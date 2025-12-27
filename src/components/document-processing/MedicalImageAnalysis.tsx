@@ -212,6 +212,8 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
   const [clinicalNotesData, setClinicalNotesData] = useState<ClinicalNotesData | null>(null);
   const [observations, setObservations] = useState<Observation[]>([]);
   const [providerConsultation, setProviderConsultation] = useState<any>(null);
+  const [cnnAnalysis, setCnnAnalysis] = useState<any>(null);
+  const [modelsUsedList, setModelsUsedList] = useState<string[]>([]);
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [zoom, setZoom] = useState(100);
   const [rotation, setRotation] = useState(0);
@@ -222,7 +224,7 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
   const [activeTab, setActiveTab] = useState('analysis');
   const [showProviderSettings, setShowProviderSettings] = useState(false);
   const [hasAbnormalities, setHasAbnormalities] = useState(false);
-  const [expandedPanels, setExpandedPanels] = useState<Set<string>>(new Set(['model-info', 'auto-detection']));
+  const [expandedPanels, setExpandedPanels] = useState<Set<string>>(new Set(['model-info', 'auto-detection', 'cnn-models']));
   
   // Multi-provider state
   const modality = (documentType?.replace('-', '') === 'ctscan' ? 'ct-scan' : documentType) as MedicalModalityType || 'xray';
@@ -378,6 +380,16 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
           setProviderConsultation(data.providerConsultation);
         }
         
+        // Set CNN analysis results
+        if (data.cnnAnalysis) {
+          setCnnAnalysis(data.cnnAnalysis);
+        }
+        
+        // Set models used list
+        if (data.modelsUsed && Array.isArray(data.modelsUsed)) {
+          setModelsUsedList(data.modelsUsed);
+        }
+        
         // Check for abnormalities
         const abnormalCount = (data.insights || []).filter((i: AIInsight) => 
           i.status === 'abnormal' || 
@@ -387,7 +399,10 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
           i.category === 'abnormality'
         ).length;
         
-        setHasAbnormalities(abnormalCount > 0 || (data.abnormalitySummary?.totalAbnormalities || 0) > 0);
+        // Also check CNN analysis for critical findings
+        const cnnCriticalCount = data.cnnAnalysis?.clinicalSummary?.criticalFindings?.length || 0;
+        
+        setHasAbnormalities(abnormalCount > 0 || cnnCriticalCount > 0 || (data.abnormalitySummary?.totalAbnormalities || 0) > 0);
       }
       
       setAnalysisComplete(true);
@@ -532,7 +547,56 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
                   {aiInsights.length} insights
                 </Badge>
               )}
+              {cnnAnalysis && (
+                <Badge className="text-xs bg-emerald-600">
+                  <Activity className="h-3 w-3 mr-1" />
+                  CNN Ensemble Active
+                </Badge>
+              )}
             </div>
+          )}
+          
+          {/* CNN Models Used */}
+          {modelsUsedList.length > 1 && (
+            <Collapsible open={expandedPanels.has('cnn-models')} className="mt-3">
+              <CollapsibleTrigger 
+                onClick={() => togglePanel('cnn-models')}
+                className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground w-full"
+              >
+                {expandedPanels.has('cnn-models') ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                <Cpu className="h-3 w-3" />
+                {modelsUsedList.length} AI Models Used (CNN + Vision AI)
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2">
+                <div className="bg-emerald-50 rounded-lg p-3 text-xs space-y-2 border border-emerald-200">
+                  <div className="font-medium text-emerald-800">Models Executed:</div>
+                  <div className="flex flex-wrap gap-1">
+                    {modelsUsedList.map((model, idx) => (
+                      <Badge key={idx} variant="outline" className="text-xs border-emerald-300 text-emerald-700">
+                        {model}
+                      </Badge>
+                    ))}
+                  </div>
+                  {cnnAnalysis?.clinicalSummary && (
+                    <div className="mt-2 pt-2 border-t border-emerald-200">
+                      <div className="font-medium text-emerald-800 mb-1">CNN Summary:</div>
+                      <p className="text-emerald-700">{cnnAnalysis.clinicalSummary.overallAssessment}</p>
+                      {cnnAnalysis.clinicalSummary.criticalFindings?.length > 0 && (
+                        <div className="mt-1 text-red-600 font-medium">
+                          ⚠️ {cnnAnalysis.clinicalSummary.criticalFindings.length} critical finding(s) from CNN
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {cnnAnalysis?.performance && (
+                    <div className="text-muted-foreground">
+                      Total latency: {cnnAnalysis.performance.totalLatencyMs}ms | 
+                      {cnnAnalysis.predictions?.length || 0} predictions
+                    </div>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           )}
           
           {/* Model Approach Details */}
