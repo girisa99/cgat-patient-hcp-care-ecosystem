@@ -541,6 +541,114 @@ const detectCodeType = (items: LineItem[]): CodeType => {
   return 'none';
 };
 
+// Invoice classification types
+export type InvoiceClassification = 'healthcare-rcm' | 'regular-invoice';
+
+export interface InvoiceClassificationResult {
+  type: InvoiceClassification;
+  confidence: number;
+  indicators: {
+    hasCPTCodes: boolean;
+    hasHCPCSCodes: boolean;
+    hasICDCodes: boolean;
+    hasRevenueCodes: boolean;
+    hasNDCCodes: boolean;
+    hasNPI: boolean;
+    hasPatientInfo: boolean;
+    hasPayerInfo: boolean;
+    hasClaimNumber: boolean;
+    hasHealthcareTerms: boolean;
+  };
+  tabLabel: string;
+  analysisType: string;
+}
+
+// Healthcare-specific terms to detect in invoice content
+const HEALTHCARE_TERMS = [
+  'diagnosis', 'patient', 'provider', 'insurance', 'claim', 'medicare', 'medicaid',
+  'copay', 'coinsurance', 'deductible', 'procedure', 'treatment', 'hospital',
+  'clinic', 'physician', 'medical', 'healthcare', 'health care', 'rx', 'pharmacy',
+  'prescription', 'laboratory', 'radiology', 'surgery', 'anesthesia', 'therapy',
+  'nursing', 'icu', 'emergency', 'outpatient', 'inpatient', 'billing provider',
+  'referring provider', 'rendering provider', 'place of service', 'pos',
+  'date of service', 'dos', 'explanation of benefits', 'eob', 'remittance',
+  'allowed amount', 'contractual adjustment', 'write-off', 'prior authorization'
+];
+
+// Detect if invoice is healthcare/RCM or regular
+const classifyInvoice = (
+  invoiceData: InvoiceData, 
+  lineItems: LineItem[],
+  rawData: Record<string, any>
+): InvoiceClassificationResult => {
+  const indicators = {
+    hasCPTCodes: false,
+    hasHCPCSCodes: false,
+    hasICDCodes: false,
+    hasRevenueCodes: false,
+    hasNDCCodes: false,
+    hasNPI: false,
+    hasPatientInfo: false,
+    hasPayerInfo: false,
+    hasClaimNumber: false,
+    hasHealthcareTerms: false,
+  };
+
+  // Check line items for healthcare codes
+  lineItems.forEach(item => {
+    if (item.cpt_code && /^\d{5}$/.test(item.cpt_code)) indicators.hasCPTCodes = true;
+    if (item.hcpcs_code || (item.cpt_code && /^[JAEGQLST]\d{4}$/i.test(item.cpt_code))) indicators.hasHCPCSCodes = true;
+    if (item.icd_code) indicators.hasICDCodes = true;
+    if (item.revenue_code) indicators.hasRevenueCodes = true;
+    if (item.ndc_code) indicators.hasNDCCodes = true;
+  });
+
+  // Check invoice-level codes
+  if (invoiceData.cpt_codes) indicators.hasCPTCodes = true;
+  if (invoiceData.icd_codes) indicators.hasICDCodes = true;
+  if (invoiceData.ndc_codes) indicators.hasNDCCodes = true;
+
+  // Check for healthcare-specific identifiers
+  if (invoiceData.vendor_npi) indicators.hasNPI = true;
+  if (invoiceData.patient_name || invoiceData.patient_account) indicators.hasPatientInfo = true;
+  if (invoiceData.payer_name) indicators.hasPayerInfo = true;
+  if (invoiceData.claim_number) indicators.hasClaimNumber = true;
+
+  // Check raw data for healthcare terms
+  const rawDataStr = JSON.stringify(rawData).toLowerCase();
+  const healthcareTermCount = HEALTHCARE_TERMS.filter(term => 
+    rawDataStr.includes(term.toLowerCase())
+  ).length;
+  indicators.hasHealthcareTerms = healthcareTermCount >= 3;
+
+  // Calculate confidence score (0-100)
+  let score = 0;
+  if (indicators.hasCPTCodes) score += 25;
+  if (indicators.hasHCPCSCodes) score += 20;
+  if (indicators.hasICDCodes) score += 20;
+  if (indicators.hasRevenueCodes) score += 15;
+  if (indicators.hasNDCCodes) score += 10;
+  if (indicators.hasNPI) score += 15;
+  if (indicators.hasPatientInfo) score += 10;
+  if (indicators.hasPayerInfo) score += 10;
+  if (indicators.hasClaimNumber) score += 15;
+  if (indicators.hasHealthcareTerms) score += 10;
+
+  // Determine classification
+  const isHealthcare = score >= 25;
+  const confidence = Math.min(score, 100);
+
+  return {
+    type: isHealthcare ? 'healthcare-rcm' : 'regular-invoice',
+    confidence,
+    indicators,
+    tabLabel: isHealthcare ? 'RCM Analysis' : 'Invoice Analysis',
+    analysisType: isHealthcare 
+      ? 'Healthcare Revenue Cycle Management' 
+      : 'Standard Invoice Analysis'
+  };
+};
+
 interface InvoiceData {
   invoice_number?: string;
   claim_number?: string;
@@ -589,6 +697,7 @@ interface InvoiceRCMAnalysisProps {
   processingHistory?: any[];
   onExport?: (format: 'csv' | 'json', data: any) => void;
   onLineItemsChange?: (lineItems: LineItem[]) => void;
+  onClassificationChange?: (classification: InvoiceClassificationResult) => void;
 }
 
 // Intelligent field matcher - maps any extracted field to expected RCM fields
@@ -628,7 +737,8 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
   extractedData,
   processingHistory = [],
   onExport,
-  onLineItemsChange
+  onLineItemsChange,
+  onClassificationChange
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [rcmSummary, setRcmSummary] = useState<RCMSummary | null>(null);
@@ -638,6 +748,7 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
   const [editingLineItemIdx, setEditingLineItemIdx] = useState<number | null>(null);
   const [hasRestoredState, setHasRestoredState] = useState(false);
   const [hasUserEdits, setHasUserEdits] = useState(false);
+  const [invoiceClassification, setInvoiceClassification] = useState<InvoiceClassificationResult | null>(null);
 
   // Create unique key based on invoice identifiers to prevent data carryover
   // Uses invoice-specific data to ensure each invoice has isolated state
@@ -1227,50 +1338,82 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
     }
   }, [hasRestoredState, lineItems.length]);
 
-  // Calculate RCM Summary - use line items as source of truth when available
+  // Classify invoice type based on extracted data and line items
   useEffect(() => {
-    const allInvoices = processingHistory.filter(h => 
-      h.document_type === 'invoice' || h.extracted_data?.invoice_number
-    );
+    if (!hasRestoredState) return;
+    
+    const classification = classifyInvoice(invoiceData, lineItems, extractedData);
+    setInvoiceClassification(classification);
+    
+    // Notify parent component of classification change
+    if (onClassificationChange) {
+      onClassificationChange(classification);
+    }
+    
+    console.log('RCM Analysis - Invoice Classification:', classification);
+  }, [invoiceData, lineItems, extractedData, hasRestoredState, onClassificationChange]);
+
+  // Calculate RCM Summary - ONLY use actual extracted data, no mock values
+  useEffect(() => {
+    // CRITICAL: Only calculate if we have real extracted data
+    const hasRealData = invoiceData.billed_amount && invoiceData.billed_amount > 0;
+    
+    if (!hasRealData && lineItems.length === 0) {
+      // No real data - set summary to zeros/empty
+      setRcmSummary({
+        totalBilled: 0,
+        totalPaid: 0,
+        totalOutstanding: 0,
+        totalDenied: 0,
+        totalAdjustments: 0,
+        collectionRate: 0,
+        avgDaysToPayment: 0,
+        agingBreakdown: [],
+        cptBreakdown: [],
+        denialBreakdown: [],
+        vendorBreakdown: []
+      });
+      return;
+    }
 
     // Calculate from line items if available
     const lineItemsBilled = lineItems.reduce((sum, i) => sum + (i.total || 0), 0);
-    const lineItemsAllowed = lineItems.reduce((sum, i) => sum + (i.allowed_amount || 0), 0);
     const lineItemsAdjustments = lineItems.reduce((sum, i) => sum + (i.adjustment || 0), 0);
 
-    // Use line items totals if available, otherwise fall back to invoice data
-    const currentBilled = lineItemsBilled > 0 ? lineItemsBilled : (invoiceData.billed_amount || 0);
+    // Use ONLY extracted values - no fallback to mock data
+    const currentBilled = invoiceData.billed_amount || lineItemsBilled || 0;
     const currentPaid = invoiceData.paid_amount || 0;
-    const currentAdjustments = lineItemsAdjustments > 0 ? lineItemsAdjustments : (invoiceData.adjustment_amount || 0);
+    const currentAdjustments = invoiceData.adjustment_amount || lineItemsAdjustments || 0;
     
-    // Balance due: from invoice or calculate as Billed - Adjustments - Paid
-    const currentBalanceDue = invoiceData.balance_due || (currentBilled - currentAdjustments - currentPaid);
-    
-    // Calculate adjustments from billed vs balance if not extracted
-    const calculatedAdjustments = currentAdjustments > 0 ? currentAdjustments : 
-      (currentBilled - currentBalanceDue - currentPaid);
+    // Balance due: from invoice only, or calculate if we have real billed amount
+    const currentBalanceDue = invoiceData.balance_due || 
+      (currentBilled > 0 ? (currentBilled - currentAdjustments - currentPaid) : 0);
 
-    const totalBilled = allInvoices.reduce((sum, inv) => 
-      sum + parseFloat(inv.extracted_data?.billed_amount || inv.extracted_data?.total || '0'), 0) + currentBilled;
-    const totalPaid = allInvoices.reduce((sum, inv) => 
+    // Only include history items with real extracted data
+    const validHistory = processingHistory.filter(h => {
+      const billedAmt = parseFloat(h.extracted_data?.billed_amount || '0');
+      return billedAmt > 0;
+    });
+
+    const totalBilled = validHistory.reduce((sum, inv) => 
+      sum + parseFloat(inv.extracted_data?.billed_amount || '0'), 0) + currentBilled;
+    const totalPaid = validHistory.reduce((sum, inv) => 
       sum + parseFloat(inv.extracted_data?.paid_amount || '0'), 0) + currentPaid;
-    const totalAdjustments = allInvoices.reduce((sum, inv) => 
-      sum + parseFloat(inv.extracted_data?.adjustment_amount || '0'), 0) + calculatedAdjustments;
 
     const summary: RCMSummary = {
       totalBilled,
       totalPaid,
       totalOutstanding: currentBalanceDue,
-      totalDenied: allInvoices.filter(i => i.extracted_data?.payment_status === 'denied').length * 100,
-      totalAdjustments: calculatedAdjustments,
+      totalDenied: validHistory.filter(i => i.extracted_data?.payment_status === 'denied').length * 100,
+      totalAdjustments: currentAdjustments,
       collectionRate: currentBilled > 0 ? ((currentPaid / currentBilled) * 100) : 0,
-      avgDaysToPayment: 32,
-      agingBreakdown: [
+      avgDaysToPayment: currentPaid > 0 ? 32 : 0, // Only show if we have payment data
+      agingBreakdown: currentBalanceDue > 0 ? [
         { bucket: '0-30 days', amount: currentBalanceDue, count: 1 },
         { bucket: '31-60 days', amount: 0, count: 0 },
         { bucket: '61-90 days', amount: 0, count: 0 },
         { bucket: '90+ days', amount: 0, count: 0 },
-      ],
+      ] : [],
       cptBreakdown: lineItems.filter(i => i.cpt_code).map(item => ({
         code: item.cpt_code || 'N/A',
         description: item.description,
@@ -1284,12 +1427,12 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
         count: 1,
         amount: currentBilled
       }] : [],
-      vendorBreakdown: [{
+      vendorBreakdown: currentBilled > 0 ? [{
         vendor: invoiceData.vendor_name || 'Unknown Vendor',
         billed: currentBilled,
         paid: currentPaid,
         outstanding: currentBalanceDue
-      }]
+      }] : []
     };
 
     setRcmSummary(summary);
@@ -1397,11 +1540,35 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
         <div>
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <Receipt className="h-5 w-5 text-emerald-500" />
-            Revenue Cycle Management Analysis
+            {invoiceClassification?.analysisType || 'Invoice Analysis'}
+            {invoiceClassification && (
+              <Badge 
+                variant={invoiceClassification.type === 'healthcare-rcm' ? 'default' : 'secondary'}
+                className="ml-2"
+              >
+                {invoiceClassification.type === 'healthcare-rcm' ? 'Healthcare RCM' : 'Standard Invoice'}
+              </Badge>
+            )}
           </h3>
           <p className="text-sm text-muted-foreground">
             Invoice #{invoiceData.invoice_number || 'N/A'} • {invoiceData.vendor_name || 'Unknown Vendor'}
+            {invoiceClassification && invoiceClassification.confidence > 0 && (
+              <span className="ml-2 text-xs">
+                (Confidence: {invoiceClassification.confidence}%)
+              </span>
+            )}
           </p>
+          {/* Healthcare Indicators */}
+          {invoiceClassification?.type === 'healthcare-rcm' && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {invoiceClassification.indicators.hasCPTCodes && <Badge variant="outline" className="text-xs">CPT</Badge>}
+              {invoiceClassification.indicators.hasHCPCSCodes && <Badge variant="outline" className="text-xs">HCPCS</Badge>}
+              {invoiceClassification.indicators.hasICDCodes && <Badge variant="outline" className="text-xs">ICD-10</Badge>}
+              {invoiceClassification.indicators.hasRevenueCodes && <Badge variant="outline" className="text-xs">Revenue Codes</Badge>}
+              {invoiceClassification.indicators.hasNDCCodes && <Badge variant="outline" className="text-xs">NDC</Badge>}
+              {invoiceClassification.indicators.hasNPI && <Badge variant="outline" className="text-xs">NPI</Badge>}
+            </div>
+          )}
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleExportCSV}>
@@ -2117,114 +2284,152 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
           <div className="space-y-4">
             <Alert>
               <BarChart3 className="h-4 w-4" />
-              <AlertTitle>Consolidated Revenue Cycle Report</AlertTitle>
+              <AlertTitle>
+                {invoiceClassification?.type === 'healthcare-rcm' 
+                  ? 'Consolidated Revenue Cycle Report' 
+                  : 'Consolidated Invoice Report'}
+              </AlertTitle>
               <AlertDescription>
-                Summary across all processed invoices and claims
+                {invoiceClassification?.type === 'healthcare-rcm'
+                  ? 'Summary across all processed invoices and claims'
+                  : 'Summary of invoice analysis'}
               </AlertDescription>
             </Alert>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Show message if no real data */}
+            {(!rcmSummary || rcmSummary.totalBilled === 0) && lineItems.length === 0 ? (
               <Card>
-                <CardContent className="pt-4">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-green-500" />
-                    <span className="text-sm text-muted-foreground">Total Revenue</span>
-                  </div>
-                  <div className="text-2xl font-bold mt-1">
-                    {formatCurrency(rcmSummary?.totalBilled || 0)}
+                <CardContent className="pt-6">
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg font-medium mb-2">No Invoice Data Available</p>
+                    <p className="text-sm">
+                      Upload and process an invoice to see consolidated revenue analysis.
+                    </p>
+                    <p className="text-xs mt-4">
+                      The system will automatically detect if it's a healthcare (RCM) or standard invoice.
+                    </p>
                   </div>
                 </CardContent>
               </Card>
-              <Card>
-                <CardContent className="pt-4">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-blue-500" />
-                    <span className="text-sm text-muted-foreground">Collected</span>
-                  </div>
-                  <div className="text-2xl font-bold mt-1">
-                    {formatCurrency(rcmSummary?.totalPaid || 0)}
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-4">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-orange-500" />
-                    <span className="text-sm text-muted-foreground">Outstanding</span>
-                  </div>
-                  <div className="text-2xl font-bold mt-1">
-                    {formatCurrency(rcmSummary?.totalOutstanding || 0)}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Vendor Breakdown */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Building2 className="h-4 w-4" />
-                  Vendor/Supplier Breakdown
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Vendor</TableHead>
-                      <TableHead className="text-right">Billed</TableHead>
-                      <TableHead className="text-right">Paid</TableHead>
-                      <TableHead className="text-right">Outstanding</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {rcmSummary?.vendorBreakdown.map((vendor, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell className="font-medium">{vendor.vendor}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(vendor.billed)}</TableCell>
-                        <TableCell className="text-right text-green-600">{formatCurrency(vendor.paid)}</TableCell>
-                        <TableCell className="text-right text-orange-600">{formatCurrency(vendor.outstanding)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-
-            {/* Key Metrics */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Key Performance Indicators</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-3 bg-muted rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">
-                      {rcmSummary?.collectionRate.toFixed(1) || 0}%
-                    </div>
-                    <div className="text-xs text-muted-foreground">Collection Rate</div>
-                  </div>
-                  <div className="text-center p-3 bg-muted rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {rcmSummary?.avgDaysToPayment || 0}
-                    </div>
-                    <div className="text-xs text-muted-foreground">Avg Days to Pay</div>
-                  </div>
-                  <div className="text-center p-3 bg-muted rounded-lg">
-                    <div className="text-2xl font-bold text-red-600">
-                      {rcmSummary?.denialBreakdown.length || 0}
-                    </div>
-                    <div className="text-xs text-muted-foreground">Denials</div>
-                  </div>
-                  <div className="text-center p-3 bg-muted rounded-lg">
-                    <div className="text-2xl font-bold text-purple-600">
-                      {formatCurrency(rcmSummary?.totalAdjustments || 0)}
-                    </div>
-                    <div className="text-xs text-muted-foreground">Total Adjustments</div>
-                  </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card>
+                    <CardContent className="pt-4">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5 text-green-500" />
+                        <span className="text-sm text-muted-foreground">Total Revenue</span>
+                      </div>
+                      <div className="text-2xl font-bold mt-1">
+                        {rcmSummary && rcmSummary.totalBilled > 0 
+                          ? formatCurrency(rcmSummary.totalBilled) 
+                          : 'N/A'}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-5 w-5 text-blue-500" />
+                        <span className="text-sm text-muted-foreground">Collected</span>
+                      </div>
+                      <div className="text-2xl font-bold mt-1">
+                        {formatCurrency(rcmSummary?.totalPaid || 0)}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-orange-500" />
+                        <span className="text-sm text-muted-foreground">Outstanding</span>
+                      </div>
+                      <div className="text-2xl font-bold mt-1">
+                        {rcmSummary && rcmSummary.totalOutstanding > 0 
+                          ? formatCurrency(rcmSummary.totalOutstanding) 
+                          : 'N/A'}
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
-              </CardContent>
-            </Card>
+
+                {/* Vendor Breakdown - Only show if we have data */}
+                {rcmSummary?.vendorBreakdown && rcmSummary.vendorBreakdown.length > 0 && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Building2 className="h-4 w-4" />
+                        Vendor/Supplier Breakdown
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Vendor</TableHead>
+                            <TableHead className="text-right">Billed</TableHead>
+                            <TableHead className="text-right">Paid</TableHead>
+                            <TableHead className="text-right">Outstanding</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {rcmSummary.vendorBreakdown.map((vendor, idx) => (
+                            <TableRow key={idx}>
+                              <TableCell className="font-medium">{vendor.vendor}</TableCell>
+                              <TableCell className="text-right">{formatCurrency(vendor.billed)}</TableCell>
+                              <TableCell className="text-right text-green-600">{formatCurrency(vendor.paid)}</TableCell>
+                              <TableCell className="text-right text-orange-600">{formatCurrency(vendor.outstanding)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Key Metrics */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Key Performance Indicators</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center p-3 bg-muted rounded-lg">
+                        <div className="text-2xl font-bold text-green-600">
+                          {rcmSummary && rcmSummary.totalBilled > 0 
+                            ? `${rcmSummary.collectionRate.toFixed(1)}%` 
+                            : 'N/A'}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Collection Rate</div>
+                      </div>
+                      <div className="text-center p-3 bg-muted rounded-lg">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {rcmSummary && rcmSummary.avgDaysToPayment > 0 
+                            ? rcmSummary.avgDaysToPayment 
+                            : 'N/A'}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Avg Days to Pay</div>
+                      </div>
+                      <div className="text-center p-3 bg-muted rounded-lg">
+                        <div className="text-2xl font-bold text-red-600">
+                          {rcmSummary?.denialBreakdown.length || 0}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Denials</div>
+                      </div>
+                      <div className="text-center p-3 bg-muted rounded-lg">
+                        <div className="text-2xl font-bold text-purple-600">
+                          {rcmSummary && rcmSummary.totalAdjustments > 0 
+                            ? formatCurrency(rcmSummary.totalAdjustments) 
+                            : 'N/A'}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Total Adjustments</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </div>
         </TabsContent>
       </Tabs>
