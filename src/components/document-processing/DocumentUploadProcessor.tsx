@@ -642,32 +642,98 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
           {/* Medication Tab - Only for Prescription */}
           {selectedDocumentType === 'prescription' && (
             <TabsContent value="medication" className="space-y-4 mt-4">
-              {activeJob?.extracted_metadata ? (
+              {formMapping && Object.keys(formMapping).length > 0 ? (
                 <div className="space-y-4">
+                  {/* Header */}
                   <div className="flex items-center gap-2">
                     <span className="text-lg">💊</span>
-                    <h4 className="font-medium">Medication Details</h4>
-                    <Badge variant="outline">From {activeJob.file_name}</Badge>
+                    <h4 className="font-medium">Prescription Details</h4>
+                    <Badge variant="outline">From {activeJob?.file_name}</Badge>
                   </div>
+                  
+                  {/* Patient & Doctor Info */}
                   <div className="grid grid-cols-2 gap-4">
-                    {activeJob.extracted_metadata.entities
-                      ?.filter(e => ['medication', 'dosage', 'frequency', 'quantity', 'refills', 'ndc'].includes(e.type))
-                      .map((entity, idx) => (
-                        <div key={idx} className="bg-muted/50 p-3 rounded-lg">
-                          <Label className="text-xs text-muted-foreground capitalize">{entity.type.replace(/_/g, ' ')}</Label>
-                          <p className="font-medium">{entity.value}</p>
+                    {['patient_name', 'patient_address', 'doctor_name', 'document_date', 'patient_blood_pressure', 'patient_temperature'].map(fieldKey => {
+                      const field = formMapping[fieldKey];
+                      if (!field?.value) return null;
+                      return (
+                        <div key={fieldKey} className="bg-muted/50 p-3 rounded-lg">
+                          <Label className="text-xs text-muted-foreground capitalize">{fieldKey.replace(/_/g, ' ')}</Label>
+                          <p className="font-medium">{field.value}</p>
                           <Badge variant="secondary" className="text-[9px] mt-1">
-                            {Math.round(entity.confidence * 100)}% • {entity.source === 'vision_ai' ? '🤖 Vision AI' : '📷 OCR'}
+                            {Math.round(field.confidence * 100)}% • {field.source === 'gemini_vision_ai' || field.source === 'vision_ai' ? '🤖 Vision AI' : '📷 OCR'}
                           </Badge>
                         </div>
-                      ))}
+                      );
+                    })}
                   </div>
+                  
+                  {/* Medications from line_items */}
+                  {(() => {
+                    // Parse line_items from formMapping
+                    let medications: any[] = [];
+                    const lineItemsField = formMapping['line_items'];
+                    if (lineItemsField?.value) {
+                      try {
+                        medications = typeof lineItemsField.value === 'string' 
+                          ? JSON.parse(lineItemsField.value) 
+                          : lineItemsField.value;
+                      } catch (e) {
+                        console.warn('Failed to parse line_items:', e);
+                      }
+                    }
+                    
+                    if (medications.length > 0) {
+                      return (
+                        <div className="space-y-3">
+                          <h5 className="font-medium flex items-center gap-2">
+                            <span>💊</span> Medications ({medications.length})
+                          </h5>
+                          <div className="space-y-2">
+                            {medications.map((med: any, idx: number) => (
+                              <div key={idx} className="bg-primary/5 border border-primary/20 p-4 rounded-lg">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <p className="font-semibold text-primary">{med.medication_name || med.name || 'Unknown Medication'}</p>
+                                    {med.dosage && <p className="text-sm text-muted-foreground mt-1">📋 {med.dosage}</p>}
+                                    <div className="flex gap-4 mt-2 text-xs">
+                                      {med.duration && <span className="bg-muted px-2 py-1 rounded">⏱️ {med.duration}</span>}
+                                      {med.quantity && <span className="bg-muted px-2 py-1 rounded">📦 Qty: {med.quantity}</span>}
+                                      {med.strength && <span className="bg-muted px-2 py-1 rounded">💪 {med.strength}</span>}
+                                    </div>
+                                  </div>
+                                  <Badge variant="outline" className="text-[10px]">#{idx + 1}</Badge>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+                  
+                  {/* Advice if present */}
+                  {formMapping['advice_given']?.value && (
+                    <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-lg">
+                      <Label className="text-xs text-muted-foreground">Advice Given</Label>
+                      <p className="font-medium">{formMapping['advice_given'].value}</p>
+                    </div>
+                  )}
+                  
+                  {/* Follow-up if present */}
+                  {formMapping['follow_up_date']?.value && (
+                    <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded-lg">
+                      <Label className="text-xs text-muted-foreground">Follow-up Date</Label>
+                      <p className="font-medium">{formMapping['follow_up_date'].value}</p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <span className="text-4xl block mb-2">💊</span>
                   <p>No medication data extracted</p>
-                  <p className="text-sm">Upload a prescription to see medication details</p>
+                  <p className="text-sm">Upload a prescription and generate form mapping to see medication details</p>
                 </div>
               )}
             </TabsContent>
