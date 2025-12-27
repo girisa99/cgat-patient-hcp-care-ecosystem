@@ -133,7 +133,15 @@ export const RealTimeExtractionTracker: React.FC<RealTimeExtractionTrackerProps>
     const prevFields = prevFieldsRef.current;
     const newExtractions: ExtractedField[] = [];
     
+    // List of metadata/internal fields to exclude from live display
+    const excludedFields = ['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'];
+    
     Object.entries(extractedFields).forEach(([key, data]) => {
+      // Skip internal metadata fields (starting with _) and excluded fields
+      if (key.startsWith('_') || excludedFields.includes(key)) {
+        return;
+      }
+      
       if (!prevFields[key] || prevFields[key].value !== data.value) {
         // Determine source from confidence or explicit source field
         const source: 'ocr' | 'vision_ai' = data.source === 'vision_ai' || data.source === 'nlp' || data.source === 'NLP' 

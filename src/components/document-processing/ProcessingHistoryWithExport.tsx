@@ -436,9 +436,12 @@ export default function ProcessingHistoryWithExport({
         _processedAt: item.processedAt,
       };
       
-      // Add ALL dynamically extracted fields
+      // Add ALL dynamically extracted fields - exclude metadata fields
+      const excludedFields = ['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'];
       for (const [key, fieldData] of Object.entries(item.extractedFields)) {
-        record[key] = fieldData.value;
+        if (!key.startsWith('_') && !excludedFields.includes(key)) {
+          record[key] = fieldData.value;
+        }
       }
       
       // Add medication data if present
