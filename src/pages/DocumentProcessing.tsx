@@ -1233,6 +1233,28 @@ export default function DocumentProcessing() {
     
     const file = acceptedFiles[0];
     
+    // CRITICAL: Reset medication-specific fields when uploading a new prescription
+    // This prevents stale data from previous prescriptions showing in Medication Lookup tab
+    if (selectedDocType === 'prescription' || currentConfig.processingHints?.enableMedicationLookup) {
+      console.log('New prescription upload - resetting medication state');
+      setDrugSearchQuery('');
+      setSigInstructions('');
+      setSearchResults(null);
+      setSelectedNdc(null);
+      setParsedSig(null);
+      setSelectedDose('1 tablet');
+      setSelectedRoute('by mouth (oral)');
+      setSelectedFrequency('once daily');
+      setSelectedDuration('30 days');
+      setNdcDosageInfo(null);
+      // Also clear sessionStorage to prevent stale data on page reload
+      sessionStorage.removeItem('docProcessing_drugQuery');
+      sessionStorage.removeItem('docProcessing_sigInstructions');
+      sessionStorage.removeItem('docProcessing_searchResults');
+      sessionStorage.removeItem('docProcessing_selectedNdc');
+      sessionStorage.removeItem('docProcessing_parsedSig');
+    }
+    
     // Create object URL for image preview
     const imageUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined;
     
