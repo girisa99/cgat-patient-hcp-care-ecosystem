@@ -2243,11 +2243,11 @@ export default function DocumentProcessing() {
                           <p className="text-xs text-muted-foreground">Edit fields below, then confirm to proceed</p>
                         </div>
                         
-                        {/* Show ONLY actually extracted fields with values */}
-                        {Object.keys(processingResult.extractedFields).filter(k => processingResult.extractedFields[k]?.value).length > 0 ? (
+                        {/* Show ONLY actually extracted fields with values - exclude metadata */}
+                        {Object.keys(processingResult.extractedFields).filter(k => processingResult.extractedFields[k]?.value && !k.startsWith('_') && !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(k)).length > 0 ? (
                           <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1">
                             {Object.entries(processingResult.extractedFields)
-                              .filter(([_, field]) => field?.value)
+                              .filter(([key, field]) => field?.value && !key.startsWith('_') && !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key))
                               .map(([key, field]) => {
                                 const confidence = field?.confidence || 0;
                                 const targetField = currentConfig.targetFields.find(f => f.key === key);
@@ -3116,7 +3116,7 @@ export default function DocumentProcessing() {
                       {/* Editable Insurance Fields */}
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {Object.entries(processingResult.extractedFields)
-                          .filter(([key, field]) => field?.value && !['line_items', 'tables', 'detected_document_type', 'document_category'].includes(key))
+                          .filter(([key, field]) => field?.value && !key.startsWith('_') && !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key))
                           .map(([key, field]) => {
                             const label = expandAbbreviation(key.replace(/_/g, ' '));
                             return (
@@ -3286,7 +3286,7 @@ export default function DocumentProcessing() {
                       )}
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {Object.entries(processingResult.extractedFields)
-                          .filter(([key, field]) => field?.value && !['line_items', 'tables', 'detected_document_type', 'document_category'].includes(key))
+                          .filter(([key, field]) => field?.value && !key.startsWith('_') && !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key))
                           .map(([key, field]) => {
                             const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                             return (
@@ -3323,7 +3323,7 @@ export default function DocumentProcessing() {
                   {processingResult && processingResult.stage === 'complete' ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       {Object.entries(processingResult.extractedFields)
-                        .filter(([key, field]) => field?.value && !['line_items', 'tables', 'detected_document_type', 'document_category'].includes(key))
+                        .filter(([key, field]) => field?.value && !key.startsWith('_') && !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key))
                         .map(([key, field]) => {
                           const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                           return (
@@ -3359,7 +3359,7 @@ export default function DocumentProcessing() {
                   {processingResult && processingResult.stage === 'complete' ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       {Object.entries(processingResult.extractedFields)
-                        .filter(([key, field]) => field?.value && !['line_items', 'tables', 'detected_document_type', 'document_category'].includes(key))
+                        .filter(([key, field]) => field?.value && !key.startsWith('_') && !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key))
                         .map(([key, field]) => {
                           const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                           return (
@@ -3395,7 +3395,7 @@ export default function DocumentProcessing() {
                   {processingResult && processingResult.stage === 'complete' ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       {Object.entries(processingResult.extractedFields)
-                        .filter(([key, field]) => field?.value && !['line_items', 'tables', 'detected_document_type', 'document_category'].includes(key))
+                        .filter(([key, field]) => field?.value && !key.startsWith('_') && !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key))
                         .map(([key, field]) => {
                           const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                           return (
@@ -3788,16 +3788,24 @@ export default function DocumentProcessing() {
                     )}
                   </div>
                   
-                  {/* Extracted Fields - Show ONLY actually extracted fields */}
+                  {/* Extracted Fields - Show ONLY actually extracted fields, exclude metadata */}
                   <div className="border rounded-lg p-4">
                     <h4 className="font-medium mb-2 flex items-center gap-2">
                       <Table2 className="h-4 w-4" />
-                      Extracted Fields ({Object.keys(pendingResult.extractedFields).filter(k => pendingResult.extractedFields[k]?.value && !['line_items', 'tables', 'detected_document_type', 'document_category'].includes(k)).length})
+                      Extracted Fields ({Object.keys(pendingResult.extractedFields).filter(k => 
+                        pendingResult.extractedFields[k]?.value && 
+                        !k.startsWith('_') && 
+                        !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(k)
+                      ).length})
                     </h4>
                     <ScrollArea className="h-[300px]">
                       <div className="space-y-2">
                         {Object.entries(pendingResult.extractedFields)
-                          .filter(([key, field]) => field?.value && !['line_items', 'tables', 'detected_document_type', 'document_category'].includes(key))
+                          .filter(([key, field]) => 
+                            field?.value && 
+                            !key.startsWith('_') && 
+                            !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key)
+                          )
                           .map(([key, field]) => {
                             const confidence = field?.confidence || 0;
                             const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
