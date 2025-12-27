@@ -2464,16 +2464,31 @@ async function extractWithClaude(imageBase64: string, contentType: string, promp
   
   try {
     // Determine media type for Claude's vision API
+    // Claude supports: image/jpeg, image/png, image/gif, image/webp
+    // Note: BMP is NOT directly supported by Claude - we need to handle it differently
     let mediaType = 'image/png';
-    if (contentType.includes('jpeg') || contentType.includes('jpg')) {
+    const lowerContentType = contentType.toLowerCase();
+    
+    if (lowerContentType.includes('jpeg') || lowerContentType.includes('jpg')) {
       mediaType = 'image/jpeg';
-    } else if (contentType.includes('webp')) {
+    } else if (lowerContentType.includes('webp')) {
       mediaType = 'image/webp';
-    } else if (contentType.includes('gif')) {
+    } else if (lowerContentType.includes('gif')) {
       mediaType = 'image/gif';
-    } else if (contentType.includes('pdf')) {
+    } else if (lowerContentType.includes('png')) {
+      mediaType = 'image/png';
+    } else if (lowerContentType.includes('pdf')) {
       mediaType = 'application/pdf';
+    } else if (lowerContentType.includes('bmp')) {
+      // BMP is not directly supported by Claude API
+      // Attempt to send as PNG and hope the API can process it
+      // If this fails, we'll need proper image conversion
+      console.log('[Claude] BMP format detected - attempting to process (may fail, recommend using JPEG/PNG)');
+      mediaType = 'image/png'; // This will likely fail for true BMP files
+      throw new Error('BMP format is not supported. Please convert to JPEG or PNG before uploading.');
     }
+    
+    console.log(`[Claude] Using media type: ${mediaType} for content type: ${contentType}`);
     
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -2785,7 +2800,7 @@ function convertToSupportedFormat(imageBase64: string, contentType: string): { b
 function isFormatSupportedByProvider(mimeType: string, provider: AIProvider): boolean {
   const supportMatrix: Record<AIProvider, string[]> = {
     'gemini': ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
-    'claude': ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp'], // Claude actually supports BMP
+    'claude': ['image/jpeg', 'image/png', 'image/gif', 'image/webp'], // Claude does NOT support BMP
     'openai': ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
   };
   
@@ -2804,17 +2819,18 @@ async function extractWithHybridPipeline(
   
   console.log(`[HybridPipeline] Starting hybrid extraction with primary provider: ${primaryProvider}, format: ${contentType}`);
   
-  // Check for unsupported formats and adjust provider if needed
-  const isUnsupportedFormat = !['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(contentType.toLowerCase());
+  // Check for unsupported formats - REJECT BMP upfront with clear message
+  const lowerContentType = contentType.toLowerCase();
+  if (lowerContentType === 'image/bmp' || lowerContentType.includes('bmp')) {
+    console.error(`[HybridPipeline] BMP format is not supported by any AI vision provider`);
+    throw new Error('BMP format is not supported. Please convert your image to JPEG or PNG before uploading. You can use any image editor or online converter to do this.');
+  }
+  
+  const isUnsupportedFormat = !['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(lowerContentType);
   let effectiveProvider = primaryProvider;
   
   if (isUnsupportedFormat) {
-    console.log(`[HybridPipeline] Unsupported format ${contentType} detected`);
-    // BMP is only supported by Claude, so force Claude for BMP
-    if (contentType.toLowerCase() === 'image/bmp') {
-      effectiveProvider = 'claude';
-      console.log(`[HybridPipeline] BMP format - switching to Claude (only provider supporting BMP)`);
-    }
+    console.log(`[HybridPipeline] Unsupported format ${contentType} detected - may cause issues`);
   }
   
   let ocrText = '';
@@ -2851,8 +2867,8 @@ Use the OCR text above as a reference to validate and enhance your visual extrac
   // Build smart fallback chain based on format support
   const fallbackChain: AIProvider[] = [];
   if (effectiveProvider !== 'claude') fallbackChain.push('claude');
-  if (effectiveProvider !== 'openai' && contentType.toLowerCase() !== 'image/bmp') fallbackChain.push('openai');
-  if (effectiveProvider !== 'gemini' && contentType.toLowerCase() !== 'image/bmp') fallbackChain.push('gemini');
+  if (effectiveProvider !== 'openai') fallbackChain.push('openai');
+  if (effectiveProvider !== 'gemini') fallbackChain.push('gemini');
   
   console.log(`[HybridPipeline] Provider chain: ${effectiveProvider} -> ${fallbackChain.join(' -> ')}`);
   

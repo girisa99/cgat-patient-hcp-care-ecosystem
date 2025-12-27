@@ -191,6 +191,23 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
   });
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    // Check for unsupported formats like BMP upfront
+    const unsupportedFiles = acceptedFiles.filter(f => 
+      f.type === 'image/bmp' || f.name.toLowerCase().endsWith('.bmp')
+    );
+    
+    if (unsupportedFiles.length > 0) {
+      toast.error('BMP format is not supported. Please convert to JPEG or PNG before uploading.', {
+        duration: 5000,
+        description: 'You can use any image editor or online converter to convert BMP files.'
+      });
+      // Filter out BMP files
+      acceptedFiles = acceptedFiles.filter(f => 
+        f.type !== 'image/bmp' && !f.name.toLowerCase().endsWith('.bmp')
+      );
+      if (acceptedFiles.length === 0) return;
+    }
+    
     if (acceptedFiles.length > 1) {
       // Batch upload
       await uploadBatch(acceptedFiles, getProcessingConfig());
@@ -237,7 +254,12 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
     onDrop,
     accept: {
       'application/pdf': ['.pdf'],
-      'image/*': ['.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif'],
+      'image/jpeg': ['.jpg', '.jpeg'],
+      'image/png': ['.png'],
+      'image/gif': ['.gif'],
+      'image/webp': ['.webp'],
+      'image/tiff': ['.tiff', '.tif'],
+      // Note: BMP is NOT supported by AI vision providers - removed from accept list
       'application/msword': ['.doc'],
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
       // Excel/Spreadsheet support
