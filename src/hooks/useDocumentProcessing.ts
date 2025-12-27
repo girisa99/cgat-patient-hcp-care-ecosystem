@@ -555,13 +555,33 @@ export function useDocumentProcessing(): UseDocumentProcessingReturn {
         throw new Error(error?.message || data?.error || 'Form mapping failed');
       }
 
-      setFormMapping(data.formMapping);
+      // Filter out internal metadata fields (starting with _) from display
+      // but keep them available in the full response
+      const cleanedMapping: FormMapping = {};
+      if (data.formMapping) {
+        Object.entries(data.formMapping).forEach(([key, value]) => {
+          // Skip internal metadata fields that start with _
+          if (!key.startsWith('_')) {
+            const fieldValue = value as any;
+            cleanedMapping[key] = {
+              value: fieldValue.value ?? '',
+              confidence: fieldValue.confidence ?? 0,
+              source: fieldValue.source ?? 'unknown',
+              verified: fieldValue.verified,
+              originalValue: fieldValue.originalValue,
+              fieldType: fieldValue.fieldType
+            };
+          }
+        });
+      }
+
+      setFormMapping(cleanedMapping);
       
       if (data.unmappedFields?.length > 0) {
         toast.info(`${data.unmappedFields.length} fields could not be mapped automatically`);
       }
 
-      return data.formMapping;
+      return cleanedMapping;
     } catch (e) {
       console.error('Form mapping error:', e);
       toast.error(`Form mapping failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
