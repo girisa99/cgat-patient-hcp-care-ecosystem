@@ -3598,6 +3598,10 @@ export default function DocumentProcessing() {
                     setProcessingResult(prev => prev ? { ...prev, lineItems } : prev);
                   }
                 }}
+                onClassificationChange={(classification) => {
+                  console.log('Invoice Classification:', classification);
+                  // Could update tab label dynamically here if needed
+                }}
               />
             </TabsContent>
           )}
