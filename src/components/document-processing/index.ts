@@ -11,6 +11,7 @@ export { FeaturesOverviewDiagram } from './FeaturesOverviewDiagram';
 export { SolutionArchitectureDiagram } from './SolutionArchitectureDiagram';
 export { DocumentProcessingArchitectureDiagram } from './DocumentProcessingArchitectureDiagram';
 export { MedicalImagingAIPipelineDiagram } from './MedicalImagingAIPipelineDiagram';
+export { PatientInfoVerificationPanel } from './PatientInfoVerificationPanel';
 export type { AIProvider, PipelineType, ModelUsageInfo } from './AIModelIndicator';
 export { useDocumentProcessing, DOCUMENT_TYPE_FIELDS } from '@/hooks/useDocumentProcessing';
 export type { 

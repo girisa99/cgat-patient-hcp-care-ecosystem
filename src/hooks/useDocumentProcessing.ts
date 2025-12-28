@@ -397,6 +397,11 @@ export function useDocumentProcessing(): UseDocumentProcessingReturn {
     config?: ProcessingConfig,
     options?: { autoDetect?: boolean; autoAnalyzeMedical?: boolean; isMedicalContext?: boolean }
   ): Promise<string | null> => {
+    // Clear previous document state before uploading new document
+    setActiveJob(null);
+    setFormMapping(null);
+    setIsProcessing(false);
+    
     setIsUploading(true);
     setUploadProgress(0);
 
