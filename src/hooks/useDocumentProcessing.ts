@@ -358,23 +358,30 @@ export function useDocumentProcessing(): UseDocumentProcessingReturn {
         (payload) => {
           console.log('Real-time update received:', payload.new);
           const rawJob = payload.new as any;
-          // Extract model_routing from processing_config
-          const updatedJob: DocumentJob = {
-            ...rawJob,
-            model_routing: rawJob.processing_config?.modelRouting || null
-          };
           
-          setActiveJob(updatedJob);
-          setJobs(prev => prev.map(j => j.id === updatedJob.id ? updatedJob : j));
-          
-          // Update processing state based on status
-          if (updatedJob.status === 'completed') {
-            setIsProcessing(false);
-            toast.success('Document processing completed!');
-          } else if (updatedJob.status === 'error') {
-            setIsProcessing(false);
-            toast.error(`Processing failed: ${updatedJob.error_message || 'Unknown error'}`);
-          }
+          // Preserve image_base64 from current activeJob since it's not stored in DB
+          setActiveJob(prev => {
+            const updatedJob: DocumentJob = {
+              ...rawJob,
+              model_routing: rawJob.processing_config?.modelRouting || null,
+              // Preserve image_base64 from previous state since it's only stored locally
+              image_base64: rawJob.image_base64 || prev?.image_base64
+            };
+            
+            // Update jobs list as well
+            setJobs(jobs => jobs.map(j => j.id === updatedJob.id ? updatedJob : j));
+            
+            // Update processing state based on status
+            if (updatedJob.status === 'completed') {
+              setIsProcessing(false);
+              toast.success('Document processing completed!');
+            } else if (updatedJob.status === 'error') {
+              setIsProcessing(false);
+              toast.error(`Processing failed: ${updatedJob.error_message || 'Unknown error'}`);
+            }
+            
+            return updatedJob;
+          });
         }
       )
       .subscribe((status) => {
@@ -460,6 +467,26 @@ export function useDocumentProcessing(): UseDocumentProcessingReturn {
       }
 
       const documentId = data.documentId;
+      
+      // Store the image base64 in activeJob for verification display
+      // Create the full data URL from the uploaded file
+      const imageDataUrl = `data:${file.type};base64,${fileBase64}`;
+      
+      // Create initial job with image data for immediate preview
+      const initialJob: DocumentJob = {
+        id: documentId,
+        file_name: file.name,
+        file_path: '',
+        mime_type: file.type,
+        status: 'processing',
+        progress: 0,
+        current_stage: 'uploading',
+        created_at: new Date().toISOString(),
+        image_base64: imageDataUrl, // Store full data URL for display
+        document_type: data.detectedDocumentType || undefined,
+      };
+      
+      setActiveJob(initialJob);
       
       // Log auto-detection results
       if (data.detectedDocumentType) {

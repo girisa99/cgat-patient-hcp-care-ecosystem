@@ -123,19 +123,19 @@ export const PatientInfoVerificationPanel: React.FC<PatientInfoVerificationPanel
   formMapping,
   className
 }) => {
-  // Build proper image source
+  // Build proper image source - now supports full data URL directly
   const getImageSrc = () => {
+    // image_base64 now stores the full data URL (data:mime/type;base64,...)
     if (job.image_base64) {
-      // Check if already has data: prefix
-      if (job.image_base64.startsWith('data:')) {
-        return job.image_base64;
-      }
-      return `data:${job.mime_type || 'image/jpeg'};base64,${job.image_base64}`;
+      return job.image_base64;
     }
+    // Fallback to image_url if available
     return job.image_url || null;
   };
   
   const imageSrc = getImageSrc();
+  console.log('[PatientInfoVerificationPanel] Image source available:', !!imageSrc, 'from:', imageSrc ? 'base64/url' : 'none');
+  
   const signatures = job.extracted_metadata?.signatures || [];
   const detectedSignatures = signatures.filter(s => s.detected);
 
