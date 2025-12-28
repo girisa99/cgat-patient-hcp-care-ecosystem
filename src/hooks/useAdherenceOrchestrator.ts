@@ -84,7 +84,7 @@ export const useAdherenceOrchestrator = (agentId?: string) => {
     },
     onSuccess: (result) => {
       if (result.alerts.length > 0) {
-        showWarning('Adherence Alert', `${result.alerts.length} issues detected - intervention recommended`);
+        showInfo('Adherence Alert', `${result.alerts.length} issues detected - intervention recommended`);
       } else {
         showSuccess('Monitoring Complete', `PDC: ${(result.metrics.pdc * 100).toFixed(1)}%`);
       }
