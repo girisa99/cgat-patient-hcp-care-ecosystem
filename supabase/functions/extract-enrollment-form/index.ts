@@ -1,12 +1,18 @@
 /**
- * DYNAMIC ENROLLMENT FORM EXTRACTION - 2-STAGE AI PIPELINE
+ * DYNAMIC ENROLLMENT FORM EXTRACTION - MULTI-MODEL AI PIPELINE
  * 
- * STAGE 1: Form Classification & Section Detection (Gemini 2.5 Flash - FAST)
+ * SUPPORTED MODELS:
+ * - Gemini 2.5 Flash (google/gemini-2.5-flash) - Fast classification
+ * - Gemini 2.5 Pro (google/gemini-2.5-pro) - Accurate extraction, handwriting OCR
+ * - GPT-5 (openai/gpt-5) - High accuracy, excellent reasoning
+ * - GPT-5 Mini (openai/gpt-5-mini) - Balanced speed/accuracy
+ * 
+ * STAGE 1: Form Classification & Section Detection
  * - Identifies manufacturer, program, form type
  * - Detects all sections present in the form
  * - Handles both printed and handwritten forms
  * 
- * STAGE 2: Deep Field Extraction (Gemini 2.5 Pro - ACCURATE)
+ * STAGE 2: Deep Field Extraction
  * - Extracts every field from each detected section
  * - Handles handwriting recognition
  * - Captures checkboxes, signatures, tables
@@ -21,16 +27,29 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Available models configuration
+const AVAILABLE_MODELS: Record<string, { modelId: string; provider: string }> = {
+  'gemini-flash': { modelId: 'google/gemini-2.5-flash', provider: 'gemini' },
+  'gemini-pro': { modelId: 'google/gemini-2.5-pro', provider: 'gemini' },
+  'gpt-5': { modelId: 'openai/gpt-5', provider: 'openai' },
+  'gpt-5-mini': { modelId: 'openai/gpt-5-mini', provider: 'openai' }
+};
+
 interface ExtractionRequest {
   fileUrl?: string;
   fileBase64?: string;
   fileName: string;
   fileType: 'pdf' | 'image';
-  pageNumber?: number; // For multi-page PDFs
+  pageNumber?: number;
   totalPages?: number;
   extractSignatures?: boolean;
   saveToDatabase?: boolean;
-  sessionId?: string; // For state persistence
+  sessionId?: string;
+  // Multi-model configuration
+  stage1Model?: string; // Key from AVAILABLE_MODELS, default: gemini-flash
+  stage2Model?: string; // Key from AVAILABLE_MODELS, default: gemini-pro
+  enableComparison?: boolean; // Run multiple models and compare
+  comparisonModels?: string[]; // Additional models to compare
 }
 
 // ============= STAGE 1: CLASSIFICATION PROMPT =============
@@ -169,9 +188,15 @@ serve(async (req) => {
       throw new Error("Either fileUrl or fileBase64 must be provided");
     }
 
-    console.log(`[extract-enrollment-form] STAGE 1: Classifying ${request.fileName}`);
+    // Get model configurations
+    const stage1ModelKey = request.stage1Model || 'gemini-flash';
+    const stage2ModelKey = request.stage2Model || 'gemini-pro';
+    const stage1ModelId = AVAILABLE_MODELS[stage1ModelKey]?.modelId || 'google/gemini-2.5-flash';
+    const stage2ModelId = AVAILABLE_MODELS[stage2ModelKey]?.modelId || 'google/gemini-2.5-pro';
 
-    // ============= STAGE 1: CLASSIFICATION (Fast Model) =============
+    console.log(`[extract-enrollment-form] STAGE 1: Classifying ${request.fileName} with ${stage1ModelId}`);
+
+    // ============= STAGE 1: CLASSIFICATION =============
     const stage1Response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -179,7 +204,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash", // FAST for classification
+        model: stage1ModelId,
         messages: [
           { role: "system", content: STAGE1_CLASSIFICATION_PROMPT },
           {
@@ -233,7 +258,7 @@ serve(async (req) => {
     console.log(`[extract-enrollment-form] STAGE 1 complete in ${stage1Time}ms - Found ${classificationResult.detectedSections?.length || 0} sections`);
 
     // ============= STAGE 2: DEEP EXTRACTION (Accurate Model) =============
-    console.log(`[extract-enrollment-form] STAGE 2: Deep extraction with Gemini Pro`);
+    console.log(`[extract-enrollment-form] STAGE 2: Deep extraction with ${stage2ModelId}`);
 
     const stage2Start = Date.now();
     
@@ -249,7 +274,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-pro", // ACCURATE for extraction
+        model: stage2ModelId,
         messages: [
           { role: "system", content: STAGE2_EXTRACTION_PROMPT },
           {
