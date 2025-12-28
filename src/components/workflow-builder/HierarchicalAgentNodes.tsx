@@ -5,9 +5,34 @@
 
 import React from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
-import { Building2, Shield, Pill, HeartPulse, FileCheck, CreditCard, Banknote, Activity, AlertTriangle, ArrowUpCircle } from 'lucide-react';
+import { Building2, Shield, Pill, HeartPulse, FileCheck, CreditCard, Banknote, Activity, AlertTriangle, ArrowUpCircle, FileSearch, Route } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+
+// Document Router Node (Top-Level)
+export const DocumentRouterNode: React.FC<NodeProps> = ({ data, selected }) => (
+  <div className={cn("p-5 rounded-xl border-3 min-w-[240px] bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950 dark:to-purple-950", selected ? "border-indigo-500 shadow-lg" : "border-indigo-300")}>
+    <Handle type="target" position={Position.Top} className="w-4 h-4" />
+    <div className="flex items-center gap-2 mb-3">
+      <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900">
+        <Route className="w-6 h-6 text-indigo-600" />
+      </div>
+      <div>
+        <span className="font-bold text-lg">Document Router</span>
+        <div className="text-xs text-muted-foreground">Top-Level Orchestrator</div>
+      </div>
+    </div>
+    <div className="flex gap-1 flex-wrap">
+      <Badge variant="secondary" className="text-xs">Classify</Badge>
+      <Badge variant="secondary" className="text-xs">Route</Badge>
+      <Badge variant="secondary" className="text-xs">Monitor</Badge>
+    </div>
+    <div className="mt-3 text-xs text-muted-foreground border-t pt-2">
+      → Insurance | Coding | Adherence
+    </div>
+    <Handle type="source" position={Position.Bottom} className="w-4 h-4" />
+  </div>
+);
 
 // Insurance Pipeline Nodes
 export const InsuranceOrchestratorNode: React.FC<NodeProps> = ({ data, selected }) => (
@@ -142,6 +167,7 @@ export const EscalationAgentNode: React.FC<NodeProps> = ({ data, selected }) => 
 
 // Node type registry
 export const hierarchicalAgentNodeTypes = {
+  documentRouter: DocumentRouterNode,
   insuranceOrchestrator: InsuranceOrchestratorNode,
   verificationAgent: VerificationAgentNode,
   benefitsAgent: BenefitsAgentNode,
@@ -156,6 +182,7 @@ export const hierarchicalAgentNodeTypes = {
 };
 
 export const HIERARCHICAL_AGENT_NODE_DEFINITIONS = [
+  { type: 'documentRouter', label: 'Document Router', category: 'orchestrators', domain: 'router', description: 'Classifies and routes documents to domain pipelines' },
   { type: 'insuranceOrchestrator', label: 'Insurance Orchestrator', category: 'orchestrators', domain: 'insurance' },
   { type: 'verificationAgent', label: 'Verification Agent', category: 'insurance-pipeline', domain: 'insurance' },
   { type: 'benefitsAgent', label: 'Benefits Agent', category: 'insurance-pipeline', domain: 'insurance' },
