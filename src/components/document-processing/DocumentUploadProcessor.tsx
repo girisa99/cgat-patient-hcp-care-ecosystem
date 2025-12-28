@@ -1363,8 +1363,35 @@ const ValidationDisplay: React.FC<ValidationDisplayProps> = ({
     ? Object.entries(formMapping).filter(([_, v]) => !v.verified)
     : [];
 
+  // Get image URL for preview
+  const imageUrl = job.image_url || job.image_base64;
+
   return (
     <div className="space-y-4">
+      {/* Document Image Preview for Verification */}
+      {imageUrl && (
+        <div className="border rounded-lg overflow-hidden bg-muted/30">
+          <div className="flex items-center justify-between p-2 border-b bg-background/50">
+            <div className="flex items-center gap-2">
+              <Eye className="h-4 w-4" />
+              <span className="text-sm font-medium">Document Preview</span>
+            </div>
+            {job.document_type && job.document_type !== 'unknown' && (
+              <Badge variant="outline" className="text-[10px]">
+                {DOCUMENT_TYPE_LABELS[job.document_type]}
+              </Badge>
+            )}
+          </div>
+          <div className="relative aspect-[3/4] max-h-[300px] bg-black/5">
+            <img 
+              src={job.image_base64 ? `data:${job.mime_type};base64,${job.image_base64}` : imageUrl}
+              alt={job.file_name}
+              className="w-full h-full object-contain"
+            />
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <h4 className="font-medium flex items-center gap-2">
           <CheckCircle className="h-4 w-4 text-primary" />

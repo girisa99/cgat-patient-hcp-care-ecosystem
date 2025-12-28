@@ -163,7 +163,7 @@ export const RealTimeExtractionTracker: React.FC<RealTimeExtractionTrackerProps>
     });
 
     if (newExtractions.length > 0) {
-      setLiveExtractions(prev => [...prev, ...newExtractions].slice(-20)); // Keep last 20
+      setLiveExtractions(prev => [...prev, ...newExtractions]); // Keep all extractions
       
       // Update stage field counts
       setStages(prev => prev.map(stage => {
@@ -189,9 +189,22 @@ export const RealTimeExtractionTracker: React.FC<RealTimeExtractionTrackerProps>
     }
   }, [liveExtractions]);
 
-  // Count OCR vs Vision AI fields
-  const ocrFieldCount = liveExtractions.filter(e => e.source === 'ocr').length;
-  const visionAiFieldCount = liveExtractions.filter(e => e.source === 'vision_ai').length;
+  // Count OCR vs Vision AI fields from all extractedFields (not just live extractions)
+  const totalFieldsCount = Object.keys(extractedFields).filter(key => 
+    !key.startsWith('_') && !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key)
+  ).length;
+  
+  const ocrFieldCount = Object.entries(extractedFields).filter(([key, data]) => {
+    if (key.startsWith('_') || ['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key)) return false;
+    const source = data.source === 'vision_ai' || data.source === 'nlp' || data.source === 'NLP' 
+      ? 'vision_ai' 
+      : data.source === 'ocr' || data.source === 'OCR'
+      ? 'ocr'
+      : data.confidence < 0.85 ? 'ocr' : 'vision_ai';
+    return source === 'ocr';
+  }).length;
+  
+  const visionAiFieldCount = totalFieldsCount - ocrFieldCount;
 
   const getStageIcon = (stage: ExtractionStage) => {
     if (stage.status === 'completed') {
