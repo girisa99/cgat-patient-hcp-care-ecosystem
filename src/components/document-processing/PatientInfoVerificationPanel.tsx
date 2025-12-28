@@ -33,50 +33,60 @@ interface PatientInfoVerificationPanelProps {
 }
 
 // Define field sections matching typical form layout order
+// Uses flexible matching to catch common variations
 const FIELD_SECTIONS = [
   {
     id: 'patient_demographics',
     title: 'Patient Demographics',
     icon: User,
-    fields: ['patient_name', 'first_name', 'last_name', 'middle_name', 'dob', 'date_of_birth', 'patient_dob', 'gender', 'ssn', 'patient_id', 'mrn']
+    patterns: ['patient_name', 'first_name', 'last_name', 'middle_name', 'dob', 'date_of_birth', 'patient_dob', 'gender', 'sex', 'ssn', 'social_security', 'patient_id', 'mrn', 'medical_record', 'age', 'birth', 'name']
   },
   {
     id: 'contact_info',
     title: 'Contact Information',
     icon: Phone,
-    fields: ['phone', 'patient_phone', 'mobile_phone', 'home_phone', 'work_phone', 'email', 'patient_email']
+    patterns: ['phone', 'mobile', 'cell', 'telephone', 'tel', 'email', 'contact', 'fax']
   },
   {
     id: 'address',
     title: 'Address',
     icon: MapPin,
-    fields: ['address', 'patient_address', 'street', 'city', 'state', 'zip', 'zip_code', 'country']
+    patterns: ['address', 'street', 'city', 'state', 'zip', 'postal', 'country', 'apt', 'suite', 'unit', 'county']
   },
   {
     id: 'emergency_contact',
     title: 'Emergency Contact',
     icon: AlertTriangle,
-    fields: ['emergency_contact', 'emergency_contact_name', 'emergency_contact_phone', 'emergency_relationship', 'next_of_kin']
+    patterns: ['emergency', 'next_of_kin', 'kin', 'relationship', 'guardian', 'parent', 'spouse']
   },
   {
     id: 'insurance',
     title: 'Insurance Information',
     icon: Shield,
-    fields: ['insurance_id', 'insurance_name', 'insurance_provider', 'member_id', 'group_number', 'policy_number', 'subscriber_name', 'subscriber_id', 'bin', 'pcn', 'rxgrp']
+    patterns: ['insurance', 'member_id', 'group', 'policy', 'subscriber', 'bin', 'pcn', 'rxgrp', 'payer', 'carrier', 'plan', 'coverage', 'copay', 'deductible', 'authorization']
   },
   {
     id: 'medical_history',
     title: 'Medical History',
     icon: FileText,
-    fields: ['allergies', 'medications', 'medical_conditions', 'diagnosis', 'primary_care_physician', 'referring_physician']
+    patterns: ['allerg', 'medication', 'condition', 'diagnosis', 'physician', 'doctor', 'provider', 'history', 'illness', 'surgery', 'treatment', 'symptom']
   },
   {
     id: 'consent_signatures',
     title: 'Consent & Signatures',
     icon: PenTool,
-    fields: ['consent_signed', 'consent_date', 'signature', 'signature_date', 'hipaa_consent', 'financial_consent', 'treatment_consent']
+    patterns: ['consent', 'signature', 'sign', 'hipaa', 'authorization', 'agreement', 'acknowledge', 'date_signed', 'witness']
   }
 ];
+
+// Check if a field key matches a section's patterns
+const fieldMatchesSection = (fieldKey: string, patterns: string[]): boolean => {
+  const normalizedKey = fieldKey.toLowerCase().replace(/[-_\s]/g, '');
+  return patterns.some(pattern => {
+    const normalizedPattern = pattern.toLowerCase().replace(/[-_\s]/g, '');
+    return normalizedKey.includes(normalizedPattern) || normalizedPattern.includes(normalizedKey);
+  });
+};
 
 // Format field name for display
 const formatFieldName = (key: string): string => {
@@ -113,35 +123,26 @@ export const PatientInfoVerificationPanel: React.FC<PatientInfoVerificationPanel
   formMapping,
   className
 }) => {
-  const imageUrl = job.image_url || job.image_base64;
+  // Build proper image source
+  const getImageSrc = () => {
+    if (job.image_base64) {
+      // Check if already has data: prefix
+      if (job.image_base64.startsWith('data:')) {
+        return job.image_base64;
+      }
+      return `data:${job.mime_type || 'image/jpeg'};base64,${job.image_base64}`;
+    }
+    return job.image_url || null;
+  };
+  
+  const imageSrc = getImageSrc();
   const signatures = job.extracted_metadata?.signatures || [];
   const detectedSignatures = signatures.filter(s => s.detected);
 
-  // Organize fields by sections
-  const organizedSections = FIELD_SECTIONS.map(section => {
-    const sectionFields = section.fields
-      .map(fieldKey => {
-        // Check both exact match and variations
-        const mappedValue = formMapping?.[fieldKey];
-        if (mappedValue?.value) {
-          return { key: fieldKey, ...mappedValue };
-        }
-        return null;
-      })
-      .filter(Boolean) as Array<{ key: string; value: string; confidence: number; source: string; verified?: boolean }>;
-
-    return {
-      ...section,
-      fields: sectionFields
-    };
-  }).filter(section => section.fields.length > 0);
-
-  // Get unmapped fields (fields not in any section)
-  const allSectionFields = FIELD_SECTIONS.flatMap(s => s.fields);
-  const unmappedFields = formMapping 
+  // Get all form mapping fields (excluding internal fields)
+  const allFields = formMapping 
     ? Object.entries(formMapping)
         .filter(([key, value]) => 
-          !allSectionFields.includes(key) && 
           value?.value && 
           !key.startsWith('_') &&
           !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key)
@@ -149,10 +150,39 @@ export const PatientInfoVerificationPanel: React.FC<PatientInfoVerificationPanel
         .map(([key, value]) => ({ key, ...value }))
     : [];
 
+  // Organize fields by sections using pattern matching
+  const usedFieldKeys = new Set<string>();
+  
+  const organizedSections = FIELD_SECTIONS.map(section => {
+    const sectionFields = allFields
+      .filter(field => {
+        if (usedFieldKeys.has(field.key)) return false;
+        if (fieldMatchesSection(field.key, section.patterns)) {
+          usedFieldKeys.add(field.key);
+          return true;
+        }
+        return false;
+      });
+
+    return {
+      ...section,
+      fields: sectionFields
+    };
+  }).filter(section => section.fields.length > 0);
+
+  // Get unmapped fields (fields not assigned to any section)
+  const unmappedFields = allFields.filter(field => !usedFieldKeys.has(field.key));
+
+  // Calculate accurate stats
+  const totalFields = allFields.length;
+  const verifiedCount = allFields.filter(f => f.verified).length;
+  const lowConfidenceCount = allFields.filter(f => f.confidence < 0.7).length;
+  const highConfidenceCount = totalFields - lowConfidenceCount;
+
   return (
     <div className={cn("space-y-4", className)}>
       {/* Document Image Preview */}
-      {imageUrl && (
+      {imageSrc ? (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
@@ -168,12 +198,24 @@ export const PatientInfoVerificationPanel: React.FC<PatientInfoVerificationPanel
           <CardContent className="p-3">
             <div className="relative aspect-[4/3] max-h-[300px] bg-muted/30 rounded-lg overflow-hidden border">
               <img 
-                src={job.image_base64 ? `data:${job.mime_type};base64,${job.image_base64}` : imageUrl}
+                src={imageSrc}
                 alt={job.file_name}
                 className="w-full h-full object-contain"
+                onError={(e) => {
+                  console.error('Image failed to load:', imageSrc?.substring(0, 50));
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
               />
             </div>
             <p className="text-xs text-muted-foreground mt-2 text-center">{job.file_name}</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-6 text-center">
+            <FileText className="h-12 w-12 mx-auto text-muted-foreground opacity-50 mb-2" />
+            <p className="text-sm text-muted-foreground">No image preview available</p>
+            <p className="text-xs text-muted-foreground">{job.file_name}</p>
           </CardContent>
         </Card>
       )}
@@ -347,33 +389,25 @@ export const PatientInfoVerificationPanel: React.FC<PatientInfoVerificationPanel
         </div>
       </ScrollArea>
 
-      {/* Extraction Summary */}
-      {formMapping && Object.keys(formMapping).length > 0 && (
+      {/* Extraction Summary - Consistent Stats */}
+      {totalFields > 0 && (
         <>
           <Separator />
           <div className="grid grid-cols-4 gap-2 text-center">
             <div className="p-2 bg-muted/30 rounded-lg">
-              <p className="text-lg font-bold text-primary">
-                {Object.keys(formMapping).filter(k => !k.startsWith('_')).length}
-              </p>
+              <p className="text-lg font-bold text-primary">{totalFields}</p>
               <p className="text-[10px] text-muted-foreground">Total Fields</p>
             </div>
             <div className="p-2 bg-green-500/10 rounded-lg">
-              <p className="text-lg font-bold text-green-600">
-                {Object.values(formMapping).filter(v => v.verified).length}
-              </p>
-              <p className="text-[10px] text-muted-foreground">Verified</p>
+              <p className="text-lg font-bold text-green-600">{highConfidenceCount}</p>
+              <p className="text-[10px] text-muted-foreground">High Confidence</p>
             </div>
             <div className="p-2 bg-amber-500/10 rounded-lg">
-              <p className="text-lg font-bold text-amber-600">
-                {Object.values(formMapping).filter(v => v.confidence < 0.7).length}
-              </p>
-              <p className="text-[10px] text-muted-foreground">Low Confidence</p>
+              <p className="text-lg font-bold text-amber-600">{lowConfidenceCount}</p>
+              <p className="text-[10px] text-muted-foreground">Needs Review</p>
             </div>
             <div className="p-2 bg-purple-500/10 rounded-lg">
-              <p className="text-lg font-bold text-purple-600">
-                {detectedSignatures.length}
-              </p>
+              <p className="text-lg font-bold text-purple-600">{detectedSignatures.length}</p>
               <p className="text-[10px] text-muted-foreground">Signatures</p>
             </div>
           </div>

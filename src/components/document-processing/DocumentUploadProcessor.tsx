@@ -1374,21 +1374,37 @@ const ValidationDisplay: React.FC<ValidationDisplayProps> = ({
   onReviewReasonChange,
   onFlagForReview
 }) => {
-  const lowConfidenceFields = formMapping 
-    ? Object.entries(formMapping).filter(([_, v]) => v.confidence < confidenceThreshold)
+  // Filter to get actual extracted fields only
+  const extractedFields = formMapping 
+    ? Object.entries(formMapping).filter(([key, v]) => 
+        v.value && 
+        !key.startsWith('_') && 
+        !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key)
+      )
     : [];
   
-  const unverifiedFields = formMapping
-    ? Object.entries(formMapping).filter(([_, v]) => !v.verified)
-    : [];
+  const totalFields = extractedFields.length;
+  const lowConfidenceFields = extractedFields.filter(([_, v]) => v.confidence < confidenceThreshold);
+  const highConfidenceFields = totalFields - lowConfidenceFields.length;
+  const verifiedFields = extractedFields.filter(([_, v]) => v.verified);
 
-  // Get image URL for preview
-  const imageUrl = job.image_url || job.image_base64;
+  // Build proper image source
+  const getImageSrc = () => {
+    if (job.image_base64) {
+      if (job.image_base64.startsWith('data:')) {
+        return job.image_base64;
+      }
+      return `data:${job.mime_type || 'image/jpeg'};base64,${job.image_base64}`;
+    }
+    return job.image_url || null;
+  };
+  
+  const imageSrc = getImageSrc();
 
   return (
     <div className="space-y-4">
       {/* Document Image Preview for Verification */}
-      {imageUrl && (
+      {imageSrc ? (
         <div className="border rounded-lg overflow-hidden bg-muted/30">
           <div className="flex items-center justify-between p-2 border-b bg-background/50">
             <div className="flex items-center gap-2">
@@ -1403,11 +1419,21 @@ const ValidationDisplay: React.FC<ValidationDisplayProps> = ({
           </div>
           <div className="relative aspect-[3/4] max-h-[300px] bg-black/5">
             <img 
-              src={job.image_base64 ? `data:${job.mime_type};base64,${job.image_base64}` : imageUrl}
+              src={imageSrc}
               alt={job.file_name}
               className="w-full h-full object-contain"
+              onError={(e) => {
+                console.error('Image failed to load');
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
             />
           </div>
+        </div>
+      ) : (
+        <div className="border rounded-lg p-6 text-center bg-muted/30">
+          <FileText className="h-12 w-12 mx-auto text-muted-foreground opacity-50 mb-2" />
+          <p className="text-sm text-muted-foreground">No image preview available</p>
+          <p className="text-xs text-muted-foreground">{job.file_name}</p>
         </div>
       )}
 
@@ -1421,21 +1447,26 @@ const ValidationDisplay: React.FC<ValidationDisplayProps> = ({
         </Badge>
       </div>
 
-      {/* Validation Status */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* Validation Status - Consistent with extracted fields count */}
+      <div className="grid grid-cols-4 gap-3">
+        <div className="bg-muted/30 p-3 rounded-lg text-center">
+          <Database className="h-6 w-6 mx-auto text-primary mb-1" />
+          <p className="text-lg font-bold">{totalFields}</p>
+          <p className="text-xs text-muted-foreground">Total Fields</p>
+        </div>
         <div className="bg-green-500/10 p-3 rounded-lg text-center">
           <CheckCircle className="h-6 w-6 mx-auto text-green-500 mb-1" />
-          <p className="text-lg font-bold">{formMapping ? Object.keys(formMapping).length - lowConfidenceFields.length : 0}</p>
+          <p className="text-lg font-bold">{highConfidenceFields}</p>
           <p className="text-xs text-muted-foreground">High Confidence</p>
         </div>
         <div className="bg-amber-500/10 p-3 rounded-lg text-center">
           <AlertTriangle className="h-6 w-6 mx-auto text-amber-500 mb-1" />
           <p className="text-lg font-bold">{lowConfidenceFields.length}</p>
-          <p className="text-xs text-muted-foreground">Low Confidence</p>
+          <p className="text-xs text-muted-foreground">Needs Review</p>
         </div>
         <div className="bg-blue-500/10 p-3 rounded-lg text-center">
           <Eye className="h-6 w-6 mx-auto text-blue-500 mb-1" />
-          <p className="text-lg font-bold">{formMapping ? Object.keys(formMapping).filter(k => formMapping[k]?.verified).length : 0}</p>
+          <p className="text-lg font-bold">{verifiedFields.length}</p>
           <p className="text-xs text-muted-foreground">Verified</p>
         </div>
       </div>
