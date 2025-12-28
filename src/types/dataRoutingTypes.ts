@@ -78,10 +78,10 @@ export type FieldTransform =
 // ============= DEFAULT ROUTING RULES =============
 
 /**
- * Routing rules follow this logic:
- * 1. ALL data → Supabase (always, required)
- * 2. Patient/Insurance/Medication → Salesforce (default, can disable)
- * 3. Provider data → Veeva (optional, user must enable)
+ * Routing rules:
+ * 1. ALL data → Supabase (always, local storage)
+ * 2. ALL data → Salesforce (default, entire form)
+ * 3. Provider data → Veeva (OPTIONAL, only if user enables)
  */
 export const DEFAULT_ROUTING_RULES: RoutingRule[] = [
   // ALWAYS: Save everything to local Supabase
@@ -98,37 +98,51 @@ export const DEFAULT_ROUTING_RULES: RoutingRule[] = [
     isActive: true,
     requiresVerification: false
   },
-  // DEFAULT: Patient data to Salesforce
+  // DEFAULT: Entire form to Salesforce
   {
-    id: 'patient_to_salesforce',
-    name: 'Patient Data → Salesforce',
-    description: 'Route patient information, insurance, and income data to Salesforce (default)',
-    sourceSections: ['patient_information', 'insurance_coverage', 'income_financial', 'caregiver_representative', 'medication_requested', 'clinical_diagnosis'],
-    sourceFieldPatterns: ['patient_*', 'insurance_*', 'caregiver_*', 'medication_*', 'diagnosis_*'],
+    id: 'all_to_salesforce',
+    name: 'Entire Form → Salesforce',
+    description: 'Push all extracted data to Salesforce (default)',
+    sourceSections: [], // Empty = ALL sections
+    sourceFieldPatterns: ['*'], // All fields
     targetSystem: 'salesforce',
-    targetObject: 'Contact',
+    targetObject: 'Enrollment__c',
     fieldMappings: [
-      { sourceFieldKey: 'patient_first_name', targetFieldKey: 'FirstName', transform: 'none', required: true },
-      { sourceFieldKey: 'patient_last_name', targetFieldKey: 'LastName', transform: 'none', required: true },
-      { sourceFieldKey: 'patient_email', targetFieldKey: 'Email', transform: 'lowercase', required: false },
-      { sourceFieldKey: 'patient_phone_primary', targetFieldKey: 'Phone', transform: 'phone_e164', required: false },
-      { sourceFieldKey: 'patient_dob', targetFieldKey: 'Birthdate', transform: 'date_iso', required: true },
-      { sourceFieldKey: 'patient_address_street', targetFieldKey: 'MailingStreet', transform: 'none', required: false },
-      { sourceFieldKey: 'patient_address_city', targetFieldKey: 'MailingCity', transform: 'none', required: false },
-      { sourceFieldKey: 'patient_address_state', targetFieldKey: 'MailingState', transform: 'uppercase', required: false },
-      { sourceFieldKey: 'patient_address_zip', targetFieldKey: 'MailingPostalCode', transform: 'none', required: false },
-      { sourceFieldKey: 'medication_name', targetFieldKey: 'Product_Name__c', transform: 'none', required: false },
+      // Patient fields
+      { sourceFieldKey: 'patient_first_name', targetFieldKey: 'Patient_First_Name__c', transform: 'none', required: true },
+      { sourceFieldKey: 'patient_last_name', targetFieldKey: 'Patient_Last_Name__c', transform: 'none', required: true },
+      { sourceFieldKey: 'patient_email', targetFieldKey: 'Patient_Email__c', transform: 'lowercase', required: false },
+      { sourceFieldKey: 'patient_phone_primary', targetFieldKey: 'Patient_Phone__c', transform: 'phone_e164', required: false },
+      { sourceFieldKey: 'patient_dob', targetFieldKey: 'Patient_DOB__c', transform: 'date_iso', required: true },
+      { sourceFieldKey: 'patient_address_street', targetFieldKey: 'Patient_Street__c', transform: 'none', required: false },
+      { sourceFieldKey: 'patient_address_city', targetFieldKey: 'Patient_City__c', transform: 'none', required: false },
+      { sourceFieldKey: 'patient_address_state', targetFieldKey: 'Patient_State__c', transform: 'uppercase', required: false },
+      { sourceFieldKey: 'patient_address_zip', targetFieldKey: 'Patient_Zip__c', transform: 'none', required: false },
+      // Insurance fields
+      { sourceFieldKey: 'insurance_primary_name', targetFieldKey: 'Insurance_Name__c', transform: 'none', required: false },
+      { sourceFieldKey: 'insurance_primary_id', targetFieldKey: 'Insurance_Member_ID__c', transform: 'none', required: false },
+      { sourceFieldKey: 'insurance_primary_group', targetFieldKey: 'Insurance_Group__c', transform: 'none', required: false },
+      // Prescriber fields (also go to Salesforce)
+      { sourceFieldKey: 'prescriber_first_name', targetFieldKey: 'Prescriber_First_Name__c', transform: 'none', required: false },
+      { sourceFieldKey: 'prescriber_last_name', targetFieldKey: 'Prescriber_Last_Name__c', transform: 'none', required: false },
+      { sourceFieldKey: 'prescriber_npi', targetFieldKey: 'Prescriber_NPI__c', transform: 'none', required: false },
+      { sourceFieldKey: 'prescriber_phone', targetFieldKey: 'Prescriber_Phone__c', transform: 'phone_e164', required: false },
+      { sourceFieldKey: 'prescriber_fax', targetFieldKey: 'Prescriber_Fax__c', transform: 'phone_e164', required: false },
+      { sourceFieldKey: 'facility_name', targetFieldKey: 'Facility_Name__c', transform: 'none', required: false },
+      // Medication fields
+      { sourceFieldKey: 'medication_name', targetFieldKey: 'Medication_Name__c', transform: 'none', required: false },
+      { sourceFieldKey: 'medication_strength', targetFieldKey: 'Medication_Strength__c', transform: 'none', required: false },
       { sourceFieldKey: 'diagnosis_icd10', targetFieldKey: 'ICD10_Code__c', transform: 'uppercase', required: false },
     ],
     priority: 1,
     isActive: true, // DEFAULT ON
     requiresVerification: true
   },
-  // OPTIONAL: Provider data to Veeva
+  // OPTIONAL: Provider data to Veeva (only if user enables)
   {
     id: 'provider_to_veeva',
     name: 'Provider Data → Veeva',
-    description: 'Route prescriber/provider information to Veeva CRM (optional - enable if needed)',
+    description: 'Optionally push prescriber/provider information to Veeva CRM',
     sourceSections: ['prescriber_provider', 'pharmacy_information'],
     sourceFieldPatterns: ['prescriber_*', 'provider_*', 'facility_*', 'pharmacy_*'],
     targetSystem: 'veeva',
@@ -141,6 +155,8 @@ export const DEFAULT_ROUTING_RULES: RoutingRule[] = [
       { sourceFieldKey: 'prescriber_phone', targetFieldKey: 'Phone_vod__c', transform: 'phone_e164', required: false },
       { sourceFieldKey: 'prescriber_fax', targetFieldKey: 'Fax_vod__c', transform: 'phone_e164', required: false },
       { sourceFieldKey: 'facility_name', targetFieldKey: 'Organization_Name_vod__c', transform: 'none', required: false },
+      { sourceFieldKey: 'pharmacy_name', targetFieldKey: 'Pharmacy_Name_vod__c', transform: 'none', required: false },
+      { sourceFieldKey: 'pharmacy_npi', targetFieldKey: 'Pharmacy_NPI_vod__c', transform: 'none', required: false },
     ],
     priority: 2,
     isActive: false, // OPTIONAL - user must enable
