@@ -128,3 +128,6 @@ verify_jwt = false
 
 [functions.medical-imaging-cnn]
 verify_jwt = false
+
+[functions.extract-enrollment-form]
+verify_jwt = false

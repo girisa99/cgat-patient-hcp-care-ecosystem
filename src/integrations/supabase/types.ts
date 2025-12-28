@@ -5258,6 +5258,75 @@ export type Database = {
           },
         ]
       }
+      enrollment_form_extractions: {
+        Row: {
+          all_fields: Json | null
+          created_at: string
+          created_by: string | null
+          detected_sections: Json | null
+          external_push_at: string | null
+          external_push_response: Json | null
+          external_system_id: string | null
+          extracted_tables: Json | null
+          fields_by_section: Json | null
+          file_name: string
+          file_url: string | null
+          form_identification: Json | null
+          id: string
+          overall_confidence: number | null
+          pipeline_info: Json | null
+          session_id: string
+          status: string | null
+          updated_at: string
+          validation_summary: Json | null
+          verification_state: Json | null
+        }
+        Insert: {
+          all_fields?: Json | null
+          created_at?: string
+          created_by?: string | null
+          detected_sections?: Json | null
+          external_push_at?: string | null
+          external_push_response?: Json | null
+          external_system_id?: string | null
+          extracted_tables?: Json | null
+          fields_by_section?: Json | null
+          file_name: string
+          file_url?: string | null
+          form_identification?: Json | null
+          id?: string
+          overall_confidence?: number | null
+          pipeline_info?: Json | null
+          session_id: string
+          status?: string | null
+          updated_at?: string
+          validation_summary?: Json | null
+          verification_state?: Json | null
+        }
+        Update: {
+          all_fields?: Json | null
+          created_at?: string
+          created_by?: string | null
+          detected_sections?: Json | null
+          external_push_at?: string | null
+          external_push_response?: Json | null
+          external_system_id?: string | null
+          extracted_tables?: Json | null
+          fields_by_section?: Json | null
+          file_name?: string
+          file_url?: string | null
+          form_identification?: Json | null
+          id?: string
+          overall_confidence?: number | null
+          pipeline_info?: Json | null
+          session_id?: string
+          status?: string | null
+          updated_at?: string
+          validation_summary?: Json | null
+          verification_state?: Json | null
+        }
+        Relationships: []
+      }
       enrollment_instances: {
         Row: {
           actual_start_date: string | null
