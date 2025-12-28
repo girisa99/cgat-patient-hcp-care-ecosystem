@@ -47,6 +47,7 @@ import {
 } from '@/config/documentTypes';
 import { toast } from 'sonner';
 import { AIModelIndicator, type ModelUsageInfo } from './AIModelIndicator';
+import { PatientInfoVerificationPanel } from './PatientInfoVerificationPanel';
 
 interface DocumentUploadProcessorProps {
   onFormMappingComplete?: (mapping: FormMapping) => void;
@@ -761,6 +762,24 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
             </TabsContent>
           )}
 
+          {/* Patient Info Tab - For Patient Onboarding */}
+          {(selectedDocumentType === 'patient-onboarding' || selectedDocumentType === 'form') && (
+            <TabsContent value="patient-info" className="space-y-4 mt-4">
+              {activeJob ? (
+                <PatientInfoVerificationPanel 
+                  job={activeJob}
+                  formMapping={formMapping}
+                />
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <span className="text-4xl block mb-2">👤</span>
+                  <p>No patient information extracted</p>
+                  <p className="text-sm">Upload a patient form to see details</p>
+                </div>
+              )}
+            </TabsContent>
+          )}
+
           {/* Insurance Tab - Only for Insurance Card */}
           {selectedDocumentType === 'insurance_card' && (
             <TabsContent value="insurance" className="space-y-4 mt-4">
@@ -1420,6 +1439,49 @@ const ValidationDisplay: React.FC<ValidationDisplayProps> = ({
           <p className="text-xs text-muted-foreground">Verified</p>
         </div>
       </div>
+
+      {/* Signature Detection */}
+      {job.extracted_metadata?.signatures && job.extracted_metadata.signatures.length > 0 && (
+        <div className="space-y-2">
+          <h5 className="text-sm font-medium flex items-center gap-2">
+            <PenTool className="h-4 w-4" />
+            Signature Detection
+          </h5>
+          <div className="grid grid-cols-2 gap-2">
+            {job.extracted_metadata.signatures.map((sig, idx) => (
+              <div 
+                key={sig.id || idx} 
+                className={cn(
+                  "p-3 rounded-lg border",
+                  sig.detected 
+                    ? "bg-green-500/10 border-green-500/30" 
+                    : "bg-muted/30 border-border"
+                )}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  {sig.detected ? (
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  <span className="text-sm font-medium">
+                    {sig.detected ? 'Signature Detected' : 'No Signature'}
+                  </span>
+                </div>
+                {sig.signedBy && (
+                  <p className="text-xs text-muted-foreground">Signed by: {sig.signedBy}</p>
+                )}
+                {sig.signedDate && (
+                  <p className="text-xs text-muted-foreground">Date: {sig.signedDate}</p>
+                )}
+                <Badge variant="secondary" className="text-[9px] mt-1">
+                  {Math.round(sig.confidence * 100)}% confidence
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Low Confidence Fields */}
       {lowConfidenceFields.length > 0 && (
