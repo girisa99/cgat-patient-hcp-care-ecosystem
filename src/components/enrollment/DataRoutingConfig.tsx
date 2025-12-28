@@ -204,8 +204,8 @@ export const DataRoutingConfig: React.FC<DataRoutingConfigProps> = ({
           <Info className="h-4 w-4" />
           <AlertDescription>
             <strong>Routing Logic:</strong> All data is always saved to Supabase. 
-            Patient data goes to Salesforce by default. 
-            Enable Veeva to push provider data separately.
+            Entire form data goes to Salesforce by default. 
+            Enable Veeva to additionally push provider data to Veeva CRM.
           </AlertDescription>
         </Alert>
         
