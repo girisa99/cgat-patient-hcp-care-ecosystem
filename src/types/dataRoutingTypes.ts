@@ -77,13 +77,34 @@ export type FieldTransform =
 
 // ============= DEFAULT ROUTING RULES =============
 
+/**
+ * Routing rules follow this logic:
+ * 1. ALL data → Supabase (always, required)
+ * 2. Patient/Insurance/Medication → Salesforce (default, can disable)
+ * 3. Provider data → Veeva (optional, user must enable)
+ */
 export const DEFAULT_ROUTING_RULES: RoutingRule[] = [
+  // ALWAYS: Save everything to local Supabase
+  {
+    id: 'all_to_supabase',
+    name: 'All Data → Local Supabase',
+    description: 'Always save complete extraction to local database (required)',
+    sourceSections: [],
+    sourceFieldPatterns: ['*'],
+    targetSystem: 'supabase',
+    targetObject: 'enrollment_form_extractions',
+    fieldMappings: [],
+    priority: 0,
+    isActive: true,
+    requiresVerification: false
+  },
+  // DEFAULT: Patient data to Salesforce
   {
     id: 'patient_to_salesforce',
     name: 'Patient Data → Salesforce',
-    description: 'Route patient information, insurance, and income data to Salesforce',
-    sourceSections: ['patient_information', 'insurance_coverage', 'income_financial', 'caregiver_representative'],
-    sourceFieldPatterns: ['patient_*', 'insurance_*', 'caregiver_*'],
+    description: 'Route patient information, insurance, and income data to Salesforce (default)',
+    sourceSections: ['patient_information', 'insurance_coverage', 'income_financial', 'caregiver_representative', 'medication_requested', 'clinical_diagnosis'],
+    sourceFieldPatterns: ['patient_*', 'insurance_*', 'caregiver_*', 'medication_*', 'diagnosis_*'],
     targetSystem: 'salesforce',
     targetObject: 'Contact',
     fieldMappings: [
@@ -96,15 +117,18 @@ export const DEFAULT_ROUTING_RULES: RoutingRule[] = [
       { sourceFieldKey: 'patient_address_city', targetFieldKey: 'MailingCity', transform: 'none', required: false },
       { sourceFieldKey: 'patient_address_state', targetFieldKey: 'MailingState', transform: 'uppercase', required: false },
       { sourceFieldKey: 'patient_address_zip', targetFieldKey: 'MailingPostalCode', transform: 'none', required: false },
+      { sourceFieldKey: 'medication_name', targetFieldKey: 'Product_Name__c', transform: 'none', required: false },
+      { sourceFieldKey: 'diagnosis_icd10', targetFieldKey: 'ICD10_Code__c', transform: 'uppercase', required: false },
     ],
     priority: 1,
-    isActive: true,
+    isActive: true, // DEFAULT ON
     requiresVerification: true
   },
+  // OPTIONAL: Provider data to Veeva
   {
     id: 'provider_to_veeva',
     name: 'Provider Data → Veeva',
-    description: 'Route prescriber/provider information to Veeva CRM',
+    description: 'Route prescriber/provider information to Veeva CRM (optional - enable if needed)',
     sourceSections: ['prescriber_provider', 'pharmacy_information'],
     sourceFieldPatterns: ['prescriber_*', 'provider_*', 'facility_*', 'pharmacy_*'],
     targetSystem: 'veeva',
@@ -119,38 +143,8 @@ export const DEFAULT_ROUTING_RULES: RoutingRule[] = [
       { sourceFieldKey: 'facility_name', targetFieldKey: 'Organization_Name_vod__c', transform: 'none', required: false },
     ],
     priority: 2,
-    isActive: true,
+    isActive: false, // OPTIONAL - user must enable
     requiresVerification: true
-  },
-  {
-    id: 'medication_to_salesforce',
-    name: 'Medication Data → Salesforce',
-    description: 'Route medication and clinical data to Salesforce as Case/Enrollment',
-    sourceSections: ['medication_requested', 'clinical_diagnosis', 'program_selection'],
-    sourceFieldPatterns: ['medication_*', 'diagnosis_*'],
-    targetSystem: 'salesforce',
-    targetObject: 'Case',
-    fieldMappings: [
-      { sourceFieldKey: 'medication_name', targetFieldKey: 'Product_Name__c', transform: 'none', required: true },
-      { sourceFieldKey: 'medication_strength', targetFieldKey: 'Strength__c', transform: 'none', required: false },
-      { sourceFieldKey: 'diagnosis_icd10', targetFieldKey: 'ICD10_Code__c', transform: 'uppercase', required: false },
-    ],
-    priority: 3,
-    isActive: true,
-    requiresVerification: true
-  },
-  {
-    id: 'all_to_supabase',
-    name: 'All Data → Local Supabase',
-    description: 'Save complete extraction to local Supabase database',
-    sourceSections: [],
-    sourceFieldPatterns: ['*'],
-    targetSystem: 'supabase',
-    targetObject: 'enrollment_form_extractions',
-    fieldMappings: [],
-    priority: 0,
-    isActive: true,
-    requiresVerification: false
   }
 ];
 

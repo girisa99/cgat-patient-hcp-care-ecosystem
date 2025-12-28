@@ -1,6 +1,10 @@
 /**
  * DATA ROUTING CONFIGURATION COMPONENT
- * Configure where extracted data goes: Salesforce, Veeva, Supabase, CSV, etc.
+ * 
+ * Routing Logic:
+ * 1. ALL data → Supabase (always, required, cannot disable)
+ * 2. Patient/Insurance/Medication → Salesforce (default ON)
+ * 3. Provider data → Veeva (optional, default OFF)
  */
 
 import React, { useState } from 'react';
@@ -11,10 +15,11 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Building2, Database, FileJson, FileSpreadsheet, 
   ArrowRight, Check, Settings, User, Pill, 
-  DollarSign, CreditCard, FileCheck, Send
+  DollarSign, CreditCard, FileCheck, Send, Lock, Info
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -52,24 +57,46 @@ const SECTION_ICONS: Record<string, React.ReactNode> = {
 const RoutingRuleCard: React.FC<{
   rule: RoutingRule;
   onToggle: (active: boolean) => void;
-}> = ({ rule, onToggle }) => {
+  isLocked?: boolean;
+}> = ({ rule, onToggle, isLocked }) => {
+  const isSupabase = rule.targetSystem === 'supabase';
+  
   return (
     <div className={cn(
       "p-4 border rounded-lg transition-all",
-      rule.isActive ? "bg-card" : "bg-muted/30 opacity-60"
+      rule.isActive ? "bg-card" : "bg-muted/30 opacity-60",
+      isSupabase && "border-green-500/50 bg-green-50/30 dark:bg-green-950/20"
     )}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
           {SYSTEM_ICONS[rule.targetSystem]}
           <div>
-            <div className="font-medium">{rule.name}</div>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">{rule.name}</span>
+              {isSupabase && (
+                <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
+                  <Lock className="h-3 w-3 mr-1" />
+                  Required
+                </Badge>
+              )}
+              {rule.targetSystem === 'veeva' && !rule.isActive && (
+                <Badge variant="outline" className="text-xs">Optional</Badge>
+              )}
+            </div>
             <div className="text-sm text-muted-foreground">{rule.description}</div>
           </div>
         </div>
-        <Switch
-          checked={rule.isActive}
-          onCheckedChange={onToggle}
-        />
+        {isLocked ? (
+          <Badge variant="secondary" className="text-xs">
+            <Check className="h-3 w-3 mr-1" />
+            Always On
+          </Badge>
+        ) : (
+          <Switch
+            checked={rule.isActive}
+            onCheckedChange={onToggle}
+          />
+        )}
       </div>
 
       {rule.isActive && (
@@ -142,6 +169,9 @@ export const DataRoutingConfig: React.FC<DataRoutingConfigProps> = ({
   const [rules, setRules] = useState<RoutingRule[]>(DEFAULT_ROUTING_RULES);
 
   const handleToggleRule = (ruleId: string, active: boolean) => {
+    // Supabase rule cannot be toggled off
+    if (ruleId === 'all_to_supabase') return;
+    
     const updated = rules.map(r => 
       r.id === ruleId ? { ...r, isActive: active } : r
     );
@@ -169,13 +199,24 @@ export const DataRoutingConfig: React.FC<DataRoutingConfigProps> = ({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <ScrollArea className="h-[400px] pr-4">
+        {/* Info Alert */}
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Routing Logic:</strong> All data is always saved to Supabase. 
+            Patient data goes to Salesforce by default. 
+            Enable Veeva to push provider data separately.
+          </AlertDescription>
+        </Alert>
+        
+        <ScrollArea className="h-[350px] pr-4">
           <div className="space-y-4">
             {rules.map(rule => (
               <RoutingRuleCard
                 key={rule.id}
                 rule={rule}
                 onToggle={(active) => handleToggleRule(rule.id, active)}
+                isLocked={rule.id === 'all_to_supabase'}
               />
             ))}
           </div>
