@@ -459,26 +459,36 @@ export const EnrollmentFormExtractor: React.FC<EnrollmentFormExtractorProps> = (
 
     setIsSaving(true);
     try {
-      // Save to Supabase
-      const { error } = await supabase
-        .from('enrollment_form_extractions')
-        .upsert({
+      // Save to Supabase using raw query to avoid type issues with new table
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      
+      const response = await fetch(`${supabaseUrl}/rest/v1/enrollment_form_extractions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify({
           id: extractionResult.extractionId,
           session_id: extractionResult.sessionId,
           file_name: uploadedFile?.name || 'unknown',
-          form_identification: extractionResult.formIdentification as any,
-          detected_sections: extractionResult.detectedSections as any,
-          all_fields: extractionResult.allFields as any,
-          fields_by_section: extractionResult.fieldsBySection as any,
-          validation_summary: extractionResult.validationSummary as any,
+          form_identification: extractionResult.formIdentification,
+          detected_sections: extractionResult.detectedSections,
+          all_fields: extractionResult.allFields,
+          fields_by_section: extractionResult.fieldsBySection,
+          validation_summary: extractionResult.validationSummary,
           overall_confidence: extractionResult.overallConfidence,
-          pipeline_info: extractionResult.pipeline as any,
-          verification_state: extractionResult.verificationState as any,
+          pipeline_info: extractionResult.pipeline,
+          verification_state: extractionResult.verificationState,
           status: 'saved',
           updated_at: new Date().toISOString()
-        });
+        })
+      });
 
-      if (error) throw error;
+      if (!response.ok) throw new Error('Failed to save');
 
       onSaveToHistory?.(extractionResult);
       toast.success('Saved to history');
