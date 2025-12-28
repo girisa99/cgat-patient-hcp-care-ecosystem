@@ -4625,6 +4625,87 @@ export type Database = {
         }
         Relationships: []
       }
+      document_classification_learning: {
+        Row: {
+          applied_to_model: boolean | null
+          confidence_score: number | null
+          corrected_classification: string | null
+          created_at: string | null
+          document_id: string | null
+          features: Json | null
+          feedback_type: string | null
+          id: string
+          learned_at: string | null
+          original_classification: string | null
+          user_id: string | null
+        }
+        Insert: {
+          applied_to_model?: boolean | null
+          confidence_score?: number | null
+          corrected_classification?: string | null
+          created_at?: string | null
+          document_id?: string | null
+          features?: Json | null
+          feedback_type?: string | null
+          id?: string
+          learned_at?: string | null
+          original_classification?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          applied_to_model?: boolean | null
+          confidence_score?: number | null
+          corrected_classification?: string | null
+          created_at?: string | null
+          document_id?: string | null
+          features?: Json | null
+          feedback_type?: string | null
+          id?: string
+          learned_at?: string | null
+          original_classification?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      document_classification_patterns: {
+        Row: {
+          created_at: string | null
+          document_type: string
+          id: string
+          is_active: boolean | null
+          match_count: number | null
+          pattern_type: string | null
+          pattern_value: string
+          success_rate: number | null
+          updated_at: string | null
+          weight: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          document_type: string
+          id?: string
+          is_active?: boolean | null
+          match_count?: number | null
+          pattern_type?: string | null
+          pattern_value: string
+          success_rate?: number | null
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          document_type?: string
+          id?: string
+          is_active?: boolean | null
+          match_count?: number | null
+          pattern_type?: string | null
+          pattern_value?: string
+          success_rate?: number | null
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Relationships: []
+      }
       document_processing_jobs: {
         Row: {
           completed_at: string | null
@@ -4749,6 +4830,111 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      document_routing_history: {
+        Row: {
+          classification_method: string | null
+          classified_type: string | null
+          confidence_score: number | null
+          created_at: string | null
+          document_id: string | null
+          feedback_notes: string | null
+          id: string
+          processing_time_ms: number | null
+          routed_to_domain: string | null
+          routed_to_orchestrator: string | null
+          source_type: string | null
+          user_id: string | null
+          was_correct: boolean | null
+        }
+        Insert: {
+          classification_method?: string | null
+          classified_type?: string | null
+          confidence_score?: number | null
+          created_at?: string | null
+          document_id?: string | null
+          feedback_notes?: string | null
+          id?: string
+          processing_time_ms?: number | null
+          routed_to_domain?: string | null
+          routed_to_orchestrator?: string | null
+          source_type?: string | null
+          user_id?: string | null
+          was_correct?: boolean | null
+        }
+        Update: {
+          classification_method?: string | null
+          classified_type?: string | null
+          confidence_score?: number | null
+          created_at?: string | null
+          document_id?: string | null
+          feedback_notes?: string | null
+          id?: string
+          processing_time_ms?: number | null
+          routed_to_domain?: string | null
+          routed_to_orchestrator?: string | null
+          source_type?: string | null
+          user_id?: string | null
+          was_correct?: boolean | null
+        }
+        Relationships: []
+      }
+      document_type_configurations: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          display_name: string
+          document_type: string
+          domain: string
+          extraction_fields: string[] | null
+          id: string
+          is_active: boolean | null
+          keywords: string[] | null
+          patterns: Json | null
+          priority: number | null
+          sub_agents: string[] | null
+          target_orchestrator: string | null
+          updated_at: string | null
+          validation_rules: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          display_name: string
+          document_type: string
+          domain: string
+          extraction_fields?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          keywords?: string[] | null
+          patterns?: Json | null
+          priority?: number | null
+          sub_agents?: string[] | null
+          target_orchestrator?: string | null
+          updated_at?: string | null
+          validation_rules?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          display_name?: string
+          document_type?: string
+          domain?: string
+          extraction_fields?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          keywords?: string[] | null
+          patterns?: Json | null
+          priority?: number | null
+          sub_agents?: string[] | null
+          target_orchestrator?: string | null
+          updated_at?: string | null
+          validation_rules?: Json | null
+        }
+        Relationships: []
       }
       docusign_envelopes: {
         Row: {
