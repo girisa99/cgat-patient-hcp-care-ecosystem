@@ -1872,7 +1872,8 @@ EXTRACTION PROCESS:
 
 CRITICAL: If you cannot read something clearly, DO NOT guess. Skip it.
 
-Return ONLY this JSON structure with extracted data:
+RESPONSE FORMAT: Return ONLY valid JSON, no markdown formatting, no explanations before or after the JSON.
+Your entire response must be parseable JSON in exactly this format:
 {
   "fields": {
     "field_name_in_snake_case": "value_read_from_document"
@@ -1881,27 +1882,25 @@ Return ONLY this JSON structure with extracted data:
     "Section Name As Shown On Form": ["field_name_1", "field_name_2"],
     "Another Section": ["field_name_3", "field_name_4"]
   },
-  "line_items": [
-    {"description": "...", "quantity": 1, "amount": 0}
-  ],
-  "tables": [
-    {"header": ["col1", "col2"], "rows": [["val1", "val2"]]}
-  ],
-  "detected_document_type": "what_type_of_document_this_appears_to_be",
-  "summary": {
-    "total_amount": 0
-  },
-  "confidence": 0.0
+  "line_items": [],
+  "tables": [],
+  "detected_document_type": "enrollment_form",
+  "confidence": 0.85
 }
 
 SECTION EXTRACTION RULES:
 - Look for visual section dividers, headers, or labeled groups on the form
 - Use the EXACT section names as they appear on the form
 - Group related fields under their respective sections
-- If no clear sections exist, group by logical categories (Patient Info, Insurance, Provider, etc.)
+- If no clear sections exist, create logical sections like: "Patient Information", "Insurance Information", "Prescriber Information", "Medication Information", "Consent & Signatures"
 - The "sections" object maps section names to arrays of field keys that belong in each section
 
-IMPORTANT: Include "medication_name" field for prescriptions with the actual drug name extracted from the document.`;
+FIELD EXTRACTION:
+- Extract EVERY visible field with data from the form
+- Use snake_case for field names (e.g., patient_name, date_of_birth, insurance_member_id)
+- Include medication_name field for prescriptions
+
+RESPOND WITH ONLY THE JSON OBJECT, nothing else.`;
 }
 
 // CSV extraction - parse CSV files and extract structured data
@@ -2447,27 +2446,77 @@ async function extractWithGemini(imageBase64: string, contentType: string, promp
       return null;
     }
     
-    // Try to extract JSON from response
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    // Try to extract JSON from response - handle various formats
+    // First try to find a complete JSON object
+    let jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
+    let jsonStr = jsonMatch ? jsonMatch[1] : null;
     
-    if (jsonMatch) {
+    if (!jsonStr) {
+      // Try to find raw JSON object
+      jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      jsonStr = jsonMatch ? jsonMatch[0] : null;
+    }
+    
+    if (jsonStr) {
       try {
-        const parsed = JSON.parse(jsonMatch[0]);
-        console.log(`Gemini extraction successful: ${Object.keys(parsed.fields || {}).length} fields extracted`);
+        // Clean the JSON string
+        jsonStr = jsonStr.trim();
+        const parsed = JSON.parse(jsonStr);
+        console.log(`Gemini extraction successful: ${Object.keys(parsed.fields || {}).length} fields, sections: ${parsed.sections ? Object.keys(parsed.sections).length : 0}`);
         return parsed;
       } catch (parseError) {
         console.error("Failed to parse Gemini JSON response:", parseError);
-        // Try to extract fields manually from text
-        return { fields: {}, confidence: 0.3, raw_text: responseText };
+        console.log("JSON string that failed:", jsonStr.substring(0, 500));
+        
+        // Try to extract fields manually from text using regex patterns
+        const fields = extractFieldsFromText(responseText);
+        return { fields, confidence: 0.5, raw_text: responseText };
       }
     }
     
-    console.log("No JSON found in Gemini response, returning raw text");
+    // If no JSON found, try to extract fields from plain text
+    console.log("No JSON found in Gemini response, attempting field extraction from text");
+    const fields = extractFieldsFromText(responseText);
+    if (Object.keys(fields).length > 0) {
+      console.log(`Extracted ${Object.keys(fields).length} fields from plain text`);
+      return { fields, confidence: 0.5, raw_text: responseText };
+    }
+    
     return { fields: {}, confidence: 0.3, raw_text: responseText };
   } catch (error) {
     console.error("Gemini extraction error:", error);
     throw error;
   }
+}
+
+// Helper function to extract fields from plain text when JSON parsing fails
+function extractFieldsFromText(text: string): Record<string, string> {
+  const fields: Record<string, string> = {};
+  
+  // Common patterns for field extraction
+  const patterns = [
+    // "Field Name: Value" pattern
+    /^([A-Za-z][A-Za-z\s_-]{2,30}):\s*(.+)$/gm,
+    // "Field Name = Value" pattern
+    /^([A-Za-z][A-Za-z\s_-]{2,30})\s*=\s*(.+)$/gm,
+    // "**Field Name**: Value" (markdown)
+    /\*\*([A-Za-z][A-Za-z\s_-]{2,30})\*\*:\s*(.+)/g,
+  ];
+  
+  for (const pattern of patterns) {
+    let match;
+    while ((match = pattern.exec(text)) !== null) {
+      const key = match[1].trim().toLowerCase().replace(/[\s-]+/g, '_');
+      const value = match[2].trim();
+      
+      // Skip empty values or keys that are too generic
+      if (value && value.length > 0 && key.length > 2) {
+        fields[key] = value;
+      }
+    }
+  }
+  
+  return fields;
 }
 
 // ============= CLAUDE EXTRACTION =============
