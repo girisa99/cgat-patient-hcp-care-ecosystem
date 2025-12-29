@@ -946,9 +946,21 @@ const DocumentImagePreview: React.FC<{
   job: DocumentJob;
   className?: string;
 }> = ({ job, className }) => {
-  const imageUrl = job.image_url || job.image_base64;
+  // Build proper image source - handle both data URL and raw base64
+  const getImageSrc = () => {
+    if (job.image_base64) {
+      // Check if it's already a data URL
+      if (job.image_base64.startsWith('data:')) {
+        return job.image_base64;
+      }
+      // Otherwise, construct the data URL
+      return `data:${job.mime_type || 'image/jpeg'};base64,${job.image_base64}`;
+    }
+    return job.image_url || null;
+  };
   
-  if (!imageUrl) return null;
+  const imageSrc = getImageSrc();
+  if (!imageSrc) return null;
   
   return (
     <div className={cn("border rounded-lg overflow-hidden bg-muted/30", className)}>
@@ -965,9 +977,13 @@ const DocumentImagePreview: React.FC<{
       </div>
       <div className="relative aspect-[3/4] max-h-[300px] bg-black/5">
         <img 
-          src={job.image_base64 ? `data:${job.mime_type};base64,${job.image_base64}` : imageUrl}
+          src={imageSrc}
           alt={job.file_name}
           className="w-full h-full object-contain"
+          onError={(e) => {
+            console.error('[DocumentImagePreview] Image failed to load');
+            (e.target as HTMLImageElement).style.display = 'none';
+          }}
         />
       </div>
     </div>
@@ -1567,11 +1583,13 @@ const JobHistoryItem: React.FC<{
   
   return (
     <div className="flex items-stretch gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
-      {/* Document Thumbnail */}
+          {/* Document Thumbnail */}
       {hasThumbnail ? (
         <div className="w-16 h-20 rounded overflow-hidden bg-muted flex-shrink-0 border">
           <img 
-            src={job.thumbnail_url || (job.image_base64 ? `data:${job.mime_type};base64,${job.image_base64}` : '')}
+            src={job.thumbnail_url || (job.image_base64 
+              ? (job.image_base64.startsWith('data:') ? job.image_base64 : `data:${job.mime_type || 'image/jpeg'};base64,${job.image_base64}`)
+              : '')}
             alt={job.file_name}
             className="w-full h-full object-cover"
           />
