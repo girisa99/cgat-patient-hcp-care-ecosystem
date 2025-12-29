@@ -2428,8 +2428,7 @@ async function extractWithGemini(imageBase64: string, contentType: string, promp
         generationConfig: { 
           temperature: 0.1, 
           topP: 0.95, 
-          maxOutputTokens: 8192,
-          responseMimeType: "application/json"
+          maxOutputTokens: 8192
         }
       })
     });
@@ -2451,11 +2450,10 @@ async function extractWithGemini(imageBase64: string, contentType: string, promp
       return null;
     }
     
-    // With responseMimeType: "application/json", Gemini should return valid JSON directly
-    // But we still handle fallbacks for compatibility
+    // Try multiple JSON parsing strategies
     let parsed = null;
     
-    // First, try to parse the entire response as JSON
+    // Strategy 1: Try to parse the entire response as JSON directly
     try {
       parsed = JSON.parse(responseText);
       console.log(`Gemini extraction successful (direct JSON): ${Object.keys(parsed.fields || {}).length} fields, sections: ${parsed.sections ? Object.keys(parsed.sections).length : 0}`);
