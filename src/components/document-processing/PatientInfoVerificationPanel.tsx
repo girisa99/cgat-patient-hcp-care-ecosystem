@@ -35,63 +35,113 @@ interface PatientInfoVerificationPanelProps {
 // Define field sections matching typical form layout order
 // Uses flexible matching to catch common variations
 // These sections are used as fallback if no explicit section is detected
+// Order matters - more specific patterns should come first
 const FIELD_SECTIONS = [
+  {
+    id: 'document_info',
+    title: 'Document Information',
+    icon: FileText,
+    patterns: ['document_type', 'form_type', 'form_name', 'advancing_access', 'form_version', 'form_date']
+  },
   {
     id: 'patient_demographics',
     title: 'Patient Demographics',
     icon: User,
-    patterns: ['patient_name', 'first_name', 'last_name', 'middle_name', 'dob', 'date_of_birth', 'patient_dob', 'gender', 'sex', 'ssn', 'social_security', 'patient_id', 'mrn', 'medical_record', 'age', 'birth', 'name', 'patient', 'full_name']
+    patterns: ['patient_name', 'first_name', 'last_name', 'middle_name', 'dob', 'date_of_birth', 'patient_dob', 'gender', 'sex', 'ssn', 'social_security', 'patient_id', 'mrn', 'medical_record', 'age', 'birth', 'full_name', 'applicant_name', 'patient_first', 'patient_last', 'patient_middle', 'patient_gender', 'patient_ssn']
   },
   {
-    id: 'contact_info',
-    title: 'Contact Information',
+    id: 'patient_contact',
+    title: 'Patient Contact',
     icon: Phone,
-    patterns: ['phone', 'mobile', 'cell', 'telephone', 'tel', 'email', 'contact', 'fax', 'work_phone', 'home_phone']
+    patterns: ['patient_phone', 'patient_email', 'patient_mobile', 'patient_cell', 'patient_fax', 'home_phone', 'work_phone', 'cell_phone', 'mobile_phone', 'patient_contact']
   },
   {
-    id: 'address',
-    title: 'Address',
+    id: 'patient_address',
+    title: 'Patient Address',
     icon: MapPin,
-    patterns: ['address', 'street', 'city', 'state', 'zip', 'postal', 'country', 'apt', 'suite', 'unit', 'county', 'address_line', 'location']
-  },
-  {
-    id: 'emergency_contact',
-    title: 'Emergency Contact',
-    icon: AlertTriangle,
-    patterns: ['emergency', 'next_of_kin', 'kin', 'relationship', 'guardian', 'parent', 'spouse', 'caregiver', 'emergency_name', 'emergency_phone']
-  },
-  {
-    id: 'insurance',
-    title: 'Insurance Information',
-    icon: Shield,
-    patterns: ['insurance', 'member_id', 'group', 'policy', 'subscriber', 'bin', 'pcn', 'rxgrp', 'payer', 'carrier', 'plan', 'coverage', 'copay', 'deductible', 'authorization', 'insurance_provider', 'policy_number']
-  },
-  {
-    id: 'medical_history',
-    title: 'Medical History',
-    icon: FileText,
-    patterns: ['allerg', 'medication', 'condition', 'diagnosis', 'physician', 'doctor', 'provider', 'history', 'illness', 'surgery', 'treatment', 'symptom', 'prescription', 'current_medications', 'medical_conditions', 'primary_physician']
+    patterns: ['patient_address', 'patient_street', 'patient_city', 'patient_state', 'patient_zip', 'home_address', 'mailing_address', 'residential_address']
   },
   {
     id: 'prescriber_info',
     title: 'Prescriber Information',
     icon: User,
-    patterns: ['prescriber', 'doctor', 'physician', 'npi', 'dea', 'license', 'clinic', 'hospital', 'prescriber_name', 'doctor_name', 'provider_name']
+    // More specific patterns for prescriber fields - must come before general contact/address
+    patterns: ['prescriber_name', 'prescriber_facility', 'prescriber_address', 'prescriber_city', 'prescriber_state', 'prescriber_zip', 'prescriber_phone', 'prescriber_fax', 'prescriber_npi', 'prescriber_dea', 'prescriber_office', 'prescriber_contact', 'prescriber_email', 'prescribing_physician', 'ordering_physician', 'referring_physician', 'physician_name', 'doctor_name', 'provider_name', 'clinic_name', 'facility_name', 'office_contact']
+  },
+  {
+    id: 'program_services',
+    title: 'Program & Services',
+    icon: Shield,
+    patterns: ['benefits_investigation', 'co_pay', 'copay_coupon', 'prior_authorization', 'patient_assistance', 'medication_assistance', 'eligibility', 'program_requested', 'service_requested', 'gilead', 'treatment', 'prep_prevention', 'appeals', 'marketplace', 'state_insurance']
+  },
+  {
+    id: 'representative_info',
+    title: 'Representative Information',
+    icon: User,
+    patterns: ['representative_name', 'representative_relationship', 'applicant_consent', 'patient_representative', 'authorized_representative', 'legal_guardian', 'power_of_attorney', 'caregiver_name', 'caregiver_relationship']
   },
   {
     id: 'consent_signatures',
-    title: 'Consent & Signatures',
+    title: 'Consent & Authorizations',
     icon: PenTool,
-    patterns: ['consent', 'signature', 'sign', 'hipaa', 'authorization', 'agreement', 'acknowledge', 'date_signed', 'witness', 'signed_date']
+    patterns: ['consent', 'signature', 'sign', 'hipaa', 'authorization', 'agreement', 'acknowledge', 'date_signed', 'witness', 'signed_date', 'opt_in', 'opt_out', 'marketing_communication', 'patient_consent', 'shipping_consent', 'prescription_shipping']
+  },
+  {
+    id: 'insurance',
+    title: 'Insurance Information',
+    icon: Shield,
+    patterns: ['insurance', 'member_id', 'group_number', 'policy', 'subscriber', 'bin', 'pcn', 'rxgrp', 'payer', 'carrier', 'plan', 'coverage', 'copay', 'deductible', 'insurance_provider', 'policy_number', 'pharmacy_benefit', 'medical_benefit', 'primary_insurance', 'secondary_insurance']
+  },
+  {
+    id: 'medical_history',
+    title: 'Medical History',
+    icon: FileText,
+    patterns: ['allerg', 'medication', 'condition', 'diagnosis', 'history', 'illness', 'surgery', 'symptom', 'current_medications', 'medical_conditions', 'icd_code', 'diagnosis_code']
+  },
+  {
+    id: 'emergency_contact',
+    title: 'Emergency Contact',
+    icon: AlertTriangle,
+    patterns: ['emergency', 'next_of_kin', 'kin', 'guardian', 'parent', 'spouse', 'emergency_name', 'emergency_phone', 'emergency_contact', 'emergency_relationship']
+  },
+  {
+    id: 'contact_info',
+    title: 'Other Contact Information',
+    icon: Phone,
+    // Fallback for generic phone/email/fax not matched above
+    patterns: ['phone', 'mobile', 'cell', 'telephone', 'tel', 'email', 'contact', 'fax']
+  },
+  {
+    id: 'address',
+    title: 'Other Address',
+    icon: MapPin,
+    // Fallback for generic address not matched above
+    patterns: ['address', 'street', 'city', 'state', 'zip', 'postal', 'country', 'apt', 'suite', 'unit', 'county', 'address_line', 'location']
   }
 ];
 
 // Check if a field key matches a section's patterns
+// Uses word-boundary aware matching to prevent overly broad matches
 const fieldMatchesSection = (fieldKey: string, patterns: string[]): boolean => {
-  const normalizedKey = fieldKey.toLowerCase().replace(/[-_\s]/g, '');
+  const normalizedKey = fieldKey.toLowerCase().replace(/[-_\s]+/g, '_');
+  const keyParts = normalizedKey.split('_').filter(Boolean);
+  
   return patterns.some(pattern => {
-    const normalizedPattern = pattern.toLowerCase().replace(/[-_\s]/g, '');
-    return normalizedKey.includes(normalizedPattern) || normalizedPattern.includes(normalizedKey);
+    const normalizedPattern = pattern.toLowerCase().replace(/[-_\s]+/g, '_');
+    const patternParts = normalizedPattern.split('_').filter(Boolean);
+    
+    // Check if all pattern parts appear in key parts (in any order)
+    // This allows "prescriber_name" to match "prescriber" pattern
+    // But prevents "phone" from matching "prescriber_phone" when "prescriber" section should catch it
+    const allPatternPartsMatch = patternParts.every(pp => 
+      keyParts.some(kp => kp.includes(pp) || pp.includes(kp))
+    );
+    
+    // Also check direct substring match for compound patterns
+    const directMatch = normalizedKey.includes(normalizedPattern) || 
+                       normalizedPattern.includes(normalizedKey);
+    
+    return allPatternPartsMatch || directMatch;
   });
 };
 
@@ -229,34 +279,68 @@ export const PatientInfoVerificationPanel: React.FC<PatientInfoVerificationPanel
   const lowConfidenceCount = allFields.filter(f => f.confidence < 0.7).length;
   const highConfidenceCount = totalFields - lowConfidenceCount;
 
+  // Determine if document is PDF for proper rendering
+  const isPdf = job.mime_type === 'application/pdf' || 
+                job.file_name?.toLowerCase().endsWith('.pdf') ||
+                imageSrc?.startsWith('data:application/pdf');
+
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Document Image Preview */}
+      {/* Document Image/PDF Preview */}
       {imageSrc ? (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <Eye className="h-4 w-4" />
-              Document Preview
+              Original Document
               {job.document_type && (
                 <Badge variant="outline" className="ml-auto text-[10px]">
                   {job.document_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                 </Badge>
               )}
+              {isPdf && (
+                <Badge variant="secondary" className="text-[10px]">PDF</Badge>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-3">
-            <div className="relative aspect-[4/3] max-h-[300px] bg-muted/30 rounded-lg overflow-hidden border">
-              <img 
-                src={imageSrc}
-                alt={job.file_name}
-                className="w-full h-full object-contain"
-                onError={(e) => {
-                  console.error('Image failed to load:', imageSrc?.substring(0, 50));
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-            </div>
+            {isPdf ? (
+              // PDF files need iframe/object element to display
+              <div className="relative h-[400px] bg-muted/30 rounded-lg overflow-hidden border">
+                <object
+                  data={imageSrc}
+                  type="application/pdf"
+                  className="w-full h-full"
+                  title={job.file_name}
+                >
+                  <iframe
+                    src={imageSrc}
+                    className="w-full h-full"
+                    title={job.file_name}
+                  >
+                    <p className="p-4 text-center text-muted-foreground">
+                      PDF preview not supported in this browser.
+                      <a href={imageSrc} target="_blank" rel="noopener noreferrer" className="text-primary ml-1 underline">
+                        Open PDF
+                      </a>
+                    </p>
+                  </iframe>
+                </object>
+              </div>
+            ) : (
+              // Image files use img element
+              <div className="relative aspect-[4/3] max-h-[400px] bg-muted/30 rounded-lg overflow-hidden border">
+                <img 
+                  src={imageSrc}
+                  alt={job.file_name}
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    console.error('Image failed to load:', imageSrc?.substring(0, 50));
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
             <p className="text-xs text-muted-foreground mt-2 text-center">{job.file_name}</p>
           </CardContent>
         </Card>
