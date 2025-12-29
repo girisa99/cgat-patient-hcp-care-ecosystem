@@ -12,21 +12,27 @@ export const TwoStagePipelineFlowDiagram: React.FC = () => {
     if (!diagramRef.current) return;
     
     try {
+      toast.info('Generating image...');
       const canvas = await html2canvas(diagramRef.current, {
         backgroundColor: '#0f172a',
         scale: 2,
         useCORS: true,
+        logging: false,
+        allowTaint: true,
+        foreignObjectRendering: true,
       });
       
       const link = document.createElement('a');
       link.download = 'two-stage-ai-pipeline-diagram.png';
       link.href = canvas.toDataURL('image/png');
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
       
       toast.success('Two-Stage Pipeline diagram downloaded!');
     } catch (error) {
       console.error('Download failed:', error);
-      toast.error('Failed to download diagram');
+      toast.error('Failed to download diagram. Try using Full Size view and right-click to save.');
     }
   };
 
@@ -34,12 +40,17 @@ export const TwoStagePipelineFlowDiagram: React.FC = () => {
     if (!diagramRef.current) return;
     
     try {
+      toast.info('Generating full size view...');
       const canvas = await html2canvas(diagramRef.current, {
         backgroundColor: '#0f172a',
         scale: 2,
         useCORS: true,
+        logging: false,
+        allowTaint: true,
+        foreignObjectRendering: true,
       });
       
+      const dataUrl = canvas.toDataURL('image/png');
       const newWindow = window.open('', '_blank');
       if (newWindow) {
         newWindow.document.write(`
@@ -47,7 +58,7 @@ export const TwoStagePipelineFlowDiagram: React.FC = () => {
           <html>
             <head><title>Two-Stage AI Pipeline Diagram</title></head>
             <body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#0f172a;">
-              <img src="${canvas.toDataURL('image/png')}" style="max-width:100%;height:auto;" />
+              <img src="${dataUrl}" style="max-width:100%;height:auto;" />
             </body>
           </html>
         `);
