@@ -2442,8 +2442,17 @@ async function extractWithGemini(imageBase64: string, contentType: string, promp
     const data = await response.json();
     console.log(`Gemini response received, candidates: ${data?.candidates?.length || 0}`);
     
+    // Check for finish reason - important for debugging truncation
+    const finishReason = data?.candidates?.[0]?.finishReason;
+    console.log(`[Gemini] Finish reason: ${finishReason}`);
+    
+    if (finishReason === 'MAX_TOKENS') {
+      console.warn('[Gemini] Response was truncated due to max tokens limit');
+    }
+    
     const responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
     console.log(`Gemini extracted text length: ${responseText.length}`);
+    console.log(`[Gemini] Last 100 chars: ${responseText.substring(responseText.length - 100)}`);
     
     if (!responseText) {
       console.error("Gemini returned empty response");
@@ -2452,77 +2461,74 @@ async function extractWithGemini(imageBase64: string, contentType: string, promp
     
     // Try multiple JSON parsing strategies
     let parsed = null;
+    console.log(`[GeminiParse] Starting JSON parsing, response length: ${responseText.length}`);
+    console.log(`[GeminiParse] First 100 chars: ${responseText.substring(0, 100)}`);
     
     // Strategy 1: Try to parse the entire response as JSON directly
     try {
       parsed = JSON.parse(responseText);
-      console.log(`Gemini extraction successful (direct JSON): ${Object.keys(parsed.fields || {}).length} fields, sections: ${parsed.sections ? Object.keys(parsed.sections).length : 0}`);
+      console.log(`[GeminiParse] SUCCESS - Direct JSON parse: ${Object.keys(parsed.fields || {}).length} fields`);
       return parsed;
     } catch (directParseError) {
-      console.log("Direct JSON parse failed, trying to extract JSON from text...");
+      console.log(`[GeminiParse] Direct parse failed: ${directParseError instanceof Error ? directParseError.message : 'unknown'}`);
     }
     
     // Strategy 2: Extract JSON from markdown code blocks ```json ... ```
-    // Use greedy match to get the full content
     let jsonStr: string | null = null;
     
-    // First, try to strip markdown code block markers
     if (responseText.includes('```json')) {
       const startMarker = responseText.indexOf('```json');
       const endMarker = responseText.lastIndexOf('```');
       if (startMarker !== -1 && endMarker !== -1 && endMarker > startMarker) {
-        // Extract content between markers
         jsonStr = responseText.substring(startMarker + 7, endMarker).trim();
-        console.log(`Found JSON in markdown block, length: ${jsonStr.length}`);
+        console.log(`[GeminiParse] Found markdown JSON block, length: ${jsonStr.length}`);
       }
     }
     
-    // If no markdown block, try to find raw JSON object
+    // Strategy 3: Find raw JSON object by locating { and }
     if (!jsonStr) {
-      // Look for the first { and last } to extract JSON object
       const firstBrace = responseText.indexOf('{');
       const lastBrace = responseText.lastIndexOf('}');
+      console.log(`[GeminiParse] Looking for braces: first={${firstBrace}}, last={${lastBrace}}`);
       if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
         jsonStr = responseText.substring(firstBrace, lastBrace + 1);
-        console.log(`Found raw JSON object, length: ${jsonStr.length}`);
+        console.log(`[GeminiParse] Extracted raw JSON, length: ${jsonStr.length}`);
       }
     }
     
     if (jsonStr) {
       try {
         parsed = JSON.parse(jsonStr);
-        console.log(`Gemini extraction successful (extracted JSON): ${Object.keys(parsed.fields || {}).length} fields, sections: ${parsed.sections ? Object.keys(parsed.sections).length : 0}`);
+        console.log(`[GeminiParse] SUCCESS - Extracted JSON: ${Object.keys(parsed.fields || {}).length} fields, sections: ${parsed.sections ? Object.keys(parsed.sections).length : 0}`);
         return parsed;
       } catch (parseError) {
-        console.error("Failed to parse Gemini JSON response:", parseError);
-        console.log("JSON string that failed (first 500 chars):", jsonStr.substring(0, 500));
+        console.error(`[GeminiParse] Parse error: ${parseError instanceof Error ? parseError.message : 'unknown'}`);
+        console.log(`[GeminiParse] Failed JSON (first 300 chars): ${jsonStr.substring(0, 300)}`);
         
-        // Try to fix common JSON issues and retry
+        // Try to fix common JSON issues
         try {
-          // Remove trailing commas before } or ]
           let fixedJson = jsonStr.replace(/,\s*([\]}])/g, '$1');
-          // Replace null text with actual null
           fixedJson = fixedJson.replace(/:\s*null\s*([,\}])/g, ': null$1');
           parsed = JSON.parse(fixedJson);
-          console.log(`Gemini extraction successful (fixed JSON): ${Object.keys(parsed.fields || {}).length} fields`);
+          console.log(`[GeminiParse] SUCCESS - Fixed JSON: ${Object.keys(parsed.fields || {}).length} fields`);
           return parsed;
         } catch (fixError) {
-          console.error("JSON fix attempt also failed:", fixError);
+          console.error(`[GeminiParse] Fix attempt failed: ${fixError instanceof Error ? fixError.message : 'unknown'}`);
         }
       }
+    } else {
+      console.log(`[GeminiParse] No JSON structure found in response`);
     }
     
-    // If no JSON found, try to extract fields from plain text as last resort
-    console.log("No JSON found in Gemini response, attempting field extraction from text");
-    console.log("Response text (first 1000 chars):", responseText.substring(0, 1000));
+    // Last resort: extract fields from plain text
+    console.log(`[GeminiParse] Falling back to text extraction`);
     const fields = extractFieldsFromText(responseText);
     if (Object.keys(fields).length > 0) {
-      console.log(`Extracted ${Object.keys(fields).length} fields from plain text`);
+      console.log(`[GeminiParse] Extracted ${Object.keys(fields).length} fields from text`);
       return { fields, confidence: 0.5, raw_text: responseText };
     }
     
-    // Return the raw text for debugging
-    console.warn("Could not extract any fields from Gemini response");
+    console.warn(`[GeminiParse] FAILED - No fields extracted`);
     return { fields: {}, confidence: 0.3, raw_text: responseText };
   } catch (error) {
     console.error("Gemini extraction error:", error);
