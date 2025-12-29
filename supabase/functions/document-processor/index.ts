@@ -1851,36 +1851,40 @@ GENERAL FORM EXTRACTION:
 
   const typeHint = documentTypeHints[documentType] || '';
   
-  return `You are an expert document analyzer. Your task is to extract information from this document image using STANDARDIZED field names.
+  return `You are an expert document analyzer. Extract information from this document image.
 
-EXTRACTION REQUIREMENTS:
-1. Extract ALL text, numbers, dates, and values that are VISIBLE in the document
-2. Use the STANDARDIZED field names specified below when applicable
-3. For fields not in the standard list, use the document's own label (convert to snake_case)
-4. If a field is not visible, DO NOT include it
-5. Extract the ACTUAL values you can read
-6. IMPORTANT: Identify the SECTIONS visible on the form and group fields accordingly
+## CRITICAL: SECTION DETECTION IS MANDATORY
+
+Every enrollment/healthcare form has SECTIONS (labeled groups of fields). You MUST:
+1. Find ALL section headers/dividers on the form (numbered sections like "1.", "2.", or titled sections)
+2. Return these sections in the "sections" object mapping section name to field keys
+3. NEVER return an empty sections object for forms that have visible sections
+
+## EXTRACTION REQUIREMENTS:
+1. Extract ALL text, numbers, dates, and values VISIBLE in the document
+2. Use snake_case for field names (e.g., patient_name, date_of_birth)
+3. For checkboxes: use "checked" or "unchecked" as values
+4. If a field is not visible or filled, DO NOT include it
 ${typeHint}
 
-EXTRACTION PROCESS:
-1. Look at the document image carefully
-2. Identify the SECTIONS/HEADINGS on the form (e.g., "Patient Information", "Insurance Details", "Prescriber Information")
-3. For each section, extract all fields that belong to it
-4. Read every piece of text that is actually printed/visible
-5. For tables, extract only rows that are actually visible
-6. For totals/amounts, extract only what is printed
+## EXTRACTION PROCESS:
+1. FIRST: Scan the document and identify ALL SECTION HEADERS (look for numbered sections like "1. Patient Information", "2. Insurance Information", bolded headers, divider lines, or titled groups)
+2. SECOND: For EACH section, extract all fields within that section
+3. THIRD: Map each field to its parent section in the "sections" object
 
-CRITICAL: If you cannot read something clearly, DO NOT guess. Skip it.
-
-RESPONSE FORMAT: Return ONLY valid JSON, no markdown formatting, no explanations before or after the JSON.
-Your entire response must be parseable JSON in exactly this format:
+## RESPONSE FORMAT (JSON ONLY - no markdown, no explanation):
 {
   "fields": {
-    "field_name_in_snake_case": "value_read_from_document"
+    "first_name": "John",
+    "last_name": "Doe",
+    "date_of_birth": "01/15/1980",
+    "insurance_member_id": "ABC123456"
   },
   "sections": {
-    "Section Name As Shown On Form": ["field_name_1", "field_name_2"],
-    "Another Section": ["field_name_3", "field_name_4"]
+    "1. Patient Information": ["first_name", "last_name", "date_of_birth", "address", "phone", "email"],
+    "2. Insurance Information": ["insurance_member_id", "group_number", "plan_name"],
+    "3. Prescriber Information": ["prescriber_name", "prescriber_npi", "prescriber_phone"],
+    "4. Consent & Signatures": ["patient_signature", "signature_date"]
   },
   "line_items": [],
   "tables": [],
@@ -1888,19 +1892,18 @@ Your entire response must be parseable JSON in exactly this format:
   "confidence": 0.85
 }
 
-SECTION EXTRACTION RULES:
-- Look for visual section dividers, headers, or labeled groups on the form
-- Use the EXACT section names as they appear on the form
-- Group related fields under their respective sections
-- If no clear sections exist, create logical sections like: "Patient Information", "Insurance Information", "Prescriber Information", "Medication Information", "Consent & Signatures"
-- The "sections" object maps section names to arrays of field keys that belong in each section
+## SECTION NAMING RULES:
+- Use the EXACT section names as shown on the form (including numbers if present)
+- Common sections in pharmaceutical enrollment forms:
+  * Patient Information / Patient Demographics
+  * Insurance Information / Coverage Details
+  * Prescriber/Provider Information / Healthcare Provider
+  * Medication Information / Prescription Details
+  * Financial Information / Income Information
+  * Authorization / Consent & Signatures
+- If a section doesn't have a clear title, create a descriptive one
 
-FIELD EXTRACTION:
-- Extract EVERY visible field with data from the form
-- Use snake_case for field names (e.g., patient_name, date_of_birth, insurance_member_id)
-- Include medication_name field for prescriptions
-
-RESPOND WITH ONLY THE JSON OBJECT, nothing else.`;
+RESPOND WITH ONLY THE JSON OBJECT.`;
 }
 
 // CSV extraction - parse CSV files and extract structured data
@@ -2401,6 +2404,62 @@ Return JSON:
   }
 }
 
+// Helper function to generate sections from field names using pattern matching
+// This is a fallback when Gemini doesn't return sections in its response
+function generateSectionsFromFields(fields: Record<string, any>): Record<string, string[]> {
+  const sections: Record<string, string[]> = {};
+  
+  // Section mapping patterns - order matters for priority
+  const sectionPatterns: { pattern: RegExp; section: string }[] = [
+    // Program/Services
+    { pattern: /^(program|service_request|benefits_investigation|copay|co_pay|prior_auth|patient_assist|medication_assist|appeals|eligibility|hub_service|financial_assistance)/i, section: "Program & Services" },
+    // Medication
+    { pattern: /^(medication|drug|rx_|prescription|dosage|strength|quantity|refill|days_supply|ndc|directions|indication|therapy|treatment(?!_history))/i, section: "Medication Information" },
+    // Prescriber/Provider
+    { pattern: /^(prescriber|physician|doctor|provider|hcp|npi|dea|clinic|facility|office_|medical_license|state_license)/i, section: "Prescriber/Provider Information" },
+    // Pharmacy
+    { pattern: /^(pharmacy|ncpdp|dispensing|specialty_pharm|mail_order)/i, section: "Pharmacy Information" },
+    // Insurance
+    { pattern: /^(insurance|member_id|group_number|policy|subscriber|payer|carrier|plan_name|coverage|medicaid|medicare|commercial|tricare|va_benefit|bin|pcn|rxgrp|pbm|primary_ins|secondary_ins)/i, section: "Insurance Information" },
+    // Financial
+    { pattern: /^(income|household_size|family_size|fpl|financial|afford|hardship|deductible|out_of_pocket|coinsurance|premium|employment|employer)/i, section: "Financial Information" },
+    // Clinical
+    { pattern: /^(diagnosis|icd|condition|allerg|medical_history|lab_result|treatment_history|prior_therap|contraindic|pregnancy|weight|height|bmi|vital|clinical)/i, section: "Clinical Information" },
+    // Contact Authorization
+    { pattern: /^(representative|guardian|power_of_attorney|caregiver|authorized(?!_)|emergency_contact|emergency_phone|hipaa|phi_auth|release_|voicemail|sms_consent|email_consent)/i, section: "Contact Authorization" },
+    // Consent & Signatures
+    { pattern: /^(signature|consent|authorization(?!_rep)|agreement|acknowledge|date_signed|witness|opt_in|opt_out|marketing|certification|terms|privacy)/i, section: "Consent & Signatures" },
+    // Patient Information - catch remaining patient-related fields
+    { pattern: /^(patient|first_name|last_name|middle_name|full_name|dob|date_of_birth|gender|sex|ssn|social_security|age|birth|address|city|state|zip|phone|email|mobile|cell|fax|language|contact|applicant)/i, section: "Patient Information" },
+  ];
+  
+  const fieldKeys = Object.keys(fields);
+  const usedFields = new Set<string>();
+  
+  // Assign fields to sections based on patterns
+  for (const { pattern, section } of sectionPatterns) {
+    for (const key of fieldKeys) {
+      if (usedFields.has(key)) continue;
+      if (pattern.test(key)) {
+        if (!sections[section]) {
+          sections[section] = [];
+        }
+        sections[section].push(key);
+        usedFields.add(key);
+      }
+    }
+  }
+  
+  // Any remaining unmatched fields go to "Additional Information"
+  const unmatched = fieldKeys.filter(k => !usedFields.has(k) && !k.startsWith('_') && k !== 'detected_document_type' && k !== 'document_category');
+  if (unmatched.length > 0) {
+    sections["Additional Information"] = unmatched;
+  }
+  
+  console.log(`[generateSectionsFromFields] Created ${Object.keys(sections).length} sections from ${fieldKeys.length} fields`);
+  return sections;
+}
+
 // Gemini extraction with enhanced error handling
 async function extractWithGemini(imageBase64: string, contentType: string, prompt: string): Promise<any> {
   const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
@@ -2534,7 +2593,24 @@ async function extractWithGemini(imageBase64: string, contentType: string, promp
     if (jsonStr) {
       try {
         parsed = JSON.parse(jsonStr);
-        console.log(`[GeminiParse] SUCCESS - Extracted JSON: ${Object.keys(parsed.fields || {}).length} fields, sections: ${parsed.sections ? Object.keys(parsed.sections).length : 0}`);
+        console.log(`[GeminiParse] SUCCESS - Extracted JSON: ${Object.keys(parsed.fields || {}).length} fields`);
+        
+        // Explicitly log sections for debugging
+        if (parsed.sections && typeof parsed.sections === 'object') {
+          const sectionKeys = Object.keys(parsed.sections);
+          console.log(`[GeminiParse] Sections found: ${sectionKeys.length} - ${sectionKeys.slice(0, 5).join(', ')}`);
+          // Log section contents
+          for (const [sectionName, fields] of Object.entries(parsed.sections)) {
+            const fieldList = Array.isArray(fields) ? fields : [];
+            console.log(`[GeminiParse] Section "${sectionName}": ${fieldList.length} fields - ${fieldList.slice(0, 5).join(', ')}`);
+          }
+        } else {
+          console.warn(`[GeminiParse] WARNING: No sections extracted from document - attempting to generate sections from fields`);
+          // Auto-generate sections based on field patterns if none were extracted
+          parsed.sections = generateSectionsFromFields(parsed.fields || {});
+          console.log(`[GeminiParse] Generated ${Object.keys(parsed.sections).length} sections from field patterns`);
+        }
+        
         return parsed;
       } catch (parseError) {
         console.error(`[GeminiParse] Parse error: ${parseError instanceof Error ? parseError.message : 'unknown'}`);
@@ -2557,6 +2633,13 @@ async function extractWithGemini(imageBase64: string, contentType: string, promp
           fixedJson += ']'.repeat(Math.max(0, openBr)) + '}'.repeat(Math.max(0, openB));
           parsed = JSON.parse(fixedJson);
           console.log(`[GeminiParse] SUCCESS - Fixed JSON: ${Object.keys(parsed.fields || {}).length} fields`);
+          
+          // Also generate sections if missing after fix
+          if (!parsed.sections || Object.keys(parsed.sections).length === 0) {
+            parsed.sections = generateSectionsFromFields(parsed.fields || {});
+            console.log(`[GeminiParse] Generated ${Object.keys(parsed.sections).length} sections from field patterns (after fix)`);
+          }
+          
           return parsed;
         } catch (fixError) {
           console.error(`[GeminiParse] Fix attempt failed: ${fixError instanceof Error ? fixError.message : 'unknown'}`);
@@ -2571,7 +2654,8 @@ async function extractWithGemini(imageBase64: string, contentType: string, promp
     const fields = extractFieldsFromText(responseText);
     if (Object.keys(fields).length > 0) {
       console.log(`[GeminiParse] Extracted ${Object.keys(fields).length} fields from text`);
-      return { fields, confidence: 0.5, raw_text: responseText };
+      const sections = generateSectionsFromFields(fields);
+      return { fields, sections, confidence: 0.5, raw_text: responseText };
     }
     
     console.warn(`[GeminiParse] FAILED - No fields extracted`);
