@@ -34,48 +34,55 @@ interface PatientInfoVerificationPanelProps {
 
 // Define field sections matching typical form layout order
 // Uses flexible matching to catch common variations
+// These sections are used as fallback if no explicit section is detected
 const FIELD_SECTIONS = [
   {
     id: 'patient_demographics',
     title: 'Patient Demographics',
     icon: User,
-    patterns: ['patient_name', 'first_name', 'last_name', 'middle_name', 'dob', 'date_of_birth', 'patient_dob', 'gender', 'sex', 'ssn', 'social_security', 'patient_id', 'mrn', 'medical_record', 'age', 'birth', 'name']
+    patterns: ['patient_name', 'first_name', 'last_name', 'middle_name', 'dob', 'date_of_birth', 'patient_dob', 'gender', 'sex', 'ssn', 'social_security', 'patient_id', 'mrn', 'medical_record', 'age', 'birth', 'name', 'patient', 'full_name']
   },
   {
     id: 'contact_info',
     title: 'Contact Information',
     icon: Phone,
-    patterns: ['phone', 'mobile', 'cell', 'telephone', 'tel', 'email', 'contact', 'fax']
+    patterns: ['phone', 'mobile', 'cell', 'telephone', 'tel', 'email', 'contact', 'fax', 'work_phone', 'home_phone']
   },
   {
     id: 'address',
     title: 'Address',
     icon: MapPin,
-    patterns: ['address', 'street', 'city', 'state', 'zip', 'postal', 'country', 'apt', 'suite', 'unit', 'county']
+    patterns: ['address', 'street', 'city', 'state', 'zip', 'postal', 'country', 'apt', 'suite', 'unit', 'county', 'address_line', 'location']
   },
   {
     id: 'emergency_contact',
     title: 'Emergency Contact',
     icon: AlertTriangle,
-    patterns: ['emergency', 'next_of_kin', 'kin', 'relationship', 'guardian', 'parent', 'spouse']
+    patterns: ['emergency', 'next_of_kin', 'kin', 'relationship', 'guardian', 'parent', 'spouse', 'caregiver', 'emergency_name', 'emergency_phone']
   },
   {
     id: 'insurance',
     title: 'Insurance Information',
     icon: Shield,
-    patterns: ['insurance', 'member_id', 'group', 'policy', 'subscriber', 'bin', 'pcn', 'rxgrp', 'payer', 'carrier', 'plan', 'coverage', 'copay', 'deductible', 'authorization']
+    patterns: ['insurance', 'member_id', 'group', 'policy', 'subscriber', 'bin', 'pcn', 'rxgrp', 'payer', 'carrier', 'plan', 'coverage', 'copay', 'deductible', 'authorization', 'insurance_provider', 'policy_number']
   },
   {
     id: 'medical_history',
     title: 'Medical History',
     icon: FileText,
-    patterns: ['allerg', 'medication', 'condition', 'diagnosis', 'physician', 'doctor', 'provider', 'history', 'illness', 'surgery', 'treatment', 'symptom']
+    patterns: ['allerg', 'medication', 'condition', 'diagnosis', 'physician', 'doctor', 'provider', 'history', 'illness', 'surgery', 'treatment', 'symptom', 'prescription', 'current_medications', 'medical_conditions', 'primary_physician']
+  },
+  {
+    id: 'prescriber_info',
+    title: 'Prescriber Information',
+    icon: User,
+    patterns: ['prescriber', 'doctor', 'physician', 'npi', 'dea', 'license', 'clinic', 'hospital', 'prescriber_name', 'doctor_name', 'provider_name']
   },
   {
     id: 'consent_signatures',
     title: 'Consent & Signatures',
     icon: PenTool,
-    patterns: ['consent', 'signature', 'sign', 'hipaa', 'authorization', 'agreement', 'acknowledge', 'date_signed', 'witness']
+    patterns: ['consent', 'signature', 'sign', 'hipaa', 'authorization', 'agreement', 'acknowledge', 'date_signed', 'witness', 'signed_date']
   }
 ];
 
@@ -140,6 +147,7 @@ export const PatientInfoVerificationPanel: React.FC<PatientInfoVerificationPanel
   const detectedSignatures = signatures.filter(s => s.detected);
 
   // Get all form mapping fields (excluding internal fields)
+  // Preserve original extraction order for form sequence matching
   const allFields = formMapping 
     ? Object.entries(formMapping)
         .filter(([key, value]) => 
@@ -147,31 +155,73 @@ export const PatientInfoVerificationPanel: React.FC<PatientInfoVerificationPanel
           !key.startsWith('_') &&
           !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key)
         )
-        .map(([key, value]) => ({ key, ...value }))
+        .map(([key, value], index) => ({ 
+          key, 
+          ...value,
+          originalOrder: index // Preserve original extraction order
+        }))
     : [];
 
-  // Organize fields by sections using pattern matching
+  // First, check if formMapping has section info from AI extraction (stored as _sections metadata)
+  // This would be a JSON object like { "Patient Demographics": ["patient_name", "dob"], ... }
+  const sectionsData = formMapping?.['_sections'];
+  const extractedSections: Record<string, string[]> | undefined = 
+    sectionsData && typeof sectionsData === 'object' && !('value' in sectionsData)
+      ? (sectionsData as unknown as Record<string, string[]>)
+      : undefined;
+  
+  // Organize fields by sections
   const usedFieldKeys = new Set<string>();
   
-  const organizedSections = FIELD_SECTIONS.map(section => {
-    const sectionFields = allFields
-      .filter(field => {
-        if (usedFieldKeys.has(field.key)) return false;
-        if (fieldMatchesSection(field.key, section.patterns)) {
-          usedFieldKeys.add(field.key);
-          return true;
-        }
-        return false;
-      });
+  let organizedSections: { id: string; title: string; icon: any; fields: typeof allFields }[];
+  
+  if (extractedSections && Object.keys(extractedSections).length > 0) {
+    // Use AI-extracted sections if available (matches form structure)
+    organizedSections = Object.entries(extractedSections).map(([sectionName, fieldKeys]) => {
+      const matchingSection = FIELD_SECTIONS.find(s => 
+        s.id === sectionName || s.title.toLowerCase() === sectionName.toLowerCase()
+      );
+      
+      const sectionFields = (fieldKeys as string[])
+        .map(fieldKey => allFields.find(f => f.key === fieldKey))
+        .filter((f): f is NonNullable<typeof f> => !!f && !usedFieldKeys.has(f.key))
+        .map(f => {
+          usedFieldKeys.add(f.key);
+          return f;
+        });
+      
+      return {
+        id: sectionName,
+        title: matchingSection?.title || sectionName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        icon: matchingSection?.icon || FileText,
+        fields: sectionFields
+      };
+    }).filter(section => section.fields.length > 0);
+  } else {
+    // Fall back to pattern matching
+    organizedSections = FIELD_SECTIONS.map(section => {
+      const sectionFields = allFields
+        .filter(field => {
+          if (usedFieldKeys.has(field.key)) return false;
+          if (fieldMatchesSection(field.key, section.patterns)) {
+            usedFieldKeys.add(field.key);
+            return true;
+          }
+          return false;
+        });
 
-    return {
-      ...section,
-      fields: sectionFields
-    };
-  }).filter(section => section.fields.length > 0);
+      return {
+        ...section,
+        fields: sectionFields
+      };
+    }).filter(section => section.fields.length > 0);
+  }
 
   // Get unmapped fields (fields not assigned to any section)
-  const unmappedFields = allFields.filter(field => !usedFieldKeys.has(field.key));
+  // Sort by original order to maintain form sequence
+  const unmappedFields = allFields
+    .filter(field => !usedFieldKeys.has(field.key))
+    .sort((a, b) => (a.originalOrder || 0) - (b.originalOrder || 0));
 
   // Calculate accurate stats
   const totalFields = allFields.length;
