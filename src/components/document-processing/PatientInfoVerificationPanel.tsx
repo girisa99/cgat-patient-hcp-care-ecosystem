@@ -346,26 +346,66 @@ export const PatientInfoVerificationPanel: React.FC<PatientInfoVerificationPanel
     : [];
 
   // First, check if formMapping has section info from AI extraction (stored as _sections metadata)
-  // This would be a JSON object like { "Patient Demographics": ["patient_name", "dob"], ... }
+  // This would be a JSON object like { "Patient Information": ["patient_name", "dob"], ... }
   const sectionsData = formMapping?.['_sections'];
-  const extractedSections: Record<string, string[]> | undefined = 
-    sectionsData && typeof sectionsData === 'object' && !('value' in sectionsData)
-      ? (sectionsData as unknown as Record<string, string[]>)
-      : undefined;
+  
+  // Handle both direct object format and {value: JSON string} format
+  let extractedSections: Record<string, string[]> | undefined;
+  if (sectionsData) {
+    if (typeof sectionsData === 'object' && !('value' in sectionsData)) {
+      // Direct object format from extraction
+      extractedSections = sectionsData as unknown as Record<string, string[]>;
+    } else if (typeof sectionsData === 'object' && 'value' in sectionsData) {
+      // Stored as {value: JSON string} - try to parse
+      try {
+        const parsed = typeof sectionsData.value === 'string' 
+          ? JSON.parse(sectionsData.value) 
+          : sectionsData.value;
+        if (typeof parsed === 'object') {
+          extractedSections = parsed as Record<string, string[]>;
+        }
+      } catch (e) {
+        console.warn('[PatientInfoVerificationPanel] Failed to parse _sections value:', e);
+      }
+    }
+  }
+  
+  console.log('[PatientInfoVerificationPanel] Sections data:', {
+    hasSectionsData: !!sectionsData,
+    extractedSections: extractedSections ? Object.keys(extractedSections) : 'none',
+    totalFields: allFields.length
+  });
   
   // Organize fields by sections
   const usedFieldKeys = new Set<string>();
   
   let organizedSections: { id: string; title: string; icon: any; fields: typeof allFields }[];
   
+  // Get icon for a section name based on keywords
+  const getSectionIcon = (sectionName: string): any => {
+    const name = sectionName.toLowerCase();
+    if (name.includes('patient') && !name.includes('assistance')) return User;
+    if (name.includes('prescriber') || name.includes('provider') || name.includes('physician')) return User;
+    if (name.includes('insurance') || name.includes('coverage')) return Shield;
+    if (name.includes('pharmacy')) return FileText;
+    if (name.includes('medication') || name.includes('drug') || name.includes('rx')) return FileText;
+    if (name.includes('consent') || name.includes('signature') || name.includes('authorization')) return PenTool;
+    if (name.includes('contact') || name.includes('phone') || name.includes('address')) return Phone;
+    if (name.includes('financial') || name.includes('income') || name.includes('payment')) return FileText;
+    if (name.includes('clinical') || name.includes('diagnosis') || name.includes('medical')) return FileText;
+    if (name.includes('program') || name.includes('service') || name.includes('support')) return Shield;
+    return FileText;
+  };
+  
   if (extractedSections && Object.keys(extractedSections).length > 0) {
-    // Use AI-extracted sections if available (matches form structure)
+    console.log('[PatientInfoVerificationPanel] Using AI-extracted sections:', Object.keys(extractedSections));
+    
+    // Use AI-extracted sections - these match the actual form structure
     organizedSections = Object.entries(extractedSections).map(([sectionName, fieldKeys]) => {
-      const matchingSection = FIELD_SECTIONS.find(s => 
-        s.id === sectionName || s.title.toLowerCase() === sectionName.toLowerCase()
-      );
+      // Ensure fieldKeys is an array
+      const keys = Array.isArray(fieldKeys) ? fieldKeys : [];
       
-      const sectionFields = (fieldKeys as string[])
+      const sectionFields = keys
         .map(fieldKey => allFields.find(f => f.key === fieldKey))
         .filter((f): f is NonNullable<typeof f> => !!f && !usedFieldKeys.has(f.key))
         .map(f => {
@@ -374,9 +414,9 @@ export const PatientInfoVerificationPanel: React.FC<PatientInfoVerificationPanel
         });
       
       return {
-        id: sectionName,
-        title: matchingSection?.title || sectionName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        icon: matchingSection?.icon || FileText,
+        id: sectionName.toLowerCase().replace(/\s+/g, '_'),
+        title: sectionName,
+        icon: getSectionIcon(sectionName),
         fields: sectionFields
       };
     }).filter(section => section.fields.length > 0);

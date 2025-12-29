@@ -1190,6 +1190,12 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
               };
             }
             
+            // Add sections from AI extraction for dynamic form display
+            if (extracted.sections && typeof extracted.sections === 'object') {
+              formMapping['_sections'] = extracted.sections;
+              console.log(`[Extraction] Sections extracted: ${Object.keys(extracted.sections).length} sections`);
+            }
+            
             extractionSuccess = true;
             console.log(`Hybrid extraction completed with ${providerUsed} (${pipelineTypeUsed}): ${Object.keys(formMapping).length} fields, ${lineItemsExtracted.length} line items`);
           }
@@ -1853,14 +1859,16 @@ EXTRACTION REQUIREMENTS:
 3. For fields not in the standard list, use the document's own label (convert to snake_case)
 4. If a field is not visible, DO NOT include it
 5. Extract the ACTUAL values you can read
+6. IMPORTANT: Identify the SECTIONS visible on the form and group fields accordingly
 ${typeHint}
 
 EXTRACTION PROCESS:
 1. Look at the document image carefully
-2. Read every piece of text that is actually printed/visible
-3. For each visible label-value pair, extract it using standardized field name if applicable
-4. For tables, extract only rows that are actually visible
-5. For totals/amounts, extract only what is printed
+2. Identify the SECTIONS/HEADINGS on the form (e.g., "Patient Information", "Insurance Details", "Prescriber Information")
+3. For each section, extract all fields that belong to it
+4. Read every piece of text that is actually printed/visible
+5. For tables, extract only rows that are actually visible
+6. For totals/amounts, extract only what is printed
 
 CRITICAL: If you cannot read something clearly, DO NOT guess. Skip it.
 
@@ -1868,6 +1876,10 @@ Return ONLY this JSON structure with extracted data:
 {
   "fields": {
     "field_name_in_snake_case": "value_read_from_document"
+  },
+  "sections": {
+    "Section Name As Shown On Form": ["field_name_1", "field_name_2"],
+    "Another Section": ["field_name_3", "field_name_4"]
   },
   "line_items": [
     {"description": "...", "quantity": 1, "amount": 0}
@@ -1881,6 +1893,13 @@ Return ONLY this JSON structure with extracted data:
   },
   "confidence": 0.0
 }
+
+SECTION EXTRACTION RULES:
+- Look for visual section dividers, headers, or labeled groups on the form
+- Use the EXACT section names as they appear on the form
+- Group related fields under their respective sections
+- If no clear sections exist, group by logical categories (Patient Info, Insurance, Provider, etc.)
+- The "sections" object maps section names to arrays of field keys that belong in each section
 
 IMPORTANT: Include "medication_name" field for prescriptions with the actual drug name extracted from the document.`;
 }
