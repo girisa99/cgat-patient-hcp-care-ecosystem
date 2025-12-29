@@ -3848,13 +3848,39 @@ export default function DocumentProcessing() {
                     <h4 className="font-medium mb-2 flex items-center gap-2">
                       <Image className="h-4 w-4" />
                       Original Document
+                      {pendingResult.imageUrl?.startsWith('data:application/pdf') && (
+                        <Badge variant="secondary" className="text-xs">PDF</Badge>
+                      )}
                     </h4>
                     {pendingResult.imageUrl ? (
-                      <img 
-                        src={pendingResult.imageUrl} 
-                        alt="Original document" 
-                        className="w-full rounded border"
-                      />
+                      pendingResult.imageUrl.startsWith('data:application/pdf') ? (
+                        // PDF files need object/iframe for preview
+                        <div className="h-[400px] border rounded overflow-hidden">
+                          <object
+                            data={pendingResult.imageUrl}
+                            type="application/pdf"
+                            className="w-full h-full"
+                            title="Original document"
+                          >
+                            <iframe
+                              src={pendingResult.imageUrl}
+                              className="w-full h-full"
+                              title="Original document"
+                            >
+                              <p className="p-4 text-center text-muted-foreground">
+                                PDF preview not supported.
+                              </p>
+                            </iframe>
+                          </object>
+                        </div>
+                      ) : (
+                        // Image files use img element
+                        <img 
+                          src={pendingResult.imageUrl} 
+                          alt="Original document" 
+                          className="w-full rounded border max-h-[400px] object-contain"
+                        />
+                      )
                     ) : (
                       <div className="bg-muted rounded p-4 text-center text-muted-foreground">
                         <FileText className="h-12 w-12 mx-auto mb-2" />
