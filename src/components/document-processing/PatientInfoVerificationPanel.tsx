@@ -104,28 +104,70 @@ const FIELD_SECTIONS = [
 ];
 
 // Check if a field key matches a section's patterns
-// Uses word-boundary aware matching to prevent overly broad matches
+// Uses flexible matching to catch varied naming conventions
 const fieldMatchesSection = (fieldKey: string, patterns: string[]): boolean => {
   const normalizedKey = fieldKey.toLowerCase().replace(/[-_\s]+/g, '_');
-  const keyParts = normalizedKey.split('_').filter(Boolean);
   
   return patterns.some(pattern => {
     const normalizedPattern = pattern.toLowerCase().replace(/[-_\s]+/g, '_');
-    const patternParts = normalizedPattern.split('_').filter(Boolean);
     
-    // Check if all pattern parts appear in key parts (in any order)
-    // This allows "prescriber_name" to match "prescriber" pattern
-    // But prevents "phone" from matching "prescriber_phone" when "prescriber" section should catch it
-    const allPatternPartsMatch = patternParts.every(pp => 
-      keyParts.some(kp => kp.includes(pp) || pp.includes(kp))
-    );
+    // Direct substring match (most common case)
+    if (normalizedKey.includes(normalizedPattern) || normalizedPattern.includes(normalizedKey)) {
+      return true;
+    }
     
-    // Also check direct substring match for compound patterns
-    const directMatch = normalizedKey.includes(normalizedPattern) || 
-                       normalizedPattern.includes(normalizedKey);
+    // Check if any word in the key starts with or equals a pattern
+    const keyWords = normalizedKey.split('_').filter(Boolean);
+    const patternWords = normalizedPattern.split('_').filter(Boolean);
     
-    return allPatternPartsMatch || directMatch;
+    // Match if the primary pattern word appears in the key
+    const primaryPatternWord = patternWords[0];
+    if (keyWords.some(kw => kw.includes(primaryPatternWord) || primaryPatternWord.includes(kw))) {
+      return true;
+    }
+    
+    return false;
   });
+};
+
+// Priority-based section assignment - assign fields to FIRST matching section
+// This prevents fields from being captured by overly broad patterns
+const getFieldSectionPriority = (fieldKey: string): string | null => {
+  const normalizedKey = fieldKey.toLowerCase().replace(/[-_\s]+/g, '_');
+  
+  // Explicit priority rules for common field conflicts
+  const priorityRules: { pattern: RegExp; section: string }[] = [
+    // Prescriber fields (before general contact/phone)
+    { pattern: /prescri(ber|bing|ption)|physician|doctor|provider|hcp|npi|dea|clinic|facility_name|office/i, section: 'prescriber_info' },
+    // Pharmacy fields
+    { pattern: /pharmacy|ncpdp|dispensing|specialty_pharm|mail_order/i, section: 'pharmacy_info' },
+    // Patient contact/address (before general contact)
+    { pattern: /patient_(phone|email|address|city|state|zip|mobile|cell|fax)|home_phone|home_address|mailing_address|residential/i, section: 'patient_information' },
+    // Patient demographics
+    { pattern: /patient_name|first_name|last_name|middle_name|dob|date_of_birth|gender|sex|ssn|mrn|age|birth|full_name/i, section: 'patient_information' },
+    // Representative/authorization
+    { pattern: /representative|guardian|power_of_attorney|caregiver|authorized|emergency_contact|hipaa|phi_auth/i, section: 'contact_authorization' },
+    // Insurance
+    { pattern: /insurance|member_id|group_number|policy|subscriber|payer|carrier|medicaid|medicare|commercial|bin|pcn|rxgrp/i, section: 'insurance_information' },
+    // Financial
+    { pattern: /income|household|financial|fpl|poverty|afford|hardship|copay|deductible|out_of_pocket/i, section: 'patient_financial' },
+    // Medication
+    { pattern: /medication|drug|therapy|treatment|dosage|strength|frequency|quantity|refill|ndc|rx_number|directions|sig|indication/i, section: 'medication_prescribed' },
+    // Clinical
+    { pattern: /diagnosis|icd|condition|allerg|medical_history|lab_result|treatment_history|contraindication|pregnancy|weight|height|bmi/i, section: 'clinical_info' },
+    // Program/Services
+    { pattern: /program|service_requested|benefits_investigation|copay_coupon|prior_authorization|patient_assistance|appeals|eligibility|hub_services/i, section: 'program_services' },
+    // Consent/Signatures
+    { pattern: /consent|signature|sign|authorization|agreement|acknowledge|attestation|certification|terms|privacy|opt_in|opt_out/i, section: 'consent_signatures' },
+  ];
+  
+  for (const rule of priorityRules) {
+    if (rule.pattern.test(normalizedKey)) {
+      return rule.section;
+    }
+  }
+  
+  return null;
 };
 
 // Format field name for display
@@ -231,15 +273,37 @@ export const PatientInfoVerificationPanel: React.FC<PatientInfoVerificationPanel
       };
     }).filter(section => section.fields.length > 0);
   } else {
-    // Fall back to pattern matching
+    // Use priority-based matching first, then fall back to pattern matching
+    // This ensures fields go to the most appropriate section
+    
+    // First pass: assign fields using priority rules
+    const fieldToSection = new Map<string, string>();
+    allFields.forEach(field => {
+      const prioritySection = getFieldSectionPriority(field.key);
+      if (prioritySection) {
+        fieldToSection.set(field.key, prioritySection);
+      }
+    });
+    
+    // Build sections with priority-assigned fields first
     organizedSections = FIELD_SECTIONS.map(section => {
       const sectionFields = allFields
         .filter(field => {
           if (usedFieldKeys.has(field.key)) return false;
-          if (fieldMatchesSection(field.key, section.patterns)) {
+          
+          // Check priority assignment first
+          const prioritySection = fieldToSection.get(field.key);
+          if (prioritySection === section.id) {
             usedFieldKeys.add(field.key);
             return true;
           }
+          
+          // If no priority match, try pattern matching (but only if not assigned elsewhere)
+          if (!prioritySection && fieldMatchesSection(field.key, section.patterns)) {
+            usedFieldKeys.add(field.key);
+            return true;
+          }
+          
           return false;
         });
 
@@ -255,6 +319,14 @@ export const PatientInfoVerificationPanel: React.FC<PatientInfoVerificationPanel
   const unmappedFields = allFields
     .filter(field => !usedFieldKeys.has(field.key))
     .sort((a, b) => (a.originalOrder || 0) - (b.originalOrder || 0));
+  
+  // Log section distribution for debugging
+  console.log('[PatientInfoVerificationPanel] Field distribution:', {
+    totalFields: allFields.length,
+    organizedSections: organizedSections.map(s => ({ id: s.id, title: s.title, count: s.fields.length })),
+    unmappedCount: unmappedFields.length,
+    unmappedFields: unmappedFields.map(f => f.key)
+  });
 
   // Calculate accurate stats
   const totalFields = allFields.length;
