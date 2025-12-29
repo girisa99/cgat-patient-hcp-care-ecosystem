@@ -101,8 +101,6 @@ import MedicalImageAnalysis from '@/components/document-processing/MedicalImageA
 import InvoiceRCMAnalysis from '@/components/document-processing/InvoiceRCMAnalysis';
 import SubAgentRecommendationDialog from '@/components/document-processing/SubAgentRecommendationDialog';
 import RealTimeExtractionTracker from '@/components/document-processing/RealTimeExtractionTracker';
-import LinkedInArticleDownload from '@/components/document-processing/LinkedInArticleDownload';
-import VideoScriptDownload from '@/components/document-processing/VideoScriptDownload';
 import { ArchitectureRecommendation } from '@/services/agentArchitectureIntelligence';
 
 // Healthcare abbreviation expansion dictionary
@@ -310,9 +308,8 @@ export default function DocumentProcessing() {
       });
     }
     
-    // Always add history and resources at the end
+    // Always add history at the end
     baseTabs.push({ id: 'history', label: 'History', icon: <History className="h-4 w-4" /> });
-    baseTabs.push({ id: 'resources', label: 'Resources', icon: <FileText className="h-4 w-4" /> });
     
     return baseTabs;
   }, [customDocTypes]);
@@ -3661,23 +3658,6 @@ export default function DocumentProcessing() {
                 }
               }}
             />
-          </TabsContent>
-
-          {/* Resources Tab */}
-          <TabsContent value="resources">
-            <div className="space-y-6">
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold">Documentation & Resources</h2>
-                <p className="text-muted-foreground">
-                  Download LinkedIn articles, video scripts, and technical documentation for the AI-powered document processing platform.
-                </p>
-              </div>
-              
-              <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-                <LinkedInArticleDownload />
-                <VideoScriptDownload />
-              </div>
-            </div>
           </TabsContent>
         </Tabs>
 
