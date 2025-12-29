@@ -12,6 +12,14 @@ export { SolutionArchitectureDiagram } from './SolutionArchitectureDiagram';
 export { DocumentProcessingArchitectureDiagram } from './DocumentProcessingArchitectureDiagram';
 export { MedicalImagingAIPipelineDiagram } from './MedicalImagingAIPipelineDiagram';
 export { PatientInfoVerificationPanel } from './PatientInfoVerificationPanel';
+export { RealTimeExtractionTracker } from './RealTimeExtractionTracker';
+
+// New Improvement Components
+export { ModelUsageAnalyticsDashboard } from './ModelUsageAnalyticsDashboard';
+export { ConfidenceVisualization } from './ConfidenceVisualization';
+export { OCRVisionAIComparisonView } from './OCRVisionAIComparisonView';
+export { RetryWithDifferentModel } from './RetryWithDifferentModel';
+
 export type { AIProvider, PipelineType, ModelUsageInfo } from './AIModelIndicator';
 export { useDocumentProcessing, DOCUMENT_TYPE_FIELDS } from '@/hooks/useDocumentProcessing';
 export type { 

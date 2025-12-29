@@ -4722,12 +4722,15 @@ export type Database = {
           file_name: string
           file_path: string
           id: string
+          image_storage_path: string | null
+          image_url: string | null
           mime_type: string | null
           processing_config: Json | null
           progress: number
           stage_message: string | null
           stages: Json | null
           status: string
+          thumbnail_url: string | null
           user_id: string | null
           validation_status: string | null
         }
@@ -4746,12 +4749,15 @@ export type Database = {
           file_name: string
           file_path: string
           id?: string
+          image_storage_path?: string | null
+          image_url?: string | null
           mime_type?: string | null
           processing_config?: Json | null
           progress?: number
           stage_message?: string | null
           stages?: Json | null
           status?: string
+          thumbnail_url?: string | null
           user_id?: string | null
           validation_status?: string | null
         }
@@ -4770,12 +4776,15 @@ export type Database = {
           file_name?: string
           file_path?: string
           id?: string
+          image_storage_path?: string | null
+          image_url?: string | null
           mime_type?: string | null
           processing_config?: Json | null
           progress?: number
           stage_message?: string | null
           stages?: Json | null
           status?: string
+          thumbnail_url?: string | null
           user_id?: string | null
           validation_status?: string | null
         }
@@ -4876,6 +4885,87 @@ export type Database = {
           source_type?: string | null
           user_id?: string | null
           was_correct?: boolean | null
+        }
+        Relationships: []
+      }
+      document_type_configs: {
+        Row: {
+          category: string
+          confidence_threshold: number | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          display_order: number | null
+          estimated_cost_per_page_cents: number | null
+          expected_fields: string[] | null
+          fallback_models: string[] | null
+          field_patterns: Json | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          is_system: boolean | null
+          label: string
+          pipeline_type: string | null
+          primary_model: string | null
+          required_fields: string[] | null
+          special_tab_id: string | null
+          special_tab_label: string | null
+          stage2_model: string | null
+          type_id: string
+          updated_at: string | null
+          validation_rules: Json | null
+        }
+        Insert: {
+          category?: string
+          confidence_threshold?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          display_order?: number | null
+          estimated_cost_per_page_cents?: number | null
+          expected_fields?: string[] | null
+          fallback_models?: string[] | null
+          field_patterns?: Json | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system?: boolean | null
+          label: string
+          pipeline_type?: string | null
+          primary_model?: string | null
+          required_fields?: string[] | null
+          special_tab_id?: string | null
+          special_tab_label?: string | null
+          stage2_model?: string | null
+          type_id: string
+          updated_at?: string | null
+          validation_rules?: Json | null
+        }
+        Update: {
+          category?: string
+          confidence_threshold?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          display_order?: number | null
+          estimated_cost_per_page_cents?: number | null
+          expected_fields?: string[] | null
+          fallback_models?: string[] | null
+          field_patterns?: Json | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system?: boolean | null
+          label?: string
+          pipeline_type?: string | null
+          primary_model?: string | null
+          required_fields?: string[] | null
+          special_tab_id?: string | null
+          special_tab_label?: string | null
+          stage2_model?: string | null
+          type_id?: string
+          updated_at?: string | null
+          validation_rules?: Json | null
         }
         Relationships: []
       }
@@ -9289,6 +9379,107 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      model_usage_analytics: {
+        Row: {
+          average_confidence: number | null
+          completed_at: string | null
+          created_at: string | null
+          document_category: string | null
+          document_id: string | null
+          document_type: string
+          error_message: string | null
+          estimated_cost_cents: number | null
+          fallbacks_attempted: string[] | null
+          file_name: string | null
+          id: string
+          input_tokens: number | null
+          model_used: string
+          ocr_fields_count: number | null
+          ocr_time_ms: number | null
+          output_tokens: number | null
+          pipeline_type: string | null
+          primary_model: string
+          processing_time_ms: number | null
+          selection_confidence: number | null
+          selection_reason: string
+          stage1_model: string | null
+          stage2_model: string | null
+          success: boolean | null
+          total_fields_extracted: number | null
+          user_id: string | null
+          vision_ai_fields_count: number | null
+          vision_ai_time_ms: number | null
+        }
+        Insert: {
+          average_confidence?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          document_category?: string | null
+          document_id?: string | null
+          document_type: string
+          error_message?: string | null
+          estimated_cost_cents?: number | null
+          fallbacks_attempted?: string[] | null
+          file_name?: string | null
+          id?: string
+          input_tokens?: number | null
+          model_used: string
+          ocr_fields_count?: number | null
+          ocr_time_ms?: number | null
+          output_tokens?: number | null
+          pipeline_type?: string | null
+          primary_model: string
+          processing_time_ms?: number | null
+          selection_confidence?: number | null
+          selection_reason: string
+          stage1_model?: string | null
+          stage2_model?: string | null
+          success?: boolean | null
+          total_fields_extracted?: number | null
+          user_id?: string | null
+          vision_ai_fields_count?: number | null
+          vision_ai_time_ms?: number | null
+        }
+        Update: {
+          average_confidence?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          document_category?: string | null
+          document_id?: string | null
+          document_type?: string
+          error_message?: string | null
+          estimated_cost_cents?: number | null
+          fallbacks_attempted?: string[] | null
+          file_name?: string | null
+          id?: string
+          input_tokens?: number | null
+          model_used?: string
+          ocr_fields_count?: number | null
+          ocr_time_ms?: number | null
+          output_tokens?: number | null
+          pipeline_type?: string | null
+          primary_model?: string
+          processing_time_ms?: number | null
+          selection_confidence?: number | null
+          selection_reason?: string
+          stage1_model?: string | null
+          stage2_model?: string | null
+          success?: boolean | null
+          total_fields_extracted?: number | null
+          user_id?: string | null
+          vision_ai_fields_count?: number | null
+          vision_ai_time_ms?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "model_usage_analytics_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "document_processing_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       module_permissions: {
         Row: {
