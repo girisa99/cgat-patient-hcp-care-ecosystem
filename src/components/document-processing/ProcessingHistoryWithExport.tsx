@@ -885,26 +885,44 @@ export default function ProcessingHistoryWithExport({
                 />
                 
                 {/* Thumbnail */}
-                {result.imageUrl ? (
-                  <div className="w-12 h-12 rounded border overflow-hidden shrink-0 bg-muted">
-                    <img 
-                      src={result.imageUrl} 
-                      alt={result.fileName}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.parentElement?.classList.add('flex', 'items-center', 'justify-center');
-                        const fallback = document.createElement('div');
-                        fallback.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>';
-                        e.currentTarget.parentElement?.appendChild(fallback.firstChild as Node);
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div className="w-12 h-12 rounded border bg-muted flex items-center justify-center shrink-0">
-                    <FileText className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                )}
+                {(() => {
+                  const isPdf = result.fileName?.toLowerCase().endsWith('.pdf') || 
+                                result.imageUrl?.startsWith('data:application/pdf');
+                  
+                  if (result.imageUrl && !isPdf) {
+                    // Image files - show thumbnail
+                    return (
+                      <div className="w-12 h-12 rounded border overflow-hidden shrink-0 bg-muted">
+                        <img 
+                          src={result.imageUrl} 
+                          alt={result.fileName}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.parentElement?.classList.add('flex', 'items-center', 'justify-center');
+                            const fallback = document.createElement('div');
+                            fallback.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>';
+                            e.currentTarget.parentElement?.appendChild(fallback.firstChild as Node);
+                          }}
+                        />
+                      </div>
+                    );
+                  } else if (result.imageUrl && isPdf) {
+                    // PDF files - show PDF icon with red accent
+                    return (
+                      <div className="w-12 h-12 rounded border bg-red-50 flex items-center justify-center shrink-0">
+                        <FileText className="h-5 w-5 text-red-500" />
+                      </div>
+                    );
+                  } else {
+                    // No image - show generic document icon
+                    return (
+                      <div className="w-12 h-12 rounded border bg-muted flex items-center justify-center shrink-0">
+                        <FileText className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                    );
+                  }
+                })()}
                 
                 {/* Info */}
                 <div className="flex-1 min-w-0">

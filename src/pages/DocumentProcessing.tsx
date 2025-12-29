@@ -435,19 +435,27 @@ export default function DocumentProcessing() {
 
       if (data && data.length > 0) {
         const historyItems: ProcessingResult[] = data.map((job: any) => {
-          // Derive a robust public URL for the stored file
+          // Derive a robust URL for the stored file - prioritize base64 data URL from processing_config
           let publicUrl: string | undefined;
           
-          // Try from processing_config first (most reliable as it's stored at upload time)
-          if (job.processing_config?.publicUrl) {
+          // Try from processing_config.imageUrl first (base64 data URL stored during save)
+          if (job.processing_config?.imageUrl) {
+            publicUrl = job.processing_config.imageUrl;
+            console.log('[loadHistory] Using imageUrl from processing_config');
+          }
+          // Then try publicUrl from processing_config (legacy storage URL)
+          else if (job.processing_config?.publicUrl) {
             publicUrl = job.processing_config.publicUrl;
-          } else if (job.file_path) {
-            // Fallback: try to construct URL from file_path
+            console.log('[loadHistory] Using publicUrl from processing_config');
+          } 
+          // Finally fallback to storage URL
+          else if (job.file_path) {
             try {
               const { data: urlData } = supabase.storage
                 .from('document-processing')
                 .getPublicUrl(job.file_path);
               publicUrl = urlData?.publicUrl;
+              console.log('[loadHistory] Using storage publicUrl');
             } catch (e) {
               console.warn('Could not get public URL for:', job.file_path);
             }

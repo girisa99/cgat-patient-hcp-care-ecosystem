@@ -32,91 +32,80 @@ interface PatientInfoVerificationPanelProps {
   className?: string;
 }
 
-// Define field sections matching typical form layout order
-// Uses flexible matching to catch common variations
-// These sections are used as fallback if no explicit section is detected
-// Order matters - more specific patterns should come first
+// Define field sections matching Gilead enrollment form structure
+// Order matches the actual form layout for easy verification
 const FIELD_SECTIONS = [
   {
-    id: 'document_info',
-    title: 'Document Information',
+    id: 'patient_support',
+    title: 'Patient Support',
+    icon: Shield,
+    patterns: ['advancing_access', 'patient_support', 'support_program', 'benefits_investigation', 'copay_coupon', 'co_pay', 'prior_authorization', 'patient_assistance', 'medication_assistance', 'appeals', 'marketplace', 'state_insurance', 'program_requested', 'service_requested']
+  },
+  {
+    id: 'gilead_medication',
+    title: 'Gilead Medication Prescribed',
     icon: FileText,
-    patterns: ['document_type', 'form_type', 'form_name', 'advancing_access', 'form_version', 'form_date']
+    patterns: ['gilead', 'medication_prescribed', 'biktarvy', 'descovy', 'genvoya', 'odefsey', 'stribild', 'truvada', 'vemlidy', 'viread', 'atripla', 'complera', 'emtriva', 'tybost', 'vosevi', 'epclusa', 'harvoni', 'sovaldi', 'medication_name', 'drug_name', 'prescribed_medication', 'therapy', 'treatment', 'prep_prevention', 'hiv_treatment', 'hcv_treatment', 'hbv_treatment']
   },
   {
-    id: 'patient_demographics',
-    title: 'Patient Demographics',
+    id: 'patient_information',
+    title: 'Patient Information',
     icon: User,
-    patterns: ['patient_name', 'first_name', 'last_name', 'middle_name', 'dob', 'date_of_birth', 'patient_dob', 'gender', 'sex', 'ssn', 'social_security', 'patient_id', 'mrn', 'medical_record', 'age', 'birth', 'full_name', 'applicant_name', 'patient_first', 'patient_last', 'patient_middle', 'patient_gender', 'patient_ssn']
+    patterns: ['patient_name', 'first_name', 'last_name', 'middle_name', 'dob', 'date_of_birth', 'patient_dob', 'gender', 'sex', 'ssn', 'social_security', 'patient_id', 'mrn', 'medical_record', 'age', 'birth', 'full_name', 'applicant_name', 'patient_first', 'patient_last', 'patient_middle', 'patient_gender', 'patient_ssn', 'patient_phone', 'patient_email', 'patient_mobile', 'patient_cell', 'patient_fax', 'home_phone', 'work_phone', 'cell_phone', 'mobile_phone', 'patient_contact', 'patient_address', 'patient_street', 'patient_city', 'patient_state', 'patient_zip', 'home_address', 'mailing_address', 'residential_address', 'language', 'preferred_language', 'best_time_to_call', 'contact_preference']
   },
   {
-    id: 'patient_contact',
-    title: 'Patient Contact',
-    icon: Phone,
-    patterns: ['patient_phone', 'patient_email', 'patient_mobile', 'patient_cell', 'patient_fax', 'home_phone', 'work_phone', 'cell_phone', 'mobile_phone', 'patient_contact']
+    id: 'contact_authorization',
+    title: 'Contact Authorization',
+    icon: PenTool,
+    patterns: ['representative_name', 'representative_relationship', 'applicant_consent', 'patient_representative', 'authorized_representative', 'legal_guardian', 'power_of_attorney', 'caregiver_name', 'caregiver_relationship', 'contact_authorization', 'authorized_contact', 'permission_to_contact', 'voicemail_consent', 'sms_consent', 'email_consent', 'hipaa', 'phi_authorization', 'release_information']
   },
   {
-    id: 'patient_address',
-    title: 'Patient Address',
-    icon: MapPin,
-    patterns: ['patient_address', 'patient_street', 'patient_city', 'patient_state', 'patient_zip', 'home_address', 'mailing_address', 'residential_address']
+    id: 'insurance_information',
+    title: 'Insurance Information',
+    icon: Shield,
+    patterns: ['insurance', 'member_id', 'group_number', 'policy', 'subscriber', 'payer', 'carrier', 'plan', 'coverage', 'insurance_provider', 'policy_number', 'insurance_type', 'insurance_status', 'uninsured', 'underinsured', 'no_insurance', 'medicaid', 'medicare', 'commercial', 'military', 'tricare', 'va_benefits']
+  },
+  {
+    id: 'primary_insurance',
+    title: 'Primary Insurance',
+    icon: Shield,
+    patterns: ['primary_insurance', 'primary_plan', 'primary_member', 'primary_group', 'primary_subscriber', 'primary_policy', 'primary_bin', 'primary_pcn', 'primary_rxgrp', 'pharmacy_benefit', 'pbm', 'rx_insurance', 'prescription_coverage', 'bin', 'pcn', 'rxgrp', 'cardholder_id', 'rx_member_id', 'rx_group']
+  },
+  {
+    id: 'patient_financial',
+    title: 'Patient Financial Information',
+    icon: FileText,
+    patterns: ['income', 'household_income', 'annual_income', 'household_size', 'family_size', 'tax_filing', 'employment', 'employer', 'financial', 'fpl', 'federal_poverty', 'afford', 'hardship', 'financial_assistance', 'copay', 'deductible', 'out_of_pocket', 'coinsurance', 'premium', 'cost', 'payment']
   },
   {
     id: 'prescriber_info',
     title: 'Prescriber Information',
     icon: User,
-    // More specific patterns for prescriber fields - must come before general contact/address
-    patterns: ['prescriber_name', 'prescriber_facility', 'prescriber_address', 'prescriber_city', 'prescriber_state', 'prescriber_zip', 'prescriber_phone', 'prescriber_fax', 'prescriber_npi', 'prescriber_dea', 'prescriber_office', 'prescriber_contact', 'prescriber_email', 'prescribing_physician', 'ordering_physician', 'referring_physician', 'physician_name', 'doctor_name', 'provider_name', 'clinic_name', 'facility_name', 'office_contact']
+    patterns: ['prescriber_name', 'prescriber_facility', 'prescriber_address', 'prescriber_city', 'prescriber_state', 'prescriber_zip', 'prescriber_phone', 'prescriber_fax', 'prescriber_npi', 'prescriber_dea', 'prescriber_office', 'prescriber_contact', 'prescriber_email', 'prescribing_physician', 'ordering_physician', 'referring_physician', 'physician_name', 'doctor_name', 'provider_name', 'clinic_name', 'facility_name', 'office_contact', 'hcp_name', 'healthcare_provider', 'npi', 'dea', 'medical_license', 'state_license']
   },
   {
-    id: 'program_services',
-    title: 'Program & Services',
-    icon: Shield,
-    patterns: ['benefits_investigation', 'co_pay', 'copay_coupon', 'prior_authorization', 'patient_assistance', 'medication_assistance', 'eligibility', 'program_requested', 'service_requested', 'gilead', 'treatment', 'prep_prevention', 'appeals', 'marketplace', 'state_insurance']
-  },
-  {
-    id: 'representative_info',
-    title: 'Representative Information',
-    icon: User,
-    patterns: ['representative_name', 'representative_relationship', 'applicant_consent', 'patient_representative', 'authorized_representative', 'legal_guardian', 'power_of_attorney', 'caregiver_name', 'caregiver_relationship']
+    id: 'pharmacy_info',
+    title: 'Pharmacy Information',
+    icon: FileText,
+    patterns: ['pharmacy_name', 'pharmacy_address', 'pharmacy_phone', 'pharmacy_fax', 'pharmacy_npi', 'pharmacy_ncpdp', 'specialty_pharmacy', 'mail_order', 'preferred_pharmacy', 'pharmacy_city', 'pharmacy_state', 'pharmacy_zip']
   },
   {
     id: 'consent_signatures',
     title: 'Consent & Authorizations',
     icon: PenTool,
-    patterns: ['consent', 'signature', 'sign', 'hipaa', 'authorization', 'agreement', 'acknowledge', 'date_signed', 'witness', 'signed_date', 'opt_in', 'opt_out', 'marketing_communication', 'patient_consent', 'shipping_consent', 'prescription_shipping']
+    patterns: ['consent', 'signature', 'sign', 'authorization', 'agreement', 'acknowledge', 'date_signed', 'witness', 'signed_date', 'opt_in', 'opt_out', 'marketing_communication', 'patient_consent', 'shipping_consent', 'prescription_shipping', 'patient_signature', 'prescriber_signature', 'representative_signature', 'attestation', 'certification']
   },
   {
-    id: 'insurance',
-    title: 'Insurance Information',
-    icon: Shield,
-    patterns: ['insurance', 'member_id', 'group_number', 'policy', 'subscriber', 'bin', 'pcn', 'rxgrp', 'payer', 'carrier', 'plan', 'coverage', 'copay', 'deductible', 'insurance_provider', 'policy_number', 'pharmacy_benefit', 'medical_benefit', 'primary_insurance', 'secondary_insurance']
-  },
-  {
-    id: 'medical_history',
-    title: 'Medical History',
+    id: 'clinical_info',
+    title: 'Clinical Information',
     icon: FileText,
-    patterns: ['allerg', 'medication', 'condition', 'diagnosis', 'history', 'illness', 'surgery', 'symptom', 'current_medications', 'medical_conditions', 'icd_code', 'diagnosis_code']
+    patterns: ['diagnosis', 'icd', 'condition', 'allerg', 'current_medications', 'medical_conditions', 'medical_history', 'lab_results', 'viral_load', 'cd4_count', 'genotype', 'treatment_history', 'prior_therapy', 'contraindication', 'pregnancy', 'liver_function', 'renal_function', 'hiv_status', 'hcv_status', 'hbv_status']
   },
   {
-    id: 'emergency_contact',
-    title: 'Emergency Contact',
-    icon: AlertTriangle,
-    patterns: ['emergency', 'next_of_kin', 'kin', 'guardian', 'parent', 'spouse', 'emergency_name', 'emergency_phone', 'emergency_contact', 'emergency_relationship']
-  },
-  {
-    id: 'contact_info',
-    title: 'Other Contact Information',
-    icon: Phone,
-    // Fallback for generic phone/email/fax not matched above
-    patterns: ['phone', 'mobile', 'cell', 'telephone', 'tel', 'email', 'contact', 'fax']
-  },
-  {
-    id: 'address',
-    title: 'Other Address',
-    icon: MapPin,
-    // Fallback for generic address not matched above
-    patterns: ['address', 'street', 'city', 'state', 'zip', 'postal', 'country', 'apt', 'suite', 'unit', 'county', 'address_line', 'location']
+    id: 'additional',
+    title: 'Additional Information',
+    icon: FileText,
+    patterns: ['notes', 'comments', 'additional', 'other', 'special_instructions', 'shipping', 'delivery', 'preferred_contact', 'referral', 'source', 'how_heard', 'reason']
   }
 ];
 
