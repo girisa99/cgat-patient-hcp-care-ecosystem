@@ -305,27 +305,51 @@ export const PatientInfoVerificationPanel: React.FC<PatientInfoVerificationPanel
           </CardHeader>
           <CardContent className="p-3">
             {isPdf ? (
-              // PDF files need iframe/object element to display
-              <div className="relative h-[400px] bg-muted/30 rounded-lg overflow-hidden border">
-                <object
-                  data={imageSrc}
-                  type="application/pdf"
-                  className="w-full h-full"
-                  title={job.file_name}
-                >
-                  <iframe
-                    src={imageSrc}
-                    className="w-full h-full"
-                    title={job.file_name}
-                  >
-                    <p className="p-4 text-center text-muted-foreground">
-                      PDF preview not supported in this browser.
-                      <a href={imageSrc} target="_blank" rel="noopener noreferrer" className="text-primary ml-1 underline">
-                        Open PDF
-                      </a>
-                    </p>
-                  </iframe>
-                </object>
+              // PDF base64 data URLs don't render in iframes due to browser security
+              // Show document info with download/open option
+              <div className="relative bg-muted/30 rounded-lg border p-6">
+                <div className="flex flex-col items-center justify-center text-center space-y-4">
+                  <div className="p-4 bg-red-50 rounded-full">
+                    <FileText className="h-12 w-12 text-red-500" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-lg">{job.file_name}</p>
+                    <p className="text-sm text-muted-foreground">PDF Document</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <a 
+                      href={imageSrc}
+                      download={job.file_name}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 transition-colors"
+                    >
+                      <FileText className="h-4 w-4" />
+                      Download PDF
+                    </a>
+                    <button
+                      onClick={() => {
+                        // Open PDF in new tab for viewing
+                        const newWindow = window.open();
+                        if (newWindow) {
+                          newWindow.document.write(`
+                            <html>
+                              <head><title>${job.file_name}</title></head>
+                              <body style="margin:0;padding:0;">
+                                <embed src="${imageSrc}" type="application/pdf" width="100%" height="100%" style="position:absolute;top:0;left:0;right:0;bottom:0;" />
+                              </body>
+                            </html>
+                          `);
+                        }
+                      }}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-md text-sm hover:bg-secondary/80 transition-colors"
+                    >
+                      <Eye className="h-4 w-4" />
+                      Open in New Tab
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    PDF preview in-browser is limited. Use the buttons above to view the full document.
+                  </p>
+                </div>
               </div>
             ) : (
               // Image files use img element

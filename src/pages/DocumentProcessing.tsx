@@ -3854,24 +3854,38 @@ export default function DocumentProcessing() {
                     </h4>
                     {pendingResult.imageUrl ? (
                       pendingResult.imageUrl.startsWith('data:application/pdf') ? (
-                        // PDF files need object/iframe for preview
-                        <div className="h-[400px] border rounded overflow-hidden">
-                          <object
-                            data={pendingResult.imageUrl}
-                            type="application/pdf"
-                            className="w-full h-full"
-                            title="Original document"
-                          >
-                            <iframe
-                              src={pendingResult.imageUrl}
-                              className="w-full h-full"
-                              title="Original document"
-                            >
-                              <p className="p-4 text-center text-muted-foreground">
-                                PDF preview not supported.
-                              </p>
-                            </iframe>
-                          </object>
+                        // PDF base64 data URLs don't work in iframes - show download option
+                        <div className="bg-muted/30 rounded-lg border p-6">
+                          <div className="flex flex-col items-center justify-center text-center space-y-3">
+                            <div className="p-3 bg-red-50 rounded-full">
+                              <FileText className="h-8 w-8 text-red-500" />
+                            </div>
+                            <p className="font-medium">{pendingResult.fileName}</p>
+                            <div className="flex gap-2">
+                              <a 
+                                href={pendingResult.imageUrl}
+                                download={pendingResult.fileName}
+                                className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded text-sm hover:bg-primary/90"
+                              >
+                                <FileText className="h-3 w-3" />
+                                Download
+                              </a>
+                              <button
+                                onClick={() => {
+                                  const newWindow = window.open();
+                                  if (newWindow) {
+                                    newWindow.document.write(`
+                                      <html><head><title>${pendingResult.fileName}</title></head>
+                                      <body style="margin:0;"><embed src="${pendingResult.imageUrl}" type="application/pdf" width="100%" height="100%" style="position:absolute;inset:0;" /></body></html>
+                                    `);
+                                  }
+                                }}
+                                className="inline-flex items-center gap-2 px-3 py-1.5 bg-secondary text-secondary-foreground rounded text-sm hover:bg-secondary/80"
+                              >
+                                Open
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       ) : (
                         // Image files use img element
