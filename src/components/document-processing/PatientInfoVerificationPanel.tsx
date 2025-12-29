@@ -333,17 +333,33 @@ export const PatientInfoVerificationPanel: React.FC<PatientInfoVerificationPanel
   // Preserve original extraction order for form sequence matching
   const allFields = formMapping 
     ? Object.entries(formMapping)
-        .filter(([key, value]) => 
-          value?.value && 
-          !key.startsWith('_') &&
-          !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key)
-        )
+        .filter(([key, value]) => {
+          // Skip internal fields and special keys
+          if (key.startsWith('_')) return false;
+          if (['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key)) return false;
+          
+          // Check if value has the expected structure
+          if (!value) return false;
+          
+          // Handle both {value: string} format and direct string values
+          const hasValue = typeof value === 'object' && 'value' in value && value.value;
+          return hasValue;
+        })
         .map(([key, value], index) => ({ 
           key, 
           ...value,
           originalOrder: index // Preserve original extraction order
         }))
     : [];
+  
+  // Log for debugging
+  console.log('[PatientInfoVerificationPanel] Form mapping analysis:', {
+    hasFormMapping: !!formMapping,
+    totalKeys: formMapping ? Object.keys(formMapping).length : 0,
+    fieldCount: allFields.length,
+    fieldNames: allFields.slice(0, 10).map(f => f.key),
+    rawKeys: formMapping ? Object.keys(formMapping).slice(0, 20) : []
+  });
 
   // First, check if formMapping has section info from AI extraction (stored as _sections metadata)
   // This would be a JSON object like { "Patient Information": ["patient_name", "dob"], ... }
