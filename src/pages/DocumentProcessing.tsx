@@ -1865,6 +1865,8 @@ export default function DocumentProcessing() {
         // Include line items and tables from extraction results
         lineItems: mapResult?.line_items || mapResult?.lineItems || processResult?.line_items || [],
         tables: mapResult?.tables || processResult?.tables || [],
+        // CRITICAL: Use base64DataUrl for image preview - works for PDFs and images
+        imageUrl: base64DataUrl || result.imageUrl,
         validationResults: {
           passed: Object.keys(extractedFields).filter(k => extractedFields[k]?.value && extractedFields[k].confidence >= confidenceThreshold).length,
           failed: 0, // No longer counting "missing" hardcoded fields as failures
