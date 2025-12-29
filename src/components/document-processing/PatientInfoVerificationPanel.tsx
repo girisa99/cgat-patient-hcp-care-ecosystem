@@ -32,20 +32,20 @@ interface PatientInfoVerificationPanelProps {
   className?: string;
 }
 
-// Define field sections matching Gilead enrollment form structure
-// Order matches the actual form layout for easy verification
+// Define field sections matching typical patient enrollment/intake form structure
+// Order matches common form layouts for easy verification across different pharma/healthcare forms
 const FIELD_SECTIONS = [
   {
-    id: 'patient_support',
-    title: 'Patient Support',
+    id: 'program_services',
+    title: 'Program & Services Requested',
     icon: Shield,
-    patterns: ['advancing_access', 'patient_support', 'support_program', 'benefits_investigation', 'copay_coupon', 'co_pay', 'prior_authorization', 'patient_assistance', 'medication_assistance', 'appeals', 'marketplace', 'state_insurance', 'program_requested', 'service_requested']
+    patterns: ['program', 'service_requested', 'benefits_investigation', 'copay_coupon', 'co_pay', 'prior_authorization', 'patient_assistance', 'medication_assistance', 'appeals', 'marketplace', 'state_insurance', 'eligibility', 'advancing_access', 'patient_support', 'support_program', 'hub_services', 'reimbursement', 'financial_assistance']
   },
   {
-    id: 'gilead_medication',
-    title: 'Gilead Medication Prescribed',
+    id: 'medication_prescribed',
+    title: 'Medication Prescribed',
     icon: FileText,
-    patterns: ['gilead', 'medication_prescribed', 'biktarvy', 'descovy', 'genvoya', 'odefsey', 'stribild', 'truvada', 'vemlidy', 'viread', 'atripla', 'complera', 'emtriva', 'tybost', 'vosevi', 'epclusa', 'harvoni', 'sovaldi', 'medication_name', 'drug_name', 'prescribed_medication', 'therapy', 'treatment', 'prep_prevention', 'hiv_treatment', 'hcv_treatment', 'hbv_treatment']
+    patterns: ['medication_prescribed', 'medication_name', 'drug_name', 'prescribed_medication', 'therapy', 'treatment', 'dosage', 'strength', 'frequency', 'quantity', 'refills', 'days_supply', 'ndc', 'rx_number', 'directions', 'sig', 'route', 'indication', 'diagnosis_for_medication']
   },
   {
     id: 'patient_information',
@@ -57,55 +57,49 @@ const FIELD_SECTIONS = [
     id: 'contact_authorization',
     title: 'Contact Authorization',
     icon: PenTool,
-    patterns: ['representative_name', 'representative_relationship', 'applicant_consent', 'patient_representative', 'authorized_representative', 'legal_guardian', 'power_of_attorney', 'caregiver_name', 'caregiver_relationship', 'contact_authorization', 'authorized_contact', 'permission_to_contact', 'voicemail_consent', 'sms_consent', 'email_consent', 'hipaa', 'phi_authorization', 'release_information']
+    patterns: ['representative_name', 'representative_relationship', 'applicant_consent', 'patient_representative', 'authorized_representative', 'legal_guardian', 'power_of_attorney', 'caregiver_name', 'caregiver_relationship', 'contact_authorization', 'authorized_contact', 'permission_to_contact', 'voicemail_consent', 'sms_consent', 'email_consent', 'hipaa', 'phi_authorization', 'release_information', 'emergency_contact', 'emergency_phone', 'emergency_name']
   },
   {
     id: 'insurance_information',
     title: 'Insurance Information',
     icon: Shield,
-    patterns: ['insurance', 'member_id', 'group_number', 'policy', 'subscriber', 'payer', 'carrier', 'plan', 'coverage', 'insurance_provider', 'policy_number', 'insurance_type', 'insurance_status', 'uninsured', 'underinsured', 'no_insurance', 'medicaid', 'medicare', 'commercial', 'military', 'tricare', 'va_benefits']
-  },
-  {
-    id: 'primary_insurance',
-    title: 'Primary Insurance',
-    icon: Shield,
-    patterns: ['primary_insurance', 'primary_plan', 'primary_member', 'primary_group', 'primary_subscriber', 'primary_policy', 'primary_bin', 'primary_pcn', 'primary_rxgrp', 'pharmacy_benefit', 'pbm', 'rx_insurance', 'prescription_coverage', 'bin', 'pcn', 'rxgrp', 'cardholder_id', 'rx_member_id', 'rx_group']
+    patterns: ['insurance', 'member_id', 'group_number', 'policy', 'subscriber', 'payer', 'carrier', 'plan', 'coverage', 'insurance_provider', 'policy_number', 'insurance_type', 'insurance_status', 'uninsured', 'underinsured', 'no_insurance', 'medicaid', 'medicare', 'commercial', 'military', 'tricare', 'va_benefits', 'bin', 'pcn', 'rxgrp', 'cardholder', 'rx_member', 'rx_group', 'pharmacy_benefit', 'pbm', 'primary_insurance', 'secondary_insurance', 'medical_benefit']
   },
   {
     id: 'patient_financial',
     title: 'Patient Financial Information',
     icon: FileText,
-    patterns: ['income', 'household_income', 'annual_income', 'household_size', 'family_size', 'tax_filing', 'employment', 'employer', 'financial', 'fpl', 'federal_poverty', 'afford', 'hardship', 'financial_assistance', 'copay', 'deductible', 'out_of_pocket', 'coinsurance', 'premium', 'cost', 'payment']
+    patterns: ['income', 'household_income', 'annual_income', 'household_size', 'family_size', 'tax_filing', 'employment', 'employer', 'financial', 'fpl', 'federal_poverty', 'afford', 'hardship', 'financial_assistance', 'copay', 'deductible', 'out_of_pocket', 'coinsurance', 'premium', 'cost', 'payment', 'bank', 'credit_card']
   },
   {
     id: 'prescriber_info',
-    title: 'Prescriber Information',
+    title: 'Prescriber/Provider Information',
     icon: User,
-    patterns: ['prescriber_name', 'prescriber_facility', 'prescriber_address', 'prescriber_city', 'prescriber_state', 'prescriber_zip', 'prescriber_phone', 'prescriber_fax', 'prescriber_npi', 'prescriber_dea', 'prescriber_office', 'prescriber_contact', 'prescriber_email', 'prescribing_physician', 'ordering_physician', 'referring_physician', 'physician_name', 'doctor_name', 'provider_name', 'clinic_name', 'facility_name', 'office_contact', 'hcp_name', 'healthcare_provider', 'npi', 'dea', 'medical_license', 'state_license']
+    patterns: ['prescriber_name', 'prescriber_facility', 'prescriber_address', 'prescriber_city', 'prescriber_state', 'prescriber_zip', 'prescriber_phone', 'prescriber_fax', 'prescriber_npi', 'prescriber_dea', 'prescriber_office', 'prescriber_contact', 'prescriber_email', 'prescribing_physician', 'ordering_physician', 'referring_physician', 'physician_name', 'doctor_name', 'provider_name', 'clinic_name', 'facility_name', 'office_contact', 'hcp_name', 'healthcare_provider', 'npi', 'dea', 'medical_license', 'state_license', 'tax_id', 'office_manager']
   },
   {
     id: 'pharmacy_info',
     title: 'Pharmacy Information',
     icon: FileText,
-    patterns: ['pharmacy_name', 'pharmacy_address', 'pharmacy_phone', 'pharmacy_fax', 'pharmacy_npi', 'pharmacy_ncpdp', 'specialty_pharmacy', 'mail_order', 'preferred_pharmacy', 'pharmacy_city', 'pharmacy_state', 'pharmacy_zip']
-  },
-  {
-    id: 'consent_signatures',
-    title: 'Consent & Authorizations',
-    icon: PenTool,
-    patterns: ['consent', 'signature', 'sign', 'authorization', 'agreement', 'acknowledge', 'date_signed', 'witness', 'signed_date', 'opt_in', 'opt_out', 'marketing_communication', 'patient_consent', 'shipping_consent', 'prescription_shipping', 'patient_signature', 'prescriber_signature', 'representative_signature', 'attestation', 'certification']
+    patterns: ['pharmacy_name', 'pharmacy_address', 'pharmacy_phone', 'pharmacy_fax', 'pharmacy_npi', 'pharmacy_ncpdp', 'specialty_pharmacy', 'mail_order', 'preferred_pharmacy', 'pharmacy_city', 'pharmacy_state', 'pharmacy_zip', 'dispensing_pharmacy']
   },
   {
     id: 'clinical_info',
     title: 'Clinical Information',
     icon: FileText,
-    patterns: ['diagnosis', 'icd', 'condition', 'allerg', 'current_medications', 'medical_conditions', 'medical_history', 'lab_results', 'viral_load', 'cd4_count', 'genotype', 'treatment_history', 'prior_therapy', 'contraindication', 'pregnancy', 'liver_function', 'renal_function', 'hiv_status', 'hcv_status', 'hbv_status']
+    patterns: ['diagnosis', 'icd', 'condition', 'allerg', 'current_medications', 'medical_conditions', 'medical_history', 'lab_results', 'treatment_history', 'prior_therapy', 'contraindication', 'pregnancy', 'weight', 'height', 'bmi', 'vital', 'test_result', 'clinical_notes']
+  },
+  {
+    id: 'consent_signatures',
+    title: 'Consent & Signatures',
+    icon: PenTool,
+    patterns: ['consent', 'signature', 'sign', 'authorization', 'agreement', 'acknowledge', 'date_signed', 'witness', 'signed_date', 'opt_in', 'opt_out', 'marketing_communication', 'patient_consent', 'shipping_consent', 'prescription_shipping', 'patient_signature', 'prescriber_signature', 'representative_signature', 'attestation', 'certification', 'terms', 'privacy']
   },
   {
     id: 'additional',
     title: 'Additional Information',
     icon: FileText,
-    patterns: ['notes', 'comments', 'additional', 'other', 'special_instructions', 'shipping', 'delivery', 'preferred_contact', 'referral', 'source', 'how_heard', 'reason']
+    patterns: ['notes', 'comments', 'additional', 'other', 'special_instructions', 'shipping', 'delivery', 'preferred_contact', 'referral', 'source', 'how_heard', 'reason', 'document_type', 'form_type', 'form_name', 'form_version', 'form_date']
   }
 ];
 
