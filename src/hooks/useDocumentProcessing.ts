@@ -156,6 +156,7 @@ export interface FormFieldExtraction {
   fieldType?: 'text' | 'date' | 'number' | 'checkbox' | 'signature';
   verified?: boolean;
   originalValue?: string;
+  source?: string;  // Added: Track extraction source (e.g., 'gemini_vision_ai', 'ocr')
 }
 
 export interface ExtractedTable {
@@ -596,6 +597,9 @@ export function useDocumentProcessing(): UseDocumentProcessingReturn {
       ];
       
       const cleanedMapping: FormMapping = {};
+      const formFieldsForDb: FormFieldExtraction[] = [];
+      const sectionsData = data.formMapping?.['_sections'];
+      
       if (data.formMapping) {
         Object.entries(data.formMapping).forEach(([key, value]) => {
           // Skip internal metadata fields that start with _ or are in exclusion list
@@ -609,11 +613,79 @@ export function useDocumentProcessing(): UseDocumentProcessingReturn {
               originalValue: fieldValue.originalValue,
               fieldType: fieldValue.fieldType
             };
+            
+            // Also build formFields array for database storage
+            formFieldsForDb.push({
+              fieldName: key,
+              value: fieldValue.value ?? '',
+              confidence: fieldValue.confidence ?? 0,
+              source: fieldValue.source ?? 'unknown',
+              verified: fieldValue.verified ?? false,
+              originalValue: fieldValue.originalValue
+            });
           }
         });
       }
 
+      // CRITICAL: Save extracted fields to database so they persist and are available in PatientInfoVerificationPanel
+      // This updates extracted_metadata with entities and formFields from the AI extraction
+      try {
+        const { data: existingDoc } = await (supabase as any)
+          .from('document_processing_jobs')
+          .select('extracted_metadata, processing_config')
+          .eq('id', documentId)
+          .single();
+        
+        const existingMetadata = existingDoc?.extracted_metadata || {};
+        const existingConfig = existingDoc?.processing_config || {};
+        
+        // Build entities array from extracted fields (for legacy compatibility)
+        const entities = formFieldsForDb.map(field => ({
+          type: field.fieldName,
+          value: field.value,
+          confidence: field.confidence,
+          source: field.source || 'vision_ai'
+        }));
+        
+        const updatedMetadata = {
+          ...existingMetadata,
+          entities,
+          formFields: formFieldsForDb,
+          sections: sectionsData || existingMetadata.sections,
+          extractionSummary: {
+            totalFields: formFieldsForDb.length,
+            ocrFieldCount: formFieldsForDb.filter(f => f.source?.includes('ocr')).length,
+            visionAiFieldCount: formFieldsForDb.filter(f => f.source?.includes('vision') || f.source?.includes('gemini')).length,
+            extractedAt: new Date().toISOString()
+          }
+        };
+        
+        // Also save to processing_config.extractedFields for the DocumentProcessing page to use
+        const updatedConfig = {
+          ...existingConfig,
+          extractedFields: cleanedMapping,
+          lineItems: data.line_items || existingConfig.lineItems || [],
+          tables: data.tables || existingConfig.tables || []
+        };
+        
+        await (supabase as any)
+          .from('document_processing_jobs')
+          .update({
+            extracted_metadata: updatedMetadata,
+            processing_config: updatedConfig
+          })
+          .eq('id', documentId);
+        
+        console.log(`[mapToForm] Saved ${formFieldsForDb.length} fields to database`);
+      } catch (saveError) {
+        console.error('[mapToForm] Failed to save extracted fields to database:', saveError);
+        // Continue anyway - fields are still available in memory
+      }
+
       setFormMapping(cleanedMapping);
+      
+      // Reload jobs to get the updated data
+      await loadJobs();
       
       if (data.unmappedFields?.length > 0) {
         toast.info(`${data.unmappedFields.length} fields could not be mapped automatically`);
@@ -625,7 +697,7 @@ export function useDocumentProcessing(): UseDocumentProcessingReturn {
       toast.error(`Form mapping failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
       return null;
     }
-  }, []);
+  }, [loadJobs]);
 
   const cancelJob = useCallback(async (documentId: string) => {
     try {
