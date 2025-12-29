@@ -2425,7 +2425,12 @@ async function extractWithGemini(imageBase64: string, contentType: string, promp
             { inline_data: { mime_type: contentType, data: imageBase64 } }
           ]
         }],
-        generationConfig: { temperature: 0.1, topP: 0.95, maxOutputTokens: 8192 }
+        generationConfig: { 
+          temperature: 0.1, 
+          topP: 0.95, 
+          maxOutputTokens: 8192,
+          responseMimeType: "application/json"
+        }
       })
     });
     
@@ -2446,8 +2451,20 @@ async function extractWithGemini(imageBase64: string, contentType: string, promp
       return null;
     }
     
+    // With responseMimeType: "application/json", Gemini should return valid JSON directly
+    // But we still handle fallbacks for compatibility
+    let parsed = null;
+    
+    // First, try to parse the entire response as JSON
+    try {
+      parsed = JSON.parse(responseText);
+      console.log(`Gemini extraction successful (direct JSON): ${Object.keys(parsed.fields || {}).length} fields, sections: ${parsed.sections ? Object.keys(parsed.sections).length : 0}`);
+      return parsed;
+    } catch (directParseError) {
+      console.log("Direct JSON parse failed, trying to extract JSON from text...");
+    }
+    
     // Try to extract JSON from response - handle various formats
-    // First try to find a complete JSON object
     let jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
     let jsonStr = jsonMatch ? jsonMatch[1] : null;
     
@@ -2459,29 +2476,27 @@ async function extractWithGemini(imageBase64: string, contentType: string, promp
     
     if (jsonStr) {
       try {
-        // Clean the JSON string
         jsonStr = jsonStr.trim();
-        const parsed = JSON.parse(jsonStr);
-        console.log(`Gemini extraction successful: ${Object.keys(parsed.fields || {}).length} fields, sections: ${parsed.sections ? Object.keys(parsed.sections).length : 0}`);
+        parsed = JSON.parse(jsonStr);
+        console.log(`Gemini extraction successful (extracted JSON): ${Object.keys(parsed.fields || {}).length} fields, sections: ${parsed.sections ? Object.keys(parsed.sections).length : 0}`);
         return parsed;
       } catch (parseError) {
         console.error("Failed to parse Gemini JSON response:", parseError);
-        console.log("JSON string that failed:", jsonStr.substring(0, 500));
-        
-        // Try to extract fields manually from text using regex patterns
-        const fields = extractFieldsFromText(responseText);
-        return { fields, confidence: 0.5, raw_text: responseText };
+        console.log("JSON string that failed (first 500 chars):", jsonStr.substring(0, 500));
       }
     }
     
-    // If no JSON found, try to extract fields from plain text
+    // If no JSON found, try to extract fields from plain text as last resort
     console.log("No JSON found in Gemini response, attempting field extraction from text");
+    console.log("Response text (first 1000 chars):", responseText.substring(0, 1000));
     const fields = extractFieldsFromText(responseText);
     if (Object.keys(fields).length > 0) {
       console.log(`Extracted ${Object.keys(fields).length} fields from plain text`);
       return { fields, confidence: 0.5, raw_text: responseText };
     }
     
+    // Return the raw text for debugging
+    console.warn("Could not extract any fields from Gemini response");
     return { fields: {}, confidence: 0.3, raw_text: responseText };
   } catch (error) {
     console.error("Gemini extraction error:", error);
