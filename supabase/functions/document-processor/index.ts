@@ -2428,7 +2428,7 @@ async function extractWithGemini(imageBase64: string, contentType: string, promp
         generationConfig: { 
           temperature: 0.1, 
           topP: 0.95, 
-          maxOutputTokens: 8192
+          maxOutputTokens: 65536  // Increased significantly to prevent truncation
         }
       })
     });
@@ -2488,9 +2488,44 @@ async function extractWithGemini(imageBase64: string, contentType: string, promp
     // Strategy 3: Find raw JSON object by locating { and }
     if (!jsonStr) {
       const firstBrace = responseText.indexOf('{');
-      const lastBrace = responseText.lastIndexOf('}');
+      let lastBrace = responseText.lastIndexOf('}');
       console.log(`[GeminiParse] Looking for braces: first={${firstBrace}}, last={${lastBrace}}`);
-      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      
+      // Handle truncated JSON - if no closing brace, the response was cut off
+      if (firstBrace !== -1 && lastBrace === -1) {
+        console.log(`[GeminiParse] Detected truncated JSON - attempting repair`);
+        // Take from first brace to end and attempt to close it
+        jsonStr = responseText.substring(firstBrace);
+        // Count unclosed braces and brackets
+        let openBraces = 0, openBrackets = 0;
+        let inString = false;
+        for (let i = 0; i < jsonStr.length; i++) {
+          const c = jsonStr[i];
+          if (c === '"' && (i === 0 || jsonStr[i-1] !== '\\')) inString = !inString;
+          if (!inString) {
+            if (c === '{') openBraces++;
+            if (c === '}') openBraces--;
+            if (c === '[') openBrackets++;
+            if (c === ']') openBrackets--;
+          }
+        }
+        // Find last complete value (ends with " or number or true/false/null)
+        const lastQuote = jsonStr.lastIndexOf('"');
+        const lastColon = jsonStr.lastIndexOf(':');
+        if (lastQuote > lastColon) {
+          // Truncated in a string value - close the string
+          jsonStr = jsonStr.substring(0, lastQuote + 1);
+        } else {
+          // Truncated elsewhere - find last complete key-value
+          const lastComma = jsonStr.lastIndexOf(',');
+          if (lastComma > 0) {
+            jsonStr = jsonStr.substring(0, lastComma);
+          }
+        }
+        // Close all open brackets and braces
+        jsonStr += ']'.repeat(Math.max(0, openBrackets)) + '}'.repeat(Math.max(0, openBraces + 1));
+        console.log(`[GeminiParse] Repaired JSON, length: ${jsonStr.length}, added ${openBrackets} ] and ${openBraces + 1} }`);
+      } else if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
         jsonStr = responseText.substring(firstBrace, lastBrace + 1);
         console.log(`[GeminiParse] Extracted raw JSON, length: ${jsonStr.length}`);
       }
@@ -2504,11 +2539,22 @@ async function extractWithGemini(imageBase64: string, contentType: string, promp
       } catch (parseError) {
         console.error(`[GeminiParse] Parse error: ${parseError instanceof Error ? parseError.message : 'unknown'}`);
         console.log(`[GeminiParse] Failed JSON (first 300 chars): ${jsonStr.substring(0, 300)}`);
+        console.log(`[GeminiParse] Failed JSON (last 300 chars): ${jsonStr.substring(Math.max(0, jsonStr.length - 300))}`);
         
-        // Try to fix common JSON issues
+        // Try to fix common JSON issues including unterminated strings
         try {
-          let fixedJson = jsonStr.replace(/,\s*([\]}])/g, '$1');
-          fixedJson = fixedJson.replace(/:\s*null\s*([,\}])/g, ': null$1');
+          let fixedJson = jsonStr;
+          // Remove trailing incomplete entries
+          fixedJson = fixedJson.replace(/,\s*"[^"]*"?\s*:\s*"?[^"}\]]*$/g, '');
+          // Fix trailing commas
+          fixedJson = fixedJson.replace(/,\s*([\]}])/g, '$1');
+          // Ensure proper closing
+          let openB = 0, openBr = 0;
+          for (const c of fixedJson) {
+            if (c === '{') openB++; if (c === '}') openB--;
+            if (c === '[') openBr++; if (c === ']') openBr--;
+          }
+          fixedJson += ']'.repeat(Math.max(0, openBr)) + '}'.repeat(Math.max(0, openB));
           parsed = JSON.parse(fixedJson);
           console.log(`[GeminiParse] SUCCESS - Fixed JSON: ${Object.keys(parsed.fields || {}).length} fields`);
           return parsed;
