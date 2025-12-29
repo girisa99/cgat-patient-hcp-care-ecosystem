@@ -2462,25 +2462,53 @@ async function extractWithGemini(imageBase64: string, contentType: string, promp
       console.log("Direct JSON parse failed, trying to extract JSON from text...");
     }
     
-    // Try to extract JSON from response - handle various formats
-    let jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
-    let jsonStr = jsonMatch ? jsonMatch[1] : null;
+    // Strategy 2: Extract JSON from markdown code blocks ```json ... ```
+    // Use greedy match to get the full content
+    let jsonStr: string | null = null;
     
+    // First, try to strip markdown code block markers
+    if (responseText.includes('```json')) {
+      const startMarker = responseText.indexOf('```json');
+      const endMarker = responseText.lastIndexOf('```');
+      if (startMarker !== -1 && endMarker !== -1 && endMarker > startMarker) {
+        // Extract content between markers
+        jsonStr = responseText.substring(startMarker + 7, endMarker).trim();
+        console.log(`Found JSON in markdown block, length: ${jsonStr.length}`);
+      }
+    }
+    
+    // If no markdown block, try to find raw JSON object
     if (!jsonStr) {
-      // Try to find raw JSON object
-      jsonMatch = responseText.match(/\{[\s\S]*\}/);
-      jsonStr = jsonMatch ? jsonMatch[0] : null;
+      // Look for the first { and last } to extract JSON object
+      const firstBrace = responseText.indexOf('{');
+      const lastBrace = responseText.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        jsonStr = responseText.substring(firstBrace, lastBrace + 1);
+        console.log(`Found raw JSON object, length: ${jsonStr.length}`);
+      }
     }
     
     if (jsonStr) {
       try {
-        jsonStr = jsonStr.trim();
         parsed = JSON.parse(jsonStr);
         console.log(`Gemini extraction successful (extracted JSON): ${Object.keys(parsed.fields || {}).length} fields, sections: ${parsed.sections ? Object.keys(parsed.sections).length : 0}`);
         return parsed;
       } catch (parseError) {
         console.error("Failed to parse Gemini JSON response:", parseError);
         console.log("JSON string that failed (first 500 chars):", jsonStr.substring(0, 500));
+        
+        // Try to fix common JSON issues and retry
+        try {
+          // Remove trailing commas before } or ]
+          let fixedJson = jsonStr.replace(/,\s*([\]}])/g, '$1');
+          // Replace null text with actual null
+          fixedJson = fixedJson.replace(/:\s*null\s*([,\}])/g, ': null$1');
+          parsed = JSON.parse(fixedJson);
+          console.log(`Gemini extraction successful (fixed JSON): ${Object.keys(parsed.fields || {}).length} fields`);
+          return parsed;
+        } catch (fixError) {
+          console.error("JSON fix attempt also failed:", fixError);
+        }
       }
     }
     
