@@ -192,6 +192,10 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
   });
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    // CRITICAL: Clear all previous document state before processing new upload
+    // This ensures no stale data from previous documents persists
+    clearAllDocumentState();
+    
     // Check for unsupported formats like BMP upfront
     const unsupportedFiles = acceptedFiles.filter(f => 
       f.type === 'image/bmp' || f.name.toLowerCase().endsWith('.bmp')
@@ -249,7 +253,7 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
         setActiveTab('mapping');
       }
     }
-  }, [uploadDocument, uploadBatch, processDocument, mapToForm, autoProcess, autoMap, targetFormFields, enableOCR, enableHandwriting, enableTableExtraction, enableSignatureDetection, enableDocumentClassification, confidenceThreshold, selectedDocumentType]);
+  }, [clearAllDocumentState, uploadDocument, uploadBatch, processDocument, mapToForm, autoProcess, autoMap, targetFormFields, enableOCR, enableHandwriting, enableTableExtraction, enableSignatureDetection, enableDocumentClassification, confidenceThreshold, selectedDocumentType]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
