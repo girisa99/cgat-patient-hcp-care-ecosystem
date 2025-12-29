@@ -104,70 +104,178 @@ const FIELD_SECTIONS = [
 ];
 
 // Check if a field key matches a section's patterns
-// Uses flexible matching to catch varied naming conventions
+// Uses very flexible matching to catch varied naming conventions from different OCR/AI systems
 const fieldMatchesSection = (fieldKey: string, patterns: string[]): boolean => {
-  const normalizedKey = fieldKey.toLowerCase().replace(/[-_\s]+/g, '_');
+  const normalizedKey = fieldKey.toLowerCase().replace(/[-_\s]+/g, ' ').trim();
   
   return patterns.some(pattern => {
-    const normalizedPattern = pattern.toLowerCase().replace(/[-_\s]+/g, '_');
+    const normalizedPattern = pattern.toLowerCase().replace(/[-_\s]+/g, ' ').trim();
     
     // Direct substring match (most common case)
     if (normalizedKey.includes(normalizedPattern) || normalizedPattern.includes(normalizedKey)) {
       return true;
     }
     
-    // Check if any word in the key starts with or equals a pattern
-    const keyWords = normalizedKey.split('_').filter(Boolean);
-    const patternWords = normalizedPattern.split('_').filter(Boolean);
+    // Word-based matching - if any significant word from pattern appears in key
+    const patternWords = normalizedPattern.split(' ').filter(w => w.length > 2);
+    const keyWords = normalizedKey.split(' ').filter(w => w.length > 2);
     
-    // Match if the primary pattern word appears in the key
-    const primaryPatternWord = patternWords[0];
-    if (keyWords.some(kw => kw.includes(primaryPatternWord) || primaryPatternWord.includes(kw))) {
-      return true;
-    }
-    
-    return false;
+    // Match if any pattern word is found in key
+    return patternWords.some(pw => 
+      keyWords.some(kw => kw.includes(pw) || pw.includes(kw))
+    );
   });
 };
 
-// Priority-based section assignment - assign fields to FIRST matching section
-// This prevents fields from being captured by overly broad patterns
-const getFieldSectionPriority = (fieldKey: string): string | null => {
-  const normalizedKey = fieldKey.toLowerCase().replace(/[-_\s]+/g, '_');
+// Comprehensive section assignment using regex patterns
+// Matches fields to sections based on common field naming patterns across forms
+const assignFieldToSection = (fieldKey: string): string => {
+  const key = fieldKey.toLowerCase().replace(/[-_\s]+/g, '_');
   
-  // Explicit priority rules for common field conflicts
-  const priorityRules: { pattern: RegExp; section: string }[] = [
-    // Prescriber fields (before general contact/phone)
-    { pattern: /prescri(ber|bing|ption)|physician|doctor|provider|hcp|npi|dea|clinic|facility_name|office/i, section: 'prescriber_info' },
-    // Pharmacy fields
-    { pattern: /pharmacy|ncpdp|dispensing|specialty_pharm|mail_order/i, section: 'pharmacy_info' },
-    // Patient contact/address (before general contact)
-    { pattern: /patient_(phone|email|address|city|state|zip|mobile|cell|fax)|home_phone|home_address|mailing_address|residential/i, section: 'patient_information' },
-    // Patient demographics
-    { pattern: /patient_name|first_name|last_name|middle_name|dob|date_of_birth|gender|sex|ssn|mrn|age|birth|full_name/i, section: 'patient_information' },
-    // Representative/authorization
-    { pattern: /representative|guardian|power_of_attorney|caregiver|authorized|emergency_contact|hipaa|phi_auth/i, section: 'contact_authorization' },
+  // Order matters! More specific patterns should come first
+  const sectionRules: Array<{ patterns: RegExp[]; section: string }> = [
+    // Prescriber/Provider - must come before patient to catch prescriber_* fields
+    {
+      patterns: [
+        /prescrib(er|ing)|physician|doctor|provider_/i,
+        /^(hcp|npi|dea|clinic|facility)_/i,
+        /office_(contact|manager|phone|fax|address)/i,
+        /medical_license|state_license|tax_id/i,
+      ],
+      section: 'prescriber_info'
+    },
+    // Pharmacy
+    {
+      patterns: [
+        /pharmacy/i,
+        /ncpdp|dispensing_pharm|specialty_pharm|mail_order_pharm/i,
+      ],
+      section: 'pharmacy_info'
+    },
+    // Program & Services
+    {
+      patterns: [
+        /program|service_request/i,
+        /benefits_investigation|copay_coupon|co_pay_assist/i,
+        /prior_auth|patient_assist|medication_assist/i,
+        /appeals|marketplace|eligibility|hub_service/i,
+        /reimbursement|advancing_access|support_program/i,
+      ],
+      section: 'program_services'
+    },
+    // Medication/Rx
+    {
+      patterns: [
+        /medication|drug_name|rx_|prescription/i,
+        /dosage|strength|frequency|quantity|refill/i,
+        /days_supply|ndc_|directions|indication/i,
+        /therapy|treatment(?!_history)/i,
+      ],
+      section: 'medication_prescribed'
+    },
     // Insurance
-    { pattern: /insurance|member_id|group_number|policy|subscriber|payer|carrier|medicaid|medicare|commercial|bin|pcn|rxgrp/i, section: 'insurance_information' },
+    {
+      patterns: [
+        /insurance|member_id|group_number|policy/i,
+        /subscriber|payer|carrier|plan_name|coverage/i,
+        /medicaid|medicare|commercial|tricare|va_benefit/i,
+        /bin_|pcn_|rxgrp|pharmacy_benefit|pbm/i,
+        /primary_ins|secondary_ins|medical_benefit/i,
+      ],
+      section: 'insurance_information'
+    },
     // Financial
-    { pattern: /income|household|financial|fpl|poverty|afford|hardship|copay|deductible|out_of_pocket/i, section: 'patient_financial' },
-    // Medication
-    { pattern: /medication|drug|therapy|treatment|dosage|strength|frequency|quantity|refill|ndc|rx_number|directions|sig|indication/i, section: 'medication_prescribed' },
+    {
+      patterns: [
+        /income|household_size|family_size|fpl/i,
+        /financial(?!_assist)|afford|hardship/i,
+        /deductible|out_of_pocket|coinsurance|premium/i,
+        /employment|employer_/i,
+      ],
+      section: 'patient_financial'
+    },
     // Clinical
-    { pattern: /diagnosis|icd|condition|allerg|medical_history|lab_result|treatment_history|contraindication|pregnancy|weight|height|bmi/i, section: 'clinical_info' },
-    // Program/Services
-    { pattern: /program|service_requested|benefits_investigation|copay_coupon|prior_authorization|patient_assistance|appeals|eligibility|hub_services/i, section: 'program_services' },
-    // Consent/Signatures
-    { pattern: /consent|signature|sign|authorization|agreement|acknowledge|attestation|certification|terms|privacy|opt_in|opt_out/i, section: 'consent_signatures' },
+    {
+      patterns: [
+        /diagnosis|icd_|icd10|condition/i,
+        /allerg|medical_history|lab_result/i,
+        /treatment_history|prior_therap|contraindic/i,
+        /pregnancy|weight|height|bmi|vital/i,
+        /test_result|clinical_note/i,
+      ],
+      section: 'clinical_info'
+    },
+    // Contact Authorization / Representative
+    {
+      patterns: [
+        /representative|guardian|power_of_attorney/i,
+        /caregiver|authorized(?!_)/i,
+        /emergency_contact|emergency_phone|emergency_name/i,
+        /hipaa|phi_auth|release_information/i,
+        /voicemail_consent|sms_consent|email_consent/i,
+      ],
+      section: 'contact_authorization'
+    },
+    // Consent & Signatures
+    {
+      patterns: [
+        /signature|consent|authorization(?!_rep)/i,
+        /agreement|acknowledge|attestation/i,
+        /date_signed|signed_date|witness/i,
+        /opt_in|opt_out|marketing_comm/i,
+        /certification|terms|privacy/i,
+      ],
+      section: 'consent_signatures'
+    },
+    // Patient Information - comes later to not capture prescriber/provider fields
+    {
+      patterns: [
+        /patient_name|patient_first|patient_last|patient_middle/i,
+        /^first_name|^last_name|^middle_name|^full_name/i,
+        /dob|date_of_birth|birth_date|age/i,
+        /gender|sex|ssn|social_security/i,
+        /patient_id|mrn|medical_record/i,
+        /patient_phone|patient_email|patient_address/i,
+        /patient_city|patient_state|patient_zip/i,
+        /home_phone|home_address|mailing_address/i,
+        /cell_phone|mobile_phone|work_phone/i,
+        /language|preferred_language|best_time_to_call/i,
+        /applicant_name|contact_preference/i,
+      ],
+      section: 'patient_information'
+    },
+    // Additional/Other - catch-all
+    {
+      patterns: [
+        /notes|comments|additional|other/i,
+        /special_instruction|shipping|delivery/i,
+        /referral|source|how_heard|reason/i,
+        /document_type|form_type|form_name|form_version/i,
+      ],
+      section: 'additional'
+    },
   ];
   
-  for (const rule of priorityRules) {
-    if (rule.pattern.test(normalizedKey)) {
-      return rule.section;
+  for (const rule of sectionRules) {
+    for (const pattern of rule.patterns) {
+      if (pattern.test(key)) {
+        return rule.section;
+      }
     }
   }
   
-  return null;
+  // Default fallback - try to infer from common words
+  if (/name|address|phone|email|city|state|zip/.test(key)) {
+    if (/prescrib|physician|doctor|provider|office|clinic/.test(key)) {
+      return 'prescriber_info';
+    }
+    if (/pharmacy/.test(key)) {
+      return 'pharmacy_info';
+    }
+    return 'patient_information';
+  }
+  
+  return 'additional'; // Default to additional if no match
 };
 
 // Format field name for display
@@ -273,33 +381,29 @@ export const PatientInfoVerificationPanel: React.FC<PatientInfoVerificationPanel
       };
     }).filter(section => section.fields.length > 0);
   } else {
-    // Use priority-based matching first, then fall back to pattern matching
-    // This ensures fields go to the most appropriate section
+    // Use the comprehensive assignFieldToSection function to categorize all fields
+    // This ensures every field gets assigned to an appropriate section
     
-    // First pass: assign fields using priority rules
+    // First pass: assign ALL fields to sections using regex-based matching
     const fieldToSection = new Map<string, string>();
     allFields.forEach(field => {
-      const prioritySection = getFieldSectionPriority(field.key);
-      if (prioritySection) {
-        fieldToSection.set(field.key, prioritySection);
-      }
+      const assignedSection = assignFieldToSection(field.key);
+      fieldToSection.set(field.key, assignedSection);
     });
     
-    // Build sections with priority-assigned fields first
+    // Log field assignments for debugging
+    console.log('[PatientInfoVerificationPanel] Field assignments:', 
+      Object.fromEntries(fieldToSection)
+    );
+    
+    // Build sections based on assignments
     organizedSections = FIELD_SECTIONS.map(section => {
       const sectionFields = allFields
         .filter(field => {
           if (usedFieldKeys.has(field.key)) return false;
           
-          // Check priority assignment first
-          const prioritySection = fieldToSection.get(field.key);
-          if (prioritySection === section.id) {
-            usedFieldKeys.add(field.key);
-            return true;
-          }
-          
-          // If no priority match, try pattern matching (but only if not assigned elsewhere)
-          if (!prioritySection && fieldMatchesSection(field.key, section.patterns)) {
+          const assignedSection = fieldToSection.get(field.key);
+          if (assignedSection === section.id) {
             usedFieldKeys.add(field.key);
             return true;
           }
