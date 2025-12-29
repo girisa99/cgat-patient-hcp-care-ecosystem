@@ -13,6 +13,8 @@ export { DocumentProcessingArchitectureDiagram } from './DocumentProcessingArchi
 export { MedicalImagingAIPipelineDiagram } from './MedicalImagingAIPipelineDiagram';
 export { PatientInfoVerificationPanel } from './PatientInfoVerificationPanel';
 export { RealTimeExtractionTracker } from './RealTimeExtractionTracker';
+export { default as LinkedInArticleDownload } from './LinkedInArticleDownload';
+export { default as VideoScriptDownload } from './VideoScriptDownload';
 
 // New Improvement Components
 export { ModelUsageAnalyticsDashboard } from './ModelUsageAnalyticsDashboard';
