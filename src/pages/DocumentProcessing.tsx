@@ -110,6 +110,9 @@ import { HEALTHCARE_ABBREVIATIONS, expandAbbreviation } from '@/utils/healthcare
 // Extracted tab components
 import { HistoryTab, PatientInfoTab } from '@/components/document-processing/tabs';
 
+// Extracted dialog components
+import { ClinicalRecommendationDialog } from '@/components/document-processing/dialogs';
+
 // Processing stages
 type ProcessingStage = 'idle' | 'uploading' | 'ocr' | 'extraction' | 'mapping' | 'validation' | 'complete' | 'error';
 
@@ -3689,31 +3692,11 @@ export default function DocumentProcessing() {
           </DialogContent>
         </Dialog>
 
-        {/* Clinical Recommendation Dialog */}
-        <Dialog open={!!selectedRecommendation} onOpenChange={() => setSelectedRecommendation(null)}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                {selectedRecommendation?.type === 'error' ? (
-                  <XCircle className="h-5 w-5 text-destructive" />
-                ) : selectedRecommendation?.type === 'warning' ? (
-                  <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                ) : (
-                  <Sparkles className="h-5 w-5 text-primary" />
-                )}
-                {selectedRecommendation?.title}
-              </DialogTitle>
-              <DialogDescription className="pt-4">
-                <p className="text-base leading-relaxed">{selectedRecommendation?.message}</p>
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex justify-end pt-4">
-              <Button variant="outline" onClick={() => setSelectedRecommendation(null)}>
-                Close
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {/* Clinical Recommendation Dialog - Using extracted component */}
+        <ClinicalRecommendationDialog
+          recommendation={selectedRecommendation}
+          onClose={() => setSelectedRecommendation(null)}
+        />
 
         {/* Verification Dialog - Confirm extracted data before saving */}
         <Dialog open={showVerificationDialog} onOpenChange={setShowVerificationDialog}>
