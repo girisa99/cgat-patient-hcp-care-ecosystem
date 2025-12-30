@@ -128,23 +128,27 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
   const [selectedDocumentType, setSelectedDocumentType] = useState<string>('prescription');
   const [prevDocumentType, setPrevDocumentType] = useState<string>('prescription');
 
-  // Clear state when document type changes
+  // Track document type changes but DON'T clear state if a document is already uploaded
+  // This allows users to switch document types to view different tabs without losing their data
   useEffect(() => {
     if (prevDocumentType !== selectedDocumentType) {
       console.log('DocumentUploadProcessor - Document type changed from', prevDocumentType, 'to', selectedDocumentType);
       
-      // Clear all document processing state
-      clearAllDocumentState();
-      
-      // Reset local state
-      setActiveTab('upload');
-      setEditingField(null);
-      setEditValue('');
-      setReviewReason('');
+      // Only clear state if there's NO active job (no document uploaded yet)
+      // This preserves uploaded document data when user changes document type to access different tabs
+      if (!activeJob) {
+        clearAllDocumentState();
+        setActiveTab('upload');
+        setEditingField(null);
+        setEditValue('');
+        setReviewReason('');
+      } else {
+        console.log('DocumentUploadProcessor - Preserving document state (active job exists)');
+      }
       
       setPrevDocumentType(selectedDocumentType);
     }
-  }, [selectedDocumentType, prevDocumentType, clearAllDocumentState]);
+  }, [selectedDocumentType, prevDocumentType, clearAllDocumentState, activeJob]);
 
   // Dynamic tabs based on document type - uses config from documentTypes.ts
   const getTabsForDocumentType = (docType: string) => {
