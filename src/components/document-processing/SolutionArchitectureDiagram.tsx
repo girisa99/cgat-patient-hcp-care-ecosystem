@@ -291,21 +291,22 @@ export const SolutionArchitectureDiagram = () => {
         <rect x="0" y="0" width="1300" height="140" rx="8" fill="url(#integrationGradient)" stroke="#f97316" strokeWidth="2" />
         <text x="20" y="25" fill="#f97316" fontSize="16" fontWeight="bold">INTEGRATIONS & OUTPUTS</text>
         
-        {/* Integration Boxes */}
+        {/* Integration Boxes - Row 1 */}
         {[
           { x: 20, label: 'EHR Systems', sub: 'Epic • Cerner • Allscripts', icon: '🏥' },
-          { x: 200, label: 'RCM/Billing', sub: 'Claims • Payments', icon: '💳' },
-          { x: 380, label: 'Analytics', sub: 'Dashboards • Reports', icon: '📊' },
-          { x: 560, label: 'Notifications', sub: 'Email • SMS • Push', icon: '🔔' },
-          { x: 740, label: 'Workflow Engine', sub: 'n8n • Temporal', icon: '⚙️' },
-          { x: 920, label: 'Label Studio', sub: 'Human Review', icon: '🏷️' },
-          { x: 1100, label: 'Audit Trail', sub: 'Compliance Logs', icon: '📋' },
+          { x: 170, label: 'RCM/Billing', sub: 'Claims • Payments', icon: '💳' },
+          { x: 320, label: 'CRM Systems', sub: 'Salesforce • HubSpot', icon: '👥' },
+          { x: 470, label: 'ERP Systems', sub: 'SAP • Oracle • NetSuite', icon: '🏢' },
+          { x: 620, label: 'Analytics', sub: 'Dashboards • Reports', icon: '📊' },
+          { x: 770, label: 'Notifications', sub: 'Email • SMS • Push', icon: '🔔' },
+          { x: 920, label: 'Workflow', sub: 'n8n • Temporal', icon: '⚙️' },
+          { x: 1070, label: 'Label Studio', sub: 'Human Review', icon: '🏷️' },
         ].map((item, i) => (
           <g key={i} transform={`translate(${item.x}, 40)`}>
-            <rect x="0" y="0" width="165" height="85" rx="6" fill="#0f172a" stroke="#f97316" strokeWidth="1" />
-            <text x="82" y="25" textAnchor="middle" fill="#f8fafc" fontSize="20">{item.icon}</text>
-            <text x="82" y="50" textAnchor="middle" fill="#fdba74" fontSize="12">{item.label}</text>
-            <text x="82" y="70" textAnchor="middle" fill="#64748b" fontSize="9">{item.sub}</text>
+            <rect x="0" y="0" width="140" height="85" rx="6" fill="#0f172a" stroke="#f97316" strokeWidth="1" />
+            <text x="70" y="25" textAnchor="middle" fill="#f8fafc" fontSize="18">{item.icon}</text>
+            <text x="70" y="48" textAnchor="middle" fill="#fdba74" fontSize="11">{item.label}</text>
+            <text x="70" y="68" textAnchor="middle" fill="#64748b" fontSize="8">{item.sub}</text>
           </g>
         ))}
       </g>
