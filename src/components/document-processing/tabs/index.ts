@@ -5,6 +5,6 @@
 
 export { default as UploadTab } from './UploadTab';
 export { default as HistoryTab } from './HistoryTab';
-
-// Note: MedicationTab, InsuranceTab, PatientInfoTab are still in the main file
-// They will be extracted in future refactoring phases
+export { default as MedicationTab } from './MedicationTab';
+export { default as InsuranceTab } from './InsuranceTab';
+export { default as PatientInfoTab } from './PatientInfoTab';
