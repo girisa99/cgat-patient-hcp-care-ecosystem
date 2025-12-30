@@ -24,12 +24,14 @@ import {
 } from "@/components/ui/select";
 import { Settings, Cpu } from 'lucide-react';
 
+type OcrProvider = 'google' | 'azure' | 'aws';
+
 interface SettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   // OCR Settings
-  ocrProvider: string;
-  setOcrProvider: (provider: string) => void;
+  ocrProvider: OcrProvider;
+  setOcrProvider: (provider: OcrProvider) => void;
   enableOCR: boolean;
   setEnableOCR: (enable: boolean) => void;
   enableHandwriting: boolean;
