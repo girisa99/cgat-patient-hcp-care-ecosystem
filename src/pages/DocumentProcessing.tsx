@@ -3362,25 +3362,77 @@ export default function DocumentProcessing() {
                 </CardHeader>
                 <CardContent>
                   {processingResult && processingResult.stage === 'complete' ? (
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                       {processingResult.imageUrl && (
                         <div className="flex gap-4 items-start p-4 bg-muted/30 rounded-lg">
                           <img src={processingResult.imageUrl} alt="Document" className="max-h-48 w-auto rounded border" />
                         </div>
                       )}
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {Object.entries(processingResult.extractedFields)
-                          .filter(([key, field]) => field?.value && !key.startsWith('_') && !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key))
-                          .map(([key, field]) => {
-                            const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                            return (
-                              <div key={key} className="p-3 bg-muted/50 rounded-lg">
-                                <Label className="text-xs text-muted-foreground">{label}</Label>
-                                <p className="font-medium">{field?.value || '—'}</p>
-                              </div>
-                            );
-                          })}
-                      </div>
+                      {/* Organize fields by sections for patient onboarding */}
+                      {(() => {
+                        // Define section patterns for grouping
+                        const sectionPatterns: { id: string; title: string; icon: React.ReactNode; patterns: RegExp[] }[] = [
+                          { id: 'application', title: 'Application Type', icon: <FileCheck className="h-4 w-4" />, patterns: [/^(new_application|re_enrollment|application|enrollment)/i] },
+                          { id: 'patient', title: 'Patient Information', icon: <Users className="h-4 w-4" />, patterns: [/^patient|^first_name|^last_name|^middle|^dob|^date_of_birth|^gender|^sex|^ssn|^address|^street|^city|^state|^zip|^phone|^mobile|^email|^language/i] },
+                          { id: 'prescriber', title: 'Prescriber Information', icon: <Stethoscope className="h-4 w-4" />, patterns: [/prescriber|physician|doctor|provider|^npi|^dea|clinic|facility|office/i] },
+                          { id: 'insurance', title: 'Insurance & Coverage', icon: <Shield className="h-4 w-4" />, patterns: [/insurance|medicare|medicaid|coverage|drug_coverage|medical_benefit|military|va_|employer|commercial|member_id|group|bin|pcn/i] },
+                          { id: 'consent', title: 'Consent & Signatures', icon: <FileText className="h-4 w-4" />, patterns: [/signature|consent|authorization|date_signed|enrollment_year|pap_/i] },
+                        ];
+                        
+                        const allFields = Object.entries(processingResult.extractedFields)
+                          .filter(([key, field]) => field?.value && !key.startsWith('_') && !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key));
+                        
+                        const assignedFields = new Set<string>();
+                        const sectionData: { id: string; title: string; icon: React.ReactNode; fields: [string, any][] }[] = [];
+                        
+                        // Assign fields to sections
+                        for (const section of sectionPatterns) {
+                          const sectionFields = allFields.filter(([key]) => {
+                            if (assignedFields.has(key)) return false;
+                            const matches = section.patterns.some(p => p.test(key));
+                            if (matches) assignedFields.add(key);
+                            return matches;
+                          });
+                          if (sectionFields.length > 0) {
+                            sectionData.push({ ...section, fields: sectionFields });
+                          }
+                        }
+                        
+                        // Add remaining fields to "Additional Information"
+                        const remainingFields = allFields.filter(([key]) => !assignedFields.has(key));
+                        if (remainingFields.length > 0) {
+                          sectionData.push({ id: 'additional', title: 'Additional Information', icon: <FileText className="h-4 w-4" />, fields: remainingFields });
+                        }
+                        
+                        return (
+                          <div className="space-y-4">
+                            {sectionData.map(section => (
+                              <Card key={section.id} className="border-muted">
+                                <CardHeader className="py-3 px-4 bg-muted/30">
+                                  <CardTitle className="text-sm flex items-center gap-2">
+                                    <span className="text-primary">{section.icon}</span>
+                                    {section.title}
+                                    <Badge variant="secondary" className="ml-auto text-[10px]">{section.fields.length} fields</Badge>
+                                  </CardTitle>
+                                </CardHeader>
+                                <CardContent className="pt-3">
+                                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                    {section.fields.map(([key, field]) => {
+                                      const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                                      return (
+                                        <div key={key} className="p-3 bg-muted/50 rounded-lg border border-border/50">
+                                          <Label className="text-xs text-muted-foreground">{label}</Label>
+                                          <p className="font-medium text-sm">{field?.value || '—'}</p>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
                   ) : (
                     <div className="text-center py-12 text-muted-foreground">
