@@ -9,8 +9,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Bot, Zap, Brain, Sparkles, ArrowRight, Clock, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export type AIProvider = 'claude' | 'gemini' | 'openai';
-export type PipelineType = 'single' | 'sequential-hybrid';
+export type AIProvider = 'claude' | 'gemini' | 'openai' | 'google_vision_ocr';
+export type PipelineType = 'single' | 'sequential-hybrid' | 'hybrid_ocr_vision_ai' | 'vision_ai_only' | 'ocr_only' | 'vision_ai_fallback';
 
 export interface ModelUsageInfo {
   primaryModel: AIProvider;
@@ -22,6 +22,8 @@ export interface ModelUsageInfo {
   stage2Model?: AIProvider;
   fallbacksAttempted?: AIProvider[];
   processingTimeMs?: number;
+  ocrTextLength?: number;
+  ocrConfidence?: number;
 }
 
 interface AIModelIndicatorProps {
@@ -58,6 +60,13 @@ const MODEL_CONFIG: Record<AIProvider, {
     color: 'text-green-600',
     bgColor: 'bg-green-500/10',
     borderColor: 'border-green-500/30'
+  },
+  google_vision_ocr: {
+    name: 'Google Vision OCR',
+    icon: <Zap className="h-3 w-3" />,
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-500/10',
+    borderColor: 'border-purple-500/30'
   }
 };
 
@@ -68,16 +77,27 @@ const REASON_LABELS: Record<string, string> = {
   'fallback': 'Fallback'
 };
 
+const PIPELINE_LABELS: Record<PipelineType, { label: string; description: string }> = {
+  'hybrid_ocr_vision_ai': { label: 'Hybrid OCR + AI', description: 'Google Vision OCR → Vision AI structuring' },
+  'vision_ai_only': { label: 'Vision AI Only', description: 'Direct Vision AI extraction' },
+  'ocr_only': { label: 'OCR Only', description: 'Google Vision OCR only' },
+  'vision_ai_fallback': { label: 'AI Fallback', description: 'Vision AI extraction after OCR failed' },
+  'single': { label: 'Single Model', description: 'Single AI model extraction' },
+  'sequential-hybrid': { label: 'Two-Stage', description: 'Vision → Clinical analysis' }
+};
+
 export const AIModelIndicator: React.FC<AIModelIndicatorProps> = ({
   modelInfo,
   className,
   variant = 'compact',
   showTooltip = true
 }) => {
-  const usedModel = MODEL_CONFIG[modelInfo.modelUsed];
-  const primaryModel = MODEL_CONFIG[modelInfo.primaryModel];
+  const usedModel = MODEL_CONFIG[modelInfo.modelUsed] || MODEL_CONFIG.gemini;
+  const primaryModel = MODEL_CONFIG[modelInfo.primaryModel] || MODEL_CONFIG.gemini;
   const usedFallback = modelInfo.primaryModel !== modelInfo.modelUsed;
   const isHybridPipeline = modelInfo.pipelineType === 'sequential-hybrid';
+  const isOCRHybrid = modelInfo.pipelineType === 'hybrid_ocr_vision_ai';
+  const pipelineInfo = PIPELINE_LABELS[modelInfo.pipelineType] || PIPELINE_LABELS['single'];
 
   const content = (
     <div className={cn(
@@ -123,24 +143,44 @@ export const AIModelIndicator: React.FC<AIModelIndicatorProps> = ({
           usedModel.bgColor,
           usedModel.borderColor
         )}>
-          {/* Pipeline visualization for hybrid */}
-          {isHybridPipeline && modelInfo.stage1Model && modelInfo.stage2Model ? (
+          {/* OCR Hybrid Pipeline visualization */}
+          {isOCRHybrid ? (
             <div className="flex items-center gap-1">
               <div className={cn(
                 "flex items-center gap-1 px-1.5 py-0.5 rounded",
-                MODEL_CONFIG[modelInfo.stage1Model].bgColor,
-                MODEL_CONFIG[modelInfo.stage1Model].color
+                MODEL_CONFIG.google_vision_ocr.bgColor,
+                MODEL_CONFIG.google_vision_ocr.color
               )}>
-                {MODEL_CONFIG[modelInfo.stage1Model].icon}
+                {MODEL_CONFIG.google_vision_ocr.icon}
+                <span className="text-[10px] font-medium">OCR</span>
+              </div>
+              <ArrowRight className="h-3 w-3 text-muted-foreground" />
+              <div className={cn(
+                "flex items-center gap-1 px-1.5 py-0.5 rounded",
+                usedModel.bgColor,
+                usedModel.color
+              )}>
+                {usedModel.icon}
+                <span className="text-[10px] font-medium">AI</span>
+              </div>
+            </div>
+          ) : isHybridPipeline && modelInfo.stage1Model && modelInfo.stage2Model ? (
+            <div className="flex items-center gap-1">
+              <div className={cn(
+                "flex items-center gap-1 px-1.5 py-0.5 rounded",
+                (MODEL_CONFIG[modelInfo.stage1Model] || MODEL_CONFIG.gemini).bgColor,
+                (MODEL_CONFIG[modelInfo.stage1Model] || MODEL_CONFIG.gemini).color
+              )}>
+                {(MODEL_CONFIG[modelInfo.stage1Model] || MODEL_CONFIG.gemini).icon}
                 <span className="text-[10px] font-medium">Vision</span>
               </div>
               <ArrowRight className="h-3 w-3 text-muted-foreground" />
               <div className={cn(
                 "flex items-center gap-1 px-1.5 py-0.5 rounded",
-                MODEL_CONFIG[modelInfo.stage2Model].bgColor,
-                MODEL_CONFIG[modelInfo.stage2Model].color
+                (MODEL_CONFIG[modelInfo.stage2Model] || MODEL_CONFIG.claude).bgColor,
+                (MODEL_CONFIG[modelInfo.stage2Model] || MODEL_CONFIG.claude).color
               )}>
-                {MODEL_CONFIG[modelInfo.stage2Model].icon}
+                {(MODEL_CONFIG[modelInfo.stage2Model] || MODEL_CONFIG.claude).icon}
                 <span className="text-[10px] font-medium">Clinical</span>
               </div>
             </div>
@@ -151,11 +191,23 @@ export const AIModelIndicator: React.FC<AIModelIndicatorProps> = ({
             </div>
           )}
 
+          {/* Pipeline type badge */}
+          <Badge variant="secondary" className="text-[9px] h-4">
+            {pipelineInfo.label}
+          </Badge>
+
           {/* Confidence indicator */}
           <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
             <Zap className="h-3 w-3" />
             {Math.round(modelInfo.confidence * 100)}%
           </div>
+
+          {/* OCR confidence if available */}
+          {modelInfo.ocrConfidence && modelInfo.ocrConfidence > 0 && (
+            <div className="flex items-center gap-1 text-[10px] text-purple-600">
+              <span>OCR: {Math.round(modelInfo.ocrConfidence * 100)}%</span>
+            </div>
+          )}
 
           {/* Processing time */}
           {modelInfo.processingTimeMs && (
@@ -200,10 +252,13 @@ export const AIModelIndicator: React.FC<AIModelIndicatorProps> = ({
               <span className="text-muted-foreground">Confidence:</span>
               <span>{Math.round(modelInfo.confidence * 100)}%</span>
               
-              {modelInfo.pipelineType === 'sequential-hybrid' && (
+              <span className="text-muted-foreground">Pipeline:</span>
+              <span>{pipelineInfo.label}</span>
+              
+              {isOCRHybrid && modelInfo.ocrConfidence && (
                 <>
-                  <span className="text-muted-foreground">Pipeline:</span>
-                  <span>Two-Stage Hybrid</span>
+                  <span className="text-muted-foreground">OCR Confidence:</span>
+                  <span className="text-purple-600">{Math.round(modelInfo.ocrConfidence * 100)}%</span>
                 </>
               )}
               
@@ -222,16 +277,31 @@ export const AIModelIndicator: React.FC<AIModelIndicatorProps> = ({
               </div>
             )}
 
+            {isOCRHybrid && (
+              <div className="pt-1 border-t">
+                <div className="text-muted-foreground mb-1">Pipeline stages:</div>
+                <div className="flex items-center gap-1">
+                  <Badge variant="outline" className="text-[9px] border-purple-300 text-purple-600">
+                    1. Google Vision OCR
+                  </Badge>
+                  <ArrowRight className="h-3 w-3" />
+                  <Badge variant="outline" className="text-[9px]">
+                    2. {usedModel.name} (AI Structuring)
+                  </Badge>
+                </div>
+              </div>
+            )}
+
             {isHybridPipeline && modelInfo.stage1Model && modelInfo.stage2Model && (
               <div className="pt-1 border-t">
                 <div className="text-muted-foreground mb-1">Pipeline stages:</div>
                 <div className="flex items-center gap-1">
                   <Badge variant="outline" className="text-[9px]">
-                    1. {MODEL_CONFIG[modelInfo.stage1Model].name} (Vision)
+                    1. {(MODEL_CONFIG[modelInfo.stage1Model] || MODEL_CONFIG.gemini).name} (Vision)
                   </Badge>
                   <ArrowRight className="h-3 w-3" />
                   <Badge variant="outline" className="text-[9px]">
-                    2. {MODEL_CONFIG[modelInfo.stage2Model].name} (Clinical)
+                    2. {(MODEL_CONFIG[modelInfo.stage2Model] || MODEL_CONFIG.claude).name} (Clinical)
                   </Badge>
                 </div>
               </div>
