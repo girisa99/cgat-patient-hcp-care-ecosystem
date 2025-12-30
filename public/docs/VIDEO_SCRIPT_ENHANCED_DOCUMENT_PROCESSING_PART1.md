@@ -1,5 +1,5 @@
 # AI-Powered Document Processing: Enhanced Enterprise Edition
-## Video Script Part 1 (~10 Minutes) - Patient Onboarding & Sub-Agents
+## Video Script Part 1 (~10 Minutes) - Patient Onboarding Focus
 
 ---
 
@@ -12,9 +12,9 @@
 | 2 | Enterprise Solution Architecture | 4:30 - 6:30 | 6:30 |
 | 3 | Two-Stage Pipeline - Enhanced | 6:30 - 8:00 | 8:00 |
 | 4 | Patient Onboarding Document Processing | 8:00 - 10:30 | 10:30 |
-| 5 | Sub-Agent Recommendations & Workflow | 10:30 - 12:00 | 12:00 |
+| 5 | Closing & What's Next | 10:30 - 11:30 | 11:30 |
 
-**Part 1 Runtime: ~12 minutes**
+**Part 1 Runtime: ~11-12 minutes**
 
 ---
 
@@ -259,53 +259,49 @@
 
 ---
 
-## 🎬 CHAPTER 5: SUB-AGENT RECOMMENDATIONS & WORKFLOW
-**[10:30 - 12:00] Duration: 1 minute 30 seconds**
+## 🎬 CHAPTER 5: CLOSING & WHAT'S NEXT
+**[10:30 - 11:30] Duration: 1 minute**
 
 ### Visual Cues
-- Show the Sub-Agent Recommendation Dialog appearing
-- Highlight the recommended agents for patient onboarding
-- Click "Build Agent" to show workflow canvas
-- Display the auto-generated workflow nodes
+- Show a brief glimpse of the Sub-Agent Recommendation Dialog (tease it)
+- Display "Coming Next" graphic
+- Return to LinkedIn article
+- Show contact information
 
 ### Script
 
-> After processing patient onboarding documents, something powerful happens—the **Sub-Agent Recommendation Dialog**.
+> So that's patient onboarding—from document upload to validated, structured data ready for your EHR or practice management system.
 >
-> *[Point to the dialog that appeared]*
+> But here's where it gets **really interesting**...
 >
-> Based on the extracted data, the system recommends follow-up AI agents:
+> *[Briefly show the Sub-Agent Recommendation Dialog appearing]*
 >
-> **For Patient Onboarding, you'll see:**
+> You might have noticed this dialog appearing after processing. What you're seeing is a preview of something powerful—**AI Sub-Agent Recommendations**.
 >
-> 1. **Insurance Eligibility Verification Agent**
->    - Automatically checks coverage with the payer
->    - Returns active/inactive status
->    - Pulls benefits summary
+> Imagine: after extracting patient data, the system automatically recommends follow-up AI agents:
+> - Insurance eligibility verification
+> - Demographics validation
+> - Care team assignment
+> - And more...
 >
-> 2. **Demographics Validation Agent**
->    - Cross-references address with postal databases
->    - Validates phone numbers
->    - Checks for duplicate patient records
+> These sub-agents can **take action** on the extracted data—not just store it.
 >
-> 3. **Care Team Assignment Agent**
->    - Matches patient to appropriate providers
->    - Considers insurance network
->    - Factors in geographic proximity
+> **But that's a story for the next video.**
 >
-> *[Click Build Agent]*
+> In Part 2, I'll walk you through:
+> - How sub-agents are generated from document context
+> - The workflow canvas and visual orchestration
+> - Prescription processing with NDC lookup
+> - Medical imaging analysis with Vision AI
+> - MCP SDK integration for external systems
 >
-> Click **'Build Agent'** and watch—
+> If you're curious about how **Agentic AI** transforms document processing into intelligent automation, make sure to subscribe and hit that notification bell.
 >
-> The system auto-generates a **workflow on our visual canvas**:
-> - Input node with extracted patient data
-> - Parallel execution paths for eligibility and validation
-> - Decision node for routing based on results
-> - Output node for EHR integration
+> In the meantime, check out the full technical article on LinkedIn—link in the description.
 >
-> You go from document processing to **automated orchestration** in seconds.
+> Thanks for watching! If you're working on healthcare automation, drop a comment—I'd love to hear about the challenges you're solving.
 >
-> This is the power of combining document processing with **Agentic AI**—not just extracting data, but taking intelligent action on that data.
+> See you in the next one!
 
 ---
 
@@ -331,32 +327,33 @@
 4:30 Solution Architecture Deep-Dive
 6:30 Enhanced Two-Stage Pipeline
 8:00 Patient Onboarding Processing
-10:30 Sub-Agent Recommendations
+10:30 What's Next - Sub-Agents Preview
 ```
 
 ### B-Roll Suggestions
 - Architecture diagram zooms and pans
 - Document upload with progress animation
 - Confidence score highlighting
-- Workflow canvas node generation
+- Brief tease of sub-agent dialog
 - Side-by-side before/after comparisons
 
 ---
 
-## 🎯 PART 2 PREVIEW
+## 🎯 PART 2 TEASER CONTENT
 
-In the follow-up session, we'll cover:
-- Chapter 6: Prescription Processing with NDC Lookup
-- Chapter 7: Insurance Card Multi-Variant Processing
-- Chapter 8: Medical Imaging Analysis (X-Ray, CT, ECG)
-- Chapter 9: Invoice & RCM Analysis
-- Chapter 10: MCP SDK Export & Integration
-- Chapter 11: Processing History & Audit Trail
-- Chapter 12: Closing & Call to Action
+Topics for the next video:
+- Sub-Agent Recommendations deep-dive
+- Workflow canvas and visual orchestration
+- Prescription Processing with NDC Lookup
+- Insurance Card Multi-Variant Processing
+- Medical Imaging Analysis (X-Ray, CT, ECG)
+- Invoice & RCM Analysis
+- MCP SDK Export & Integration
+- Processing History & Audit Trail
 
 ---
 
 *Script Version: 2.0 (Part 1)*
-*Part 1 Runtime: ~12 minutes*
+*Part 1 Runtime: ~11-12 minutes*
 *Created: December 2024*
 *Updated: January 2025 - Enterprise Enhancements*
