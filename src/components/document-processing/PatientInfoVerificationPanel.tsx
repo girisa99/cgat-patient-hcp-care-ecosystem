@@ -363,22 +363,40 @@ export const PatientInfoVerificationPanel: React.FC<PatientInfoVerificationPanel
 
   // First, check if formMapping has section info from AI extraction (stored as _sections metadata)
   // This would be a JSON object like { "Patient Information": ["patient_name", "dob"], ... }
+  // IMPORTANT: _sections is NOT a standard form field, it's stored as raw data without wrapper
   const sectionsData = formMapping?.['_sections'];
   
-  // Handle both direct object format and {value: JSON string} format
+  // Handle multiple formats the sections data could be in
   let extractedSections: Record<string, string[]> | undefined;
+  
+  console.log('[PatientInfoVerificationPanel] Raw _sections data:', {
+    type: typeof sectionsData,
+    hasSectionsData: !!sectionsData,
+    isObject: typeof sectionsData === 'object',
+    keys: sectionsData && typeof sectionsData === 'object' ? Object.keys(sectionsData) : 'none',
+    sample: sectionsData ? JSON.stringify(sectionsData).substring(0, 200) : 'null'
+  });
+  
   if (sectionsData) {
+    // Format 1: Direct object format { "Section Name": ["field1", "field2"] }
     if (typeof sectionsData === 'object' && !('value' in sectionsData)) {
-      // Direct object format from extraction
-      extractedSections = sectionsData as unknown as Record<string, string[]>;
-    } else if (typeof sectionsData === 'object' && 'value' in sectionsData) {
-      // Stored as {value: JSON string} - try to parse
+      // Check if it looks like sections (keys are strings, values are arrays)
+      const firstKey = Object.keys(sectionsData)[0];
+      const firstValue = firstKey ? (sectionsData as any)[firstKey] : null;
+      if (Array.isArray(firstValue)) {
+        extractedSections = sectionsData as unknown as Record<string, string[]>;
+        console.log('[PatientInfoVerificationPanel] Using direct object format sections');
+      }
+    }
+    
+    // Format 2: Wrapped in {value: ...} format
+    if (!extractedSections && typeof sectionsData === 'object' && 'value' in sectionsData) {
       try {
-        const parsed = typeof sectionsData.value === 'string' 
-          ? JSON.parse(sectionsData.value) 
-          : sectionsData.value;
-        if (typeof parsed === 'object') {
+        const rawValue = (sectionsData as any).value;
+        const parsed = typeof rawValue === 'string' ? JSON.parse(rawValue) : rawValue;
+        if (typeof parsed === 'object' && parsed !== null) {
           extractedSections = parsed as Record<string, string[]>;
+          console.log('[PatientInfoVerificationPanel] Parsed sections from value wrapper');
         }
       } catch (e) {
         console.warn('[PatientInfoVerificationPanel] Failed to parse _sections value:', e);
@@ -386,9 +404,29 @@ export const PatientInfoVerificationPanel: React.FC<PatientInfoVerificationPanel
     }
   }
   
-  console.log('[PatientInfoVerificationPanel] Sections data:', {
-    hasSectionsData: !!sectionsData,
+  // If no AI-extracted sections, try to generate from field names dynamically
+  // This ensures patient onboarding forms get proper sections even without AI section detection
+  if (!extractedSections || Object.keys(extractedSections).length === 0) {
+    console.log('[PatientInfoVerificationPanel] No AI sections found, generating from field patterns');
+    
+    // Generate sections dynamically from field names for better UX
+    extractedSections = {};
+    for (const field of allFields) {
+      const sectionId = assignFieldToSection(field.key);
+      const sectionConfig = FIELD_SECTIONS.find(s => s.id === sectionId);
+      const sectionTitle = sectionConfig?.title || 'Additional Information';
+      
+      if (!extractedSections[sectionTitle]) {
+        extractedSections[sectionTitle] = [];
+      }
+      extractedSections[sectionTitle].push(field.key);
+    }
+    console.log('[PatientInfoVerificationPanel] Generated sections:', Object.keys(extractedSections));
+  }
+  
+  console.log('[PatientInfoVerificationPanel] Final sections data:', {
     extractedSections: extractedSections ? Object.keys(extractedSections) : 'none',
+    sectionCounts: extractedSections ? Object.entries(extractedSections).map(([k, v]) => `${k}: ${v.length}`) : [],
     totalFields: allFields.length
   });
   
