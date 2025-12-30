@@ -138,9 +138,12 @@ src/
 4. ✅ Create `dialogs/index.ts` export file
 
 ### Phase 5: Final Cleanup ⏳ PENDING
-1. ⏳ Reduce main file to orchestrator (integrate all extracted components)
-2. ⏳ Update imports/exports
+1. ⏳ Update main file to use extracted hooks and components
+2. ⏳ Resolve type mismatches between components
 3. ⏳ Final testing
+
+**Note:** Phase 5 requires careful type alignment between the extracted components and main file. 
+The extracted components are ready for use but require the main file to adapt to their interfaces.
 
 ---
 

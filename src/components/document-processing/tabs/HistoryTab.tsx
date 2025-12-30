@@ -5,31 +5,60 @@
  */
 
 import React from 'react';
-import { TabsContent } from '@/components/ui/tabs';
 import ProcessingHistoryWithExport from '@/components/document-processing/ProcessingHistoryWithExport';
-import { ProcessingResult } from '@/hooks/useDocumentProcessingState';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+interface ProcessingResult {
+  id: string;
+  fileName: string;
+  documentType: string;
+  stage: string;
+  progress: number;
+  extractedFields: Record<string, { value: string; confidence: number; verified?: boolean }>;
+  validationResults?: { passed: number; failed: number; warnings: number };
+  rawText?: string;
+  tables?: any[];
+  lineItems?: any[];
+  error?: string;
+  processedAt: Date;
+  imageUrl?: string;
+}
+
 interface HistoryTabProps {
   processingHistory: ProcessingResult[];
-  setProcessingHistory: (history: ProcessingResult[] | ((prev: ProcessingResult[]) => ProcessingResult[])) => void;
-  isLoadingHistory: boolean;
-  setProcessingResult: (result: ProcessingResult | null) => void;
+  setProcessingHistory: React.Dispatch<React.SetStateAction<ProcessingResult[]>>;
+  selectedDocType: string;
+  setProcessingResult: React.Dispatch<React.SetStateAction<ProcessingResult | null>>;
+  setSelectedDocType: (docType: string) => void;
   setActiveTab: (tab: string) => void;
+  setShowVerificationDialog: (show: boolean) => void;
+  setPendingResult: (result: ProcessingResult | null) => void;
 }
 
 export default function HistoryTab({
   processingHistory,
   setProcessingHistory,
-  isLoadingHistory,
+  selectedDocType,
   setProcessingResult,
-  setActiveTab
+  setSelectedDocType,
+  setActiveTab,
+  setShowVerificationDialog,
+  setPendingResult
 }: HistoryTabProps) {
-  const handleRestoreItem = (item: ProcessingResult) => {
-    setProcessingResult(item);
-    setActiveTab('upload');
-    toast.info('Restored document for editing');
+  const handleViewResult = (result: any) => {
+    setProcessingResult(result as ProcessingResult);
+    
+    // For invoices/billing, switch to RCM analysis tab
+    if (result.documentType === 'invoice' || result.documentType === 'billing') {
+      setSelectedDocType(result.documentType);
+      setActiveTab('rcm-analysis');
+      toast.info('Loaded invoice for RCM analysis');
+    } else {
+      // For other document types, show verification dialog
+      setShowVerificationDialog(true);
+      setPendingResult(result as ProcessingResult);
+    }
   };
 
   const handleDeleteItems = async (ids: string[]) => {
@@ -55,7 +84,8 @@ export default function HistoryTab({
   return (
     <ProcessingHistoryWithExport
       history={processingHistory}
-      onViewResult={handleRestoreItem}
+      filterByDocType={selectedDocType}
+      onViewResult={handleViewResult}
       onDeleteItems={handleDeleteItems}
     />
   );
