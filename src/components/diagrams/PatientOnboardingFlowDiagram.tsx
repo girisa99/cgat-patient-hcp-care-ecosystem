@@ -1,71 +1,12 @@
 import React, { useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Maximize2, Send, Shield, User, Building2, CreditCard, Activity, CheckCircle, ArrowRight } from 'lucide-react';
+import { Download, Maximize2, FileText, Brain, GitBranch, User, Shield, Send, ArrowRight, ArrowDown, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 
 export const PatientOnboardingFlowDiagram: React.FC = () => {
   const diagramRef = useRef<HTMLDivElement>(null);
-
-  const steps = [
-    { 
-      step: 1,
-      icon: Send, 
-      label: 'Submission Method', 
-      description: 'Choose how to complete enrollment',
-      aiFeature: 'Smart Form Detection',
-      color: '#3B82F6' // blue
-    },
-    { 
-      step: 2,
-      icon: Shield, 
-      label: 'Consent Management', 
-      description: 'Patient consent & provider authorization',
-      aiFeature: 'E-Signature Capture',
-      color: '#8B5CF6' // purple
-    },
-    { 
-      step: 3,
-      icon: User, 
-      label: 'Patient Information', 
-      description: 'Demographics & contact details',
-      aiFeature: 'ID Card OCR Extraction',
-      color: '#10B981' // green
-    },
-    { 
-      step: 4,
-      icon: Building2, 
-      label: 'Provider Information', 
-      description: 'Treatment center & prescriber details',
-      aiFeature: 'NPI Validation',
-      color: '#F59E0B' // orange
-    },
-    { 
-      step: 5,
-      icon: CreditCard, 
-      label: 'Insurance Details', 
-      description: 'Medical & pharmacy coverage',
-      aiFeature: 'Insurance Card OCR',
-      color: '#06B6D4' // cyan
-    },
-    { 
-      step: 6,
-      icon: Activity, 
-      label: 'Treatment & Clinical', 
-      description: 'Clinical assessment & treatment plan',
-      aiFeature: 'Prior Auth Check',
-      color: '#EC4899' // pink
-    },
-    { 
-      step: 7,
-      icon: CheckCircle, 
-      label: 'Review & Submit', 
-      description: 'Final review and submission',
-      aiFeature: 'Completeness Validation',
-      color: '#059669' // emerald
-    },
-  ];
 
   const handleDownload = async () => {
     if (!diagramRef.current) return;
@@ -73,229 +14,252 @@ export const PatientOnboardingFlowDiagram: React.FC = () => {
     try {
       toast.info('Generating image...');
       const canvas = await html2canvas(diagramRef.current, {
-        backgroundColor: '#1e3a5f',
-        scale: 2,
+        backgroundColor: '#0f172a',
+        scale: 3,
         useCORS: true,
         logging: false,
-        allowTaint: true,
-        foreignObjectRendering: true,
       });
       
       const link = document.createElement('a');
       link.download = 'patient-onboarding-flow-diagram.png';
-      link.href = canvas.toDataURL('image/png');
-      document.body.appendChild(link);
+      link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
-      document.body.removeChild(link);
       
       toast.success('Patient Onboarding Flow diagram downloaded!');
     } catch (error) {
       console.error('Download failed:', error);
-      toast.error('Failed to download diagram. Try using Full Size view and right-click to save.');
+      toast.error('Failed to download diagram.');
     }
   };
 
-  const handleOpenFullSize = async () => {
-    if (!diagramRef.current) return;
-    
-    try {
-      toast.info('Generating full size view...');
-      const canvas = await html2canvas(diagramRef.current, {
-        backgroundColor: '#1e3a5f',
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        allowTaint: true,
-        foreignObjectRendering: true,
-      });
-      
-      const dataUrl = canvas.toDataURL('image/png');
-      const newWindow = window.open('', '_blank');
-      if (newWindow) {
-        newWindow.document.write(`
-          <!DOCTYPE html>
-          <html>
-            <head><title>Patient Onboarding Flow Diagram</title></head>
-            <body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#0f172a;">
-              <img src="${dataUrl}" style="max-width:100%;height:auto;" />
-            </body>
-          </html>
-        `);
-        newWindow.document.close();
-      }
-    } catch (error) {
-      console.error('Failed to open full size:', error);
-      toast.error('Failed to open full size view');
+  const handleOpenFullSize = () => {
+    const newWindow = window.open('', '_blank');
+    if (newWindow && diagramRef.current) {
+      newWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head><title>Patient Onboarding Flow Diagram</title></head>
+          <body style="margin:0;padding:20px;background:#0f172a;display:flex;justify-content:center;">
+            ${diagramRef.current.outerHTML}
+          </body>
+        </html>
+      `);
     }
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-xl font-semibold">Patient Onboarding Workflow</CardTitle>
+    <Card className="w-full bg-slate-900 border-slate-700">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-white text-lg">Patient Onboarding AI Pipeline</CardTitle>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleOpenFullSize}>
-            <Maximize2 className="h-4 w-4 mr-2" />
+          <Button variant="outline" size="sm" onClick={handleOpenFullSize} className="gap-2 text-slate-300 border-slate-600 hover:bg-slate-800">
+            <Maximize2 className="h-4 w-4" />
             Full Size
           </Button>
-          <Button variant="default" size="sm" onClick={handleDownload}>
-            <Download className="h-4 w-4 mr-2" />
+          <Button variant="default" size="sm" onClick={handleDownload} className="gap-2 bg-cyan-600 hover:bg-cyan-700">
+            <Download className="h-4 w-4" />
             Download PNG
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="overflow-x-auto">
+      <CardContent className="p-4">
         <div 
           ref={diagramRef}
-          className="p-8 rounded-lg min-w-[1100px]"
-          style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)' }}
+          className="relative w-full overflow-auto rounded-lg border border-slate-700 bg-slate-950 p-6"
+          style={{ minWidth: '1000px' }}
         >
           {/* Title */}
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-white mb-2">
-              Patient Onboarding Workflow
-            </h2>
-            <p className="text-blue-200 text-sm">
-              AI-Powered 7-Step Enrollment Journey with Document Processing
-            </p>
-          </div>
-          
-          {/* Flow Steps - Top Row (Steps 1-4) */}
-          <div className="flex justify-center items-start gap-2 mb-6">
-            {steps.slice(0, 4).map((step, index) => {
-              const IconComponent = step.icon;
-              return (
-                <React.Fragment key={step.step}>
-                  {/* Step Card */}
-                  <div className="flex flex-col items-center w-[140px]">
-                    {/* Step Number Badge */}
-                    <div 
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm mb-2 shadow-lg"
-                      style={{ backgroundColor: step.color }}
-                    >
-                      {step.step}
-                    </div>
-                    
-                    {/* Card */}
-                    <div className="bg-white rounded-xl shadow-xl p-4 w-full">
-                      <div 
-                        className="w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-3"
-                        style={{ backgroundColor: `${step.color}20` }}
-                      >
-                        <IconComponent className="h-6 w-6" style={{ color: step.color }} />
-                      </div>
-                      <h4 className="text-sm font-bold text-gray-800 text-center mb-1 leading-tight">
-                        {step.label}
-                      </h4>
-                      <p className="text-xs text-gray-500 text-center mb-2 leading-tight">
-                        {step.description}
-                      </p>
-                      <div 
-                        className="text-xs font-medium text-center py-1 px-2 rounded-full"
-                        style={{ backgroundColor: `${step.color}15`, color: step.color }}
-                      >
-                        🤖 {step.aiFeature}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Arrow */}
-                  {index < 3 && (
-                    <div className="flex items-center pt-16">
-                      <ArrowRight className="h-6 w-6 text-white/70" />
-                    </div>
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </div>
+          <h2 className="text-xl font-bold text-center text-white mb-2">
+            Patient Onboarding AI Pipeline
+          </h2>
+          <p className="text-slate-400 text-xs text-center mb-6">
+            6-Step Multi-Model AI Document Processing & Verification Flow
+          </p>
 
-          {/* Connecting Arrow Down */}
-          <div className="flex justify-end pr-[70px] mb-4">
-            <div className="flex flex-col items-center">
-              <div className="w-0.5 h-8 bg-white/50"></div>
-              <div className="w-0 h-0 border-l-4 border-r-4 border-t-8 border-transparent border-t-white/50"></div>
+          {/* STEP 1: Multi-Document Intake */}
+          <div className="mb-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm">1</div>
+              <h3 className="text-blue-400 font-bold text-sm">STEP 1: Multi-Document Intake</h3>
+            </div>
+            <div className="grid grid-cols-4 gap-3 ml-11">
+              {[
+                { name: 'Enrollment Form', icon: '📋', color: 'border-blue-500 bg-blue-500/10' },
+                { name: 'Insurance Card', icon: '💳', color: 'border-cyan-500 bg-cyan-500/10' },
+                { name: 'Prescription Order', icon: '💊', color: 'border-green-500 bg-green-500/10' },
+                { name: 'Income Proof', icon: '📄', color: 'border-orange-500 bg-orange-500/10' },
+              ].map((doc) => (
+                <div key={doc.name} className={`${doc.color} border rounded-lg p-3 text-center`}>
+                  <span className="text-2xl block mb-1">{doc.icon}</span>
+                  <span className="text-xs text-white font-medium">{doc.name}</span>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Flow Steps - Bottom Row (Steps 5-7) */}
-          <div className="flex justify-center items-start gap-2">
-            {steps.slice(4).reverse().map((step, index) => {
-              const IconComponent = step.icon;
-              const reversedSteps = steps.slice(4).reverse();
-              return (
-                <React.Fragment key={step.step}>
-                  {/* Step Card */}
-                  <div className="flex flex-col items-center w-[140px]">
-                    {/* Step Number Badge */}
-                    <div 
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm mb-2 shadow-lg"
-                      style={{ backgroundColor: step.color }}
-                    >
-                      {step.step}
-                    </div>
-                    
-                    {/* Card */}
-                    <div className="bg-white rounded-xl shadow-xl p-4 w-full">
-                      <div 
-                        className="w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-3"
-                        style={{ backgroundColor: `${step.color}20` }}
-                      >
-                        <IconComponent className="h-6 w-6" style={{ color: step.color }} />
-                      </div>
-                      <h4 className="text-sm font-bold text-gray-800 text-center mb-1 leading-tight">
-                        {step.label}
-                      </h4>
-                      <p className="text-xs text-gray-500 text-center mb-2 leading-tight">
-                        {step.description}
-                      </p>
-                      <div 
-                        className="text-xs font-medium text-center py-1 px-2 rounded-full"
-                        style={{ backgroundColor: `${step.color}15`, color: step.color }}
-                      >
-                        🤖 {step.aiFeature}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Arrow (reversed direction) */}
-                  {index < reversedSteps.length - 1 && (
-                    <div className="flex items-center pt-16">
-                      <ArrowRight className="h-6 w-6 text-white/70" />
-                    </div>
-                  )}
-                </React.Fragment>
-              );
-            })}
+          {/* Arrow Down */}
+          <div className="flex justify-center my-3">
+            <ArrowDown className="h-6 w-6 text-slate-500" />
           </div>
 
-          {/* Footer Banner */}
-          <div className="mt-8 bg-white/10 backdrop-blur rounded-lg p-4">
-            <div className="flex justify-between items-center text-white/90 text-sm">
+          {/* STEP 2: Stage 1 Classification */}
+          <div className="mb-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-sm">2</div>
+              <h3 className="text-purple-400 font-bold text-sm">STEP 2: Stage 1 Classification</h3>
+            </div>
+            <div className="ml-11 bg-gradient-to-r from-purple-900/50 to-purple-950/50 border border-purple-500 rounded-lg p-4">
               <div className="flex items-center gap-4">
-                <span className="flex items-center gap-1">
-                  <span className="w-3 h-3 bg-green-400 rounded-full"></span>
-                  Document OCR
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-3 h-3 bg-blue-400 rounded-full"></span>
-                  Auto-Extraction
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-3 h-3 bg-purple-400 rounded-full"></span>
-                  Real-time Validation
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">✨</span>
+                  <span className="text-white font-medium text-sm">Gemini 2.5 Flash</span>
+                </div>
+                <div className="flex-1 grid grid-cols-2 gap-2">
+                  <div className="bg-purple-800/50 rounded px-3 py-1.5 text-center">
+                    <span className="text-purple-300 text-xs">Auto-Detect Document Type</span>
+                  </div>
+                  <div className="bg-purple-800/50 rounded px-3 py-1.5 text-center">
+                    <span className="text-purple-300 text-xs">Identify Manufacturer/Source</span>
+                  </div>
+                </div>
               </div>
-              <span className="text-blue-200 font-medium">
-                Powered by Multi-Model AI
-              </span>
+            </div>
+          </div>
+
+          {/* Arrow Down */}
+          <div className="flex justify-center my-3">
+            <ArrowDown className="h-6 w-6 text-slate-500" />
+          </div>
+
+          {/* STEP 3: Stage 2 Intelligent Routing */}
+          <div className="mb-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-8 h-8 rounded-full bg-cyan-600 flex items-center justify-center text-white font-bold text-sm">3</div>
+              <h3 className="text-cyan-400 font-bold text-sm">STEP 3: Stage 2 Intelligent Routing</h3>
+            </div>
+            <div className="ml-11 bg-gradient-to-r from-cyan-900/50 to-cyan-950/50 border border-cyan-500 rounded-lg p-4">
+              <div className="text-xs text-slate-400 mb-3 text-center">Route to optimal model per document type</div>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { name: 'Google Gemini', icon: '✨', task: 'Entity Extraction', docs: 'Forms, Cards' },
+                  { name: 'OpenAI GPT-4', icon: '🧠', task: 'Classification', docs: 'Prescriptions' },
+                  { name: 'Anthropic Claude', icon: '🔮', task: 'Validation', docs: 'Income Proofs' },
+                ].map((model) => (
+                  <div key={model.name} className="bg-slate-800/80 border border-slate-600 rounded-lg p-2.5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-lg">{model.icon}</span>
+                      <span className="text-xs text-white font-medium">{model.name}</span>
+                    </div>
+                    <div className="text-[10px] text-cyan-400">{model.task}</div>
+                    <div className="text-[9px] text-slate-500 mt-0.5">→ {model.docs}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Arrow Down */}
+          <div className="flex justify-center my-3">
+            <ArrowDown className="h-6 w-6 text-slate-500" />
+          </div>
+
+          {/* STEP 4: Unified Patient Record */}
+          <div className="mb-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white font-bold text-sm">4</div>
+              <h3 className="text-green-400 font-bold text-sm">STEP 4: Unified Patient Record</h3>
+            </div>
+            <div className="ml-11 grid grid-cols-4 gap-3">
+              {[
+                { name: 'Patient Profile', confidence: '95%', color: 'border-green-500 bg-green-500/10 text-green-400' },
+                { name: 'Insurance', confidence: '92%', color: 'border-cyan-500 bg-cyan-500/10 text-cyan-400' },
+                { name: 'Prescriber', confidence: '97%', color: 'border-purple-500 bg-purple-500/10 text-purple-400' },
+                { name: 'Medication', confidence: '98%', color: 'border-orange-500 bg-orange-500/10 text-orange-400' },
+              ].map((record) => (
+                <div key={record.name} className={`${record.color} border rounded-lg p-3 text-center`}>
+                  <span className="text-sm font-medium block text-white">{record.name}</span>
+                  <span className={`text-lg font-bold ${record.color.includes('green') ? 'text-green-400' : record.color.includes('cyan') ? 'text-cyan-400' : record.color.includes('purple') ? 'text-purple-400' : 'text-orange-400'}`}>{record.confidence}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Arrow Down */}
+          <div className="flex justify-center my-3">
+            <ArrowDown className="h-6 w-6 text-slate-500" />
+          </div>
+
+          {/* STEP 5: Sub-Agent Verification */}
+          <div className="mb-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-8 h-8 rounded-full bg-yellow-600 flex items-center justify-center text-white font-bold text-sm">5</div>
+              <h3 className="text-yellow-400 font-bold text-sm">STEP 5: Sub-Agent Verification</h3>
+            </div>
+            <div className="ml-11 flex gap-3">
+              {[
+                { name: 'NPI Lookup', icon: '🔍' },
+                { name: 'Eligibility Check', icon: '✅' },
+                { name: 'Address Validation', icon: '📍' },
+              ].map((agent) => (
+                <div key={agent.name} className="flex-1 bg-yellow-900/30 border border-yellow-500/50 rounded-lg p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{agent.icon}</span>
+                    <span className="text-sm text-white font-medium">{agent.name}</span>
+                  </div>
+                  <CheckCircle className="h-5 w-5 text-green-400" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Arrow Down */}
+          <div className="flex justify-center my-3">
+            <ArrowDown className="h-6 w-6 text-slate-500" />
+          </div>
+
+          {/* STEP 6: MCP SDK Export */}
+          <div className="mb-2">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-8 h-8 rounded-full bg-pink-600 flex items-center justify-center text-white font-bold text-sm">6</div>
+              <h3 className="text-pink-400 font-bold text-sm">STEP 6: MCP SDK Export</h3>
+            </div>
+            <div className="ml-11 grid grid-cols-4 gap-3">
+              {[
+                { name: 'EHR', icon: '🏥', color: 'border-blue-500 bg-blue-500/20' },
+                { name: 'Pharmacy', icon: '💊', color: 'border-green-500 bg-green-500/20' },
+                { name: 'PAP Portal', icon: '📋', color: 'border-purple-500 bg-purple-500/20' },
+                { name: 'RCM System', icon: '💰', color: 'border-orange-500 bg-orange-500/20' },
+              ].map((system) => (
+                <div key={system.name} className={`${system.color} border rounded-lg p-3 text-center`}>
+                  <span className="text-2xl block mb-1">{system.icon}</span>
+                  <span className="text-xs text-white font-medium">{system.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Footer Legend */}
+          <div className="mt-6 pt-4 border-t border-slate-700">
+            <div className="flex justify-center gap-6">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                <span className="text-[10px] text-slate-400">Stage 1: Classification</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-cyan-500"></div>
+                <span className="text-[10px] text-slate-400">Stage 2: Routing</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                <span className="text-[10px] text-slate-400">Sub-Agent Verification</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-pink-500"></div>
+                <span className="text-[10px] text-slate-400">MCP SDK Integration</span>
+              </div>
             </div>
           </div>
         </div>
-
-        <p className="text-sm text-muted-foreground mt-4 text-center">
-          Complete 7-step patient enrollment journey with AI-powered document processing at each stage
-        </p>
       </CardContent>
     </Card>
   );
