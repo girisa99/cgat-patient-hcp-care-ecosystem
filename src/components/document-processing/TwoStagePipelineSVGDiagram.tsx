@@ -67,131 +67,140 @@ export const TwoStagePipelineSVGDiagram = () => {
       <CardContent className="p-4">
         <div 
           ref={diagramRef}
-          className="relative w-full overflow-auto rounded-lg border border-slate-700 bg-slate-950 p-8"
-          style={{ minWidth: '900px' }}
+          className="relative w-full overflow-auto rounded-lg border border-slate-700 bg-slate-950 p-6"
+          style={{ minWidth: '1100px' }}
         >
           {/* Title */}
-          <h2 className="text-2xl font-bold text-center text-white mb-8">
+          <h2 className="text-xl font-bold text-center text-white mb-6">
             Two-Stage AI Document Processing Pipeline
           </h2>
 
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-stretch justify-between gap-3">
             {/* Input Documents */}
-            <div className="flex flex-col gap-3 min-w-[120px]">
-              <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wide text-center">Input</h4>
+            <div className="flex flex-col gap-2 min-w-[100px]">
+              <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wide text-center mb-1">Input</h4>
               {['Medical Records', 'Prescriptions', 'Insurance Cards', 'Invoices'].map((doc) => (
-                <div key={doc} className="bg-slate-800 border border-slate-600 rounded-lg p-3 text-center">
-                  <div className="text-2xl mb-1">📄</div>
-                  <span className="text-xs text-slate-300">{doc}</span>
+                <div key={doc} className="bg-slate-800 border border-slate-600 rounded-lg p-2 text-center">
+                  <div className="text-lg mb-0.5">📄</div>
+                  <span className="text-[10px] text-slate-300 leading-tight">{doc}</span>
                 </div>
               ))}
             </div>
 
             {/* Arrow */}
             <div className="flex items-center self-center">
-              <div className="w-8 h-0.5 bg-cyan-500"></div>
-              <div className="w-0 h-0 border-t-4 border-b-4 border-l-8 border-transparent border-l-cyan-500"></div>
+              <div className="w-6 h-0.5 bg-blue-500"></div>
+              <div className="w-0 h-0 border-t-[5px] border-b-[5px] border-l-[8px] border-transparent border-l-blue-500"></div>
             </div>
 
-            {/* Stage 1: Extraction */}
-            <div className="flex-1 max-w-[280px]">
-              <div className="bg-gradient-to-br from-blue-900/50 to-blue-950/50 border-2 border-blue-500 rounded-xl p-5">
-                <h3 className="text-lg font-bold text-blue-400 mb-4 text-center">
+            {/* Stage 1: OCR Extraction */}
+            <div className="flex-1 max-w-[220px]">
+              <div className="bg-gradient-to-br from-blue-900/50 to-blue-950/50 border-2 border-blue-500 rounded-xl p-4 h-full">
+                <h3 className="text-base font-bold text-blue-400 mb-2 text-center">
                   STAGE 1: EXTRACTION
                 </h3>
-                <div className="text-xs text-slate-400 text-center mb-4">Multi-Provider OCR</div>
+                <div className="text-[10px] text-slate-400 text-center mb-3">User Selects OCR Provider</div>
                 
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {[
-                    { name: 'Google Vision API', icon: '🔍' },
-                    { name: 'Azure Computer Vision', icon: '☁️' },
-                    { name: 'AWS Textract', icon: '📊' },
+                    { name: 'Google Vision API', icon: '🔍', selected: true },
+                    { name: 'Azure Computer Vision', icon: '☁️', selected: false },
+                    { name: 'AWS Textract', icon: '📊', selected: false },
                   ].map((provider) => (
-                    <div key={provider.name} className="bg-slate-800/80 border border-slate-600 rounded-lg p-3 flex items-center gap-3">
-                      <span className="text-xl">{provider.icon}</span>
-                      <span className="text-sm text-white font-medium">{provider.name}</span>
+                    <div key={provider.name} className={`bg-slate-800/80 border rounded-lg p-2 flex items-center gap-2 ${provider.selected ? 'border-blue-400 ring-1 ring-blue-400' : 'border-slate-600'}`}>
+                      <span className="text-base">{provider.icon}</span>
+                      <span className="text-xs text-white">{provider.name}</span>
+                      {provider.selected && <span className="ml-auto text-blue-400 text-xs">✓</span>}
                     </div>
                   ))}
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-blue-500/30">
-                  <div className="text-xs text-slate-400 text-center">Output: Raw Text + Layout</div>
+                <div className="mt-3 pt-2 border-t border-blue-500/30">
+                  <div className="text-[10px] text-slate-400 text-center">Output: Raw Text + Layout</div>
                 </div>
               </div>
             </div>
 
-            {/* Arrow between stages */}
-            <div className="flex items-center self-center">
-              <div className="w-12 h-0.5 bg-gradient-to-r from-blue-500 to-cyan-500"></div>
-              <div className="w-0 h-0 border-t-4 border-b-4 border-l-8 border-transparent border-l-cyan-500"></div>
+            {/* Arrow with label */}
+            <div className="flex flex-col items-center self-center">
+              <span className="text-[9px] text-slate-500 mb-1">Raw Text</span>
+              <div className="w-10 h-0.5 bg-gradient-to-r from-blue-500 to-cyan-500"></div>
+              <div className="w-0 h-0 border-t-[5px] border-b-[5px] border-l-[8px] border-transparent border-l-cyan-500"></div>
             </div>
 
-            {/* Stage 2: Intelligence */}
-            <div className="flex-1 max-w-[320px]">
-              <div className="bg-gradient-to-br from-cyan-900/50 to-cyan-950/50 border-2 border-cyan-500 rounded-xl p-5">
-                <h3 className="text-lg font-bold text-cyan-400 mb-4 text-center">
+            {/* Stage 2: Intelligent NLP Routing */}
+            <div className="flex-1 max-w-[280px]">
+              <div className="bg-gradient-to-br from-cyan-900/50 to-cyan-950/50 border-2 border-cyan-500 rounded-xl p-4 h-full">
+                <h3 className="text-base font-bold text-cyan-400 mb-2 text-center">
                   STAGE 2: INTELLIGENCE
                 </h3>
-                <div className="text-xs text-slate-400 text-center mb-4">Multi-Model NLP Processing</div>
+                <div className="text-[10px] text-slate-400 text-center mb-3">Task-Based Model Routing</div>
                 
                 <div className="space-y-2">
                   {[
-                    { name: 'Google Gemini', icon: '✨', task: 'Entity Extraction' },
-                    { name: 'OpenAI GPT-4', icon: '🧠', task: 'Classification & Summarization' },
-                    { name: 'Anthropic Claude', icon: '🔮', task: 'Reasoning & Validation' },
+                    { name: 'Google Gemini', icon: '✨', task: 'Entity Extraction', example: 'Patient Name, DOB, MRN' },
+                    { name: 'OpenAI GPT-4', icon: '🧠', task: 'Classification & Summary', example: 'Document Type, Key Points' },
+                    { name: 'Anthropic Claude', icon: '🔮', task: 'Reasoning & Validation', example: 'Cross-Reference, Compliance' },
                   ].map((provider) => (
-                    <div key={provider.name} className="bg-slate-800/80 border border-slate-600 rounded-lg p-2.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{provider.icon}</span>
-                        <span className="text-sm text-white font-medium">{provider.name}</span>
+                    <div key={provider.name} className="bg-slate-800/80 border border-slate-600 rounded-lg p-2">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-base">{provider.icon}</span>
+                        <span className="text-xs text-white font-medium">{provider.name}</span>
                       </div>
-                      <div className="text-xs text-cyan-400 ml-7 mt-0.5">{provider.task}</div>
+                      <div className="text-[10px] text-cyan-400 ml-6">{provider.task}</div>
+                      <div className="text-[9px] text-slate-500 ml-6 italic">e.g., {provider.example}</div>
                     </div>
                   ))}
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-cyan-500/30">
-                  <div className="text-xs text-slate-400 text-center">Output: Structured Data</div>
+                <div className="mt-3 pt-2 border-t border-cyan-500/30">
+                  <div className="text-[10px] text-slate-400 text-center">Output: Structured Data</div>
                 </div>
               </div>
             </div>
 
             {/* Arrow */}
             <div className="flex items-center self-center">
-              <div className="w-8 h-0.5 bg-cyan-500"></div>
-              <div className="w-0 h-0 border-t-4 border-b-4 border-l-8 border-transparent border-l-cyan-500"></div>
+              <div className="w-6 h-0.5 bg-cyan-500"></div>
+              <div className="w-0 h-0 border-t-[5px] border-b-[5px] border-l-[8px] border-transparent border-l-cyan-500"></div>
             </div>
 
             {/* Output Formats */}
-            <div className="flex flex-col gap-3 min-w-[100px]">
-              <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wide text-center">Output</h4>
+            <div className="flex flex-col gap-2 min-w-[110px]">
+              <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wide text-center mb-1">Output</h4>
               {[
-                { name: 'JSON', color: 'bg-yellow-500/20 border-yellow-500 text-yellow-400' },
-                { name: 'FHIR R4', color: 'bg-green-500/20 border-green-500 text-green-400' },
-                { name: 'HL7', color: 'bg-purple-500/20 border-purple-500 text-purple-400' },
-                { name: 'CSV', color: 'bg-orange-500/20 border-orange-500 text-orange-400' },
+                { name: 'JSON', color: 'bg-yellow-500/20 border-yellow-500 text-yellow-400', example: 'API Response' },
+                { name: 'FHIR R4', color: 'bg-green-500/20 border-green-500 text-green-400', example: 'Healthcare' },
+                { name: 'HL7', color: 'bg-purple-500/20 border-purple-500 text-purple-400', example: 'Clinical' },
+                { name: 'CSV', color: 'bg-orange-500/20 border-orange-500 text-orange-400', example: 'Analytics' },
               ].map((format) => (
                 <div key={format.name} className={`${format.color} border rounded-lg p-2 text-center`}>
-                  <span className="text-sm font-bold">{format.name}</span>
+                  <span className="text-xs font-bold block">{format.name}</span>
+                  <span className="text-[9px] opacity-70">{format.example}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Bottom Labels */}
-          <div className="mt-8 pt-4 border-t border-slate-700 flex justify-center gap-8">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-              <span className="text-xs text-slate-400">OCR Providers</span>
+          {/* Bottom Legend */}
+          <div className="mt-6 pt-4 border-t border-slate-700">
+            <div className="flex justify-center gap-6 mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                <span className="text-[10px] text-slate-400">OCR Providers (User Selection)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-cyan-500"></div>
+                <span className="text-[10px] text-slate-400">AI/NLP Models (Task-Based Routing)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                <span className="text-[10px] text-slate-400">Healthcare Standards Output</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-cyan-500"></div>
-              <span className="text-xs text-slate-400">AI/NLP Models</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span className="text-xs text-slate-400">Healthcare Standards</span>
-            </div>
+            <p className="text-slate-500 text-[10px] text-center">
+              Stage 1: User selects OCR provider → Stage 2: Raw text routed to AI models by task type → Structured output in multiple formats
+            </p>
           </div>
         </div>
 
