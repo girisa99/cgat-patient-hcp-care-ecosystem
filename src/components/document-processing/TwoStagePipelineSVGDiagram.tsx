@@ -127,22 +127,25 @@ export const TwoStagePipelineSVGDiagram = () => {
             </div>
 
             {/* Stage 2: Intelligence */}
-            <div className="flex-1 max-w-[280px]">
+            <div className="flex-1 max-w-[320px]">
               <div className="bg-gradient-to-br from-cyan-900/50 to-cyan-950/50 border-2 border-cyan-500 rounded-xl p-5">
                 <h3 className="text-lg font-bold text-cyan-400 mb-4 text-center">
                   STAGE 2: INTELLIGENCE
                 </h3>
-                <div className="text-xs text-slate-400 text-center mb-4">NLP & Entity Extraction</div>
+                <div className="text-xs text-slate-400 text-center mb-4">Multi-Model NLP Processing</div>
                 
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {[
-                    { name: 'Google Gemini Pro', icon: '✨' },
-                    { name: 'OpenAI GPT-4', icon: '🧠' },
-                    { name: 'Entity Extraction', icon: '🏷️' },
+                    { name: 'Google Gemini', icon: '✨', task: 'Entity Extraction' },
+                    { name: 'OpenAI GPT-4', icon: '🧠', task: 'Classification & Summarization' },
+                    { name: 'Anthropic Claude', icon: '🔮', task: 'Reasoning & Validation' },
                   ].map((provider) => (
-                    <div key={provider.name} className="bg-slate-800/80 border border-slate-600 rounded-lg p-3 flex items-center gap-3">
-                      <span className="text-xl">{provider.icon}</span>
-                      <span className="text-sm text-white font-medium">{provider.name}</span>
+                    <div key={provider.name} className="bg-slate-800/80 border border-slate-600 rounded-lg p-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{provider.icon}</span>
+                        <span className="text-sm text-white font-medium">{provider.name}</span>
+                      </div>
+                      <div className="text-xs text-cyan-400 ml-7 mt-0.5">{provider.task}</div>
                     </div>
                   ))}
                 </div>
