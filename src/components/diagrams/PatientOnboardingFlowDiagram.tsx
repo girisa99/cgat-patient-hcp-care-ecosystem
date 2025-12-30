@@ -82,16 +82,19 @@ export const PatientOnboardingFlowDiagram: React.FC = () => {
               <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm">1</div>
               <h3 className="text-blue-400 font-bold text-sm">STEP 1: Multi-Document Intake</h3>
             </div>
-            <div className="grid grid-cols-4 gap-3 ml-11">
+            <div className="ml-11 grid grid-cols-7 gap-2">
               {[
                 { name: 'Enrollment Form', icon: '📋', color: 'border-blue-500 bg-blue-500/10' },
                 { name: 'Insurance Card', icon: '💳', color: 'border-cyan-500 bg-cyan-500/10' },
-                { name: 'Prescription Order', icon: '💊', color: 'border-green-500 bg-green-500/10' },
+                { name: 'Prescription', icon: '💊', color: 'border-green-500 bg-green-500/10' },
                 { name: 'Income Proof', icon: '📄', color: 'border-orange-500 bg-orange-500/10' },
+                { name: 'Lab Results', icon: '🧪', color: 'border-purple-500 bg-purple-500/10' },
+                { name: 'Invoice/Billing', icon: '🧾', color: 'border-yellow-500 bg-yellow-500/10' },
+                { name: 'Prior Auth', icon: '✅', color: 'border-pink-500 bg-pink-500/10' },
               ].map((doc) => (
-                <div key={doc.name} className={`${doc.color} border rounded-lg p-3 text-center`}>
-                  <span className="text-2xl block mb-1">{doc.icon}</span>
-                  <span className="text-xs text-white font-medium">{doc.name}</span>
+                <div key={doc.name} className={`${doc.color} border rounded-lg p-2 text-center`}>
+                  <span className="text-xl block mb-0.5">{doc.icon}</span>
+                  <span className="text-[9px] text-white font-medium leading-tight block">{doc.name}</span>
                 </div>
               ))}
             </div>
@@ -109,19 +112,26 @@ export const PatientOnboardingFlowDiagram: React.FC = () => {
               <h3 className="text-purple-400 font-bold text-sm">STEP 2: Stage 1 Classification</h3>
             </div>
             <div className="ml-11 bg-gradient-to-r from-purple-900/50 to-purple-950/50 border border-purple-500 rounded-lg p-4">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">✨</span>
-                  <span className="text-white font-medium text-sm">Gemini 2.5 Flash</span>
-                </div>
-                <div className="flex-1 grid grid-cols-2 gap-2">
-                  <div className="bg-purple-800/50 rounded px-3 py-1.5 text-center">
-                    <span className="text-purple-300 text-xs">Auto-Detect Document Type</span>
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-2xl">✨</span>
+                <span className="text-white font-medium text-sm">Gemini 2.5 Flash</span>
+                <span className="text-purple-300 text-xs">— Auto-detects type + manufacturer/source</span>
+              </div>
+              <div className="grid grid-cols-7 gap-2">
+                {[
+                  { type: 'Enrollment', detected: 'Form/Application' },
+                  { type: 'Insurance', detected: 'Payer Card' },
+                  { type: 'Prescription', detected: 'Rx Order' },
+                  { type: 'Income', detected: 'Financial Doc' },
+                  { type: 'Lab', detected: 'Test Results' },
+                  { type: 'Invoice', detected: 'Billing Statement' },
+                  { type: 'Prior Auth', detected: 'Authorization' },
+                ].map((item) => (
+                  <div key={item.type} className="bg-purple-800/40 rounded px-2 py-1.5 text-center">
+                    <span className="text-[9px] text-white block font-medium">{item.type}</span>
+                    <span className="text-[8px] text-purple-300">→ {item.detected}</span>
                   </div>
-                  <div className="bg-purple-800/50 rounded px-3 py-1.5 text-center">
-                    <span className="text-purple-300 text-xs">Identify Manufacturer/Source</span>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>
@@ -141,17 +151,17 @@ export const PatientOnboardingFlowDiagram: React.FC = () => {
               <div className="text-xs text-slate-400 mb-3 text-center">Route to optimal model per document type</div>
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { name: 'Google Gemini', icon: '✨', task: 'Entity Extraction', docs: 'Forms, Cards' },
-                  { name: 'OpenAI GPT-4', icon: '🧠', task: 'Classification', docs: 'Prescriptions' },
-                  { name: 'Anthropic Claude', icon: '🔮', task: 'Validation', docs: 'Income Proofs' },
+                  { name: 'Google Gemini', icon: '✨', task: 'Entity Extraction', docs: 'Enrollment, Insurance, Prior Auth' },
+                  { name: 'OpenAI GPT-4', icon: '🧠', task: 'Classification & Summary', docs: 'Prescriptions, Lab Results' },
+                  { name: 'Anthropic Claude', icon: '🔮', task: 'Reasoning & Validation', docs: 'Income Proof, Invoice/Billing' },
                 ].map((model) => (
-                  <div key={model.name} className="bg-slate-800/80 border border-slate-600 rounded-lg p-2.5">
+                  <div key={model.name} className="bg-slate-800/80 border border-slate-600 rounded-lg p-3">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-lg">{model.icon}</span>
                       <span className="text-xs text-white font-medium">{model.name}</span>
                     </div>
-                    <div className="text-[10px] text-cyan-400">{model.task}</div>
-                    <div className="text-[9px] text-slate-500 mt-0.5">→ {model.docs}</div>
+                    <div className="text-[10px] text-cyan-400 mb-1">{model.task}</div>
+                    <div className="text-[9px] text-slate-500">→ {model.docs}</div>
                   </div>
                 ))}
               </div>
