@@ -8,10 +8,10 @@ import {
   ContentTypeRoutingDiagram
 } from '@/components/document-processing';
 import { TwoStagePipelineSVGDiagram } from '@/components/document-processing/TwoStagePipelineSVGDiagram';
-import { PatientOnboardingFlowDiagram, SubAgentArchitectureDiagram } from '@/components/diagrams';
+import { PatientOnboardingFlowDiagram, SubAgentArchitectureDiagram, BeforeAfterArchitectureDiagram } from '@/components/diagrams';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building, Users, Network } from 'lucide-react';
+import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building, Users, Network, ArrowRightLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 
@@ -33,7 +33,11 @@ const ArchitectureDiagram = () => {
         
         <div className="p-4">
           <Tabs defaultValue="solution" className="w-full">
-            <TabsList className="grid w-full grid-cols-9 mb-6">
+            <TabsList className="grid w-full grid-cols-10 mb-6">
+              <TabsTrigger value="before-after" className="flex items-center gap-1 text-xs">
+                <ArrowRightLeft className="h-3 w-3" />
+                Before/After
+              </TabsTrigger>
               <TabsTrigger value="solution" className="flex items-center gap-1 text-xs">
                 <Building className="h-3 w-3" />
                 Solution
@@ -72,6 +76,10 @@ const ArchitectureDiagram = () => {
               </TabsTrigger>
             </TabsList>
             
+            <TabsContent value="before-after" className="space-y-4">
+              <BeforeAfterArchitectureDiagram />
+            </TabsContent>
+
             <TabsContent value="solution" className="space-y-4">
               <SolutionArchitectureDiagram />
             </TabsContent>
