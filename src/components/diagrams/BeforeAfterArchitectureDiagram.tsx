@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Maximize2, X } from 'lucide-react';
+import { Download, Maximize2, X, FileImage, FileCode } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import { toast } from 'sonner';
 
 export const BeforeAfterArchitectureDiagram = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const diagramRef = useRef<HTMLDivElement>(null);
 
-  const handleDownload = () => {
+  const handleDownloadSVG = () => {
     const svgElement = document.getElementById('before-after-architecture-svg');
     if (svgElement) {
       const svgData = new XMLSerializer().serializeToString(svgElement);
@@ -17,6 +20,30 @@ export const BeforeAfterArchitectureDiagram = () => {
       link.download = 'before-after-architecture.svg';
       link.click();
       URL.revokeObjectURL(url);
+      toast.success('SVG downloaded successfully!');
+    }
+  };
+
+  const handleDownloadPNG = async () => {
+    if (!diagramRef.current) return;
+    
+    try {
+      const canvas = await html2canvas(diagramRef.current, {
+        backgroundColor: '#0f172a',
+        scale: 3,
+        useCORS: true,
+        logging: false,
+      });
+      
+      const link = document.createElement('a');
+      link.download = 'before-after-architecture.png';
+      link.href = canvas.toDataURL('image/png', 1.0);
+      link.click();
+      
+      toast.success('PNG downloaded successfully!');
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Failed to download PNG');
     }
   };
 
@@ -293,8 +320,12 @@ export const BeforeAfterArchitectureDiagram = () => {
     return (
       <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm overflow-auto p-4">
         <div className="flex justify-end mb-4 gap-2">
-          <Button variant="outline" size="sm" onClick={handleDownload}>
-            <Download className="h-4 w-4 mr-2" />
+          <Button variant="outline" size="sm" onClick={handleDownloadPNG}>
+            <FileImage className="h-4 w-4 mr-2" />
+            Download PNG
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleDownloadSVG}>
+            <FileCode className="h-4 w-4 mr-2" />
             Download SVG
           </Button>
           <Button variant="outline" size="sm" onClick={() => setIsFullscreen(false)}>
@@ -302,7 +333,9 @@ export const BeforeAfterArchitectureDiagram = () => {
             Close
           </Button>
         </div>
-        <DiagramContent />
+        <div ref={diagramRef}>
+          <DiagramContent />
+        </div>
       </div>
     );
   }
@@ -312,9 +345,13 @@ export const BeforeAfterArchitectureDiagram = () => {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Before & After Architecture</CardTitle>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleDownload}>
-            <Download className="h-4 w-4 mr-2" />
-            Download
+          <Button variant="outline" size="sm" onClick={handleDownloadPNG}>
+            <FileImage className="h-4 w-4 mr-2" />
+            PNG
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleDownloadSVG}>
+            <FileCode className="h-4 w-4 mr-2" />
+            SVG
           </Button>
           <Button variant="outline" size="sm" onClick={() => setIsFullscreen(true)}>
             <Maximize2 className="h-4 w-4 mr-2" />
