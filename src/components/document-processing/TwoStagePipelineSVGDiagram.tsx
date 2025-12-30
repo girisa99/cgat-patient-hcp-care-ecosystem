@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, ExternalLink } from 'lucide-react';
+import { Download, ExternalLink, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 
@@ -14,16 +14,17 @@ export const TwoStagePipelineSVGDiagram = () => {
     try {
       const canvas = await html2canvas(diagramRef.current, {
         backgroundColor: '#0f172a',
-        scale: 2,
+        scale: 3,
         useCORS: true,
+        logging: false,
       });
       
       const link = document.createElement('a');
-      link.download = 'two-stage-ai-pipeline.png';
-      link.href = canvas.toDataURL('image/png');
+      link.download = 'two-stage-ai-pipeline-architecture.png';
+      link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
       
-      toast.success('Diagram downloaded as PNG!');
+      toast.success('Diagram downloaded as PNG to your downloads folder!');
     } catch (error) {
       console.error('Download error:', error);
       toast.error('Failed to download diagram');
@@ -53,11 +54,11 @@ export const TwoStagePipelineSVGDiagram = () => {
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-white text-lg">Two-Stage AI Document Processing Pipeline</CardTitle>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleOpenFullSize} className="gap-2">
+          <Button variant="outline" size="sm" onClick={handleOpenFullSize} className="gap-2 text-slate-300 border-slate-600 hover:bg-slate-800">
             <ExternalLink className="h-4 w-4" />
             Full Size
           </Button>
-          <Button variant="default" size="sm" onClick={handleDownloadPNG} className="gap-2">
+          <Button variant="default" size="sm" onClick={handleDownloadPNG} className="gap-2 bg-cyan-600 hover:bg-cyan-700">
             <Download className="h-4 w-4" />
             Download PNG
           </Button>
