@@ -108,7 +108,7 @@ import { ArchitectureRecommendation } from '@/services/agentArchitectureIntellig
 import { HEALTHCARE_ABBREVIATIONS, expandAbbreviation } from '@/utils/healthcareAbbreviations';
 
 // Extracted tab components
-import { HistoryTab, PatientInfoTab } from '@/components/document-processing/tabs';
+import { HistoryTab, PatientInfoTab, InsuranceTab } from '@/components/document-processing/tabs';
 
 // Extracted dialog components
 import { ClinicalRecommendationDialog } from '@/components/document-processing/dialogs';
@@ -3117,186 +3117,15 @@ export default function DocumentProcessing() {
             </div>
           </TabsContent>
 
-          {/* Insurance Details Tab - Only for Insurance document type */}
+          {/* Insurance Details Tab - Using extracted component */}
           {selectedDocType === 'insurance' && (
             <TabsContent value="insurance-details" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-primary" />
-                    Insurance Details
-                  </CardTitle>
-                  <CardDescription>
-                    Extracted insurance information - Edit fields below and save to history
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {processingResult && processingResult.stage === 'complete' ? (
-                    <div className="space-y-4">
-                      {/* Document Image */}
-                      {processingResult.imageUrl && (
-                        <div className="flex gap-4 items-start p-4 bg-muted/30 rounded-lg">
-                          <img 
-                            src={processingResult.imageUrl} 
-                            alt="Insurance document" 
-                            className="max-h-48 w-auto rounded border"
-                          />
-                          <div className="flex-1">
-                            <Badge variant="outline">{processingResult.fileName}</Badge>
-                            <p className="text-sm text-muted-foreground mt-2">
-                              Verify and edit extracted data, then save to history
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Editable Insurance Fields */}
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {Object.entries(processingResult.extractedFields)
-                          .filter(([key, field]) => field?.value && !key.startsWith('_') && !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key))
-                          .map(([key, field]) => {
-                            const label = expandAbbreviation(key.replace(/_/g, ' '));
-                            return (
-                              <div key={key} className="p-3 bg-muted/50 rounded-lg space-y-1">
-                                <Label className="text-xs text-muted-foreground">{label}</Label>
-                                <Input
-                                  value={field?.value || ''}
-                                  onChange={(e) => {
-                                    setProcessingResult(prev => {
-                                      if (!prev) return prev;
-                                      return {
-                                        ...prev,
-                                        extractedFields: {
-                                          ...prev.extractedFields,
-                                          [key]: {
-                                            ...prev.extractedFields[key],
-                                            value: e.target.value
-                                          }
-                                        }
-                                      };
-                                    });
-                                  }}
-                                  className="h-8 text-sm"
-                                />
-                                {field?.confidence && (
-                                  <Badge variant="secondary" className="text-[9px]">
-                                    {Math.round(field.confidence * 100)}% confidence
-                                  </Badge>
-                                )}
-                              </div>
-                            );
-                          })}
-                      </div>
-                      
-                      {/* Tables extracted from insurance card */}
-                      {processingResult.tables && processingResult.tables.length > 0 && (
-                        <div className="space-y-3 mt-4">
-                          <h4 className="font-medium text-sm flex items-center gap-2">
-                            <Table2 className="h-4 w-4" />
-                            Coverage Details Tables
-                          </h4>
-                          {processingResult.tables.map((table: any, tableIdx: number) => (
-                            <div key={tableIdx} className="border rounded-lg overflow-hidden">
-                              <div className="bg-muted px-3 py-2 font-medium text-sm">
-                                {table.title || `Coverage Table ${tableIdx + 1}`}
-                              </div>
-                              <div className="max-h-[300px] overflow-auto">
-                                <table className="w-full text-sm">
-                                  {table.header && (
-                                    <thead className="bg-muted/50 sticky top-0">
-                                      <tr>
-                                        {table.header.map((col: string, idx: number) => (
-                                          <th key={idx} className="text-left p-2 border-r last:border-r-0 font-medium">
-                                            {expandAbbreviation(col)}
-                                          </th>
-                                        ))}
-                                      </tr>
-                                    </thead>
-                                  )}
-                                  <tbody>
-                                    {table.rows?.map((row: any[], rowIdx: number) => (
-                                      <tr key={rowIdx} className="border-t hover:bg-muted/30">
-                                        {row.map((cell: any, cellIdx: number) => (
-                                          <td key={cellIdx} className="p-2 border-r last:border-r-0">
-                                            {cell || '—'}
-                                          </td>
-                                        ))}
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      
-                      {/* Save to History Button */}
-                      <Button 
-                        className="w-full mt-4" 
-                        onClick={async () => {
-                          try {
-                            const { data: { user } } = await supabase.auth.getUser();
-                            if (!user) {
-                              toast.error('Please login to save');
-                              return;
-                            }
-                            
-                            // Save to database
-                            const { error } = await supabase
-                              .from('document_processing_jobs')
-                              .upsert({
-                                id: processingResult.id,
-                                user_id: user.id,
-                                document_type: 'insurance',
-                                file_name: processingResult.fileName,
-                                file_path: processingResult.imageUrl || processingResult.fileName,
-                                status: 'completed',
-                                progress: 100,
-                                processing_config: {
-                                  extractedFields: processingResult.extractedFields,
-                                  tables: processingResult.tables || [],
-                                  validationResults: processingResult.validationResults,
-                                  imageUrl: processingResult.imageUrl
-                                }
-                              });
-                            
-                            if (error) throw error;
-                            
-                            // Update local history
-                            setProcessingHistory(prev => {
-                              const existing = prev.find(p => p.id === processingResult.id);
-                              if (existing) {
-                                return prev.map(p => p.id === processingResult.id ? processingResult : p);
-                              }
-                              return [processingResult, ...prev];
-                            });
-                            
-                            toast.success('Insurance details saved to history');
-                            
-                            // Trigger sub-agent recommendation dialog after delay
-                            setTimeout(() => {
-                              setShowSubAgentDialog(true);
-                            }, 500);
-                          } catch (err) {
-                            console.error('Save error:', err);
-                            toast.error('Failed to save insurance details');
-                          }
-                        }}
-                      >
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Confirm & Save to History
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No insurance document processed</p>
-                      <p className="text-sm mt-1">Upload an insurance card to see details</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <InsuranceTab
+                processingResult={processingResult}
+                setProcessingResult={setProcessingResult}
+                setProcessingHistory={setProcessingHistory}
+                setShowSubAgentDialog={setShowSubAgentDialog}
+              />
             </TabsContent>
           )}
 
