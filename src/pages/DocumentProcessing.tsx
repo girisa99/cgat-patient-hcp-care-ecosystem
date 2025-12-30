@@ -2584,8 +2584,15 @@ export default function DocumentProcessing() {
                                 
                                 toast.success('Saved to history');
                                 
-                                // Show sub-agent recommendation popup
-                                setShowSubAgentDialog(true);
+                                // For patient-onboarding, auto-switch to patient-info tab
+                                if (selectedDocType === 'patient-onboarding') {
+                                  setActiveTab('patient-info');
+                                }
+                                
+                                // Show sub-agent recommendation popup after a short delay
+                                setTimeout(() => {
+                                  setShowSubAgentDialog(true);
+                                }, 500);
                               } catch (err) {
                                 console.error('Save error:', err);
                                 toast.error('Failed to save');
