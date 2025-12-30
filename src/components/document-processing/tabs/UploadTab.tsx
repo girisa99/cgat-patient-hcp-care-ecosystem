@@ -31,8 +31,16 @@ import { ProcessingResult, ProcessingStage, MedicationResult } from '@/hooks/use
 import { DocumentTypeConfig } from '@/config/documentTypes';
 import ProcessingOptionsPanel from '@/components/document-processing/ProcessingOptionsPanel';
 import RealTimeExtractionTracker from '@/components/document-processing/RealTimeExtractionTracker';
+import ExtractionMetricsSummary from '@/components/document-processing/ExtractionMetricsSummary';
 import { expandAbbreviation } from '@/utils/healthcareAbbreviations';
 
+// Helper to count visible fields consistently
+const countVisibleFields = (extractedFields: Record<string, any>): number => {
+  const EXCLUDED = ['line_items', 'tables', 'raw_text', 'detected_document_type', 'document_category', '_pipeline_type', '_ocr_text_length', '_ocr_confidence'];
+  return Object.entries(extractedFields).filter(([key, field]) => 
+    field?.value && !key.startsWith('_') && !EXCLUDED.includes(key)
+  ).length;
+};
 interface UploadTabProps {
   currentConfig: DocumentTypeConfig;
   processingResult: ProcessingResult | null;
@@ -196,6 +204,19 @@ export default function UploadTab({
                   </div>
                 )}
 
+                {/* Extraction Metrics Summary - shows after completion */}
+                {processingResult.stage === 'complete' && Object.keys(processingResult.extractedFields).length > 0 && (
+                  <>
+                    <ExtractionMetricsSummary
+                      extractedFields={processingResult.extractedFields}
+                      validationResults={processingResult.validationResults}
+                      ocrProvider={ocrProvider === 'google' ? 'Google Vision' : ocrProvider === 'azure' ? 'Azure AI Vision' : 'AWS Textract'}
+                      visionAiProvider="Gemini 2.5 Flash"
+                      isHandwritten={enableHandwriting}
+                    />
+                  </>
+                )}
+
                 {/* Extracted Fields - Editable */}
                 {processingResult.stage === 'complete' && Object.keys(processingResult.extractedFields).length > 0 && (
                   <>
@@ -211,7 +232,7 @@ export default function UploadTab({
                             .filter(([key, field]) => 
                               field?.value && 
                               !key.startsWith('_') && 
-                              !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key)
+                              !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text', '_pipeline_type', '_ocr_text_length', '_ocr_confidence'].includes(key)
                             )
                             .map(([key, field]) => {
                               const label = expandAbbreviation(key.replace(/_/g, ' '));
@@ -334,7 +355,7 @@ export default function UploadTab({
                       
                       <div className="p-3 border border-border/50 bg-muted/30 rounded-lg">
                         <p className="text-sm text-muted-foreground">
-                          Extracted {Object.keys(processingResult.extractedFields).filter(k => processingResult.extractedFields[k]?.value).length} fields from document
+                          Extracted {countVisibleFields(processingResult.extractedFields)} fields from document
                         </p>
                       </div>
                     </div>

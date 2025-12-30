@@ -1957,46 +1957,68 @@ export default function DocumentProcessing() {
 
   // Handle verify and save to history
   const handleVerifyAndSave = useCallback(async () => {
-    if (!processingResult) return;
+    if (!processingResult) {
+      toast.error('No processing result to save');
+      return;
+    }
     
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        toast.error('Authentication error', { description: authError.message });
+        return;
+      }
       if (!user) {
         toast.error('Please login to save');
         return;
       }
       
+      // Build processing config with safe serialization
       const processingConfig: Record<string, unknown> = {
         extractedFields: JSON.parse(JSON.stringify(processingResult.extractedFields || {})),
         lineItems: JSON.parse(JSON.stringify(processingResult.lineItems || [])),
         tables: JSON.parse(JSON.stringify(processingResult.tables || [])),
         medications: JSON.parse(JSON.stringify(processingResult.medications || [])),
         validationResults: processingResult.validationResults ? JSON.parse(JSON.stringify(processingResult.validationResults)) : null,
-        imageUrl: processingResult.imageUrl,
+        // Don't include large base64 imageUrl in config - just reference it
+        imageUrl: processingResult.imageUrl?.startsWith('data:') 
+          ? `[base64:${processingResult.imageUrl.length} chars]` 
+          : processingResult.imageUrl,
         savedAt: new Date().toISOString()
       };
       
-      const { error } = await supabase
+      // Ensure we have a valid ID
+      const documentId = processingResult.id || crypto.randomUUID();
+      
+      const { error: upsertError } = await supabase
         .from('document_processing_jobs')
         .upsert({
-          id: processingResult.id,
+          id: documentId,
           user_id: user.id,
           document_type: selectedDocType,
-          file_name: processingResult.fileName,
-          file_path: processingResult.imageUrl || processingResult.fileName,
+          file_name: processingResult.fileName || 'Unknown Document',
+          file_path: processingResult.fileName || 'unknown',
           status: 'completed',
           progress: 100,
           processing_config: processingConfig as any
         });
       
-      if (error) throw error;
+      if (upsertError) {
+        console.error('Database save error:', upsertError);
+        toast.error('Failed to save', { 
+          description: upsertError.message || 'Database error - check console for details' 
+        });
+        return;
+      }
       
+      // Update local history
+      const updatedResult = { ...processingResult, id: documentId };
       setProcessingHistory(prev => {
-        const existing = prev.find(p => p.id === processingResult.id);
+        const existing = prev.find(p => p.id === documentId);
         if (existing) {
-          return prev.map(p => p.id === processingResult.id ? processingResult : p);
+          return prev.map(p => p.id === documentId ? updatedResult : p);
         }
-        return [processingResult, ...prev];
+        return [updatedResult, ...prev];
       });
       
       toast.success('Saved to history');
@@ -2010,7 +2032,8 @@ export default function DocumentProcessing() {
       }, 500);
     } catch (err) {
       console.error('Save error:', err);
-      toast.error('Failed to save');
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      toast.error('Failed to save', { description: errorMessage });
     }
   }, [processingResult, selectedDocType]);
 
