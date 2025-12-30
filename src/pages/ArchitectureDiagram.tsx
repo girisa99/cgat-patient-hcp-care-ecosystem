@@ -8,9 +8,10 @@ import {
   ContentTypeRoutingDiagram
 } from '@/components/document-processing';
 import { TwoStagePipelineSVGDiagram } from '@/components/document-processing/TwoStagePipelineSVGDiagram';
+import { PatientOnboardingFlowDiagram } from '@/components/diagrams';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building } from 'lucide-react';
+import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 
@@ -32,33 +33,37 @@ const ArchitectureDiagram = () => {
         
         <div className="p-4">
           <Tabs defaultValue="solution" className="w-full">
-            <TabsList className="grid w-full grid-cols-7 mb-6">
-              <TabsTrigger value="solution" className="flex items-center gap-2">
-                <Building className="h-4 w-4" />
+            <TabsList className="grid w-full grid-cols-8 mb-6">
+              <TabsTrigger value="solution" className="flex items-center gap-1 text-xs">
+                <Building className="h-3 w-3" />
                 Solution
               </TabsTrigger>
-              <TabsTrigger value="two-stage" className="flex items-center gap-2">
-                <GitBranch className="h-4 w-4" />
+              <TabsTrigger value="two-stage" className="flex items-center gap-1 text-xs">
+                <GitBranch className="h-3 w-3" />
                 Two-Stage
               </TabsTrigger>
-              <TabsTrigger value="content-routing" className="flex items-center gap-2">
-                <Layers className="h-4 w-4" />
-                Content Routing
+              <TabsTrigger value="content-routing" className="flex items-center gap-1 text-xs">
+                <Layers className="h-3 w-3" />
+                Content
               </TabsTrigger>
-              <TabsTrigger value="features" className="flex items-center gap-2">
-                <BarChart3 className="h-4 w-4" />
+              <TabsTrigger value="onboarding" className="flex items-center gap-1 text-xs">
+                <Users className="h-3 w-3" />
+                Onboarding
+              </TabsTrigger>
+              <TabsTrigger value="features" className="flex items-center gap-1 text-xs">
+                <BarChart3 className="h-3 w-3" />
                 Features
               </TabsTrigger>
-              <TabsTrigger value="platform" className="flex items-center gap-2">
-                <Layers className="h-4 w-4" />
+              <TabsTrigger value="platform" className="flex items-center gap-1 text-xs">
+                <Layers className="h-3 w-3" />
                 Platform
               </TabsTrigger>
-              <TabsTrigger value="document" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
+              <TabsTrigger value="document" className="flex items-center gap-1 text-xs">
+                <FileText className="h-3 w-3" />
                 Document
               </TabsTrigger>
-              <TabsTrigger value="medical" className="flex items-center gap-2">
-                <Eye className="h-4 w-4" />
+              <TabsTrigger value="medical" className="flex items-center gap-1 text-xs">
+                <Eye className="h-3 w-3" />
                 Medical
               </TabsTrigger>
             </TabsList>
@@ -71,12 +76,16 @@ const ArchitectureDiagram = () => {
               <TwoStagePipelineSVGDiagram />
             </TabsContent>
             
-            <TabsContent value="features" className="space-y-4">
-              <FeaturesOverviewDiagram />
-            </TabsContent>
-
             <TabsContent value="content-routing" className="space-y-4">
               <ContentTypeRoutingDiagram />
+            </TabsContent>
+
+            <TabsContent value="onboarding" className="space-y-4">
+              <PatientOnboardingFlowDiagram />
+            </TabsContent>
+
+            <TabsContent value="features" className="space-y-4">
+              <FeaturesOverviewDiagram />
             </TabsContent>
             
             <TabsContent value="platform" className="space-y-4">
