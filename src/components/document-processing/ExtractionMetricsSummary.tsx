@@ -47,7 +47,9 @@ export const ExtractionMetricsSummary: React.FC<ExtractionMetricsSummaryProps> =
   const ocrTextLength = parseInt(extractedFields['_ocr_text_length']?.value || '0', 10);
   const ocrConfidence = extractedFields['_ocr_confidence']?.value || '';
   const pipelineType = extractedFields['_pipeline_type']?.value || 'vision_ai_only';
-  const hasOcrPipeline = ocrTextLength > 0 || pipelineType.includes('ocr') || pipelineType.includes('hybrid');
+  
+  // OCR is active if: handwriting mode is on, OR ocr text was extracted, OR pipeline type indicates OCR
+  const hasOcrPipeline = isHandwritten || ocrTextLength > 0 || pipelineType.includes('ocr') || pipelineType.includes('hybrid');
   
   // Count visible fields (exclude internal metadata)
   const EXCLUDED_FIELDS = [

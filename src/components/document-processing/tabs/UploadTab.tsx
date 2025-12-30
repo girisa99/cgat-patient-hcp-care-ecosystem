@@ -4,7 +4,7 @@
  * Extracted from DocumentProcessing.tsx for maintainability
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -41,12 +41,13 @@ const countVisibleFields = (extractedFields: Record<string, any>): number => {
     field?.value && !key.startsWith('_') && !EXCLUDED.includes(key)
   ).length;
 };
+
 interface UploadTabProps {
   currentConfig: DocumentTypeConfig;
   processingResult: ProcessingResult | null;
   setProcessingResult: (result: ProcessingResult | null | ((prev: ProcessingResult | null) => ProcessingResult | null)) => void;
   onDrop: (files: File[]) => void;
-  onVerifyAndSave: () => void;
+  onVerifyAndSave: () => Promise<void> | void;
   // Processing options
   enableOCR: boolean;
   setEnableOCR: (value: boolean) => void;
@@ -107,6 +108,18 @@ export default function UploadTab({
     },
     maxFiles: 1
   });
+
+  // Track save loading state
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSaveClick = async () => {
+    setIsSaving(true);
+    try {
+      await onVerifyAndSave();
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const getStageIcon = (stage: ProcessingStage) => {
     switch (stage) {
@@ -186,7 +199,7 @@ export default function UploadTab({
                   </div>
                 </div>
 
-                {/* Real-time extraction tracker */}
+                {/* Real-time extraction tracker - shows during ALL processing stages */}
                 {processingResult.stage !== 'idle' && processingResult.stage !== 'complete' && processingResult.stage !== 'error' && (
                   <RealTimeExtractionTracker 
                     currentStage={processingResult.stage}
@@ -195,6 +208,9 @@ export default function UploadTab({
                     documentType={processingResult.documentType}
                     isProcessing={true}
                     fileName={processingResult.fileName}
+                    ocrProvider={ocrProvider === 'google' ? 'Google Vision' : ocrProvider === 'azure' ? 'Azure AI Vision' : 'AWS Textract'}
+                    visionAiProvider="Gemini 2.5 Flash"
+                    isHandwritten={enableHandwriting}
                   />
                 )}
 
@@ -285,11 +301,21 @@ export default function UploadTab({
                     {/* Save Button */}
                     <div className="flex justify-end pt-4">
                       <Button 
-                        onClick={onVerifyAndSave}
+                        onClick={handleSaveClick}
+                        disabled={isSaving}
                         className="gap-2"
                       >
-                        <CheckCircle className="h-4 w-4" />
-                        Confirm & Save to History
+                        {isSaving ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="h-4 w-4" />
+                            Confirm & Save to History
+                          </>
+                        )}
                       </Button>
                     </div>
                   </>
