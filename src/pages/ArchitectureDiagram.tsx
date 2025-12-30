@@ -4,7 +4,8 @@ import {
   FeaturesOverviewDiagram,
   SolutionArchitectureDiagram,
   DocumentProcessingArchitectureDiagram,
-  MedicalImagingAIPipelineDiagram 
+  MedicalImagingAIPipelineDiagram,
+  ContentTypeRoutingDiagram
 } from '@/components/document-processing';
 import { TwoStagePipelineSVGDiagram } from '@/components/document-processing/TwoStagePipelineSVGDiagram';
 import { Button } from '@/components/ui/button';
@@ -31,30 +32,34 @@ const ArchitectureDiagram = () => {
         
         <div className="p-4">
           <Tabs defaultValue="solution" className="w-full">
-            <TabsList className="grid w-full grid-cols-6 mb-6">
+            <TabsList className="grid w-full grid-cols-7 mb-6">
               <TabsTrigger value="solution" className="flex items-center gap-2">
                 <Building className="h-4 w-4" />
-                Solution Architecture
+                Solution
               </TabsTrigger>
               <TabsTrigger value="two-stage" className="flex items-center gap-2">
                 <GitBranch className="h-4 w-4" />
-                Two-Stage Pipeline
+                Two-Stage
+              </TabsTrigger>
+              <TabsTrigger value="content-routing" className="flex items-center gap-2">
+                <Layers className="h-4 w-4" />
+                Content Routing
               </TabsTrigger>
               <TabsTrigger value="features" className="flex items-center gap-2">
                 <BarChart3 className="h-4 w-4" />
-                Features Overview
+                Features
               </TabsTrigger>
               <TabsTrigger value="platform" className="flex items-center gap-2">
                 <Layers className="h-4 w-4" />
-                Platform Architecture
+                Platform
               </TabsTrigger>
               <TabsTrigger value="document" className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
-                Document Processing
+                Document
               </TabsTrigger>
               <TabsTrigger value="medical" className="flex items-center gap-2">
                 <Eye className="h-4 w-4" />
-                Medical Imaging
+                Medical
               </TabsTrigger>
             </TabsList>
             
@@ -68,6 +73,10 @@ const ArchitectureDiagram = () => {
             
             <TabsContent value="features" className="space-y-4">
               <FeaturesOverviewDiagram />
+            </TabsContent>
+
+            <TabsContent value="content-routing" className="space-y-4">
+              <ContentTypeRoutingDiagram />
             </TabsContent>
             
             <TabsContent value="platform" className="space-y-4">
