@@ -66,25 +66,10 @@ const expandAbbreviation = (text: string): string => {
   return text.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 };
 
-interface ProcessingResult {
-  id: string;
-  fileName: string;
-  documentType: string;
-  stage: string;
-  progress: number;
-  extractedFields: Record<string, { value: string; confidence: number; verified?: boolean }>;
-  validationResults?: { passed: number; failed: number; warnings: number };
-  rawText?: string;
-  tables?: any[];
-  error?: string;
-  processedAt: Date;
-  imageUrl?: string;
-}
-
 interface InsuranceTabProps {
-  processingResult: ProcessingResult | null;
-  setProcessingResult: React.Dispatch<React.SetStateAction<ProcessingResult | null>>;
-  setProcessingHistory: React.Dispatch<React.SetStateAction<ProcessingResult[]>>;
+  processingResult: any;
+  setProcessingResult: (updater: (prev: any) => any) => void;
+  setProcessingHistory: (updater: (prev: any[]) => any[]) => void;
   setShowSubAgentDialog: (show: boolean) => void;
 }
 
@@ -180,8 +165,8 @@ export default function InsuranceTab({
             {/* Editable Insurance Fields */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {Object.entries(processingResult.extractedFields)
-                .filter(([key, field]) => field?.value && !key.startsWith('_') && !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key))
-                .map(([key, field]) => {
+                .filter(([key, field]: [string, any]) => field?.value && !key.startsWith('_') && !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key))
+                .map(([key, field]: [string, any]) => {
                   const label = expandAbbreviation(key.replace(/_/g, ' '));
                   return (
                     <div key={key} className="p-3 bg-muted/50 rounded-lg space-y-1">
@@ -189,7 +174,7 @@ export default function InsuranceTab({
                       <Input
                         value={field?.value || ''}
                         onChange={(e) => {
-                          setProcessingResult(prev => {
+                          setProcessingResult((prev: any) => {
                             if (!prev) return prev;
                             return {
                               ...prev,
