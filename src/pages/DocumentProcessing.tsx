@@ -71,7 +71,8 @@ import {
   BadgeCheck,
   Plus,
   Image,
-  FlaskConical
+  FlaskConical,
+  PenTool
 } from 'lucide-react';
 import { useMedicationProcessing } from '@/hooks/useMedicationProcessing';
 import { toast } from 'sonner';
@@ -3373,10 +3374,11 @@ export default function DocumentProcessing() {
                         // Define section patterns for grouping
                         const sectionPatterns: { id: string; title: string; icon: React.ReactNode; patterns: RegExp[] }[] = [
                           { id: 'application', title: 'Application Type', icon: <FileCheck className="h-4 w-4" />, patterns: [/^(new_application|re_enrollment|application|enrollment)/i] },
-                          { id: 'patient', title: 'Patient Information', icon: <Users className="h-4 w-4" />, patterns: [/^patient|^first_name|^last_name|^middle|^dob|^date_of_birth|^gender|^sex|^ssn|^address|^street|^city|^state|^zip|^phone|^mobile|^email|^language/i] },
-                          { id: 'prescriber', title: 'Prescriber Information', icon: <Stethoscope className="h-4 w-4" />, patterns: [/prescriber|physician|doctor|provider|^npi|^dea|clinic|facility|office/i] },
-                          { id: 'insurance', title: 'Insurance & Coverage', icon: <Shield className="h-4 w-4" />, patterns: [/insurance|medicare|medicaid|coverage|drug_coverage|medical_benefit|military|va_|employer|commercial|member_id|group|bin|pcn/i] },
-                          { id: 'consent', title: 'Consent & Signatures', icon: <FileText className="h-4 w-4" />, patterns: [/signature|consent|authorization|date_signed|enrollment_year|pap_/i] },
+                          { id: 'patient', title: 'Patient Information', icon: <Users className="h-4 w-4" />, patterns: [/^patient|^first_name|^last_name|^middle|^dob|^date_of_birth|^gender|^sex|^ssn|^address|^street|^city|^state|^zip|^phone|^mobile|^email|^language|^caregiver/i] },
+                          { id: 'prescriber', title: 'Prescriber Information', icon: <Stethoscope className="h-4 w-4" />, patterns: [/prescriber|physician|doctor|provider|^npi|^dea|clinic|facility|office|healthcare/i] },
+                          { id: 'insurance', title: 'Insurance & Coverage', icon: <Shield className="h-4 w-4" />, patterns: [/insurance|medicare|medicaid|coverage|drug_coverage|medical_benefit|military|va_|employer|commercial|member_id|group|bin|pcn|benefits|investigation/i] },
+                          { id: 'medication', title: 'Medication & Treatment', icon: <Pill className="h-4 w-4" />, patterns: [/medication|drug|dosage|strength|prescription|treatment|requesting|truvada|descovy|copay|coupon|prior_auth/i] },
+                          { id: 'consent', title: 'Consent & Signatures', icon: <PenTool className="h-4 w-4" />, patterns: [/signature|consent|authorization|date_signed|enrollment_year|pap_|handwritten/i] },
                         ];
                         
                         const allFields = Object.entries(processingResult.extractedFields)

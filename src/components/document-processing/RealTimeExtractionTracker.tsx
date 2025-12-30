@@ -143,11 +143,18 @@ export const RealTimeExtractionTracker: React.FC<RealTimeExtractionTrackerProps>
       }
       
       if (!prevFields[key] || prevFields[key].value !== data.value) {
-        // Determine source from confidence or explicit source field
-        const source: 'ocr' | 'vision_ai' = data.source === 'vision_ai' || data.source === 'nlp' || data.source === 'NLP' 
-          ? 'vision_ai' 
-          : data.source === 'ocr' || data.source === 'OCR'
-          ? 'ocr'
+        // Determine source from explicit source field - handle multiple formats:
+        // Backend uses: 'google_vision_ocr', 'gemini_vision_ai', 'claude_vision_ai', etc.
+        const srcLower = (data.source || '').toLowerCase();
+        const isOcrSource = srcLower.includes('ocr') || srcLower === 'ocr';
+        const isVisionAiSource = srcLower.includes('vision_ai') || srcLower.includes('nlp') || 
+                                 srcLower.includes('gemini') || srcLower.includes('claude') || srcLower.includes('openai');
+        
+        // If source explicitly indicates OCR, use ocr; if vision_ai/nlp, use vision_ai; else fallback to confidence
+        const source: 'ocr' | 'vision_ai' = isOcrSource && !isVisionAiSource
+          ? 'ocr' 
+          : isVisionAiSource
+          ? 'vision_ai'
           : data.confidence >= 0.85 ? 'vision_ai' : 'ocr';
         
         newExtractions.push({
@@ -189,22 +196,30 @@ export const RealTimeExtractionTracker: React.FC<RealTimeExtractionTrackerProps>
     }
   }, [liveExtractions]);
 
-  // Count OCR vs Vision AI fields from all extractedFields (not just live extractions)
+  // Count fields by source - properly track hybrid pipeline
+  // In hybrid pipeline: OCR extracts raw text, Vision AI structures into fields
+  // The '_ocr_text_length' field indicates OCR was used in the pipeline
+  const hasOcrPipeline = !!extractedFields['_ocr_text_length']?.value || !!extractedFields['_pipeline_type']?.value?.includes('ocr');
+  const ocrTextLength = parseInt(extractedFields['_ocr_text_length']?.value || '0', 10);
+  const ocrConfidenceStr = extractedFields['_ocr_confidence']?.value || '';
+  const pipelineType = extractedFields['_pipeline_type']?.value || 'vision_ai_only';
+  
   const totalFieldsCount = Object.keys(extractedFields).filter(key => 
     !key.startsWith('_') && !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key)
   ).length;
   
-  const ocrFieldCount = Object.entries(extractedFields).filter(([key, data]) => {
+  // For hybrid pipeline: OCR provides raw text, Vision AI provides structured fields
+  // Count Vision AI fields (all structured fields come from Vision AI in hybrid mode)
+  const visionAiFieldCount = Object.entries(extractedFields).filter(([key, data]) => {
     if (key.startsWith('_') || ['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key)) return false;
-    const source = data.source === 'vision_ai' || data.source === 'nlp' || data.source === 'NLP' 
-      ? 'vision_ai' 
-      : data.source === 'ocr' || data.source === 'OCR'
-      ? 'ocr'
-      : data.confidence < 0.85 ? 'ocr' : 'vision_ai';
-    return source === 'ocr';
+    const srcLower = (data.source || '').toLowerCase();
+    // In hybrid mode, all structured fields are from Vision AI even though they used OCR text as context
+    return srcLower.includes('vision_ai') || srcLower.includes('gemini') || srcLower.includes('claude') || srcLower.includes('openai');
   }).length;
   
-  const visionAiFieldCount = totalFieldsCount - ocrFieldCount;
+  // OCR doesn't produce individual fields in hybrid mode - it produces raw text
+  // Show OCR contribution based on whether OCR text was used
+  const ocrFieldCount = hasOcrPipeline && ocrTextLength > 0 ? Math.ceil(ocrTextLength / 100) : 0; // Approximate "fields worth" of OCR text
 
   const getStageIcon = (stage: ExtractionStage) => {
     if (stage.status === 'completed') {
@@ -226,10 +241,17 @@ export const RealTimeExtractionTracker: React.FC<RealTimeExtractionTrackerProps>
             Real-Time Extraction Progress
           </CardTitle>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-[10px] bg-blue-500/10 border-blue-500/30">
-              <Camera className="h-3 w-3 mr-1" />
-              OCR: {ocrFieldCount}
-            </Badge>
+            {hasOcrPipeline ? (
+              <Badge variant="outline" className="text-[10px] bg-blue-500/10 border-blue-500/30">
+                <Camera className="h-3 w-3 mr-1" />
+                OCR: {ocrConfidenceStr || `${(ocrTextLength / 1000).toFixed(1)}k chars`}
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-[10px] bg-muted border-border">
+                <Camera className="h-3 w-3 mr-1" />
+                No OCR
+              </Badge>
+            )}
             <Badge variant="outline" className="text-[10px] bg-purple-500/10 border-purple-500/30">
               <Brain className="h-3 w-3 mr-1" />
               Vision AI: {visionAiFieldCount}
@@ -412,12 +434,12 @@ export const RealTimeExtractionTracker: React.FC<RealTimeExtractionTrackerProps>
             <Separator />
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="p-2 bg-muted/30 rounded-lg">
-                <div className="text-lg font-bold text-primary">{liveExtractions.length}</div>
+                <div className="text-lg font-bold text-primary">{totalFieldsCount}</div>
                 <div className="text-[10px] text-muted-foreground">Total Fields</div>
               </div>
               <div className="p-2 bg-blue-500/10 rounded-lg">
-                <div className="text-lg font-bold text-blue-600">{ocrFieldCount}</div>
-                <div className="text-[10px] text-muted-foreground">From OCR</div>
+                <div className="text-lg font-bold text-blue-600">{hasOcrPipeline ? `${(ocrTextLength / 1000).toFixed(1)}k` : '0'}</div>
+                <div className="text-[10px] text-muted-foreground">OCR Chars</div>
               </div>
               <div className="p-2 bg-purple-500/10 rounded-lg">
                 <div className="text-lg font-bold text-purple-600">{visionAiFieldCount}</div>
