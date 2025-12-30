@@ -8,3 +8,9 @@ export { default as HistoryTab } from './HistoryTab';
 export { default as MedicationTab } from './MedicationTab';
 export { default as InsuranceTab } from './InsuranceTab';
 export { default as PatientInfoTab } from './PatientInfoTab';
+
+// Layout components
+export { DocumentProcessingHeader } from './DocumentProcessingHeader';
+export { DocumentProcessingControlBar } from './DocumentProcessingControlBar';
+export { AgentWorkflowSelector } from './AgentWorkflowSelector';
+export { GenericDocumentTab } from './GenericDocumentTab';

@@ -108,7 +108,17 @@ import { ArchitectureRecommendation } from '@/services/agentArchitectureIntellig
 import { HEALTHCARE_ABBREVIATIONS, expandAbbreviation } from '@/utils/healthcareAbbreviations';
 
 // Extracted tab components
-import { HistoryTab, PatientInfoTab, InsuranceTab, UploadTab, MedicationTab } from '@/components/document-processing/tabs';
+import { 
+  HistoryTab, 
+  PatientInfoTab, 
+  InsuranceTab, 
+  UploadTab, 
+  MedicationTab,
+  DocumentProcessingHeader,
+  DocumentProcessingControlBar,
+  AgentWorkflowSelector,
+  GenericDocumentTab
+} from '@/components/document-processing/tabs';
 
 // Extracted dialog components
 import { ClinicalRecommendationDialog, SettingsDialog, VerificationDialog } from '@/components/document-processing/dialogs';
@@ -2038,228 +2048,35 @@ export default function DocumentProcessing() {
   return (
     <AppLayout title="Document Processing">
       <div className="container mx-auto p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-lg bg-primary/10">
-              <FileSearch className="h-8 w-8 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold">Document Processing</h1>
-              <p className="text-muted-foreground">Upload, auto-process, and extract data from documents</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <Label htmlFor="auto-process" className="text-sm">Auto-Process</Label>
-              <Switch 
-                id="auto-process" 
-                checked={isAutoProcessing}
-                onCheckedChange={setIsAutoProcessing}
-              />
-            </div>
-            <Button variant="outline" onClick={() => setShowSettingsDialog(true)}>
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
-            </Button>
-          </div>
-        </div>
+        {/* Header - Using extracted component */}
+        <DocumentProcessingHeader
+          isAutoProcessing={isAutoProcessing}
+          setIsAutoProcessing={setIsAutoProcessing}
+          onOpenSettings={() => setShowSettingsDialog(true)}
+        />
 
-        {/* Compact Control Bar with Document Type Dropdown */}
-        <Card className="bg-gradient-to-r from-muted/30 via-background to-muted/30">
-          <CardContent className="py-4">
-            <div className="flex flex-wrap items-center gap-4">
-              {/* Document Type Dropdown */}
-              <div className="flex items-center gap-3">
-                <Label className="text-sm font-medium whitespace-nowrap">Document Type</Label>
-                <Select value={selectedDocType} onValueChange={setSelectedDocType}>
-                  <SelectTrigger className="w-[220px] bg-background">
-                    <SelectValue>
-                      <div className="flex items-center gap-2">
-                        <span>{currentConfig.icon}</span>
-                        <span>{currentConfig.title}</span>
-                      </div>
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px] overflow-y-auto bg-background border shadow-lg z-50">
-                    {getAllCategories().map(category => (
-                      <div key={category}>
-                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50 flex items-center gap-2 sticky top-0">
-                          <span>{getCategoryIcon(category)}</span>
-                          {getCategoryLabel(category)}
-                        </div>
-                        {getDocumentTypesByCategory(category).map(config => (
-                          <SelectItem key={config.id} value={config.id}>
-                            <div className="flex items-center gap-2">
-                              <span>{config.icon}</span>
-                              <span>{config.title}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </div>
-                    ))}
-                    {/* Custom document types */}
-                    {customDocTypes.length > 0 && (
-                      <div>
-                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50 flex items-center gap-2 sticky top-0">
-                          <span>✨</span>
-                          Custom Types
-                        </div>
-                        {customDocTypes.map(config => (
-                          <SelectItem key={config.id} value={config.id}>
-                            <div className="flex items-center gap-2">
-                              <span>{config.icon}</span>
-                              <span>{config.title}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </div>
-                    )}
-                    {/* Add New Type Option */}
-                    <div 
-                      className="px-2 py-2 text-sm cursor-pointer hover:bg-muted flex items-center gap-2 text-primary"
-                      onClick={(e) => { e.stopPropagation(); setShowCustomTypeDialog(true); }}
-                    >
-                      <Plus className="h-4 w-4" />
-                      Add Custom Type...
-                    </div>
-                  </SelectContent>
-                </Select>
-              </div>
+        {/* Control Bar - Using extracted component */}
+        <DocumentProcessingControlBar
+          selectedDocType={selectedDocType}
+          setSelectedDocType={setSelectedDocType}
+          currentConfig={currentConfig}
+          customDocTypes={customDocTypes}
+          processingResult={processingResult}
+          processingMode={processingMode}
+          setProcessingMode={setProcessingMode}
+          onOpenSubAgentDialog={() => setShowSubAgentDialog(true)}
+          onOpenSettingsDialog={() => setShowSettingsDialog(true)}
+          onOpenCustomTypeDialog={() => setShowCustomTypeDialog(true)}
+        />
 
-              {/* Agent Recommendation Button */}
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setShowSubAgentDialog(true)}
-                className="h-8"
-              >
-                <Brain className="h-4 w-4 mr-2" />
-                AI Agent
-              </Button>
-
-              <Separator orientation="vertical" className="h-8" />
-
-              {/* Compact AI Pipeline Status */}
-              <div className="flex items-center gap-2">
-                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${
-                  processingResult?.stage === 'complete' ? 'bg-green-500/10 text-green-600' :
-                  processingResult?.stage && processingResult.stage !== 'idle' ? 'bg-primary/10 text-primary animate-pulse' :
-                  'bg-muted text-muted-foreground'
-                }`}>
-                  {processingResult?.stage === 'complete' ? (
-                    <><CheckCircle className="h-3.5 w-3.5" /> Complete</>
-                  ) : processingResult?.stage === 'ocr' ? (
-                    <><Eye className="h-3.5 w-3.5 animate-pulse" /> OCR</>
-                  ) : processingResult?.stage === 'extraction' ? (
-                    <><Table2 className="h-3.5 w-3.5 animate-pulse" /> Extracting</>
-                  ) : processingResult?.stage === 'mapping' ? (
-                    <><ClipboardList className="h-3.5 w-3.5 animate-pulse" /> Mapping</>
-                  ) : processingResult?.stage === 'validation' ? (
-                    <><Shield className="h-3.5 w-3.5 animate-pulse" /> Validating</>
-                  ) : (
-                    <><Cpu className="h-3.5 w-3.5" /> Ready</>
-                  )}
-                </div>
-              </div>
-
-              <Separator orientation="vertical" className="h-8" />
-
-              {/* Processing Mode Toggle */}
-              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted/50">
-                <Button 
-                  size="sm" 
-                  variant={processingMode === 'standalone' ? 'default' : 'ghost'}
-                  className="h-7 px-3 text-xs rounded-full"
-                  onClick={() => setProcessingMode('standalone')}
-                >
-                  <Zap className="h-3 w-3 mr-1" />
-                  Standalone
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant={processingMode === 'agent' ? 'default' : 'ghost'}
-                  className="h-7 px-3 text-xs rounded-full"
-                  onClick={() => setProcessingMode('agent')}
-                >
-                  <Bot className="h-3 w-3 mr-1" />
-                  Agent
-                </Button>
-              </div>
-
-              <div className="flex-1" />
-
-              {/* Settings Button */}
-              <Button variant="outline" size="sm" onClick={() => setShowSettingsDialog(true)} className="h-8">
-                <Settings className="h-4 w-4 mr-2" />
-                Options
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Agent Workflow Selection - Only show when agent mode is enabled */}
+        {/* Agent Workflow Selection - Using extracted component */}
         {processingMode === 'agent' && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Bot className="h-5 w-5" />
-                Select Agent Workflow
-              </CardTitle>
-              <CardDescription>Choose an AI agent to process your {currentConfig.title} document</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {recommendedAgentWorkflows.length > 0 ? (
-                  recommendedAgentWorkflows.map((workflow) => (
-                    <div
-                      key={workflow.id}
-                      onClick={() => setSelectedAgentWorkflow(workflow.id)}
-                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                        selectedAgentWorkflow === workflow.id 
-                          ? 'border-primary bg-primary/5 ring-2 ring-primary/20' 
-                          : 'hover:border-primary/50 hover:bg-muted/50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className={`p-2 rounded-lg ${selectedAgentWorkflow === workflow.id ? 'bg-primary/20' : 'bg-muted'}`}>
-                          {workflow.icon}
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-medium text-sm">{workflow.title}</h4>
-                          <p className="text-xs text-muted-foreground">{workflow.description}</p>
-                        </div>
-                        {selectedAgentWorkflow === workflow.id && (
-                          <CheckCircle className="h-5 w-5 text-primary" />
-                        )}
-                      </div>
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {workflow.capabilities.slice(0, 2).map((cap, i) => (
-                          <Badge key={i} variant="secondary" className="text-[10px]">{cap}</Badge>
-                        ))}
-                        {workflow.capabilities.length > 2 && (
-                          <Badge variant="outline" className="text-[10px]">+{workflow.capabilities.length - 2}</Badge>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="col-span-3 text-center py-6 text-muted-foreground">
-                    <Bot className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No agent workflows available for {currentConfig.title}</p>
-                    <Button 
-                      variant="link" 
-                      size="sm" 
-                      onClick={() => navigate('/agents/canvas')}
-                      className="mt-2"
-                    >
-                      Create custom agent workflow →
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <AgentWorkflowSelector
+            currentConfig={currentConfig}
+            recommendedWorkflows={recommendedAgentWorkflows}
+            selectedWorkflow={selectedAgentWorkflow}
+            setSelectedWorkflow={setSelectedAgentWorkflow}
+          />
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -2350,111 +2167,39 @@ export default function DocumentProcessing() {
             </TabsContent>
           )}
 
-          {/* Order Details Tab - Only for Order Management document type */}
+          {/* Order Details Tab - Using GenericDocumentTab */}
           {selectedDocType === 'order-management' && (
             <TabsContent value="order-details" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ShoppingCart className="h-5 w-5 text-primary" />
-                    Order Details
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {processingResult && processingResult.stage === 'complete' ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {Object.entries(processingResult.extractedFields)
-                        .filter(([key, field]) => field?.value && !key.startsWith('_') && !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key))
-                        .map(([key, field]) => {
-                          const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                          return (
-                            <div key={key} className="p-3 bg-muted/50 rounded-lg">
-                              <Label className="text-xs text-muted-foreground">{label}</Label>
-                              <p className="font-medium">{field?.value || '—'}</p>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No order document processed</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <GenericDocumentTab
+                title="Order Details"
+                icon={ShoppingCart}
+                processingResult={processingResult}
+                emptyStateMessage="No order document processed"
+              />
             </TabsContent>
           )}
 
-          {/* Treatment Center Tab */}
+          {/* Treatment Center Tab - Using GenericDocumentTab */}
           {selectedDocType === 'treatment-center' && (
             <TabsContent value="treatment-info" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Building2 className="h-5 w-5 text-primary" />
-                    Treatment Center Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {processingResult && processingResult.stage === 'complete' ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {Object.entries(processingResult.extractedFields)
-                        .filter(([key, field]) => field?.value && !key.startsWith('_') && !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key))
-                        .map(([key, field]) => {
-                          const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                          return (
-                            <div key={key} className="p-3 bg-muted/50 rounded-lg">
-                              <Label className="text-xs text-muted-foreground">{label}</Label>
-                              <p className="font-medium">{field?.value || '—'}</p>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No treatment center document processed</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <GenericDocumentTab
+                title="Treatment Center Information"
+                icon={Building2}
+                processingResult={processingResult}
+                emptyStateMessage="No treatment center document processed"
+              />
             </TabsContent>
           )}
 
-          {/* Customer Onboarding Tab */}
+          {/* Customer Onboarding Tab - Using GenericDocumentTab */}
           {selectedDocType === 'customer-onboarding' && (
             <TabsContent value="customer-info" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <UserCheck className="h-5 w-5 text-primary" />
-                    Customer Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {processingResult && processingResult.stage === 'complete' ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {Object.entries(processingResult.extractedFields)
-                        .filter(([key, field]) => field?.value && !key.startsWith('_') && !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key))
-                        .map(([key, field]) => {
-                          const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                          return (
-                            <div key={key} className="p-3 bg-muted/50 rounded-lg">
-                              <Label className="text-xs text-muted-foreground">{label}</Label>
-                              <p className="font-medium">{field?.value || '—'}</p>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <UserCheck className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No customer document processed</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <GenericDocumentTab
+                title="Customer Information"
+                icon={UserCheck}
+                processingResult={processingResult}
+                emptyStateMessage="No customer document processed"
+              />
             </TabsContent>
           )}
 
