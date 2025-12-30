@@ -1408,38 +1408,84 @@ INSURANCE CARD EXTRACTION:
 - Look for effective/expiration dates
 `,
     'patient-onboarding': `
-PATIENT ONBOARDING/INTAKE FORM EXTRACTION:
+PATIENT ONBOARDING/ENROLLMENT FORM EXTRACTION:
+
+**CRITICAL: DETECT ALL FORM SECTIONS DYNAMICALLY**
+- Analyze the form structure and identify ALL sections present
+- Return sections as a JSON object mapping section titles to field names
+- Include sections like: Application Type, Patient Demographics, Prescriber Info, Insurance, Consent, etc.
+
+**APPLICATION TYPE (if present):**
+- new_application: Is this a new enrollment (checkbox marked)?
+- re_enrollment: Is this a re-enrollment?
+- enrollment_year: Year of enrollment if specified
+
 **PATIENT DEMOGRAPHICS:**
-- patient_name: Full name (first, middle, last)
-- dob: Date of birth
+- patient_name / first_name / last_name / middle_name: Full name components
+- dob / date_of_birth: Date of birth
 - ssn: Social Security Number (last 4 if partial)
 - gender: Gender/Sex
-- address: Full street address
+- address / street_address: Street address
 - city, state, zip: City, state, and ZIP code
-- phone: Phone number(s) - home, cell, work
+- phone / mobile_phone / home_phone: Phone number(s)
 - email: Email address
 - preferred_language: Preferred language
 
 **EMERGENCY CONTACT:**
-- emergency_contact: Emergency contact name
-- emergency_phone: Emergency contact phone
-- emergency_relationship: Relationship to patient
+- emergency_contact_name: Emergency contact name
+- emergency_contact_phone: Emergency contact phone
+- emergency_contact_relationship: Relationship to patient
 
-**INSURANCE INFO:**
-- insurance_id: Insurance member ID
+**PRESCRIBER/PROVIDER INFORMATION:**
+- prescriber_name / provider_name: Prescriber's full name
+- prescriber_npi / npi: NPI number (10 digits)
+- prescriber_phone: Prescriber phone
+- prescriber_fax: Prescriber fax
+- clinic_name / facility_name: Clinic or facility name
+- clinic_address: Clinic address
+- clinic_city / clinic_state / clinic_zip: Clinic location
+
+**INSURANCE INFORMATION:**
 - insurance_name: Insurance company name
+- insurance_id / member_id: Member ID
 - group_number: Group number
+- bin / pcn / rxgrp: Pharmacy benefit info
+- medicare_part_d: Has Medicare Part D coverage?
+- medicaid: Has Medicaid coverage?
+- commercial_insurance: Has commercial insurance?
+- military_va: Has VA/Military coverage?
+- no_insurance: No insurance coverage?
 
-**MEDICAL HISTORY:**
-- allergies: Known allergies (medications, food, environmental)
-- current_medications: Current medications
-- medical_conditions: Existing medical conditions
-- primary_care_physician: PCP name
+**DRUG/MEDICATION COVERAGE:**
+- drug_coverage_type: Type of drug coverage
+- medical_benefit: Uses medical benefit?
+- pharmacy_benefit: Uses pharmacy benefit?
 
-**CONSENTS:**
-- consent_signed: Whether consent form was signed (true/false)
-- hipaa_signed: HIPAA authorization signed (true/false)
-- signature_date: Date of signature
+**CONSENTS & AUTHORIZATIONS:**
+- pap_consent: Patient Assistance Program consent signed?
+- hipaa_consent: HIPAA authorization signed?
+- patient_consent: General patient consent signed?
+- provider_authorization: Provider authorization signed?
+
+**SIGNATURE DETECTION (CRITICAL):**
+- Look for ANY handwritten signatures on the form
+- For each signature found, extract:
+  - signature_detected: true/false (are there signatures on the form?)
+  - patient_signature_present: true/false (is patient signature visible?)
+  - provider_signature_present: true/false (is provider/prescriber signature visible?)
+  - signature_date: Date written next to signature
+  - signature_location: Description of where signature appears (e.g., "bottom of page", "consent section")
+  
+**HANDWRITTEN CONTENT DETECTION:**
+- handwritten_regions_detected: true/false (is there handwritten text?)
+- handwritten_text: Any handwritten text you can read (not just signatures)
+- handwritten_notes: Any handwritten notes or annotations
+
+**CHECKBOX/SELECTION FIELDS:**
+- For each checkbox section, indicate which options are checked
+- Use field names that match the checkbox labels
+
+Return a "sections" object that groups fields by their form section headers.
 `,
     'lab-results': `
 LAB RESULTS EXTRACTION:
