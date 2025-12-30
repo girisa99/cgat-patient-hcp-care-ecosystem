@@ -16,135 +16,157 @@ If you watched my previous video on this AI document processing platform, you sa
 
 Today, I'm excited to share what happened next—the evolution from a weekend prototype to an enterprise-grade solution.
 
-Since that original build, I've been working on significant enhancements.
+Since that original build, I've made significant **technical architecture enhancements**:
 
-On the architecture side:
-- Enterprise-standard visual design with high-contrast, accessible interfaces
-- Solid opaque backgrounds replacing transparency for better readability
-- Professional typography using system fonts
-- Drop shadows and visual depth for clear layer separation
+**Multi-Model AI Routing System:**
+- Content-aware model selection based on document characteristics
+- Specialized models for different content types—tables, handwriting, medical images
+- Dynamic routing logic that chooses the optimal AI model per document
 
-On the functional side:
-- Intelligent multi-model AI routing
-- Dynamic field discovery across ANY document type
-- Enhanced confidence scoring with healthcare-specific validation
-- Seamless patient onboarding workflow integration
+**Configuration-Driven Architecture:**
+- Document type configurations externalized from code
+- Field mapping rules configurable per document category
+- Processing hints that enable specialized pipelines like NDC lookup
 
-What started as a proof-of-concept is now ready for production healthcare environments.
+**Enhanced Processing Pipeline:**
+- Two-stage OCR plus NLP architecture with provider abstraction
+- Parallel processing paths for OCR, Form Recognition, and Entity Extraction
+- Confidence scoring with configurable thresholds for human-in-the-loop
 
-Let me walk you through the transformation—starting with the architecture changes that made this possible.
+**Healthcare-Specific Integrations:**
+- NDC medication database lookups for prescription validation
+- ICD-10 and CPT code search and validation
+- Insurance payer database integration for eligibility checks
+
+What started as a proof-of-concept now has production-ready architecture patterns.
+
+Let me walk you through the technical transformation.
 
 ---
 
-# SCENE 2: BEFORE/AFTER ARCHITECTURE
+# SCENE 2: MULTI-MODEL ROUTING ARCHITECTURE
 **[2:30 - 4:30]**
 
-*[Navigate to Architecture Diagram → Before/After tab]*
+*[Navigate to Architecture Diagram → Content Type Routing tab]*
 
-Let me start by showing you the before and after architecture transformation.
+The biggest architectural change is **intelligent multi-model routing**.
 
-On the left, you can see the original architecture—what we built in 64 hours:
+Before — Single Model Approach:
+- One AI model processed every document type
+- Same extraction logic regardless of content
+- Generic prompts with no document-type optimization
+- Accuracy dropped significantly on specialized content
 
-Before — Single Pipeline:
-- One AI model for everything
-- Manual document type selection
-- Fixed field extraction with hardcoded mappings
-- 70 to 80 percent accuracy on complex documents
-- Limited validation and no confidence thresholds
+After — Content-Aware Routing System:
 
-Now look at the right side—the enhanced enterprise architecture:
+The system now analyzes document characteristics and routes to specialized models:
 
-After — Intelligent Multi-Model Routing:
-- Claude 3.5 for complex medical documents requiring reasoning
-- GPT-4o for structured forms like insurance and billing
-- Gemini 1.5 for high-volume processing with speed optimization
+**Tables and Structured Data:**
+- Gemini 2.5 Flash for structure recognition
+- AWS Textract for precise cell extraction
+- Optimized for invoices, forms, and tabular medical records
 
-Each model handles what it's best at.
+**Medical Imaging:**
+- GPT-5 for radiology analysis and findings
+- Med-PaLM 2 for clinical interpretation
+- X-rays, CT scans, MRI reports
 
-Notice the visual improvements too:
-- Solid opaque backgrounds with high contrast ratios
-- Professional color coding with semantic meaning
-- Clear section separation with drop shadows
-- System fonts optimized for technical readability
+**Lab Results:**
+- Claude Sonnet for result interpretation
+- Gemini Pro for reference range validation
+- Blood tests, pathology reports, urinalysis
 
-This isn't just prettier—it's enterprise-ready documentation that stakeholders and compliance teams can understand.
+**Handwritten Content:**
+- Google Vision for handwriting OCR
+- GPT-5 Mini for contextual correction
+- Physician notes, handwritten prescriptions
+
+Each routing decision is logged with the model selected, confidence threshold applied, and processing time.
 
 ---
 
-# SCENE 3: SOLUTION ARCHITECTURE
+# SCENE 3: CONFIGURATION-DRIVEN DOCUMENT TYPES
 **[4:30 - 6:30]**
 
-*[Navigate to Solution Architecture tab]*
+*[Show code structure and config files]*
 
-Now let's look at the complete solution architecture in enterprise detail.
+The second major enhancement is **configuration-driven architecture**.
 
-This diagram shows the full stack from user input to data output.
+Previously, adding a new document type meant writing custom code—new components, new extraction logic, new field mappings.
 
-Layer 1 — Input Sources:
-At the top, you see all supported document sources:
-- Patient intake forms and enrollment documents
-- Prescriptions—handwritten or printed
-- Insurance cards in all variants
-- Medical imaging from radiology systems
-- Invoices and billing documents
+Now, document types are defined in configuration:
 
-Layer 2 — AI Processing Engine:
-This is the heart of the system:
-- Document Classification using Vision AI
-- Intelligent Model Routing based on document type and complexity
-- Entity Extraction with healthcare-specific NLP
-- Validation Engine with configurable rules
+**Document Type Config Structure:**
+```typescript
+{
+  id: 'prescription',
+  category: 'medical',
+  fields: ['patient_name', 'medication', 'dosage', 'prescriber'],
+  processingHints: {
+    enableOCR: true,
+    enableMedicationLookup: true,
+    preferredOCRProvider: 'google_vision'
+  },
+  validationRules: [...]
+}
+```
 
-Layer 3 — Integration Layer:
-Post-processing capabilities include:
-- MCP SDK for external system integration
-- Webhook support for real-time notifications
-- API gateway for secure data access
-- Audit logging for compliance requirements
+**What This Enables:**
+- Add new document types without code changes
+- A/B test different field extraction strategies
+- Per-document-type model selection
+- Custom validation rules per category
 
-Layer 4 — Output Destinations:
-Extracted data flows to:
-- Electronic Health Records
-- Practice Management Systems
-- Revenue Cycle Management platforms
-- CRM systems like Salesforce
+**Processing Hints System:**
+- `enableMedicationLookup` — triggers NDC database integration
+- `enableTableExtraction` — activates AWS Textract pipeline
+- `preferredOCRProvider` — routes to specific OCR service
+- `confidenceThreshold` — sets human review trigger level
 
-Notice the enterprise design standards—clear color differentiation between layers, solid backgrounds for accessibility, professional typography throughout, and consistent visual language.
+This pattern follows the **Open/Closed Principle**—the system is open for extension but closed for modification.
 
 ---
 
-# SCENE 4: TWO-STAGE PIPELINE
+# SCENE 4: TWO-STAGE PIPELINE ARCHITECTURE
 **[6:30 - 8:00]**
 
 *[Navigate to NLP Pipeline diagram]*
 
-The foundation remains our two-stage AI pipeline, but with significant enhancements.
+The processing foundation is a **two-stage pipeline with provider abstraction**.
 
-Stage 1 — OCR with Provider Selection:
-- Google Cloud Vision for general document processing
-- AWS Textract for complex table extraction
-- Azure Form Recognizer for structured forms
+**Stage 1 — OCR Layer with Provider Selection:**
 
-The key improvement: automatic provider routing based on document characteristics.
+The system dynamically selects OCR providers based on document characteristics:
 
-Stage 2 — NLP Entity Extraction, Now Multi-Model:
+- **Google Cloud Vision** — General-purpose, excellent for printed text
+- **AWS Textract** — Superior table and form extraction
+- **Azure Form Recognizer** — Optimized for structured documents
 
-This is where the magic happens. Instead of one model for everything:
-- Complex reasoning goes to Claude 3.5 Sonnet
-- Structured data goes to GPT-4o
-- High volume goes to Gemini 1.5 Flash
+Provider selection logic considers:
+- Document type from classification
+- Presence of tables or forms
+- Handwriting detection results
+- Cost optimization rules
 
-Each extraction includes:
-- Confidence scores per field, zero to 100 percent
-- Source attribution—OCR versus NLP derived
-- Validation status against healthcare rules
+**Stage 2 — NLP Entity Extraction:**
 
-New feature — Confidence Thresholds:
-- High confidence, above 90 percent: Auto-process
-- Medium, 70 to 90 percent: Human review queue
-- Low, below 70 percent: Manual verification required
+After OCR, the text flows through entity extraction:
 
-This human-in-the-loop approach ensures accuracy while maintaining efficiency.
+- **Prompt Templates** — Document-type-specific extraction prompts
+- **Field Schema** — Expected fields with types and validation rules
+- **Confidence Scoring** — Per-field confidence from 0 to 100 percent
+
+**Key Technical Pattern — Provider Abstraction:**
+
+Both OCR and NLP layers use a provider interface pattern:
+```typescript
+interface OCRProvider {
+  extractText(document: Buffer): Promise<OCRResult>;
+  extractTables(document: Buffer): Promise<TableResult>;
+}
+```
+
+This means swapping providers—or adding new ones—requires zero changes to the processing pipeline.
 
 ---
 
@@ -153,54 +175,41 @@ This human-in-the-loop approach ensures accuracy while maintaining efficiency.
 
 *[Navigate to Document Processing screen, select Patient Onboarding]*
 
-Now let's see the enhanced system in action with patient onboarding documents.
+Let's see the architecture in action with patient onboarding.
 
-Patient onboarding is one of the most complex document processing challenges because it involves multiple document types in a single workflow:
-- Demographic forms
-- Insurance information
-- Medical history questionnaires
-- Consent forms with signatures
-- ID verification documents
+Patient onboarding is architecturally interesting because it demonstrates:
+- Multi-document workflow chaining
+- Cross-document validation
+- Multiple extraction pipelines in sequence
 
 *[Upload a patient enrollment form]*
 
-Watch the processing—you'll see our enhanced progress indicators:
-- Document classification in progress...
-- Model selection: routing to Claude 3.5 for complex form...
-- Entity extraction running...
-- Healthcare validation applying...
+Watch the processing stages:
+- Document classification identifies type as "patient_enrollment"
+- Config lookup loads processing hints and field schema
+- OCR provider selected: Google Vision for printed form
+- NLP model routed: Gemini 2.5 Flash for structured extraction
 
-*[Show Demographics Tab]*
+*[Show extracted data]*
 
-Extracted Data — Demographics Tab:
-- Patient name with confidence: 98 percent
-- Date of birth: 95 percent
-- Address: 92 percent
-- Phone number: 97 percent
-- Emergency contact: 89 percent
+**Technical Details to Notice:**
 
-*[Navigate to Insurance Tab]*
+Each extracted field includes metadata:
+- **Value** — The extracted content
+- **Confidence** — Model certainty from 0 to 1
+- **Source** — OCR-derived or NLP-inferred
+- **Validation Status** — Passed, warning, or failed
 
-Insurance Information:
-- Member ID extracted from attached card
-- Group number validated against payer database
-- Primary versus secondary insurance detected
+*[Show validation results]*
 
-*[Navigate to Consent Tab]*
+**Cross-Document Validation:**
 
-Consent Verification:
-- Signature detected: Yes
-- Signature confidence: 94 percent
-- Date signed matches document date
-- Required checkboxes: All verified
+The system performs consistency checks across documents in a workflow:
+- Patient name matches across all documents
+- Date of birth consistent between forms
+- Insurance member ID matches card scan
 
-The Key Improvement:
-Previously, each document type required separate processing. Now, the system intelligently chains related documents in a single patient onboarding flow.
-
-All extracted data is pre-validated against:
-- Required field completeness
-- Data format rules—dates, phone numbers, SSN patterns
-- Cross-document consistency checks
+This is enabled by the **workflow context** that persists across document processing.
 
 ---
 
@@ -209,63 +218,61 @@ All extracted data is pre-validated against:
 
 *[Briefly show the Sub-Agent Recommendation Dialog appearing]*
 
-So that's patient onboarding—from document upload to validated, structured data ready for your EHR or practice management system.
+So that's the technical architecture—configuration-driven document types, multi-model routing, and a two-stage pipeline with provider abstraction.
 
-But here's where it gets really interesting...
+But there's one more architectural pattern I haven't shown yet.
 
-You might have noticed this dialog appearing after processing. What you're seeing is a preview of something powerful—AI Sub-Agent Recommendations.
+You might have noticed this dialog appearing after processing—**Sub-Agent Recommendations**.
 
-Imagine: after extracting patient data, the system automatically recommends follow-up AI agents:
-- Insurance eligibility verification
-- Demographics validation
-- Care team assignment
-- And more...
+This is the next evolution: after extracting data, the system can recommend and orchestrate follow-up AI agents:
+- Insurance eligibility verification agent
+- Prior authorization agent
+- Care team notification agent
 
-These sub-agents can take action on the extracted data—not just store it.
+These agents are dynamically generated based on document context and connected through an **MCP SDK integration layer**.
 
-But that's a story for the next video.
+But that architecture deserves its own deep dive.
 
-In Part 2, I'll walk you through:
-- How sub-agents are generated from document context
-- The workflow canvas and visual orchestration
-- Prescription processing with NDC lookup
-- Medical imaging analysis with Vision AI
-- MCP SDK integration for external systems
+In Part 2, I'll cover:
+- Sub-agent generation from document context
+- The workflow canvas for visual agent orchestration
+- MCP SDK integration patterns
+- Event-driven agent communication
 
-If you're curious about how Agentic AI transforms document processing into intelligent automation, make sure to subscribe and hit that notification bell.
+If you're building AI-powered document systems, subscribe for the technical deep dive.
 
-In the meantime, check out the full technical article on LinkedIn—link in the description.
+Full architecture documentation is linked in the description.
 
-Thanks for watching! If you're working on healthcare automation, drop a comment—I'd love to hear about the challenges you're solving.
-
-See you in the next one!
+Thanks for watching!
 
 ---
 
 # PRODUCTION NOTES
 
-## Sample Documents Needed
-1. Patient Enrollment Form (multi-page)
-2. Insurance Card (front and back)
-3. Patient Demographics Form
-4. Consent Form with signature
+## Key Technical Points to Emphasize
+1. Multi-model routing based on content type
+2. Configuration-driven document types
+3. Provider abstraction pattern (OCR and NLP)
+4. Two-stage pipeline architecture
+5. Per-field confidence scoring
+6. Cross-document validation in workflows
 
 ## YouTube Timestamps
 ```
-0:00 Introduction
-2:30 Before/After Architecture
-4:30 Solution Architecture
-6:30 Two-Stage Pipeline
-8:00 Patient Onboarding Demo
-10:30 What's Next
+0:00 Introduction & Technical Enhancements
+2:30 Multi-Model Routing Architecture
+4:30 Configuration-Driven Document Types
+6:30 Two-Stage Pipeline Architecture
+8:00 Patient Onboarding Technical Demo
+10:30 What's Next: Sub-Agent Architecture
 ```
 
-## B-Roll Ideas
-- Architecture diagram zooms
-- Document upload animation
-- Confidence score highlights
-- Sub-agent dialog tease
+## Code Samples to Show
+- Document type configuration object
+- Provider interface pattern
+- Confidence threshold logic
+- Cross-document validation
 
 ---
 
-*Version 2.0 | January 2025*
+*Version 3.0 | January 2025 | Technical Focus*
