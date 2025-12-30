@@ -6,7 +6,7 @@ import {
   DocumentProcessingArchitectureDiagram,
   MedicalImagingAIPipelineDiagram 
 } from '@/components/document-processing';
-import { TwoStagePipelineSVG } from '@/components/document-processing/TwoStagePipelineSVG';
+import { TwoStagePipelineSVGDiagram } from '@/components/document-processing/TwoStagePipelineSVGDiagram';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building } from 'lucide-react';
@@ -63,7 +63,7 @@ const ArchitectureDiagram = () => {
             </TabsContent>
             
             <TabsContent value="two-stage" className="space-y-4">
-              <TwoStagePipelineSVG />
+              <TwoStagePipelineSVGDiagram />
             </TabsContent>
             
             <TabsContent value="features" className="space-y-4">
