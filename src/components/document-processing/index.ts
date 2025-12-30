@@ -16,6 +16,7 @@ export { PatientInfoVerificationPanel } from './PatientInfoVerificationPanel';
 export { RealTimeExtractionTracker } from './RealTimeExtractionTracker';
 export { default as LinkedInArticleDownload } from './LinkedInArticleDownload';
 export { default as VideoScriptDownload } from './VideoScriptDownload';
+export { VideoScriptDownloader } from './VideoScriptDownloader';
 
 // New Improvement Components
 export { ModelUsageAnalyticsDashboard } from './ModelUsageAnalyticsDashboard';

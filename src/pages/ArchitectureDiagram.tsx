@@ -5,13 +5,14 @@ import {
   SolutionArchitectureDiagram,
   DocumentProcessingArchitectureDiagram,
   MedicalImagingAIPipelineDiagram,
-  ContentTypeRoutingDiagram
+  ContentTypeRoutingDiagram,
+  VideoScriptDownloader
 } from '@/components/document-processing';
 import { TwoStagePipelineSVGDiagram } from '@/components/document-processing/TwoStagePipelineSVGDiagram';
 import { PatientOnboardingFlowDiagram, SubAgentArchitectureDiagram, BeforeAfterArchitectureDiagram } from '@/components/diagrams';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building, Users, Network, ArrowRightLeft } from 'lucide-react';
+import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building, Users, Network, ArrowRightLeft, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 
@@ -74,6 +75,10 @@ const ArchitectureDiagram = () => {
                 <Eye className="h-3.5 w-3.5 shrink-0" />
                 <span className="hidden sm:inline">Medical</span>
               </TabsTrigger>
+              <TabsTrigger value="scripts" className="flex items-center gap-1.5 px-3 py-2 text-xs whitespace-nowrap">
+                <Download className="h-3.5 w-3.5 shrink-0" />
+                <span className="hidden sm:inline">Scripts</span>
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="before-after" className="space-y-4">
@@ -114,6 +119,10 @@ const ArchitectureDiagram = () => {
             
             <TabsContent value="medical" className="space-y-4">
               <MedicalImagingAIPipelineDiagram />
+            </TabsContent>
+
+            <TabsContent value="scripts" className="space-y-4">
+              <VideoScriptDownloader />
             </TabsContent>
           </Tabs>
         </div>
