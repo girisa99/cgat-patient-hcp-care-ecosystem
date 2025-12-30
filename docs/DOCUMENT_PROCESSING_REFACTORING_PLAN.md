@@ -124,17 +124,21 @@ src/
 1. ✅ Create `healthcareAbbreviations.ts` for HEALTHCARE_ABBREVIATIONS
 2. ✅ Move helper functions
 
-### Phase 3: Extract Tab Components 🔄 IN PROGRESS
+### Phase 3: Extract Tab Components ✅ COMPLETE
 1. ✅ Create `UploadTab.tsx` component
 2. ✅ Create `HistoryTab.tsx` component
-3. ⏳ Create remaining tabs (MedicationTab, InsuranceTab, PatientInfoTab)
+3. ✅ Create `MedicationTab.tsx` component
+4. ✅ Create `InsuranceTab.tsx` component
+5. ✅ Create `PatientInfoTab.tsx` component
 
-### Phase 4: Extract Dialogs ⏳ PENDING
-1. ⏳ Create dialog components
-2. ⏳ Preserve all handlers
+### Phase 4: Extract Dialogs ✅ COMPLETE
+1. ✅ Create `SettingsDialog.tsx` component
+2. ✅ Create `VerificationDialog.tsx` component
+3. ✅ Create `ClinicalRecommendationDialog.tsx` component
+4. ✅ Create `dialogs/index.ts` export file
 
 ### Phase 5: Final Cleanup ⏳ PENDING
-1. ⏳ Reduce main file to orchestrator
+1. ⏳ Reduce main file to orchestrator (integrate all extracted components)
 2. ⏳ Update imports/exports
 3. ⏳ Final testing
 
