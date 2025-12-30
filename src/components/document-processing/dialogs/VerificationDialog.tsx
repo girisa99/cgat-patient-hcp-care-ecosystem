@@ -26,33 +26,17 @@ import {
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
-interface ProcessingResult {
-  id: string;
-  fileName: string;
-  documentType: string;
-  stage: string;
-  progress: number;
-  extractedFields: Record<string, { value: string; confidence: number; verified?: boolean }>;
-  medications?: any[];
-  validationResults?: { passed: number; failed: number; warnings: number };
-  rawText?: string;
-  tables?: any[];
-  lineItems?: any[];
-  error?: string;
-  processedAt: Date;
-  imageUrl?: string;
-}
-
 interface VerificationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  pendingResult: ProcessingResult | null;
-  setPendingResult: (result: ProcessingResult | null) => void;
+  pendingResult: any;
+  setPendingResult: (result: any) => void;
   confidenceThreshold: number;
-  setProcessingResult: React.Dispatch<React.SetStateAction<ProcessingResult | null>>;
-  setProcessingHistory: React.Dispatch<React.SetStateAction<ProcessingResult[]>>;
+  setProcessingHistory: (updater: (prev: any[]) => any[]) => void;
   setShowSubAgentDialog: (show: boolean) => void;
   loadHistory: () => Promise<void>;
+  selectedDocType?: string;
+  setActiveTab?: (tab: string) => void;
 }
 
 export default function VerificationDialog({
@@ -61,10 +45,11 @@ export default function VerificationDialog({
   pendingResult,
   setPendingResult,
   confidenceThreshold,
-  setProcessingResult,
   setProcessingHistory,
   setShowSubAgentDialog,
-  loadHistory
+  loadHistory,
+  selectedDocType,
+  setActiveTab
 }: VerificationDialogProps) {
   
   const handleSave = async () => {
@@ -102,8 +87,8 @@ export default function VerificationDialog({
           file_path: pendingResult.imageUrl || pendingResult.fileName,
           status: 'verified',
           progress: 100,
-          extracted_metadata: { 
-            entities: Object.entries(pendingResult.extractedFields).map(([k, v]) => ({
+        extracted_metadata: { 
+            entities: Object.entries(pendingResult.extractedFields).map(([k, v]: [string, any]) => ({
               type: k, 
               value: v?.value || '',
               confidence: v?.confidence || 0.85
@@ -124,11 +109,10 @@ export default function VerificationDialog({
       toast.success('Document verified and saved to history!');
       
       // Update local state
-      setProcessingResult(pendingResult);
-      setProcessingHistory(prev => {
-        const existing = prev.find(p => p.id === pendingResult.id);
+      setProcessingHistory((prev: any[]) => {
+        const existing = prev.find((p: any) => p.id === pendingResult.id);
         if (existing) {
-          return prev.map(p => p.id === pendingResult.id ? pendingResult : p);
+          return prev.map((p: any) => p.id === pendingResult.id ? pendingResult : p);
         }
         return [pendingResult, ...prev];
       });
@@ -246,12 +230,12 @@ export default function VerificationDialog({
                 <ScrollArea className="h-[300px]">
                   <div className="space-y-2">
                     {Object.entries(pendingResult.extractedFields)
-                      .filter(([key, field]) => 
+                      .filter(([key, field]: [string, any]) => 
                         field?.value && 
                         !key.startsWith('_') && 
                         !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key)
                       )
-                      .map(([key, field]) => {
+                      .map(([key, field]: [string, any]) => {
                         const confidence = field?.confidence || 0;
                         const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                         
