@@ -32,47 +32,47 @@ const ArchitectureDiagram = () => {
         </div>
         
         <div className="p-4">
-          <Tabs defaultValue="solution" className="w-full">
-            <TabsList className="grid w-full grid-cols-10 mb-6">
-              <TabsTrigger value="before-after" className="flex items-center gap-1 text-xs">
-                <ArrowRightLeft className="h-3 w-3" />
-                Before/After
+        <Tabs defaultValue="solution" className="w-full">
+            <TabsList className="flex flex-wrap h-auto gap-1 mb-6 p-1">
+              <TabsTrigger value="before-after" className="flex items-center gap-1.5 px-3 py-2 text-xs whitespace-nowrap">
+                <ArrowRightLeft className="h-3.5 w-3.5 shrink-0" />
+                <span className="hidden sm:inline">Before/After</span>
               </TabsTrigger>
-              <TabsTrigger value="solution" className="flex items-center gap-1 text-xs">
-                <Building className="h-3 w-3" />
-                Solution
+              <TabsTrigger value="solution" className="flex items-center gap-1.5 px-3 py-2 text-xs whitespace-nowrap">
+                <Building className="h-3.5 w-3.5 shrink-0" />
+                <span className="hidden sm:inline">Solution</span>
               </TabsTrigger>
-              <TabsTrigger value="two-stage" className="flex items-center gap-1 text-xs">
-                <GitBranch className="h-3 w-3" />
-                Two-Stage
+              <TabsTrigger value="two-stage" className="flex items-center gap-1.5 px-3 py-2 text-xs whitespace-nowrap">
+                <GitBranch className="h-3.5 w-3.5 shrink-0" />
+                <span className="hidden sm:inline">Two-Stage</span>
               </TabsTrigger>
-              <TabsTrigger value="content-routing" className="flex items-center gap-1 text-xs">
-                <Layers className="h-3 w-3" />
-                Content
+              <TabsTrigger value="content-routing" className="flex items-center gap-1.5 px-3 py-2 text-xs whitespace-nowrap">
+                <Layers className="h-3.5 w-3.5 shrink-0" />
+                <span className="hidden sm:inline">Content</span>
               </TabsTrigger>
-              <TabsTrigger value="onboarding" className="flex items-center gap-1 text-xs">
-                <Users className="h-3 w-3" />
-                Onboarding
+              <TabsTrigger value="onboarding" className="flex items-center gap-1.5 px-3 py-2 text-xs whitespace-nowrap">
+                <Users className="h-3.5 w-3.5 shrink-0" />
+                <span className="hidden sm:inline">Onboarding</span>
               </TabsTrigger>
-              <TabsTrigger value="sub-agents" className="flex items-center gap-1 text-xs">
-                <Network className="h-3 w-3" />
-                Sub-Agents
+              <TabsTrigger value="sub-agents" className="flex items-center gap-1.5 px-3 py-2 text-xs whitespace-nowrap">
+                <Network className="h-3.5 w-3.5 shrink-0" />
+                <span className="hidden sm:inline">Sub-Agents</span>
               </TabsTrigger>
-              <TabsTrigger value="features" className="flex items-center gap-1 text-xs">
-                <BarChart3 className="h-3 w-3" />
-                Features
+              <TabsTrigger value="features" className="flex items-center gap-1.5 px-3 py-2 text-xs whitespace-nowrap">
+                <BarChart3 className="h-3.5 w-3.5 shrink-0" />
+                <span className="hidden sm:inline">Features</span>
               </TabsTrigger>
-              <TabsTrigger value="platform" className="flex items-center gap-1 text-xs">
-                <Layers className="h-3 w-3" />
-                Platform
+              <TabsTrigger value="platform" className="flex items-center gap-1.5 px-3 py-2 text-xs whitespace-nowrap">
+                <Layers className="h-3.5 w-3.5 shrink-0" />
+                <span className="hidden sm:inline">Platform</span>
               </TabsTrigger>
-              <TabsTrigger value="document" className="flex items-center gap-1 text-xs">
-                <FileText className="h-3 w-3" />
-                Document
+              <TabsTrigger value="document" className="flex items-center gap-1.5 px-3 py-2 text-xs whitespace-nowrap">
+                <FileText className="h-3.5 w-3.5 shrink-0" />
+                <span className="hidden sm:inline">Document</span>
               </TabsTrigger>
-              <TabsTrigger value="medical" className="flex items-center gap-1 text-xs">
-                <Eye className="h-3 w-3" />
-                Medical
+              <TabsTrigger value="medical" className="flex items-center gap-1.5 px-3 py-2 text-xs whitespace-nowrap">
+                <Eye className="h-3.5 w-3.5 shrink-0" />
+                <span className="hidden sm:inline">Medical</span>
               </TabsTrigger>
             </TabsList>
             
