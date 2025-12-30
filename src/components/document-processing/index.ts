@@ -11,6 +11,7 @@ export { FeaturesOverviewDiagram } from './FeaturesOverviewDiagram';
 export { SolutionArchitectureDiagram } from './SolutionArchitectureDiagram';
 export { DocumentProcessingArchitectureDiagram } from './DocumentProcessingArchitectureDiagram';
 export { MedicalImagingAIPipelineDiagram } from './MedicalImagingAIPipelineDiagram';
+export { ContentTypeRoutingDiagram } from './ContentTypeRoutingDiagram';
 export { PatientInfoVerificationPanel } from './PatientInfoVerificationPanel';
 export { RealTimeExtractionTracker } from './RealTimeExtractionTracker';
 export { default as LinkedInArticleDownload } from './LinkedInArticleDownload';
