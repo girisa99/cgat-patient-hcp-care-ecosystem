@@ -61,6 +61,7 @@ interface RealTimeExtractionTrackerProps {
   fileName?: string;
   ocrProvider?: string;
   visionAiProvider?: string;
+  isHandwritten?: boolean;
   className?: string;
 }
 
@@ -92,6 +93,7 @@ export const RealTimeExtractionTracker: React.FC<RealTimeExtractionTrackerProps>
   fileName,
   ocrProvider = 'Google Vision',
   visionAiProvider = 'Gemini 2.5 Flash',
+  isHandwritten = false,
   className
 }) => {
   // Track live extractions with animation
@@ -199,7 +201,8 @@ export const RealTimeExtractionTracker: React.FC<RealTimeExtractionTrackerProps>
   // Count fields by source - properly track hybrid pipeline
   // In hybrid pipeline: OCR extracts raw text, Vision AI structures into fields
   // The '_ocr_text_length' field indicates OCR was used in the pipeline
-  const hasOcrPipeline = !!extractedFields['_ocr_text_length']?.value || !!extractedFields['_pipeline_type']?.value?.includes('ocr');
+  // Also consider handwritten mode as OCR pipeline
+  const hasOcrPipeline = isHandwritten || !!extractedFields['_ocr_text_length']?.value || !!extractedFields['_pipeline_type']?.value?.includes('ocr');
   const ocrTextLength = parseInt(extractedFields['_ocr_text_length']?.value || '0', 10);
   const ocrConfidenceStr = extractedFields['_ocr_confidence']?.value || '';
   const pipelineType = extractedFields['_pipeline_type']?.value || 'vision_ai_only';
