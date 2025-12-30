@@ -23,6 +23,7 @@ export { ModelUsageAnalyticsDashboard } from './ModelUsageAnalyticsDashboard';
 export { ConfidenceVisualization } from './ConfidenceVisualization';
 export { OCRVisionAIComparisonView } from './OCRVisionAIComparisonView';
 export { RetryWithDifferentModel } from './RetryWithDifferentModel';
+export { ExtractionMetricsSummary } from './ExtractionMetricsSummary';
 
 export type { AIProvider, PipelineType, ModelUsageInfo } from './AIModelIndicator';
 export { useDocumentProcessing, DOCUMENT_TYPE_FIELDS } from '@/hooks/useDocumentProcessing';
