@@ -48,52 +48,58 @@ export const SubAgentArchitectureDiagram: React.FC = () => {
 
   const specialistAgents = [
     { 
-      name: 'NPI Lookup Agent', 
+      name: 'Verification Agent', 
       icon: '🔍', 
       color: 'from-blue-600 to-blue-800',
       borderColor: 'border-blue-500',
-      tasks: ['Provider Verification', 'License Validation', 'DEA Number Check'],
-      api: 'NPPES API'
+      domain: 'Data Validation',
+      tasks: ['NPI Lookup', 'DEA Validation', 'Address Standardization'],
+      integration: 'NPI Registry, USPS API'
     },
     { 
-      name: 'Eligibility Agent', 
-      icon: '✅', 
+      name: 'Benefits Investigation', 
+      icon: '💊', 
       color: 'from-green-600 to-green-800',
       borderColor: 'border-green-500',
-      tasks: ['Coverage Check', 'Benefits Verification', 'Prior Auth Status'],
-      api: 'Payer APIs'
+      domain: 'Coverage Analysis',
+      tasks: ['Formulary Check', 'Coverage Verification', 'Copay Estimation'],
+      integration: 'Payer APIs'
     },
     { 
-      name: 'Address Agent', 
-      icon: '📍', 
+      name: 'Prior Authorization', 
+      icon: '📋', 
       color: 'from-orange-600 to-orange-800',
       borderColor: 'border-orange-500',
-      tasks: ['USPS Validation', 'Geocoding', 'Delivery Verification'],
-      api: 'Google Maps API'
+      domain: 'Authorization',
+      tasks: ['PA Form Generation', 'Status Tracking', 'Appeals'],
+      integration: 'Payer Portals'
     },
     { 
-      name: 'Document Agent', 
-      icon: '📄', 
+      name: 'Coding Agent', 
+      icon: '🏷️', 
       color: 'from-purple-600 to-purple-800',
       borderColor: 'border-purple-500',
-      tasks: ['OCR Extraction', 'Data Validation', 'Field Mapping'],
-      api: 'Vision AI'
+      domain: 'Medical Coding',
+      tasks: ['ICD-10 Validation', 'CPT/HCPCS Assignment', 'NDC Verification'],
+      integration: 'CMS Databases'
     },
     { 
-      name: 'Compliance Agent', 
-      icon: '🛡️', 
+      name: 'Adherence Agent', 
+      icon: '💚', 
       color: 'from-cyan-600 to-cyan-800',
       borderColor: 'border-cyan-500',
-      tasks: ['HIPAA Check', 'Audit Logging', 'PHI Redaction'],
-      api: 'Internal Rules'
+      domain: 'Patient Support',
+      tasks: ['Refill Reminders', 'Therapy Tracking', 'Intervention Alerts'],
+      integration: 'Patient Systems'
     },
     { 
-      name: 'Pricing Agent', 
-      icon: '💰', 
+      name: 'Custom Agents', 
+      icon: '⚙️', 
       color: 'from-yellow-600 to-yellow-800',
       borderColor: 'border-yellow-500',
-      tasks: ['Copay Calculation', 'PAP Eligibility', 'Cost Estimation'],
-      api: 'Drug Pricing API'
+      domain: 'Extensible',
+      tasks: ['Per-Client Workflows', 'Custom Integration', 'Workflow Builder'],
+      integration: 'Custom APIs'
     },
   ];
 
@@ -200,6 +206,11 @@ export const SubAgentArchitectureDiagram: React.FC = () => {
                   <span className="text-2xl block mb-1">{agent.icon}</span>
                   <h4 className="text-xs font-bold text-white mb-2 leading-tight">{agent.name}</h4>
                   
+                  {/* Domain Label */}
+                  <div className="bg-white/20 rounded px-2 py-0.5 mb-2">
+                    <span className="text-[8px] text-white font-medium">{agent.domain}</span>
+                  </div>
+                  
                   <div className="space-y-1 mb-2">
                     {agent.tasks.map((task) => (
                       <div key={task} className="bg-black/20 rounded px-1.5 py-0.5">
@@ -209,7 +220,7 @@ export const SubAgentArchitectureDiagram: React.FC = () => {
                   </div>
                   
                   <div className="bg-white/10 rounded px-2 py-1">
-                    <span className="text-[8px] text-white/60">{agent.api}</span>
+                    <span className="text-[8px] text-white/60">{agent.integration}</span>
                   </div>
                 </div>
               </div>
@@ -232,12 +243,12 @@ export const SubAgentArchitectureDiagram: React.FC = () => {
               <span className="text-green-400 text-xs block mb-2">Aggregated Response</span>
               <div className="flex gap-4">
                 {[
-                  { label: 'NPI', status: '✓ Verified' },
-                  { label: 'Eligibility', status: '✓ Active' },
-                  { label: 'Address', status: '✓ Valid' },
-                  { label: 'Documents', status: '✓ Extracted' },
-                  { label: 'Compliance', status: '✓ Passed' },
-                  { label: 'Pricing', status: '✓ Calculated' },
+                  { label: 'Verification', status: '✓ Validated' },
+                  { label: 'Benefits', status: '✓ Checked' },
+                  { label: 'Prior Auth', status: '✓ Approved' },
+                  { label: 'Coding', status: '✓ Assigned' },
+                  { label: 'Adherence', status: '✓ Tracked' },
+                  { label: 'Custom', status: '✓ Processed' },
                 ].map((item) => (
                   <div key={item.label} className="text-center">
                     <span className="text-[10px] text-slate-400 block">{item.label}</span>
@@ -245,6 +256,41 @@ export const SubAgentArchitectureDiagram: React.FC = () => {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+
+          {/* Agent Capabilities Matrix */}
+          <div className="mt-6 pt-4 border-t border-slate-700">
+            <h3 className="text-white text-sm font-bold text-center mb-4">Agent Capabilities Matrix</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-[10px]">
+                <thead>
+                  <tr className="border-b border-slate-700">
+                    <th className="text-left text-slate-400 py-2 px-2">Agent</th>
+                    <th className="text-left text-slate-400 py-2 px-2">Domain</th>
+                    <th className="text-left text-slate-400 py-2 px-2">Capabilities</th>
+                    <th className="text-left text-slate-400 py-2 px-2">Integration</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {specialistAgents.map((agent) => (
+                    <tr key={agent.name} className="border-b border-slate-800">
+                      <td className="py-2 px-2">
+                        <span className="text-white font-medium">{agent.icon} {agent.name}</span>
+                      </td>
+                      <td className="py-2 px-2">
+                        <span className="text-cyan-400">{agent.domain}</span>
+                      </td>
+                      <td className="py-2 px-2">
+                        <span className="text-slate-300">{agent.tasks.join(', ')}</span>
+                      </td>
+                      <td className="py-2 px-2">
+                        <span className="text-green-400">{agent.integration}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
 
