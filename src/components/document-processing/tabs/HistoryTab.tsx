@@ -9,31 +9,15 @@ import ProcessingHistoryWithExport from '@/components/document-processing/Proces
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-interface ProcessingResult {
-  id: string;
-  fileName: string;
-  documentType: string;
-  stage: string;
-  progress: number;
-  extractedFields: Record<string, { value: string; confidence: number; verified?: boolean }>;
-  validationResults?: { passed: number; failed: number; warnings: number };
-  rawText?: string;
-  tables?: any[];
-  lineItems?: any[];
-  error?: string;
-  processedAt: Date;
-  imageUrl?: string;
-}
-
 interface HistoryTabProps {
-  processingHistory: ProcessingResult[];
-  setProcessingHistory: React.Dispatch<React.SetStateAction<ProcessingResult[]>>;
+  processingHistory: any[];
+  setProcessingHistory: (updater: (prev: any[]) => any[]) => void;
   selectedDocType: string;
-  setProcessingResult: React.Dispatch<React.SetStateAction<ProcessingResult | null>>;
+  setProcessingResult: (result: any) => void;
   setSelectedDocType: (docType: string) => void;
   setActiveTab: (tab: string) => void;
   setShowVerificationDialog: (show: boolean) => void;
-  setPendingResult: (result: ProcessingResult | null) => void;
+  setPendingResult: (result: any) => void;
 }
 
 export default function HistoryTab({
@@ -47,7 +31,7 @@ export default function HistoryTab({
   setPendingResult
 }: HistoryTabProps) {
   const handleViewResult = (result: any) => {
-    setProcessingResult(result as ProcessingResult);
+    setProcessingResult(result);
     
     // For invoices/billing, switch to RCM analysis tab
     if (result.documentType === 'invoice' || result.documentType === 'billing') {
@@ -57,7 +41,7 @@ export default function HistoryTab({
     } else {
       // For other document types, show verification dialog
       setShowVerificationDialog(true);
-      setPendingResult(result as ProcessingResult);
+      setPendingResult(result);
     }
   };
 

@@ -107,6 +107,9 @@ import { ArchitectureRecommendation } from '@/services/agentArchitectureIntellig
 // Use shared healthcare abbreviation utilities
 import { HEALTHCARE_ABBREVIATIONS, expandAbbreviation } from '@/utils/healthcareAbbreviations';
 
+// Extracted tab components
+import { HistoryTab } from '@/components/document-processing/tabs';
+
 // Processing stages
 type ProcessingStage = 'idle' | 'uploading' | 'ocr' | 'extraction' | 'mapping' | 'validation' | 'complete' | 'error';
 
@@ -3616,47 +3619,17 @@ export default function DocumentProcessing() {
             </TabsContent>
           )}
 
-          {/* History Tab */}
+          {/* History Tab - Using extracted component */}
           <TabsContent value="history">
-            <ProcessingHistoryWithExport
-              history={processingHistory}
-              currentExtractedFields={processingResult?.extractedFields}
-              currentProcessingResultId={processingResult?.id}
-              filterByDocType={selectedDocType}
-              onViewResult={(result: any) => {
-                setProcessingResult(result as any);
-                
-                // For invoices/billing, switch to RCM analysis tab
-                if (result.documentType === 'invoice' || result.documentType === 'billing') {
-                  setSelectedDocType(result.documentType);
-                  setActiveTab('rcm-analysis');
-                  toast.info('Loaded invoice for RCM analysis');
-                } else {
-                  // For other document types, show verification dialog
-                  setShowVerificationDialog(true);
-                  setPendingResult(result as any);
-                }
-              }}
-              onDeleteItems={async (ids: string[]) => {
-                // Delete from database
-                try {
-                  const { error } = await supabase
-                    .from('document_processing_jobs')
-                    .delete()
-                    .in('id', ids);
-                  
-                  if (error) {
-                    toast.error('Failed to delete items');
-                    console.error('Delete error:', error);
-                  } else {
-                    setProcessingHistory(prev => prev.filter(item => !ids.includes(item.id)));
-                    toast.success(`Deleted ${ids.length} item(s)`);
-                  }
-                } catch (err) {
-                  console.error('Delete error:', err);
-                  toast.error('Failed to delete items');
-                }
-              }}
+            <HistoryTab
+              processingHistory={processingHistory}
+              setProcessingHistory={setProcessingHistory}
+              selectedDocType={selectedDocType}
+              setProcessingResult={setProcessingResult}
+              setSelectedDocType={setSelectedDocType}
+              setActiveTab={setActiveTab}
+              setShowVerificationDialog={setShowVerificationDialog}
+              setPendingResult={setPendingResult}
             />
           </TabsContent>
         </Tabs>
