@@ -8,10 +8,10 @@ import {
   ContentTypeRoutingDiagram
 } from '@/components/document-processing';
 import { TwoStagePipelineSVGDiagram } from '@/components/document-processing/TwoStagePipelineSVGDiagram';
-import { PatientOnboardingFlowDiagram } from '@/components/diagrams';
+import { PatientOnboardingFlowDiagram, SubAgentArchitectureDiagram } from '@/components/diagrams';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building, Users } from 'lucide-react';
+import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building, Users, Network } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 
@@ -33,7 +33,7 @@ const ArchitectureDiagram = () => {
         
         <div className="p-4">
           <Tabs defaultValue="solution" className="w-full">
-            <TabsList className="grid w-full grid-cols-8 mb-6">
+            <TabsList className="grid w-full grid-cols-9 mb-6">
               <TabsTrigger value="solution" className="flex items-center gap-1 text-xs">
                 <Building className="h-3 w-3" />
                 Solution
@@ -49,6 +49,10 @@ const ArchitectureDiagram = () => {
               <TabsTrigger value="onboarding" className="flex items-center gap-1 text-xs">
                 <Users className="h-3 w-3" />
                 Onboarding
+              </TabsTrigger>
+              <TabsTrigger value="sub-agents" className="flex items-center gap-1 text-xs">
+                <Network className="h-3 w-3" />
+                Sub-Agents
               </TabsTrigger>
               <TabsTrigger value="features" className="flex items-center gap-1 text-xs">
                 <BarChart3 className="h-3 w-3" />
@@ -82,6 +86,10 @@ const ArchitectureDiagram = () => {
 
             <TabsContent value="onboarding" className="space-y-4">
               <PatientOnboardingFlowDiagram />
+            </TabsContent>
+
+            <TabsContent value="sub-agents" className="space-y-4">
+              <SubAgentArchitectureDiagram />
             </TabsContent>
 
             <TabsContent value="features" className="space-y-4">
