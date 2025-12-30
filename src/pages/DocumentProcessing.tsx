@@ -3329,10 +3329,10 @@ export default function DocumentProcessing() {
                             
                             toast.success('Insurance details saved to history');
                             
-                            // Trigger sub-agent recommendation dialog
+                            // Trigger sub-agent recommendation dialog after delay
                             setTimeout(() => {
                               setShowSubAgentDialog(true);
-                            }, 300);
+                            }, 500);
                           } catch (err) {
                             console.error('Save error:', err);
                             toast.error('Failed to save insurance details');
