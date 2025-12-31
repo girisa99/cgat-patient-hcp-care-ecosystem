@@ -13,7 +13,7 @@ import { PatientOnboardingFlowDiagram, SubAgentArchitectureDiagram, BeforeAfterA
 import { Button } from '@/components/ui/button';
 // Tabs imports kept for potential future use but not needed for current category navigation
 import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building, Users, Network, ArrowRightLeft, Download, Workflow, Bot, Video, Music, History } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -84,10 +84,21 @@ const getDefaultVersions = (diagramId: string): DiagramVersion[] => {
 
 const ArchitectureDiagram = () => {
   const navigate = useNavigate();
-  const [activeCategory, setActiveCategory] = useState('overview');
-  const [activeDiagram, setActiveDiagram] = useState('solution');
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Initialize from URL params or defaults
+  const initialCategory = searchParams.get('category') || 'overview';
+  const initialDiagram = searchParams.get('diagram') || 'solution';
+  
+  const [activeCategory, setActiveCategory] = useState(initialCategory);
+  const [activeDiagram, setActiveDiagram] = useState(initialDiagram);
   const [diagramVersions, setDiagramVersions] = useState<Record<string, DiagramVersion[]>>({});
   const [selectedVersion, setSelectedVersion] = useState<string>('latest');
+
+  // Sync URL with state changes
+  useEffect(() => {
+    setSearchParams({ category: activeCategory, diagram: activeDiagram }, { replace: true });
+  }, [activeCategory, activeDiagram, setSearchParams]);
 
   // Load versions from localStorage
   useEffect(() => {
