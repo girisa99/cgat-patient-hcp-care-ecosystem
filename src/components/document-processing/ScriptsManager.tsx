@@ -35,6 +35,7 @@ interface GeneratedAudio {
   generatedAt: Date;
   voice: string;
   scriptText?: string; // Original script text for editing
+  scriptType?: 'video' | 'audio'; // Type of script used
 }
 
 // Predefined scripts - Video Script with visual cues
@@ -259,6 +260,7 @@ export const ScriptsManager: React.FC = () => {
   const [activeTab, setActiveTab] = useState('scripts');
   const [scriptText, setScriptText] = useState('');
   const [scriptName, setScriptName] = useState('');
+  const [scriptType, setScriptType] = useState<'video' | 'audio'>('audio');
   const [selectedVoice, setSelectedVoice] = useState('onyx');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedAudios, setGeneratedAudios] = useState<GeneratedAudio[]>([]);
@@ -283,7 +285,8 @@ export const ScriptsManager: React.FC = () => {
             ...a,
             audioUrl,
             generatedAt: new Date(a.generatedAt),
-            scriptText: a.scriptText // Preserve script text
+            scriptText: a.scriptText, // Preserve script text
+            scriptType: a.scriptType // Preserve script type
           };
         });
         setGeneratedAudios(audiosWithUrls);
@@ -308,7 +311,8 @@ export const ScriptsManager: React.FC = () => {
         generatedAt: a.generatedAt,
         voice: a.voice,
         audioUrl: a.storagePath ? '' : a.audioUrl, // Only keep URL if no storage path
-        scriptText: a.scriptText // Store script text for editing/regenerating
+        scriptText: a.scriptText, // Store script text for editing/regenerating
+        scriptType: a.scriptType // Store script type
       }));
       localStorage.setItem('generatedAudiosMetadata', JSON.stringify(metadata));
     }
@@ -447,7 +451,8 @@ export const ScriptsManager: React.FC = () => {
         storagePath,
         generatedAt: new Date(),
         voice: selectedVoice,
-        scriptText: scriptText // Store original script for editing
+        scriptText: scriptText, // Store original script for editing
+        scriptType: scriptType // Store script type (video or audio)
       };
 
       setGeneratedAudios(prev => [newAudio, ...prev]);
@@ -458,6 +463,7 @@ export const ScriptsManager: React.FC = () => {
       // Clear the form
       setScriptText('');
       setScriptName('');
+      setScriptType('audio');
       
     } catch (error) {
       console.error('TTS generation error:', error);
@@ -541,8 +547,9 @@ export const ScriptsManager: React.FC = () => {
       setScriptText(audio.scriptText);
       setScriptName(audio.name);
       setSelectedVoice(audio.voice);
+      setScriptType(audio.scriptType || 'audio');
       setActiveTab('generate');
-      showSuccess(`Loaded script: ${audio.name}`);
+      showSuccess(`Loaded ${audio.scriptType || 'audio'} script: ${audio.name}`);
     } else {
       showError('Script text not available for this audio');
     }
@@ -569,6 +576,7 @@ export const ScriptsManager: React.FC = () => {
     setScriptText(audio.scriptText);
     setScriptName(audio.name);
     setSelectedVoice(audio.voice);
+    setScriptType(audio.scriptType || 'audio');
     
     // Remove the old entry
     setGeneratedAudios(prev => prev.filter(a => a.id !== audio.id));
@@ -582,6 +590,7 @@ export const ScriptsManager: React.FC = () => {
     const preset = PRESET_SCRIPTS[key];
     setScriptText(preset.content);
     setScriptName(preset.name);
+    setScriptType(preset.type);
     showSuccess(`Loaded preset: ${preset.name}`);
   };
 
@@ -758,6 +767,19 @@ export const ScriptsManager: React.FC = () => {
                     style={{ backgroundColor: '#0f172a', borderColor: '#475569', color: '#ffffff' }}
                   />
                 </div>
+                <div className="w-32">
+                  <Label htmlFor="scriptType" className="text-sm" style={{ color: '#ffffff', fontWeight: 500 }}>Script Type</Label>
+                  <select
+                    id="scriptType"
+                    value={scriptType}
+                    onChange={(e) => setScriptType(e.target.value as 'video' | 'audio')}
+                    className="w-full h-10 px-3 rounded-md border text-sm"
+                    style={{ backgroundColor: '#0f172a', borderColor: '#475569', color: '#ffffff' }}
+                  >
+                    <option value="audio">Audio</option>
+                    <option value="video">Video</option>
+                  </select>
+                </div>
                 <div className="w-40">
                   <Label htmlFor="voice" className="text-sm" style={{ color: '#ffffff', fontWeight: 500 }}>Voice</Label>
                   <select
@@ -870,7 +892,30 @@ export const ScriptsManager: React.FC = () => {
                             )}
                           </Button>
                           <div>
-                            <h4 className="font-medium" style={{ color: '#ffffff' }}>{audio.name}</h4>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-medium" style={{ color: '#ffffff' }}>{audio.name}</h4>
+                              {audio.scriptType && (
+                                <span 
+                                  className="text-xs px-2 py-0.5 rounded"
+                                  style={{ 
+                                    backgroundColor: audio.scriptType === 'video' ? '#7c3aed33' : '#22c55e33',
+                                    color: audio.scriptType === 'video' ? '#a78bfa' : '#4ade80'
+                                  }}
+                                >
+                                  {audio.scriptType === 'video' ? (
+                                    <span className="flex items-center gap-1">
+                                      <Video className="h-3 w-3" />
+                                      Video
+                                    </span>
+                                  ) : (
+                                    <span className="flex items-center gap-1">
+                                      <Mic className="h-3 w-3" />
+                                      Audio
+                                    </span>
+                                  )}
+                                </span>
+                              )}
+                            </div>
                             <div className="flex items-center gap-3 text-xs" style={{ color: '#94a3b8' }}>
                               <span className="flex items-center gap-1">
                                 <Mic className="h-3 w-3" />
