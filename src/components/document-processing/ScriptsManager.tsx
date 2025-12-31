@@ -475,14 +475,29 @@ export const ScriptsManager: React.FC = () => {
     }
   };
 
-  const handleDownloadAudio = (audio: GeneratedAudio) => {
-    const a = document.createElement('a');
-    a.href = audio.audioUrl;
-    a.download = `${audio.name.replace(/[^a-zA-Z0-9]/g, '_')}.mp3`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    showSuccess('Audio downloaded');
+  const handleDownloadAudio = async (audio: GeneratedAudio) => {
+    try {
+      // Fetch the audio as blob to force download (download attribute doesn't work for cross-origin URLs)
+      const response = await fetch(audio.audioUrl);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `${audio.name.replace(/[^a-zA-Z0-9]/g, '_')}.mp3`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      // Clean up blob URL
+      URL.revokeObjectURL(blobUrl);
+      showSuccess('Audio downloaded');
+    } catch (error) {
+      console.error('Download error:', error);
+      // Fallback: open in new tab
+      window.open(audio.audioUrl, '_blank');
+      showError('Could not download directly, opened in new tab');
+    }
   };
 
   const handlePlayPause = (audio: GeneratedAudio) => {
