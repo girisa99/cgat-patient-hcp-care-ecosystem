@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Home, ChevronDown, Users, Building2, Settings, Activity, MoreHorizontal, LogOut, User, FileBarChart, Bot, Brain, Network } from 'lucide-react';
+import { ArrowLeft, Home, ChevronDown, Users, Building2, Settings, Activity, MoreHorizontal, LogOut, User, FileBarChart, Bot, Brain, Network, GitBranch } from 'lucide-react';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import {
   DropdownMenu,
@@ -88,7 +88,9 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
     const managementTabs = ['/users', '/facilities', '/onboarding', '/modules', '/role-management'];
     const systemTabs = ['/api-services', '/system-integration', '/data-import', '/security', '/testing'];
     const reportsTabs = ['/reports', '/governance', '/framework', '/stability', '/active-verification'];
-    const specializedTabs = ['/healthcare-ai', '/ngrok'];
+    // Architecture cluster: architecture diagrams + related technical views
+    const architectureTabs = ['/architecture', '/healthcare-ai', '/database-performance'];
+    const specializedTabs = ['/ngrok'];
 
     return {
       primary,
@@ -97,6 +99,7 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
       management: availableTabs.filter(tab => managementTabs.includes(tab.to)),
       systemIntegration: availableTabs.filter(tab => systemTabs.includes(tab.to)),
       reportsCompliance: availableTabs.filter(tab => reportsTabs.includes(tab.to)),
+      architecture: availableTabs.filter(tab => architectureTabs.includes(tab.to)),
       specialized: availableTabs.filter(tab => specializedTabs.includes(tab.to))
     };
   };
@@ -298,6 +301,29 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
                 </div>
               )}
 
+              {/* Architecture & Diagrams */}
+              {navigationGroups.architecture && navigationGroups.architecture.length > 0 && (
+                <div className="nav-item">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex items-center gap-2 hover:bg-accent whitespace-nowrap min-w-fit px-3"
+                      >
+                        <GitBranch className="h-4 w-4 flex-shrink-0" />
+                        <span className="hidden xl:inline text-stable">Architecture</span>
+                        <span className="hidden lg:inline xl:hidden text-stable">Arch</span>
+                        <ChevronDown className="h-3 w-3 flex-shrink-0" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="center" className="w-56 bg-background border border-border shadow-md z-[9999]">
+                      {navigationGroups.architecture.map(tab => renderNavButton(tab, true))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              )}
+
               {/* Specialized Tools */}
               {navigationGroups.specialized.length > 0 && (
                 <div className="nav-item">
@@ -306,11 +332,10 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="flex items-center gap-2 hover:bg-accent hover:scale-105 whitespace-nowrap min-w-fit px-3"
+                        className="flex items-center gap-2 hover:bg-accent whitespace-nowrap min-w-fit px-3"
                       >
                         <Brain className="h-4 w-4 flex-shrink-0" />
-                        <span className="hidden xl:inline text-stable">Specialized</span>
-                        <span className="hidden lg:inline xl:hidden text-stable">Special</span>
+                        <span className="hidden xl:inline text-stable">Tools</span>
                         <ChevronDown className="h-3 w-3 flex-shrink-0" />
                       </Button>
                     </DropdownMenuTrigger>
