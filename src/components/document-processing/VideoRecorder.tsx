@@ -486,11 +486,19 @@ Let me walk you through the key improvements we've made.`,
   // Pop out recording to a separate window (completely outside app frame)
   const handlePopOutRecording = () => {
     const scriptContent = selectedScript?.content || '';
+    const scriptTitle = selectedScript?.title || '';
     const audioName = selectedAudioFile?.name || '';
     const audioUrl = selectedAudioFile?.url || '';
+    const bgMusicName = selectedBackgroundMusic?.name || '';
+    const bgMusicUrl = selectedBackgroundMusic?.url || '';
+    
+    // Prepare scripts list for dropdown
+    const scriptsJson = JSON.stringify(availableScripts.map(s => ({ id: s.id, title: s.title, content: s.content })));
+    const voiceoversJson = JSON.stringify(voiceoverFiles.map(a => ({ id: a.id, name: a.name, url: a.url })));
+    const musicFilesJson = JSON.stringify(musicFiles.map(m => ({ id: m.id, name: m.name, url: m.url })));
     
     const popoutWindow = window.open('', 'recording-studio', 
-      'width=1280,height=800,left=100,top=100,toolbar=no,menubar=no,scrollbars=no,resizable=yes'
+      'width=1400,height=900,left=100,top=50,toolbar=no,menubar=no,scrollbars=no,resizable=yes'
     );
     
     if (!popoutWindow) {
@@ -523,7 +531,41 @@ Let me walk you through the key improvements we've made.`,
           }
           .header h1 { font-size: 18px; display: flex; align-items: center; gap: 8px; }
           .header .badge { background: #22c55e; padding: 4px 10px; border-radius: 12px; font-size: 12px; }
-          .main { flex: 1; display: flex; gap: 10px; padding: 10px; }
+          
+          /* Options bar */
+          .options-bar {
+            background: #1a1a2e;
+            padding: 12px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: center;
+            border-bottom: 1px solid #333;
+          }
+          .option-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+          }
+          .option-group label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          select {
+            background: #2a2a3e;
+            border: 1px solid #444;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            min-width: 180px;
+            cursor: pointer;
+          }
+          select:focus { outline: 2px solid #6366f1; outline-offset: 2px; }
+          
+          .main { flex: 1; display: flex; gap: 10px; padding: 10px; overflow: hidden; }
           .video-section { flex: 2; display: flex; flex-direction: column; gap: 10px; }
           .video-container {
             flex: 1;
@@ -560,20 +602,22 @@ Let me walk you through the key improvements we've made.`,
           button.danger { background: #dc2626; }
           button.danger:hover { background: #b91c1c; }
           button:disabled { opacity: 0.5; cursor: not-allowed; }
-          .sidebar { width: 350px; display: flex; flex-direction: column; gap: 10px; }
+          .sidebar { width: 350px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
           .panel {
             background: #1a1a2e;
             border-radius: 12px;
             padding: 15px;
+            flex-shrink: 0;
+          }
+          .panel.teleprompter {
             flex: 1;
             overflow-y: auto;
           }
-          .panel h3 { font-size: 14px; margin-bottom: 10px; opacity: 0.8; }
+          .panel h3 { font-size: 14px; margin-bottom: 10px; opacity: 0.8; display: flex; align-items: center; gap: 6px; }
           .script-content {
-            font-size: 16px;
-            line-height: 1.8;
+            font-size: 18px;
+            line-height: 2;
             white-space: pre-wrap;
-            max-height: 300px;
             overflow-y: auto;
           }
           .recording-indicator {
@@ -610,6 +654,7 @@ Let me walk you through the key improvements we've made.`,
           }
           .status { padding: 5px 10px; border-radius: 20px; font-size: 12px; }
           .status.ready { background: #22c55e33; color: #22c55e; }
+          .status.countdown { background: #f59e0b33; color: #f59e0b; }
           .status.recording { background: #dc262633; color: #dc2626; }
           .audio-info {
             margin-top: 10px;
@@ -617,6 +662,32 @@ Let me walk you through the key improvements we've made.`,
             background: #2a2a3e;
             border-radius: 8px;
             font-size: 13px;
+          }
+          
+          /* Countdown overlay */
+          .countdown-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+          }
+          .countdown-overlay.hidden { display: none; }
+          .countdown-number {
+            font-size: 150px;
+            font-weight: bold;
+            color: white;
+            animation: countPulse 1s ease-in-out infinite;
+          }
+          .countdown-text { font-size: 24px; color: #888; margin-top: 20px; }
+          .countdown-cancel { margin-top: 30px; }
+          @keyframes countPulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
           }
         </style>
       </head>
@@ -634,10 +705,40 @@ Let me walk you through the key improvements we've made.`,
           <div id="status" class="status ready">Ready</div>
         </div>
         
+        <!-- Options Bar with Dropdowns -->
+        <div class="options-bar">
+          <div class="option-group">
+            <label>📄 Script</label>
+            <select id="scriptSelect">
+              <option value="">None</option>
+            </select>
+          </div>
+          <div class="option-group">
+            <label>🎤 Voiceover</label>
+            <select id="voiceoverSelect">
+              <option value="">None</option>
+            </select>
+          </div>
+          <div class="option-group">
+            <label>🎵 Background Music</label>
+            <select id="musicSelect">
+              <option value="">None</option>
+            </select>
+          </div>
+        </div>
+        
         <div class="main">
           <div class="video-section">
             <div class="video-container">
               <video id="preview" autoplay playsinline muted></video>
+              
+              <!-- Countdown Overlay -->
+              <div id="countdownOverlay" class="countdown-overlay hidden">
+                <div id="countdownNumber" class="countdown-number">5</div>
+                <div class="countdown-text">Get ready...</div>
+                <button id="cancelCountdown" class="countdown-cancel">Cancel</button>
+              </div>
+              
               <div id="recIndicator" class="recording-indicator" style="display:none;">
                 <div class="rec-dot"></div>
                 <span id="timer" class="timer">00:00</span>
@@ -671,22 +772,30 @@ Let me walk you through the key improvements we've made.`,
           </div>
           
           <div class="sidebar">
-            ${scriptContent ? `
-              <div class="panel">
-                <h3>📄 Script / Teleprompter</h3>
-                <div class="script-content">${scriptContent.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+            <div id="scriptPanel" class="panel teleprompter">
+              <h3>📄 Teleprompter</h3>
+              <div id="scriptContent" class="script-content">
+                ${scriptContent ? scriptContent.replace(/</g, '&lt;').replace(/>/g, '&gt;') : '<span style="opacity:0.5;">Select a script to display here...</span>'}
               </div>
-            ` : ''}
-            ${audioUrl ? `
-              <div class="panel">
-                <h3>🎵 Voiceover Audio</h3>
-                <div class="audio-info">
-                  <strong>${audioName}</strong><br>
-                  <small>Will play automatically when recording starts</small>
-                </div>
-                <audio id="voiceover" src="${audioUrl}" preload="auto"></audio>
+            </div>
+            
+            <div id="audioPanel" class="panel" style="${audioUrl ? '' : 'display:none;'}">
+              <h3>🎤 Voiceover Audio</h3>
+              <div class="audio-info">
+                <strong id="voiceoverName">${audioName}</strong><br>
+                <small>Will play automatically when recording starts</small>
               </div>
-            ` : ''}
+              <audio id="voiceover" src="${audioUrl}" preload="auto"></audio>
+            </div>
+            
+            <div id="musicPanel" class="panel" style="${bgMusicUrl ? '' : 'display:none;'}">
+              <h3>🎵 Background Music</h3>
+              <div class="audio-info">
+                <strong id="bgMusicName">${bgMusicName}</strong>
+              </div>
+              <audio id="bgMusic" src="${bgMusicUrl}" preload="auto" loop></audio>
+            </div>
+            
             <div class="panel">
               <h3>⚙️ Info</h3>
               <p style="font-size:13px;opacity:0.8;">
@@ -698,12 +807,19 @@ Let me walk you through the key improvements we've made.`,
         </div>
 
         <script>
+          // Data from parent
+          const scripts = ${scriptsJson};
+          const voiceovers = ${voiceoversJson};
+          const musicList = ${musicFilesJson};
+          
           let mediaRecorder = null;
           let chunks = [];
           let stream = null;
           let startTime = 0;
           let timerInterval = null;
           let isPaused = false;
+          let countdownInterval = null;
+          let countdownValue = 5;
           
           const preview = document.getElementById('preview');
           const startBtn = document.getElementById('startBtn');
@@ -716,6 +832,77 @@ Let me walk you through the key improvements we've made.`,
           const timer = document.getElementById('timer');
           const status = document.getElementById('status');
           const voiceover = document.getElementById('voiceover');
+          const bgMusic = document.getElementById('bgMusic');
+          const countdownOverlay = document.getElementById('countdownOverlay');
+          const countdownNumber = document.getElementById('countdownNumber');
+          const cancelCountdown = document.getElementById('cancelCountdown');
+          const scriptSelect = document.getElementById('scriptSelect');
+          const voiceoverSelect = document.getElementById('voiceoverSelect');
+          const musicSelect = document.getElementById('musicSelect');
+          const scriptContent = document.getElementById('scriptContent');
+          const audioPanel = document.getElementById('audioPanel');
+          const musicPanel = document.getElementById('musicPanel');
+          const voiceoverName = document.getElementById('voiceoverName');
+          const bgMusicName = document.getElementById('bgMusicName');
+          
+          // Populate dropdowns
+          scripts.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id;
+            opt.textContent = s.title;
+            if (s.content === \`${scriptContent.replace(/`/g, '\\`').replace(/\\/g, '\\\\')}\`) opt.selected = true;
+            scriptSelect.appendChild(opt);
+          });
+          
+          voiceovers.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v.id;
+            opt.textContent = v.name;
+            if (v.url === '${audioUrl}') opt.selected = true;
+            voiceoverSelect.appendChild(opt);
+          });
+          
+          musicList.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.id;
+            opt.textContent = m.name;
+            if (m.url === '${bgMusicUrl}') opt.selected = true;
+            musicSelect.appendChild(opt);
+          });
+          
+          // Handle dropdown changes
+          scriptSelect.onchange = function() {
+            const script = scripts.find(s => s.id === this.value);
+            if (script) {
+              scriptContent.textContent = script.content;
+            } else {
+              scriptContent.innerHTML = '<span style="opacity:0.5;">Select a script to display here...</span>';
+            }
+          };
+          
+          voiceoverSelect.onchange = function() {
+            const vo = voiceovers.find(v => v.id === this.value);
+            if (vo) {
+              voiceover.src = vo.url;
+              voiceoverName.textContent = vo.name;
+              audioPanel.style.display = 'block';
+            } else {
+              voiceover.src = '';
+              audioPanel.style.display = 'none';
+            }
+          };
+          
+          musicSelect.onchange = function() {
+            const m = musicList.find(x => x.id === this.value);
+            if (m) {
+              bgMusic.src = m.url;
+              bgMusicName.textContent = m.name;
+              musicPanel.style.display = 'block';
+            } else {
+              bgMusic.src = '';
+              musicPanel.style.display = 'none';
+            }
+          };
           
           // Request camera on load
           async function initCamera() {
@@ -738,7 +925,34 @@ Let me walk you through the key improvements we've made.`,
             return mins.toString().padStart(2,'0') + ':' + secs.toString().padStart(2,'0');
           }
           
-          startBtn.onclick = async function() {
+          // Start countdown then record
+          startBtn.onclick = function() {
+            countdownValue = 5;
+            countdownNumber.textContent = countdownValue;
+            countdownOverlay.classList.remove('hidden');
+            status.textContent = 'Countdown...';
+            status.className = 'status countdown';
+            
+            countdownInterval = setInterval(() => {
+              countdownValue--;
+              if (countdownValue <= 0) {
+                clearInterval(countdownInterval);
+                countdownOverlay.classList.add('hidden');
+                actuallyStartRecording();
+              } else {
+                countdownNumber.textContent = countdownValue;
+              }
+            }, 1000);
+          };
+          
+          cancelCountdown.onclick = function() {
+            clearInterval(countdownInterval);
+            countdownOverlay.classList.add('hidden');
+            status.textContent = 'Ready';
+            status.className = 'status ready';
+          };
+          
+          async function actuallyStartRecording() {
             try {
               // Get screen + webcam
               const displayStream = await navigator.mediaDevices.getDisplayMedia({
@@ -816,6 +1030,7 @@ Let me walk you through the key improvements we've made.`,
                 status.className = 'status';
                 
                 if(voiceover) voiceover.pause();
+                if(bgMusic) bgMusic.pause();
               };
               
               mediaRecorder.start(1000);
@@ -831,24 +1046,29 @@ Let me walk you through the key improvements we've made.`,
               status.textContent = 'Recording';
               status.className = 'status recording';
               
-              if(voiceover) voiceover.play();
+              if(voiceover && voiceover.src) voiceover.play();
+              if(bgMusic && bgMusic.src) { bgMusic.volume = 0.3; bgMusic.play(); }
               
             } catch(e) {
               alert('Error: ' + e.message);
+              status.textContent = 'Ready';
+              status.className = 'status ready';
             }
-          };
+          }
           
           pauseBtn.onclick = function() {
             if(isPaused) {
               mediaRecorder.resume();
               pauseBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>Pause';
               isPaused = false;
-              if(voiceover) voiceover.play();
+              if(voiceover && voiceover.src) voiceover.play();
+              if(bgMusic && bgMusic.src) bgMusic.play();
             } else {
               mediaRecorder.pause();
               pauseBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>Resume';
               isPaused = true;
               if(voiceover) voiceover.pause();
+              if(bgMusic) bgMusic.pause();
             }
           };
           
