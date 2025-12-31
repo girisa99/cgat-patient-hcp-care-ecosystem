@@ -738,27 +738,26 @@ Thanks for watching!`,
     });
     
     // Prepare scripts list for dropdown - include scriptText from voiceovers that have it
-    // IMPORTANT: Escape JSON for safe embedding in inline JavaScript
-    const escapeForInlineJs = (str: string) => {
-      return str
-        .replace(/\\/g, '\\\\')      // Escape backslashes first
-        .replace(/`/g, '\\`')        // Escape backticks (template literal delimiter)
-        .replace(/\$/g, '\\$')       // Escape dollar signs (template literal expressions)
-        .replace(/</g, '\\u003c')    // Escape < to prevent script tag issues
-        .replace(/>/g, '\\u003e');   // Escape > to prevent script tag issues
-    };
-    
-    const scriptsJson = escapeForInlineJs(JSON.stringify(availableScripts.map(s => ({ id: s.id, title: s.title, content: s.content }))));
-    
-    // For voiceovers, include the attached script if available
-    const voiceoversJson = escapeForInlineJs(JSON.stringify(popoutVoiceoverFiles.map(a => ({ 
+    // IMPORTANT: Use a safe method to pass data - encode as base64 and decode in the popout
+    const scriptsData = availableScripts.map(s => ({ id: s.id, title: s.title, content: s.content }));
+    const voiceoversData = popoutVoiceoverFiles.map(a => ({ 
       id: a.id, 
       name: a.name, 
       url: a.url,
       scriptText: a.metadata?.scriptText || null,
       scriptType: a.metadata?.scriptType || null
-    }))));
-    const musicFilesJson = escapeForInlineJs(JSON.stringify(popoutMusicFiles.map(m => ({ id: m.id, name: m.name, url: m.url }))));
+    }));
+    const musicData = popoutMusicFiles.map(m => ({ id: m.id, name: m.name, url: m.url }));
+    
+    // Encode data as base64 to avoid any escaping issues with template literals
+    const encodeData = (data: any) => btoa(encodeURIComponent(JSON.stringify(data)));
+    const scriptsEncoded = encodeData(scriptsData);
+    const voiceoversEncoded = encodeData(voiceoversData);
+    const musicEncoded = encodeData(musicData);
+    
+    // Also escape other string values that will be embedded
+    const escapedAudioName = audioName.replace(/'/g, "\\'").replace(/`/g, "\\`");
+    const escapedBgMusicName = bgMusicName.replace(/'/g, "\\'").replace(/`/g, "\\`");
     
     const popoutWindow = window.open('', 'recording-studio', 
       'width=1400,height=900,left=100,top=50,toolbar=no,menubar=no,scrollbars=no,resizable=yes'
@@ -998,7 +997,12 @@ Thanks for watching!`,
             Video Recording Studio
             <span class="badge">Pop-out Mode</span>
           </h1>
-          <div id="status" class="status loading">Initializing Camera...</div>
+          <div style="display:flex;align-items:center;gap:15px;">
+            <div id="status" class="status loading">Initializing Camera...</div>
+            <button id="closeBtn" class="danger" style="padding:8px 16px;font-size:13px;">
+              ✕ Close
+            </button>
+          </div>
         </div>
         
         <!-- Options Bar with Dropdowns -->
@@ -1075,7 +1079,14 @@ Thanks for watching!`,
           
           <div class="sidebar">
             <div id="scriptPanel" class="panel teleprompter">
-              <h3>📄 Teleprompter</h3>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <h3 style="margin:0;">📄 Teleprompter</h3>
+                <div style="display:flex;gap:5px;">
+                  <button id="scrollUpBtn" style="padding:4px 8px;font-size:12px;" title="Scroll Up">▲</button>
+                  <button id="scrollDownBtn" style="padding:4px 8px;font-size:12px;" title="Scroll Down">▼</button>
+                  <button id="scrollResetBtn" style="padding:4px 8px;font-size:12px;" title="Reset">⟲</button>
+                </div>
+              </div>
               <div id="scriptContent" class="script-content">
                 ${escapedScriptContent || '<span style="opacity:0.5;">Select a script to display here...</span>'}
               </div>
@@ -1084,7 +1095,7 @@ Thanks for watching!`,
             <div id="audioPanel" class="panel" style="${audioUrl ? '' : 'display:none;'}">
               <h3>🎤 Voiceover Audio</h3>
               <div class="audio-info">
-                <strong id="voiceoverName">${audioName}</strong><br>
+                <strong id="voiceoverName">${escapedAudioName}</strong><br>
                 <small>Will play automatically when recording starts</small>
                 <button id="useVoiceoverScriptBtn" class="use-script-btn" style="display:none;margin-top:8px;">
                   📄 Use Attached Script
@@ -1096,7 +1107,7 @@ Thanks for watching!`,
             <div id="musicPanel" class="panel" style="${bgMusicUrl ? '' : 'display:none;'}">
               <h3>🎵 Background Music</h3>
               <div class="audio-info">
-                <strong id="bgMusicName">${bgMusicName}</strong>
+                <strong id="bgMusicName">${escapedBgMusicName}</strong>
               </div>
               <audio id="bgMusic" src="${bgMusicUrl}" preload="auto" loop></audio>
             </div>
@@ -1112,10 +1123,20 @@ Thanks for watching!`,
         </div>
 
         <script>
-          // Data from parent
-          const scripts = ${scriptsJson};
-          const voiceovers = ${voiceoversJson};
-          const musicList = ${musicFilesJson};
+          // Decode data from base64 (safe encoding to avoid template literal issues)
+          function decodeData(encoded) {
+            try {
+              return JSON.parse(decodeURIComponent(atob(encoded)));
+            } catch(e) {
+              console.error('Failed to decode data:', e);
+              return [];
+            }
+          }
+          
+          // Data from parent (base64 encoded for safety)
+          const scripts = decodeData('${scriptsEncoded}');
+          const voiceovers = decodeData('${voiceoversEncoded}');
+          const musicList = decodeData('${musicEncoded}');
           
           let mediaRecorder = null;
           let chunks = [];
@@ -1258,6 +1279,23 @@ Thanks for watching!`,
               bgMusic.src = '';
               musicPanel.style.display = 'none';
             }
+          };
+          
+          // Teleprompter scroll controls
+          const scrollUpBtn = document.getElementById('scrollUpBtn');
+          const scrollDownBtn = document.getElementById('scrollDownBtn');
+          const scrollResetBtn = document.getElementById('scrollResetBtn');
+          
+          scrollUpBtn.onclick = function() {
+            scriptContent.scrollTop -= 50;
+          };
+          
+          scrollDownBtn.onclick = function() {
+            scriptContent.scrollTop += 50;
+          };
+          
+          scrollResetBtn.onclick = function() {
+            scriptContent.scrollTop = 0;
           };
           
           const cameraLoading = document.getElementById('cameraLoading');
@@ -1723,6 +1761,27 @@ Thanks for watching!`,
           resetBtn.onclick = function() {
             location.reload();
           };
+          
+          // Close button handler
+          document.getElementById('closeBtn').onclick = function() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+              if (!confirm('Recording in progress. Are you sure you want to close?')) {
+                return;
+              }
+              mediaRecorder.stop();
+            }
+            if (stream) {
+              stream.getTracks().forEach(t => t.stop());
+            }
+            window.close();
+          };
+          
+          // Allow closing with Escape key
+          document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+              document.getElementById('closeBtn').click();
+            }
+          });
         </script>
       </body>
       </html>
