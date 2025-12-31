@@ -110,7 +110,7 @@ export default function VerificationDialog({
           document_type: pendingResult.documentType || selectedDocType || 'unknown',
           file_name: pendingResult.fileName || 'Unknown Document',
           file_path: pendingResult.fileName || 'unknown',
-          status: 'verified',
+          status: 'completed',
           progress: 100,
           extracted_metadata: { 
             entities: Object.entries(pendingResult.extractedFields)
