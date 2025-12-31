@@ -161,6 +161,35 @@ export const VideoRecorder: React.FC = () => {
           metadata: item.metadata,
         }));
 
+        // Also check localStorage for legacy generated audios not yet in DB
+        const savedAudioMetadata = localStorage.getItem('generatedAudiosMetadata');
+        if (savedAudioMetadata) {
+          try {
+            const legacyAudios = JSON.parse(savedAudioMetadata);
+            legacyAudios.forEach((audio: any) => {
+              // Check if this audio is already in the DB items (by storage path)
+              const alreadyExists = items.some(
+                item => item.storage_path === audio.storagePath || item.name === audio.name
+              );
+              if (!alreadyExists && audio.audioUrl) {
+                items.push({
+                  id: audio.id,
+                  name: audio.name,
+                  file_type: 'audio',
+                  storage_bucket: 'generated-audio',
+                  storage_path: audio.storagePath || '',
+                  url: audio.audioUrl,
+                  source: 'generated',
+                  created_at: audio.generatedAt || new Date().toISOString(),
+                  metadata: { voice: audio.voice, scriptText: audio.scriptText },
+                });
+              }
+            });
+          } catch (e) {
+            console.error('Failed to parse legacy audio metadata:', e);
+          }
+        }
+
         setMediaItems(items);
       } catch (e) {
         console.error('Failed to load media:', e);

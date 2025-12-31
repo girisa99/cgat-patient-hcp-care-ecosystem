@@ -445,6 +445,28 @@ export const ScriptsManager: React.FC = () => {
         .from('generated-audio')
         .getPublicUrl(storagePath);
 
+      // Also save to generated_media table so it appears in Video Studio
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('generated_media')
+          .insert({
+            user_id: user.id,
+            name: scriptName,
+            file_type: 'audio',
+            storage_bucket: 'generated-audio',
+            storage_path: storagePath,
+            file_url: urlData.publicUrl,
+            source: 'generated',
+            metadata: { 
+              voice: selectedVoice, 
+              scriptType: scriptType,
+              textLength: cleanedScript.length,
+              chunks: totalChunks
+            },
+          });
+      }
+
       const newAudio: GeneratedAudio = {
         id: audioId,
         name: scriptName,
