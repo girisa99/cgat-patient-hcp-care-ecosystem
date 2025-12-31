@@ -270,31 +270,69 @@ function generateStyles(): string {
     .audio-control-group {
       display: flex;
       flex-direction: column;
+      align-items: stretch;
+      gap: 6px;
+      padding: 10px;
+      background: rgba(30, 41, 59, 0.6);
+      border-radius: 8px;
+      border-left: 3px solid #475569;
+      transition: all 0.2s ease;
+    }
+    .audio-control-group.playing { 
+      border-left-color: #22c55e; 
+      background: rgba(34, 197, 94, 0.1);
+    }
+    .audio-control-group.paused { 
+      border-left-color: #f59e0b; 
+      background: rgba(245, 158, 11, 0.1);
+    }
+    .audio-control-group .track-header {
+      display: flex;
+      justify-content: space-between;
       align-items: center;
-      gap: 5px;
-      min-width: 100px;
     }
     .audio-control-group label {
-      font-size: 10px;
+      font-size: 11px;
+      font-weight: 600;
       text-transform: uppercase;
-      opacity: 0.7;
+      opacity: 0.9;
+    }
+    .audio-control-group .track-status {
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 10px;
+      background: #475569;
+      text-transform: uppercase;
+    }
+    .audio-control-group.playing .track-status {
+      background: #22c55e;
+      color: #000;
+    }
+    .audio-control-group.paused .track-status {
+      background: #f59e0b;
+      color: #000;
     }
     .audio-control-group .controls {
       display: flex;
-      gap: 5px;
+      gap: 4px;
+      justify-content: center;
     }
     .audio-control-group button {
       padding: 6px 10px;
-      font-size: 14px;
+      font-size: 12px;
       min-width: 36px;
+      background: #334155;
+      border: 1px solid #475569;
+    }
+    .audio-control-group button:hover {
+      background: #475569;
     }
     .audio-control-group .progress {
-      width: 80px;
+      width: 100%;
       height: 4px;
-      background: #333;
+      background: #1e293b;
       border-radius: 2px;
       overflow: hidden;
-      margin-top: 3px;
     }
     .audio-control-group .progress-bar {
       height: 100%;
@@ -302,8 +340,8 @@ function generateStyles(): string {
       width: 0%;
       transition: width 0.1s;
     }
-    .audio-control-group.playing { border-left: 2px solid #22c55e; padding-left: 10px; }
-    .audio-control-group.paused { border-left: 2px solid #f59e0b; padding-left: 10px; }
+    .audio-control-group.playing .progress-bar { background: #22c55e; }
+    .audio-control-group.paused .progress-bar { background: #f59e0b; }
     
     .sidebar { width: 350px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
     .panel {
@@ -524,41 +562,52 @@ function generateBody(config: PopoutConfig, escapedScriptContent: string): strin
             </div>
             
             <div id="voiceoverControls" class="audio-control-group" style="display:none;">
-              <label>🎤 Voiceover</label>
+              <div class="track-header">
+                <label>🎤 Voiceover</label>
+                <span class="track-status">Stopped</span>
+              </div>
               <div class="controls">
                 <button id="voRewindBtn" title="Rewind 5s">⏪</button>
-                <button id="voPlayPauseBtn" title="Play/Pause">⏸️</button>
+                <button id="voPlayPauseBtn" title="Play/Pause">▶️</button>
                 <button id="voForwardBtn" title="Forward 5s">⏩</button>
               </div>
               <div class="progress"><div id="voProgress" class="progress-bar"></div></div>
             </div>
             
             <div id="ttsControls" class="audio-control-group" style="display:none;">
-              <label>🗣️ TTS Audio</label>
+              <div class="track-header">
+                <label>🗣️ TTS Script</label>
+                <span class="track-status">Stopped</span>
+              </div>
               <div class="controls">
                 <button id="ttsRewindBtn" title="Rewind 5s">⏪</button>
-                <button id="ttsPlayPauseBtn" title="Play/Pause">⏸️</button>
+                <button id="ttsPlayPauseBtn" title="Play/Pause">▶️</button>
                 <button id="ttsForwardBtn" title="Forward 5s">⏩</button>
               </div>
               <div class="progress"><div id="ttsProgress" class="progress-bar"></div></div>
             </div>
             
             <div id="musicControls" class="audio-control-group" style="display:none;">
-              <label>🎵 Music</label>
+              <div class="track-header">
+                <label>🎵 Background Music</label>
+                <span class="track-status">Stopped</span>
+              </div>
               <div class="controls">
                 <button id="musicRewindBtn" title="Rewind 5s">⏪</button>
-                <button id="musicPlayPauseBtn" title="Play/Pause">⏸️</button>
+                <button id="musicPlayPauseBtn" title="Play/Pause">▶️</button>
                 <button id="musicVolumeDownBtn" title="Volume -">🔉</button>
                 <button id="musicVolumeUpBtn" title="Volume +">🔊</button>
               </div>
               <div class="progress"><div id="musicProgress" class="progress-bar"></div></div>
             </div>
             
-            <div id="allAudioControls" class="audio-control-group">
-              <label>All Audio</label>
+            <div id="allAudioControls" class="audio-control-group" style="background:transparent;border-left-color:#6366f1;">
+              <div class="track-header">
+                <label>🎛️ All Tracks</label>
+              </div>
               <div class="controls">
-                <button id="pauseAllAudioBtn" title="Pause All">⏸️ All</button>
-                <button id="resumeAllAudioBtn" title="Resume All">▶️ All</button>
+                <button id="pauseAllAudioBtn" title="Pause All">⏸️</button>
+                <button id="resumeAllAudioBtn" title="Resume All">▶️</button>
                 <button id="restartAllAudioBtn" title="Restart All">🔄</button>
               </div>
             </div>
@@ -1556,27 +1605,62 @@ function generateScript(config: PopoutConfig): string {
         }
       }
       
-      // Update progress bars
+      // Update progress bars and status
       function updateAudioProgress() {
         setInterval(function() {
-          if (voiceoverActive && voiceover && voiceover.duration) {
-            document.getElementById('voProgress').style.width = (voiceover.currentTime / voiceover.duration * 100) + '%';
+          // Update voiceover
+          if (voiceoverActive && voiceover) {
+            if (voiceover.duration) {
+              document.getElementById('voProgress').style.width = (voiceover.currentTime / voiceover.duration * 100) + '%';
+            }
+            updateTrackStatus('voiceoverControls', voiceover);
           }
-          if (ttsActive && ttsAudio && ttsAudio.duration) {
-            document.getElementById('ttsProgress').style.width = (ttsAudio.currentTime / ttsAudio.duration * 100) + '%';
+          // Update TTS
+          if (ttsActive && ttsAudio) {
+            if (ttsAudio.duration) {
+              document.getElementById('ttsProgress').style.width = (ttsAudio.currentTime / ttsAudio.duration * 100) + '%';
+            }
+            updateTrackStatus('ttsControls', ttsAudio);
           }
-          if (musicActive && bgMusic && bgMusic.duration) {
-            document.getElementById('musicProgress').style.width = (bgMusic.currentTime / bgMusic.duration * 100) + '%';
+          // Update music
+          if (musicActive && bgMusic) {
+            if (bgMusic.duration) {
+              document.getElementById('musicProgress').style.width = (bgMusic.currentTime / bgMusic.duration * 100) + '%';
+            }
+            updateTrackStatus('musicControls', bgMusic);
           }
         }, 100);
       }
       
-      // Audio controls
+      // Update track visual status
+      function updateTrackStatus(controlId, audioElement) {
+        var control = document.getElementById(controlId);
+        var statusEl = control.querySelector('.track-status');
+        if (!audioElement) return;
+        
+        control.classList.remove('playing', 'paused');
+        if (!audioElement.paused && !audioElement.ended) {
+          control.classList.add('playing');
+          if (statusEl) statusEl.textContent = 'Playing';
+        } else if (audioElement.paused && audioElement.currentTime > 0) {
+          control.classList.add('paused');
+          if (statusEl) statusEl.textContent = 'Paused';
+        } else {
+          if (statusEl) statusEl.textContent = 'Stopped';
+        }
+      }
+      
+      // Audio controls with visual feedback
       document.getElementById('voRewindBtn').onclick = function() { if (voiceover) voiceover.currentTime = Math.max(0, voiceover.currentTime - 5); };
       document.getElementById('voPlayPauseBtn').onclick = function() {
         if (voiceover) {
-          if (voiceover.paused) { voiceover.play(); this.textContent = '⏸️'; }
-          else { voiceover.pause(); this.textContent = '▶️'; }
+          if (voiceover.paused) { 
+            voiceover.play(); 
+            this.textContent = '⏸️'; 
+          } else { 
+            voiceover.pause(); 
+            this.textContent = '▶️'; 
+          }
         }
       };
       document.getElementById('voForwardBtn').onclick = function() { if (voiceover) voiceover.currentTime = Math.min(voiceover.duration || 0, voiceover.currentTime + 5); };
@@ -1584,8 +1668,13 @@ function generateScript(config: PopoutConfig): string {
       document.getElementById('ttsRewindBtn').onclick = function() { if (ttsAudio) ttsAudio.currentTime = Math.max(0, ttsAudio.currentTime - 5); };
       document.getElementById('ttsPlayPauseBtn').onclick = function() {
         if (ttsAudio) {
-          if (ttsAudio.paused) { ttsAudio.play(); this.textContent = '⏸️'; }
-          else { ttsAudio.pause(); this.textContent = '▶️'; }
+          if (ttsAudio.paused) { 
+            ttsAudio.play(); 
+            this.textContent = '⏸️'; 
+          } else { 
+            ttsAudio.pause(); 
+            this.textContent = '▶️'; 
+          }
         }
       };
       document.getElementById('ttsForwardBtn').onclick = function() { if (ttsAudio) ttsAudio.currentTime = Math.min(ttsAudio.duration || 0, ttsAudio.currentTime + 5); };
@@ -1593,27 +1682,32 @@ function generateScript(config: PopoutConfig): string {
       document.getElementById('musicRewindBtn').onclick = function() { if (bgMusic) bgMusic.currentTime = Math.max(0, bgMusic.currentTime - 5); };
       document.getElementById('musicPlayPauseBtn').onclick = function() {
         if (bgMusic) {
-          if (bgMusic.paused) { bgMusic.play(); this.textContent = '⏸️'; }
-          else { bgMusic.pause(); this.textContent = '▶️'; }
+          if (bgMusic.paused) { 
+            bgMusic.play(); 
+            this.textContent = '⏸️'; 
+          } else { 
+            bgMusic.pause(); 
+            this.textContent = '▶️'; 
+          }
         }
       };
       document.getElementById('musicVolumeDownBtn').onclick = function() { if (bgMusic) bgMusic.volume = Math.max(0, bgMusic.volume - 0.1); };
       document.getElementById('musicVolumeUpBtn').onclick = function() { if (bgMusic) bgMusic.volume = Math.min(1, bgMusic.volume + 0.1); };
       
       document.getElementById('pauseAllAudioBtn').onclick = function() {
-        if (voiceover) voiceover.pause();
-        if (ttsAudio) ttsAudio.pause();
-        if (bgMusic) bgMusic.pause();
+        if (voiceover) { voiceover.pause(); document.getElementById('voPlayPauseBtn').textContent = '▶️'; }
+        if (ttsAudio) { ttsAudio.pause(); document.getElementById('ttsPlayPauseBtn').textContent = '▶️'; }
+        if (bgMusic) { bgMusic.pause(); document.getElementById('musicPlayPauseBtn').textContent = '▶️'; }
       };
       document.getElementById('resumeAllAudioBtn').onclick = function() {
-        if (voiceoverActive && voiceover) voiceover.play();
-        if (ttsActive && ttsAudio) ttsAudio.play();
-        if (musicActive && bgMusic) bgMusic.play();
+        if (voiceoverActive && voiceover) { voiceover.play(); document.getElementById('voPlayPauseBtn').textContent = '⏸️'; }
+        if (ttsActive && ttsAudio) { ttsAudio.play(); document.getElementById('ttsPlayPauseBtn').textContent = '⏸️'; }
+        if (musicActive && bgMusic) { bgMusic.play(); document.getElementById('musicPlayPauseBtn').textContent = '⏸️'; }
       };
       document.getElementById('restartAllAudioBtn').onclick = function() {
-        if (voiceover) { voiceover.currentTime = 0; voiceover.play(); }
-        if (ttsAudio) { ttsAudio.currentTime = 0; ttsAudio.play(); }
-        if (bgMusic) { bgMusic.currentTime = 0; bgMusic.play(); }
+        if (voiceover) { voiceover.currentTime = 0; voiceover.play(); document.getElementById('voPlayPauseBtn').textContent = '⏸️'; }
+        if (ttsAudio) { ttsAudio.currentTime = 0; ttsAudio.play(); document.getElementById('ttsPlayPauseBtn').textContent = '⏸️'; }
+        if (bgMusic) { bgMusic.currentTime = 0; bgMusic.play(); document.getElementById('musicPlayPauseBtn').textContent = '⏸️'; }
       };
       
       // Pause/Resume recording
