@@ -871,6 +871,61 @@ Thanks for watching!`,
           }
           button.use-script-btn:hover { background: #16a34a; }
           button:disabled { opacity: 0.5; cursor: not-allowed; }
+          
+          /* Audio control panel during recording */
+          .audio-control-panel {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9);
+            border-radius: 12px;
+            padding: 12px 20px;
+            display: none;
+            gap: 15px;
+            align-items: center;
+            z-index: 50;
+            border: 1px solid #333;
+          }
+          .audio-control-panel.visible { display: flex; }
+          .audio-control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            min-width: 100px;
+          }
+          .audio-control-group label {
+            font-size: 10px;
+            text-transform: uppercase;
+            opacity: 0.7;
+          }
+          .audio-control-group .controls {
+            display: flex;
+            gap: 5px;
+          }
+          .audio-control-group button {
+            padding: 6px 10px;
+            font-size: 14px;
+            min-width: 36px;
+          }
+          .audio-control-group .progress {
+            width: 80px;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 3px;
+          }
+          .audio-control-group .progress-bar {
+            height: 100%;
+            background: #6366f1;
+            width: 0%;
+            transition: width 0.1s;
+          }
+          .audio-control-group.playing { border-left: 2px solid #22c55e; padding-left: 10px; }
+          .audio-control-group.paused { border-left: 2px solid #f59e0b; padding-left: 10px; }
+          
           .sidebar { width: 350px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
           .panel {
             background: #1a1a2e;
@@ -1048,6 +1103,49 @@ Thanks for watching!`,
               <div id="recIndicator" class="recording-indicator" style="display:none;">
                 <div class="rec-dot"></div>
                 <span id="timer" class="timer">00:00</span>
+              </div>
+              
+              <!-- Audio Control Panel (visible during recording) -->
+              <div id="audioControlPanel" class="audio-control-panel">
+                <div id="voiceoverControls" class="audio-control-group" style="display:none;">
+                  <label>🎤 Voiceover</label>
+                  <div class="controls">
+                    <button id="voRewindBtn" title="Rewind 5s">⏪</button>
+                    <button id="voPlayPauseBtn" title="Play/Pause">⏸️</button>
+                    <button id="voForwardBtn" title="Forward 5s">⏩</button>
+                  </div>
+                  <div class="progress"><div id="voProgress" class="progress-bar"></div></div>
+                </div>
+                
+                <div id="ttsControls" class="audio-control-group" style="display:none;">
+                  <label>🗣️ TTS Audio</label>
+                  <div class="controls">
+                    <button id="ttsRewindBtn" title="Rewind 5s">⏪</button>
+                    <button id="ttsPlayPauseBtn" title="Play/Pause">⏸️</button>
+                    <button id="ttsForwardBtn" title="Forward 5s">⏩</button>
+                  </div>
+                  <div class="progress"><div id="ttsProgress" class="progress-bar"></div></div>
+                </div>
+                
+                <div id="musicControls" class="audio-control-group" style="display:none;">
+                  <label>🎵 Music</label>
+                  <div class="controls">
+                    <button id="musicRewindBtn" title="Rewind 5s">⏪</button>
+                    <button id="musicPlayPauseBtn" title="Play/Pause">⏸️</button>
+                    <button id="musicVolumeDownBtn" title="Volume -">🔉</button>
+                    <button id="musicVolumeUpBtn" title="Volume +">🔊</button>
+                  </div>
+                  <div class="progress"><div id="musicProgress" class="progress-bar"></div></div>
+                </div>
+                
+                <div class="audio-control-group">
+                  <label>All Audio</label>
+                  <div class="controls">
+                    <button id="pauseAllAudioBtn" title="Pause All">⏸️ All</button>
+                    <button id="resumeAllAudioBtn" title="Resume All">▶️ All</button>
+                    <button id="restartAllAudioBtn" title="Restart All">🔄</button>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="controls">
@@ -1300,9 +1398,16 @@ Thanks for watching!`,
           
           const cameraLoading = document.getElementById('cameraLoading');
           
-          // Request camera on load
+          // Request camera on load with timeout
           async function initCamera() {
             console.log('🎥 Initializing camera...');
+            
+            // Set a timeout to show error if camera takes too long
+            const cameraTimeout = setTimeout(() => {
+              console.warn('⏰ Camera initialization taking too long');
+              cameraLoading.innerHTML = '<p style="color:#f59e0b;">Camera is taking a while...</p><p style="margin-top:10px;font-size:13px;opacity:0.7;">Make sure you allow camera access in your browser.</p><button onclick="location.reload()" style="margin-top:20px;padding:10px 20px;">Retry</button>';
+            }, 10000); // 10 second timeout
+            
             try {
               // Check if mediaDevices is available
               if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -1318,27 +1423,37 @@ Thanks for watching!`,
                 audio: true
               });
               
+              clearTimeout(cameraTimeout);
               console.log('✅ Camera stream obtained:', stream.getVideoTracks().length, 'video tracks');
               
               // Set preview source
               preview.srcObject = stream;
               
-              // Ensure video plays
-              preview.onloadedmetadata = function() {
-                console.log('📺 Video metadata loaded, playing...');
-                preview.play().then(() => {
-                  // Hide loading overlay once video is playing
-                  cameraLoading.classList.add('hidden');
-                  status.textContent = 'Camera Ready';
-                  status.className = 'status ready';
+              // Ensure video plays - try immediately, don't wait for onloadedmetadata
+              try {
+                await preview.play();
+                cameraLoading.classList.add('hidden');
+                status.textContent = 'Camera Ready';
+                status.className = 'status ready';
+              } catch(playErr) {
+                console.log('Initial play failed, waiting for metadata...');
+                // Fallback: wait for metadata
+                preview.onloadedmetadata = function() {
+                  console.log('📺 Video metadata loaded, playing...');
+                  preview.play().then(() => {
+                    cameraLoading.classList.add('hidden');
+                    status.textContent = 'Camera Ready';
+                    status.className = 'status ready';
                 }).catch(e => {
                   console.error('Play error:', e);
                   cameraLoading.innerHTML = '<p style="color:#f87171;">Failed to play video. Click to retry.</p>';
                   cameraLoading.onclick = initCamera;
                 });
               };
+              }
               
             } catch(e) {
+              clearTimeout(cameraTimeout);
               console.error('❌ Camera error:', e);
               status.textContent = 'Camera Error';
               status.className = 'status error';
@@ -1664,6 +1779,9 @@ Thanks for watching!`,
                 status.textContent = 'Recorded';
                 status.className = 'status';
                 
+                // Hide audio control panel
+                audioControlPanel.classList.remove('visible');
+                
                 if(voiceover) voiceover.pause();
                 if(bgMusic) bgMusic.pause();
                 if(ttsAudio) ttsAudio.pause();
@@ -1699,6 +1817,9 @@ Thanks for watching!`,
                 bgMusic.play().catch(e => console.error('Music error:', e));
               }
               
+              // Show audio control panel
+              showAudioControls(useVoiceover, useTTS, useMusic);
+              
               // Auto-scroll teleprompter
               startTeleprompterScroll();
               
@@ -1725,21 +1846,148 @@ Thanks for watching!`,
             }, 50);
           }
           
+          // Audio control panel element references
+          const audioControlPanel = document.getElementById('audioControlPanel');
+          const voiceoverControls = document.getElementById('voiceoverControls');
+          const ttsControls = document.getElementById('ttsControls');
+          const musicControls = document.getElementById('musicControls');
+          
+          // Track which audio sources are active
+          let voiceoverActive = false;
+          let ttsActive = false;
+          let musicActive = false;
+          
+          // Show audio control panel during recording
+          function showAudioControls(useVoiceover, useTTS, useMusic) {
+            voiceoverActive = useVoiceover;
+            ttsActive = useTTS;
+            musicActive = useMusic;
+            
+            if (useVoiceover) voiceoverControls.style.display = 'flex';
+            if (useTTS) ttsControls.style.display = 'flex';
+            if (useMusic) musicControls.style.display = 'flex';
+            
+            if (useVoiceover || useTTS || useMusic) {
+              audioControlPanel.classList.add('visible');
+              updateAudioProgress();
+            }
+          }
+          
+          // Update progress bars
+          function updateAudioProgress() {
+            setInterval(() => {
+              if (voiceoverActive && voiceover && voiceover.duration) {
+                document.getElementById('voProgress').style.width = (voiceover.currentTime / voiceover.duration * 100) + '%';
+              }
+              if (ttsActive && ttsAudio && ttsAudio.duration) {
+                document.getElementById('ttsProgress').style.width = (ttsAudio.currentTime / ttsAudio.duration * 100) + '%';
+              }
+              if (musicActive && bgMusic && bgMusic.duration) {
+                document.getElementById('musicProgress').style.width = (bgMusic.currentTime / bgMusic.duration * 100) + '%';
+              }
+            }, 100);
+          }
+          
+          // Voiceover controls
+          document.getElementById('voRewindBtn').onclick = function() {
+            if (voiceover) voiceover.currentTime = Math.max(0, voiceover.currentTime - 5);
+          };
+          document.getElementById('voPlayPauseBtn').onclick = function() {
+            if (voiceover) {
+              if (voiceover.paused) {
+                voiceover.play();
+                this.textContent = '⏸️';
+                voiceoverControls.classList.remove('paused');
+                voiceoverControls.classList.add('playing');
+              } else {
+                voiceover.pause();
+                this.textContent = '▶️';
+                voiceoverControls.classList.remove('playing');
+                voiceoverControls.classList.add('paused');
+              }
+            }
+          };
+          document.getElementById('voForwardBtn').onclick = function() {
+            if (voiceover) voiceover.currentTime = Math.min(voiceover.duration || 0, voiceover.currentTime + 5);
+          };
+          
+          // TTS controls
+          document.getElementById('ttsRewindBtn').onclick = function() {
+            if (ttsAudio) ttsAudio.currentTime = Math.max(0, ttsAudio.currentTime - 5);
+          };
+          document.getElementById('ttsPlayPauseBtn').onclick = function() {
+            if (ttsAudio) {
+              if (ttsAudio.paused) {
+                ttsAudio.play();
+                this.textContent = '⏸️';
+                ttsControls.classList.remove('paused');
+                ttsControls.classList.add('playing');
+              } else {
+                ttsAudio.pause();
+                this.textContent = '▶️';
+                ttsControls.classList.remove('playing');
+                ttsControls.classList.add('paused');
+              }
+            }
+          };
+          document.getElementById('ttsForwardBtn').onclick = function() {
+            if (ttsAudio) ttsAudio.currentTime = Math.min(ttsAudio.duration || 0, ttsAudio.currentTime + 5);
+          };
+          
+          // Music controls
+          document.getElementById('musicRewindBtn').onclick = function() {
+            if (bgMusic) bgMusic.currentTime = Math.max(0, bgMusic.currentTime - 5);
+          };
+          document.getElementById('musicPlayPauseBtn').onclick = function() {
+            if (bgMusic) {
+              if (bgMusic.paused) {
+                bgMusic.play();
+                this.textContent = '⏸️';
+                musicControls.classList.remove('paused');
+                musicControls.classList.add('playing');
+              } else {
+                bgMusic.pause();
+                this.textContent = '▶️';
+                musicControls.classList.remove('playing');
+                musicControls.classList.add('paused');
+              }
+            }
+          };
+          document.getElementById('musicVolumeDownBtn').onclick = function() {
+            if (bgMusic) bgMusic.volume = Math.max(0, bgMusic.volume - 0.1);
+          };
+          document.getElementById('musicVolumeUpBtn').onclick = function() {
+            if (bgMusic) bgMusic.volume = Math.min(1, bgMusic.volume + 0.1);
+          };
+          
+          // All audio controls
+          document.getElementById('pauseAllAudioBtn').onclick = function() {
+            if (voiceover) { voiceover.pause(); document.getElementById('voPlayPauseBtn').textContent = '▶️'; }
+            if (ttsAudio) { ttsAudio.pause(); document.getElementById('ttsPlayPauseBtn').textContent = '▶️'; }
+            if (bgMusic) { bgMusic.pause(); document.getElementById('musicPlayPauseBtn').textContent = '▶️'; }
+          };
+          document.getElementById('resumeAllAudioBtn').onclick = function() {
+            if (voiceoverActive && voiceover) { voiceover.play(); document.getElementById('voPlayPauseBtn').textContent = '⏸️'; }
+            if (ttsActive && ttsAudio) { ttsAudio.play(); document.getElementById('ttsPlayPauseBtn').textContent = '⏸️'; }
+            if (musicActive && bgMusic) { bgMusic.play(); document.getElementById('musicPlayPauseBtn').textContent = '⏸️'; }
+          };
+          document.getElementById('restartAllAudioBtn').onclick = function() {
+            if (voiceover) { voiceover.currentTime = 0; voiceover.play(); document.getElementById('voPlayPauseBtn').textContent = '⏸️'; }
+            if (ttsAudio) { ttsAudio.currentTime = 0; ttsAudio.play(); document.getElementById('ttsPlayPauseBtn').textContent = '⏸️'; }
+            if (bgMusic) { bgMusic.currentTime = 0; bgMusic.play(); document.getElementById('musicPlayPauseBtn').textContent = '⏸️'; }
+          };
+          
           pauseBtn.onclick = function() {
             if(isPaused) {
               mediaRecorder.resume();
               pauseBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>Pause';
               isPaused = false;
-              if(ttsAudio && !ttsAudio.ended) ttsAudio.play();
-              if(voiceover && voiceover.src) voiceover.play();
-              if(bgMusic && bgMusic.src) bgMusic.play();
+              // Note: Audio resume is now handled by individual controls or "Resume All"
             } else {
               mediaRecorder.pause();
               pauseBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>Resume';
               isPaused = true;
-              if(ttsAudio) ttsAudio.pause();
-              if(voiceover) voiceover.pause();
-              if(bgMusic) bgMusic.pause();
+              // Note: Audio pause is now handled by individual controls or "Pause All"
             }
           };
           
