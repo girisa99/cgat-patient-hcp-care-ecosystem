@@ -100,6 +100,7 @@ export const VideoRecorder: React.FC = () => {
   const fullscreenPreviewRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
+  const musicInputRef = useRef<HTMLInputElement>(null);
   const voiceoverAudioRef = useRef<HTMLAudioElement>(null);
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
   
@@ -999,6 +1000,81 @@ Let me walk you through the key improvements we've made.`,
     }
   };
 
+  // Upload instrumental music files
+  const handleMusicUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files?.length) return;
+
+    setIsUploading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      for (const file of Array.from(files)) {
+        if (!file.type.startsWith('audio/')) {
+          showError(`Only audio files allowed: ${file.name}`);
+          continue;
+        }
+
+        const bucket = 'generated-audio';
+        const fileName = `music_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+        
+        const { data, error: uploadError } = await supabase.storage
+          .from(bucket)
+          .upload(fileName, file, {
+            contentType: file.type,
+            upsert: false,
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage
+          .from(bucket)
+          .getPublicUrl(data.path);
+
+        const { data: dbData, error: dbError } = await supabase
+          .from('generated_media')
+          .insert({
+            user_id: user.id,
+            name: `🎵 ${file.name}`,
+            file_type: 'audio',
+            storage_bucket: bucket,
+            storage_path: data.path,
+            file_url: urlData.publicUrl,
+            file_size_bytes: file.size,
+            source: 'upload',
+            metadata: { type: 'instrumental', uploadedAs: 'background_music' }
+          })
+          .select()
+          .single();
+
+        if (!dbError && dbData) {
+          const newMedia: MediaItem = {
+            id: dbData.id,
+            name: `🎵 ${file.name}`,
+            url: urlData.publicUrl,
+            file_type: 'audio',
+            storage_bucket: bucket,
+            storage_path: data.path,
+            source: 'upload',
+            created_at: dbData.created_at,
+            metadata: { type: 'instrumental' }
+          };
+          setMediaItems(prev => [newMedia, ...prev]);
+        }
+      }
+      showSuccess('Music files uploaded successfully!');
+    } catch (err) {
+      console.error('Music upload error:', err);
+      showError('Failed to upload music files');
+    } finally {
+      setIsUploading(false);
+      if (musicInputRef.current) {
+        musicInputRef.current.value = '';
+      }
+    }
+  };
+
   const handleDownload = async (media: MediaItem) => {
     try {
       const response = await fetch(media.url);
@@ -1454,6 +1530,33 @@ Let me walk you through the key improvements we've made.`,
                   <p className="text-xs text-muted-foreground">
                     Describe the style: genre, mood, instruments, tempo
                   </p>
+                  
+                  {/* Upload music divider */}
+                  <div className="flex items-center gap-2 pt-2 mt-2 border-t border-border/50">
+                    <span className="text-xs text-muted-foreground">Or upload your own:</span>
+                    <input
+                      ref={musicInputRef}
+                      type="file"
+                      accept="audio/*"
+                      multiple
+                      onChange={handleMusicUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => musicInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="gap-1"
+                    >
+                      {isUploading ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Upload className="h-3 w-3" />
+                      )}
+                      Upload Music
+                    </Button>
+                  </div>
                 </div>
               </div>
 
