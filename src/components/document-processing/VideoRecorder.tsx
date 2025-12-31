@@ -1238,39 +1238,73 @@ Thanks for watching!`,
         <script>
           // Run immediately - script is at end of body so DOM is ready
           (function() {
+            'use strict';
             console.log('🚀 Pop-out window script starting...');
             
+            // Global references for cleanup
+            window.mediaRecorder = null;
+            window.cameraStream = null;
+            window.displayStream = null;
+            
             // PRIORITY 1: Set up close button IMMEDIATELY
-            const closeBtn = document.getElementById('closeBtn');
+            var closeBtn = document.getElementById('closeBtn');
             console.log('Close button found:', !!closeBtn);
             
+            function cleanupAndClose() {
+              console.log('Cleaning up and closing...');
+              try {
+                if (window.mediaRecorder && window.mediaRecorder.state === 'recording') {
+                  window.mediaRecorder.stop();
+                }
+              } catch(e) { console.log('MediaRecorder cleanup error:', e); }
+              
+              try {
+                if (window.cameraStream) {
+                  window.cameraStream.getTracks().forEach(function(t) { t.stop(); });
+                }
+              } catch(e) { console.log('Camera cleanup error:', e); }
+              
+              try {
+                if (window.displayStream) {
+                  window.displayStream.getTracks().forEach(function(t) { t.stop(); });
+                }
+              } catch(e) { console.log('Display cleanup error:', e); }
+              
+              window.close();
+            }
+            
             if (closeBtn) {
-              closeBtn.addEventListener('click', function(e) {
+              closeBtn.onclick = function(e) {
                 e.preventDefault();
+                e.stopPropagation();
                 console.log('Close button clicked');
+                
+                if (window.mediaRecorder && window.mediaRecorder.state === 'recording') {
+                  if (!confirm('Recording in progress. Are you sure you want to close?')) {
+                    return false;
+                  }
+                }
+                cleanupAndClose();
+                return false;
+              };
+              console.log('✅ Close button handler attached');
+            } else {
+              console.error('❌ Close button not found!');
+            }
+            
+            // Allow closing with Escape key
+            document.onkeydown = function(e) {
+              if (e.key === 'Escape' || e.keyCode === 27) {
+                console.log('Escape pressed');
                 if (window.mediaRecorder && window.mediaRecorder.state === 'recording') {
                   if (!confirm('Recording in progress. Are you sure you want to close?')) {
                     return;
                   }
-                  window.mediaRecorder.stop();
                 }
-                if (window.cameraStream) {
-                  window.cameraStream.getTracks().forEach(function(t) { t.stop(); });
-                }
-                window.close();
-              });
-            } else {
-              console.error('Close button not found!');
-            }
-            
-            // Allow closing with Escape key
-            document.addEventListener('keydown', function(e) {
-              if (e.key === 'Escape') {
-                console.log('Escape pressed');
-                var btn = document.getElementById('closeBtn');
-                if (btn) btn.click();
+                cleanupAndClose();
               }
-            });
+            };
+            console.log('✅ Escape key handler attached');
             
             // Decode data from base64 (safe encoding to avoid template literal issues)
             function decodeData(encoded) {
@@ -1289,10 +1323,6 @@ Thanks for watching!`,
             var musicList = decodeData('${musicEncoded}');
             
             console.log('📋 Data loaded:', { scripts: scripts.length, voiceovers: voiceovers.length, music: musicList.length });
-            
-            // Global references for close handler
-            window.mediaRecorder = null;
-            window.cameraStream = null;
             
             var mediaRecorder = null;
             var chunks = [];
@@ -1332,30 +1362,37 @@ Thanks for watching!`,
             var selectedVoiceoverId = '${selectedAudioFile?.id || ''}';
             var selectedMusicId = '${selectedBackgroundMusic?.id || ''}';
             
-            // Populate dropdowns
-            scripts.forEach(function(s) {
-              var opt = document.createElement('option');
-              opt.value = s.id;
-              opt.textContent = s.title;
-              if (s.id === selectedScriptId) opt.selected = true;
-              scriptSelect.appendChild(opt);
-            });
-            
-            voiceovers.forEach(function(v) {
-              var opt = document.createElement('option');
-              opt.value = v.id;
-              opt.textContent = v.name;
-              if (v.id === selectedVoiceoverId) opt.selected = true;
-              voiceoverSelect.appendChild(opt);
-            });
-            
-            musicList.forEach(function(m) {
-              var opt = document.createElement('option');
-              opt.value = m.id;
-              opt.textContent = m.name;
-              if (m.id === selectedMusicId) opt.selected = true;
-              musicSelect.appendChild(opt);
-            });
+            // Populate dropdowns (wrapped in try-catch to prevent breaking close button)
+            try {
+              scripts.forEach(function(s) {
+                var opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = s.title;
+                if (s.id === selectedScriptId) opt.selected = true;
+                scriptSelect.appendChild(opt);
+              });
+              console.log('✅ Scripts dropdown populated:', scripts.length);
+              
+              voiceovers.forEach(function(v) {
+                var opt = document.createElement('option');
+                opt.value = v.id;
+                opt.textContent = v.name;
+                if (v.id === selectedVoiceoverId) opt.selected = true;
+                voiceoverSelect.appendChild(opt);
+              });
+              console.log('✅ Voiceovers dropdown populated:', voiceovers.length);
+              
+              musicList.forEach(function(m) {
+                var opt = document.createElement('option');
+                opt.value = m.id;
+                opt.textContent = m.name;
+                if (m.id === selectedMusicId) opt.selected = true;
+                musicSelect.appendChild(opt);
+              });
+              console.log('✅ Music dropdown populated:', musicList.length);
+            } catch(dropdownError) {
+              console.error('❌ Error populating dropdowns:', dropdownError);
+            }
             
             // Helper to escape HTML for safe display
             function escapeHtmlContent(str) {
@@ -1372,84 +1409,95 @@ Thanks for watching!`,
               musicCount: musicList.length
             });
             
-            // Check if initial voiceover has attached script
-            var initialVoiceover = voiceovers.find(function(v) { return v.id === selectedVoiceoverId; });
-            if (initialVoiceover && initialVoiceover.scriptText) {
-              var useScriptBtnInit = document.getElementById('useVoiceoverScriptBtn');
-              useScriptBtnInit.style.display = 'inline-block';
-              useScriptBtnInit.onclick = function() {
-                scriptContent.innerHTML = escapeHtmlContent(initialVoiceover.scriptText);
-                scriptSelect.value = '';
-                status.textContent = 'Script loaded from voiceover';
-                status.className = 'status ready';
-              };
-            }
-            
-            // Handle dropdown changes
-            scriptSelect.onchange = function() {
-              var script = scripts.find(function(s) { return s.id === scriptSelect.value; });
-              if (script) {
-                scriptContent.innerHTML = escapeHtmlContent(script.content);
-              } else {
-                scriptContent.innerHTML = '<span style="opacity:0.5;">Select a script to display here...</span>';
-              }
-            };
-            
-            voiceoverSelect.onchange = function() {
-              var vo = voiceovers.find(function(v) { return v.id === voiceoverSelect.value; });
-              if (vo) {
-                voiceover.src = vo.url;
-                voiceoverName.textContent = vo.name;
-                audioPanel.style.display = 'block';
-                
-                // If voiceover has an attached script, show option to use it
-                var useScriptBtn = document.getElementById('useVoiceoverScriptBtn');
-                if (vo.scriptText) {
-                  useScriptBtn.style.display = 'inline-block';
-                  useScriptBtn.onclick = function() {
-                    scriptContent.innerHTML = escapeHtmlContent(vo.scriptText);
-                    scriptSelect.value = ''; // Deselect any selected script
+            // Check if initial voiceover has attached script (wrapped in try-catch)
+            try {
+              var initialVoiceover = voiceovers.find(function(v) { return v.id === selectedVoiceoverId; });
+              if (initialVoiceover && initialVoiceover.scriptText) {
+                var useScriptBtnInit = document.getElementById('useVoiceoverScriptBtn');
+                if (useScriptBtnInit) {
+                  useScriptBtnInit.style.display = 'inline-block';
+                  useScriptBtnInit.onclick = function() {
+                    scriptContent.innerHTML = escapeHtmlContent(initialVoiceover.scriptText);
+                    scriptSelect.value = '';
                     status.textContent = 'Script loaded from voiceover';
                     status.className = 'status ready';
                   };
-                } else {
-                  useScriptBtn.style.display = 'none';
                 }
-              } else {
-                voiceover.src = '';
-                audioPanel.style.display = 'none';
-                document.getElementById('useVoiceoverScriptBtn').style.display = 'none';
               }
-            };
+            } catch(voError) {
+              console.error('❌ Error setting up initial voiceover:', voError);
+            }
             
-            musicSelect.onchange = function() {
-              var m = musicList.find(function(x) { return x.id === musicSelect.value; });
-              if (m) {
-                bgMusic.src = m.url;
-                bgMusicName.textContent = m.name;
-                musicPanel.style.display = 'block';
-              } else {
-                bgMusic.src = '';
-                musicPanel.style.display = 'none';
-              }
-            };
+            // Handle dropdown changes (wrapped in try-catch)
+            try {
+              scriptSelect.onchange = function() {
+                var script = scripts.find(function(s) { return s.id === scriptSelect.value; });
+                if (script) {
+                  scriptContent.innerHTML = escapeHtmlContent(script.content);
+                } else {
+                  scriptContent.innerHTML = '<span style="opacity:0.5;">Select a script to display here...</span>';
+                }
+              };
+              
+              voiceoverSelect.onchange = function() {
+                var vo = voiceovers.find(function(v) { return v.id === voiceoverSelect.value; });
+                if (vo) {
+                  voiceover.src = vo.url;
+                  voiceoverName.textContent = vo.name;
+                  audioPanel.style.display = 'block';
+                  
+                  // If voiceover has an attached script, show option to use it
+                  var useScriptBtn = document.getElementById('useVoiceoverScriptBtn');
+                  if (useScriptBtn) {
+                    if (vo.scriptText) {
+                      useScriptBtn.style.display = 'inline-block';
+                      useScriptBtn.onclick = function() {
+                        scriptContent.innerHTML = escapeHtmlContent(vo.scriptText);
+                        scriptSelect.value = ''; // Deselect any selected script
+                        status.textContent = 'Script loaded from voiceover';
+                        status.className = 'status ready';
+                      };
+                    } else {
+                      useScriptBtn.style.display = 'none';
+                    }
+                  }
+                } else {
+                  voiceover.src = '';
+                  audioPanel.style.display = 'none';
+                  var btn = document.getElementById('useVoiceoverScriptBtn');
+                  if (btn) btn.style.display = 'none';
+                }
+              };
+              
+              musicSelect.onchange = function() {
+                var m = musicList.find(function(x) { return x.id === musicSelect.value; });
+                if (m) {
+                  bgMusic.src = m.url;
+                  bgMusicName.textContent = m.name;
+                  musicPanel.style.display = 'block';
+                } else {
+                  bgMusic.src = '';
+                  musicPanel.style.display = 'none';
+                }
+              };
+              console.log('✅ Dropdown change handlers set up');
+            } catch(changeError) {
+              console.error('❌ Error setting up dropdown handlers:', changeError);
+            }
             
-            // Teleprompter scroll controls
-            var scrollUpBtn = document.getElementById('scrollUpBtn');
-            var scrollDownBtn = document.getElementById('scrollDownBtn');
-            var scrollResetBtn = document.getElementById('scrollResetBtn');
-            
-            scrollUpBtn.onclick = function() {
-              scriptContent.scrollTop -= 50;
-            };
-            
-            scrollDownBtn.onclick = function() {
-              scriptContent.scrollTop += 50;
-            };
-            
-            scrollResetBtn.onclick = function() {
-              scriptContent.scrollTop = 0;
-            };
+            // Teleprompter scroll controls (wrapped in try-catch)
+            try {
+              var scrollUpBtn = document.getElementById('scrollUpBtn');
+              var scrollDownBtn = document.getElementById('scrollDownBtn');
+              var scrollResetBtn = document.getElementById('scrollResetBtn');
+              
+              if (scrollUpBtn) scrollUpBtn.onclick = function() { scriptContent.scrollTop -= 50; };
+              if (scrollDownBtn) scrollDownBtn.onclick = function() { scriptContent.scrollTop += 50; };
+              if (scrollResetBtn) scrollResetBtn.onclick = function() { scriptContent.scrollTop = 0; };
+              console.log('✅ Teleprompter controls set up');
+            } catch(scrollError) {
+              console.error('❌ Error setting up scroll controls:', scrollError);
+            }
             
             var cameraLoading = document.getElementById('cameraLoading');
             var cameraLoadingContent = document.getElementById('cameraLoadingContent');
@@ -1483,72 +1531,72 @@ Thanks for watching!`,
             status.className = 'status error';
           }
           
-          // Initialize camera immediately - this triggers browser permission prompt right away
-          async function initCamera() {
+          // Initialize camera - this triggers browser permission prompt right away
+          function initCamera() {
             console.log('🎥 Requesting camera access...');
             
-            try {
-              // Check if mediaDevices is available
-              if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                throw new Error('Camera API not available');
-              }
+            // Check if mediaDevices is available
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+              console.error('Camera API not available');
+              cameraLoadingContent.innerHTML = '<p style="color:#f87171;">Camera API not available in this browser</p>';
+              status.textContent = 'Error';
+              status.className = 'status error';
+              return;
+            }
+            
+            // Request immediately - browser will show permission prompt
+            navigator.mediaDevices.getUserMedia({
+              video: { 
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+                facingMode: 'user'
+              },
+              audio: true
+            }).then(function(mediaStream) {
+              console.log('✅ Camera stream obtained');
+              stream = mediaStream;
+              window.cameraStream = mediaStream; // Set global for close handler
               
-              // Request immediately - browser will show permission prompt
-              stream = await navigator.mediaDevices.getUserMedia({
-                video: { 
-                  width: { ideal: 1280 },
-                  height: { ideal: 720 },
-                  facingMode: 'user'
-                },
-                audio: true
+              // Set preview and play
+              preview.srcObject = mediaStream;
+              preview.muted = true;
+              preview.play().then(function() {
+                console.log('✅ Preview playing');
+                cameraLoading.classList.add('hidden');
+                status.textContent = 'Camera Ready';
+                status.className = 'status ready';
+              }).catch(function(playErr) {
+                console.error('Preview play error:', playErr);
+                // Still mark as ready even if autoplay fails
+                cameraLoading.classList.add('hidden');
+                status.textContent = 'Camera Ready';
+                status.className = 'status ready';
               });
               
-              console.log('✅ Camera stream obtained');
-              window.cameraStream = stream; // Set global for close handler
-              // Set preview and play
-              preview.srcObject = stream;
-              preview.muted = true;
-              await preview.play();
-              
-              cameraLoading.classList.add('hidden');
-              status.textContent = 'Camera Ready';
-              status.className = 'status ready';
-              
-            } catch(e) {
+            }).catch(function(e) {
               console.error('❌ Camera error:', e.name, e.message);
               
               if (e.name === 'NotAllowedError') {
                 showPermissionDenied();
               } else if (e.name === 'NotFoundError') {
                 cameraLoadingContent.style.display = 'none';
-                cameraPermissionRequest.innerHTML = \`
-                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5" style="margin-bottom:20px;">
-                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                  </svg>
-                  <p style="font-size:18px;font-weight:600;color:#ef4444;margin-bottom:10px;">No Camera Found</p>
-                  <p style="font-size:14px;opacity:0.7;margin-bottom:20px;">Please connect a camera and try again</p>
-                  <button onclick="location.reload()" style="padding:12px 25px;background:#3b82f6;border:none;color:white;border-radius:8px;cursor:pointer;">Retry</button>
-                \`;
+                cameraPermissionRequest.innerHTML = '<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5" style="margin-bottom:20px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg><p style="font-size:18px;font-weight:600;color:#ef4444;margin-bottom:10px;">No Camera Found</p><p style="font-size:14px;opacity:0.7;margin-bottom:20px;">Please connect a camera and try again</p><button onclick="location.reload()" style="padding:12px 25px;background:#3b82f6;border:none;color:white;border-radius:8px;cursor:pointer;">Retry</button>';
                 cameraPermissionRequest.style.display = 'block';
                 status.textContent = 'No Camera';
                 status.className = 'status error';
               } else {
-                cameraLoadingContent.innerHTML = \`
-                  <p style="color:#f87171;font-size:16px;margin-bottom:10px;">Camera Error</p>
-                  <p style="font-size:13px;opacity:0.7;margin-bottom:15px;">\${e.message}</p>
-                  <button onclick="initCamera()" style="padding:10px 20px;background:#3b82f6;border:none;color:white;border-radius:8px;cursor:pointer;">Retry</button>
-                \`;
+                cameraLoadingContent.innerHTML = '<p style="color:#f87171;font-size:16px;margin-bottom:10px;">Camera Error</p><p style="font-size:13px;opacity:0.7;margin-bottom:15px;">' + (e.message || 'Unknown error') + '</p><button onclick="initCamera()" style="padding:10px 20px;background:#3b82f6;border:none;color:white;border-radius:8px;cursor:pointer;">Retry</button>';
                 status.textContent = 'Error';
                 status.className = 'status error';
               }
-            }
+            });
           }
           
           // Button click to retry
           requestCameraBtn.onclick = initCamera;
           
           // Initialize camera immediately on load
+          console.log('🎬 Starting camera initialization...');
           initCamera();
           
             function formatTime(seconds) {
@@ -1567,16 +1615,17 @@ Thanks for watching!`,
             var ttsAudio = null;
           
           // Start recording - First get screen share, then show audio options, then countdown
-          startBtn.onclick = async function() {
-            try {
-              status.textContent = 'Select screen...';
-              status.className = 'status countdown';
-              
-              // Step 1: Get screen share FIRST (before countdown)
-              displayStream = await navigator.mediaDevices.getDisplayMedia({
-                video: { width: 1920, height: 1080, frameRate: 30 },
-                audio: true
-              });
+          startBtn.onclick = function() {
+            status.textContent = 'Select screen...';
+            status.className = 'status countdown';
+            
+            // Step 1: Get screen share FIRST (before countdown)
+            navigator.mediaDevices.getDisplayMedia({
+              video: { width: 1920, height: 1080, frameRate: 30 },
+              audio: true
+            }).then(function(displayStr) {
+              displayStream = displayStr;
+              window.displayStream = displayStr; // Store globally for cleanup
               
               // Show screen preview immediately
               preview.srcObject = displayStream;
@@ -1586,14 +1635,14 @@ Thanks for watching!`,
               // Step 2: Show audio options confirmation dialog
               showAudioOptionsDialog();
               
-            } catch(e) {
+            }).catch(function(e) {
               console.error('Screen share error:', e);
               status.textContent = 'Ready';
               status.className = 'status ready';
               if (e.name !== 'NotAllowedError') {
                 alert('Screen share error: ' + e.message);
               }
-            }
+            });
           };
           
             // Audio options dialog
@@ -1657,7 +1706,7 @@ Thanks for watching!`,
                 status.className = 'status ready';
               };
               
-              document.getElementById('confirmOptions').onclick = async function() {
+              document.getElementById('confirmOptions').onclick = function() {
                 var useTTSVal = document.getElementById('useTTS');
                 var useVoiceoverVal = document.getElementById('useVoiceover');
                 var useMusicVal = document.getElementById('useMusic');
@@ -1667,29 +1716,55 @@ Thanks for watching!`,
                 
                 document.getElementById('audioOptionsDialog').remove();
                 
-                // Generate TTS if requested
+                // Generate TTS if requested (async, then start countdown)
                 if (useTTS && hasScript) {
                   status.textContent = 'Generating TTS...';
-                  try {
-                    var scriptToUse = scripts.find(function(s) { return s.id === scriptSelect.value; });
-                    if (scriptToUse) await generateTTS(scriptToUse.content);
-                  } catch(e) {
-                    console.error('TTS generation failed:', e);
+                  var scriptToUse = scripts.find(function(s) { return s.id === scriptSelect.value; });
+                  if (scriptToUse) {
+                    generateTTS(scriptToUse.content, function() {
+                      startCountdown(useVoiceoverOpt, useMusicOpt, useTTS);
+                    });
+                  } else {
+                    startCountdown(useVoiceoverOpt, useMusicOpt, useTTS);
                   }
+                } else {
+                  // Start countdown immediately
+                  startCountdown(useVoiceoverOpt, useMusicOpt, useTTS);
                 }
-                
-                // Start countdown
-                startCountdown(useVoiceoverOpt, useMusicOpt, useTTS);
               };
             }
           
-          // Generate TTS from script
-          async function generateTTS(text) {
-            const supabaseUrl = '${supabaseUrl}';
-            const supabaseKey = '${supabaseKey}';
+          // Generate TTS from script (callback-based)
+          function generateTTS(text, callback) {
+            var supabaseUrl = '${supabaseUrl}';
+            var supabaseKey = '${supabaseKey}';
             
-            try {
-              const response = await fetch(supabaseUrl + '/functions/v1/elevenlabs-voice', {
+            fetch(supabaseUrl + '/functions/v1/elevenlabs-voice', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': supabaseKey,
+                'Authorization': 'Bearer ' + supabaseKey
+              },
+              body: JSON.stringify({
+                text: text.substring(0, 5000),
+                voice: 'Aria',
+                model: 'eleven_multilingual_v2',
+                agentType: 'conversational'
+              })
+            }).then(function(response) {
+              if (!response.ok) throw new Error('TTS API failed');
+              return response.json();
+            }).then(function(data) {
+              if (data.audioContent) {
+                ttsAudio = new Audio('data:audio/mpeg;base64,' + data.audioContent);
+                ttsAudio.volume = 1.0;
+              }
+              if (callback) callback();
+            }).catch(function(e) {
+              console.error('TTS error:', e);
+              // Fallback: try OpenAI TTS
+              fetch(supabaseUrl + '/functions/v1/openai-tts', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -1697,49 +1772,24 @@ Thanks for watching!`,
                   'Authorization': 'Bearer ' + supabaseKey
                 },
                 body: JSON.stringify({
-                  text: text.substring(0, 5000),
-                  voice: 'Aria',
-                  model: 'eleven_multilingual_v2',
-                  agentType: 'conversational'
+                  text: text.substring(0, 4000),
+                  voice: 'alloy',
+                  speed: 1.0
                 })
-              });
-              
-              if (!response.ok) throw new Error('TTS API failed');
-              
-              const data = await response.json();
-              if (data.audioContent) {
-                ttsAudio = new Audio('data:audio/mpeg;base64,' + data.audioContent);
-                ttsAudio.volume = 1.0;
-              }
-            } catch(e) {
-              console.error('TTS error:', e);
-              // Fallback: try OpenAI TTS
-              try {
-                const response = await fetch(supabaseUrl + '/functions/v1/openai-tts', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'apikey': supabaseKey,
-                    'Authorization': 'Bearer ' + supabaseKey
-                  },
-                  body: JSON.stringify({
-                    text: text.substring(0, 4000),
-                    voice: 'alloy',
-                    speed: 1.0
-                  })
-                });
-                
-                if (response.ok) {
-                  const data = await response.json();
-                  if (data.audioContent) {
-                    ttsAudio = new Audio('data:audio/mpeg;base64,' + data.audioContent);
-                    ttsAudio.volume = 1.0;
-                  }
+              }).then(function(response) {
+                if (response.ok) return response.json();
+                throw new Error('OpenAI TTS failed');
+              }).then(function(data) {
+                if (data.audioContent) {
+                  ttsAudio = new Audio('data:audio/mpeg;base64,' + data.audioContent);
+                  ttsAudio.volume = 1.0;
                 }
-              } catch(e2) {
+                if (callback) callback();
+              }).catch(function(e2) {
                 console.error('OpenAI TTS fallback failed:', e2);
-              }
-            }
+                if (callback) callback();
+              });
+            });
           }
           
             // Start countdown after screen share is ready
@@ -1774,25 +1824,60 @@ Thanks for watching!`,
               status.className = 'status ready';
             };
             
-            async function actuallyStartRecording(useVoiceover, useMusic, useTTS) {
+            function actuallyStartRecording(useVoiceover, useMusic, useTTS) {
+              // Create canvas for picture-in-picture (reduces delay)
+              canvas = document.createElement('canvas');
+              canvas.width = 1920;
+              canvas.height = 1080;
+              ctx = canvas.getContext('2d');
+              
+              screenVideo = document.createElement('video');
+              screenVideo.srcObject = displayStream;
+              screenVideo.muted = true;
+              screenVideo.playsInline = true;
+              
+              webcamVideo = document.createElement('video');
+              webcamVideo.srcObject = stream;
+              webcamVideo.muted = true;
+              webcamVideo.playsInline = true;
+              
+              // Play both videos using Promise.all pattern with callbacks
+              var videosReady = 0;
+              var totalVideos = 2;
+              
+              function onVideoReady() {
+                videosReady++;
+                if (videosReady >= totalVideos) {
+                  startRecordingAfterVideos(useVoiceover, useMusic, useTTS);
+                }
+              }
+              
+              screenVideo.onloadedmetadata = function() {
+                screenVideo.play().then(onVideoReady).catch(function(e) {
+                  console.error('Screen video play error:', e);
+                  onVideoReady(); // Continue anyway
+                });
+              };
+              
+              webcamVideo.onloadedmetadata = function() {
+                webcamVideo.play().then(onVideoReady).catch(function(e) {
+                  console.error('Webcam video play error:', e);
+                  onVideoReady(); // Continue anyway
+                });
+              };
+              
+              // Fallback timeout in case onloadedmetadata doesn't fire
+              setTimeout(function() {
+                if (videosReady < totalVideos) {
+                  console.log('Timeout reached, starting recording...');
+                  startRecordingAfterVideos(useVoiceover, useMusic, useTTS);
+                  videosReady = 999; // Prevent double-start
+                }
+              }, 3000);
+            }
+            
+            function startRecordingAfterVideos(useVoiceover, useMusic, useTTS) {
               try {
-                // Create canvas for picture-in-picture (reduces delay)
-                canvas = document.createElement('canvas');
-                canvas.width = 1920;
-                canvas.height = 1080;
-                ctx = canvas.getContext('2d');
-                
-                screenVideo = document.createElement('video');
-                screenVideo.srcObject = displayStream;
-                screenVideo.muted = true;
-                screenVideo.playsInline = true;
-                await screenVideo.play();
-                
-                webcamVideo = document.createElement('video');
-                webcamVideo.srcObject = stream;
-                webcamVideo.muted = true;
-                webcamVideo.playsInline = true;
-                await webcamVideo.play();
                 
                 // Optimized drawing loop for less delay
                 var lastDrawTime = 0;
