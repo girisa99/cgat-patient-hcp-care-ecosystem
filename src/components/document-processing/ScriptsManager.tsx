@@ -20,7 +20,8 @@ import {
   FileAudio,
   Video,
   RefreshCw,
-  Edit3
+  Edit3,
+  Link
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from '@/hooks/useMasterToast';
@@ -542,6 +543,16 @@ export const ScriptsManager: React.FC = () => {
     showSuccess('Audio deleted');
   };
 
+  const handleAttachScript = (audioId: string, scriptKey: 'videoScript' | 'audioScript') => {
+    const preset = PRESET_SCRIPTS[scriptKey];
+    setGeneratedAudios(prev => prev.map(audio => 
+      audio.id === audioId 
+        ? { ...audio, scriptText: preset.content, scriptType: preset.type }
+        : audio
+    ));
+    showSuccess(`Attached ${preset.type} script to audio`);
+  };
+
   const handleEditScript = (audio: GeneratedAudio) => {
     if (audio.scriptText) {
       setScriptText(audio.scriptText);
@@ -931,7 +942,7 @@ export const ScriptsManager: React.FC = () => {
                           </div>
                         </div>
                         <div className="flex gap-2">
-                          {audio.scriptText && (
+                          {audio.scriptText ? (
                             <>
                               <Button
                                 size="sm"
@@ -950,6 +961,27 @@ export const ScriptsManager: React.FC = () => {
                                 <RefreshCw className="h-4 w-4" />
                               </Button>
                             </>
+                          ) : (
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                onClick={() => handleAttachScript(audio.id, 'audioScript')}
+                                title="Attach Audio Script"
+                                style={{ backgroundColor: '#22c55e', color: '#ffffff', border: 'none' }}
+                              >
+                                <Link className="h-3 w-3 mr-1" />
+                                <Mic className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => handleAttachScript(audio.id, 'videoScript')}
+                                title="Attach Video Script"
+                                style={{ backgroundColor: '#7c3aed', color: '#ffffff', border: 'none' }}
+                              >
+                                <Link className="h-3 w-3 mr-1" />
+                                <Video className="h-3 w-3" />
+                              </Button>
+                            </div>
                           )}
                           <Button
                             size="sm"
