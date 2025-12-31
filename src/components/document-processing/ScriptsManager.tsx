@@ -670,10 +670,10 @@ export const ScriptsManager: React.FC = () => {
               </div>
 
               <div>
-                <div className="flex justify-between items-center mb-1">
-                  <Label htmlFor="scriptText" className="text-slate-300 text-sm">Script Text</Label>
+                <div className="flex justify-between items-center mb-2">
+                  <Label htmlFor="scriptText" className="text-slate-200 font-medium">Script Text</Label>
                   {scriptText && (
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-slate-400 bg-slate-800 px-2 py-1 rounded">
                       {scriptText.length.toLocaleString()} chars | {scriptText.split(/\s+/).length.toLocaleString()} words | {estimateAudioDuration(scriptText)}
                     </span>
                   )}
@@ -683,7 +683,8 @@ export const ScriptsManager: React.FC = () => {
                   value={scriptText}
                   onChange={(e) => setScriptText(e.target.value)}
                   placeholder="Paste or type your script here. Markdown formatting will be removed for TTS."
-                  className="min-h-[300px] bg-slate-900/50 border-slate-600 text-white font-mono text-sm"
+                  className="min-h-[450px] bg-slate-900 border-slate-500 text-slate-100 font-mono text-sm leading-relaxed placeholder:text-slate-500 focus:border-green-500 focus:ring-green-500/20 resize-y"
+                  style={{ color: '#e2e8f0' }}
                 />
               </div>
             </div>
