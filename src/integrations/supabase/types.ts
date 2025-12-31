@@ -7017,6 +7017,54 @@ export type Database = {
           },
         ]
       }
+      generated_media: {
+        Row: {
+          created_at: string
+          duration_seconds: number | null
+          file_size_bytes: number | null
+          file_type: string
+          file_url: string | null
+          id: string
+          metadata: Json | null
+          name: string
+          source: string | null
+          storage_bucket: string
+          storage_path: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number | null
+          file_size_bytes?: number | null
+          file_type: string
+          file_url?: string | null
+          id?: string
+          metadata?: Json | null
+          name: string
+          source?: string | null
+          storage_bucket: string
+          storage_path: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number | null
+          file_size_bytes?: number | null
+          file_type?: string
+          file_url?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string
+          source?: string | null
+          storage_bucket?: string
+          storage_path?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       genie_ab_test_config: {
         Row: {
           created_at: string
