@@ -209,36 +209,62 @@ function generateStyles(): string {
     button:disabled { opacity: 0.5; cursor: not-allowed; }
     
     .audio-control-panel {
-      position: absolute;
-      bottom: 80px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,0.9);
+      position: fixed;
+      bottom: 120px;
+      right: 20px;
+      background: rgba(15, 23, 42, 0.95);
       border-radius: 12px;
-      padding: 12px 20px;
-      display: none;
-      gap: 15px;
-      align-items: center;
-      z-index: 50;
-      border: 1px solid #333;
-      transition: all 0.3s ease;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: stretch;
+      z-index: 200;
+      border: 1px solid #475569;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      min-width: 180px;
+      max-width: 240px;
+      cursor: default;
+      user-select: none;
     }
-    .audio-control-panel.visible { display: flex; }
+    .audio-control-panel .drag-handle {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0 8px 0;
+      border-bottom: 1px solid #334155;
+      margin-bottom: 4px;
+      cursor: move;
+    }
+    .audio-control-panel .drag-handle:active { cursor: grabbing; }
+    .audio-control-panel .drag-handle-icon {
+      font-size: 12px;
+      opacity: 0.5;
+      letter-spacing: 2px;
+    }
+    .audio-control-panel .panel-title {
+      font-size: 11px;
+      font-weight: 600;
+      opacity: 0.8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
     .audio-control-panel.minimized {
       padding: 8px 12px;
-      gap: 8px;
+      min-width: 140px;
     }
     .audio-control-panel.minimized .audio-control-group { display: none; }
-    .audio-control-panel.minimized .minimize-toggle { display: flex; }
+    .audio-control-panel.minimized .drag-handle { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .minimized-label { display: none; font-size: 11px; opacity: 0.6; }
     .audio-control-panel.minimized .minimized-label { display: block; }
-    .minimized-label { display: none; font-size: 12px; opacity: 0.7; }
     .minimize-toggle {
-      padding: 6px 10px;
-      font-size: 12px;
+      padding: 4px 8px;
+      font-size: 11px;
       background: #334155;
       border: 1px solid #475569;
       cursor: pointer;
       min-width: auto;
+      border-radius: 4px;
     }
     .minimize-toggle:hover { background: #475569; }
     .audio-control-group {
@@ -488,8 +514,14 @@ function generateBody(config: PopoutConfig, escapedScriptContent: string): strin
           </div>
           
           <div id="audioControlPanel" class="audio-control-panel">
-            <button id="minimizeAudioBtn" class="minimize-toggle" title="Minimize/Expand">➖</button>
-            <span class="minimized-label">Audio Controls</span>
+            <div class="drag-handle" id="audioPanelDragHandle">
+              <span class="panel-title">🎛️ Audio Controls</span>
+              <span class="drag-handle-icon">⋮⋮</span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button id="minimizeAudioBtn" class="minimize-toggle" title="Minimize/Expand">➖</button>
+              <span class="minimized-label">Minimized</span>
+            </div>
             
             <div id="voiceoverControls" class="audio-control-group" style="display:none;">
               <label>🎤 Voiceover</label>
@@ -918,12 +950,14 @@ function generateScript(config: PopoutConfig): string {
         }
       };
       
-      // Audio control panel minimize toggle
+      // Audio control panel minimize toggle and drag functionality
       var minimizeAudioBtn = document.getElementById('minimizeAudioBtn');
       var audioControlPanel = document.getElementById('audioControlPanel');
+      var audioPanelDragHandle = document.getElementById('audioPanelDragHandle');
       var isAudioMinimized = false;
       
-      minimizeAudioBtn.onclick = function() {
+      minimizeAudioBtn.onclick = function(e) {
+        e.stopPropagation();
         isAudioMinimized = !isAudioMinimized;
         if (isAudioMinimized) {
           audioControlPanel.classList.add('minimized');
@@ -933,6 +967,44 @@ function generateScript(config: PopoutConfig): string {
           audioControlPanel.classList.remove('minimized');
           minimizeAudioBtn.textContent = '➖';
           minimizeAudioBtn.title = 'Minimize Audio Controls';
+        }
+      };
+      
+      // Make audio panel draggable
+      var isDragging = false;
+      var dragOffsetX = 0;
+      var dragOffsetY = 0;
+      
+      audioPanelDragHandle.onmousedown = function(e) {
+        e.preventDefault();
+        isDragging = true;
+        var rect = audioControlPanel.getBoundingClientRect();
+        dragOffsetX = e.clientX - rect.left;
+        dragOffsetY = e.clientY - rect.top;
+        audioControlPanel.style.transition = 'none';
+      };
+      
+      document.onmousemove = function(e) {
+        if (!isDragging) return;
+        var newX = e.clientX - dragOffsetX;
+        var newY = e.clientY - dragOffsetY;
+        
+        // Keep within viewport bounds
+        var panelWidth = audioControlPanel.offsetWidth;
+        var panelHeight = audioControlPanel.offsetHeight;
+        newX = Math.max(0, Math.min(newX, window.innerWidth - panelWidth));
+        newY = Math.max(0, Math.min(newY, window.innerHeight - panelHeight));
+        
+        audioControlPanel.style.left = newX + 'px';
+        audioControlPanel.style.top = newY + 'px';
+        audioControlPanel.style.right = 'auto';
+        audioControlPanel.style.bottom = 'auto';
+      };
+      
+      document.onmouseup = function() {
+        if (isDragging) {
+          isDragging = false;
+          audioControlPanel.style.transition = '';
         }
       };
       
