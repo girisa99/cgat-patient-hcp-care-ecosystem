@@ -560,15 +560,15 @@ export const VideoRecorder: React.FC = () => {
                     Voiceover Audio
                   </Label>
                   <Select
-                    value={selectedAudioFile?.id || ''}
-                    onValueChange={handleSelectAudioFile}
+                    value={selectedAudioFile?.id || 'none'}
+                    onValueChange={(val) => handleSelectAudioFile(val === 'none' ? '' : val)}
                     disabled={isRecording}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select audio file..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {audioFiles.map(audio => (
                         <SelectItem key={audio.id} value={audio.id}>
                           {audio.name}
@@ -585,14 +585,14 @@ export const VideoRecorder: React.FC = () => {
                     Script for Captions
                   </Label>
                   <Select
-                    value={selectedScript?.id || ''}
-                    onValueChange={handleSelectScript}
+                    value={selectedScript?.id || 'none'}
+                    onValueChange={(val) => handleSelectScript(val === 'none' ? '' : val)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select script..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {availableScripts.map(script => (
                         <SelectItem key={script.id} value={script.id}>
                           {script.title}
