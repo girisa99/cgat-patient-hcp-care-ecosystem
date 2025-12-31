@@ -225,7 +225,7 @@ const ArchitectureDiagram = () => {
                     <TabsTrigger 
                       key={key} 
                       value={key}
-                      className="flex items-center gap-2 px-4 py-2 data-[state=active]:bg-background"
+                      className="flex items-center gap-2 px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:text-foreground"
                     >
                       <cat.icon className="h-4 w-4" />
                       <span>{cat.label}</span>
