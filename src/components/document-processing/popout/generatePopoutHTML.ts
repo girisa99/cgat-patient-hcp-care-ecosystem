@@ -342,7 +342,10 @@ function generateStyles(): string {
     }
     .audio-control-group.playing .progress-bar { background: #22c55e; }
     .audio-control-group.paused .progress-bar { background: #f59e0b; }
-    
+    .audio-control-group.disabled { opacity: 0.5; }
+    .audio-control-group.disabled .track-status { background: #334155; }
+    .audio-control-group.active { opacity: 1; }
+    .audio-control-group.active .track-status { background: #475569; }
     .sidebar { width: 350px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
     .panel {
       background: #1a1a2e;
@@ -561,42 +564,42 @@ function generateBody(config: PopoutConfig, escapedScriptContent: string): strin
               <span class="minimized-label">Minimized</span>
             </div>
             
-            <div id="voiceoverControls" class="audio-control-group" style="display:none;">
+            <div id="voiceoverControls" class="audio-control-group disabled">
               <div class="track-header">
                 <label>🎤 Voiceover</label>
-                <span class="track-status">Stopped</span>
+                <span class="track-status">Not Selected</span>
               </div>
               <div class="controls">
-                <button id="voRewindBtn" title="Rewind 5s">⏪</button>
-                <button id="voPlayPauseBtn" title="Play/Pause">▶️</button>
-                <button id="voForwardBtn" title="Forward 5s">⏩</button>
+                <button id="voRewindBtn" title="Rewind 5s" disabled>⏪</button>
+                <button id="voPlayPauseBtn" title="Play/Pause" disabled>▶️</button>
+                <button id="voForwardBtn" title="Forward 5s" disabled>⏩</button>
               </div>
               <div class="progress"><div id="voProgress" class="progress-bar"></div></div>
             </div>
             
-            <div id="ttsControls" class="audio-control-group" style="display:none;">
+            <div id="ttsControls" class="audio-control-group disabled">
               <div class="track-header">
                 <label>🗣️ TTS Script</label>
-                <span class="track-status">Stopped</span>
+                <span class="track-status">Not Selected</span>
               </div>
               <div class="controls">
-                <button id="ttsRewindBtn" title="Rewind 5s">⏪</button>
-                <button id="ttsPlayPauseBtn" title="Play/Pause">▶️</button>
-                <button id="ttsForwardBtn" title="Forward 5s">⏩</button>
+                <button id="ttsRewindBtn" title="Rewind 5s" disabled>⏪</button>
+                <button id="ttsPlayPauseBtn" title="Play/Pause" disabled>▶️</button>
+                <button id="ttsForwardBtn" title="Forward 5s" disabled>⏩</button>
               </div>
               <div class="progress"><div id="ttsProgress" class="progress-bar"></div></div>
             </div>
             
-            <div id="musicControls" class="audio-control-group" style="display:none;">
+            <div id="musicControls" class="audio-control-group disabled">
               <div class="track-header">
                 <label>🎵 Background Music</label>
-                <span class="track-status">Stopped</span>
+                <span class="track-status">Not Selected</span>
               </div>
               <div class="controls">
-                <button id="musicRewindBtn" title="Rewind 5s">⏪</button>
-                <button id="musicPlayPauseBtn" title="Play/Pause">▶️</button>
-                <button id="musicVolumeDownBtn" title="Volume -">🔉</button>
-                <button id="musicVolumeUpBtn" title="Volume +">🔊</button>
+                <button id="musicRewindBtn" title="Rewind 5s" disabled>⏪</button>
+                <button id="musicPlayPauseBtn" title="Play/Pause" disabled>▶️</button>
+                <button id="musicVolumeDownBtn" title="Volume -" disabled>🔉</button>
+                <button id="musicVolumeUpBtn" title="Volume +" disabled>🔊</button>
               </div>
               <div class="progress"><div id="musicProgress" class="progress-bar"></div></div>
             </div>
@@ -1589,20 +1592,38 @@ function generateScript(config: PopoutConfig): string {
         status.className = 'status recording';
       }
       
-      // Show audio controls
+      // Show audio controls and enable active tracks
       function showAudioControls(useVoiceover, useTTS, useMusic) {
         voiceoverActive = useVoiceover;
         ttsActive = useTTS;
         musicActive = useMusic;
         
-        if (useVoiceover) voiceoverControls.style.display = 'flex';
-        if (useTTS) ttsControls.style.display = 'flex';
-        if (useMusic) musicControls.style.display = 'flex';
-        
-        if (useVoiceover || useTTS || useMusic) {
-          audioControlPanel.classList.add('visible');
-          updateAudioProgress();
+        // Enable voiceover controls
+        if (useVoiceover) {
+          voiceoverControls.classList.remove('disabled');
+          voiceoverControls.classList.add('active');
+          voiceoverControls.querySelector('.track-status').textContent = 'Ready';
+          voiceoverControls.querySelectorAll('button').forEach(function(btn) { btn.disabled = false; });
         }
+        
+        // Enable TTS controls
+        if (useTTS) {
+          ttsControls.classList.remove('disabled');
+          ttsControls.classList.add('active');
+          ttsControls.querySelector('.track-status').textContent = 'Ready';
+          ttsControls.querySelectorAll('button').forEach(function(btn) { btn.disabled = false; });
+        }
+        
+        // Enable music controls
+        if (useMusic) {
+          musicControls.classList.remove('disabled');
+          musicControls.classList.add('active');
+          musicControls.querySelector('.track-status').textContent = 'Ready';
+          musicControls.querySelectorAll('button').forEach(function(btn) { btn.disabled = false; });
+        }
+        
+        audioControlPanel.classList.add('visible');
+        updateAudioProgress();
       }
       
       // Update progress bars and status
