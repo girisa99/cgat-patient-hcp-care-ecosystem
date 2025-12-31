@@ -79,21 +79,31 @@ export default function PatientInfoTab({ processingResult }: PatientInfoTabProps
     return sectionData;
   };
 
+  // Check if we have extracted fields to display
+  const sections = organizeFieldsBySections();
+  const hasExtractedFields = sections.length > 0 && sections.some(s => s.fields.length > 0);
+  const isProcessing = processingResult && processingResult.stage !== 'complete' && processingResult.progress > 0;
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Users className="h-5 w-5 text-primary" />
           Patient Information
+          {isProcessing && (
+            <Badge variant="outline" className="ml-2 text-xs">
+              Extracting... {processingResult.progress}%
+            </Badge>
+          )}
         </CardTitle>
         <CardDescription>
           Extracted patient demographics and information
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {processingResult && processingResult.stage === 'complete' ? (
+        {hasExtractedFields ? (
           <div className="space-y-6">
-            {processingResult.imageUrl && (
+            {processingResult?.imageUrl && (
               <div className="flex gap-4 items-start p-4 bg-muted/30 rounded-lg">
                 <img src={processingResult.imageUrl} alt="Document" className="max-h-48 w-auto rounded border" />
               </div>
@@ -101,7 +111,7 @@ export default function PatientInfoTab({ processingResult }: PatientInfoTabProps
             
             {/* Organized sections */}
             <div className="space-y-4">
-              {organizeFieldsBySections().map(section => (
+              {sections.map(section => (
                 <Card key={section.id} className="border-muted">
                   <CardHeader className="py-3 px-4 bg-muted/30">
                     <CardTitle className="text-sm flex items-center gap-2">
@@ -130,7 +140,7 @@ export default function PatientInfoTab({ processingResult }: PatientInfoTabProps
         ) : (
           <div className="text-center py-12 text-muted-foreground">
             <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No patient document processed</p>
+            <p>{isProcessing ? 'Extracting patient information...' : 'No patient document processed'}</p>
           </div>
         )}
       </CardContent>
