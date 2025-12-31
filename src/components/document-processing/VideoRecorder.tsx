@@ -281,31 +281,90 @@ export const VideoRecorder: React.FC = () => {
     const loadScripts = () => {
       const allScripts: ScriptItem[] = [];
       
+      // Always add preset scripts first
+      allScripts.push(
+        {
+          id: 'preset-video',
+          title: 'Video Script - Patient Onboarding',
+          content: `# AI Document Processing: Enterprise Edition
+## Voice-Over Script
+
+Hello everyone! If you watched my previous video on this AI document processing platform, you saw what was possible in less than 64 hours during a single weekend.
+
+Today, I'm excited to share what happened next—the evolution from a weekend prototype to an enterprise-grade solution.
+
+Since that original build, I've made significant enhancements on both the technical architecture and functional sides.
+
+Technical Architecture Enhancements:
+- Multi-Model AI Routing System
+- Configuration-Driven Architecture
+- Two-Stage Pipeline with Provider Abstraction
+
+Let me walk you through the technical transformation.`,
+        },
+        {
+          id: 'preset-audio',
+          title: 'Audio Script - Introduction',
+          content: `Hello everyone! Good morning, evening, afternoon, or night—wherever you are watching this video!
+
+Today I'm excited to share the evolution of our AI document processing platform from a weekend prototype to an enterprise-grade solution.
+
+Let me walk you through the key improvements we've made.`,
+        }
+      );
+      
       // Source 1: savedScripts (legacy)
       const savedScripts = localStorage.getItem('savedScripts');
       if (savedScripts) {
         try {
           const scripts = JSON.parse(savedScripts);
           scripts.forEach((s: any) => {
-            allScripts.push({
-              id: s.id || crypto.randomUUID(),
-              title: s.title || 'Untitled Script',
-              content: s.content || s.text || '',
-            });
+            const content = s.content || s.text || '';
+            if (content) {
+              allScripts.push({
+                id: s.id || crypto.randomUUID(),
+                title: s.title || 'Untitled Script',
+                content,
+              });
+            }
           });
         } catch (e) {
           console.error('Failed to load savedScripts:', e);
         }
       }
       
-      // Source 2: generatedAudiosMetadata (scripts attached to generated audio)
+      // Source 2: videoScripts from ScriptsManager
+      const videoScripts = localStorage.getItem('videoScripts');
+      if (videoScripts) {
+        try {
+          const scripts = JSON.parse(videoScripts);
+          scripts.forEach((s: any) => {
+            const content = s.content || s.script || '';
+            if (content) {
+              const isDuplicate = allScripts.some(
+                existing => existing.content.substring(0, 100) === content.substring(0, 100)
+              );
+              if (!isDuplicate) {
+                allScripts.push({
+                  id: s.id || crypto.randomUUID(),
+                  title: s.title || s.name || 'Video Script',
+                  content,
+                });
+              }
+            }
+          });
+        } catch (e) {
+          console.error('Failed to load videoScripts:', e);
+        }
+      }
+      
+      // Source 3: generatedAudiosMetadata (scripts attached to generated audio)
       const audioMetadata = localStorage.getItem('generatedAudiosMetadata');
       if (audioMetadata) {
         try {
           const audios = JSON.parse(audioMetadata);
           audios.forEach((a: any) => {
             if (a.scriptText) {
-              // Check if this script is already in the list (by content hash)
               const isDuplicate = allScripts.some(
                 s => s.content.substring(0, 100) === a.scriptText.substring(0, 100)
               );
@@ -323,40 +382,7 @@ export const VideoRecorder: React.FC = () => {
         }
       }
       
-      // Add preset scripts if no scripts found
-      if (allScripts.length === 0) {
-        allScripts.push(
-          {
-            id: 'preset-video',
-            title: 'Video Script - Patient Onboarding',
-            content: `# AI Document Processing: Enterprise Edition
-## Voice-Over Script
-
-Hello everyone! If you watched my previous video on this AI document processing platform, you saw what was possible in less than 64 hours during a single weekend.
-
-Today, I'm excited to share what happened next—the evolution from a weekend prototype to an enterprise-grade solution.
-
-Since that original build, I've made significant enhancements on both the technical architecture and functional sides.
-
-Technical Architecture Enhancements:
-- Multi-Model AI Routing System
-- Configuration-Driven Architecture
-- Two-Stage Pipeline with Provider Abstraction
-
-Let me walk you through the technical transformation.`,
-          },
-          {
-            id: 'preset-audio',
-            title: 'Audio Script - Introduction',
-            content: `Hello everyone! Good morning, evening, afternoon, or night—wherever you are watching this video!
-
-Today I'm excited to share the evolution of our AI document processing platform from a weekend prototype to an enterprise-grade solution.
-
-Let me walk you through the key improvements we've made.`,
-          }
-        );
-      }
-      
+      console.log('Loaded scripts:', allScripts.length);
       setAvailableScripts(allScripts);
     };
     
@@ -413,6 +439,401 @@ Let me walk you through the key improvements we've made.`,
       }
       setIsFullscreen(false);
     }
+  };
+
+  // Pop out recording to a separate window (completely outside app frame)
+  const handlePopOutRecording = () => {
+    const scriptContent = selectedScript?.content || '';
+    const audioName = selectedAudioFile?.name || '';
+    const audioUrl = selectedAudioFile?.url || '';
+    
+    const popoutWindow = window.open('', 'recording-studio', 
+      'width=1280,height=800,left=100,top=100,toolbar=no,menubar=no,scrollbars=no,resizable=yes'
+    );
+    
+    if (!popoutWindow) {
+      showError('Pop-up blocked. Please allow pop-ups for this site.');
+      return;
+    }
+    
+    popoutWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Video Recording Studio</title>
+        <style>
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+          }
+          .header {
+            background: #1a1a2e;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #333;
+          }
+          .header h1 { font-size: 18px; display: flex; align-items: center; gap: 8px; }
+          .header .badge { background: #22c55e; padding: 4px 10px; border-radius: 12px; font-size: 12px; }
+          .main { flex: 1; display: flex; gap: 10px; padding: 10px; }
+          .video-section { flex: 2; display: flex; flex-direction: column; gap: 10px; }
+          .video-container {
+            flex: 1;
+            background: #1a1a1a;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+          }
+          video { width: 100%; height: 100%; object-fit: contain; }
+          .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            padding: 15px;
+            background: #1a1a2e;
+            border-radius: 12px;
+          }
+          button {
+            background: #4a4a6a;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+          }
+          button:hover { background: #5a5a7a; }
+          button.primary { background: #6366f1; }
+          button.primary:hover { background: #4f46e5; }
+          button.danger { background: #dc2626; }
+          button.danger:hover { background: #b91c1c; }
+          button:disabled { opacity: 0.5; cursor: not-allowed; }
+          .sidebar { width: 350px; display: flex; flex-direction: column; gap: 10px; }
+          .panel {
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 15px;
+            flex: 1;
+            overflow-y: auto;
+          }
+          .panel h3 { font-size: 14px; margin-bottom: 10px; opacity: 0.8; }
+          .script-content {
+            font-size: 16px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+          }
+          .recording-indicator {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0,0,0,0.7);
+            padding: 8px 12px;
+            border-radius: 8px;
+          }
+          .rec-dot {
+            width: 12px;
+            height: 12px;
+            background: #dc2626;
+            border-radius: 50%;
+            animation: pulse 1s ease-in-out infinite;
+          }
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+          }
+          .timer { font-family: monospace; font-size: 16px; }
+          input {
+            background: #2a2a3e;
+            border: 1px solid #444;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            width: 200px;
+          }
+          .status { padding: 5px 10px; border-radius: 20px; font-size: 12px; }
+          .status.ready { background: #22c55e33; color: #22c55e; }
+          .status.recording { background: #dc262633; color: #dc2626; }
+          .audio-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: #2a2a3e;
+            border-radius: 8px;
+            font-size: 13px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+            Video Recording Studio
+            <span class="badge">Pop-out Mode</span>
+          </h1>
+          <div id="status" class="status ready">Ready</div>
+        </div>
+        
+        <div class="main">
+          <div class="video-section">
+            <div class="video-container">
+              <video id="preview" autoplay playsinline muted></video>
+              <div id="recIndicator" class="recording-indicator" style="display:none;">
+                <div class="rec-dot"></div>
+                <span id="timer" class="timer">00:00</span>
+              </div>
+            </div>
+            <div class="controls">
+              <button id="startBtn" class="primary">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <circle cx="12" cy="12" r="3" fill="currentColor"></circle>
+                </svg>
+                Start Recording
+              </button>
+              <button id="pauseBtn" style="display:none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="6" y="4" width="4" height="16"></rect>
+                  <rect x="14" y="4" width="4" height="16"></rect>
+                </svg>
+                Pause
+              </button>
+              <button id="stopBtn" class="danger" style="display:none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+                </svg>
+                Stop
+              </button>
+              <input id="videoName" placeholder="Video name..." style="display:none;" />
+              <button id="saveBtn" class="primary" style="display:none;">Save</button>
+              <button id="resetBtn" style="display:none;">New Recording</button>
+            </div>
+          </div>
+          
+          <div class="sidebar">
+            ${scriptContent ? `
+              <div class="panel">
+                <h3>📄 Script / Teleprompter</h3>
+                <div class="script-content">${scriptContent.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+              </div>
+            ` : ''}
+            ${audioUrl ? `
+              <div class="panel">
+                <h3>🎵 Voiceover Audio</h3>
+                <div class="audio-info">
+                  <strong>${audioName}</strong><br>
+                  <small>Will play automatically when recording starts</small>
+                </div>
+                <audio id="voiceover" src="${audioUrl}" preload="auto"></audio>
+              </div>
+            ` : ''}
+            <div class="panel">
+              <h3>⚙️ Info</h3>
+              <p style="font-size:13px;opacity:0.8;">
+                This window is separate from the main app.<br><br>
+                When you share your screen, only this window will be captured - the main app controls won't show.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <script>
+          let mediaRecorder = null;
+          let chunks = [];
+          let stream = null;
+          let startTime = 0;
+          let timerInterval = null;
+          let isPaused = false;
+          
+          const preview = document.getElementById('preview');
+          const startBtn = document.getElementById('startBtn');
+          const pauseBtn = document.getElementById('pauseBtn');
+          const stopBtn = document.getElementById('stopBtn');
+          const saveBtn = document.getElementById('saveBtn');
+          const resetBtn = document.getElementById('resetBtn');
+          const videoNameInput = document.getElementById('videoName');
+          const recIndicator = document.getElementById('recIndicator');
+          const timer = document.getElementById('timer');
+          const status = document.getElementById('status');
+          const voiceover = document.getElementById('voiceover');
+          
+          // Request camera on load
+          async function initCamera() {
+            try {
+              stream = await navigator.mediaDevices.getUserMedia({
+                video: { width: 1280, height: 720 },
+                audio: true
+              });
+              preview.srcObject = stream;
+            } catch(e) {
+              alert('Camera access needed: ' + e.message);
+            }
+          }
+          
+          initCamera();
+          
+          function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return mins.toString().padStart(2,'0') + ':' + secs.toString().padStart(2,'0');
+          }
+          
+          startBtn.onclick = async function() {
+            try {
+              // Get screen + webcam
+              const displayStream = await navigator.mediaDevices.getDisplayMedia({
+                video: true,
+                audio: true
+              });
+              
+              // Create canvas for picture-in-picture
+              const canvas = document.createElement('canvas');
+              canvas.width = 1920;
+              canvas.height = 1080;
+              const ctx = canvas.getContext('2d');
+              
+              const screenVideo = document.createElement('video');
+              screenVideo.srcObject = displayStream;
+              screenVideo.muted = true;
+              await screenVideo.play();
+              
+              const webcamVideo = document.createElement('video');
+              webcamVideo.srcObject = stream;
+              webcamVideo.muted = true;
+              await webcamVideo.play();
+              
+              function draw() {
+                ctx.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(webcamVideo, canvas.width - 340, canvas.height - 260, 320, 240);
+                requestAnimationFrame(draw);
+              }
+              draw();
+              
+              // Combine audio
+              const audioContext = new AudioContext();
+              const dest = audioContext.createMediaStreamDestination();
+              
+              displayStream.getAudioTracks().forEach(track => {
+                const src = audioContext.createMediaStreamSource(new MediaStream([track]));
+                src.connect(dest);
+              });
+              stream.getAudioTracks().forEach(track => {
+                const src = audioContext.createMediaStreamSource(new MediaStream([track]));
+                src.connect(dest);
+              });
+              
+              const canvasStream = canvas.captureStream(30);
+              const finalStream = new MediaStream([
+                ...canvasStream.getVideoTracks(),
+                ...dest.stream.getAudioTracks()
+              ]);
+              
+              preview.srcObject = finalStream;
+              
+              mediaRecorder = new MediaRecorder(finalStream, { mimeType: 'video/webm' });
+              chunks = [];
+              
+              mediaRecorder.ondataavailable = (e) => {
+                if(e.data.size > 0) chunks.push(e.data);
+              };
+              
+              mediaRecorder.onstop = () => {
+                clearInterval(timerInterval);
+                const blob = new Blob(chunks, { type: 'video/webm' });
+                preview.srcObject = null;
+                preview.src = URL.createObjectURL(blob);
+                preview.muted = false;
+                preview.controls = true;
+                
+                startBtn.style.display = 'none';
+                pauseBtn.style.display = 'none';
+                stopBtn.style.display = 'none';
+                videoNameInput.style.display = 'block';
+                saveBtn.style.display = 'block';
+                resetBtn.style.display = 'block';
+                recIndicator.style.display = 'none';
+                status.textContent = 'Recorded';
+                status.className = 'status';
+                
+                if(voiceover) voiceover.pause();
+              };
+              
+              mediaRecorder.start(1000);
+              startTime = Date.now();
+              timerInterval = setInterval(() => {
+                timer.textContent = formatTime(Math.floor((Date.now() - startTime) / 1000));
+              }, 1000);
+              
+              startBtn.style.display = 'none';
+              pauseBtn.style.display = 'block';
+              stopBtn.style.display = 'block';
+              recIndicator.style.display = 'flex';
+              status.textContent = 'Recording';
+              status.className = 'status recording';
+              
+              if(voiceover) voiceover.play();
+              
+            } catch(e) {
+              alert('Error: ' + e.message);
+            }
+          };
+          
+          pauseBtn.onclick = function() {
+            if(isPaused) {
+              mediaRecorder.resume();
+              pauseBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>Pause';
+              isPaused = false;
+              if(voiceover) voiceover.play();
+            } else {
+              mediaRecorder.pause();
+              pauseBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>Resume';
+              isPaused = true;
+              if(voiceover) voiceover.pause();
+            }
+          };
+          
+          stopBtn.onclick = function() {
+            mediaRecorder.stop();
+            stream.getTracks().forEach(t => t.stop());
+          };
+          
+          saveBtn.onclick = function() {
+            const name = videoNameInput.value.trim() || 'recording';
+            const blob = new Blob(chunks, { type: 'video/webm' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = name + '.webm';
+            a.click();
+            alert('Video downloaded! Close this window to return to the app.');
+          };
+          
+          resetBtn.onclick = function() {
+            location.reload();
+          };
+        </script>
+      </body>
+      </html>
+    `);
+    popoutWindow.document.close();
+    showSuccess('Recording studio opened in separate window');
   };
 
   const handleSaveRecording = async () => {
@@ -906,14 +1327,26 @@ Let me walk you through the key improvements we've made.`,
               {/* Preview */}
               <div className="relative">
                 <VideoPreview videoRef={previewRef} />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="absolute top-2 right-2 bg-background/80"
-                  onClick={handleToggleFullscreen}
-                >
-                  <Maximize2 className="h-4 w-4" />
-                </Button>
+                <div className="absolute top-2 right-2 flex gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-background/80"
+                    onClick={handlePopOutRecording}
+                    title="Pop out to separate window (for cleaner screen recording)"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-background/80"
+                    onClick={handleToggleFullscreen}
+                    title="Fullscreen in app"
+                  >
+                    <Maximize2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
 
               {error && (
