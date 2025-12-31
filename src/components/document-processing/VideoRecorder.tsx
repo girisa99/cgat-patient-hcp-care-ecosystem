@@ -699,6 +699,32 @@ Let me walk you through the key improvements we've made.`,
           .status.ready { background: #22c55e33; color: #22c55e; }
           .status.countdown { background: #f59e0b33; color: #f59e0b; }
           .status.recording { background: #dc262633; color: #dc2626; }
+          .status.error { background: #dc262633; color: #dc2626; }
+          .status.loading { background: #3b82f633; color: #3b82f6; }
+          
+          /* Camera loading overlay */
+          .camera-loading {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #1a1a1a;
+            color: white;
+          }
+          .camera-loading.hidden { display: none; }
+          .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #333;
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+          }
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
           .audio-info {
             margin-top: 10px;
             padding: 10px;
@@ -745,7 +771,7 @@ Let me walk you through the key improvements we've made.`,
             Video Recording Studio
             <span class="badge">Pop-out Mode</span>
           </h1>
-          <div id="status" class="status ready">Ready</div>
+          <div id="status" class="status loading">Initializing Camera...</div>
         </div>
         
         <!-- Options Bar with Dropdowns -->
@@ -774,6 +800,12 @@ Let me walk you through the key improvements we've made.`,
           <div class="video-section">
             <div class="video-container">
               <video id="preview" autoplay playsinline muted></video>
+              
+              <!-- Camera Loading Overlay -->
+              <div id="cameraLoading" class="camera-loading">
+                <div class="spinner"></div>
+                <p style="margin-top:20px;opacity:0.7;">Initializing camera...</p>
+              </div>
               
               <!-- Countdown Overlay -->
               <div id="countdownOverlay" class="countdown-overlay hidden">
@@ -970,20 +1002,69 @@ Let me walk you through the key improvements we've made.`,
             }
           };
           
+          const cameraLoading = document.getElementById('cameraLoading');
+          
           // Request camera on load
           async function initCamera() {
+            console.log('🎥 Initializing camera...');
             try {
+              // Check if mediaDevices is available
+              if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error('Camera API not available in this browser');
+              }
+              
               stream = await navigator.mediaDevices.getUserMedia({
-                video: { width: 1280, height: 720 },
+                video: { 
+                  width: { ideal: 1280 },
+                  height: { ideal: 720 },
+                  facingMode: 'user'
+                },
                 audio: true
               });
+              
+              console.log('✅ Camera stream obtained:', stream.getVideoTracks().length, 'video tracks');
+              
+              // Set preview source
               preview.srcObject = stream;
+              
+              // Ensure video plays
+              preview.onloadedmetadata = function() {
+                console.log('📺 Video metadata loaded, playing...');
+                preview.play().then(() => {
+                  // Hide loading overlay once video is playing
+                  cameraLoading.classList.add('hidden');
+                  status.textContent = 'Camera Ready';
+                  status.className = 'status ready';
+                }).catch(e => {
+                  console.error('Play error:', e);
+                  cameraLoading.innerHTML = '<p style="color:#f87171;">Failed to play video. Click to retry.</p>';
+                  cameraLoading.onclick = initCamera;
+                });
+              };
+              
             } catch(e) {
-              alert('Camera access needed: ' + e.message);
+              console.error('❌ Camera error:', e);
+              status.textContent = 'Camera Error';
+              status.className = 'status error';
+              
+              // Update loading overlay with error
+              cameraLoading.innerHTML = '<p style="color:#f87171;">Camera error</p><p style="margin-top:10px;font-size:13px;opacity:0.7;">' + e.message + '</p><button onclick="location.reload()" style="margin-top:20px;padding:10px 20px;">Retry</button>';
+              
+              // Show helpful error message
+              if (e.name === 'NotAllowedError') {
+                alert('Camera access denied. Please allow camera access in your browser settings and refresh this window.');
+              } else if (e.name === 'NotFoundError') {
+                alert('No camera found. Please connect a camera and refresh this window.');
+              }
             }
           }
           
-          initCamera();
+          // Wait for DOM to be ready, then init camera
+          if (document.readyState === 'complete') {
+            initCamera();
+          } else {
+            window.addEventListener('load', initCamera);
+          }
           
           function formatTime(seconds) {
             const mins = Math.floor(seconds / 60);
