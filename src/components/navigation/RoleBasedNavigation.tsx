@@ -62,7 +62,7 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
 
   // FULLY DYNAMIC navigation groups - no hardcoding
   const getNavigationGroups = () => {
-    // Healthcare Provider gets dedicated primary navigation
+    // Healthcare Provider gets dedicated primary navigation with Architecture dropdown
     if (userRoles.includes('healthcareProvider')) {
       return {
         primary: availableTabs.filter(tab => 
@@ -75,6 +75,9 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
           ['/api-services', '/system-integration', '/testing'].includes(tab.to)
         ),
         reportsCompliance: [],
+        architecture: availableTabs.filter(tab => 
+          ['/architecture', '/healthcare-ai', '/database-performance'].includes(tab.to)
+        ),
         specialized: []
       };
     }

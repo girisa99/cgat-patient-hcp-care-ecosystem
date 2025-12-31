@@ -65,13 +65,14 @@ export const useRoleBasedNavigation = () => {
       'active-verification': ['superAdmin', 'demoUser'], // Add demoUser for verification demo
       'framework': ['superAdmin', 'demoUser'], // Add demoUser for framework demo
       'stability': ['superAdmin', 'demoUser'], // Add demoUser for stability demo
-      'healthcare-ai': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for AI demo
+      'healthcare-ai': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need AI access
       'treatment-centers': ['superAdmin', 'demoUser'], // Add treatment centers for demoUser
-      'database-performance': ['superAdmin', 'demoUser'], // Database performance optimization
+      'database-performance': ['superAdmin', 'healthcareProvider', 'demoUser'], // Database performance optimization
       'order-management': ['healthcareProvider'], // Healthcare provider specific
       'patient-onboarding': ['healthcareProvider'], // Healthcare provider specific - patient enrollment
       'patient-onboarding-standard': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Standard patient enrollment 
       'patient-onboarding-whatsapp': ['superAdmin', 'onboardingTeam', 'healthcareProvider'], // WhatsApp patient enrollment
+      'architecture': ['superAdmin', 'admin', 'onboardingTeam', 'healthcareProvider', 'caseManager', 'nurse', 'provider', 'demoUser'], // Architecture diagrams - accessible to all roles
     };
 
     const filteredItems = navItems.filter(item => {
@@ -127,11 +128,12 @@ export const useRoleBasedNavigation = () => {
       'governance': ['superAdmin', 'demoUser'], // Add demoUser for governance demo
       'framework': ['superAdmin', 'demoUser'], // Add demoUser for framework demo
       'stability': ['superAdmin', 'demoUser'], // Add demoUser for stability demo
-      'healthcare-ai': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for AI demo
+      'healthcare-ai': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need AI access
       'treatment-centers': ['superAdmin', 'demoUser'], // Add treatment centers for demoUser
-      'database-performance': ['superAdmin', 'demoUser'], // Database performance optimization
+      'database-performance': ['superAdmin', 'healthcareProvider', 'demoUser'], // Database performance optimization
       'order-management': ['healthcareProvider'], // Healthcare provider specific
       'document-processing': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'customerOnboarding', 'demoUser'], // Document processing page
+      'architecture': ['superAdmin', 'admin', 'onboardingTeam', 'healthcareProvider', 'caseManager', 'nurse', 'provider', 'demoUser'], // Architecture diagrams
     };
 
     const allowedRoles = roleAccess[cleanPath as keyof typeof roleAccess] || [];
@@ -155,7 +157,7 @@ export const useRoleBasedNavigation = () => {
   const getNavItemsByRole = () => {
     return normalizedUserRoles.reduce((acc, role) => {
       acc[role] = navItems.filter(item => {
-        const path = item.url.replace('/', '') || 'dashboard';
+      const path = item.url.replace('/', '') || 'dashboard';
         const roleAccess = {
           dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'healthcareProvider', 'patientCaregiver', 'demoUser'],
           users: ['superAdmin', 'demoUser'], // Add demoUser for demo management showcase
@@ -181,9 +183,11 @@ export const useRoleBasedNavigation = () => {
           'governance': ['superAdmin', 'demoUser'], // Add demoUser for governance demo
           'framework': ['superAdmin', 'demoUser'], // Add demoUser for framework demo
           'stability': ['superAdmin', 'demoUser'], // Add demoUser for stability demo
-          'healthcare-ai': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for AI demo
+          'healthcare-ai': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need AI access
           'treatment-centers': ['superAdmin', 'demoUser'], // Add treatment centers for demoUser
-          'order-management': ['healthcareProvider'] // Healthcare provider specific
+          'order-management': ['healthcareProvider'], // Healthcare provider specific
+          'database-performance': ['superAdmin', 'healthcareProvider', 'demoUser'], // Database performance optimization
+          'architecture': ['superAdmin', 'admin', 'onboardingTeam', 'healthcareProvider', 'caseManager', 'nurse', 'provider', 'demoUser'], // Architecture diagrams
         };
         
         const allowedRoles = roleAccess[path as keyof typeof roleAccess] || [];
