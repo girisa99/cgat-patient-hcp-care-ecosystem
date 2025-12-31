@@ -678,13 +678,17 @@ export const ScriptsManager: React.FC = () => {
                     </span>
                   )}
                 </div>
-                <Textarea
+                <textarea
                   id="scriptText"
                   value={scriptText}
                   onChange={(e) => setScriptText(e.target.value)}
                   placeholder="Paste or type your script here. Markdown formatting will be removed for TTS."
-                  className="min-h-[450px] bg-slate-900 border-slate-500 text-slate-100 font-mono text-sm leading-relaxed placeholder:text-slate-500 focus:border-green-500 focus:ring-green-500/20 resize-y"
-                  style={{ color: '#e2e8f0' }}
+                  className="w-full min-h-[450px] rounded-md border border-slate-500 font-mono text-sm leading-relaxed focus:border-green-500 focus:ring-2 focus:ring-green-500/20 focus:outline-none resize-y p-4"
+                  style={{ 
+                    backgroundColor: '#0f172a', 
+                    color: '#f1f5f9',
+                    caretColor: '#22c55e'
+                  }}
                 />
               </div>
             </div>
