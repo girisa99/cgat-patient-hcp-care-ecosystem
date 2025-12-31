@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import {
   Video,
   Camera,
@@ -30,6 +31,8 @@ import {
   Captions,
   FileText,
   Volume2,
+  ExternalLink,
+  Eye,
 } from 'lucide-react';
 import { useMediaRecorder, RecordingMode } from '@/hooks/useMediaRecorder';
 import { useMasterToast } from '@/hooks/useMasterToast';
@@ -40,6 +43,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { TeleprompterPopup } from './TeleprompterPopup';
 
 interface MediaItem {
   id: string;
@@ -76,6 +80,8 @@ export const VideoRecorder: React.FC = () => {
   const [availableScripts, setAvailableScripts] = useState<ScriptItem[]>([]);
   const [isPlayingVoiceover, setIsPlayingVoiceover] = useState(false);
   const [micEnabled, setMicEnabled] = useState(true);
+  const [showScriptTeleprompter, setShowScriptTeleprompter] = useState(false);
+  const [showAudioTeleprompter, setShowAudioTeleprompter] = useState(false);
   
   const previewRef = useRef<HTMLVideoElement>(null);
   const fullscreenPreviewRef = useRef<HTMLVideoElement>(null);
@@ -645,6 +651,44 @@ export const VideoRecorder: React.FC = () => {
                 </div>
               </div>
 
+              {/* Teleprompter Controls */}
+              {(selectedScript || selectedAudioFile) && (
+                <div className="flex flex-wrap gap-2 p-3 bg-muted/50 rounded-lg">
+                  <Label className="flex items-center gap-2 text-sm mr-2">
+                    <Eye className="h-4 w-4" />
+                    Teleprompter:
+                  </Label>
+                  {selectedScript && (
+                    <Button
+                      variant={showScriptTeleprompter ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setShowScriptTeleprompter(!showScriptTeleprompter)}
+                      className="gap-2"
+                    >
+                      <FileText className="h-4 w-4" />
+                      Script
+                      {showScriptTeleprompter && <Badge variant="secondary" className="ml-1">Open</Badge>}
+                    </Button>
+                  )}
+                  {selectedAudioFile && (
+                    <Button
+                      variant={showAudioTeleprompter ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setShowAudioTeleprompter(!showAudioTeleprompter)}
+                      className="gap-2"
+                    >
+                      <Volume2 className="h-4 w-4" />
+                      Audio Cue
+                      {showAudioTeleprompter && <Badge variant="secondary" className="ml-1">Open</Badge>}
+                    </Button>
+                  )}
+                  <span className="text-xs text-muted-foreground ml-auto flex items-center gap-1">
+                    <ExternalLink className="h-3 w-3" />
+                    Click popup icon to open in separate window
+                  </span>
+                </div>
+              )}
+
               {/* Custom Caption Input */}
               {showCaptions && !selectedScript && (
                 <div className="space-y-2">
@@ -921,6 +965,30 @@ export const VideoRecorder: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Script Teleprompter Popup */}
+      {selectedScript && (
+        <TeleprompterPopup
+          title={selectedScript.title}
+          content={selectedScript.content}
+          type="script"
+          isOpen={showScriptTeleprompter}
+          onClose={() => setShowScriptTeleprompter(false)}
+          isRecording={isRecording}
+        />
+      )}
+
+      {/* Audio Cue Teleprompter Popup */}
+      {selectedAudioFile && (
+        <TeleprompterPopup
+          title={`Audio: ${selectedAudioFile.name}`}
+          content={`Playing voiceover audio:\n\n${selectedAudioFile.name}\n\nThis audio will play automatically when you start recording.\n\nFollow along with your script and let the audio guide your presentation.`}
+          type="audio"
+          isOpen={showAudioTeleprompter}
+          onClose={() => setShowAudioTeleprompter(false)}
+          isRecording={isRecording}
+        />
+      )}
     </>
   );
 };
