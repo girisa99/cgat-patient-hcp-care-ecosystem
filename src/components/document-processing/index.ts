@@ -19,6 +19,7 @@ export { default as VideoScriptDownload } from './VideoScriptDownload';
 export { VideoScriptDownloader } from './VideoScriptDownloader';
 export { ScriptsManager } from './ScriptsManager';
 export { VideoRecorder } from './VideoRecorder';
+export { TeleprompterPopup } from './TeleprompterPopup';
 
 // New Improvement Components
 export { ModelUsageAnalyticsDashboard } from './ModelUsageAnalyticsDashboard';
