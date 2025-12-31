@@ -985,8 +985,11 @@ export const ScriptsManager: React.FC = () => {
                           )}
                           <Button
                             size="sm"
-                            onClick={() => handleDownloadAudio(audio)}
-                            title="Download audio"
+                            onClick={() => {
+                              handleDownloadAudio(audio);
+                              setActiveTab('scripts');
+                            }}
+                            title="Download audio & back to scripts"
                             style={{ backgroundColor: '#3b82f6', color: '#ffffff', border: 'none' }}
                           >
                             <Download className="h-4 w-4" />
