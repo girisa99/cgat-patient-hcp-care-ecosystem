@@ -254,8 +254,8 @@ export default function VerificationDialog({
               </div>
               
               {/* Extracted Fields */}
-              <div className="border rounded-lg p-4">
-                <h4 className="font-medium mb-2 flex items-center gap-2">
+              <div className="border rounded-lg p-4 flex flex-col max-h-[500px]">
+                <h4 className="font-medium mb-2 flex items-center gap-2 flex-shrink-0">
                   <Table2 className="h-4 w-4" />
                   Extracted Fields ({Object.keys(pendingResult.extractedFields).filter(k => 
                     pendingResult.extractedFields[k]?.value && 
@@ -263,8 +263,8 @@ export default function VerificationDialog({
                     !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(k)
                   ).length})
                 </h4>
-                <ScrollArea className="h-[300px]">
-                  <div className="space-y-2">
+                <ScrollArea className="flex-1 min-h-0 pr-2">
+                  <div className="space-y-2 pb-2">
                     {Object.entries(pendingResult.extractedFields)
                       .filter(([key, field]: [string, any]) => 
                         field?.value && 
