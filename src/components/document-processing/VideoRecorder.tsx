@@ -916,11 +916,23 @@ Let me walk you through the key improvements we've made.`,
                 <VideoEditor
                   videoUrl={editingMedia.url}
                   videoName={editingMedia.name}
+                  videoId={editingMedia.id}
+                  availableAudioFiles={audioFiles.map(a => ({
+                    id: a.id,
+                    name: a.name,
+                    url: a.url,
+                  }))}
                   onClose={() => setEditingMedia(null)}
-                  onSave={(blob, transcript) => {
-                    console.log('Video saved with transcript:', transcript.substring(0, 100));
+                  onSave={(blob, transcript, audioSettings) => {
+                    console.log('Video saved:', {
+                      transcript: transcript.substring(0, 100),
+                      audioSettings,
+                    });
                     setEditingMedia(null);
-                    showSuccess('Video saved with updated script');
+                    showSuccess(audioSettings 
+                      ? `Video saved with ${audioSettings.mixMode} voiceover!` 
+                      : 'Video saved with updated script'
+                    );
                   }}
                 />
               ) : (

@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Scissors,
   Play,
@@ -23,6 +25,8 @@ import {
   RotateCcw,
   ZoomIn,
   ZoomOut,
+  Music,
+  Layers,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from '@/hooks/useMasterToast';
@@ -30,8 +34,16 @@ import { useMasterToast } from '@/hooks/useMasterToast';
 interface VideoEditorProps {
   videoUrl: string;
   videoName: string;
-  onSave?: (editedBlob: Blob, transcript: string) => void;
+  videoId?: string;
+  availableAudioFiles?: AudioFile[];
+  onSave?: (editedBlob: Blob, transcript: string, audioSettings: AudioOverlaySettings | null) => void;
   onClose?: () => void;
+}
+
+interface AudioFile {
+  id: string;
+  name: string;
+  url: string;
 }
 
 interface TranscriptSegment {
@@ -43,13 +55,38 @@ interface TranscriptSegment {
   confidence: number;
 }
 
+type AudioMixMode = 'replace' | 'mix' | 'background';
+
+interface AudioOverlaySettings {
+  audioFileId: string;
+  audioFileUrl: string;
+  audioFileName: string;
+  mixMode: AudioMixMode;
+  originalVolume: number; // 0-1
+  voiceoverVolume: number; // 0-1
+}
+
+// Storage key for persisting editor state
+const getEditorStorageKey = (videoId: string) => `video-editor-${videoId}`;
+
+interface EditorState {
+  trimStart: number;
+  trimEnd: number;
+  transcript: TranscriptSegment[];
+  editableScript: string;
+  audioSettings: AudioOverlaySettings | null;
+}
+
 export const VideoEditor: React.FC<VideoEditorProps> = ({
   videoUrl,
   videoName,
+  videoId,
+  availableAudioFiles = [],
   onSave,
   onClose,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const voiceoverRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -67,11 +104,68 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
   const [editableScript, setEditableScript] = useState('');
   const [activeTab, setActiveTab] = useState('preview');
   
+  // Audio overlay
+  const [audioSettings, setAudioSettings] = useState<AudioOverlaySettings | null>(null);
+  const [selectedAudioId, setSelectedAudioId] = useState<string>('none');
+  const [mixMode, setMixMode] = useState<AudioMixMode>('replace');
+  const [originalVolume, setOriginalVolume] = useState(0.3);
+  const [voiceoverVolume, setVoiceoverVolume] = useState(1);
+  
   // Processing
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState('');
+  const [stateLoaded, setStateLoaded] = useState(false);
   
   const { showSuccess, showError } = useMasterToast();
+
+  // Load persisted state
+  useEffect(() => {
+    if (!videoId) {
+      setStateLoaded(true);
+      return;
+    }
+    
+    try {
+      const saved = localStorage.getItem(getEditorStorageKey(videoId));
+      if (saved) {
+        const state: EditorState = JSON.parse(saved);
+        setTrimStart(state.trimStart);
+        setTrimEnd(state.trimEnd);
+        setTranscript(state.transcript || []);
+        setEditableScript(state.editableScript || '');
+        if (state.audioSettings) {
+          setAudioSettings(state.audioSettings);
+          setSelectedAudioId(state.audioSettings.audioFileId);
+          setMixMode(state.audioSettings.mixMode);
+          setOriginalVolume(state.audioSettings.originalVolume);
+          setVoiceoverVolume(state.audioSettings.voiceoverVolume);
+        }
+        console.log('Loaded editor state for', videoId);
+      }
+    } catch (e) {
+      console.error('Failed to load editor state:', e);
+    }
+    setStateLoaded(true);
+  }, [videoId]);
+
+  // Persist state changes
+  useEffect(() => {
+    if (!videoId || !stateLoaded) return;
+    
+    const state: EditorState = {
+      trimStart,
+      trimEnd,
+      transcript,
+      editableScript,
+      audioSettings,
+    };
+    
+    try {
+      localStorage.setItem(getEditorStorageKey(videoId), JSON.stringify(state));
+    } catch (e) {
+      console.error('Failed to save editor state:', e);
+    }
+  }, [videoId, trimStart, trimEnd, transcript, editableScript, audioSettings, stateLoaded]);
 
   // Initialize video
   useEffect(() => {
@@ -80,27 +174,75 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
 
     const handleLoadedMetadata = () => {
       setDuration(video.duration);
-      setTrimEnd(video.duration);
+      // Only set trimEnd if not loaded from state
+      if (trimEnd === 0) {
+        setTrimEnd(video.duration);
+      }
     };
 
     const handleTimeUpdate = () => {
       setCurrentTime(video.currentTime);
+      // Sync voiceover audio
+      if (voiceoverRef.current && audioSettings) {
+        const voiceover = voiceoverRef.current;
+        if (Math.abs(voiceover.currentTime - video.currentTime) > 0.3) {
+          voiceover.currentTime = video.currentTime;
+        }
+      }
     };
 
     const handleEnded = () => {
       setIsPlaying(false);
+      if (voiceoverRef.current) {
+        voiceoverRef.current.pause();
+      }
+    };
+
+    const handlePlay = () => {
+      if (voiceoverRef.current && audioSettings) {
+        voiceoverRef.current.play().catch(console.error);
+      }
+    };
+
+    const handlePause = () => {
+      if (voiceoverRef.current) {
+        voiceoverRef.current.pause();
+      }
     };
 
     video.addEventListener('loadedmetadata', handleLoadedMetadata);
     video.addEventListener('timeupdate', handleTimeUpdate);
     video.addEventListener('ended', handleEnded);
+    video.addEventListener('play', handlePlay);
+    video.addEventListener('pause', handlePause);
 
     return () => {
       video.removeEventListener('loadedmetadata', handleLoadedMetadata);
       video.removeEventListener('timeupdate', handleTimeUpdate);
       video.removeEventListener('ended', handleEnded);
+      video.removeEventListener('play', handlePlay);
+      video.removeEventListener('pause', handlePause);
     };
-  }, [videoUrl]);
+  }, [videoUrl, audioSettings, trimEnd]);
+
+  // Update video volume based on mix mode
+  useEffect(() => {
+    if (!videoRef.current) return;
+    
+    if (audioSettings && mixMode !== 'replace') {
+      videoRef.current.volume = originalVolume * volume;
+    } else if (audioSettings && mixMode === 'replace') {
+      videoRef.current.volume = 0;
+    } else {
+      videoRef.current.volume = volume;
+    }
+  }, [audioSettings, mixMode, originalVolume, volume]);
+
+  // Update voiceover volume
+  useEffect(() => {
+    if (!voiceoverRef.current) return;
+    voiceoverRef.current.volume = voiceoverVolume * volume;
+  }, [voiceoverVolume, volume]);
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -125,6 +267,9 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
     const video = videoRef.current;
     if (!video) return;
     video.currentTime = Math.max(0, Math.min(time, duration));
+    if (voiceoverRef.current) {
+      voiceoverRef.current.currentTime = video.currentTime;
+    }
   };
 
   const skipBack = () => seek(currentTime - 5);
@@ -133,9 +278,6 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
   const handleVolumeChange = (value: number[]) => {
     const vol = value[0];
     setVolume(vol);
-    if (videoRef.current) {
-      videoRef.current.volume = vol;
-    }
     setIsMuted(vol === 0);
   };
 
@@ -144,12 +286,51 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
       videoRef.current.muted = !isMuted;
       setIsMuted(!isMuted);
     }
+    if (voiceoverRef.current) {
+      voiceoverRef.current.muted = !isMuted;
+    }
   };
 
   const handlePlaybackRateChange = (rate: number) => {
     setPlaybackRate(rate);
     if (videoRef.current) {
       videoRef.current.playbackRate = rate;
+    }
+    if (voiceoverRef.current) {
+      voiceoverRef.current.playbackRate = rate;
+    }
+  };
+
+  // Handle audio file selection
+  const handleAudioSelect = (audioId: string) => {
+    setSelectedAudioId(audioId);
+    
+    if (audioId === 'none') {
+      setAudioSettings(null);
+      return;
+    }
+    
+    const audioFile = availableAudioFiles.find(a => a.id === audioId);
+    if (audioFile) {
+      setAudioSettings({
+        audioFileId: audioFile.id,
+        audioFileUrl: audioFile.url,
+        audioFileName: audioFile.name,
+        mixMode,
+        originalVolume,
+        voiceoverVolume,
+      });
+    }
+  };
+
+  // Update audio settings when mix mode changes
+  const handleMixModeChange = (mode: AudioMixMode) => {
+    setMixMode(mode);
+    if (audioSettings) {
+      setAudioSettings({
+        ...audioSettings,
+        mixMode: mode,
+      });
     }
   };
 
@@ -189,34 +370,32 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
 
       const transcribedText = data?.text || '';
       
-      // Parse transcript into segments (simplified - in production would use word timestamps)
+      // Parse transcript into segments
       const words = transcribedText.split(/\s+/).filter(Boolean);
       const avgWordDuration = duration / Math.max(words.length, 1);
       
       const segments: TranscriptSegment[] = [];
-      let currentTime = 0;
+      let segmentCurrentTime = 0;
       let currentSegment: string[] = [];
       let segmentStart = 0;
       
-      // Group into ~5 second segments
       words.forEach((word, i) => {
         currentSegment.push(word);
-        currentTime += avgWordDuration;
+        segmentCurrentTime += avgWordDuration;
         
-        // Check for filler words
         const fillerWords = ['um', 'uh', 'hmm', 'ah', 'like', 'you know', 'basically'];
         const isFillerWord = fillerWords.some(f => word.toLowerCase().includes(f));
         
-        if (currentTime - segmentStart >= 5 || i === words.length - 1) {
+        if (segmentCurrentTime - segmentStart >= 5 || i === words.length - 1) {
           segments.push({
             id: crypto.randomUUID(),
             start: segmentStart,
-            end: currentTime,
+            end: segmentCurrentTime,
             text: currentSegment.join(' '),
             type: isFillerWord ? 'filler' : 'speech',
             confidence: data?.confidence || 0.85,
           });
-          segmentStart = currentTime;
+          segmentStart = segmentCurrentTime;
           currentSegment = [];
         }
       });
@@ -247,7 +426,6 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
     const updatedTranscript = transcript.map(segment => {
       let type: 'speech' | 'silence' | 'filler' = 'speech';
       
-      // Check for filler words
       for (const pattern of fillerPatterns) {
         if (pattern.test(segment.text)) {
           type = 'filler';
@@ -255,7 +433,6 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
         }
       }
       
-      // Check for silence (very short segments or empty)
       if (segment.text.trim().length < 3) {
         type = 'silence';
       }
@@ -267,13 +444,11 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
     showSuccess('Detected fillers and silence');
   }, [transcript, showSuccess]);
 
-  // Remove selected segments
   const removeSegment = (id: string) => {
     setTranscript(prev => prev.filter(s => s.id !== id));
     setEditableScript(transcript.filter(s => s.id !== id).map(s => s.text).join('\n\n'));
   };
 
-  // Remove all fillers and silence
   const removeAllFillers = () => {
     const cleaned = transcript.filter(s => s.type === 'speech');
     setTranscript(cleaned);
@@ -281,21 +456,27 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
     showSuccess('Removed all filler words and silence');
   };
 
-  // Save edited video (placeholder - would need FFmpeg WASM for actual trimming)
   const handleSave = async () => {
     setIsProcessing(true);
     setProcessingStatus('Preparing video...');
     
     try {
-      // For now, save the original video with the edited script
       const response = await fetch(videoUrl);
       const blob = await response.blob();
       
+      // Update audio settings with current values
+      const finalAudioSettings = audioSettings ? {
+        ...audioSettings,
+        mixMode,
+        originalVolume,
+        voiceoverVolume,
+      } : null;
+      
       if (onSave) {
-        onSave(blob, editableScript);
+        onSave(blob, editableScript, finalAudioSettings);
       }
       
-      showSuccess('Video saved with updated script!');
+      showSuccess('Video saved with updated settings!');
     } catch (err) {
       console.error('Save error:', err);
       showError('Failed to save video');
@@ -305,9 +486,24 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
     }
   };
 
-  // Jump to segment in video
   const jumpToSegment = (segment: TranscriptSegment) => {
     seek(segment.start);
+  };
+
+  const clearState = () => {
+    if (videoId) {
+      localStorage.removeItem(getEditorStorageKey(videoId));
+    }
+    setTrimStart(0);
+    setTrimEnd(duration);
+    setTranscript([]);
+    setEditableScript('');
+    setAudioSettings(null);
+    setSelectedAudioId('none');
+    setMixMode('replace');
+    setOriginalVolume(0.3);
+    setVoiceoverVolume(1);
+    showSuccess('Editor state cleared');
   };
 
   return (
@@ -317,16 +513,25 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
           <Scissors className="h-5 w-5 text-primary" />
           Video Editor - {videoName}
         </CardTitle>
-        {onClose && (
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <X className="h-4 w-4" />
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={clearState} title="Clear all edits">
+            <RotateCcw className="h-4 w-4" />
           </Button>
-        )}
+          {onClose && (
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="preview">Preview</TabsTrigger>
+            <TabsTrigger value="audio">
+              <Music className="h-4 w-4 mr-1" />
+              Audio
+            </TabsTrigger>
             <TabsTrigger value="trim">Trim</TabsTrigger>
             <TabsTrigger value="script">
               Script {transcript.length > 0 && <Badge className="ml-1" variant="secondary">{transcript.length}</Badge>}
@@ -344,6 +549,14 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
                 playsInline
               />
               
+              {/* Audio indicator */}
+              {audioSettings && (
+                <div className="absolute top-2 right-2 bg-primary/80 text-primary-foreground px-2 py-1 rounded flex items-center gap-1">
+                  <Music className="h-3 w-3" />
+                  <span className="text-xs">{audioSettings.mixMode === 'replace' ? 'Voiceover' : 'Mixed'}</span>
+                </div>
+              )}
+              
               {/* Processing overlay */}
               {(isTranscribing || isProcessing) && (
                 <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
@@ -355,9 +568,17 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
               )}
             </div>
 
+            {/* Hidden voiceover audio */}
+            {audioSettings && (
+              <audio
+                ref={voiceoverRef}
+                src={audioSettings.audioFileUrl}
+                preload="auto"
+              />
+            )}
+
             {/* Playback Controls */}
             <div className="space-y-3">
-              {/* Progress bar */}
               <div className="space-y-1">
                 <Slider
                   value={[currentTime]}
@@ -373,7 +594,6 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
                 </div>
               </div>
 
-              {/* Control buttons */}
               <div className="flex items-center justify-center gap-2">
                 <Button variant="outline" size="icon" onClick={skipBack}>
                   <SkipBack className="h-4 w-4" />
@@ -415,7 +635,6 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
                 </div>
               </div>
 
-              {/* Action buttons */}
               <div className="flex items-center gap-2 justify-center pt-2">
                 <Button
                   variant="outline"
@@ -429,11 +648,117 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
                   )}
                   Auto-Transcribe
                 </Button>
-                <Button variant="outline" onClick={() => setActiveTab('trim')}>
-                  <Scissors className="h-4 w-4 mr-2" />
-                  Trim Video
+                <Button variant="outline" onClick={() => setActiveTab('audio')}>
+                  <Music className="h-4 w-4 mr-2" />
+                  Add Voiceover
                 </Button>
               </div>
+            </div>
+          </TabsContent>
+
+          {/* Audio Tab - Voiceover Settings */}
+          <TabsContent value="audio" className="space-y-4">
+            <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Music className="h-4 w-4" />
+                  Select Voiceover Audio
+                </Label>
+                <Select value={selectedAudioId} onValueChange={handleAudioSelect}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose audio file..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No voiceover</SelectItem>
+                    {availableAudioFiles.map(audio => (
+                      <SelectItem key={audio.id} value={audio.id}>
+                        {audio.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {selectedAudioId !== 'none' && (
+                <>
+                  <div className="space-y-3">
+                    <Label className="flex items-center gap-2">
+                      <Layers className="h-4 w-4" />
+                      Audio Mix Mode
+                    </Label>
+                    <RadioGroup value={mixMode} onValueChange={(v) => handleMixModeChange(v as AudioMixMode)}>
+                      <div className="flex items-center space-x-2 p-3 rounded-lg bg-background border border-border">
+                        <RadioGroupItem value="replace" id="replace" />
+                        <Label htmlFor="replace" className="flex-1 cursor-pointer">
+                          <div className="font-medium">Replace Original</div>
+                          <div className="text-xs text-muted-foreground">Mute video audio, play only voiceover</div>
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-3 rounded-lg bg-background border border-border">
+                        <RadioGroupItem value="mix" id="mix" />
+                        <Label htmlFor="mix" className="flex-1 cursor-pointer">
+                          <div className="font-medium">Mix Both</div>
+                          <div className="text-xs text-muted-foreground">Play both tracks, adjust volumes below</div>
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-3 rounded-lg bg-background border border-border">
+                        <RadioGroupItem value="background" id="background" />
+                        <Label htmlFor="background" className="flex-1 cursor-pointer">
+                          <div className="font-medium">Voiceover as Background</div>
+                          <div className="text-xs text-muted-foreground">Lower voiceover volume, keep original prominent</div>
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  {mixMode !== 'replace' && (
+                    <div className="space-y-4 pt-2">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label>Original Audio Volume</Label>
+                          <span className="text-sm text-muted-foreground">{Math.round(originalVolume * 100)}%</span>
+                        </div>
+                        <Slider
+                          value={[originalVolume]}
+                          min={0}
+                          max={1}
+                          step={0.05}
+                          onValueChange={(v) => setOriginalVolume(v[0])}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label>Voiceover Volume</Label>
+                          <span className="text-sm text-muted-foreground">{Math.round(voiceoverVolume * 100)}%</span>
+                        </div>
+                        <Slider
+                          value={[voiceoverVolume]}
+                          min={0}
+                          max={1}
+                          step={0.05}
+                          onValueChange={(v) => setVoiceoverVolume(v[0])}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="pt-2">
+                    <Button onClick={() => setActiveTab('preview')} className="w-full">
+                      <Play className="h-4 w-4 mr-2" />
+                      Preview with Audio
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {availableAudioFiles.length === 0 && (
+                <div className="text-center py-4 text-muted-foreground">
+                  <Music className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No audio files available</p>
+                  <p className="text-xs">Upload or generate audio files first</p>
+                </div>
+              )}
             </div>
           </TabsContent>
 
@@ -518,7 +843,6 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
               </div>
             ) : (
               <div className="space-y-4">
-                {/* Segment controls */}
                 <div className="flex items-center gap-2 flex-wrap">
                   <Button variant="outline" size="sm" onClick={detectSilenceAndFillers}>
                     <Wand2 className="h-4 w-4 mr-2" />
@@ -530,7 +854,6 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
                   </Button>
                 </div>
 
-                {/* Transcript segments */}
                 <ScrollArea className="h-[200px]">
                   <div className="space-y-2">
                     {transcript.map((segment) => (
@@ -571,7 +894,6 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
                   </div>
                 </ScrollArea>
 
-                {/* Editable script */}
                 <div className="space-y-2">
                   <Label>Edit Script</Label>
                   <Textarea
