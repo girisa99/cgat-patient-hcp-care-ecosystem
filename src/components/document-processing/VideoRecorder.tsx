@@ -1236,11 +1236,17 @@ Thanks for watching!`,
         </div>
 
         <script>
-          // PRIORITY 1: Set up close button IMMEDIATELY so user can always close
-          (function() {
+          // Wrap everything in DOMContentLoaded to ensure elements exist
+          document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Pop-out window script starting...');
+            
+            // PRIORITY 1: Set up close button IMMEDIATELY
             const closeBtn = document.getElementById('closeBtn');
+            console.log('Close button found:', !!closeBtn);
+            
             if (closeBtn) {
               closeBtn.onclick = function() {
+                console.log('Close button clicked');
                 if (window.mediaRecorder && window.mediaRecorder.state === 'recording') {
                   if (!confirm('Recording in progress. Are you sure you want to close?')) {
                     return;
@@ -1257,39 +1263,41 @@ Thanks for watching!`,
             // Allow closing with Escape key
             document.addEventListener('keydown', function(e) {
               if (e.key === 'Escape') {
-                const closeBtn = document.getElementById('closeBtn');
+                console.log('Escape pressed');
                 if (closeBtn) closeBtn.click();
               }
             });
-          })();
-          
-          // Decode data from base64 (safe encoding to avoid template literal issues)
-          function decodeData(encoded) {
-            try {
-              return JSON.parse(decodeURIComponent(atob(encoded)));
-            } catch(e) {
-              console.error('Failed to decode data:', e);
-              return [];
+            
+            // Decode data from base64 (safe encoding to avoid template literal issues)
+            function decodeData(encoded) {
+              try {
+                if (!encoded) return [];
+                return JSON.parse(decodeURIComponent(atob(encoded)));
+              } catch(e) {
+                console.error('Failed to decode data:', e);
+                return [];
+              }
             }
-          }
-          
-          // Data from parent (base64 encoded for safety)
-          const scripts = decodeData('${scriptsEncoded}');
-          const voiceovers = decodeData('${voiceoversEncoded}');
-          const musicList = decodeData('${musicEncoded}');
-          
-          // Global references for close handler
-          window.mediaRecorder = null;
-          window.cameraStream = null;
-          
-          let mediaRecorder = null;
-          let chunks = [];
-          let stream = null;
-          let startTime = 0;
-          let timerInterval = null;
-          let isPaused = false;
-          let countdownInterval = null;
-          let countdownValue = 5;
+            
+            // Data from parent (base64 encoded for safety)
+            const scripts = decodeData('${scriptsEncoded}');
+            const voiceovers = decodeData('${voiceoversEncoded}');
+            const musicList = decodeData('${musicEncoded}');
+            
+            console.log('📋 Data loaded:', { scripts: scripts.length, voiceovers: voiceovers.length, music: musicList.length });
+            
+            // Global references for close handler
+            window.mediaRecorder = null;
+            window.cameraStream = null;
+            
+            let mediaRecorder = null;
+            let chunks = [];
+            let stream = null;
+            let startTime = 0;
+            let timerInterval = null;
+            let isPaused = false;
+            let countdownInterval = null;
+            let countdownValue = 5;
           
           const preview = document.getElementById('preview');
           const startBtn = document.getElementById('startBtn');
@@ -2077,6 +2085,8 @@ Thanks for watching!`,
           };
           
           // Note: Close button handler is set up at the top of the script for immediate availability
+          
+          }); // End DOMContentLoaded
         </script>
       </body>
       </html>
