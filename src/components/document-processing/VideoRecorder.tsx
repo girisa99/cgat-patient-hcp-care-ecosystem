@@ -1236,6 +1236,17 @@ Thanks for watching!`,
         </div>
 
         <script>
+          // Global error handler to catch any script errors
+          window.onerror = function(msg, url, line, col, error) {
+            console.error('❌ Script Error:', msg, 'at line', line);
+            var status = document.getElementById('status');
+            if (status) {
+              status.textContent = 'Script Error';
+              status.className = 'status error';
+            }
+            return false;
+          };
+          
           // Run immediately - script is at end of body so DOM is ready
           (function() {
             'use strict';
@@ -1506,26 +1517,7 @@ Thanks for watching!`,
           
           function showPermissionDenied() {
             cameraLoadingContent.style.display = 'none';
-            cameraPermissionRequest.innerHTML = \`
-              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5" style="margin-bottom:20px;">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="15" y1="9" x2="9" y2="15"></line>
-                <line x1="9" y1="9" x2="15" y2="15"></line>
-              </svg>
-              <p style="font-size:18px;font-weight:600;color:#ef4444;margin-bottom:10px;">Camera Access Blocked</p>
-              <p style="font-size:14px;opacity:0.7;margin-bottom:15px;">Camera permission was denied by browser</p>
-              <div style="background:rgba(255,255,255,0.05);padding:15px;border-radius:10px;text-align:left;margin-bottom:20px;max-width:400px;">
-                <p style="font-size:13px;font-weight:600;margin-bottom:10px;">To allow camera access:</p>
-                <ol style="font-size:12px;opacity:0.8;padding-left:20px;margin:0;">
-                  <li style="margin-bottom:5px;">Click the camera/lock icon in your browser's address bar</li>
-                  <li style="margin-bottom:5px;">Find "Camera" and change to "Allow"</li>
-                  <li style="margin-bottom:5px;">Click the button below to reload</li>
-                </ol>
-              </div>
-              <button onclick="location.reload()" style="padding:12px 25px;font-size:14px;background:#3b82f6;border:none;color:white;border-radius:8px;cursor:pointer;">
-                🔄 Reload Window
-              </button>
-            \`;
+            cameraPermissionRequest.innerHTML = '<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5" style="margin-bottom:20px;"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg><p style="font-size:18px;font-weight:600;color:#ef4444;margin-bottom:10px;">Camera Access Blocked</p><p style="font-size:14px;opacity:0.7;margin-bottom:15px;">Camera permission was denied by browser</p><div style="background:rgba(255,255,255,0.05);padding:15px;border-radius:10px;text-align:left;margin-bottom:20px;max-width:400px;"><p style="font-size:13px;font-weight:600;margin-bottom:10px;">To allow camera access:</p><ol style="font-size:12px;opacity:0.8;padding-left:20px;margin:0;"><li style="margin-bottom:5px;">Click the camera/lock icon in your browser address bar</li><li style="margin-bottom:5px;">Find Camera and change to Allow</li><li style="margin-bottom:5px;">Click the button below to reload</li></ol></div><button onclick="location.reload()" style="padding:12px 25px;font-size:14px;background:#3b82f6;border:none;color:white;border-radius:8px;cursor:pointer;">Reload Window</button>';
             cameraPermissionRequest.style.display = 'block';
             status.textContent = 'Permission Denied';
             status.className = 'status error';
