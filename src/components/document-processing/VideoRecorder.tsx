@@ -220,34 +220,44 @@ export const VideoRecorder: React.FC = () => {
           metadata: item.metadata,
         }));
 
-        // Also check localStorage for legacy generated audios not yet in DB
+        // Also check localStorage for generated audios from ScriptsManager
         const savedAudioMetadata = localStorage.getItem('generatedAudiosMetadata');
         if (savedAudioMetadata) {
           try {
-            const legacyAudios = JSON.parse(savedAudioMetadata);
-            legacyAudios.forEach((audio: any) => {
+            const generatedAudios = JSON.parse(savedAudioMetadata);
+            console.log('📀 Found generatedAudiosMetadata:', generatedAudios.length, 'audios');
+            
+            generatedAudios.forEach((audio: any) => {
               // Check if this audio is already in the DB items (by storage path or name)
               const alreadyExists = items.some(
                 item => 
                   (item.storage_path && audio.storagePath && item.storage_path === audio.storagePath) || 
                   (item.name === audio.name && item.file_type === 'audio')
               );
-              if (!alreadyExists && audio.audioUrl) {
+              
+              // Reconstruct URL from storage path if needed
+              let audioUrl = audio.audioUrl;
+              if (audio.storagePath && !audioUrl) {
+                const { data } = supabase.storage.from('generated-audio').getPublicUrl(audio.storagePath);
+                audioUrl = data.publicUrl;
+              }
+              
+              if (!alreadyExists && audioUrl) {
                 items.push({
-                  id: audio.id || `legacy-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+                  id: audio.id || `generated-${Date.now()}-${Math.random().toString(36).substring(7)}`,
                   name: audio.name || 'Generated Audio',
                   file_type: 'audio',
                   storage_bucket: 'generated-audio',
                   storage_path: audio.storagePath || '',
-                  url: audio.audioUrl,
+                  url: audioUrl,
                   source: 'generated',
                   created_at: audio.generatedAt || new Date().toISOString(),
-                  metadata: { voice: audio.voice, scriptText: audio.scriptText },
+                  metadata: { voice: audio.voice, scriptText: audio.scriptText, scriptType: audio.scriptType },
                 });
               }
             });
           } catch (e) {
-            console.error('Failed to parse legacy audio metadata:', e);
+            console.error('Failed to parse generated audio metadata:', e);
           }
         }
 
@@ -279,7 +289,7 @@ export const VideoRecorder: React.FC = () => {
           }
         }
 
-        console.log('Loaded media items:', items.length, 'audio files:', items.filter(m => m.file_type === 'audio').length);
+        console.log('🎥 Loaded media items:', items.length, 'audio files:', items.filter(m => m.file_type === 'audio').length, items.filter(m => m.file_type === 'audio').map(a => a.name));
         setMediaItems(items);
       } catch (e) {
         console.error('Failed to load media:', e);
@@ -395,7 +405,7 @@ Let me walk you through the key improvements we've made.`,
         }
       }
       
-      console.log('Loaded scripts:', allScripts.length);
+      console.log('📄 Loaded scripts:', allScripts.length, allScripts.map(s => s.title));
       setAvailableScripts(allScripts);
     };
     
@@ -507,10 +517,28 @@ Let me walk you through the key improvements we've made.`,
     
     const escapedScriptContent = escapeHtml(scriptContent);
     
+    // Calculate audio files for popout - filter from mediaItems
+    const popoutAudioFiles = mediaItems.filter(m => m.file_type === 'audio');
+    const popoutMusicFiles = popoutAudioFiles.filter(m => 
+      m.metadata?.type === 'instrumental' || 
+      m.name.toLowerCase().includes('music') || 
+      m.name.toLowerCase().includes('instrument') ||
+      m.name.toLowerCase().includes('bgm') ||
+      m.name.toLowerCase().includes('background')
+    );
+    const popoutVoiceoverFiles = popoutAudioFiles.filter(m => !popoutMusicFiles.includes(m));
+    
+    console.log('📋 Pop-out data:', {
+      scripts: availableScripts.length,
+      voiceovers: popoutVoiceoverFiles.length,
+      music: popoutMusicFiles.length,
+      allAudio: popoutAudioFiles.length
+    });
+    
     // Prepare scripts list for dropdown
     const scriptsJson = JSON.stringify(availableScripts.map(s => ({ id: s.id, title: s.title, content: s.content })));
-    const voiceoversJson = JSON.stringify(voiceoverFiles.map(a => ({ id: a.id, name: a.name, url: a.url })));
-    const musicFilesJson = JSON.stringify(musicFiles.map(m => ({ id: m.id, name: m.name, url: m.url })));
+    const voiceoversJson = JSON.stringify(popoutVoiceoverFiles.map(a => ({ id: a.id, name: a.name, url: a.url })));
+    const musicFilesJson = JSON.stringify(popoutMusicFiles.map(m => ({ id: m.id, name: m.name, url: m.url })));
     
     const popoutWindow = window.open('', 'recording-studio', 
       'width=1400,height=900,left=100,top=50,toolbar=no,menubar=no,scrollbars=no,resizable=yes'
@@ -723,19 +751,19 @@ Let me walk you through the key improvements we've made.`,
         <!-- Options Bar with Dropdowns -->
         <div class="options-bar">
           <div class="option-group">
-            <label>📄 Script</label>
+            <label>📄 Script (${availableScripts.length} available)</label>
             <select id="scriptSelect">
               <option value="">None</option>
             </select>
           </div>
           <div class="option-group">
-            <label>🎤 Voiceover</label>
+            <label>🎤 Voiceover (${popoutVoiceoverFiles.length} available)</label>
             <select id="voiceoverSelect">
               <option value="">None</option>
             </select>
           </div>
           <div class="option-group">
-            <label>🎵 Background Music</label>
+            <label>🎵 Background Music (${popoutMusicFiles.length} available)</label>
             <select id="musicSelect">
               <option value="">None</option>
             </select>
@@ -894,8 +922,19 @@ Let me walk you through the key improvements we've made.`,
           function escapeHtmlContent(str) {
             const div = document.createElement('div');
             div.textContent = str;
-            return div.innerHTML.replace(/\\n/g, '<br>');
+            // Convert newlines to <br> tags for proper display
+            return div.innerHTML.replace(/\\n/g, '<br>').replace(/\n/g, '<br>');
           }
+          
+          // Debug log the loaded data
+          console.log('📋 Pop-out loaded data:', {
+            scriptsCount: scripts.length,
+            voiceoversCount: voiceovers.length,
+            musicCount: musicList.length,
+            scripts: scripts.map(s => s.title),
+            voiceovers: voiceovers.map(v => v.name),
+            music: musicList.map(m => m.name)
+          });
           
           // Handle dropdown changes
           scriptSelect.onchange = function() {
