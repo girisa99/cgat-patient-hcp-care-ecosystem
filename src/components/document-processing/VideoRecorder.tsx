@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Video,
   Camera,
@@ -23,10 +25,21 @@ import {
   FileVideo,
   Loader2,
   RefreshCw,
+  Maximize2,
+  Minimize2,
+  Captions,
+  FileText,
+  Volume2,
 } from 'lucide-react';
 import { useMediaRecorder, RecordingMode } from '@/hooks/useMediaRecorder';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface RecordedVideo {
   id: string;
@@ -47,6 +60,12 @@ interface UploadedMedia {
   createdAt: Date;
 }
 
+interface ScriptItem {
+  id: string;
+  title: string;
+  content: string;
+}
+
 export const VideoRecorder: React.FC = () => {
   const [activeTab, setActiveTab] = useState('record');
   const [recordingMode, setRecordingMode] = useState<RecordingMode>('webcam');
@@ -55,9 +74,21 @@ export const VideoRecorder: React.FC = () => {
   const [uploadedMedia, setUploadedMedia] = useState<UploadedMedia[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showCaptions, setShowCaptions] = useState(false);
+  const [captionText, setCaptionText] = useState('');
+  const [selectedAudioFile, setSelectedAudioFile] = useState<UploadedMedia | null>(null);
+  const [selectedScript, setSelectedScript] = useState<ScriptItem | null>(null);
+  const [availableScripts, setAvailableScripts] = useState<ScriptItem[]>([]);
+  const [isPlayingVoiceover, setIsPlayingVoiceover] = useState(false);
+  const [micEnabled, setMicEnabled] = useState(true);
   
   const previewRef = useRef<HTMLVideoElement>(null);
+  const fullscreenPreviewRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const audioInputRef = useRef<HTMLInputElement>(null);
+  const voiceoverAudioRef = useRef<HTMLAudioElement>(null);
+  const fullscreenContainerRef = useRef<HTMLDivElement>(null);
   
   const {
     isRecording,
@@ -66,11 +97,13 @@ export const VideoRecorder: React.FC = () => {
     recordedBlob,
     recordedUrl,
     error,
+    isMicEnabled,
     startRecording,
     stopRecording,
     pauseRecording,
     resumeRecording,
     resetRecording,
+    toggleMic,
     webcamStream,
     combinedStream,
   } = useMediaRecorder();
@@ -79,18 +112,19 @@ export const VideoRecorder: React.FC = () => {
 
   // Show live preview
   useEffect(() => {
-    if (previewRef.current) {
+    const videoElement = isFullscreen ? fullscreenPreviewRef.current : previewRef.current;
+    if (videoElement) {
       if (isRecording) {
-        previewRef.current.srcObject = combinedStream || webcamStream;
-        previewRef.current.muted = true;
-        previewRef.current.play().catch(console.error);
+        videoElement.srcObject = combinedStream || webcamStream;
+        videoElement.muted = true;
+        videoElement.play().catch(console.error);
       } else if (recordedUrl) {
-        previewRef.current.srcObject = null;
-        previewRef.current.src = recordedUrl;
-        previewRef.current.muted = false;
+        videoElement.srcObject = null;
+        videoElement.src = recordedUrl;
+        videoElement.muted = false;
       }
     }
-  }, [isRecording, webcamStream, combinedStream, recordedUrl]);
+  }, [isRecording, webcamStream, combinedStream, recordedUrl, isFullscreen]);
 
   // Load saved recordings metadata
   useEffect(() => {
@@ -121,6 +155,21 @@ export const VideoRecorder: React.FC = () => {
         console.error('Failed to load uploaded media:', e);
       }
     }
+
+    // Load scripts from localStorage
+    const savedScripts = localStorage.getItem('savedScripts');
+    if (savedScripts) {
+      try {
+        const scripts = JSON.parse(savedScripts);
+        setAvailableScripts(scripts.map((s: any) => ({
+          id: s.id || crypto.randomUUID(),
+          title: s.title || 'Untitled Script',
+          content: s.content || s.text || '',
+        })));
+      } catch (e) {
+        console.error('Failed to load scripts:', e);
+      }
+    }
   }, []);
 
   // Save metadata
@@ -145,6 +194,17 @@ export const VideoRecorder: React.FC = () => {
     }
   }, [uploadedMedia]);
 
+  // Handle fullscreen change
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        setIsFullscreen(false);
+      }
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
   const formatDuration = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -152,7 +212,32 @@ export const VideoRecorder: React.FC = () => {
   };
 
   const handleStartRecording = async () => {
-    await startRecording(recordingMode);
+    await startRecording(recordingMode, micEnabled);
+    // Start voiceover audio if selected
+    if (selectedAudioFile && voiceoverAudioRef.current) {
+      voiceoverAudioRef.current.play();
+      setIsPlayingVoiceover(true);
+    }
+  };
+
+  const handleStopRecording = () => {
+    stopRecording();
+    if (voiceoverAudioRef.current) {
+      voiceoverAudioRef.current.pause();
+      voiceoverAudioRef.current.currentTime = 0;
+      setIsPlayingVoiceover(false);
+    }
+  };
+
+  const handleToggleFullscreen = async () => {
+    if (!isFullscreen) {
+      setIsFullscreen(true);
+    } else {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      }
+      setIsFullscreen(false);
+    }
   };
 
   const handleSaveRecording = async () => {
@@ -296,6 +381,24 @@ export const VideoRecorder: React.FC = () => {
     showSuccess('Media deleted');
   };
 
+  const handleSelectAudioFile = (mediaId: string) => {
+    const audio = uploadedMedia.find(m => m.id === mediaId && m.type === 'audio');
+    setSelectedAudioFile(audio || null);
+    if (audio) {
+      showSuccess(`Selected "${audio.name}" as voiceover`);
+    }
+  };
+
+  const handleSelectScript = (scriptId: string) => {
+    const script = availableScripts.find(s => s.id === scriptId);
+    setSelectedScript(script || null);
+    if (script) {
+      setCaptionText(script.content);
+      setShowCaptions(true);
+      showSuccess(`Loaded script: "${script.title}"`);
+    }
+  };
+
   const getModeIcon = (mode: RecordingMode) => {
     switch (mode) {
       case 'webcam': return <Camera className="h-4 w-4" />;
@@ -312,189 +415,394 @@ export const VideoRecorder: React.FC = () => {
     }
   };
 
+  const audioFiles = uploadedMedia.filter(m => m.type === 'audio');
+
+  const VideoPreview = ({ className = '', videoRef }: { className?: string; videoRef: React.RefObject<HTMLVideoElement> }) => (
+    <div className={`relative aspect-video bg-muted rounded-lg overflow-hidden ${className}`}>
+      <video
+        ref={videoRef}
+        className="w-full h-full object-contain"
+        playsInline
+        controls={!!recordedUrl && !isRecording}
+      />
+      {!isRecording && !recordedUrl && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-center text-muted-foreground">
+            <Video className="h-12 w-12 mx-auto mb-2 opacity-50" />
+            <p>Select a mode and start recording</p>
+          </div>
+        </div>
+      )}
+      {isRecording && (
+        <div className="absolute top-4 left-4 flex items-center gap-2">
+          <div className={`w-3 h-3 rounded-full ${isPaused ? 'bg-yellow-500' : 'bg-red-500 animate-pulse'}`} />
+          <span className="text-sm font-mono bg-background/80 px-2 py-1 rounded">
+            {formatDuration(duration)}
+          </span>
+        </div>
+      )}
+      {/* Captions overlay */}
+      {showCaptions && captionText && (
+        <div className="absolute bottom-16 left-4 right-4">
+          <div className="bg-black/70 text-white text-center py-2 px-4 rounded-lg">
+            <p className="text-sm leading-relaxed whitespace-pre-wrap max-h-24 overflow-y-auto">
+              {captionText}
+            </p>
+          </div>
+        </div>
+      )}
+      {/* Voiceover indicator */}
+      {isPlayingVoiceover && (
+        <div className="absolute top-4 right-4 bg-primary/80 text-primary-foreground px-2 py-1 rounded flex items-center gap-1">
+          <Volume2 className="h-3 w-3" />
+          <span className="text-xs">Voiceover</span>
+        </div>
+      )}
+    </div>
+  );
+
   return (
-    <Card className="border-border/50">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2">
-          <Video className="h-5 w-5 text-primary" />
-          Video Studio
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 mb-4">
-            <TabsTrigger value="record" className="flex items-center gap-2">
-              <Camera className="h-4 w-4" />
-              Record
-            </TabsTrigger>
-            <TabsTrigger value="upload" className="flex items-center gap-2">
-              <Upload className="h-4 w-4" />
-              Upload
-            </TabsTrigger>
-            <TabsTrigger value="library" className="flex items-center gap-2">
-              <FileVideo className="h-4 w-4" />
-              Library ({recordings.length + uploadedMedia.length})
-            </TabsTrigger>
-          </TabsList>
+    <>
+      <Card className="border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2">
+            <Video className="h-5 w-5 text-primary" />
+            Video Studio
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-3 mb-4">
+              <TabsTrigger value="record" className="flex items-center gap-2">
+                <Camera className="h-4 w-4" />
+                Record
+              </TabsTrigger>
+              <TabsTrigger value="upload" className="flex items-center gap-2">
+                <Upload className="h-4 w-4" />
+                Upload
+              </TabsTrigger>
+              <TabsTrigger value="library" className="flex items-center gap-2">
+                <FileVideo className="h-4 w-4" />
+                Library ({recordings.length + uploadedMedia.length})
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Record Tab */}
-          <TabsContent value="record" className="space-y-4">
-            {/* Recording Mode Selector */}
-            <div className="space-y-2">
-              <Label>Recording Mode</Label>
-              <div className="flex gap-2">
-                <Button
-                  variant={recordingMode === 'webcam' ? 'default' : 'outline'}
-                  onClick={() => setRecordingMode('webcam')}
-                  disabled={isRecording}
-                  className="flex-1"
-                >
-                  <Camera className="h-4 w-4 mr-2" />
-                  Webcam
-                </Button>
-                <Button
-                  variant={recordingMode === 'screen' ? 'default' : 'outline'}
-                  onClick={() => setRecordingMode('screen')}
-                  disabled={isRecording}
-                  className="flex-1"
-                >
-                  <Monitor className="h-4 w-4 mr-2" />
-                  Screen
-                </Button>
-                <Button
-                  variant={recordingMode === 'screen+webcam' ? 'default' : 'outline'}
-                  onClick={() => setRecordingMode('screen+webcam')}
-                  disabled={isRecording}
-                  className="flex-1"
-                >
-                  <MonitorPlay className="h-4 w-4 mr-2" />
-                  Screen + Webcam
-                </Button>
-              </div>
-            </div>
-
-            {/* Preview */}
-            <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
-              <video
-                ref={previewRef}
-                className="w-full h-full object-contain"
-                playsInline
-                controls={!!recordedUrl && !isRecording}
-              />
-              {!isRecording && !recordedUrl && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center text-muted-foreground">
-                    <Video className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>Select a mode and start recording</p>
-                  </div>
-                </div>
-              )}
-              {isRecording && (
-                <div className="absolute top-4 left-4 flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${isPaused ? 'bg-yellow-500' : 'bg-red-500 animate-pulse'}`} />
-                  <span className="text-sm font-mono bg-background/80 px-2 py-1 rounded">
-                    {formatDuration(duration)}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {error && (
-              <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg">
-                {error}
-              </div>
-            )}
-
-            {/* Controls */}
-            <div className="flex items-center gap-2">
-              {!isRecording && !recordedUrl && (
-                <Button onClick={handleStartRecording} className="flex-1">
-                  <Camera className="h-4 w-4 mr-2" />
-                  Start Recording
-                </Button>
-              )}
-              
-              {isRecording && (
-                <>
-                  <Button
-                    variant={isPaused ? 'default' : 'outline'}
-                    onClick={isPaused ? resumeRecording : pauseRecording}
-                  >
-                    {isPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
-                    {isPaused ? 'Resume' : 'Pause'}
-                  </Button>
-                  <Button variant="destructive" onClick={stopRecording}>
-                    <Square className="h-4 w-4 mr-2" />
-                    Stop
-                  </Button>
-                </>
-              )}
-              
-              {recordedUrl && !isRecording && (
-                <>
-                  <Input
-                    placeholder="Video name..."
-                    value={videoName}
-                    onChange={(e) => setVideoName(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button onClick={handleSaveRecording} disabled={isSaving || !videoName.trim()}>
-                    {isSaving ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Download className="h-4 w-4 mr-2" />
-                    )}
-                    Save
-                  </Button>
-                  <Button variant="outline" onClick={resetRecording}>
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Reset
-                  </Button>
-                </>
-              )}
-            </div>
-          </TabsContent>
-
-          {/* Upload Tab */}
-          <TabsContent value="upload" className="space-y-4">
-            <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="video/*,audio/*,image/*"
-                multiple
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-              <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="font-medium mb-2">Upload Media Files</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Videos, audio files, and images
-              </p>
-              <Button onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
-                {isUploading ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Upload className="h-4 w-4 mr-2" />
-                )}
-                Select Files
-              </Button>
-            </div>
-
-            {uploadedMedia.length > 0 && (
+            {/* Record Tab */}
+            <TabsContent value="record" className="space-y-4">
+              {/* Recording Mode Selector */}
               <div className="space-y-2">
-                <Label>Recently Uploaded</Label>
-                <ScrollArea className="h-[200px]">
+                <Label>Recording Mode</Label>
+                <div className="flex gap-2">
+                  <Button
+                    variant={recordingMode === 'webcam' ? 'default' : 'outline'}
+                    onClick={() => setRecordingMode('webcam')}
+                    disabled={isRecording}
+                    className="flex-1"
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    Webcam
+                  </Button>
+                  <Button
+                    variant={recordingMode === 'screen' ? 'default' : 'outline'}
+                    onClick={() => setRecordingMode('screen')}
+                    disabled={isRecording}
+                    className="flex-1"
+                  >
+                    <Monitor className="h-4 w-4 mr-2" />
+                    Screen
+                  </Button>
+                  <Button
+                    variant={recordingMode === 'screen+webcam' ? 'default' : 'outline'}
+                    onClick={() => setRecordingMode('screen+webcam')}
+                    disabled={isRecording}
+                    className="flex-1"
+                  >
+                    <MonitorPlay className="h-4 w-4 mr-2" />
+                    Screen + Webcam
+                  </Button>
+                </div>
+              </div>
+
+              {/* Audio & Script Options */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Mic Toggle */}
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    {micEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+                    <Label>Enable Microphone</Label>
+                  </div>
+                  <Switch
+                    checked={micEnabled}
+                    onCheckedChange={setMicEnabled}
+                    disabled={isRecording}
+                  />
+                </div>
+
+                {/* Captions Toggle */}
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Captions className="h-4 w-4" />
+                    <Label>Show Captions</Label>
+                  </div>
+                  <Switch
+                    checked={showCaptions}
+                    onCheckedChange={setShowCaptions}
+                  />
+                </div>
+              </div>
+
+              {/* Voiceover & Script Selection */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Audio File Selection */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Music className="h-4 w-4" />
+                    Voiceover Audio
+                  </Label>
+                  <Select
+                    value={selectedAudioFile?.id || ''}
+                    onValueChange={handleSelectAudioFile}
+                    disabled={isRecording}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select audio file..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {audioFiles.map(audio => (
+                        <SelectItem key={audio.id} value={audio.id}>
+                          {audio.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Script Selection */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Script for Captions
+                  </Label>
+                  <Select
+                    value={selectedScript?.id || ''}
+                    onValueChange={handleSelectScript}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select script..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {availableScripts.map(script => (
+                        <SelectItem key={script.id} value={script.id}>
+                          {script.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Custom Caption Input */}
+              {showCaptions && !selectedScript && (
+                <div className="space-y-2">
+                  <Label>Custom Caption Text</Label>
+                  <Input
+                    placeholder="Enter caption text to display..."
+                    value={captionText}
+                    onChange={(e) => setCaptionText(e.target.value)}
+                  />
+                </div>
+              )}
+
+              {/* Preview */}
+              <div className="relative">
+                <VideoPreview videoRef={previewRef} />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="absolute top-2 right-2 bg-background/80"
+                  onClick={handleToggleFullscreen}
+                >
+                  <Maximize2 className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {error && (
+                <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg">
+                  {error}
+                </div>
+              )}
+
+              {/* Hidden audio element for voiceover */}
+              {selectedAudioFile && (
+                <audio ref={voiceoverAudioRef} src={selectedAudioFile.url} preload="auto" />
+              )}
+
+              {/* Controls */}
+              <div className="flex items-center gap-2">
+                {!isRecording && !recordedUrl && (
+                  <Button onClick={handleStartRecording} className="flex-1">
+                    <Camera className="h-4 w-4 mr-2" />
+                    Start Recording
+                  </Button>
+                )}
+                
+                {isRecording && (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={toggleMic}
+                    >
+                      {isMicEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      variant={isPaused ? 'default' : 'outline'}
+                      onClick={isPaused ? resumeRecording : pauseRecording}
+                    >
+                      {isPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
+                      {isPaused ? 'Resume' : 'Pause'}
+                    </Button>
+                    <Button variant="destructive" onClick={handleStopRecording}>
+                      <Square className="h-4 w-4 mr-2" />
+                      Stop
+                    </Button>
+                  </>
+                )}
+                
+                {recordedUrl && !isRecording && (
+                  <>
+                    <Input
+                      placeholder="Video name..."
+                      value={videoName}
+                      onChange={(e) => setVideoName(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button onClick={handleSaveRecording} disabled={isSaving || !videoName.trim()}>
+                      {isSaving ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Download className="h-4 w-4 mr-2" />
+                      )}
+                      Save
+                    </Button>
+                    <Button variant="outline" onClick={resetRecording}>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Reset
+                    </Button>
+                  </>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* Upload Tab */}
+            <TabsContent value="upload" className="space-y-4">
+              <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="video/*,audio/*,image/*"
+                  multiple
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="font-medium mb-2">Upload Media Files</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Videos, audio files, and images
+                </p>
+                <Button onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                  {isUploading ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4 mr-2" />
+                  )}
+                  Select Files
+                </Button>
+              </div>
+
+              {uploadedMedia.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Recently Uploaded</Label>
+                  <ScrollArea className="h-[200px]">
+                    <div className="space-y-2">
+                      {uploadedMedia.slice(0, 5).map((media) => (
+                        <div
+                          key={media.id}
+                          className="flex items-center gap-3 p-3 rounded-lg bg-muted/50"
+                        >
+                          {getMediaIcon(media.type)}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{media.name}</p>
+                            <p className="text-xs text-muted-foreground capitalize">{media.type}</p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDeleteMedia(media.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Library Tab */}
+            <TabsContent value="library" className="space-y-4">
+              <ScrollArea className="h-[400px]">
+                {recordings.length === 0 && uploadedMedia.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FileVideo className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>No recordings or uploads yet</p>
+                  </div>
+                ) : (
                   <div className="space-y-2">
-                    {uploadedMedia.slice(0, 5).map((media) => (
+                    {/* Recordings */}
+                    {recordings.map((recording) => (
+                      <div
+                        key={recording.id}
+                        className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                      >
+                        {getModeIcon(recording.mode)}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{recording.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDuration(recording.duration)} • {recording.createdAt.toLocaleDateString()}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDownload(recording)}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDeleteRecording(recording.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    ))}
+                    
+                    {/* Uploaded Media */}
+                    {uploadedMedia.map((media) => (
                       <div
                         key={media.id}
-                        className="flex items-center gap-3 p-3 rounded-lg bg-muted/50"
+                        className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
                       >
                         {getMediaIcon(media.type)}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{media.name}</p>
-                          <p className="text-xs text-muted-foreground capitalize">{media.type}</p>
+                          <p className="text-xs text-muted-foreground capitalize">
+                            {media.type} • {media.createdAt.toLocaleDateString()}
+                          </p>
                         </div>
                         <Button
                           size="sm"
@@ -506,79 +814,90 @@ export const VideoRecorder: React.FC = () => {
                       </div>
                     ))}
                   </div>
-                </ScrollArea>
-              </div>
-            )}
-          </TabsContent>
+                )}
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
 
-          {/* Library Tab */}
-          <TabsContent value="library" className="space-y-4">
-            <ScrollArea className="h-[400px]">
-              {recordings.length === 0 && uploadedMedia.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <FileVideo className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>No recordings or uploads yet</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {/* Recordings */}
-                  {recordings.map((recording) => (
-                    <div
-                      key={recording.id}
-                      className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                    >
-                      {getModeIcon(recording.mode)}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{recording.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatDuration(recording.duration)} • {recording.createdAt.toLocaleDateString()}
-                        </p>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDownload(recording)}
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDeleteRecording(recording.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  ))}
-                  
-                  {/* Uploaded Media */}
-                  {uploadedMedia.map((media) => (
-                    <div
-                      key={media.id}
-                      className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                    >
-                      {getMediaIcon(media.type)}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{media.name}</p>
-                        <p className="text-xs text-muted-foreground capitalize">
-                          {media.type} • {media.createdAt.toLocaleDateString()}
-                        </p>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDeleteMedia(media.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+      {/* Fullscreen Dialog */}
+      <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full p-4" ref={fullscreenContainerRef}>
+          <DialogHeader className="pb-2">
+            <DialogTitle className="flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Video className="h-5 w-5 text-primary" />
+                Video Recording - Fullscreen
+              </span>
+              <Button variant="ghost" size="sm" onClick={() => setIsFullscreen(false)}>
+                <Minimize2 className="h-4 w-4" />
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex-1 flex flex-col gap-4">
+            <VideoPreview className="flex-1 min-h-[60vh]" videoRef={fullscreenPreviewRef} />
+            
+            {/* Fullscreen Controls */}
+            <div className="flex items-center justify-center gap-4">
+              {!isRecording && !recordedUrl && (
+                <Button onClick={handleStartRecording} size="lg">
+                  <Camera className="h-5 w-5 mr-2" />
+                  Start Recording
+                </Button>
               )}
-            </ScrollArea>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+              
+              {isRecording && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={toggleMic}
+                  >
+                    {isMicEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+                  </Button>
+                  <Button
+                    variant={isPaused ? 'default' : 'outline'}
+                    size="lg"
+                    onClick={isPaused ? resumeRecording : pauseRecording}
+                  >
+                    {isPaused ? <Play className="h-5 w-5 mr-2" /> : <Pause className="h-5 w-5 mr-2" />}
+                    {isPaused ? 'Resume' : 'Pause'}
+                  </Button>
+                  <Button variant="destructive" size="lg" onClick={handleStopRecording}>
+                    <Square className="h-5 w-5 mr-2" />
+                    Stop
+                  </Button>
+                </>
+              )}
+              
+              {recordedUrl && !isRecording && (
+                <>
+                  <Input
+                    placeholder="Video name..."
+                    value={videoName}
+                    onChange={(e) => setVideoName(e.target.value)}
+                    className="max-w-xs"
+                  />
+                  <Button size="lg" onClick={handleSaveRecording} disabled={isSaving || !videoName.trim()}>
+                    {isSaving ? (
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    ) : (
+                      <Download className="h-5 w-5 mr-2" />
+                    )}
+                    Save
+                  </Button>
+                  <Button variant="outline" size="lg" onClick={resetRecording}>
+                    <RefreshCw className="h-5 w-5 mr-2" />
+                    Reset
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };

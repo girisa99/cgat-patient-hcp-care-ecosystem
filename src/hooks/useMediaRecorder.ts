@@ -9,14 +9,16 @@ interface MediaRecorderState {
   recordedBlob: Blob | null;
   recordedUrl: string | null;
   error: string | null;
+  isMicEnabled: boolean;
 }
 
 interface UseMediaRecorderReturn extends MediaRecorderState {
-  startRecording: (mode: RecordingMode) => Promise<void>;
+  startRecording: (mode: RecordingMode, withMic?: boolean) => Promise<void>;
   stopRecording: () => void;
   pauseRecording: () => void;
   resumeRecording: () => void;
   resetRecording: () => void;
+  toggleMic: () => void;
   webcamStream: MediaStream | null;
   screenStream: MediaStream | null;
   combinedStream: MediaStream | null;
@@ -30,6 +32,7 @@ export function useMediaRecorder(): UseMediaRecorderReturn {
     recordedBlob: null,
     recordedUrl: null,
     error: null,
+    isMicEnabled: true,
   });
 
   const [webcamStream, setWebcamStream] = useState<MediaStream | null>(null);
@@ -40,19 +43,36 @@ export function useMediaRecorder(): UseMediaRecorderReturn {
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(0);
+  const micStreamRef = useRef<MediaStream | null>(null);
 
   const stopAllStreams = useCallback(() => {
     webcamStream?.getTracks().forEach(track => track.stop());
     screenStream?.getTracks().forEach(track => track.stop());
     combinedStream?.getTracks().forEach(track => track.stop());
+    micStreamRef.current?.getTracks().forEach(track => track.stop());
     setWebcamStream(null);
     setScreenStream(null);
     setCombinedStream(null);
+    micStreamRef.current = null;
   }, [webcamStream, screenStream, combinedStream]);
 
-  const startRecording = useCallback(async (mode: RecordingMode) => {
+  const toggleMic = useCallback(() => {
+    // Toggle mic enabled state
+    setState(prev => {
+      const newMicState = !prev.isMicEnabled;
+      // If recording, mute/unmute the audio tracks
+      if (micStreamRef.current) {
+        micStreamRef.current.getAudioTracks().forEach(track => {
+          track.enabled = newMicState;
+        });
+      }
+      return { ...prev, isMicEnabled: newMicState };
+    });
+  }, []);
+
+  const startRecording = useCallback(async (mode: RecordingMode, withMic: boolean = true) => {
     try {
-      setState(prev => ({ ...prev, error: null }));
+      setState(prev => ({ ...prev, error: null, isMicEnabled: withMic }));
       chunksRef.current = [];
 
       let finalStream: MediaStream;
@@ -61,9 +81,10 @@ export function useMediaRecorder(): UseMediaRecorderReturn {
         // Webcam + microphone
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { width: 1280, height: 720, facingMode: 'user' },
-          audio: true,
+          audio: withMic,
         });
         setWebcamStream(stream);
+        micStreamRef.current = stream;
         finalStream = stream;
       } else if (mode === 'screen') {
         // Screen + system/mic audio
@@ -72,32 +93,38 @@ export function useMediaRecorder(): UseMediaRecorderReturn {
           audio: true,
         });
         
-        // Also capture microphone
-        try {
-          const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
-          // Combine screen video with mic audio
-          const audioContext = new AudioContext();
-          const destination = audioContext.createMediaStreamDestination();
-          
-          // Add display audio if available
-          display.getAudioTracks().forEach(track => {
-            const source = audioContext.createMediaStreamSource(new MediaStream([track]));
-            source.connect(destination);
-          });
-          
-          // Add mic audio
-          mic.getAudioTracks().forEach(track => {
-            const source = audioContext.createMediaStreamSource(new MediaStream([track]));
-            source.connect(destination);
-          });
-          
-          finalStream = new MediaStream([
-            ...display.getVideoTracks(),
-            ...destination.stream.getAudioTracks(),
-          ]);
-          setScreenStream(display);
-        } catch {
-          // Fallback: just use display stream
+        // Also capture microphone if enabled
+        if (withMic) {
+          try {
+            const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+            micStreamRef.current = mic;
+            // Combine screen video with mic audio
+            const audioContext = new AudioContext();
+            const destination = audioContext.createMediaStreamDestination();
+            
+            // Add display audio if available
+            display.getAudioTracks().forEach(track => {
+              const source = audioContext.createMediaStreamSource(new MediaStream([track]));
+              source.connect(destination);
+            });
+            
+            // Add mic audio
+            mic.getAudioTracks().forEach(track => {
+              const source = audioContext.createMediaStreamSource(new MediaStream([track]));
+              source.connect(destination);
+            });
+            
+            finalStream = new MediaStream([
+              ...display.getVideoTracks(),
+              ...destination.stream.getAudioTracks(),
+            ]);
+            setScreenStream(display);
+          } catch {
+            // Fallback: just use display stream
+            finalStream = display;
+            setScreenStream(display);
+          }
+        } else {
           finalStream = display;
           setScreenStream(display);
         }
@@ -110,9 +137,10 @@ export function useMediaRecorder(): UseMediaRecorderReturn {
         
         const webcam = await navigator.mediaDevices.getUserMedia({
           video: { width: 320, height: 240, facingMode: 'user' },
-          audio: true,
+          audio: withMic,
         });
         
+        micStreamRef.current = webcam;
         setScreenStream(display);
         setWebcamStream(webcam);
         
@@ -159,10 +187,12 @@ export function useMediaRecorder(): UseMediaRecorderReturn {
           source.connect(destination);
         });
         
-        webcam.getAudioTracks().forEach(track => {
-          const source = audioContext.createMediaStreamSource(new MediaStream([track]));
-          source.connect(destination);
-        });
+        if (withMic) {
+          webcam.getAudioTracks().forEach(track => {
+            const source = audioContext.createMediaStreamSource(new MediaStream([track]));
+            source.connect(destination);
+          });
+        }
         
         const canvasStream = canvas.captureStream(30);
         finalStream = new MediaStream([
@@ -267,6 +297,7 @@ export function useMediaRecorder(): UseMediaRecorderReturn {
       recordedBlob: null,
       recordedUrl: null,
       error: null,
+      isMicEnabled: true,
     });
     chunksRef.current = [];
   }, [state.recordedUrl, stopAllStreams]);
@@ -278,6 +309,7 @@ export function useMediaRecorder(): UseMediaRecorderReturn {
     pauseRecording,
     resumeRecording,
     resetRecording,
+    toggleMic,
     webcamStream,
     screenStream,
     combinedStream,
