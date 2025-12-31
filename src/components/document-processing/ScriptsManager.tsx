@@ -18,7 +18,9 @@ import {
   Plus,
   Clock,
   FileAudio,
-  Video
+  Video,
+  RefreshCw,
+  Edit3
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from '@/hooks/useMasterToast';
@@ -32,6 +34,7 @@ interface GeneratedAudio {
   storagePath?: string; // Path in Supabase storage
   generatedAt: Date;
   voice: string;
+  scriptText?: string; // Original script text for editing
 }
 
 // Predefined scripts - Video Script with visual cues
@@ -279,7 +282,8 @@ export const ScriptsManager: React.FC = () => {
           return {
             ...a,
             audioUrl,
-            generatedAt: new Date(a.generatedAt)
+            generatedAt: new Date(a.generatedAt),
+            scriptText: a.scriptText // Preserve script text
           };
         });
         setGeneratedAudios(audiosWithUrls);
@@ -292,7 +296,7 @@ export const ScriptsManager: React.FC = () => {
     localStorage.removeItem('generatedAudios');
   }, []);
 
-  // Save only metadata to localStorage (not audio data)
+  // Save only metadata to localStorage (not audio data, but include scriptText)
   useEffect(() => {
     if (generatedAudios.length > 0) {
       const metadata = generatedAudios.map(a => ({
@@ -303,7 +307,8 @@ export const ScriptsManager: React.FC = () => {
         storagePath: a.storagePath,
         generatedAt: a.generatedAt,
         voice: a.voice,
-        audioUrl: a.storagePath ? '' : a.audioUrl // Only keep URL if no storage path
+        audioUrl: a.storagePath ? '' : a.audioUrl, // Only keep URL if no storage path
+        scriptText: a.scriptText // Store script text for editing/regenerating
       }));
       localStorage.setItem('generatedAudiosMetadata', JSON.stringify(metadata));
     }
@@ -441,7 +446,8 @@ export const ScriptsManager: React.FC = () => {
         audioUrl: urlData.publicUrl,
         storagePath,
         generatedAt: new Date(),
-        voice: selectedVoice
+        voice: selectedVoice,
+        scriptText: scriptText // Store original script for editing
       };
 
       setGeneratedAudios(prev => [newAudio, ...prev]);
@@ -496,16 +502,80 @@ export const ScriptsManager: React.FC = () => {
     }
   };
 
-  const handleDeleteAudio = (id: string) => {
+  const handleDeleteAudio = async (id: string) => {
+    const audioToDelete = generatedAudios.find(a => a.id === id);
+    
     if (playingId === id && audioElements[id]) {
       audioElements[id].pause();
       setPlayingId(null);
     }
+    
+    // Delete from Supabase Storage if storagePath exists
+    if (audioToDelete?.storagePath) {
+      try {
+        const { error } = await supabase.storage
+          .from('generated-audio')
+          .remove([audioToDelete.storagePath]);
+        
+        if (error) {
+          console.error('Failed to delete from storage:', error);
+          showError('Audio removed from library but failed to delete from storage');
+        } else {
+          console.log('Deleted from storage:', audioToDelete.storagePath);
+        }
+      } catch (err) {
+        console.error('Storage deletion error:', err);
+      }
+    }
+    
     setGeneratedAudios(prev => prev.filter(a => a.id !== id));
     const newAudios = generatedAudios.filter(a => a.id !== id);
     if (newAudios.length === 0) {
-      localStorage.removeItem('generatedAudios');
+      localStorage.removeItem('generatedAudiosMetadata');
     }
+    showSuccess('Audio deleted');
+  };
+
+  const handleEditScript = (audio: GeneratedAudio) => {
+    if (audio.scriptText) {
+      setScriptText(audio.scriptText);
+      setScriptName(audio.name);
+      setSelectedVoice(audio.voice);
+      setActiveTab('generate');
+      showSuccess(`Loaded script: ${audio.name}`);
+    } else {
+      showError('Script text not available for this audio');
+    }
+  };
+
+  const handleRegenerateAudio = async (audio: GeneratedAudio) => {
+    if (!audio.scriptText) {
+      showError('Script text not available - cannot regenerate');
+      return;
+    }
+
+    // Delete old file from storage first
+    if (audio.storagePath) {
+      try {
+        await supabase.storage
+          .from('generated-audio')
+          .remove([audio.storagePath]);
+      } catch (err) {
+        console.error('Failed to delete old audio:', err);
+      }
+    }
+
+    // Set form with audio's script and regenerate
+    setScriptText(audio.scriptText);
+    setScriptName(audio.name);
+    setSelectedVoice(audio.voice);
+    
+    // Remove the old entry
+    setGeneratedAudios(prev => prev.filter(a => a.id !== audio.id));
+    
+    // Switch to generate tab and trigger generation
+    setActiveTab('generate');
+    showSuccess('Ready to regenerate - click Generate MP3');
   };
 
   const loadPresetScript = (key: keyof typeof PRESET_SCRIPTS) => {
@@ -816,9 +886,30 @@ export const ScriptsManager: React.FC = () => {
                           </div>
                         </div>
                         <div className="flex gap-2">
+                          {audio.scriptText && (
+                            <>
+                              <Button
+                                size="sm"
+                                onClick={() => handleEditScript(audio)}
+                                title="Edit script"
+                                style={{ backgroundColor: '#8b5cf6', color: '#ffffff', border: 'none' }}
+                              >
+                                <Edit3 className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => handleRegenerateAudio(audio)}
+                                title="Regenerate audio"
+                                style={{ backgroundColor: '#f59e0b', color: '#ffffff', border: 'none' }}
+                              >
+                                <RefreshCw className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
                           <Button
                             size="sm"
                             onClick={() => handleDownloadAudio(audio)}
+                            title="Download audio"
                             style={{ backgroundColor: '#3b82f6', color: '#ffffff', border: 'none' }}
                           >
                             <Download className="h-4 w-4" />
@@ -827,6 +918,7 @@ export const ScriptsManager: React.FC = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDeleteAudio(audio.id)}
+                            title="Delete audio"
                             style={{ color: '#f87171' }}
                             className="hover:bg-red-400/10"
                           >
