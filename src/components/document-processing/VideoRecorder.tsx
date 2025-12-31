@@ -492,6 +492,17 @@ Let me walk you through the key improvements we've made.`,
     const bgMusicName = selectedBackgroundMusic?.name || '';
     const bgMusicUrl = selectedBackgroundMusic?.url || '';
     
+    // Escape script content for safe HTML embedding
+    const escapeHtml = (str: string) => str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
+      .replace(/\n/g, '<br>');
+    
+    const escapedScriptContent = escapeHtml(scriptContent);
+    
     // Prepare scripts list for dropdown
     const scriptsJson = JSON.stringify(availableScripts.map(s => ({ id: s.id, title: s.title, content: s.content })));
     const voiceoversJson = JSON.stringify(voiceoverFiles.map(a => ({ id: a.id, name: a.name, url: a.url })));
@@ -775,7 +786,7 @@ Let me walk you through the key improvements we've made.`,
             <div id="scriptPanel" class="panel teleprompter">
               <h3>📄 Teleprompter</h3>
               <div id="scriptContent" class="script-content">
-                ${scriptContent ? scriptContent.replace(/</g, '&lt;').replace(/>/g, '&gt;') : '<span style="opacity:0.5;">Select a script to display here...</span>'}
+                ${escapedScriptContent || '<span style="opacity:0.5;">Select a script to display here...</span>'}
               </div>
             </div>
             
@@ -845,12 +856,17 @@ Let me walk you through the key improvements we've made.`,
           const voiceoverName = document.getElementById('voiceoverName');
           const bgMusicName = document.getElementById('bgMusicName');
           
+          // Currently selected script ID
+          const selectedScriptId = '${selectedScript?.id || ''}';
+          const selectedVoiceoverId = '${selectedAudioFile?.id || ''}';
+          const selectedMusicId = '${selectedBackgroundMusic?.id || ''}';
+          
           // Populate dropdowns
           scripts.forEach(s => {
             const opt = document.createElement('option');
             opt.value = s.id;
             opt.textContent = s.title;
-            if (s.content === \`${scriptContent.replace(/`/g, '\\`').replace(/\\/g, '\\\\')}\`) opt.selected = true;
+            if (s.id === selectedScriptId) opt.selected = true;
             scriptSelect.appendChild(opt);
           });
           
@@ -858,7 +874,7 @@ Let me walk you through the key improvements we've made.`,
             const opt = document.createElement('option');
             opt.value = v.id;
             opt.textContent = v.name;
-            if (v.url === '${audioUrl}') opt.selected = true;
+            if (v.id === selectedVoiceoverId) opt.selected = true;
             voiceoverSelect.appendChild(opt);
           });
           
@@ -866,15 +882,22 @@ Let me walk you through the key improvements we've made.`,
             const opt = document.createElement('option');
             opt.value = m.id;
             opt.textContent = m.name;
-            if (m.url === '${bgMusicUrl}') opt.selected = true;
+            if (m.id === selectedMusicId) opt.selected = true;
             musicSelect.appendChild(opt);
           });
+          
+          // Helper to escape HTML for safe display
+          function escapeHtmlContent(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML.replace(/\\n/g, '<br>');
+          }
           
           // Handle dropdown changes
           scriptSelect.onchange = function() {
             const script = scripts.find(s => s.id === this.value);
             if (script) {
-              scriptContent.textContent = script.content;
+              scriptContent.innerHTML = escapeHtmlContent(script.content);
             } else {
               scriptContent.innerHTML = '<span style="opacity:0.5;">Select a script to display here...</span>';
             }
