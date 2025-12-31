@@ -686,13 +686,16 @@ Thanks for watching!`,
     const supabaseUrl = 'https://ithspbabhmdntioslfqe.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0aHNwYmFiaG1kbnRpb3NsZnFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY5MjU5OTMsImV4cCI6MjA2MjUwMTk5M30.yUZZHsz2wIHboVuWWfqXeAH5oHRxzJIz20NWSUmHPhw';
     
-    // Escape script content for safe HTML embedding
+    // Escape script content for safe HTML embedding AND template literal safety
     const escapeHtml = (str: string) => str
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;')
+      .replace(/`/g, '&#96;')  // Escape backticks for template literal safety
+      .replace(/\$/g, '&#36;') // Escape dollar signs to prevent ${} interpolation
+      .replace(/\\/g, '&#92;') // Escape backslashes
       .replace(/\n/g, '<br>');
     
     const escapedScriptContent = escapeHtml(scriptContent);
@@ -755,9 +758,9 @@ Thanks for watching!`,
     const voiceoversEncoded = encodeData(voiceoversData);
     const musicEncoded = encodeData(musicData);
     
-    // Also escape other string values that will be embedded
-    const escapedAudioName = audioName.replace(/'/g, "\\'").replace(/`/g, "\\`");
-    const escapedBgMusicName = bgMusicName.replace(/'/g, "\\'").replace(/`/g, "\\`");
+    // Also escape other string values that will be embedded - use HTML entities
+    const escapedAudioName = audioName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;').replace(/`/g, '&#96;').replace(/\$/g, '&#36;');
+    const escapedBgMusicName = bgMusicName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;').replace(/`/g, '&#96;').replace(/\$/g, '&#36;');
     
     const popoutWindow = window.open('', 'recording-studio', 
       'width=1400,height=900,left=100,top=50,toolbar=no,menubar=no,scrollbars=no,resizable=yes'
@@ -1236,86 +1239,65 @@ Thanks for watching!`,
         </div>
 
         <script>
-          // Global error handler to catch any script errors
-          window.onerror = function(msg, url, line, col, error) {
-            console.error('❌ Script Error:', msg, 'at line', line);
-            var status = document.getElementById('status');
-            if (status) {
-              status.textContent = 'Script Error';
-              status.className = 'status error';
+          // =====================================================
+          // CRITICAL: Close button setup BEFORE anything else
+          // This runs in its own scope to ensure it never fails
+          // =====================================================
+          (function setupCloseButton() {
+            try {
+              window.mediaRecorder = null;
+              window.cameraStream = null;
+              window.displayStream = null;
+              
+              var closeBtn = document.getElementById('closeBtn');
+              console.log('🔴 Close button element:', closeBtn);
+              
+              if (closeBtn) {
+                closeBtn.onclick = function() {
+                  console.log('Close clicked!');
+                  try {
+                    if (window.mediaRecorder && window.mediaRecorder.state === 'recording') {
+                      window.mediaRecorder.stop();
+                    }
+                    if (window.cameraStream) {
+                      window.cameraStream.getTracks().forEach(function(t) { t.stop(); });
+                    }
+                    if (window.displayStream) {
+                      window.displayStream.getTracks().forEach(function(t) { t.stop(); });
+                    }
+                  } catch(e) { console.log('Cleanup error:', e); }
+                  window.close();
+                  return false;
+                };
+                console.log('✅ Close button ready');
+              } else {
+                console.error('❌ No close button!');
+              }
+              
+              document.onkeydown = function(e) {
+                if (e.key === 'Escape' || e.keyCode === 27) {
+                  closeBtn && closeBtn.click();
+                }
+              };
+            } catch(e) {
+              console.error('Close button setup error:', e);
             }
+          })();
+          
+          // Global error handler
+          window.onerror = function(msg, url, line) {
+            console.error('Script Error:', msg, 'line:', line);
+            var s = document.getElementById('status');
+            if (s) { s.textContent = 'Script Error'; s.className = 'status error'; }
             return false;
           };
           
-          // Run immediately - script is at end of body so DOM is ready
-          (function() {
+          // =====================================================
+          // Main functionality in separate IIFE
+          // =====================================================
+          (function mainScript() {
             'use strict';
-            console.log('🚀 Pop-out window script starting...');
-            
-            // Global references for cleanup
-            window.mediaRecorder = null;
-            window.cameraStream = null;
-            window.displayStream = null;
-            
-            // PRIORITY 1: Set up close button IMMEDIATELY
-            var closeBtn = document.getElementById('closeBtn');
-            console.log('Close button found:', !!closeBtn);
-            
-            function cleanupAndClose() {
-              console.log('Cleaning up and closing...');
-              try {
-                if (window.mediaRecorder && window.mediaRecorder.state === 'recording') {
-                  window.mediaRecorder.stop();
-                }
-              } catch(e) { console.log('MediaRecorder cleanup error:', e); }
-              
-              try {
-                if (window.cameraStream) {
-                  window.cameraStream.getTracks().forEach(function(t) { t.stop(); });
-                }
-              } catch(e) { console.log('Camera cleanup error:', e); }
-              
-              try {
-                if (window.displayStream) {
-                  window.displayStream.getTracks().forEach(function(t) { t.stop(); });
-                }
-              } catch(e) { console.log('Display cleanup error:', e); }
-              
-              window.close();
-            }
-            
-            if (closeBtn) {
-              closeBtn.onclick = function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('Close button clicked');
-                
-                if (window.mediaRecorder && window.mediaRecorder.state === 'recording') {
-                  if (!confirm('Recording in progress. Are you sure you want to close?')) {
-                    return false;
-                  }
-                }
-                cleanupAndClose();
-                return false;
-              };
-              console.log('✅ Close button handler attached');
-            } else {
-              console.error('❌ Close button not found!');
-            }
-            
-            // Allow closing with Escape key
-            document.onkeydown = function(e) {
-              if (e.key === 'Escape' || e.keyCode === 27) {
-                console.log('Escape pressed');
-                if (window.mediaRecorder && window.mediaRecorder.state === 'recording') {
-                  if (!confirm('Recording in progress. Are you sure you want to close?')) {
-                    return;
-                  }
-                }
-                cleanupAndClose();
-              }
-            };
-            console.log('✅ Escape key handler attached');
+            console.log('🚀 Main script starting...');
             
             // Decode data from base64 (safe encoding to avoid template literal issues)
             function decodeData(encoded) {
@@ -2168,9 +2150,9 @@ Thanks for watching!`,
             location.reload();
           };
           
-          // Note: Close button handler is set up at the top of the script for immediate availability
+          // Close button is set up in separate IIFE at top
           
-          })(); // End IIFE
+          })(); // End mainScript IIFE
         </script>
       </body>
       </html>
