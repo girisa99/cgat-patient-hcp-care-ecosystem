@@ -1401,15 +1401,11 @@ Let me walk you through the key improvements we've made.`,
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
-                    {musicFiles.length > 0 ? (
-                      musicFiles.map(music => (
-                        <SelectItem key={music.id} value={music.id}>
-                          {music.name}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="none" disabled>No music files yet - generate below</SelectItem>
-                    )}
+                    {musicFiles.map(music => (
+                      <SelectItem key={music.id} value={music.id}>
+                        {music.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
 
