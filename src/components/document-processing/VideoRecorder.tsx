@@ -699,25 +699,55 @@ Thanks for watching!`,
     
     // Calculate audio files for popout - filter from mediaItems
     const popoutAudioFiles = mediaItems.filter(m => m.file_type === 'audio');
+    
+    // Music files: instrumental type OR name contains music-related keywords
     const popoutMusicFiles = popoutAudioFiles.filter(m => 
       m.metadata?.type === 'instrumental' || 
       m.name.toLowerCase().includes('music') || 
       m.name.toLowerCase().includes('instrument') ||
       m.name.toLowerCase().includes('bgm') ||
-      m.name.toLowerCase().includes('background')
+      m.name.toLowerCase().includes('background') ||
+      m.name.toLowerCase().includes('song_') // Generated music files start with song_
     );
-    const popoutVoiceoverFiles = popoutAudioFiles.filter(m => !popoutMusicFiles.includes(m));
+    
+    // Voiceover files: Has scriptText/scriptType in metadata OR not in music list
+    // Prioritize files that have script data attached (from Library generation)
+    const popoutVoiceoverFiles = popoutAudioFiles.filter(m => {
+      // If it's already identified as music, exclude it
+      if (popoutMusicFiles.includes(m)) return false;
+      
+      // If it has scriptText or scriptType metadata, it's a voiceover
+      if (m.metadata?.scriptText || m.metadata?.scriptType === 'audio' || m.metadata?.scriptType === 'video') {
+        return true;
+      }
+      
+      // If it has voice metadata (TTS generated), it's a voiceover
+      if (m.metadata?.voice) return true;
+      
+      // Default: include anything not in music
+      return true;
+    });
     
     console.log('📋 Pop-out data:', {
       scripts: availableScripts.length,
       voiceovers: popoutVoiceoverFiles.length,
+      voiceoverNames: popoutVoiceoverFiles.map(v => v.name),
       music: popoutMusicFiles.length,
+      musicNames: popoutMusicFiles.map(m => m.name),
       allAudio: popoutAudioFiles.length
     });
     
-    // Prepare scripts list for dropdown
+    // Prepare scripts list for dropdown - include scriptText from voiceovers that have it
     const scriptsJson = JSON.stringify(availableScripts.map(s => ({ id: s.id, title: s.title, content: s.content })));
-    const voiceoversJson = JSON.stringify(popoutVoiceoverFiles.map(a => ({ id: a.id, name: a.name, url: a.url })));
+    
+    // For voiceovers, include the attached script if available
+    const voiceoversJson = JSON.stringify(popoutVoiceoverFiles.map(a => ({ 
+      id: a.id, 
+      name: a.name, 
+      url: a.url,
+      scriptText: a.metadata?.scriptText || null,
+      scriptType: a.metadata?.scriptType || null
+    })));
     const musicFilesJson = JSON.stringify(popoutMusicFiles.map(m => ({ id: m.id, name: m.name, url: m.url })));
     
     const popoutWindow = window.open('', 'recording-studio', 
@@ -824,6 +854,13 @@ Thanks for watching!`,
           button.primary:hover { background: #4f46e5; }
           button.danger { background: #dc2626; }
           button.danger:hover { background: #b91c1c; }
+          button.use-script-btn { 
+            background: #22c55e; 
+            font-size: 12px; 
+            padding: 6px 12px; 
+            width: 100%;
+          }
+          button.use-script-btn:hover { background: #16a34a; }
           button:disabled { opacity: 0.5; cursor: not-allowed; }
           .sidebar { width: 350px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
           .panel {
@@ -1039,6 +1076,9 @@ Thanks for watching!`,
               <div class="audio-info">
                 <strong id="voiceoverName">${audioName}</strong><br>
                 <small>Will play automatically when recording starts</small>
+                <button id="useVoiceoverScriptBtn" class="use-script-btn" style="display:none;margin-top:8px;">
+                  📄 Use Attached Script
+                </button>
               </div>
               <audio id="voiceover" src="${audioUrl}" preload="auto"></audio>
             </div>
@@ -1144,9 +1184,22 @@ Thanks for watching!`,
             voiceoversCount: voiceovers.length,
             musicCount: musicList.length,
             scripts: scripts.map(s => s.title),
-            voiceovers: voiceovers.map(v => v.name),
+            voiceovers: voiceovers.map(v => ({ name: v.name, hasScript: !!v.scriptText })),
             music: musicList.map(m => m.name)
           });
+          
+          // Check if initial voiceover has attached script
+          const initialVoiceover = voiceovers.find(v => v.id === selectedVoiceoverId);
+          if (initialVoiceover && initialVoiceover.scriptText) {
+            const useScriptBtn = document.getElementById('useVoiceoverScriptBtn');
+            useScriptBtn.style.display = 'inline-block';
+            useScriptBtn.onclick = function() {
+              scriptContent.innerHTML = escapeHtmlContent(initialVoiceover.scriptText);
+              scriptSelect.value = '';
+              status.textContent = 'Script loaded from voiceover';
+              status.className = 'status ready';
+            };
+          }
           
           // Handle dropdown changes
           scriptSelect.onchange = function() {
@@ -1164,9 +1217,24 @@ Thanks for watching!`,
               voiceover.src = vo.url;
               voiceoverName.textContent = vo.name;
               audioPanel.style.display = 'block';
+              
+              // If voiceover has an attached script, show option to use it
+              const useScriptBtn = document.getElementById('useVoiceoverScriptBtn');
+              if (vo.scriptText) {
+                useScriptBtn.style.display = 'inline-block';
+                useScriptBtn.onclick = function() {
+                  scriptContent.innerHTML = escapeHtmlContent(vo.scriptText);
+                  scriptSelect.value = ''; // Deselect any selected script
+                  status.textContent = 'Script loaded from voiceover';
+                  status.className = 'status ready';
+                };
+              } else {
+                useScriptBtn.style.display = 'none';
+              }
             } else {
               voiceover.src = '';
               audioPanel.style.display = 'none';
+              document.getElementById('useVoiceoverScriptBtn').style.display = 'none';
             }
           };
           
