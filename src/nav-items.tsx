@@ -21,7 +21,8 @@ import {
   Network,
   Workflow,
   ShoppingCart,
-  FileSearch
+  FileSearch,
+  GitBranch
 } from "lucide-react";
 
 export const navItems = [
@@ -137,6 +138,12 @@ export const navItems = [
     title: "Verification",
     url: "/active-verification",
     icon: BarChart3,
+  },
+  // ARCHITECTURE & DIAGRAMS SECTION
+  {
+    title: "Architecture",
+    url: "/architecture",
+    icon: GitBranch,
   },
   // SPECIALIZED TOOLS
   {
