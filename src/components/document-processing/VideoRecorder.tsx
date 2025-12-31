@@ -1236,6 +1236,33 @@ Thanks for watching!`,
         </div>
 
         <script>
+          // PRIORITY 1: Set up close button IMMEDIATELY so user can always close
+          (function() {
+            const closeBtn = document.getElementById('closeBtn');
+            if (closeBtn) {
+              closeBtn.onclick = function() {
+                if (window.mediaRecorder && window.mediaRecorder.state === 'recording') {
+                  if (!confirm('Recording in progress. Are you sure you want to close?')) {
+                    return;
+                  }
+                  window.mediaRecorder.stop();
+                }
+                if (window.cameraStream) {
+                  window.cameraStream.getTracks().forEach(t => t.stop());
+                }
+                window.close();
+              };
+            }
+            
+            // Allow closing with Escape key
+            document.addEventListener('keydown', function(e) {
+              if (e.key === 'Escape') {
+                const closeBtn = document.getElementById('closeBtn');
+                if (closeBtn) closeBtn.click();
+              }
+            });
+          })();
+          
           // Decode data from base64 (safe encoding to avoid template literal issues)
           function decodeData(encoded) {
             try {
@@ -1250,6 +1277,10 @@ Thanks for watching!`,
           const scripts = decodeData('${scriptsEncoded}');
           const voiceovers = decodeData('${voiceoversEncoded}');
           const musicList = decodeData('${musicEncoded}');
+          
+          // Global references for close handler
+          window.mediaRecorder = null;
+          window.cameraStream = null;
           
           let mediaRecorder = null;
           let chunks = [];
@@ -1464,7 +1495,7 @@ Thanks for watching!`,
               });
               
               console.log('✅ Camera stream obtained');
-              
+              window.cameraStream = stream; // Set global for close handler
               // Set preview and play
               preview.srcObject = stream;
               preview.muted = true;
@@ -1788,6 +1819,7 @@ Thanks for watching!`,
                 mimeType: 'video/webm;codecs=vp9',
                 videoBitsPerSecond: 2500000 
               });
+              window.mediaRecorder = mediaRecorder; // Set global for close handler
               chunks = [];
               
               mediaRecorder.ondataavailable = (e) => {
@@ -2044,26 +2076,7 @@ Thanks for watching!`,
             location.reload();
           };
           
-          // Close button handler
-          document.getElementById('closeBtn').onclick = function() {
-            if (mediaRecorder && mediaRecorder.state === 'recording') {
-              if (!confirm('Recording in progress. Are you sure you want to close?')) {
-                return;
-              }
-              mediaRecorder.stop();
-            }
-            if (stream) {
-              stream.getTracks().forEach(t => t.stop());
-            }
-            window.close();
-          };
-          
-          // Allow closing with Escape key
-          document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-              document.getElementById('closeBtn').click();
-            }
-          });
+          // Note: Close button handler is set up at the top of the script for immediate availability
         </script>
       </body>
       </html>
