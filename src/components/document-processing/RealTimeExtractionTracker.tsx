@@ -207,22 +207,32 @@ export const RealTimeExtractionTracker: React.FC<RealTimeExtractionTrackerProps>
   const ocrConfidenceStr = extractedFields['_ocr_confidence']?.value || '';
   const pipelineType = extractedFields['_pipeline_type']?.value || 'vision_ai_only';
   
-  const totalFieldsCount = Object.keys(extractedFields).filter(key => 
+  // Filter out internal fields for counting
+  const visibleFields = Object.entries(extractedFields).filter(([key]) => 
     !key.startsWith('_') && !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key)
-  ).length;
+  );
   
-  // For hybrid pipeline: OCR provides raw text, Vision AI provides structured fields
-  // Count Vision AI fields (all structured fields come from Vision AI in hybrid mode)
-  const visionAiFieldCount = Object.entries(extractedFields).filter(([key, data]) => {
-    if (key.startsWith('_') || ['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key)) return false;
+  const totalFieldsCount = visibleFields.length;
+  
+  // Count Vision AI fields - in practice ALL extracted fields come through Vision AI for structuring
+  // even if OCR was used for text extraction
+  const visionAiFieldCount = visibleFields.filter(([key, data]) => {
     const srcLower = (data.source || '').toLowerCase();
-    // In hybrid mode, all structured fields are from Vision AI even though they used OCR text as context
-    return srcLower.includes('vision_ai') || srcLower.includes('gemini') || srcLower.includes('claude') || srcLower.includes('openai');
+    // Vision AI fields: explicitly marked OR high confidence OR any field in vision_ai pipeline
+    return srcLower.includes('vision_ai') || srcLower.includes('gemini') || 
+           srcLower.includes('claude') || srcLower.includes('openai') ||
+           srcLower.includes('nlp') || data.confidence >= 0.8;
   }).length;
   
-  // OCR doesn't produce individual fields in hybrid mode - it produces raw text
-  // Show OCR contribution based on whether OCR text was used
-  const ocrFieldCount = hasOcrPipeline && ocrTextLength > 0 ? Math.ceil(ocrTextLength / 100) : 0; // Approximate "fields worth" of OCR text
+  // If no fields have explicit vision_ai source but we have fields, assume they're from Vision AI
+  const effectiveVisionAiCount = visionAiFieldCount > 0 ? visionAiFieldCount : totalFieldsCount;
+  
+  // OCR contributes text extraction - show as character count or field-equivalent
+  const ocrCharDisplay = hasOcrPipeline && ocrTextLength > 0 
+    ? `${(ocrTextLength / 1000).toFixed(1)}k chars` 
+    : isHandwritten 
+      ? 'Handwriting Mode' 
+      : 'Not Used';
 
   const getStageIcon = (stage: ExtractionStage) => {
     if (stage.status === 'completed') {
@@ -244,20 +254,20 @@ export const RealTimeExtractionTracker: React.FC<RealTimeExtractionTrackerProps>
             Real-Time Extraction Progress
           </CardTitle>
           <div className="flex items-center gap-2">
-            {hasOcrPipeline ? (
+            {hasOcrPipeline || isHandwritten ? (
               <Badge variant="outline" className="text-[10px] bg-blue-500/10 border-blue-500/30">
                 <Camera className="h-3 w-3 mr-1" />
-                OCR: {ocrConfidenceStr || `${(ocrTextLength / 1000).toFixed(1)}k chars`}
+                OCR: {ocrCharDisplay}
               </Badge>
             ) : (
               <Badge variant="outline" className="text-[10px] bg-muted border-border">
                 <Camera className="h-3 w-3 mr-1" />
-                No OCR
+                OCR: Not Used
               </Badge>
             )}
             <Badge variant="outline" className="text-[10px] bg-purple-500/10 border-purple-500/30">
               <Brain className="h-3 w-3 mr-1" />
-              Vision AI: {visionAiFieldCount}
+              Vision AI: {effectiveVisionAiCount}
             </Badge>
           </div>
         </div>

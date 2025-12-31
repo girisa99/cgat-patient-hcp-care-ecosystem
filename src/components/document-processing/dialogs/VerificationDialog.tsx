@@ -21,7 +21,8 @@ import {
   Image,
   Table2,
   FileText,
-  AlertTriangle
+  AlertTriangle,
+  Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,12 +53,30 @@ export default function VerificationDialog({
   setActiveTab
 }: VerificationDialogProps) {
   
+  const [isSaving, setIsSaving] = React.useState(false);
+  
   const handleSave = async () => {
-    if (!pendingResult) return;
+    if (!pendingResult) {
+      toast.error('No data to save');
+      return;
+    }
+    
+    setIsSaving(true);
     
     try {
-      // Save verified/edited fields to database
-      const { data: { user } } = await supabase.auth.getUser();
+      // Get authenticated user
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        console.error('Auth error:', authError);
+        toast.error('Authentication error', { description: authError.message });
+        return;
+      }
+      
+      if (!user) {
+        toast.error('Please login to save', { description: 'You must be authenticated to save documents' });
+        return;
+      }
       
       // Prepare processing config with line items and tables for RCM (as JSON-serializable)
       const processingConfig: Record<string, unknown> = {
@@ -66,9 +85,12 @@ export default function VerificationDialog({
         tables: JSON.parse(JSON.stringify(pendingResult.tables || [])),
         medications: JSON.parse(JSON.stringify(pendingResult.medications || [])),
         validationResults: pendingResult.validationResults ? JSON.parse(JSON.stringify(pendingResult.validationResults)) : null,
-        imageUrl: pendingResult.imageUrl || null,
+        // Don't store large base64 data - just reference
+        imageUrl: pendingResult.imageUrl?.startsWith('data:') 
+          ? `[base64:${pendingResult.imageUrl.length} chars]` 
+          : pendingResult.imageUrl,
         savedAt: new Date().toISOString(),
-        verifiedBy: user?.id || null
+        verifiedBy: user.id
       };
       
       // Validation status as string
@@ -76,23 +98,28 @@ export default function VerificationDialog({
         ? `passed:${pendingResult.validationResults.passed},failed:${pendingResult.validationResults.failed},warnings:${pendingResult.validationResults.warnings}`
         : 'verified';
       
+      // Ensure we have a valid ID
+      const documentId = pendingResult.id || crypto.randomUUID();
+      
       // Update the document processing job with verified data
       const { error } = await supabase
         .from('document_processing_jobs')
         .upsert({
-          id: pendingResult.id,
-          user_id: user?.id || null,
-          document_type: pendingResult.documentType,
-          file_name: pendingResult.fileName,
-          file_path: pendingResult.imageUrl || pendingResult.fileName,
+          id: documentId,
+          user_id: user.id,
+          document_type: pendingResult.documentType || selectedDocType || 'unknown',
+          file_name: pendingResult.fileName || 'Unknown Document',
+          file_path: pendingResult.fileName || 'unknown',
           status: 'verified',
           progress: 100,
-        extracted_metadata: { 
-            entities: Object.entries(pendingResult.extractedFields).map(([k, v]: [string, any]) => ({
-              type: k, 
-              value: v?.value || '',
-              confidence: v?.confidence || 0.85
-            })),
+          extracted_metadata: { 
+            entities: Object.entries(pendingResult.extractedFields)
+              .filter(([k]) => !k.startsWith('_'))
+              .map(([k, v]: [string, any]) => ({
+                type: k, 
+                value: v?.value || '',
+                confidence: v?.confidence || 0.85
+              })),
             lineItems: pendingResult.lineItems || [],
             tables: pendingResult.tables || [],
             verifiedAt: new Date().toISOString()
@@ -102,19 +129,21 @@ export default function VerificationDialog({
         });
       
       if (error) {
-        console.error('Supabase upsert error:', error);
-        throw error;
+        console.error('Database save error:', error);
+        toast.error('Failed to save to database', { description: error.message });
+        return;
       }
       
-      toast.success('Document verified and saved to history!');
+      toast.success('Document verified and saved!');
       
-      // Update local state
+      // Update local state with the saved result
+      const savedResult = { ...pendingResult, id: documentId };
       setProcessingHistory((prev: any[]) => {
-        const existing = prev.find((p: any) => p.id === pendingResult.id);
+        const existing = prev.find((p: any) => p.id === documentId);
         if (existing) {
-          return prev.map((p: any) => p.id === pendingResult.id ? pendingResult : p);
+          return prev.map((p: any) => p.id === documentId ? savedResult : p);
         }
-        return [pendingResult, ...prev];
+        return [savedResult, ...prev];
       });
       
       // Reload history from database to ensure consistency
@@ -123,6 +152,11 @@ export default function VerificationDialog({
       onOpenChange(false);
       setPendingResult(null);
       
+      // Switch to patient-info tab if patient onboarding
+      if (selectedDocType === 'patient-onboarding' && setActiveTab) {
+        setActiveTab('patient-info');
+      }
+      
       // Trigger sub-agent dialog after successful save
       setTimeout(() => {
         setShowSubAgentDialog(true);
@@ -130,8 +164,10 @@ export default function VerificationDialog({
     } catch (err) {
       console.error('Failed to save verified document:', err);
       toast.error('Failed to save document', {
-        description: err instanceof Error ? err.message : 'Unknown error'
+        description: err instanceof Error ? err.message : 'Unknown error occurred'
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -279,18 +315,32 @@ export default function VerificationDialog({
             
             {/* Action Buttons */}
             <div className="flex justify-end gap-2 pt-4 border-t">
-              <Button variant="outline" onClick={() => {
-                onOpenChange(false);
-                setPendingResult(null);
-              }}>
+              <Button 
+                variant="outline" 
+                disabled={isSaving}
+                onClick={() => {
+                  onOpenChange(false);
+                  setPendingResult(null);
+                }}
+              >
                 Cancel & Discard
               </Button>
               <Button 
                 variant="default"
                 onClick={handleSave}
+                disabled={isSaving}
               >
-                <FileCheck className="h-4 w-4 mr-2" />
-                Confirm & Save to History
+                {isSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <FileCheck className="h-4 w-4 mr-2" />
+                    Confirm & Save to History
+                  </>
+                )}
               </Button>
             </div>
           </div>
