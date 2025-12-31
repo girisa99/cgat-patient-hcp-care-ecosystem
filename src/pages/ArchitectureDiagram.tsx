@@ -11,7 +11,7 @@ import {
 import { TwoStagePipelineSVGDiagram } from '@/components/document-processing/TwoStagePipelineSVGDiagram';
 import { PatientOnboardingFlowDiagram, SubAgentArchitectureDiagram, BeforeAfterArchitectureDiagram } from '@/components/diagrams';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+// Tabs imports kept for potential future use but not needed for current category navigation
 import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building, Users, Network, ArrowRightLeft, Download, Workflow, Bot, Video, Music, History } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
@@ -218,21 +218,23 @@ const ArchitectureDiagram = () => {
             </div>
 
             {/* Category Tabs - Desktop */}
-            <div className="hidden md:block">
-              <Tabs value={activeCategory} onValueChange={handleCategoryChange}>
-                <TabsList className="h-auto gap-1 p-1 bg-muted">
-                  {Object.entries(diagramCategories).map(([key, cat]) => (
-                    <TabsTrigger 
-                      key={key} 
-                      value={key}
-                      className="flex items-center gap-2 px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:text-foreground"
-                    >
-                      <cat.icon className="h-4 w-4" />
-                      <span>{cat.label}</span>
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </Tabs>
+            <div className="hidden md:flex gap-1 p-1 bg-muted rounded-lg">
+              {Object.entries(diagramCategories).map(([key, cat]) => (
+                <Button
+                  key={key}
+                  variant={activeCategory === key ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => handleCategoryChange(key)}
+                  className={`flex items-center gap-2 px-4 py-2 ${
+                    activeCategory === key 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'text-foreground hover:bg-muted-foreground/10'
+                  }`}
+                >
+                  <cat.icon className="h-4 w-4" />
+                  <span>{cat.label}</span>
+                </Button>
+              ))}
             </div>
 
             {/* Diagram Sub-tabs */}
