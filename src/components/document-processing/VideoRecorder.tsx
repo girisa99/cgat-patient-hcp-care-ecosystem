@@ -484,13 +484,17 @@ Let me walk you through the key improvements we've made.`,
   };
 
   // Pop out recording to a separate window (completely outside app frame)
-  const handlePopOutRecording = () => {
+  const handlePopOutRecording = async () => {
     const scriptContent = selectedScript?.content || '';
     const scriptTitle = selectedScript?.title || '';
     const audioName = selectedAudioFile?.name || '';
     const audioUrl = selectedAudioFile?.url || '';
     const bgMusicName = selectedBackgroundMusic?.name || '';
     const bgMusicUrl = selectedBackgroundMusic?.url || '';
+    
+    // Get Supabase URL and API key for TTS calls
+    const supabaseUrl = 'https://ithspbabhmdntioslfqe.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0aHNwYmFiaG1kbnRpb3NsZnFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY5MjU5OTMsImV4cCI6MjA2MjUwMTk5M30.yUZZHsz2wIHboVuWWfqXeAH5oHRxzJIz20NWSUmHPhw';
     
     // Escape script content for safe HTML embedding
     const escapeHtml = (str: string) => str
@@ -948,8 +952,187 @@ Let me walk you through the key improvements we've made.`,
             return mins.toString().padStart(2,'0') + ':' + secs.toString().padStart(2,'0');
           }
           
-          // Start countdown then record
-          startBtn.onclick = function() {
+          let displayStream = null;
+          let screenVideo = null;
+          let webcamVideo = null;
+          let canvas = null;
+          let ctx = null;
+          let audioContext = null;
+          let scrollInterval = null;
+          let ttsAudio = null;
+          
+          // Start recording - First get screen share, then show audio options, then countdown
+          startBtn.onclick = async function() {
+            try {
+              status.textContent = 'Select screen...';
+              status.className = 'status countdown';
+              
+              // Step 1: Get screen share FIRST (before countdown)
+              displayStream = await navigator.mediaDevices.getDisplayMedia({
+                video: { width: 1920, height: 1080, frameRate: 30 },
+                audio: true
+              });
+              
+              // Show screen preview immediately
+              preview.srcObject = displayStream;
+              
+              status.textContent = 'Screen selected';
+              
+              // Step 2: Show audio options confirmation dialog
+              showAudioOptionsDialog();
+              
+            } catch(e) {
+              console.error('Screen share error:', e);
+              status.textContent = 'Ready';
+              status.className = 'status ready';
+              if (e.name !== 'NotAllowedError') {
+                alert('Screen share error: ' + e.message);
+              }
+            }
+          };
+          
+          // Audio options dialog
+          function showAudioOptionsDialog() {
+            const hasScript = scriptSelect.value && scripts.find(s => s.id === scriptSelect.value);
+            const hasVoiceover = voiceoverSelect.value && voiceovers.find(v => v.id === voiceoverSelect.value);
+            const hasMusic = musicSelect.value && musicList.find(m => m.id === musicSelect.value);
+            
+            let dialogHtml = '<div id="audioOptionsDialog" style="position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:200;">';
+            dialogHtml += '<div style="background:#1a1a2e;padding:30px;border-radius:16px;max-width:500px;width:90%;">';
+            dialogHtml += '<h2 style="margin-bottom:20px;font-size:20px;">🎬 Recording Options</h2>';
+            
+            // TTS Option (if script is selected)
+            if (hasScript) {
+              dialogHtml += '<div style="margin-bottom:20px;padding:15px;background:#2a2a3e;border-radius:8px;">';
+              dialogHtml += '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">';
+              dialogHtml += '<input type="checkbox" id="useTTS" checked style="width:20px;height:20px;">';
+              dialogHtml += '<div><strong>🗣️ Generate TTS Voiceover</strong><br><small style="opacity:0.7;">Convert script to speech using AI voice</small></div>';
+              dialogHtml += '</label></div>';
+            }
+            
+            // Audio file option (if voiceover is selected)
+            if (hasVoiceover) {
+              dialogHtml += '<div style="margin-bottom:20px;padding:15px;background:#2a2a3e;border-radius:8px;">';
+              dialogHtml += '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">';
+              dialogHtml += '<input type="checkbox" id="useVoiceover" checked style="width:20px;height:20px;">';
+              dialogHtml += '<div><strong>🎤 Play Voiceover Audio</strong><br><small style="opacity:0.7;">' + voiceovers.find(v => v.id === voiceoverSelect.value)?.name + '</small></div>';
+              dialogHtml += '</label></div>';
+            }
+            
+            // Background music option
+            if (hasMusic) {
+              dialogHtml += '<div style="margin-bottom:20px;padding:15px;background:#2a2a3e;border-radius:8px;">';
+              dialogHtml += '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">';
+              dialogHtml += '<input type="checkbox" id="useMusic" checked style="width:20px;height:20px;">';
+              dialogHtml += '<div><strong>🎵 Play Background Music</strong><br><small style="opacity:0.7;">' + musicList.find(m => m.id === musicSelect.value)?.name + '</small></div>';
+              dialogHtml += '</label></div>';
+            }
+            
+            if (!hasScript && !hasVoiceover && !hasMusic) {
+              dialogHtml += '<p style="opacity:0.7;margin-bottom:20px;">No audio sources selected. Recording will use microphone only.</p>';
+            }
+            
+            dialogHtml += '<div style="display:flex;gap:10px;justify-content:flex-end;">';
+            dialogHtml += '<button id="cancelOptions" style="padding:12px 24px;">Cancel</button>';
+            dialogHtml += '<button id="confirmOptions" class="primary" style="padding:12px 24px;">Start Countdown</button>';
+            dialogHtml += '</div></div></div>';
+            
+            document.body.insertAdjacentHTML('beforeend', dialogHtml);
+            
+            document.getElementById('cancelOptions').onclick = function() {
+              document.getElementById('audioOptionsDialog').remove();
+              if (displayStream) {
+                displayStream.getTracks().forEach(t => t.stop());
+                displayStream = null;
+              }
+              preview.srcObject = stream;
+              status.textContent = 'Ready';
+              status.className = 'status ready';
+            };
+            
+            document.getElementById('confirmOptions').onclick = async function() {
+              const useTTS = document.getElementById('useTTS')?.checked || false;
+              const useVoiceover = document.getElementById('useVoiceover')?.checked || false;
+              const useMusic = document.getElementById('useMusic')?.checked || false;
+              
+              document.getElementById('audioOptionsDialog').remove();
+              
+              // Generate TTS if requested
+              if (useTTS && hasScript) {
+                status.textContent = 'Generating TTS...';
+                try {
+                  await generateTTS(scripts.find(s => s.id === scriptSelect.value).content);
+                } catch(e) {
+                  console.error('TTS generation failed:', e);
+                }
+              }
+              
+              // Start countdown
+              startCountdown(useVoiceover, useMusic, useTTS);
+            };
+          }
+          
+          // Generate TTS from script
+          async function generateTTS(text) {
+            const supabaseUrl = '${supabaseUrl}';
+            const supabaseKey = '${supabaseKey}';
+            
+            try {
+              const response = await fetch(supabaseUrl + '/functions/v1/elevenlabs-voice', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'apikey': supabaseKey,
+                  'Authorization': 'Bearer ' + supabaseKey
+                },
+                body: JSON.stringify({
+                  text: text.substring(0, 5000),
+                  voice: 'Aria',
+                  model: 'eleven_multilingual_v2',
+                  agentType: 'conversational'
+                })
+              });
+              
+              if (!response.ok) throw new Error('TTS API failed');
+              
+              const data = await response.json();
+              if (data.audioContent) {
+                ttsAudio = new Audio('data:audio/mpeg;base64,' + data.audioContent);
+                ttsAudio.volume = 1.0;
+              }
+            } catch(e) {
+              console.error('TTS error:', e);
+              // Fallback: try OpenAI TTS
+              try {
+                const response = await fetch(supabaseUrl + '/functions/v1/openai-tts', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': supabaseKey,
+                    'Authorization': 'Bearer ' + supabaseKey
+                  },
+                  body: JSON.stringify({
+                    text: text.substring(0, 4000),
+                    voice: 'alloy',
+                    speed: 1.0
+                  })
+                });
+                
+                if (response.ok) {
+                  const data = await response.json();
+                  if (data.audioContent) {
+                    ttsAudio = new Audio('data:audio/mpeg;base64,' + data.audioContent);
+                    ttsAudio.volume = 1.0;
+                  }
+                }
+              } catch(e2) {
+                console.error('OpenAI TTS fallback failed:', e2);
+              }
+            }
+          }
+          
+          // Start countdown after screen share is ready
+          function startCountdown(useVoiceover, useMusic, useTTS) {
             countdownValue = 5;
             countdownNumber.textContent = countdownValue;
             countdownOverlay.classList.remove('hidden');
@@ -961,59 +1144,68 @@ Let me walk you through the key improvements we've made.`,
               if (countdownValue <= 0) {
                 clearInterval(countdownInterval);
                 countdownOverlay.classList.add('hidden');
-                actuallyStartRecording();
+                actuallyStartRecording(useVoiceover, useMusic, useTTS);
               } else {
                 countdownNumber.textContent = countdownValue;
               }
             }, 1000);
-          };
+          }
           
           cancelCountdown.onclick = function() {
             clearInterval(countdownInterval);
             countdownOverlay.classList.add('hidden');
+            if (displayStream) {
+              displayStream.getTracks().forEach(t => t.stop());
+              displayStream = null;
+            }
+            preview.srcObject = stream;
             status.textContent = 'Ready';
             status.className = 'status ready';
           };
           
-          async function actuallyStartRecording() {
+          async function actuallyStartRecording(useVoiceover, useMusic, useTTS) {
             try {
-              // Get screen + webcam
-              const displayStream = await navigator.mediaDevices.getDisplayMedia({
-                video: true,
-                audio: true
-              });
-              
-              // Create canvas for picture-in-picture
-              const canvas = document.createElement('canvas');
+              // Create canvas for picture-in-picture (reduces delay)
+              canvas = document.createElement('canvas');
               canvas.width = 1920;
               canvas.height = 1080;
-              const ctx = canvas.getContext('2d');
+              ctx = canvas.getContext('2d');
               
-              const screenVideo = document.createElement('video');
+              screenVideo = document.createElement('video');
               screenVideo.srcObject = displayStream;
               screenVideo.muted = true;
+              screenVideo.playsInline = true;
               await screenVideo.play();
               
-              const webcamVideo = document.createElement('video');
+              webcamVideo = document.createElement('video');
               webcamVideo.srcObject = stream;
               webcamVideo.muted = true;
+              webcamVideo.playsInline = true;
               await webcamVideo.play();
               
-              function draw() {
-                ctx.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
-                ctx.drawImage(webcamVideo, canvas.width - 340, canvas.height - 260, 320, 240);
+              // Optimized drawing loop for less delay
+              let lastDrawTime = 0;
+              function draw(timestamp) {
+                if (timestamp - lastDrawTime >= 33) { // ~30fps
+                  ctx.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
+                  ctx.drawImage(webcamVideo, canvas.width - 340, canvas.height - 260, 320, 240);
+                  lastDrawTime = timestamp;
+                }
                 requestAnimationFrame(draw);
               }
-              draw();
+              draw(0);
               
-              // Combine audio
-              const audioContext = new AudioContext();
+              // Combine audio sources
+              audioContext = new AudioContext();
               const dest = audioContext.createMediaStreamDestination();
               
+              // Add display audio
               displayStream.getAudioTracks().forEach(track => {
                 const src = audioContext.createMediaStreamSource(new MediaStream([track]));
                 src.connect(dest);
               });
+              
+              // Add microphone audio
               stream.getAudioTracks().forEach(track => {
                 const src = audioContext.createMediaStreamSource(new MediaStream([track]));
                 src.connect(dest);
@@ -1027,7 +1219,10 @@ Let me walk you through the key improvements we've made.`,
               
               preview.srcObject = finalStream;
               
-              mediaRecorder = new MediaRecorder(finalStream, { mimeType: 'video/webm' });
+              mediaRecorder = new MediaRecorder(finalStream, { 
+                mimeType: 'video/webm;codecs=vp9',
+                videoBitsPerSecond: 2500000 
+              });
               chunks = [];
               
               mediaRecorder.ondataavailable = (e) => {
@@ -1036,6 +1231,7 @@ Let me walk you through the key improvements we've made.`,
               
               mediaRecorder.onstop = () => {
                 clearInterval(timerInterval);
+                clearInterval(scrollInterval);
                 const blob = new Blob(chunks, { type: 'video/webm' });
                 preview.srcObject = null;
                 preview.src = URL.createObjectURL(blob);
@@ -1054,6 +1250,8 @@ Let me walk you through the key improvements we've made.`,
                 
                 if(voiceover) voiceover.pause();
                 if(bgMusic) bgMusic.pause();
+                if(ttsAudio) ttsAudio.pause();
+                if(displayStream) displayStream.getTracks().forEach(t => t.stop());
               };
               
               mediaRecorder.start(1000);
@@ -1069,14 +1267,46 @@ Let me walk you through the key improvements we've made.`,
               status.textContent = 'Recording';
               status.className = 'status recording';
               
-              if(voiceover && voiceover.src) voiceover.play();
-              if(bgMusic && bgMusic.src) { bgMusic.volume = 0.3; bgMusic.play(); }
+              // Play TTS if generated
+              if (useTTS && ttsAudio) {
+                ttsAudio.play().catch(e => console.error('TTS playback error:', e));
+              }
+              
+              // Play voiceover if selected
+              if(useVoiceover && voiceover && voiceover.src) {
+                voiceover.play().catch(e => console.error('Voiceover error:', e));
+              }
+              
+              // Play background music if selected
+              if(useMusic && bgMusic && bgMusic.src) { 
+                bgMusic.volume = 0.3; 
+                bgMusic.play().catch(e => console.error('Music error:', e));
+              }
+              
+              // Auto-scroll teleprompter
+              startTeleprompterScroll();
               
             } catch(e) {
+              console.error('Recording error:', e);
               alert('Error: ' + e.message);
+              if (displayStream) {
+                displayStream.getTracks().forEach(t => t.stop());
+                displayStream = null;
+              }
+              preview.srcObject = stream;
               status.textContent = 'Ready';
               status.className = 'status ready';
             }
+          }
+          
+          // Auto-scroll teleprompter during recording
+          function startTeleprompterScroll() {
+            const scrollSpeed = 1; // pixels per 50ms
+            scrollInterval = setInterval(() => {
+              if (!isPaused && scriptContent) {
+                scriptContent.scrollTop += scrollSpeed;
+              }
+            }, 50);
           }
           
           pauseBtn.onclick = function() {
@@ -1084,12 +1314,14 @@ Let me walk you through the key improvements we've made.`,
               mediaRecorder.resume();
               pauseBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>Pause';
               isPaused = false;
+              if(ttsAudio && !ttsAudio.ended) ttsAudio.play();
               if(voiceover && voiceover.src) voiceover.play();
               if(bgMusic && bgMusic.src) bgMusic.play();
             } else {
               mediaRecorder.pause();
               pauseBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>Resume';
               isPaused = true;
+              if(ttsAudio) ttsAudio.pause();
               if(voiceover) voiceover.pause();
               if(bgMusic) bgMusic.pause();
             }
