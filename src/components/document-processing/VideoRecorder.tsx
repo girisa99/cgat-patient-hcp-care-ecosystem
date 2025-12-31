@@ -1861,7 +1861,118 @@ Let me walk you through the key improvements we've made.`,
           </DialogHeader>
           
           <div className="flex-1 flex flex-col gap-4">
-            <VideoPreview className="flex-1 min-h-[60vh]" videoRef={fullscreenPreviewRef} />
+            {/* Fullscreen Options Bar */}
+            <div className="flex flex-wrap items-center gap-4 p-3 bg-muted/50 rounded-lg">
+              {/* Voiceover Audio Selection */}
+              <div className="flex items-center gap-2">
+                <Music className="h-4 w-4 text-primary" />
+                <Select
+                  value={selectedAudioFile?.id || 'none'}
+                  onValueChange={(val) => handleSelectAudioFile(val === 'none' ? '' : val)}
+                  disabled={isRecording}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Voiceover audio..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {voiceoverFiles.map(audio => (
+                      <SelectItem key={audio.id} value={audio.id}>
+                        {audio.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Script Selection */}
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-primary" />
+                <Select
+                  value={selectedScript?.id || 'none'}
+                  onValueChange={(val) => handleSelectScript(val === 'none' ? '' : val)}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Script..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {availableScripts.map(script => (
+                      <SelectItem key={script.id} value={script.id}>
+                        {script.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Background Music Selection */}
+              <div className="flex items-center gap-2">
+                <Headphones className="h-4 w-4 text-primary" />
+                <Select
+                  value={selectedBackgroundMusic?.id || 'none'}
+                  onValueChange={(val) => {
+                    if (val === 'none') {
+                      setSelectedBackgroundMusic(null);
+                    } else {
+                      const music = musicFiles.find(m => m.id === val);
+                      setSelectedBackgroundMusic(music || null);
+                    }
+                  }}
+                  disabled={isRecording}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Background music..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {musicFiles.map(music => (
+                      <SelectItem key={music.id} value={music.id}>
+                        {music.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Teleprompter Buttons */}
+              {(selectedScript || selectedAudioFile) && (
+                <div className="flex items-center gap-2 ml-auto">
+                  <Eye className="h-4 w-4 text-muted-foreground" />
+                  {selectedScript && (
+                    <Button
+                      variant={showScriptTeleprompter ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setShowScriptTeleprompter(!showScriptTeleprompter)}
+                    >
+                      <FileText className="h-4 w-4 mr-1" />
+                      Script
+                    </Button>
+                  )}
+                  {selectedAudioFile && (
+                    <Button
+                      variant={showAudioTeleprompter ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setShowAudioTeleprompter(!showAudioTeleprompter)}
+                    >
+                      <Volume2 className="h-4 w-4 mr-1" />
+                      Audio Cue
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {/* Captions Toggle */}
+              <div className="flex items-center gap-2">
+                <Captions className="h-4 w-4" />
+                <Switch
+                  checked={showCaptions}
+                  onCheckedChange={setShowCaptions}
+                />
+              </div>
+            </div>
+
+            <VideoPreview className="flex-1 min-h-[50vh]" videoRef={fullscreenPreviewRef} />
             
             {/* Fullscreen Controls */}
             <div className="flex items-center justify-center gap-4">
