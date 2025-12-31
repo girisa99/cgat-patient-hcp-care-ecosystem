@@ -29,6 +29,7 @@ interface GeneratedAudio {
   textLength: number;
   chunks: number;
   audioUrl: string;
+  storagePath?: string; // Path in Supabase storage
   generatedAt: Date;
   voice: string;
 }
@@ -262,26 +263,49 @@ export const ScriptsManager: React.FC = () => {
   const [audioElements, setAudioElements] = useState<Record<string, HTMLAudioElement>>({});
   const { showSuccess, showError } = useMasterToast();
 
-  // Load saved audios from localStorage on mount
+  // Load saved audios metadata from localStorage on mount (only metadata, not audio data)
   useEffect(() => {
-    const saved = localStorage.getItem('generatedAudios');
+    const saved = localStorage.getItem('generatedAudiosMetadata');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        setGeneratedAudios(parsed.map((a: any) => ({
-          ...a,
-          generatedAt: new Date(a.generatedAt)
-        })));
+        // Reconstruct audio URLs from storage paths
+        const audiosWithUrls = parsed.map((a: any) => {
+          let audioUrl = a.audioUrl;
+          if (a.storagePath) {
+            const { data } = supabase.storage.from('generated-audio').getPublicUrl(a.storagePath);
+            audioUrl = data.publicUrl;
+          }
+          return {
+            ...a,
+            audioUrl,
+            generatedAt: new Date(a.generatedAt)
+          };
+        });
+        setGeneratedAudios(audiosWithUrls);
       } catch (e) {
         console.error('Failed to load saved audios:', e);
       }
     }
+    
+    // Clear old localStorage data that was storing full audio
+    localStorage.removeItem('generatedAudios');
   }, []);
 
-  // Save to localStorage when audios change
+  // Save only metadata to localStorage (not audio data)
   useEffect(() => {
     if (generatedAudios.length > 0) {
-      localStorage.setItem('generatedAudios', JSON.stringify(generatedAudios));
+      const metadata = generatedAudios.map(a => ({
+        id: a.id,
+        name: a.name,
+        textLength: a.textLength,
+        chunks: a.chunks,
+        storagePath: a.storagePath,
+        generatedAt: a.generatedAt,
+        voice: a.voice,
+        audioUrl: a.storagePath ? '' : a.audioUrl // Only keep URL if no storage path
+      }));
+      localStorage.setItem('generatedAudiosMetadata', JSON.stringify(metadata));
     }
   }, [generatedAudios]);
 
@@ -328,7 +352,7 @@ export const ScriptsManager: React.FC = () => {
 
       if (initialError) throw initialError;
 
-      let finalAudioBase64: string;
+      let audioBlob: Blob;
       let totalChunks = 1;
 
       if (initialData?.needsChunking) {
@@ -371,35 +395,51 @@ export const ScriptsManager: React.FC = () => {
           combinedBlobs.push(new Blob([bytes], { type: 'audio/mpeg' }));
         }
 
-        // Create combined blob and convert to base64
-        const combinedBlob = new Blob(combinedBlobs, { type: 'audio/mpeg' });
-        const arrayBuffer = await combinedBlob.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
-        
-        // Convert to base64 in chunks to avoid call stack issues
-        let binary = '';
-        const chunkSize = 32768;
-        for (let i = 0; i < uint8Array.length; i += chunkSize) {
-          const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length));
-          binary += String.fromCharCode.apply(null, Array.from(chunk));
-        }
-        finalAudioBase64 = btoa(binary);
+        // Create combined blob
+        audioBlob = new Blob(combinedBlobs, { type: 'audio/mpeg' });
         
       } else if (initialData?.audioContent) {
-        // Short text processed directly
-        finalAudioBase64 = initialData.audioContent;
+        // Short text processed directly - convert base64 to blob
+        const binaryString = atob(initialData.audioContent);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        audioBlob = new Blob([bytes], { type: 'audio/mpeg' });
       } else {
         throw new Error('No audio content received');
       }
 
-      const audioUrl = `data:audio/mpeg;base64,${finalAudioBase64}`;
+      setGenerationProgress('Uploading to storage...');
       
+      // Upload to Supabase Storage instead of storing in localStorage
+      const audioId = crypto.randomUUID();
+      const storagePath = `${audioId}.mp3`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('generated-audio')
+        .upload(storagePath, audioBlob, {
+          contentType: 'audio/mpeg',
+          upsert: true
+        });
+
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw new Error(`Failed to save audio: ${uploadError.message}`);
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('generated-audio')
+        .getPublicUrl(storagePath);
+
       const newAudio: GeneratedAudio = {
-        id: crypto.randomUUID(),
+        id: audioId,
         name: scriptName,
         textLength: cleanedScript.length,
         chunks: totalChunks,
-        audioUrl,
+        audioUrl: urlData.publicUrl,
+        storagePath,
         generatedAt: new Date(),
         voice: selectedVoice
       };
@@ -407,7 +447,7 @@ export const ScriptsManager: React.FC = () => {
       setGeneratedAudios(prev => [newAudio, ...prev]);
       setActiveTab('library');
       
-      showSuccess(`Audio generated! (${totalChunks} chunk${totalChunks > 1 ? 's' : ''}, ${Math.round(cleanedScript.length / 1000)}k chars)`);
+      showSuccess(`Audio generated and saved! (${totalChunks} chunk${totalChunks > 1 ? 's' : ''}, ${Math.round(cleanedScript.length / 1000)}k chars)`);
       
       // Clear the form
       setScriptText('');
