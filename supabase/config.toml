@@ -131,3 +131,6 @@ verify_jwt = false
 
 [functions.extract-enrollment-form]
 verify_jwt = false
+
+[functions.openai-tts]
+verify_jwt = false

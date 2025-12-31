@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, FileText, Mic, Video } from 'lucide-react';
+import { Download, FileText, Mic, Video, Volume2, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useMasterToast } from '@/hooks/useMasterToast';
 
 const VIDEO_SCRIPT = `# AI Document Processing: Enterprise Edition
 ## Voice-Over Script — Part 1: Patient Onboarding
@@ -421,6 +423,9 @@ Thanks for watching!
 *Version 3.0 | Technical Architecture Focus*`;
 
 export const VideoScriptDownloader: React.FC = () => {
+  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
+  const { showSuccess, showError } = useMasterToast();
+
   const handleDownloadVideoScript = () => {
     const blob = new Blob([VIDEO_SCRIPT], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
@@ -443,6 +448,53 @@ export const VideoScriptDownloader: React.FC = () => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const handleGenerateAudio = async () => {
+    setIsGeneratingAudio(true);
+    try {
+      // Clean the script - remove markdown formatting for TTS
+      const cleanedScript = AUDIO_SCRIPT
+        .replace(/^#.*$/gm, '') // Remove headers
+        .replace(/\*\*.*?\*\*/g, (match) => match.replace(/\*\*/g, '')) // Remove bold markers
+        .replace(/\*.*?\*/g, (match) => match.replace(/\*/g, '')) // Remove italic markers
+        .replace(/---/g, '') // Remove horizontal rules
+        .replace(/\n{3,}/g, '\n\n') // Reduce multiple newlines
+        .trim();
+
+      // Take first 4000 chars for TTS (OpenAI limit is 4096)
+      const textForTTS = cleanedScript.substring(0, 4000);
+
+      const { data, error } = await supabase.functions.invoke('openai-tts', {
+        body: { 
+          text: textForTTS, 
+          voice: 'onyx', // Professional male voice
+          speed: 1.0 
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.audioContent) {
+        // Create download link for the audio
+        const audioUrl = `data:audio/mpeg;base64,${data.audioContent}`;
+        const a = document.createElement('a');
+        a.href = audioUrl;
+        a.download = 'AUDIO_SCRIPT_PATIENT_ONBOARDING.mp3';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        showSuccess(data.truncated 
+          ? 'Audio generated (first 4000 chars due to API limit)' 
+          : 'Audio generated successfully');
+      }
+    } catch (error) {
+      console.error('TTS generation error:', error);
+      showError('Failed to generate audio: ' + (error as Error).message);
+    } finally {
+      setIsGeneratingAudio(false);
+    }
   };
 
   return (
@@ -506,14 +558,28 @@ export const VideoScriptDownloader: React.FC = () => {
                 <li>• Natural speech flow</li>
                 <li>• Technical content focus</li>
               </ul>
-              <Button 
-                onClick={handleDownloadAudioScript}
-                className="w-full gap-2"
-                variant="outline"
-              >
-                <Download className="h-4 w-4" />
-                Download Audio Script
-              </Button>
+              <div className="flex flex-col gap-2">
+                <Button 
+                  onClick={handleDownloadAudioScript}
+                  className="w-full gap-2"
+                  variant="outline"
+                >
+                  <Download className="h-4 w-4" />
+                  Download Audio Script
+                </Button>
+                <Button 
+                  onClick={handleGenerateAudio}
+                  disabled={isGeneratingAudio}
+                  className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white"
+                >
+                  {isGeneratingAudio ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Volume2 className="h-4 w-4" />
+                  )}
+                  {isGeneratingAudio ? 'Generating...' : 'Generate Audio (TTS)'}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
