@@ -692,20 +692,52 @@ export const ScriptsManager: React.FC = () => {
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4" style={{ backgroundColor: '#334155' }}>
-            <TabsTrigger value="scripts" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white" style={{ color: '#e2e8f0' }}>
+          <TabsList className="grid w-full grid-cols-4 p-1 rounded-lg border border-border/50 shadow-sm" style={{ backgroundColor: '#1e293b' }}>
+            <TabsTrigger 
+              value="scripts" 
+              className="rounded-md font-medium transition-all data-[state=active]:shadow-md" 
+              style={{ 
+                backgroundColor: activeTab === 'scripts' ? '#7c3aed' : '#334155',
+                color: '#ffffff',
+                border: 'none'
+              }}
+            >
               <FileText className="h-4 w-4 mr-2" />
               Scripts
             </TabsTrigger>
-            <TabsTrigger value="generate" className="data-[state=active]:bg-green-600 data-[state=active]:text-white" style={{ color: '#e2e8f0' }}>
+            <TabsTrigger 
+              value="generate" 
+              className="rounded-md font-medium transition-all data-[state=active]:shadow-md"
+              style={{ 
+                backgroundColor: activeTab === 'generate' ? '#16a34a' : '#334155',
+                color: '#ffffff',
+                border: 'none'
+              }}
+            >
               <Volume2 className="h-4 w-4 mr-2" />
               Generate Audio
             </TabsTrigger>
-            <TabsTrigger value="video" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white" style={{ color: '#e2e8f0' }}>
+            <TabsTrigger 
+              value="video" 
+              className="rounded-md font-medium transition-all data-[state=active]:shadow-md"
+              style={{ 
+                backgroundColor: activeTab === 'video' ? '#ea580c' : '#334155',
+                color: '#ffffff',
+                border: 'none'
+              }}
+            >
               <Camera className="h-4 w-4 mr-2" />
               Video Studio
             </TabsTrigger>
-            <TabsTrigger value="library" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white" style={{ color: '#e2e8f0' }}>
+            <TabsTrigger 
+              value="library" 
+              className="rounded-md font-medium transition-all data-[state=active]:shadow-md"
+              style={{ 
+                backgroundColor: activeTab === 'library' ? '#2563eb' : '#334155',
+                color: '#ffffff',
+                border: 'none'
+              }}
+            >
               <FileAudio className="h-4 w-4 mr-2" />
               Library ({generatedAudios.length})
             </TabsTrigger>
