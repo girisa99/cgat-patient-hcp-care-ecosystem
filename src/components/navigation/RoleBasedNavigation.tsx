@@ -103,6 +103,14 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
 
   const navigationGroups = getNavigationGroups();
 
+  // Debug: Log navigation groups for troubleshooting
+  console.log('📍 Navigation Groups:', {
+    roles: userRoles,
+    primary: navigationGroups.primary.map(t => t.to),
+    agents: navigationGroups.agents.map(t => t.to),
+    systemIntegration: navigationGroups.systemIntegration.map(t => t.to),
+  });
+
   const renderNavButton = (tab: any, isDropdown = false) => {
     const isActive = location.pathname === tab.to;
     const Icon = tab.icon;
@@ -181,9 +189,9 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
             )}
           </div>
 
-          {/* Center: Main Navigation - Fixed overflow and text stability */}
-          <nav className="flex items-center flex-1 justify-start min-w-0 px-2 overflow-hidden" aria-label="Primary">
-            <div className="flex items-center gap-1 max-w-full flex-nowrap overflow-x-auto scrollbar-hide">
+          {/* Center: Main Navigation - Scrollable with visible scrollbar on hover */}
+          <nav className="flex items-center flex-1 justify-start min-w-0 px-2" aria-label="Primary">
+            <div className="flex items-center gap-1 max-w-full flex-nowrap overflow-x-auto scrollbar-thin scrollbar-thumb-muted hover:scrollbar-thumb-muted-foreground pb-1">
               {/* Dashboard */}
               <div className="nav-item">
                 <Link to="/">
