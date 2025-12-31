@@ -1416,53 +1416,6 @@ Thanks for watching!`,
           const cameraPermissionRequest = document.getElementById('cameraPermissionRequest');
           const requestCameraBtn = document.getElementById('requestCameraBtn');
           
-          // Check permission state first
-          async function checkCameraPermission() {
-            console.log('🔍 Checking camera permission...');
-            
-            try {
-              // Check if we can query permissions
-              if (navigator.permissions && navigator.permissions.query) {
-                const cameraPermission = await navigator.permissions.query({ name: 'camera' });
-                console.log('Camera permission state:', cameraPermission.state);
-                
-                if (cameraPermission.state === 'granted') {
-                  // Already granted, init directly
-                  initCamera();
-                } else if (cameraPermission.state === 'denied') {
-                  // Denied, show instructions
-                  showPermissionDenied();
-                } else {
-                  // Prompt state - show button to request
-                  showPermissionButton();
-                }
-                
-                // Listen for changes
-                cameraPermission.onchange = function() {
-                  console.log('Permission changed to:', this.state);
-                  if (this.state === 'granted') {
-                    initCamera();
-                  } else if (this.state === 'denied') {
-                    showPermissionDenied();
-                  }
-                };
-              } else {
-                // Permissions API not available, show button
-                showPermissionButton();
-              }
-            } catch(e) {
-              console.log('Permission query not supported, showing button');
-              showPermissionButton();
-            }
-          }
-          
-          function showPermissionButton() {
-            cameraLoadingContent.style.display = 'none';
-            cameraPermissionRequest.style.display = 'block';
-            status.textContent = 'Awaiting Permission';
-            status.className = 'status countdown';
-          }
-          
           function showPermissionDenied() {
             cameraLoadingContent.style.display = 'none';
             cameraPermissionRequest.innerHTML = \`
@@ -1490,41 +1443,17 @@ Thanks for watching!`,
             status.className = 'status error';
           }
           
-          // Request camera on button click or auto
+          // Initialize camera immediately - this triggers browser permission prompt right away
           async function initCamera() {
-            console.log('🎥 Initializing camera...');
-            
-            // Show loading state
-            cameraLoadingContent.style.display = 'block';
-            cameraPermissionRequest.style.display = 'none';
-            cameraLoadingContent.innerHTML = \`
-              <div class="spinner"></div>
-              <p style="margin-top:20px;opacity:0.7;">Accessing camera...</p>
-            \`;
-            status.textContent = 'Connecting...';
-            status.className = 'status loading';
-            
-            // Set a timeout to show help if camera takes too long
-            const cameraTimeout = setTimeout(() => {
-              console.warn('⏰ Camera initialization taking too long');
-              cameraLoadingContent.innerHTML = \`
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" style="margin-bottom:15px;">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" y1="8" x2="12" y2="12"></line>
-                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-                <p style="color:#f59e0b;font-size:16px;margin-bottom:10px;">Taking longer than expected...</p>
-                <p style="font-size:13px;opacity:0.7;margin-bottom:15px;">Check if a permission popup appeared behind this window</p>
-                <button onclick="location.reload()" style="padding:10px 20px;background:#3b82f6;border:none;color:white;border-radius:8px;cursor:pointer;">Retry</button>
-              \`;
-            }, 8000);
+            console.log('🎥 Requesting camera access...');
             
             try {
               // Check if mediaDevices is available
               if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                throw new Error('Camera API not available in this browser');
+                throw new Error('Camera API not available');
               }
               
+              // Request immediately - browser will show permission prompt
               stream = await navigator.mediaDevices.getUserMedia({
                 video: { 
                   width: { ideal: 1280 },
@@ -1534,28 +1463,25 @@ Thanks for watching!`,
                 audio: true
               });
               
-              clearTimeout(cameraTimeout);
-              console.log('✅ Camera stream obtained:', stream.getVideoTracks().length, 'video tracks');
+              console.log('✅ Camera stream obtained');
               
-              // Set preview source
+              // Set preview and play
               preview.srcObject = stream;
               preview.muted = true;
-              
-              // Try to play
               await preview.play();
+              
               cameraLoading.classList.add('hidden');
               status.textContent = 'Camera Ready';
               status.className = 'status ready';
-              console.log('✅ Camera preview playing');
               
             } catch(e) {
-              clearTimeout(cameraTimeout);
-              console.error('❌ Camera error:', e);
+              console.error('❌ Camera error:', e.name, e.message);
               
               if (e.name === 'NotAllowedError') {
                 showPermissionDenied();
               } else if (e.name === 'NotFoundError') {
-                cameraLoadingContent.innerHTML = \`
+                cameraLoadingContent.style.display = 'none';
+                cameraPermissionRequest.innerHTML = \`
                   <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5" style="margin-bottom:20px;">
                     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                     <line x1="1" y1="1" x2="23" y2="23"></line>
@@ -1564,29 +1490,26 @@ Thanks for watching!`,
                   <p style="font-size:14px;opacity:0.7;margin-bottom:20px;">Please connect a camera and try again</p>
                   <button onclick="location.reload()" style="padding:12px 25px;background:#3b82f6;border:none;color:white;border-radius:8px;cursor:pointer;">Retry</button>
                 \`;
+                cameraPermissionRequest.style.display = 'block';
                 status.textContent = 'No Camera';
                 status.className = 'status error';
               } else {
                 cameraLoadingContent.innerHTML = \`
                   <p style="color:#f87171;font-size:16px;margin-bottom:10px;">Camera Error</p>
                   <p style="font-size:13px;opacity:0.7;margin-bottom:15px;">\${e.message}</p>
-                  <button onclick="location.reload()" style="padding:10px 20px;background:#3b82f6;border:none;color:white;border-radius:8px;cursor:pointer;">Retry</button>
+                  <button onclick="initCamera()" style="padding:10px 20px;background:#3b82f6;border:none;color:white;border-radius:8px;cursor:pointer;">Retry</button>
                 \`;
-                status.textContent = 'Camera Error';
+                status.textContent = 'Error';
                 status.className = 'status error';
               }
             }
           }
           
-          // Button click to request camera
+          // Button click to retry
           requestCameraBtn.onclick = initCamera;
           
-          // Check permission on load
-          if (document.readyState === 'complete') {
-            checkCameraPermission();
-          } else {
-            window.addEventListener('load', checkCameraPermission);
-          }
+          // Initialize camera immediately on load
+          initCamera();
           
           function formatTime(seconds) {
             const mins = Math.floor(seconds / 60);
