@@ -514,25 +514,25 @@ export const ScriptsManager: React.FC = () => {
   };
 
   return (
-    <Card className="bg-slate-800/50 border-slate-700">
+    <Card style={{ backgroundColor: '#1e293b', borderColor: '#475569' }} className="border">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-white">
-          <FileAudio className="h-5 w-5 text-green-400" />
+        <CardTitle className="flex items-center gap-2" style={{ color: '#ffffff' }}>
+          <FileAudio className="h-5 w-5" style={{ color: '#4ade80' }} />
           Scripts & Audio Manager
         </CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 bg-slate-700/50">
-            <TabsTrigger value="scripts" className="data-[state=active]:bg-purple-600">
+          <TabsList className="grid w-full grid-cols-3" style={{ backgroundColor: '#334155' }}>
+            <TabsTrigger value="scripts" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white" style={{ color: '#e2e8f0' }}>
               <FileText className="h-4 w-4 mr-2" />
               Scripts
             </TabsTrigger>
-            <TabsTrigger value="generate" className="data-[state=active]:bg-green-600">
+            <TabsTrigger value="generate" className="data-[state=active]:bg-green-600 data-[state=active]:text-white" style={{ color: '#e2e8f0' }}>
               <Volume2 className="h-4 w-4 mr-2" />
               Generate Audio
             </TabsTrigger>
-            <TabsTrigger value="library" className="data-[state=active]:bg-blue-600">
+            <TabsTrigger value="library" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white" style={{ color: '#e2e8f0' }}>
               <FileAudio className="h-4 w-4 mr-2" />
               Library ({generatedAudios.length})
             </TabsTrigger>
@@ -540,73 +540,69 @@ export const ScriptsManager: React.FC = () => {
 
           {/* Scripts Tab - Download original scripts */}
           <TabsContent value="scripts" className="mt-4 space-y-4">
-            <p className="text-slate-300 text-sm">
-              Download the complete scripts for Part 1: Patient Onboarding (~11 minutes)
+            <p style={{ color: '#ffffff', fontWeight: 500 }} className="text-sm">
+              Download the complete scripts for Part 1: Patient Onboarding <span style={{ color: '#fbbf24' }}>(~11 minutes)</span>
             </p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Video Script Card */}
-              <Card className="bg-slate-900/50 border-slate-600">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="p-2 rounded-lg bg-purple-500/20">
-                      <Video className="h-5 w-5 text-purple-400" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-white">Video Script</h3>
-                      <p className="text-xs text-slate-400">With visual cues & timestamps</p>
-                    </div>
+              <div className="rounded-lg border p-4" style={{ backgroundColor: '#0f172a', borderColor: '#475569' }}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 rounded-lg" style={{ backgroundColor: '#7c3aed33' }}>
+                    <Video className="h-5 w-5" style={{ color: '#a78bfa' }} />
                   </div>
-                  <ul className="text-xs text-slate-400 space-y-1 mb-4">
-                    <li>• Scene-by-scene breakdown</li>
-                    <li>• Visual direction notes</li>
-                    <li>• Production notes included</li>
-                    <li>• Technical architecture focus</li>
-                  </ul>
-                  <Button 
-                    onClick={() => handleDownloadPresetScript('videoScript')}
-                    className="w-full gap-2"
-                    variant="outline"
-                  >
-                    <Download className="h-4 w-4" />
-                    Download Video Script
-                  </Button>
-                </CardContent>
-              </Card>
+                  <div>
+                    <h3 className="font-semibold" style={{ color: '#ffffff' }}>Video Script</h3>
+                    <p className="text-xs" style={{ color: '#94a3b8' }}>With visual cues & timestamps</p>
+                  </div>
+                </div>
+                <ul className="text-xs space-y-1 mb-4" style={{ color: '#cbd5e1' }}>
+                  <li>• Scene-by-scene breakdown</li>
+                  <li>• Visual direction notes</li>
+                  <li>• Production notes included</li>
+                  <li>• Technical architecture focus</li>
+                </ul>
+                <Button 
+                  onClick={() => handleDownloadPresetScript('videoScript')}
+                  className="w-full gap-2"
+                  style={{ backgroundColor: '#7c3aed', color: '#ffffff', border: 'none' }}
+                >
+                  <Download className="h-4 w-4" />
+                  Download Video Script
+                </Button>
+              </div>
 
               {/* Audio Script Card */}
-              <Card className="bg-slate-900/50 border-slate-600">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="p-2 rounded-lg bg-green-500/20">
-                      <Mic className="h-5 w-5 text-green-400" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-white">Audio Script</h3>
-                      <p className="text-xs text-slate-400">Voice-over only, no visual cues</p>
-                    </div>
+              <div className="rounded-lg border p-4" style={{ backgroundColor: '#0f172a', borderColor: '#475569' }}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 rounded-lg" style={{ backgroundColor: '#22c55e33' }}>
+                    <Mic className="h-5 w-5" style={{ color: '#4ade80' }} />
                   </div>
-                  <ul className="text-xs text-slate-400 space-y-1 mb-4">
-                    <li>• Clean voice-over text</li>
-                    <li>• Ready for recording</li>
-                    <li>• Natural speech flow</li>
-                    <li>• Technical content focus</li>
-                  </ul>
-                  <Button 
-                    onClick={() => handleDownloadPresetScript('audioScript')}
-                    className="w-full gap-2"
-                    variant="outline"
-                  >
-                    <Download className="h-4 w-4" />
-                    Download Audio Script
-                  </Button>
-                </CardContent>
-              </Card>
+                  <div>
+                    <h3 className="font-semibold" style={{ color: '#ffffff' }}>Audio Script</h3>
+                    <p className="text-xs" style={{ color: '#94a3b8' }}>Voice-over only, no visual cues</p>
+                  </div>
+                </div>
+                <ul className="text-xs space-y-1 mb-4" style={{ color: '#cbd5e1' }}>
+                  <li>• Clean voice-over text</li>
+                  <li>• Ready for recording</li>
+                  <li>• Natural speech flow</li>
+                  <li>• Technical content focus</li>
+                </ul>
+                <Button 
+                  onClick={() => handleDownloadPresetScript('audioScript')}
+                  className="w-full gap-2"
+                  style={{ backgroundColor: '#22c55e', color: '#ffffff', border: 'none' }}
+                >
+                  <Download className="h-4 w-4" />
+                  Download Audio Script
+                </Button>
+              </div>
             </div>
 
-            <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-              <p className="text-xs text-blue-300">
-                <strong>Part 1 covers:</strong> Multi-model routing architecture, configuration-driven document types, 
+            <div className="p-3 rounded-lg" style={{ backgroundColor: '#1e3a5f', border: '1px solid #3b82f6' }}>
+              <p className="text-sm" style={{ color: '#ffffff' }}>
+                <strong style={{ color: '#60a5fa' }}>Part 1 covers:</strong> Multi-model routing architecture, configuration-driven document types, 
                 two-stage pipeline with provider abstraction, and patient onboarding demo with cross-document validation.
               </p>
             </div>
@@ -614,23 +610,23 @@ export const ScriptsManager: React.FC = () => {
 
           <TabsContent value="generate" className="mt-4 space-y-4">
             {/* Preset Scripts */}
-            <div className="p-3 rounded-lg bg-slate-900/50 border border-slate-600">
-              <Label className="text-slate-300 text-sm mb-2 block">Load Preset Script (for TTS generation)</Label>
+            <div className="p-3 rounded-lg border" style={{ backgroundColor: '#0f172a', borderColor: '#475569' }}>
+              <Label className="text-sm mb-2 block" style={{ color: '#ffffff', fontWeight: 500 }}>Load Preset Script (for TTS generation)</Label>
               <div className="flex flex-wrap gap-2">
                 <Button
-                  variant="outline"
                   size="sm"
                   onClick={() => loadPresetScript('audioScript')}
                   className="text-xs"
+                  style={{ backgroundColor: '#22c55e', color: '#ffffff', border: 'none' }}
                 >
                   <Mic className="h-3 w-3 mr-1" />
                   Audio Script (~11 min)
                 </Button>
                 <Button
-                  variant="outline"
                   size="sm"
                   onClick={() => loadPresetScript('videoScript')}
                   className="text-xs"
+                  style={{ backgroundColor: '#7c3aed', color: '#ffffff', border: 'none' }}
                 >
                   <Video className="h-3 w-3 mr-1" />
                   Video Script (with cues)
@@ -642,22 +638,24 @@ export const ScriptsManager: React.FC = () => {
             <div className="space-y-3">
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <Label htmlFor="scriptName" className="text-slate-300 text-sm">Audio Name</Label>
+                  <Label htmlFor="scriptName" className="text-sm" style={{ color: '#ffffff', fontWeight: 500 }}>Audio Name</Label>
                   <Input
                     id="scriptName"
                     value={scriptName}
                     onChange={(e) => setScriptName(e.target.value)}
                     placeholder="e.g., Patient Onboarding Part 1"
-                    className="bg-slate-900/50 border-slate-600 text-white"
+                    className="border"
+                    style={{ backgroundColor: '#0f172a', borderColor: '#475569', color: '#ffffff' }}
                   />
                 </div>
                 <div className="w-40">
-                  <Label htmlFor="voice" className="text-slate-300 text-sm">Voice</Label>
+                  <Label htmlFor="voice" className="text-sm" style={{ color: '#ffffff', fontWeight: 500 }}>Voice</Label>
                   <select
                     id="voice"
                     value={selectedVoice}
                     onChange={(e) => setSelectedVoice(e.target.value)}
-                    className="w-full h-10 px-3 rounded-md bg-slate-900/50 border border-slate-600 text-white text-sm"
+                    className="w-full h-10 px-3 rounded-md border text-sm"
+                    style={{ backgroundColor: '#0f172a', borderColor: '#475569', color: '#ffffff' }}
                   >
                     <option value="alloy">Alloy (Neutral)</option>
                     <option value="echo">Echo (Male)</option>
@@ -671,9 +669,9 @@ export const ScriptsManager: React.FC = () => {
 
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <Label htmlFor="scriptText" className="text-slate-200 font-medium">Script Text</Label>
+                  <Label htmlFor="scriptText" className="font-medium" style={{ color: '#ffffff' }}>Script Text</Label>
                   {scriptText && (
-                    <span className="text-xs text-slate-400 bg-slate-800 px-2 py-1 rounded">
+                    <span className="text-xs px-2 py-1 rounded" style={{ color: '#e2e8f0', backgroundColor: '#334155' }}>
                       {scriptText.length.toLocaleString()} chars | {scriptText.split(/\s+/).length.toLocaleString()} words | {estimateAudioDuration(scriptText)}
                     </span>
                   )}
@@ -683,9 +681,10 @@ export const ScriptsManager: React.FC = () => {
                   value={scriptText}
                   onChange={(e) => setScriptText(e.target.value)}
                   placeholder="Paste or type your script here. Markdown formatting will be removed for TTS."
-                  className="w-full min-h-[450px] rounded-md border border-slate-500 font-mono text-sm leading-relaxed focus:border-green-500 focus:ring-2 focus:ring-green-500/20 focus:outline-none resize-y p-4"
+                  className="w-full min-h-[450px] rounded-md border font-mono text-sm leading-relaxed focus:ring-2 focus:outline-none resize-y p-4"
                   style={{ 
                     backgroundColor: '#0f172a', 
+                    borderColor: '#475569',
                     color: '#f1f5f9',
                     caretColor: '#22c55e'
                   }}
@@ -698,7 +697,8 @@ export const ScriptsManager: React.FC = () => {
               <Button
                 onClick={handleGenerateAudio}
                 disabled={isGenerating || !scriptText.trim() || !scriptName.trim()}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                className="flex-1"
+                style={{ backgroundColor: '#22c55e', color: '#ffffff' }}
               >
                 {isGenerating ? (
                   <>
@@ -713,9 +713,9 @@ export const ScriptsManager: React.FC = () => {
                 )}
               </Button>
               <Button
-                variant="outline"
                 onClick={handleDownloadScript}
                 disabled={!scriptText.trim()}
+                style={{ backgroundColor: '#3b82f6', color: '#ffffff' }}
               >
                 <Download className="h-4 w-4 mr-2" />
                 Save Script
@@ -723,9 +723,9 @@ export const ScriptsManager: React.FC = () => {
             </div>
 
             {isGenerating && (
-              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                <p className="text-xs text-amber-300">
-                  <strong>Processing:</strong> Long scripts are automatically split into chunks and combined. 
+              <div className="p-3 rounded-lg" style={{ backgroundColor: '#422006', border: '1px solid #f59e0b' }}>
+                <p className="text-sm" style={{ color: '#fef3c7' }}>
+                  <strong style={{ color: '#fbbf24' }}>Processing:</strong> Long scripts are automatically split into chunks and combined. 
                   This may take a few moments for longer scripts.
                 </p>
               </div>
@@ -734,67 +734,67 @@ export const ScriptsManager: React.FC = () => {
 
           <TabsContent value="library" className="mt-4">
             {generatedAudios.length === 0 ? (
-              <div className="text-center py-12 text-slate-400">
+              <div className="text-center py-12" style={{ color: '#94a3b8' }}>
                 <FileAudio className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>No audio files generated yet</p>
+                <p style={{ color: '#ffffff' }}>No audio files generated yet</p>
                 <p className="text-sm mt-1">Generate your first audio from the "Generate Audio" tab</p>
               </div>
             ) : (
               <ScrollArea className="h-[400px]">
                 <div className="space-y-3">
                   {generatedAudios.map((audio) => (
-                    <Card key={audio.id} className="bg-slate-900/50 border-slate-600">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handlePlayPause(audio)}
-                              className="h-10 w-10 rounded-full bg-green-600/20 hover:bg-green-600/30"
-                            >
-                              {playingId === audio.id ? (
-                                <Pause className="h-5 w-5 text-green-400" />
-                              ) : (
-                                <Play className="h-5 w-5 text-green-400" />
-                              )}
-                            </Button>
-                            <div>
-                              <h4 className="font-medium text-white">{audio.name}</h4>
-                              <div className="flex items-center gap-3 text-xs text-slate-400">
-                                <span className="flex items-center gap-1">
-                                  <Mic className="h-3 w-3" />
-                                  {audio.voice}
-                                </span>
-                                <span>{Math.round(audio.textLength / 1000)}k chars</span>
-                                <span>{audio.chunks} chunk{audio.chunks > 1 ? 's' : ''}</span>
-                                <span className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  {audio.generatedAt.toLocaleDateString()}
-                                </span>
-                              </div>
+                    <div key={audio.id} className="rounded-lg border p-4" style={{ backgroundColor: '#0f172a', borderColor: '#475569' }}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handlePlayPause(audio)}
+                            className="h-10 w-10 rounded-full"
+                            style={{ backgroundColor: '#22c55e33' }}
+                          >
+                            {playingId === audio.id ? (
+                              <Pause className="h-5 w-5" style={{ color: '#4ade80' }} />
+                            ) : (
+                              <Play className="h-5 w-5" style={{ color: '#4ade80' }} />
+                            )}
+                          </Button>
+                          <div>
+                            <h4 className="font-medium" style={{ color: '#ffffff' }}>{audio.name}</h4>
+                            <div className="flex items-center gap-3 text-xs" style={{ color: '#94a3b8' }}>
+                              <span className="flex items-center gap-1">
+                                <Mic className="h-3 w-3" />
+                                {audio.voice}
+                              </span>
+                              <span>{Math.round(audio.textLength / 1000)}k chars</span>
+                              <span>{audio.chunks} chunk{audio.chunks > 1 ? 's' : ''}</span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {audio.generatedAt.toLocaleDateString()}
+                              </span>
                             </div>
                           </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDownloadAudio(audio)}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteAudio(audio.id)}
-                              className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
                         </div>
-                      </CardContent>
-                    </Card>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleDownloadAudio(audio)}
+                            style={{ backgroundColor: '#3b82f6', color: '#ffffff', border: 'none' }}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteAudio(audio.id)}
+                            style={{ color: '#f87171' }}
+                            className="hover:bg-red-400/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </ScrollArea>
