@@ -692,54 +692,54 @@ export const ScriptsManager: React.FC = () => {
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 p-1 rounded-lg border border-border/50 shadow-sm" style={{ backgroundColor: '#1e293b' }}>
+          <TabsList className="flex w-full gap-2 p-2 rounded-lg border border-border/50 shadow-sm" style={{ backgroundColor: '#1e293b' }}>
             <TabsTrigger 
               value="scripts" 
-              className="rounded-md font-medium transition-all data-[state=active]:shadow-md" 
+              className="flex-1 rounded-md font-medium transition-all data-[state=active]:shadow-md px-3 py-2 text-sm whitespace-nowrap" 
               style={{ 
                 backgroundColor: activeTab === 'scripts' ? '#7c3aed' : '#334155',
                 color: '#ffffff',
                 border: 'none'
               }}
             >
-              <FileText className="h-4 w-4 mr-2" />
-              Scripts
+              <FileText className="h-4 w-4 mr-1.5 shrink-0" />
+              <span>Scripts</span>
             </TabsTrigger>
             <TabsTrigger 
               value="generate" 
-              className="rounded-md font-medium transition-all data-[state=active]:shadow-md"
+              className="flex-1 rounded-md font-medium transition-all data-[state=active]:shadow-md px-3 py-2 text-sm whitespace-nowrap"
               style={{ 
                 backgroundColor: activeTab === 'generate' ? '#16a34a' : '#334155',
                 color: '#ffffff',
                 border: 'none'
               }}
             >
-              <Volume2 className="h-4 w-4 mr-2" />
-              Generate Audio
+              <Volume2 className="h-4 w-4 mr-1.5 shrink-0" />
+              <span>Generate Audio</span>
             </TabsTrigger>
             <TabsTrigger 
               value="video" 
-              className="rounded-md font-medium transition-all data-[state=active]:shadow-md"
+              className="flex-1 rounded-md font-medium transition-all data-[state=active]:shadow-md px-3 py-2 text-sm whitespace-nowrap"
               style={{ 
                 backgroundColor: activeTab === 'video' ? '#ea580c' : '#334155',
                 color: '#ffffff',
                 border: 'none'
               }}
             >
-              <Camera className="h-4 w-4 mr-2" />
-              Video Studio
+              <Camera className="h-4 w-4 mr-1.5 shrink-0" />
+              <span>Video Studio</span>
             </TabsTrigger>
             <TabsTrigger 
               value="library" 
-              className="rounded-md font-medium transition-all data-[state=active]:shadow-md"
+              className="flex-1 rounded-md font-medium transition-all data-[state=active]:shadow-md px-3 py-2 text-sm whitespace-nowrap"
               style={{ 
                 backgroundColor: activeTab === 'library' ? '#2563eb' : '#334155',
                 color: '#ffffff',
                 border: 'none'
               }}
             >
-              <FileAudio className="h-4 w-4 mr-2" />
-              Library ({generatedAudios.length})
+              <FileAudio className="h-4 w-4 mr-1.5 shrink-0" />
+              <span>Library ({generatedAudios.length})</span>
             </TabsTrigger>
           </TabsList>
 
