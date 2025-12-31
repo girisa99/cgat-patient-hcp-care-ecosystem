@@ -21,8 +21,10 @@ import {
   Video,
   RefreshCw,
   Edit3,
-  Link
+  Link,
+  Camera
 } from 'lucide-react';
+import { VideoRecorder } from './VideoRecorder';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from '@/hooks/useMasterToast';
 
@@ -668,7 +670,7 @@ export const ScriptsManager: React.FC = () => {
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3" style={{ backgroundColor: '#334155' }}>
+          <TabsList className="grid w-full grid-cols-4" style={{ backgroundColor: '#334155' }}>
             <TabsTrigger value="scripts" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white" style={{ color: '#e2e8f0' }}>
               <FileText className="h-4 w-4 mr-2" />
               Scripts
@@ -676,6 +678,10 @@ export const ScriptsManager: React.FC = () => {
             <TabsTrigger value="generate" className="data-[state=active]:bg-green-600 data-[state=active]:text-white" style={{ color: '#e2e8f0' }}>
               <Volume2 className="h-4 w-4 mr-2" />
               Generate Audio
+            </TabsTrigger>
+            <TabsTrigger value="video" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white" style={{ color: '#e2e8f0' }}>
+              <Camera className="h-4 w-4 mr-2" />
+              Video Studio
             </TabsTrigger>
             <TabsTrigger value="library" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white" style={{ color: '#e2e8f0' }}>
               <FileAudio className="h-4 w-4 mr-2" />
@@ -888,6 +894,11 @@ export const ScriptsManager: React.FC = () => {
                 </p>
               </div>
             )}
+          </TabsContent>
+
+          {/* Video Studio Tab */}
+          <TabsContent value="video" className="mt-4">
+            <VideoRecorder />
           </TabsContent>
 
           <TabsContent value="library" className="mt-4">
