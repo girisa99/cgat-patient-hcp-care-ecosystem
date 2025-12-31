@@ -116,6 +116,60 @@ function generateStyles(): string {
       background: #1a1a2e;
       border-radius: 12px;
     }
+    .camera-controls {
+      position: absolute;
+      bottom: 15px;
+      left: 15px;
+      display: flex;
+      gap: 8px;
+      z-index: 20;
+    }
+    .camera-controls button {
+      padding: 8px 12px;
+      font-size: 12px;
+      background: rgba(0,0,0,0.7);
+      border: 1px solid #444;
+    }
+    .camera-controls button.active { background: #6366f1; border-color: #6366f1; }
+    .camera-off-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #1a1a2e 0%, #2a2a4e 100%);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 15;
+    }
+    .camera-off-overlay.visible { display: flex; }
+    .logo-placeholder {
+      width: 120px;
+      height: 120px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 40px rgba(99,102,241,0.3);
+    }
+    .camera-off-text { font-size: 16px; opacity: 0.7; }
+    .webcam-pip {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      width: 200px;
+      height: 112px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 3px solid #333;
+      background: #000;
+      z-index: 10;
+    }
+    .webcam-pip.hidden { display: none; }
+    .webcam-pip.blurred video { filter: blur(10px); }
+    .webcam-pip video { width: 100%; height: 100%; object-fit: cover; }
     button {
       background: #4a4a6a;
       color: white;
@@ -358,6 +412,18 @@ function generateBody(config: PopoutConfig, escapedScriptContent: string): strin
       <div class="video-section">
         <div class="video-container">
           <video id="preview" autoplay playsinline muted></video>
+          
+          <!-- Camera off overlay with logo -->
+          <div id="cameraOffOverlay" class="camera-off-overlay">
+            <div class="logo-placeholder">🎥</div>
+            <p class="camera-off-text">Camera is off</p>
+          </div>
+          
+          <!-- Camera controls -->
+          <div class="camera-controls">
+            <button id="cameraToggleBtn" class="active" title="Toggle Camera">📹 On</button>
+            <button id="cameraBlurBtn" title="Blur Background">🔵 Blur</button>
+          </div>
           
           <div id="cameraLoading" class="camera-loading">
             <div id="cameraLoadingContent">
@@ -646,6 +712,13 @@ function generateScript(config: PopoutConfig): string {
       var cameraLoadingContent = document.getElementById('cameraLoadingContent');
       var cameraPermissionRequest = document.getElementById('cameraPermissionRequest');
       var requestCameraBtn = document.getElementById('requestCameraBtn');
+      var cameraOffOverlay = document.getElementById('cameraOffOverlay');
+      var cameraToggleBtn = document.getElementById('cameraToggleBtn');
+      var cameraBlurBtn = document.getElementById('cameraBlurBtn');
+      
+      // Camera state
+      var isCameraOn = true;
+      var isCameraBlurred = false;
       
       // Currently selected IDs
       var selectedScriptId = '${config.selectedScriptId}';
@@ -733,6 +806,44 @@ function generateScript(config: PopoutConfig): string {
       document.getElementById('scrollUpBtn').onclick = function() { scriptContent.scrollTop -= 50; };
       document.getElementById('scrollDownBtn').onclick = function() { scriptContent.scrollTop += 50; };
       document.getElementById('scrollResetBtn').onclick = function() { scriptContent.scrollTop = 0; };
+      
+      // Camera toggle controls
+      cameraToggleBtn.onclick = function() {
+        isCameraOn = !isCameraOn;
+        if (isCameraOn) {
+          cameraOffOverlay.classList.remove('visible');
+          preview.style.display = '';
+          cameraToggleBtn.textContent = '📹 On';
+          cameraToggleBtn.classList.add('active');
+          // Re-enable video track
+          if (stream) {
+            var videoTracks = stream.getVideoTracks();
+            videoTracks.forEach(function(track) { track.enabled = true; });
+          }
+        } else {
+          cameraOffOverlay.classList.add('visible');
+          cameraToggleBtn.textContent = '📹 Off';
+          cameraToggleBtn.classList.remove('active');
+          // Disable video track (keeps audio)
+          if (stream) {
+            var videoTracks = stream.getVideoTracks();
+            videoTracks.forEach(function(track) { track.enabled = false; });
+          }
+        }
+      };
+      
+      cameraBlurBtn.onclick = function() {
+        isCameraBlurred = !isCameraBlurred;
+        if (isCameraBlurred) {
+          preview.style.filter = 'blur(10px)';
+          cameraBlurBtn.textContent = '🔵 Unblur';
+          cameraBlurBtn.classList.add('active');
+        } else {
+          preview.style.filter = '';
+          cameraBlurBtn.textContent = '🔵 Blur';
+          cameraBlurBtn.classList.remove('active');
+        }
+      };
       
       // Show permission denied UI
       function showPermissionDenied() {
@@ -926,6 +1037,47 @@ function generateScript(config: PopoutConfig): string {
         var supabaseUrl = '${config.supabaseUrl}';
         var supabaseKey = '${config.supabaseKey}';
         
+        // Helper to save TTS to parent window's localStorage
+        function saveTTSToLibrary(audioContent, scriptTitle) {
+          try {
+            var audioId = 'tts-' + Date.now() + '-' + Math.random().toString(36).substring(7);
+            var audioName = 'TTS: ' + (scriptTitle || 'Generated').substring(0, 30);
+            var audioDataUrl = 'data:audio/mpeg;base64,' + audioContent;
+            
+            // Save to localStorage for the parent window to pick up
+            var existingAudios = [];
+            try {
+              var saved = localStorage.getItem('generatedAudiosMetadata');
+              if (saved) existingAudios = JSON.parse(saved);
+            } catch(e) {}
+            
+            existingAudios.push({
+              id: audioId,
+              name: audioName,
+              audioUrl: audioDataUrl,
+              storagePath: null,
+              createdAt: new Date().toISOString(),
+              scriptText: text.substring(0, 500),
+              scriptType: 'video',
+              source: 'tts-popout'
+            });
+            
+            localStorage.setItem('generatedAudiosMetadata', JSON.stringify(existingAudios));
+            console.log('✅ TTS saved to library:', audioName);
+            
+            // Try to notify parent window
+            if (window.opener && !window.opener.closed) {
+              window.opener.postMessage({ type: 'TTS_GENERATED', audioId: audioId, name: audioName }, '*');
+            }
+          } catch(e) {
+            console.error('Failed to save TTS to library:', e);
+          }
+        }
+        
+        var scriptTitle = '';
+        var selectedScriptObj = scripts.find(function(s) { return s.id === scriptSelect.value; });
+        if (selectedScriptObj) scriptTitle = selectedScriptObj.title;
+        
         fetch(supabaseUrl + '/functions/v1/elevenlabs-voice', {
           method: 'POST',
           headers: {
@@ -946,6 +1098,7 @@ function generateScript(config: PopoutConfig): string {
           if (data.audioContent) {
             ttsAudio = new Audio('data:audio/mpeg;base64,' + data.audioContent);
             ttsAudio.volume = 1.0;
+            saveTTSToLibrary(data.audioContent, scriptTitle);
           }
           if (callback) callback();
         }).catch(function(e) {
@@ -969,6 +1122,7 @@ function generateScript(config: PopoutConfig): string {
             if (data.audioContent) {
               ttsAudio = new Audio('data:audio/mpeg;base64,' + data.audioContent);
               ttsAudio.volume = 1.0;
+              saveTTSToLibrary(data.audioContent, scriptTitle);
             }
             if (callback) callback();
           }).catch(function(e2) {
@@ -1136,9 +1290,55 @@ function generateScript(config: PopoutConfig): string {
         // Draw loop
         function drawFrame() {
           ctx.drawImage(screenVideo, 0, 0, 1920, 1080);
-          var pipWidth = 320;
-          var pipHeight = 180;
-          ctx.drawImage(webcamVideo, 1920 - pipWidth - 20, 1080 - pipHeight - 20, pipWidth, pipHeight);
+          
+          // Only draw webcam PIP if camera is on
+          if (isCameraOn) {
+            var pipWidth = 320;
+            var pipHeight = 180;
+            var pipX = 1920 - pipWidth - 20;
+            var pipY = 1080 - pipHeight - 20;
+            
+            if (isCameraBlurred) {
+              // Apply blur effect to webcam
+              ctx.save();
+              ctx.filter = 'blur(10px)';
+              ctx.drawImage(webcamVideo, pipX, pipY, pipWidth, pipHeight);
+              ctx.restore();
+            } else {
+              ctx.drawImage(webcamVideo, pipX, pipY, pipWidth, pipHeight);
+            }
+            
+            // Draw PIP border
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(pipX, pipY, pipWidth, pipHeight);
+          } else {
+            // Draw logo placeholder instead of webcam
+            var pipWidth = 320;
+            var pipHeight = 180;
+            var pipX = 1920 - pipWidth - 20;
+            var pipY = 1080 - pipHeight - 20;
+            
+            // Draw dark background
+            var gradient = ctx.createLinearGradient(pipX, pipY, pipX + pipWidth, pipY + pipHeight);
+            gradient.addColorStop(0, '#1a1a2e');
+            gradient.addColorStop(1, '#2a2a4e');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(pipX, pipY, pipWidth, pipHeight);
+            
+            // Draw camera icon
+            ctx.fillStyle = '#6366f1';
+            ctx.font = '48px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🎥', pipX + pipWidth/2, pipY + pipHeight/2);
+            
+            // Draw border
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(pipX, pipY, pipWidth, pipHeight);
+          }
+          
           if (mediaRecorder.state === 'recording') {
             requestAnimationFrame(drawFrame);
           }
