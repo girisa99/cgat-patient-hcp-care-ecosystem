@@ -85,6 +85,8 @@ export const VideoRecorder: React.FC = () => {
   const [showScriptTeleprompter, setShowScriptTeleprompter] = useState(false);
   const [showAudioTeleprompter, setShowAudioTeleprompter] = useState(false);
   const [editingMedia, setEditingMedia] = useState<MediaItem | null>(null);
+  const [previewStream, setPreviewStream] = useState<MediaStream | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   
   const previewRef = useRef<HTMLVideoElement>(null);
   const fullscreenPreviewRef = useRef<HTMLVideoElement>(null);
@@ -113,21 +115,65 @@ export const VideoRecorder: React.FC = () => {
   
   const { showSuccess, showError } = useMasterToast();
 
-  // Show live preview
+  // Start camera preview when mode changes (before recording)
+  useEffect(() => {
+    const startPreview = async () => {
+      // Stop existing preview stream
+      if (previewStream) {
+        previewStream.getTracks().forEach(track => track.stop());
+        setPreviewStream(null);
+      }
+      
+      if (isRecording || recordedUrl) return;
+      
+      setIsPreviewLoading(true);
+      
+      try {
+        if (recordingMode === 'webcam' || recordingMode === 'screen+webcam') {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { width: 1280, height: 720, facingMode: 'user' },
+            audio: false, // No audio for preview
+          });
+          setPreviewStream(stream);
+        }
+      } catch (err) {
+        console.error('Preview error:', err);
+      } finally {
+        setIsPreviewLoading(false);
+      }
+    };
+    
+    startPreview();
+    
+    return () => {
+      if (previewStream) {
+        previewStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [recordingMode, isRecording, recordedUrl]);
+
+  // Show live preview (before recording, during recording, or playback)
   useEffect(() => {
     const videoElement = isFullscreen ? fullscreenPreviewRef.current : previewRef.current;
     if (videoElement) {
       if (isRecording) {
+        // During recording - show combined stream
         videoElement.srcObject = combinedStream || webcamStream;
         videoElement.muted = true;
         videoElement.play().catch(console.error);
       } else if (recordedUrl) {
+        // After recording - show playback
         videoElement.srcObject = null;
         videoElement.src = recordedUrl;
         videoElement.muted = false;
+      } else if (previewStream) {
+        // Before recording - show camera preview
+        videoElement.srcObject = previewStream;
+        videoElement.muted = true;
+        videoElement.play().catch(console.error);
       }
     }
-  }, [isRecording, webcamStream, combinedStream, recordedUrl, isFullscreen]);
+  }, [isRecording, webcamStream, combinedStream, recordedUrl, isFullscreen, previewStream]);
 
   // Load media from database and scripts
   useEffect(() => {
@@ -167,14 +213,16 @@ export const VideoRecorder: React.FC = () => {
           try {
             const legacyAudios = JSON.parse(savedAudioMetadata);
             legacyAudios.forEach((audio: any) => {
-              // Check if this audio is already in the DB items (by storage path)
+              // Check if this audio is already in the DB items (by storage path or name)
               const alreadyExists = items.some(
-                item => item.storage_path === audio.storagePath || item.name === audio.name
+                item => 
+                  (item.storage_path && audio.storagePath && item.storage_path === audio.storagePath) || 
+                  (item.name === audio.name && item.file_type === 'audio')
               );
               if (!alreadyExists && audio.audioUrl) {
                 items.push({
-                  id: audio.id,
-                  name: audio.name,
+                  id: audio.id || `legacy-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+                  name: audio.name || 'Generated Audio',
                   file_type: 'audio',
                   storage_bucket: 'generated-audio',
                   storage_path: audio.storagePath || '',
@@ -190,6 +238,35 @@ export const VideoRecorder: React.FC = () => {
           }
         }
 
+        // Also check for savedAudios in localStorage (another common pattern)
+        const savedAudios = localStorage.getItem('savedAudios');
+        if (savedAudios) {
+          try {
+            const audios = JSON.parse(savedAudios);
+            audios.forEach((audio: any) => {
+              const alreadyExists = items.some(
+                item => item.url === audio.url || (item.name === audio.name && item.file_type === 'audio')
+              );
+              if (!alreadyExists && (audio.url || audio.audioUrl)) {
+                items.push({
+                  id: audio.id || `saved-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+                  name: audio.name || audio.title || 'Saved Audio',
+                  file_type: 'audio',
+                  storage_bucket: audio.bucket || 'generated-audio',
+                  storage_path: audio.path || '',
+                  url: audio.url || audio.audioUrl,
+                  source: 'generated',
+                  created_at: audio.createdAt || new Date().toISOString(),
+                  metadata: audio.metadata || {},
+                });
+              }
+            });
+          } catch (e) {
+            console.error('Failed to parse saved audios:', e);
+          }
+        }
+
+        console.log('Loaded media items:', items.length, 'audio files:', items.filter(m => m.file_type === 'audio').length);
         setMediaItems(items);
       } catch (e) {
         console.error('Failed to load media:', e);
@@ -304,6 +381,12 @@ Let me walk you through the key improvements we've made.`,
   };
 
   const handleStartRecording = async () => {
+    // Stop preview stream before starting recording
+    if (previewStream) {
+      previewStream.getTracks().forEach(track => track.stop());
+      setPreviewStream(null);
+    }
+    
     await startRecording(recordingMode, micEnabled);
     // Start voiceover audio if selected
     if (selectedAudioFile && voiceoverAudioRef.current) {
@@ -575,12 +658,29 @@ Let me walk you through the key improvements we've made.`,
         playsInline
         controls={!!recordedUrl && !isRecording}
       />
-      {!isRecording && !recordedUrl && (
+      {/* Show placeholder only when no preview stream available */}
+      {!isRecording && !recordedUrl && !previewStream && !isPreviewLoading && recordingMode === 'screen' && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-center text-muted-foreground">
-            <Video className="h-12 w-12 mx-auto mb-2 opacity-50" />
-            <p>Select a mode and start recording</p>
+            <Monitor className="h-12 w-12 mx-auto mb-2 opacity-50" />
+            <p>Screen preview available after starting</p>
           </div>
+        </div>
+      )}
+      {/* Loading state */}
+      {isPreviewLoading && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-center text-muted-foreground">
+            <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin" />
+            <p>Starting live preview...</p>
+          </div>
+        </div>
+      )}
+      {/* Camera preview ready indicator */}
+      {!isRecording && !recordedUrl && previewStream && (
+        <div className="absolute top-4 left-4 bg-green-500/80 text-white px-2 py-1 rounded flex items-center gap-1">
+          <Camera className="h-3 w-3" />
+          <span className="text-xs">Camera Ready</span>
         </div>
       )}
       {isRecording && (
