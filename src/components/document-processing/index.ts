@@ -20,6 +20,7 @@ export { VideoScriptDownloader } from './VideoScriptDownloader';
 export { ScriptsManager } from './ScriptsManager';
 export { VideoRecorder } from './VideoRecorder';
 export { TeleprompterPopup } from './TeleprompterPopup';
+export { VideoEditor } from './VideoEditor';
 
 // New Improvement Components
 export { ModelUsageAnalyticsDashboard } from './ModelUsageAnalyticsDashboard';

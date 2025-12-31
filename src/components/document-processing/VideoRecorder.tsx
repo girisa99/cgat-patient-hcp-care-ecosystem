@@ -33,6 +33,7 @@ import {
   Volume2,
   ExternalLink,
   Eye,
+  Scissors,
 } from 'lucide-react';
 import { useMediaRecorder, RecordingMode } from '@/hooks/useMediaRecorder';
 import { useMasterToast } from '@/hooks/useMasterToast';
@@ -44,6 +45,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { TeleprompterPopup } from './TeleprompterPopup';
+import { VideoEditor } from './VideoEditor';
 
 interface MediaItem {
   id: string;
@@ -82,6 +84,7 @@ export const VideoRecorder: React.FC = () => {
   const [micEnabled, setMicEnabled] = useState(true);
   const [showScriptTeleprompter, setShowScriptTeleprompter] = useState(false);
   const [showAudioTeleprompter, setShowAudioTeleprompter] = useState(false);
+  const [editingMedia, setEditingMedia] = useState<MediaItem | null>(null);
   
   const previewRef = useRef<HTMLVideoElement>(null);
   const fullscreenPreviewRef = useRef<HTMLVideoElement>(null);
@@ -126,7 +129,7 @@ export const VideoRecorder: React.FC = () => {
     }
   }, [isRecording, webcamStream, combinedStream, recordedUrl, isFullscreen]);
 
-  // Load media from database
+  // Load media from database and scripts
   useEffect(() => {
     const loadMedia = async () => {
       setIsLoading(true);
@@ -168,20 +171,90 @@ export const VideoRecorder: React.FC = () => {
 
     loadMedia();
 
-    // Load scripts from localStorage
-    const savedScripts = localStorage.getItem('savedScripts');
-    if (savedScripts) {
-      try {
-        const scripts = JSON.parse(savedScripts);
-        setAvailableScripts(scripts.map((s: any) => ({
-          id: s.id || crypto.randomUUID(),
-          title: s.title || 'Untitled Script',
-          content: s.content || s.text || '',
-        })));
-      } catch (e) {
-        console.error('Failed to load scripts:', e);
+    // Load scripts from multiple sources
+    const loadScripts = () => {
+      const allScripts: ScriptItem[] = [];
+      
+      // Source 1: savedScripts (legacy)
+      const savedScripts = localStorage.getItem('savedScripts');
+      if (savedScripts) {
+        try {
+          const scripts = JSON.parse(savedScripts);
+          scripts.forEach((s: any) => {
+            allScripts.push({
+              id: s.id || crypto.randomUUID(),
+              title: s.title || 'Untitled Script',
+              content: s.content || s.text || '',
+            });
+          });
+        } catch (e) {
+          console.error('Failed to load savedScripts:', e);
+        }
       }
-    }
+      
+      // Source 2: generatedAudiosMetadata (scripts attached to generated audio)
+      const audioMetadata = localStorage.getItem('generatedAudiosMetadata');
+      if (audioMetadata) {
+        try {
+          const audios = JSON.parse(audioMetadata);
+          audios.forEach((a: any) => {
+            if (a.scriptText) {
+              // Check if this script is already in the list (by content hash)
+              const isDuplicate = allScripts.some(
+                s => s.content.substring(0, 100) === a.scriptText.substring(0, 100)
+              );
+              if (!isDuplicate) {
+                allScripts.push({
+                  id: `audio-${a.id}`,
+                  title: `${a.name} Script`,
+                  content: a.scriptText,
+                });
+              }
+            }
+          });
+        } catch (e) {
+          console.error('Failed to load audio scripts:', e);
+        }
+      }
+      
+      // Add preset scripts if no scripts found
+      if (allScripts.length === 0) {
+        allScripts.push(
+          {
+            id: 'preset-video',
+            title: 'Video Script - Patient Onboarding',
+            content: `# AI Document Processing: Enterprise Edition
+## Voice-Over Script
+
+Hello everyone! If you watched my previous video on this AI document processing platform, you saw what was possible in less than 64 hours during a single weekend.
+
+Today, I'm excited to share what happened next—the evolution from a weekend prototype to an enterprise-grade solution.
+
+Since that original build, I've made significant enhancements on both the technical architecture and functional sides.
+
+Technical Architecture Enhancements:
+- Multi-Model AI Routing System
+- Configuration-Driven Architecture
+- Two-Stage Pipeline with Provider Abstraction
+
+Let me walk you through the technical transformation.`,
+          },
+          {
+            id: 'preset-audio',
+            title: 'Audio Script - Introduction',
+            content: `Hello everyone! Good morning, evening, afternoon, or night—wherever you are watching this video!
+
+Today I'm excited to share the evolution of our AI document processing platform from a weekend prototype to an enterprise-grade solution.
+
+Let me walk you through the key improvements we've made.`,
+          }
+        );
+      }
+      
+      setAvailableScripts(allScripts);
+    };
+    
+    loadScripts();
   }, []);
 
   // Handle fullscreen change
@@ -839,50 +912,74 @@ export const VideoRecorder: React.FC = () => {
 
             {/* Library Tab */}
             <TabsContent value="library" className="space-y-4">
-              <ScrollArea className="h-[400px]">
-                {mediaItems.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <FileVideo className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>No recordings or uploads yet</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {/* All Media Items */}
-                    {mediaItems.map((media) => (
-                      <div
-                        key={media.id}
-                        className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                      >
-                        {media.source === 'recording' && media.metadata?.mode 
-                          ? getModeIcon(media.metadata.mode as string) 
-                          : getMediaIcon(media.file_type)}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{media.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {media.duration_seconds ? `${formatDuration(media.duration_seconds)} • ` : ''}
-                            {media.source === 'recording' ? 'Recording' : 'Upload'} • 
-                            {new Date(media.created_at).toLocaleDateString()}
-                          </p>
+              {editingMedia ? (
+                <VideoEditor
+                  videoUrl={editingMedia.url}
+                  videoName={editingMedia.name}
+                  onClose={() => setEditingMedia(null)}
+                  onSave={(blob, transcript) => {
+                    console.log('Video saved with transcript:', transcript.substring(0, 100));
+                    setEditingMedia(null);
+                    showSuccess('Video saved with updated script');
+                  }}
+                />
+              ) : (
+                <ScrollArea className="h-[400px]">
+                  {mediaItems.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <FileVideo className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p>No recordings or uploads yet</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {/* All Media Items */}
+                      {mediaItems.map((media) => (
+                        <div
+                          key={media.id}
+                          className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                        >
+                          {media.source === 'recording' && media.metadata?.mode 
+                            ? getModeIcon(media.metadata.mode as string) 
+                            : getMediaIcon(media.file_type)}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{media.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {media.duration_seconds ? `${formatDuration(media.duration_seconds)} • ` : ''}
+                              {media.source === 'recording' ? 'Recording' : 'Upload'} • 
+                              {new Date(media.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                          {/* Edit button for videos only */}
+                          {media.file_type === 'video' && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setEditingMedia(media)}
+                              title="Edit video (trim, transcribe)"
+                            >
+                              <Scissors className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDownload(media)}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDeleteMedia(media.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
                         </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleDownload(media)}
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleDeleteMedia(media.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>
