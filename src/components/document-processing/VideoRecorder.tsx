@@ -24,6 +24,8 @@ import {
   Image,
   Music,
   FileVideo,
+  Headphones,
+  Sparkles,
   Loader2,
   RefreshCw,
   Maximize2,
@@ -86,6 +88,12 @@ export const VideoRecorder: React.FC = () => {
   const [showAudioTeleprompter, setShowAudioTeleprompter] = useState(false);
   const [editingMedia, setEditingMedia] = useState<MediaItem | null>(null);
   const [previewStream, setPreviewStream] = useState<MediaStream | null>(null);
+  
+  // Instrumental music generation state
+  const [musicPrompt, setMusicPrompt] = useState('');
+  const [musicDuration, setMusicDuration] = useState(30);
+  const [isGeneratingMusic, setIsGeneratingMusic] = useState(false);
+  const [selectedBackgroundMusic, setSelectedBackgroundMusic] = useState<MediaItem | null>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   
   const previewRef = useRef<HTMLVideoElement>(null);
@@ -1067,9 +1075,100 @@ Let me walk you through the key improvements we've made.`,
   };
 
   const audioFiles = mediaItems.filter(m => m.file_type === 'audio');
+  const musicFiles = audioFiles.filter(m => m.metadata?.type === 'instrumental' || m.name.toLowerCase().includes('music') || m.name.toLowerCase().includes('instrument'));
+  const voiceoverFiles = audioFiles.filter(m => !musicFiles.includes(m));
   const videoFiles = mediaItems.filter(m => m.file_type === 'video');
   const recordings = mediaItems.filter(m => m.source === 'recording');
   const uploads = mediaItems.filter(m => m.source === 'upload');
+
+  // Generate instrumental music using ElevenLabs
+  const handleGenerateMusic = async () => {
+    if (!musicPrompt.trim()) {
+      showError('Please enter a music description');
+      return;
+    }
+
+    setIsGeneratingMusic(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      console.log('🎵 Generating instrumental music:', musicPrompt);
+      
+      const { data, error } = await supabase.functions.invoke('elevenlabs-music', {
+        body: { prompt: musicPrompt, duration: musicDuration }
+      });
+
+      if (error) throw error;
+      if (!data?.audioContent) throw new Error('No audio content returned');
+
+      // Convert base64 to blob
+      const audioUrl = `data:audio/mpeg;base64,${data.audioContent}`;
+      
+      // Create blob from data URL for storage
+      const response = await fetch(audioUrl);
+      const audioBlob = await response.blob();
+      
+      // Upload to storage
+      const fileName = `instrumental_${Date.now()}.mp3`;
+      const storagePath = `${user.id}/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('generated-audio')
+        .upload(storagePath, audioBlob, {
+          contentType: 'audio/mpeg',
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('generated-audio')
+        .getPublicUrl(storagePath);
+
+      // Save to database
+      const { data: dbData, error: dbError } = await supabase
+        .from('generated_media')
+        .insert({
+          user_id: user.id,
+          name: `🎵 ${musicPrompt.substring(0, 50)}${musicPrompt.length > 50 ? '...' : ''}`,
+          file_type: 'audio',
+          storage_bucket: 'generated-audio',
+          storage_path: storagePath,
+          file_url: urlData.publicUrl,
+          source: 'generated',
+          duration_seconds: musicDuration,
+          metadata: { type: 'instrumental', prompt: musicPrompt, duration: musicDuration }
+        })
+        .select()
+        .single();
+
+      if (dbError) throw dbError;
+
+      // Add to local state
+      const newItem: MediaItem = {
+        id: dbData.id,
+        name: dbData.name,
+        file_type: 'audio',
+        storage_bucket: 'generated-audio',
+        storage_path: storagePath,
+        url: urlData.publicUrl,
+        source: 'generated',
+        duration_seconds: musicDuration,
+        created_at: new Date().toISOString(),
+        metadata: { type: 'instrumental', prompt: musicPrompt }
+      };
+
+      setMediaItems(prev => [newItem, ...prev]);
+      setMusicPrompt('');
+      showSuccess(`Instrumental music "${musicPrompt.substring(0, 30)}..." generated!`);
+    } catch (error: any) {
+      console.error('Music generation error:', error);
+      showError(error.message || 'Failed to generate music');
+    } finally {
+      setIsGeneratingMusic(false);
+    }
+  };
 
   const VideoPreview = ({ className = '', videoRef }: { className?: string; videoRef: React.RefObject<HTMLVideoElement> }) => (
     <div className={`relative aspect-video bg-muted rounded-lg overflow-hidden ${className}`}>
@@ -1240,7 +1339,7 @@ Let me walk you through the key improvements we've made.`,
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">None</SelectItem>
-                      {audioFiles.map(audio => (
+                      {voiceoverFiles.map(audio => (
                         <SelectItem key={audio.id} value={audio.id}>
                           {audio.name}
                         </SelectItem>
@@ -1271,6 +1370,94 @@ Let me walk you through the key improvements we've made.`,
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+
+              {/* Background Instrumental Music */}
+              <div className="space-y-3 p-3 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg border border-primary/20">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2">
+                    <Headphones className="h-4 w-4 text-primary" />
+                    Background Instrumental Music
+                  </Label>
+                  <Badge variant="outline" className="text-xs">AI Generated</Badge>
+                </div>
+                
+                {/* Music Selection */}
+                <Select
+                  value={selectedBackgroundMusic?.id || 'none'}
+                  onValueChange={(val) => {
+                    if (val === 'none') {
+                      setSelectedBackgroundMusic(null);
+                    } else {
+                      const music = musicFiles.find(m => m.id === val);
+                      setSelectedBackgroundMusic(music || null);
+                    }
+                  }}
+                  disabled={isRecording}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select background music..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {musicFiles.length > 0 ? (
+                      musicFiles.map(music => (
+                        <SelectItem key={music.id} value={music.id}>
+                          {music.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="none" disabled>No music files yet - generate below</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+
+                {/* Generate New Music */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium">Generate New Instrumental</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="e.g., Upbeat corporate background, relaxing piano..."
+                      value={musicPrompt}
+                      onChange={(e) => setMusicPrompt(e.target.value)}
+                      disabled={isGeneratingMusic}
+                      className="flex-1"
+                    />
+                    <Select
+                      value={musicDuration.toString()}
+                      onValueChange={(val) => setMusicDuration(parseInt(val))}
+                      disabled={isGeneratingMusic}
+                    >
+                      <SelectTrigger className="w-24">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="15">15s</SelectItem>
+                        <SelectItem value="30">30s</SelectItem>
+                        <SelectItem value="60">1 min</SelectItem>
+                        <SelectItem value="90">1.5 min</SelectItem>
+                        <SelectItem value="120">2 min</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      onClick={handleGenerateMusic}
+                      disabled={isGeneratingMusic || !musicPrompt.trim()}
+                      size="sm"
+                    >
+                      {isGeneratingMusic ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Describe the style: genre, mood, instruments, tempo
+                  </p>
                 </div>
               </div>
 
