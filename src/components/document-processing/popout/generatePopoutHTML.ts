@@ -598,10 +598,14 @@ function generateBody(config: PopoutConfig, escapedScriptContent: string): strin
               <div class="controls">
                 <button id="musicRewindBtn" title="Rewind 5s" disabled>⏪</button>
                 <button id="musicPlayPauseBtn" title="Play/Pause" disabled>▶️</button>
+                <button id="musicLoopBtn" title="Toggle Loop" disabled>🔁</button>
                 <button id="musicVolumeDownBtn" title="Volume -" disabled>🔉</button>
                 <button id="musicVolumeUpBtn" title="Volume +" disabled>🔊</button>
               </div>
               <div class="progress"><div id="musicProgress" class="progress-bar"></div></div>
+              <div style="font-size:9px;text-align:center;opacity:0.7;margin-top:2px;">
+                <span id="musicLoopStatus">🔁 Loop: ON</span>
+              </div>
             </div>
             
             <div id="allAudioControls" class="audio-control-group" style="background:transparent;border-left-color:#6366f1;">
@@ -675,6 +679,12 @@ function generateBody(config: PopoutConfig, escapedScriptContent: string): strin
           <h3>🎵 Background Music</h3>
           <div class="audio-info">
             <strong id="bgMusicName">${selectedMusicName}</strong>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+              <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;">
+                <input type="checkbox" id="musicLoopToggle" checked style="width:14px;height:14px;">
+                🔁 Loop until recording ends
+              </label>
+            </div>
           </div>
           <audio id="bgMusic" src="${selectedMusicUrl}" preload="auto" loop></audio>
         </div>
@@ -1056,6 +1066,13 @@ function generateScript(config: PopoutConfig): string {
           cameraBlurBtn.textContent = '🔵 BG Blur';
           cameraBlurBtn.classList.remove('active');
         }
+      };
+      
+      // Music loop toggle
+      var musicLoopToggle = document.getElementById('musicLoopToggle');
+      musicLoopToggle.onchange = function() {
+        bgMusic.loop = this.checked;
+        console.log('🔁 Music loop:', this.checked ? 'ON' : 'OFF');
       };
       
       // Audio control panel minimize toggle and drag functionality
@@ -1770,6 +1787,21 @@ function generateScript(config: PopoutConfig): string {
       };
       document.getElementById('musicVolumeDownBtn').onclick = function() { if (bgMusic) bgMusic.volume = Math.max(0, bgMusic.volume - 0.1); };
       document.getElementById('musicVolumeUpBtn').onclick = function() { if (bgMusic) bgMusic.volume = Math.min(1, bgMusic.volume + 0.1); };
+      document.getElementById('musicLoopBtn').onclick = function() {
+        if (bgMusic) {
+          bgMusic.loop = !bgMusic.loop;
+          var loopStatus = document.getElementById('musicLoopStatus');
+          if (bgMusic.loop) {
+            loopStatus.textContent = '🔁 Loop: ON';
+            this.classList.add('active');
+          } else {
+            loopStatus.textContent = '🔁 Loop: OFF';
+            this.classList.remove('active');
+          }
+          // Sync with sidebar checkbox
+          document.getElementById('musicLoopToggle').checked = bgMusic.loop;
+        }
+      };
       
       document.getElementById('pauseAllAudioBtn').onclick = function() {
         if (voiceover) { voiceover.pause(); document.getElementById('voPlayPauseBtn').textContent = '▶️'; }
