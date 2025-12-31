@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ComprehensiveArchitectureDiagram } from '@/components/architecture';
 import { 
   FeaturesOverviewDiagram,
@@ -12,9 +12,10 @@ import { TwoStagePipelineSVGDiagram } from '@/components/document-processing/Two
 import { PatientOnboardingFlowDiagram, SubAgentArchitectureDiagram, BeforeAfterArchitectureDiagram } from '@/components/diagrams';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building, Users, Network, ArrowRightLeft, Download, Workflow, Bot, Cpu } from 'lucide-react';
+import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building, Users, Network, ArrowRightLeft, Download, Workflow, Bot, Video, Music, History } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -22,6 +23,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+// Version history for diagrams (stored in localStorage for persistence)
+interface DiagramVersion {
+  id: string;
+  version: string;
+  date: string;
+  label: string;
+  isLatest?: boolean;
+}
 
 // Define diagram categories for cleaner organization
 const diagramCategories = {
@@ -57,15 +67,40 @@ const diagramCategories = {
     label: 'Resources',
     icon: Download,
     diagrams: [
+      { id: 'videos', label: 'Videos', icon: Video },
+      { id: 'audio', label: 'Audio', icon: Music },
       { id: 'scripts', label: 'Scripts', icon: Download },
     ]
   }
+};
+
+// Default versions for each diagram
+const getDefaultVersions = (diagramId: string): DiagramVersion[] => {
+  const today = new Date().toISOString().split('T')[0];
+  return [
+    { id: `${diagramId}-v1`, version: '1.0', date: today, label: 'Current', isLatest: true },
+  ];
 };
 
 const ArchitectureDiagram = () => {
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState('overview');
   const [activeDiagram, setActiveDiagram] = useState('solution');
+  const [diagramVersions, setDiagramVersions] = useState<Record<string, DiagramVersion[]>>({});
+  const [selectedVersion, setSelectedVersion] = useState<string>('latest');
+
+  // Load versions from localStorage
+  useEffect(() => {
+    const savedVersions = localStorage.getItem('diagram_versions');
+    if (savedVersions) {
+      setDiagramVersions(JSON.parse(savedVersions));
+    }
+  }, []);
+
+  // Get versions for current diagram
+  const getCurrentVersions = (): DiagramVersion[] => {
+    return diagramVersions[activeDiagram] || getDefaultVersions(activeDiagram);
+  };
 
   const currentCategory = diagramCategories[activeCategory as keyof typeof diagramCategories];
 
@@ -91,6 +126,10 @@ const ArchitectureDiagram = () => {
         return <PatientOnboardingFlowDiagram />;
       case 'sub-agents':
         return <SubAgentArchitectureDiagram />;
+      case 'videos':
+        return <VideoResourcesSection />;
+      case 'audio':
+        return <AudioResourcesSection />;
       case 'scripts':
         return <ScriptsManager />;
       default:
@@ -102,7 +141,16 @@ const ArchitectureDiagram = () => {
     setActiveCategory(category);
     const firstDiagram = diagramCategories[category as keyof typeof diagramCategories].diagrams[0];
     setActiveDiagram(firstDiagram.id);
+    setSelectedVersion('latest');
   };
+
+  const handleDiagramChange = (diagramId: string) => {
+    setActiveDiagram(diagramId);
+    setSelectedVersion('latest');
+  };
+
+  // Check if current diagram supports versioning (not resources)
+  const supportsVersioning = !['videos', 'audio', 'scripts'].includes(activeDiagram);
 
   return (
     <AppLayout>
@@ -119,35 +167,65 @@ const ArchitectureDiagram = () => {
                 <h1 className="text-xl font-semibold">Platform Architecture & Diagrams</h1>
               </div>
               
-              {/* Category Dropdown for mobile */}
-              <div className="md:hidden">
-                <Select value={activeCategory} onValueChange={handleCategoryChange}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(diagramCategories).map(([key, cat]) => (
-                      <SelectItem key={key} value={key}>
+              <div className="flex items-center gap-2">
+                {/* Version Dropdown - only for diagrams */}
+                {supportsVersioning && (
+                  <Select value={selectedVersion} onValueChange={setSelectedVersion}>
+                    <SelectTrigger className="w-36 bg-background border border-border">
+                      <div className="flex items-center gap-2">
+                        <History className="h-4 w-4 text-muted-foreground" />
+                        <SelectValue placeholder="Version" />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border border-border shadow-lg z-50">
+                      <SelectItem value="latest">
                         <div className="flex items-center gap-2">
-                          <cat.icon className="h-4 w-4" />
-                          {cat.label}
+                          <span>Latest</span>
+                          <Badge variant="secondary" className="text-xs">Current</Badge>
                         </div>
                       </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      {getCurrentVersions().map((v) => (
+                        <SelectItem key={v.id} value={v.id}>
+                          <div className="flex items-center gap-2">
+                            <span>v{v.version}</span>
+                            <span className="text-xs text-muted-foreground">{v.date}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+
+                {/* Category Dropdown for mobile */}
+                <div className="md:hidden">
+                  <Select value={activeCategory} onValueChange={handleCategoryChange}>
+                    <SelectTrigger className="w-40 bg-background border border-border">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border border-border shadow-lg z-50">
+                      {Object.entries(diagramCategories).map(([key, cat]) => (
+                        <SelectItem key={key} value={key}>
+                          <div className="flex items-center gap-2">
+                            <cat.icon className="h-4 w-4" />
+                            {cat.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 
             {/* Category Tabs - Desktop */}
             <div className="hidden md:block">
               <Tabs value={activeCategory} onValueChange={handleCategoryChange}>
-                <TabsList className="h-auto gap-1 p-1">
+                <TabsList className="h-auto gap-1 p-1 bg-muted">
                   {Object.entries(diagramCategories).map(([key, cat]) => (
                     <TabsTrigger 
                       key={key} 
                       value={key}
-                      className="flex items-center gap-2 px-4 py-2"
+                      className="flex items-center gap-2 px-4 py-2 data-[state=active]:bg-background"
                     >
                       <cat.icon className="h-4 w-4" />
                       <span>{cat.label}</span>
@@ -164,11 +242,17 @@ const ArchitectureDiagram = () => {
                   key={diagram.id}
                   variant={activeDiagram === diagram.id ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setActiveDiagram(diagram.id)}
+                  onClick={() => handleDiagramChange(diagram.id)}
                   className="flex items-center gap-1.5"
                 >
                   <diagram.icon className="h-3.5 w-3.5" />
                   <span>{diagram.label}</span>
+                  {diagram.id === 'videos' && (
+                    <Badge variant="secondary" className="ml-1 text-xs bg-red-500/20 text-red-600">New</Badge>
+                  )}
+                  {diagram.id === 'audio' && (
+                    <Badge variant="secondary" className="ml-1 text-xs bg-purple-500/20 text-purple-600">New</Badge>
+                  )}
                 </Button>
               ))}
             </div>
@@ -180,6 +264,126 @@ const ArchitectureDiagram = () => {
         </div>
       </div>
     </AppLayout>
+  );
+};
+
+// Video Resources Section Component
+const VideoResourcesSection = () => {
+  const [videos, setVideos] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Load videos from localStorage (from VideoRecorder)
+    const savedMedia = localStorage.getItem('recordedMedia');
+    if (savedMedia) {
+      const allMedia = JSON.parse(savedMedia);
+      setVideos(allMedia.filter((m: any) => m.type === 'video'));
+    }
+  }, []);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 mb-4">
+        <Video className="h-5 w-5 text-red-500" />
+        <h2 className="text-lg font-semibold">Video Resources</h2>
+        <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/30">
+          {videos.length} Videos
+        </Badge>
+      </div>
+      
+      {videos.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground border border-dashed rounded-lg">
+          <Video className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <p>No videos recorded yet</p>
+          <p className="text-sm">Record videos in Document Processing → Video Studio</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {videos.map((video, index) => (
+            <div key={index} className="border rounded-lg overflow-hidden bg-card">
+              <video 
+                src={video.url} 
+                className="w-full aspect-video object-cover"
+                controls
+              />
+              <div className="p-3">
+                <p className="font-medium truncate">{video.name || `Video ${index + 1}`}</p>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(video.timestamp).toLocaleDateString()}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Audio Resources Section Component
+const AudioResourcesSection = () => {
+  const [audios, setAudios] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Load audios from localStorage
+    const savedMedia = localStorage.getItem('recordedMedia');
+    const generatedAudios = localStorage.getItem('generatedAudiosMetadata');
+    
+    let allAudios: any[] = [];
+    
+    if (savedMedia) {
+      const allMedia = JSON.parse(savedMedia);
+      allAudios = [...allAudios, ...allMedia.filter((m: any) => m.type === 'audio')];
+    }
+    
+    if (generatedAudios) {
+      const generated = JSON.parse(generatedAudios);
+      allAudios = [...allAudios, ...generated.map((a: any) => ({
+        ...a,
+        type: 'audio',
+        name: a.title || 'Generated Audio'
+      }))];
+    }
+    
+    setAudios(allAudios);
+  }, []);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 mb-4">
+        <Music className="h-5 w-5 text-purple-500" />
+        <h2 className="text-lg font-semibold">Audio Resources</h2>
+        <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30">
+          {audios.length} Audio Files
+        </Badge>
+      </div>
+      
+      {audios.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground border border-dashed rounded-lg">
+          <Music className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <p>No audio files yet</p>
+          <p className="text-sm">Generate voiceovers in Document Processing → Scripts</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {audios.map((audio, index) => (
+            <div key={index} className="border rounded-lg p-4 bg-card flex items-center gap-4">
+              <div className="h-12 w-12 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                <Music className="h-6 w-6 text-purple-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium truncate">{audio.name || audio.title || `Audio ${index + 1}`}</p>
+                <p className="text-xs text-muted-foreground">
+                  {audio.timestamp ? new Date(audio.timestamp).toLocaleDateString() : 'Generated'}
+                </p>
+              </div>
+              {audio.url && (
+                <audio src={audio.url} controls className="max-w-xs" />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 };
 
