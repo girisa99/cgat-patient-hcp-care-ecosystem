@@ -738,17 +738,27 @@ Thanks for watching!`,
     });
     
     // Prepare scripts list for dropdown - include scriptText from voiceovers that have it
-    const scriptsJson = JSON.stringify(availableScripts.map(s => ({ id: s.id, title: s.title, content: s.content })));
+    // IMPORTANT: Escape JSON for safe embedding in inline JavaScript
+    const escapeForInlineJs = (str: string) => {
+      return str
+        .replace(/\\/g, '\\\\')      // Escape backslashes first
+        .replace(/`/g, '\\`')        // Escape backticks (template literal delimiter)
+        .replace(/\$/g, '\\$')       // Escape dollar signs (template literal expressions)
+        .replace(/</g, '\\u003c')    // Escape < to prevent script tag issues
+        .replace(/>/g, '\\u003e');   // Escape > to prevent script tag issues
+    };
+    
+    const scriptsJson = escapeForInlineJs(JSON.stringify(availableScripts.map(s => ({ id: s.id, title: s.title, content: s.content }))));
     
     // For voiceovers, include the attached script if available
-    const voiceoversJson = JSON.stringify(popoutVoiceoverFiles.map(a => ({ 
+    const voiceoversJson = escapeForInlineJs(JSON.stringify(popoutVoiceoverFiles.map(a => ({ 
       id: a.id, 
       name: a.name, 
       url: a.url,
       scriptText: a.metadata?.scriptText || null,
       scriptType: a.metadata?.scriptType || null
-    })));
-    const musicFilesJson = JSON.stringify(popoutMusicFiles.map(m => ({ id: m.id, name: m.name, url: m.url })));
+    }))));
+    const musicFilesJson = escapeForInlineJs(JSON.stringify(popoutMusicFiles.map(m => ({ id: m.id, name: m.name, url: m.url }))));
     
     const popoutWindow = window.open('', 'recording-studio', 
       'width=1400,height=900,left=100,top=50,toolbar=no,menubar=no,scrollbars=no,resizable=yes'
