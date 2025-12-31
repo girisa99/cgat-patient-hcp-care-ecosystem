@@ -221,8 +221,26 @@ function generateStyles(): string {
       align-items: center;
       z-index: 50;
       border: 1px solid #333;
+      transition: all 0.3s ease;
     }
     .audio-control-panel.visible { display: flex; }
+    .audio-control-panel.minimized {
+      padding: 8px 12px;
+      gap: 8px;
+    }
+    .audio-control-panel.minimized .audio-control-group { display: none; }
+    .audio-control-panel.minimized .minimize-toggle { display: flex; }
+    .audio-control-panel.minimized .minimized-label { display: block; }
+    .minimized-label { display: none; font-size: 12px; opacity: 0.7; }
+    .minimize-toggle {
+      padding: 6px 10px;
+      font-size: 12px;
+      background: #334155;
+      border: 1px solid #475569;
+      cursor: pointer;
+      min-width: auto;
+    }
+    .minimize-toggle:hover { background: #475569; }
     .audio-control-group {
       display: flex;
       flex-direction: column;
@@ -470,6 +488,9 @@ function generateBody(config: PopoutConfig, escapedScriptContent: string): strin
           </div>
           
           <div id="audioControlPanel" class="audio-control-panel">
+            <button id="minimizeAudioBtn" class="minimize-toggle" title="Minimize/Expand">➖</button>
+            <span class="minimized-label">Audio Controls</span>
+            
             <div id="voiceoverControls" class="audio-control-group" style="display:none;">
               <label>🎤 Voiceover</label>
               <div class="controls">
@@ -501,7 +522,7 @@ function generateBody(config: PopoutConfig, escapedScriptContent: string): strin
               <div class="progress"><div id="musicProgress" class="progress-bar"></div></div>
             </div>
             
-            <div class="audio-control-group">
+            <div id="allAudioControls" class="audio-control-group">
               <label>All Audio</label>
               <div class="controls">
                 <button id="pauseAllAudioBtn" title="Pause All">⏸️ All</button>
@@ -894,6 +915,24 @@ function generateScript(config: PopoutConfig): string {
           preview.style.filter = '';
           cameraBlurBtn.textContent = '🔵 BG Blur';
           cameraBlurBtn.classList.remove('active');
+        }
+      };
+      
+      // Audio control panel minimize toggle
+      var minimizeAudioBtn = document.getElementById('minimizeAudioBtn');
+      var audioControlPanel = document.getElementById('audioControlPanel');
+      var isAudioMinimized = false;
+      
+      minimizeAudioBtn.onclick = function() {
+        isAudioMinimized = !isAudioMinimized;
+        if (isAudioMinimized) {
+          audioControlPanel.classList.add('minimized');
+          minimizeAudioBtn.textContent = '➕';
+          minimizeAudioBtn.title = 'Expand Audio Controls';
+        } else {
+          audioControlPanel.classList.remove('minimized');
+          minimizeAudioBtn.textContent = '➖';
+          minimizeAudioBtn.title = 'Minimize Audio Controls';
         }
       };
       
