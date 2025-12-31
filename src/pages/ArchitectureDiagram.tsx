@@ -6,7 +6,7 @@ import {
   DocumentProcessingArchitectureDiagram,
   MedicalImagingAIPipelineDiagram,
   ContentTypeRoutingDiagram,
-  VideoScriptDownloader
+  ScriptsManager
 } from '@/components/document-processing';
 import { TwoStagePipelineSVGDiagram } from '@/components/document-processing/TwoStagePipelineSVGDiagram';
 import { PatientOnboardingFlowDiagram, SubAgentArchitectureDiagram, BeforeAfterArchitectureDiagram } from '@/components/diagrams';
@@ -122,7 +122,7 @@ const ArchitectureDiagram = () => {
             </TabsContent>
 
             <TabsContent value="scripts" className="space-y-4">
-              <VideoScriptDownloader />
+              <ScriptsManager />
             </TabsContent>
           </Tabs>
         </div>

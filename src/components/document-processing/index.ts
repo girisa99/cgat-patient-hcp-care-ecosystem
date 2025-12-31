@@ -17,6 +17,7 @@ export { RealTimeExtractionTracker } from './RealTimeExtractionTracker';
 export { default as LinkedInArticleDownload } from './LinkedInArticleDownload';
 export { default as VideoScriptDownload } from './VideoScriptDownload';
 export { VideoScriptDownloader } from './VideoScriptDownloader';
+export { ScriptsManager } from './ScriptsManager';
 
 // New Improvement Components
 export { ModelUsageAnalyticsDashboard } from './ModelUsageAnalyticsDashboard';
