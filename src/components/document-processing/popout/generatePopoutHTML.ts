@@ -153,8 +153,19 @@ function generateStyles(): string {
       font-size: 48px;
       margin-bottom: 20px;
       box-shadow: 0 10px 40px rgba(99,102,241,0.3);
+      overflow: hidden;
     }
+    .logo-placeholder img { width: 100%; height: 100%; object-fit: cover; }
     .camera-off-text { font-size: 16px; opacity: 0.7; }
+    .upload-logo-btn {
+      margin-top: 15px;
+      padding: 8px 16px;
+      font-size: 12px;
+      background: rgba(99,102,241,0.3);
+      border: 1px dashed #6366f1;
+      cursor: pointer;
+    }
+    .upload-logo-btn:hover { background: rgba(99,102,241,0.5); }
     .webcam-pip {
       position: absolute;
       bottom: 20px;
@@ -415,14 +426,16 @@ function generateBody(config: PopoutConfig, escapedScriptContent: string): strin
           
           <!-- Camera off overlay with logo -->
           <div id="cameraOffOverlay" class="camera-off-overlay">
-            <div class="logo-placeholder">🎥</div>
+            <div id="logoPlaceholder" class="logo-placeholder">🎥</div>
             <p class="camera-off-text">Camera is off</p>
+            <input type="file" id="logoUploadInput" accept="image/*" style="display:none;">
+            <button id="uploadLogoBtn" class="upload-logo-btn">📷 Upload Logo</button>
           </div>
           
           <!-- Camera controls -->
           <div class="camera-controls">
             <button id="cameraToggleBtn" class="active" title="Toggle Camera">📹 On</button>
-            <button id="cameraBlurBtn" title="Blur Background">🔵 Blur</button>
+            <button id="cameraBlurBtn" title="Background Blur (softens entire webcam)">🔵 BG Blur</button>
           </div>
           
           <div id="cameraLoading" class="camera-loading">
@@ -715,10 +728,49 @@ function generateScript(config: PopoutConfig): string {
       var cameraOffOverlay = document.getElementById('cameraOffOverlay');
       var cameraToggleBtn = document.getElementById('cameraToggleBtn');
       var cameraBlurBtn = document.getElementById('cameraBlurBtn');
+      var logoPlaceholder = document.getElementById('logoPlaceholder');
+      var logoUploadInput = document.getElementById('logoUploadInput');
+      var uploadLogoBtn = document.getElementById('uploadLogoBtn');
       
       // Camera state
       var isCameraOn = true;
       var isCameraBlurred = false;
+      var customLogoDataUrl = null;
+      var customLogoImage = null;
+      
+      // Load saved logo from localStorage
+      try {
+        var savedLogo = localStorage.getItem('recording_studio_custom_logo');
+        if (savedLogo) {
+          customLogoDataUrl = savedLogo;
+          customLogoImage = new Image();
+          customLogoImage.src = savedLogo;
+          logoPlaceholder.innerHTML = '<img src="' + savedLogo + '" alt="Logo">';
+        }
+      } catch(e) { console.error('Failed to load saved logo:', e); }
+      
+      // Logo upload handling
+      uploadLogoBtn.onclick = function() {
+        logoUploadInput.click();
+      };
+      
+      logoUploadInput.onchange = function(e) {
+        var file = e.target.files[0];
+        if (file && file.type.startsWith('image/')) {
+          var reader = new FileReader();
+          reader.onload = function(evt) {
+            customLogoDataUrl = evt.target.result;
+            customLogoImage = new Image();
+            customLogoImage.src = customLogoDataUrl;
+            logoPlaceholder.innerHTML = '<img src="' + customLogoDataUrl + '" alt="Logo">';
+            // Save to localStorage
+            try {
+              localStorage.setItem('recording_studio_custom_logo', customLogoDataUrl);
+            } catch(err) { console.error('Failed to save logo:', err); }
+          };
+          reader.readAsDataURL(file);
+        }
+      };
       
       // Currently selected IDs
       var selectedScriptId = '${config.selectedScriptId}';
@@ -835,12 +887,12 @@ function generateScript(config: PopoutConfig): string {
       cameraBlurBtn.onclick = function() {
         isCameraBlurred = !isCameraBlurred;
         if (isCameraBlurred) {
-          preview.style.filter = 'blur(10px)';
+          preview.style.filter = 'blur(8px)';
           cameraBlurBtn.textContent = '🔵 Unblur';
           cameraBlurBtn.classList.add('active');
         } else {
           preview.style.filter = '';
-          cameraBlurBtn.textContent = '🔵 Blur';
+          cameraBlurBtn.textContent = '🔵 BG Blur';
           cameraBlurBtn.classList.remove('active');
         }
       };
@@ -1326,12 +1378,21 @@ function generateScript(config: PopoutConfig): string {
             ctx.fillStyle = gradient;
             ctx.fillRect(pipX, pipY, pipWidth, pipHeight);
             
-            // Draw camera icon
-            ctx.fillStyle = '#6366f1';
-            ctx.font = '48px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('🎥', pipX + pipWidth/2, pipY + pipHeight/2);
+            // Draw custom logo if uploaded, otherwise camera icon
+            if (customLogoImage && customLogoImage.complete) {
+              // Draw the custom logo centered and scaled
+              var logoSize = Math.min(pipWidth * 0.6, pipHeight * 0.8);
+              var logoX = pipX + (pipWidth - logoSize) / 2;
+              var logoY = pipY + (pipHeight - logoSize) / 2;
+              ctx.drawImage(customLogoImage, logoX, logoY, logoSize, logoSize);
+            } else {
+              // Draw default camera icon
+              ctx.fillStyle = '#6366f1';
+              ctx.font = '48px sans-serif';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText('🎥', pipX + pipWidth/2, pipY + pipHeight/2);
+            }
             
             // Draw border
             ctx.strokeStyle = '#333';
