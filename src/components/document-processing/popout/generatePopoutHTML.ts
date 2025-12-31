@@ -913,6 +913,54 @@ function generateScript(config: PopoutConfig): string {
         console.error('Dropdown error:', e);
       }
       
+      // Function to update audio control panel based on dropdown selections
+      function updateControlPanelFromDropdowns() {
+        var hasVoiceover = voiceoverSelect.value && voiceovers.find(function(v) { return v.id === voiceoverSelect.value; });
+        var hasScript = scriptSelect.value && scripts.find(function(s) { return s.id === scriptSelect.value; });
+        var hasMusic = musicSelect.value && musicList.find(function(m) { return m.id === musicSelect.value; });
+        
+        console.log('🎛️ Updating control panel:', { hasVoiceover: !!hasVoiceover, hasScript: !!hasScript, hasMusic: !!hasMusic });
+        
+        // Update voiceover controls
+        if (hasVoiceover) {
+          voiceoverControls.classList.remove('disabled');
+          voiceoverControls.classList.add('active');
+          voiceoverControls.querySelector('.track-status').textContent = 'Ready';
+          voiceoverControls.querySelectorAll('button').forEach(function(btn) { btn.disabled = false; });
+        } else {
+          voiceoverControls.classList.remove('active');
+          voiceoverControls.classList.add('disabled');
+          voiceoverControls.querySelector('.track-status').textContent = 'Not Selected';
+          voiceoverControls.querySelectorAll('button').forEach(function(btn) { btn.disabled = true; });
+        }
+        
+        // Update TTS controls (based on script selection)
+        if (hasScript) {
+          ttsControls.classList.remove('disabled');
+          ttsControls.classList.add('active');
+          ttsControls.querySelector('.track-status').textContent = 'Ready';
+          ttsControls.querySelectorAll('button').forEach(function(btn) { btn.disabled = false; });
+        } else {
+          ttsControls.classList.remove('active');
+          ttsControls.classList.add('disabled');
+          ttsControls.querySelector('.track-status').textContent = 'Not Selected';
+          ttsControls.querySelectorAll('button').forEach(function(btn) { btn.disabled = true; });
+        }
+        
+        // Update music controls
+        if (hasMusic) {
+          musicControls.classList.remove('disabled');
+          musicControls.classList.add('active');
+          musicControls.querySelector('.track-status').textContent = 'Ready';
+          musicControls.querySelectorAll('button').forEach(function(btn) { btn.disabled = false; });
+        } else {
+          musicControls.classList.remove('active');
+          musicControls.classList.add('disabled');
+          musicControls.querySelector('.track-status').textContent = 'Not Selected';
+          musicControls.querySelectorAll('button').forEach(function(btn) { btn.disabled = true; });
+        }
+      }
+      
       // Dropdown change handlers
       scriptSelect.onchange = function() {
         var id = this.value;
@@ -922,6 +970,7 @@ function generateScript(config: PopoutConfig): string {
         } else {
           scriptContent.innerHTML = '<span style="opacity:0.5;">Select a script to display here...</span>';
         }
+        updateControlPanelFromDropdowns();
       };
       
       voiceoverSelect.onchange = function() {
@@ -945,6 +994,7 @@ function generateScript(config: PopoutConfig): string {
         } else {
           audioPanel.style.display = 'none';
         }
+        updateControlPanelFromDropdowns();
       };
       
       musicSelect.onchange = function() {
@@ -957,7 +1007,13 @@ function generateScript(config: PopoutConfig): string {
         } else {
           musicPanel.style.display = 'none';
         }
+        updateControlPanelFromDropdowns();
       };
+      
+      // Initialize control panel on load
+      setTimeout(function() {
+        updateControlPanelFromDropdowns();
+      }, 100);
       
       // Scroll controls
       document.getElementById('scrollUpBtn').onclick = function() { scriptContent.scrollTop -= 50; };
