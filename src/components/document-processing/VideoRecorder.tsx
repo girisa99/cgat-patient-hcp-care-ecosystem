@@ -1236,8 +1236,8 @@ Thanks for watching!`,
         </div>
 
         <script>
-          // Wrap everything in DOMContentLoaded to ensure elements exist
-          document.addEventListener('DOMContentLoaded', function() {
+          // Run immediately - script is at end of body so DOM is ready
+          (function() {
             console.log('🚀 Pop-out window script starting...');
             
             // PRIORITY 1: Set up close button IMMEDIATELY
@@ -1245,7 +1245,8 @@ Thanks for watching!`,
             console.log('Close button found:', !!closeBtn);
             
             if (closeBtn) {
-              closeBtn.onclick = function() {
+              closeBtn.addEventListener('click', function(e) {
+                e.preventDefault();
                 console.log('Close button clicked');
                 if (window.mediaRecorder && window.mediaRecorder.state === 'recording') {
                   if (!confirm('Recording in progress. Are you sure you want to close?')) {
@@ -1254,17 +1255,20 @@ Thanks for watching!`,
                   window.mediaRecorder.stop();
                 }
                 if (window.cameraStream) {
-                  window.cameraStream.getTracks().forEach(t => t.stop());
+                  window.cameraStream.getTracks().forEach(function(t) { t.stop(); });
                 }
                 window.close();
-              };
+              });
+            } else {
+              console.error('Close button not found!');
             }
             
             // Allow closing with Escape key
             document.addEventListener('keydown', function(e) {
               if (e.key === 'Escape') {
                 console.log('Escape pressed');
-                if (closeBtn) closeBtn.click();
+                var btn = document.getElementById('closeBtn');
+                if (btn) btn.click();
               }
             });
             
@@ -1280,9 +1284,9 @@ Thanks for watching!`,
             }
             
             // Data from parent (base64 encoded for safety)
-            const scripts = decodeData('${scriptsEncoded}');
-            const voiceovers = decodeData('${voiceoversEncoded}');
-            const musicList = decodeData('${musicEncoded}');
+            var scripts = decodeData('${scriptsEncoded}');
+            var voiceovers = decodeData('${voiceoversEncoded}');
+            var musicList = decodeData('${musicEncoded}');
             
             console.log('📋 Data loaded:', { scripts: scripts.length, voiceovers: voiceovers.length, music: musicList.length });
             
@@ -1290,170 +1294,167 @@ Thanks for watching!`,
             window.mediaRecorder = null;
             window.cameraStream = null;
             
-            let mediaRecorder = null;
-            let chunks = [];
-            let stream = null;
-            let startTime = 0;
-            let timerInterval = null;
-            let isPaused = false;
-            let countdownInterval = null;
-            let countdownValue = 5;
+            var mediaRecorder = null;
+            var chunks = [];
+            var stream = null;
+            var startTime = 0;
+            var timerInterval = null;
+            var isPaused = false;
+            var countdownInterval = null;
+            var countdownValue = 5;
           
-          const preview = document.getElementById('preview');
-          const startBtn = document.getElementById('startBtn');
-          const pauseBtn = document.getElementById('pauseBtn');
-          const stopBtn = document.getElementById('stopBtn');
-          const saveBtn = document.getElementById('saveBtn');
-          const resetBtn = document.getElementById('resetBtn');
-          const videoNameInput = document.getElementById('videoName');
-          const recIndicator = document.getElementById('recIndicator');
-          const timer = document.getElementById('timer');
-          const status = document.getElementById('status');
-          const voiceover = document.getElementById('voiceover');
-          const bgMusic = document.getElementById('bgMusic');
-          const countdownOverlay = document.getElementById('countdownOverlay');
-          const countdownNumber = document.getElementById('countdownNumber');
-          const cancelCountdown = document.getElementById('cancelCountdown');
-          const scriptSelect = document.getElementById('scriptSelect');
-          const voiceoverSelect = document.getElementById('voiceoverSelect');
-          const musicSelect = document.getElementById('musicSelect');
-          const scriptContent = document.getElementById('scriptContent');
-          const audioPanel = document.getElementById('audioPanel');
-          const musicPanel = document.getElementById('musicPanel');
-          const voiceoverName = document.getElementById('voiceoverName');
-          const bgMusicName = document.getElementById('bgMusicName');
-          
-          // Currently selected script ID
-          const selectedScriptId = '${selectedScript?.id || ''}';
-          const selectedVoiceoverId = '${selectedAudioFile?.id || ''}';
-          const selectedMusicId = '${selectedBackgroundMusic?.id || ''}';
-          
-          // Populate dropdowns
-          scripts.forEach(s => {
-            const opt = document.createElement('option');
-            opt.value = s.id;
-            opt.textContent = s.title;
-            if (s.id === selectedScriptId) opt.selected = true;
-            scriptSelect.appendChild(opt);
-          });
-          
-          voiceovers.forEach(v => {
-            const opt = document.createElement('option');
-            opt.value = v.id;
-            opt.textContent = v.name;
-            if (v.id === selectedVoiceoverId) opt.selected = true;
-            voiceoverSelect.appendChild(opt);
-          });
-          
-          musicList.forEach(m => {
-            const opt = document.createElement('option');
-            opt.value = m.id;
-            opt.textContent = m.name;
-            if (m.id === selectedMusicId) opt.selected = true;
-            musicSelect.appendChild(opt);
-          });
-          
-          // Helper to escape HTML for safe display
-          function escapeHtmlContent(str) {
-            const div = document.createElement('div');
-            div.textContent = str;
-            // Convert newlines to <br> tags for proper display
-            return div.innerHTML.replace(/\\n/g, '<br>').replace(/\n/g, '<br>');
-          }
-          
-          // Debug log the loaded data
-          console.log('📋 Pop-out loaded data:', {
-            scriptsCount: scripts.length,
-            voiceoversCount: voiceovers.length,
-            musicCount: musicList.length,
-            scripts: scripts.map(s => s.title),
-            voiceovers: voiceovers.map(v => ({ name: v.name, hasScript: !!v.scriptText })),
-            music: musicList.map(m => m.name)
-          });
-          
-          // Check if initial voiceover has attached script
-          const initialVoiceover = voiceovers.find(v => v.id === selectedVoiceoverId);
-          if (initialVoiceover && initialVoiceover.scriptText) {
-            const useScriptBtn = document.getElementById('useVoiceoverScriptBtn');
-            useScriptBtn.style.display = 'inline-block';
-            useScriptBtn.onclick = function() {
-              scriptContent.innerHTML = escapeHtmlContent(initialVoiceover.scriptText);
-              scriptSelect.value = '';
-              status.textContent = 'Script loaded from voiceover';
-              status.className = 'status ready';
-            };
-          }
-          
-          // Handle dropdown changes
-          scriptSelect.onchange = function() {
-            const script = scripts.find(s => s.id === this.value);
-            if (script) {
-              scriptContent.innerHTML = escapeHtmlContent(script.content);
-            } else {
-              scriptContent.innerHTML = '<span style="opacity:0.5;">Select a script to display here...</span>';
+            var preview = document.getElementById('preview');
+            var startBtn = document.getElementById('startBtn');
+            var pauseBtn = document.getElementById('pauseBtn');
+            var stopBtn = document.getElementById('stopBtn');
+            var saveBtn = document.getElementById('saveBtn');
+            var resetBtn = document.getElementById('resetBtn');
+            var videoNameInput = document.getElementById('videoName');
+            var recIndicator = document.getElementById('recIndicator');
+            var timer = document.getElementById('timer');
+            var status = document.getElementById('status');
+            var voiceover = document.getElementById('voiceover');
+            var bgMusic = document.getElementById('bgMusic');
+            var countdownOverlay = document.getElementById('countdownOverlay');
+            var countdownNumber = document.getElementById('countdownNumber');
+            var cancelCountdown = document.getElementById('cancelCountdown');
+            var scriptSelect = document.getElementById('scriptSelect');
+            var voiceoverSelect = document.getElementById('voiceoverSelect');
+            var musicSelect = document.getElementById('musicSelect');
+            var scriptContent = document.getElementById('scriptContent');
+            var audioPanel = document.getElementById('audioPanel');
+            var musicPanel = document.getElementById('musicPanel');
+            var voiceoverName = document.getElementById('voiceoverName');
+            var bgMusicName = document.getElementById('bgMusicName');
+            
+            // Currently selected script ID
+            var selectedScriptId = '${selectedScript?.id || ''}';
+            var selectedVoiceoverId = '${selectedAudioFile?.id || ''}';
+            var selectedMusicId = '${selectedBackgroundMusic?.id || ''}';
+            
+            // Populate dropdowns
+            scripts.forEach(function(s) {
+              var opt = document.createElement('option');
+              opt.value = s.id;
+              opt.textContent = s.title;
+              if (s.id === selectedScriptId) opt.selected = true;
+              scriptSelect.appendChild(opt);
+            });
+            
+            voiceovers.forEach(function(v) {
+              var opt = document.createElement('option');
+              opt.value = v.id;
+              opt.textContent = v.name;
+              if (v.id === selectedVoiceoverId) opt.selected = true;
+              voiceoverSelect.appendChild(opt);
+            });
+            
+            musicList.forEach(function(m) {
+              var opt = document.createElement('option');
+              opt.value = m.id;
+              opt.textContent = m.name;
+              if (m.id === selectedMusicId) opt.selected = true;
+              musicSelect.appendChild(opt);
+            });
+            
+            // Helper to escape HTML for safe display
+            function escapeHtmlContent(str) {
+              var div = document.createElement('div');
+              div.textContent = str;
+              // Convert newlines to <br> tags for proper display
+              return div.innerHTML.replace(/\\n/g, '<br>').replace(/\n/g, '<br>');
             }
-          };
-          
-          voiceoverSelect.onchange = function() {
-            const vo = voiceovers.find(v => v.id === this.value);
-            if (vo) {
-              voiceover.src = vo.url;
-              voiceoverName.textContent = vo.name;
-              audioPanel.style.display = 'block';
-              
-              // If voiceover has an attached script, show option to use it
-              const useScriptBtn = document.getElementById('useVoiceoverScriptBtn');
-              if (vo.scriptText) {
-                useScriptBtn.style.display = 'inline-block';
-                useScriptBtn.onclick = function() {
-                  scriptContent.innerHTML = escapeHtmlContent(vo.scriptText);
-                  scriptSelect.value = ''; // Deselect any selected script
-                  status.textContent = 'Script loaded from voiceover';
-                  status.className = 'status ready';
-                };
+            
+            // Debug log the loaded data
+            console.log('📋 Pop-out loaded data:', {
+              scriptsCount: scripts.length,
+              voiceoversCount: voiceovers.length,
+              musicCount: musicList.length
+            });
+            
+            // Check if initial voiceover has attached script
+            var initialVoiceover = voiceovers.find(function(v) { return v.id === selectedVoiceoverId; });
+            if (initialVoiceover && initialVoiceover.scriptText) {
+              var useScriptBtnInit = document.getElementById('useVoiceoverScriptBtn');
+              useScriptBtnInit.style.display = 'inline-block';
+              useScriptBtnInit.onclick = function() {
+                scriptContent.innerHTML = escapeHtmlContent(initialVoiceover.scriptText);
+                scriptSelect.value = '';
+                status.textContent = 'Script loaded from voiceover';
+                status.className = 'status ready';
+              };
+            }
+            
+            // Handle dropdown changes
+            scriptSelect.onchange = function() {
+              var script = scripts.find(function(s) { return s.id === scriptSelect.value; });
+              if (script) {
+                scriptContent.innerHTML = escapeHtmlContent(script.content);
               } else {
-                useScriptBtn.style.display = 'none';
+                scriptContent.innerHTML = '<span style="opacity:0.5;">Select a script to display here...</span>';
               }
-            } else {
-              voiceover.src = '';
-              audioPanel.style.display = 'none';
-              document.getElementById('useVoiceoverScriptBtn').style.display = 'none';
-            }
-          };
-          
-          musicSelect.onchange = function() {
-            const m = musicList.find(x => x.id === this.value);
-            if (m) {
-              bgMusic.src = m.url;
-              bgMusicName.textContent = m.name;
-              musicPanel.style.display = 'block';
-            } else {
-              bgMusic.src = '';
-              musicPanel.style.display = 'none';
-            }
-          };
-          
-          // Teleprompter scroll controls
-          const scrollUpBtn = document.getElementById('scrollUpBtn');
-          const scrollDownBtn = document.getElementById('scrollDownBtn');
-          const scrollResetBtn = document.getElementById('scrollResetBtn');
-          
-          scrollUpBtn.onclick = function() {
-            scriptContent.scrollTop -= 50;
-          };
-          
-          scrollDownBtn.onclick = function() {
-            scriptContent.scrollTop += 50;
-          };
-          
-          scrollResetBtn.onclick = function() {
-            scriptContent.scrollTop = 0;
-          };
-          
-          const cameraLoading = document.getElementById('cameraLoading');
-          const cameraLoadingContent = document.getElementById('cameraLoadingContent');
-          const cameraPermissionRequest = document.getElementById('cameraPermissionRequest');
-          const requestCameraBtn = document.getElementById('requestCameraBtn');
+            };
+            
+            voiceoverSelect.onchange = function() {
+              var vo = voiceovers.find(function(v) { return v.id === voiceoverSelect.value; });
+              if (vo) {
+                voiceover.src = vo.url;
+                voiceoverName.textContent = vo.name;
+                audioPanel.style.display = 'block';
+                
+                // If voiceover has an attached script, show option to use it
+                var useScriptBtn = document.getElementById('useVoiceoverScriptBtn');
+                if (vo.scriptText) {
+                  useScriptBtn.style.display = 'inline-block';
+                  useScriptBtn.onclick = function() {
+                    scriptContent.innerHTML = escapeHtmlContent(vo.scriptText);
+                    scriptSelect.value = ''; // Deselect any selected script
+                    status.textContent = 'Script loaded from voiceover';
+                    status.className = 'status ready';
+                  };
+                } else {
+                  useScriptBtn.style.display = 'none';
+                }
+              } else {
+                voiceover.src = '';
+                audioPanel.style.display = 'none';
+                document.getElementById('useVoiceoverScriptBtn').style.display = 'none';
+              }
+            };
+            
+            musicSelect.onchange = function() {
+              var m = musicList.find(function(x) { return x.id === musicSelect.value; });
+              if (m) {
+                bgMusic.src = m.url;
+                bgMusicName.textContent = m.name;
+                musicPanel.style.display = 'block';
+              } else {
+                bgMusic.src = '';
+                musicPanel.style.display = 'none';
+              }
+            };
+            
+            // Teleprompter scroll controls
+            var scrollUpBtn = document.getElementById('scrollUpBtn');
+            var scrollDownBtn = document.getElementById('scrollDownBtn');
+            var scrollResetBtn = document.getElementById('scrollResetBtn');
+            
+            scrollUpBtn.onclick = function() {
+              scriptContent.scrollTop -= 50;
+            };
+            
+            scrollDownBtn.onclick = function() {
+              scriptContent.scrollTop += 50;
+            };
+            
+            scrollResetBtn.onclick = function() {
+              scriptContent.scrollTop = 0;
+            };
+            
+            var cameraLoading = document.getElementById('cameraLoading');
+            var cameraLoadingContent = document.getElementById('cameraLoadingContent');
+            var cameraPermissionRequest = document.getElementById('cameraPermissionRequest');
+            var requestCameraBtn = document.getElementById('requestCameraBtn');
           
           function showPermissionDenied() {
             cameraLoadingContent.style.display = 'none';
@@ -1550,20 +1551,20 @@ Thanks for watching!`,
           // Initialize camera immediately on load
           initCamera();
           
-          function formatTime(seconds) {
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return mins.toString().padStart(2,'0') + ':' + secs.toString().padStart(2,'0');
-          }
-          
-          let displayStream = null;
-          let screenVideo = null;
-          let webcamVideo = null;
-          let canvas = null;
-          let ctx = null;
-          let audioContext = null;
-          let scrollInterval = null;
-          let ttsAudio = null;
+            function formatTime(seconds) {
+              var mins = Math.floor(seconds / 60);
+              var secs = seconds % 60;
+              return mins.toString().padStart(2,'0') + ':' + secs.toString().padStart(2,'0');
+            }
+            
+            var displayStream = null;
+            var screenVideo = null;
+            var webcamVideo = null;
+            var canvas = null;
+            var ctx = null;
+            var audioContext = null;
+            var scrollInterval = null;
+            var ttsAudio = null;
           
           // Start recording - First get screen share, then show audio options, then countdown
           startBtn.onclick = async function() {
@@ -1595,86 +1596,92 @@ Thanks for watching!`,
             }
           };
           
-          // Audio options dialog
-          function showAudioOptionsDialog() {
-            const hasScript = scriptSelect.value && scripts.find(s => s.id === scriptSelect.value);
-            const hasVoiceover = voiceoverSelect.value && voiceovers.find(v => v.id === voiceoverSelect.value);
-            const hasMusic = musicSelect.value && musicList.find(m => m.id === musicSelect.value);
-            
-            let dialogHtml = '<div id="audioOptionsDialog" style="position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:200;">';
-            dialogHtml += '<div style="background:#1a1a2e;padding:30px;border-radius:16px;max-width:500px;width:90%;">';
-            dialogHtml += '<h2 style="margin-bottom:20px;font-size:20px;">🎬 Recording Options</h2>';
-            
-            // TTS Option (if script is selected)
-            if (hasScript) {
-              dialogHtml += '<div style="margin-bottom:20px;padding:15px;background:#2a2a3e;border-radius:8px;">';
-              dialogHtml += '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">';
-              dialogHtml += '<input type="checkbox" id="useTTS" checked style="width:20px;height:20px;">';
-              dialogHtml += '<div><strong>🗣️ Generate TTS Voiceover</strong><br><small style="opacity:0.7;">Convert script to speech using AI voice</small></div>';
-              dialogHtml += '</label></div>';
-            }
-            
-            // Audio file option (if voiceover is selected)
-            if (hasVoiceover) {
-              dialogHtml += '<div style="margin-bottom:20px;padding:15px;background:#2a2a3e;border-radius:8px;">';
-              dialogHtml += '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">';
-              dialogHtml += '<input type="checkbox" id="useVoiceover" checked style="width:20px;height:20px;">';
-              dialogHtml += '<div><strong>🎤 Play Voiceover Audio</strong><br><small style="opacity:0.7;">' + voiceovers.find(v => v.id === voiceoverSelect.value)?.name + '</small></div>';
-              dialogHtml += '</label></div>';
-            }
-            
-            // Background music option
-            if (hasMusic) {
-              dialogHtml += '<div style="margin-bottom:20px;padding:15px;background:#2a2a3e;border-radius:8px;">';
-              dialogHtml += '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">';
-              dialogHtml += '<input type="checkbox" id="useMusic" checked style="width:20px;height:20px;">';
-              dialogHtml += '<div><strong>🎵 Play Background Music</strong><br><small style="opacity:0.7;">' + musicList.find(m => m.id === musicSelect.value)?.name + '</small></div>';
-              dialogHtml += '</label></div>';
-            }
-            
-            if (!hasScript && !hasVoiceover && !hasMusic) {
-              dialogHtml += '<p style="opacity:0.7;margin-bottom:20px;">No audio sources selected. Recording will use microphone only.</p>';
-            }
-            
-            dialogHtml += '<div style="display:flex;gap:10px;justify-content:flex-end;">';
-            dialogHtml += '<button id="cancelOptions" style="padding:12px 24px;">Cancel</button>';
-            dialogHtml += '<button id="confirmOptions" class="primary" style="padding:12px 24px;">Start Countdown</button>';
-            dialogHtml += '</div></div></div>';
-            
-            document.body.insertAdjacentHTML('beforeend', dialogHtml);
-            
-            document.getElementById('cancelOptions').onclick = function() {
-              document.getElementById('audioOptionsDialog').remove();
-              if (displayStream) {
-                displayStream.getTracks().forEach(t => t.stop());
-                displayStream = null;
+            // Audio options dialog
+            function showAudioOptionsDialog() {
+              var hasScript = scriptSelect.value && scripts.find(function(s) { return s.id === scriptSelect.value; });
+              var hasVoiceover = voiceoverSelect.value && voiceovers.find(function(v) { return v.id === voiceoverSelect.value; });
+              var hasMusic = musicSelect.value && musicList.find(function(m) { return m.id === musicSelect.value; });
+              
+              var dialogHtml = '<div id="audioOptionsDialog" style="position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:200;">';
+              dialogHtml += '<div style="background:#1a1a2e;padding:30px;border-radius:16px;max-width:500px;width:90%;">';
+              dialogHtml += '<h2 style="margin-bottom:20px;font-size:20px;">🎬 Recording Options</h2>';
+              
+              // TTS Option (if script is selected)
+              if (hasScript) {
+                dialogHtml += '<div style="margin-bottom:20px;padding:15px;background:#2a2a3e;border-radius:8px;">';
+                dialogHtml += '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">';
+                dialogHtml += '<input type="checkbox" id="useTTS" checked style="width:20px;height:20px;">';
+                dialogHtml += '<div><strong>🗣️ Generate TTS Voiceover</strong><br><small style="opacity:0.7;">Convert script to speech using AI voice</small></div>';
+                dialogHtml += '</label></div>';
               }
-              preview.srcObject = stream;
-              status.textContent = 'Ready';
-              status.className = 'status ready';
-            };
-            
-            document.getElementById('confirmOptions').onclick = async function() {
-              const useTTS = document.getElementById('useTTS')?.checked || false;
-              const useVoiceover = document.getElementById('useVoiceover')?.checked || false;
-              const useMusic = document.getElementById('useMusic')?.checked || false;
               
-              document.getElementById('audioOptionsDialog').remove();
+              // Audio file option (if voiceover is selected)
+              if (hasVoiceover) {
+                var voName = voiceovers.find(function(v) { return v.id === voiceoverSelect.value; });
+                dialogHtml += '<div style="margin-bottom:20px;padding:15px;background:#2a2a3e;border-radius:8px;">';
+                dialogHtml += '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">';
+                dialogHtml += '<input type="checkbox" id="useVoiceover" checked style="width:20px;height:20px;">';
+                dialogHtml += '<div><strong>🎤 Play Voiceover Audio</strong><br><small style="opacity:0.7;">' + (voName ? voName.name : '') + '</small></div>';
+                dialogHtml += '</label></div>';
+              }
               
-              // Generate TTS if requested
-              if (useTTS && hasScript) {
-                status.textContent = 'Generating TTS...';
-                try {
-                  await generateTTS(scripts.find(s => s.id === scriptSelect.value).content);
-                } catch(e) {
-                  console.error('TTS generation failed:', e);
+              // Background music option
+              if (hasMusic) {
+                var mName = musicList.find(function(m) { return m.id === musicSelect.value; });
+                dialogHtml += '<div style="margin-bottom:20px;padding:15px;background:#2a2a3e;border-radius:8px;">';
+                dialogHtml += '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">';
+                dialogHtml += '<input type="checkbox" id="useMusic" checked style="width:20px;height:20px;">';
+                dialogHtml += '<div><strong>🎵 Play Background Music</strong><br><small style="opacity:0.7;">' + (mName ? mName.name : '') + '</small></div>';
+                dialogHtml += '</label></div>';
+              }
+              
+              if (!hasScript && !hasVoiceover && !hasMusic) {
+                dialogHtml += '<p style="opacity:0.7;margin-bottom:20px;">No audio sources selected. Recording will use microphone only.</p>';
+              }
+              
+              dialogHtml += '<div style="display:flex;gap:10px;justify-content:flex-end;">';
+              dialogHtml += '<button id="cancelOptions" style="padding:12px 24px;">Cancel</button>';
+              dialogHtml += '<button id="confirmOptions" class="primary" style="padding:12px 24px;">Start Countdown</button>';
+              dialogHtml += '</div></div></div>';
+              
+              document.body.insertAdjacentHTML('beforeend', dialogHtml);
+              
+              document.getElementById('cancelOptions').onclick = function() {
+                document.getElementById('audioOptionsDialog').remove();
+                if (displayStream) {
+                  displayStream.getTracks().forEach(function(t) { t.stop(); });
+                  displayStream = null;
                 }
-              }
+                preview.srcObject = stream;
+                status.textContent = 'Ready';
+                status.className = 'status ready';
+              };
               
-              // Start countdown
-              startCountdown(useVoiceover, useMusic, useTTS);
-            };
-          }
+              document.getElementById('confirmOptions').onclick = async function() {
+                var useTTSVal = document.getElementById('useTTS');
+                var useVoiceoverVal = document.getElementById('useVoiceover');
+                var useMusicVal = document.getElementById('useMusic');
+                var useTTS = useTTSVal ? useTTSVal.checked : false;
+                var useVoiceoverOpt = useVoiceoverVal ? useVoiceoverVal.checked : false;
+                var useMusicOpt = useMusicVal ? useMusicVal.checked : false;
+                
+                document.getElementById('audioOptionsDialog').remove();
+                
+                // Generate TTS if requested
+                if (useTTS && hasScript) {
+                  status.textContent = 'Generating TTS...';
+                  try {
+                    var scriptToUse = scripts.find(function(s) { return s.id === scriptSelect.value; });
+                    if (scriptToUse) await generateTTS(scriptToUse.content);
+                  } catch(e) {
+                    console.error('TTS generation failed:', e);
+                  }
+                }
+                
+                // Start countdown
+                startCountdown(useVoiceoverOpt, useMusicOpt, useTTS);
+              };
+            }
           
           // Generate TTS from script
           async function generateTTS(text) {
@@ -1735,92 +1742,92 @@ Thanks for watching!`,
             }
           }
           
-          // Start countdown after screen share is ready
-          function startCountdown(useVoiceover, useMusic, useTTS) {
-            countdownValue = 5;
-            countdownNumber.textContent = countdownValue;
-            countdownOverlay.classList.remove('hidden');
-            status.textContent = 'Countdown...';
-            status.className = 'status countdown';
-            
-            countdownInterval = setInterval(() => {
-              countdownValue--;
-              if (countdownValue <= 0) {
-                clearInterval(countdownInterval);
-                countdownOverlay.classList.add('hidden');
-                actuallyStartRecording(useVoiceover, useMusic, useTTS);
-              } else {
-                countdownNumber.textContent = countdownValue;
-              }
-            }, 1000);
-          }
-          
-          cancelCountdown.onclick = function() {
-            clearInterval(countdownInterval);
-            countdownOverlay.classList.add('hidden');
-            if (displayStream) {
-              displayStream.getTracks().forEach(t => t.stop());
-              displayStream = null;
-            }
-            preview.srcObject = stream;
-            status.textContent = 'Ready';
-            status.className = 'status ready';
-          };
-          
-          async function actuallyStartRecording(useVoiceover, useMusic, useTTS) {
-            try {
-              // Create canvas for picture-in-picture (reduces delay)
-              canvas = document.createElement('canvas');
-              canvas.width = 1920;
-              canvas.height = 1080;
-              ctx = canvas.getContext('2d');
+            // Start countdown after screen share is ready
+            function startCountdown(useVoiceover, useMusic, useTTS) {
+              countdownValue = 5;
+              countdownNumber.textContent = countdownValue;
+              countdownOverlay.classList.remove('hidden');
+              status.textContent = 'Countdown...';
+              status.className = 'status countdown';
               
-              screenVideo = document.createElement('video');
-              screenVideo.srcObject = displayStream;
-              screenVideo.muted = true;
-              screenVideo.playsInline = true;
-              await screenVideo.play();
-              
-              webcamVideo = document.createElement('video');
-              webcamVideo.srcObject = stream;
-              webcamVideo.muted = true;
-              webcamVideo.playsInline = true;
-              await webcamVideo.play();
-              
-              // Optimized drawing loop for less delay
-              let lastDrawTime = 0;
-              function draw(timestamp) {
-                if (timestamp - lastDrawTime >= 33) { // ~30fps
-                  ctx.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
-                  ctx.drawImage(webcamVideo, canvas.width - 340, canvas.height - 260, 320, 240);
-                  lastDrawTime = timestamp;
+              countdownInterval = setInterval(function() {
+                countdownValue--;
+                if (countdownValue <= 0) {
+                  clearInterval(countdownInterval);
+                  countdownOverlay.classList.add('hidden');
+                  actuallyStartRecording(useVoiceover, useMusic, useTTS);
+                } else {
+                  countdownNumber.textContent = countdownValue;
                 }
-                requestAnimationFrame(draw);
+              }, 1000);
+            }
+            
+            cancelCountdown.onclick = function() {
+              clearInterval(countdownInterval);
+              countdownOverlay.classList.add('hidden');
+              if (displayStream) {
+                displayStream.getTracks().forEach(function(t) { t.stop(); });
+                displayStream = null;
               }
-              draw(0);
-              
-              // Combine audio sources
-              audioContext = new AudioContext();
-              const dest = audioContext.createMediaStreamDestination();
-              
-              // Add display audio
-              displayStream.getAudioTracks().forEach(track => {
-                const src = audioContext.createMediaStreamSource(new MediaStream([track]));
-                src.connect(dest);
-              });
-              
-              // Add microphone audio
-              stream.getAudioTracks().forEach(track => {
-                const src = audioContext.createMediaStreamSource(new MediaStream([track]));
-                src.connect(dest);
-              });
-              
-              const canvasStream = canvas.captureStream(30);
-              const finalStream = new MediaStream([
-                ...canvasStream.getVideoTracks(),
-                ...dest.stream.getAudioTracks()
-              ]);
-              
+              preview.srcObject = stream;
+              status.textContent = 'Ready';
+              status.className = 'status ready';
+            };
+            
+            async function actuallyStartRecording(useVoiceover, useMusic, useTTS) {
+              try {
+                // Create canvas for picture-in-picture (reduces delay)
+                canvas = document.createElement('canvas');
+                canvas.width = 1920;
+                canvas.height = 1080;
+                ctx = canvas.getContext('2d');
+                
+                screenVideo = document.createElement('video');
+                screenVideo.srcObject = displayStream;
+                screenVideo.muted = true;
+                screenVideo.playsInline = true;
+                await screenVideo.play();
+                
+                webcamVideo = document.createElement('video');
+                webcamVideo.srcObject = stream;
+                webcamVideo.muted = true;
+                webcamVideo.playsInline = true;
+                await webcamVideo.play();
+                
+                // Optimized drawing loop for less delay
+                var lastDrawTime = 0;
+                function draw(timestamp) {
+                  if (timestamp - lastDrawTime >= 33) { // ~30fps
+                    ctx.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(webcamVideo, canvas.width - 340, canvas.height - 260, 320, 240);
+                    lastDrawTime = timestamp;
+                  }
+                  requestAnimationFrame(draw);
+                }
+                draw(0);
+                
+                // Combine audio sources
+                audioContext = new AudioContext();
+                var dest = audioContext.createMediaStreamDestination();
+                
+                // Add display audio
+                displayStream.getAudioTracks().forEach(function(track) {
+                  var src = audioContext.createMediaStreamSource(new MediaStream([track]));
+                  src.connect(dest);
+                });
+                
+                // Add microphone audio
+                stream.getAudioTracks().forEach(function(track) {
+                  var src = audioContext.createMediaStreamSource(new MediaStream([track]));
+                  src.connect(dest);
+                });
+                
+                var canvasStream = canvas.captureStream(30);
+                var videoTracks = canvasStream.getVideoTracks();
+                var audioTracks = dest.stream.getAudioTracks();
+                var allTracks = videoTracks.concat(audioTracks);
+                var finalStream = new MediaStream(allTracks);
+                
               preview.srcObject = finalStream;
               
               mediaRecorder = new MediaRecorder(finalStream, { 
@@ -1830,106 +1837,106 @@ Thanks for watching!`,
               window.mediaRecorder = mediaRecorder; // Set global for close handler
               chunks = [];
               
-              mediaRecorder.ondataavailable = (e) => {
-                if(e.data.size > 0) chunks.push(e.data);
-              };
-              
-              mediaRecorder.onstop = () => {
-                clearInterval(timerInterval);
-                clearInterval(scrollInterval);
-                const blob = new Blob(chunks, { type: 'video/webm' });
-                preview.srcObject = null;
-                preview.src = URL.createObjectURL(blob);
-                preview.muted = false;
-                preview.controls = true;
+                mediaRecorder.ondataavailable = function(e) {
+                  if(e.data.size > 0) chunks.push(e.data);
+                };
+                
+                mediaRecorder.onstop = function() {
+                  clearInterval(timerInterval);
+                  clearInterval(scrollInterval);
+                  var blob = new Blob(chunks, { type: 'video/webm' });
+                  preview.srcObject = null;
+                  preview.src = URL.createObjectURL(blob);
+                  preview.muted = false;
+                  preview.controls = true;
+                  
+                  startBtn.style.display = 'none';
+                  pauseBtn.style.display = 'none';
+                  stopBtn.style.display = 'none';
+                  videoNameInput.style.display = 'block';
+                  saveBtn.style.display = 'block';
+                  resetBtn.style.display = 'block';
+                  recIndicator.style.display = 'none';
+                  status.textContent = 'Recorded';
+                  status.className = 'status';
+                  
+                  // Hide audio control panel
+                  audioControlPanel.classList.remove('visible');
+                  
+                  if(voiceover) voiceover.pause();
+                  if(bgMusic) bgMusic.pause();
+                  if(ttsAudio) ttsAudio.pause();
+                  if(displayStream) displayStream.getTracks().forEach(function(t) { t.stop(); });
+                };
+                
+                mediaRecorder.start(1000);
+                startTime = Date.now();
+                timerInterval = setInterval(function() {
+                  timer.textContent = formatTime(Math.floor((Date.now() - startTime) / 1000));
+                }, 1000);
                 
                 startBtn.style.display = 'none';
-                pauseBtn.style.display = 'none';
-                stopBtn.style.display = 'none';
-                videoNameInput.style.display = 'block';
-                saveBtn.style.display = 'block';
-                resetBtn.style.display = 'block';
-                recIndicator.style.display = 'none';
-                status.textContent = 'Recorded';
-                status.className = 'status';
+                pauseBtn.style.display = 'block';
+                stopBtn.style.display = 'block';
+                recIndicator.style.display = 'flex';
+                status.textContent = 'Recording';
+                status.className = 'status recording';
                 
-                // Hide audio control panel
-                audioControlPanel.classList.remove('visible');
+                // Play TTS if generated
+                if (useTTS && ttsAudio) {
+                  ttsAudio.play().catch(function(e) { console.error('TTS playback error:', e); });
+                }
                 
-                if(voiceover) voiceover.pause();
-                if(bgMusic) bgMusic.pause();
-                if(ttsAudio) ttsAudio.pause();
-                if(displayStream) displayStream.getTracks().forEach(t => t.stop());
-              };
-              
-              mediaRecorder.start(1000);
-              startTime = Date.now();
-              timerInterval = setInterval(() => {
-                timer.textContent = formatTime(Math.floor((Date.now() - startTime) / 1000));
-              }, 1000);
-              
-              startBtn.style.display = 'none';
-              pauseBtn.style.display = 'block';
-              stopBtn.style.display = 'block';
-              recIndicator.style.display = 'flex';
-              status.textContent = 'Recording';
-              status.className = 'status recording';
-              
-              // Play TTS if generated
-              if (useTTS && ttsAudio) {
-                ttsAudio.play().catch(e => console.error('TTS playback error:', e));
+                // Play voiceover if selected
+                if(useVoiceover && voiceover && voiceover.src) {
+                  voiceover.play().catch(function(e) { console.error('Voiceover error:', e); });
+                }
+                
+                // Play background music if selected
+                if(useMusic && bgMusic && bgMusic.src) { 
+                  bgMusic.volume = 0.3; 
+                  bgMusic.play().catch(function(e) { console.error('Music error:', e); });
+                }
+                
+                // Show audio control panel
+                showAudioControls(useVoiceover, useTTS, useMusic);
+                
+                // Auto-scroll teleprompter
+                startTeleprompterScroll();
+                
+              } catch(e) {
+                console.error('Recording error:', e);
+                alert('Error: ' + e.message);
+                if (displayStream) {
+                  displayStream.getTracks().forEach(function(t) { t.stop(); });
+                  displayStream = null;
+                }
+                preview.srcObject = stream;
+                status.textContent = 'Ready';
+                status.className = 'status ready';
               }
-              
-              // Play voiceover if selected
-              if(useVoiceover && voiceover && voiceover.src) {
-                voiceover.play().catch(e => console.error('Voiceover error:', e));
-              }
-              
-              // Play background music if selected
-              if(useMusic && bgMusic && bgMusic.src) { 
-                bgMusic.volume = 0.3; 
-                bgMusic.play().catch(e => console.error('Music error:', e));
-              }
-              
-              // Show audio control panel
-              showAudioControls(useVoiceover, useTTS, useMusic);
-              
-              // Auto-scroll teleprompter
-              startTeleprompterScroll();
-              
-            } catch(e) {
-              console.error('Recording error:', e);
-              alert('Error: ' + e.message);
-              if (displayStream) {
-                displayStream.getTracks().forEach(t => t.stop());
-                displayStream = null;
-              }
-              preview.srcObject = stream;
-              status.textContent = 'Ready';
-              status.className = 'status ready';
             }
-          }
-          
-          // Auto-scroll teleprompter during recording
-          function startTeleprompterScroll() {
-            const scrollSpeed = 1; // pixels per 50ms
-            scrollInterval = setInterval(() => {
-              if (!isPaused && scriptContent) {
-                scriptContent.scrollTop += scrollSpeed;
-              }
-            }, 50);
-          }
-          
-          // Audio control panel element references
-          const audioControlPanel = document.getElementById('audioControlPanel');
-          const voiceoverControls = document.getElementById('voiceoverControls');
-          const ttsControls = document.getElementById('ttsControls');
-          const musicControls = document.getElementById('musicControls');
-          
-          // Track which audio sources are active
-          let voiceoverActive = false;
-          let ttsActive = false;
-          let musicActive = false;
+            
+            // Auto-scroll teleprompter during recording
+            function startTeleprompterScroll() {
+              var scrollSpeed = 1; // pixels per 50ms
+              scrollInterval = setInterval(function() {
+                if (!isPaused && scriptContent) {
+                  scriptContent.scrollTop += scrollSpeed;
+                }
+              }, 50);
+            }
+            
+            // Audio control panel element references
+            var audioControlPanel = document.getElementById('audioControlPanel');
+            var voiceoverControls = document.getElementById('voiceoverControls');
+            var ttsControls = document.getElementById('ttsControls');
+            var musicControls = document.getElementById('musicControls');
+            
+            // Track which audio sources are active
+            var voiceoverActive = false;
+            var ttsActive = false;
+            var musicActive = false;
           
           // Show audio control panel during recording
           function showAudioControls(useVoiceover, useTTS, useMusic) {
@@ -1947,20 +1954,20 @@ Thanks for watching!`,
             }
           }
           
-          // Update progress bars
-          function updateAudioProgress() {
-            setInterval(() => {
-              if (voiceoverActive && voiceover && voiceover.duration) {
-                document.getElementById('voProgress').style.width = (voiceover.currentTime / voiceover.duration * 100) + '%';
-              }
-              if (ttsActive && ttsAudio && ttsAudio.duration) {
-                document.getElementById('ttsProgress').style.width = (ttsAudio.currentTime / ttsAudio.duration * 100) + '%';
-              }
-              if (musicActive && bgMusic && bgMusic.duration) {
-                document.getElementById('musicProgress').style.width = (bgMusic.currentTime / bgMusic.duration * 100) + '%';
-              }
-            }, 100);
-          }
+            // Update progress bars
+            function updateAudioProgress() {
+              setInterval(function() {
+                if (voiceoverActive && voiceover && voiceover.duration) {
+                  document.getElementById('voProgress').style.width = (voiceover.currentTime / voiceover.duration * 100) + '%';
+                }
+                if (ttsActive && ttsAudio && ttsAudio.duration) {
+                  document.getElementById('ttsProgress').style.width = (ttsAudio.currentTime / ttsAudio.duration * 100) + '%';
+                }
+                if (musicActive && bgMusic && bgMusic.duration) {
+                  document.getElementById('musicProgress').style.width = (bgMusic.currentTime / bgMusic.duration * 100) + '%';
+                }
+              }, 100);
+            }
           
           // Voiceover controls
           document.getElementById('voRewindBtn').onclick = function() {
@@ -2065,20 +2072,20 @@ Thanks for watching!`,
             }
           };
           
-          stopBtn.onclick = function() {
-            mediaRecorder.stop();
-            stream.getTracks().forEach(t => t.stop());
-          };
-          
-          saveBtn.onclick = function() {
-            const name = videoNameInput.value.trim() || 'recording';
-            const blob = new Blob(chunks, { type: 'video/webm' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = name + '.webm';
-            a.click();
-            alert('Video downloaded! Close this window to return to the app.');
-          };
+            stopBtn.onclick = function() {
+              mediaRecorder.stop();
+              stream.getTracks().forEach(function(t) { t.stop(); });
+            };
+            
+            saveBtn.onclick = function() {
+              var name = videoNameInput.value.trim() || 'recording';
+              var blob = new Blob(chunks, { type: 'video/webm' });
+              var a = document.createElement('a');
+              a.href = URL.createObjectURL(blob);
+              a.download = name + '.webm';
+              a.click();
+              alert('Video downloaded! Close this window to return to the app.');
+            };
           
           resetBtn.onclick = function() {
             location.reload();
@@ -2086,7 +2093,7 @@ Thanks for watching!`,
           
           // Note: Close button handler is set up at the top of the script for immediate availability
           
-          }); // End DOMContentLoaded
+          })(); // End IIFE
         </script>
       </body>
       </html>
