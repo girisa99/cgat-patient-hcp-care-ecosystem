@@ -183,6 +183,8 @@ export const ScriptsManager: React.FC = () => {
       .trim();
   };
 
+  const [generationProgress, setGenerationProgress] = useState<string>('');
+
   const handleGenerateAudio = async () => {
     if (!scriptText.trim()) {
       showError('Please enter or paste a script first');
@@ -195,12 +197,15 @@ export const ScriptsManager: React.FC = () => {
     }
 
     setIsGenerating(true);
+    setGenerationProgress('Preparing...');
+    
     try {
       const cleanedScript = cleanScriptForTTS(scriptText);
       
-      console.log(`Sending ${cleanedScript.length} characters to TTS (full text, will be chunked server-side)`);
+      console.log(`Sending ${cleanedScript.length} characters to TTS`);
 
-      const { data, error } = await supabase.functions.invoke('openai-tts', {
+      // First call to get chunks info or direct audio
+      const { data: initialData, error: initialError } = await supabase.functions.invoke('openai-tts', {
         body: { 
           text: cleanedScript, 
           voice: selectedVoice,
@@ -208,35 +213,99 @@ export const ScriptsManager: React.FC = () => {
         }
       });
 
-      if (error) throw error;
+      if (initialError) throw initialError;
 
-      if (data?.audioContent) {
-        const audioUrl = `data:audio/mpeg;base64,${data.audioContent}`;
-        
-        const newAudio: GeneratedAudio = {
-          id: crypto.randomUUID(),
-          name: scriptName,
-          textLength: data.textLength || cleanedScript.length,
-          chunks: data.chunks || 1,
-          audioUrl,
-          generatedAt: new Date(),
-          voice: selectedVoice
-        };
+      let finalAudioBase64: string;
+      let totalChunks = 1;
 
-        setGeneratedAudios(prev => [newAudio, ...prev]);
-        setActiveTab('library');
+      if (initialData?.needsChunking) {
+        // Process chunks client-side to avoid memory issues on server
+        const chunks = initialData.chunks as string[];
+        totalChunks = chunks.length;
+        const audioChunks: string[] = [];
+
+        console.log(`Processing ${totalChunks} chunks client-side`);
+
+        for (let i = 0; i < chunks.length; i++) {
+          setGenerationProgress(`Processing chunk ${i + 1} of ${totalChunks}...`);
+          
+          const { data: chunkData, error: chunkError } = await supabase.functions.invoke('openai-tts', {
+            body: { 
+              text: chunks[i], 
+              voice: selectedVoice,
+              speed: 1.0,
+              chunkIndex: i,
+              totalChunks: totalChunks
+            }
+          });
+
+          if (chunkError) throw chunkError;
+          if (!chunkData?.audioContent) throw new Error(`No audio content for chunk ${i + 1}`);
+          
+          audioChunks.push(chunkData.audioContent);
+        }
+
+        setGenerationProgress('Combining audio...');
         
-        showSuccess(`Audio generated successfully! (${data.chunks || 1} chunks, ${Math.round(cleanedScript.length / 1000)}k characters)`);
+        // Combine audio chunks client-side
+        const combinedBlobs: Blob[] = [];
+        for (const base64Chunk of audioChunks) {
+          const binaryString = atob(base64Chunk);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          combinedBlobs.push(new Blob([bytes], { type: 'audio/mpeg' }));
+        }
+
+        // Create combined blob and convert to base64
+        const combinedBlob = new Blob(combinedBlobs, { type: 'audio/mpeg' });
+        const arrayBuffer = await combinedBlob.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
         
-        // Clear the form
-        setScriptText('');
-        setScriptName('');
+        // Convert to base64 in chunks to avoid call stack issues
+        let binary = '';
+        const chunkSize = 32768;
+        for (let i = 0; i < uint8Array.length; i += chunkSize) {
+          const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length));
+          binary += String.fromCharCode.apply(null, Array.from(chunk));
+        }
+        finalAudioBase64 = btoa(binary);
+        
+      } else if (initialData?.audioContent) {
+        // Short text processed directly
+        finalAudioBase64 = initialData.audioContent;
+      } else {
+        throw new Error('No audio content received');
       }
+
+      const audioUrl = `data:audio/mpeg;base64,${finalAudioBase64}`;
+      
+      const newAudio: GeneratedAudio = {
+        id: crypto.randomUUID(),
+        name: scriptName,
+        textLength: cleanedScript.length,
+        chunks: totalChunks,
+        audioUrl,
+        generatedAt: new Date(),
+        voice: selectedVoice
+      };
+
+      setGeneratedAudios(prev => [newAudio, ...prev]);
+      setActiveTab('library');
+      
+      showSuccess(`Audio generated! (${totalChunks} chunk${totalChunks > 1 ? 's' : ''}, ${Math.round(cleanedScript.length / 1000)}k chars)`);
+      
+      // Clear the form
+      setScriptText('');
+      setScriptName('');
+      
     } catch (error) {
       console.error('TTS generation error:', error);
       showError('Failed to generate audio: ' + (error as Error).message);
     } finally {
       setIsGenerating(false);
+      setGenerationProgress('');
     }
   };
 
@@ -415,7 +484,7 @@ export const ScriptsManager: React.FC = () => {
                 {isGenerating ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Generating Audio...
+                    {generationProgress || 'Generating...'}
                   </>
                 ) : (
                   <>
