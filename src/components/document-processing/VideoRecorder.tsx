@@ -775,8 +775,12 @@ Thanks for watching!`,
       <!DOCTYPE html>
       <html>
       <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Video Recording Studio</title>
         <style>
+          /* Screen reader only - for accessibility */
+          .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
           * { box-sizing: border-box; margin: 0; padding: 0; }
           body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -1066,20 +1070,20 @@ Thanks for watching!`,
         <!-- Options Bar with Dropdowns -->
         <div class="options-bar">
           <div class="option-group">
-            <label>📄 Script (${availableScripts.length} available)</label>
-            <select id="scriptSelect">
+            <label for="scriptSelect">📄 Script (${availableScripts.length} available)</label>
+            <select id="scriptSelect" name="scriptSelect">
               <option value="">None</option>
             </select>
           </div>
           <div class="option-group">
-            <label>🎤 Voiceover (${popoutVoiceoverFiles.length} available)</label>
-            <select id="voiceoverSelect">
+            <label for="voiceoverSelect">🎤 Voiceover (${popoutVoiceoverFiles.length} available)</label>
+            <select id="voiceoverSelect" name="voiceoverSelect">
               <option value="">None</option>
             </select>
           </div>
           <div class="option-group">
-            <label>🎵 Background Music (${popoutMusicFiles.length} available)</label>
-            <select id="musicSelect">
+            <label for="musicSelect">🎵 Background Music (${popoutMusicFiles.length} available)</label>
+            <select id="musicSelect" name="musicSelect">
               <option value="">None</option>
             </select>
           </div>
@@ -1187,7 +1191,8 @@ Thanks for watching!`,
                 </svg>
                 Stop
               </button>
-              <input id="videoName" placeholder="Video name..." style="display:none;" />
+              <label for="videoName" class="sr-only">Video name</label>
+              <input id="videoName" name="videoName" placeholder="Video name..." style="display:none;" />
               <button id="saveBtn" class="primary" style="display:none;">Save</button>
               <button id="resetBtn" style="display:none;">New Recording</button>
             </div>
