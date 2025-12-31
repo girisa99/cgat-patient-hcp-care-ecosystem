@@ -17,7 +17,8 @@ import {
   Trash2,
   Plus,
   Clock,
-  FileAudio
+  FileAudio,
+  Video
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from '@/hooks/useMasterToast';
@@ -32,11 +33,111 @@ interface GeneratedAudio {
   voice: string;
 }
 
-// Predefined scripts
-const PRESET_SCRIPTS = {
-  patientOnboarding: {
-    name: 'Patient Onboarding - Part 1',
-    content: `Hello everyone! Good morning, evening, afternoon, or night—wherever you are watching this video!
+// Predefined scripts - Video Script with visual cues
+const VIDEO_SCRIPT = `# AI Document Processing: Enterprise Edition
+## Voice-Over Script — Part 1: Patient Onboarding
+
+**Total Runtime: ~11 minutes**
+
+---
+
+# SCENE 1: OPENING
+**[0:00 - 2:30]**
+
+*[Show title card, then transition to screen recording]*
+
+Hello everyone! Good morning, evening, afternoon, or night—wherever you are watching this video!
+
+If you watched my previous video on this AI document processing platform, you saw what was possible in less than 64 hours during a single weekend.
+
+Today, I'm excited to share what happened next—the evolution from a weekend prototype to an enterprise-grade solution.
+
+Since that original build, I've made significant enhancements on both the **technical architecture** and **functional** sides.
+
+**Technical Architecture Enhancements:**
+
+**Multi-Model AI Routing System:**
+- Content-aware model selection based on document characteristics
+- Specialized models for different content types—tables, handwriting, medical images
+- Dynamic routing logic that chooses the optimal AI model per document
+
+**Configuration-Driven Architecture:**
+- Document type configurations externalized from code
+- Field mapping rules configurable per document category
+- Processing hints that enable specialized pipelines like NDC lookup
+
+**Two-Stage Pipeline with Provider Abstraction:**
+- OCR layer with dynamic provider selection—Google Vision, AWS Textract, Azure Form Recognizer
+- NLP layer with multi-model routing based on document complexity
+- Interface patterns that allow swapping providers without pipeline changes
+
+---
+
+# SCENE 2: MULTI-MODEL ROUTING ARCHITECTURE
+**[2:30 - 4:30]**
+
+*[Navigate to Architecture Diagram → Content Type Routing tab]*
+
+The biggest architectural change is **intelligent multi-model routing**.
+
+Before — Single Model Approach:
+- One AI model processed every document type
+- Same extraction logic regardless of content
+- Generic prompts with no document-type optimization
+- Accuracy dropped significantly on specialized content
+
+After — Content-Aware Routing System:
+
+The system now analyzes document characteristics and routes to specialized models:
+
+**Tables and Structured Data:**
+- Gemini 2.5 Flash for structure recognition
+- AWS Textract for precise cell extraction
+- Optimized for invoices, forms, and tabular medical records
+
+**Medical Imaging:**
+- GPT-5 for radiology analysis and findings
+- Med-PaLM 2 for clinical interpretation
+- X-rays, CT scans, MRI reports
+
+**Lab Results:**
+- Claude Sonnet for result interpretation
+- Gemini Pro for reference range validation
+- Blood tests, pathology reports, urinalysis
+
+**Handwritten Content:**
+- Google Vision for handwriting OCR
+- GPT-5 Mini for contextual correction
+- Physician notes, handwritten prescriptions
+
+Each routing decision is logged with the model selected, confidence threshold applied, and processing time.
+
+---
+
+# PRODUCTION NOTES
+
+## Key Technical Points to Emphasize
+1. Multi-model routing based on content type
+2. Configuration-driven document types
+3. Provider abstraction pattern (OCR and NLP)
+4. Two-stage pipeline architecture
+5. Per-field confidence scoring
+6. Cross-document validation in workflows
+
+## YouTube Timestamps
+0:00 Introduction & Technical Enhancements
+2:30 Multi-Model Routing Architecture
+4:30 Configuration-Driven Document Types
+6:30 Two-Stage Pipeline Architecture
+8:00 Patient Onboarding Technical Demo
+10:30 What's Next: Sub-Agent Architecture
+
+---
+
+*Version 3.0 | January 2025 | Technical Focus*`;
+
+// Audio Script - Voice-over only, no visual cues
+const AUDIO_SCRIPT = `Hello everyone! Good morning, evening, afternoon, or night—wherever you are watching this video!
 
 If you watched my previous video on this AI document processing platform, you saw what was possible in less than 64 hours during a single weekend.
 
@@ -134,12 +235,24 @@ If you're building AI-powered document systems, subscribe for the technical deep
 
 Full architecture documentation is linked in the description.
 
-Thanks for watching!`
+Thanks for watching!`;
+
+// Preset scripts for loading
+const PRESET_SCRIPTS = {
+  videoScript: {
+    name: 'Video Script - Patient Onboarding',
+    content: VIDEO_SCRIPT,
+    type: 'video' as const
+  },
+  audioScript: {
+    name: 'Audio Script - Patient Onboarding',
+    content: AUDIO_SCRIPT,
+    type: 'audio' as const
   }
 };
 
 export const ScriptsManager: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('generate');
+  const [activeTab, setActiveTab] = useState('scripts');
   const [scriptText, setScriptText] = useState('');
   const [scriptName, setScriptName] = useState('');
   const [selectedVoice, setSelectedVoice] = useState('onyx');
@@ -379,6 +492,20 @@ export const ScriptsManager: React.FC = () => {
     showSuccess('Script downloaded');
   };
 
+  const handleDownloadPresetScript = (key: keyof typeof PRESET_SCRIPTS) => {
+    const preset = PRESET_SCRIPTS[key];
+    const blob = new Blob([preset.content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${preset.name.replace(/[^a-zA-Z0-9]/g, '_')}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showSuccess(`Downloaded: ${preset.name}`);
+  };
+
   const estimateAudioDuration = (text: string): string => {
     // Average speaking rate is about 150 words per minute
     const wordCount = text.split(/\s+/).length;
@@ -396,30 +523,117 @@ export const ScriptsManager: React.FC = () => {
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 bg-slate-700/50">
+          <TabsList className="grid w-full grid-cols-3 bg-slate-700/50">
+            <TabsTrigger value="scripts" className="data-[state=active]:bg-purple-600">
+              <FileText className="h-4 w-4 mr-2" />
+              Scripts
+            </TabsTrigger>
             <TabsTrigger value="generate" className="data-[state=active]:bg-green-600">
-              <Plus className="h-4 w-4 mr-2" />
+              <Volume2 className="h-4 w-4 mr-2" />
               Generate Audio
             </TabsTrigger>
             <TabsTrigger value="library" className="data-[state=active]:bg-blue-600">
               <FileAudio className="h-4 w-4 mr-2" />
-              Audio Library ({generatedAudios.length})
+              Library ({generatedAudios.length})
             </TabsTrigger>
           </TabsList>
+
+          {/* Scripts Tab - Download original scripts */}
+          <TabsContent value="scripts" className="mt-4 space-y-4">
+            <p className="text-slate-300 text-sm">
+              Download the complete scripts for Part 1: Patient Onboarding (~11 minutes)
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Video Script Card */}
+              <Card className="bg-slate-900/50 border-slate-600">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 rounded-lg bg-purple-500/20">
+                      <Video className="h-5 w-5 text-purple-400" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-white">Video Script</h3>
+                      <p className="text-xs text-slate-400">With visual cues & timestamps</p>
+                    </div>
+                  </div>
+                  <ul className="text-xs text-slate-400 space-y-1 mb-4">
+                    <li>• Scene-by-scene breakdown</li>
+                    <li>• Visual direction notes</li>
+                    <li>• Production notes included</li>
+                    <li>• Technical architecture focus</li>
+                  </ul>
+                  <Button 
+                    onClick={() => handleDownloadPresetScript('videoScript')}
+                    className="w-full gap-2"
+                    variant="outline"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download Video Script
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Audio Script Card */}
+              <Card className="bg-slate-900/50 border-slate-600">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 rounded-lg bg-green-500/20">
+                      <Mic className="h-5 w-5 text-green-400" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-white">Audio Script</h3>
+                      <p className="text-xs text-slate-400">Voice-over only, no visual cues</p>
+                    </div>
+                  </div>
+                  <ul className="text-xs text-slate-400 space-y-1 mb-4">
+                    <li>• Clean voice-over text</li>
+                    <li>• Ready for recording</li>
+                    <li>• Natural speech flow</li>
+                    <li>• Technical content focus</li>
+                  </ul>
+                  <Button 
+                    onClick={() => handleDownloadPresetScript('audioScript')}
+                    className="w-full gap-2"
+                    variant="outline"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download Audio Script
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+              <p className="text-xs text-blue-300">
+                <strong>Part 1 covers:</strong> Multi-model routing architecture, configuration-driven document types, 
+                two-stage pipeline with provider abstraction, and patient onboarding demo with cross-document validation.
+              </p>
+            </div>
+          </TabsContent>
 
           <TabsContent value="generate" className="mt-4 space-y-4">
             {/* Preset Scripts */}
             <div className="p-3 rounded-lg bg-slate-900/50 border border-slate-600">
-              <Label className="text-slate-300 text-sm mb-2 block">Load Preset Script</Label>
+              <Label className="text-slate-300 text-sm mb-2 block">Load Preset Script (for TTS generation)</Label>
               <div className="flex flex-wrap gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => loadPresetScript('patientOnboarding')}
+                  onClick={() => loadPresetScript('audioScript')}
                   className="text-xs"
                 >
-                  <FileText className="h-3 w-3 mr-1" />
-                  Patient Onboarding (~11 min)
+                  <Mic className="h-3 w-3 mr-1" />
+                  Audio Script (~11 min)
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => loadPresetScript('videoScript')}
+                  className="text-xs"
+                >
+                  <Video className="h-3 w-3 mr-1" />
+                  Video Script (with cues)
                 </Button>
               </div>
             </div>
