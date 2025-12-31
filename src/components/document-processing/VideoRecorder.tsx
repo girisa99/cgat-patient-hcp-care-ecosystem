@@ -1089,8 +1089,23 @@ Thanks for watching!`,
               
               <!-- Camera Loading Overlay -->
               <div id="cameraLoading" class="camera-loading">
-                <div class="spinner"></div>
-                <p style="margin-top:20px;opacity:0.7;">Initializing camera...</p>
+                <div id="cameraLoadingContent">
+                  <div class="spinner"></div>
+                  <p style="margin-top:20px;opacity:0.7;">Checking camera permissions...</p>
+                  <p style="margin-top:10px;font-size:12px;opacity:0.5;">Please allow camera access when prompted</p>
+                </div>
+                <div id="cameraPermissionRequest" style="display:none;text-align:center;">
+                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.5" style="margin-bottom:20px;">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                    <circle cx="12" cy="13" r="4"></circle>
+                  </svg>
+                  <p style="font-size:18px;font-weight:600;margin-bottom:10px;">Camera Access Required</p>
+                  <p style="font-size:14px;opacity:0.7;margin-bottom:20px;">Click below to grant camera and microphone access</p>
+                  <button id="requestCameraBtn" style="padding:15px 30px;font-size:16px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border:none;color:white;border-radius:10px;cursor:pointer;margin-bottom:15px;">
+                    🎥 Allow Camera Access
+                  </button>
+                  <p style="font-size:12px;opacity:0.5;">Your browser will ask for permission</p>
+                </div>
               </div>
               
               <!-- Countdown Overlay -->
@@ -1397,16 +1412,112 @@ Thanks for watching!`,
           };
           
           const cameraLoading = document.getElementById('cameraLoading');
+          const cameraLoadingContent = document.getElementById('cameraLoadingContent');
+          const cameraPermissionRequest = document.getElementById('cameraPermissionRequest');
+          const requestCameraBtn = document.getElementById('requestCameraBtn');
           
-          // Request camera on load with timeout
+          // Check permission state first
+          async function checkCameraPermission() {
+            console.log('🔍 Checking camera permission...');
+            
+            try {
+              // Check if we can query permissions
+              if (navigator.permissions && navigator.permissions.query) {
+                const cameraPermission = await navigator.permissions.query({ name: 'camera' });
+                console.log('Camera permission state:', cameraPermission.state);
+                
+                if (cameraPermission.state === 'granted') {
+                  // Already granted, init directly
+                  initCamera();
+                } else if (cameraPermission.state === 'denied') {
+                  // Denied, show instructions
+                  showPermissionDenied();
+                } else {
+                  // Prompt state - show button to request
+                  showPermissionButton();
+                }
+                
+                // Listen for changes
+                cameraPermission.onchange = function() {
+                  console.log('Permission changed to:', this.state);
+                  if (this.state === 'granted') {
+                    initCamera();
+                  } else if (this.state === 'denied') {
+                    showPermissionDenied();
+                  }
+                };
+              } else {
+                // Permissions API not available, show button
+                showPermissionButton();
+              }
+            } catch(e) {
+              console.log('Permission query not supported, showing button');
+              showPermissionButton();
+            }
+          }
+          
+          function showPermissionButton() {
+            cameraLoadingContent.style.display = 'none';
+            cameraPermissionRequest.style.display = 'block';
+            status.textContent = 'Awaiting Permission';
+            status.className = 'status countdown';
+          }
+          
+          function showPermissionDenied() {
+            cameraLoadingContent.style.display = 'none';
+            cameraPermissionRequest.innerHTML = \`
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5" style="margin-bottom:20px;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+              </svg>
+              <p style="font-size:18px;font-weight:600;color:#ef4444;margin-bottom:10px;">Camera Access Blocked</p>
+              <p style="font-size:14px;opacity:0.7;margin-bottom:15px;">Camera permission was denied by browser</p>
+              <div style="background:rgba(255,255,255,0.05);padding:15px;border-radius:10px;text-align:left;margin-bottom:20px;max-width:400px;">
+                <p style="font-size:13px;font-weight:600;margin-bottom:10px;">To allow camera access:</p>
+                <ol style="font-size:12px;opacity:0.8;padding-left:20px;margin:0;">
+                  <li style="margin-bottom:5px;">Click the camera/lock icon in your browser's address bar</li>
+                  <li style="margin-bottom:5px;">Find "Camera" and change to "Allow"</li>
+                  <li style="margin-bottom:5px;">Click the button below to reload</li>
+                </ol>
+              </div>
+              <button onclick="location.reload()" style="padding:12px 25px;font-size:14px;background:#3b82f6;border:none;color:white;border-radius:8px;cursor:pointer;">
+                🔄 Reload Window
+              </button>
+            \`;
+            cameraPermissionRequest.style.display = 'block';
+            status.textContent = 'Permission Denied';
+            status.className = 'status error';
+          }
+          
+          // Request camera on button click or auto
           async function initCamera() {
             console.log('🎥 Initializing camera...');
             
-            // Set a timeout to show error if camera takes too long
+            // Show loading state
+            cameraLoadingContent.style.display = 'block';
+            cameraPermissionRequest.style.display = 'none';
+            cameraLoadingContent.innerHTML = \`
+              <div class="spinner"></div>
+              <p style="margin-top:20px;opacity:0.7;">Accessing camera...</p>
+            \`;
+            status.textContent = 'Connecting...';
+            status.className = 'status loading';
+            
+            // Set a timeout to show help if camera takes too long
             const cameraTimeout = setTimeout(() => {
               console.warn('⏰ Camera initialization taking too long');
-              cameraLoading.innerHTML = '<p style="color:#f59e0b;">Camera is taking a while...</p><p style="margin-top:10px;font-size:13px;opacity:0.7;">Make sure you allow camera access in your browser.</p><button onclick="location.reload()" style="margin-top:20px;padding:10px 20px;">Retry</button>';
-            }, 10000); // 10 second timeout
+              cameraLoadingContent.innerHTML = \`
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" style="margin-bottom:15px;">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <p style="color:#f59e0b;font-size:16px;margin-bottom:10px;">Taking longer than expected...</p>
+                <p style="font-size:13px;opacity:0.7;margin-bottom:15px;">Check if a permission popup appeared behind this window</p>
+                <button onclick="location.reload()" style="padding:10px 20px;background:#3b82f6;border:none;color:white;border-radius:8px;cursor:pointer;">Retry</button>
+              \`;
+            }, 8000);
             
             try {
               // Check if mediaDevices is available
@@ -1428,53 +1539,53 @@ Thanks for watching!`,
               
               // Set preview source
               preview.srcObject = stream;
+              preview.muted = true;
               
-              // Ensure video plays - try immediately, don't wait for onloadedmetadata
-              try {
-                await preview.play();
-                cameraLoading.classList.add('hidden');
-                status.textContent = 'Camera Ready';
-                status.className = 'status ready';
-              } catch(playErr) {
-                console.log('Initial play failed, waiting for metadata...');
-                // Fallback: wait for metadata
-                preview.onloadedmetadata = function() {
-                  console.log('📺 Video metadata loaded, playing...');
-                  preview.play().then(() => {
-                    cameraLoading.classList.add('hidden');
-                    status.textContent = 'Camera Ready';
-                    status.className = 'status ready';
-                }).catch(e => {
-                  console.error('Play error:', e);
-                  cameraLoading.innerHTML = '<p style="color:#f87171;">Failed to play video. Click to retry.</p>';
-                  cameraLoading.onclick = initCamera;
-                });
-              };
-              }
+              // Try to play
+              await preview.play();
+              cameraLoading.classList.add('hidden');
+              status.textContent = 'Camera Ready';
+              status.className = 'status ready';
+              console.log('✅ Camera preview playing');
               
             } catch(e) {
               clearTimeout(cameraTimeout);
               console.error('❌ Camera error:', e);
-              status.textContent = 'Camera Error';
-              status.className = 'status error';
               
-              // Update loading overlay with error
-              cameraLoading.innerHTML = '<p style="color:#f87171;">Camera error</p><p style="margin-top:10px;font-size:13px;opacity:0.7;">' + e.message + '</p><button onclick="location.reload()" style="margin-top:20px;padding:10px 20px;">Retry</button>';
-              
-              // Show helpful error message
               if (e.name === 'NotAllowedError') {
-                alert('Camera access denied. Please allow camera access in your browser settings and refresh this window.');
+                showPermissionDenied();
               } else if (e.name === 'NotFoundError') {
-                alert('No camera found. Please connect a camera and refresh this window.');
+                cameraLoadingContent.innerHTML = \`
+                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5" style="margin-bottom:20px;">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                  <p style="font-size:18px;font-weight:600;color:#ef4444;margin-bottom:10px;">No Camera Found</p>
+                  <p style="font-size:14px;opacity:0.7;margin-bottom:20px;">Please connect a camera and try again</p>
+                  <button onclick="location.reload()" style="padding:12px 25px;background:#3b82f6;border:none;color:white;border-radius:8px;cursor:pointer;">Retry</button>
+                \`;
+                status.textContent = 'No Camera';
+                status.className = 'status error';
+              } else {
+                cameraLoadingContent.innerHTML = \`
+                  <p style="color:#f87171;font-size:16px;margin-bottom:10px;">Camera Error</p>
+                  <p style="font-size:13px;opacity:0.7;margin-bottom:15px;">\${e.message}</p>
+                  <button onclick="location.reload()" style="padding:10px 20px;background:#3b82f6;border:none;color:white;border-radius:8px;cursor:pointer;">Retry</button>
+                \`;
+                status.textContent = 'Camera Error';
+                status.className = 'status error';
               }
             }
           }
           
-          // Wait for DOM to be ready, then init camera
+          // Button click to request camera
+          requestCameraBtn.onclick = initCamera;
+          
+          // Check permission on load
           if (document.readyState === 'complete') {
-            initCamera();
+            checkCameraPermission();
           } else {
-            window.addEventListener('load', initCamera);
+            window.addEventListener('load', checkCameraPermission);
           }
           
           function formatTime(seconds) {
