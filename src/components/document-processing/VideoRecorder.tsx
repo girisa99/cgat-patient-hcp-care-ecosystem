@@ -96,6 +96,10 @@ export const VideoRecorder: React.FC = () => {
   const [selectedBackgroundMusic, setSelectedBackgroundMusic] = useState<MediaItem | null>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   
+  // Countdown state
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
   const previewRef = useRef<HTMLVideoElement>(null);
   const fullscreenPreviewRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -416,18 +420,47 @@ Let me walk you through the key improvements we've made.`,
   };
 
   const handleStartRecording = async () => {
-    // Stop preview stream before starting recording
-    if (previewStream) {
-      previewStream.getTracks().forEach(track => track.stop());
-      setPreviewStream(null);
-    }
+    // Start 5-second countdown
+    setCountdown(5);
     
-    await startRecording(recordingMode, micEnabled);
-    // Start voiceover audio if selected
-    if (selectedAudioFile && voiceoverAudioRef.current) {
-      voiceoverAudioRef.current.play();
-      setIsPlayingVoiceover(true);
+    countdownIntervalRef.current = setInterval(() => {
+      setCountdown(prev => {
+        if (prev === null || prev <= 1) {
+          // Clear interval and start recording
+          if (countdownIntervalRef.current) {
+            clearInterval(countdownIntervalRef.current);
+            countdownIntervalRef.current = null;
+          }
+          
+          // Actually start recording
+          (async () => {
+            // Stop preview stream before starting recording
+            if (previewStream) {
+              previewStream.getTracks().forEach(track => track.stop());
+              setPreviewStream(null);
+            }
+            
+            await startRecording(recordingMode, micEnabled);
+            // Start voiceover audio if selected
+            if (selectedAudioFile && voiceoverAudioRef.current) {
+              voiceoverAudioRef.current.play();
+              setIsPlayingVoiceover(true);
+            }
+          })();
+          
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const handleCancelCountdown = () => {
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
     }
+    setCountdown(null);
   };
 
   const handleStopRecording = () => {
@@ -1254,8 +1287,26 @@ Let me walk you through the key improvements we've made.`,
         playsInline
         controls={!!recordedUrl && !isRecording}
       />
+      {/* Countdown overlay */}
+      {countdown !== null && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-20">
+          <div className="text-center">
+            <div className="text-8xl font-bold text-white animate-pulse mb-4">
+              {countdown}
+            </div>
+            <p className="text-white text-lg mb-4">Get ready...</p>
+            <Button 
+              variant="outline" 
+              onClick={handleCancelCountdown}
+              className="bg-background/20 border-white text-white hover:bg-white/20"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
       {/* Show placeholder only when no preview stream available */}
-      {!isRecording && !recordedUrl && !previewStream && !isPreviewLoading && recordingMode === 'screen' && (
+      {!isRecording && !recordedUrl && !previewStream && !isPreviewLoading && recordingMode === 'screen' && countdown === null && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-center text-muted-foreground">
             <Monitor className="h-12 w-12 mx-auto mb-2 opacity-50" />
@@ -1273,7 +1324,7 @@ Let me walk you through the key improvements we've made.`,
         </div>
       )}
       {/* Camera preview ready indicator */}
-      {!isRecording && !recordedUrl && previewStream && (
+      {!isRecording && !recordedUrl && previewStream && countdown === null && (
         <div className="absolute top-4 left-4 bg-green-500/80 text-white px-2 py-1 rounded flex items-center gap-1">
           <Camera className="h-3 w-3" />
           <span className="text-xs">Camera Ready</span>
@@ -1648,10 +1699,16 @@ Let me walk you through the key improvements we've made.`,
 
               {/* Controls */}
               <div className="flex items-center gap-2">
-                {!isRecording && !recordedUrl && (
+                {!isRecording && !recordedUrl && countdown === null && (
                   <Button onClick={handleStartRecording} className="flex-1">
                     <Camera className="h-4 w-4 mr-2" />
                     Start Recording
+                  </Button>
+                )}
+
+                {countdown !== null && !isRecording && (
+                  <Button variant="outline" onClick={handleCancelCountdown} className="flex-1">
+                    Cancel Countdown ({countdown}s)
                   </Button>
                 )}
                 
@@ -1864,17 +1921,20 @@ Let me walk you through the key improvements we've made.`,
             {/* Fullscreen Options Bar */}
             <div className="flex flex-wrap items-center gap-4 p-3 bg-muted/50 rounded-lg">
               {/* Voiceover Audio Selection */}
-              <div className="flex items-center gap-2">
-                <Music className="h-4 w-4 text-primary" />
+              <div className="flex flex-col gap-1">
+                <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Music className="h-3 w-3" />
+                  Voiceover
+                </Label>
                 <Select
                   value={selectedAudioFile?.id || 'none'}
                   onValueChange={(val) => handleSelectAudioFile(val === 'none' ? '' : val)}
-                  disabled={isRecording}
+                  disabled={isRecording || countdown !== null}
                 >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Voiceover audio..." />
+                  <SelectTrigger className="w-[180px] bg-background">
+                    <SelectValue placeholder="Select audio..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-popover border border-border shadow-lg z-[100]">
                     <SelectItem value="none">None</SelectItem>
                     {voiceoverFiles.map(audio => (
                       <SelectItem key={audio.id} value={audio.id}>
@@ -1886,16 +1946,19 @@ Let me walk you through the key improvements we've made.`,
               </div>
 
               {/* Script Selection */}
-              <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-primary" />
+              <div className="flex flex-col gap-1">
+                <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                  <FileText className="h-3 w-3" />
+                  Script
+                </Label>
                 <Select
                   value={selectedScript?.id || 'none'}
                   onValueChange={(val) => handleSelectScript(val === 'none' ? '' : val)}
                 >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Script..." />
+                  <SelectTrigger className="w-[180px] bg-background">
+                    <SelectValue placeholder="Select script..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-popover border border-border shadow-lg z-[100]">
                     <SelectItem value="none">None</SelectItem>
                     {availableScripts.map(script => (
                       <SelectItem key={script.id} value={script.id}>
@@ -1907,8 +1970,11 @@ Let me walk you through the key improvements we've made.`,
               </div>
 
               {/* Background Music Selection */}
-              <div className="flex items-center gap-2">
-                <Headphones className="h-4 w-4 text-primary" />
+              <div className="flex flex-col gap-1">
+                <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Headphones className="h-3 w-3" />
+                  Background Music
+                </Label>
                 <Select
                   value={selectedBackgroundMusic?.id || 'none'}
                   onValueChange={(val) => {
@@ -1919,12 +1985,12 @@ Let me walk you through the key improvements we've made.`,
                       setSelectedBackgroundMusic(music || null);
                     }
                   }}
-                  disabled={isRecording}
+                  disabled={isRecording || countdown !== null}
                 >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Background music..." />
+                  <SelectTrigger className="w-[180px] bg-background">
+                    <SelectValue placeholder="Select music..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-popover border border-border shadow-lg z-[100]">
                     <SelectItem value="none">None</SelectItem>
                     {musicFiles.map(music => (
                       <SelectItem key={music.id} value={music.id}>
@@ -1976,10 +2042,16 @@ Let me walk you through the key improvements we've made.`,
             
             {/* Fullscreen Controls */}
             <div className="flex items-center justify-center gap-4">
-              {!isRecording && !recordedUrl && (
+              {!isRecording && !recordedUrl && countdown === null && (
                 <Button onClick={handleStartRecording} size="lg">
                   <Camera className="h-5 w-5 mr-2" />
                   Start Recording
+                </Button>
+              )}
+
+              {countdown !== null && !isRecording && (
+                <Button variant="outline" size="lg" onClick={handleCancelCountdown}>
+                  Cancel Countdown ({countdown}s)
                 </Button>
               )}
               
