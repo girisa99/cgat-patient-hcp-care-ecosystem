@@ -1690,6 +1690,26 @@ function generateScript(config: PopoutConfig): string {
           }
         }
         
+        // HTML escape helper - avoids regex literals that break script parsing
+        // The issue is /</g pattern looks like </script> to HTML parser
+        function escapeForHtml(str) {
+          if (!str) return '';
+          var div = document.createElement('div');
+          div.textContent = str;
+          return div.innerHTML;
+        }
+        
+        // Replace newlines with <br> tags safely
+        function nlToBr(str) {
+          if (!str) return '';
+          return String(str).split('\\n').join('<br>');
+        }
+        
+        // Combined: escape HTML and convert newlines
+        function safeHtml(str) {
+          return nlToBr(escapeForHtml(str));
+        }
+        
         // Data from parent (base64 encoded for safety)
         var scripts = decodeData('${scriptsEncoded}');
         var voiceovers = decodeData('${voiceoversEncoded}');
@@ -2139,21 +2159,25 @@ function generateScript(config: PopoutConfig): string {
         
         console.log('🧹 Cleaning script for TTS, input length:', text.length);
         
+        // Use RegExp constructor to avoid template literal escaping issues
+        var pausePattern = new RegExp('\\\\[PAUSE\\\\s+[0-9.]+s\\\\]', 'gi');
+        var improvementPattern = new RegExp('\\\\[IMPROVEMENT NOTES:\\\\][\\\\s\\\\S]*?(?=\\\\n\\\\n|\\\\[|$)', 'gi');
+        var engagementPattern = new RegExp('\\\\[ENGAGEMENT NOTES:\\\\][\\\\s\\\\S]*?(?=\\\\n\\\\n|\\\\[|$)', 'gi');
+        var deliveryPattern = new RegExp('\\\\[DELIVERY TIPS:\\\\][\\\\s\\\\S]*?(?=\\\\n\\\\n|\\\\[|$)', 'gi');
+        var bracketPattern = new RegExp('\\\\[[A-Z\\\\s]+:\\\\]', 'gi');
+        var bulletPattern = new RegExp('[•·▪]', 'g');
+        var multiNewlinePattern = new RegExp('\\\\n{3,}', 'g');
+        var multiSpacePattern = new RegExp('  +', 'g');
+        
         var cleaned = text
-          // Replace [PAUSE Xs] with natural pauses (ellipsis for short pauses)
-          .replace(/\[PAUSE\s+[0-9.]+s\]/gi, '...')
-          // Remove entire notes sections - match [SECTION:] through end of that section
-          .replace(/\[IMPROVEMENT NOTES:\][\s\S]*?(?=\n\n|\[|$)/gi, '')
-          .replace(/\[ENGAGEMENT NOTES:\][\s\S]*?(?=\n\n|\[|$)/gi, '')
-          .replace(/\[DELIVERY TIPS:\][\s\S]*?(?=\n\n|\[|$)/gi, '')
-          // Remove any remaining bracket markers
-          .replace(/\[[A-Z\s]+:\]/gi, '')
-          // Remove bullet points
-          .replace(/[•·▪]/g, '')
-          // Clean up multiple newlines
-          .replace(/\n{3,}/g, '\n\n')
-          // Clean up multiple spaces
-          .replace(/  +/g, ' ')
+          .replace(pausePattern, '...')
+          .replace(improvementPattern, '')
+          .replace(engagementPattern, '')
+          .replace(deliveryPattern, '')
+          .replace(bracketPattern, '')
+          .replace(bulletPattern, '')
+          .replace(multiNewlinePattern, '\\n\\n')
+          .replace(multiSpacePattern, ' ')
           .trim();
         
         console.log('🧹 Cleaned script length:', cleaned.length);
@@ -2214,7 +2238,7 @@ function generateScript(config: PopoutConfig): string {
         var id = this.value;
         var script = scripts.find(function(s) { return s.id === id; });
         if (script) {
-          scriptContent.innerHTML = script.content.replace(/\\n/g, '<br>').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          scriptContent.innerHTML = safeHtml(script.content);
         } else {
           scriptContent.innerHTML = '<span style="opacity:0.5;">Select a script to display here...</span>';
         }
@@ -2234,7 +2258,7 @@ function generateScript(config: PopoutConfig): string {
           if (vo.scriptText) {
             useScriptBtn.style.display = 'block';
             useScriptBtn.onclick = function() {
-              scriptContent.innerHTML = vo.scriptText.replace(/\\n/g, '<br>').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+              scriptContent.innerHTML = safeHtml(vo.scriptText);
             };
           } else {
             useScriptBtn.style.display = 'none';
@@ -2472,7 +2496,7 @@ function generateScript(config: PopoutConfig): string {
           html += '<span class="segment-type">' + seg.type + '</span>';
           html += '<span class="segment-duration">~' + seg.estimatedDuration + 's</span>';
           html += '</div>';
-          html += '<div class="segment-text">' + seg.text.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>';
+          html += '<div class="segment-text">' + escapeForHtml(seg.text) + '</div>';
           
           // Tone markers
           if (seg.toneMarkers && seg.toneMarkers.length > 0) {
@@ -2571,7 +2595,7 @@ function generateScript(config: PopoutConfig): string {
           // Restore plain text view
           var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
           if (selectedScript) {
-            scriptContent.innerHTML = selectedScript.content.replace(/\\n/g, '<br>').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            scriptContent.innerHTML = safeHtml(selectedScript.content);
           }
         }
       }
@@ -2628,7 +2652,7 @@ function generateScript(config: PopoutConfig): string {
           var startCtx = Math.max(0, pp.position - 30);
           var endCtx = Math.min(scriptText.length, pp.position + 30);
           var context = '...' + scriptText.substring(startCtx, pp.position) + '⏸️' + scriptText.substring(pp.position, endCtx) + '...';
-          context = context.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\\n/g, ' ');
+          context = escapeForHtml(context).split('\\n').join(' ');
           
           html += '<div class="pause-point-item" data-pause-index="' + idx + '" data-position="' + pp.position + '">';
           html += '<span class="pp-position">#' + (idx + 1) + '</span>';
@@ -2878,7 +2902,7 @@ function generateScript(config: PopoutConfig): string {
         pauseChanges.forEach(function(pause, idx) {
           // Add text before this pause point
           var textBefore = scriptText.substring(lastPos, pause.position);
-          result += textBefore.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\\n/g, '<br>');
+          result += safeHtml(textBefore);
           
           // Add inline pause marker with status
           var statusClass = pause.applied === true ? 'accepted' : (pause.applied === false ? 'rejected' : 'pending');
@@ -2893,7 +2917,7 @@ function generateScript(config: PopoutConfig): string {
         });
         
         // Add remaining text
-        result += scriptText.substring(lastPos).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\\n/g, '<br>');
+        result += safeHtml(scriptText.substring(lastPos));
         
         // Add notes section if any accepted
         var acceptedEngagement = pendingChanges.filter(function(c) { return c.type === 'engagement' && c.applied === true; });
@@ -3409,10 +3433,10 @@ function generateScript(config: PopoutConfig): string {
         words.forEach(function(word) {
           if (word.trim() === '') {
             // Preserve whitespace and newlines
-            html += word.replace(/\n/g, '<br>');
+            html += nlToBr(word);
           } else {
             // Wrap each word in a span for highlighting
-            var sanitizedWord = word.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            var sanitizedWord = escapeForHtml(word);
             html += '<span class="script-word" data-word-index="' + wordIndex + '">' + sanitizedWord + '</span>';
             scriptWords.push({
               index: wordIndex,
@@ -3451,7 +3475,7 @@ function generateScript(config: PopoutConfig): string {
             } else {
               var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
               if (selectedScript) {
-                scriptContent.innerHTML = selectedScript.content.replace(/\\n/g, '<br>').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                scriptContent.innerHTML = safeHtml(selectedScript.content);
               }
             }
           }
@@ -3475,10 +3499,10 @@ function generateScript(config: PopoutConfig): string {
         sortedPauses.forEach(function(pp, idx) {
           // Add text before this pause point
           var textBefore = scriptText.substring(lastPos, pp.position);
-          result += textBefore.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\\n/g, '<br>');
+          result += safeHtml(textBefore);
           
           // Add inline pause marker
-          result += '<span class="inline-pause-marker" data-position="' + pp.position + '" data-index="' + idx + '" title="' + pp.reason + ' (' + pp.suggestedDuration + 's)">';
+          result += '<span class="inline-pause-marker" data-position="' + pp.position + '" data-index="' + idx + '" title="' + escapeForHtml(pp.reason) + ' (' + pp.suggestedDuration + 's)">';
           result += '⏸️ ' + (idx + 1);
           result += '</span>';
           
@@ -3486,7 +3510,7 @@ function generateScript(config: PopoutConfig): string {
         });
         
         // Add remaining text
-        result += scriptText.substring(lastPos).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\\n/g, '<br>');
+        result += safeHtml(scriptText.substring(lastPos));
         
         scriptContent.innerHTML = result;
         
@@ -5701,7 +5725,8 @@ function generateScript(config: PopoutConfig): string {
         try {
           // Generate unique filename with correct extension
           var timestamp = Date.now();
-          var safeFileName = name.replace(/[^a-zA-Z0-9_-]/g, '_');
+          var filenamePattern = new RegExp('[^a-zA-Z0-9_-]', 'g');
+          var safeFileName = name.replace(filenamePattern, '_');
           var storagePath = 'recording_' + timestamp + '_' + safeFileName + '.' + fileExt;
           
           // Upload to Supabase Storage with correct content type
@@ -6005,7 +6030,7 @@ function generateScript(config: PopoutConfig): string {
           
           // Display transcript in the teleprompter
           if (transcriptText) {
-            scriptContent.innerHTML = '<strong style="color:#22c55e;">📝 Transcription:</strong><br><br>' + transcriptText.replace(/\\n/g, '<br>');
+            scriptContent.innerHTML = '<strong style="color:#22c55e;">📝 Transcription:</strong><br><br>' + nlToBr(escapeForHtml(transcriptText));
           }
           
           console.log('✅ Transcription complete:', transcriptText.substring(0, 100) + '...');
