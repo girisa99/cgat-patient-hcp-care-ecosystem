@@ -446,7 +446,9 @@ function generateStyles(): string {
     }
     .panel.teleprompter {
       flex: 1;
-      overflow-y: auto;
+      overflow-y: hidden;
+      display: flex;
+      flex-direction: column;
     }
     .panel h3 { font-size: 14px; margin-bottom: 10px; opacity: 0.8; display: flex; align-items: center; gap: 6px; }
     .script-content {
@@ -454,6 +456,9 @@ function generateStyles(): string {
       line-height: 2;
       white-space: pre-wrap;
       overflow-y: auto;
+      flex: 1;
+      height: 0;
+      min-height: 200px;
     }
     .recording-indicator {
       position: absolute;
@@ -2098,10 +2103,12 @@ function generateScript(config: PopoutConfig): string {
           console.log('🎵 Playing background music (clone)');
         }
         
-        // Auto-scroll
+        // Auto-scroll - scroll 2px every 50ms (40px/sec for smooth reading)
         scrollInterval = setInterval(function() {
-          if (!isPaused) scriptContent.scrollTop += 1;
-        }, 100);
+          if (!isPaused && scriptContent) {
+            scriptContent.scrollTop += 2;
+          }
+        }, 50);
         
         showAudioControls(useVoiceover, useTTS, useMusic);
         
