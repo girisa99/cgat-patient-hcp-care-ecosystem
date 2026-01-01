@@ -1501,6 +1501,7 @@ function generateScript(config: PopoutConfig): string {
       var musicClone = null;
       var animationFrameId = null; // Track animation frame for cleanup
       var isSaving = false; // Prevent multiple saves and accidental restarts
+      var isStopped = false; // Guard flag to prevent audio restart after stop
       var recordedMimeType = 'video/webm'; // Track the mime type used for recording
       
       // Trim and transcription state
@@ -2982,37 +2983,49 @@ function generateScript(config: PopoutConfig): string {
       // Stop all audio helper - with thorough cleanup (called when STOPPING recording)
       function stopAllAudio() {
         console.log('🔇 Stopping all audio PERMANENTLY');
+        
+        // Set guard flag FIRST to prevent any callbacks from restarting audio
+        isStopped = true;
+        
         try {
           // Stop original voiceover completely
           if (voiceover) { 
             voiceover.pause(); 
             voiceover.currentTime = 0;
             voiceover.onended = null;
+            voiceover.onloadedmetadata = null;
+            voiceover.onplay = null;
           }
           // Stop cloned voiceover and clear it
           if (voiceoverClone) {
             voiceoverClone.pause();
             voiceoverClone.currentTime = 0;
             voiceoverClone.onended = null;
-            try { voiceoverClone.src = ''; } catch(e) {}
+            voiceoverClone.onloadedmetadata = null;
+            voiceoverClone.onplay = null;
+            try { voiceoverClone.src = ''; voiceoverClone.load(); } catch(e) {}
           }
           // Stop TTS audio and clear it completely
           if (ttsAudio) { 
             ttsAudio.pause(); 
             ttsAudio.currentTime = 0;
             ttsAudio.onended = null;
-            try { ttsAudio.src = ''; } catch(e) {}
+            ttsAudio.onloadedmetadata = null;
+            ttsAudio.onplay = null;
+            try { ttsAudio.src = ''; ttsAudio.load(); } catch(e) {}
           }
           // Stop original background music
           if (bgMusic) { 
             bgMusic.pause(); 
-            bgMusic.currentTime = 0; 
+            bgMusic.currentTime = 0;
+            bgMusic.onended = null;
           }
           // Stop cloned music and clear it
           if (musicClone) {
             musicClone.pause();
             musicClone.currentTime = 0;
-            try { musicClone.src = ''; } catch(e) {}
+            musicClone.onended = null;
+            try { musicClone.src = ''; musicClone.load(); } catch(e) {}
           }
           
           // Close audio context to fully release
@@ -3028,7 +3041,7 @@ function generateScript(config: PopoutConfig): string {
         ttsActive = false;
         musicActive = false;
         
-        console.log('✅ All audio stopped permanently');
+        console.log('✅ All audio stopped permanently, isStopped flag set');
       }
       
       // Audio options dialog
@@ -3397,6 +3410,7 @@ function generateScript(config: PopoutConfig): string {
         isRecording = true;
         isCountingDown = false;
         isPaused = false; // Reset pause state for new recording
+        isStopped = false; // Reset stop guard for new recording
         
         // Reset chunks for new recording
         chunks = [];
@@ -3723,20 +3737,108 @@ function generateScript(config: PopoutConfig): string {
         
         // Play audio - IMPORTANT: Only play ONE voiceover source to avoid overlap
         // If TTS is enabled, use that as primary voice. Otherwise use voiceover audio clone.
+        
+        // Function to start teleprompter scroll with proper audio sync
+        function startTeleprompterScrollSync(audioDuration) {
+          var scrollPixelsPerInterval = 2; // Default: 2px per 50ms = 40px/sec
+          var scrollIntervalMs = 50;
+          
+          if (audioDuration && audioDuration > 0 && scriptContent) {
+            // Calculate scroll height (total scrollable distance)
+            var scrollableHeight = scriptContent.scrollHeight - scriptContent.clientHeight;
+            
+            if (scrollableHeight > 0) {
+              // Calculate how many pixels to scroll per interval to finish with audio
+              // Add 5 second buffer to account for any delays
+              var bufferedDuration = audioDuration + 5;
+              var totalIntervals = (bufferedDuration * 1000) / scrollIntervalMs;
+              scrollPixelsPerInterval = scrollableHeight / totalIntervals;
+              
+              // Ensure minimum scroll speed of 0.3px and max of 4px per interval
+              scrollPixelsPerInterval = Math.max(0.3, Math.min(4, scrollPixelsPerInterval));
+              
+              console.log('📜 Teleprompter sync: scrollHeight=' + scrollableHeight + 'px, audioDuration=' + audioDuration.toFixed(1) + 's (buffered: ' + bufferedDuration.toFixed(1) + 's), speed=' + scrollPixelsPerInterval.toFixed(2) + 'px/interval');
+            }
+          }
+          
+          // Accumulated scroll for sub-pixel accuracy
+          var accumulatedScroll = 0;
+          
+          // Auto-scroll with calculated speed
+          scrollInterval = setInterval(function() {
+            if (!isPaused && scriptContent && !isStopped) {
+              accumulatedScroll += scrollPixelsPerInterval;
+              if (accumulatedScroll >= 1) {
+                var pixelsToScroll = Math.floor(accumulatedScroll);
+                scriptContent.scrollTop += pixelsToScroll;
+                accumulatedScroll -= pixelsToScroll;
+              }
+            }
+          }, scrollIntervalMs);
+        }
+        
         if (useTTS && ttsAudio) {
-          ttsAudio.play().catch(console.error);
+          // Wait for TTS audio metadata before starting scroll sync
+          if (ttsAudio.duration && ttsAudio.duration > 0 && !isNaN(ttsAudio.duration)) {
+            // Metadata already loaded
+            console.log('🎤 TTS metadata already loaded, duration:', ttsAudio.duration);
+            ttsAudio.play().catch(console.error);
+            startTeleprompterScrollSync(ttsAudio.duration);
+          } else {
+            // Wait for metadata to load
+            ttsAudio.onloadedmetadata = function() {
+              console.log('🎤 TTS metadata loaded, duration:', ttsAudio.duration);
+              if (!isStopped) {
+                startTeleprompterScrollSync(ttsAudio.duration);
+              }
+            };
+            ttsAudio.play().catch(console.error);
+            
+            // Fallback: start scroll after 2s if metadata doesn't load
+            setTimeout(function() {
+              if (!scrollInterval && !isStopped) {
+                console.log('⚠️ TTS metadata timeout, using default scroll speed');
+                startTeleprompterScrollSync(60); // Assume 60s as fallback
+              }
+            }, 2000);
+          }
+          
           // If user also selected voiceover, DON'T play it - TTS takes priority
           console.log('🎤 Playing TTS audio (voiceover disabled to prevent overlap)');
           
-          // Sync teleprompter scroll to TTS duration
+          // TTS ended handler
           ttsAudio.onended = function() {
+            if (isStopped) return; // Don't do anything if stopped
             console.log('🎤 TTS audio ended');
             // Don't clear the scroll interval - let it continue for visual purposes
             // but the audio is done so recording can continue without audio
           };
         } else if (useVoiceover && voiceoverClone) {
-          voiceoverClone.play().catch(console.error);
+          // Wait for voiceover metadata before starting scroll sync
+          if (voiceoverClone.duration && voiceoverClone.duration > 0 && !isNaN(voiceoverClone.duration)) {
+            console.log('🎤 Voiceover metadata already loaded, duration:', voiceoverClone.duration);
+            voiceoverClone.play().catch(console.error);
+            startTeleprompterScrollSync(voiceoverClone.duration);
+          } else {
+            voiceoverClone.onloadedmetadata = function() {
+              console.log('🎤 Voiceover metadata loaded, duration:', voiceoverClone.duration);
+              if (!isStopped) {
+                startTeleprompterScrollSync(voiceoverClone.duration);
+              }
+            };
+            voiceoverClone.play().catch(console.error);
+            
+            setTimeout(function() {
+              if (!scrollInterval && !isStopped) {
+                console.log('⚠️ Voiceover metadata timeout, using default scroll speed');
+                startTeleprompterScrollSync(60);
+              }
+            }, 2000);
+          }
           console.log('🎤 Playing voiceover audio (clone)');
+        } else {
+          // No audio - use default scroll speed
+          startTeleprompterScrollSync(null);
         }
         
         // Background music is separate and can play alongside voice - use clone
@@ -3745,55 +3847,6 @@ function generateScript(config: PopoutConfig): string {
           musicClone.play().catch(console.error);
           console.log('🎵 Playing background music (clone)');
         }
-        
-        // Calculate scroll speed based on TTS duration OR use default
-        var scrollPixelsPerInterval = 2; // Default: 2px per 50ms = 40px/sec
-        var scrollIntervalMs = 50;
-        
-        if (useTTS && ttsAudio && ttsAudio.duration && scriptContent) {
-          // Calculate scroll height (total scrollable distance)
-          var scrollableHeight = scriptContent.scrollHeight - scriptContent.clientHeight;
-          var audioDuration = ttsAudio.duration;
-          
-          if (scrollableHeight > 0 && audioDuration > 0) {
-            // Calculate how many pixels to scroll per interval to finish with audio
-            // Total intervals needed = audioDuration * 1000 / scrollIntervalMs
-            var totalIntervals = (audioDuration * 1000) / scrollIntervalMs;
-            scrollPixelsPerInterval = scrollableHeight / totalIntervals;
-            
-            // Ensure minimum scroll speed of 0.5px and max of 5px per interval
-            scrollPixelsPerInterval = Math.max(0.5, Math.min(5, scrollPixelsPerInterval));
-            
-            console.log('📜 Teleprompter sync: scrollHeight=' + scrollableHeight + 'px, duration=' + audioDuration.toFixed(1) + 's, speed=' + scrollPixelsPerInterval.toFixed(2) + 'px/interval');
-          }
-        } else if (useVoiceover && voiceoverClone && voiceoverClone.duration && scriptContent) {
-          // Sync to voiceover duration instead
-          var scrollableHeight = scriptContent.scrollHeight - scriptContent.clientHeight;
-          var audioDuration = voiceoverClone.duration;
-          
-          if (scrollableHeight > 0 && audioDuration > 0) {
-            var totalIntervals = (audioDuration * 1000) / scrollIntervalMs;
-            scrollPixelsPerInterval = scrollableHeight / totalIntervals;
-            scrollPixelsPerInterval = Math.max(0.5, Math.min(5, scrollPixelsPerInterval));
-            
-            console.log('📜 Teleprompter sync to voiceover: scrollHeight=' + scrollableHeight + 'px, duration=' + audioDuration.toFixed(1) + 's, speed=' + scrollPixelsPerInterval.toFixed(2) + 'px/interval');
-          }
-        }
-        
-        // Accumulated scroll for sub-pixel accuracy
-        var accumulatedScroll = 0;
-        
-        // Auto-scroll with calculated speed
-        scrollInterval = setInterval(function() {
-          if (!isPaused && scriptContent) {
-            accumulatedScroll += scrollPixelsPerInterval;
-            if (accumulatedScroll >= 1) {
-              var pixelsToScroll = Math.floor(accumulatedScroll);
-              scriptContent.scrollTop += pixelsToScroll;
-              accumulatedScroll -= pixelsToScroll;
-            }
-          }
-        }, scrollIntervalMs);
         
         showAudioControls(useVoiceover, useTTS, useMusic);
         
@@ -4178,6 +4231,9 @@ function generateScript(config: PopoutConfig): string {
       // Stop recording - with thorough cleanup (but keep camera for new recording)
       stopBtn.onclick = function() {
         console.log('🛑 Stop button clicked');
+        
+        // Set stop guard FIRST to prevent any audio callbacks
+        isStopped = true;
         isRecording = false;
         isCountingDown = false;
         
@@ -4194,7 +4250,7 @@ function generateScript(config: PopoutConfig): string {
           animationFrameId = null;
         }
         
-        // Clear all intervals
+        // Clear all intervals IMMEDIATELY
         if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
         if (scrollInterval) { clearInterval(scrollInterval); scrollInterval = null; }
         if (audioProgressInterval) { clearInterval(audioProgressInterval); audioProgressInterval = null; }
@@ -4213,13 +4269,31 @@ function generateScript(config: PopoutConfig): string {
           displayStream = null;
         }
         
-        // Reset audio clones for next recording (sources are cleared in stopAllAudio)
+        // Nullify audio references COMPLETELY to prevent restart
+        if (voiceoverClone) {
+          voiceoverClone.onplay = null;
+          voiceoverClone.onended = null;
+          voiceoverClone.onloadedmetadata = null;
+        }
+        if (ttsAudio) {
+          ttsAudio.onplay = null;
+          ttsAudio.onended = null;
+          ttsAudio.onloadedmetadata = null;
+        }
+        if (musicClone) {
+          musicClone.onplay = null;
+          musicClone.onended = null;
+        }
+        
+        // Reset audio clones for next recording
         voiceoverClone = null;
         musicClone = null;
         ttsAudio = null;
         
         // Reset audio context reference
         audioContext = null;
+        
+        console.log('✅ Stop handler complete, all audio prevented from restarting');
       };
       
       // Save recording to Supabase storage and database
