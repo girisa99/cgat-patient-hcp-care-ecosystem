@@ -3279,13 +3279,15 @@ function generateScript(config: PopoutConfig): string {
           preview.muted = true; // Keep muted to prevent feedback
           preview.play().then(function() {
             console.log('✅ Screen share preview playing');
-            status.textContent = 'Screen selected - Ready to record';
+            status.textContent = '✅ Screen selected - Configure options below';
             status.className = 'status ready';
           }).catch(function(playErr) {
             console.error('Screen share preview play error:', playErr);
-            status.textContent = 'Screen selected';
+            status.textContent = '✅ Screen selected';
+            status.className = 'status ready';
           });
           
+          // Show the audio options dialog immediately
           showAudioOptionsDialog();
           
         }).catch(function(e) {
@@ -3408,7 +3410,8 @@ function generateScript(config: PopoutConfig): string {
         
         var dialogHtml = '<div id="audioOptionsDialog" style="position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:200;">';
         dialogHtml += '<div style="background:#1a1a2e;padding:30px;border-radius:16px;max-width:500px;width:90%;">';
-        dialogHtml += '<h2 style="margin-bottom:20px;font-size:20px;">🎬 Recording Options</h2>';
+        dialogHtml += '<h2 style="margin-bottom:20px;font-size:20px;">🎬 Ready to Record!</h2>';
+        dialogHtml += '<p style="opacity:0.7;margin-bottom:15px;font-size:14px;">Configure audio options below, then click "Start Recording" to begin the countdown.</p>';
         
         if (hasScript) {
           dialogHtml += '<div style="margin-bottom:20px;padding:15px;background:#2a2a3e;border-radius:8px;">';
@@ -3460,7 +3463,7 @@ function generateScript(config: PopoutConfig): string {
         
         dialogHtml += '<div style="display:flex;gap:10px;justify-content:flex-end;">';
         dialogHtml += '<button id="cancelOptions" style="padding:12px 24px;">Cancel</button>';
-        dialogHtml += '<button id="confirmOptions" class="primary" style="padding:12px 24px;">Start Countdown</button>';
+        dialogHtml += '<button id="confirmOptions" class="primary" style="padding:12px 24px;font-weight:600;">🎬 Start Recording</button>';
         dialogHtml += '</div></div></div>';
         
         document.body.insertAdjacentHTML('beforeend', dialogHtml);
@@ -3921,7 +3924,7 @@ function generateScript(config: PopoutConfig): string {
         };
         
         mediaRecorder.onstop = function() {
-          console.log('🛑 Recording stopped');
+          console.log('🛑 Recording stopped, chunks:', chunks.length);
           isRecording = false;
           isCountingDown = false;
           
@@ -3973,7 +3976,7 @@ function generateScript(config: PopoutConfig): string {
           screenShareIndicator.classList.remove('visible');
           cameraOffOverlay.classList.remove('screen-active');
           
-        recIndicator.style.display = 'none';
+          recIndicator.style.display = 'none';
           audioControlPanel.classList.remove('visible');
           audioControlPanel.style.display = 'none';
           pipOverlay.classList.add('hidden'); // Hide PIP overlay
@@ -3981,23 +3984,41 @@ function generateScript(config: PopoutConfig): string {
           startBtn.style.display = 'none';
           pauseBtn.style.display = 'none';
           stopBtn.style.display = 'none';
+          
+          // Check if we have recording data
+          if (chunks.length === 0) {
+            console.error('❌ No recording data captured');
+            status.textContent = '⚠️ No recording data - try again';
+            status.className = 'status error';
+            startBtn.style.display = '';
+            return;
+          }
+          
+          // Show save UI
           videoNameInput.style.display = '';
           videoNameInput.value = 'recording_' + new Date().toISOString().slice(0, 10);
           videoNameInput.focus();
           saveBtn.style.display = '';
+          saveBtn.textContent = '💾 Save';
+          saveBtn.disabled = false;
           resetBtn.style.display = '';
           
-          status.textContent = 'Recording Complete - Enter name to save';
+          status.textContent = '✅ Recording Complete - Enter name to save';
           status.className = 'status ready';
           
           // Determine file type based on recordedMimeType (global variable)
           var fileType = recordedMimeType.startsWith('video/mp4') ? 'video/mp4' : 'video/webm';
           var blob = new Blob(chunks, { type: fileType });
           console.log('📦 Recording blob created:', fileType, 'size:', (blob.size / 1024 / 1024).toFixed(2), 'MB');
+          
+          // Preview the recorded video
           preview.srcObject = null;
           preview.src = URL.createObjectURL(blob);
           preview.controls = true;
           preview.muted = false;
+          
+          // Enable download link immediately as backup
+          console.log('✅ Save UI shown, ready for user input');
         };
         
         // Start recording with 1 second timeslice for continuous data availability
