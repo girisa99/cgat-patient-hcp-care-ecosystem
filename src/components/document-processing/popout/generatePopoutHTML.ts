@@ -2078,9 +2078,9 @@ function generateScript(config: PopoutConfig): string {
             ttsAudio.volume = 1.0;
             ttsAudio.crossOrigin = 'anonymous';
             ttsAudio.preload = 'auto';
-            // Wait for audio to be ready before calling callback
-            ttsAudio.oncanplaythrough = function() {
-              console.log('✅ TTS audio ready');
+            // Wait for audio metadata to get duration
+            ttsAudio.onloadedmetadata = function() {
+              console.log('✅ TTS audio ready, duration:', ttsAudio.duration, 'seconds');
             };
             saveTTSToLibrary(data.audioContent, scriptTitle);
           }
@@ -2556,6 +2556,13 @@ function generateScript(config: PopoutConfig): string {
           ttsAudio.play().catch(console.error);
           // If user also selected voiceover, DON'T play it - TTS takes priority
           console.log('🎤 Playing TTS audio (voiceover disabled to prevent overlap)');
+          
+          // Sync teleprompter scroll to TTS duration
+          ttsAudio.onended = function() {
+            console.log('🎤 TTS audio ended');
+            // Don't clear the scroll interval - let it continue for visual purposes
+            // but the audio is done so recording can continue without audio
+          };
         } else if (useVoiceover && voiceoverClone) {
           voiceoverClone.play().catch(console.error);
           console.log('🎤 Playing voiceover audio (clone)');
@@ -2568,12 +2575,54 @@ function generateScript(config: PopoutConfig): string {
           console.log('🎵 Playing background music (clone)');
         }
         
-        // Auto-scroll - scroll 2px every 50ms (40px/sec for smooth reading)
+        // Calculate scroll speed based on TTS duration OR use default
+        var scrollPixelsPerInterval = 2; // Default: 2px per 50ms = 40px/sec
+        var scrollIntervalMs = 50;
+        
+        if (useTTS && ttsAudio && ttsAudio.duration && scriptContent) {
+          // Calculate scroll height (total scrollable distance)
+          var scrollableHeight = scriptContent.scrollHeight - scriptContent.clientHeight;
+          var audioDuration = ttsAudio.duration;
+          
+          if (scrollableHeight > 0 && audioDuration > 0) {
+            // Calculate how many pixels to scroll per interval to finish with audio
+            // Total intervals needed = audioDuration * 1000 / scrollIntervalMs
+            var totalIntervals = (audioDuration * 1000) / scrollIntervalMs;
+            scrollPixelsPerInterval = scrollableHeight / totalIntervals;
+            
+            // Ensure minimum scroll speed of 0.5px and max of 5px per interval
+            scrollPixelsPerInterval = Math.max(0.5, Math.min(5, scrollPixelsPerInterval));
+            
+            console.log('📜 Teleprompter sync: scrollHeight=' + scrollableHeight + 'px, duration=' + audioDuration.toFixed(1) + 's, speed=' + scrollPixelsPerInterval.toFixed(2) + 'px/interval');
+          }
+        } else if (useVoiceover && voiceoverClone && voiceoverClone.duration && scriptContent) {
+          // Sync to voiceover duration instead
+          var scrollableHeight = scriptContent.scrollHeight - scriptContent.clientHeight;
+          var audioDuration = voiceoverClone.duration;
+          
+          if (scrollableHeight > 0 && audioDuration > 0) {
+            var totalIntervals = (audioDuration * 1000) / scrollIntervalMs;
+            scrollPixelsPerInterval = scrollableHeight / totalIntervals;
+            scrollPixelsPerInterval = Math.max(0.5, Math.min(5, scrollPixelsPerInterval));
+            
+            console.log('📜 Teleprompter sync to voiceover: scrollHeight=' + scrollableHeight + 'px, duration=' + audioDuration.toFixed(1) + 's, speed=' + scrollPixelsPerInterval.toFixed(2) + 'px/interval');
+          }
+        }
+        
+        // Accumulated scroll for sub-pixel accuracy
+        var accumulatedScroll = 0;
+        
+        // Auto-scroll with calculated speed
         scrollInterval = setInterval(function() {
           if (!isPaused && scriptContent) {
-            scriptContent.scrollTop += 2;
+            accumulatedScroll += scrollPixelsPerInterval;
+            if (accumulatedScroll >= 1) {
+              var pixelsToScroll = Math.floor(accumulatedScroll);
+              scriptContent.scrollTop += pixelsToScroll;
+              accumulatedScroll -= pixelsToScroll;
+            }
           }
-        }, 50);
+        }, scrollIntervalMs);
         
         showAudioControls(useVoiceover, useTTS, useMusic);
         
