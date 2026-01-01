@@ -3390,7 +3390,7 @@ function generateScript(config: PopoutConfig): string {
         words.forEach(function(word) {
           if (word.trim() === '') {
             // Preserve whitespace and newlines
-            html += word.replace(/\\n/g, '<br>');
+            html += word.replace(/\n/g, '<br>');
           } else {
             // Wrap each word in a span for highlighting
             var sanitizedWord = word.replace(/</g, '&lt;').replace(/>/g, '&gt;');
