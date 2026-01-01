@@ -2927,14 +2927,24 @@ function generateScript(config: PopoutConfig): string {
           // Check if there are pending items
           var pendingCount = pendingChanges.filter(function(c) { return c.applied === null; }).length;
           if (pendingCount > 0) {
-            if (!confirm('You have ' + pendingCount + ' items still pending review.\\n\\nDo you want to skip all pending items and apply only accepted changes?')) {
-              return;
-            }
-            // Mark all pending as rejected
-            pendingChanges.forEach(function(c) {
-              if (c.applied === null) c.applied = false;
+            showCustomConfirm('You have ' + pendingCount + ' items still pending review.\\n\\nDo you want to skip all pending items and apply only accepted changes?', 'Pending Items', function() {
+              // Mark all pending as rejected and continue
+              pendingChanges.forEach(function(c) {
+                if (c.applied === null) c.applied = false;
+              });
+              applyEnhancedChanges();
+            }, function() {
+              // Cancelled - do nothing
             });
+            return;
           }
+          
+          applyEnhancedChanges();
+        };
+        
+        function applyEnhancedChanges() {
+          var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
+          if (!selectedScript || !scriptAnalysis) return;
           
           // Build enhanced script with ONLY ACCEPTED changes
           var enhancedScript = selectedScript.content;
@@ -4241,19 +4251,26 @@ function generateScript(config: PopoutConfig): string {
                 } else {
                   console.log('⚠️ Enhanced selected but no enhanced content found, using original');
                 }
-                
-                // Update teleprompter to show enhanced content
-                if (scriptContent) {
-                  renderScriptWithWordTracking(scriptText);
-                }
+                // Note: Teleprompter will be updated below with the clean script
               } else {
                 console.log('📄 Using ORIGINAL script for TTS');
               }
               
-              // Store the script being used for TTS so teleprompter stays in sync
-              window.currentTTSScript = scriptText;
+              // Clean the script for TTS - remove markers that shouldn't be spoken
+              var ttsCleanScript = cleanScriptForTTS(scriptText);
+              console.log('🔊 TTS clean script length:', ttsCleanScript.length, 'chars');
               
-              generateTTS(scriptText, function() {
+              // Store the CLEAN script for teleprompter - must match TTS audio exactly for sync
+              window.currentTTSScript = ttsCleanScript;
+              
+              // Update teleprompter to show the CLEAN script (what TTS will speak)
+              // This ensures word tracking matches audio exactly
+              if (scriptContent) {
+                renderScriptWithWordTracking(ttsCleanScript);
+              }
+              
+              // Use the CLEAN script for TTS (without markers)
+              generateTTS(ttsCleanScript, function() {
                 startCountdown(useVoiceoverOpt, useMusicOpt, useTTS);
               });
             } else {
@@ -4263,6 +4280,25 @@ function generateScript(config: PopoutConfig): string {
             startCountdown(useVoiceoverOpt, useMusicOpt, useTTS);
           }
         };
+      }
+      
+      // Clean script for TTS - remove markers, notes sections that shouldn't be spoken
+      function cleanScriptForTTS(text) {
+        if (!text) return '';
+        
+        return text
+          // Replace [PAUSE Xs] with natural pauses (ellipsis for short pauses)
+          .replace(/\\[PAUSE [0-9.]+s\\]/gi, '...')
+          // Remove entire notes sections
+          .replace(/\\[IMPROVEMENT NOTES:\\][\\s\\S]*?(?=\\[|$)/gi, '')
+          .replace(/\\[ENGAGEMENT NOTES:\\][\\s\\S]*?(?=\\[|$)/gi, '')
+          .replace(/\\[DELIVERY TIPS:\\][\\s\\S]*?(?=\\[|$)/gi, '')
+          // Remove bullet points
+          .replace(/[•]/g, '')
+          // Clean up multiple spaces and newlines
+          .replace(/\\n\\n+/g, '\\n')
+          .replace(/  +/g, ' ')
+          .trim();
       }
       
       // Build enhanced script from analysis segments
