@@ -2511,37 +2511,45 @@ function generateScript(config: PopoutConfig): string {
         });
       };
       
-      // Stop all audio helper - with thorough cleanup
+      // Stop all audio helper - with thorough cleanup (called when STOPPING recording)
       function stopAllAudio() {
-        console.log('🔇 Stopping all audio');
+        console.log('🔇 Stopping all audio PERMANENTLY');
         try {
-          // Stop original voiceover
+          // Stop original voiceover completely
           if (voiceover) { 
             voiceover.pause(); 
             voiceover.currentTime = 0;
             voiceover.onended = null;
           }
-          // Stop cloned voiceover if exists
-          if (voiceoverClone && voiceoverClone !== voiceover) {
+          // Stop cloned voiceover and clear it
+          if (voiceoverClone) {
             voiceoverClone.pause();
             voiceoverClone.currentTime = 0;
             voiceoverClone.onended = null;
+            try { voiceoverClone.src = ''; } catch(e) {}
           }
-          // Stop TTS audio
+          // Stop TTS audio and clear it completely
           if (ttsAudio) { 
             ttsAudio.pause(); 
             ttsAudio.currentTime = 0;
             ttsAudio.onended = null;
+            try { ttsAudio.src = ''; } catch(e) {}
           }
           // Stop original background music
           if (bgMusic) { 
             bgMusic.pause(); 
             bgMusic.currentTime = 0; 
           }
-          // Stop cloned music if exists
-          if (musicClone && musicClone !== bgMusic) {
+          // Stop cloned music and clear it
+          if (musicClone) {
             musicClone.pause();
             musicClone.currentTime = 0;
+            try { musicClone.src = ''; } catch(e) {}
+          }
+          
+          // Close audio context to fully release
+          if (audioContext && audioContext.state !== 'closed') {
+            audioContext.close().catch(function(e) { console.log('Audio context close:', e); });
           }
         } catch(e) {
           console.error('Error stopping audio:', e);
@@ -2551,6 +2559,8 @@ function generateScript(config: PopoutConfig): string {
         voiceoverActive = false;
         ttsActive = false;
         musicActive = false;
+        
+        console.log('✅ All audio stopped permanently');
       }
       
       // Audio options dialog
@@ -2568,7 +2578,25 @@ function generateScript(config: PopoutConfig): string {
           dialogHtml += '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">';
           dialogHtml += '<input type="checkbox" id="useTTS" checked style="width:20px;height:20px;">';
           dialogHtml += '<div><strong>🗣️ Generate TTS Voiceover</strong><br><small style="opacity:0.7;">Convert script to speech using AI voice</small></div>';
-          dialogHtml += '</label></div>';
+          dialogHtml += '</label>';
+          
+          // Show Original vs Enhanced option if script analysis exists
+          if (scriptAnalysis && scriptAnalysis.segments && scriptAnalysis.segments.length > 0) {
+            dialogHtml += '<div id="ttsVersionSelect" style="margin-top:12px;padding:10px;background:rgba(99,102,241,0.1);border-radius:6px;border:1px solid #6366f1;">';
+            dialogHtml += '<div style="font-size:12px;font-weight:600;margin-bottom:8px;">✨ Script Version for TTS:</div>';
+            dialogHtml += '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:6px;">';
+            dialogHtml += '<input type="radio" name="ttsVersion" value="original" style="width:16px;height:16px;">';
+            dialogHtml += '<span style="font-size:13px;">📄 Original Script</span>';
+            dialogHtml += '</label>';
+            dialogHtml += '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;">';
+            dialogHtml += '<input type="radio" name="ttsVersion" value="enhanced" checked style="width:16px;height:16px;">';
+            dialogHtml += '<span style="font-size:13px;">✨ Enhanced Script <span style="font-size:11px;opacity:0.7;">(with pause markers & engagement tips)</span></span>';
+            dialogHtml += '</label>';
+            dialogHtml += '<div style="font-size:11px;opacity:0.7;margin-top:8px;">Enhanced version syncs with teleprompter segments</div>';
+            dialogHtml += '</div>';
+          }
+          
+          dialogHtml += '</div>';
         }
         
         if (hasVoiceover) {
@@ -2619,6 +2647,15 @@ function generateScript(config: PopoutConfig): string {
           var useVoiceoverOpt = useVoiceoverVal ? useVoiceoverVal.checked : false;
           var useMusicOpt = useMusicVal ? useMusicVal.checked : false;
           
+          // Check which TTS version to use (original vs enhanced)
+          var useEnhancedScript = false;
+          var ttsVersionRadios = document.querySelectorAll('input[name="ttsVersion"]');
+          ttsVersionRadios.forEach(function(radio) {
+            if (radio.checked && radio.value === 'enhanced') {
+              useEnhancedScript = true;
+            }
+          });
+          
           document.getElementById('audioOptionsDialog').remove();
           
           if (useTTS && hasScript) {
@@ -2626,8 +2663,25 @@ function generateScript(config: PopoutConfig): string {
             status.textContent = 'Generating TTS audio...';
             status.className = 'status countdown';
             var scriptToUse = scripts.find(function(s) { return s.id === scriptSelect.value; });
+            
             if (scriptToUse) {
-              generateTTS(scriptToUse.content, function() {
+              var scriptText = scriptToUse.content;
+              
+              // If enhanced version selected and we have analysis, build enhanced script
+              if (useEnhancedScript && scriptAnalysis && scriptAnalysis.segments) {
+                scriptText = buildEnhancedScript(scriptAnalysis);
+                console.log('✨ Using ENHANCED script for TTS');
+                
+                // Update teleprompter to show enhanced segments
+                if (isSegmentViewEnabled || scriptAnalysis.segments.length > 0) {
+                  isSegmentViewEnabled = true;
+                  renderSegmentView(scriptAnalysis);
+                }
+              } else {
+                console.log('📄 Using ORIGINAL script for TTS');
+              }
+              
+              generateTTS(scriptText, function() {
                 startCountdown(useVoiceoverOpt, useMusicOpt, useTTS);
               });
             } else {
@@ -2637,6 +2691,26 @@ function generateScript(config: PopoutConfig): string {
             startCountdown(useVoiceoverOpt, useMusicOpt, useTTS);
           }
         };
+      }
+      
+      // Build enhanced script from analysis segments
+      function buildEnhancedScript(analysis) {
+        if (!analysis || !analysis.segments) return '';
+        
+        var enhancedParts = [];
+        
+        analysis.segments.forEach(function(seg, idx) {
+          // Add segment text
+          enhancedParts.push(seg.text);
+          
+          // Add natural pause markers if suggested
+          if (seg.suggestedPauseAfter && idx < analysis.segments.length - 1) {
+            // Add a short pause indicator (TTS engines often respect "..." or commas for pauses)
+            enhancedParts.push('...');
+          }
+        });
+        
+        return enhancedParts.join(' ');
       }
       
       // Generate TTS from script
@@ -3639,11 +3713,12 @@ function generateScript(config: PopoutConfig): string {
         isRecording = false;
         isCountingDown = false;
         
-        // Stop all audio immediately
+        // Stop all audio immediately and permanently
         stopAllAudio();
         
-        // Hide pause edit panel
+        // Hide ALL panels
         pauseEditPanel.classList.add('hidden');
+        hidePauseInsertPanel(); // Hide the segment controls panel too
         
         // Cancel animation frame
         if (animationFrameId) {
@@ -3670,10 +3745,13 @@ function generateScript(config: PopoutConfig): string {
           displayStream = null;
         }
         
-        // Reset clones for next recording
+        // Reset audio clones for next recording (sources are cleared in stopAllAudio)
         voiceoverClone = null;
         musicClone = null;
         ttsAudio = null;
+        
+        // Reset audio context reference
+        audioContext = null;
       };
       
       // Save recording to Supabase storage and database
