@@ -142,6 +142,15 @@ function generateStyles(): string {
       z-index: 15;
     }
     .camera-off-overlay.visible { display: flex; }
+    .camera-off-overlay.screen-active {
+      background: transparent;
+      pointer-events: none;
+    }
+    .camera-off-overlay.screen-active .logo-placeholder,
+    .camera-off-overlay.screen-active .camera-off-text,
+    .camera-off-overlay.screen-active .upload-logo-btn {
+      display: none;
+    }
     .logo-placeholder {
       width: 120px;
       height: 120px;
@@ -154,8 +163,49 @@ function generateStyles(): string {
       margin-bottom: 20px;
       box-shadow: 0 10px 40px rgba(99,102,241,0.3);
       overflow: hidden;
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+      position: relative;
     }
-    .logo-placeholder img { width: 100%; height: 100%; object-fit: cover; }
+    .logo-placeholder.dragging { cursor: grabbing; transform: scale(1.05); }
+    .logo-placeholder.positioned { 
+      position: absolute; 
+      margin-bottom: 0;
+    }
+    .logo-placeholder img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+    .drag-hint {
+      position: absolute;
+      bottom: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      opacity: 0.6;
+      white-space: nowrap;
+      background: rgba(0,0,0,0.6);
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+    .screen-share-indicator {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(34, 197, 94, 0.9);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 30;
+      display: none;
+      animation: pulse 2s infinite;
+    }
+    .screen-share-indicator.visible { display: flex; align-items: center; gap: 8px; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
     .camera-off-text { font-size: 16px; opacity: 0.7; }
     .upload-logo-btn {
       margin-top: 15px;
@@ -673,9 +723,18 @@ function generateBody(config: PopoutConfig, escapedScriptContent: string): strin
         <div class="video-container">
           <video id="preview" autoplay playsinline muted></video>
           
+          <!-- Screen share indicator -->
+          <div id="screenShareIndicator" class="screen-share-indicator">
+            <span>🖥️</span>
+            <span>Screen is being captured</span>
+          </div>
+          
           <!-- Camera off overlay with logo -->
           <div id="cameraOffOverlay" class="camera-off-overlay">
-            <div id="logoPlaceholder" class="logo-placeholder">🎥</div>
+            <div id="logoPlaceholder" class="logo-placeholder">
+              🎥
+              <span class="drag-hint">Drag to position</span>
+            </div>
             <p class="camera-off-text">Camera is off</p>
             <input type="file" id="logoUploadInput" accept="image/*" style="display:none;">
             <button id="uploadLogoBtn" class="upload-logo-btn">📷 Upload Logo</button>
@@ -1074,6 +1133,7 @@ function generateScript(config: PopoutConfig): string {
       var logoPlaceholder = document.getElementById('logoPlaceholder');
       var logoUploadInput = document.getElementById('logoUploadInput');
       var uploadLogoBtn = document.getElementById('uploadLogoBtn');
+      var screenShareIndicator = document.getElementById('screenShareIndicator');
       
       // Pause edit panel elements
       var pauseEditPanel = document.getElementById('pauseEditPanel');
@@ -1102,6 +1162,7 @@ function generateScript(config: PopoutConfig): string {
       var isCameraStreamActive = false;
       var useLogo = false; // Use logo instead of camera in PIP
       var pipPosition = { x: null, y: null }; // Custom PIP position (null = default bottom-right)
+      var logoPreviewPosition = { x: null, y: null }; // Logo position before recording for preview
       var customLogoDataUrl = null;
       var customLogoImage = null;
       
@@ -1112,7 +1173,7 @@ function generateScript(config: PopoutConfig): string {
           customLogoDataUrl = savedLogo;
           customLogoImage = new Image();
           customLogoImage.src = savedLogo;
-          logoPlaceholder.innerHTML = '<img src="' + savedLogo + '" alt="Logo">';
+          logoPlaceholder.innerHTML = '<img src="' + savedLogo + '" alt="Logo"><span class="drag-hint">Drag to position</span>';
           // Also update PIP logo container
           pipLogoContainer.innerHTML = '<img src="' + savedLogo + '" alt="Logo">';
         }
@@ -1131,7 +1192,7 @@ function generateScript(config: PopoutConfig): string {
             customLogoDataUrl = evt.target.result;
             customLogoImage = new Image();
             customLogoImage.src = customLogoDataUrl;
-            logoPlaceholder.innerHTML = '<img src="' + customLogoDataUrl + '" alt="Logo">';
+            logoPlaceholder.innerHTML = '<img src="' + customLogoDataUrl + '" alt="Logo"><span class="drag-hint">Drag to position</span>';
             // Also update PIP logo container
             pipLogoContainer.innerHTML = '<img src="' + customLogoDataUrl + '" alt="Logo">';
             // Save to localStorage
@@ -1142,6 +1203,109 @@ function generateScript(config: PopoutConfig): string {
           reader.readAsDataURL(file);
         }
       };
+      
+      // Make logo placeholder draggable for positioning before recording
+      var isLogoDragging = false;
+      var logoDragOffsetX = 0;
+      var logoDragOffsetY = 0;
+      
+      logoPlaceholder.addEventListener('mousedown', function(e) {
+        if (e.target.tagName === 'BUTTON') return;
+        e.preventDefault();
+        e.stopPropagation();
+        isLogoDragging = true;
+        logoPlaceholder.classList.add('dragging');
+        
+        var rect = logoPlaceholder.getBoundingClientRect();
+        logoDragOffsetX = e.clientX - rect.left;
+        logoDragOffsetY = e.clientY - rect.top;
+        console.log('🖱️ Logo drag started');
+      });
+      
+      document.addEventListener('mousemove', function(e) {
+        if (!isLogoDragging) return;
+        e.preventDefault();
+        
+        var container = cameraOffOverlay;
+        var containerRect = container.getBoundingClientRect();
+        var logoWidth = logoPlaceholder.offsetWidth;
+        var logoHeight = logoPlaceholder.offsetHeight;
+        
+        // Calculate new position relative to container
+        var newX = e.clientX - containerRect.left - logoDragOffsetX;
+        var newY = e.clientY - containerRect.top - logoDragOffsetY;
+        
+        // Constrain to container bounds with 10px padding
+        newX = Math.max(10, Math.min(newX, containerRect.width - logoWidth - 10));
+        newY = Math.max(10, Math.min(newY, containerRect.height - logoHeight - 10));
+        
+        // Apply position - switch to absolute positioning
+        logoPlaceholder.classList.add('positioned');
+        logoPlaceholder.style.left = newX + 'px';
+        logoPlaceholder.style.top = newY + 'px';
+        
+        // Store position for PIP and canvas drawing (scale to relative position)
+        logoPreviewPosition.x = newX;
+        logoPreviewPosition.y = newY;
+        
+        // Also sync to pipPosition for recording
+        pipPosition.x = newX;
+        pipPosition.y = newY;
+      });
+      
+      document.addEventListener('mouseup', function(e) {
+        if (isLogoDragging) {
+          isLogoDragging = false;
+          logoPlaceholder.classList.remove('dragging');
+          console.log('🖱️ Logo drag ended at:', logoPreviewPosition);
+        }
+      });
+      
+      // Touch events for logo dragging on mobile
+      logoPlaceholder.addEventListener('touchstart', function(e) {
+        if (e.target.tagName === 'BUTTON') return;
+        e.preventDefault();
+        isLogoDragging = true;
+        logoPlaceholder.classList.add('dragging');
+        
+        var touch = e.touches[0];
+        var rect = logoPlaceholder.getBoundingClientRect();
+        logoDragOffsetX = touch.clientX - rect.left;
+        logoDragOffsetY = touch.clientY - rect.top;
+      }, { passive: false });
+      
+      document.addEventListener('touchmove', function(e) {
+        if (!isLogoDragging) return;
+        e.preventDefault();
+        
+        var touch = e.touches[0];
+        var container = cameraOffOverlay;
+        var containerRect = container.getBoundingClientRect();
+        var logoWidth = logoPlaceholder.offsetWidth;
+        var logoHeight = logoPlaceholder.offsetHeight;
+        
+        var newX = touch.clientX - containerRect.left - logoDragOffsetX;
+        var newY = touch.clientY - containerRect.top - logoDragOffsetY;
+        
+        newX = Math.max(10, Math.min(newX, containerRect.width - logoWidth - 10));
+        newY = Math.max(10, Math.min(newY, containerRect.height - logoHeight - 10));
+        
+        logoPlaceholder.classList.add('positioned');
+        logoPlaceholder.style.left = newX + 'px';
+        logoPlaceholder.style.top = newY + 'px';
+        
+        logoPreviewPosition.x = newX;
+        logoPreviewPosition.y = newY;
+        pipPosition.x = newX;
+        pipPosition.y = newY;
+      }, { passive: false });
+      
+      document.addEventListener('touchend', function() {
+        if (isLogoDragging) {
+          isLogoDragging = false;
+          logoPlaceholder.classList.remove('dragging');
+        }
+      });
       
       // Currently selected IDs
       var selectedScriptId = '${config.selectedScriptId}';
@@ -1675,6 +1839,10 @@ function generateScript(config: PopoutConfig): string {
           displayStr.getVideoTracks().forEach(function(track) {
             track.onended = function() {
               console.log('🛑 Screen share stopped by user');
+              // Hide screen share indicator
+              screenShareIndicator.classList.remove('visible');
+              cameraOffOverlay.classList.remove('screen-active');
+              
               if (isRecording) {
                 // Auto-stop recording when screen share ends
                 stopBtn.click();
@@ -1684,6 +1852,12 @@ function generateScript(config: PopoutConfig): string {
               }
             };
           });
+          
+          // Show screen share indicator
+          screenShareIndicator.classList.add('visible');
+          
+          // Make camera off overlay transparent so screen share is visible
+          cameraOffOverlay.classList.add('screen-active');
           
           preview.srcObject = displayStream;
           preview.muted = true; // Keep muted to prevent feedback
@@ -2249,6 +2423,10 @@ function generateScript(config: PopoutConfig): string {
             displayStream.getTracks().forEach(function(t) { t.stop(); });
             displayStream = null;
           }
+          
+          // Hide screen share indicator and reset camera overlay
+          screenShareIndicator.classList.remove('visible');
+          cameraOffOverlay.classList.remove('screen-active');
           
         recIndicator.style.display = 'none';
           audioControlPanel.classList.remove('visible');
