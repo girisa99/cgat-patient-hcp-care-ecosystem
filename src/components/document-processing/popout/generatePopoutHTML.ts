@@ -4787,51 +4787,69 @@ function generateScript(config: PopoutConfig): string {
         }
         
         // Function to start teleprompter scroll with proper audio sync
+        // This now directly ties scroll position to audio.currentTime for perfect sync
         function startTeleprompterScrollSync(audioDuration, audio) {
           var scrollIntervalMs = 50;
           
           // Start word-level highlighting
           startWordHighlighting(audio, audioDuration);
           
-          if (audioDuration && audioDuration > 0 && scriptContent) {
-            // Calculate scroll height (total scrollable distance)
-            var scrollableHeight = scriptContent.scrollHeight - scriptContent.clientHeight;
-            
-            if (scrollableHeight > 0) {
-              // Calculate how many pixels to scroll per interval to finish with audio
-              // Add 5 second buffer to account for any delays
-              var bufferedDuration = audioDuration + 5;
-              var totalIntervals = (bufferedDuration * 1000) / scrollIntervalMs;
-              baseScrollSpeed = scrollableHeight / totalIntervals;
-              
-              // Ensure minimum scroll speed of 0.3px and max of 4px per interval
-              baseScrollSpeed = Math.max(0.3, Math.min(4, baseScrollSpeed));
-              
-              console.log('📜 Teleprompter sync: scrollHeight=' + scrollableHeight + 'px, audioDuration=' + audioDuration.toFixed(1) + 's (buffered: ' + bufferedDuration.toFixed(1) + 's), baseSpeed=' + baseScrollSpeed.toFixed(2) + 'px/interval');
-            }
-          } else {
-            // Default speed when no audio
-            baseScrollSpeed = 2;
+          // Calculate scroll parameters
+          var scrollableHeight = scriptContent ? (scriptContent.scrollHeight - scriptContent.clientHeight) : 0;
+          var effectiveDuration = audioDuration && audioDuration > 0 ? audioDuration : 60;
+          
+          console.log('📜 Teleprompter sync: scrollHeight=' + scrollableHeight + 'px, audioDuration=' + effectiveDuration.toFixed(1) + 's');
+          
+          // Clear any existing scroll interval
+          if (scrollInterval) {
+            clearInterval(scrollInterval);
+            scrollInterval = null;
           }
           
-          // Accumulated scroll for sub-pixel accuracy
-          var accumulatedScroll = 0;
+          // If no scrollable content, just return
+          if (scrollableHeight <= 0) {
+            console.log('📜 No scrollable content, skipping scroll sync');
+            return;
+          }
           
-          // Auto-scroll with calculated speed (adjusted by user speed multiplier)
+          // Sync scroll position directly to audio currentTime
           scrollInterval = setInterval(function() {
-            if (!isPaused && scriptContent && !isStopped) {
-              // Apply user's speed multiplier
-              var adjustedSpeed = baseScrollSpeed * teleprompterSpeedMultiplier;
-              accumulatedScroll += adjustedSpeed;
-              if (accumulatedScroll >= 1) {
-                var pixelsToScroll = Math.floor(accumulatedScroll);
-                scriptContent.scrollTop += pixelsToScroll;
-                accumulatedScroll -= pixelsToScroll;
-                
-                // Update reading cursor position
-                updateReadingCursor();
-              }
+            if (isPaused || isStopped || !scriptContent) return;
+            
+            var currentTime = 0;
+            var totalDuration = effectiveDuration;
+            
+            // Get current audio position if available
+            if (audio && !isNaN(audio.currentTime) && !isNaN(audio.duration) && audio.duration > 0) {
+              currentTime = audio.currentTime;
+              totalDuration = audio.duration;
             }
+            
+            // Calculate target scroll position based on audio progress
+            var progress = currentTime / totalDuration;
+            progress = Math.max(0, Math.min(1, progress)); // Clamp 0-1
+            
+            // Apply user's speed multiplier (1.0 = normal, 1.5 = faster, 0.5 = slower)
+            // Speed multiplier affects how "ahead" or "behind" the scroll is relative to audio
+            var adjustedProgress = progress * teleprompterSpeedMultiplier;
+            adjustedProgress = Math.max(0, Math.min(1, adjustedProgress));
+            
+            var targetScroll = Math.floor(adjustedProgress * scrollableHeight);
+            
+            // Smooth transition to target position (ease towards it)
+            var currentScroll = scriptContent.scrollTop;
+            var diff = targetScroll - currentScroll;
+            
+            // Move 20% of the way to target each interval for smooth scrolling
+            if (Math.abs(diff) > 1) {
+              var step = diff * 0.2;
+              // Ensure minimum step size for responsiveness
+              if (Math.abs(step) < 1) step = diff > 0 ? 1 : -1;
+              scriptContent.scrollTop = currentScroll + step;
+            }
+            
+            // Update reading cursor position
+            updateReadingCursor();
           }, scrollIntervalMs);
         }
         
