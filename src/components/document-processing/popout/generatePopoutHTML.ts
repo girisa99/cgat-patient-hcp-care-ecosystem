@@ -4256,20 +4256,30 @@ function generateScript(config: PopoutConfig): string {
                 console.log('📄 Using ORIGINAL script for TTS');
               }
               
+              // Log what script version we're starting with BEFORE cleaning
+              console.log('📋 PRE-CLEAN scriptText preview:', scriptText.substring(0, 200));
+              console.log('📋 Contains [PAUSE]?', scriptText.includes('[PAUSE'));
+              console.log('📋 Contains [IMPROVEMENT NOTES:]?', scriptText.includes('[IMPROVEMENT NOTES:]'));
+              
               // Clean the script for TTS - remove markers that shouldn't be spoken
               var ttsCleanScript = cleanScriptForTTS(scriptText);
               console.log('🔊 TTS clean script length:', ttsCleanScript.length, 'chars');
+              console.log('📋 POST-CLEAN Contains [PAUSE]?', ttsCleanScript.includes('[PAUSE'));
+              console.log('📋 POST-CLEAN Contains [IMPROVEMENT NOTES:]?', ttsCleanScript.includes('[IMPROVEMENT NOTES:]'));
               
               // Store the CLEAN script for teleprompter - must match TTS audio exactly for sync
               window.currentTTSScript = ttsCleanScript;
+              console.log('💾 Stored window.currentTTSScript (clean):', ttsCleanScript.substring(0, 150));
               
               // Update teleprompter to show the CLEAN script (what TTS will speak)
               // This ensures word tracking matches audio exactly
               if (scriptContent) {
+                console.log('🖥️ Rendering teleprompter with CLEAN script');
                 renderScriptWithWordTracking(ttsCleanScript);
               }
               
               // Use the CLEAN script for TTS (without markers)
+              console.log('🎤 Calling generateTTS with CLEAN script');
               generateTTS(ttsCleanScript, function() {
                 startCountdown(useVoiceoverOpt, useMusicOpt, useTTS);
               });
@@ -4286,19 +4296,30 @@ function generateScript(config: PopoutConfig): string {
       function cleanScriptForTTS(text) {
         if (!text) return '';
         
-        return text
+        console.log('🧹 Cleaning script for TTS, input length:', text.length);
+        console.log('🧹 Input preview:', text.substring(0, 300));
+        
+        var cleaned = text
           // Replace [PAUSE Xs] with natural pauses (ellipsis for short pauses)
-          .replace(/\\[PAUSE [0-9.]+s\\]/gi, '...')
-          // Remove entire notes sections
-          .replace(/\\[IMPROVEMENT NOTES:\\][\\s\\S]*?(?=\\[|$)/gi, '')
-          .replace(/\\[ENGAGEMENT NOTES:\\][\\s\\S]*?(?=\\[|$)/gi, '')
-          .replace(/\\[DELIVERY TIPS:\\][\\s\\S]*?(?=\\[|$)/gi, '')
+          .replace(/\[PAUSE\s+[0-9.]+s\]/gi, '...')
+          // Remove entire notes sections - match [SECTION:] through end of that section
+          .replace(/\[IMPROVEMENT NOTES:\][\s\S]*?(?=\n\n|\[|$)/gi, '')
+          .replace(/\[ENGAGEMENT NOTES:\][\s\S]*?(?=\n\n|\[|$)/gi, '')
+          .replace(/\[DELIVERY TIPS:\][\s\S]*?(?=\n\n|\[|$)/gi, '')
+          // Remove any remaining bracket markers
+          .replace(/\[[A-Z\s]+:\]/gi, '')
           // Remove bullet points
-          .replace(/[•]/g, '')
-          // Clean up multiple spaces and newlines
-          .replace(/\\n\\n+/g, '\\n')
+          .replace(/[•·▪]/g, '')
+          // Clean up multiple newlines
+          .replace(/\n{3,}/g, '\n\n')
+          // Clean up multiple spaces
           .replace(/  +/g, ' ')
           .trim();
+        
+        console.log('🧹 Cleaned script length:', cleaned.length);
+        console.log('🧹 Cleaned preview:', cleaned.substring(0, 300));
+        
+        return cleaned;
       }
       
       // Build enhanced script from analysis segments
@@ -4893,13 +4914,20 @@ function generateScript(config: PopoutConfig): string {
         
         // Word-level highlighting that syncs with audio time
         function startWordHighlighting(audio, audioDuration) {
-          if (!scriptWords || scriptWords.length === 0) return;
+          if (!scriptWords || scriptWords.length === 0) {
+            console.log('⚠️ No scriptWords available for word tracking');
+            return;
+          }
           
           // Calculate words per millisecond based on audio duration
           var msPerWord = (audioDuration * 1000) / scriptWords.length;
           var lastHighlightedIndex = -1;
           
-          console.log('📝 Word tracking: ' + scriptWords.length + ' words, ' + msPerWord.toFixed(1) + 'ms per word');
+          console.log('📝 Word tracking started:');
+          console.log('   - scriptWords.length:', scriptWords.length);
+          console.log('   - audioDuration:', audioDuration, 'seconds');
+          console.log('   - msPerWord:', msPerWord.toFixed(1), 'ms');
+          console.log('   - First few words:', scriptWords.slice(0, 5).map(function(w) { return w.text; }).join(' '));
           
           // Clear any existing word highlight interval
           if (wordHighlightInterval) {
@@ -5005,13 +5033,20 @@ function generateScript(config: PopoutConfig): string {
             return;
           }
           
-          // Prepare script with word tracking for highlighting
-          // Use the exact script that was sent to TTS for perfect sync
-          var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
-          var scriptText = window.currentTTSScript || window.enhancedScriptContent || (selectedScript ? selectedScript.content : '');
-          console.log('📜 Teleprompter using script:', scriptText ? (scriptText.substring(0, 100) + '...') : 'none');
-          if (scriptText && scriptContent) {
-            renderScriptWithWordTracking(scriptText);
+          // Teleprompter should already be rendered with the clean TTS script
+          // from generateTTS callback - only re-render if somehow not set
+          if (!window.currentTTSScript) {
+            console.log('⚠️ currentTTSScript not set, using fallback');
+            var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
+            var fallbackText = window.enhancedScriptContent || (selectedScript ? selectedScript.content : '');
+            // Clean it before using
+            var scriptText = cleanScriptForTTS(fallbackText);
+            window.currentTTSScript = scriptText;
+            if (scriptText && scriptContent) {
+              renderScriptWithWordTracking(scriptText);
+            }
+          } else {
+            console.log('✅ Using pre-set currentTTSScript (clean version):', window.currentTTSScript.substring(0, 100) + '...');
           }
           
           // Wait for TTS audio metadata before starting scroll sync
@@ -5064,13 +5099,19 @@ function generateScript(config: PopoutConfig): string {
             return;
           }
           
-          // Prepare script with word tracking for highlighting
-          // Use the exact script that matches the voiceover for sync
-          var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
-          var scriptText = window.currentTTSScript || window.enhancedScriptContent || (selectedScript ? selectedScript.content : '');
-          console.log('📜 Teleprompter (voiceover) using script:', scriptText ? (scriptText.substring(0, 100) + '...') : 'none');
-          if (scriptText && scriptContent) {
-            renderScriptWithWordTracking(scriptText);
+          // For voiceover mode, we need to clean the script too for proper sync
+          if (!window.currentTTSScript) {
+            console.log('📜 Teleprompter (voiceover): cleaning script for sync');
+            var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
+            var fallbackText = window.enhancedScriptContent || (selectedScript ? selectedScript.content : '');
+            // Clean it before using
+            var scriptText = cleanScriptForTTS(fallbackText);
+            window.currentTTSScript = scriptText;
+            if (scriptText && scriptContent) {
+              renderScriptWithWordTracking(scriptText);
+            }
+          } else {
+            console.log('✅ Using pre-set currentTTSScript for voiceover sync');
           }
           
           // Wait for voiceover metadata before starting scroll sync
