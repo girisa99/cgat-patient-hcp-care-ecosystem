@@ -1702,7 +1702,8 @@ function generateScript(config: PopoutConfig): string {
         // Replace newlines with <br> tags safely
         function nlToBr(str) {
           if (!str) return '';
-          return String(str).split('\\n').join('<br>');
+          // Split on actual newline character
+          return String(str).split(String.fromCharCode(10)).join('<br>');
         }
         
         // Combined: escape HTML and convert newlines
@@ -2159,26 +2160,60 @@ function generateScript(config: PopoutConfig): string {
         
         console.log('🧹 Cleaning script for TTS, input length:', text.length);
         
-        // Use RegExp constructor to avoid template literal escaping issues
-        var pausePattern = new RegExp('\\\\[PAUSE\\\\s+[0-9.]+s\\\\]', 'gi');
-        var improvementPattern = new RegExp('\\\\[IMPROVEMENT NOTES:\\\\][\\\\s\\\\S]*?(?=\\\\n\\\\n|\\\\[|$)', 'gi');
-        var engagementPattern = new RegExp('\\\\[ENGAGEMENT NOTES:\\\\][\\\\s\\\\S]*?(?=\\\\n\\\\n|\\\\[|$)', 'gi');
-        var deliveryPattern = new RegExp('\\\\[DELIVERY TIPS:\\\\][\\\\s\\\\S]*?(?=\\\\n\\\\n|\\\\[|$)', 'gi');
-        var bracketPattern = new RegExp('\\\\[[A-Z\\\\s]+:\\\\]', 'gi');
-        var bulletPattern = new RegExp('[•·▪]', 'g');
-        var multiNewlinePattern = new RegExp('\\\\n{3,}', 'g');
-        var multiSpacePattern = new RegExp('  +', 'g');
+        // Simple string-based cleaning to avoid regex literal issues
+        var cleaned = text;
         
-        var cleaned = text
-          .replace(pausePattern, '...')
-          .replace(improvementPattern, '')
-          .replace(engagementPattern, '')
-          .replace(deliveryPattern, '')
-          .replace(bracketPattern, '')
-          .replace(bulletPattern, '')
-          .replace(multiNewlinePattern, '\\n\\n')
-          .replace(multiSpacePattern, ' ')
-          .trim();
+        // Remove [PAUSE Xs] markers - simple approach
+        var pauseStart = cleaned.indexOf('[PAUSE');
+        while (pauseStart !== -1) {
+          var pauseEnd = cleaned.indexOf(']', pauseStart);
+          if (pauseEnd !== -1) {
+            cleaned = cleaned.substring(0, pauseStart) + '...' + cleaned.substring(pauseEnd + 1);
+          } else {
+            break;
+          }
+          pauseStart = cleaned.indexOf('[PAUSE');
+        }
+        
+        // Remove notes sections
+        var sections = ['[IMPROVEMENT NOTES:]', '[ENGAGEMENT NOTES:]', '[DELIVERY TIPS:]'];
+        sections.forEach(function(section) {
+          var idx = cleaned.indexOf(section);
+          while (idx !== -1) {
+            var endIdx = cleaned.indexOf('[', idx + 1);
+            if (endIdx === -1) endIdx = cleaned.length;
+            cleaned = cleaned.substring(0, idx) + cleaned.substring(endIdx);
+            idx = cleaned.indexOf(section);
+          }
+        });
+        
+        // Remove other bracket markers like [SECTION:]
+        var bracketStart = cleaned.indexOf('[');
+        while (bracketStart !== -1) {
+          var bracketEnd = cleaned.indexOf(']', bracketStart);
+          if (bracketEnd !== -1 && bracketEnd - bracketStart < 30) {
+            var inside = cleaned.substring(bracketStart + 1, bracketEnd);
+            if (inside.indexOf(':') !== -1 && inside === inside.toUpperCase()) {
+              cleaned = cleaned.substring(0, bracketStart) + cleaned.substring(bracketEnd + 1);
+            } else {
+              bracketStart = cleaned.indexOf('[', bracketEnd);
+              continue;
+            }
+          } else {
+            bracketStart = cleaned.indexOf('[', bracketStart + 1);
+            continue;
+          }
+          bracketStart = cleaned.indexOf('[');
+        }
+        
+        // Remove bullet points
+        cleaned = cleaned.split('•').join('').split('·').join('').split('▪').join('');
+        
+        // Clean up whitespace
+        while (cleaned.indexOf('   ') !== -1) {
+          cleaned = cleaned.split('   ').join('  ');
+        }
+        cleaned = cleaned.trim();
         
         console.log('🧹 Cleaned script length:', cleaned.length);
         
