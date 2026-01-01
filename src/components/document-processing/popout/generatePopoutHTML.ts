@@ -177,10 +177,50 @@ function generateStyles(): string {
       border: 3px solid #333;
       background: #000;
       z-index: 10;
+      cursor: grab;
+      user-select: none;
     }
+    .webcam-pip:active { cursor: grabbing; }
     .webcam-pip.hidden { display: none; }
     .webcam-pip.blurred video { filter: blur(10px); }
-    .webcam-pip video { width: 100%; height: 100%; object-fit: cover; }
+    .webcam-pip video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+    .webcam-pip .pip-logo {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1a1a2e, #2a2a4e);
+    }
+    .webcam-pip .pip-logo img {
+      max-width: 80%;
+      max-height: 80%;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+    .webcam-pip .pip-logo .default-icon {
+      font-size: 48px;
+    }
+    .pip-controls {
+      position: absolute;
+      top: -30px;
+      right: 0;
+      display: none;
+      gap: 4px;
+      background: rgba(0,0,0,0.8);
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+    .webcam-pip:hover .pip-controls { display: flex; }
+    .pip-controls button {
+      padding: 4px 8px;
+      font-size: 10px;
+      min-width: auto;
+      background: #334155;
+      border: 1px solid #475569;
+    }
+    .pip-controls button:hover { background: #475569; }
+    .pip-controls button.active { background: #6366f1; border-color: #6366f1; }
     button {
       background: #4a4a6a;
       color: white;
@@ -615,8 +655,22 @@ function generateBody(config: PopoutConfig, escapedScriptContent: string): strin
           
           <!-- Camera controls -->
           <div class="camera-controls">
-            <button id="cameraToggleBtn" class="active" title="Toggle Camera">📹 On</button>
+            <button id="cameraToggleBtn" class="active" title="Toggle Camera (stops camera when off)">📹 On</button>
             <button id="cameraBlurBtn" title="Background Blur (softens entire webcam)">🔵 BG Blur</button>
+            <button id="useLogoBtn" title="Use logo/avatar instead of camera">🖼️ Use Logo</button>
+          </div>
+          
+          <!-- Draggable PIP overlay for camera/logo during recording -->
+          <div id="pipOverlay" class="webcam-pip hidden">
+            <div class="pip-controls">
+              <button id="pipCameraBtn" class="active" title="Show Camera">📹</button>
+              <button id="pipLogoBtn" title="Show Logo">🖼️</button>
+              <button id="pipHideBtn" title="Hide PIP">👁️‍🗨️</button>
+            </div>
+            <video id="pipVideo" autoplay playsinline muted></video>
+            <div id="pipLogoContainer" class="pip-logo" style="display:none;">
+              <span class="default-icon">🎥</span>
+            </div>
           </div>
           
           <div id="cameraLoading" class="camera-loading">
@@ -1002,9 +1056,21 @@ function generateScript(config: PopoutConfig): string {
       var captionOverlay = document.getElementById('captionOverlay');
       var captionToggleBtn = document.getElementById('captionToggleBtn');
       
+      // PIP overlay elements
+      var pipOverlay = document.getElementById('pipOverlay');
+      var pipVideo = document.getElementById('pipVideo');
+      var pipLogoContainer = document.getElementById('pipLogoContainer');
+      var pipCameraBtn = document.getElementById('pipCameraBtn');
+      var pipLogoBtn = document.getElementById('pipLogoBtn');
+      var pipHideBtn = document.getElementById('pipHideBtn');
+      var useLogoBtn = document.getElementById('useLogoBtn');
+      
       // Camera state
       var isCameraOn = true;
       var isCameraBlurred = false;
+      var isCameraStreamActive = false;
+      var useLogo = false; // Use logo instead of camera in PIP
+      var pipPosition = { x: null, y: null }; // Custom PIP position (null = default bottom-right)
       var customLogoDataUrl = null;
       var customLogoImage = null;
       
@@ -1016,6 +1082,8 @@ function generateScript(config: PopoutConfig): string {
           customLogoImage = new Image();
           customLogoImage.src = savedLogo;
           logoPlaceholder.innerHTML = '<img src="' + savedLogo + '" alt="Logo">';
+          // Also update PIP logo container
+          pipLogoContainer.innerHTML = '<img src="' + savedLogo + '" alt="Logo">';
         }
       } catch(e) { console.error('Failed to load saved logo:', e); }
       
@@ -1033,6 +1101,8 @@ function generateScript(config: PopoutConfig): string {
             customLogoImage = new Image();
             customLogoImage.src = customLogoDataUrl;
             logoPlaceholder.innerHTML = '<img src="' + customLogoDataUrl + '" alt="Logo">';
+            // Also update PIP logo container
+            pipLogoContainer.innerHTML = '<img src="' + customLogoDataUrl + '" alt="Logo">';
             // Save to localStorage
             try {
               localStorage.setItem('recording_studio_custom_logo', customLogoDataUrl);
@@ -1185,28 +1255,53 @@ function generateScript(config: PopoutConfig): string {
       document.getElementById('scrollDownBtn').onclick = function() { scriptContent.scrollTop += 50; };
       document.getElementById('scrollResetBtn').onclick = function() { scriptContent.scrollTop = 0; };
       
-      // Camera toggle controls
+      // Camera toggle controls - now actually stops/starts camera stream
       cameraToggleBtn.onclick = function() {
-        isCameraOn = !isCameraOn;
         if (isCameraOn) {
-          cameraOffOverlay.classList.remove('visible');
-          preview.style.display = '';
-          cameraToggleBtn.textContent = '📹 On';
-          cameraToggleBtn.classList.add('active');
-          // Re-enable video track
-          if (stream) {
-            var videoTracks = stream.getVideoTracks();
-            videoTracks.forEach(function(track) { track.enabled = true; });
-          }
-        } else {
+          // Turn camera OFF - stop the stream to turn off camera light
+          isCameraOn = false;
           cameraOffOverlay.classList.add('visible');
           cameraToggleBtn.textContent = '📹 Off';
           cameraToggleBtn.classList.remove('active');
-          // Disable video track (keeps audio)
+          
+          // Actually stop video tracks to turn off camera light
           if (stream) {
             var videoTracks = stream.getVideoTracks();
-            videoTracks.forEach(function(track) { track.enabled = false; });
+            videoTracks.forEach(function(track) { 
+              track.stop(); // This turns off the camera light
+            });
+            isCameraStreamActive = false;
           }
+          console.log('📹 Camera turned OFF - stream stopped');
+        } else {
+          // Turn camera ON - re-acquire camera stream
+          isCameraOn = true;
+          cameraToggleBtn.textContent = '📹 ...';
+          
+          navigator.mediaDevices.getUserMedia({
+            video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+            audio: true
+          }).then(function(newStream) {
+            stream = newStream;
+            window.cameraStream = newStream;
+            isCameraStreamActive = true;
+            
+            preview.srcObject = newStream;
+            preview.play().catch(console.error);
+            
+            // Also update PIP video
+            pipVideo.srcObject = newStream;
+            pipVideo.play().catch(console.error);
+            
+            cameraOffOverlay.classList.remove('visible');
+            cameraToggleBtn.textContent = '📹 On';
+            cameraToggleBtn.classList.add('active');
+            console.log('📹 Camera turned ON - stream re-acquired');
+          }).catch(function(err) {
+            console.error('Failed to re-acquire camera:', err);
+            isCameraOn = false;
+            cameraToggleBtn.textContent = '📹 Error';
+          });
         }
       };
       
@@ -1222,6 +1317,91 @@ function generateScript(config: PopoutConfig): string {
           cameraBlurBtn.classList.remove('active');
         }
       };
+      
+      // Use Logo button - switch to logo in PIP instead of camera
+      useLogoBtn.onclick = function() {
+        useLogo = !useLogo;
+        if (useLogo) {
+          useLogoBtn.textContent = '📹 Use Camera';
+          useLogoBtn.classList.add('active');
+          console.log('🖼️ Switched to logo mode for PIP');
+        } else {
+          useLogoBtn.textContent = '🖼️ Use Logo';
+          useLogoBtn.classList.remove('active');
+          console.log('📹 Switched to camera mode for PIP');
+        }
+      };
+      
+      // PIP overlay controls
+      pipCameraBtn.onclick = function(e) {
+        e.stopPropagation();
+        useLogo = false;
+        pipVideo.style.display = '';
+        pipLogoContainer.style.display = 'none';
+        pipCameraBtn.classList.add('active');
+        pipLogoBtn.classList.remove('active');
+      };
+      
+      pipLogoBtn.onclick = function(e) {
+        e.stopPropagation();
+        useLogo = true;
+        pipVideo.style.display = 'none';
+        pipLogoContainer.style.display = '';
+        pipLogoBtn.classList.add('active');
+        pipCameraBtn.classList.remove('active');
+      };
+      
+      pipHideBtn.onclick = function(e) {
+        e.stopPropagation();
+        pipOverlay.classList.add('hidden');
+      };
+      
+      // Make PIP overlay draggable
+      var isPipDragging = false;
+      var pipDragOffsetX = 0;
+      var pipDragOffsetY = 0;
+      
+      pipOverlay.onmousedown = function(e) {
+        if (e.target.tagName === 'BUTTON') return; // Don't drag when clicking buttons
+        e.preventDefault();
+        isPipDragging = true;
+        var rect = pipOverlay.getBoundingClientRect();
+        pipDragOffsetX = e.clientX - rect.left;
+        pipDragOffsetY = e.clientY - rect.top;
+        pipOverlay.style.transition = 'none';
+        pipOverlay.style.cursor = 'grabbing';
+      };
+      
+      document.addEventListener('mousemove', function(e) {
+        if (!isPipDragging) return;
+        var newX = e.clientX - pipDragOffsetX;
+        var newY = e.clientY - pipDragOffsetY;
+        
+        // Keep within viewport bounds
+        var pipWidth = pipOverlay.offsetWidth;
+        var pipHeight = pipOverlay.offsetHeight;
+        var container = document.querySelector('.video-container');
+        var containerRect = container.getBoundingClientRect();
+        
+        newX = Math.max(containerRect.left, Math.min(newX, containerRect.right - pipWidth));
+        newY = Math.max(containerRect.top, Math.min(newY, containerRect.bottom - pipHeight));
+        
+        pipOverlay.style.left = (newX - containerRect.left) + 'px';
+        pipOverlay.style.top = (newY - containerRect.top) + 'px';
+        pipOverlay.style.right = 'auto';
+        pipOverlay.style.bottom = 'auto';
+        
+        pipPosition.x = newX - containerRect.left;
+        pipPosition.y = newY - containerRect.top;
+      });
+      
+      document.addEventListener('mouseup', function() {
+        if (isPipDragging) {
+          isPipDragging = false;
+          pipOverlay.style.cursor = 'grab';
+          pipOverlay.style.transition = '';
+        }
+      });
       
       // Music loop toggle
       var musicLoopToggle = document.getElementById('musicLoopToggle');
@@ -1318,9 +1498,17 @@ function generateScript(config: PopoutConfig): string {
           console.log('✅ Camera stream obtained');
           stream = mediaStream;
           window.cameraStream = mediaStream;
+          isCameraStreamActive = true;
+          isCameraOn = true;
           
           preview.srcObject = mediaStream;
           preview.muted = true;
+          
+          // Also set PIP video source
+          pipVideo.srcObject = mediaStream;
+          pipVideo.muted = true;
+          pipVideo.play().catch(console.error);
+          
           preview.play().then(function() {
             console.log('✅ Preview playing');
             cameraLoading.classList.add('hidden');
@@ -1972,6 +2160,7 @@ function generateScript(config: PopoutConfig): string {
         recIndicator.style.display = 'none';
           audioControlPanel.classList.remove('visible');
           audioControlPanel.style.display = 'none';
+          pipOverlay.classList.add('hidden'); // Hide PIP overlay
           startBtn.style.display = 'none';
           pauseBtn.style.display = 'none';
           stopBtn.style.display = 'none';
@@ -2023,15 +2212,53 @@ function generateScript(config: PopoutConfig): string {
           
           ctx.drawImage(screenVideo, 0, 0, 1920, 1080);
           
-          // Only draw webcam PIP if camera is on
-          if (isCameraOn) {
-            var pipWidth = 320;
-            var pipHeight = 180;
-            var pipX = 1920 - pipWidth - 20;
-            var pipY = 1080 - pipHeight - 20;
+          // Calculate PIP position (default bottom-right, or custom dragged position)
+          var pipWidth = 320;
+          var pipHeight = 180;
+          var pipX, pipY;
+          
+          if (pipPosition.x !== null && pipPosition.y !== null) {
+            // Use custom position (scaled from preview to canvas)
+            var scaleX = 1920 / document.querySelector('.video-container').offsetWidth;
+            var scaleY = 1080 / document.querySelector('.video-container').offsetHeight;
+            pipX = pipPosition.x * scaleX;
+            pipY = pipPosition.y * scaleY;
+          } else {
+            // Default bottom-right
+            pipX = 1920 - pipWidth - 20;
+            pipY = 1080 - pipHeight - 20;
+          }
+          
+          // Decide whether to show camera or logo in PIP
+          if (useLogo || !isCameraOn) {
+            // Draw logo/avatar in PIP
+            var gradient = ctx.createLinearGradient(pipX, pipY, pipX + pipWidth, pipY + pipHeight);
+            gradient.addColorStop(0, '#1a1a2e');
+            gradient.addColorStop(1, '#2a2a4e');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(pipX, pipY, pipWidth, pipHeight);
             
+            // Draw custom logo if uploaded, otherwise default icon
+            if (customLogoImage && customLogoImage.complete) {
+              var logoSize = Math.min(pipWidth * 0.6, pipHeight * 0.8);
+              var logoX = pipX + (pipWidth - logoSize) / 2;
+              var logoY = pipY + (pipHeight - logoSize) / 2;
+              ctx.drawImage(customLogoImage, logoX, logoY, logoSize, logoSize);
+            } else {
+              ctx.fillStyle = '#6366f1';
+              ctx.font = '48px sans-serif';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText('🎥', pipX + pipWidth/2, pipY + pipHeight/2);
+            }
+            
+            // Draw PIP border
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(pipX, pipY, pipWidth, pipHeight);
+          } else if (isCameraOn && isCameraStreamActive) {
+            // Draw camera in PIP
             if (isCameraBlurred) {
-              // Apply blur effect to webcam
               ctx.save();
               ctx.filter = 'blur(10px)';
               ctx.drawImage(webcamVideo, pipX, pipY, pipWidth, pipHeight);
@@ -2044,36 +2271,8 @@ function generateScript(config: PopoutConfig): string {
             ctx.strokeStyle = '#333';
             ctx.lineWidth = 3;
             ctx.strokeRect(pipX, pipY, pipWidth, pipHeight);
-          } else {
-            // Draw logo placeholder instead of webcam
-            var pipWidth = 320;
-            var pipHeight = 180;
-            var pipX = 1920 - pipWidth - 20;
-            var pipY = 1080 - pipHeight - 20;
-            
-            // Draw dark background
-            var gradient = ctx.createLinearGradient(pipX, pipY, pipX + pipWidth, pipY + pipHeight);
-            gradient.addColorStop(0, '#1a1a2e');
-            gradient.addColorStop(1, '#2a2a4e');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(pipX, pipY, pipWidth, pipHeight);
-            
-            // Draw custom logo if uploaded, otherwise camera icon
-            if (customLogoImage && customLogoImage.complete) {
-              // Draw the custom logo centered and scaled
-              var logoSize = Math.min(pipWidth * 0.6, pipHeight * 0.8);
-              var logoX = pipX + (pipWidth - logoSize) / 2;
-              var logoY = pipY + (pipHeight - logoSize) / 2;
-              ctx.drawImage(customLogoImage, logoX, logoY, logoSize, logoSize);
-            } else {
-              // Draw default camera icon
-              ctx.fillStyle = '#6366f1';
-              ctx.font = '48px sans-serif';
-              ctx.textAlign = 'center';
-              ctx.textBaseline = 'middle';
-              ctx.fillText('🎥', pipX + pipWidth/2, pipY + pipHeight/2);
-            }
-            
+          }
+          // If neither camera nor logo - no PIP drawn (hidden)
             // Draw border
             ctx.strokeStyle = '#333';
             ctx.lineWidth = 3;
@@ -2111,6 +2310,20 @@ function generateScript(config: PopoutConfig): string {
         }, 50);
         
         showAudioControls(useVoiceover, useTTS, useMusic);
+        
+        // Show PIP overlay (draggable) - update its content based on mode
+        pipOverlay.classList.remove('hidden');
+        if (useLogo || !isCameraOn) {
+          pipVideo.style.display = 'none';
+          pipLogoContainer.style.display = '';
+          pipLogoBtn.classList.add('active');
+          pipCameraBtn.classList.remove('active');
+        } else {
+          pipVideo.style.display = '';
+          pipLogoContainer.style.display = 'none';
+          pipCameraBtn.classList.add('active');
+          pipLogoBtn.classList.remove('active');
+        }
         
         startBtn.style.display = 'none';
         pauseBtn.style.display = '';
