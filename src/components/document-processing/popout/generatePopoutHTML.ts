@@ -631,9 +631,19 @@ function generateStyles(): string {
     
     /* Current word highlight */
     .word-highlight {
-      background: rgba(99, 102, 241, 0.3);
-      border-radius: 2px;
-      padding: 0 2px;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.5) 0%, rgba(139, 92, 246, 0.4) 100%);
+      border-radius: 3px;
+      padding: 2px 4px;
+      margin: 0 -2px;
+      box-shadow: 0 0 8px rgba(99, 102, 241, 0.6);
+      color: #fff;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+    
+    /* Script word for tracking */
+    .script-word {
+      transition: background 0.1s ease;
     }
     
     /* Script Analysis & Segment Styles */
@@ -1598,6 +1608,12 @@ function generateScript(config: PopoutConfig): string {
       var animationFrameId = null; // Track animation frame for cleanup
       var isSaving = false; // Prevent multiple saves and accidental restarts
       var isStopped = false; // Guard flag to prevent audio restart after stop
+      
+      // Word-level tracking for cursor sync
+      var scriptWords = []; // Array of word objects with positions
+      var currentWordIndex = 0;
+      var wordHighlightInterval = null;
+      var estimatedWPM = 150; // Words per minute for TTS (adjustable)
       var recordedMimeType = 'video/webm'; // Track the mime type used for recording
       
       // Trim and transcription state
@@ -2536,41 +2552,143 @@ function generateScript(config: PopoutConfig): string {
         });
       }
       
-      // Apply all changes button
+      // Apply all changes button - incorporates ALL recommendations into enhanced script
       if (applyAllChangesBtn) {
         applyAllChangesBtn.onclick = function() {
-          if (!scriptAnalysis || pendingChanges.length === 0) return;
+          if (!scriptAnalysis) return;
           
           var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
           if (!selectedScript) return;
           
-          // Build enhanced script with pause markers
+          // Build enhanced script with ALL changes
           var enhancedScript = selectedScript.content;
+          var changesApplied = 0;
           
-          // Sort pause points by position (descending) to insert from end
-          var pausesToApply = pendingChanges
-            .filter(function(c) { return c.type === 'pause' && c.applied; })
-            .sort(function(a, b) { return b.position - a.position; });
+          // 1. Apply pause markers (from pendingChanges or scriptAnalysis)
+          var pausesToApply = [];
+          if (pendingChanges && pendingChanges.length > 0) {
+            pausesToApply = pendingChanges
+              .filter(function(c) { return c.type === 'pause' && c.applied !== false; })
+              .sort(function(a, b) { return b.position - a.position; });
+          } else if (scriptAnalysis.pausePoints && scriptAnalysis.pausePoints.length > 0) {
+            pausesToApply = scriptAnalysis.pausePoints
+              .map(function(pp) { return { position: pp.position, text: '[PAUSE ' + pp.suggestedDuration + 's]', type: 'pause' }; })
+              .sort(function(a, b) { return b.position - a.position; });
+          }
           
           pausesToApply.forEach(function(pause) {
             enhancedScript = enhancedScript.slice(0, pause.position) + ' ' + pause.text + ' ' + enhancedScript.slice(pause.position);
+            changesApplied++;
           });
           
-          // Store enhanced script
+          // 2. Add engagement tips at the end as notes
+          if (scriptAnalysis.engagementTips && scriptAnalysis.engagementTips.length > 0) {
+            enhancedScript += '\\n\\n[ENGAGEMENT NOTES:]\\n';
+            scriptAnalysis.engagementTips.forEach(function(tip) {
+              enhancedScript += '• ' + tip + '\\n';
+            });
+            changesApplied += scriptAnalysis.engagementTips.length;
+          }
+          
+          // 3. Add conversational tips
+          if (scriptAnalysis.conversationalTips && scriptAnalysis.conversationalTips.length > 0) {
+            enhancedScript += '\\n[DELIVERY TIPS:]\\n';
+            scriptAnalysis.conversationalTips.forEach(function(tip) {
+              enhancedScript += '• ' + tip + '\\n';
+            });
+            changesApplied += scriptAnalysis.conversationalTips.length;
+          }
+          
+          // Store enhanced script globally and in localStorage
           window.enhancedScriptContent = enhancedScript;
           
+          // Save to localStorage for persistence
+          try {
+            var enhancedScripts = {};
+            var saved = localStorage.getItem('enhancedScripts');
+            if (saved) enhancedScripts = JSON.parse(saved);
+            
+            enhancedScripts[selectedScript.id] = {
+              originalContent: selectedScript.content,
+              enhancedContent: enhancedScript,
+              analysis: scriptAnalysis,
+              appliedAt: new Date().toISOString(),
+              changesCount: changesApplied
+            };
+            
+            localStorage.setItem('enhancedScripts', JSON.stringify(enhancedScripts));
+            console.log('💾 Enhanced script saved to localStorage');
+            
+            // Notify parent window
+            if (window.opener && !window.opener.closed) {
+              window.opener.postMessage({ 
+                type: 'SCRIPT_ENHANCED', 
+                scriptId: selectedScript.id, 
+                enhancedContent: enhancedScript,
+                changesCount: changesApplied 
+              }, '*');
+            }
+          } catch(e) {
+            console.error('Failed to save enhanced script:', e);
+          }
+          
+          // Update the script content display with enhanced version
+          if (scriptContent) {
+            // Render the enhanced script with word spans for tracking
+            renderScriptWithWordTracking(enhancedScript);
+          }
+          
           // Show confirmation
-          applyAllChangesBtn.textContent = '✅ Applied ' + pausesToApply.length + ' changes!';
+          applyAllChangesBtn.textContent = '✅ Applied ' + changesApplied + ' changes!';
           applyAllChangesBtn.style.background = '#22c55e';
           
-          // Enable segment view with enhanced content
-          console.log('✅ Enhanced script created with ' + pausesToApply.length + ' pause insertions');
+          console.log('✅ Enhanced script created with ' + changesApplied + ' total changes');
           
           setTimeout(function() {
             applyAllChangesBtn.textContent = '✅ Apply All Changes to Script';
             applyAllChangesBtn.style.background = '';
           }, 2000);
         };
+      }
+      
+      // Render script with word-level tracking for cursor sync
+      function renderScriptWithWordTracking(text) {
+        if (!scriptContent) return;
+        
+        // Split text into words while preserving structure
+        var words = text.split(/(\s+)/);
+        scriptWords = [];
+        var html = '';
+        var wordIndex = 0;
+        
+        words.forEach(function(word) {
+          if (word.trim() === '') {
+            // Preserve whitespace and newlines
+            html += word.replace(/\\n/g, '<br>');
+          } else {
+            // Wrap each word in a span for highlighting
+            var sanitizedWord = word.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            html += '<span class="script-word" data-word-index="' + wordIndex + '">' + sanitizedWord + '</span>';
+            scriptWords.push({
+              index: wordIndex,
+              text: word,
+              element: null // Will be set after render
+            });
+            wordIndex++;
+          }
+        });
+        
+        scriptContent.innerHTML = html;
+        
+        // Cache word element references
+        var wordElements = scriptContent.querySelectorAll('.script-word');
+        wordElements.forEach(function(el, idx) {
+          if (scriptWords[idx]) {
+            scriptWords[idx].element = el;
+          }
+        });
+        
+        console.log('📝 Script rendered with ' + scriptWords.length + ' words for tracking');
       }
       
       // Show inline markers button
@@ -3187,6 +3305,12 @@ function generateScript(config: PopoutConfig): string {
         // Set guard flag FIRST to prevent any callbacks from restarting audio
         isStopped = true;
         
+        // Clear word highlighting interval
+        if (wordHighlightInterval) {
+          clearInterval(wordHighlightInterval);
+          wordHighlightInterval = null;
+        }
+        
         try {
           // Stop original voiceover completely
           if (voiceover) { 
@@ -3797,6 +3921,10 @@ function generateScript(config: PopoutConfig): string {
           ttsAudio = null; // Clear TTS so a fresh one is generated for next recording
           audioSourcesConnected = false;
           
+          // Reset word tracking state
+          scriptWords = [];
+          currentWordIndex = 0;
+          
           // Close audio context to fully disconnect sources
           if (audioContext && audioContext.state !== 'closed') {
             audioContext.close().catch(console.error);
@@ -3942,9 +4070,65 @@ function generateScript(config: PopoutConfig): string {
         // Show speed controls and reading cursor during recording
         showTeleprompterControls(true);
         
+        // Word-level highlighting that syncs with audio time
+        function startWordHighlighting(audio, audioDuration) {
+          if (!scriptWords || scriptWords.length === 0) return;
+          
+          // Calculate words per millisecond based on audio duration
+          var msPerWord = (audioDuration * 1000) / scriptWords.length;
+          var lastHighlightedIndex = -1;
+          
+          console.log('📝 Word tracking: ' + scriptWords.length + ' words, ' + msPerWord.toFixed(1) + 'ms per word');
+          
+          // Clear any existing word highlight interval
+          if (wordHighlightInterval) {
+            clearInterval(wordHighlightInterval);
+          }
+          
+          wordHighlightInterval = setInterval(function() {
+            if (isPaused || isStopped || !audio) return;
+            
+            // Calculate which word should be highlighted based on audio time
+            var currentTimeMs = audio.currentTime * 1000;
+            var targetWordIndex = Math.floor(currentTimeMs / msPerWord);
+            
+            // Clamp to valid range
+            targetWordIndex = Math.max(0, Math.min(scriptWords.length - 1, targetWordIndex));
+            
+            // Only update if index changed
+            if (targetWordIndex !== lastHighlightedIndex) {
+              // Remove previous highlight
+              if (lastHighlightedIndex >= 0 && scriptWords[lastHighlightedIndex] && scriptWords[lastHighlightedIndex].element) {
+                scriptWords[lastHighlightedIndex].element.classList.remove('word-highlight');
+              }
+              
+              // Add new highlight
+              if (scriptWords[targetWordIndex] && scriptWords[targetWordIndex].element) {
+                scriptWords[targetWordIndex].element.classList.add('word-highlight');
+                
+                // Scroll word into view if needed
+                var wordEl = scriptWords[targetWordIndex].element;
+                var containerRect = scriptContent.getBoundingClientRect();
+                var wordRect = wordEl.getBoundingClientRect();
+                
+                // If word is outside visible area, scroll to it
+                if (wordRect.top < containerRect.top + 50 || wordRect.bottom > containerRect.bottom - 50) {
+                  wordEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+              }
+              
+              lastHighlightedIndex = targetWordIndex;
+              currentWordIndex = targetWordIndex;
+            }
+          }, 100); // Check every 100ms for smooth highlighting
+        }
+        
         // Function to start teleprompter scroll with proper audio sync
-        function startTeleprompterScrollSync(audioDuration) {
+        function startTeleprompterScrollSync(audioDuration, audio) {
           var scrollIntervalMs = 50;
+          
+          // Start word-level highlighting
+          startWordHighlighting(audio, audioDuration);
           
           if (audioDuration && audioDuration > 0 && scriptContent) {
             // Calculate scroll height (total scrollable distance)
@@ -3989,18 +4173,25 @@ function generateScript(config: PopoutConfig): string {
         }
         
         if (useTTS && ttsAudio) {
+          // Prepare script with word tracking for highlighting
+          var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
+          var scriptText = window.enhancedScriptContent || (selectedScript ? selectedScript.content : '');
+          if (scriptText && scriptContent) {
+            renderScriptWithWordTracking(scriptText);
+          }
+          
           // Wait for TTS audio metadata before starting scroll sync
           if (ttsAudio.duration && ttsAudio.duration > 0 && !isNaN(ttsAudio.duration)) {
             // Metadata already loaded
             console.log('🎤 TTS metadata already loaded, duration:', ttsAudio.duration);
             ttsAudio.play().catch(console.error);
-            startTeleprompterScrollSync(ttsAudio.duration);
+            startTeleprompterScrollSync(ttsAudio.duration, ttsAudio);
           } else {
             // Wait for metadata to load
             ttsAudio.onloadedmetadata = function() {
               console.log('🎤 TTS metadata loaded, duration:', ttsAudio.duration);
               if (!isStopped) {
-                startTeleprompterScrollSync(ttsAudio.duration);
+                startTeleprompterScrollSync(ttsAudio.duration, ttsAudio);
               }
             };
             ttsAudio.play().catch(console.error);
@@ -4009,7 +4200,7 @@ function generateScript(config: PopoutConfig): string {
             setTimeout(function() {
               if (!scrollInterval && !isStopped) {
                 console.log('⚠️ TTS metadata timeout, using default scroll speed');
-                startTeleprompterScrollSync(60); // Assume 60s as fallback
+                startTeleprompterScrollSync(60, ttsAudio); // Assume 60s as fallback
               }
             }, 2000);
           }
@@ -4021,20 +4212,30 @@ function generateScript(config: PopoutConfig): string {
           ttsAudio.onended = function() {
             if (isStopped) return; // Don't do anything if stopped
             console.log('🎤 TTS audio ended');
-            // Don't clear the scroll interval - let it continue for visual purposes
-            // but the audio is done so recording can continue without audio
+            // Stop word highlighting when audio ends
+            if (wordHighlightInterval) {
+              clearInterval(wordHighlightInterval);
+              wordHighlightInterval = null;
+            }
           };
         } else if (useVoiceover && voiceoverClone) {
+          // Prepare script with word tracking for highlighting
+          var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
+          var scriptText = window.enhancedScriptContent || (selectedScript ? selectedScript.content : '');
+          if (scriptText && scriptContent) {
+            renderScriptWithWordTracking(scriptText);
+          }
+          
           // Wait for voiceover metadata before starting scroll sync
           if (voiceoverClone.duration && voiceoverClone.duration > 0 && !isNaN(voiceoverClone.duration)) {
             console.log('🎤 Voiceover metadata already loaded, duration:', voiceoverClone.duration);
             voiceoverClone.play().catch(console.error);
-            startTeleprompterScrollSync(voiceoverClone.duration);
+            startTeleprompterScrollSync(voiceoverClone.duration, voiceoverClone);
           } else {
             voiceoverClone.onloadedmetadata = function() {
               console.log('🎤 Voiceover metadata loaded, duration:', voiceoverClone.duration);
               if (!isStopped) {
-                startTeleprompterScrollSync(voiceoverClone.duration);
+                startTeleprompterScrollSync(voiceoverClone.duration, voiceoverClone);
               }
             };
             voiceoverClone.play().catch(console.error);
@@ -4042,14 +4243,29 @@ function generateScript(config: PopoutConfig): string {
             setTimeout(function() {
               if (!scrollInterval && !isStopped) {
                 console.log('⚠️ Voiceover metadata timeout, using default scroll speed');
-                startTeleprompterScrollSync(60);
+                startTeleprompterScrollSync(60, voiceoverClone);
               }
             }, 2000);
           }
           console.log('🎤 Playing voiceover audio (clone)');
+          
+          // Voiceover ended handler
+          voiceoverClone.onended = function() {
+            if (isStopped) return;
+            console.log('🎤 Voiceover audio ended');
+            if (wordHighlightInterval) {
+              clearInterval(wordHighlightInterval);
+              wordHighlightInterval = null;
+            }
+          };
         } else {
-          // No audio - use default scroll speed
-          startTeleprompterScrollSync(null);
+          // No audio - use default scroll speed, still render word tracking for visual
+          var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
+          var scriptText = window.enhancedScriptContent || (selectedScript ? selectedScript.content : '');
+          if (scriptText && scriptContent) {
+            renderScriptWithWordTracking(scriptText);
+          }
+          startTeleprompterScrollSync(null, null);
         }
         
         // Background music is separate and can play alongside voice - use clone
