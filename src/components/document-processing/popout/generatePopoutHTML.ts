@@ -3305,67 +3305,99 @@ function generateScript(config: PopoutConfig): string {
         // Set guard flag FIRST to prevent any callbacks from restarting audio
         isStopped = true;
         
+        // Reset active states IMMEDIATELY to prevent any play attempts
+        voiceoverActive = false;
+        ttsActive = false;
+        musicActive = false;
+        
         // Clear word highlighting interval
         if (wordHighlightInterval) {
           clearInterval(wordHighlightInterval);
           wordHighlightInterval = null;
         }
         
+        // Clear scroll interval
+        if (scrollInterval) {
+          clearInterval(scrollInterval);
+          scrollInterval = null;
+        }
+        
         try {
-          // Stop original voiceover completely
+          // Stop original voiceover completely - remove ALL event handlers first
           if (voiceover) { 
-            voiceover.pause(); 
-            voiceover.currentTime = 0;
+            voiceover.onplay = null;
             voiceover.onended = null;
             voiceover.onloadedmetadata = null;
-            voiceover.onplay = null;
+            voiceover.ontimeupdate = null;
+            voiceover.onerror = null;
+            voiceover.pause(); 
+            voiceover.currentTime = 0;
           }
-          // Stop cloned voiceover and clear it
+          // Stop cloned voiceover and DESTROY it
           if (voiceoverClone) {
-            voiceoverClone.pause();
-            voiceoverClone.currentTime = 0;
+            voiceoverClone.onplay = null;
             voiceoverClone.onended = null;
             voiceoverClone.onloadedmetadata = null;
-            voiceoverClone.onplay = null;
-            try { voiceoverClone.src = ''; voiceoverClone.load(); } catch(e) {}
+            voiceoverClone.ontimeupdate = null;
+            voiceoverClone.onerror = null;
+            voiceoverClone.pause();
+            voiceoverClone.currentTime = 0;
+            try { 
+              voiceoverClone.src = ''; 
+              voiceoverClone.removeAttribute('src');
+              voiceoverClone.load(); 
+            } catch(e) {}
+            voiceoverClone = null; // Nullify immediately
           }
-          // Stop TTS audio and clear it completely
+          // Stop TTS audio and DESTROY it completely
           if (ttsAudio) { 
-            ttsAudio.pause(); 
-            ttsAudio.currentTime = 0;
+            ttsAudio.onplay = null;
             ttsAudio.onended = null;
             ttsAudio.onloadedmetadata = null;
-            ttsAudio.onplay = null;
-            try { ttsAudio.src = ''; ttsAudio.load(); } catch(e) {}
+            ttsAudio.ontimeupdate = null;
+            ttsAudio.onerror = null;
+            ttsAudio.pause(); 
+            ttsAudio.currentTime = 0;
+            try { 
+              ttsAudio.src = ''; 
+              ttsAudio.removeAttribute('src');
+              ttsAudio.load(); 
+            } catch(e) {}
+            ttsAudio = null; // Nullify immediately
           }
           // Stop original background music
           if (bgMusic) { 
+            bgMusic.onplay = null;
+            bgMusic.onended = null;
+            bgMusic.ontimeupdate = null;
             bgMusic.pause(); 
             bgMusic.currentTime = 0;
-            bgMusic.onended = null;
           }
-          // Stop cloned music and clear it
+          // Stop cloned music and DESTROY it
           if (musicClone) {
+            musicClone.onplay = null;
+            musicClone.onended = null;
+            musicClone.ontimeupdate = null;
             musicClone.pause();
             musicClone.currentTime = 0;
-            musicClone.onended = null;
-            try { musicClone.src = ''; musicClone.load(); } catch(e) {}
+            try { 
+              musicClone.src = ''; 
+              musicClone.removeAttribute('src');
+              musicClone.load(); 
+            } catch(e) {}
+            musicClone = null; // Nullify immediately
           }
           
           // Close audio context to fully release
           if (audioContext && audioContext.state !== 'closed') {
             audioContext.close().catch(function(e) { console.log('Audio context close:', e); });
+            audioContext = null;
           }
         } catch(e) {
           console.error('Error stopping audio:', e);
         }
         
-        // Reset active states
-        voiceoverActive = false;
-        ttsActive = false;
-        musicActive = false;
-        
-        console.log('✅ All audio stopped permanently, isStopped flag set');
+        console.log('✅ All audio stopped permanently, isStopped flag set, all audio nullified');
       }
       
       // Audio options dialog
@@ -4173,6 +4205,12 @@ function generateScript(config: PopoutConfig): string {
         }
         
         if (useTTS && ttsAudio) {
+          // Guard: check if stopped before playing
+          if (isStopped) {
+            console.log('⚠️ Recording stopped, skipping TTS playback');
+            return;
+          }
+          
           // Prepare script with word tracking for highlighting
           var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
           var scriptText = window.enhancedScriptContent || (selectedScript ? selectedScript.content : '');
@@ -4181,24 +4219,27 @@ function generateScript(config: PopoutConfig): string {
           }
           
           // Wait for TTS audio metadata before starting scroll sync
-          if (ttsAudio.duration && ttsAudio.duration > 0 && !isNaN(ttsAudio.duration)) {
+          if (ttsAudio && ttsAudio.duration && ttsAudio.duration > 0 && !isNaN(ttsAudio.duration)) {
             // Metadata already loaded
             console.log('🎤 TTS metadata already loaded, duration:', ttsAudio.duration);
-            ttsAudio.play().catch(console.error);
-            startTeleprompterScrollSync(ttsAudio.duration, ttsAudio);
-          } else {
+            if (!isStopped && ttsAudio) {
+              ttsAudio.play().catch(console.error);
+              startTeleprompterScrollSync(ttsAudio.duration, ttsAudio);
+            }
+          } else if (ttsAudio) {
             // Wait for metadata to load
             ttsAudio.onloadedmetadata = function() {
+              if (isStopped || !ttsAudio) return; // Guard check
               console.log('🎤 TTS metadata loaded, duration:', ttsAudio.duration);
-              if (!isStopped) {
-                startTeleprompterScrollSync(ttsAudio.duration, ttsAudio);
-              }
+              startTeleprompterScrollSync(ttsAudio.duration, ttsAudio);
             };
-            ttsAudio.play().catch(console.error);
+            if (!isStopped) {
+              ttsAudio.play().catch(console.error);
+            }
             
             // Fallback: start scroll after 2s if metadata doesn't load
             setTimeout(function() {
-              if (!scrollInterval && !isStopped) {
+              if (!scrollInterval && !isStopped && ttsAudio) {
                 console.log('⚠️ TTS metadata timeout, using default scroll speed');
                 startTeleprompterScrollSync(60, ttsAudio); // Assume 60s as fallback
               }
@@ -4209,16 +4250,26 @@ function generateScript(config: PopoutConfig): string {
           console.log('🎤 Playing TTS audio (voiceover disabled to prevent overlap)');
           
           // TTS ended handler
-          ttsAudio.onended = function() {
-            if (isStopped) return; // Don't do anything if stopped
-            console.log('🎤 TTS audio ended');
-            // Stop word highlighting when audio ends
-            if (wordHighlightInterval) {
-              clearInterval(wordHighlightInterval);
-              wordHighlightInterval = null;
+          if (ttsAudio) {
+            ttsAudio.onended = function() {
+              if (isStopped) return; // Don't do anything if stopped
+              console.log('🎤 TTS audio ended');
+              // Stop word highlighting when audio ends
+              if (wordHighlightInterval) {
+                clearInterval(wordHighlightInterval);
+                wordHighlightInterval = null;
+              }
+            };
+          }
             }
           };
         } else if (useVoiceover && voiceoverClone) {
+          // Guard: check if stopped before playing
+          if (isStopped) {
+            console.log('⚠️ Recording stopped, skipping voiceover playback');
+            return;
+          }
+          
           // Prepare script with word tracking for highlighting
           var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
           var scriptText = window.enhancedScriptContent || (selectedScript ? selectedScript.content : '');
@@ -4227,21 +4278,24 @@ function generateScript(config: PopoutConfig): string {
           }
           
           // Wait for voiceover metadata before starting scroll sync
-          if (voiceoverClone.duration && voiceoverClone.duration > 0 && !isNaN(voiceoverClone.duration)) {
+          if (voiceoverClone && voiceoverClone.duration && voiceoverClone.duration > 0 && !isNaN(voiceoverClone.duration)) {
             console.log('🎤 Voiceover metadata already loaded, duration:', voiceoverClone.duration);
-            voiceoverClone.play().catch(console.error);
-            startTeleprompterScrollSync(voiceoverClone.duration, voiceoverClone);
-          } else {
+            if (!isStopped && voiceoverClone) {
+              voiceoverClone.play().catch(console.error);
+              startTeleprompterScrollSync(voiceoverClone.duration, voiceoverClone);
+            }
+          } else if (voiceoverClone) {
             voiceoverClone.onloadedmetadata = function() {
+              if (isStopped || !voiceoverClone) return; // Guard check
               console.log('🎤 Voiceover metadata loaded, duration:', voiceoverClone.duration);
-              if (!isStopped) {
-                startTeleprompterScrollSync(voiceoverClone.duration, voiceoverClone);
-              }
+              startTeleprompterScrollSync(voiceoverClone.duration, voiceoverClone);
             };
-            voiceoverClone.play().catch(console.error);
+            if (!isStopped) {
+              voiceoverClone.play().catch(console.error);
+            }
             
             setTimeout(function() {
-              if (!scrollInterval && !isStopped) {
+              if (!scrollInterval && !isStopped && voiceoverClone) {
                 console.log('⚠️ Voiceover metadata timeout, using default scroll speed');
                 startTeleprompterScrollSync(60, voiceoverClone);
               }
@@ -4250,14 +4304,16 @@ function generateScript(config: PopoutConfig): string {
           console.log('🎤 Playing voiceover audio (clone)');
           
           // Voiceover ended handler
-          voiceoverClone.onended = function() {
-            if (isStopped) return;
-            console.log('🎤 Voiceover audio ended');
-            if (wordHighlightInterval) {
-              clearInterval(wordHighlightInterval);
-              wordHighlightInterval = null;
-            }
-          };
+          if (voiceoverClone) {
+            voiceoverClone.onended = function() {
+              if (isStopped) return;
+              console.log('🎤 Voiceover audio ended');
+              if (wordHighlightInterval) {
+                clearInterval(wordHighlightInterval);
+                wordHighlightInterval = null;
+              }
+            };
+          }
         } else {
           // No audio - use default scroll speed, still render word tracking for visual
           var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
@@ -4265,11 +4321,13 @@ function generateScript(config: PopoutConfig): string {
           if (scriptText && scriptContent) {
             renderScriptWithWordTracking(scriptText);
           }
-          startTeleprompterScrollSync(null, null);
+          if (!isStopped) {
+            startTeleprompterScrollSync(null, null);
+          }
         }
         
         // Background music is separate and can play alongside voice - use clone
-        if (useMusic && musicClone) {
+        if (useMusic && musicClone && !isStopped) {
           musicClone.volume = 0.3;
           musicClone.play().catch(console.error);
           console.log('🎵 Playing background music (clone)');
@@ -4405,6 +4463,7 @@ function generateScript(config: PopoutConfig): string {
         if (vo && vo.src) vo.currentTime = Math.max(0, vo.currentTime - 5); 
       };
       document.getElementById('voPlayPauseBtn').onclick = function() {
+        if (isStopped) return; // Guard: don't play if recording stopped
         var vo = voiceoverClone || voiceover;
         if (!vo || !vo.src) {
           console.log('⚠️ No voiceover loaded');
@@ -4435,6 +4494,7 @@ function generateScript(config: PopoutConfig): string {
         if (ttsAudio) ttsAudio.currentTime = Math.max(0, ttsAudio.currentTime - 5); 
       };
       document.getElementById('ttsPlayPauseBtn').onclick = function() {
+        if (isStopped) return; // Guard: don't play if recording stopped
         if (!ttsAudio) {
           console.log('⚠️ No TTS audio loaded');
           return;
@@ -4463,6 +4523,7 @@ function generateScript(config: PopoutConfig): string {
         if (music && music.src) music.currentTime = Math.max(0, music.currentTime - 5); 
       };
       document.getElementById('musicPlayPauseBtn').onclick = function() {
+        if (isStopped) return; // Guard: don't play if recording stopped
         var music = musicClone || bgMusic;
         if (!music || !music.src) {
           console.log('⚠️ No music loaded');
@@ -4521,32 +4582,34 @@ function generateScript(config: PopoutConfig): string {
         if (music && music.src) { music.pause(); document.getElementById('musicPlayPauseBtn').textContent = '▶️'; }
       };
       document.getElementById('resumeAllAudioBtn').onclick = function() {
+        if (isStopped) return; // Guard: don't play if recording stopped
         var vo = voiceoverClone || voiceover;
         var music = musicClone || bgMusic;
         // Only play ONE voice source - TTS takes priority
-        if (ttsActive && ttsAudio) { 
+        if (ttsActive && ttsAudio && !isStopped) { 
           ttsAudio.play().catch(console.error); 
           document.getElementById('ttsPlayPauseBtn').textContent = '⏸️'; 
-        } else if (voiceoverActive && vo && vo.src) { 
+        } else if (voiceoverActive && vo && vo.src && !isStopped) { 
           vo.play().catch(console.error); 
           document.getElementById('voPlayPauseBtn').textContent = '⏸️'; 
         }
-        if (musicActive && music && music.src) { music.play().catch(console.error); document.getElementById('musicPlayPauseBtn').textContent = '⏸️'; }
+        if (musicActive && music && music.src && !isStopped) { music.play().catch(console.error); document.getElementById('musicPlayPauseBtn').textContent = '⏸️'; }
       };
       document.getElementById('restartAllAudioBtn').onclick = function() {
+        if (isStopped) return; // Guard: don't play if recording stopped
         var vo = voiceoverClone || voiceover;
         var music = musicClone || bgMusic;
         // Only restart ONE voice source - TTS takes priority
-        if (ttsActive && ttsAudio) { 
+        if (ttsActive && ttsAudio && !isStopped) { 
           ttsAudio.currentTime = 0; 
           ttsAudio.play().catch(console.error); 
           document.getElementById('ttsPlayPauseBtn').textContent = '⏸️'; 
-        } else if (voiceoverActive && vo && vo.src) { 
+        } else if (voiceoverActive && vo && vo.src && !isStopped) { 
           vo.currentTime = 0; 
           vo.play().catch(console.error); 
           document.getElementById('voPlayPauseBtn').textContent = '⏸️'; 
         }
-        if (musicActive && music && music.src) { music.currentTime = 0; music.play().catch(console.error); document.getElementById('musicPlayPauseBtn').textContent = '⏸️'; }
+        if (musicActive && music && music.src && !isStopped) { music.currentTime = 0; music.play().catch(console.error); document.getElementById('musicPlayPauseBtn').textContent = '⏸️'; }
       };
       
       // Pause/Resume recording - ALSO pause/resume audio
@@ -4557,6 +4620,12 @@ function generateScript(config: PopoutConfig): string {
         var music = musicClone || bgMusic;
         
         if (isPaused) {
+          // Guard: don't resume if stopped
+          if (isStopped) {
+            console.log('⚠️ Cannot resume - recording stopped');
+            return;
+          }
+          
           // Resume recording
           console.log('▶️ Resuming recording...');
           if (mediaRecorder) {
@@ -4569,12 +4638,12 @@ function generateScript(config: PopoutConfig): string {
           }
           
           // Resume audio - Only ONE voice source (TTS takes priority)
-          if (ttsActive && ttsAudio) { 
+          if (ttsActive && ttsAudio && !isStopped) { 
             ttsAudio.play().catch(function(err) { console.error('TTS resume error:', err); }); 
-          } else if (voiceoverActive && vo && vo.src) { 
+          } else if (voiceoverActive && vo && vo.src && !isStopped) { 
             vo.play().catch(function(err) { console.error('VO resume error:', err); }); 
           }
-          if (musicActive && music && music.src) { 
+          if (musicActive && music && music.src && !isStopped) { 
             music.play().catch(function(err) { console.error('Music resume error:', err); }); 
           }
           
