@@ -555,6 +555,87 @@ function generateStyles(): string {
     }
     .caption-toggle.active { background: #6366f1; border-color: #6366f1; }
     
+    /* Teleprompter Speed Controls */
+    .teleprompter-speed-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(30, 41, 59, 0.8);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      border: 1px solid #475569;
+    }
+    .teleprompter-speed-controls.hidden { display: none; }
+    .teleprompter-speed-controls .speed-label {
+      font-size: 11px;
+      opacity: 0.7;
+      min-width: 50px;
+    }
+    .teleprompter-speed-controls .speed-btn {
+      padding: 4px 10px;
+      font-size: 14px;
+      background: #334155;
+      border: 1px solid #475569;
+      cursor: pointer;
+      min-width: 32px;
+    }
+    .teleprompter-speed-controls .speed-btn:hover { background: #475569; }
+    .teleprompter-speed-controls .speed-value {
+      font-size: 12px;
+      font-weight: 600;
+      min-width: 45px;
+      text-align: center;
+      color: #6366f1;
+    }
+    .teleprompter-speed-controls .speed-preset {
+      padding: 3px 8px;
+      font-size: 10px;
+      background: #334155;
+      border: 1px solid #475569;
+      cursor: pointer;
+    }
+    .teleprompter-speed-controls .speed-preset:hover { background: #475569; }
+    .teleprompter-speed-controls .speed-preset.active { background: #6366f1; border-color: #6366f1; }
+    
+    /* Reading Cursor/Highlight */
+    .reading-cursor {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 32px;
+      background: linear-gradient(to bottom, 
+        rgba(99, 102, 241, 0.0) 0%, 
+        rgba(99, 102, 241, 0.15) 30%, 
+        rgba(99, 102, 241, 0.25) 50%, 
+        rgba(99, 102, 241, 0.15) 70%, 
+        rgba(99, 102, 241, 0.0) 100%);
+      pointer-events: none;
+      z-index: 10;
+      transition: top 0.15s ease-out;
+      border-left: 3px solid #6366f1;
+    }
+    .reading-cursor::before {
+      content: '▶';
+      position: absolute;
+      left: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 10px;
+      color: #6366f1;
+      opacity: 0.8;
+    }
+    .script-content.cursor-active {
+      position: relative;
+    }
+    
+    /* Current word highlight */
+    .word-highlight {
+      background: rgba(99, 102, 241, 0.3);
+      border-radius: 2px;
+      padding: 0 2px;
+    }
+    
     /* Script Analysis & Segment Styles */
     .script-segment {
       padding: 12px;
@@ -1339,7 +1420,22 @@ function generateBody(config: PopoutConfig, escapedScriptContent: string): strin
             </div>
           </div>
           
+          <!-- Teleprompter Speed Controls (shown during recording) -->
+          <div id="speedControls" class="teleprompter-speed-controls hidden">
+            <span class="speed-label">📜 Speed:</span>
+            <button id="speedDownBtn" class="speed-btn" title="Slow down">−</button>
+            <span id="speedValue" class="speed-value">1.0x</span>
+            <button id="speedUpBtn" class="speed-btn" title="Speed up">+</button>
+            <div style="display:flex;gap:4px;margin-left:8px;">
+              <button id="speedPreset05" class="speed-preset" title="0.5x speed">0.5x</button>
+              <button id="speedPreset10" class="speed-preset active" title="1x speed (normal)">1x</button>
+              <button id="speedPreset15" class="speed-preset" title="1.5x speed">1.5x</button>
+              <button id="speedPreset20" class="speed-preset" title="2x speed">2x</button>
+            </div>
+          </div>
+          
           <div id="scriptContent" class="script-content">
+            <div id="readingCursor" class="reading-cursor" style="display:none;"></div>
             ${escapedScriptContent || '<span style="opacity:0.5;">Select a script to display here...</span>'}
           </div>
         </div>
@@ -1517,6 +1613,12 @@ function generateScript(config: PopoutConfig): string {
       var insertMode = 'demo'; // 'demo', 'silent', 'skip'
       var isAnalyzing = false; // Analysis in progress
       
+      // Teleprompter speed and cursor state
+      var teleprompterSpeedMultiplier = 1.0; // User-adjustable speed multiplier
+      var baseScrollSpeed = 2; // Base pixels per interval at 1.0x speed
+      var readingCursorEnabled = true; // Show reading cursor during playback
+      var currentScrollPixelsPerInterval = 2; // Current calculated speed
+      
       // DOM Elements
       var preview = document.getElementById('preview');
       var startBtn = document.getElementById('startBtn');
@@ -1603,6 +1705,17 @@ function generateScript(config: PopoutConfig): string {
       var resumeContinueBtn = document.getElementById('resumeContinueBtn');
       var resumeRestartSegmentBtn = document.getElementById('resumeRestartSegmentBtn');
       var resumeSkipAheadBtn = document.getElementById('resumeSkipAheadBtn');
+      
+      // Speed controls elements
+      var speedControls = document.getElementById('speedControls');
+      var speedDownBtn = document.getElementById('speedDownBtn');
+      var speedUpBtn = document.getElementById('speedUpBtn');
+      var speedValue = document.getElementById('speedValue');
+      var speedPreset05 = document.getElementById('speedPreset05');
+      var speedPreset10 = document.getElementById('speedPreset10');
+      var speedPreset15 = document.getElementById('speedPreset15');
+      var speedPreset20 = document.getElementById('speedPreset20');
+      var readingCursor = document.getElementById('readingCursor');
       
       // PIP overlay elements
       var pipOverlay = document.getElementById('pipOverlay');
@@ -1905,7 +2018,94 @@ function generateScript(config: PopoutConfig): string {
       // Scroll controls
       document.getElementById('scrollUpBtn').onclick = function() { scriptContent.scrollTop -= 50; };
       document.getElementById('scrollDownBtn').onclick = function() { scriptContent.scrollTop += 50; };
-      document.getElementById('scrollResetBtn').onclick = function() { scriptContent.scrollTop = 0; };
+      document.getElementById('scrollResetBtn').onclick = function() { 
+        scriptContent.scrollTop = 0; 
+        updateReadingCursor();
+      };
+      
+      // =====================================================
+      // Teleprompter Speed & Reading Cursor Controls
+      // =====================================================
+      
+      // Update speed display and apply multiplier
+      function updateSpeedDisplay() {
+        speedValue.textContent = teleprompterSpeedMultiplier.toFixed(1) + 'x';
+        
+        // Update preset button states
+        [speedPreset05, speedPreset10, speedPreset15, speedPreset20].forEach(function(btn) {
+          btn.classList.remove('active');
+        });
+        
+        if (teleprompterSpeedMultiplier === 0.5) speedPreset05.classList.add('active');
+        else if (teleprompterSpeedMultiplier === 1.0) speedPreset10.classList.add('active');
+        else if (teleprompterSpeedMultiplier === 1.5) speedPreset15.classList.add('active');
+        else if (teleprompterSpeedMultiplier === 2.0) speedPreset20.classList.add('active');
+      }
+      
+      // Apply speed multiplier to current scroll speed
+      function getAdjustedScrollSpeed() {
+        return baseScrollSpeed * teleprompterSpeedMultiplier;
+      }
+      
+      // Update reading cursor position based on scroll
+      function updateReadingCursor() {
+        if (!readingCursor || !readingCursorEnabled || !isRecording) return;
+        
+        // Position cursor at the center of the visible area
+        var containerHeight = scriptContent.clientHeight;
+        var cursorTop = containerHeight * 0.35; // Position at ~35% from top (reading zone)
+        readingCursor.style.top = cursorTop + 'px';
+        readingCursor.style.display = 'block';
+      }
+      
+      // Show/hide speed controls and reading cursor based on recording state
+      function showTeleprompterControls(show) {
+        if (show) {
+          speedControls.classList.remove('hidden');
+          scriptContent.classList.add('cursor-active');
+          updateReadingCursor();
+        } else {
+          speedControls.classList.add('hidden');
+          readingCursor.style.display = 'none';
+          scriptContent.classList.remove('cursor-active');
+        }
+      }
+      
+      // Speed control event handlers
+      speedDownBtn.onclick = function() {
+        teleprompterSpeedMultiplier = Math.max(0.25, teleprompterSpeedMultiplier - 0.25);
+        updateSpeedDisplay();
+        console.log('📜 Speed decreased to:', teleprompterSpeedMultiplier + 'x');
+      };
+      
+      speedUpBtn.onclick = function() {
+        teleprompterSpeedMultiplier = Math.min(3.0, teleprompterSpeedMultiplier + 0.25);
+        updateSpeedDisplay();
+        console.log('📜 Speed increased to:', teleprompterSpeedMultiplier + 'x');
+      };
+      
+      speedPreset05.onclick = function() {
+        teleprompterSpeedMultiplier = 0.5;
+        updateSpeedDisplay();
+      };
+      
+      speedPreset10.onclick = function() {
+        teleprompterSpeedMultiplier = 1.0;
+        updateSpeedDisplay();
+      };
+      
+      speedPreset15.onclick = function() {
+        teleprompterSpeedMultiplier = 1.5;
+        updateSpeedDisplay();
+      };
+      
+      speedPreset20.onclick = function() {
+        teleprompterSpeedMultiplier = 2.0;
+        updateSpeedDisplay();
+      };
+      
+      // Initialize speed display
+      updateSpeedDisplay();
       
       // =====================================================
       // Script Analysis Functions
@@ -3617,6 +3817,7 @@ function generateScript(config: PopoutConfig): string {
           audioControlPanel.classList.remove('visible');
           audioControlPanel.style.display = 'none';
           pipOverlay.classList.add('hidden'); // Hide PIP overlay
+          showTeleprompterControls(false); // Hide speed controls and cursor
           startBtn.style.display = 'none';
           pauseBtn.style.display = 'none';
           stopBtn.style.display = 'none';
@@ -3738,9 +3939,11 @@ function generateScript(config: PopoutConfig): string {
         // Play audio - IMPORTANT: Only play ONE voiceover source to avoid overlap
         // If TTS is enabled, use that as primary voice. Otherwise use voiceover audio clone.
         
+        // Show speed controls and reading cursor during recording
+        showTeleprompterControls(true);
+        
         // Function to start teleprompter scroll with proper audio sync
         function startTeleprompterScrollSync(audioDuration) {
-          var scrollPixelsPerInterval = 2; // Default: 2px per 50ms = 40px/sec
           var scrollIntervalMs = 50;
           
           if (audioDuration && audioDuration > 0 && scriptContent) {
@@ -3752,26 +3955,34 @@ function generateScript(config: PopoutConfig): string {
               // Add 5 second buffer to account for any delays
               var bufferedDuration = audioDuration + 5;
               var totalIntervals = (bufferedDuration * 1000) / scrollIntervalMs;
-              scrollPixelsPerInterval = scrollableHeight / totalIntervals;
+              baseScrollSpeed = scrollableHeight / totalIntervals;
               
               // Ensure minimum scroll speed of 0.3px and max of 4px per interval
-              scrollPixelsPerInterval = Math.max(0.3, Math.min(4, scrollPixelsPerInterval));
+              baseScrollSpeed = Math.max(0.3, Math.min(4, baseScrollSpeed));
               
-              console.log('📜 Teleprompter sync: scrollHeight=' + scrollableHeight + 'px, audioDuration=' + audioDuration.toFixed(1) + 's (buffered: ' + bufferedDuration.toFixed(1) + 's), speed=' + scrollPixelsPerInterval.toFixed(2) + 'px/interval');
+              console.log('📜 Teleprompter sync: scrollHeight=' + scrollableHeight + 'px, audioDuration=' + audioDuration.toFixed(1) + 's (buffered: ' + bufferedDuration.toFixed(1) + 's), baseSpeed=' + baseScrollSpeed.toFixed(2) + 'px/interval');
             }
+          } else {
+            // Default speed when no audio
+            baseScrollSpeed = 2;
           }
           
           // Accumulated scroll for sub-pixel accuracy
           var accumulatedScroll = 0;
           
-          // Auto-scroll with calculated speed
+          // Auto-scroll with calculated speed (adjusted by user speed multiplier)
           scrollInterval = setInterval(function() {
             if (!isPaused && scriptContent && !isStopped) {
-              accumulatedScroll += scrollPixelsPerInterval;
+              // Apply user's speed multiplier
+              var adjustedSpeed = baseScrollSpeed * teleprompterSpeedMultiplier;
+              accumulatedScroll += adjustedSpeed;
               if (accumulatedScroll >= 1) {
                 var pixelsToScroll = Math.floor(accumulatedScroll);
                 scriptContent.scrollTop += pixelsToScroll;
                 accumulatedScroll -= pixelsToScroll;
+                
+                // Update reading cursor position
+                updateReadingCursor();
               }
             }
           }, scrollIntervalMs);
@@ -4254,6 +4465,9 @@ function generateScript(config: PopoutConfig): string {
         if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
         if (scrollInterval) { clearInterval(scrollInterval); scrollInterval = null; }
         if (audioProgressInterval) { clearInterval(audioProgressInterval); audioProgressInterval = null; }
+        
+        // Hide speed controls and reading cursor
+        showTeleprompterControls(false);
         
         // Stop the recorder - this triggers onstop handler
         if (mediaRecorder && mediaRecorder.state !== 'inactive') {
