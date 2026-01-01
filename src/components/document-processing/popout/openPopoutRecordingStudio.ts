@@ -118,6 +118,18 @@ export function openPopoutRecordingStudio(options: OpenPopoutOptions): Window | 
 
   // Generate and write the HTML content
   const htmlContent = generatePopoutHTML(config);
+  
+  // Debug: Log the first 2000 characters to check for issues
+  console.log('📝 Generated HTML preview (first 2000 chars):', htmlContent.substring(0, 2000));
+  console.log('📝 Generated HTML length:', htmlContent.length);
+  
+  // Check for potentially problematic patterns
+  if (htmlContent.includes('</sc' + 'ript>')) {
+    const idx = htmlContent.indexOf('</sc' + 'ript>');
+    console.warn('⚠️ Found closing script tag at index:', idx);
+    console.warn('Context:', htmlContent.substring(Math.max(0, idx - 100), idx + 20));
+  }
+  
   popoutWindow.document.write(htmlContent);
   popoutWindow.document.close();
 
