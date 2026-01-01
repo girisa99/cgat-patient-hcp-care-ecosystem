@@ -6128,18 +6128,6 @@ function generateScript(config: PopoutConfig): string {
 }
 
 /**
- * Escape script content for safe embedding in HTML
- * Prevents HTML parser from interpreting </ sequences as closing tags
- */
-function escapeScriptContent(script: string): string {
-  // Replace </ with <\/ to prevent HTML parser from seeing closing tags
-  // Also escape <!-- to prevent comment interpretation
-  return script
-    .replace(/<\//g, '<\\/')
-    .replace(/<!--/g, '<\\!--');
-}
-
-/**
  * Generate the complete HTML document for the pop-out recording studio
  */
 export function generatePopoutHTML(config: PopoutConfig): string {
@@ -6153,8 +6141,11 @@ export function generatePopoutHTML(config: PopoutConfig): string {
     musicCount: config.music.length
   });
 
-  // Generate the main script and escape it for safe embedding
-  const mainScriptContent = escapeScriptContent(generateScript(config));
+  // Generate the main script
+  const mainScript = generateScript(config);
+  
+  // Encode the script as base64 to avoid any HTML parsing issues
+  const scriptBase64 = btoa(unescape(encodeURIComponent(mainScript)));
 
   return `<!DOCTYPE html>
 <html>
@@ -6170,7 +6161,7 @@ export function generatePopoutHTML(config: PopoutConfig): string {
   </div>
   ${generateBody(config, escapedScriptContent)}
   <script>
-    // IMMEDIATE DEBUG - runs before anything else
+    // Debug helper
     (function() {
       var debugLog = document.getElementById('debugLog');
       var debugOverlay = document.getElementById('debugOverlay');
@@ -6190,10 +6181,8 @@ export function generatePopoutHTML(config: PopoutConfig): string {
           debugOverlay.style.display = 'block';
           debugLog.innerHTML += '<span style="color:#f00;">' + errorMsg + '</span><br>';
         }
-        // Also show in status
         var s = document.getElementById('status');
         if (s) { s.textContent = 'JS Error: ' + String(msg).substring(0, 30); s.className = 'status error'; }
-        // Hide loading
         var loading = document.getElementById('cameraLoading');
         if (loading) loading.classList.add('hidden');
         return false;
@@ -6201,11 +6190,22 @@ export function generatePopoutHTML(config: PopoutConfig): string {
       
       window.debugPopout('Debug initialized');
     })();
-  ${'<'+'/script>'}
+  </script>
   <script>
-    window.debugPopout && window.debugPopout('Main script loading...');
-    ${mainScriptContent}
-  ${'<'+'/script>'}
-${'<'+'/body>'}
-${'<'+'/html>'}`;
+    // Load main script from base64 to avoid HTML parsing issues
+    window.debugPopout('Loading main script...');
+    try {
+      var scriptCode = decodeURIComponent(escape(atob('${scriptBase64}')));
+      window.debugPopout('Script decoded, length: ' + scriptCode.length);
+      var scriptEl = document.createElement('script');
+      scriptEl.textContent = scriptCode;
+      document.body.appendChild(scriptEl);
+      window.debugPopout('Script element added');
+    } catch(e) {
+      window.debugPopout('Script load error: ' + e.message);
+      console.error('Failed to load main script:', e);
+    }
+  </script>
+</body>
+</html>`;
 }
