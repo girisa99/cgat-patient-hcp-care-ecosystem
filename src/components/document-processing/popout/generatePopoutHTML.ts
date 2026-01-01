@@ -2113,6 +2113,35 @@ function generateScript(config: PopoutConfig): string {
         console.error('Dropdown error:', e);
       }
       
+      // Clean script for TTS - remove markers, notes sections that shouldn't be spoken
+      // Defined early so it can be used by download handlers
+      function cleanScriptForTTS(text) {
+        if (!text) return '';
+        
+        console.log('🧹 Cleaning script for TTS, input length:', text.length);
+        
+        var cleaned = text
+          // Replace [PAUSE Xs] with natural pauses (ellipsis for short pauses)
+          .replace(/\[PAUSE\s+[0-9.]+s\]/gi, '...')
+          // Remove entire notes sections - match [SECTION:] through end of that section
+          .replace(/\[IMPROVEMENT NOTES:\][\s\S]*?(?=\n\n|\[|$)/gi, '')
+          .replace(/\[ENGAGEMENT NOTES:\][\s\S]*?(?=\n\n|\[|$)/gi, '')
+          .replace(/\[DELIVERY TIPS:\][\s\S]*?(?=\n\n|\[|$)/gi, '')
+          // Remove any remaining bracket markers
+          .replace(/\[[A-Z\s]+:\]/gi, '')
+          // Remove bullet points
+          .replace(/[•·▪]/g, '')
+          // Clean up multiple newlines
+          .replace(/\n{3,}/g, '\n\n')
+          // Clean up multiple spaces
+          .replace(/  +/g, ' ')
+          .trim();
+        
+        console.log('🧹 Cleaned script length:', cleaned.length);
+        
+        return cleaned;
+      }
+      
       // Function to update audio control panel based on dropdown selections
       function updateControlPanelFromDropdowns() {
         var hasVoiceover = voiceoverSelect.value && voiceovers.find(function(v) { return v.id === voiceoverSelect.value; });
@@ -3130,7 +3159,7 @@ function generateScript(config: PopoutConfig): string {
         }
       }
       
-      // Download enhanced transcript as TXT
+      // Download enhanced transcript as TXT - CLEAN version without markers
       if (downloadEnhancedTranscriptBtn) {
         downloadEnhancedTranscriptBtn.onclick = function() {
           if (!window.enhancedScriptContent) {
@@ -3138,7 +3167,10 @@ function generateScript(config: PopoutConfig): string {
             return;
           }
           
-          var blob = new Blob([window.enhancedScriptContent], { type: 'text/plain' });
+          // Use cleanScriptForTTS to get a clean version without markers
+          var cleanContent = cleanScriptForTTS(window.enhancedScriptContent);
+          
+          var blob = new Blob([cleanContent], { type: 'text/plain' });
           var url = URL.createObjectURL(blob);
           var a = document.createElement('a');
           a.href = url;
@@ -3148,7 +3180,7 @@ function generateScript(config: PopoutConfig): string {
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
           
-          console.log('📄 Enhanced transcript downloaded');
+          console.log('📄 Enhanced transcript downloaded (clean version)');
         };
       }
       
@@ -3184,13 +3216,10 @@ function generateScript(config: PopoutConfig): string {
           }
           
           var enhancedText = window.enhancedScriptContent;
-          // Clean up markers for TTS (remove pause markers, notes sections)
-          var ttsText = enhancedText
-            .replace(/\\[PAUSE [0-9.]+s\\]/gi, '... ')
-            .replace(/\\[ENGAGEMENT NOTES:\\][\\s\\S]*/gi, '')
-            .replace(/\\[DELIVERY TIPS:\\][\\s\\S]*/gi, '')
-            .replace(/[•]/g, '')
-            .trim();
+          // Use cleanScriptForTTS to get proper clean version for TTS
+          var ttsText = cleanScriptForTTS(enhancedText);
+          
+          console.log('🎤 Enhanced audio TTS text:', ttsText.substring(0, 200));
           
           if (!ttsText || ttsText.length < 5) {
             showCustomAlert('Enhanced script content is too short for audio generation.', 'Content Too Short');
@@ -4292,35 +4321,8 @@ function generateScript(config: PopoutConfig): string {
         };
       }
       
-      // Clean script for TTS - remove markers, notes sections that shouldn't be spoken
-      function cleanScriptForTTS(text) {
-        if (!text) return '';
-        
-        console.log('🧹 Cleaning script for TTS, input length:', text.length);
-        console.log('🧹 Input preview:', text.substring(0, 300));
-        
-        var cleaned = text
-          // Replace [PAUSE Xs] with natural pauses (ellipsis for short pauses)
-          .replace(/\[PAUSE\s+[0-9.]+s\]/gi, '...')
-          // Remove entire notes sections - match [SECTION:] through end of that section
-          .replace(/\[IMPROVEMENT NOTES:\][\s\S]*?(?=\n\n|\[|$)/gi, '')
-          .replace(/\[ENGAGEMENT NOTES:\][\s\S]*?(?=\n\n|\[|$)/gi, '')
-          .replace(/\[DELIVERY TIPS:\][\s\S]*?(?=\n\n|\[|$)/gi, '')
-          // Remove any remaining bracket markers
-          .replace(/\[[A-Z\s]+:\]/gi, '')
-          // Remove bullet points
-          .replace(/[•·▪]/g, '')
-          // Clean up multiple newlines
-          .replace(/\n{3,}/g, '\n\n')
-          // Clean up multiple spaces
-          .replace(/  +/g, ' ')
-          .trim();
-        
-        console.log('🧹 Cleaned script length:', cleaned.length);
-        console.log('🧹 Cleaned preview:', cleaned.substring(0, 300));
-        
-        return cleaned;
-      }
+      // Note: cleanScriptForTTS is defined earlier in the file (around line 2115)
+      // to ensure it's available for download handlers
       
       // Build enhanced script from analysis segments
       function buildEnhancedScript(analysis) {
