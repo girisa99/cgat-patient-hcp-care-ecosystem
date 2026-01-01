@@ -104,34 +104,32 @@ export function openPopoutRecordingStudio(options: OpenPopoutOptions): Window | 
     supabaseKey,
   };
 
-  // Open the pop-out window
+  // Generate the HTML content first
+  const htmlContent = generatePopoutHTML(config);
+  
+  console.log('📝 Generated HTML length:', htmlContent.length);
+
+  // Use Blob URL approach - more reliable than document.write() for complex scripts
+  const blob = new Blob([htmlContent], { type: 'text/html' });
+  const blobUrl = URL.createObjectURL(blob);
+  
+  // Open the pop-out window with the blob URL
   const popoutWindow = window.open(
-    '',
+    blobUrl,
     'recording-studio',
     'width=1400,height=900,left=100,top=50,toolbar=no,menubar=no,scrollbars=no,resizable=yes'
   );
 
   if (!popoutWindow) {
+    URL.revokeObjectURL(blobUrl);
     onError?.('Pop-up blocked. Please allow pop-ups for this site.');
     return null;
   }
 
-  // Generate and write the HTML content
-  const htmlContent = generatePopoutHTML(config);
-  
-  // Debug: Log the first 2000 characters to check for issues
-  console.log('📝 Generated HTML preview (first 2000 chars):', htmlContent.substring(0, 2000));
-  console.log('📝 Generated HTML length:', htmlContent.length);
-  
-  // Check for potentially problematic patterns
-  if (htmlContent.includes('</sc' + 'ript>')) {
-    const idx = htmlContent.indexOf('</sc' + 'ript>');
-    console.warn('⚠️ Found closing script tag at index:', idx);
-    console.warn('Context:', htmlContent.substring(Math.max(0, idx - 100), idx + 20));
-  }
-  
-  popoutWindow.document.write(htmlContent);
-  popoutWindow.document.close();
+  // Clean up blob URL after the window loads
+  popoutWindow.addEventListener('load', () => {
+    URL.revokeObjectURL(blobUrl);
+  });
 
   onSuccess?.();
   return popoutWindow;
