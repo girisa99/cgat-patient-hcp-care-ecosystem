@@ -816,6 +816,9 @@ function generateScript(config: PopoutConfig): string {
       var ttsAudioSource = null;
       var musicAudioSource = null;
       var audioSourcesConnected = false; // Track if sources already connected
+      var audioProgressInterval = null; // Track the progress interval to avoid duplicates
+      var voiceoverClone = null; // Track cloned audio elements
+      var musicClone = null;
       
       // DOM Elements
       var preview = document.getElementById('preview');
@@ -1258,23 +1261,42 @@ function generateScript(config: PopoutConfig): string {
       function stopAllAudio() {
         console.log('🔇 Stopping all audio');
         try {
+          // Stop original voiceover
           if (voiceover) { 
             voiceover.pause(); 
             voiceover.currentTime = 0;
             voiceover.onended = null;
           }
+          // Stop cloned voiceover if exists
+          if (voiceoverClone && voiceoverClone !== voiceover) {
+            voiceoverClone.pause();
+            voiceoverClone.currentTime = 0;
+            voiceoverClone.onended = null;
+          }
+          // Stop TTS audio
           if (ttsAudio) { 
             ttsAudio.pause(); 
             ttsAudio.currentTime = 0;
             ttsAudio.onended = null;
           }
+          // Stop original background music
           if (bgMusic) { 
             bgMusic.pause(); 
             bgMusic.currentTime = 0; 
           }
+          // Stop cloned music if exists
+          if (musicClone && musicClone !== bgMusic) {
+            musicClone.pause();
+            musicClone.currentTime = 0;
+          }
         } catch(e) {
           console.error('Error stopping audio:', e);
         }
+        
+        // Reset active states
+        voiceoverActive = false;
+        ttsActive = false;
+        musicActive = false;
       }
       
       // Audio options dialog
@@ -1609,7 +1631,7 @@ function generateScript(config: PopoutConfig): string {
         if (useVoiceover && voiceover && voiceover.src && !useTTS) {
           try {
             // Create a fresh audio element to avoid "already connected" errors
-            var voiceoverClone = new Audio(voiceover.src);
+            voiceoverClone = new Audio(voiceover.src);
             voiceoverClone.crossOrigin = 'anonymous';
             voiceoverClone.volume = 1.0;
             
@@ -1620,8 +1642,7 @@ function generateScript(config: PopoutConfig): string {
             voiceoverGain.connect(destination);
             voiceoverGain.connect(audioContext.destination); // Also play to speakers
             
-            // Replace the global voiceover reference with the clone
-            voiceover = voiceoverClone;
+            // Keep original voiceover for dropdown reference, use clone for playback
             console.log('🎤 Voiceover audio connected to recording');
           } catch(e) {
             console.error('Voiceover source error:', e);
@@ -1649,7 +1670,7 @@ function generateScript(config: PopoutConfig): string {
         if (useMusic && bgMusic && bgMusic.src) {
           try {
             // Create a fresh audio element to avoid "already connected" errors
-            var musicClone = new Audio(bgMusic.src);
+            musicClone = new Audio(bgMusic.src);
             musicClone.crossOrigin = 'anonymous';
             musicClone.volume = 0.3;
             musicClone.loop = bgMusic.loop;
@@ -1661,8 +1682,7 @@ function generateScript(config: PopoutConfig): string {
             musicGain.connect(destination);
             musicAudioSource.connect(audioContext.destination); // Also play to speakers
             
-            // Replace the global bgMusic reference with the clone
-            bgMusic = musicClone;
+            // Keep original bgMusic for dropdown reference, use clone for playback
             console.log('🎵 Music audio connected to recording');
           } catch(e) {
             console.error('Music source error:', e);
@@ -1696,10 +1716,18 @@ function generateScript(config: PopoutConfig): string {
           // Stop all audio completely and remove event listeners
           stopAllAudio();
           
-          // Reset audio sources and TTS for next recording
+          // Clear progress interval
+          if (audioProgressInterval) {
+            clearInterval(audioProgressInterval);
+            audioProgressInterval = null;
+          }
+          
+          // Reset audio sources, clones, and TTS for next recording
           voiceoverAudioSource = null;
           ttsAudioSource = null;
           musicAudioSource = null;
+          voiceoverClone = null;
+          musicClone = null;
           ttsAudio = null; // Clear TTS so a fresh one is generated for next recording
           audioSourcesConnected = false;
           
@@ -1814,21 +1842,21 @@ function generateScript(config: PopoutConfig): string {
         drawFrame();
         
         // Play audio - IMPORTANT: Only play ONE voiceover source to avoid overlap
-        // If TTS is enabled, use that as primary voice. Otherwise use voiceover audio.
+        // If TTS is enabled, use that as primary voice. Otherwise use voiceover audio clone.
         if (useTTS && ttsAudio) {
           ttsAudio.play().catch(console.error);
           // If user also selected voiceover, DON'T play it - TTS takes priority
           console.log('🎤 Playing TTS audio (voiceover disabled to prevent overlap)');
-        } else if (useVoiceover && voiceover && voiceover.src) {
-          voiceover.play().catch(console.error);
-          console.log('🎤 Playing voiceover audio');
+        } else if (useVoiceover && voiceoverClone) {
+          voiceoverClone.play().catch(console.error);
+          console.log('🎤 Playing voiceover audio (clone)');
         }
         
-        // Background music is separate and can play alongside voice
-        if (useMusic && bgMusic && bgMusic.src) {
-          bgMusic.volume = 0.3;
-          bgMusic.play().catch(console.error);
-          console.log('🎵 Playing background music');
+        // Background music is separate and can play alongside voice - use clone
+        if (useMusic && musicClone) {
+          musicClone.volume = 0.3;
+          musicClone.play().catch(console.error);
+          console.log('🎵 Playing background music (clone)');
         }
         
         // Auto-scroll
@@ -1882,13 +1910,22 @@ function generateScript(config: PopoutConfig): string {
       
       // Update progress bars and status
       function updateAudioProgress() {
-        setInterval(function() {
-          // Update voiceover
-          if (voiceoverActive && voiceover) {
-            if (voiceover.duration) {
-              document.getElementById('voProgress').style.width = (voiceover.currentTime / voiceover.duration * 100) + '%';
+        // Clear any existing interval to prevent duplicates
+        if (audioProgressInterval) {
+          clearInterval(audioProgressInterval);
+        }
+        
+        audioProgressInterval = setInterval(function() {
+          // Only update if recording is active
+          if (!isRecording) return;
+          
+          // Update voiceover - use clone if available
+          var voAudio = voiceoverClone || voiceover;
+          if (voiceoverActive && voAudio) {
+            if (voAudio.duration) {
+              document.getElementById('voProgress').style.width = (voAudio.currentTime / voAudio.duration * 100) + '%';
             }
-            updateTrackStatus('voiceoverControls', voiceover);
+            updateTrackStatus('voiceoverControls', voAudio);
           }
           // Update TTS
           if (ttsActive && ttsAudio) {
@@ -1897,12 +1934,13 @@ function generateScript(config: PopoutConfig): string {
             }
             updateTrackStatus('ttsControls', ttsAudio);
           }
-          // Update music
-          if (musicActive && bgMusic) {
-            if (bgMusic.duration) {
-              document.getElementById('musicProgress').style.width = (bgMusic.currentTime / bgMusic.duration * 100) + '%';
+          // Update music - use clone if available
+          var musicAudio = musicClone || bgMusic;
+          if (musicActive && musicAudio) {
+            if (musicAudio.duration) {
+              document.getElementById('musicProgress').style.width = (musicAudio.currentTime / musicAudio.duration * 100) + '%';
             }
-            updateTrackStatus('musicControls', bgMusic);
+            updateTrackStatus('musicControls', musicAudio);
           }
         }, 100);
       }
@@ -1925,32 +1963,36 @@ function generateScript(config: PopoutConfig): string {
         }
       }
       
-      // Audio controls with visual feedback - with proper null checks and status updates
+      // Audio controls with visual feedback - use clones when available
       document.getElementById('voRewindBtn').onclick = function() { 
-        if (voiceover && voiceover.src) voiceover.currentTime = Math.max(0, voiceover.currentTime - 5); 
+        var vo = voiceoverClone || voiceover;
+        if (vo && vo.src) vo.currentTime = Math.max(0, vo.currentTime - 5); 
       };
       document.getElementById('voPlayPauseBtn').onclick = function() {
-        if (!voiceover || !voiceover.src) {
+        var vo = voiceoverClone || voiceover;
+        if (!vo || !vo.src) {
           console.log('⚠️ No voiceover loaded');
           return;
         }
-        if (voiceover.paused) { 
-          voiceover.play().catch(function(e) { console.error('Voiceover play error:', e); }); 
+        if (vo.paused) { 
+          vo.play().catch(function(e) { console.error('Voiceover play error:', e); }); 
           this.textContent = '⏸️'; 
         } else { 
-          voiceover.pause(); 
+          vo.pause(); 
           this.textContent = '▶️'; 
         }
       };
       document.getElementById('voStopBtn').onclick = function() { 
-        if (voiceover && voiceover.src) { 
-          voiceover.pause(); 
-          voiceover.currentTime = 0; 
+        var vo = voiceoverClone || voiceover;
+        if (vo && vo.src) { 
+          vo.pause(); 
+          vo.currentTime = 0; 
           document.getElementById('voPlayPauseBtn').textContent = '▶️';
         }
       };
       document.getElementById('voForwardBtn').onclick = function() { 
-        if (voiceover && voiceover.src) voiceover.currentTime = Math.min(voiceover.duration || 0, voiceover.currentTime + 5); 
+        var vo = voiceoverClone || voiceover;
+        if (vo && vo.src) vo.currentTime = Math.min(vo.duration || 0, vo.currentTime + 5); 
       };
       
       document.getElementById('ttsRewindBtn').onclick = function() { 
@@ -1981,35 +2023,45 @@ function generateScript(config: PopoutConfig): string {
       };
       
       document.getElementById('musicRewindBtn').onclick = function() { 
-        if (bgMusic && bgMusic.src) bgMusic.currentTime = Math.max(0, bgMusic.currentTime - 5); 
+        var music = musicClone || bgMusic;
+        if (music && music.src) music.currentTime = Math.max(0, music.currentTime - 5); 
       };
       document.getElementById('musicPlayPauseBtn').onclick = function() {
-        if (!bgMusic || !bgMusic.src) {
+        var music = musicClone || bgMusic;
+        if (!music || !music.src) {
           console.log('⚠️ No music loaded');
           return;
         }
-        if (bgMusic.paused) { 
-          bgMusic.play().catch(function(e) { console.error('Music play error:', e); }); 
+        if (music.paused) { 
+          music.play().catch(function(e) { console.error('Music play error:', e); }); 
           this.textContent = '⏸️'; 
         } else { 
-          bgMusic.pause(); 
+          music.pause(); 
           this.textContent = '▶️'; 
         }
       };
       document.getElementById('musicStopBtn').onclick = function() { 
-        if (bgMusic && bgMusic.src) { 
-          bgMusic.pause(); 
-          bgMusic.currentTime = 0; 
+        var music = musicClone || bgMusic;
+        if (music && music.src) { 
+          music.pause(); 
+          music.currentTime = 0; 
           document.getElementById('musicPlayPauseBtn').textContent = '▶️';
         }
       };
-      document.getElementById('musicVolumeDownBtn').onclick = function() { if (bgMusic) bgMusic.volume = Math.max(0, bgMusic.volume - 0.1); };
-      document.getElementById('musicVolumeUpBtn').onclick = function() { if (bgMusic) bgMusic.volume = Math.min(1, bgMusic.volume + 0.1); };
+      document.getElementById('musicVolumeDownBtn').onclick = function() { 
+        var music = musicClone || bgMusic;
+        if (music) music.volume = Math.max(0, music.volume - 0.1); 
+      };
+      document.getElementById('musicVolumeUpBtn').onclick = function() { 
+        var music = musicClone || bgMusic;
+        if (music) music.volume = Math.min(1, music.volume + 0.1); 
+      };
       document.getElementById('musicLoopBtn').onclick = function() {
-        if (bgMusic) {
-          bgMusic.loop = !bgMusic.loop;
+        var music = musicClone || bgMusic;
+        if (music) {
+          music.loop = !music.loop;
           var loopStatus = document.getElementById('musicLoopStatus');
-          if (bgMusic.loop) {
+          if (music.loop) {
             loopStatus.textContent = '🔁 Loop: ON';
             this.classList.add('active');
           } else {
@@ -2022,32 +2074,58 @@ function generateScript(config: PopoutConfig): string {
       };
       
       document.getElementById('pauseAllAudioBtn').onclick = function() {
-        if (voiceover && voiceover.src) { voiceover.pause(); document.getElementById('voPlayPauseBtn').textContent = '▶️'; }
+        var vo = voiceoverClone || voiceover;
+        var music = musicClone || bgMusic;
+        if (vo && vo.src) { vo.pause(); document.getElementById('voPlayPauseBtn').textContent = '▶️'; }
         if (ttsAudio) { ttsAudio.pause(); document.getElementById('ttsPlayPauseBtn').textContent = '▶️'; }
-        if (bgMusic && bgMusic.src) { bgMusic.pause(); document.getElementById('musicPlayPauseBtn').textContent = '▶️'; }
+        if (music && music.src) { music.pause(); document.getElementById('musicPlayPauseBtn').textContent = '▶️'; }
       };
       document.getElementById('resumeAllAudioBtn').onclick = function() {
-        if (voiceoverActive && voiceover && voiceover.src) { voiceover.play().catch(console.error); document.getElementById('voPlayPauseBtn').textContent = '⏸️'; }
-        if (ttsActive && ttsAudio) { ttsAudio.play().catch(console.error); document.getElementById('ttsPlayPauseBtn').textContent = '⏸️'; }
-        if (musicActive && bgMusic && bgMusic.src) { bgMusic.play().catch(console.error); document.getElementById('musicPlayPauseBtn').textContent = '⏸️'; }
+        var vo = voiceoverClone || voiceover;
+        var music = musicClone || bgMusic;
+        // Only play ONE voice source - TTS takes priority
+        if (ttsActive && ttsAudio) { 
+          ttsAudio.play().catch(console.error); 
+          document.getElementById('ttsPlayPauseBtn').textContent = '⏸️'; 
+        } else if (voiceoverActive && vo && vo.src) { 
+          vo.play().catch(console.error); 
+          document.getElementById('voPlayPauseBtn').textContent = '⏸️'; 
+        }
+        if (musicActive && music && music.src) { music.play().catch(console.error); document.getElementById('musicPlayPauseBtn').textContent = '⏸️'; }
       };
       document.getElementById('restartAllAudioBtn').onclick = function() {
-        if (voiceover && voiceover.src) { voiceover.currentTime = 0; voiceover.play().catch(console.error); document.getElementById('voPlayPauseBtn').textContent = '⏸️'; }
-        if (ttsAudio) { ttsAudio.currentTime = 0; ttsAudio.play().catch(console.error); document.getElementById('ttsPlayPauseBtn').textContent = '⏸️'; }
-        if (bgMusic && bgMusic.src) { bgMusic.currentTime = 0; bgMusic.play().catch(console.error); document.getElementById('musicPlayPauseBtn').textContent = '⏸️'; }
+        var vo = voiceoverClone || voiceover;
+        var music = musicClone || bgMusic;
+        // Only restart ONE voice source - TTS takes priority
+        if (ttsActive && ttsAudio) { 
+          ttsAudio.currentTime = 0; 
+          ttsAudio.play().catch(console.error); 
+          document.getElementById('ttsPlayPauseBtn').textContent = '⏸️'; 
+        } else if (voiceoverActive && vo && vo.src) { 
+          vo.currentTime = 0; 
+          vo.play().catch(console.error); 
+          document.getElementById('voPlayPauseBtn').textContent = '⏸️'; 
+        }
+        if (musicActive && music && music.src) { music.currentTime = 0; music.play().catch(console.error); document.getElementById('musicPlayPauseBtn').textContent = '⏸️'; }
       };
       
       // Pause/Resume recording - ALSO pause/resume audio
       pauseBtn.onclick = function() {
+        var vo = voiceoverClone || voiceover;
+        var music = musicClone || bgMusic;
+        
         if (isPaused) {
           // Resume recording
           if (mediaRecorder && mediaRecorder.state === 'paused') {
             mediaRecorder.resume();
           }
-          // Resume audio
-          if (ttsActive && ttsAudio) { ttsAudio.play().catch(console.error); }
-          if (voiceoverActive && voiceover && voiceover.src) { voiceover.play().catch(console.error); }
-          if (musicActive && bgMusic && bgMusic.src) { bgMusic.play().catch(console.error); }
+          // Resume audio - Only ONE voice source (TTS takes priority)
+          if (ttsActive && ttsAudio) { 
+            ttsAudio.play().catch(console.error); 
+          } else if (voiceoverActive && vo && vo.src) { 
+            vo.play().catch(console.error); 
+          }
+          if (musicActive && music && music.src) { music.play().catch(console.error); }
           
           pauseBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>Pause';
           isPaused = false;
@@ -2058,8 +2136,10 @@ function generateScript(config: PopoutConfig): string {
           }
           // Pause all audio
           if (ttsAudio) { ttsAudio.pause(); }
-          if (voiceover) { voiceover.pause(); }
-          if (bgMusic) { bgMusic.pause(); }
+          if (vo) { vo.pause(); }
+          if (voiceoverClone) { voiceoverClone.pause(); }
+          if (music) { music.pause(); }
+          if (musicClone) { musicClone.pause(); }
           
           pauseBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>Resume';
           isPaused = true;
@@ -2075,9 +2155,10 @@ function generateScript(config: PopoutConfig): string {
         // Stop all audio immediately
         stopAllAudio();
         
-        // Clear intervals
+        // Clear all intervals
         if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
         if (scrollInterval) { clearInterval(scrollInterval); scrollInterval = null; }
+        if (audioProgressInterval) { clearInterval(audioProgressInterval); audioProgressInterval = null; }
         
         // Stop the recorder
         if (mediaRecorder && mediaRecorder.state !== 'inactive') {
@@ -2093,6 +2174,10 @@ function generateScript(config: PopoutConfig): string {
         if (displayStream) {
           displayStream.getTracks().forEach(function(t) { t.stop(); });
         }
+        
+        // Reset clones for next recording
+        voiceoverClone = null;
+        musicClone = null;
       };
       
       // Save recording to Supabase storage and database
