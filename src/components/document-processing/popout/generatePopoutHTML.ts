@@ -1840,6 +1840,83 @@ function generateScript(config: PopoutConfig): string {
       var speedPreset20 = document.getElementById('speedPreset20');
       var readingCursor = document.getElementById('readingCursor');
       
+      // =====================================================
+      // Custom Modal Helper Functions (to keep modals within popout)
+      // =====================================================
+      
+      function showCustomAlert(message, title) {
+        title = title || 'Notice';
+        var modalId = 'customModal-' + Date.now();
+        var modalHtml = '<div id="' + modalId + '" style="position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:9999;">';
+        modalHtml += '<div style="background:#1a1a2e;padding:24px;border-radius:12px;max-width:400px;width:90%;box-shadow:0 20px 40px rgba(0,0,0,0.5);">';
+        modalHtml += '<h3 style="margin:0 0 16px 0;font-size:18px;color:#fff;">' + title + '</h3>';
+        modalHtml += '<p style="margin:0 0 20px 0;color:#a0a0b0;font-size:14px;line-height:1.5;white-space:pre-wrap;">' + message + '</p>';
+        modalHtml += '<button onclick="document.getElementById(\\'' + modalId + '\\').remove()" style="width:100%;padding:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;">OK</button>';
+        modalHtml += '</div></div>';
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+      }
+      
+      function showCustomPrompt(message, title, callback) {
+        title = title || 'Input Required';
+        var modalId = 'customPromptModal-' + Date.now();
+        var inputId = 'customPromptInput-' + Date.now();
+        var modalHtml = '<div id="' + modalId + '" style="position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:9999;">';
+        modalHtml += '<div style="background:#1a1a2e;padding:24px;border-radius:12px;max-width:450px;width:90%;box-shadow:0 20px 40px rgba(0,0,0,0.5);">';
+        modalHtml += '<h3 style="margin:0 0 16px 0;font-size:18px;color:#fff;">' + title + '</h3>';
+        modalHtml += '<p style="margin:0 0 16px 0;color:#a0a0b0;font-size:13px;line-height:1.5;white-space:pre-wrap;">' + message + '</p>';
+        modalHtml += '<input id="' + inputId + '" type="text" style="width:100%;padding:12px;background:#2a2a3e;border:1px solid #3a3a4e;border-radius:8px;color:#fff;font-size:14px;margin-bottom:16px;box-sizing:border-box;" placeholder="Enter value...">';
+        modalHtml += '<div style="display:flex;gap:10px;">';
+        modalHtml += '<button id="' + modalId + '-cancel" style="flex:1;padding:12px;background:#3a3a4e;color:#fff;border:none;border-radius:8px;cursor:pointer;">Cancel</button>';
+        modalHtml += '<button id="' + modalId + '-confirm" style="flex:1;padding:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;">Confirm</button>';
+        modalHtml += '</div></div></div>';
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        var modal = document.getElementById(modalId);
+        var input = document.getElementById(inputId);
+        input.focus();
+        
+        document.getElementById(modalId + '-cancel').onclick = function() {
+          modal.remove();
+          if (callback) callback(null);
+        };
+        document.getElementById(modalId + '-confirm').onclick = function() {
+          var value = input.value;
+          modal.remove();
+          if (callback) callback(value);
+        };
+        input.onkeydown = function(e) {
+          if (e.key === 'Enter') {
+            var value = input.value;
+            modal.remove();
+            if (callback) callback(value);
+          }
+        };
+      }
+      
+      function showCustomConfirm(message, title, onConfirm, onCancel) {
+        title = title || 'Confirm';
+        var modalId = 'customConfirmModal-' + Date.now();
+        var modalHtml = '<div id="' + modalId + '" style="position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:9999;">';
+        modalHtml += '<div style="background:#1a1a2e;padding:24px;border-radius:12px;max-width:400px;width:90%;box-shadow:0 20px 40px rgba(0,0,0,0.5);">';
+        modalHtml += '<h3 style="margin:0 0 16px 0;font-size:18px;color:#fff;">' + title + '</h3>';
+        modalHtml += '<p style="margin:0 0 20px 0;color:#a0a0b0;font-size:14px;line-height:1.5;white-space:pre-wrap;">' + message + '</p>';
+        modalHtml += '<div style="display:flex;gap:10px;">';
+        modalHtml += '<button id="' + modalId + '-cancel" style="flex:1;padding:12px;background:#3a3a4e;color:#fff;border:none;border-radius:8px;cursor:pointer;">Cancel</button>';
+        modalHtml += '<button id="' + modalId + '-confirm" style="flex:1;padding:12px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;">Confirm</button>';
+        modalHtml += '</div></div></div>';
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        var modal = document.getElementById(modalId);
+        document.getElementById(modalId + '-cancel').onclick = function() {
+          modal.remove();
+          if (onCancel) onCancel();
+        };
+        document.getElementById(modalId + '-confirm').onclick = function() {
+          modal.remove();
+          if (onConfirm) onConfirm();
+        };
+      }
+      
       // PIP overlay elements
       var pipOverlay = document.getElementById('pipOverlay');
       var pipVideo = document.getElementById('pipVideo');
@@ -2904,7 +2981,7 @@ function generateScript(config: PopoutConfig): string {
           }
           
           if (changesApplied === 0) {
-            alert('No changes were accepted. Please accept at least one suggestion.');
+            showCustomAlert('No changes were accepted. Please accept at least one suggestion.', 'No Changes Applied');
             return;
           }
           
@@ -3047,7 +3124,7 @@ function generateScript(config: PopoutConfig): string {
       if (downloadEnhancedTranscriptBtn) {
         downloadEnhancedTranscriptBtn.onclick = function() {
           if (!window.enhancedScriptContent) {
-            alert('Please apply changes first to generate enhanced content.');
+            showCustomAlert('Please apply changes first to generate enhanced content.', 'Apply Changes First');
             return;
           }
           
@@ -3070,7 +3147,7 @@ function generateScript(config: PopoutConfig): string {
         downloadOriginalTranscriptBtn.onclick = function() {
           var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
           if (!selectedScript) {
-            alert('No script selected.');
+            showCustomAlert('No script selected.', 'Script Required');
             return;
           }
           
@@ -3092,7 +3169,7 @@ function generateScript(config: PopoutConfig): string {
       if (downloadEnhancedAudioBtn) {
         downloadEnhancedAudioBtn.onclick = async function() {
           if (!window.enhancedScriptContent) {
-            alert('Please apply changes first to generate enhanced content.');
+            showCustomAlert('Please apply changes first to generate enhanced content.', 'Apply Changes First');
             return;
           }
           
@@ -3106,7 +3183,7 @@ function generateScript(config: PopoutConfig): string {
             .trim();
           
           if (!ttsText || ttsText.length < 5) {
-            alert('Enhanced script content is too short for audio generation.');
+            showCustomAlert('Enhanced script content is too short for audio generation.', 'Content Too Short');
             return;
           }
           
@@ -3361,7 +3438,7 @@ function generateScript(config: PopoutConfig): string {
           marker.onclick = function() {
             var idx = parseInt(marker.getAttribute('data-index'));
             var pp = sortedPauses[idx];
-            alert('Pause Point #' + (idx + 1) + '\\n\\nReason: ' + pp.reason + '\\nSuggested Duration: ' + pp.suggestedDuration + ' seconds');
+            showCustomAlert('Reason: ' + pp.reason + '\\n\\nSuggested Duration: ' + pp.suggestedDuration + ' seconds', '⏸️ Pause Point #' + (idx + 1));
           };
         });
       }
@@ -3422,13 +3499,14 @@ function generateScript(config: PopoutConfig): string {
             return (idx + 1) + '. ' + seg.type.toUpperCase() + ': ' + seg.text.substring(0, 40) + '...';
           }).join('\\n');
           
-          var choice = prompt('Jump to segment:\\n' + options + '\\n\\nEnter segment number:');
-          if (choice) {
-            var idx = parseInt(choice) - 1;
-            if (!isNaN(idx) && idx >= 0 && idx < scriptAnalysis.segments.length) {
-              setCurrentSegment(idx);
+          showCustomPrompt(options + '\\n\\nEnter segment number:', '🎯 Jump to Segment', function(choice) {
+            if (choice) {
+              var idx = parseInt(choice) - 1;
+              if (!isNaN(idx) && idx >= 0 && idx < scriptAnalysis.segments.length) {
+                setCurrentSegment(idx);
+              }
             }
-          }
+          });
         };
       }
       
@@ -3905,7 +3983,7 @@ function generateScript(config: PopoutConfig): string {
           status.textContent = 'Ready';
           status.className = 'status ready';
           if (e.name !== 'NotAllowedError') {
-            alert('Screen share error: ' + e.message);
+            showCustomAlert('Screen share error: ' + e.message, 'Screen Share Error');
           }
         });
       };
