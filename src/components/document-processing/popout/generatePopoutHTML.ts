@@ -795,6 +795,8 @@ function generateScript(config: PopoutConfig): string {
       var chunks = [];
       var stream = null;
       var startTime = 0;
+      var pausedTime = 0; // Track total paused time
+      var pauseStartTime = 0; // Track when pause started
       var timerInterval = null;
       var isPaused = false;
       var countdownInterval = null;
@@ -1260,6 +1262,20 @@ function generateScript(config: PopoutConfig): string {
           console.log('🖥️ Screen shared, has system audio:', hasSystemAudio);
           displayStream = displayStr;
           window.displayStream = displayStr;
+          
+          // Handle user clicking "Stop Sharing" in browser UI
+          displayStr.getVideoTracks().forEach(function(track) {
+            track.onended = function() {
+              console.log('🛑 Screen share stopped by user');
+              if (isRecording) {
+                // Auto-stop recording when screen share ends
+                stopBtn.click();
+              } else if (isCountingDown) {
+                // Cancel countdown if screen share ends
+                cancelCountdown.click();
+              }
+            };
+          });
           
           preview.srcObject = displayStream;
           status.textContent = 'Screen selected';
@@ -1849,9 +1865,14 @@ function generateScript(config: PopoutConfig): string {
         startTime = Date.now();
         console.log('🎬 MediaRecorder started with 1s timeslice');
         
+        // Reset pause tracking
+        pausedTime = 0;
+        pauseStartTime = 0;
+        
         timerInterval = setInterval(function() {
           if (!isPaused) {
-            var elapsed = Math.floor((Date.now() - startTime) / 1000);
+            // Subtract paused time from elapsed calculation
+            var elapsed = Math.floor((Date.now() - startTime - pausedTime) / 1000);
             timer.textContent = formatTime(elapsed);
           }
         }, 1000);
@@ -2220,6 +2241,12 @@ function generateScript(config: PopoutConfig): string {
           }
           if (musicActive && music && music.src) { music.play().catch(console.error); }
           
+          // Track paused duration when resuming
+          if (pauseStartTime > 0) {
+            pausedTime += Date.now() - pauseStartTime;
+            pauseStartTime = 0;
+          }
+          
           pauseBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>Pause';
           isPaused = false;
         } else {
@@ -2233,6 +2260,9 @@ function generateScript(config: PopoutConfig): string {
           if (voiceoverClone) { voiceoverClone.pause(); }
           if (music) { music.pause(); }
           if (musicClone) { musicClone.pause(); }
+          
+          // Track when pause started
+          pauseStartTime = Date.now();
           
           pauseBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>Resume';
           isPaused = true;
