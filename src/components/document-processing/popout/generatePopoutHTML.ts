@@ -807,6 +807,11 @@ function generateScript(config: PopoutConfig): string {
       var voiceoverActive = false;
       var ttsActive = false;
       var musicActive = false;
+      var isRecording = false;
+      var isCountingDown = false;
+      var voiceoverAudioSource = null;
+      var ttsAudioSource = null;
+      var musicAudioSource = null;
       
       // DOM Elements
       var preview = document.getElementById('preview');
@@ -1211,6 +1216,15 @@ function generateScript(config: PopoutConfig): string {
       
       // Start recording button
       startBtn.onclick = function() {
+        // Prevent multiple clicks
+        if (isRecording || isCountingDown) {
+          console.log('⚠️ Already recording or counting down, ignoring click');
+          return;
+        }
+        
+        // Stop any playing audio first
+        stopAllAudio();
+        
         status.textContent = 'Select screen...';
         status.className = 'status countdown';
         
@@ -1235,6 +1249,14 @@ function generateScript(config: PopoutConfig): string {
           }
         });
       };
+      
+      // Stop all audio helper
+      function stopAllAudio() {
+        console.log('🔇 Stopping all audio');
+        if (voiceover) { voiceover.pause(); voiceover.currentTime = 0; }
+        if (ttsAudio) { ttsAudio.pause(); ttsAudio.currentTime = 0; }
+        if (bgMusic) { bgMusic.pause(); bgMusic.currentTime = 0; }
+      }
       
       // Audio options dialog
       function showAudioOptionsDialog() {
@@ -1422,16 +1444,26 @@ function generateScript(config: PopoutConfig): string {
       
       // Start countdown after screen share is ready
       function startCountdown(useVoiceover, useMusic, useTTS) {
+        if (isCountingDown || isRecording) {
+          console.log('⚠️ Already counting down or recording');
+          return;
+        }
+        
+        isCountingDown = true;
         countdownValue = 5;
         countdownNumber.textContent = countdownValue;
         countdownOverlay.classList.remove('hidden');
         status.textContent = 'Countdown...';
         status.className = 'status countdown';
         
+        // Clear any previous countdown
+        if (countdownInterval) clearInterval(countdownInterval);
+        
         countdownInterval = setInterval(function() {
           countdownValue--;
           if (countdownValue <= 0) {
             clearInterval(countdownInterval);
+            countdownInterval = null;
             countdownOverlay.classList.add('hidden');
             actuallyStartRecording(useVoiceover, useMusic, useTTS);
           } else {
@@ -1441,7 +1473,11 @@ function generateScript(config: PopoutConfig): string {
       }
       
       cancelCountdown.onclick = function() {
-        clearInterval(countdownInterval);
+        isCountingDown = false;
+        if (countdownInterval) {
+          clearInterval(countdownInterval);
+          countdownInterval = null;
+        }
         countdownOverlay.classList.add('hidden');
         if (displayStream) {
           displayStream.getTracks().forEach(function(t) { t.stop(); });
@@ -1494,6 +1530,9 @@ function generateScript(config: PopoutConfig): string {
       
       // Start compositing and recording
       function startCompositing(useVoiceover, useMusic, useTTS) {
+        isRecording = true;
+        isCountingDown = false;
+        
         var canvasStream = canvas.captureStream(30);
         
         // Mix audio from all sources
@@ -1510,6 +1549,7 @@ function generateScript(config: PopoutConfig): string {
             micGain.gain.value = 1.0;
             micSource.connect(micGain);
             micGain.connect(destination);
+            console.log('🎙️ Mic audio connected');
           }
         }
         
@@ -1523,6 +1563,52 @@ function generateScript(config: PopoutConfig): string {
             sysGain.gain.value = 0.5;
             sysSource.connect(sysGain);
             sysGain.connect(destination);
+            console.log('🖥️ System audio connected');
+          }
+        }
+        
+        // Connect voiceover audio to destination (if selected and has a source)
+        if (useVoiceover && voiceover && voiceover.src && !useTTS) {
+          try {
+            voiceoverAudioSource = audioContext.createMediaElementSource(voiceover);
+            var voiceoverGain = audioContext.createGain();
+            voiceoverGain.gain.value = 1.0;
+            voiceoverAudioSource.connect(voiceoverGain);
+            voiceoverGain.connect(destination);
+            voiceoverGain.connect(audioContext.destination); // Also play to speakers
+            console.log('🎤 Voiceover audio connected to recording');
+          } catch(e) {
+            console.error('Voiceover source error:', e);
+          }
+        }
+        
+        // Connect TTS audio to destination
+        if (useTTS && ttsAudio) {
+          try {
+            ttsAudioSource = audioContext.createMediaElementSource(ttsAudio);
+            var ttsGain = audioContext.createGain();
+            ttsGain.gain.value = 1.0;
+            ttsAudioSource.connect(ttsGain);
+            ttsGain.connect(destination);
+            ttsGain.connect(audioContext.destination); // Also play to speakers
+            console.log('🗣️ TTS audio connected to recording');
+          } catch(e) {
+            console.error('TTS source error:', e);
+          }
+        }
+        
+        // Connect background music to destination
+        if (useMusic && bgMusic && bgMusic.src) {
+          try {
+            musicAudioSource = audioContext.createMediaElementSource(bgMusic);
+            var musicGain = audioContext.createGain();
+            musicGain.gain.value = 0.3;
+            musicAudioSource.connect(musicGain);
+            musicGain.connect(destination);
+            musicGain.connect(audioContext.destination); // Also play to speakers
+            console.log('🎵 Music audio connected to recording');
+          } catch(e) {
+            console.error('Music source error:', e);
           }
         }
         
@@ -1540,11 +1626,28 @@ function generateScript(config: PopoutConfig): string {
         };
         
         mediaRecorder.onstop = function() {
-          clearInterval(timerInterval);
-          clearInterval(scrollInterval);
-          if (ttsAudio) ttsAudio.pause();
-          if (voiceover) voiceover.pause();
-          if (bgMusic) bgMusic.pause();
+          console.log('🛑 Recording stopped');
+          isRecording = false;
+          isCountingDown = false;
+          
+          // Clear all intervals
+          if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+          if (scrollInterval) { clearInterval(scrollInterval); scrollInterval = null; }
+          
+          // Stop all audio completely
+          if (ttsAudio) { ttsAudio.pause(); ttsAudio.currentTime = 0; }
+          if (voiceover) { voiceover.pause(); voiceover.currentTime = 0; }
+          if (bgMusic) { bgMusic.pause(); bgMusic.currentTime = 0; }
+          
+          // Close audio context to fully disconnect sources
+          if (audioContext && audioContext.state !== 'closed') {
+            audioContext.close().catch(console.error);
+          }
+          
+          // Stop display stream tracks
+          if (displayStream) {
+            displayStream.getTracks().forEach(function(t) { t.stop(); });
+          }
           
           recIndicator.style.display = 'none';
           audioControlPanel.classList.remove('visible');
@@ -1552,10 +1655,12 @@ function generateScript(config: PopoutConfig): string {
           pauseBtn.style.display = 'none';
           stopBtn.style.display = 'none';
           videoNameInput.style.display = '';
+          videoNameInput.value = 'recording_' + new Date().toISOString().slice(0, 10);
+          videoNameInput.focus();
           saveBtn.style.display = '';
           resetBtn.style.display = '';
           
-          status.textContent = 'Recording Complete';
+          status.textContent = 'Recording Complete - Enter name to save';
           status.className = 'status ready';
           
           var blob = new Blob(chunks, { type: 'video/webm' });
@@ -1844,8 +1949,20 @@ function generateScript(config: PopoutConfig): string {
       
       // Stop recording
       stopBtn.onclick = function() {
-        mediaRecorder.stop();
-        stream.getTracks().forEach(function(t) { t.stop(); });
+        console.log('🛑 Stop button clicked');
+        
+        // Stop all audio immediately
+        stopAllAudio();
+        
+        // Stop the recorder
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+        }
+        
+        // Stop camera stream
+        if (stream) {
+          stream.getTracks().forEach(function(t) { t.stop(); });
+        }
       };
       
       // Save recording to Supabase storage and database
