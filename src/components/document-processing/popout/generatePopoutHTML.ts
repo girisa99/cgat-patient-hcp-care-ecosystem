@@ -1677,8 +1677,11 @@ function generateScript(config: PopoutConfig): string {
     (function mainScript() {
       'use strict';
       console.log('🚀 Main script starting...');
+      window.debugPopout && window.debugPopout('Main script IIFE entered');
       
       try {
+        window.debugPopout && window.debugPopout('Setting up decode function...');
+        
         // Decode data from base64 (safe encoding to avoid template literal issues)
         function decodeData(encoded) {
           try {
@@ -1689,6 +1692,8 @@ function generateScript(config: PopoutConfig): string {
             return [];
           }
         }
+        
+        window.debugPopout && window.debugPopout('Setting up helper functions...');
         
         // HTML escape helper - avoids regex literals that break script parsing
         // The issue is /</g pattern looks like </script> to HTML parser
@@ -1711,16 +1716,21 @@ function generateScript(config: PopoutConfig): string {
           return nlToBr(escapeForHtml(str));
         }
         
+        window.debugPopout && window.debugPopout('Decoding data...');
+        
         // Data from parent (base64 encoded for safety)
         var scripts = decodeData('${scriptsEncoded}');
         var voiceovers = decodeData('${voiceoversEncoded}');
         var musicList = decodeData('${musicEncoded}');
         
+        window.debugPopout && window.debugPopout('Data decoded: ' + scripts.length + ' scripts, ' + voiceovers.length + ' voiceovers, ' + musicList.length + ' music');
         console.log('📋 Data loaded:', { scripts: scripts.length, voiceovers: voiceovers.length, music: musicList.length });
         
         if (scripts.length === 0 && voiceovers.length === 0 && musicList.length === 0) {
           console.warn('⚠️ All data arrays are empty - may indicate decoding issue');
         }
+        
+        window.debugPopout && window.debugPopout('Initializing variables...');
       
       var mediaRecorder = null;
       var chunks = [];
