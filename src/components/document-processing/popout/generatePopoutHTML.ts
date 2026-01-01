@@ -2272,12 +2272,7 @@ function generateScript(config: PopoutConfig): string {
             ctx.lineWidth = 3;
             ctx.strokeRect(pipX, pipY, pipWidth, pipHeight);
           }
-          // If neither camera nor logo - no PIP drawn (hidden)
-            // Draw border
-            ctx.strokeStyle = '#333';
-            ctx.lineWidth = 3;
-            ctx.strokeRect(pipX, pipY, pipWidth, pipHeight);
-          }
+          // If neither camera nor logo - no PIP is drawn (hidden state)
           
           // Continue loop for recording or paused state
           animationFrameId = requestAnimationFrame(drawFrame);
