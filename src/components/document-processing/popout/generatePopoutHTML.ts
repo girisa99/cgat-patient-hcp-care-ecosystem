@@ -1649,12 +1649,26 @@ function generateScript(config: PopoutConfig): string {
       }
     })();
     
-    // Global error handler
-    window.onerror = function(msg, url, line) {
-      console.error('Script Error:', msg, 'line:', line);
+    // Global error handler with detailed logging
+    window.onerror = function(msg, url, line, col, error) {
+      console.error('🚨 Script Error:', msg, 'line:', line, 'col:', col);
+      console.error('Error details:', error);
       var s = document.getElementById('status');
-      if (s) { s.textContent = 'Script Error'; s.className = 'status error'; }
+      if (s) { s.textContent = 'Script Error: ' + String(msg).substring(0, 50); s.className = 'status error'; }
+      // Hide loading overlay if visible
+      var loading = document.getElementById('cameraLoading');
+      if (loading) loading.classList.add('hidden');
       return false;
+    };
+    
+    // Unhandled promise rejection handler
+    window.onunhandledrejection = function(event) {
+      console.error('🚨 Unhandled Promise Rejection:', event.reason);
+      var s = document.getElementById('status');
+      if (s && !s.textContent.includes('Error')) { 
+        s.textContent = 'Async Error'; 
+        s.className = 'status error'; 
+      }
     };
     
     // =====================================================
@@ -1664,23 +1678,28 @@ function generateScript(config: PopoutConfig): string {
       'use strict';
       console.log('🚀 Main script starting...');
       
-      // Decode data from base64 (safe encoding to avoid template literal issues)
-      function decodeData(encoded) {
-        try {
-          if (!encoded) return [];
-          return JSON.parse(decodeURIComponent(atob(encoded)));
-        } catch(e) {
-          console.error('Failed to decode data:', e);
-          return [];
+      try {
+        // Decode data from base64 (safe encoding to avoid template literal issues)
+        function decodeData(encoded) {
+          try {
+            if (!encoded) return [];
+            return JSON.parse(decodeURIComponent(atob(encoded)));
+          } catch(e) {
+            console.error('Failed to decode data:', e, 'encoded:', encoded ? encoded.substring(0, 50) + '...' : 'empty');
+            return [];
+          }
         }
-      }
-      
-      // Data from parent (base64 encoded for safety)
-      var scripts = decodeData('${scriptsEncoded}');
-      var voiceovers = decodeData('${voiceoversEncoded}');
-      var musicList = decodeData('${musicEncoded}');
-      
-      console.log('📋 Data loaded:', { scripts: scripts.length, voiceovers: voiceovers.length, music: musicList.length });
+        
+        // Data from parent (base64 encoded for safety)
+        var scripts = decodeData('${scriptsEncoded}');
+        var voiceovers = decodeData('${voiceoversEncoded}');
+        var musicList = decodeData('${musicEncoded}');
+        
+        console.log('📋 Data loaded:', { scripts: scripts.length, voiceovers: voiceovers.length, music: musicList.length });
+        
+        if (scripts.length === 0 && voiceovers.length === 0 && musicList.length === 0) {
+          console.warn('⚠️ All data arrays are empty - may indicate decoding issue');
+        }
       
       var mediaRecorder = null;
       var chunks = [];
@@ -3939,6 +3958,14 @@ function generateScript(config: PopoutConfig): string {
       console.log('🎬 Starting camera initialization...');
       initCamera();
       
+      // Safety timeout: If camera loading takes too long, show retry option
+      setTimeout(function() {
+        if (!cameraLoading.classList.contains('hidden')) {
+          console.log('⚠️ Camera initialization timeout - showing retry option');
+          cameraLoadingContent.innerHTML = '<p style="color:#f59e0b;font-size:16px;margin-bottom:10px;">Camera Taking Too Long</p><p style="font-size:13px;opacity:0.7;margin-bottom:15px;">The camera is taking longer than expected to initialize.</p><button onclick="initCamera()" style="padding:10px 20px;background:#3b82f6;border:none;color:white;border-radius:8px;cursor:pointer;margin-right:10px;">Retry Camera</button><button onclick="document.getElementById(\\'cameraLoading\\').classList.add(\\'hidden\\');document.getElementById(\\'status\\').textContent=\\'Ready (No Camera)\\';document.getElementById(\\'status\\').className=\\'status ready\\';" style="padding:10px 20px;background:#6b7280;border:none;color:white;border-radius:8px;cursor:pointer;">Continue Without Camera</button>';
+        }
+      }, 15000); // 15 second timeout
+      
       // Utility functions
       function formatTime(seconds) {
         var mins = Math.floor(seconds / 60);
@@ -6012,6 +6039,14 @@ function generateScript(config: PopoutConfig): string {
           captionOverlay.classList.add('hidden');
         }
       };
+      
+      } catch(mainError) {
+        console.error('🚨 Critical error in main script:', mainError);
+        var s = document.getElementById('status');
+        if (s) { s.textContent = 'Initialization Error'; s.className = 'status error'; }
+        var loading = document.getElementById('cameraLoading');
+        if (loading) loading.classList.add('hidden');
+      }
       
     })();
   `;
