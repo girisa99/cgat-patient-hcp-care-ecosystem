@@ -4117,19 +4117,29 @@ function generateScript(config: PopoutConfig): string {
             if (scriptToUse) {
               var scriptText = scriptToUse.content;
               
-              // If enhanced version selected and we have analysis, build enhanced script
-              if (useEnhancedScript && scriptAnalysis && scriptAnalysis.segments) {
-                scriptText = buildEnhancedScript(scriptAnalysis);
-                console.log('✨ Using ENHANCED script for TTS');
+              // If enhanced version selected, use the saved enhanced script with accepted changes
+              if (useEnhancedScript) {
+                // Priority: 1. User's accepted changes (window.enhancedScriptContent)
+                //           2. Build from analysis segments as fallback
+                if (window.enhancedScriptContent && window.enhancedScriptContent.trim().length > 0) {
+                  scriptText = window.enhancedScriptContent;
+                  console.log('✨ Using ENHANCED script with ACCEPTED CHANGES for TTS');
+                  console.log('📝 Enhanced content length:', scriptText.length, 'chars');
+                } else if (scriptAnalysis && scriptAnalysis.segments) {
+                  scriptText = buildEnhancedScript(scriptAnalysis);
+                  console.log('✨ Using ENHANCED script (from segments) for TTS');
+                }
                 
-                // Update teleprompter to show enhanced segments
-                if (isSegmentViewEnabled || scriptAnalysis.segments.length > 0) {
-                  isSegmentViewEnabled = true;
-                  renderSegmentView(scriptAnalysis);
+                // Update teleprompter to show enhanced content
+                if (scriptContent) {
+                  renderScriptWithWordTracking(scriptText);
                 }
               } else {
                 console.log('📄 Using ORIGINAL script for TTS');
               }
+              
+              // Store the script being used for TTS so teleprompter stays in sync
+              window.currentTTSScript = scriptText;
               
               generateTTS(scriptText, function() {
                 startCountdown(useVoiceoverOpt, useMusicOpt, useTTS);
@@ -4861,8 +4871,10 @@ function generateScript(config: PopoutConfig): string {
           }
           
           // Prepare script with word tracking for highlighting
+          // Use the exact script that was sent to TTS for perfect sync
           var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
-          var scriptText = window.enhancedScriptContent || (selectedScript ? selectedScript.content : '');
+          var scriptText = window.currentTTSScript || window.enhancedScriptContent || (selectedScript ? selectedScript.content : '');
+          console.log('📜 Teleprompter using script:', scriptText ? (scriptText.substring(0, 100) + '...') : 'none');
           if (scriptText && scriptContent) {
             renderScriptWithWordTracking(scriptText);
           }
@@ -4918,8 +4930,10 @@ function generateScript(config: PopoutConfig): string {
           }
           
           // Prepare script with word tracking for highlighting
+          // Use the exact script that matches the voiceover for sync
           var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
-          var scriptText = window.enhancedScriptContent || (selectedScript ? selectedScript.content : '');
+          var scriptText = window.currentTTSScript || window.enhancedScriptContent || (selectedScript ? selectedScript.content : '');
+          console.log('📜 Teleprompter (voiceover) using script:', scriptText ? (scriptText.substring(0, 100) + '...') : 'none');
           if (scriptText && scriptContent) {
             renderScriptWithWordTracking(scriptText);
           }
