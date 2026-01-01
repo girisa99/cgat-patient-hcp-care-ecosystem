@@ -6118,6 +6118,18 @@ function generateScript(config: PopoutConfig): string {
 }
 
 /**
+ * Escape script content for safe embedding in HTML
+ * Prevents HTML parser from interpreting </ sequences as closing tags
+ */
+function escapeScriptContent(script: string): string {
+  // Replace </ with <\/ to prevent HTML parser from seeing closing tags
+  // Also escape <!-- to prevent comment interpretation
+  return script
+    .replace(/<\//g, '<\\/')
+    .replace(/<!--/g, '<\\!--');
+}
+
+/**
  * Generate the complete HTML document for the pop-out recording studio
  */
 export function generatePopoutHTML(config: PopoutConfig): string {
@@ -6130,6 +6142,9 @@ export function generatePopoutHTML(config: PopoutConfig): string {
     voiceoversCount: config.voiceovers.length,
     musicCount: config.music.length
   });
+
+  // Generate the main script and escape it for safe embedding
+  const mainScriptContent = escapeScriptContent(generateScript(config));
 
   return `<!DOCTYPE html>
 <html>
@@ -6163,7 +6178,7 @@ export function generatePopoutHTML(config: PopoutConfig): string {
         console.error('[POPOUT ERROR]', errorMsg, error);
         if (debugLog && debugOverlay) {
           debugOverlay.style.display = 'block';
-          debugLog.innerHTML += '<span style="color:#f00;">' + errorMsg + '</span><br>';
+          debugLog.innerHTML += '<span style="color:#f00;">' + errorMsg + '<\\/span><br>';
         }
         // Also show in status
         var s = document.getElementById('status');
@@ -6176,11 +6191,11 @@ export function generatePopoutHTML(config: PopoutConfig): string {
       
       window.debugPopout('Debug initialized');
     })();
-  </script>
+  <\\/script>
   <script>
     window.debugPopout && window.debugPopout('Main script loading...');
-    ${generateScript(config)}
-  </script>
-</body>
-</html>`;
+    ${mainScriptContent}
+  <\\/script>
+<\\/body>
+<\\/html>`;
 }
