@@ -819,6 +819,8 @@ function generateScript(config: PopoutConfig): string {
       var audioProgressInterval = null; // Track the progress interval to avoid duplicates
       var voiceoverClone = null; // Track cloned audio elements
       var musicClone = null;
+      var animationFrameId = null; // Track animation frame for cleanup
+      var isSaving = false; // Prevent multiple saves and accidental restarts
       
       // DOM Elements
       var preview = document.getElementById('preview');
@@ -1740,6 +1742,12 @@ function generateScript(config: PopoutConfig): string {
           isRecording = false;
           isCountingDown = false;
           
+          // Cancel animation frame
+          if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+          }
+          
           // Clear all intervals
           if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
           if (scrollInterval) { clearInterval(scrollInterval); scrollInterval = null; }
@@ -1806,8 +1814,15 @@ function generateScript(config: PopoutConfig): string {
           }
         }, 1000);
         
-        // Draw loop
+        // Draw loop - continue even when paused (mediaRecorder state is 'paused')
         function drawFrame() {
+          // Only stop if mediaRecorder is fully inactive (not paused, not recording)
+          if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+            console.log('🎬 Draw loop stopped - recorder inactive');
+            animationFrameId = null;
+            return;
+          }
+          
           ctx.drawImage(screenVideo, 0, 0, 1920, 1080);
           
           // Only draw webcam PIP if camera is on
@@ -1867,9 +1882,8 @@ function generateScript(config: PopoutConfig): string {
             ctx.strokeRect(pipX, pipY, pipWidth, pipHeight);
           }
           
-          if (mediaRecorder.state === 'recording') {
-            requestAnimationFrame(drawFrame);
-          }
+          // Continue loop for recording or paused state
+          animationFrameId = requestAnimationFrame(drawFrame);
         }
         drawFrame();
         
@@ -2192,6 +2206,12 @@ function generateScript(config: PopoutConfig): string {
         // Stop all audio immediately
         stopAllAudio();
         
+        // Cancel animation frame
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
+          animationFrameId = null;
+        }
+        
         // Clear all intervals
         if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
         if (scrollInterval) { clearInterval(scrollInterval); scrollInterval = null; }
@@ -2219,12 +2239,27 @@ function generateScript(config: PopoutConfig): string {
       
       // Save recording to Supabase storage and database
       saveBtn.onclick = async function() {
+        // Prevent multiple saves
+        if (isSaving) {
+          console.log('⚠️ Already saving, ignoring click');
+          return;
+        }
+        isSaving = true;
+        
         var name = videoNameInput.value.trim() || 'recording';
         var blob = new Blob(chunks, { type: 'video/webm' });
         var supabaseUrl = '${config.supabaseUrl}';
         var supabaseKey = '${config.supabaseKey}';
         
+        // Check file size - warn for large files (> 100MB)
+        var fileSizeMB = blob.size / (1024 * 1024);
+        console.log('📦 Recording size:', fileSizeMB.toFixed(2), 'MB');
+        if (fileSizeMB > 100) {
+          status.textContent = 'Large file (' + fileSizeMB.toFixed(0) + 'MB) - uploading...';
+        }
+        
         saveBtn.disabled = true;
+        resetBtn.disabled = true; // Disable reset during save
         saveBtn.textContent = '⏳ Saving...';
         status.textContent = 'Uploading to cloud...';
         
@@ -2310,6 +2345,10 @@ function generateScript(config: PopoutConfig): string {
           a.download = name + '.webm';
           a.click();
           
+          // Reset save state and re-enable reset button
+          isSaving = false;
+          resetBtn.disabled = false;
+          
           // Show success modal instead of alert
           showSaveModal('✅ Video Saved Successfully!', 'Your video has been saved to the cloud and downloaded locally.', 'success');
           
@@ -2318,6 +2357,8 @@ function generateScript(config: PopoutConfig): string {
           status.textContent = 'Save failed';
           saveBtn.textContent = '💾 Retry Save';
           saveBtn.disabled = false;
+          resetBtn.disabled = false;
+          isSaving = false;
           
           // Fallback to local download
           var a = document.createElement('a');
@@ -2350,8 +2391,12 @@ function generateScript(config: PopoutConfig): string {
         };
       }
       
-      // Reset
+      // Reset - with protection against accidental resets during save
       resetBtn.onclick = function() {
+        if (isSaving) {
+          console.log('⚠️ Cannot reset while saving');
+          return;
+        }
         location.reload();
       };
       
