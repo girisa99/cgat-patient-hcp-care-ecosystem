@@ -821,6 +821,7 @@ function generateScript(config: PopoutConfig): string {
       var musicClone = null;
       var animationFrameId = null; // Track animation frame for cleanup
       var isSaving = false; // Prevent multiple saves and accidental restarts
+      var recordedMimeType = 'video/webm'; // Track the mime type used for recording
       
       // DOM Elements
       var preview = document.getElementById('preview');
@@ -1583,10 +1584,12 @@ function generateScript(config: PopoutConfig): string {
         
         var videosReady = 0;
         var totalVideos = 2;
+        var compositingStarted = false; // Guard against multiple calls
         
         function onVideoReady() {
           videosReady++;
-          if (videosReady >= totalVideos) {
+          if (videosReady >= totalVideos && !compositingStarted) {
+            compositingStarted = true;
             startCompositing(useVoiceover, useMusic, useTTS);
           }
         }
@@ -1596,9 +1599,11 @@ function generateScript(config: PopoutConfig): string {
         screenVideo.play().catch(console.error);
         webcamVideo.play().catch(console.error);
         
+        // Fallback timeout if videos don't fire canplay
         setTimeout(function() {
-          if (videosReady < totalVideos) {
-            console.log('Force starting compositing...');
+          if (!compositingStarted) {
+            console.log('⚠️ Force starting compositing (timeout)...');
+            compositingStarted = true;
             startCompositing(useVoiceover, useMusic, useTTS);
           }
         }, 2000);
@@ -1606,6 +1611,12 @@ function generateScript(config: PopoutConfig): string {
       
       // Start compositing and recording
       function startCompositing(useVoiceover, useMusic, useTTS) {
+        // Prevent duplicate calls
+        if (isRecording) {
+          console.log('⚠️ Already recording, ignoring duplicate startCompositing call');
+          return;
+        }
+        
         isRecording = true;
         isCountingDown = false;
         isPaused = false; // Reset pause state for new recording
@@ -1749,6 +1760,7 @@ function generateScript(config: PopoutConfig): string {
           mimeType = 'video/webm;codecs=vp8,opus';
         }
         console.log('🎥 Using recording format:', mimeType);
+        recordedMimeType = mimeType; // Store globally for later use
         
         mediaRecorder = new MediaRecorder(combinedStream, {
           mimeType: mimeType,
@@ -1821,17 +1833,21 @@ function generateScript(config: PopoutConfig): string {
           status.textContent = 'Recording Complete - Enter name to save';
           status.className = 'status ready';
           
-          // Determine file type based on mimeType used
-          var fileType = mimeType.startsWith('video/mp4') ? 'video/mp4' : 'video/webm';
+          // Determine file type based on recordedMimeType (global variable)
+          var fileType = recordedMimeType.startsWith('video/mp4') ? 'video/mp4' : 'video/webm';
           var blob = new Blob(chunks, { type: fileType });
+          console.log('📦 Recording blob created:', fileType, 'size:', (blob.size / 1024 / 1024).toFixed(2), 'MB');
           preview.srcObject = null;
           preview.src = URL.createObjectURL(blob);
           preview.controls = true;
           preview.muted = false;
         };
         
-        mediaRecorder.start();
+        // Start recording with 1 second timeslice for continuous data availability
+        // This helps prevent data loss for long recordings and enables progress monitoring
+        mediaRecorder.start(1000);
         startTime = Date.now();
+        console.log('🎬 MediaRecorder started with 1s timeslice');
         
         timerInterval = setInterval(function() {
           if (!isPaused) {
@@ -2274,8 +2290,8 @@ function generateScript(config: PopoutConfig): string {
         
         var name = videoNameInput.value.trim() || 'recording';
         
-        // Determine format based on what was recorded
-        var isMP4 = chunks.length > 0 && chunks[0].type && chunks[0].type.includes('mp4');
+        // Determine format based on the global recordedMimeType variable
+        var isMP4 = recordedMimeType.startsWith('video/mp4');
         var fileType = isMP4 ? 'video/mp4' : 'video/webm';
         var fileExt = isMP4 ? 'mp4' : 'webm';
         
