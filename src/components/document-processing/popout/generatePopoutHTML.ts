@@ -4108,8 +4108,11 @@ function generateScript(config: PopoutConfig): string {
           dialogHtml += '<div><strong>🗣️ Generate TTS Voiceover</strong><br><small style="opacity:0.7;">Convert script to speech using AI voice</small></div>';
           dialogHtml += '</label>';
           
-          // Show Original vs Enhanced option if script analysis exists
-          if (scriptAnalysis && scriptAnalysis.segments && scriptAnalysis.segments.length > 0) {
+          // Show Original vs Enhanced option if we have enhanced content OR script analysis
+          var hasEnhancedContent = window.enhancedScriptContent && window.enhancedScriptContent.trim().length > 0;
+          var hasAnalysis = scriptAnalysis && scriptAnalysis.segments && scriptAnalysis.segments.length > 0;
+          
+          if (hasEnhancedContent || hasAnalysis) {
             dialogHtml += '<div id="ttsVersionSelect" style="margin-top:12px;padding:10px;background:rgba(99,102,241,0.1);border-radius:6px;border:1px solid #6366f1;">';
             dialogHtml += '<div style="font-size:12px;font-weight:600;margin-bottom:8px;">✨ Script Version for TTS:</div>';
             dialogHtml += '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:6px;">';
@@ -4118,9 +4121,14 @@ function generateScript(config: PopoutConfig): string {
             dialogHtml += '</label>';
             dialogHtml += '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;">';
             dialogHtml += '<input type="radio" name="ttsVersion" value="enhanced" checked style="width:16px;height:16px;">';
-            dialogHtml += '<span style="font-size:13px;">✨ Enhanced Script <span style="font-size:11px;opacity:0.7;">(with pause markers & engagement tips)</span></span>';
+            var enhancedLabel = hasEnhancedContent ? '✨ Enhanced Script (with your accepted changes)' : '✨ Enhanced Script (with pause markers)';
+            dialogHtml += '<span style="font-size:13px;">' + enhancedLabel + '</span>';
             dialogHtml += '</label>';
-            dialogHtml += '<div style="font-size:11px;opacity:0.7;margin-top:8px;">Enhanced version syncs with teleprompter segments</div>';
+            if (hasEnhancedContent) {
+              dialogHtml += '<div style="font-size:11px;color:#22c55e;margin-top:8px;">✅ Enhanced script ready with your accepted changes</div>';
+            } else {
+              dialogHtml += '<div style="font-size:11px;opacity:0.7;margin-top:8px;">Enhanced version syncs with teleprompter segments</div>';
+            }
             dialogHtml += '</div>';
           }
           
@@ -4178,11 +4186,32 @@ function generateScript(config: PopoutConfig): string {
           // Check which TTS version to use (original vs enhanced)
           var useEnhancedScript = false;
           var ttsVersionRadios = document.querySelectorAll('input[name="ttsVersion"]');
-          ttsVersionRadios.forEach(function(radio) {
-            if (radio.checked && radio.value === 'enhanced') {
-              useEnhancedScript = true;
-            }
+          
+          // Check if we have enhanced content available
+          var hasEnhancedAvailable = (window.enhancedScriptContent && window.enhancedScriptContent.trim().length > 0) ||
+                                     (scriptAnalysis && scriptAnalysis.segments && scriptAnalysis.segments.length > 0);
+          
+          console.log('🎯 TTS Version Check:', {
+            hasRadios: ttsVersionRadios.length > 0,
+            hasEnhancedContent: !!(window.enhancedScriptContent && window.enhancedScriptContent.trim().length > 0),
+            hasAnalysis: !!(scriptAnalysis && scriptAnalysis.segments),
+            hasEnhancedAvailable: hasEnhancedAvailable
           });
+          
+          if (ttsVersionRadios.length > 0) {
+            // User had option to choose - check their selection
+            ttsVersionRadios.forEach(function(radio) {
+              if (radio.checked && radio.value === 'enhanced') {
+                useEnhancedScript = true;
+              }
+            });
+          } else if (hasEnhancedAvailable) {
+            // No radios shown but we have enhanced content - default to using it
+            useEnhancedScript = true;
+            console.log('📌 Auto-selecting enhanced script (no radio options shown but content available)');
+          }
+          
+          console.log('🎤 TTS will use:', useEnhancedScript ? 'ENHANCED' : 'ORIGINAL');
           
           document.getElementById('audioOptionsDialog').remove();
           
@@ -4195,17 +4224,22 @@ function generateScript(config: PopoutConfig): string {
             if (scriptToUse) {
               var scriptText = scriptToUse.content;
               
+              console.log('📄 Original script length:', scriptText.length, 'chars');
+              console.log('📝 Enhanced content available:', window.enhancedScriptContent ? window.enhancedScriptContent.length + ' chars' : 'NONE');
+              
               // If enhanced version selected, use the saved enhanced script with accepted changes
               if (useEnhancedScript) {
                 // Priority: 1. User's accepted changes (window.enhancedScriptContent)
                 //           2. Build from analysis segments as fallback
                 if (window.enhancedScriptContent && window.enhancedScriptContent.trim().length > 0) {
                   scriptText = window.enhancedScriptContent;
-                  console.log('✨ Using ENHANCED script with ACCEPTED CHANGES for TTS');
-                  console.log('📝 Enhanced content length:', scriptText.length, 'chars');
+                  console.log('✨✨✨ USING ENHANCED SCRIPT WITH ACCEPTED CHANGES ✨✨✨');
+                  console.log('📝 Enhanced script preview:', scriptText.substring(0, 200) + '...');
                 } else if (scriptAnalysis && scriptAnalysis.segments) {
                   scriptText = buildEnhancedScript(scriptAnalysis);
-                  console.log('✨ Using ENHANCED script (from segments) for TTS');
+                  console.log('✨ Using ENHANCED script (built from segments)');
+                } else {
+                  console.log('⚠️ Enhanced selected but no enhanced content found, using original');
                 }
                 
                 // Update teleprompter to show enhanced content
@@ -4914,27 +4948,14 @@ function generateScript(config: PopoutConfig): string {
             }
             
             // Calculate target scroll position based on audio progress
+            // DO NOT apply speed multiplier here - scroll must stay perfectly in sync with audio
             var progress = currentTime / totalDuration;
             progress = Math.max(0, Math.min(1, progress)); // Clamp 0-1
             
-            // Apply user's speed multiplier (1.0 = normal, 1.5 = faster, 0.5 = slower)
-            // Speed multiplier affects how "ahead" or "behind" the scroll is relative to audio
-            var adjustedProgress = progress * teleprompterSpeedMultiplier;
-            adjustedProgress = Math.max(0, Math.min(1, adjustedProgress));
+            var targetScroll = Math.floor(progress * scrollableHeight);
             
-            var targetScroll = Math.floor(adjustedProgress * scrollableHeight);
-            
-            // Smooth transition to target position (ease towards it)
-            var currentScroll = scriptContent.scrollTop;
-            var diff = targetScroll - currentScroll;
-            
-            // Move 20% of the way to target each interval for smooth scrolling
-            if (Math.abs(diff) > 1) {
-              var step = diff * 0.2;
-              // Ensure minimum step size for responsiveness
-              if (Math.abs(step) < 1) step = diff > 0 ? 1 : -1;
-              scriptContent.scrollTop = currentScroll + step;
-            }
+            // Directly set scroll position for perfect sync (no easing which can cause drift)
+            scriptContent.scrollTop = targetScroll;
             
             // Update reading cursor position
             updateReadingCursor();
