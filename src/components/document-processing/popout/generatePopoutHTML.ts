@@ -173,17 +173,18 @@ function generateStyles(): string {
       width: 200px;
       height: 112px;
       border-radius: 12px;
-      overflow: hidden;
+      overflow: visible;
       border: 3px solid #333;
       background: #000;
-      z-index: 10;
+      z-index: 100;
       cursor: grab;
       user-select: none;
+      touch-action: none;
     }
-    .webcam-pip:active { cursor: grabbing; }
+    .webcam-pip.dragging { cursor: grabbing; z-index: 200; }
     .webcam-pip.hidden { display: none; }
     .webcam-pip.blurred video { filter: blur(10px); }
-    .webcam-pip video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+    .webcam-pip video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; border-radius: 9px; }
     .webcam-pip .pip-logo {
       width: 100%;
       height: 100%;
@@ -191,6 +192,7 @@ function generateStyles(): string {
       align-items: center;
       justify-content: center;
       background: linear-gradient(135deg, #1a1a2e, #2a2a4e);
+      border-radius: 9px;
     }
     .webcam-pip .pip-logo img {
       max-width: 80%;
@@ -203,15 +205,19 @@ function generateStyles(): string {
     }
     .pip-controls {
       position: absolute;
-      top: -30px;
-      right: 0;
-      display: none;
+      top: -35px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
       gap: 4px;
-      background: rgba(0,0,0,0.8);
-      padding: 4px 8px;
-      border-radius: 6px;
+      background: rgba(0,0,0,0.9);
+      padding: 6px 10px;
+      border-radius: 8px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
     }
-    .webcam-pip:hover .pip-controls { display: flex; }
+    .webcam-pip:hover .pip-controls { opacity: 1; pointer-events: auto; }
     .pip-controls button {
       padding: 4px 8px;
       font-size: 10px;
@@ -405,6 +411,11 @@ function generateStyles(): string {
       min-width: 380px;
     }
     .pause-edit-panel.hidden { display: none; }
+    .pause-edit-panel .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
     .pause-edit-panel h4 {
       font-size: 14px;
       font-weight: 600;
@@ -413,6 +424,16 @@ function generateStyles(): string {
       gap: 8px;
       margin: 0;
     }
+    .pause-edit-panel .close-panel-btn {
+      padding: 4px 8px;
+      font-size: 16px;
+      background: transparent;
+      border: 1px solid #475569;
+      cursor: pointer;
+      min-width: auto;
+      line-height: 1;
+    }
+    .pause-edit-panel .close-panel-btn:hover { background: #475569; }
     .pause-edit-panel .trim-controls {
       display: flex;
       gap: 8px;
@@ -423,11 +444,18 @@ function generateStyles(): string {
       padding: 8px 12px;
       font-size: 12px;
       background: #334155;
-      border: 1px solid #475569;
+      border: 2px solid #475569;
       cursor: pointer;
+      transition: all 0.2s ease;
     }
-    .pause-edit-panel .trim-btn:hover { background: #475569; }
-    .pause-edit-panel .trim-btn.active { background: #dc2626; border-color: #dc2626; }
+    .pause-edit-panel .trim-btn:hover { background: #475569; border-color: #6366f1; }
+    .pause-edit-panel .trim-btn.selected { 
+      background: #dc2626; 
+      border-color: #dc2626; 
+      transform: scale(1.05);
+      box-shadow: 0 0 10px rgba(220, 38, 38, 0.4);
+    }
+    .pause-edit-panel .trim-btn.active { background: #22c55e; border-color: #22c55e; }
     .pause-edit-panel .transcribe-btn {
       padding: 10px 16px;
       font-size: 13px;
@@ -710,7 +738,10 @@ function generateBody(config: PopoutConfig, escapedScriptContent: string): strin
           
           <!-- Pause edit panel -->
           <div id="pauseEditPanel" class="pause-edit-panel hidden">
-            <h4>✏️ Edit While Paused</h4>
+            <div class="panel-header">
+              <h4>✏️ Edit While Paused</h4>
+              <button id="closePausePanel" class="close-panel-btn" title="Close panel">✕</button>
+            </div>
             <div class="trim-controls">
               <button id="trimLast5Btn" class="trim-btn" title="Remove last 5 seconds">✂️ Trim 5s</button>
               <button id="trimLast10Btn" class="trim-btn" title="Remove last 10 seconds">✂️ Trim 10s</button>
@@ -1356,50 +1387,104 @@ function generateScript(config: PopoutConfig): string {
         pipOverlay.classList.add('hidden');
       };
       
-      // Make PIP overlay draggable
+      // Make PIP overlay draggable anywhere on the video container
       var isPipDragging = false;
       var pipDragOffsetX = 0;
       var pipDragOffsetY = 0;
       
-      pipOverlay.onmousedown = function(e) {
-        if (e.target.tagName === 'BUTTON') return; // Don't drag when clicking buttons
+      pipOverlay.addEventListener('mousedown', function(e) {
+        // Don't start drag if clicking on a button
+        if (e.target.tagName === 'BUTTON') return;
         e.preventDefault();
+        e.stopPropagation();
         isPipDragging = true;
+        pipOverlay.classList.add('dragging');
+        
         var rect = pipOverlay.getBoundingClientRect();
         pipDragOffsetX = e.clientX - rect.left;
         pipDragOffsetY = e.clientY - rect.top;
-        pipOverlay.style.transition = 'none';
-        pipOverlay.style.cursor = 'grabbing';
-      };
+        
+        console.log('🖱️ PIP drag started');
+      });
       
       document.addEventListener('mousemove', function(e) {
         if (!isPipDragging) return;
-        var newX = e.clientX - pipDragOffsetX;
-        var newY = e.clientY - pipDragOffsetY;
+        e.preventDefault();
         
-        // Keep within viewport bounds
-        var pipWidth = pipOverlay.offsetWidth;
-        var pipHeight = pipOverlay.offsetHeight;
         var container = document.querySelector('.video-container');
         var containerRect = container.getBoundingClientRect();
+        var pipWidth = pipOverlay.offsetWidth;
+        var pipHeight = pipOverlay.offsetHeight;
         
-        newX = Math.max(containerRect.left, Math.min(newX, containerRect.right - pipWidth));
-        newY = Math.max(containerRect.top, Math.min(newY, containerRect.bottom - pipHeight));
+        // Calculate new position relative to container
+        var newX = e.clientX - containerRect.left - pipDragOffsetX;
+        var newY = e.clientY - containerRect.top - pipDragOffsetY;
         
-        pipOverlay.style.left = (newX - containerRect.left) + 'px';
-        pipOverlay.style.top = (newY - containerRect.top) + 'px';
+        // Constrain to container bounds with 10px padding
+        newX = Math.max(10, Math.min(newX, containerRect.width - pipWidth - 10));
+        newY = Math.max(10, Math.min(newY, containerRect.height - pipHeight - 10));
+        
+        // Apply position
+        pipOverlay.style.left = newX + 'px';
+        pipOverlay.style.top = newY + 'px';
         pipOverlay.style.right = 'auto';
         pipOverlay.style.bottom = 'auto';
         
-        pipPosition.x = newX - containerRect.left;
-        pipPosition.y = newY - containerRect.top;
+        // Store position for canvas drawing
+        pipPosition.x = newX;
+        pipPosition.y = newY;
       });
       
-      document.addEventListener('mouseup', function() {
+      document.addEventListener('mouseup', function(e) {
         if (isPipDragging) {
           isPipDragging = false;
-          pipOverlay.style.cursor = 'grab';
-          pipOverlay.style.transition = '';
+          pipOverlay.classList.remove('dragging');
+          console.log('🖱️ PIP drag ended at:', pipPosition);
+        }
+      });
+      
+      // Also handle touch events for mobile
+      pipOverlay.addEventListener('touchstart', function(e) {
+        if (e.target.tagName === 'BUTTON') return;
+        e.preventDefault();
+        isPipDragging = true;
+        pipOverlay.classList.add('dragging');
+        
+        var touch = e.touches[0];
+        var rect = pipOverlay.getBoundingClientRect();
+        pipDragOffsetX = touch.clientX - rect.left;
+        pipDragOffsetY = touch.clientY - rect.top;
+      }, { passive: false });
+      
+      document.addEventListener('touchmove', function(e) {
+        if (!isPipDragging) return;
+        e.preventDefault();
+        
+        var touch = e.touches[0];
+        var container = document.querySelector('.video-container');
+        var containerRect = container.getBoundingClientRect();
+        var pipWidth = pipOverlay.offsetWidth;
+        var pipHeight = pipOverlay.offsetHeight;
+        
+        var newX = touch.clientX - containerRect.left - pipDragOffsetX;
+        var newY = touch.clientY - containerRect.top - pipDragOffsetY;
+        
+        newX = Math.max(10, Math.min(newX, containerRect.width - pipWidth - 10));
+        newY = Math.max(10, Math.min(newY, containerRect.height - pipHeight - 10));
+        
+        pipOverlay.style.left = newX + 'px';
+        pipOverlay.style.top = newY + 'px';
+        pipOverlay.style.right = 'auto';
+        pipOverlay.style.bottom = 'auto';
+        
+        pipPosition.x = newX;
+        pipPosition.y = newY;
+      }, { passive: false });
+      
+      document.addEventListener('touchend', function() {
+        if (isPipDragging) {
+          isPipDragging = false;
+          pipOverlay.classList.remove('dragging');
         }
       });
       
@@ -1601,7 +1686,15 @@ function generateScript(config: PopoutConfig): string {
           });
           
           preview.srcObject = displayStream;
-          status.textContent = 'Screen selected';
+          preview.muted = true; // Keep muted to prevent feedback
+          preview.play().then(function() {
+            console.log('✅ Screen share preview playing');
+            status.textContent = 'Screen selected - Ready to record';
+            status.className = 'status ready';
+          }).catch(function(playErr) {
+            console.error('Screen share preview play error:', playErr);
+            status.textContent = 'Screen selected';
+          });
           
           showAudioOptionsDialog();
           
@@ -2570,21 +2663,32 @@ function generateScript(config: PopoutConfig): string {
       
       // Pause/Resume recording - ALSO pause/resume audio
       pauseBtn.onclick = function() {
+        console.log('⏸️ Pause button clicked, isPaused:', isPaused, 'mediaRecorder state:', mediaRecorder ? mediaRecorder.state : 'null');
+        
         var vo = voiceoverClone || voiceover;
         var music = musicClone || bgMusic;
         
         if (isPaused) {
           // Resume recording
-          if (mediaRecorder && mediaRecorder.state === 'paused') {
-            mediaRecorder.resume();
+          console.log('▶️ Resuming recording...');
+          if (mediaRecorder) {
+            if (mediaRecorder.state === 'paused') {
+              mediaRecorder.resume();
+              console.log('✅ MediaRecorder resumed');
+            } else {
+              console.log('⚠️ MediaRecorder state is:', mediaRecorder.state, '- cannot resume');
+            }
           }
+          
           // Resume audio - Only ONE voice source (TTS takes priority)
           if (ttsActive && ttsAudio) { 
-            ttsAudio.play().catch(console.error); 
+            ttsAudio.play().catch(function(err) { console.error('TTS resume error:', err); }); 
           } else if (voiceoverActive && vo && vo.src) { 
-            vo.play().catch(console.error); 
+            vo.play().catch(function(err) { console.error('VO resume error:', err); }); 
           }
-          if (musicActive && music && music.src) { music.play().catch(console.error); }
+          if (musicActive && music && music.src) { 
+            music.play().catch(function(err) { console.error('Music resume error:', err); }); 
+          }
           
           // Track paused duration when resuming
           if (pauseStartTime > 0) {
@@ -2595,25 +2699,58 @@ function generateScript(config: PopoutConfig): string {
           pauseBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>Pause';
           isPaused = false;
           
+          // Update status
+          status.textContent = 'Recording...';
+          status.className = 'status recording';
+          
           // Hide pause edit panel when resuming
           pauseEditPanel.classList.add('hidden');
         } else {
           // Pause recording
-          if (mediaRecorder && mediaRecorder.state === 'recording') {
-            mediaRecorder.pause();
+          console.log('⏸️ Pausing recording...');
+          if (mediaRecorder) {
+            if (mediaRecorder.state === 'recording') {
+              mediaRecorder.pause();
+              console.log('✅ MediaRecorder paused');
+            } else {
+              console.log('⚠️ MediaRecorder state is:', mediaRecorder.state, '- cannot pause');
+            }
           }
-          // Pause all audio
-          if (ttsAudio) { ttsAudio.pause(); }
-          if (vo) { vo.pause(); }
-          if (voiceoverClone) { voiceoverClone.pause(); }
-          if (music) { music.pause(); }
-          if (musicClone) { musicClone.pause(); }
+          
+          // Pause ALL audio sources thoroughly
+          console.log('🔇 Pausing all audio...');
+          try {
+            if (ttsAudio) { 
+              ttsAudio.pause(); 
+              console.log('  - TTS paused');
+            }
+            if (voiceover) { 
+              voiceover.pause(); 
+            }
+            if (voiceoverClone) { 
+              voiceoverClone.pause(); 
+              console.log('  - Voiceover clone paused');
+            }
+            if (bgMusic) { 
+              bgMusic.pause(); 
+            }
+            if (musicClone) { 
+              musicClone.pause(); 
+              console.log('  - Music clone paused');
+            }
+          } catch(e) {
+            console.error('Error pausing audio:', e);
+          }
           
           // Track when pause started
           pauseStartTime = Date.now();
           
           pauseBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>Resume';
           isPaused = true;
+          
+          // Update status
+          status.textContent = 'Paused';
+          status.className = 'status countdown';
           
           // Show pause edit panel and update info
           var elapsed = Math.floor((Date.now() - startTime - pausedTime) / 1000);
@@ -2903,10 +3040,42 @@ function generateScript(config: PopoutConfig): string {
         console.log('↩️ Undo trim, restored', lastTrimmed.length, 'chunks');
       }
       
-      // Trim button handlers
-      trimLast5Btn.onclick = function() { trimLastSeconds(5); };
-      trimLast10Btn.onclick = function() { trimLastSeconds(10); };
-      trimLast30Btn.onclick = function() { trimLastSeconds(30); };
+      // Close panel button
+      var closePausePanel = document.getElementById('closePausePanel');
+      closePausePanel.onclick = function() {
+        pauseEditPanel.classList.add('hidden');
+      };
+      
+      // Track selected trim button
+      var selectedTrimBtn = null;
+      function selectTrimBtn(btn) {
+        // Remove selection from all trim buttons
+        [trimLast5Btn, trimLast10Btn, trimLast30Btn].forEach(function(b) {
+          b.classList.remove('selected');
+        });
+        // Select the clicked button
+        btn.classList.add('selected');
+        selectedTrimBtn = btn;
+        // Auto-deselect after 1.5s
+        setTimeout(function() {
+          btn.classList.remove('selected');
+          if (selectedTrimBtn === btn) selectedTrimBtn = null;
+        }, 1500);
+      }
+      
+      // Trim button handlers with selection feedback
+      trimLast5Btn.onclick = function() { 
+        selectTrimBtn(this);
+        trimLastSeconds(5); 
+      };
+      trimLast10Btn.onclick = function() { 
+        selectTrimBtn(this);
+        trimLastSeconds(10); 
+      };
+      trimLast30Btn.onclick = function() { 
+        selectTrimBtn(this);
+        trimLastSeconds(30); 
+      };
       undoTrimBtn.onclick = undoLastTrim;
       
       // =====================================================
