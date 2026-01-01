@@ -1084,6 +1084,8 @@ function generateScript(config: PopoutConfig): string {
       var musicLoopToggle = document.getElementById('musicLoopToggle');
       musicLoopToggle.onchange = function() {
         bgMusic.loop = this.checked;
+        // Also sync clone if exists
+        if (musicClone) musicClone.loop = this.checked;
         console.log('🔁 Music loop:', this.checked ? 'ON' : 'OFF');
       };
       
@@ -1229,8 +1231,11 @@ function generateScript(config: PopoutConfig): string {
           return;
         }
         
-        // Stop any playing audio first
+        // Stop any playing audio and reset clones from previous recording
         stopAllAudio();
+        voiceoverClone = null;
+        musicClone = null;
+        ttsAudio = null;
         
         status.textContent = 'Select screen...';
         status.className = 'status countdown';
@@ -1533,6 +1538,12 @@ function generateScript(config: PopoutConfig): string {
           displayStream.getTracks().forEach(function(t) { t.stop(); });
           displayStream = null;
         }
+        // Reset clones and audio state
+        stopAllAudio();
+        voiceoverClone = null;
+        musicClone = null;
+        ttsAudio = null;
+        
         preview.srcObject = stream;
         status.textContent = 'Ready';
         status.className = 'status ready';
@@ -1582,6 +1593,13 @@ function generateScript(config: PopoutConfig): string {
       function startCompositing(useVoiceover, useMusic, useTTS) {
         isRecording = true;
         isCountingDown = false;
+        isPaused = false; // Reset pause state for new recording
+        
+        // Reset chunks for new recording
+        chunks = [];
+        
+        // Reset timer display
+        timer.textContent = '00:00';
         
         var canvasStream = canvas.captureStream(30);
         
@@ -2060,6 +2078,10 @@ function generateScript(config: PopoutConfig): string {
         var music = musicClone || bgMusic;
         if (music) {
           music.loop = !music.loop;
+          // Also sync original bgMusic loop state
+          if (bgMusic) bgMusic.loop = music.loop;
+          if (musicClone) musicClone.loop = music.loop;
+          
           var loopStatus = document.getElementById('musicLoopStatus');
           if (music.loop) {
             loopStatus.textContent = '🔁 Loop: ON';
@@ -2069,7 +2091,7 @@ function generateScript(config: PopoutConfig): string {
             this.classList.remove('active');
           }
           // Sync with sidebar checkbox
-          document.getElementById('musicLoopToggle').checked = bgMusic.loop;
+          document.getElementById('musicLoopToggle').checked = music.loop;
         }
       };
       
