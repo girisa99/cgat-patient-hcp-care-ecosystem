@@ -639,6 +639,8 @@ function generateStyles(): string {
       border-radius: 12px;
       padding: 15px;
       margin-bottom: 10px;
+      max-height: 60vh;
+      overflow-y: auto;
     }
     .analysis-panel h4 {
       margin: 0 0 10px 0;
