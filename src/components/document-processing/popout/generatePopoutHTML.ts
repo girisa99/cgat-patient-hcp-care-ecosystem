@@ -1464,6 +1464,40 @@ function generateBody(config: PopoutConfig, escapedScriptContent: string): strin
               <!-- Enhanced Downloads Section -->
               <div id="enhancedDownloadsSection" style="display:none;margin-top:12px;padding:12px;background:rgba(34,197,94,0.15);border-radius:8px;border:1px solid rgba(34,197,94,0.3);">
                 <h5 style="margin:0 0 8px 0;font-size:12px;display:flex;align-items:center;gap:6px;">💾 Enhanced Content Downloads</h5>
+                
+                <!-- Voice Selection for Enhanced Audio -->
+                <div style="margin-bottom:10px;padding:8px;background:rgba(0,0,0,0.2);border-radius:6px;">
+                  <label style="display:block;font-size:11px;margin-bottom:4px;opacity:0.8;">🎤 Select Voice for Audio:</label>
+                  <div style="display:flex;gap:6px;margin-bottom:6px;">
+                    <select id="enhancedTtsProvider" style="flex:1;padding:6px;border-radius:4px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;font-size:11px;">
+                      <option value="openai">OpenAI TTS</option>
+                      <option value="elevenlabs">ElevenLabs</option>
+                    </select>
+                  </div>
+                  <select id="enhancedVoiceSelect" style="width:100%;padding:6px;border-radius:4px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;font-size:11px;">
+                    <optgroup label="OpenAI Voices" id="openaiVoicesGroup">
+                      <option value="alloy" selected>Alloy (Neutral)</option>
+                      <option value="echo">Echo (Male)</option>
+                      <option value="fable">Fable (British)</option>
+                      <option value="onyx">Onyx (Deep Male)</option>
+                      <option value="nova">Nova (Female)</option>
+                      <option value="shimmer">Shimmer (Soft Female)</option>
+                    </optgroup>
+                    <optgroup label="ElevenLabs Voices" id="elevenlabsVoicesGroup" style="display:none;">
+                      <option value="EXAVITQu4vr4xnSDxMaL">Sarah</option>
+                      <option value="JBFqnCBsd6RMkjVDRZzb">George</option>
+                      <option value="TX3LPaxmHKxFdv7VOQHJ">Liam</option>
+                      <option value="XrExE9yKIg1WjnnlVkGX">Matilda</option>
+                      <option value="pFZP5JQG7iQjIQuC4Bku">Lily</option>
+                      <option value="onwK4e9ZLuTAKqWW03F9">Daniel</option>
+                      <option value="cgSgspJ2msm6clMCkdW9">Jessica</option>
+                      <option value="iP95p4xoKVk53GoZ742B">Chris</option>
+                      <option value="nPczCjzI2devNBz1zQrb">Brian</option>
+                      <option value="CwhRBWXzGAHq8TQ4Fs17">Roger</option>
+                    </optgroup>
+                  </select>
+                </div>
+                
                 <div style="display:flex;flex-direction:column;gap:6px;">
                   <button id="downloadEnhancedAudioBtn" class="action-btn" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;display:flex;align-items:center;gap:6px;justify-content:center;">
                     🎧 Generate & Download Enhanced Audio (MP3)
@@ -2944,9 +2978,65 @@ function generateScript(config: PopoutConfig): string {
       var downloadEnhancedTranscriptBtn = document.getElementById('downloadEnhancedTranscriptBtn');
       var downloadOriginalTranscriptBtn = document.getElementById('downloadOriginalTranscriptBtn');
       var enhancedAudioProgress = document.getElementById('enhancedAudioProgress');
+      var enhancedTtsProvider = document.getElementById('enhancedTtsProvider');
+      var enhancedVoiceSelect = document.getElementById('enhancedVoiceSelect');
       
       // Store the generated enhanced audio for later download
       var generatedEnhancedAudioBlob = null;
+      
+      // Handle TTS provider change - show/hide appropriate voice options
+      if (enhancedTtsProvider && enhancedVoiceSelect) {
+        enhancedTtsProvider.onchange = function() {
+          var provider = enhancedTtsProvider.value;
+          var openaiGroup = enhancedVoiceSelect.querySelector('#openaiVoicesGroup');
+          var elevenlabsGroup = enhancedVoiceSelect.querySelector('#elevenlabsVoicesGroup');
+          
+          if (provider === 'openai') {
+            // Show OpenAI voices, hide ElevenLabs
+            if (openaiGroup) {
+              Array.from(openaiGroup.querySelectorAll('option')).forEach(function(opt) {
+                opt.style.display = '';
+              });
+              openaiGroup.style.display = '';
+            }
+            if (elevenlabsGroup) {
+              Array.from(elevenlabsGroup.querySelectorAll('option')).forEach(function(opt) {
+                opt.style.display = 'none';
+              });
+              elevenlabsGroup.style.display = 'none';
+            }
+            // Select first OpenAI voice
+            enhancedVoiceSelect.value = 'alloy';
+          } else {
+            // Show ElevenLabs voices, hide OpenAI
+            if (openaiGroup) {
+              Array.from(openaiGroup.querySelectorAll('option')).forEach(function(opt) {
+                opt.style.display = 'none';
+              });
+              openaiGroup.style.display = 'none';
+            }
+            if (elevenlabsGroup) {
+              Array.from(elevenlabsGroup.querySelectorAll('option')).forEach(function(opt) {
+                opt.style.display = '';
+              });
+              elevenlabsGroup.style.display = '';
+            }
+            // Select first ElevenLabs voice
+            enhancedVoiceSelect.value = 'EXAVITQu4vr4xnSDxMaL';
+          }
+          
+          console.log('🎤 Enhanced TTS provider changed to:', provider);
+        };
+        
+        // Initialize - hide ElevenLabs voices by default
+        var elevenlabsGroup = enhancedVoiceSelect.querySelector('#elevenlabsVoicesGroup');
+        if (elevenlabsGroup) {
+          Array.from(elevenlabsGroup.querySelectorAll('option')).forEach(function(opt) {
+            opt.style.display = 'none';
+          });
+          elevenlabsGroup.style.display = 'none';
+        }
+      }
       
       // Download enhanced transcript as TXT
       if (downloadEnhancedTranscriptBtn) {
@@ -3021,9 +3111,11 @@ function generateScript(config: PopoutConfig): string {
           enhancedAudioProgress.textContent = 'Generating TTS audio from enhanced script...';
           
           try {
-            // Use default voice settings - OpenAI TTS with 'alloy' voice
-            var selectedVoice = 'alloy';
-            var ttsProvider = 'openai';
+            // Get selected voice and provider from dropdowns
+            var selectedVoice = enhancedVoiceSelect ? enhancedVoiceSelect.value : 'alloy';
+            var ttsProvider = enhancedTtsProvider ? enhancedTtsProvider.value : 'openai';
+            
+            console.log('🎤 Generating enhanced audio with:', ttsProvider, selectedVoice);
             
             var audioBlob = null;
             
