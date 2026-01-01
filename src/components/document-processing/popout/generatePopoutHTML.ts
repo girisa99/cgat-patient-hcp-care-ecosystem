@@ -1870,7 +1870,7 @@ function generateScript(config: PopoutConfig): string {
         modalHtml += '<div style="background:#1a1a2e;padding:24px;border-radius:12px;max-width:400px;width:90%;box-shadow:0 20px 40px rgba(0,0,0,0.5);">';
         modalHtml += '<h3 style="margin:0 0 16px 0;font-size:18px;color:#fff;">' + title + '</h3>';
         modalHtml += '<p style="margin:0 0 20px 0;color:#a0a0b0;font-size:14px;line-height:1.5;white-space:pre-wrap;">' + message + '</p>';
-        modalHtml += '<button onclick="document.getElementById(\\'' + modalId + '\\').remove()" style="width:100%;padding:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;">OK</button>';
+        modalHtml += '<button onclick="document.getElementById(' + "'" + modalId + "'" + ').remove()" style="width:100%;padding:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;">OK</button>';
         modalHtml += '</div></div>';
         document.body.insertAdjacentHTML('beforeend', modalHtml);
       }
@@ -3962,7 +3962,12 @@ function generateScript(config: PopoutConfig): string {
       setTimeout(function() {
         if (!cameraLoading.classList.contains('hidden')) {
           console.log('⚠️ Camera initialization timeout - showing retry option');
-          cameraLoadingContent.innerHTML = '<p style="color:#f59e0b;font-size:16px;margin-bottom:10px;">Camera Taking Too Long</p><p style="font-size:13px;opacity:0.7;margin-bottom:15px;">The camera is taking longer than expected to initialize.</p><button onclick="initCamera()" style="padding:10px 20px;background:#3b82f6;border:none;color:white;border-radius:8px;cursor:pointer;margin-right:10px;">Retry Camera</button><button onclick="document.getElementById(\\'cameraLoading\\').classList.add(\\'hidden\\');document.getElementById(\\'status\\').textContent=\\'Ready (No Camera)\\';document.getElementById(\\'status\\').className=\\'status ready\\';" style="padding:10px 20px;background:#6b7280;border:none;color:white;border-radius:8px;cursor:pointer;">Continue Without Camera</button>';
+          cameraLoadingContent.innerHTML = '<p style="color:#f59e0b;font-size:16px;margin-bottom:10px;">Camera Taking Too Long</p><p style="font-size:13px;opacity:0.7;margin-bottom:15px;">The camera is taking longer than expected to initialize.</p><button onclick="initCamera()" style="padding:10px 20px;background:#3b82f6;border:none;color:white;border-radius:8px;cursor:pointer;margin-right:10px;">Retry Camera</button><button id="skipCameraBtn" style="padding:10px 20px;background:#6b7280;border:none;color:white;border-radius:8px;cursor:pointer;">Continue Without Camera</button>';
+          document.getElementById("skipCameraBtn").onclick = function() {
+            cameraLoading.classList.add("hidden");
+            status.textContent = "Ready (No Camera)";
+            status.className = "status ready";
+          };
         }
       }, 15000); // 15 second timeout
       
