@@ -346,6 +346,97 @@ function generateStyles(): string {
     .audio-control-group.disabled .track-status { background: #334155; }
     .audio-control-group.active { opacity: 1; }
     .audio-control-group.active .track-status { background: #475569; }
+    
+    /* Pause edit panel styles */
+    .pause-edit-panel {
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.95);
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 150;
+      border: 1px solid #475569;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      min-width: 380px;
+    }
+    .pause-edit-panel.hidden { display: none; }
+    .pause-edit-panel h4 {
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+    }
+    .pause-edit-panel .trim-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .pause-edit-panel .trim-btn {
+      padding: 8px 12px;
+      font-size: 12px;
+      background: #334155;
+      border: 1px solid #475569;
+      cursor: pointer;
+    }
+    .pause-edit-panel .trim-btn:hover { background: #475569; }
+    .pause-edit-panel .trim-btn.active { background: #dc2626; border-color: #dc2626; }
+    .pause-edit-panel .transcribe-btn {
+      padding: 10px 16px;
+      font-size: 13px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .pause-edit-panel .transcribe-btn:hover { opacity: 0.9; }
+    .pause-edit-panel .transcribe-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .pause-edit-panel .trim-info {
+      font-size: 11px;
+      opacity: 0.7;
+      text-align: center;
+    }
+    
+    /* Caption overlay styles */
+    .caption-overlay {
+      position: absolute;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.85);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 18px;
+      max-width: 80%;
+      text-align: center;
+      z-index: 50;
+      line-height: 1.4;
+      font-weight: 500;
+    }
+    .caption-overlay.hidden { display: none; }
+    .caption-toggle {
+      position: absolute;
+      bottom: 15px;
+      right: 240px;
+      padding: 6px 12px;
+      font-size: 11px;
+      background: rgba(0,0,0,0.7);
+      border: 1px solid #444;
+      cursor: pointer;
+      z-index: 20;
+    }
+    .caption-toggle.active { background: #6366f1; border-color: #6366f1; }
+    
     .sidebar { width: 350px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
     .panel {
       background: #1a1a2e;
@@ -553,6 +644,27 @@ function generateBody(config: PopoutConfig, escapedScriptContent: string): strin
             <div class="rec-dot"></div>
             <span id="timer" class="timer">00:00</span>
           </div>
+          
+          <!-- Caption overlay for transcription -->
+          <div id="captionOverlay" class="caption-overlay hidden"></div>
+          <button id="captionToggleBtn" class="caption-toggle" style="display:none;">CC Off</button>
+          
+          <!-- Pause edit panel -->
+          <div id="pauseEditPanel" class="pause-edit-panel hidden">
+            <h4>✏️ Edit While Paused</h4>
+            <div class="trim-controls">
+              <button id="trimLast5Btn" class="trim-btn" title="Remove last 5 seconds">✂️ Trim 5s</button>
+              <button id="trimLast10Btn" class="trim-btn" title="Remove last 10 seconds">✂️ Trim 10s</button>
+              <button id="trimLast30Btn" class="trim-btn" title="Remove last 30 seconds">✂️ Trim 30s</button>
+              <button id="undoTrimBtn" class="trim-btn" title="Undo last trim" style="display:none;">↩️ Undo</button>
+            </div>
+            <div class="trim-info" id="trimInfo">Recording duration: 00:00</div>
+            <button id="transcribeBtn" class="transcribe-btn" title="Transcribe current recording with AI">
+              🎙️ Transcribe Recording
+            </button>
+            <div id="transcriptionStatus" class="trim-info" style="display:none;">Transcribing...</div>
+          </div>
+          
           
           <div id="audioControlPanel" class="audio-control-panel">
             <div class="drag-handle" id="audioPanelDragHandle">
@@ -825,6 +937,12 @@ function generateScript(config: PopoutConfig): string {
       var isSaving = false; // Prevent multiple saves and accidental restarts
       var recordedMimeType = 'video/webm'; // Track the mime type used for recording
       
+      // Trim and transcription state
+      var trimmedChunks = []; // Stack to store trimmed chunks for undo
+      var transcriptText = ''; // Stored transcription text
+      var captionsEnabled = false; // Caption display toggle
+      var isTranscribing = false; // Transcription in progress
+      
       // DOM Elements
       var preview = document.getElementById('preview');
       var startBtn = document.getElementById('startBtn');
@@ -866,6 +984,18 @@ function generateScript(config: PopoutConfig): string {
       var logoPlaceholder = document.getElementById('logoPlaceholder');
       var logoUploadInput = document.getElementById('logoUploadInput');
       var uploadLogoBtn = document.getElementById('uploadLogoBtn');
+      
+      // Pause edit panel elements
+      var pauseEditPanel = document.getElementById('pauseEditPanel');
+      var trimLast5Btn = document.getElementById('trimLast5Btn');
+      var trimLast10Btn = document.getElementById('trimLast10Btn');
+      var trimLast30Btn = document.getElementById('trimLast30Btn');
+      var undoTrimBtn = document.getElementById('undoTrimBtn');
+      var trimInfo = document.getElementById('trimInfo');
+      var transcribeBtn = document.getElementById('transcribeBtn');
+      var transcriptionStatus = document.getElementById('transcriptionStatus');
+      var captionOverlay = document.getElementById('captionOverlay');
+      var captionToggleBtn = document.getElementById('captionToggleBtn');
       
       // Camera state
       var isCameraOn = true;
@@ -2249,6 +2379,9 @@ function generateScript(config: PopoutConfig): string {
           
           pauseBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>Pause';
           isPaused = false;
+          
+          // Hide pause edit panel when resuming
+          pauseEditPanel.classList.add('hidden');
         } else {
           // Pause recording
           if (mediaRecorder && mediaRecorder.state === 'recording') {
@@ -2266,6 +2399,16 @@ function generateScript(config: PopoutConfig): string {
           
           pauseBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>Resume';
           isPaused = true;
+          
+          // Show pause edit panel and update info
+          var elapsed = Math.floor((Date.now() - startTime - pausedTime) / 1000);
+          trimInfo.textContent = 'Recording duration: ' + formatTime(elapsed) + ' (' + chunks.length + ' segments)';
+          pauseEditPanel.classList.remove('hidden');
+          
+          // Show caption toggle if transcript exists
+          if (transcriptText) {
+            captionToggleBtn.style.display = '';
+          }
         }
       };
       
@@ -2277,6 +2420,9 @@ function generateScript(config: PopoutConfig): string {
         
         // Stop all audio immediately
         stopAllAudio();
+        
+        // Hide pause edit panel
+        pauseEditPanel.classList.add('hidden');
         
         // Cancel animation frame
         if (animationFrameId) {
@@ -2476,6 +2622,184 @@ function generateScript(config: PopoutConfig): string {
           return;
         }
         location.reload();
+      };
+      
+      // =====================================================
+      // TRIM FUNCTIONALITY
+      // =====================================================
+      
+      // Helper to estimate chunk duration (rough estimate based on total time)
+      function estimateChunkDuration() {
+        if (chunks.length === 0) return 0;
+        var elapsed = Math.floor((Date.now() - startTime - pausedTime) / 1000);
+        return elapsed / chunks.length; // seconds per chunk
+      }
+      
+      // Trim last X seconds
+      function trimLastSeconds(seconds) {
+        var chunkDuration = estimateChunkDuration();
+        if (chunkDuration <= 0) {
+          console.log('⚠️ Cannot estimate chunk duration');
+          return;
+        }
+        
+        var chunksToRemove = Math.ceil(seconds / chunkDuration);
+        chunksToRemove = Math.min(chunksToRemove, chunks.length - 1); // Keep at least 1 chunk
+        
+        if (chunksToRemove <= 0) {
+          console.log('⚠️ Not enough recording to trim');
+          return;
+        }
+        
+        // Store removed chunks for undo
+        var removed = chunks.splice(chunks.length - chunksToRemove, chunksToRemove);
+        trimmedChunks.push(removed);
+        
+        // Update timer display
+        var newElapsed = Math.floor(chunks.length * chunkDuration);
+        timer.textContent = formatTime(newElapsed);
+        startTime = Date.now() - (newElapsed * 1000) - pausedTime; // Adjust start time
+        
+        // Update info
+        trimInfo.textContent = 'Trimmed ' + seconds + 's. Duration: ' + formatTime(newElapsed) + ' (' + chunks.length + ' segments)';
+        undoTrimBtn.style.display = '';
+        
+        console.log('✂️ Trimmed', chunksToRemove, 'chunks (~' + seconds + 's)');
+      }
+      
+      // Undo last trim
+      function undoLastTrim() {
+        if (trimmedChunks.length === 0) return;
+        
+        var lastTrimmed = trimmedChunks.pop();
+        chunks = chunks.concat(lastTrimmed);
+        
+        var chunkDuration = estimateChunkDuration();
+        var newElapsed = Math.floor(chunks.length * chunkDuration);
+        timer.textContent = formatTime(newElapsed);
+        startTime = Date.now() - (newElapsed * 1000) - pausedTime;
+        
+        trimInfo.textContent = 'Undo complete. Duration: ' + formatTime(newElapsed) + ' (' + chunks.length + ' segments)';
+        
+        if (trimmedChunks.length === 0) {
+          undoTrimBtn.style.display = 'none';
+        }
+        
+        console.log('↩️ Undo trim, restored', lastTrimmed.length, 'chunks');
+      }
+      
+      // Trim button handlers
+      trimLast5Btn.onclick = function() { trimLastSeconds(5); };
+      trimLast10Btn.onclick = function() { trimLastSeconds(10); };
+      trimLast30Btn.onclick = function() { trimLastSeconds(30); };
+      undoTrimBtn.onclick = undoLastTrim;
+      
+      // =====================================================
+      // TRANSCRIPTION FUNCTIONALITY
+      // =====================================================
+      
+      transcribeBtn.onclick = async function() {
+        if (isTranscribing || chunks.length === 0) return;
+        
+        isTranscribing = true;
+        transcribeBtn.disabled = true;
+        transcribeBtn.textContent = '⏳ Transcribing...';
+        transcriptionStatus.style.display = '';
+        transcriptionStatus.textContent = 'Preparing audio for transcription...';
+        
+        try {
+          // Create blob from current chunks
+          var fileType = recordedMimeType.startsWith('video/mp4') ? 'video/mp4' : 'video/webm';
+          var blob = new Blob(chunks, { type: fileType });
+          
+          transcriptionStatus.textContent = 'Converting to audio...';
+          
+          // Convert blob to base64
+          var reader = new FileReader();
+          var base64Promise = new Promise(function(resolve, reject) {
+            reader.onload = function() {
+              var base64 = reader.result.split(',')[1];
+              resolve(base64);
+            };
+            reader.onerror = reject;
+          });
+          reader.readAsDataURL(blob);
+          var base64Audio = await base64Promise;
+          
+          transcriptionStatus.textContent = 'Sending to AI transcription service...';
+          
+          // Call Hugging Face speech function via Supabase
+          var supabaseUrl = '${config.supabaseUrl}';
+          var supabaseKey = '${config.supabaseKey}';
+          
+          var transcribeResponse = await fetch(supabaseUrl + '/functions/v1/huggingface-speech', {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + supabaseKey,
+              'apikey': supabaseKey,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              audio: base64Audio,
+              agentType: 'transcription'
+            })
+          });
+          
+          if (!transcribeResponse.ok) {
+            throw new Error('Transcription failed: ' + transcribeResponse.statusText);
+          }
+          
+          var transcribeData = await transcribeResponse.json();
+          transcriptText = transcribeData.text || '';
+          
+          transcriptionStatus.textContent = 'Transcription complete!';
+          transcriptionStatus.style.color = '#22c55e';
+          
+          // Show caption toggle
+          captionToggleBtn.style.display = '';
+          captionToggleBtn.textContent = 'CC Off';
+          captionsEnabled = false;
+          
+          // Display transcript in the teleprompter
+          if (transcriptText) {
+            scriptContent.innerHTML = '<strong style="color:#22c55e;">📝 Transcription:</strong><br><br>' + transcriptText.replace(/\\n/g, '<br>');
+          }
+          
+          console.log('✅ Transcription complete:', transcriptText.substring(0, 100) + '...');
+          
+        } catch (err) {
+          console.error('Transcription error:', err);
+          transcriptionStatus.textContent = '❌ Transcription failed: ' + err.message;
+          transcriptionStatus.style.color = '#dc2626';
+        } finally {
+          isTranscribing = false;
+          transcribeBtn.disabled = false;
+          transcribeBtn.textContent = '🎙️ Transcribe Recording';
+          
+          setTimeout(function() {
+            transcriptionStatus.style.display = 'none';
+            transcriptionStatus.style.color = '';
+          }, 5000);
+        }
+      };
+      
+      // =====================================================
+      // CAPTION TOGGLE
+      // =====================================================
+      
+      captionToggleBtn.onclick = function() {
+        captionsEnabled = !captionsEnabled;
+        
+        if (captionsEnabled) {
+          captionToggleBtn.textContent = 'CC On';
+          captionToggleBtn.classList.add('active');
+          captionOverlay.classList.remove('hidden');
+          captionOverlay.textContent = transcriptText || 'No transcript available';
+        } else {
+          captionToggleBtn.textContent = 'CC Off';
+          captionToggleBtn.classList.remove('active');
+          captionOverlay.classList.add('hidden');
+        }
       };
       
     })();
