@@ -845,6 +845,9 @@ function generateScript(config: PopoutConfig): string {
       var voiceoverName = document.getElementById('voiceoverName');
       var bgMusicName = document.getElementById('bgMusicName');
       var audioControlPanel = document.getElementById('audioControlPanel');
+      
+      // Initially hide audio control panel until recording starts
+      audioControlPanel.style.display = 'none';
       var voiceoverControls = document.getElementById('voiceoverControls');
       var ttsControls = document.getElementById('ttsControls');
       var musicControls = document.getElementById('musicControls');
@@ -1240,10 +1243,18 @@ function generateScript(config: PopoutConfig): string {
         status.textContent = 'Select screen...';
         status.className = 'status countdown';
         
+        // Request screen share WITH audio option - user should enable "Share tab audio"
         navigator.mediaDevices.getDisplayMedia({
           video: { width: 1920, height: 1080, frameRate: 30 },
-          audio: true
+          audio: {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false
+          }
         }).then(function(displayStr) {
+          // Check if system audio was captured
+          var hasSystemAudio = displayStr.getAudioTracks().length > 0;
+          console.log('🖥️ Screen shared, has system audio:', hasSystemAudio);
           displayStream = displayStr;
           window.displayStream = displayStr;
           
@@ -1373,7 +1384,9 @@ function generateScript(config: PopoutConfig): string {
           document.getElementById('audioOptionsDialog').remove();
           
           if (useTTS && hasScript) {
-            status.textContent = 'Generating TTS...';
+            // Show loading state for TTS generation
+            status.textContent = 'Generating TTS audio...';
+            status.className = 'status countdown';
             var scriptToUse = scripts.find(function(s) { return s.id === scriptSelect.value; });
             if (scriptToUse) {
               generateTTS(scriptToUse.content, function() {
@@ -1761,8 +1774,9 @@ function generateScript(config: PopoutConfig): string {
             displayStream = null;
           }
           
-          recIndicator.style.display = 'none';
+        recIndicator.style.display = 'none';
           audioControlPanel.classList.remove('visible');
+          audioControlPanel.style.display = 'none';
           startBtn.style.display = 'none';
           pauseBtn.style.display = 'none';
           stopBtn.style.display = 'none';
@@ -1922,6 +1936,7 @@ function generateScript(config: PopoutConfig): string {
           musicControls.querySelectorAll('button').forEach(function(btn) { btn.disabled = false; });
         }
         
+        audioControlPanel.style.display = '';
         audioControlPanel.classList.add('visible');
         updateAudioProgress();
       }
@@ -2168,7 +2183,7 @@ function generateScript(config: PopoutConfig): string {
         }
       };
       
-      // Stop recording - with thorough cleanup
+      // Stop recording - with thorough cleanup (but keep camera for new recording)
       stopBtn.onclick = function() {
         console.log('🛑 Stop button clicked');
         isRecording = false;
@@ -2182,24 +2197,24 @@ function generateScript(config: PopoutConfig): string {
         if (scrollInterval) { clearInterval(scrollInterval); scrollInterval = null; }
         if (audioProgressInterval) { clearInterval(audioProgressInterval); audioProgressInterval = null; }
         
-        // Stop the recorder
+        // Stop the recorder - this triggers onstop handler
         if (mediaRecorder && mediaRecorder.state !== 'inactive') {
           mediaRecorder.stop();
         }
         
-        // Stop camera stream
-        if (stream) {
-          stream.getTracks().forEach(function(t) { t.stop(); });
-        }
+        // DO NOT stop camera stream here - it will be stopped in onstop handler
+        // and we keep it so user can see preview of recording
         
-        // Stop display stream
+        // Stop display stream (screen share)
         if (displayStream) {
           displayStream.getTracks().forEach(function(t) { t.stop(); });
+          displayStream = null;
         }
         
         // Reset clones for next recording
         voiceoverClone = null;
         musicClone = null;
+        ttsAudio = null;
       };
       
       // Save recording to Supabase storage and database
