@@ -555,6 +555,228 @@ function generateStyles(): string {
     }
     .caption-toggle.active { background: #6366f1; border-color: #6366f1; }
     
+    /* Script Analysis & Segment Styles */
+    .script-segment {
+      padding: 12px;
+      margin: 8px 0;
+      border-radius: 8px;
+      border-left: 4px solid #475569;
+      background: rgba(30, 41, 59, 0.4);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .script-segment:hover { background: rgba(30, 41, 59, 0.6); }
+    .script-segment.active { 
+      background: rgba(99, 102, 241, 0.2); 
+      border-left-color: #6366f1;
+    }
+    .script-segment.intro { border-left-color: #22c55e; }
+    .script-segment.demo { border-left-color: #f59e0b; }
+    .script-segment.transition { border-left-color: #8b5cf6; }
+    .script-segment.closing { border-left-color: #ec4899; }
+    .script-segment .segment-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .script-segment .segment-type {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: #475569;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .script-segment.intro .segment-type { background: #22c55e; color: #000; }
+    .script-segment.demo .segment-type { background: #f59e0b; color: #000; }
+    .script-segment.transition .segment-type { background: #8b5cf6; }
+    .script-segment.closing .segment-type { background: #ec4899; }
+    .script-segment .segment-duration {
+      font-size: 11px;
+      opacity: 0.7;
+    }
+    .script-segment .segment-text {
+      font-size: 16px;
+      line-height: 1.8;
+    }
+    .script-segment .pause-marker {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      padding: 6px 10px;
+      background: rgba(245, 158, 11, 0.2);
+      border-radius: 6px;
+      font-size: 12px;
+      color: #fbbf24;
+    }
+    .script-segment .tone-markers {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+    .script-segment .tone-marker {
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(99, 102, 241, 0.3);
+    }
+    .script-segment .engagement-tip {
+      font-size: 11px;
+      opacity: 0.8;
+      font-style: italic;
+      margin-top: 6px;
+      padding-left: 10px;
+      border-left: 2px solid #6366f1;
+    }
+    
+    /* Analysis Panel Styles */
+    .analysis-panel {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+      border: 1px solid #6366f1;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 10px;
+    }
+    .analysis-panel h4 {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .analysis-panel .score-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .analysis-panel .score-badge.good { background: #22c55e; color: #000; }
+    .analysis-panel .score-badge.medium { background: #f59e0b; color: #000; }
+    .analysis-panel .score-badge.low { background: #ef4444; }
+    .analysis-panel .recommendation {
+      font-size: 12px;
+      padding: 6px 10px;
+      background: rgba(30, 41, 59, 0.6);
+      border-radius: 6px;
+      margin-top: 6px;
+    }
+    .analysis-panel .tone-guide {
+      font-size: 12px;
+      opacity: 0.9;
+      font-style: italic;
+      margin-top: 8px;
+    }
+    
+    /* Pause Insert Resume Panel */
+    .pause-insert-panel {
+      background: rgba(15, 23, 42, 0.95);
+      border: 2px solid #f59e0b;
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 10px;
+    }
+    .pause-insert-panel .insert-mode-toggle {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .pause-insert-panel .mode-btn {
+      flex: 1;
+      padding: 10px;
+      font-size: 12px;
+      border: 2px solid #475569;
+      background: transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .pause-insert-panel .mode-btn:hover { border-color: #6366f1; }
+    .pause-insert-panel .mode-btn.active { 
+      border-color: #f59e0b; 
+      background: rgba(245, 158, 11, 0.2);
+    }
+    .pause-insert-panel .current-segment {
+      background: rgba(30, 41, 59, 0.6);
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 12px;
+    }
+    .pause-insert-panel .current-segment h5 {
+      margin: 0 0 6px 0;
+      font-size: 12px;
+      opacity: 0.7;
+    }
+    .pause-insert-panel .segment-nav {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .pause-insert-panel .nav-btn {
+      padding: 6px 12px;
+      font-size: 11px;
+      background: #334155;
+      border: 1px solid #475569;
+      cursor: pointer;
+    }
+    .pause-insert-panel .nav-btn:hover { background: #475569; }
+    .pause-insert-panel .resume-options {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .pause-insert-panel .resume-btn {
+      padding: 10px 16px;
+      font-size: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .pause-insert-panel .resume-btn.continue {
+      background: #22c55e;
+      border: none;
+    }
+    .pause-insert-panel .resume-btn.restart-segment {
+      background: #f59e0b;
+      border: none;
+      color: #000;
+    }
+    .pause-insert-panel .resume-btn.skip-ahead {
+      background: #6366f1;
+      border: none;
+    }
+    
+    /* Analyze Script Button */
+    .analyze-script-btn {
+      padding: 8px 12px;
+      font-size: 11px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .analyze-script-btn:hover { opacity: 0.9; }
+    .analyze-script-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .analyze-script-btn.loading::after {
+      content: '';
+      width: 12px;
+      height: 12px;
+      border: 2px solid #fff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-left: 6px;
+    }
+    
     .sidebar { width: 350px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
     .panel {
       background: #1a1a2e;
@@ -917,11 +1139,48 @@ function generateBody(config: PopoutConfig, escapedScriptContent: string): strin
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
             <h3 style="margin:0;">📄 Teleprompter</h3>
             <div style="display:flex;gap:5px;">
+              <button id="analyzeScriptBtn" class="analyze-script-btn" title="Analyze script for engagement tips">✨ Analyze</button>
+              <button id="toggleSegmentViewBtn" style="padding:4px 8px;font-size:12px;" title="Toggle segment view">📊</button>
               <button id="scrollUpBtn" style="padding:4px 8px;font-size:12px;" title="Scroll Up">▲</button>
               <button id="scrollDownBtn" style="padding:4px 8px;font-size:12px;" title="Scroll Down">▼</button>
               <button id="scrollResetBtn" style="padding:4px 8px;font-size:12px;" title="Reset">⟲</button>
             </div>
           </div>
+          
+          <!-- Analysis Results Panel (hidden by default) -->
+          <div id="analysisPanel" class="analysis-panel" style="display:none;">
+            <h4>✨ Script Analysis <span id="analysisScore" class="score-badge"></span></h4>
+            <div id="analysisToneGuide" class="tone-guide"></div>
+            <div id="analysisRecommendations"></div>
+            <div style="margin-top:8px;display:flex;gap:6px;">
+              <span id="analysisDuration" style="font-size:11px;opacity:0.7;"></span>
+              <span id="analysisPauseCount" style="font-size:11px;opacity:0.7;"></span>
+            </div>
+          </div>
+          
+          <!-- Pause Insert Resume Panel (shown when paused with script) -->
+          <div id="pauseInsertPanel" class="pause-insert-panel" style="display:none;">
+            <div class="insert-mode-toggle">
+              <button id="modeDemoBtn" class="mode-btn active" title="Insert demo/walkthrough">🖥️ Demo Mode</button>
+              <button id="modeSilentBtn" class="mode-btn" title="Silent recording continues">🔇 Silent</button>
+              <button id="modeSkipBtn" class="mode-btn" title="Skip to next segment">⏭️ Skip</button>
+            </div>
+            <div class="current-segment">
+              <h5>📍 Current Position</h5>
+              <div id="currentSegmentInfo">Segment 1 of 1</div>
+              <div class="segment-nav">
+                <button id="prevSegmentBtn" class="nav-btn">◀ Previous</button>
+                <button id="jumpToSegmentBtn" class="nav-btn">📌 Jump to...</button>
+                <button id="nextSegmentBtn" class="nav-btn">Next ▶</button>
+              </div>
+            </div>
+            <div class="resume-options">
+              <button id="resumeContinueBtn" class="resume-btn continue">▶️ Continue Recording</button>
+              <button id="resumeRestartSegmentBtn" class="resume-btn restart-segment">🔄 Restart Segment</button>
+              <button id="resumeSkipAheadBtn" class="resume-btn skip-ahead">⏭️ Skip to Next</button>
+            </div>
+          </div>
+          
           <div id="scriptContent" class="script-content">
             ${escapedScriptContent || '<span style="opacity:0.5;">Select a script to display here...</span>'}
           </div>
@@ -1092,6 +1351,13 @@ function generateScript(config: PopoutConfig): string {
       var captionsEnabled = false; // Caption display toggle
       var isTranscribing = false; // Transcription in progress
       
+      // Script analysis and segment state
+      var scriptAnalysis = null; // Stores AI analysis results
+      var currentSegmentIndex = 0; // Current segment during recording
+      var isSegmentViewEnabled = false; // Toggle between plain text and segment view
+      var insertMode = 'demo'; // 'demo', 'silent', 'skip'
+      var isAnalyzing = false; // Analysis in progress
+      
       // DOM Elements
       var preview = document.getElementById('preview');
       var startBtn = document.getElementById('startBtn');
@@ -1146,6 +1412,29 @@ function generateScript(config: PopoutConfig): string {
       var transcriptionStatus = document.getElementById('transcriptionStatus');
       var captionOverlay = document.getElementById('captionOverlay');
       var captionToggleBtn = document.getElementById('captionToggleBtn');
+      
+      // Script analysis elements
+      var analyzeScriptBtn = document.getElementById('analyzeScriptBtn');
+      var toggleSegmentViewBtn = document.getElementById('toggleSegmentViewBtn');
+      var analysisPanel = document.getElementById('analysisPanel');
+      var analysisScore = document.getElementById('analysisScore');
+      var analysisToneGuide = document.getElementById('analysisToneGuide');
+      var analysisRecommendations = document.getElementById('analysisRecommendations');
+      var analysisDuration = document.getElementById('analysisDuration');
+      var analysisPauseCount = document.getElementById('analysisPauseCount');
+      
+      // Pause insert resume elements
+      var pauseInsertPanel = document.getElementById('pauseInsertPanel');
+      var modeDemoBtn = document.getElementById('modeDemoBtn');
+      var modeSilentBtn = document.getElementById('modeSilentBtn');
+      var modeSkipBtn = document.getElementById('modeSkipBtn');
+      var currentSegmentInfo = document.getElementById('currentSegmentInfo');
+      var prevSegmentBtn = document.getElementById('prevSegmentBtn');
+      var nextSegmentBtn = document.getElementById('nextSegmentBtn');
+      var jumpToSegmentBtn = document.getElementById('jumpToSegmentBtn');
+      var resumeContinueBtn = document.getElementById('resumeContinueBtn');
+      var resumeRestartSegmentBtn = document.getElementById('resumeRestartSegmentBtn');
+      var resumeSkipAheadBtn = document.getElementById('resumeSkipAheadBtn');
       
       // PIP overlay elements
       var pipOverlay = document.getElementById('pipOverlay');
@@ -1449,6 +1738,346 @@ function generateScript(config: PopoutConfig): string {
       document.getElementById('scrollUpBtn').onclick = function() { scriptContent.scrollTop -= 50; };
       document.getElementById('scrollDownBtn').onclick = function() { scriptContent.scrollTop += 50; };
       document.getElementById('scrollResetBtn').onclick = function() { scriptContent.scrollTop = 0; };
+      
+      // =====================================================
+      // Script Analysis Functions
+      // =====================================================
+      
+      // Analyze script using AI
+      function analyzeScript(scriptText) {
+        if (!scriptText || isAnalyzing) return;
+        
+        isAnalyzing = true;
+        analyzeScriptBtn.disabled = true;
+        analyzeScriptBtn.classList.add('loading');
+        analyzeScriptBtn.innerHTML = '✨ Analyzing...';
+        
+        var supabaseUrl = '${config.supabaseUrl}';
+        var supabaseKey = '${config.supabaseKey}';
+        
+        fetch(supabaseUrl + '/functions/v1/analyze-script', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey,
+            'Authorization': 'Bearer ' + supabaseKey
+          },
+          body: JSON.stringify({
+            script: scriptText,
+            context: 'video recording walkthrough'
+          })
+        })
+        .then(function(response) {
+          if (!response.ok) throw new Error('Analysis failed');
+          return response.json();
+        })
+        .then(function(analysis) {
+          scriptAnalysis = analysis;
+          displayAnalysisResults(analysis);
+          if (isSegmentViewEnabled) {
+            renderSegmentView(analysis);
+          }
+          console.log('✅ Script analysis complete:', analysis);
+        })
+        .catch(function(err) {
+          console.error('Script analysis error:', err);
+          // Show a simple fallback message
+          analysisPanel.style.display = 'block';
+          analysisScore.textContent = '⚠️';
+          analysisScore.className = 'score-badge';
+          analysisToneGuide.textContent = 'Analysis unavailable - try again later';
+        })
+        .finally(function() {
+          isAnalyzing = false;
+          analyzeScriptBtn.disabled = false;
+          analyzeScriptBtn.classList.remove('loading');
+          analyzeScriptBtn.innerHTML = '✨ Analyze';
+        });
+      }
+      
+      // Display analysis results in the panel
+      function displayAnalysisResults(analysis) {
+        analysisPanel.style.display = 'block';
+        
+        // Score badge
+        var score = analysis.overallScore || 50;
+        analysisScore.textContent = score + '/100';
+        if (score >= 70) {
+          analysisScore.className = 'score-badge good';
+        } else if (score >= 50) {
+          analysisScore.className = 'score-badge medium';
+        } else {
+          analysisScore.className = 'score-badge low';
+        }
+        
+        // Tone guide
+        analysisToneGuide.textContent = analysis.toneGuide || 'Deliver naturally';
+        
+        // Recommendations
+        var recsHtml = '';
+        if (analysis.engagementRecommendations && analysis.engagementRecommendations.length > 0) {
+          analysis.engagementRecommendations.slice(0, 3).forEach(function(rec) {
+            recsHtml += '<div class="recommendation">💡 ' + rec + '</div>';
+          });
+        }
+        analysisRecommendations.innerHTML = recsHtml;
+        
+        // Duration and pause info
+        var duration = analysis.totalDuration || 0;
+        var mins = Math.floor(duration / 60);
+        var secs = duration % 60;
+        analysisDuration.textContent = '⏱️ ~' + mins + ':' + (secs < 10 ? '0' : '') + secs;
+        
+        var pauseCount = analysis.pausePoints ? analysis.pausePoints.length : 0;
+        analysisPauseCount.textContent = '⏸️ ' + pauseCount + ' pause points';
+      }
+      
+      // Render script in segment view with markers
+      function renderSegmentView(analysis) {
+        if (!analysis || !analysis.segments || analysis.segments.length === 0) {
+          return;
+        }
+        
+        var html = '';
+        analysis.segments.forEach(function(seg, idx) {
+          var segClass = 'script-segment ' + seg.type;
+          if (idx === currentSegmentIndex) segClass += ' active';
+          
+          html += '<div class="' + segClass + '" data-segment-index="' + idx + '">';
+          html += '<div class="segment-header">';
+          html += '<span class="segment-type">' + seg.type + '</span>';
+          html += '<span class="segment-duration">~' + seg.estimatedDuration + 's</span>';
+          html += '</div>';
+          html += '<div class="segment-text">' + seg.text.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>';
+          
+          // Tone markers
+          if (seg.toneMarkers && seg.toneMarkers.length > 0) {
+            html += '<div class="tone-markers">';
+            seg.toneMarkers.forEach(function(marker) {
+              var icon = '';
+              switch(marker) {
+                case 'emphasize': icon = '💪'; break;
+                case 'slower': icon = '🐢'; break;
+                case 'faster': icon = '🚀'; break;
+                case 'pause': icon = '⏸️'; break;
+                case 'question': icon = '❓'; break;
+                case 'excitement': icon = '🎉'; break;
+                default: icon = '🎯';
+              }
+              html += '<span class="tone-marker">' + icon + ' ' + marker + '</span>';
+            });
+            html += '</div>';
+          }
+          
+          // Engagement tips
+          if (seg.engagementTips && seg.engagementTips.length > 0) {
+            seg.engagementTips.forEach(function(tip) {
+              html += '<div class="engagement-tip">💡 ' + tip + '</div>';
+            });
+          }
+          
+          // Pause marker
+          if (seg.suggestedPauseAfter) {
+            html += '<div class="pause-marker">';
+            html += '⏸️ ' + (seg.pauseReason || 'Suggested pause point');
+            html += '</div>';
+          }
+          
+          html += '</div>';
+        });
+        
+        scriptContent.innerHTML = html;
+        
+        // Add click handlers to segments
+        var segmentEls = scriptContent.querySelectorAll('.script-segment');
+        segmentEls.forEach(function(el) {
+          el.onclick = function() {
+            var idx = parseInt(el.getAttribute('data-segment-index'));
+            setCurrentSegment(idx);
+          };
+        });
+      }
+      
+      // Set current segment and scroll to it
+      function setCurrentSegment(idx) {
+        if (!scriptAnalysis || !scriptAnalysis.segments) return;
+        if (idx < 0) idx = 0;
+        if (idx >= scriptAnalysis.segments.length) idx = scriptAnalysis.segments.length - 1;
+        
+        currentSegmentIndex = idx;
+        
+        // Update active class
+        var segmentEls = scriptContent.querySelectorAll('.script-segment');
+        segmentEls.forEach(function(el, i) {
+          if (i === idx) {
+            el.classList.add('active');
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          } else {
+            el.classList.remove('active');
+          }
+        });
+        
+        // Update segment info
+        updateSegmentInfo();
+      }
+      
+      // Update segment navigation info
+      function updateSegmentInfo() {
+        if (!scriptAnalysis || !scriptAnalysis.segments) {
+          currentSegmentInfo.textContent = 'No segments loaded';
+          return;
+        }
+        
+        var seg = scriptAnalysis.segments[currentSegmentIndex];
+        var total = scriptAnalysis.segments.length;
+        currentSegmentInfo.innerHTML = '<strong>' + seg.type.toUpperCase() + '</strong> - Segment ' + (currentSegmentIndex + 1) + ' of ' + total;
+        
+        prevSegmentBtn.disabled = currentSegmentIndex === 0;
+        nextSegmentBtn.disabled = currentSegmentIndex >= total - 1;
+      }
+      
+      // Toggle segment view
+      function toggleSegmentView() {
+        isSegmentViewEnabled = !isSegmentViewEnabled;
+        toggleSegmentViewBtn.classList.toggle('active', isSegmentViewEnabled);
+        
+        if (isSegmentViewEnabled && scriptAnalysis) {
+          renderSegmentView(scriptAnalysis);
+        } else {
+          // Restore plain text view
+          var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
+          if (selectedScript) {
+            scriptContent.innerHTML = selectedScript.content.replace(/\\n/g, '<br>').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          }
+        }
+      }
+      
+      // Analyze button click handler
+      if (analyzeScriptBtn) {
+        analyzeScriptBtn.onclick = function() {
+          var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
+          if (selectedScript) {
+            analyzeScript(selectedScript.content);
+          } else {
+            console.log('⚠️ No script selected to analyze');
+          }
+        };
+      }
+      
+      // Toggle segment view button
+      if (toggleSegmentViewBtn) {
+        toggleSegmentViewBtn.onclick = toggleSegmentView;
+      }
+      
+      // =====================================================
+      // Pause-Insert-Resume Controls
+      // =====================================================
+      
+      // Insert mode buttons
+      if (modeDemoBtn) {
+        modeDemoBtn.onclick = function() {
+          insertMode = 'demo';
+          modeDemoBtn.classList.add('active');
+          modeSilentBtn.classList.remove('active');
+          modeSkipBtn.classList.remove('active');
+        };
+      }
+      
+      if (modeSilentBtn) {
+        modeSilentBtn.onclick = function() {
+          insertMode = 'silent';
+          modeDemoBtn.classList.remove('active');
+          modeSilentBtn.classList.add('active');
+          modeSkipBtn.classList.remove('active');
+          // Pause audio when in silent mode
+          if (ttsAudio) ttsAudio.pause();
+          if (voiceoverClone) voiceoverClone.pause();
+        };
+      }
+      
+      if (modeSkipBtn) {
+        modeSkipBtn.onclick = function() {
+          insertMode = 'skip';
+          modeDemoBtn.classList.remove('active');
+          modeSilentBtn.classList.remove('active');
+          modeSkipBtn.classList.add('active');
+        };
+      }
+      
+      // Segment navigation
+      if (prevSegmentBtn) {
+        prevSegmentBtn.onclick = function() {
+          setCurrentSegment(currentSegmentIndex - 1);
+        };
+      }
+      
+      if (nextSegmentBtn) {
+        nextSegmentBtn.onclick = function() {
+          setCurrentSegment(currentSegmentIndex + 1);
+        };
+      }
+      
+      if (jumpToSegmentBtn) {
+        jumpToSegmentBtn.onclick = function() {
+          if (!scriptAnalysis || !scriptAnalysis.segments) return;
+          
+          var options = scriptAnalysis.segments.map(function(seg, idx) {
+            return (idx + 1) + '. ' + seg.type.toUpperCase() + ': ' + seg.text.substring(0, 40) + '...';
+          }).join('\\n');
+          
+          var choice = prompt('Jump to segment:\\n' + options + '\\n\\nEnter segment number:');
+          if (choice) {
+            var idx = parseInt(choice) - 1;
+            if (!isNaN(idx) && idx >= 0 && idx < scriptAnalysis.segments.length) {
+              setCurrentSegment(idx);
+            }
+          }
+        };
+      }
+      
+      // Resume controls
+      if (resumeContinueBtn) {
+        resumeContinueBtn.onclick = function() {
+          // Continue recording from current position
+          pauseInsertPanel.style.display = 'none';
+          pauseBtn.click(); // Toggle pause/resume
+        };
+      }
+      
+      if (resumeRestartSegmentBtn) {
+        resumeRestartSegmentBtn.onclick = function() {
+          // Restart current segment - scroll to segment start, resume audio from segment
+          if (scriptAnalysis && scriptAnalysis.segments && scriptAnalysis.segments[currentSegmentIndex]) {
+            setCurrentSegment(currentSegmentIndex);
+          }
+          pauseInsertPanel.style.display = 'none';
+          pauseBtn.click();
+        };
+      }
+      
+      if (resumeSkipAheadBtn) {
+        resumeSkipAheadBtn.onclick = function() {
+          // Skip to next segment
+          if (scriptAnalysis && scriptAnalysis.segments) {
+            setCurrentSegment(currentSegmentIndex + 1);
+          }
+          pauseInsertPanel.style.display = 'none';
+          pauseBtn.click();
+        };
+      }
+      
+      // Show pause insert panel when paused (if script has analysis)
+      function showPauseInsertPanel() {
+        if (scriptAnalysis && scriptAnalysis.segments && scriptAnalysis.segments.length > 0) {
+          updateSegmentInfo();
+          pauseInsertPanel.style.display = 'block';
+        }
+      }
+      
+      // Hide pause insert panel
+      function hidePauseInsertPanel() {
+        pauseInsertPanel.style.display = 'none';
+      }
       
       // Camera toggle controls - now actually stops/starts camera stream
       cameraToggleBtn.onclick = function() {
@@ -2993,6 +3622,9 @@ function generateScript(config: PopoutConfig): string {
           var elapsed = Math.floor((Date.now() - startTime - pausedTime) / 1000);
           trimInfo.textContent = 'Recording duration: ' + formatTime(elapsed) + ' (' + chunks.length + ' segments)';
           pauseEditPanel.classList.remove('hidden');
+          
+          // Show pause insert panel with segment controls (if script analysis exists)
+          showPauseInsertPanel();
           
           // Show caption toggle if transcript exists
           if (transcriptText) {
