@@ -2742,10 +2742,10 @@ function generateScript(config: PopoutConfig): string {
           var enhancedText = window.enhancedScriptContent;
           // Clean up markers for TTS (remove pause markers, notes sections)
           var ttsText = enhancedText
-            .replace(/\\[PAUSE \\d+(\\.\\d+)?s\\]/g, '... ')
-            .replace(/\\[ENGAGEMENT NOTES:\\][\\s\\S]*?(?=\\[|$)/g, '')
-            .replace(/\\[DELIVERY TIPS:\\][\\s\\S]*$/g, '')
-            .replace(/•/g, '')
+            .replace(/\\[PAUSE [0-9.]+s\\]/gi, '... ')
+            .replace(/\\[ENGAGEMENT NOTES:\\][\\s\\S]*/gi, '')
+            .replace(/\\[DELIVERY TIPS:\\][\\s\\S]*/gi, '')
+            .replace(/[•]/g, '')
             .trim();
           
           if (!ttsText || ttsText.length < 5) {
@@ -4533,8 +4533,6 @@ function generateScript(config: PopoutConfig): string {
               }
             };
           }
-            }
-          };
         } else if (useVoiceover && voiceoverClone) {
           // Guard: check if stopped before playing
           if (isStopped) {
