@@ -1642,12 +1642,22 @@ function generateScript(config: PopoutConfig): string {
         }
         drawFrame();
         
-        // Play audio
-        if (useTTS && ttsAudio) ttsAudio.play().catch(console.error);
-        if (useVoiceover && voiceover && voiceover.src) voiceover.play().catch(console.error);
+        // Play audio - IMPORTANT: Only play ONE voiceover source to avoid overlap
+        // If TTS is enabled, use that as primary voice. Otherwise use voiceover audio.
+        if (useTTS && ttsAudio) {
+          ttsAudio.play().catch(console.error);
+          // If user also selected voiceover, DON'T play it - TTS takes priority
+          console.log('🎤 Playing TTS audio (voiceover disabled to prevent overlap)');
+        } else if (useVoiceover && voiceover && voiceover.src) {
+          voiceover.play().catch(console.error);
+          console.log('🎤 Playing voiceover audio');
+        }
+        
+        // Background music is separate and can play alongside voice
         if (useMusic && bgMusic && bgMusic.src) {
           bgMusic.volume = 0.3;
           bgMusic.play().catch(console.error);
+          console.log('🎵 Playing background music');
         }
         
         // Auto-scroll
@@ -1838,15 +1848,114 @@ function generateScript(config: PopoutConfig): string {
         stream.getTracks().forEach(function(t) { t.stop(); });
       };
       
-      // Save recording
-      saveBtn.onclick = function() {
+      // Save recording to Supabase storage and database
+      saveBtn.onclick = async function() {
         var name = videoNameInput.value.trim() || 'recording';
         var blob = new Blob(chunks, { type: 'video/webm' });
-        var a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = name + '.webm';
-        a.click();
-        alert('Video downloaded! Close this window to return to the app.');
+        var supabaseUrl = '${config.supabaseUrl}';
+        var supabaseKey = '${config.supabaseKey}';
+        
+        saveBtn.disabled = true;
+        saveBtn.textContent = '⏳ Saving...';
+        status.textContent = 'Uploading to cloud...';
+        
+        try {
+          // Generate unique filename
+          var timestamp = Date.now();
+          var safeFileName = name.replace(/[^a-zA-Z0-9_-]/g, '_');
+          var storagePath = 'recording_' + timestamp + '_' + safeFileName + '.webm';
+          
+          // Upload to Supabase Storage
+          var uploadResponse = await fetch(supabaseUrl + '/storage/v1/object/generated-videos/' + storagePath, {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + supabaseKey,
+              'apikey': supabaseKey,
+              'Content-Type': 'video/webm',
+              'x-upsert': 'true'
+            },
+            body: blob
+          });
+          
+          if (!uploadResponse.ok) {
+            throw new Error('Upload failed: ' + uploadResponse.statusText);
+          }
+          
+          var fileUrl = supabaseUrl + '/storage/v1/object/public/generated-videos/' + storagePath;
+          
+          // Get current user
+          var authResponse = await fetch(supabaseUrl + '/auth/v1/user', {
+            headers: {
+              'Authorization': 'Bearer ' + supabaseKey,
+              'apikey': supabaseKey
+            }
+          });
+          
+          var userId = null;
+          if (authResponse.ok) {
+            var authData = await authResponse.json();
+            userId = authData.id;
+          }
+          
+          // Save to generated_media table
+          var dbResponse = await fetch(supabaseUrl + '/rest/v1/generated_media', {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + supabaseKey,
+              'apikey': supabaseKey,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify({
+              name: name,
+              file_type: 'video',
+              file_url: fileUrl,
+              storage_bucket: 'generated-videos',
+              storage_path: storagePath,
+              file_size_bytes: blob.size,
+              source: 'popout-recording',
+              user_id: userId,
+              metadata: {
+                recordedAt: new Date().toISOString(),
+                format: 'webm',
+                source: 'popout-studio'
+              }
+            })
+          });
+          
+          if (!dbResponse.ok) {
+            console.error('Database save failed:', await dbResponse.text());
+          }
+          
+          status.textContent = '✅ Saved to cloud!';
+          saveBtn.textContent = '✅ Saved!';
+          
+          // Notify parent window
+          if (window.opener && !window.opener.closed) {
+            window.opener.postMessage({ type: 'VIDEO_SAVED', name: name, url: fileUrl }, '*');
+          }
+          
+          // Also offer local download
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = name + '.webm';
+          a.click();
+          
+          alert('Video saved to cloud and downloaded locally!');
+          
+        } catch (err) {
+          console.error('Save error:', err);
+          status.textContent = 'Save failed';
+          saveBtn.textContent = '💾 Retry Save';
+          saveBtn.disabled = false;
+          
+          // Fallback to local download
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = name + '.webm';
+          a.click();
+          alert('Cloud save failed. Video downloaded locally instead.');
+        }
       };
       
       // Reset
