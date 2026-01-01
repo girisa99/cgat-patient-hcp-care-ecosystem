@@ -2579,6 +2579,16 @@ function generateScript(config: PopoutConfig): string {
         
         // Show PIP overlay (draggable) - update its content based on mode
         pipOverlay.classList.remove('hidden');
+        
+        // Apply the logo position to PIP overlay if user dragged the logo
+        if (pipPosition.x !== null && pipPosition.y !== null) {
+          pipOverlay.style.left = pipPosition.x + 'px';
+          pipOverlay.style.top = pipPosition.y + 'px';
+          pipOverlay.style.right = 'auto';
+          pipOverlay.style.bottom = 'auto';
+          console.log('📍 PIP positioned at:', pipPosition);
+        }
+        
         if (useLogo || !isCameraOn) {
           pipVideo.style.display = 'none';
           pipLogoContainer.style.display = '';
