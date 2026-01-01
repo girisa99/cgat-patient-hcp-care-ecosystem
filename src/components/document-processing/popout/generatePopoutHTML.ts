@@ -6178,7 +6178,7 @@ export function generatePopoutHTML(config: PopoutConfig): string {
         console.error('[POPOUT ERROR]', errorMsg, error);
         if (debugLog && debugOverlay) {
           debugOverlay.style.display = 'block';
-          debugLog.innerHTML += '<span style="color:#f00;">' + errorMsg + '<\\/span><br>';
+          debugLog.innerHTML += '<span style="color:#f00;">' + errorMsg + '</span><br>';
         }
         // Also show in status
         var s = document.getElementById('status');
@@ -6191,11 +6191,11 @@ export function generatePopoutHTML(config: PopoutConfig): string {
       
       window.debugPopout('Debug initialized');
     })();
-  <\\/script>
+  ${'<'+'/script>'}
   <script>
     window.debugPopout && window.debugPopout('Main script loading...');
     ${mainScriptContent}
-  <\\/script>
-<\\/body>
-<\\/html>`;
+  ${'<'+'/script>'}
+${'<'+'/body>'}
+${'<'+'/html>'}`;
 }
