@@ -1404,6 +1404,23 @@ function generateBody(config: PopoutConfig, escapedScriptContent: string): strin
               <h5>✏️ Suggested Improvements</h5>
               <div id="changesList"></div>
               <button id="applyAllChangesBtn" class="apply-all-btn">✅ Apply All Changes to Script</button>
+              
+              <!-- Enhanced Downloads Section -->
+              <div id="enhancedDownloadsSection" style="display:none;margin-top:12px;padding:12px;background:rgba(34,197,94,0.15);border-radius:8px;border:1px solid rgba(34,197,94,0.3);">
+                <h5 style="margin:0 0 8px 0;font-size:12px;display:flex;align-items:center;gap:6px;">💾 Enhanced Content Downloads</h5>
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                  <button id="downloadEnhancedAudioBtn" class="action-btn" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;display:flex;align-items:center;gap:6px;justify-content:center;">
+                    🎧 Generate & Download Enhanced Audio (MP3)
+                  </button>
+                  <button id="downloadEnhancedTranscriptBtn" class="action-btn" style="display:flex;align-items:center;gap:6px;justify-content:center;">
+                    📄 Download Enhanced Transcript (TXT)
+                  </button>
+                  <button id="downloadOriginalTranscriptBtn" class="action-btn" style="display:flex;align-items:center;gap:6px;justify-content:center;">
+                    📄 Download Original Transcript (TXT)
+                  </button>
+                </div>
+                <div id="enhancedAudioProgress" style="display:none;margin-top:8px;font-size:11px;opacity:0.8;"></div>
+              </div>
             </div>
           </div>
           
@@ -2638,6 +2655,12 @@ function generateScript(config: PopoutConfig): string {
             renderScriptWithWordTracking(enhancedScript);
           }
           
+          // Show enhanced downloads section
+          var enhancedDownloadsSection = document.getElementById('enhancedDownloadsSection');
+          if (enhancedDownloadsSection) {
+            enhancedDownloadsSection.style.display = 'block';
+          }
+          
           // Show confirmation
           applyAllChangesBtn.textContent = '✅ Applied ' + changesApplied + ' changes!';
           applyAllChangesBtn.style.background = '#22c55e';
@@ -2648,6 +2671,234 @@ function generateScript(config: PopoutConfig): string {
             applyAllChangesBtn.textContent = '✅ Apply All Changes to Script';
             applyAllChangesBtn.style.background = '';
           }, 2000);
+        };
+      }
+      
+      // =====================================================
+      // Enhanced Content Download Handlers
+      // =====================================================
+      
+      var downloadEnhancedAudioBtn = document.getElementById('downloadEnhancedAudioBtn');
+      var downloadEnhancedTranscriptBtn = document.getElementById('downloadEnhancedTranscriptBtn');
+      var downloadOriginalTranscriptBtn = document.getElementById('downloadOriginalTranscriptBtn');
+      var enhancedAudioProgress = document.getElementById('enhancedAudioProgress');
+      
+      // Store the generated enhanced audio for later download
+      var generatedEnhancedAudioBlob = null;
+      
+      // Download enhanced transcript as TXT
+      if (downloadEnhancedTranscriptBtn) {
+        downloadEnhancedTranscriptBtn.onclick = function() {
+          if (!window.enhancedScriptContent) {
+            alert('Please apply changes first to generate enhanced content.');
+            return;
+          }
+          
+          var blob = new Blob([window.enhancedScriptContent], { type: 'text/plain' });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = 'enhanced_transcript_' + new Date().toISOString().slice(0,10) + '.txt';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          
+          console.log('📄 Enhanced transcript downloaded');
+        };
+      }
+      
+      // Download original transcript as TXT
+      if (downloadOriginalTranscriptBtn) {
+        downloadOriginalTranscriptBtn.onclick = function() {
+          var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
+          if (!selectedScript) {
+            alert('No script selected.');
+            return;
+          }
+          
+          var blob = new Blob([selectedScript.content], { type: 'text/plain' });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = 'original_transcript_' + new Date().toISOString().slice(0,10) + '.txt';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          
+          console.log('📄 Original transcript downloaded');
+        };
+      }
+      
+      // Generate and download enhanced audio as MP3
+      if (downloadEnhancedAudioBtn) {
+        downloadEnhancedAudioBtn.onclick = async function() {
+          if (!window.enhancedScriptContent) {
+            alert('Please apply changes first to generate enhanced content.');
+            return;
+          }
+          
+          var enhancedText = window.enhancedScriptContent;
+          // Clean up markers for TTS (remove pause markers, notes sections)
+          var ttsText = enhancedText
+            .replace(/\\[PAUSE \\d+(\\.\\d+)?s\\]/g, '... ')
+            .replace(/\\[ENGAGEMENT NOTES:\\][\\s\\S]*?(?=\\[|$)/g, '')
+            .replace(/\\[DELIVERY TIPS:\\][\\s\\S]*$/g, '')
+            .replace(/•/g, '')
+            .trim();
+          
+          if (!ttsText || ttsText.length < 5) {
+            alert('Enhanced script content is too short for audio generation.');
+            return;
+          }
+          
+          downloadEnhancedAudioBtn.disabled = true;
+          downloadEnhancedAudioBtn.textContent = '⏳ Generating audio...';
+          enhancedAudioProgress.style.display = 'block';
+          enhancedAudioProgress.textContent = 'Generating TTS audio from enhanced script...';
+          
+          try {
+            // Use existing TTS functionality - determine which provider
+            var selectedVoice = voiceSelect.value || 'alloy';
+            var ttsProvider = ttsProviderSelect ? ttsProviderSelect.value : 'openai';
+            
+            var audioBlob = null;
+            
+            if (ttsProvider === 'elevenlabs') {
+              // Call ElevenLabs TTS
+              enhancedAudioProgress.textContent = 'Calling ElevenLabs TTS...';
+              var response = await fetch(supabaseUrl + '/functions/v1/elevenlabs-voice', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': 'Bearer ' + supabaseKey
+                },
+                body: JSON.stringify({
+                  text: ttsText,
+                  voice: selectedVoice,
+                  model: 'eleven_multilingual_v2'
+                })
+              });
+              
+              if (!response.ok) {
+                throw new Error('ElevenLabs TTS failed: ' + response.status);
+              }
+              
+              var data = await response.json();
+              if (data.audioContent) {
+                // Convert base64 to blob
+                var binaryStr = atob(data.audioContent);
+                var bytes = new Uint8Array(binaryStr.length);
+                for (var i = 0; i < binaryStr.length; i++) {
+                  bytes[i] = binaryStr.charCodeAt(i);
+                }
+                audioBlob = new Blob([bytes], { type: 'audio/mpeg' });
+              }
+            } else {
+              // Call OpenAI TTS
+              enhancedAudioProgress.textContent = 'Calling OpenAI TTS...';
+              var response = await fetch(supabaseUrl + '/functions/v1/openai-tts', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': 'Bearer ' + supabaseKey
+                },
+                body: JSON.stringify({
+                  text: ttsText,
+                  voice: selectedVoice,
+                  speed: 1.0
+                })
+              });
+              
+              if (!response.ok) {
+                throw new Error('OpenAI TTS failed: ' + response.status);
+              }
+              
+              var data = await response.json();
+              if (data.audioContent) {
+                // Convert base64 to blob
+                var binaryStr = atob(data.audioContent);
+                var bytes = new Uint8Array(binaryStr.length);
+                for (var i = 0; i < binaryStr.length; i++) {
+                  bytes[i] = binaryStr.charCodeAt(i);
+                }
+                audioBlob = new Blob([bytes], { type: 'audio/mpeg' });
+              } else if (data.chunks) {
+                // Handle chunked response for long text
+                enhancedAudioProgress.textContent = 'Processing ' + data.chunks.length + ' audio chunks...';
+                var audioChunks = [];
+                for (var j = 0; j < data.chunks.length; j++) {
+                  enhancedAudioProgress.textContent = 'Processing chunk ' + (j+1) + '/' + data.chunks.length + '...';
+                  var chunkResponse = await fetch(supabaseUrl + '/functions/v1/openai-tts', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': 'Bearer ' + supabaseKey
+                    },
+                    body: JSON.stringify({
+                      text: data.chunks[j],
+                      voice: selectedVoice,
+                      speed: 1.0,
+                      chunkIndex: j,
+                      totalChunks: data.chunks.length
+                    })
+                  });
+                  
+                  if (chunkResponse.ok) {
+                    var chunkData = await chunkResponse.json();
+                    if (chunkData.audioContent) {
+                      audioChunks.push(chunkData.audioContent);
+                    }
+                  }
+                }
+                
+                // Combine all chunks
+                if (audioChunks.length > 0) {
+                  var combinedBytes = [];
+                  audioChunks.forEach(function(chunk) {
+                    var binaryStr = atob(chunk);
+                    for (var k = 0; k < binaryStr.length; k++) {
+                      combinedBytes.push(binaryStr.charCodeAt(k));
+                    }
+                  });
+                  audioBlob = new Blob([new Uint8Array(combinedBytes)], { type: 'audio/mpeg' });
+                }
+              }
+            }
+            
+            if (audioBlob) {
+              generatedEnhancedAudioBlob = audioBlob;
+              
+              // Download the audio
+              var url = URL.createObjectURL(audioBlob);
+              var a = document.createElement('a');
+              a.href = url;
+              a.download = 'enhanced_audio_' + new Date().toISOString().slice(0,10) + '.mp3';
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+              
+              enhancedAudioProgress.textContent = '✅ Enhanced audio downloaded successfully!';
+              console.log('🎧 Enhanced audio downloaded');
+              
+              setTimeout(function() {
+                enhancedAudioProgress.style.display = 'none';
+              }, 3000);
+            } else {
+              throw new Error('No audio data received');
+            }
+          } catch(error) {
+            console.error('Failed to generate enhanced audio:', error);
+            enhancedAudioProgress.textContent = '❌ Error: ' + error.message;
+            setTimeout(function() {
+              enhancedAudioProgress.style.display = 'none';
+            }, 5000);
+          } finally {
+            downloadEnhancedAudioBtn.disabled = false;
+            downloadEnhancedAudioBtn.textContent = '🎧 Generate & Download Enhanced Audio (MP3)';
+          }
         };
       }
       
