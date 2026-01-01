@@ -6064,6 +6064,13 @@ export function generatePopoutHTML(config: PopoutConfig): string {
   const selectedScript = config.scripts.find(s => s.id === config.selectedScriptId);
   const escapedScriptContent = selectedScript ? escapeHtml(selectedScript.content) : '';
 
+  // Debug: log what we're generating
+  console.log('🎬 Generating popout HTML with config:', {
+    scriptsCount: config.scripts.length,
+    voiceoversCount: config.voiceovers.length,
+    musicCount: config.music.length
+  });
+
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -6073,8 +6080,47 @@ export function generatePopoutHTML(config: PopoutConfig): string {
   <style>${generateStyles()}</style>
 </head>
 <body>
+  <div id="debugOverlay" style="position:fixed;top:10px;left:10px;background:rgba(0,0,0,0.9);color:#0f0;padding:15px;border-radius:8px;font-family:monospace;font-size:12px;z-index:99999;max-width:400px;display:none;">
+    <div id="debugLog"></div>
+  </div>
   ${generateBody(config, escapedScriptContent)}
-  <script>${generateScript(config)}</script>
+  <script>
+    // IMMEDIATE DEBUG - runs before anything else
+    (function() {
+      var debugLog = document.getElementById('debugLog');
+      var debugOverlay = document.getElementById('debugOverlay');
+      
+      window.debugPopout = function(msg) {
+        console.log('[POPOUT]', msg);
+        if (debugLog && debugOverlay) {
+          debugOverlay.style.display = 'block';
+          debugLog.innerHTML += msg + '<br>';
+        }
+      };
+      
+      window.onerror = function(msg, url, line, col, error) {
+        var errorMsg = 'ERROR: ' + msg + ' (line ' + line + ')';
+        console.error('[POPOUT ERROR]', errorMsg, error);
+        if (debugLog && debugOverlay) {
+          debugOverlay.style.display = 'block';
+          debugLog.innerHTML += '<span style="color:#f00;">' + errorMsg + '</span><br>';
+        }
+        // Also show in status
+        var s = document.getElementById('status');
+        if (s) { s.textContent = 'JS Error: ' + String(msg).substring(0, 30); s.className = 'status error'; }
+        // Hide loading
+        var loading = document.getElementById('cameraLoading');
+        if (loading) loading.classList.add('hidden');
+        return false;
+      };
+      
+      window.debugPopout('Debug initialized');
+    })();
+  </script>
+  <script>
+    window.debugPopout && window.debugPopout('Main script loading...');
+    ${generateScript(config)}
+  </script>
 </body>
 </html>`;
 }
