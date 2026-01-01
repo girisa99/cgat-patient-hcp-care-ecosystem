@@ -672,6 +672,145 @@ function generateStyles(): string {
       font-style: italic;
       margin-top: 8px;
     }
+    .analysis-panel .action-btns {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .analysis-panel .action-btn {
+      padding: 6px 10px;
+      font-size: 11px;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #334155;
+      border: 1px solid #475569;
+      transition: all 0.2s ease;
+    }
+    .analysis-panel .action-btn:hover { background: #475569; }
+    .analysis-panel .action-btn.active { background: #6366f1; border-color: #6366f1; }
+    .analysis-panel .pause-points-list {
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 8px;
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 8px;
+      padding: 8px;
+    }
+    .analysis-panel .pause-point-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      margin: 4px 0;
+      background: rgba(245, 158, 11, 0.15);
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .analysis-panel .pause-point-item:hover { background: rgba(245, 158, 11, 0.3); }
+    .analysis-panel .pause-point-item .pp-position {
+      padding: 2px 6px;
+      background: #f59e0b;
+      color: #000;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 10px;
+    }
+    .analysis-panel .pause-point-item .pp-reason { flex: 1; }
+    .analysis-panel .pause-point-item .pp-duration {
+      opacity: 0.7;
+      font-size: 10px;
+    }
+    .analysis-panel .review-panel {
+      margin-top: 10px;
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid #6366f1;
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .analysis-panel .review-panel h5 {
+      margin: 0 0 8px 0;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .analysis-panel .change-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 8px;
+      margin: 6px 0;
+      background: rgba(30, 41, 59, 0.6);
+      border-radius: 6px;
+      border-left: 3px solid #8b5cf6;
+    }
+    .analysis-panel .change-item .change-type {
+      font-size: 10px;
+      text-transform: uppercase;
+      color: #8b5cf6;
+      font-weight: 600;
+    }
+    .analysis-panel .change-item .change-text {
+      font-size: 12px;
+    }
+    .analysis-panel .change-item .change-actions {
+      display: flex;
+      gap: 4px;
+      margin-top: 4px;
+    }
+    .analysis-panel .change-item .change-btn {
+      padding: 4px 8px;
+      font-size: 10px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .analysis-panel .change-item .change-btn.accept {
+      background: #22c55e;
+      border: none;
+      color: #000;
+    }
+    .analysis-panel .change-item .change-btn.reject {
+      background: #ef4444;
+      border: none;
+    }
+    .analysis-panel .apply-all-btn {
+      width: 100%;
+      padding: 8px;
+      margin-top: 8px;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .analysis-panel .apply-all-btn:hover { opacity: 0.9; }
+    /* Inline pause markers in script */
+    .inline-pause-marker {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      margin: 0 4px;
+      background: rgba(245, 158, 11, 0.3);
+      border: 1px dashed #f59e0b;
+      border-radius: 12px;
+      font-size: 11px;
+      color: #fbbf24;
+      cursor: pointer;
+      vertical-align: middle;
+    }
+    .inline-pause-marker:hover { background: rgba(245, 158, 11, 0.5); }
+    .inline-pause-marker.highlighted {
+      background: rgba(245, 158, 11, 0.6);
+      animation: pulse-pause 1s ease-in-out;
+    }
+    @keyframes pulse-pause {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
     
     /* Pause Insert Resume Panel */
     .pause-insert-panel {
@@ -1154,7 +1293,24 @@ function generateBody(config: PopoutConfig, escapedScriptContent: string): strin
             <div id="analysisRecommendations"></div>
             <div style="margin-top:8px;display:flex;gap:6px;">
               <span id="analysisDuration" style="font-size:11px;opacity:0.7;"></span>
-              <span id="analysisPauseCount" style="font-size:11px;opacity:0.7;"></span>
+              <span id="analysisPauseCount" style="font-size:11px;opacity:0.7;cursor:pointer;" title="Click to view pause points">⏸️ 0 pause points</span>
+            </div>
+            
+            <!-- Action buttons -->
+            <div class="action-btns">
+              <button id="viewPausePointsBtn" class="action-btn" title="View all pause point locations">📍 View Pause Points</button>
+              <button id="reviewChangesBtn" class="action-btn" title="Review suggested improvements">✏️ Review Changes</button>
+              <button id="showInlineMarkersBtn" class="action-btn" title="Show pause markers in script">🔖 Show Markers</button>
+            </div>
+            
+            <!-- Pause Points List (expandable) -->
+            <div id="pausePointsList" class="pause-points-list" style="display:none;"></div>
+            
+            <!-- Review & Apply Changes Panel -->
+            <div id="reviewChangesPanel" class="review-panel" style="display:none;">
+              <h5>✏️ Suggested Improvements</h5>
+              <div id="changesList"></div>
+              <button id="applyAllChangesBtn" class="apply-all-btn">✅ Apply All Changes to Script</button>
             </div>
           </div>
           
@@ -1422,6 +1578,15 @@ function generateScript(config: PopoutConfig): string {
       var analysisRecommendations = document.getElementById('analysisRecommendations');
       var analysisDuration = document.getElementById('analysisDuration');
       var analysisPauseCount = document.getElementById('analysisPauseCount');
+      var viewPausePointsBtn = document.getElementById('viewPausePointsBtn');
+      var reviewChangesBtn = document.getElementById('reviewChangesBtn');
+      var showInlineMarkersBtn = document.getElementById('showInlineMarkersBtn');
+      var pausePointsList = document.getElementById('pausePointsList');
+      var reviewChangesPanel = document.getElementById('reviewChangesPanel');
+      var changesList = document.getElementById('changesList');
+      var applyAllChangesBtn = document.getElementById('applyAllChangesBtn');
+      var inlineMarkersEnabled = false;
+      var pendingChanges = [];
       
       // Pause insert resume elements
       var pauseInsertPanel = document.getElementById('pauseInsertPanel');
@@ -1967,6 +2132,307 @@ function generateScript(config: PopoutConfig): string {
       // Toggle segment view button
       if (toggleSegmentViewBtn) {
         toggleSegmentViewBtn.onclick = toggleSegmentView;
+      }
+      
+      // =====================================================
+      // Pause Points & Review Changes Handlers
+      // =====================================================
+      
+      // View pause points button
+      if (viewPausePointsBtn) {
+        viewPausePointsBtn.onclick = function() {
+          viewPausePointsBtn.classList.toggle('active');
+          if (pausePointsList.style.display === 'none') {
+            renderPausePointsList();
+            pausePointsList.style.display = 'block';
+            reviewChangesPanel.style.display = 'none';
+            reviewChangesBtn.classList.remove('active');
+          } else {
+            pausePointsList.style.display = 'none';
+          }
+        };
+      }
+      
+      // Render pause points list
+      function renderPausePointsList() {
+        if (!scriptAnalysis || !scriptAnalysis.pausePoints || scriptAnalysis.pausePoints.length === 0) {
+          pausePointsList.innerHTML = '<div style="opacity:0.6;font-size:11px;text-align:center;">No pause points detected</div>';
+          return;
+        }
+        
+        var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
+        var scriptText = selectedScript ? selectedScript.content : '';
+        
+        var html = '';
+        scriptAnalysis.pausePoints.forEach(function(pp, idx) {
+          // Get context around the pause position
+          var startCtx = Math.max(0, pp.position - 30);
+          var endCtx = Math.min(scriptText.length, pp.position + 30);
+          var context = '...' + scriptText.substring(startCtx, pp.position) + '⏸️' + scriptText.substring(pp.position, endCtx) + '...';
+          context = context.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\\n/g, ' ');
+          
+          html += '<div class="pause-point-item" data-pause-index="' + idx + '" data-position="' + pp.position + '">';
+          html += '<span class="pp-position">#' + (idx + 1) + '</span>';
+          html += '<span class="pp-reason" title="' + context + '">' + pp.reason + '</span>';
+          html += '<span class="pp-duration">' + pp.suggestedDuration + 's</span>';
+          html += '</div>';
+        });
+        
+        pausePointsList.innerHTML = html;
+        
+        // Add click handlers to scroll to position
+        var items = pausePointsList.querySelectorAll('.pause-point-item');
+        items.forEach(function(item) {
+          item.onclick = function() {
+            var pos = parseInt(item.getAttribute('data-position'));
+            scrollToPausePosition(pos);
+          };
+        });
+      }
+      
+      // Scroll to pause position in script
+      function scrollToPausePosition(position) {
+        var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
+        if (!selectedScript) return;
+        
+        // If inline markers are enabled, find and highlight the marker
+        if (inlineMarkersEnabled) {
+          var markers = scriptContent.querySelectorAll('.inline-pause-marker');
+          markers.forEach(function(m) {
+            m.classList.remove('highlighted');
+            if (parseInt(m.getAttribute('data-position')) === position) {
+              m.classList.add('highlighted');
+              m.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          });
+        } else {
+          // Enable inline markers and show
+          inlineMarkersEnabled = true;
+          showInlineMarkersBtn.classList.add('active');
+          renderScriptWithInlineMarkers();
+          setTimeout(function() {
+            var markers = scriptContent.querySelectorAll('.inline-pause-marker');
+            markers.forEach(function(m) {
+              if (parseInt(m.getAttribute('data-position')) === position) {
+                m.classList.add('highlighted');
+                m.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+            });
+          }, 100);
+        }
+      }
+      
+      // Review changes button
+      if (reviewChangesBtn) {
+        reviewChangesBtn.onclick = function() {
+          reviewChangesBtn.classList.toggle('active');
+          if (reviewChangesPanel.style.display === 'none') {
+            renderChangesList();
+            reviewChangesPanel.style.display = 'block';
+            pausePointsList.style.display = 'none';
+            viewPausePointsBtn.classList.remove('active');
+          } else {
+            reviewChangesPanel.style.display = 'none';
+          }
+        };
+      }
+      
+      // Render suggested changes list
+      function renderChangesList() {
+        if (!scriptAnalysis) {
+          changesList.innerHTML = '<div style="opacity:0.6;font-size:11px;text-align:center;">No analysis available</div>';
+          return;
+        }
+        
+        pendingChanges = [];
+        var html = '';
+        
+        // Add pause point insertions as changes
+        if (scriptAnalysis.pausePoints && scriptAnalysis.pausePoints.length > 0) {
+          html += '<div style="margin-bottom:8px;font-size:11px;opacity:0.7;">📍 Pause Point Insertions (' + scriptAnalysis.pausePoints.length + ')</div>';
+          scriptAnalysis.pausePoints.slice(0, 5).forEach(function(pp, idx) {
+            pendingChanges.push({
+              type: 'pause',
+              position: pp.position,
+              text: '[PAUSE: ' + pp.suggestedDuration + 's - ' + pp.reason + ']',
+              applied: false
+            });
+            html += '<div class="change-item" data-change-index="' + (pendingChanges.length - 1) + '">';
+            html += '<span class="change-type">Pause Insert</span>';
+            html += '<span class="change-text">' + pp.reason + ' (' + pp.suggestedDuration + 's)</span>';
+            html += '<div class="change-actions">';
+            html += '<button class="change-btn accept" data-action="accept">✓ Add</button>';
+            html += '<button class="change-btn reject" data-action="reject">✗ Skip</button>';
+            html += '</div>';
+            html += '</div>';
+          });
+          
+          if (scriptAnalysis.pausePoints.length > 5) {
+            html += '<div style="font-size:10px;opacity:0.6;text-align:center;">...and ' + (scriptAnalysis.pausePoints.length - 5) + ' more pause points</div>';
+          }
+        }
+        
+        // Add segment improvement suggestions as changes
+        if (scriptAnalysis.segments && scriptAnalysis.segments.length > 0) {
+          var segmentsWithSuggestions = scriptAnalysis.segments.filter(function(s) { return s.improvementSuggestions; });
+          if (segmentsWithSuggestions.length > 0) {
+            html += '<div style="margin:12px 0 8px 0;font-size:11px;opacity:0.7;">✏️ Improvement Suggestions (' + segmentsWithSuggestions.length + ')</div>';
+            segmentsWithSuggestions.slice(0, 3).forEach(function(seg) {
+              pendingChanges.push({
+                type: 'suggestion',
+                segmentId: seg.id,
+                text: seg.improvementSuggestions,
+                applied: false
+              });
+              html += '<div class="change-item" data-change-index="' + (pendingChanges.length - 1) + '">';
+              html += '<span class="change-type">' + seg.type + ' Segment</span>';
+              html += '<span class="change-text">' + seg.improvementSuggestions + '</span>';
+              html += '<div class="change-actions">';
+              html += '<button class="change-btn accept" data-action="accept">✓ Note</button>';
+              html += '<button class="change-btn reject" data-action="reject">✗ Skip</button>';
+              html += '</div>';
+              html += '</div>';
+            });
+          }
+        }
+        
+        // Add conversational tips as changes
+        if (scriptAnalysis.conversationalTips && scriptAnalysis.conversationalTips.length > 0) {
+          html += '<div style="margin:12px 0 8px 0;font-size:11px;opacity:0.7;">💬 Conversational Tips</div>';
+          scriptAnalysis.conversationalTips.forEach(function(tip) {
+            html += '<div style="font-size:11px;padding:4px 8px;margin:4px 0;background:rgba(34,197,94,0.15);border-radius:4px;">• ' + tip + '</div>';
+          });
+        }
+        
+        if (html === '') {
+          html = '<div style="opacity:0.6;font-size:11px;text-align:center;">No specific changes to review</div>';
+        }
+        
+        changesList.innerHTML = html;
+        
+        // Add click handlers for accept/reject buttons
+        var changeBtns = changesList.querySelectorAll('.change-btn');
+        changeBtns.forEach(function(btn) {
+          btn.onclick = function(e) {
+            e.stopPropagation();
+            var changeItem = btn.closest('.change-item');
+            var changeIndex = parseInt(changeItem.getAttribute('data-change-index'));
+            var action = btn.getAttribute('data-action');
+            
+            if (action === 'accept') {
+              pendingChanges[changeIndex].applied = true;
+              changeItem.style.opacity = '0.5';
+              changeItem.style.borderLeftColor = '#22c55e';
+              btn.textContent = '✓ Added';
+              btn.disabled = true;
+            } else {
+              changeItem.style.display = 'none';
+              pendingChanges[changeIndex].applied = false;
+            }
+          };
+        });
+      }
+      
+      // Apply all changes button
+      if (applyAllChangesBtn) {
+        applyAllChangesBtn.onclick = function() {
+          if (!scriptAnalysis || pendingChanges.length === 0) return;
+          
+          var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
+          if (!selectedScript) return;
+          
+          // Build enhanced script with pause markers
+          var enhancedScript = selectedScript.content;
+          
+          // Sort pause points by position (descending) to insert from end
+          var pausesToApply = pendingChanges
+            .filter(function(c) { return c.type === 'pause' && c.applied; })
+            .sort(function(a, b) { return b.position - a.position; });
+          
+          pausesToApply.forEach(function(pause) {
+            enhancedScript = enhancedScript.slice(0, pause.position) + ' ' + pause.text + ' ' + enhancedScript.slice(pause.position);
+          });
+          
+          // Store enhanced script
+          window.enhancedScriptContent = enhancedScript;
+          
+          // Show confirmation
+          applyAllChangesBtn.textContent = '✅ Applied ' + pausesToApply.length + ' changes!';
+          applyAllChangesBtn.style.background = '#22c55e';
+          
+          // Enable segment view with enhanced content
+          console.log('✅ Enhanced script created with ' + pausesToApply.length + ' pause insertions');
+          
+          setTimeout(function() {
+            applyAllChangesBtn.textContent = '✅ Apply All Changes to Script';
+            applyAllChangesBtn.style.background = '';
+          }, 2000);
+        };
+      }
+      
+      // Show inline markers button
+      if (showInlineMarkersBtn) {
+        showInlineMarkersBtn.onclick = function() {
+          inlineMarkersEnabled = !inlineMarkersEnabled;
+          showInlineMarkersBtn.classList.toggle('active', inlineMarkersEnabled);
+          
+          if (inlineMarkersEnabled) {
+            renderScriptWithInlineMarkers();
+          } else {
+            // Restore normal view
+            if (isSegmentViewEnabled && scriptAnalysis) {
+              renderSegmentView(scriptAnalysis);
+            } else {
+              var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
+              if (selectedScript) {
+                scriptContent.innerHTML = selectedScript.content.replace(/\\n/g, '<br>').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+              }
+            }
+          }
+        };
+      }
+      
+      // Render script with inline pause markers
+      function renderScriptWithInlineMarkers() {
+        if (!scriptAnalysis || !scriptAnalysis.pausePoints) return;
+        
+        var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
+        if (!selectedScript) return;
+        
+        var scriptText = selectedScript.content;
+        var result = '';
+        var lastPos = 0;
+        
+        // Sort pause points by position
+        var sortedPauses = scriptAnalysis.pausePoints.slice().sort(function(a, b) { return a.position - b.position; });
+        
+        sortedPauses.forEach(function(pp, idx) {
+          // Add text before this pause point
+          var textBefore = scriptText.substring(lastPos, pp.position);
+          result += textBefore.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\\n/g, '<br>');
+          
+          // Add inline pause marker
+          result += '<span class="inline-pause-marker" data-position="' + pp.position + '" data-index="' + idx + '" title="' + pp.reason + ' (' + pp.suggestedDuration + 's)">';
+          result += '⏸️ ' + (idx + 1);
+          result += '</span>';
+          
+          lastPos = pp.position;
+        });
+        
+        // Add remaining text
+        result += scriptText.substring(lastPos).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\\n/g, '<br>');
+        
+        scriptContent.innerHTML = result;
+        
+        // Add click handlers to markers
+        var markers = scriptContent.querySelectorAll('.inline-pause-marker');
+        markers.forEach(function(marker) {
+          marker.onclick = function() {
+            var idx = parseInt(marker.getAttribute('data-index'));
+            var pp = sortedPauses[idx];
+            alert('Pause Point #' + (idx + 1) + '\\n\\nReason: ' + pp.reason + '\\nSuggested Duration: ' + pp.suggestedDuration + ' seconds');
+          };
+        });
       }
       
       // =====================================================
