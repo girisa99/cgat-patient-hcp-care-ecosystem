@@ -65,6 +65,7 @@ serve(async (req) => {
         case 'traditional_form': return 'openai/whisper-small' // Fast for simple forms
         case 'fax': return 'openai/whisper-large-v3' // High accuracy for fax OCR
         case 'pdf': return 'openai/whisper-large-v3' // High accuracy for document processing
+        case 'transcription': return 'openai/whisper-large-v3' // High accuracy for video transcription
         default: return 'openai/whisper-medium'
       }
     }
