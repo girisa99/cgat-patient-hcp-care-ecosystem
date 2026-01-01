@@ -2994,32 +2994,36 @@ function generateScript(config: PopoutConfig): string {
           if (provider === 'openai') {
             // Show OpenAI voices, hide ElevenLabs
             if (openaiGroup) {
+              openaiGroup.disabled = false;
               Array.from(openaiGroup.querySelectorAll('option')).forEach(function(opt) {
-                opt.style.display = '';
+                opt.disabled = false;
+                opt.hidden = false;
               });
-              openaiGroup.style.display = '';
             }
             if (elevenlabsGroup) {
+              elevenlabsGroup.disabled = true;
               Array.from(elevenlabsGroup.querySelectorAll('option')).forEach(function(opt) {
-                opt.style.display = 'none';
+                opt.disabled = true;
+                opt.hidden = true;
               });
-              elevenlabsGroup.style.display = 'none';
             }
             // Select first OpenAI voice
             enhancedVoiceSelect.value = 'alloy';
           } else {
             // Show ElevenLabs voices, hide OpenAI
             if (openaiGroup) {
+              openaiGroup.disabled = true;
               Array.from(openaiGroup.querySelectorAll('option')).forEach(function(opt) {
-                opt.style.display = 'none';
+                opt.disabled = true;
+                opt.hidden = true;
               });
-              openaiGroup.style.display = 'none';
             }
             if (elevenlabsGroup) {
+              elevenlabsGroup.disabled = false;
               Array.from(elevenlabsGroup.querySelectorAll('option')).forEach(function(opt) {
-                opt.style.display = '';
+                opt.disabled = false;
+                opt.hidden = false;
               });
-              elevenlabsGroup.style.display = '';
             }
             // Select first ElevenLabs voice
             enhancedVoiceSelect.value = 'EXAVITQu4vr4xnSDxMaL';
@@ -3031,10 +3035,11 @@ function generateScript(config: PopoutConfig): string {
         // Initialize - hide ElevenLabs voices by default
         var elevenlabsGroup = enhancedVoiceSelect.querySelector('#elevenlabsVoicesGroup');
         if (elevenlabsGroup) {
+          elevenlabsGroup.disabled = true;
           Array.from(elevenlabsGroup.querySelectorAll('option')).forEach(function(opt) {
-            opt.style.display = 'none';
+            opt.disabled = true;
+            opt.hidden = true;
           });
-          elevenlabsGroup.style.display = 'none';
         }
       }
       
