@@ -905,6 +905,62 @@ function generateStyles(): string {
       50% { transform: scale(1.1); }
     }
     
+    /* Inline change markers for accept/skip flow */
+    .inline-change-marker {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      margin: 0 4px;
+      border-radius: 12px;
+      font-size: 11px;
+      cursor: pointer;
+      vertical-align: middle;
+      transition: all 0.2s ease;
+    }
+    .inline-change-marker .marker-icon {
+      width: 14px;
+      height: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 9px;
+    }
+    .inline-change-marker.pending {
+      background: rgba(245, 158, 11, 0.3);
+      border: 1px dashed #f59e0b;
+      color: #fbbf24;
+    }
+    .inline-change-marker.pending .marker-icon {
+      background: #f59e0b;
+      color: #000;
+    }
+    .inline-change-marker.pending:hover {
+      background: rgba(245, 158, 11, 0.5);
+      transform: scale(1.05);
+    }
+    .inline-change-marker.accepted {
+      background: rgba(34, 197, 94, 0.3);
+      border: 1px solid #22c55e;
+      color: #22c55e;
+    }
+    .inline-change-marker.accepted .marker-icon {
+      background: #22c55e;
+      color: #000;
+    }
+    .inline-change-marker.rejected {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid #ef4444;
+      color: #ef4444;
+      opacity: 0.5;
+      text-decoration: line-through;
+    }
+    .inline-change-marker.rejected .marker-icon {
+      background: #ef4444;
+      color: #fff;
+    }
+    
     /* Pause Insert Resume Panel */
     .pause-insert-panel {
       background: rgba(15, 23, 42, 0.95);
@@ -2231,6 +2287,14 @@ function generateScript(config: PopoutConfig): string {
         
         var pauseCount = analysis.pausePoints ? analysis.pausePoints.length : 0;
         analysisPauseCount.textContent = '⏸️ ' + pauseCount + ' pause points';
+        
+        // Automatically show review changes panel with all suggestions
+        reviewChangesBtn.classList.add('active');
+        reviewChangesPanel.style.display = 'block';
+        renderChangesList();
+        
+        // Highlight that user should review changes
+        console.log('📝 Analysis complete - Review ' + pendingChanges.length + ' suggested changes');
       }
       
       // Render script in segment view with markers
@@ -2486,26 +2550,24 @@ function generateScript(config: PopoutConfig): string {
         // Add pause point insertions as changes
         if (scriptAnalysis.pausePoints && scriptAnalysis.pausePoints.length > 0) {
           html += '<div style="margin-bottom:8px;font-size:11px;opacity:0.7;">📍 Pause Point Insertions (' + scriptAnalysis.pausePoints.length + ')</div>';
-          scriptAnalysis.pausePoints.slice(0, 5).forEach(function(pp, idx) {
+          scriptAnalysis.pausePoints.forEach(function(pp, idx) {
             pendingChanges.push({
               type: 'pause',
               position: pp.position,
-              text: '[PAUSE: ' + pp.suggestedDuration + 's - ' + pp.reason + ']',
-              applied: false
+              duration: pp.suggestedDuration,
+              reason: pp.reason,
+              text: '[PAUSE ' + pp.suggestedDuration + 's]',
+              applied: null // null = pending, true = accepted, false = rejected
             });
-            html += '<div class="change-item" data-change-index="' + (pendingChanges.length - 1) + '">';
-            html += '<span class="change-type">Pause Insert</span>';
+            html += '<div class="change-item" data-change-index="' + (pendingChanges.length - 1) + '" data-type="pause">';
+            html += '<span class="change-type">⏸️ Pause #' + (idx + 1) + '</span>';
             html += '<span class="change-text">' + pp.reason + ' (' + pp.suggestedDuration + 's)</span>';
             html += '<div class="change-actions">';
-            html += '<button class="change-btn accept" data-action="accept">✓ Add</button>';
+            html += '<button class="change-btn accept" data-action="accept">✓ Accept</button>';
             html += '<button class="change-btn reject" data-action="reject">✗ Skip</button>';
             html += '</div>';
             html += '</div>';
           });
-          
-          if (scriptAnalysis.pausePoints.length > 5) {
-            html += '<div style="font-size:10px;opacity:0.6;text-align:center;">...and ' + (scriptAnalysis.pausePoints.length - 5) + ' more pause points</div>';
-          }
         }
         
         // Add segment improvement suggestions as changes
@@ -2513,18 +2575,19 @@ function generateScript(config: PopoutConfig): string {
           var segmentsWithSuggestions = scriptAnalysis.segments.filter(function(s) { return s.improvementSuggestions; });
           if (segmentsWithSuggestions.length > 0) {
             html += '<div style="margin:12px 0 8px 0;font-size:11px;opacity:0.7;">✏️ Improvement Suggestions (' + segmentsWithSuggestions.length + ')</div>';
-            segmentsWithSuggestions.slice(0, 3).forEach(function(seg) {
+            segmentsWithSuggestions.forEach(function(seg) {
               pendingChanges.push({
                 type: 'suggestion',
                 segmentId: seg.id,
-                text: seg.improvementSuggestions,
-                applied: false
+                segmentText: seg.text,
+                suggestion: seg.improvementSuggestions,
+                applied: null
               });
-              html += '<div class="change-item" data-change-index="' + (pendingChanges.length - 1) + '">';
-              html += '<span class="change-type">' + seg.type + ' Segment</span>';
+              html += '<div class="change-item" data-change-index="' + (pendingChanges.length - 1) + '" data-type="suggestion">';
+              html += '<span class="change-type">💡 ' + seg.type + '</span>';
               html += '<span class="change-text">' + seg.improvementSuggestions + '</span>';
               html += '<div class="change-actions">';
-              html += '<button class="change-btn accept" data-action="accept">✓ Note</button>';
+              html += '<button class="change-btn accept" data-action="accept">✓ Accept</button>';
               html += '<button class="change-btn reject" data-action="reject">✗ Skip</button>';
               html += '</div>';
               html += '</div>';
@@ -2532,11 +2595,43 @@ function generateScript(config: PopoutConfig): string {
           }
         }
         
-        // Add conversational tips as changes
+        // Add engagement tips
+        if (scriptAnalysis.engagementTips && scriptAnalysis.engagementTips.length > 0) {
+          html += '<div style="margin:12px 0 8px 0;font-size:11px;opacity:0.7;">🎯 Engagement Tips</div>';
+          scriptAnalysis.engagementTips.forEach(function(tip, idx) {
+            pendingChanges.push({
+              type: 'engagement',
+              text: tip,
+              applied: null
+            });
+            html += '<div class="change-item" data-change-index="' + (pendingChanges.length - 1) + '" data-type="engagement">';
+            html += '<span class="change-type">🎯 Tip</span>';
+            html += '<span class="change-text">' + tip + '</span>';
+            html += '<div class="change-actions">';
+            html += '<button class="change-btn accept" data-action="accept">✓ Include</button>';
+            html += '<button class="change-btn reject" data-action="reject">✗ Skip</button>';
+            html += '</div>';
+            html += '</div>';
+          });
+        }
+        
+        // Add conversational tips
         if (scriptAnalysis.conversationalTips && scriptAnalysis.conversationalTips.length > 0) {
-          html += '<div style="margin:12px 0 8px 0;font-size:11px;opacity:0.7;">💬 Conversational Tips</div>';
-          scriptAnalysis.conversationalTips.forEach(function(tip) {
-            html += '<div style="font-size:11px;padding:4px 8px;margin:4px 0;background:rgba(34,197,94,0.15);border-radius:4px;">• ' + tip + '</div>';
+          html += '<div style="margin:12px 0 8px 0;font-size:11px;opacity:0.7;">💬 Delivery Tips</div>';
+          scriptAnalysis.conversationalTips.forEach(function(tip, idx) {
+            pendingChanges.push({
+              type: 'delivery',
+              text: tip,
+              applied: null
+            });
+            html += '<div class="change-item" data-change-index="' + (pendingChanges.length - 1) + '" data-type="delivery">';
+            html += '<span class="change-type">💬 Delivery</span>';
+            html += '<span class="change-text">' + tip + '</span>';
+            html += '<div class="change-actions">';
+            html += '<button class="change-btn accept" data-action="accept">✓ Include</button>';
+            html += '<button class="change-btn reject" data-action="reject">✗ Skip</button>';
+            html += '</div>';
+            html += '</div>';
           });
         }
         
@@ -2544,7 +2639,14 @@ function generateScript(config: PopoutConfig): string {
           html = '<div style="opacity:0.6;font-size:11px;text-align:center;">No specific changes to review</div>';
         }
         
-        changesList.innerHTML = html;
+        // Add summary at top
+        var summaryHtml = '<div style="background:rgba(99,102,241,0.2);padding:8px;border-radius:6px;margin-bottom:10px;font-size:11px;">';
+        summaryHtml += '<strong>Review each suggestion below:</strong><br>';
+        summaryHtml += '✓ Accept to include in enhanced script<br>';
+        summaryHtml += '✗ Skip to exclude from enhanced script';
+        summaryHtml += '</div>';
+        
+        changesList.innerHTML = summaryHtml + html;
         
         // Add click handlers for accept/reject buttons
         var changeBtns = changesList.querySelectorAll('.change-btn');
@@ -2557,19 +2659,153 @@ function generateScript(config: PopoutConfig): string {
             
             if (action === 'accept') {
               pendingChanges[changeIndex].applied = true;
-              changeItem.style.opacity = '0.5';
               changeItem.style.borderLeftColor = '#22c55e';
-              btn.textContent = '✓ Added';
-              btn.disabled = true;
+              changeItem.querySelector('.accept').textContent = '✓ Accepted';
+              changeItem.querySelector('.accept').disabled = true;
+              changeItem.querySelector('.accept').style.background = '#22c55e';
+              changeItem.querySelector('.reject').style.display = 'none';
             } else {
-              changeItem.style.display = 'none';
               pendingChanges[changeIndex].applied = false;
+              changeItem.style.opacity = '0.4';
+              changeItem.style.borderLeftColor = '#ef4444';
+              changeItem.querySelector('.reject').textContent = '✗ Skipped';
+              changeItem.querySelector('.reject').disabled = true;
+              changeItem.querySelector('.accept').style.display = 'none';
             }
+            
+            // Update the inline preview
+            renderScriptWithAcceptedChanges();
+            updateApplyButtonState();
+          };
+        });
+        
+        // Initially render script with pending changes highlighted
+        renderScriptWithAcceptedChanges();
+      }
+      
+      // Update apply button to show count
+      function updateApplyButtonState() {
+        var acceptedCount = pendingChanges.filter(function(c) { return c.applied === true; }).length;
+        var pendingCount = pendingChanges.filter(function(c) { return c.applied === null; }).length;
+        
+        if (pendingCount > 0) {
+          applyAllChangesBtn.textContent = '⚠️ Review ' + pendingCount + ' pending items first';
+          applyAllChangesBtn.style.background = '#f59e0b';
+        } else if (acceptedCount > 0) {
+          applyAllChangesBtn.textContent = '✅ Apply ' + acceptedCount + ' Accepted Changes';
+          applyAllChangesBtn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
+        } else {
+          applyAllChangesBtn.textContent = 'No changes accepted';
+          applyAllChangesBtn.style.background = '#475569';
+        }
+      }
+      
+      // Render script with accepted changes shown inline
+      function renderScriptWithAcceptedChanges() {
+        var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
+        if (!selectedScript || !pendingChanges || pendingChanges.length === 0) return;
+        
+        var scriptText = selectedScript.content;
+        var result = '';
+        var lastPos = 0;
+        
+        // Get pause points sorted by position
+        var pauseChanges = pendingChanges
+          .filter(function(c) { return c.type === 'pause'; })
+          .map(function(c, idx) { return { ...c, originalIndex: pendingChanges.indexOf(c) }; })
+          .sort(function(a, b) { return a.position - b.position; });
+        
+        // Build script with inline markers
+        pauseChanges.forEach(function(pause, idx) {
+          // Add text before this pause point
+          var textBefore = scriptText.substring(lastPos, pause.position);
+          result += textBefore.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\\n/g, '<br>');
+          
+          // Add inline pause marker with status
+          var statusClass = pause.applied === true ? 'accepted' : (pause.applied === false ? 'rejected' : 'pending');
+          var statusIcon = pause.applied === true ? '✓' : (pause.applied === false ? '✗' : '?');
+          
+          result += '<span class="inline-change-marker ' + statusClass + '" data-index="' + pause.originalIndex + '">';
+          result += '<span class="marker-icon">' + statusIcon + '</span>';
+          result += '⏸️ ' + pause.duration + 's';
+          result += '</span>';
+          
+          lastPos = pause.position;
+        });
+        
+        // Add remaining text
+        result += scriptText.substring(lastPos).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\\n/g, '<br>');
+        
+        // Add notes section if any accepted
+        var acceptedEngagement = pendingChanges.filter(function(c) { return c.type === 'engagement' && c.applied === true; });
+        var acceptedDelivery = pendingChanges.filter(function(c) { return c.type === 'delivery' && c.applied === true; });
+        var acceptedSuggestions = pendingChanges.filter(function(c) { return c.type === 'suggestion' && c.applied === true; });
+        
+        if (acceptedEngagement.length > 0 || acceptedDelivery.length > 0 || acceptedSuggestions.length > 0) {
+          result += '<br><br><div style="border-top:2px dashed #6366f1;padding-top:10px;margin-top:10px;">';
+          result += '<strong style="color:#6366f1;">📝 Accepted Notes:</strong><br>';
+          
+          if (acceptedSuggestions.length > 0) {
+            result += '<div style="margin:6px 0;padding:6px;background:rgba(139,92,246,0.2);border-radius:4px;">';
+            result += '<strong>Improvements:</strong><br>';
+            acceptedSuggestions.forEach(function(s) {
+              result += '• ' + s.suggestion + '<br>';
+            });
+            result += '</div>';
+          }
+          
+          if (acceptedEngagement.length > 0) {
+            result += '<div style="margin:6px 0;padding:6px;background:rgba(34,197,94,0.2);border-radius:4px;">';
+            result += '<strong>Engagement Tips:</strong><br>';
+            acceptedEngagement.forEach(function(e) {
+              result += '• ' + e.text + '<br>';
+            });
+            result += '</div>';
+          }
+          
+          if (acceptedDelivery.length > 0) {
+            result += '<div style="margin:6px 0;padding:6px;background:rgba(59,130,246,0.2);border-radius:4px;">';
+            result += '<strong>Delivery Tips:</strong><br>';
+            acceptedDelivery.forEach(function(d) {
+              result += '• ' + d.text + '<br>';
+            });
+            result += '</div>';
+          }
+          
+          result += '</div>';
+        }
+        
+        scriptContent.innerHTML = result;
+        
+        // Add click handlers to inline markers for quick accept/reject
+        var markers = scriptContent.querySelectorAll('.inline-change-marker.pending');
+        markers.forEach(function(marker) {
+          marker.onclick = function() {
+            var idx = parseInt(marker.getAttribute('data-index'));
+            // Toggle to accepted
+            pendingChanges[idx].applied = true;
+            
+            // Update the change item in the list
+            var changeItem = changesList.querySelector('[data-change-index="' + idx + '"]');
+            if (changeItem) {
+              changeItem.style.borderLeftColor = '#22c55e';
+              var acceptBtn = changeItem.querySelector('.accept');
+              var rejectBtn = changeItem.querySelector('.reject');
+              if (acceptBtn) {
+                acceptBtn.textContent = '✓ Accepted';
+                acceptBtn.disabled = true;
+                acceptBtn.style.background = '#22c55e';
+              }
+              if (rejectBtn) rejectBtn.style.display = 'none';
+            }
+            
+            renderScriptWithAcceptedChanges();
+            updateApplyButtonState();
           };
         });
       }
       
-      // Apply all changes button - incorporates ALL recommendations into enhanced script
+      // Apply all changes button - incorporates ONLY ACCEPTED changes into enhanced script
       if (applyAllChangesBtn) {
         applyAllChangesBtn.onclick = function() {
           if (!scriptAnalysis) return;
@@ -2577,43 +2813,65 @@ function generateScript(config: PopoutConfig): string {
           var selectedScript = scripts.find(function(s) { return s.id === scriptSelect.value; });
           if (!selectedScript) return;
           
-          // Build enhanced script with ALL changes
+          // Check if there are pending items
+          var pendingCount = pendingChanges.filter(function(c) { return c.applied === null; }).length;
+          if (pendingCount > 0) {
+            if (!confirm('You have ' + pendingCount + ' items still pending review.\\n\\nDo you want to skip all pending items and apply only accepted changes?')) {
+              return;
+            }
+            // Mark all pending as rejected
+            pendingChanges.forEach(function(c) {
+              if (c.applied === null) c.applied = false;
+            });
+          }
+          
+          // Build enhanced script with ONLY ACCEPTED changes
           var enhancedScript = selectedScript.content;
           var changesApplied = 0;
           
-          // 1. Apply pause markers (from pendingChanges or scriptAnalysis)
-          var pausesToApply = [];
-          if (pendingChanges && pendingChanges.length > 0) {
-            pausesToApply = pendingChanges
-              .filter(function(c) { return c.type === 'pause' && c.applied !== false; })
-              .sort(function(a, b) { return b.position - a.position; });
-          } else if (scriptAnalysis.pausePoints && scriptAnalysis.pausePoints.length > 0) {
-            pausesToApply = scriptAnalysis.pausePoints
-              .map(function(pp) { return { position: pp.position, text: '[PAUSE ' + pp.suggestedDuration + 's]', type: 'pause' }; })
-              .sort(function(a, b) { return b.position - a.position; });
-          }
+          // 1. Apply accepted pause markers
+          var acceptedPauses = pendingChanges
+            .filter(function(c) { return c.type === 'pause' && c.applied === true; })
+            .sort(function(a, b) { return b.position - a.position; }); // Reverse order to not affect positions
           
-          pausesToApply.forEach(function(pause) {
-            enhancedScript = enhancedScript.slice(0, pause.position) + ' ' + pause.text + ' ' + enhancedScript.slice(pause.position);
+          acceptedPauses.forEach(function(pause) {
+            enhancedScript = enhancedScript.slice(0, pause.position) + ' [PAUSE ' + pause.duration + 's] ' + enhancedScript.slice(pause.position);
             changesApplied++;
           });
           
-          // 2. Add engagement tips at the end as notes
-          if (scriptAnalysis.engagementTips && scriptAnalysis.engagementTips.length > 0) {
-            enhancedScript += '\\n\\n[ENGAGEMENT NOTES:]\\n';
-            scriptAnalysis.engagementTips.forEach(function(tip) {
-              enhancedScript += '• ' + tip + '\\n';
+          // 2. Add accepted suggestions at the end
+          var acceptedSuggestions = pendingChanges.filter(function(c) { return c.type === 'suggestion' && c.applied === true; });
+          if (acceptedSuggestions.length > 0) {
+            enhancedScript += '\\n\\n[IMPROVEMENT NOTES:]\\n';
+            acceptedSuggestions.forEach(function(s) {
+              enhancedScript += '• ' + s.suggestion + '\\n';
             });
-            changesApplied += scriptAnalysis.engagementTips.length;
+            changesApplied += acceptedSuggestions.length;
           }
           
-          // 3. Add conversational tips
-          if (scriptAnalysis.conversationalTips && scriptAnalysis.conversationalTips.length > 0) {
-            enhancedScript += '\\n[DELIVERY TIPS:]\\n';
-            scriptAnalysis.conversationalTips.forEach(function(tip) {
-              enhancedScript += '• ' + tip + '\\n';
+          // 3. Add accepted engagement tips
+          var acceptedEngagement = pendingChanges.filter(function(c) { return c.type === 'engagement' && c.applied === true; });
+          if (acceptedEngagement.length > 0) {
+            enhancedScript += '\\n[ENGAGEMENT NOTES:]\\n';
+            acceptedEngagement.forEach(function(e) {
+              enhancedScript += '• ' + e.text + '\\n';
             });
-            changesApplied += scriptAnalysis.conversationalTips.length;
+            changesApplied += acceptedEngagement.length;
+          }
+          
+          // 4. Add accepted delivery tips
+          var acceptedDelivery = pendingChanges.filter(function(c) { return c.type === 'delivery' && c.applied === true; });
+          if (acceptedDelivery.length > 0) {
+            enhancedScript += '\\n[DELIVERY TIPS:]\\n';
+            acceptedDelivery.forEach(function(d) {
+              enhancedScript += '• ' + d.text + '\\n';
+            });
+            changesApplied += acceptedDelivery.length;
+          }
+          
+          if (changesApplied === 0) {
+            alert('No changes were accepted. Please accept at least one suggestion.');
+            return;
           }
           
           // Store enhanced script globally and in localStorage
@@ -2629,12 +2887,13 @@ function generateScript(config: PopoutConfig): string {
               originalContent: selectedScript.content,
               enhancedContent: enhancedScript,
               analysis: scriptAnalysis,
+              acceptedChanges: pendingChanges.filter(function(c) { return c.applied === true; }),
               appliedAt: new Date().toISOString(),
               changesCount: changesApplied
             };
             
             localStorage.setItem('enhancedScripts', JSON.stringify(enhancedScripts));
-            console.log('💾 Enhanced script saved to localStorage');
+            console.log('💾 Enhanced script saved with ' + changesApplied + ' accepted changes');
             
             // Notify parent window
             if (window.opener && !window.opener.closed) {
@@ -2651,7 +2910,6 @@ function generateScript(config: PopoutConfig): string {
           
           // Update the script content display with enhanced version
           if (scriptContent) {
-            // Render the enhanced script with word spans for tracking
             renderScriptWithWordTracking(enhancedScript);
           }
           
@@ -2661,16 +2919,20 @@ function generateScript(config: PopoutConfig): string {
             enhancedDownloadsSection.style.display = 'block';
           }
           
+          // Hide the review panel
+          reviewChangesPanel.style.display = 'none';
+          reviewChangesBtn.classList.remove('active');
+          
           // Show confirmation
           applyAllChangesBtn.textContent = '✅ Applied ' + changesApplied + ' changes!';
           applyAllChangesBtn.style.background = '#22c55e';
           
-          console.log('✅ Enhanced script created with ' + changesApplied + ' total changes');
+          console.log('✅ Enhanced script created with ' + changesApplied + ' accepted changes');
           
           setTimeout(function() {
-            applyAllChangesBtn.textContent = '✅ Apply All Changes to Script';
+            applyAllChangesBtn.textContent = '✅ Apply Accepted Changes';
             applyAllChangesBtn.style.background = '';
-          }, 2000);
+          }, 3000);
         };
       }
       
