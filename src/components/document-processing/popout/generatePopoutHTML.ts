@@ -572,6 +572,7 @@ function generateBody(config: PopoutConfig, escapedScriptContent: string): strin
               <div class="controls">
                 <button id="voRewindBtn" title="Rewind 5s" disabled>⏪</button>
                 <button id="voPlayPauseBtn" title="Play/Pause" disabled>▶️</button>
+                <button id="voStopBtn" title="Stop" disabled>⏹️</button>
                 <button id="voForwardBtn" title="Forward 5s" disabled>⏩</button>
               </div>
               <div class="progress"><div id="voProgress" class="progress-bar"></div></div>
@@ -585,6 +586,7 @@ function generateBody(config: PopoutConfig, escapedScriptContent: string): strin
               <div class="controls">
                 <button id="ttsRewindBtn" title="Rewind 5s" disabled>⏪</button>
                 <button id="ttsPlayPauseBtn" title="Play/Pause" disabled>▶️</button>
+                <button id="ttsStopBtn" title="Stop" disabled>⏹️</button>
                 <button id="ttsForwardBtn" title="Forward 5s" disabled>⏩</button>
               </div>
               <div class="progress"><div id="ttsProgress" class="progress-bar"></div></div>
@@ -598,6 +600,7 @@ function generateBody(config: PopoutConfig, escapedScriptContent: string): strin
               <div class="controls">
                 <button id="musicRewindBtn" title="Rewind 5s" disabled>⏪</button>
                 <button id="musicPlayPauseBtn" title="Play/Pause" disabled>▶️</button>
+                <button id="musicStopBtn" title="Stop" disabled>⏹️</button>
                 <button id="musicLoopBtn" title="Toggle Loop" disabled>🔁</button>
                 <button id="musicVolumeDownBtn" title="Volume -" disabled>🔉</button>
                 <button id="musicVolumeUpBtn" title="Volume +" disabled>🔊</button>
@@ -812,6 +815,7 @@ function generateScript(config: PopoutConfig): string {
       var voiceoverAudioSource = null;
       var ttsAudioSource = null;
       var musicAudioSource = null;
+      var audioSourcesConnected = false; // Track if sources already connected
       
       // DOM Elements
       var preview = document.getElementById('preview');
@@ -1250,12 +1254,27 @@ function generateScript(config: PopoutConfig): string {
         });
       };
       
-      // Stop all audio helper
+      // Stop all audio helper - with thorough cleanup
       function stopAllAudio() {
         console.log('🔇 Stopping all audio');
-        if (voiceover) { voiceover.pause(); voiceover.currentTime = 0; }
-        if (ttsAudio) { ttsAudio.pause(); ttsAudio.currentTime = 0; }
-        if (bgMusic) { bgMusic.pause(); bgMusic.currentTime = 0; }
+        try {
+          if (voiceover) { 
+            voiceover.pause(); 
+            voiceover.currentTime = 0;
+            voiceover.onended = null;
+          }
+          if (ttsAudio) { 
+            ttsAudio.pause(); 
+            ttsAudio.currentTime = 0;
+            ttsAudio.onended = null;
+          }
+          if (bgMusic) { 
+            bgMusic.pause(); 
+            bgMusic.currentTime = 0; 
+          }
+        } catch(e) {
+          console.error('Error stopping audio:', e);
+        }
       }
       
       // Audio options dialog
@@ -1568,7 +1587,8 @@ function generateScript(config: PopoutConfig): string {
         }
         
         // Connect voiceover audio to destination (if selected and has a source)
-        if (useVoiceover && voiceover && voiceover.src && !useTTS) {
+        // IMPORTANT: Only connect if not already connected (prevents "already connected" errors)
+        if (useVoiceover && voiceover && voiceover.src && !useTTS && !voiceoverAudioSource) {
           try {
             voiceoverAudioSource = audioContext.createMediaElementSource(voiceover);
             var voiceoverGain = audioContext.createGain();
@@ -1583,7 +1603,7 @@ function generateScript(config: PopoutConfig): string {
         }
         
         // Connect TTS audio to destination
-        if (useTTS && ttsAudio) {
+        if (useTTS && ttsAudio && !ttsAudioSource) {
           try {
             ttsAudioSource = audioContext.createMediaElementSource(ttsAudio);
             var ttsGain = audioContext.createGain();
@@ -1598,15 +1618,21 @@ function generateScript(config: PopoutConfig): string {
         }
         
         // Connect background music to destination
-        if (useMusic && bgMusic && bgMusic.src) {
+        if (useMusic && bgMusic && bgMusic.src && !musicAudioSource) {
           try {
             musicAudioSource = audioContext.createMediaElementSource(bgMusic);
             var musicGain = audioContext.createGain();
             musicGain.gain.value = 0.3;
             musicAudioSource.connect(musicGain);
             musicGain.connect(destination);
-            musicGain.connect(audioContext.destination); // Also play to speakers
+            musicAudioSource.connect(audioContext.destination); // Also play to speakers
             console.log('🎵 Music audio connected to recording');
+          } catch(e) {
+            console.error('Music source error:', e);
+          }
+        }
+        
+        audioSourcesConnected = true;
           } catch(e) {
             console.error('Music source error:', e);
           }
@@ -1634,19 +1660,25 @@ function generateScript(config: PopoutConfig): string {
           if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
           if (scrollInterval) { clearInterval(scrollInterval); scrollInterval = null; }
           
-          // Stop all audio completely
-          if (ttsAudio) { ttsAudio.pause(); ttsAudio.currentTime = 0; }
-          if (voiceover) { voiceover.pause(); voiceover.currentTime = 0; }
-          if (bgMusic) { bgMusic.pause(); bgMusic.currentTime = 0; }
+          // Stop all audio completely and remove event listeners
+          stopAllAudio();
+          
+          // Reset audio sources for next recording
+          voiceoverAudioSource = null;
+          ttsAudioSource = null;
+          musicAudioSource = null;
+          audioSourcesConnected = false;
           
           // Close audio context to fully disconnect sources
           if (audioContext && audioContext.state !== 'closed') {
             audioContext.close().catch(console.error);
+            audioContext = null;
           }
           
           // Stop display stream tracks
           if (displayStream) {
             displayStream.getTracks().forEach(function(t) { t.stop(); });
+            displayStream = null;
           }
           
           recIndicator.style.display = 'none';
@@ -1859,45 +1891,82 @@ function generateScript(config: PopoutConfig): string {
         }
       }
       
-      // Audio controls with visual feedback
-      document.getElementById('voRewindBtn').onclick = function() { if (voiceover) voiceover.currentTime = Math.max(0, voiceover.currentTime - 5); };
+      // Audio controls with visual feedback - with proper null checks and status updates
+      document.getElementById('voRewindBtn').onclick = function() { 
+        if (voiceover && voiceover.src) voiceover.currentTime = Math.max(0, voiceover.currentTime - 5); 
+      };
       document.getElementById('voPlayPauseBtn').onclick = function() {
-        if (voiceover) {
-          if (voiceover.paused) { 
-            voiceover.play(); 
-            this.textContent = '⏸️'; 
-          } else { 
-            voiceover.pause(); 
-            this.textContent = '▶️'; 
-          }
+        if (!voiceover || !voiceover.src) {
+          console.log('⚠️ No voiceover loaded');
+          return;
+        }
+        if (voiceover.paused) { 
+          voiceover.play().catch(function(e) { console.error('Voiceover play error:', e); }); 
+          this.textContent = '⏸️'; 
+        } else { 
+          voiceover.pause(); 
+          this.textContent = '▶️'; 
         }
       };
-      document.getElementById('voForwardBtn').onclick = function() { if (voiceover) voiceover.currentTime = Math.min(voiceover.duration || 0, voiceover.currentTime + 5); };
+      document.getElementById('voStopBtn').onclick = function() { 
+        if (voiceover && voiceover.src) { 
+          voiceover.pause(); 
+          voiceover.currentTime = 0; 
+          document.getElementById('voPlayPauseBtn').textContent = '▶️';
+        }
+      };
+      document.getElementById('voForwardBtn').onclick = function() { 
+        if (voiceover && voiceover.src) voiceover.currentTime = Math.min(voiceover.duration || 0, voiceover.currentTime + 5); 
+      };
       
-      document.getElementById('ttsRewindBtn').onclick = function() { if (ttsAudio) ttsAudio.currentTime = Math.max(0, ttsAudio.currentTime - 5); };
+      document.getElementById('ttsRewindBtn').onclick = function() { 
+        if (ttsAudio) ttsAudio.currentTime = Math.max(0, ttsAudio.currentTime - 5); 
+      };
       document.getElementById('ttsPlayPauseBtn').onclick = function() {
-        if (ttsAudio) {
-          if (ttsAudio.paused) { 
-            ttsAudio.play(); 
-            this.textContent = '⏸️'; 
-          } else { 
-            ttsAudio.pause(); 
-            this.textContent = '▶️'; 
-          }
+        if (!ttsAudio) {
+          console.log('⚠️ No TTS audio loaded');
+          return;
+        }
+        if (ttsAudio.paused) { 
+          ttsAudio.play().catch(function(e) { console.error('TTS play error:', e); }); 
+          this.textContent = '⏸️'; 
+        } else { 
+          ttsAudio.pause(); 
+          this.textContent = '▶️'; 
         }
       };
-      document.getElementById('ttsForwardBtn').onclick = function() { if (ttsAudio) ttsAudio.currentTime = Math.min(ttsAudio.duration || 0, ttsAudio.currentTime + 5); };
+      document.getElementById('ttsStopBtn').onclick = function() { 
+        if (ttsAudio) { 
+          ttsAudio.pause(); 
+          ttsAudio.currentTime = 0; 
+          document.getElementById('ttsPlayPauseBtn').textContent = '▶️';
+        }
+      };
+      document.getElementById('ttsForwardBtn').onclick = function() { 
+        if (ttsAudio) ttsAudio.currentTime = Math.min(ttsAudio.duration || 0, ttsAudio.currentTime + 5); 
+      };
       
-      document.getElementById('musicRewindBtn').onclick = function() { if (bgMusic) bgMusic.currentTime = Math.max(0, bgMusic.currentTime - 5); };
+      document.getElementById('musicRewindBtn').onclick = function() { 
+        if (bgMusic && bgMusic.src) bgMusic.currentTime = Math.max(0, bgMusic.currentTime - 5); 
+      };
       document.getElementById('musicPlayPauseBtn').onclick = function() {
-        if (bgMusic) {
-          if (bgMusic.paused) { 
-            bgMusic.play(); 
-            this.textContent = '⏸️'; 
-          } else { 
-            bgMusic.pause(); 
-            this.textContent = '▶️'; 
-          }
+        if (!bgMusic || !bgMusic.src) {
+          console.log('⚠️ No music loaded');
+          return;
+        }
+        if (bgMusic.paused) { 
+          bgMusic.play().catch(function(e) { console.error('Music play error:', e); }); 
+          this.textContent = '⏸️'; 
+        } else { 
+          bgMusic.pause(); 
+          this.textContent = '▶️'; 
+        }
+      };
+      document.getElementById('musicStopBtn').onclick = function() { 
+        if (bgMusic && bgMusic.src) { 
+          bgMusic.pause(); 
+          bgMusic.currentTime = 0; 
+          document.getElementById('musicPlayPauseBtn').textContent = '▶️';
         }
       };
       document.getElementById('musicVolumeDownBtn').onclick = function() { if (bgMusic) bgMusic.volume = Math.max(0, bgMusic.volume - 0.1); };
@@ -1919,19 +1988,19 @@ function generateScript(config: PopoutConfig): string {
       };
       
       document.getElementById('pauseAllAudioBtn').onclick = function() {
-        if (voiceover) { voiceover.pause(); document.getElementById('voPlayPauseBtn').textContent = '▶️'; }
+        if (voiceover && voiceover.src) { voiceover.pause(); document.getElementById('voPlayPauseBtn').textContent = '▶️'; }
         if (ttsAudio) { ttsAudio.pause(); document.getElementById('ttsPlayPauseBtn').textContent = '▶️'; }
-        if (bgMusic) { bgMusic.pause(); document.getElementById('musicPlayPauseBtn').textContent = '▶️'; }
+        if (bgMusic && bgMusic.src) { bgMusic.pause(); document.getElementById('musicPlayPauseBtn').textContent = '▶️'; }
       };
       document.getElementById('resumeAllAudioBtn').onclick = function() {
-        if (voiceoverActive && voiceover) { voiceover.play(); document.getElementById('voPlayPauseBtn').textContent = '⏸️'; }
-        if (ttsActive && ttsAudio) { ttsAudio.play(); document.getElementById('ttsPlayPauseBtn').textContent = '⏸️'; }
-        if (musicActive && bgMusic) { bgMusic.play(); document.getElementById('musicPlayPauseBtn').textContent = '⏸️'; }
+        if (voiceoverActive && voiceover && voiceover.src) { voiceover.play().catch(console.error); document.getElementById('voPlayPauseBtn').textContent = '⏸️'; }
+        if (ttsActive && ttsAudio) { ttsAudio.play().catch(console.error); document.getElementById('ttsPlayPauseBtn').textContent = '⏸️'; }
+        if (musicActive && bgMusic && bgMusic.src) { bgMusic.play().catch(console.error); document.getElementById('musicPlayPauseBtn').textContent = '⏸️'; }
       };
       document.getElementById('restartAllAudioBtn').onclick = function() {
-        if (voiceover) { voiceover.currentTime = 0; voiceover.play(); document.getElementById('voPlayPauseBtn').textContent = '⏸️'; }
-        if (ttsAudio) { ttsAudio.currentTime = 0; ttsAudio.play(); document.getElementById('ttsPlayPauseBtn').textContent = '⏸️'; }
-        if (bgMusic) { bgMusic.currentTime = 0; bgMusic.play(); document.getElementById('musicPlayPauseBtn').textContent = '⏸️'; }
+        if (voiceover && voiceover.src) { voiceover.currentTime = 0; voiceover.play().catch(console.error); document.getElementById('voPlayPauseBtn').textContent = '⏸️'; }
+        if (ttsAudio) { ttsAudio.currentTime = 0; ttsAudio.play().catch(console.error); document.getElementById('ttsPlayPauseBtn').textContent = '⏸️'; }
+        if (bgMusic && bgMusic.src) { bgMusic.currentTime = 0; bgMusic.play().catch(console.error); document.getElementById('musicPlayPauseBtn').textContent = '⏸️'; }
       };
       
       // Pause/Resume recording
@@ -2058,7 +2127,8 @@ function generateScript(config: PopoutConfig): string {
           a.download = name + '.webm';
           a.click();
           
-          alert('Video saved to cloud and downloaded locally!');
+          // Show success modal instead of alert
+          showSaveModal('✅ Video Saved Successfully!', 'Your video has been saved to the cloud and downloaded locally.', 'success');
           
         } catch (err) {
           console.error('Save error:', err);
@@ -2071,9 +2141,31 @@ function generateScript(config: PopoutConfig): string {
           a.href = URL.createObjectURL(blob);
           a.download = name + '.webm';
           a.click();
-          alert('Cloud save failed. Video downloaded locally instead.');
+          showSaveModal('⚠️ Cloud Save Failed', 'Your video was downloaded locally instead. Cloud save encountered an error.', 'warning');
         }
       };
+      
+      // Show styled modal instead of browser alert
+      function showSaveModal(title, message, type) {
+        var modalHtml = '<div id="saveResultModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:300;">';
+        modalHtml += '<div style="background:#1a1a2e;padding:30px;border-radius:16px;max-width:450px;width:90%;text-align:center;border:1px solid ' + (type === 'success' ? '#22c55e' : '#f59e0b') + ';">';
+        modalHtml += '<div style="font-size:48px;margin-bottom:15px;">' + (type === 'success' ? '✅' : '⚠️') + '</div>';
+        modalHtml += '<h2 style="margin-bottom:15px;font-size:20px;color:' + (type === 'success' ? '#22c55e' : '#f59e0b') + ';">' + title + '</h2>';
+        modalHtml += '<p style="opacity:0.8;margin-bottom:25px;line-height:1.5;">' + message + '</p>';
+        modalHtml += '<button id="closeSaveModal" class="primary" style="padding:12px 32px;">OK</button>';
+        modalHtml += '</div></div>';
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        document.getElementById('closeSaveModal').onclick = function() {
+          document.getElementById('saveResultModal').remove();
+        };
+        
+        // Close on click outside
+        document.getElementById('saveResultModal').onclick = function(e) {
+          if (e.target === this) this.remove();
+        };
+      }
       
       // Reset
       resetBtn.onclick = function() {
