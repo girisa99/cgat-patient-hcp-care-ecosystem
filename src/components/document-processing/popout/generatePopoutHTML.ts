@@ -1712,8 +1712,8 @@ function generateScript(config: PopoutConfig): string {
             var musicGain = audioContext.createGain();
             musicGain.gain.value = 0.3;
             musicAudioSource.connect(musicGain);
-            musicGain.connect(destination);
-            musicAudioSource.connect(audioContext.destination); // Also play to speakers
+            musicGain.connect(destination); // Connect to recording
+            musicGain.connect(audioContext.destination); // Also play to speakers
             
             // Keep original bgMusic for dropdown reference, use clone for playback
             console.log('🎵 Music audio connected to recording');
@@ -1722,14 +1722,38 @@ function generateScript(config: PopoutConfig): string {
           }
         }
         
+        // Log audio configuration for debugging
+        console.log('🎧 Audio configuration:', {
+          mic: stream ? stream.getAudioTracks().length > 0 : false,
+          systemAudio: displayStream ? displayStream.getAudioTracks().length > 0 : false,
+          voiceover: useVoiceover && voiceoverClone ? true : false,
+          tts: useTTS && ttsAudio ? true : false,
+          music: useMusic && musicClone ? true : false
+        });
+        
         audioSourcesConnected = true;
         
         // Combined stream
         var finalTracks = canvasStream.getVideoTracks().concat(destination.stream.getAudioTracks());
         var combinedStream = new MediaStream(finalTracks);
         
+        // Use MP4 format for better compatibility - fallback to webm if mp4 not supported
+        var mimeType = 'video/webm;codecs=vp9';
+        if (MediaRecorder.isTypeSupported('video/mp4;codecs=h264,aac')) {
+          mimeType = 'video/mp4;codecs=h264,aac';
+        } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+          mimeType = 'video/mp4';
+        } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) {
+          mimeType = 'video/webm;codecs=vp9,opus';
+        } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) {
+          mimeType = 'video/webm;codecs=vp8,opus';
+        }
+        console.log('🎥 Using recording format:', mimeType);
+        
         mediaRecorder = new MediaRecorder(combinedStream, {
-          mimeType: MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm'
+          mimeType: mimeType,
+          audioBitsPerSecond: 128000,
+          videoBitsPerSecond: 2500000
         });
         window.mediaRecorder = mediaRecorder;
         
@@ -1797,7 +1821,9 @@ function generateScript(config: PopoutConfig): string {
           status.textContent = 'Recording Complete - Enter name to save';
           status.className = 'status ready';
           
-          var blob = new Blob(chunks, { type: 'video/webm' });
+          // Determine file type based on mimeType used
+          var fileType = mimeType.startsWith('video/mp4') ? 'video/mp4' : 'video/webm';
+          var blob = new Blob(chunks, { type: fileType });
           preview.srcObject = null;
           preview.src = URL.createObjectURL(blob);
           preview.controls = true;
@@ -2247,15 +2273,21 @@ function generateScript(config: PopoutConfig): string {
         isSaving = true;
         
         var name = videoNameInput.value.trim() || 'recording';
-        var blob = new Blob(chunks, { type: 'video/webm' });
+        
+        // Determine format based on what was recorded
+        var isMP4 = chunks.length > 0 && chunks[0].type && chunks[0].type.includes('mp4');
+        var fileType = isMP4 ? 'video/mp4' : 'video/webm';
+        var fileExt = isMP4 ? 'mp4' : 'webm';
+        
+        var blob = new Blob(chunks, { type: fileType });
         var supabaseUrl = '${config.supabaseUrl}';
         var supabaseKey = '${config.supabaseKey}';
         
-        // Check file size - warn for large files (> 100MB)
+        // Check file size - warn for large files (> 250MB)
         var fileSizeMB = blob.size / (1024 * 1024);
-        console.log('📦 Recording size:', fileSizeMB.toFixed(2), 'MB');
-        if (fileSizeMB > 100) {
-          status.textContent = 'Large file (' + fileSizeMB.toFixed(0) + 'MB) - uploading...';
+        console.log('📦 Recording size:', fileSizeMB.toFixed(2), 'MB, format:', fileType);
+        if (fileSizeMB > 250) {
+          status.textContent = '⚠️ Large file (' + fileSizeMB.toFixed(0) + 'MB) - uploading may take a while...';
         }
         
         saveBtn.disabled = true;
@@ -2264,18 +2296,18 @@ function generateScript(config: PopoutConfig): string {
         status.textContent = 'Uploading to cloud...';
         
         try {
-          // Generate unique filename
+          // Generate unique filename with correct extension
           var timestamp = Date.now();
           var safeFileName = name.replace(/[^a-zA-Z0-9_-]/g, '_');
-          var storagePath = 'recording_' + timestamp + '_' + safeFileName + '.webm';
+          var storagePath = 'recording_' + timestamp + '_' + safeFileName + '.' + fileExt;
           
-          // Upload to Supabase Storage
+          // Upload to Supabase Storage with correct content type
           var uploadResponse = await fetch(supabaseUrl + '/storage/v1/object/generated-videos/' + storagePath, {
             method: 'POST',
             headers: {
               'Authorization': 'Bearer ' + supabaseKey,
               'apikey': supabaseKey,
-              'Content-Type': 'video/webm',
+              'Content-Type': fileType,
               'x-upsert': 'true'
             },
             body: blob
@@ -2321,7 +2353,7 @@ function generateScript(config: PopoutConfig): string {
               user_id: userId,
               metadata: {
                 recordedAt: new Date().toISOString(),
-                format: 'webm',
+                format: fileExt,
                 source: 'popout-studio'
               }
             })
@@ -2339,10 +2371,10 @@ function generateScript(config: PopoutConfig): string {
             window.opener.postMessage({ type: 'VIDEO_SAVED', name: name, url: fileUrl }, '*');
           }
           
-          // Also offer local download
+          // Also offer local download with correct extension
           var a = document.createElement('a');
           a.href = URL.createObjectURL(blob);
-          a.download = name + '.webm';
+          a.download = name + '.' + fileExt;
           a.click();
           
           // Reset save state and re-enable reset button
@@ -2360,10 +2392,10 @@ function generateScript(config: PopoutConfig): string {
           resetBtn.disabled = false;
           isSaving = false;
           
-          // Fallback to local download
+          // Fallback to local download with correct extension
           var a = document.createElement('a');
           a.href = URL.createObjectURL(blob);
-          a.download = name + '.webm';
+          a.download = name + '.' + fileExt;
           a.click();
           showSaveModal('⚠️ Cloud Save Failed', 'Your video was downloaded locally instead. Cloud save encountered an error.', 'warning');
         }
