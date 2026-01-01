@@ -1427,6 +1427,12 @@ function generateScript(config: PopoutConfig): string {
           if (data.audioContent) {
             ttsAudio = new Audio('data:audio/mpeg;base64,' + data.audioContent);
             ttsAudio.volume = 1.0;
+            ttsAudio.crossOrigin = 'anonymous';
+            ttsAudio.preload = 'auto';
+            // Wait for audio to be ready before calling callback
+            ttsAudio.oncanplaythrough = function() {
+              console.log('✅ TTS audio ready');
+            };
             saveTTSToLibrary(data.audioContent, scriptTitle);
           }
           if (callback) callback();
@@ -1451,11 +1457,14 @@ function generateScript(config: PopoutConfig): string {
             if (data.audioContent) {
               ttsAudio = new Audio('data:audio/mpeg;base64,' + data.audioContent);
               ttsAudio.volume = 1.0;
+              ttsAudio.crossOrigin = 'anonymous';
+              ttsAudio.preload = 'auto';
               saveTTSToLibrary(data.audioContent, scriptTitle);
             }
             if (callback) callback();
           }).catch(function(e2) {
             console.error('OpenAI TTS fallback failed:', e2);
+            ttsAudio = null; // Ensure it's null if failed
             if (callback) callback();
           });
         });
@@ -1554,9 +1563,17 @@ function generateScript(config: PopoutConfig): string {
         
         var canvasStream = canvas.captureStream(30);
         
-        // Mix audio from all sources
+        // Create a fresh audio context for this recording session
+        if (audioContext && audioContext.state !== 'closed') {
+          try { audioContext.close(); } catch(e) {}
+        }
         audioContext = new AudioContext();
         var destination = audioContext.createMediaStreamDestination();
+        
+        // Reset audio source references for fresh connection
+        voiceoverAudioSource = null;
+        ttsAudioSource = null;
+        musicAudioSource = null;
         
         // Mic audio
         if (stream) {
@@ -1586,16 +1603,25 @@ function generateScript(config: PopoutConfig): string {
           }
         }
         
-        // Connect voiceover audio to destination (if selected and has a source)
-        // IMPORTANT: Only connect if not already connected (prevents "already connected" errors)
-        if (useVoiceover && voiceover && voiceover.src && !useTTS && !voiceoverAudioSource) {
+        // Connect voiceover audio to destination
+        // Note: createMediaElementSource can only be called ONCE per audio element
+        // So we create a fresh audio element if we need to reconnect
+        if (useVoiceover && voiceover && voiceover.src && !useTTS) {
           try {
-            voiceoverAudioSource = audioContext.createMediaElementSource(voiceover);
+            // Create a fresh audio element to avoid "already connected" errors
+            var voiceoverClone = new Audio(voiceover.src);
+            voiceoverClone.crossOrigin = 'anonymous';
+            voiceoverClone.volume = 1.0;
+            
+            voiceoverAudioSource = audioContext.createMediaElementSource(voiceoverClone);
             var voiceoverGain = audioContext.createGain();
             voiceoverGain.gain.value = 1.0;
             voiceoverAudioSource.connect(voiceoverGain);
             voiceoverGain.connect(destination);
             voiceoverGain.connect(audioContext.destination); // Also play to speakers
+            
+            // Replace the global voiceover reference with the clone
+            voiceover = voiceoverClone;
             console.log('🎤 Voiceover audio connected to recording');
           } catch(e) {
             console.error('Voiceover source error:', e);
@@ -1603,8 +1629,9 @@ function generateScript(config: PopoutConfig): string {
         }
         
         // Connect TTS audio to destination
-        if (useTTS && ttsAudio && !ttsAudioSource) {
+        if (useTTS && ttsAudio) {
           try {
+            // TTS audio is already fresh from generation, just connect it
             ttsAudioSource = audioContext.createMediaElementSource(ttsAudio);
             var ttsGain = audioContext.createGain();
             ttsGain.gain.value = 1.0;
@@ -1613,19 +1640,29 @@ function generateScript(config: PopoutConfig): string {
             ttsGain.connect(audioContext.destination); // Also play to speakers
             console.log('🗣️ TTS audio connected to recording');
           } catch(e) {
-            console.error('TTS source error:', e);
+            console.error('TTS source error - may already be connected:', e);
+            // If already connected, just play it normally (won't be in recording)
           }
         }
         
         // Connect background music to destination
-        if (useMusic && bgMusic && bgMusic.src && !musicAudioSource) {
+        if (useMusic && bgMusic && bgMusic.src) {
           try {
-            musicAudioSource = audioContext.createMediaElementSource(bgMusic);
+            // Create a fresh audio element to avoid "already connected" errors
+            var musicClone = new Audio(bgMusic.src);
+            musicClone.crossOrigin = 'anonymous';
+            musicClone.volume = 0.3;
+            musicClone.loop = bgMusic.loop;
+            
+            musicAudioSource = audioContext.createMediaElementSource(musicClone);
             var musicGain = audioContext.createGain();
             musicGain.gain.value = 0.3;
             musicAudioSource.connect(musicGain);
             musicGain.connect(destination);
             musicAudioSource.connect(audioContext.destination); // Also play to speakers
+            
+            // Replace the global bgMusic reference with the clone
+            bgMusic = musicClone;
             console.log('🎵 Music audio connected to recording');
           } catch(e) {
             console.error('Music source error:', e);
@@ -1633,10 +1670,6 @@ function generateScript(config: PopoutConfig): string {
         }
         
         audioSourcesConnected = true;
-          } catch(e) {
-            console.error('Music source error:', e);
-          }
-        }
         
         // Combined stream
         var finalTracks = canvasStream.getVideoTracks().concat(destination.stream.getAudioTracks());
@@ -1663,10 +1696,11 @@ function generateScript(config: PopoutConfig): string {
           // Stop all audio completely and remove event listeners
           stopAllAudio();
           
-          // Reset audio sources for next recording
+          // Reset audio sources and TTS for next recording
           voiceoverAudioSource = null;
           ttsAudioSource = null;
           musicAudioSource = null;
+          ttsAudio = null; // Clear TTS so a fresh one is generated for next recording
           audioSourcesConnected = false;
           
           // Close audio context to fully disconnect sources
@@ -2003,25 +2037,47 @@ function generateScript(config: PopoutConfig): string {
         if (bgMusic && bgMusic.src) { bgMusic.currentTime = 0; bgMusic.play().catch(console.error); document.getElementById('musicPlayPauseBtn').textContent = '⏸️'; }
       };
       
-      // Pause/Resume recording
+      // Pause/Resume recording - ALSO pause/resume audio
       pauseBtn.onclick = function() {
         if (isPaused) {
-          mediaRecorder.resume();
+          // Resume recording
+          if (mediaRecorder && mediaRecorder.state === 'paused') {
+            mediaRecorder.resume();
+          }
+          // Resume audio
+          if (ttsActive && ttsAudio) { ttsAudio.play().catch(console.error); }
+          if (voiceoverActive && voiceover && voiceover.src) { voiceover.play().catch(console.error); }
+          if (musicActive && bgMusic && bgMusic.src) { bgMusic.play().catch(console.error); }
+          
           pauseBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>Pause';
           isPaused = false;
         } else {
-          mediaRecorder.pause();
+          // Pause recording
+          if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.pause();
+          }
+          // Pause all audio
+          if (ttsAudio) { ttsAudio.pause(); }
+          if (voiceover) { voiceover.pause(); }
+          if (bgMusic) { bgMusic.pause(); }
+          
           pauseBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>Resume';
           isPaused = true;
         }
       };
       
-      // Stop recording
+      // Stop recording - with thorough cleanup
       stopBtn.onclick = function() {
         console.log('🛑 Stop button clicked');
+        isRecording = false;
+        isCountingDown = false;
         
         // Stop all audio immediately
         stopAllAudio();
+        
+        // Clear intervals
+        if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+        if (scrollInterval) { clearInterval(scrollInterval); scrollInterval = null; }
         
         // Stop the recorder
         if (mediaRecorder && mediaRecorder.state !== 'inactive') {
@@ -2031,6 +2087,11 @@ function generateScript(config: PopoutConfig): string {
         // Stop camera stream
         if (stream) {
           stream.getTracks().forEach(function(t) { t.stop(); });
+        }
+        
+        // Stop display stream
+        if (displayStream) {
+          displayStream.getTracks().forEach(function(t) { t.stop(); });
         }
       };
       
