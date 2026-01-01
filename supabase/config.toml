@@ -134,3 +134,6 @@ verify_jwt = false
 
 [functions.openai-tts]
 verify_jwt = false
+
+[functions.analyze-script]
+verify_jwt = false
