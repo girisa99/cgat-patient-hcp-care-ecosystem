@@ -2759,9 +2759,9 @@ function generateScript(config: PopoutConfig): string {
           enhancedAudioProgress.textContent = 'Generating TTS audio from enhanced script...';
           
           try {
-            // Use existing TTS functionality - determine which provider
-            var selectedVoice = voiceSelect.value || 'alloy';
-            var ttsProvider = ttsProviderSelect ? ttsProviderSelect.value : 'openai';
+            // Use default voice settings - OpenAI TTS with 'alloy' voice
+            var selectedVoice = 'alloy';
+            var ttsProvider = 'openai';
             
             var audioBlob = null;
             
