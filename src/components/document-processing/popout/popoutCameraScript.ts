@@ -239,8 +239,8 @@ export function getCameraScript(): string {
       }
     }
 
-    // Process and download recording
-    function processRecording() {
+    // Process and save/download recording
+    async function processRecording() {
       if (recordedChunks.length === 0) {
         showStatus('No recording data captured', 'error');
         return;
@@ -250,12 +250,32 @@ export function getCameraScript(): string {
 
       try {
         const blob = new Blob(recordedChunks, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
+        const recordingName = 'recording-' + new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
         
-        // Create download link
+        // Calculate duration
+        const duration = recordingStartTime ? Math.floor((Date.now() - recordingStartTime) / 1000) : 0;
+        
+        // Get metadata
+        const selectedScriptOption = document.getElementById('scriptSelect')?.options[document.getElementById('scriptSelect')?.selectedIndex];
+        const selectedVoiceover = document.getElementById('voiceoverSelect')?.value;
+        const selectedMusic = document.getElementById('musicSelect')?.value;
+        
+        // Save to library if available
+        if (typeof saveRecordingToLibrary === 'function') {
+          await saveRecordingToLibrary(blob, {
+            name: recordingName,
+            duration: duration,
+            scriptTitle: selectedScriptOption ? selectedScriptOption.text : null,
+            hasVoiceover: !!selectedVoiceover,
+            hasMusic: !!selectedMusic
+          });
+        }
+        
+        // Also trigger download
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'recording-' + new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-') + '.webm';
+        a.download = recordingName + '.webm';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -263,8 +283,8 @@ export function getCameraScript(): string {
         // Clean up
         setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
 
-        showStatus('Recording saved! Check your downloads folder.', 'success');
-        console.log('[Recording] Downloaded successfully');
+        showStatus('Recording saved! Check downloads and library.', 'success');
+        console.log('[Recording] Saved successfully');
 
       } catch (err) {
         console.error('[Recording] Process error:', err);

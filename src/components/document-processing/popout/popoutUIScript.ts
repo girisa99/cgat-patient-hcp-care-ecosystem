@@ -356,17 +356,37 @@ export function getUIScript(): string {
     }
 
     // =====================================================
-    // AUDIO PLAYBACK FOR RECORDING
+    // AUDIO PLAYBACK FOR RECORDING (with overlap prevention)
     // =====================================================
+
+    let isStoppingAudio = false;  // Flag to prevent starting audio during stop
 
     // These functions are called by the camera module during recording
     function startAudioPlayback() {
-      // Start voiceover if selected
+      // Don't start audio if we're in the process of stopping
+      if (isStoppingAudio) {
+        console.log('[UI] Skipping audio start - stop in progress');
+        return;
+      }
+
+      // Stop any existing TTS to prevent overlap
+      if (ttsAudio) {
+        ttsAudio.pause();
+        ttsAudio.currentTime = 0;
+        ttsAudio = null;
+      }
+
+      // Start voiceover if selected (mutually exclusive with TTS)
       const voOption = voiceoverSelect.options[voiceoverSelect.selectedIndex];
       const voUrl = voOption ? voOption.dataset.url : null;
       
       if (voUrl && voiceoverSelect.value) {
-        if (voiceoverAudio) voiceoverAudio.pause();
+        // Stop any existing voiceover
+        if (voiceoverAudio) {
+          voiceoverAudio.pause();
+          voiceoverAudio.currentTime = 0;
+        }
+        
         voiceoverAudio = new Audio(voUrl);
         voiceoverAudio.volume = voiceoverVolume.value / 100;
         
@@ -388,12 +408,17 @@ export function getUIScript(): string {
         });
       }
 
-      // Start music if selected
+      // Start music if selected (can play alongside voiceover)
       const musicOption = musicSelect.options[musicSelect.selectedIndex];
       const musicUrl = musicOption ? musicOption.dataset.url : null;
       
       if (musicUrl && musicSelect.value) {
-        if (musicAudio) musicAudio.pause();
+        // Stop any existing music
+        if (musicAudio) {
+          musicAudio.pause();
+          musicAudio.currentTime = 0;
+        }
+        
         musicAudio = new Audio(musicUrl);
         musicAudio.volume = musicVolume.value / 100;
         musicAudio.loop = musicLoopEnabled;
@@ -407,17 +432,22 @@ export function getUIScript(): string {
     }
 
     function stopAudioPlayback() {
+      isStoppingAudio = true;  // Set flag to prevent new audio from starting
+      
       if (voiceoverAudio) {
         voiceoverAudio.pause();
         voiceoverAudio.currentTime = 0;
+        voiceoverAudio = null;
       }
       if (musicAudio) {
         musicAudio.pause();
         musicAudio.currentTime = 0;
+        musicAudio = null;
       }
       if (ttsAudio) {
         ttsAudio.pause();
         ttsAudio.currentTime = 0;
+        ttsAudio = null;
       }
       
       // Stop sync
@@ -433,6 +463,16 @@ export function getUIScript(): string {
       
       // Hide recording UI elements
       hideRecordingUI();
+      
+      // Reset flag after a short delay
+      setTimeout(function() {
+        isStoppingAudio = false;
+      }, 500);
+    }
+    
+    // Global stop all audio function (accessible from camera script)
+    function stopAllAudio() {
+      stopAudioPlayback();
     }
 
     // =====================================================
