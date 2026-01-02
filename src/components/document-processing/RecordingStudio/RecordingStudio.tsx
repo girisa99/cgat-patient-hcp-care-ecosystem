@@ -213,44 +213,84 @@ export function RecordingStudio({
     toast.success('Script updated!');
   }, []);
 
-  // Script analysis
-  const handleAnalyzeScript = useCallback(async (): Promise<string | null> => {
+  // Script analysis - uses AI
+  const handleAnalyzeScript = useCallback(async (): Promise<any> => {
     if (!currentScript) return null;
     setIsAnalyzing(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/enhance-script`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            scriptContent: currentScript.content,
+            mode: 'analyze'
+          }),
+        }
+      );
       
-      const wordCount = currentScript.content.split(/\s+/).length;
-      const estimatedDuration = Math.ceil(wordCount / 150);
-      const sentences = currentScript.content.split(/[.!?]+/).filter(s => s.trim()).length;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Analysis failed');
+      }
       
-      return `Words: ${wordCount} | Sentences: ${sentences} | Est: ${estimatedDuration}min`;
+      const result = await response.json();
+      if (result.success && result.data) {
+        return result.data;
+      }
+      return null;
     } catch (error) {
-      toast.error('Analysis failed');
+      console.error('Analysis error:', error);
+      toast.error(error instanceof Error ? error.message : 'Analysis failed');
       return null;
     } finally {
       setIsAnalyzing(false);
     }
   }, [currentScript]);
 
-  // Script enhancement
-  const handleEnhanceScript = useCallback(async (): Promise<string | null> => {
+  // Script enhancement - uses AI
+  const handleEnhanceScript = useCallback(async (): Promise<any> => {
     if (!currentScript) return null;
     setIsEnhancing(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      toast.info('Enhancing script with AI...');
       
-      // Enhancement: add paragraph breaks, improve readability
-      const enhanced = currentScript.content
-        .replace(/\. /g, '.\n\n')
-        .replace(/! /g, '!\n\n')
-        .replace(/\? /g, '?\n\n');
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/enhance-script`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            scriptContent: currentScript.content,
+            mode: 'enhance'
+          }),
+        }
+      );
       
-      return enhanced.trim();
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Enhancement failed');
+      }
+      
+      const result = await response.json();
+      if (result.success && result.data) {
+        // Return the full enhancement data including changes
+        toast.success('Script enhanced! Review the changes below.');
+        return result.data;
+      }
+      return null;
     } catch (error) {
-      toast.error('Enhancement failed');
+      console.error('Enhancement error:', error);
+      toast.error(error instanceof Error ? error.message : 'Enhancement failed');
       return null;
     } finally {
       setIsEnhancing(false);

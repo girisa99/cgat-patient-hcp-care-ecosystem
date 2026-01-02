@@ -36,6 +36,40 @@ interface EnhancementChange {
   accepted: boolean | null;
 }
 
+// AI Response types
+interface AIAnalysisResult {
+  stats?: {
+    wordCount: number;
+    sentenceCount: number;
+    avgWordsPerSentence: number;
+    estimatedDurationMinutes: number;
+    readabilityScore: string;
+  };
+  recommendations?: Array<{
+    type: string;
+    severity: string;
+    title: string;
+    description: string;
+    originalText?: string;
+    suggestedText?: string;
+  }>;
+}
+
+interface AIEnhancementResult {
+  enhancedScript: string;
+  cleanScript?: string;
+  changes?: Array<{
+    type: string;
+    original: string;
+    enhanced: string;
+    reason: string;
+  }>;
+  summary?: string;
+}
+
+type AnalyzeResult = AIAnalysisResult | string | null;
+type EnhanceResult = AIEnhancementResult | string | null;
+
 interface ScriptPanelProps {
   scripts: ScriptData[];
   selectedScriptId: string;
@@ -46,9 +80,9 @@ interface ScriptPanelProps {
   scrollSpeed: number;
   onScrollSpeedChange: (speed: number) => void;
   
-  // Actions
-  onAnalyzeScript?: () => Promise<string | null>;
-  onEnhanceScript?: () => Promise<string | null>;
+  // Actions - now accept AI response objects
+  onAnalyzeScript?: () => Promise<AnalyzeResult>;
+  onEnhanceScript?: () => Promise<EnhanceResult>;
   isAnalyzing?: boolean;
   isEnhancing?: boolean;
   
@@ -125,63 +159,70 @@ export function ScriptPanel({
     
     const result = await onAnalyzeScript();
     if (result) {
-      // Parse result and generate detailed recommendations
+      // Type guard: Check if result is an object (AI response) or string (legacy)
+      if (typeof result === 'object' && result !== null) {
+        const aiResult = result as AIAnalysisResult;
+        
+        // AI-generated recommendations
+        if (aiResult.recommendations && Array.isArray(aiResult.recommendations)) {
+          const recommendations: AnalysisRecommendation[] = aiResult.recommendations.map((rec, index) => ({
+            id: `rec-${index}`,
+            type: (rec.type as 'readability' | 'pacing' | 'clarity' | 'engagement' | 'length') || 'readability',
+            title: rec.title,
+            description: rec.description,
+            severity: (rec.severity as 'info' | 'warning' | 'suggestion') || 'info',
+            accepted: null,
+          }));
+          
+          // Add stats from AI analysis
+          if (aiResult.stats) {
+            recommendations.unshift({
+              id: 'stats-ai',
+              type: 'readability',
+              title: 'Script Statistics (AI Analysis)',
+              description: `${aiResult.stats.wordCount} words • ${aiResult.stats.sentenceCount} sentences • ~${aiResult.stats.estimatedDurationMinutes} min • Readability: ${aiResult.stats.readabilityScore}`,
+              severity: 'info',
+              accepted: true,
+            });
+          }
+          
+          setAnalysisResult(recommendations);
+          setShowAnalysis(true);
+          toast.success('AI analysis complete!');
+          return;
+        }
+      }
+      
+      // Legacy fallback - generate local recommendations
       const wordCount = countWords(selectedScript.content);
       const sentences = selectedScript.content.split(/[.!?]+/).filter(s => s.trim()).length;
       const avgWordsPerSentence = Math.round(wordCount / sentences);
-      const estimatedDuration = Math.ceil(wordCount / 150); // 150 wpm speaking rate
+      const estimatedDuration = Math.ceil(wordCount / 150);
       
-      const recommendations: AnalysisRecommendation[] = [];
+      const recommendations: AnalysisRecommendation[] = [
+        {
+          id: 'stats-1',
+          type: 'readability',
+          title: 'Script Statistics',
+          description: `${wordCount} words • ${sentences} sentences • ~${estimatedDuration} min read time`,
+          severity: 'info',
+          accepted: true,
+        }
+      ];
       
-      // Pacing analysis
       if (avgWordsPerSentence > 25) {
         recommendations.push({
           id: 'pacing-1',
           type: 'pacing',
           title: 'Long sentences detected',
-          description: `Average ${avgWordsPerSentence} words/sentence. Consider breaking into shorter sentences for better pacing.`,
+          description: `Average ${avgWordsPerSentence} words/sentence. Consider breaking into shorter sentences.`,
           severity: 'warning',
           accepted: null,
         });
       }
       
-      // Length analysis
-      if (wordCount > 500) {
-        recommendations.push({
-          id: 'length-1',
-          type: 'length',
-          title: 'Script may be too long',
-          description: `${wordCount} words (~${estimatedDuration} min). Consider trimming for better engagement.`,
-          severity: 'suggestion',
-          accepted: null,
-        });
-      }
-      
-      // Readability
-      if (selectedScript.content.includes('...')) {
-        recommendations.push({
-          id: 'clarity-1',
-          type: 'clarity',
-          title: 'Ellipses found',
-          description: 'Ellipses can cause awkward pauses in TTS. Consider replacing with periods.',
-          severity: 'info',
-          accepted: null,
-        });
-      }
-      
-      // Always add stats
-      recommendations.push({
-        id: 'stats-1',
-        type: 'readability',
-        title: 'Script Statistics',
-        description: `${wordCount} words • ${sentences} sentences • ~${estimatedDuration} min read time`,
-        severity: 'info',
-        accepted: true, // Auto-accepted info
-      });
-      
       setAnalysisResult(recommendations);
       setShowAnalysis(true);
-      toast.success('Analysis complete!');
     }
   };
 
@@ -194,24 +235,68 @@ export function ScriptPanel({
     
     const result = await onEnhanceScript();
     if (result) {
-      setEnhancedContent(result);
-      setEnhancedWordCount(countWords(result));
-      
-      // Generate clean version for TTS
-      const cleanVersion = generateCleanScript(result);
-      setCleanEnhancedContent(cleanVersion);
-      
-      // Notify parent
-      if (onEnhancedScriptReady) {
-        onEnhancedScriptReady(cleanVersion);
+      // Type guard: Check if result is an object (AI response) or string (legacy)
+      if (typeof result === 'object' && result !== null) {
+        const aiResult = result as AIEnhancementResult;
+        
+        if (aiResult.enhancedScript) {
+          // AI-generated enhancement
+          setEnhancedContent(aiResult.enhancedScript);
+          setEnhancedWordCount(countWords(aiResult.enhancedScript));
+          
+          // Use the AI-provided clean script for TTS
+          const cleanVersion = aiResult.cleanScript || generateCleanScript(aiResult.enhancedScript);
+          setCleanEnhancedContent(cleanVersion);
+          
+          // Notify parent with clean script
+          if (onEnhancedScriptReady) {
+            onEnhancedScriptReady(cleanVersion);
+          }
+          
+          // Use AI-provided changes with highlighting
+          if (aiResult.changes && Array.isArray(aiResult.changes)) {
+            const aiChanges: EnhancementChange[] = aiResult.changes.map((change, index) => ({
+              id: `ai-change-${index}`,
+              type: (change.type as 'addition' | 'modification' | 'removal' | 'formatting') || 'modification',
+              original: change.original || '',
+              enhanced: change.enhanced || '',
+              reason: change.reason || 'AI improvement',
+              accepted: null,
+            }));
+            setEnhancementChanges(aiChanges);
+          } else {
+            // Fallback to local diff
+            const changes = generateDetailedChanges(selectedScript.content, aiResult.enhancedScript);
+            setEnhancementChanges(changes);
+          }
+          
+          setShowChanges(true);
+          
+          // Show summary if available
+          if (aiResult.summary) {
+            toast.success(aiResult.summary);
+          }
+          return;
+        }
       }
       
-      // Generate detailed changes
-      const changes = generateDetailedChanges(selectedScript.content, result);
-      setEnhancementChanges(changes);
-      setShowChanges(true);
-      
-      toast.success('Enhancement complete! Review changes below.');
+      // Legacy string result
+      if (typeof result === 'string') {
+        setEnhancedContent(result);
+        setEnhancedWordCount(countWords(result));
+        
+        const cleanVersion = generateCleanScript(result);
+        setCleanEnhancedContent(cleanVersion);
+        
+        if (onEnhancedScriptReady) {
+          onEnhancedScriptReady(cleanVersion);
+        }
+        
+        const changes = generateDetailedChanges(selectedScript.content, result);
+        setEnhancementChanges(changes);
+        setShowChanges(true);
+        toast.success('Enhancement complete! Review changes below.');
+      }
     }
   };
 
@@ -656,10 +741,10 @@ export function ScriptPanel({
 
           {/* Enhancement Changes Review - Scrollable */}
           {showChanges && enhancementChanges.length > 0 && (
-            <div className="space-y-2 border rounded-md p-2 bg-primary/5 max-h-[320px] overflow-hidden flex flex-col">
+            <div className="space-y-2 border rounded-md p-2 bg-primary/5 max-h-[380px] overflow-hidden flex flex-col">
               <div className="flex items-center justify-between shrink-0">
                 <span className="text-xs font-medium text-primary">
-                  ✨ Enhancements: {pendingChanges} pending • {acceptedChanges} accepted
+                  ✨ AI Enhancements: {pendingChanges} pending • {acceptedChanges} accepted
                 </span>
                 <Button
                   size="icon"
@@ -672,54 +757,87 @@ export function ScriptPanel({
               </div>
               
               <div className="flex-1 overflow-y-auto min-h-0 pr-1">
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   {enhancementChanges.map((change) => (
                     <div 
                       key={change.id} 
                       className={cn(
-                        "p-2 rounded text-xs border",
-                        change.accepted === true && "bg-green-500/10 border-green-500/30",
-                        change.accepted === false && "bg-red-500/10 border-red-500/30 opacity-50",
-                        change.accepted === null && "bg-muted/50"
+                        "p-2.5 rounded text-xs border transition-all",
+                        change.accepted === true && "bg-green-500/15 border-green-500/40",
+                        change.accepted === false && "bg-red-500/10 border-red-500/30 opacity-40",
+                        change.accepted === null && "bg-background border-border hover:border-primary/50"
                       )}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <Badge variant="outline" className="text-[8px] h-4">
+                        <div className="flex-1 min-w-0 space-y-1.5">
+                          {/* Change type and reason */}
+                          <div className="flex items-center gap-1.5">
+                            <Badge 
+                              variant="outline" 
+                              className={cn(
+                                "text-[9px] h-4 font-medium",
+                                change.type === 'addition' && "border-green-500 text-green-600 bg-green-500/10",
+                                change.type === 'removal' && "border-red-500 text-red-600 bg-red-500/10",
+                                change.type === 'modification' && "border-blue-500 text-blue-600 bg-blue-500/10",
+                                change.type === 'formatting' && "border-purple-500 text-purple-600 bg-purple-500/10"
+                              )}
+                            >
                               {change.type}
                             </Badge>
-                            <span className="text-muted-foreground italic text-[10px]">{change.reason}</span>
+                            <span className="text-muted-foreground text-[10px] italic truncate">{change.reason}</span>
                           </div>
-                          {change.original && (
-                            <p className="text-muted-foreground line-through mb-1 text-[11px]">
-                              {change.original.slice(0, 100)}{change.original.length > 100 ? '...' : ''}
-                            </p>
+                          
+                          {/* Original text with strikethrough */}
+                          {change.original && change.type !== 'addition' && (
+                            <div className="p-1.5 rounded bg-red-500/5 border border-red-500/20">
+                              <p className="text-red-600/80 line-through text-[11px] leading-relaxed">
+                                {change.original.length > 150 ? change.original.slice(0, 150) + '...' : change.original}
+                              </p>
+                            </div>
                           )}
-                          <p className="text-foreground text-[11px]">
-                            {change.enhanced.slice(0, 100)}{change.enhanced.length > 100 ? '...' : ''}
-                          </p>
+                          
+                          {/* Enhanced text with highlight */}
+                          {change.enhanced && (
+                            <div className="p-1.5 rounded bg-green-500/5 border border-green-500/20">
+                              <p className="text-green-700 text-[11px] leading-relaxed font-medium">
+                                {change.enhanced.length > 150 ? change.enhanced.slice(0, 150) + '...' : change.enhanced}
+                              </p>
+                            </div>
+                          )}
                         </div>
+                        
+                        {/* Accept/Reject buttons */}
                         {change.accepted === null && (
-                          <div className="flex gap-0.5 shrink-0">
+                          <div className="flex flex-col gap-0.5 shrink-0">
                             <Button 
                               size="icon" 
-                              variant="ghost" 
-                              className="h-5 w-5"
+                              variant="outline" 
+                              className="h-6 w-6 border-green-500/30 hover:bg-green-500/10 hover:border-green-500"
                               onClick={() => handleAcceptChange(change.id)}
-                              title="Accept change"
+                              title="Accept this change"
                             >
-                              <Check className="w-3 h-3 text-green-500" />
+                              <Check className="w-3 h-3 text-green-600" />
                             </Button>
                             <Button 
                               size="icon" 
-                              variant="ghost" 
-                              className="h-5 w-5"
+                              variant="outline" 
+                              className="h-6 w-6 border-red-500/30 hover:bg-red-500/10 hover:border-red-500"
                               onClick={() => handleRejectChange(change.id)}
-                              title="Skip change"
+                              title="Skip this change"
                             >
                               <X className="w-3 h-3 text-red-500" />
                             </Button>
+                          </div>
+                        )}
+                        
+                        {/* Status indicator for resolved changes */}
+                        {change.accepted !== null && (
+                          <div className="shrink-0">
+                            {change.accepted ? (
+                              <Check className="w-4 h-4 text-green-600" />
+                            ) : (
+                              <X className="w-4 h-4 text-red-400" />
+                            )}
                           </div>
                         )}
                       </div>
