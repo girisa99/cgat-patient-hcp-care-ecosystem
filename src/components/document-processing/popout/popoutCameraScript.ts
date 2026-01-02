@@ -9,19 +9,27 @@ export function getCameraScript(): string {
     // =====================================================
     // CAMERA & RECORDING MODULE
     // =====================================================
+    console.log('[Camera] Module loading...');
+    
     // Note: mediaStream, mediaRecorder, recordedChunks, isRecording, 
     // recordingStartTime, recordingTimer, isStopped, isPaused, trimHistory
     // and showStatus are declared in shared globals
 
-    // DOM Elements
-    const videoPreview = document.getElementById('videoPreview');
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    const loadingText = document.getElementById('loadingText');
-    const recordBtn = document.getElementById('recordBtn');
-    const recordBtnText = document.getElementById('recordBtnText');
-    const recordingIndicator = document.getElementById('recordingIndicator');
-    const recordingTimeEl = document.getElementById('recordingTime');
-    const statusContainer = document.getElementById('statusContainer');
+    // DOM Elements - with null checks
+    var videoPreview = document.getElementById('videoPreview');
+    var loadingOverlay = document.getElementById('loadingOverlay');
+    var loadingText = document.getElementById('loadingText');
+    var recordBtn = document.getElementById('recordBtn');
+    var recordBtnText = document.getElementById('recordBtnText');
+    var recordingIndicator = document.getElementById('recordingIndicator');
+    var recordingTimeEl = document.getElementById('recordingTime');
+    
+    console.log('[Camera] DOM elements:', {
+      videoPreview: !!videoPreview,
+      loadingOverlay: !!loadingOverlay,
+      loadingText: !!loadingText,
+      recordBtn: !!recordBtn
+    });
 
     // Format time as MM:SS
     function formatTime(seconds) {
@@ -33,7 +41,15 @@ export function getCameraScript(): string {
     // Initialize camera
     async function initCamera() {
       console.log('[Camera] Initializing...');
-      loadingText.textContent = 'Requesting camera access...';
+      
+      if (!videoPreview) {
+        console.error('[Camera] FATAL: videoPreview element not found!');
+        return;
+      }
+      
+      if (loadingText) {
+        loadingText.textContent = 'Requesting camera access...';
+      }
 
       try {
         // Request camera permission
@@ -55,7 +71,7 @@ export function getCameraScript(): string {
         videoPreview.onloadedmetadata = function() {
           console.log('[Camera] Video metadata loaded');
           videoPreview.play();
-          loadingOverlay.classList.add('hidden');
+          if (loadingOverlay) loadingOverlay.classList.add('hidden');
           enableRecordButton();
         };
 
@@ -66,8 +82,12 @@ export function getCameraScript(): string {
 
       } catch (err) {
         console.error('[Camera] Error:', err);
-        loadingText.textContent = 'Camera access denied. Please allow camera access and refresh.';
-        showStatus('Camera error: ' + err.message, 'error');
+        if (loadingText) {
+          loadingText.textContent = 'Camera access denied. Please allow camera access and refresh.';
+        }
+        if (typeof showStatus === 'function') {
+          showStatus('Camera error: ' + err.message, 'error');
+        }
       }
     }
 
