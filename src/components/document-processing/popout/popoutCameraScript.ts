@@ -349,16 +349,9 @@ export function getCameraScript(): string {
       }
     });
 
-    // Initialize camera on DOM ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', function() {
-        console.log('[Camera] DOM ready, initializing camera...');
-        initCamera();
-      });
-    } else {
-      console.log('[Camera] DOM already ready, initializing camera...');
-      initCamera();
-    }
+    // Initialize camera immediately (DOM is already ready from wrapper)
+    console.log('[Camera] Initializing camera...');
+    initCamera();
 
     console.log('[Camera] Module loaded with Phase 2 integrations');
   `;
