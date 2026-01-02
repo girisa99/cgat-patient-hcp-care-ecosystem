@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Radio, Mic2, ChevronDown, Volume2, Wand2 } from 'lucide-react';
+import { Radio, Mic2, ChevronDown, Volume2, Wand2, Monitor, Video } from 'lucide-react';
 import type { StudioSoundSettings } from '../hooks/useStudioSound';
 
 interface StudioSoundPanelProps {
@@ -80,6 +80,24 @@ export function StudioSoundPanel({
                     <div>
                       <div>Natural</div>
                       <div className="text-[10px] text-muted-foreground">Minimal processing</div>
+                    </div>
+                  </div>
+                </SelectItem>
+                <SelectItem value="webcast">
+                  <div className="flex items-center gap-2">
+                    <Video className="w-3 h-3" />
+                    <div>
+                      <div>Webcast</div>
+                      <div className="text-[10px] text-muted-foreground">Live streaming optimized</div>
+                    </div>
+                  </div>
+                </SelectItem>
+                <SelectItem value="screen_demo">
+                  <div className="flex items-center gap-2">
+                    <Monitor className="w-3 h-3" />
+                    <div>
+                      <div>Screen Demo</div>
+                      <div className="text-[10px] text-muted-foreground">Product demo narration</div>
                     </div>
                   </div>
                 </SelectItem>

@@ -89,15 +89,28 @@ export function MusicGenerator({
         throw new Error(errorData.error || `Generation failed: ${response.status}`);
       }
 
-      // Get audio as blob
-      const audioBlob = await response.blob();
+      // Edge function returns JSON with base64 audio
+      const data = await response.json();
+      
+      if (!data.audioContent) {
+        throw new Error('No audio content received');
+      }
+      
+      // Convert base64 to blob
+      const byteCharacters = atob(data.audioContent);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const audioBlob = new Blob([byteArray], { type: 'audio/mpeg' });
       const audioUrl = URL.createObjectURL(audioBlob);
 
       const newMusic: GeneratedMusic = {
         id: `music-${Date.now()}`,
         name: `🎵 ${prompt.substring(0, 40)}${prompt.length > 40 ? '...' : ''}`,
         prompt,
-        duration: parseInt(duration),
+        duration: data.duration || parseInt(duration),
         url: audioUrl,
         createdAt: new Date(),
       };
