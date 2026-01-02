@@ -1,20 +1,24 @@
 /**
  * Genie Studio - Professional Media Production Hub
  * Unified dashboard for video recording, voice generation, and content creation
- * Competitor to Loom, Descript, Synthesia
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Video, 
   Mic, 
   FileText, 
   Play, 
+  Pause,
   Sparkles, 
   Wand2,
   Library,
@@ -22,21 +26,24 @@ import {
   Zap,
   Music,
   Download,
-  Share2,
+  Trash2,
   Layers,
   Film,
   Headphones,
   PenTool,
   Cpu,
-  Globe,
   TrendingUp,
-  Trash2,
-  ExternalLink,
-  Upload
+  Loader2,
+  Volume2,
+  Copy,
+  Plus,
+  RefreshCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { RecordingStudio } from '@/components/document-processing/RecordingStudio';
 import { toast } from 'sonner';
+import { useTTSGeneration, OPENAI_VOICES, ELEVENLABS_VOICES } from '@/components/document-processing/RecordingStudio/hooks/useTTSGeneration';
+import { supabase } from '@/integrations/supabase/client';
 
 // Types for media items
 interface MediaItem {
@@ -48,6 +55,134 @@ interface MediaItem {
   duration?: number;
   size?: number;
 }
+
+// Script Templates
+const SCRIPT_TEMPLATES = [
+  {
+    id: 'product-demo',
+    name: 'Product Demo',
+    description: 'Showcase your product features',
+    category: 'Marketing',
+    content: `Welcome to [Product Name]! 
+
+Today, I'll walk you through the key features that make our solution stand out.
+
+First, let's look at [Feature 1]. This allows you to [benefit 1], saving you time and effort.
+
+Next, [Feature 2] enables [benefit 2]. Watch how easy it is to [action].
+
+Finally, [Feature 3] gives you [benefit 3], ensuring you get the most value.
+
+Ready to get started? Click the link below to try it free today!`
+  },
+  {
+    id: 'tutorial',
+    name: 'Tutorial / How-To',
+    description: 'Step-by-step educational content',
+    category: 'Education',
+    content: `Hey everyone! In this tutorial, I'll show you how to [topic].
+
+By the end of this video, you'll be able to [outcome].
+
+Let's dive in!
+
+Step 1: [First action]
+Start by [detailed instruction]. This is important because [reason].
+
+Step 2: [Second action]
+Now, [detailed instruction]. You'll notice that [observation].
+
+Step 3: [Third action]
+Finally, [detailed instruction]. And that's it!
+
+If you found this helpful, don't forget to subscribe for more tutorials!`
+  },
+  {
+    id: 'announcement',
+    name: 'Announcement',
+    description: 'Share news or updates',
+    category: 'Corporate',
+    content: `We're excited to announce [news/update]!
+
+After [timeframe/effort], we're proud to share that [details].
+
+This means [impact/benefit] for our [customers/team/community].
+
+Here's what you need to know:
+• [Key point 1]
+• [Key point 2]  
+• [Key point 3]
+
+[Next steps or call to action]
+
+Thank you for your continued support!`
+  },
+  {
+    id: 'explainer',
+    name: 'Explainer Video',
+    description: 'Explain complex topics simply',
+    category: 'Education',
+    content: `Have you ever wondered how [topic] works?
+
+Let me break it down for you in simple terms.
+
+[Topic] is essentially [simple definition].
+
+Think of it like [analogy]. When you [action], it [result].
+
+The key thing to understand is [core concept].
+
+This is important because [reason/impact].
+
+Now you know the basics of [topic]! Have questions? Drop them in the comments.`
+  },
+  {
+    id: 'testimonial',
+    name: 'Customer Testimonial',
+    description: 'Share customer success stories',
+    category: 'Marketing',
+    content: `Before using [Product/Service], I was struggling with [problem].
+
+I tried [previous solutions] but nothing worked.
+
+Then I discovered [Product/Service] and everything changed.
+
+Within [timeframe], I was able to [achievement].
+
+The best part? [Favorite feature or benefit].
+
+I highly recommend [Product/Service] to anyone dealing with [problem].
+
+It's been a game-changer for my [business/life/workflow].`
+  },
+  {
+    id: 'podcast-intro',
+    name: 'Podcast Introduction',
+    description: 'Welcome listeners to your show',
+    category: 'Entertainment',
+    content: `Welcome to [Podcast Name]! I'm your host, [Name].
+
+Today's episode is all about [topic].
+
+We've got [guest name or content preview] joining us to discuss [specific angle].
+
+Before we dive in, a quick reminder to subscribe and leave a review if you're enjoying the show.
+
+Alright, let's get into it!`
+  }
+];
+
+// Music genres with prompts
+const MUSIC_GENRES = [
+  { id: 'corporate', name: 'Corporate', prompt: 'Professional corporate background music, clean and modern, suitable for business presentations', color: 'blue' },
+  { id: 'upbeat', name: 'Upbeat', prompt: 'Upbeat and energetic music, positive vibes, perfect for promotional content', color: 'orange' },
+  { id: 'cinematic', name: 'Cinematic', prompt: 'Epic cinematic orchestral music with emotional depth, movie trailer style', color: 'purple' },
+  { id: 'ambient', name: 'Ambient', prompt: 'Calm ambient soundscape, peaceful and relaxing, meditation style', color: 'green' },
+  { id: 'motivational', name: 'Motivational', prompt: 'Inspiring motivational music with building energy, workout or achievement style', color: 'red' },
+  { id: 'lofi', name: 'Lo-Fi', prompt: 'Chill lo-fi hip hop beats, relaxed and nostalgic, study music vibe', color: 'pink' },
+  { id: 'electronic', name: 'Electronic', prompt: 'Modern electronic music with synths and beats, tech and innovation feel', color: 'cyan' },
+  { id: 'acoustic', name: 'Acoustic', prompt: 'Warm acoustic guitar melody, natural and organic, coffeehouse atmosphere', color: 'amber' }
+];
 
 // Feature cards for the dashboard
 const FEATURES = [
@@ -103,7 +238,7 @@ const QUICK_TIPS = [
   { icon: Layers, title: 'Templates', text: 'Use templates for consistent branding across all content' }
 ];
 
-// Custom hook to load media from localStorage (same logic as removed sections)
+// Custom hook to load media from localStorage
 function useMediaLibrary() {
   const [videos, setVideos] = useState<MediaItem[]>([]);
   const [audios, setAudios] = useState<MediaItem[]>([]);
@@ -112,7 +247,6 @@ function useMediaLibrary() {
   const loadMedia = () => {
     setIsLoading(true);
     try {
-      // Load videos from localStorage (from VideoRecorder)
       const savedMedia = localStorage.getItem('recordedMedia');
       if (savedMedia) {
         const allMedia = JSON.parse(savedMedia);
@@ -138,7 +272,6 @@ function useMediaLibrary() {
         setAudios(audioItems);
       }
 
-      // Load generated audios metadata
       const generatedAudios = localStorage.getItem('generatedAudiosMetadata');
       if (generatedAudios) {
         const generated = JSON.parse(generatedAudios);
@@ -187,47 +320,202 @@ function useMediaLibrary() {
 export default function GenieStudio() {
   const [isStudioOpen, setIsStudioOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [selectedFeature, setSelectedFeature] = useState<string | null>(null);
+  
+  // Script Editor State
+  const [scriptContent, setScriptContent] = useState('');
+  const [scriptName, setScriptName] = useState('');
+  const [isEnhancing, setIsEnhancing] = useState(false);
+  
+  // Voice Generator State
+  const [voiceText, setVoiceText] = useState('');
+  const [selectedProvider, setSelectedProvider] = useState<'openai' | 'elevenlabs'>('elevenlabs');
+  const [selectedVoice, setSelectedVoice] = useState('');
+  
+  // Music Studio State
+  const [musicPrompt, setMusicPrompt] = useState('');
+  const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
+  const [isGeneratingMusic, setIsGeneratingMusic] = useState(false);
+  const [generatedMusicUrl, setGeneratedMusicUrl] = useState<string | null>(null);
+  const musicAudioRef = useRef<HTMLAudioElement | null>(null);
+  
+  // TTS Hook
+  const { 
+    isGenerating: isTTSGenerating, 
+    lastResult: ttsResult, 
+    generate: generateTTS, 
+    play: playTTS, 
+    stop: stopTTS,
+    download: downloadTTS 
+  } = useTTSGeneration();
   
   // Load real media from localStorage
   const { videos, audios, isLoading, loadMedia, deleteMedia } = useMediaLibrary();
 
-  // Refresh library when studio closes
+  // Set default voice when provider changes
+  useEffect(() => {
+    if (selectedProvider === 'openai') {
+      setSelectedVoice(OPENAI_VOICES[0].value);
+    } else {
+      setSelectedVoice(ELEVENLABS_VOICES[0].value);
+    }
+  }, [selectedProvider]);
+
   const handleStudioClose = () => {
     setIsStudioOpen(false);
-    loadMedia(); // Refresh to pick up new recordings
+    loadMedia();
   };
 
-  const handleFeatureClick = (featureId: string, featureTab: string) => {
-    // Route to specific feature functionality
+  const handleFeatureClick = (featureId: string) => {
     if (featureId === 'record') {
-      setSelectedFeature('record');
       setIsStudioOpen(true);
     } else if (featureId === 'voice') {
-      setSelectedFeature('voice');
       setActiveTab('voice-generator');
     } else if (featureId === 'script') {
-      setSelectedFeature('script');
       setActiveTab('script-editor');
     } else if (featureId === 'music') {
-      setSelectedFeature('music');
       setActiveTab('music-studio');
     }
   };
 
-  const handleQuickAction = (action: string) => {
-    switch (action) {
-      case 'record':
-        setIsStudioOpen(true);
-        break;
-      case 'library':
-        setActiveTab('library');
-        break;
-      default:
-        break;
+  // Script Editor Functions
+  const calculateReadingTime = (text: string) => {
+    const words = text.trim().split(/\s+/).length;
+    const minutes = Math.ceil(words / 150); // Average speaking pace
+    return { words, minutes };
+  };
+
+  const handleNewScript = () => {
+    setScriptContent('');
+    setScriptName('');
+    toast.success('Ready for a new script!');
+  };
+
+  const handleEnhanceScript = async () => {
+    if (!scriptContent.trim()) {
+      toast.error('Please write some content first');
+      return;
+    }
+    
+    setIsEnhancing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('enhance-script', {
+        body: { scriptContent, mode: 'enhance' }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.enhancedScript) {
+        setScriptContent(data.enhancedScript);
+        toast.success('Script enhanced with AI!');
+      }
+    } catch (err) {
+      console.error('Enhancement error:', err);
+      toast.error('Failed to enhance script');
+    } finally {
+      setIsEnhancing(false);
     }
   };
-  
+
+  const handleScriptTTSPreview = async () => {
+    if (!scriptContent.trim()) {
+      toast.error('Please write some content first');
+      return;
+    }
+    
+    // Use first 500 chars for preview
+    const previewText = scriptContent.slice(0, 500);
+    const result = await generateTTS({
+      provider: selectedProvider,
+      voice: selectedVoice || (selectedProvider === 'openai' ? 'alloy' : 'EXAVITQu4vr4xnSDxMaL'),
+      text: previewText
+    });
+    
+    if (result) {
+      playTTS();
+    }
+  };
+
+  const handleLoadTemplate = (template: typeof SCRIPT_TEMPLATES[0]) => {
+    setScriptContent(template.content);
+    setScriptName(template.name);
+    setActiveTab('script-editor');
+    toast.success(`Loaded "${template.name}" template`);
+  };
+
+  // Voice Generator Functions
+  const handleGenerateVoice = async () => {
+    if (!voiceText.trim()) {
+      toast.error('Please enter text to generate');
+      return;
+    }
+    
+    const result = await generateTTS({
+      provider: selectedProvider,
+      voice: selectedVoice,
+      text: voiceText
+    });
+    
+    if (result) {
+      playTTS();
+    }
+  };
+
+  // Music Studio Functions
+  const handleGenreSelect = (genre: typeof MUSIC_GENRES[0]) => {
+    setSelectedGenre(genre.id);
+    setMusicPrompt(genre.prompt);
+  };
+
+  const handleGenerateMusic = async () => {
+    if (!musicPrompt.trim()) {
+      toast.error('Please describe the music you want');
+      return;
+    }
+    
+    setIsGeneratingMusic(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-music`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            prompt: musicPrompt,
+            duration: 30
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Music generation failed');
+      }
+
+      const data = await response.json();
+      
+      // Use data URI for proper base64 audio decoding
+      const audioUrl = `data:audio/mpeg;base64,${data.audioContent}`;
+      setGeneratedMusicUrl(audioUrl);
+      
+      // Play automatically
+      if (musicAudioRef.current) {
+        musicAudioRef.current.src = audioUrl;
+        musicAudioRef.current.play();
+      }
+      
+      toast.success('Music generated!');
+    } catch (err) {
+      console.error('Music generation error:', err);
+      toast.error('Failed to generate music. Make sure ELEVENLABS_API_KEY is configured.');
+    } finally {
+      setIsGeneratingMusic(false);
+    }
+  };
+
   // Combine videos and audios for recent projects display
   const recentProjects = [...videos, ...audios]
     .sort((a, b) => b.timestamp - a.timestamp)
@@ -252,6 +540,8 @@ export default function GenieStudio() {
     if (hours < 24) return `${hours} hours ago`;
     return `${days} days ago`;
   }
+
+  const { words, minutes } = calculateReadingTime(scriptContent);
 
   return (
     <AppLayout>
@@ -282,7 +572,7 @@ export default function GenieStudio() {
                 <div className="flex flex-wrap gap-3">
                   <Button 
                     size="lg" 
-                    onClick={() => handleQuickAction('record')}
+                    onClick={() => setIsStudioOpen(true)}
                     className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white shadow-lg shadow-red-500/25 transition-all hover:scale-105"
                   >
                     <Video className="h-5 w-5 mr-2" />
@@ -291,7 +581,7 @@ export default function GenieStudio() {
                   <Button 
                     size="lg" 
                     variant="outline"
-                    onClick={() => handleQuickAction('library')}
+                    onClick={() => setActiveTab('library')}
                     className="border-border/50 hover:bg-muted/50"
                   >
                     <Library className="h-5 w-5 mr-2" />
@@ -303,8 +593,8 @@ export default function GenieStudio() {
               {/* Stats Bar */}
               <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                  { label: 'Videos Created', value: '12', icon: Film, trend: '+3 this week' },
-                  { label: 'Voiceovers', value: '28', icon: Mic, trend: '+5 this week' },
+                  { label: 'Videos Created', value: String(videos.length), icon: Film, trend: 'Recorded' },
+                  { label: 'Voiceovers', value: String(audios.length), icon: Mic, trend: 'Generated' },
                   { label: 'Total Duration', value: '2.5h', icon: Clock, trend: 'Saved' },
                   { label: 'AI Credits Used', value: '847', icon: Zap, trend: '153 left' }
                 ].map((stat, i) => (
@@ -352,6 +642,7 @@ export default function GenieStudio() {
               </TabsTrigger>
             </TabsList>
 
+            {/* Dashboard Tab */}
             <TabsContent value="dashboard" className="space-y-8 mt-0">
               {/* Feature Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -363,7 +654,7 @@ export default function GenieStudio() {
                       "hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/10",
                       "border-border/50 bg-card/80 backdrop-blur group"
                     )}
-                    onClick={() => handleFeatureClick(feature.id, feature.tab)}
+                    onClick={() => handleFeatureClick(feature.id)}
                   >
                     <div className={cn(
                       "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity",
@@ -413,7 +704,7 @@ export default function GenieStudio() {
                           <Clock className="h-5 w-5 text-muted-foreground" />
                           Recent Projects
                         </h2>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" onClick={() => setActiveTab('library')}>
                           View All
                         </Button>
                       </div>
@@ -445,14 +736,6 @@ export default function GenieStudio() {
                             <div className="text-xs text-muted-foreground whitespace-nowrap">
                               {project.lastEdited}
                             </div>
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <Play className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <Share2 className="h-4 w-4" />
-                              </Button>
-                            </div>
                           </div>
                         ))}
                       </div>
@@ -460,7 +743,7 @@ export default function GenieStudio() {
                   </Card>
                 </div>
 
-                {/* Quick Tips for Creating Great Content */}
+                {/* Quick Tips */}
                 <div>
                   <Card className="border-border/50 bg-gradient-to-br from-card/80 to-primary/5 backdrop-blur">
                     <CardContent className="p-6">
@@ -501,42 +784,124 @@ export default function GenieStudio() {
                         <p className="text-sm text-muted-foreground">Write and enhance scripts with AI assistance</p>
                       </div>
                     </div>
-                    <Button className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      New Script
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button variant="outline" onClick={handleNewScript}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        New Script
+                      </Button>
+                      <Button variant="outline" onClick={() => setActiveTab('templates')}>
+                        <FileText className="h-4 w-4 mr-2" />
+                        Templates
+                      </Button>
+                    </div>
                   </div>
                   
-                  <div className="grid md:grid-cols-3 gap-4 mb-6">
+                  {/* Script Stats */}
+                  <div className="grid md:grid-cols-4 gap-4 mb-6">
                     <div className="p-4 rounded-lg bg-muted/50 border border-border/50">
-                      <Wand2 className="h-5 w-5 text-blue-500 mb-2" />
-                      <h3 className="font-medium mb-1">AI Writing Assistant</h3>
-                      <p className="text-xs text-muted-foreground">Get suggestions for clarity, tone, and engagement</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <FileText className="h-4 w-4 text-blue-500" />
+                        <span className="text-xs text-muted-foreground">Words</span>
+                      </div>
+                      <span className="text-xl font-bold">{words}</span>
                     </div>
                     <div className="p-4 rounded-lg bg-muted/50 border border-border/50">
-                      <Play className="h-5 w-5 text-green-500 mb-2" />
-                      <h3 className="font-medium mb-1">TTS Preview</h3>
-                      <p className="text-xs text-muted-foreground">Hear how your script sounds before recording</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <Clock className="h-4 w-4 text-orange-500" />
+                        <span className="text-xs text-muted-foreground">Reading Time</span>
+                      </div>
+                      <span className="text-xl font-bold">{minutes} min</span>
                     </div>
-                    <div className="p-4 rounded-lg bg-muted/50 border border-border/50">
-                      <Clock className="h-5 w-5 text-orange-500 mb-2" />
-                      <h3 className="font-medium mb-1">Reading Time</h3>
-                      <p className="text-xs text-muted-foreground">Automatic timing estimates for your content</p>
+                    <div 
+                      className="p-4 rounded-lg bg-muted/50 border border-border/50 cursor-pointer hover:border-purple-500/50 transition-colors"
+                      onClick={handleEnhanceScript}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <Wand2 className="h-4 w-4 text-purple-500" />
+                        <span className="text-xs text-muted-foreground">AI Enhance</span>
+                      </div>
+                      <span className="text-sm font-medium">
+                        {isEnhancing ? 'Enhancing...' : 'Click to enhance'}
+                      </span>
+                    </div>
+                    <div 
+                      className="p-4 rounded-lg bg-muted/50 border border-border/50 cursor-pointer hover:border-green-500/50 transition-colors"
+                      onClick={handleScriptTTSPreview}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <Volume2 className="h-4 w-4 text-green-500" />
+                        <span className="text-xs text-muted-foreground">TTS Preview</span>
+                      </div>
+                      <span className="text-sm font-medium">
+                        {isTTSGenerating ? 'Generating...' : 'Click to preview'}
+                      </span>
                     </div>
                   </div>
 
-                  <div className="border border-dashed rounded-lg p-8 text-center text-muted-foreground">
-                    <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p className="mb-2">No scripts yet</p>
-                    <p className="text-sm mb-4">Start writing your first script or import from a document</p>
-                    <div className="flex gap-2 justify-center">
-                      <Button variant="outline">
-                        <Upload className="h-4 w-4 mr-2" />
-                        Import
+                  {/* Script Input */}
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="script-name">Script Name</Label>
+                      <Input 
+                        id="script-name"
+                        value={scriptName}
+                        onChange={(e) => setScriptName(e.target.value)}
+                        placeholder="Enter a name for your script..."
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="script-content">Script Content</Label>
+                      <Textarea
+                        id="script-content"
+                        value={scriptContent}
+                        onChange={(e) => setScriptContent(e.target.value)}
+                        placeholder="Start writing your script here... Or select a template to get started!"
+                        className="mt-1 min-h-[300px] font-mono"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={handleEnhanceScript}
+                        disabled={isEnhancing || !scriptContent.trim()}
+                        className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+                      >
+                        {isEnhancing ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Enhancing...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="h-4 w-4 mr-2" />
+                            AI Enhance
+                          </>
+                        )}
                       </Button>
-                      <Button>
-                        <PenTool className="h-4 w-4 mr-2" />
-                        Start Writing
+                      <Button 
+                        variant="outline"
+                        onClick={handleScriptTTSPreview}
+                        disabled={isTTSGenerating || !scriptContent.trim()}
+                      >
+                        {isTTSGenerating ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Play className="h-4 w-4 mr-2" />
+                            TTS Preview
+                          </>
+                        )}
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={() => navigator.clipboard.writeText(scriptContent)}
+                        disabled={!scriptContent.trim()}
+                      >
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copy
                       </Button>
                     </div>
                   </div>
@@ -559,37 +924,135 @@ export default function GenieStudio() {
                       </div>
                     </div>
                     <Badge className="bg-purple-500/10 text-purple-600 border-purple-500/20">
-                      50+ Voice Styles
+                      {selectedProvider === 'openai' ? '6' : '9'}+ Voice Styles
                     </Badge>
                   </div>
 
-                  <div className="grid md:grid-cols-4 gap-4 mb-6">
-                    {['Professional', 'Friendly', 'Authoritative', 'Casual'].map((style, i) => (
-                      <div key={style} className="p-4 rounded-lg bg-muted/50 border border-border/50 cursor-pointer hover:border-purple-500/50 transition-colors">
+                  {/* Provider Selection */}
+                  <div className="grid md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                      <Label>Voice Provider</Label>
+                      <Select value={selectedProvider} onValueChange={(v: 'openai' | 'elevenlabs') => setSelectedProvider(v)}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="elevenlabs">ElevenLabs (Premium Quality)</SelectItem>
+                          <SelectItem value="openai">OpenAI TTS</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Voice Style</Label>
+                      <Select value={selectedVoice} onValueChange={setSelectedVoice}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(selectedProvider === 'openai' ? OPENAI_VOICES : ELEVENLABS_VOICES).map(voice => (
+                            <SelectItem key={voice.value} value={voice.value}>
+                              {voice.label} - {voice.description}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Voice Preview Cards */}
+                  <div className="grid md:grid-cols-4 gap-3 mb-6">
+                    {(selectedProvider === 'openai' ? OPENAI_VOICES.slice(0, 4) : ELEVENLABS_VOICES.slice(0, 4)).map((voice) => (
+                      <div 
+                        key={voice.value} 
+                        className={cn(
+                          "p-4 rounded-lg border cursor-pointer transition-all",
+                          selectedVoice === voice.value 
+                            ? "bg-purple-500/10 border-purple-500/50" 
+                            : "bg-muted/50 border-border/50 hover:border-purple-500/30"
+                        )}
+                        onClick={() => setSelectedVoice(voice.value)}
+                      >
                         <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-3 mx-auto">
                           <Mic className="h-5 w-5 text-white" />
                         </div>
-                        <h3 className="font-medium text-center text-sm">{style}</h3>
-                        <p className="text-xs text-muted-foreground text-center mt-1">Click to preview</p>
+                        <h3 className="font-medium text-center text-sm">{voice.label}</h3>
+                        <p className="text-xs text-muted-foreground text-center mt-1">{voice.description}</p>
                       </div>
                     ))}
                   </div>
 
-                  <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Headphones className="h-5 w-5 text-primary" />
-                      <span className="font-medium">Quick Generate</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <input 
-                        type="text" 
-                        placeholder="Enter text to generate voice..." 
-                        className="flex-1 px-4 py-2 rounded-lg border bg-background"
+                  {/* Text Input */}
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="voice-text">Text to Convert</Label>
+                      <Textarea
+                        id="voice-text"
+                        value={voiceText}
+                        onChange={(e) => setVoiceText(e.target.value)}
+                        placeholder="Enter the text you want to convert to speech..."
+                        className="mt-1 min-h-[150px]"
                       />
-                      <Button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                        Generate
-                      </Button>
                     </div>
+                    
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={handleGenerateVoice}
+                        disabled={isTTSGenerating || !voiceText.trim()}
+                        className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+                      >
+                        {isTTSGenerating ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="h-4 w-4 mr-2" />
+                            Generate Voice
+                          </>
+                        )}
+                      </Button>
+                      {ttsResult && (
+                        <>
+                          <Button variant="outline" onClick={playTTS}>
+                            <Play className="h-4 w-4 mr-2" />
+                            Play
+                          </Button>
+                          <Button variant="outline" onClick={stopTTS}>
+                            <Pause className="h-4 w-4 mr-2" />
+                            Stop
+                          </Button>
+                          <Button variant="outline" onClick={() => downloadTTS()}>
+                            <Download className="h-4 w-4 mr-2" />
+                            Download
+                          </Button>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Result Preview */}
+                    {ttsResult && (
+                      <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Headphones className="h-5 w-5 text-green-500" />
+                          <span className="font-medium text-green-700">Voice Generated!</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">Duration:</span>
+                            <span className="ml-2 font-medium">{ttsResult.duration.toFixed(1)}s</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Provider:</span>
+                            <span className="ml-2 font-medium capitalize">{ttsResult.provider}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Characters:</span>
+                            <span className="ml-2 font-medium">{ttsResult.charactersProcessed}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -610,39 +1073,110 @@ export default function GenieStudio() {
                       </div>
                     </div>
                     <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
-                      25+ Genres
+                      {MUSIC_GENRES.length} Genres
                     </Badge>
                   </div>
 
-                  <div className="grid md:grid-cols-5 gap-3 mb-6">
-                    {['Corporate', 'Upbeat', 'Cinematic', 'Ambient', 'Motivational'].map((genre) => (
-                      <div key={genre} className="p-3 rounded-lg bg-muted/50 border border-border/50 cursor-pointer hover:border-green-500/50 transition-colors text-center">
-                        <Music className="h-5 w-5 text-green-500 mx-auto mb-2" />
-                        <span className="text-sm font-medium">{genre}</span>
+                  {/* Genre Selection */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                    {MUSIC_GENRES.map((genre) => (
+                      <div 
+                        key={genre.id} 
+                        className={cn(
+                          "p-4 rounded-lg border cursor-pointer transition-all text-center",
+                          selectedGenre === genre.id 
+                            ? "bg-green-500/10 border-green-500/50" 
+                            : "bg-muted/50 border-border/50 hover:border-green-500/30"
+                        )}
+                        onClick={() => handleGenreSelect(genre)}
+                      >
+                        <Music className="h-6 w-6 text-green-500 mx-auto mb-2" />
+                        <span className="font-medium text-sm">{genre.name}</span>
                       </div>
                     ))}
                   </div>
 
-                  <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Sparkles className="h-5 w-5 text-primary" />
-                      <span className="font-medium">Describe Your Music</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <input 
-                        type="text" 
-                        placeholder="E.g., Upbeat corporate music for product demo..." 
-                        className="flex-1 px-4 py-2 rounded-lg border bg-background"
+                  {/* Music Prompt */}
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="music-prompt">Describe Your Music</Label>
+                      <Textarea
+                        id="music-prompt"
+                        value={musicPrompt}
+                        onChange={(e) => setMusicPrompt(e.target.value)}
+                        placeholder="E.g., Upbeat corporate music for product demo, 30 seconds..."
+                        className="mt-1 min-h-[100px]"
                       />
-                      <Button className="bg-gradient-to-r from-green-500 to-emerald-500 text-white">
-                        Generate
-                      </Button>
                     </div>
+                    
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={handleGenerateMusic}
+                        disabled={isGeneratingMusic || !musicPrompt.trim()}
+                        className="bg-gradient-to-r from-green-500 to-emerald-500 text-white"
+                      >
+                        {isGeneratingMusic ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="h-4 w-4 mr-2" />
+                            Generate Music
+                          </>
+                        )}
+                      </Button>
+                      {selectedGenre && (
+                        <Button 
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedGenre(null);
+                            setMusicPrompt('');
+                          }}
+                        >
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Clear
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Audio Player for Generated Music */}
+                    {generatedMusicUrl && (
+                      <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Music className="h-5 w-5 text-green-500" />
+                          <span className="font-medium text-green-700">Music Generated!</span>
+                        </div>
+                        <audio 
+                          ref={musicAudioRef}
+                          src={generatedMusicUrl} 
+                          controls 
+                          className="w-full" 
+                        />
+                        <div className="flex gap-2 mt-3">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              const a = document.createElement('a');
+                              a.href = generatedMusicUrl;
+                              a.download = `genie-music-${Date.now()}.mp3`;
+                              a.click();
+                            }}
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Download
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
+            {/* Library Tab */}
             <TabsContent value="library" className="mt-0 space-y-6">
               {/* Videos Section */}
               <Card className="border-border/50 bg-card/80 backdrop-blur">
@@ -717,7 +1251,7 @@ export default function GenieStudio() {
                     <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
                       <Music className="h-12 w-12 mx-auto mb-4 opacity-50" />
                       <p>No audio files yet</p>
-                      <Button variant="outline" className="mt-4" onClick={() => setIsStudioOpen(true)}>
+                      <Button variant="outline" className="mt-4" onClick={() => setActiveTab('voice-generator')}>
                         <Mic className="h-4 w-4 mr-2" />
                         Generate Voiceover
                       </Button>
@@ -754,18 +1288,55 @@ export default function GenieStudio() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="templates" className="mt-0">
+            {/* Templates Tab */}
+            <TabsContent value="templates" className="mt-0 space-y-6">
               <Card className="border-border/50 bg-card/80 backdrop-blur">
-                <CardContent className="p-12 text-center">
-                  <FileText className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">Script Templates</h3>
-                  <p className="text-muted-foreground mb-6">
-                    Pre-built templates for demos, tutorials, and presentations
-                  </p>
-                  <Button variant="outline">
-                    <Wand2 className="h-4 w-4 mr-2" />
-                    Browse Templates
-                  </Button>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+                        <FileText className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-semibold">Script Templates</h2>
+                        <p className="text-sm text-muted-foreground">Pre-built templates for demos, tutorials, and presentations</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {SCRIPT_TEMPLATES.map((template) => (
+                      <Card 
+                        key={template.id}
+                        className="border-border/50 hover:border-primary/30 transition-all cursor-pointer group"
+                        onClick={() => handleLoadTemplate(template)}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+                              <FileText className="h-5 w-5 text-white" />
+                            </div>
+                            <Badge variant="outline" className="text-xs">
+                              {template.category}
+                            </Badge>
+                          </div>
+                          <h3 className="font-semibold mb-1">{template.name}</h3>
+                          <p className="text-sm text-muted-foreground mb-3">{template.description}</p>
+                          <p className="text-xs text-muted-foreground line-clamp-2 italic">
+                            "{template.content.slice(0, 100)}..."
+                          </p>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="w-full mt-3 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <PenTool className="h-4 w-4 mr-2" />
+                            Use Template
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -773,16 +1344,18 @@ export default function GenieStudio() {
         </div>
 
         {/* Recording Studio Modal */}
-        <RecordingStudio
-          isOpen={isStudioOpen}
-          onClose={handleStudioClose}
-          scripts={[
-            { id: 'video-script', title: 'Video Script', content: '' },
-            { id: 'voiceover-script', title: 'Voiceover Script', content: '' }
-          ]}
-          voiceovers={[]}
-          music={[]}
-        />
+        {isStudioOpen && (
+          <RecordingStudio
+            isOpen={isStudioOpen}
+            onClose={handleStudioClose}
+            scripts={[]}
+            voiceovers={[]}
+            music={[]}
+          />
+        )}
+
+        {/* Hidden audio element for music */}
+        <audio ref={musicAudioRef} className="hidden" />
       </div>
     </AppLayout>
   );
