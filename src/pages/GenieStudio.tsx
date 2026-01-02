@@ -851,6 +851,15 @@ export default function GenieStudio() {
   const [inviteName, setInviteName] = useState('');
   const [inviteRole, setInviteRole] = useState<'host' | 'co-host' | 'guest' | 'panelist'>('guest');
   
+  // New: Schedule Show with script, topics, and participants
+  const [showTopics, setShowTopics] = useState('');
+  const [showScript, setShowScript] = useState('');
+  const [showParticipants, setShowParticipants] = useState<Omit<Participant, 'id'>[]>([]);
+  const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
+  const [suggestedTitle, setSuggestedTitle] = useState('');
+  const [suggestedIntro, setSuggestedIntro] = useState('');
+  const [scheduleStep, setScheduleStep] = useState<'details' | 'content' | 'participants'>('details');
+  
   // TTS Hook
   const { 
     isGenerating: isTTSGenerating, 
@@ -1030,7 +1039,78 @@ export default function GenieStudio() {
   };
 
   // Show/Event Functions
-  const handleCreateShow = () => {
+  const handleGenerateSuggestions = async () => {
+    if (!showTopics.trim() && !showScript.trim()) {
+      toast.error('Please add topics or upload a script first');
+      return;
+    }
+    
+    setIsGeneratingSuggestions(true);
+    try {
+      const contentForAI = showScript.trim() || showTopics.trim();
+      const showTypeLabel = newShowType === 'podcast' ? 'Podcast Episode' : 
+                           newShowType === 'webcast' ? 'Webcast/Webinar' : 'Live Broadcast';
+      
+      const { data, error } = await supabase.functions.invoke('enhance-script', {
+        body: { 
+          scriptContent: `Generate a catchy title and engaging introduction for a ${showTypeLabel} about the following topics/content:\n\n${contentForAI}\n\nProvide:\n1. A compelling title (max 60 characters)\n2. A brief introduction paragraph (2-3 sentences) that hooks the audience`,
+          mode: 'generate-intro'
+        }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.enhancedScript) {
+        // Parse the AI response
+        const lines = data.enhancedScript.split('\n').filter((l: string) => l.trim());
+        const titleLine = lines.find((l: string) => l.toLowerCase().includes('title:')) || lines[0];
+        const introLines = lines.filter((l: string) => !l.toLowerCase().includes('title:'));
+        
+        setSuggestedTitle(titleLine?.replace(/^(title:?\s*)/i, '').replace(/^["']|["']$/g, '').trim() || '');
+        setSuggestedIntro(introLines.join(' ').replace(/^(introduction:?\s*)/i, '').trim() || '');
+        
+        toast.success('AI suggestions generated!');
+      }
+    } catch (err) {
+      console.error('Suggestion error:', err);
+      // Fallback suggestions based on show type
+      const fallbackTitles: Record<string, string> = {
+        podcast: `${showTopics.split(',')[0]?.trim() || 'Episode'} Deep Dive`,
+        webcast: `${showTopics.split(',')[0]?.trim() || 'Topic'} Masterclass`,
+        broadcast: `Live: ${showTopics.split(',')[0]?.trim() || 'Discussion'}`
+      };
+      setSuggestedTitle(fallbackTitles[newShowType]);
+      setSuggestedIntro(`Join us for an insightful ${newShowType} exploring ${showTopics || 'exciting topics'}. Our guests will share valuable perspectives and actionable insights.`);
+      toast.success('Suggestions ready!');
+    } finally {
+      setIsGeneratingSuggestions(false);
+    }
+  };
+
+  const handleAddParticipantToShow = () => {
+    if (!inviteName.trim() || !inviteEmail.trim()) {
+      toast.error('Please fill in participant details');
+      return;
+    }
+    
+    setShowParticipants(prev => [...prev, {
+      name: inviteName,
+      email: inviteEmail,
+      role: inviteRole,
+      status: 'pending'
+    }]);
+    
+    setInviteName('');
+    setInviteEmail('');
+    setInviteRole('guest');
+    toast.success('Participant added!');
+  };
+
+  const handleRemoveParticipantFromShow = (index: number) => {
+    setShowParticipants(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleCreateShow = async () => {
     if (!newShowTitle.trim() || !newShowDate || !newShowTime) {
       toast.error('Please fill in all required fields');
       return;
@@ -1038,28 +1118,74 @@ export default function GenieStudio() {
 
     const scheduledDate = new Date(`${newShowDate}T${newShowTime}`);
     
+    // Create event with participants
     const newEvent = addEvent({
       type: newShowType,
       title: newShowTitle,
       description: newShowDescription,
       scheduledDate,
-      participants: [],
+      participants: showParticipants.map(p => ({ ...p, id: crypto.randomUUID() })),
       status: 'scheduled'
     });
 
+    // Send invites to all participants
+    if (showParticipants.length > 0) {
+      setIsSendingInvite(true);
+      for (const participant of showParticipants) {
+        try {
+          await supabase.functions.invoke('send-show-invite', {
+            body: {
+              to: participant.email,
+              participantName: participant.name,
+              role: participant.role,
+              showType: newShowType,
+              showTitle: newShowTitle,
+              showDescription: newShowDescription,
+              scheduledDate: scheduledDate.toISOString(),
+              hostName: 'Genie Studio',
+              topics: showTopics,
+              script: showScript.slice(0, 500), // Send preview of script
+              suggestedIntro: suggestedIntro
+            }
+          });
+        } catch (err) {
+          console.error('Failed to send invite to:', participant.email, err);
+        }
+      }
+      setIsSendingInvite(false);
+      toast.success(`Invites sent to ${showParticipants.length} participant(s)!`);
+    }
+
     toast.success(`${newShowType.charAt(0).toUpperCase() + newShowType.slice(1)} scheduled!`);
+    
+    // Reset dialog state
     setIsCreateShowDialogOpen(false);
     setNewShowTitle('');
     setNewShowDescription('');
     setNewShowDate('');
     setNewShowTime('');
+    setShowTopics('');
+    setShowScript('');
+    setShowParticipants([]);
+    setSuggestedTitle('');
+    setSuggestedIntro('');
+    setScheduleStep('details');
     
-    // Load the appropriate template
+    // Load the appropriate template with filled content
     const templateId = newShowType === 'podcast' ? 'podcast-episode' : 
                        newShowType === 'webcast' ? 'webcast-webinar' : 'live-broadcast';
     const template = SCRIPT_TEMPLATES.find(t => t.id === templateId);
     if (template) {
-      setScriptContent(template.content.replace('[Episode Topic]', newShowTitle).replace('[Webcast Title]', newShowTitle).replace('[Broadcast Title]', newShowTitle));
+      let content = template.content
+        .replace('[Episode Topic]', newShowTitle)
+        .replace('[Webcast Title]', newShowTitle)
+        .replace('[Broadcast Title]', newShowTitle);
+      
+      if (showScript.trim()) {
+        content = showScript;
+      }
+      
+      setScriptContent(content);
       setScriptName(`${newShowTitle} Script`);
     }
   };
@@ -2067,99 +2193,369 @@ export default function GenieStudio() {
           />
         )}
 
-        {/* Create Show Dialog */}
-        <Dialog open={isCreateShowDialogOpen} onOpenChange={setIsCreateShowDialogOpen}>
-          <DialogContent className="sm:max-w-md">
+        {/* Create Show Dialog - Multi-step with content and participants */}
+        <Dialog open={isCreateShowDialogOpen} onOpenChange={(open) => {
+          setIsCreateShowDialogOpen(open);
+          if (!open) {
+            setScheduleStep('details');
+            setShowParticipants([]);
+            setSuggestedTitle('');
+            setSuggestedIntro('');
+          }
+        }}>
+          <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Schedule a Show
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                  <Sparkles className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <span>Schedule a Show</span>
+                  <p className="text-sm font-normal text-muted-foreground">
+                    Step {scheduleStep === 'details' ? '1' : scheduleStep === 'content' ? '2' : '3'} of 3: {
+                      scheduleStep === 'details' ? 'Basic Details' : 
+                      scheduleStep === 'content' ? 'Content & Script' : 
+                      'Invite Participants'
+                    }
+                  </p>
+                </div>
               </DialogTitle>
-              <DialogDescription>
-                Create a new podcast, webcast, or broadcast event
-              </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div>
-                <Label>Show Type</Label>
-                <Select value={newShowType} onValueChange={(v: 'podcast' | 'webcast' | 'broadcast') => setNewShowType(v)}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="podcast">
-                      <div className="flex items-center gap-2">
-                        <Podcast className="h-4 w-4" />
-                        Podcast
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="webcast">
-                      <div className="flex items-center gap-2">
-                        <Tv className="h-4 w-4" />
-                        Webcast / Webinar
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="broadcast">
-                      <div className="flex items-center gap-2">
-                        <Radio className="h-4 w-4" />
-                        Live Broadcast
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="show-title">Title *</Label>
-                <Input
-                  id="show-title"
-                  value={newShowTitle}
-                  onChange={(e) => setNewShowTitle(e.target.value)}
-                  placeholder="Enter show title..."
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label htmlFor="show-description">Description</Label>
-                <Textarea
-                  id="show-description"
-                  value={newShowDescription}
-                  onChange={(e) => setNewShowDescription(e.target.value)}
-                  placeholder="Brief description of the show..."
-                  className="mt-1"
-                  rows={3}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="show-date">Date *</Label>
-                  <Input
-                    id="show-date"
-                    type="date"
-                    value={newShowDate}
-                    onChange={(e) => setNewShowDate(e.target.value)}
-                    className="mt-1"
-                  />
+            
+            {/* Step Progress */}
+            <div className="flex items-center gap-2 py-2">
+              {['details', 'content', 'participants'].map((step, i) => (
+                <div key={step} className="flex items-center flex-1">
+                  <div 
+                    className={cn(
+                      "h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors",
+                      scheduleStep === step 
+                        ? "bg-primary text-primary-foreground" 
+                        : (scheduleStep === 'content' && i === 0) || (scheduleStep === 'participants' && i <= 1)
+                          ? "bg-green-500 text-white"
+                          : "bg-muted text-muted-foreground"
+                    )}
+                  >
+                    {i + 1}
+                  </div>
+                  {i < 2 && (
+                    <div className={cn(
+                      "flex-1 h-0.5 mx-2",
+                      (scheduleStep === 'content' && i === 0) || (scheduleStep === 'participants')
+                        ? "bg-green-500"
+                        : "bg-muted"
+                    )} />
+                  )}
                 </div>
-                <div>
-                  <Label htmlFor="show-time">Time *</Label>
-                  <Input
-                    id="show-time"
-                    type="time"
-                    value={newShowTime}
-                    onChange={(e) => setNewShowTime(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-              </div>
+              ))}
             </div>
-            <DialogFooter>
+
+            {/* Step 1: Basic Details */}
+            {scheduleStep === 'details' && (
+              <div className="space-y-4 py-4">
+                <div>
+                  <Label>Show Type</Label>
+                  <div className="grid grid-cols-3 gap-3 mt-2">
+                    {[
+                      { value: 'podcast', label: 'Podcast', icon: Podcast, color: 'from-purple-500 to-indigo-500' },
+                      { value: 'webcast', label: 'Webcast', icon: Tv, color: 'from-blue-500 to-cyan-500' },
+                      { value: 'broadcast', label: 'Broadcast', icon: Radio, color: 'from-red-500 to-pink-500' }
+                    ].map((type) => (
+                      <div
+                        key={type.value}
+                        className={cn(
+                          "p-4 rounded-lg border-2 cursor-pointer transition-all text-center",
+                          newShowType === type.value
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-primary/50"
+                        )}
+                        onClick={() => setNewShowType(type.value as 'podcast' | 'webcast' | 'broadcast')}
+                      >
+                        <div className={cn("h-10 w-10 rounded-lg bg-gradient-to-br flex items-center justify-center mx-auto mb-2", type.color)}>
+                          <type.icon className="h-5 w-5 text-white" />
+                        </div>
+                        <span className="text-sm font-medium">{type.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="show-date">Date *</Label>
+                    <Input
+                      id="show-date"
+                      type="date"
+                      value={newShowDate}
+                      onChange={(e) => setNewShowDate(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="show-time">Time *</Label>
+                    <Input
+                      id="show-time"
+                      type="time"
+                      value={newShowTime}
+                      onChange={(e) => setNewShowTime(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Content & Script */}
+            {scheduleStep === 'content' && (
+              <div className="space-y-4 py-4">
+                <div>
+                  <Label htmlFor="show-topics">Topics (comma-separated)</Label>
+                  <Input
+                    id="show-topics"
+                    value={showTopics}
+                    onChange={(e) => setShowTopics(e.target.value)}
+                    placeholder="e.g., AI in Healthcare, Future of Technology, Innovation..."
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="show-script">Script / Outline (optional)</Label>
+                  <Textarea
+                    id="show-script"
+                    value={showScript}
+                    onChange={(e) => setShowScript(e.target.value)}
+                    placeholder="Paste your script or outline here. This will be shared with participants..."
+                    className="mt-1 min-h-[120px] font-mono text-sm"
+                  />
+                </div>
+                
+                {/* AI Suggestions */}
+                <div className="border rounded-lg p-4 bg-gradient-to-br from-purple-500/5 to-pink-500/5">
+                  <div className="flex items-center justify-between mb-3">
+                    <Label className="flex items-center gap-2">
+                      <Wand2 className="h-4 w-4 text-purple-500" />
+                      AI-Suggested Title & Introduction
+                    </Label>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleGenerateSuggestions}
+                      disabled={isGeneratingSuggestions || (!showTopics.trim() && !showScript.trim())}
+                    >
+                      {isGeneratingSuggestions ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4 mr-1" />
+                          Generate
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  
+                  {suggestedTitle && (
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Suggested Title</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            value={suggestedTitle}
+                            onChange={(e) => setSuggestedTitle(e.target.value)}
+                            className="bg-background"
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setNewShowTitle(suggestedTitle)}
+                          >
+                            Use
+                          </Button>
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Suggested Introduction</Label>
+                        <Textarea
+                          value={suggestedIntro}
+                          onChange={(e) => setSuggestedIntro(e.target.value)}
+                          className="mt-1 text-sm bg-background"
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="show-title">Show Title *</Label>
+                  <Input
+                    id="show-title"
+                    value={newShowTitle}
+                    onChange={(e) => setNewShowTitle(e.target.value)}
+                    placeholder="Enter show title or use AI suggestion..."
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="show-description">Description</Label>
+                  <Textarea
+                    id="show-description"
+                    value={newShowDescription}
+                    onChange={(e) => setNewShowDescription(e.target.value)}
+                    placeholder="Brief description of the show..."
+                    className="mt-1"
+                    rows={2}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Invite Participants */}
+            {scheduleStep === 'participants' && (
+              <div className="space-y-4 py-4">
+                <div className="p-3 rounded-lg bg-muted/50 border">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Calendar className="h-4 w-4 text-primary" />
+                    <span className="font-medium">{newShowTitle || 'Untitled Show'}</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {newShowType.charAt(0).toUpperCase() + newShowType.slice(1)} • {newShowDate} at {newShowTime}
+                  </div>
+                </div>
+
+                {/* Current Participants */}
+                {showParticipants.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>Participants to Invite ({showParticipants.length})</Label>
+                    <div className="space-y-2 max-h-[150px] overflow-y-auto">
+                      {showParticipants.map((p, index) => (
+                        <div key={index} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback className="text-xs bg-primary/10">
+                              {p.name.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{p.name}</p>
+                            <p className="text-xs text-muted-foreground truncate">{p.email}</p>
+                          </div>
+                          <Badge variant="outline" className="capitalize text-xs">
+                            {p.role}
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveParticipantFromShow(index)}
+                          >
+                            <X className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Add Participant Form */}
+                <div className="border rounded-lg p-4 space-y-3">
+                  <Label className="flex items-center gap-2">
+                    <UserPlus className="h-4 w-4" />
+                    Add Participant
+                  </Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="invite-name" className="text-xs">Name *</Label>
+                      <Input
+                        id="invite-name"
+                        value={inviteName}
+                        onChange={(e) => setInviteName(e.target.value)}
+                        placeholder="Full name"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="invite-role" className="text-xs">Role</Label>
+                      <Select value={inviteRole} onValueChange={(v: any) => setInviteRole(v)}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="host">Host</SelectItem>
+                          <SelectItem value="co-host">Co-Host</SelectItem>
+                          <SelectItem value="guest">Guest</SelectItem>
+                          <SelectItem value="panelist">Panelist</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="invite-email" className="text-xs">Email *</Label>
+                    <Input
+                      id="invite-email"
+                      type="email"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      placeholder="email@example.com"
+                      className="mt-1"
+                    />
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleAddParticipantToShow}
+                    disabled={!inviteName.trim() || !inviteEmail.trim()}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Participant
+                  </Button>
+                </div>
+
+                <p className="text-xs text-muted-foreground text-center">
+                  Participants will receive an email invite with show details, topics, and script preview.
+                </p>
+              </div>
+            )}
+
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              {scheduleStep !== 'details' && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setScheduleStep(scheduleStep === 'participants' ? 'content' : 'details')}
+                >
+                  Back
+                </Button>
+              )}
+              <div className="flex-1" />
               <Button variant="outline" onClick={() => setIsCreateShowDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleCreateShow} className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                <Calendar className="h-4 w-4 mr-2" />
-                Schedule Show
-              </Button>
+              {scheduleStep !== 'participants' ? (
+                <Button 
+                  onClick={() => setScheduleStep(scheduleStep === 'details' ? 'content' : 'participants')}
+                  disabled={scheduleStep === 'details' && (!newShowDate || !newShowTime)}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+                >
+                  Next Step
+                </Button>
+              ) : (
+                <Button 
+                  onClick={handleCreateShow}
+                  disabled={isSendingInvite || !newShowTitle.trim()}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+                >
+                  {isSendingInvite ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Sending Invites...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" />
+                      Schedule & Send Invites
+                    </>
+                  )}
+                </Button>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
