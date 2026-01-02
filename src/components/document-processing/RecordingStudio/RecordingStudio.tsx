@@ -3,15 +3,17 @@
  * Features:
  * - Screen sharing with 5-second countdown
  * - Floating teleprompter (separate window)
- * - Script enhancement with diff review
- * - TTS with ElevenLabs/OpenAI
+ * - Script analysis & enhancement with AI
+ * - TTS with ElevenLabs/OpenAI (real API integration)
  * - Audio sync and playback
  * - Trim controls with undo
  * - Recording library
  * - Background blur
  * - Keyboard shortcuts
  * - Quality settings
- * - Music generation
+ * - AI Music generation
+ * - Studio Sound (podcast audio processing)
+ * - Project cost tracking
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
@@ -22,7 +24,8 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { 
   X, Library, Monitor, Camera, MonitorPlay, 
-  FileText, Music, Mic, ChevronLeft, ChevronRight 
+  FileText, Music, Mic, ChevronLeft, ChevronRight,
+  FolderOpen, Sliders, Keyboard, Settings2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -33,7 +36,10 @@ import {
   useRecordingLibrary, 
   useScreenShare, 
   useScriptDraftStorage,
-  useKeyboardShortcuts
+  useKeyboardShortcuts,
+  useMediaProject,
+  useStudioSound,
+  useTTSGeneration
 } from './hooks';
 import { 
   VideoPreview, 
@@ -46,7 +52,9 @@ import {
   PreRecordingDialog,
   MusicGenerator,
   KeyboardShortcutsHelp,
-  RecordingQualitySettings
+  RecordingQualitySettings,
+  ProjectSelector,
+  StudioSoundPanel
 } from './components';
 import type { RecordingStudioProps, LogoState, TeleprompterState, ScriptData } from './types';
 import type { RecordingMode } from './hooks/useScreenShare';
@@ -162,6 +170,15 @@ export function RecordingStudio({
   const screenShare = useScreenShare();
   const library = useRecordingLibrary();
   const audioPlayback = useAudioPlayback();
+  
+  // Media project tracking for cost management
+  const mediaProject = useMediaProject();
+  
+  // Studio sound processing for podcast-quality audio
+  const studioSound = useStudioSound();
+  
+  // TTS generation with real API integration
+  const ttsGeneration = useTTSGeneration();
   
   // Get current data early for keyboard shortcuts
   const currentScript = scripts.find(s => s.id === selectedScriptId);
@@ -378,7 +395,7 @@ export function RecordingStudio({
     }
   }, [currentScript]);
 
-  // TTS generation - uses enhanced script if available
+  // TTS generation - uses real API integration with cost tracking
   const handleGenerateTTS = useCallback(async () => {
     const textToSpeak = ttsText || currentScript?.content;
     if (!textToSpeak) {
@@ -391,19 +408,36 @@ export function RecordingStudio({
     try {
       toast.info(`Generating TTS with ${ttsProvider === 'elevenlabs' ? 'ElevenLabs' : 'OpenAI'}...`);
       
-      // Simulate TTS generation - in real implementation, call the edge function
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const result = await ttsGeneration.generate({
+        text: textToSpeak,
+        voice: selectedVoice,
+        provider: ttsProvider,
+      });
       
-      // In real implementation, this would be the audio URL from the API
-      setHasTTSAudio(true);
-      setTTSAudioUrl(null); // Would be set from API response
-      toast.success('TTS audio generated! Click Play to preview.');
+      if (result.audioUrl) {
+        setHasTTSAudio(true);
+        setTTSAudioUrl(result.audioUrl);
+        
+        // Log cost to current project if selected
+        if (mediaProject.currentProject) {
+          await mediaProject.logCost({
+            operation_type: 'tts',
+            operation_name: `TTS: ${textToSpeak.substring(0, 50)}...`,
+            cost: result.estimatedCost || 0.01,
+            provider: ttsProvider,
+            characters_processed: textToSpeak.length,
+            metadata: { voice: selectedVoice }
+          });
+        }
+        
+        toast.success('TTS audio generated! Click Play to preview.');
+      }
     } catch (error) {
       toast.error('TTS generation failed');
     } finally {
       setIsTTSGenerating(false);
     }
-  }, [ttsText, currentScript, ttsProvider]);
+  }, [ttsText, currentScript, ttsProvider, selectedVoice, ttsGeneration, mediaProject]);
 
   // Start recording - show pre-recording dialog first if enhanced script available
   const handleStartRecording = useCallback(async () => {
@@ -690,6 +724,27 @@ export function RecordingStudio({
             
             <Separator orientation="vertical" className="h-6" />
             
+            {/* Project Selector */}
+            <ProjectSelector
+              projects={mediaProject.projects}
+              currentProject={mediaProject.currentProject}
+              onSelectProject={mediaProject.selectProject}
+              onCreateProject={mediaProject.createProject}
+              totalSessionCost={mediaProject.totalSessionCost}
+              isLoading={mediaProject.isLoading}
+            />
+            
+            <Separator orientation="vertical" className="h-6" />
+            
+            {/* Keyboard Shortcuts Help */}
+            <KeyboardShortcutsHelp isRecording={recording.isRecording} />
+            
+            {/* Recording Quality Settings */}
+            <RecordingQualitySettings
+              quality={recordingQuality}
+              onQualityChange={setRecordingQuality}
+            />
+            
             <Button
               variant="outline"
               size="sm"
@@ -861,6 +916,33 @@ export function RecordingStudio({
                   onUploadMusic={onUploadMusic}
                   isUploading={isUploading}
                 />
+                
+                {/* Studio Sound Panel for Podcast Audio */}
+                <StudioSoundPanel
+                  settings={studioSound.settings}
+                  activePreset={studioSound.activePreset}
+                  onPresetChange={studioSound.applyPreset}
+                  onSettingsChange={studioSound.updateSettings}
+                />
+                
+                {/* Music Generator */}
+                <MusicGenerator 
+                  onMusicGenerated={(generatedMusic) => {
+                    // Log cost if project selected
+                    if (mediaProject.currentProject) {
+                      mediaProject.logCost({
+                        operation_type: 'music_gen',
+                        operation_name: `Music: ${generatedMusic.prompt.substring(0, 30)}...`,
+                        cost: 0.05,
+                        provider: 'elevenlabs',
+                        duration_seconds: generatedMusic.duration,
+                      });
+                    }
+                  }}
+                  onPlayMusic={(url) => audioPlayback.playMusic(url)}
+                  onStopMusic={audioPlayback.stopMusic}
+                  isPlaying={audioPlayback.isPlaying.music}
+                />
               </div>
             )}
             
@@ -893,6 +975,15 @@ export function RecordingStudio({
                   title="Music"
                 >
                   <Music className="w-5 h-5" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9"
+                  onClick={() => setIsSidebarCollapsed(false)}
+                  title="Studio Sound"
+                >
+                  <Sliders className="w-5 h-5" />
                 </Button>
               </div>
             )}
