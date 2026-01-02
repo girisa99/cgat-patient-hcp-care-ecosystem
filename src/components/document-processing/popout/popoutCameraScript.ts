@@ -9,7 +9,7 @@ export function getCameraScript(): string {
     // =====================================================
     // CAMERA & RECORDING MODULE
     // =====================================================
-    console.log('[Camera] Module loading...');
+    debugLog('[Camera] Module loading...');
     
     // Note: mediaStream, mediaRecorder, recordedChunks, isRecording, 
     // recordingStartTime, recordingTimer, isStopped, isPaused, trimHistory
@@ -24,12 +24,7 @@ export function getCameraScript(): string {
     var recordingIndicator = document.getElementById('recordingIndicator');
     var recordingTimeEl = document.getElementById('recordingTime');
     
-    console.log('[Camera] DOM elements:', {
-      videoPreview: !!videoPreview,
-      loadingOverlay: !!loadingOverlay,
-      loadingText: !!loadingText,
-      recordBtn: !!recordBtn
-    });
+    debugLog('[Camera] DOM: video=' + !!videoPreview + ', overlay=' + !!loadingOverlay + ', btn=' + !!recordBtn);
 
     // Format time as MM:SS
     function formatTime(seconds) {
@@ -40,23 +35,15 @@ export function getCameraScript(): string {
 
     // Initialize camera
     async function initCamera() {
-      console.log('[Camera] Initializing...');
-      
-      // Show status in the UI
-      if (typeof showStatus === 'function') {
-        showStatus('Initializing camera...', 'info');
-      }
+      debugLog('[Camera] 🎬 initCamera() called');
       
       if (!videoPreview) {
-        console.error('[Camera] FATAL: videoPreview element not found!');
-        if (typeof showStatus === 'function') {
-          showStatus('Error: Video element not found', 'error');
-        }
-        if (loadingText) {
-          loadingText.textContent = 'Error: Video element not found';
-        }
+        debugLog('[Camera] ❌ videoPreview element not found!');
+        if (loadingText) loadingText.textContent = 'Error: Video element not found';
         return;
       }
+      
+      debugLog('[Camera] ✅ Video element found');
       
       if (loadingText) {
         loadingText.textContent = 'Requesting camera access...';
@@ -64,18 +51,18 @@ export function getCameraScript(): string {
 
       // Check if getUserMedia is available
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        console.error('[Camera] getUserMedia not supported');
+        debugLog('[Camera] ❌ getUserMedia not supported in this context!');
         if (loadingText) {
           loadingText.textContent = 'Camera not supported in this browser/context';
         }
-        if (typeof showStatus === 'function') {
-          showStatus('Camera not supported - try opening in a regular browser tab', 'error');
-        }
+        showStatus('Camera API not available', 'error');
         return;
       }
+      
+      debugLog('[Camera] ✅ getUserMedia API available');
 
       try {
-        console.log('[Camera] Calling getUserMedia...');
+        debugLog('[Camera] 📹 Calling getUserMedia...');
         
         // Request camera permission
         mediaStream = await navigator.mediaDevices.getUserMedia({
@@ -87,9 +74,9 @@ export function getCameraScript(): string {
           audio: true
         });
 
-        console.log('[Camera] Got media stream:', mediaStream.id);
-        console.log('[Camera] Video tracks:', mediaStream.getVideoTracks().length);
-        console.log('[Camera] Audio tracks:', mediaStream.getAudioTracks().length);
+        debugLog('[Camera] ✅ Got media stream! ID: ' + mediaStream.id);
+        debugLog('[Camera] Video tracks: ' + mediaStream.getVideoTracks().length);
+        debugLog('[Camera] Audio tracks: ' + mediaStream.getAudioTracks().length);
 
         // Attach to video element
         videoPreview.srcObject = mediaStream;
@@ -100,40 +87,34 @@ export function getCameraScript(): string {
         
         // Wait for video to be ready
         videoPreview.onloadedmetadata = function() {
-          console.log('[Camera] Video metadata loaded, dimensions:', videoPreview.videoWidth, 'x', videoPreview.videoHeight);
+          debugLog('[Camera] Video metadata loaded: ' + videoPreview.videoWidth + 'x' + videoPreview.videoHeight);
           
           videoPreview.play().then(function() {
-            console.log('[Camera] Video playing successfully');
+            debugLog('[Camera] ✅ Video playing successfully!');
             if (loadingOverlay) loadingOverlay.classList.add('hidden');
             enableRecordButton();
-            if (typeof showStatus === 'function') {
-              showStatus('Camera ready!', 'success');
-            }
+            showStatus('Camera ready!', 'success');
+            // Hide debug panel once camera works
+            hideDebugPanel();
           }).catch(function(playErr) {
-            console.error('[Camera] Play error:', playErr);
-            if (typeof showStatus === 'function') {
-              showStatus('Video play error: ' + playErr.message, 'error');
-            }
+            debugLog('[Camera] ❌ Play error: ' + playErr.message);
+            showStatus('Video play error: ' + playErr.message, 'error');
           });
         };
         
         // Handle errors
         videoPreview.onerror = function(e) {
-          console.error('[Camera] Video element error:', e);
-          if (typeof showStatus === 'function') {
-            showStatus('Video element error', 'error');
-          }
+          debugLog('[Camera] ❌ Video element error');
+          showStatus('Video element error', 'error');
         };
 
         // Handle video playing
         videoPreview.onplaying = function() {
-          console.log('[Camera] Video is now playing');
+          debugLog('[Camera] Video is now playing');
         };
 
       } catch (err) {
-        console.error('[Camera] getUserMedia error:', err);
-        console.error('[Camera] Error name:', err.name);
-        console.error('[Camera] Error message:', err.message);
+        debugLog('[Camera] ❌ getUserMedia error: ' + err.name + ' - ' + err.message);
         
         var errorMessage = 'Camera error: ' + err.message;
         
@@ -144,15 +125,15 @@ export function getCameraScript(): string {
         } else if (err.name === 'NotReadableError') {
           errorMessage = 'Camera is in use by another application.';
         } else if (err.name === 'SecurityError') {
-          errorMessage = 'Camera access blocked due to security restrictions.';
+          errorMessage = 'Camera blocked due to security restrictions.';
         }
+        
+        debugLog('[Camera] Error message: ' + errorMessage);
         
         if (loadingText) {
           loadingText.textContent = errorMessage;
         }
-        if (typeof showStatus === 'function') {
-          showStatus(errorMessage, 'error');
-        }
+        showStatus(errorMessage, 'error');
       }
     }
 
