@@ -1763,12 +1763,14 @@ export default function GenieStudio() {
               </div>
 
               {/* Stats Bar */}
-              <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="mt-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 {[
                   { label: 'Videos Created', value: String(videos.length), icon: Film, trend: 'Recorded' },
-                  { label: 'Voiceovers', value: String(audios.length), icon: Mic, trend: 'Generated' },
+                  { label: 'Voiceovers', value: String(audios.length + savedVoiceovers.length), icon: Mic, trend: 'Generated' },
                   { label: 'Upcoming Shows', value: String(upcomingEvents.length), icon: Calendar, trend: 'Scheduled' },
-                  { label: 'AI Credits Used', value: '847', icon: Zap, trend: '153 left' }
+                  { label: 'Video Scripts', value: String(videoScripts.length), icon: Video, trend: 'Created' },
+                  { label: 'Audio Scripts', value: String(audioScripts.length), icon: Headphones, trend: 'Created' },
+                  { label: 'Total Projects', value: String(videos.length + savedScripts.length + savedVoiceovers.length), icon: Layers, trend: 'All media' }
                 ].map((stat, i) => (
                   <div key={i} className="bg-card/50 backdrop-blur border border-border/50 rounded-xl p-4 hover:border-primary/30 transition-colors">
                     <div className="flex items-center gap-2 text-muted-foreground mb-1">
