@@ -59,6 +59,8 @@ import {
 import type { RecordingStudioProps, LogoState, TeleprompterState, ScriptData } from './types';
 import type { RecordingMode } from './hooks/useScreenShare';
 import type { RecordingQuality } from './components/RecordingQualitySettings';
+import { ProjectAssetBreakdown } from './components/ProjectAssetBreakdown';
+import { AvatarCreator } from './components/AvatarCreator';
 
 export function RecordingStudio({
   isOpen,
@@ -150,6 +152,16 @@ export function RecordingStudio({
   // Sidebar collapsed state
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
+  // Focus mode - auto-collapse panels during recording
+  const [isFocusMode, setIsFocusMode] = useState(false);
+  const [headerMinimized, setHeaderMinimized] = useState(false);
+  
+  // Asset breakdown panel
+  const [showAssetBreakdown, setShowAssetBreakdown] = useState(false);
+  
+  // Logo position persistence (saved per session)
+  const [savedLogoPosition, setSavedLogoPosition] = useState<{ x: number; y: number } | null>(null);
+  
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   // Script draft storage hook
@@ -184,6 +196,19 @@ export function RecordingStudio({
   const currentScript = scripts.find(s => s.id === selectedScriptId);
   const currentVoiceover = voiceovers.find(v => v.id === selectedVoiceoverId);
   const currentMusic = music.find(m => m.id === selectedMusicId);
+  
+  // Persist logo position when dragged
+  useEffect(() => {
+    if (logo.enabled && logo.src && savedLogoPosition) {
+      setLogo(prev => ({ ...prev, position: savedLogoPosition }));
+    }
+  }, [logo.enabled, logo.src, savedLogoPosition]);
+  
+  // Save logo position on change
+  const handleLogoPositionChange = useCallback((pos: { x: number; y: number }) => {
+    setSavedLogoPosition(pos);
+    setLogo(prev => ({ ...prev, position: pos }));
+  }, []);
   
   // Calculate current word index from audio time
   useEffect(() => {
@@ -252,6 +277,21 @@ export function RecordingStudio({
   );
 
   // Note: currentScript, currentVoiceover, currentMusic defined above after hooks
+
+  // Auto-focus mode: collapse panels when recording starts
+  useEffect(() => {
+    if (recording.isRecording && !recording.isPaused) {
+      // Enter focus mode
+      setIsFocusMode(true);
+      setIsSidebarCollapsed(true);
+      setHeaderMinimized(true);
+    } else if (!recording.isRecording) {
+      // Exit focus mode when recording stops
+      setIsFocusMode(false);
+      setHeaderMinimized(false);
+      // Don't auto-expand sidebar - let user control it
+    }
+  }, [recording.isRecording, recording.isPaused]);
 
   // Sync enhanced script to draft storage when it changes
   useEffect(() => {
@@ -660,49 +700,61 @@ export function RecordingStudio({
           onChange={handleLogoFileChange}
         />
 
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-2 border-b bg-background shrink-0 z-10">
+        {/* Header - Minimized in focus mode */}
+        <div className={`flex items-center justify-between px-4 border-b bg-background shrink-0 z-10 transition-all duration-300 ${
+          headerMinimized ? 'py-1 opacity-60 hover:opacity-100' : 'py-2'
+        }`}>
           <div className="flex items-center gap-3">
-            <h2 className="text-base font-semibold flex items-center gap-2">
-              🎬 Recording Studio
+            <h2 className={`font-semibold flex items-center gap-2 ${headerMinimized ? 'text-sm' : 'text-base'}`}>
+              🎬 {!headerMinimized && 'Recording Studio'}
             </h2>
             
-            {/* Recording Mode Selector */}
-            <div className="flex items-center border rounded-lg p-0.5 bg-muted/50">
-              <Button
-                size="sm"
-                variant={recordingMode === 'camera' ? 'default' : 'ghost'}
-                onClick={() => setRecordingMode('camera')}
-                className="h-7 px-2 gap-1 text-xs"
-              >
-                <Camera className="w-3 h-3" />
-                Camera
-              </Button>
-              <Button
-                size="sm"
-                variant={recordingMode === 'screen' ? 'default' : 'ghost'}
-                onClick={() => setRecordingMode('screen')}
-                className="h-7 px-2 gap-1 text-xs"
-              >
-                <Monitor className="w-3 h-3" />
-                Screen
-              </Button>
-              <Button
-                size="sm"
-                variant={recordingMode === 'screen+camera' ? 'default' : 'ghost'}
-                onClick={() => setRecordingMode('screen+camera')}
-                className="h-7 px-2 gap-1 text-xs"
-              >
-                <MonitorPlay className="w-3 h-3" />
-                Both
-              </Button>
-            </div>
+            {/* Recording Mode Selector - Hidden in focus mode */}
+            {!headerMinimized && (
+              <div className="flex items-center border rounded-lg p-0.5 bg-muted/50">
+                <Button
+                  size="sm"
+                  variant={recordingMode === 'camera' ? 'default' : 'ghost'}
+                  onClick={() => setRecordingMode('camera')}
+                  className="h-7 px-2 gap-1 text-xs"
+                >
+                  <Camera className="w-3 h-3" />
+                  Camera
+                </Button>
+                <Button
+                  size="sm"
+                  variant={recordingMode === 'screen' ? 'default' : 'ghost'}
+                  onClick={() => setRecordingMode('screen')}
+                  className="h-7 px-2 gap-1 text-xs"
+                >
+                  <Monitor className="w-3 h-3" />
+                  Screen
+                </Button>
+                <Button
+                  size="sm"
+                  variant={recordingMode === 'screen+camera' ? 'default' : 'ghost'}
+                  onClick={() => setRecordingMode('screen+camera')}
+                  className="h-7 px-2 gap-1 text-xs"
+                >
+                  <MonitorPlay className="w-3 h-3" />
+                  Both
+                </Button>
+              </div>
+            )}
             
             {/* Screen sharing status */}
             {screenShare.isSharing && (
               <Badge variant="secondary" className="gap-1 text-xs">
                 <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                 Screen Sharing
+              </Badge>
+            )}
+            
+            {/* Recording indicator in header when minimized */}
+            {headerMinimized && recording.isRecording && (
+              <Badge variant="destructive" className="gap-1 text-xs animate-pulse">
+                <span className="w-2 h-2 rounded-full bg-white" />
+                REC {recording.formattedDuration}
               </Badge>
             )}
           </div>
@@ -722,38 +774,69 @@ export function RecordingStudio({
               />
             )}
             
-            <Separator orientation="vertical" className="h-6" />
+            {/* Hide controls in focus mode */}
+            {!headerMinimized && (
+              <>
+                <Separator orientation="vertical" className="h-6" />
+                
+                {/* Project Selector with breakdown */}
+                <div className="flex items-center gap-1">
+                  <ProjectSelector
+                    projects={mediaProject.projects}
+                    currentProject={mediaProject.currentProject}
+                    onSelectProject={mediaProject.selectProject}
+                    onCreateProject={mediaProject.createProject}
+                    totalSessionCost={mediaProject.totalSessionCost}
+                    isLoading={mediaProject.isLoading}
+                  />
+                  {mediaProject.currentProject && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      onClick={() => setShowAssetBreakdown(true)}
+                      title="View project assets"
+                    >
+                      <FolderOpen className="w-3.5 h-3.5" />
+                    </Button>
+                  )}
+                </div>
+                
+                <Separator orientation="vertical" className="h-6" />
+                
+                {/* Keyboard Shortcuts Help */}
+                <KeyboardShortcutsHelp isRecording={recording.isRecording} />
+                
+                {/* Recording Quality Settings */}
+                <RecordingQualitySettings
+                  quality={recordingQuality}
+                  onQualityChange={setRecordingQuality}
+                />
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => library.setIsOpen(true)}
+                  className="gap-1 h-8"
+                >
+                  <Library className="w-4 h-4" />
+                  Library ({library.recordings.length})
+                </Button>
+              </>
+            )}
             
-            {/* Project Selector */}
-            <ProjectSelector
-              projects={mediaProject.projects}
-              currentProject={mediaProject.currentProject}
-              onSelectProject={mediaProject.selectProject}
-              onCreateProject={mediaProject.createProject}
-              totalSessionCost={mediaProject.totalSessionCost}
-              isLoading={mediaProject.isLoading}
-            />
+            {/* Focus mode toggle */}
+            {headerMinimized && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setHeaderMinimized(false)}
+                className="h-7 text-xs"
+              >
+                Show Controls
+              </Button>
+            )}
             
-            <Separator orientation="vertical" className="h-6" />
-            
-            {/* Keyboard Shortcuts Help */}
-            <KeyboardShortcutsHelp isRecording={recording.isRecording} />
-            
-            {/* Recording Quality Settings */}
-            <RecordingQualitySettings
-              quality={recordingQuality}
-              onQualityChange={setRecordingQuality}
-            />
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => library.setIsOpen(true)}
-              className="gap-1 h-8"
-            >
-              <Library className="w-4 h-4" />
-              Library ({library.recordings.length})
-            </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleClose}>
               <X className="w-4 h-4" />
             </Button>
@@ -777,7 +860,7 @@ export function RecordingStudio({
                   content: '', // Teleprompter is now in separate window
                 }}
                 logo={logo}
-                onLogoPositionChange={(pos) => setLogo(prev => ({ ...prev, position: pos }))}
+                onLogoPositionChange={handleLogoPositionChange}
                 audioCurrentTime={audioCurrentTime}
                 audioDuration={audioDuration}
                 isAudioPlaying={isAudioPlaying}
@@ -1073,6 +1156,15 @@ export function RecordingStudio({
           originalScriptPreview={currentScript?.content || ''}
           enhancedScriptPreview={cleanEnhancedScript || ''}
           scriptTitle={currentScript?.title}
+        />
+
+        {/* Project Asset Breakdown */}
+        <ProjectAssetBreakdown
+          isOpen={showAssetBreakdown}
+          onClose={() => setShowAssetBreakdown(false)}
+          projectName={mediaProject.currentProject?.name || 'Project'}
+          assets={mediaProject.assets}
+          totalCost={mediaProject.currentProject?.total_estimated_cost || 0}
         />
       </DialogContent>
     </Dialog>
