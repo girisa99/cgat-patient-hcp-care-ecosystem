@@ -6,6 +6,10 @@ export interface ScriptData {
   id: string;
   title: string;
   content: string;
+  originalContent?: string;
+  enhancedContent?: string;
+  cleanContent?: string; // Clean version for TTS (no pause markers)
+  type?: 'video' | 'audio';
 }
 
 export interface VoiceoverData {
