@@ -277,6 +277,12 @@ export function getRecordingLibraryScript(): string {
           libraryCount.textContent = recordings.length + ' recording' + (recordings.length !== 1 ? 's' : '');
         }
         
+        // Also update the button count if exists
+        const btnCount = document.querySelector('#libraryBtn #libraryCount, #libraryBtn .library-btn-count');
+        if (btnCount) {
+          btnCount.textContent = recordings.length;
+        }
+        
         if (recordings.length === 0) {
           libraryList.innerHTML = '<div class="library-empty">No recordings yet</div>';
           return;
@@ -291,7 +297,7 @@ export function getRecordingLibraryScript(): string {
           html += 
             '<div class="library-item" data-id="' + rec.id + '">' +
               '<div class="library-item-info">' +
-                '<div class="library-item-name">' + escapeHtmlSync(rec.name) + '</div>' +
+                '<div class="library-item-name">' + escapeHtmlLibrary(rec.name) + '</div>' +
                 '<div class="library-item-meta">' +
                   '<span>' + date + '</span>' +
                   '<span>⏱ ' + duration + '</span>' +
@@ -324,6 +330,15 @@ export function getRecordingLibraryScript(): string {
       if (confirm('Delete this recording? This cannot be undone.')) {
         deleteRecordingFromLibrary(id);
       }
+    }
+
+    function escapeHtmlLibrary(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
     }
 
     // =====================================================

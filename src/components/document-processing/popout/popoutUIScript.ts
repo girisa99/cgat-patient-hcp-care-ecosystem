@@ -132,18 +132,22 @@ export function getUIScript(): string {
     // =====================================================
 
     blurBtn.addEventListener('click', function() {
-      blurEnabled = !blurEnabled;
-      
-      if (blurEnabled) {
-        blurBtn.classList.remove('toggle-off');
-        blurBtn.classList.add('toggle-on');
-        blurBtn.textContent = '🔵 BG Blur: ON';
-        videoPreview.style.filter = 'blur(0px)'; // Note: actual blur requires canvas processing
+      // Delegate to background blur module if available
+      if (typeof toggleBackgroundBlur === 'function') {
+        toggleBackgroundBlur();
       } else {
-        blurBtn.classList.remove('toggle-on');
-        blurBtn.classList.add('toggle-off');
-        blurBtn.textContent = '🔵 BG Blur: OFF';
-        videoPreview.style.filter = 'none';
+        // Fallback to simple CSS blur
+        blurEnabled = !blurEnabled;
+        
+        if (blurEnabled) {
+          blurBtn.classList.remove('toggle-off');
+          blurBtn.classList.add('toggle-on');
+          blurBtn.textContent = '🔵 BG Blur: ON';
+        } else {
+          blurBtn.classList.remove('toggle-on');
+          blurBtn.classList.add('toggle-off');
+          blurBtn.textContent = '🔵 BG Blur: OFF';
+        }
       }
     });
 

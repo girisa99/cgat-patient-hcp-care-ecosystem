@@ -15,3 +15,5 @@ export { getScriptEnhancementScript, getScriptEnhancementStyles } from './script
 export { getRecordingEnhancementsScript, getRecordingEnhancementsStyles } from './recordingEnhancements';
 export { getTeleprompterEnhancementsScript, getTeleprompterEnhancementsStyles } from './teleprompterEnhancements';
 export { getVoiceProviderSelectionScript, getVoiceProviderSelectionStyles } from './voiceProviderSelection';
+export { getBackgroundBlurScript, getBackgroundBlurStyles } from './backgroundBlur';
+export { getRecordingLibraryScript, getRecordingLibraryStyles } from './recordingLibrary';

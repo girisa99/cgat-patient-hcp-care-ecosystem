@@ -237,15 +237,17 @@ export function getBackgroundBlurScript(): string {
     // =====================================================
 
     function updateBlurButton(enabled) {
-      const btn = document.getElementById('blurToggleBtn');
+      const btn = document.getElementById('blurToggleBtn') || document.getElementById('blurBtn');
       if (!btn) return;
 
       if (enabled) {
-        btn.classList.add('active');
-        btn.innerHTML = '🔵 Blur ON';
+        btn.classList.remove('toggle-off');
+        btn.classList.add('toggle-on', 'active');
+        btn.innerHTML = '🔵 BG Blur: ON';
       } else {
-        btn.classList.remove('active');
-        btn.innerHTML = '⚪ Blur OFF';
+        btn.classList.remove('toggle-on', 'active');
+        btn.classList.add('toggle-off');
+        btn.innerHTML = '🔵 BG Blur: OFF';
       }
     }
 
@@ -301,8 +303,8 @@ export function getBackgroundBlurScript(): string {
     // =====================================================
 
     function initBackgroundBlurModule() {
-      // Blur toggle button
-      const blurBtn = document.getElementById('blurToggleBtn');
+      // Blur toggle button - check both possible IDs
+      const blurBtn = document.getElementById('blurToggleBtn') || document.getElementById('blurBtn');
       if (blurBtn) {
         blurBtn.addEventListener('click', toggleBackgroundBlur);
       }

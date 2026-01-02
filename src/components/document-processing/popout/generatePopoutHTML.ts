@@ -104,25 +104,54 @@ ${scripts}
     // Validation check
     setTimeout(function() {
       const modules = [
+        // Core recording
         { name: 'Recording Enhancements', check: typeof isStopped !== 'undefined' },
+        { name: 'Countdown', check: typeof startCountdown === 'function' },
+        { name: 'Pause/Resume', check: typeof pauseRecording === 'function' },
+        { name: 'Trim Recording', check: typeof trimLastSeconds === 'function' },
+        
+        // Teleprompter
         { name: 'Teleprompter Enhancements', check: typeof scriptWords !== 'undefined' },
+        { name: 'Word Highlighting', check: typeof startWordHighlightingFromAudio === 'function' },
+        { name: 'Reading Cursor', check: typeof showReadingCursor === 'function' },
+        
+        // Audio
+        { name: 'Audio Playback', check: typeof startAudioPlayback === 'function' },
+        { name: 'Audio Analyzer', check: typeof analyzeAudio === 'function' },
+        { name: 'Audio Trimmer', check: typeof initTrimmer === 'function' },
+        { name: 'Audio Export', check: typeof exportAudio === 'function' },
+        { name: 'Script-Audio Sync', check: typeof initSync === 'function' },
+        
+        // AI Features
         { name: 'Script Enhancement', check: typeof analyzeScript === 'function' },
         { name: 'Voice Provider Selection', check: typeof selectVoiceProvider === 'function' },
-        { name: 'Countdown', check: typeof startCountdown === 'function' },
-        { name: 'Audio Playback', check: typeof startAudioPlayback === 'function' },
-        { name: 'Word Highlighting', check: typeof startWordHighlightingFromAudio === 'function' },
+        { name: 'Transcription', check: typeof transcribeAudio === 'function' },
+        
+        // Visual Effects
         { name: 'Background Blur', check: typeof toggleBackgroundBlur === 'function' },
-        { name: 'Recording Library', check: typeof saveRecordingToLibrary === 'function' }
+        { name: 'Enhanced Controls', check: typeof toggleCamera === 'function' },
+        
+        // Library
+        { name: 'Recording Library', check: typeof saveRecordingToLibrary === 'function' },
+        { name: 'Library UI', check: typeof updateLibraryUI === 'function' }
       ];
       
       console.log('[Popout] ===== MODULE VALIDATION =====');
-      let allPassed = true;
+      let passedCount = 0;
+      let failedModules = [];
       modules.forEach(function(m) {
         const status = m.check ? '✅' : '❌';
         console.log('[Popout] ' + status + ' ' + m.name);
-        if (!m.check) allPassed = false;
+        if (m.check) {
+          passedCount++;
+        } else {
+          failedModules.push(m.name);
+        }
       });
-      console.log('[Popout] ===== ' + (allPassed ? 'ALL MODULES OK' : 'SOME MODULES MISSING') + ' =====');
+      console.log('[Popout] ===== ' + passedCount + '/' + modules.length + ' MODULES LOADED =====');
+      if (failedModules.length > 0) {
+        console.warn('[Popout] Missing modules:', failedModules.join(', '));
+      }
     }, 500);
     
     console.log('[Popout] All modules loaded');
