@@ -8,6 +8,14 @@ import { getPopoutStyles } from './popoutStyles';
 import { getPopoutHTML } from './popoutTemplate';
 import { getCameraScript } from './popoutCameraScript';
 import { getUIScript } from './popoutUIScript';
+import {
+  getAudioAnalyzerScript, getAudioAnalyzerStyles,
+  getAudioTrimmerScript, getAudioTrimmerStyles,
+  getAudioExportScript, getAudioExportStyles,
+  getTranscriptionScript, getTranscriptionStyles,
+  getScriptAudioSyncScript, getScriptAudioSyncStyles,
+  getVoiceoverManagerScript, getVoiceoverManagerStyles
+} from './audio';
 
 /**
  * Generate the complete HTML for the popout recording studio
@@ -19,11 +27,31 @@ export function generatePopoutHTML(config: PopoutConfig): string {
     music: config.music.length
   });
 
-  // Get all module parts
-  const styles = getPopoutStyles();
+  // Get all styles
+  const styles = [
+    getPopoutStyles(),
+    getAudioAnalyzerStyles(),
+    getAudioTrimmerStyles(),
+    getAudioExportStyles(),
+    getTranscriptionStyles(),
+    getScriptAudioSyncStyles(),
+    getVoiceoverManagerStyles()
+  ].join('\n');
+
+  // Get HTML content
   const htmlContent = getPopoutHTML(config);
-  const cameraScript = getCameraScript();
-  const uiScript = getUIScript();
+
+  // Get all scripts
+  const scripts = [
+    getAudioAnalyzerScript(),
+    getAudioTrimmerScript(),
+    getAudioExportScript(),
+    getTranscriptionScript(config.supabaseUrl, config.supabaseKey),
+    getScriptAudioSyncScript(),
+    getVoiceoverManagerScript(),
+    getUIScript(),
+    getCameraScript()
+  ].join('\n\n');
 
   // Compose the complete HTML document
   const fullHTML = `<!DOCTYPE html>
@@ -39,18 +67,12 @@ ${styles}
 <body>
 ${htmlContent}
   <script>
-    // UI Script must load first
-${uiScript}
-
-    // Camera Script loads second (depends on UI functions)
-${cameraScript}
-
+${scripts}
     console.log('[Popout] All modules loaded');
   </script>
 </body>
 </html>`;
 
   console.log('[Popout] Generated HTML length:', fullHTML.length);
-  
   return fullHTML;
 }
