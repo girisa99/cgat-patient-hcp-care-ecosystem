@@ -6228,21 +6228,30 @@ export function generatePopoutHTML(config: PopoutConfig): string {
     console.log('✅ Generated script syntax is valid');
   } catch (syntaxError) {
     console.error('❌ SYNTAX ERROR in generated script:', syntaxError);
-    // Find the problematic area
+    
+    // Count braces to find the issue
     const lines = mainScript.split('\n');
-    const errorMatch = String(syntaxError).match(/position (\d+)/i);
-    if (errorMatch) {
-      const pos = parseInt(errorMatch[1], 10);
-      let charCount = 0;
-      for (let i = 0; i < lines.length; i++) {
-        charCount += lines[i].length + 1;
-        if (charCount >= pos) {
-          console.error('Error likely around line', i + 1, ':', lines[i]);
-          console.error('Context:', lines.slice(Math.max(0, i - 2), i + 3).join('\n'));
-          break;
-        }
+    let braceCount = 0;
+    let firstImbalance = -1;
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const opens = (line.match(/{/g) || []).length;
+      const closes = (line.match(/}/g) || []).length;
+      braceCount += opens - closes;
+      
+      // Log when brace count becomes negative (closing without opening)
+      if (braceCount < 0 && firstImbalance === -1) {
+        console.error('First negative brace count at line', i + 1, ':', line.trim());
+        firstImbalance = i;
       }
     }
+    
+    console.error('Final brace count:', braceCount, '(should be 0)');
+    
+    // Output first 200 lines for inspection
+    console.log('=== FIRST 200 LINES OF GENERATED SCRIPT ===');
+    console.log(lines.slice(0, 200).join('\n'));
   }
   
   // Encode the script as base64 to avoid any HTML parsing issues
