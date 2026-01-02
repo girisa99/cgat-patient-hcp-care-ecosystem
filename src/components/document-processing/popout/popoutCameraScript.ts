@@ -1,6 +1,7 @@
 /**
  * Popout Recording Studio - Camera & Recording Logic
  * Handles camera initialization, MediaRecorder, and video capture
+ * Integrates with enhanced recording features (countdown, pause, trim)
  */
 
 export function getCameraScript(): string {
@@ -90,15 +91,38 @@ export function getCameraScript(): string {
       recordBtnText.textContent = 'Start Recording';
     }
 
-    // Start recording
-    function startRecording() {
+    // Start recording with countdown
+    function startRecordingWithCountdown() {
       if (!mediaStream || isRecording) return;
 
-      console.log('[Recording] Starting...');
+      console.log('[Recording] Starting with countdown...');
+      
+      // Use enhanced countdown if available
+      if (typeof startCountdown === 'function') {
+        startCountdown(function() {
+          actuallyStartRecording();
+        });
+      } else {
+        // Fallback: start immediately
+        actuallyStartRecording();
+      }
+    }
+
+    // Actually start recording (called after countdown)
+    function actuallyStartRecording() {
+      if (!mediaStream) {
+        console.error('[Recording] No media stream');
+        return;
+      }
+
+      // Reset enhanced state
+      if (typeof isStopped !== 'undefined') isStopped = false;
+      if (typeof isPaused !== 'undefined') isPaused = false;
+      
       recordedChunks = [];
+      if (typeof trimHistory !== 'undefined') trimHistory = [];
 
       try {
-        // Create MediaRecorder
         const options = { mimeType: 'video/webm;codecs=vp9,opus' };
         if (!MediaRecorder.isTypeSupported(options.mimeType)) {
           options.mimeType = 'video/webm';
@@ -111,14 +135,20 @@ export function getCameraScript(): string {
 
         mediaRecorder.ondataavailable = function(event) {
           if (event.data && event.data.size > 0) {
-            recordedChunks.push(event.data);
-            console.log('[Recording] Chunk received:', event.data.size, 'bytes');
+            // Check isStopped flag from enhanced module
+            if (typeof isStopped === 'undefined' || !isStopped) {
+              recordedChunks.push(event.data);
+              console.log('[Recording] Chunk received:', event.data.size, 'bytes');
+            }
           }
         };
 
         mediaRecorder.onstop = function() {
           console.log('[Recording] Stopped, processing...');
-          processRecording();
+          // Only process if not stopped via enhanced stop
+          if (typeof isStopped === 'undefined' || !isStopped) {
+            processRecording();
+          }
         };
 
         mediaRecorder.onerror = function(event) {
@@ -137,13 +167,26 @@ export function getCameraScript(): string {
         recordBtnText.textContent = 'Stop Recording';
         recordingIndicator.classList.add('visible');
 
-        // Start timer
+        // Start timer (respects pause state)
+        let pausedTime = 0;
+        let lastPauseStart = null;
+        
         recordingTimer = setInterval(function() {
-          const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+          if (typeof isPaused !== 'undefined' && isPaused) {
+            if (!lastPauseStart) lastPauseStart = Date.now();
+            return;
+          }
+          
+          if (lastPauseStart) {
+            pausedTime += Date.now() - lastPauseStart;
+            lastPauseStart = null;
+          }
+          
+          const elapsed = Math.floor((Date.now() - recordingStartTime - pausedTime) / 1000);
           recordingTimeEl.textContent = formatTime(elapsed);
         }, 1000);
 
-        // Trigger any voiceover/music if selected
+        // Trigger audio playback and show recording UI
         if (typeof startAudioPlayback === 'function') {
           startAudioPlayback();
         }
@@ -162,6 +205,9 @@ export function getCameraScript(): string {
 
       console.log('[Recording] Stopping...');
       
+      // Set stopped flag for enhanced module
+      if (typeof isStopped !== 'undefined') isStopped = true;
+      
       isRecording = false;
       clearInterval(recordingTimer);
       
@@ -174,6 +220,11 @@ export function getCameraScript(): string {
       // Stop any audio playback
       if (typeof stopAudioPlayback === 'function') {
         stopAudioPlayback();
+      }
+      
+      // Use enhanced stop if available
+      if (typeof stopAllAudio === 'function') {
+        stopAllAudio();
       }
 
       // Stop MediaRecorder
@@ -220,7 +271,7 @@ export function getCameraScript(): string {
       if (isRecording) {
         stopRecording();
       } else {
-        startRecording();
+        startRecordingWithCountdown();
       }
     }
 
@@ -244,5 +295,7 @@ export function getCameraScript(): string {
 
     // Initialize camera on load
     initCamera();
+
+    console.log('[Camera] Module loaded with Phase 2 integrations');
   `;
 }

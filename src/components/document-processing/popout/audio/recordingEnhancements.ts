@@ -459,12 +459,7 @@ export function getRecordingEnhancementsScript(): string {
         undoBtn.addEventListener('click', undoLastTrim);
       }
 
-      // Audio options dialog
-      const startWithOptionsBtn = document.getElementById('startWithOptionsBtn');
-      if (startWithOptionsBtn) {
-        startWithOptionsBtn.addEventListener('click', showAudioOptionsDialog);
-      }
-
+      // Audio options dialog buttons
       const confirmOptionsBtn = document.getElementById('confirmOptionsBtn');
       if (confirmOptionsBtn) {
         confirmOptionsBtn.addEventListener('click', confirmAudioOptions);
@@ -475,18 +470,8 @@ export function getRecordingEnhancementsScript(): string {
         cancelOptionsBtn.addEventListener('click', hideAudioOptionsDialog);
       }
 
-      // Override record button to use countdown
-      const recordBtn = document.getElementById('recordBtn');
-      if (recordBtn) {
-        recordBtn.removeEventListener('click', toggleRecording);
-        recordBtn.addEventListener('click', function() {
-          if (isRecording) {
-            stopRecordingEnhanced();
-          } else {
-            startCountdown(actuallyStartRecording);
-          }
-        });
-      }
+      // NOTE: Record button is now handled in popoutCameraScript.ts
+      // which calls startCountdown() and uses isStopped/isPaused flags
 
       updateTrimUI();
       console.log('[RecordingEnhancements] Initialized');
