@@ -2,12 +2,13 @@
  * Video Preview Component - Enhanced with word tracking teleprompter
  * Teleprompter is CONTAINED inside the video area only
  * Syncs TTS/voiceover audio with visual cursor for reading at same speed
+ * Supports ML-based background blur via canvas overlay
  */
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, ChevronUp, ChevronDown } from 'lucide-react';
+import { RefreshCw, ChevronUp, ChevronDown, Loader2 } from 'lucide-react';
 import type { LogoState, TeleprompterState } from '../types';
 
 interface VideoPreviewProps {
@@ -29,6 +30,10 @@ interface VideoPreviewProps {
   // Manual scroll controls
   onScrollUp?: () => void;
   onScrollDown?: () => void;
+  // Background blur support
+  isBlurEnabled?: boolean;
+  blurAmount?: number;
+  isBlurLoading?: boolean;
 }
 
 export function VideoPreview({
@@ -45,12 +50,17 @@ export function VideoPreview({
   audioDuration = 0,
   isAudioPlaying = false,
   onRetryCamera,
+  isBlurEnabled = false,
+  blurAmount = 15,
+  isBlurLoading = false,
 }: VideoPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const teleprompterRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
+  const animationRef = useRef<number | null>(null);
   
   // Word tracking state
   const [words, setWords] = useState<string[]>([]);
@@ -123,6 +133,63 @@ export function VideoPreview({
     }
   }, [stream]);
 
+  // Background blur effect using canvas
+  const renderBlurFrame = useCallback(() => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    
+    if (!video || !canvas || video.readyState < 2 || !isBlurEnabled) {
+      animationRef.current = requestAnimationFrame(renderBlurFrame);
+      return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      animationRef.current = requestAnimationFrame(renderBlurFrame);
+      return;
+    }
+
+    // Match canvas to video dimensions
+    if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+    }
+
+    // Draw blurred background
+    ctx.filter = `blur(${blurAmount}px)`;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    ctx.filter = 'none';
+
+    // Draw sharp center oval (person area)
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radiusX = canvas.width * 0.35;
+    const radiusY = canvas.height * 0.55;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    ctx.restore();
+
+    animationRef.current = requestAnimationFrame(renderBlurFrame);
+  }, [isBlurEnabled, blurAmount]);
+
+  // Start/stop blur rendering
+  useEffect(() => {
+    if (isBlurEnabled && stream) {
+      renderBlurFrame();
+    }
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+    };
+  }, [isBlurEnabled, stream, renderBlurFrame]);
+
   // Logo drag handling
   const handleLogoMouseDown = (e: React.MouseEvent) => {
     if (!logo.enabled) return;
@@ -182,14 +249,33 @@ export function VideoPreview({
       ref={containerRef}
       className="relative w-full h-full bg-black rounded-lg overflow-hidden"
     >
-      {/* Video Element - Full container */}
+      {/* Video Element - Hidden when blur is enabled */}
       <video
         ref={videoRef}
-        className="absolute inset-0 w-full h-full object-cover"
+        className={cn(
+          "absolute inset-0 w-full h-full object-cover",
+          isBlurEnabled && "invisible"
+        )}
         autoPlay
         muted
         playsInline
       />
+
+      {/* Canvas for blur effect - shown when blur is enabled */}
+      {isBlurEnabled && (
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      )}
+
+      {/* Blur Loading Indicator */}
+      {isBlurLoading && (
+        <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full z-20 flex items-center gap-2">
+          <Loader2 className="w-3 h-3 animate-spin text-white" />
+          <span className="text-white/80 text-xs">Loading blur model...</span>
+        </div>
+      )}
 
       {/* Loading Overlay */}
       {isLoading && (
@@ -235,6 +321,17 @@ export function VideoPreview({
           <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
           <span className="text-white text-sm font-semibold">REC</span>
           <span className="text-white/90 text-sm font-mono">{formattedDuration}</span>
+        </div>
+      )}
+
+      {/* Blur Active Indicator */}
+      {isBlurEnabled && !isBlurLoading && (
+        <div className="absolute bottom-4 left-4 bg-blue-500/80 backdrop-blur-sm px-3 py-1.5 rounded-full z-20 flex items-center gap-2">
+          <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 6v6l4 2" />
+          </svg>
+          <span className="text-white text-xs font-medium">Blur Active</span>
         </div>
       )}
 

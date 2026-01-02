@@ -347,22 +347,52 @@ export function RecordingStudio({
   }, [camera, screenShare, audioPlayback, onClose]);
 
   const handleLogoUpload = useCallback(() => {
+    console.log('[Logo] Upload button clicked, triggering file input');
     logoInputRef.current?.click();
   }, []);
 
   const handleLogoFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      console.log('[Logo] No file selected');
+      return;
+    }
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
+      return;
+    }
+    
+    console.log('[Logo] Processing file:', file.name, file.type, file.size);
     
     const reader = new FileReader();
-    reader.onload = (e) => {
-      setLogo(prev => ({
-        ...prev,
-        enabled: true,
-        src: e.target?.result as string,
-      }));
+    reader.onload = (loadEvent) => {
+      const result = loadEvent.target?.result as string;
+      if (result) {
+        setLogo(prev => ({
+          ...prev,
+          enabled: true,
+          src: result,
+        }));
+        toast.success('Logo uploaded! Drag to reposition.');
+        console.log('[Logo] Logo loaded successfully');
+      }
+    };
+    reader.onerror = () => {
+      toast.error('Failed to load image');
+      console.error('[Logo] FileReader error');
     };
     reader.readAsDataURL(file);
+    
+    // Reset input so same file can be selected again
+    e.target.value = '';
   }, []);
 
   // Script content update handler
@@ -926,6 +956,9 @@ export function RecordingStudio({
                   audioDuration={audioDuration}
                   isAudioPlaying={isAudioPlaying}
                   onRetryCamera={camera.retryCamera}
+                  isBlurEnabled={isBlurEnabled && recordingMode === 'camera'}
+                  blurAmount={15}
+                  isBlurLoading={mlBlur.isModelLoading}
                 />
               )}
             </div>
