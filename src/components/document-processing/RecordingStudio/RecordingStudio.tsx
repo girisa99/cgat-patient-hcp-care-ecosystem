@@ -44,6 +44,9 @@ export function RecordingStudio({
   selectedScriptId: initialScriptId = '',
   selectedVoiceoverId: initialVoiceoverId = '',
   selectedMusicId: initialMusicId = '',
+  onUploadVoiceover,
+  onUploadMusic,
+  isUploading = false,
 }: RecordingStudioProps) {
   // Scripts with local content management
   const [scripts, setScripts] = useState<ScriptData[]>(initialScripts);
@@ -683,6 +686,9 @@ export function RecordingStudio({
                   onTTSProviderChange={setTTSProvider}
                   currentScriptContent={currentScript?.content}
                   cleanScriptContent={cleanEnhancedScript || undefined}
+                  onUploadVoiceover={onUploadVoiceover}
+                  onUploadMusic={onUploadMusic}
+                  isUploading={isUploading}
                 />
               </div>
             )}
