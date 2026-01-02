@@ -2,10 +2,11 @@
  * Pop-out Recording Studio
  * 
  * This module provides the pop-out recording studio functionality.
- * It's extracted from VideoRecorder for better maintainability.
+ * Modular architecture with separate files for styles, template, camera, and UI logic.
  */
 
 export { openPopoutRecordingStudio } from './openPopoutRecordingStudio';
+export { generatePopoutHTML } from './generatePopoutHTML';
 export type { 
   PopoutConfig, 
   PopoutScriptData, 
