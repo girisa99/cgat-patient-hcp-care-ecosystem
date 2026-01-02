@@ -1,5 +1,5 @@
 /**
- * Camera Hook - Handles camera initialization and controls
+ * Camera Hook - Handles camera initialization and controls with retry logic
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
@@ -8,10 +8,12 @@ import type { CameraState } from '../types';
 interface UseCameraOptions {
   autoStart?: boolean;
   videoRef?: React.RefObject<HTMLVideoElement>;
+  maxRetries?: number;
+  retryDelay?: number;
 }
 
 export function useCamera(options: UseCameraOptions = {}) {
-  const { autoStart = true } = options;
+  const { autoStart = true, maxRetries = 3, retryDelay = 1000 } = options;
   
   const [state, setState] = useState<CameraState>({
     stream: null,
@@ -22,8 +24,16 @@ export function useCamera(options: UseCameraOptions = {}) {
   });
   
   const streamRef = useRef<MediaStream | null>(null);
+  const retryCountRef = useRef(0);
+  const mountedRef = useRef(true);
 
-  const initCamera = useCallback(async () => {
+  const initCamera = useCallback(async (isRetry = false): Promise<MediaStream | null> => {
+    if (!mountedRef.current) return null;
+    
+    if (!isRetry) {
+      retryCountRef.current = 0;
+    }
+    
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     
     try {
@@ -31,14 +41,27 @@ export function useCamera(options: UseCameraOptions = {}) {
         throw new Error('Camera API not available in this browser');
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia({
+      // Request with timeout wrapper
+      const streamPromise = navigator.mediaDevices.getUserMedia({
         video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+          width: { ideal: 1280, min: 640 },
+          height: { ideal: 720, min: 480 },
           facingMode: 'user',
         },
         audio: true,
       });
+
+      // 10 second timeout
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Camera request timeout')), 10000);
+      });
+
+      const stream = await Promise.race([streamPromise, timeoutPromise]);
+
+      if (!mountedRef.current) {
+        stream.getTracks().forEach(track => track.stop());
+        return null;
+      }
 
       streamRef.current = stream;
       
@@ -53,23 +76,47 @@ export function useCamera(options: UseCameraOptions = {}) {
       console.log('[Camera] Initialized successfully');
       return stream;
     } catch (err: any) {
-      let errorMessage = 'Camera error: ' + err.message;
+      let errorMessage = 'Camera error';
+      let canRetry = false;
       
       if (err.name === 'NotAllowedError') {
-        errorMessage = 'Camera access denied. Please allow camera permission.';
+        errorMessage = 'Camera access denied. Please allow camera permission in your browser.';
       } else if (err.name === 'NotFoundError') {
-        errorMessage = 'No camera found. Please connect a camera.';
-      } else if (err.name === 'NotReadableError') {
-        errorMessage = 'Camera is in use by another application.';
+        errorMessage = 'No camera found. Please connect a camera and try again.';
+      } else if (err.name === 'NotReadableError' || err.message?.includes('Timeout')) {
+        errorMessage = 'Camera is busy or timed out. Retrying...';
+        canRetry = true;
       } else if (err.name === 'SecurityError') {
-        errorMessage = 'Camera blocked due to security restrictions.';
+        errorMessage = 'Camera blocked due to security restrictions. Use HTTPS.';
+      } else if (err.name === 'AbortError') {
+        errorMessage = 'Camera initialization was interrupted.';
+        canRetry = true;
+      } else {
+        errorMessage = `Camera error: ${err.message}`;
+        canRetry = true;
       }
       
-      console.error('[Camera] Error:', errorMessage);
+      console.error('[Camera] Error:', errorMessage, err);
+      
+      // Retry logic for timeout and busy errors
+      if (canRetry && retryCountRef.current < maxRetries && mountedRef.current) {
+        retryCountRef.current++;
+        console.log(`[Camera] Retrying... (${retryCountRef.current}/${maxRetries})`);
+        
+        setState(prev => ({ 
+          ...prev, 
+          isLoading: true, 
+          error: `Retrying camera... (${retryCountRef.current}/${maxRetries})` 
+        }));
+        
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        return initCamera(true);
+      }
+      
       setState(prev => ({ ...prev, isLoading: false, error: errorMessage }));
       return null;
     }
-  }, []);
+  }, [maxRetries, retryDelay]);
 
   const toggleCamera = useCallback(() => {
     if (!streamRef.current) return;
@@ -108,13 +155,22 @@ export function useCamera(options: UseCameraOptions = {}) {
     }
   }, []);
 
+  // Retry camera manually
+  const retryCamera = useCallback(() => {
+    retryCountRef.current = 0;
+    initCamera();
+  }, [initCamera]);
+
   // Auto-start camera
   useEffect(() => {
+    mountedRef.current = true;
+    
     if (autoStart) {
       initCamera();
     }
     
     return () => {
+      mountedRef.current = false;
       stopCamera();
     };
   }, [autoStart, initCamera, stopCamera]);
@@ -125,5 +181,6 @@ export function useCamera(options: UseCameraOptions = {}) {
     toggleCamera,
     toggleMic,
     stopCamera,
+    retryCamera,
   };
 }

@@ -306,6 +306,7 @@ export function RecordingStudio({
                 onLogoPositionChange={(pos) => setLogo(prev => ({ ...prev, position: pos }))}
                 audioCurrentTime={audioCurrentTime}
                 audioDuration={audioDuration}
+                onRetryCamera={camera.retryCamera}
               />
             </div>
 
