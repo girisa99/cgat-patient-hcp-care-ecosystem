@@ -22,7 +22,8 @@ import {
   Workflow,
   ShoppingCart,
   FileSearch,
-  GitBranch
+  GitBranch,
+  Sparkles
 } from "lucide-react";
 
 export const navItems = [
@@ -45,6 +46,11 @@ export const navItems = [
     title: "Document Processing",
     url: "/document-processing",
     icon: FileSearch,
+  },
+  {
+    title: "Genie Studio",
+    url: "/genie-studio",
+    icon: Sparkles,
   },
   {
     title: "Patients",
