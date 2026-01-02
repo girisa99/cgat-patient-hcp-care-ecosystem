@@ -89,6 +89,18 @@ interface ScriptPanelProps {
   // Enhanced script state - passed up to parent
   onEnhancedScriptReady?: (cleanScript: string) => void;
   onUseEnhancedChange?: (useEnhanced: boolean) => void;
+  
+  // Lifted state from parent to persist across re-renders
+  enhancedContent?: string | null;
+  onEnhancedContentChange?: (content: string | null) => void;
+  enhancementChanges?: EnhancementChange[];
+  onEnhancementChangesChange?: (changes: EnhancementChange[]) => void;
+  showChanges?: boolean;
+  onShowChangesChange?: (show: boolean) => void;
+  analysisResult?: AnalysisRecommendation[];
+  onAnalysisResultChange?: (result: AnalysisRecommendation[]) => void;
+  showAnalysis?: boolean;
+  onShowAnalysisChange?: (show: boolean) => void;
 }
 
 export function ScriptPanel({
@@ -104,19 +116,42 @@ export function ScriptPanel({
   isEnhancing = false,
   onEnhancedScriptReady,
   onUseEnhancedChange,
+  // Lifted state props for persistence
+  enhancedContent: enhancedContentProp,
+  onEnhancedContentChange,
+  enhancementChanges: enhancementChangesProp,
+  onEnhancementChangesChange,
+  showChanges: showChangesProp,
+  onShowChangesChange,
+  analysisResult: analysisResultProp,
+  onAnalysisResultChange,
+  showAnalysis: showAnalysisProp,
+  onShowAnalysisChange,
 }: ScriptPanelProps) {
   const selectedScript = scripts.find(s => s.id === selectedScriptId);
   
-  // Analysis state
-  const [analysisResult, setAnalysisResult] = useState<AnalysisRecommendation[]>([]);
-  const [showAnalysis, setShowAnalysis] = useState(false);
+  // Use lifted state if provided, otherwise use local state
+  const [localAnalysisResult, setLocalAnalysisResult] = useState<AnalysisRecommendation[]>([]);
+  const [localShowAnalysis, setLocalShowAnalysis] = useState(false);
+  const [localEnhancedContent, setLocalEnhancedContent] = useState<string | null>(null);
+  const [localEnhancementChanges, setLocalEnhancementChanges] = useState<EnhancementChange[]>([]);
+  const [localShowChanges, setLocalShowChanges] = useState(false);
   
-  // Enhancement state
+  // Use either lifted or local state
+  const analysisResult = analysisResultProp ?? localAnalysisResult;
+  const setAnalysisResult = onAnalysisResultChange ?? setLocalAnalysisResult;
+  const showAnalysis = showAnalysisProp ?? localShowAnalysis;
+  const setShowAnalysis = onShowAnalysisChange ?? setLocalShowAnalysis;
+  const enhancedContent = enhancedContentProp ?? localEnhancedContent;
+  const setEnhancedContent = onEnhancedContentChange ?? setLocalEnhancedContent;
+  const enhancementChanges = enhancementChangesProp ?? localEnhancementChanges;
+  const setEnhancementChanges = onEnhancementChangesChange ?? setLocalEnhancementChanges;
+  const showChanges = showChangesProp ?? localShowChanges;
+  const setShowChanges = onShowChangesChange ?? setLocalShowChanges;
+  
+  // Local-only state (doesn't need persistence)
   const [originalContent, setOriginalContent] = useState<string | null>(null);
-  const [enhancedContent, setEnhancedContent] = useState<string | null>(null);
   const [cleanEnhancedContent, setCleanEnhancedContent] = useState<string | null>(null);
-  const [enhancementChanges, setEnhancementChanges] = useState<EnhancementChange[]>([]);
-  const [showChanges, setShowChanges] = useState(false);
   const [isUsingEnhanced, setIsUsingEnhanced] = useState(false);
   
   // Word count stats

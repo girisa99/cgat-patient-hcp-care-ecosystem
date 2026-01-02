@@ -83,11 +83,18 @@ export function RecordingStudio({
   const [ttsAudioUrl, setTTSAudioUrl] = useState<string | null>(null);
   const [ttsProvider, setTTSProvider] = useState<'openai' | 'elevenlabs'>('openai');
   
-  // Script analysis/enhancement states
+  // Script analysis/enhancement states - LIFTED from ScriptPanel to persist
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [cleanEnhancedScript, setCleanEnhancedScript] = useState<string | null>(null);
   const [isUsingEnhancedScript, setIsUsingEnhancedScript] = useState(false);
+  
+  // Enhancement state lifted from ScriptPanel to prevent loss on re-render
+  const [enhancedScriptContent, setEnhancedScriptContent] = useState<string | null>(null);
+  const [enhancementChangesData, setEnhancementChangesData] = useState<any[]>([]);
+  const [showEnhancementChanges, setShowEnhancementChanges] = useState(false);
+  const [analysisResultData, setAnalysisResultData] = useState<any[]>([]);
+  const [showAnalysisResult, setShowAnalysisResult] = useState(false);
   
   // Recording preview
   const [lastRecordingBlob, setLastRecordingBlob] = useState<Blob | null>(null);
@@ -522,8 +529,8 @@ export function RecordingStudio({
             {/* Teleprompter Button */}
             {currentScript && (
               <FloatingTeleprompter
-                content={currentScript.content}
-                title={currentScript.title}
+                content={isUsingEnhancedScript && cleanEnhancedScript ? cleanEnhancedScript : currentScript.content}
+                title={currentScript.title + (isUsingEnhancedScript ? ' (Enhanced)' : '')}
                 isRecording={recording.isRecording}
                 scrollSpeed={teleprompter.scrollSpeed}
                 isOpen={teleprompterOpen}
@@ -644,6 +651,17 @@ export function RecordingStudio({
                   isEnhancing={isEnhancing}
                   onEnhancedScriptReady={setCleanEnhancedScript}
                   onUseEnhancedChange={setIsUsingEnhancedScript}
+                  // Lifted state props for persistence
+                  enhancedContent={enhancedScriptContent}
+                  onEnhancedContentChange={setEnhancedScriptContent}
+                  enhancementChanges={enhancementChangesData}
+                  onEnhancementChangesChange={setEnhancementChangesData}
+                  showChanges={showEnhancementChanges}
+                  onShowChangesChange={setShowEnhancementChanges}
+                  analysisResult={analysisResultData}
+                  onAnalysisResultChange={setAnalysisResultData}
+                  showAnalysis={showAnalysisResult}
+                  onShowAnalysisChange={setShowAnalysisResult}
                 />
 
                 {/* Audio Panel */}
