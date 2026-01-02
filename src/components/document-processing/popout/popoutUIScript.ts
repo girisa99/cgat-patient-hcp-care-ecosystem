@@ -472,9 +472,226 @@ export function getUIScript(): string {
       });
     });
 
-    // Initialize audio tabs
-    initAudioTabs();
+    // =====================================================
+    // SYNC CONTROLS INTEGRATION
+    // =====================================================
 
-    console.log('[UI] Module initialized with Phase 2 integrations');
+    function initSyncControls() {
+      const syncPlayBtn = document.getElementById('syncPlayBtn');
+      const syncStopBtn = document.getElementById('syncStopBtn');
+      const syncSection = document.getElementById('syncSection');
+
+      if (syncPlayBtn) {
+        syncPlayBtn.addEventListener('click', async function() {
+          const scriptContent = teleprompterText ? teleprompterText.textContent : '';
+          const voOption = voiceoverSelect.options[voiceoverSelect.selectedIndex];
+          const voUrl = voOption ? voOption.dataset.url : null;
+
+          if (!scriptContent || !voUrl) {
+            showStatus('Select script and voiceover first', 'error');
+            return;
+          }
+
+          // Initialize sync if not done
+          if (typeof initSync === 'function') {
+            await initSync(scriptContent, voUrl);
+          }
+
+          // Show sync section
+          if (syncSection) syncSection.style.display = 'block';
+
+          // Start synced playback
+          if (typeof startSyncedPlayback === 'function') {
+            startSyncedPlayback();
+          }
+        });
+      }
+
+      if (syncStopBtn) {
+        syncStopBtn.addEventListener('click', function() {
+          if (typeof stopSyncedPlayback === 'function') {
+            stopSyncedPlayback();
+          }
+          if (syncSection) syncSection.style.display = 'none';
+        });
+      }
+    }
+
+    // =====================================================
+    // EXPORT SCRIPT BUTTON
+    // =====================================================
+
+    function initExportControls() {
+      const exportScriptBtn = document.getElementById('exportScriptBtn');
+      
+      if (exportScriptBtn) {
+        exportScriptBtn.addEventListener('click', function() {
+          const scriptContent = teleprompterText ? teleprompterText.textContent : '';
+          
+          if (!scriptContent) {
+            showStatus('No script to export', 'error');
+            return;
+          }
+
+          // Get selected script title
+          const selectedOption = scriptSelect.options[scriptSelect.selectedIndex];
+          const scriptTitle = selectedOption ? selectedOption.text : 'script';
+          
+          // Create download
+          const blob = new Blob([scriptContent], { type: 'text/plain' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = scriptTitle.replace(/[^a-z0-9]/gi, '-').toLowerCase() + '.txt';
+          a.click();
+          URL.revokeObjectURL(url);
+          
+          showStatus('Script downloaded!', 'success');
+        });
+      }
+
+      const exportAudioBtn = document.getElementById('exportAudioBtn');
+      
+      if (exportAudioBtn) {
+        exportAudioBtn.addEventListener('click', function() {
+          const voOption = voiceoverSelect.options[voiceoverSelect.selectedIndex];
+          const voUrl = voOption ? voOption.dataset.url : null;
+
+          if (!voUrl) {
+            showStatus('No audio to export', 'error');
+            return;
+          }
+
+          // Get export options
+          const normalize = document.getElementById('exportNormalize')?.checked || false;
+          const fadeIn = parseFloat(document.getElementById('exportFadeIn')?.value) || 0;
+          const fadeOut = parseFloat(document.getElementById('exportFadeOut')?.value) || 0;
+          const format = document.querySelector('.format-btn.active')?.dataset.format || 'wav';
+
+          // Use audioExport module if available
+          if (typeof exportAudio === 'function') {
+            exportAudio(voUrl, {
+              normalize: normalize,
+              fadeIn: fadeIn,
+              fadeOut: fadeOut,
+              format: format
+            });
+          } else {
+            // Fallback: direct download
+            const a = document.createElement('a');
+            a.href = voUrl;
+            a.download = 'audio-export.' + format;
+            a.click();
+          }
+        });
+      }
+    }
+
+    // =====================================================
+    // TRIM PANEL INTEGRATION
+    // =====================================================
+
+    function initTrimPanel() {
+      const trimVoiceoverBtn = document.getElementById('trimVoiceoverBtn');
+      const trimPanel = document.getElementById('trimPanel');
+
+      if (trimVoiceoverBtn && trimPanel) {
+        trimVoiceoverBtn.addEventListener('click', async function() {
+          const voOption = voiceoverSelect.options[voiceoverSelect.selectedIndex];
+          const voUrl = voOption ? voOption.dataset.url : null;
+
+          if (!voUrl) {
+            showStatus('Select voiceover first', 'error');
+            return;
+          }
+
+          // Show trim panel
+          trimPanel.style.display = 'block';
+
+          // Analyze audio and draw waveform
+          if (typeof analyzeAudio === 'function') {
+            const analysis = await analyzeAudio(voUrl);
+            if (analysis && typeof drawWaveform === 'function') {
+              drawWaveform(analysis.buffer, 'trimWaveform');
+            }
+            if (analysis && typeof initTrimmer === 'function') {
+              initTrimmer(analysis.buffer);
+            }
+          }
+        });
+      }
+
+      // Preview trim button
+      const previewTrimBtn = document.getElementById('previewTrimBtn');
+      if (previewTrimBtn) {
+        previewTrimBtn.addEventListener('click', function() {
+          if (typeof previewTrimmedAudio === 'function') {
+            previewTrimmedAudio();
+          }
+        });
+      }
+
+      // Apply trim button
+      const applyTrimBtn = document.getElementById('applyTrimBtn');
+      if (applyTrimBtn) {
+        applyTrimBtn.addEventListener('click', function() {
+          if (typeof applyTrim === 'function') {
+            applyTrim();
+            showStatus('Trim applied!', 'success');
+            if (trimPanel) trimPanel.style.display = 'none';
+          }
+        });
+      }
+    }
+
+    // =====================================================
+    // TRANSCRIBE INTEGRATION
+    // =====================================================
+
+    function initTranscribe() {
+      const transcribeBtn = document.getElementById('transcribeBtn');
+      
+      if (transcribeBtn) {
+        transcribeBtn.addEventListener('click', async function() {
+          const voOption = voiceoverSelect.options[voiceoverSelect.selectedIndex];
+          const voUrl = voOption ? voOption.dataset.url : null;
+
+          if (!voUrl) {
+            showStatus('Select voiceover first', 'error');
+            return;
+          }
+
+          if (typeof transcribeAudio === 'function') {
+            transcribeBtn.disabled = true;
+            transcribeBtn.textContent = '⏳ Transcribing...';
+            
+            try {
+              const result = await transcribeAudio(voUrl);
+              if (result) {
+                const resultEl = document.getElementById('transcriptionResult');
+                if (resultEl) {
+                  resultEl.textContent = result;
+                  resultEl.style.display = 'block';
+                }
+              }
+            } catch (e) {
+              showStatus('Transcription failed: ' + e.message, 'error');
+            }
+            
+            transcribeBtn.disabled = false;
+            transcribeBtn.textContent = '🎤 Transcribe';
+          }
+        });
+      }
+    }
+
+    // Initialize all integrations
+    initAudioTabs();
+    initSyncControls();
+    initExportControls();
+    initTrimPanel();
+    initTranscribe();
+
+    console.log('[UI] Module initialized with complete integrations');
   `;
 }
