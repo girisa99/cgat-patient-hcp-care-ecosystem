@@ -1008,6 +1008,60 @@ export function RecordingStudio({
           onClose={() => setShowRecordingPreview(false)}
           onSave={handleSaveRecording}
           onDiscard={handleDiscardRecording}
+          onTrim={async (startTime, endTime) => {
+            if (!lastRecordingBlob) return;
+            
+            try {
+              toast.info('Trimming video...');
+              
+              // Create a video element to extract the trimmed portion
+              const video = document.createElement('video');
+              video.src = URL.createObjectURL(lastRecordingBlob);
+              await new Promise(resolve => { video.onloadedmetadata = resolve; });
+              
+              // For browser-based trimming, we'll create a MediaRecorder with the trimmed section
+              // This is a simplified approach - full implementation would use FFmpeg/WASM
+              const canvas = document.createElement('canvas');
+              canvas.width = video.videoWidth || 1280;
+              canvas.height = video.videoHeight || 720;
+              const ctx = canvas.getContext('2d');
+              
+              const stream = canvas.captureStream(30);
+              const audioCtx = new AudioContext();
+              const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+              const chunks: Blob[] = [];
+              
+              mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) chunks.push(e.data);
+              };
+              
+              await new Promise<void>((resolve) => {
+                mediaRecorder.onstop = () => resolve();
+                
+                video.currentTime = startTime;
+                video.play();
+                mediaRecorder.start();
+                
+                const drawFrame = () => {
+                  if (video.currentTime >= endTime) {
+                    video.pause();
+                    mediaRecorder.stop();
+                    return;
+                  }
+                  ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+                  requestAnimationFrame(drawFrame);
+                };
+                drawFrame();
+              });
+              
+              const trimmedBlob = new Blob(chunks, { type: 'video/webm' });
+              setLastRecordingBlob(trimmedBlob);
+              toast.success(`Trimmed to ${(endTime - startTime).toFixed(1)}s`);
+            } catch (error) {
+              console.error('Trim error:', error);
+              toast.error('Trim failed');
+            }
+          }}
         />
 
         {/* Pre-Recording Script Selection Dialog */}

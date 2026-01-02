@@ -94,6 +94,62 @@ export const STUDIO_PRESETS: Record<string, StudioSoundSettings> = {
       threshold: -0.5,
     },
   },
+  webcast: {
+    enabled: true,
+    compressor: {
+      enabled: true,
+      threshold: -20,
+      ratio: 5,
+      attack: 0.002,
+      release: 0.15,
+      knee: 8,
+    },
+    eq: {
+      enabled: true,
+      lowCut: 90,
+      lowShelf: { frequency: 180, gain: -1 },
+      midPeak: { frequency: 2800, gain: 3.5, Q: 1.8 },
+      highShelf: { frequency: 9000, gain: 2.5 },
+    },
+    noiseGate: {
+      enabled: true,
+      threshold: -48,
+      attack: 8,
+      release: 80,
+    },
+    limiter: {
+      enabled: true,
+      threshold: -0.8,
+    },
+  },
+  screen_demo: {
+    enabled: true,
+    compressor: {
+      enabled: true,
+      threshold: -22,
+      ratio: 3.5,
+      attack: 0.005,
+      release: 0.2,
+      knee: 12,
+    },
+    eq: {
+      enabled: true,
+      lowCut: 100,
+      lowShelf: { frequency: 200, gain: -3 },
+      midPeak: { frequency: 3500, gain: 2.5, Q: 1.2 },
+      highShelf: { frequency: 8000, gain: 1.5 },
+    },
+    noiseGate: {
+      enabled: true,
+      threshold: -52,
+      attack: 15,
+      release: 120,
+    },
+    limiter: {
+      enabled: true,
+      threshold: -1.5,
+    },
+  },
   natural: {
     enabled: true,
     compressor: {
