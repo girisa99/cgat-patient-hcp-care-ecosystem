@@ -1,11 +1,14 @@
 /**
- * Recording Controls Component - Camera, Mic, Record buttons with pause/trim
+ * Recording Controls Component - Camera, Mic, Record buttons with pause/trim/transcribe
  */
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Camera, CameraOff, Mic, MicOff, Play, Pause, Square, Type, Sparkles, Image, Scissors, Undo } from 'lucide-react';
+import { 
+  Camera, CameraOff, Mic, MicOff, Play, Pause, Square, 
+  Type, Sparkles, Image, Scissors, Undo, Subtitles, FileText, Loader2 
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface RecordingControlsProps {
@@ -34,12 +37,21 @@ interface RecordingControlsProps {
   onToggleLogo: () => void;
   onUploadLogo: () => void;
 
-  // Trim controls (new)
+  // Captions toggle
+  captionsEnabled?: boolean;
+  onToggleCaptions?: () => void;
+
+  // Trim controls
   onTrimSeconds?: (seconds: number) => void;
   onUndoTrim?: () => void;
   canUndoTrim?: boolean;
   trimSeconds?: number;
   onTrimSecondsChange?: (seconds: number) => void;
+
+  // Transcription during pause
+  onTranscribe?: () => void;
+  isTranscribing?: boolean;
+  transcriptionText?: string | null;
 }
 
 export function RecordingControls({
@@ -60,11 +72,16 @@ export function RecordingControls({
   isLogoEnabled,
   onToggleLogo,
   onUploadLogo,
+  captionsEnabled = false,
+  onToggleCaptions,
   onTrimSeconds,
   onUndoTrim,
   canUndoTrim = false,
   trimSeconds = 5,
   onTrimSecondsChange,
+  onTranscribe,
+  isTranscribing = false,
+  transcriptionText,
 }: RecordingControlsProps) {
   return (
     <div className="space-y-3">
@@ -131,42 +148,87 @@ export function RecordingControls({
         >
           Upload Logo
         </Button>
+
+        {onToggleCaptions && (
+          <Button
+            variant={captionsEnabled ? 'default' : 'outline'}
+            size="sm"
+            onClick={onToggleCaptions}
+            className="gap-2"
+          >
+            <Subtitles className="w-4 h-4" />
+            Captions: {captionsEnabled ? 'ON' : 'OFF'}
+          </Button>
+        )}
       </div>
 
-      {/* Trim Controls - visible during recording when paused */}
-      {isRecording && isPaused && onTrimSeconds && (
-        <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
-          <span className="text-xs text-muted-foreground">Trim last</span>
-          {onTrimSecondsChange && (
-            <Slider
-              value={[trimSeconds]}
-              onValueChange={([v]) => onTrimSecondsChange(v)}
-              min={1}
-              max={30}
-              step={1}
-              className="w-20"
-            />
+      {/* Trim & Transcribe Controls - visible during recording when paused */}
+      {isRecording && isPaused && (
+        <div className="space-y-2 p-2 bg-muted/50 rounded-md">
+          {/* Trim Controls */}
+          {onTrimSeconds && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Trim last</span>
+              {onTrimSecondsChange && (
+                <Slider
+                  value={[trimSeconds]}
+                  onValueChange={([v]) => onTrimSecondsChange(v)}
+                  min={1}
+                  max={30}
+                  step={1}
+                  className="w-20"
+                />
+              )}
+              <span className="text-xs font-medium w-8">{trimSeconds}s</span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onTrimSeconds(trimSeconds)}
+                className="gap-1 h-7 text-xs"
+              >
+                <Scissors className="w-3 h-3" />
+                Trim
+              </Button>
+              {onUndoTrim && canUndoTrim && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={onUndoTrim}
+                  className="gap-1 h-7 text-xs"
+                >
+                  <Undo className="w-3 h-3" />
+                  Undo
+                </Button>
+              )}
+            </div>
           )}
-          <span className="text-xs font-medium w-8">{trimSeconds}s</span>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onTrimSeconds(trimSeconds)}
-            className="gap-1 h-7 text-xs"
-          >
-            <Scissors className="w-3 h-3" />
-            Trim
-          </Button>
-          {onUndoTrim && canUndoTrim && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={onUndoTrim}
-              className="gap-1 h-7 text-xs"
-            >
-              <Undo className="w-3 h-3" />
-              Undo
-            </Button>
+
+          {/* Transcribe Controls */}
+          {onTranscribe && (
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onTranscribe}
+                disabled={isTranscribing}
+                className="gap-1.5 h-7 text-xs"
+              >
+                {isTranscribing ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <FileText className="w-3 h-3" />
+                )}
+                {isTranscribing ? 'Transcribing...' : 'Transcribe Recording'}
+              </Button>
+            </div>
+          )}
+
+          {/* Transcription Result */}
+          {transcriptionText && (
+            <div className="p-2 bg-background/50 rounded text-xs max-h-20 overflow-y-auto border">
+              <p className="text-muted-foreground font-medium mb-1">Transcription:</p>
+              <p>{transcriptionText}</p>
+            </div>
           )}
         </div>
       )}

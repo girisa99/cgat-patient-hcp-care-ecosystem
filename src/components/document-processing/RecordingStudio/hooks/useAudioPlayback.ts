@@ -217,6 +217,12 @@ export function useAudioPlayback() {
     activeTab,
     isPlaying,
     audioTimeInfo, // Expose for teleprompter sync
+    // Expose audio element refs for recording mix
+    audioElements: {
+      voiceover: voiceoverRef.current,
+      music: musicRef.current,
+      tts: ttsRef.current,
+    },
     setActiveTab,
     playVoiceover,
     stopVoiceover,

@@ -100,6 +100,11 @@ export function RecordingStudio({
   // Pre-recording dialog state
   const [showPreRecordingDialog, setShowPreRecordingDialog] = useState(false);
   
+  // Captions and transcription state
+  const [captionsEnabled, setCaptionsEnabled] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [transcriptionText, setTranscriptionText] = useState<string | null>(null);
+  
   // Recording preview
   const [lastRecordingBlob, setLastRecordingBlob] = useState<Blob | null>(null);
   const [showRecordingPreview, setShowRecordingPreview] = useState(false);
@@ -191,6 +196,12 @@ export function RecordingStudio({
         // Show preview
         setLastRecordingBlob(blob);
         setShowRecordingPreview(true);
+      },
+      // Pass audio sources for mixing into recording
+      audioSources: {
+        voiceover: audioPlayback.audioElements?.voiceover,
+        tts: audioPlayback.audioElements?.tts,
+        music: audioPlayback.audioElements?.music,
       },
     }
   );
@@ -446,20 +457,71 @@ export function RecordingStudio({
     }
   }, [recording, audioPlayback, screenShare]);
 
-  // Trim handler with undo support
+  // Trim handler with undo support - now uses hook's trimLastSeconds
   const handleTrimSeconds = useCallback((seconds: number) => {
     if (!recording.recordedChunks || recording.recordedChunks.length === 0) {
       toast.info('Nothing to trim');
       return;
     }
     
-    // Store current state for undo
+    // Store current blob for undo before trimming
     const currentBlob = new Blob(recording.recordedChunks, { type: 'video/webm' });
     trimHistoryRef.current.push(currentBlob);
     
+    // Use the hook's trim function
+    recording.trimLastSeconds?.(seconds);
+    
     toast.success(`Trimmed last ${seconds} seconds`);
     setCanUndoTrim(true);
-  }, [recording.recordedChunks]);
+  }, [recording]);
+
+  // Transcribe current recording (during pause)
+  const handleTranscribeRecording = useCallback(async () => {
+    if (!recording.isPaused) {
+      toast.error('Pause recording to transcribe');
+      return;
+    }
+
+    const blob = recording.getCurrentBlob?.();
+    if (!blob) {
+      toast.error('No recording to transcribe');
+      return;
+    }
+
+    setIsTranscribing(true);
+    try {
+      // Convert blob to base64
+      const arrayBuffer = await blob.arrayBuffer();
+      const base64Audio = btoa(
+        String.fromCharCode(...new Uint8Array(arrayBuffer))
+      );
+
+      const response = await fetch(
+        `https://ithspbabhmdntioslfqe.supabase.co/functions/v1/voice-to-text`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0aHNwYmFiaG1kbnRpb3NsZnFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY5MjU5OTMsImV4cCI6MjA2MjUwMTk5M30.yUZZHsz2wIHboVuWWfqXeAH5oHRxzJIz20NWSUmHPhw`,
+          },
+          body: JSON.stringify({ audio: base64Audio }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Transcription failed');
+      }
+
+      const { text } = await response.json();
+      setTranscriptionText(text);
+      toast.success('Transcription complete!');
+    } catch (error) {
+      console.error('Transcription error:', error);
+      toast.error('Failed to transcribe recording');
+    } finally {
+      setIsTranscribing(false);
+    }
+  }, [recording]);
 
   const handleUndoTrim = useCallback(() => {
     if (trimHistoryRef.current.length === 0) {
@@ -661,11 +723,16 @@ export function RecordingStudio({
               isLogoEnabled={logo.enabled}
               onToggleLogo={() => setLogo(prev => ({ ...prev, enabled: !prev.enabled }))}
               onUploadLogo={handleLogoUpload}
+              captionsEnabled={captionsEnabled}
+              onToggleCaptions={() => setCaptionsEnabled(!captionsEnabled)}
               onTrimSeconds={handleTrimSeconds}
               onUndoTrim={handleUndoTrim}
               canUndoTrim={canUndoTrim}
               trimSeconds={trimSeconds}
               onTrimSecondsChange={setTrimSeconds}
+              onTranscribe={handleTranscribeRecording}
+              isTranscribing={isTranscribing}
+              transcriptionText={transcriptionText}
             />
           </div>
 
