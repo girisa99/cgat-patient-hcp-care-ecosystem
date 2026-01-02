@@ -68,6 +68,15 @@ interface MediaItem {
   size?: number;
 }
 
+// Types for saved scripts
+interface SavedScript {
+  id: string;
+  name: string;
+  content: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
 // Types for shows/events
 interface ShowEvent {
   id: string;
@@ -77,6 +86,8 @@ interface ShowEvent {
   scheduledDate: Date;
   participants: Participant[];
   scriptId?: string;
+  scriptContent?: string;
+  hostName?: string;
   status: 'scheduled' | 'live' | 'completed' | 'cancelled';
 }
 
@@ -859,6 +870,88 @@ export default function GenieStudio() {
   const [suggestedTitle, setSuggestedTitle] = useState('');
   const [suggestedIntro, setSuggestedIntro] = useState('');
   const [scheduleStep, setScheduleStep] = useState<'details' | 'content' | 'participants'>('details');
+  const [hostName, setHostName] = useState('');
+  const [attachScriptToInvite, setAttachScriptToInvite] = useState(true);
+  
+  // Saved Scripts State
+  const [savedScripts, setSavedScripts] = useState<SavedScript[]>([]);
+  const [savedVoiceovers, setSavedVoiceovers] = useState<MediaItem[]>([]);
+  const [savedMusic, setSavedMusic] = useState<MediaItem[]>([]);
+
+  // Load saved scripts from localStorage
+  useEffect(() => {
+    try {
+      const scripts = localStorage.getItem('genieStudioScripts');
+      if (scripts) setSavedScripts(JSON.parse(scripts));
+      
+      const voiceovers = localStorage.getItem('genieStudioVoiceovers');
+      if (voiceovers) setSavedVoiceovers(JSON.parse(voiceovers));
+      
+      const music = localStorage.getItem('genieStudioMusic');
+      if (music) setSavedMusic(JSON.parse(music));
+    } catch (e) {
+      console.error('Failed to load saved content:', e);
+    }
+  }, []);
+
+  const saveScript = () => {
+    if (!scriptName.trim() || !scriptContent.trim()) {
+      toast.error('Please add a name and content');
+      return;
+    }
+    const newScript: SavedScript = {
+      id: crypto.randomUUID(),
+      name: scriptName,
+      content: scriptContent,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+    const updated = [...savedScripts, newScript];
+    setSavedScripts(updated);
+    localStorage.setItem('genieStudioScripts', JSON.stringify(updated));
+    toast.success('Script saved!');
+  };
+
+  const loadScript = (script: SavedScript) => {
+    setScriptName(script.name);
+    setScriptContent(script.content);
+    toast.success(`Loaded "${script.name}"`);
+  };
+
+  const deleteScript = (id: string) => {
+    const updated = savedScripts.filter(s => s.id !== id);
+    setSavedScripts(updated);
+    localStorage.setItem('genieStudioScripts', JSON.stringify(updated));
+    toast.success('Script deleted');
+  };
+
+  const saveVoiceover = (url: string, name: string) => {
+    const newVoiceover: MediaItem = {
+      id: crypto.randomUUID(),
+      name,
+      type: 'audio',
+      url,
+      timestamp: Date.now()
+    };
+    const updated = [...savedVoiceovers, newVoiceover];
+    setSavedVoiceovers(updated);
+    localStorage.setItem('genieStudioVoiceovers', JSON.stringify(updated));
+    toast.success('Voiceover saved!');
+  };
+
+  const saveMusicTrack = (url: string, name: string) => {
+    const newMusic: MediaItem = {
+      id: crypto.randomUUID(),
+      name,
+      type: 'audio',
+      url,
+      timestamp: Date.now()
+    };
+    const updated = [...savedMusic, newMusic];
+    setSavedMusic(updated);
+    localStorage.setItem('genieStudioMusic', JSON.stringify(updated));
+    toast.success('Music saved!');
+  };
   
   // TTS Hook
   const { 
@@ -1111,12 +1204,18 @@ export default function GenieStudio() {
   };
 
   const handleCreateShow = async () => {
-    if (!newShowTitle.trim() || !newShowDate || !newShowTime) {
+    if (!newShowTitle.trim() || !newShowDate || !newShowTime || !hostName.trim()) {
       toast.error('Please fill in all required fields');
       return;
     }
 
     const scheduledDate = new Date(`${newShowDate}T${newShowTime}`);
+    
+    // Add host as default participant
+    const allParticipants = [
+      { name: hostName, email: '', role: 'host' as const, status: 'confirmed' as const, id: crypto.randomUUID() },
+      ...showParticipants.map(p => ({ ...p, id: crypto.randomUUID() }))
+    ];
     
     // Create event with participants
     const newEvent = addEvent({
@@ -1124,14 +1223,17 @@ export default function GenieStudio() {
       title: newShowTitle,
       description: newShowDescription,
       scheduledDate,
-      participants: showParticipants.map(p => ({ ...p, id: crypto.randomUUID() })),
+      participants: allParticipants,
+      scriptContent: showScript,
+      hostName: hostName,
       status: 'scheduled'
     });
 
-    // Send invites to all participants
-    if (showParticipants.length > 0) {
+    // Send invites to all participants (except host unless they have email)
+    const participantsToInvite = showParticipants.filter(p => p.email.trim());
+    if (participantsToInvite.length > 0) {
       setIsSendingInvite(true);
-      for (const participant of showParticipants) {
+      for (const participant of participantsToInvite) {
         try {
           await supabase.functions.invoke('send-show-invite', {
             body: {
@@ -1142,9 +1244,9 @@ export default function GenieStudio() {
               showTitle: newShowTitle,
               showDescription: newShowDescription,
               scheduledDate: scheduledDate.toISOString(),
-              hostName: 'Genie Studio',
+              hostName: hostName,
               topics: showTopics,
-              script: showScript.slice(0, 500), // Send preview of script
+              script: attachScriptToInvite ? showScript.slice(0, 500) : undefined,
               suggestedIntro: suggestedIntro
             }
           });
@@ -1153,7 +1255,7 @@ export default function GenieStudio() {
         }
       }
       setIsSendingInvite(false);
-      toast.success(`Invites sent to ${showParticipants.length} participant(s)!`);
+      toast.success(`Invites sent to ${participantsToInvite.length} participant(s)!`);
     }
 
     toast.success(`${newShowType.charAt(0).toUpperCase() + newShowType.slice(1)} scheduled!`);
@@ -1170,6 +1272,7 @@ export default function GenieStudio() {
     setSuggestedTitle('');
     setSuggestedIntro('');
     setScheduleStep('details');
+    setHostName('');
     
     // Load the appropriate template with filled content
     const templateId = newShowType === 'podcast' ? 'podcast-episode' : 
@@ -1352,37 +1455,34 @@ export default function GenieStudio() {
 
         {/* Main Content */}
         <div className="max-w-7xl mx-auto px-6 py-8">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-            {/* Scrollable Tabs */}
-            <ScrollArea className="w-full">
-              <TabsList className="bg-muted/50 border border-border/50 p-1 inline-flex w-auto min-w-full">
-                <TabsTrigger value="dashboard" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
-                  <Layers className="h-4 w-4 mr-2" />
-                  Dashboard
-                </TabsTrigger>
-                <TabsTrigger value="script-editor" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
-                  <PenTool className="h-4 w-4 mr-2" />
-                  Script Editor
-                </TabsTrigger>
-                <TabsTrigger value="voice-generator" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
-                  <Mic className="h-4 w-4 mr-2" />
-                  Voice Generator
-                </TabsTrigger>
-                <TabsTrigger value="music-studio" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
-                  <Music className="h-4 w-4 mr-2" />
-                  Music Studio
-                </TabsTrigger>
-                <TabsTrigger value="library" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
-                  <Library className="h-4 w-4 mr-2" />
-                  Library
-                </TabsTrigger>
-                <TabsTrigger value="templates" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Templates
-                </TabsTrigger>
-              </TabsList>
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            {/* Compact Tabs */}
+            <TabsList className="bg-muted/50 border border-border/50 p-1 grid grid-cols-6 w-full">
+              <TabsTrigger value="dashboard" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-2">
+                <Layers className="h-4 w-4 md:mr-1" />
+                <span className="hidden md:inline">Dashboard</span>
+              </TabsTrigger>
+              <TabsTrigger value="script-editor" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-2">
+                <PenTool className="h-4 w-4 md:mr-1" />
+                <span className="hidden md:inline">Scripts</span>
+              </TabsTrigger>
+              <TabsTrigger value="voice-generator" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-2">
+                <Mic className="h-4 w-4 md:mr-1" />
+                <span className="hidden md:inline">Voice</span>
+              </TabsTrigger>
+              <TabsTrigger value="music-studio" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-2">
+                <Music className="h-4 w-4 md:mr-1" />
+                <span className="hidden md:inline">Music</span>
+              </TabsTrigger>
+              <TabsTrigger value="library" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-2">
+                <Library className="h-4 w-4 md:mr-1" />
+                <span className="hidden md:inline">Library</span>
+              </TabsTrigger>
+              <TabsTrigger value="templates" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-2">
+                <FileText className="h-4 w-4 md:mr-1" />
+                <span className="hidden md:inline">Templates</span>
+              </TabsTrigger>
+            </TabsList>
 
             {/* Dashboard Tab */}
             <TabsContent value="dashboard" className="space-y-8 mt-0">
@@ -1718,10 +1818,65 @@ export default function GenieStudio() {
                         <Copy className="h-4 w-4 mr-2" />
                         Copy
                       </Button>
+                      <Button 
+                        variant="default"
+                        onClick={saveScript}
+                        disabled={!scriptContent.trim() || !scriptName.trim()}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Save
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Saved Scripts Section */}
+              {savedScripts.length > 0 && (
+                <Card className="border-border/50 bg-card/80 backdrop-blur">
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-blue-500" />
+                      Saved Scripts ({savedScripts.length})
+                    </h3>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {savedScripts.map((script) => (
+                        <div 
+                          key={script.id}
+                          className="p-4 rounded-lg border border-border/50 hover:border-primary/30 transition-all group"
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <h4 className="font-medium truncate flex-1">{script.name}</h4>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0"
+                              onClick={() => deleteScript(script.id)}
+                            >
+                              <Trash2 className="h-3 w-3 text-muted-foreground" />
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
+                            {script.content.slice(0, 100)}...
+                          </p>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(script.updatedAt).toLocaleDateString()}
+                            </span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => loadScript(script)}
+                            >
+                              Load
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             {/* Voice Generator Tab */}
@@ -1841,6 +1996,16 @@ export default function GenieStudio() {
                             <Download className="h-4 w-4 mr-2" />
                             Download
                           </Button>
+                          <Button 
+                            variant="default"
+                            onClick={() => {
+                              if (ttsResult?.audioUrl) {
+                                saveVoiceover(ttsResult.audioUrl, `Voiceover - ${new Date().toLocaleTimeString()}`);
+                              }
+                            }}
+                          >
+                            Save
+                          </Button>
                         </>
                       )}
                     </div>
@@ -1871,6 +2036,51 @@ export default function GenieStudio() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Saved Voiceovers Section */}
+              {savedVoiceovers.length > 0 && (
+                <Card className="border-border/50 bg-card/80 backdrop-blur">
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <Mic className="h-5 w-5 text-purple-500" />
+                      Saved Voiceovers ({savedVoiceovers.length})
+                    </h3>
+                    <div className="space-y-3">
+                      {savedVoiceovers.map((voiceover) => (
+                        <div 
+                          key={voiceover.id}
+                          className="flex items-center gap-4 p-3 rounded-lg border border-border/50 hover:border-primary/30 transition-all"
+                        >
+                          <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                            <Mic className="h-5 w-5 text-purple-500" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{voiceover.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(voiceover.timestamp).toLocaleDateString()}
+                            </p>
+                          </div>
+                          {voiceover.url && (
+                            <audio src={voiceover.url} controls className="h-8 w-48" />
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const updated = savedVoiceovers.filter(v => v.id !== voiceover.id);
+                              setSavedVoiceovers(updated);
+                              localStorage.setItem('genieStudioVoiceovers', JSON.stringify(updated));
+                              toast.success('Voiceover deleted');
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             {/* Music Studio Tab */}
@@ -1983,12 +2193,65 @@ export default function GenieStudio() {
                             <Download className="h-4 w-4 mr-2" />
                             Download
                           </Button>
+                          <Button 
+                            size="sm"
+                            onClick={() => {
+                              saveMusicTrack(generatedMusicUrl, `${selectedGenre || 'custom'} - ${new Date().toLocaleTimeString()}`);
+                            }}
+                          >
+                            Save to Library
+                          </Button>
                         </div>
                       </div>
                     )}
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Saved Music Section */}
+              {savedMusic.length > 0 && (
+                <Card className="border-border/50 bg-card/80 backdrop-blur">
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <Music className="h-5 w-5 text-green-500" />
+                      Saved Music Tracks ({savedMusic.length})
+                    </h3>
+                    <div className="space-y-3">
+                      {savedMusic.map((track) => (
+                        <div 
+                          key={track.id}
+                          className="flex items-center gap-4 p-3 rounded-lg border border-border/50 hover:border-primary/30 transition-all"
+                        >
+                          <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                            <Music className="h-5 w-5 text-green-500" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{track.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(track.timestamp).toLocaleDateString()}
+                            </p>
+                          </div>
+                          {track.url && (
+                            <audio src={track.url} controls className="h-8 w-48" />
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const updated = savedMusic.filter(m => m.id !== track.id);
+                              setSavedMusic(updated);
+                              localStorage.setItem('genieStudioMusic', JSON.stringify(updated));
+                              toast.success('Music track deleted');
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             {/* Library Tab */}
@@ -2187,9 +2450,9 @@ export default function GenieStudio() {
           <RecordingStudio
             isOpen={isStudioOpen}
             onClose={handleStudioClose}
-            scripts={[]}
-            voiceovers={[]}
-            music={[]}
+            scripts={savedScripts.map(s => ({ id: s.id, title: s.name, name: s.name, content: s.content }))}
+            voiceovers={savedVoiceovers.map(v => ({ id: v.id, name: v.name, url: v.url || '' }))}
+            music={savedMusic.map(m => ({ id: m.id, name: m.name, url: m.url || '' }))}
           />
         )}
 
@@ -2279,6 +2542,20 @@ export default function GenieStudio() {
                     ))}
                   </div>
                 </div>
+                
+                {/* Host Name */}
+                <div>
+                  <Label htmlFor="host-name">Host Name *</Label>
+                  <Input
+                    id="host-name"
+                    value={hostName}
+                    onChange={(e) => setHostName(e.target.value)}
+                    placeholder="Your name as the host..."
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">You will be automatically added as host and receive an invite.</p>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="show-date">Date *</Label>
@@ -2318,7 +2595,26 @@ export default function GenieStudio() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="show-script">Script / Outline (optional)</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="show-script">Script / Outline</Label>
+                    {savedScripts.length > 0 && (
+                      <Select onValueChange={(id) => {
+                        const script = savedScripts.find(s => s.id === id);
+                        if (script) setShowScript(script.content);
+                      }}>
+                        <SelectTrigger className="w-[180px] h-8 text-xs">
+                          <SelectValue placeholder="Load saved script" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {savedScripts.map(script => (
+                            <SelectItem key={script.id} value={script.id}>
+                              {script.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
                   <Textarea
                     id="show-script"
                     value={showScript}
@@ -2326,6 +2622,20 @@ export default function GenieStudio() {
                     placeholder="Paste your script or outline here. This will be shared with participants..."
                     className="mt-1 min-h-[120px] font-mono text-sm"
                   />
+                </div>
+                
+                {/* Attach Script Option */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="attach-script"
+                    checked={attachScriptToInvite}
+                    onChange={(e) => setAttachScriptToInvite(e.target.checked)}
+                    className="rounded border-border"
+                  />
+                  <Label htmlFor="attach-script" className="text-sm cursor-pointer">
+                    Include script preview in participant invites
+                  </Label>
                 </div>
                 
                 {/* AI Suggestions */}
@@ -2532,7 +2842,7 @@ export default function GenieStudio() {
               {scheduleStep !== 'participants' ? (
                 <Button 
                   onClick={() => setScheduleStep(scheduleStep === 'details' ? 'content' : 'participants')}
-                  disabled={scheduleStep === 'details' && (!newShowDate || !newShowTime)}
+                  disabled={scheduleStep === 'details' && (!newShowDate || !newShowTime || !hostName.trim())}
                   className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
                 >
                   Next Step
