@@ -3,10 +3,9 @@
  * TTS with ElevenLabs/OpenAI provider selection and download
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -155,271 +154,302 @@ export function AudioPanel({
   };
 
   return (
-    <div className="bg-card rounded-lg border p-3">
-      <Tabs value={activeTab} onValueChange={(v) => onTabChange(v as AudioTabType)}>
-        <TabsList className="w-full grid grid-cols-3 h-9 mb-3 bg-muted p-1">
-          <TabsTrigger value="voiceover" className="text-xs gap-1 data-[state=active]:bg-background">
-            <Mic className="w-3 h-3" />
-            <span>Voice</span>
-          </TabsTrigger>
-          <TabsTrigger value="tts" className="text-xs gap-1 data-[state=active]:bg-background">
-            <Volume2 className="w-3 h-3" />
-            <span>TTS</span>
-          </TabsTrigger>
-          <TabsTrigger value="music" className="text-xs gap-1 data-[state=active]:bg-background">
-            🎵 <span>Music</span>
-          </TabsTrigger>
-        </TabsList>
+    <div className="bg-card rounded-lg border overflow-hidden">
+      {/* Custom Tab Header */}
+      <div className="flex border-b bg-muted/30">
+        <button
+          onClick={() => onTabChange('voiceover')}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors ${
+            activeTab === 'voiceover' 
+              ? 'bg-background text-foreground border-b-2 border-primary' 
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+          }`}
+        >
+          <Mic className="w-3.5 h-3.5" />
+          Voice
+        </button>
+        <button
+          onClick={() => onTabChange('tts')}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors ${
+            activeTab === 'tts' 
+              ? 'bg-background text-foreground border-b-2 border-primary' 
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+          }`}
+        >
+          <Volume2 className="w-3.5 h-3.5" />
+          TTS
+        </button>
+        <button
+          onClick={() => onTabChange('music')}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors ${
+            activeTab === 'music' 
+              ? 'bg-background text-foreground border-b-2 border-primary' 
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+          }`}
+        >
+          🎵 Music
+        </button>
+      </div>
 
-        <TabsContent value="voiceover" className="space-y-2 mt-0">
-          <Select 
-            value={selectedVoiceoverId || "none"} 
-            onValueChange={(v) => onVoiceoverChange(v === "none" ? "" : v)}
-          >
-            <SelectTrigger className="bg-background h-8 text-xs">
-              <SelectValue>
-                {selectedVoiceover?.name || (voiceovers.length > 0 ? "Select voiceover" : "No voiceovers")}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent className="bg-popover border shadow-md z-[9999]">
-              <SelectItem value="none">None</SelectItem>
-              {voiceovers.map((v) => (
-                <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <div className="flex gap-1">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={!selectedVoiceoverId}
-              onClick={isVoiceoverPlaying ? onStopVoiceover : onPlayVoiceover}
-              className="gap-1 h-7 text-xs flex-1"
+      {/* Tab Content */}
+      <div className="p-3">
+        {/* Voiceover Tab */}
+        {activeTab === 'voiceover' && (
+          <div className="space-y-3">
+            <Select 
+              value={selectedVoiceoverId || "none"} 
+              onValueChange={(v) => onVoiceoverChange(v === "none" ? "" : v)}
             >
-              {isVoiceoverPlaying ? <Square className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-              {isVoiceoverPlaying ? 'Stop' : 'Play'}
-            </Button>
-            {selectedVoiceover && (
+              <SelectTrigger className="bg-background h-9 text-sm">
+                <SelectValue placeholder="Select voiceover">
+                  {selectedVoiceover?.name || "Select voiceover"}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {voiceovers.map((v) => (
+                  <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="flex gap-2">
               <Button
                 size="sm"
                 variant="outline"
-                className="h-7 px-2"
-                onClick={() => handleExportAudio(selectedVoiceover.url, selectedVoiceover.name)}
-                title="Download audio"
+                disabled={!selectedVoiceoverId}
+                onClick={isVoiceoverPlaying ? onStopVoiceover : onPlayVoiceover}
+                className="gap-1.5 h-8 flex-1"
               >
-                <Download className="w-3 h-3" />
+                {isVoiceoverPlaying ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                {isVoiceoverPlaying ? 'Stop' : 'Play'}
+              </Button>
+              {selectedVoiceover && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 px-3"
+                  onClick={() => handleExportAudio(selectedVoiceover.url, selectedVoiceover.name)}
+                  title="Download audio"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                </Button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Volume2 className="w-4 h-4 text-muted-foreground shrink-0" />
+              <Slider
+                value={[voiceoverVolume]}
+                onValueChange={([v]) => onVoiceoverVolumeChange(v)}
+                max={100}
+                step={1}
+                className="flex-1"
+              />
+              <span className="text-xs text-muted-foreground w-9 text-right">{voiceoverVolume}%</span>
+            </div>
+
+            {onTranscribe && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onTranscribe}
+                disabled={isTranscribing || !selectedVoiceoverId}
+                className="w-full gap-1.5 h-8"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                {isTranscribing ? 'Transcribing...' : 'Transcribe'}
               </Button>
             )}
+            
+            {transcriptionText && (
+              <div className="p-2.5 bg-muted/50 rounded-md text-xs max-h-20 overflow-y-auto">
+                {transcriptionText}
+              </div>
+            )}
           </div>
-
-          <div className="flex items-center gap-2">
-            <Volume2 className="w-3 h-3 text-muted-foreground shrink-0" />
-            <Slider
-              value={[voiceoverVolume]}
-              onValueChange={([v]) => onVoiceoverVolumeChange(v)}
-              max={100}
-              step={1}
-              className="flex-1"
-            />
-            <span className="text-xs text-muted-foreground w-8">{voiceoverVolume}%</span>
-          </div>
-
-          {onTranscribe && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onTranscribe}
-              disabled={isTranscribing || !selectedVoiceoverId}
-              className="w-full gap-1 h-7 text-xs"
-            >
-              <FileText className="w-3 h-3" />
-              {isTranscribing ? 'Transcribing...' : 'Transcribe'}
-            </Button>
-          )}
-          
-          {transcriptionText && (
-            <div className="p-2 bg-muted/50 rounded text-xs max-h-16 overflow-y-auto">
-              {transcriptionText}
-            </div>
-          )}
-        </TabsContent>
+        )}
 
         {/* TTS Tab */}
-        <TabsContent value="tts" className="space-y-2 mt-0">
-          {/* Provider Selection */}
-          {onTTSProviderChange && (
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Provider</Label>
-              <RadioGroup 
-                value={ttsProvider} 
-                onValueChange={(v) => onTTSProviderChange(v as 'openai' | 'elevenlabs')}
-                className="flex gap-3"
-              >
-                <div className="flex items-center space-x-1">
-                  <RadioGroupItem value="openai" id="openai" className="h-3 w-3" />
-                  <Label htmlFor="openai" className="text-xs cursor-pointer">OpenAI</Label>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <RadioGroupItem value="elevenlabs" id="elevenlabs" className="h-3 w-3" />
-                  <Label htmlFor="elevenlabs" className="text-xs cursor-pointer">ElevenLabs</Label>
-                </div>
-              </RadioGroup>
-            </div>
-          )}
-
-          {currentScriptContent && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onTTSTextChange(currentScriptContent)}
-              className="w-full gap-1 h-7 text-xs"
-            >
-              📝 Use Script
-            </Button>
-          )}
-
-          <Textarea
-            value={ttsText}
-            onChange={(e) => onTTSTextChange(e.target.value)}
-            placeholder="Enter text for TTS..."
-            className="min-h-[60px] text-xs resize-none"
-          />
-
-          <Select value={selectedVoice} onValueChange={onVoiceChange}>
-            <SelectTrigger className="bg-background h-8 text-xs">
-              <SelectValue>
-                {voiceOptions.find(v => v.value === selectedVoice)?.label || "Select voice"}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent className="bg-popover border shadow-md z-[9999]">
-              {voiceOptions.map((v) => (
-                <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <div className="flex gap-1">
-            <Button
-              size="sm"
-              onClick={onGenerateTTS}
-              disabled={!ttsText || isTTSGenerating}
-              className="gap-1 h-7 text-xs flex-1"
-            >
-              {isTTSGenerating ? (
-                <>
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  🔊 Generate
-                </>
-              )}
-            </Button>
-            
-            {hasTTSAudio && (
-              <>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={isTTSPlaying ? onStopTTS : onPlayTTS}
-                  className="h-7 px-2"
+        {activeTab === 'tts' && (
+          <div className="space-y-3">
+            {/* Provider Selection */}
+            {onTTSProviderChange && (
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Provider</Label>
+                <RadioGroup 
+                  value={ttsProvider} 
+                  onValueChange={(v) => onTTSProviderChange(v as 'openai' | 'elevenlabs')}
+                  className="flex gap-4"
                 >
-                  {isTTSPlaying ? <Square className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleDownloadTTS}
-                  className="h-7 px-2"
-                  title="Download TTS audio"
-                >
-                  <Download className="w-3 h-3" />
-                </Button>
-              </>
+                  <div className="flex items-center space-x-1.5">
+                    <RadioGroupItem value="openai" id="openai" className="h-3.5 w-3.5" />
+                    <Label htmlFor="openai" className="text-xs cursor-pointer">OpenAI</Label>
+                  </div>
+                  <div className="flex items-center space-x-1.5">
+                    <RadioGroupItem value="elevenlabs" id="elevenlabs" className="h-3.5 w-3.5" />
+                    <Label htmlFor="elevenlabs" className="text-xs cursor-pointer">ElevenLabs</Label>
+                  </div>
+                </RadioGroup>
+              </div>
             )}
-          </div>
 
-          <div className="flex items-center gap-2">
-            <Volume2 className="w-3 h-3 text-muted-foreground shrink-0" />
-            <Slider
-              value={[ttsVolume]}
-              onValueChange={([v]) => onTTSVolumeChange(v)}
-              max={100}
-              step={1}
-              className="flex-1"
-            />
-            <span className="text-xs text-muted-foreground w-8">{ttsVolume}%</span>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="music" className="space-y-2 mt-0">
-          <Select 
-            value={selectedMusicId || "none"} 
-            onValueChange={(v) => onMusicChange(v === "none" ? "" : v)}
-          >
-            <SelectTrigger className="bg-background h-8 text-xs">
-              <SelectValue>
-                {selectedMusic?.name || (musicList.length > 0 ? "Select music" : "No music")}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent className="bg-popover border shadow-md z-[9999]">
-              <SelectItem value="none">None</SelectItem>
-              {musicList.map((m) => (
-                <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <div className="flex gap-1">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={!selectedMusicId}
-              onClick={isMusicPlaying ? onStopMusic : onPlayMusic}
-              className="gap-1 h-7 text-xs flex-1"
-            >
-              {isMusicPlaying ? <Square className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-              {isMusicPlaying ? 'Stop' : 'Play'}
-            </Button>
-            
-            <Button
-              size="sm"
-              variant={musicLoop ? 'default' : 'outline'}
-              onClick={onToggleMusicLoop}
-              className="h-7 px-2"
-              title="Loop"
-            >
-              <Repeat className="w-3 h-3" />
-            </Button>
-
-            {selectedMusic && (
+            {currentScriptContent && (
               <Button
                 size="sm"
                 variant="outline"
-                className="h-7 px-2"
-                onClick={() => handleExportAudio(selectedMusic.url, selectedMusic.name)}
-                title="Download"
+                onClick={() => onTTSTextChange(currentScriptContent)}
+                className="w-full gap-1.5 h-8"
               >
-                <Download className="w-3 h-3" />
+                📝 Use Script
               </Button>
             )}
-          </div>
 
-          <div className="flex items-center gap-2">
-            <Volume2 className="w-3 h-3 text-muted-foreground shrink-0" />
-            <Slider
-              value={[musicVolume]}
-              onValueChange={([v]) => onMusicVolumeChange(v)}
-              max={100}
-              step={1}
-              className="flex-1"
+            <Textarea
+              value={ttsText}
+              onChange={(e) => onTTSTextChange(e.target.value)}
+              placeholder="Enter text for TTS..."
+              className="min-h-[70px] text-sm resize-none"
             />
-            <span className="text-xs text-muted-foreground w-8">{musicVolume}%</span>
+
+            <Select value={selectedVoice} onValueChange={onVoiceChange}>
+              <SelectTrigger className="bg-background h-9 text-sm">
+                <SelectValue placeholder="Select voice">
+                  {voiceOptions.find(v => v.value === selectedVoice)?.label || "Select voice"}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {voiceOptions.map((v) => (
+                  <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={onGenerateTTS}
+                disabled={!ttsText || isTTSGenerating}
+                className="gap-1.5 h-8 flex-1"
+              >
+                {isTTSGenerating ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    🔊 Generate
+                  </>
+                )}
+              </Button>
+              
+              {hasTTSAudio && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={isTTSPlaying ? onStopTTS : onPlayTTS}
+                    className="h-8 px-3"
+                  >
+                    {isTTSPlaying ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleDownloadTTS}
+                    className="h-8 px-3"
+                    title="Download TTS audio"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                  </Button>
+                </>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Volume2 className="w-4 h-4 text-muted-foreground shrink-0" />
+              <Slider
+                value={[ttsVolume]}
+                onValueChange={([v]) => onTTSVolumeChange(v)}
+                max={100}
+                step={1}
+                className="flex-1"
+              />
+              <span className="text-xs text-muted-foreground w-9 text-right">{ttsVolume}%</span>
+            </div>
           </div>
-        </TabsContent>
-      </Tabs>
+        )}
+
+        {/* Music Tab */}
+        {activeTab === 'music' && (
+          <div className="space-y-3">
+            <Select 
+              value={selectedMusicId || "none"} 
+              onValueChange={(v) => onMusicChange(v === "none" ? "" : v)}
+            >
+              <SelectTrigger className="bg-background h-9 text-sm">
+                <SelectValue placeholder="Select music">
+                  {selectedMusic?.name || "Select instrumental/music"}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {musicList.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!selectedMusicId}
+                onClick={isMusicPlaying ? onStopMusic : onPlayMusic}
+                className="gap-1.5 h-8 flex-1"
+              >
+                {isMusicPlaying ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                {isMusicPlaying ? 'Stop' : 'Play'}
+              </Button>
+              
+              <Button
+                size="sm"
+                variant={musicLoop ? 'default' : 'outline'}
+                onClick={onToggleMusicLoop}
+                className="h-8 px-3"
+                title="Loop"
+              >
+                <Repeat className="w-3.5 h-3.5" />
+              </Button>
+
+              {selectedMusic && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 px-3"
+                  onClick={() => handleExportAudio(selectedMusic.url, selectedMusic.name)}
+                  title="Download"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                </Button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Volume2 className="w-4 h-4 text-muted-foreground shrink-0" />
+              <Slider
+                value={[musicVolume]}
+                onValueChange={([v]) => onMusicVolumeChange(v)}
+                max={100}
+                step={1}
+                className="flex-1"
+              />
+              <span className="text-xs text-muted-foreground w-9 text-right">{musicVolume}%</span>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
