@@ -6274,6 +6274,32 @@ export function generatePopoutHTML(config: PopoutConfig): string {
     try {
       var scriptCode = decodeURIComponent(escape(atob('${scriptBase64}')));
       window.debugPopout('Script decoded, length: ' + scriptCode.length);
+      
+      // Validate syntax before executing
+      try {
+        new Function(scriptCode);
+        window.debugPopout('Syntax validation passed');
+      } catch(syntaxErr) {
+        window.debugPopout('SYNTAX ERROR: ' + syntaxErr.message);
+        console.error('Syntax error in generated script:', syntaxErr);
+        
+        // Find the problematic line
+        var lines = scriptCode.split('\\n');
+        var match = syntaxErr.message.match(/line (\\d+)/i);
+        if (match) {
+          var lineNum = parseInt(match[1], 10);
+          window.debugPopout('Error around line ' + lineNum + ':');
+          for (var i = Math.max(0, lineNum - 3); i < Math.min(lines.length, lineNum + 3); i++) {
+            var prefix = (i + 1) === lineNum ? '>>> ' : '    ';
+            console.log(prefix + 'Line ' + (i + 1) + ': ' + lines[i]);
+            if (Math.abs(i + 1 - lineNum) <= 1) {
+              window.debugPopout(prefix + (i + 1) + ': ' + lines[i].substring(0, 60));
+            }
+          }
+        }
+        throw syntaxErr;
+      }
+      
       var scriptEl = document.createElement('script');
       scriptEl.textContent = scriptCode;
       document.body.appendChild(scriptEl);
