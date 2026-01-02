@@ -63,6 +63,7 @@ import { RecordingStudio } from '@/components/document-processing/RecordingStudi
 import { toast } from 'sonner';
 import { useTTSGeneration, OPENAI_VOICES, ELEVENLABS_VOICES } from '@/components/document-processing/RecordingStudio/hooks/useTTSGeneration';
 import { ScriptEditorTab } from '@/components/genie-studio/ScriptEditorTab';
+import { useGenieMediaLibrary } from '@/components/genie-studio/useGenieMediaLibrary';
 import { supabase } from '@/integrations/supabase/client';
 
 // Types for media items
@@ -1030,6 +1031,50 @@ export default function GenieStudio() {
   // Load real media from localStorage
   const { videos, audios, isLoading, loadMedia, deleteMedia } = useMediaLibrary();
   
+  // Load media from database (voiceovers, music, TTS files)
+  const { 
+    instrumentalMusic: dbMusic, 
+    ttsFiles: dbTtsFiles, 
+    voiceovers: dbVoiceovers,
+    customVoices: dbCustomVoices,
+    isLoading: isDbLoading,
+    refresh: refreshDbMedia 
+  } = useGenieMediaLibrary();
+  
+  // Merge localStorage voiceovers with database voiceovers (DB takes priority)
+  const mergedVoiceovers = [
+    ...dbVoiceovers.map(v => ({
+      id: v.id,
+      name: v.name,
+      type: 'audio' as const,
+      url: v.url,
+      timestamp: v.timestamp || Date.now()
+    })),
+    ...dbTtsFiles.map(v => ({
+      id: v.id,
+      name: v.name,
+      type: 'audio' as const,
+      url: v.url,
+      timestamp: v.timestamp || Date.now()
+    })),
+    ...savedVoiceovers.filter(sv => 
+      !dbVoiceovers.some(dv => dv.id === sv.id) && 
+      !dbTtsFiles.some(dv => dv.id === sv.id)
+    )
+  ];
+  
+  // Merge localStorage music with database instrumental files
+  const mergedMusic = [
+    ...dbMusic.map(m => ({
+      id: m.id,
+      name: m.name,
+      type: 'audio' as const,
+      url: m.url,
+      timestamp: Date.now()
+    })),
+    ...savedMusic.filter(sm => !dbMusic.some(dm => dm.id === sm.id))
+  ];
+  
   // Show events
   const { events, upcomingEvents, addEvent, updateEvent, deleteEvent, addParticipant } = useShowEvents();
 
@@ -1045,6 +1090,7 @@ export default function GenieStudio() {
   const handleStudioClose = () => {
     setIsStudioOpen(false);
     loadMedia();
+    refreshDbMedia(); // Also refresh database media
   };
 
   const handleFeatureClick = (featureId: string) => {
@@ -2297,25 +2343,31 @@ export default function GenieStudio() {
               {/* Saved Voiceovers Section - Categorized */}
               <Card className="border-border/50 bg-card/80 backdrop-blur">
                 <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <Mic className="h-5 w-5 text-purple-500" />
-                    Saved Audio Files
-                  </h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Mic className="h-5 w-5 text-purple-500" />
+                      Saved Audio Files
+                      {isDbLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                    </h3>
+                    <Button variant="ghost" size="sm" onClick={refreshDbMedia}>
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                  </div>
                   
                   {/* Filter Tabs */}
                   <div className="flex gap-2 mb-4 flex-wrap">
                     <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30">
-                      All ({savedVoiceovers.length})
+                      All ({mergedVoiceovers.length})
                     </Badge>
                     <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
-                      TTS ({savedVoiceovers.filter(v => v.name?.toLowerCase().includes('tts') || v.name?.toLowerCase().includes('generated')).length})
+                      TTS ({dbTtsFiles.length})
                     </Badge>
                     <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30">
-                      Voiceovers ({savedVoiceovers.filter(v => v.name?.toLowerCase().includes('voiceover') || v.name?.toLowerCase().includes('recording')).length})
+                      Voiceovers ({dbVoiceovers.length})
                     </Badge>
                   </div>
                   
-                  {savedVoiceovers.length === 0 ? (
+                  {mergedVoiceovers.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
                       <Mic className="h-12 w-12 mx-auto mb-4 opacity-50" />
                       <p>No voiceovers saved yet</p>
@@ -2323,10 +2375,14 @@ export default function GenieStudio() {
                     </div>
                   ) : (
                     <div className="space-y-3 max-h-80 overflow-y-auto">
-                      {savedVoiceovers.map((voiceover) => {
-                        // Determine type badge
-                        const isTTS = voiceover.name?.toLowerCase().includes('tts') || voiceover.name?.toLowerCase().includes('generated');
-                        const isVO = voiceover.name?.toLowerCase().includes('voiceover') || voiceover.name?.toLowerCase().includes('recording');
+                      {mergedVoiceovers.map((voiceover) => {
+                        // Check if from database TTS or voiceover lists
+                        const isTTS = dbTtsFiles.some(t => t.id === voiceover.id) || 
+                          voiceover.name?.toLowerCase().includes('tts') || 
+                          voiceover.name?.toLowerCase().includes('generated');
+                        const isVO = dbVoiceovers.some(v => v.id === voiceover.id) || 
+                          voiceover.name?.toLowerCase().includes('voiceover') || 
+                          voiceover.name?.toLowerCase().includes('recording');
                         
                         return (
                           <div 
@@ -2546,11 +2602,22 @@ export default function GenieStudio() {
               {/* Saved Music Section */}
               <Card className="border-border/50 bg-card/80 backdrop-blur">
                 <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <Music className="h-5 w-5 text-green-500" />
-                    Saved Music Tracks ({savedMusic.length})
-                  </h3>
-                  {savedMusic.length === 0 ? (
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Music className="h-5 w-5 text-green-500" />
+                      Saved Music Tracks ({mergedMusic.length})
+                      {isDbLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
+                        {dbMusic.length} from DB
+                      </Badge>
+                      <Button variant="ghost" size="sm" onClick={refreshDbMedia}>
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  {mergedMusic.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
                       <Music className="h-12 w-12 mx-auto mb-4 opacity-50" />
                       <p>No music saved yet</p>
@@ -2558,37 +2625,47 @@ export default function GenieStudio() {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {savedMusic.map((track) => (
-                        <div 
-                          key={track.id}
-                          className="flex items-center gap-4 p-3 rounded-lg border border-border/50 hover:border-primary/30 transition-all"
-                        >
-                          <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                            <Music className="h-5 w-5 text-green-500" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{track.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(track.timestamp).toLocaleDateString()}
-                            </p>
-                          </div>
-                          {track.url && (
-                            <audio src={track.url} controls className="h-8 w-48" />
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              const updated = savedMusic.filter(m => m.id !== track.id);
-                              setSavedMusic(updated);
-                              localStorage.setItem('genieStudioMusic', JSON.stringify(updated));
-                              toast.success('Music track deleted');
-                            }}
+                      {mergedMusic.map((track) => {
+                        const isFromDb = dbMusic.some(m => m.id === track.id);
+                        return (
+                          <div 
+                            key={track.id}
+                            className="flex items-center gap-4 p-3 rounded-lg border border-border/50 hover:border-primary/30 transition-all"
                           >
-                            <Trash2 className="h-4 w-4 text-muted-foreground" />
-                          </Button>
-                        </div>
-                      ))}
+                            <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                              <Music className="h-5 w-5 text-green-500" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium truncate">{track.name}</p>
+                                {isFromDb && (
+                                  <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
+                                    DB
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(track.timestamp).toLocaleDateString()}
+                              </p>
+                            </div>
+                            {track.url && (
+                              <audio src={track.url} controls className="h-8 w-48" />
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const updated = savedMusic.filter(m => m.id !== track.id);
+                                setSavedMusic(updated);
+                                localStorage.setItem('genieStudioMusic', JSON.stringify(updated));
+                                toast.success('Music track deleted');
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </CardContent>
@@ -2801,16 +2878,16 @@ export default function GenieStudio() {
               cleanContent: s.cleanContent,
               type: s.type
             }))}
-            voiceovers={savedVoiceovers.map(v => ({ 
+            voiceovers={mergedVoiceovers.map(v => ({ 
               id: v.id, 
               name: v.name, 
               url: v.url || '',
-              // Flag which voiceovers came from script TTS
+              // Flag which voiceovers came from database
               scriptText: undefined,
               scriptType: undefined,
               metadataType: undefined
             }))}
-            music={savedMusic.map(m => ({ id: m.id, name: m.name, url: m.url || '' }))}
+            music={mergedMusic.map(m => ({ id: m.id, name: m.name, url: m.url || '' }))}
           />
         )}
 
