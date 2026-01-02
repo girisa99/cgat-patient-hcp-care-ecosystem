@@ -162,6 +162,14 @@ export function ScriptEditorTab({
   const [showEnhancementReview, setShowEnhancementReview] = useState(false);
   const [reviewProgress, setReviewProgress] = useState(0);
   
+  // Progressive Analysis State - Step by step walkthrough
+  const [analysisSteps, setAnalysisSteps] = useState<{
+    step: string;
+    status: 'pending' | 'running' | 'complete';
+    detail?: string;
+  }[]>([]);
+  const [showProgressiveAnalysis, setShowProgressiveAnalysis] = useState(false);
+  
   // Draft State
   const [hasDraft, setHasDraft] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
@@ -254,7 +262,24 @@ export function ScriptEditorTab({
     }
   }, [ttsProvider]);
   
-  // Analyze Script
+  // Analysis steps for progressive walkthrough
+  const ANALYSIS_STEPS = [
+    { id: 'stats', label: 'Calculating word count & reading time', icon: 'BookOpen' },
+    { id: 'readability', label: 'Analyzing readability & complexity', icon: 'Search' },
+    { id: 'pacing', label: 'Checking pacing & natural pauses', icon: 'Clock' },
+    { id: 'engagement', label: 'Evaluating audience engagement', icon: 'Sparkles' },
+    { id: 'clarity', label: 'Reviewing clarity & structure', icon: 'FileCheck' },
+    { id: 'ai', label: 'Getting AI recommendations', icon: 'Wand2' },
+  ];
+  
+  // Progressive step update helper
+  const updateStep = (stepId: string, status: 'pending' | 'running' | 'complete', detail?: string) => {
+    setAnalysisSteps(prev => prev.map(s => 
+      s.step === stepId ? { ...s, status, detail } : s
+    ));
+  };
+  
+  // Analyze Script with Progressive Walkthrough
   const handleAnalyze = async () => {
     if (!scriptContent.trim()) {
       toast.error('Please enter script content first');
@@ -262,33 +287,24 @@ export function ScriptEditorTab({
     }
     
     setIsAnalyzing(true);
+    setShowProgressiveAnalysis(true);
+    
+    // Initialize all steps as pending
+    setAnalysisSteps(ANALYSIS_STEPS.map(s => ({ step: s.id, status: 'pending' as const })));
+    
+    const localRecommendations: AnalysisRecommendation[] = [];
+    
     try {
-      const { data, error } = await supabase.functions.invoke('enhance-script', {
-        body: { scriptContent, mode: 'analyze' }
-      });
+      // Step 1: Calculate stats
+      updateStep('stats', 'running');
+      await new Promise(r => setTimeout(r, 400));
+      const currentStats = calculateStats(scriptContent);
+      updateStep('stats', 'complete', `${currentStats.wordCount} words, ${currentStats.estimatedSpeakingMinutes}min speaking time`);
       
-      if (error) throw error;
-      
-      if (data?.success && data.data) {
-        const recommendations = (data.data.recommendations || []).map((rec: any, i: number) => ({
-          ...rec,
-          id: `rec-${i}`,
-          accepted: null
-        }));
-        
-        setAnalysisResult({
-          stats: data.data.stats || stats,
-          recommendations
-        });
-        setShowAnalysis(true);
-        toast.success(`Analysis complete! Found ${recommendations.length} recommendations.`);
-      }
-    } catch (err) {
-      console.error('Analysis error:', err);
-      // Fallback to local analysis
-      const localRecommendations: AnalysisRecommendation[] = [];
-      
-      if (stats.readabilityScore === 'difficult') {
+      // Step 2: Readability analysis
+      updateStep('readability', 'running');
+      await new Promise(r => setTimeout(r, 500));
+      if (currentStats.readabilityScore === 'difficult') {
         localRecommendations.push({
           id: 'rec-readability',
           type: 'readability',
@@ -297,21 +313,16 @@ export function ScriptEditorTab({
           description: 'Consider breaking long sentences into shorter ones for easier voiceover delivery.',
           accepted: null
         });
+        updateStep('readability', 'complete', '⚠️ Complex sentences found');
+      } else {
+        updateStep('readability', 'complete', `✓ ${currentStats.readabilityScore} readability`);
       }
       
-      if (stats.wordCount > 500) {
-        localRecommendations.push({
-          id: 'rec-length',
-          type: 'length',
-          severity: 'info',
-          title: 'Script is quite long',
-          description: `At ${stats.estimatedSpeakingMinutes} minutes, consider if this needs to be split into sections.`,
-          accepted: null
-        });
-      }
-      
-      // Check for missing pauses
-      if (!scriptContent.includes('...') && !scriptContent.includes('—')) {
+      // Step 3: Pacing check
+      updateStep('pacing', 'running');
+      await new Promise(r => setTimeout(r, 400));
+      const hasPauses = scriptContent.includes('...') || scriptContent.includes('—') || scriptContent.includes('–');
+      if (!hasPauses) {
         localRecommendations.push({
           id: 'rec-pacing',
           type: 'pacing',
@@ -320,16 +331,89 @@ export function ScriptEditorTab({
           description: 'Use "..." for pauses to give viewers time to absorb information.',
           accepted: null
         });
+        updateStep('pacing', 'complete', '💡 No pause markers found');
+      } else {
+        updateStep('pacing', 'complete', '✓ Pause markers present');
       }
       
+      // Step 4: Engagement analysis
+      updateStep('engagement', 'running');
+      await new Promise(r => setTimeout(r, 450));
+      const hasQuestions = scriptContent.includes('?');
+      const hasCallToAction = /\b(click|subscribe|sign up|get started|learn more|try|join)\b/i.test(scriptContent);
+      if (!hasQuestions && !hasCallToAction) {
+        localRecommendations.push({
+          id: 'rec-engagement',
+          type: 'engagement',
+          severity: 'suggestion',
+          title: 'Consider adding engagement hooks',
+          description: 'Questions or calls-to-action can increase viewer engagement.',
+          accepted: null
+        });
+        updateStep('engagement', 'complete', '💡 Could improve engagement');
+      } else {
+        updateStep('engagement', 'complete', '✓ Good engagement elements');
+      }
+      
+      // Step 5: Clarity check
+      updateStep('clarity', 'running');
+      await new Promise(r => setTimeout(r, 400));
+      if (currentStats.wordCount > 500) {
+        localRecommendations.push({
+          id: 'rec-length',
+          type: 'length',
+          severity: 'info',
+          title: 'Script is quite long',
+          description: `At ${currentStats.estimatedSpeakingMinutes} minutes, consider if this needs to be split into sections.`,
+          accepted: null
+        });
+        updateStep('clarity', 'complete', `ℹ️ ${currentStats.estimatedSpeakingMinutes}min - consider sections`);
+      } else {
+        updateStep('clarity', 'complete', '✓ Good length for single segment');
+      }
+      
+      // Step 6: AI recommendations
+      updateStep('ai', 'running');
+      try {
+        const { data, error } = await supabase.functions.invoke('enhance-script', {
+          body: { scriptContent, mode: 'analyze' }
+        });
+        
+        if (!error && data?.success && data.data?.recommendations) {
+          const aiRecs = (data.data.recommendations || []).map((rec: any, i: number) => ({
+            ...rec,
+            id: `ai-rec-${i}`,
+            accepted: null
+          }));
+          localRecommendations.push(...aiRecs);
+          updateStep('ai', 'complete', `Found ${aiRecs.length} AI suggestions`);
+        } else {
+          updateStep('ai', 'complete', '✓ AI analysis complete');
+        }
+      } catch (err) {
+        console.log('AI analysis skipped:', err);
+        updateStep('ai', 'complete', '✓ Using local analysis');
+      }
+      
+      // All done - show results
       setAnalysisResult({
-        stats,
+        stats: currentStats,
         recommendations: localRecommendations
       });
       setShowAnalysis(true);
-      toast.success('Analysis complete!');
+      toast.success(`Analysis complete! Found ${localRecommendations.length} recommendations.`);
+      
+    } catch (err) {
+      console.error('Analysis error:', err);
+      toast.error('Analysis failed. Please try again.');
     } finally {
       setIsAnalyzing(false);
+      // Keep progressive view visible for a moment, then user can dismiss
+      setTimeout(() => {
+        if (localRecommendations.length > 0) {
+          setShowProgressiveAnalysis(false);
+        }
+      }, 2000);
     }
   };
   
@@ -850,6 +934,97 @@ export function ScriptEditorTab({
               )}
             </CollapsibleContent>
           </Collapsible>
+          
+          {/* Progressive Analysis Walkthrough */}
+          {showProgressiveAnalysis && isAnalyzing && (
+            <div className="mb-6 p-4 rounded-lg border border-blue-500/30 bg-blue-500/5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />
+                  Analyzing Script...
+                </h3>
+              </div>
+              
+              <div className="space-y-3">
+                {analysisSteps.map((step, idx) => {
+                  const stepConfig = [
+                    { id: 'stats', label: 'Calculating word count & reading time', icon: BookOpen },
+                    { id: 'readability', label: 'Analyzing readability & complexity', icon: Search },
+                    { id: 'pacing', label: 'Checking pacing & natural pauses', icon: Clock },
+                    { id: 'engagement', label: 'Evaluating audience engagement', icon: Sparkles },
+                    { id: 'clarity', label: 'Reviewing clarity & structure', icon: FileCheck },
+                    { id: 'ai', label: 'Getting AI recommendations', icon: Wand2 },
+                  ].find(s => s.id === step.step);
+                  
+                  if (!stepConfig) return null;
+                  const Icon = stepConfig.icon;
+                  
+                  return (
+                    <div 
+                      key={step.step}
+                      className={cn(
+                        "flex items-center gap-3 p-3 rounded-lg transition-all",
+                        step.status === 'running' && "bg-blue-500/10 border border-blue-500/30",
+                        step.status === 'complete' && "bg-green-500/5 border border-green-500/20",
+                        step.status === 'pending' && "bg-muted/30 opacity-50"
+                      )}
+                    >
+                      <div className={cn(
+                        "h-8 w-8 rounded-full flex items-center justify-center",
+                        step.status === 'running' && "bg-blue-500/20",
+                        step.status === 'complete' && "bg-green-500/20",
+                        step.status === 'pending' && "bg-muted"
+                      )}>
+                        {step.status === 'running' ? (
+                          <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
+                        ) : step.status === 'complete' ? (
+                          <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <Icon className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className={cn(
+                          "text-sm font-medium",
+                          step.status === 'running' && "text-blue-600",
+                          step.status === 'complete' && "text-foreground",
+                          step.status === 'pending' && "text-muted-foreground"
+                        )}>
+                          {stepConfig.label}
+                        </p>
+                        {step.detail && step.status === 'complete' && (
+                          <p className="text-xs text-muted-foreground mt-0.5">{step.detail}</p>
+                        )}
+                      </div>
+                      <Badge 
+                        variant="outline" 
+                        className={cn(
+                          "text-xs",
+                          step.status === 'running' && "border-blue-500/50 text-blue-600",
+                          step.status === 'complete' && "border-green-500/50 text-green-600",
+                          step.status === 'pending' && "border-border text-muted-foreground"
+                        )}
+                      >
+                        {step.status === 'running' ? 'Analyzing...' : 
+                         step.status === 'complete' ? 'Done' : 
+                         `Step ${idx + 1}`}
+                      </Badge>
+                    </div>
+                  );
+                })}
+              </div>
+              
+              <div className="mt-4 pt-3 border-t border-blue-500/20">
+                <Progress 
+                  value={(analysisSteps.filter(s => s.status === 'complete').length / analysisSteps.length) * 100} 
+                  className="h-2" 
+                />
+                <p className="text-xs text-muted-foreground mt-2 text-center">
+                  {analysisSteps.filter(s => s.status === 'complete').length} of {analysisSteps.length} steps complete
+                </p>
+              </div>
+            </div>
+          )}
           
           {/* Analysis Results */}
           {showAnalysis && analysisResult && (

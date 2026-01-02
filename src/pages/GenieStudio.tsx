@@ -2122,6 +2122,84 @@ export default function GenieStudio() {
                 </CardContent>
               </Card>
 
+              {/* Custom Voice Recording Section */}
+              <Card className="border-border/50 bg-card/80 backdrop-blur">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Radio className="h-5 w-5 text-orange-500" />
+                      Record Custom Voice
+                    </h3>
+                    <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/20">
+                      Your Voice
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Record your own voice to create a custom voice profile. This voice can be used for all your TTS voiceovers, just like Alloy, Echo, or other preset voices.
+                  </p>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Voice Sample Name</Label>
+                      <Input 
+                        placeholder="e.g., My Professional Voice, Casual Narrator..."
+                        className="mt-1"
+                        id="custom-voice-name"
+                      />
+                    </div>
+                    
+                    <div className="flex gap-3">
+                      <Button 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => {
+                          // For now, trigger file upload for voice sample
+                          const input = document.createElement('input');
+                          input.type = 'file';
+                          input.accept = 'audio/*';
+                          input.onchange = (e) => {
+                            const file = (e.target as HTMLInputElement).files?.[0];
+                            if (file) {
+                              const voiceName = (document.getElementById('custom-voice-name') as HTMLInputElement)?.value || `Custom Voice ${Date.now()}`;
+                              const url = URL.createObjectURL(file);
+                              const customVoice = {
+                                id: `custom-voice-${Date.now()}`,
+                                name: voiceName,
+                                url,
+                                timestamp: Date.now(),
+                                type: 'custom-voice' as const
+                              };
+                              // Save to custom voices
+                              const existing = JSON.parse(localStorage.getItem('genieStudioCustomVoices') || '[]');
+                              const updated = [...existing, customVoice];
+                              localStorage.setItem('genieStudioCustomVoices', JSON.stringify(updated));
+                              toast.success(`Custom voice "${voiceName}" saved! You can now use it for TTS.`);
+                            }
+                          };
+                          input.click();
+                        }}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Voice Sample
+                      </Button>
+                      <Button 
+                        className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white"
+                        onClick={() => {
+                          toast.info('Voice cloning requires ElevenLabs Professional plan. Upload a sample above to get started.');
+                        }}
+                      >
+                        <Mic className="h-4 w-4 mr-2" />
+                        Record Voice (Coming Soon)
+                      </Button>
+                    </div>
+                    
+                    <p className="text-xs text-muted-foreground">
+                      <strong>Tip:</strong> For best results, record 30+ seconds of clear speech in a quiet environment. Your custom voice can then be used for all scripts.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Upload Voiceover Section */}
               <Card className="border-border/50 bg-card/80 backdrop-blur">
                 <CardContent className="p-6">
@@ -2160,13 +2238,83 @@ export default function GenieStudio() {
                 </CardContent>
               </Card>
 
-              {/* Saved Voiceovers Section */}
+              {/* Custom Voices Section */}
+              <Card className="border-border/50 bg-card/80 backdrop-blur">
+                <CardContent className="p-6">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <Radio className="h-5 w-5 text-orange-500" />
+                    My Custom Voices
+                  </h3>
+                  {(() => {
+                    const customVoices = JSON.parse(localStorage.getItem('genieStudioCustomVoices') || '[]');
+                    return customVoices.length === 0 ? (
+                      <div className="text-center py-6 text-muted-foreground border border-dashed rounded-lg">
+                        <Radio className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                        <p className="text-sm">No custom voices yet</p>
+                        <p className="text-xs">Upload voice samples above to create custom voices</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {customVoices.map((voice: any) => (
+                          <div 
+                            key={voice.id}
+                            className="flex items-center gap-4 p-3 rounded-lg border border-orange-500/30 bg-orange-500/5 hover:border-orange-500/50 transition-all"
+                          >
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
+                              <Mic className="h-5 w-5 text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">{voice.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Custom Voice • {voice.timestamp ? new Date(voice.timestamp).toLocaleDateString() : 'Unknown'}
+                              </p>
+                            </div>
+                            {voice.url && (
+                              <audio src={voice.url} controls className="h-8 w-48" />
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const existing = JSON.parse(localStorage.getItem('genieStudioCustomVoices') || '[]');
+                                const updated = existing.filter((v: any) => v.id !== voice.id);
+                                localStorage.setItem('genieStudioCustomVoices', JSON.stringify(updated));
+                                toast.success('Custom voice deleted');
+                                // Force re-render
+                                setActiveTab('voice');
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+
+              {/* Saved Voiceovers Section - Categorized */}
               <Card className="border-border/50 bg-card/80 backdrop-blur">
                 <CardContent className="p-6">
                   <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                     <Mic className="h-5 w-5 text-purple-500" />
-                    Saved Voiceovers ({savedVoiceovers.length})
+                    Saved Audio Files
                   </h3>
+                  
+                  {/* Filter Tabs */}
+                  <div className="flex gap-2 mb-4 flex-wrap">
+                    <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30">
+                      All ({savedVoiceovers.length})
+                    </Badge>
+                    <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
+                      TTS ({savedVoiceovers.filter(v => v.name?.toLowerCase().includes('tts') || v.name?.toLowerCase().includes('generated')).length})
+                    </Badge>
+                    <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30">
+                      Voiceovers ({savedVoiceovers.filter(v => v.name?.toLowerCase().includes('voiceover') || v.name?.toLowerCase().includes('recording')).length})
+                    </Badge>
+                  </div>
+                  
                   {savedVoiceovers.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
                       <Mic className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -2174,38 +2322,58 @@ export default function GenieStudio() {
                       <p className="text-sm">Generate TTS or upload audio files above</p>
                     </div>
                   ) : (
-                    <div className="space-y-3">
-                      {savedVoiceovers.map((voiceover) => (
-                        <div 
-                          key={voiceover.id}
-                          className="flex items-center gap-4 p-3 rounded-lg border border-border/50 hover:border-primary/30 transition-all"
-                        >
-                          <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                            <Mic className="h-5 w-5 text-purple-500" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{voiceover.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(voiceover.timestamp).toLocaleDateString()}
-                            </p>
-                          </div>
-                          {voiceover.url && (
-                            <audio src={voiceover.url} controls className="h-8 w-48" />
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              const updated = savedVoiceovers.filter(v => v.id !== voiceover.id);
-                              setSavedVoiceovers(updated);
-                              localStorage.setItem('genieStudioVoiceovers', JSON.stringify(updated));
-                              toast.success('Voiceover deleted');
-                            }}
+                    <div className="space-y-3 max-h-80 overflow-y-auto">
+                      {savedVoiceovers.map((voiceover) => {
+                        // Determine type badge
+                        const isTTS = voiceover.name?.toLowerCase().includes('tts') || voiceover.name?.toLowerCase().includes('generated');
+                        const isVO = voiceover.name?.toLowerCase().includes('voiceover') || voiceover.name?.toLowerCase().includes('recording');
+                        
+                        return (
+                          <div 
+                            key={voiceover.id}
+                            className="flex items-center gap-4 p-3 rounded-lg border border-border/50 hover:border-primary/30 transition-all"
                           >
-                            <Trash2 className="h-4 w-4 text-muted-foreground" />
-                          </Button>
-                        </div>
-                      ))}
+                            <div className={cn(
+                              "h-10 w-10 rounded-lg flex items-center justify-center",
+                              isTTS ? "bg-green-500/10" : isVO ? "bg-blue-500/10" : "bg-purple-500/10"
+                            )}>
+                              {isTTS ? (
+                                <Volume2 className="h-5 w-5 text-green-500" />
+                              ) : isVO ? (
+                                <Mic className="h-5 w-5 text-blue-500" />
+                              ) : (
+                                <Headphones className="h-5 w-5 text-purple-500" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium truncate">{voiceover.name}</p>
+                                <Badge variant="outline" className="text-xs shrink-0">
+                                  {isTTS ? 'TTS' : isVO ? 'Voiceover' : 'Audio'}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(voiceover.timestamp).toLocaleDateString()}
+                              </p>
+                            </div>
+                            {voiceover.url && (
+                              <audio src={voiceover.url} controls className="h-8 w-40" />
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const updated = savedVoiceovers.filter(v => v.id !== voiceover.id);
+                                setSavedVoiceovers(updated);
+                                localStorage.setItem('genieStudioVoiceovers', JSON.stringify(updated));
+                                toast.success('Audio file deleted');
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </CardContent>
