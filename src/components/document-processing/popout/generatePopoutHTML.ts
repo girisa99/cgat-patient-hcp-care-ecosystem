@@ -62,6 +62,8 @@ export function generatePopoutHTML(config: PopoutConfig): string {
     // =====================================================
     // SHARED GLOBAL VARIABLES
     // =====================================================
+    console.log('[Popout] Initializing shared globals...');
+    
     // These are declared first so all modules can access them
     var mediaStream = null;
     var mediaRecorder = null;
@@ -89,12 +91,11 @@ export function generatePopoutHTML(config: PopoutConfig): string {
         if (type === 'success') {
           setTimeout(function() { container.innerHTML = ''; }, 5000);
         }
-      } else {
-        console.log('[Status] ' + type + ': ' + message);
       }
+      console.log('[Status] ' + type + ': ' + message);
     }
     
-    console.log('[Popout] Shared globals initialized');
+    console.log('[Popout] ✅ Shared globals initialized');
   `;
 
   // Get all scripts - order matters for dependencies

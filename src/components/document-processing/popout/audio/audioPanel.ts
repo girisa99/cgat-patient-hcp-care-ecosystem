@@ -8,13 +8,13 @@ export function getAudioPanelScript(supabaseUrl: string, supabaseKey: string): s
     // =====================================================
     // AUDIO PANEL MODULE
     // =====================================================
+    // Note: ttsAudio is declared in shared globals
 
     const SUPABASE_URL = '${supabaseUrl}';
     const SUPABASE_KEY = '${supabaseKey}';
 
-    let activeAudioTab = 'voiceover';
-    let ttsAudio = null;
-    let isGeneratingTTS = false;
+    var activeAudioTab = 'voiceover';
+    var isGeneratingTTS = false;
 
     // =====================================================
     // TAB SWITCHING

@@ -9,16 +9,10 @@ export function getRecordingEnhancementsScript(): string {
     // RECORDING ENHANCEMENTS MODULE
     // =====================================================
     // Note: isStopped, isPaused, trimHistory, isRecording, mediaRecorder,
-    // recordedChunks, recordingTimer are declared in shared globals
+    // recordedChunks, recordingTimer, voiceoverAudio, musicAudio, ttsAudio
+    // syncAudioSource, syncAnimationFrame are declared in shared globals
     
     var countdownInterval = null;
-    
-    // Audio references (will be set by UI module)
-    var voiceoverAudio = typeof voiceoverAudio !== 'undefined' ? voiceoverAudio : null;
-    var musicAudio = typeof musicAudio !== 'undefined' ? musicAudio : null;
-    var ttsAudio = typeof ttsAudio !== 'undefined' ? ttsAudio : null;
-    var syncAudioSource = typeof syncAudioSource !== 'undefined' ? syncAudioSource : null;
-    var syncAnimationFrame = typeof syncAnimationFrame !== 'undefined' ? syncAnimationFrame : null;
 
     // =====================================================
     // 5-SECOND COUNTDOWN
