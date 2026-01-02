@@ -200,6 +200,15 @@ export function getVoiceoverManagerScript(): string {
       }
     }
 
+    // Helper function for HTML escaping
+    function escapeHtmlSync(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
     // Initialize on load
     setTimeout(function() {
       initVoiceoverManager();

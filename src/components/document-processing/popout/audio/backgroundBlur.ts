@@ -120,13 +120,15 @@ export function getBackgroundBlurScript(): string {
     }
 
     async function processVideoFrame() {
-      if (!isBlurEnabled || !selfieSegmentation || !videoPreview) {
+      const video = document.getElementById('videoPreview');
+      
+      if (!isBlurEnabled || !selfieSegmentation || !video) {
         blurAnimationFrame = requestAnimationFrame(processVideoFrame);
         return;
       }
 
       try {
-        await selfieSegmentation.send({ image: videoPreview });
+        await selfieSegmentation.send({ image: video });
       } catch (err) {
         // Silently handle frame errors
       }
@@ -148,6 +150,12 @@ export function getBackgroundBlurScript(): string {
 
     async function enableBackgroundBlur() {
       console.log('[BackgroundBlur] Enabling...');
+      
+      const video = document.getElementById('videoPreview');
+      if (!video) {
+        showBlurStatus('Video element not found', 'error');
+        return false;
+      }
 
       // Initialize if needed
       if (!selfieSegmentation) {
@@ -164,7 +172,7 @@ export function getBackgroundBlurScript(): string {
         blurCanvas.id = 'blurCanvas';
         blurCanvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;';
         
-        const container = videoPreview.parentElement;
+        const container = video.parentElement;
         if (container) {
           container.style.position = 'relative';
           container.appendChild(blurCanvas);
@@ -172,12 +180,12 @@ export function getBackgroundBlurScript(): string {
       }
 
       // Set canvas size to match video
-      blurCanvas.width = videoPreview.videoWidth || 1920;
-      blurCanvas.height = videoPreview.videoHeight || 1080;
+      blurCanvas.width = video.videoWidth || 1920;
+      blurCanvas.height = video.videoHeight || 1080;
       blurCtx = blurCanvas.getContext('2d');
 
       // Hide original video, show canvas
-      videoPreview.style.opacity = '0';
+      video.style.opacity = '0';
       blurCanvas.style.display = 'block';
 
       isBlurEnabled = true;
@@ -201,8 +209,9 @@ export function getBackgroundBlurScript(): string {
       isBlurEnabled = false;
 
       // Show original video
-      if (videoPreview) {
-        videoPreview.style.opacity = '1';
+      const video = document.getElementById('videoPreview');
+      if (video) {
+        video.style.opacity = '1';
       }
 
       // Hide blur canvas
@@ -271,8 +280,9 @@ export function getBackgroundBlurScript(): string {
     function enableCSSFallbackBlur() {
       console.log('[BackgroundBlur] Using CSS fallback');
       
-      if (videoPreview) {
-        videoPreview.style.filter = 'none'; // Can't blur background only with CSS
+      const video = document.getElementById('videoPreview');
+      if (video) {
+        video.style.filter = 'none'; // Can't blur background only with CSS
         showBlurStatus('MediaPipe not available - using camera only', 'warning');
       }
     }
