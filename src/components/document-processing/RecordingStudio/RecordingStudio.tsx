@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { useCamera, useRecording, useAudioPlayback, useRecordingLibrary, useScreenShare } from './hooks';
+import { useCamera, useRecording, useAudioPlayback, useRecordingLibrary, useScreenShare, useScriptDraftStorage } from './hooks';
 import { 
   VideoPreview, 
   RecordingControls, 
@@ -30,7 +30,8 @@ import {
   ScriptPanel, 
   RecordingLibraryPanel,
   RecordingPreview,
-  FloatingTeleprompter 
+  FloatingTeleprompter,
+  PreRecordingDialog
 } from './components';
 import type { RecordingStudioProps, LogoState, TeleprompterState, ScriptData } from './types';
 import type { RecordingMode } from './hooks/useScreenShare';
@@ -96,6 +97,9 @@ export function RecordingStudio({
   const [analysisResultData, setAnalysisResultData] = useState<any[]>([]);
   const [showAnalysisResult, setShowAnalysisResult] = useState(false);
   
+  // Pre-recording dialog state
+  const [showPreRecordingDialog, setShowPreRecordingDialog] = useState(false);
+  
   // Recording preview
   const [lastRecordingBlob, setLastRecordingBlob] = useState<Blob | null>(null);
   const [showRecordingPreview, setShowRecordingPreview] = useState(false);
@@ -116,10 +120,18 @@ export function RecordingStudio({
   
   const logoInputRef = useRef<HTMLInputElement>(null);
 
+  // Script draft storage hook
+  const scriptDraft = useScriptDraftStorage({ 
+    scriptId: selectedScriptId,
+    autoSaveInterval: 30000 
+  });
+
   // Update scripts when props change
   useEffect(() => {
     setScripts(initialScripts);
   }, [initialScripts]);
+
+  // Note: Draft sync effects moved after currentScript declaration
 
   // Hooks
   const camera = useCamera({ autoStart: isOpen });
@@ -187,6 +199,29 @@ export function RecordingStudio({
   const currentScript = scripts.find(s => s.id === selectedScriptId);
   const currentVoiceover = voiceovers.find(v => v.id === selectedVoiceoverId);
   const currentMusic = music.find(m => m.id === selectedMusicId);
+
+  // Sync enhanced script to draft storage when it changes
+  useEffect(() => {
+    if (enhancedScriptContent && currentScript && selectedScriptId) {
+      scriptDraft.updateDraft({
+        originalContent: currentScript.content,
+        enhancedContent: enhancedScriptContent,
+        changes: enhancementChangesData,
+        status: 'draft',
+      });
+    }
+  }, [enhancedScriptContent, currentScript, selectedScriptId, enhancementChangesData, scriptDraft]);
+
+  // Load draft on script change if exists
+  useEffect(() => {
+    if (scriptDraft.hasDraft && scriptDraft.draft?.enhancedContent && !enhancedScriptContent) {
+      setEnhancedScriptContent(scriptDraft.draft.enhancedContent);
+      setEnhancementChangesData(scriptDraft.draft.changes || []);
+      if (scriptDraft.isDraft) {
+        toast.info('Restored unsaved enhancement draft');
+      }
+    }
+  }, [scriptDraft.hasDraft, scriptDraft.draft, selectedScriptId, enhancedScriptContent]);
 
   // Handlers
   const handleClose = useCallback(() => {
@@ -334,8 +369,26 @@ export function RecordingStudio({
     }
   }, [ttsText, currentScript, ttsProvider]);
 
-  // Start recording with countdown
+  // Start recording - show pre-recording dialog first if enhanced script available
   const handleStartRecording = useCallback(async () => {
+    // If we have an enhanced script, show the dialog to choose
+    if (cleanEnhancedScript && currentScript) {
+      setShowPreRecordingDialog(true);
+      return;
+    }
+    
+    // No enhanced script - proceed directly with original
+    await proceedWithRecording();
+  }, [cleanEnhancedScript, currentScript]);
+
+  // Handle script selection from pre-recording dialog
+  const handlePreRecordingScriptSelect = useCallback(async (useEnhanced: boolean) => {
+    setIsUsingEnhancedScript(useEnhanced);
+    await proceedWithRecording();
+  }, []);
+
+  // Actual recording start logic
+  const proceedWithRecording = useCallback(async () => {
     // If screen mode, start screen share first
     if (recordingMode !== 'camera' && !screenShare.isSharing) {
       toast.info('Select your screen to share...');
@@ -344,6 +397,11 @@ export function RecordingStudio({
         toast.error('Screen share cancelled');
         return;
       }
+    }
+    
+    // Open teleprompter automatically when recording starts
+    if (currentScript) {
+      setTeleprompterOpen(true);
     }
     
     // Start recording (countdown handled by useRecording)
@@ -358,10 +416,13 @@ export function RecordingStudio({
         audioPlayback.playMusic(currentMusic.url);
       }
       
+      // Start teleprompter scrolling
+      setTeleprompter(prev => ({ ...prev, isScrolling: true }));
+      
       // Reset word index for teleprompter
       setCurrentWordIndex(0);
     }, 3500); // After 3 second countdown + buffer
-  }, [recording, audioPlayback, currentVoiceover, currentMusic, recordingMode, screenShare]);
+  }, [recording, audioPlayback, currentVoiceover, currentMusic, recordingMode, screenShare, currentScript]);
 
   // Pause recording - also pause audio
   const handlePauseRecording = useCallback(() => {
@@ -764,6 +825,17 @@ export function RecordingStudio({
           onClose={() => setShowRecordingPreview(false)}
           onSave={handleSaveRecording}
           onDiscard={handleDiscardRecording}
+        />
+
+        {/* Pre-Recording Script Selection Dialog */}
+        <PreRecordingDialog
+          isOpen={showPreRecordingDialog}
+          onClose={() => setShowPreRecordingDialog(false)}
+          onSelectScript={handlePreRecordingScriptSelect}
+          hasEnhancedScript={!!cleanEnhancedScript}
+          originalScriptPreview={currentScript?.content || ''}
+          enhancedScriptPreview={cleanEnhancedScript || ''}
+          scriptTitle={currentScript?.title}
         />
       </DialogContent>
     </Dialog>

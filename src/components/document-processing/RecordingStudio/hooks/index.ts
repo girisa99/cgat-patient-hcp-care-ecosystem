@@ -7,3 +7,4 @@ export { useRecording } from './useRecording';
 export { useAudioPlayback } from './useAudioPlayback';
 export { useRecordingLibrary } from './useRecordingLibrary';
 export { useScreenShare } from './useScreenShare';
+export { useScriptDraftStorage } from './useScriptDraftStorage';
