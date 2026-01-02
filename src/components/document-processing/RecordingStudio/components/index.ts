@@ -7,3 +7,5 @@ export { RecordingControls } from './RecordingControls';
 export { AudioPanel } from './AudioPanel';
 export { ScriptPanel } from './ScriptPanel';
 export { RecordingLibraryPanel } from './RecordingLibraryPanel';
+export { RecordingPreview } from './RecordingPreview';
+export { AudioAnalyzer } from './AudioAnalyzer';

@@ -1,5 +1,5 @@
 /**
- * Audio Panel Component - Voiceover, TTS, Music tabs
+ * Audio Panel Component - Voiceover, TTS, Music tabs with full features
  */
 
 import React from 'react';
@@ -8,7 +8,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Play, Square, Repeat, Volume2 } from 'lucide-react';
+import { Play, Square, Repeat, Volume2, Scissors, Mic, FileText } from 'lucide-react';
 import type { VoiceoverData, MusicData, AudioTabType } from '../types';
 
 interface AudioPanelProps {
@@ -54,6 +54,11 @@ interface AudioPanelProps {
   
   // Script helper
   currentScriptContent?: string;
+  
+  // Transcription
+  onTranscribe?: () => void;
+  isTranscribing?: boolean;
+  transcriptionText?: string;
 }
 
 const VOICE_OPTIONS = [
@@ -99,23 +104,42 @@ export function AudioPanel({
   ttsVolume,
   onTTSVolumeChange,
   currentScriptContent,
+  onTranscribe,
+  isTranscribing,
+  transcriptionText,
 }: AudioPanelProps) {
+  const selectedVoiceover = voiceovers.find(v => v.id === selectedVoiceoverId);
+  const selectedMusic = musicList.find(m => m.id === selectedMusicId);
+
   return (
     <div className="bg-card rounded-lg border p-4">
       <Tabs value={activeTab} onValueChange={(v) => onTabChange(v as AudioTabType)}>
-        <TabsList className="w-full grid grid-cols-3">
-          <TabsTrigger value="voiceover">🎙️ Voiceover</TabsTrigger>
-          <TabsTrigger value="tts">🔊 TTS</TabsTrigger>
-          <TabsTrigger value="music">🎵 Music</TabsTrigger>
+        <TabsList className="w-full grid grid-cols-3 mb-4">
+          <TabsTrigger value="voiceover" className="text-xs gap-1">
+            <Mic className="w-3 h-3" />
+            Voiceover
+          </TabsTrigger>
+          <TabsTrigger value="tts" className="text-xs gap-1">
+            <Volume2 className="w-3 h-3" />
+            TTS
+          </TabsTrigger>
+          <TabsTrigger value="music" className="text-xs gap-1">
+            🎵 Music
+          </TabsTrigger>
         </TabsList>
 
         {/* Voiceover Tab */}
-        <TabsContent value="voiceover" className="space-y-3 mt-4">
-          <Select value={selectedVoiceoverId || "none"} onValueChange={(v) => onVoiceoverChange(v === "none" ? "" : v)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select voiceover" />
+        <TabsContent value="voiceover" className="space-y-3 mt-0">
+          <Select 
+            value={selectedVoiceoverId || "none"} 
+            onValueChange={(v) => onVoiceoverChange(v === "none" ? "" : v)}
+          >
+            <SelectTrigger className="bg-background">
+              <SelectValue placeholder="Select voiceover">
+                {selectedVoiceover?.name || "None"}
+              </SelectValue>
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-popover z-[100]">
               <SelectItem value="none">None</SelectItem>
               {voiceovers.map((v) => (
                 <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
@@ -137,7 +161,7 @@ export function AudioPanel({
           </div>
 
           <div className="flex items-center gap-2">
-            <Volume2 className="w-4 h-4 text-muted-foreground" />
+            <Volume2 className="w-4 h-4 text-muted-foreground shrink-0" />
             <Slider
               value={[voiceoverVolume]}
               onValueChange={([v]) => onVoiceoverVolumeChange(v)}
@@ -145,18 +169,39 @@ export function AudioPanel({
               step={1}
               className="flex-1"
             />
-            <span className="text-xs text-muted-foreground w-8">{voiceoverVolume}%</span>
+            <span className="text-xs text-muted-foreground w-10 text-right">{voiceoverVolume}%</span>
           </div>
+
+          {/* Transcription */}
+          {onTranscribe && (
+            <div className="pt-2 border-t space-y-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onTranscribe}
+                disabled={isTranscribing || !selectedVoiceoverId}
+                className="w-full gap-2"
+              >
+                <FileText className="w-4 h-4" />
+                {isTranscribing ? 'Transcribing...' : 'Transcribe Audio'}
+              </Button>
+              {transcriptionText && (
+                <div className="p-2 bg-muted/50 rounded text-xs max-h-20 overflow-y-auto">
+                  {transcriptionText}
+                </div>
+              )}
+            </div>
+          )}
         </TabsContent>
 
         {/* TTS Tab */}
-        <TabsContent value="tts" className="space-y-3 mt-4">
+        <TabsContent value="tts" className="space-y-3 mt-0">
           {currentScriptContent && (
             <Button
               size="sm"
               variant="outline"
               onClick={() => onTTSTextChange(currentScriptContent)}
-              className="w-full"
+              className="w-full gap-2"
             >
               📝 Use Current Script
             </Button>
@@ -166,14 +211,14 @@ export function AudioPanel({
             value={ttsText}
             onChange={(e) => onTTSTextChange(e.target.value)}
             placeholder="Enter text to convert to speech..."
-            className="min-h-[100px]"
+            className="min-h-[80px] text-sm"
           />
 
           <Select value={selectedVoice} onValueChange={onVoiceChange}>
-            <SelectTrigger>
+            <SelectTrigger className="bg-background">
               <SelectValue placeholder="Select voice" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-popover z-[100]">
               {VOICE_OPTIONS.map((v) => (
                 <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>
               ))}
@@ -187,7 +232,7 @@ export function AudioPanel({
               disabled={!ttsText || isTTSGenerating}
               className="gap-2"
             >
-              {isTTSGenerating ? '⏳ Generating...' : '🔊 Generate TTS'}
+              {isTTSGenerating ? '⏳ Generating...' : '🔊 Generate'}
             </Button>
             
             {hasTTSAudio && (
@@ -204,7 +249,7 @@ export function AudioPanel({
           </div>
 
           <div className="flex items-center gap-2">
-            <Volume2 className="w-4 h-4 text-muted-foreground" />
+            <Volume2 className="w-4 h-4 text-muted-foreground shrink-0" />
             <Slider
               value={[ttsVolume]}
               onValueChange={([v]) => onTTSVolumeChange(v)}
@@ -212,17 +257,22 @@ export function AudioPanel({
               step={1}
               className="flex-1"
             />
-            <span className="text-xs text-muted-foreground w-8">{ttsVolume}%</span>
+            <span className="text-xs text-muted-foreground w-10 text-right">{ttsVolume}%</span>
           </div>
         </TabsContent>
 
         {/* Music Tab */}
-        <TabsContent value="music" className="space-y-3 mt-4">
-          <Select value={selectedMusicId || "none"} onValueChange={(v) => onMusicChange(v === "none" ? "" : v)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select music" />
+        <TabsContent value="music" className="space-y-3 mt-0">
+          <Select 
+            value={selectedMusicId || "none"} 
+            onValueChange={(v) => onMusicChange(v === "none" ? "" : v)}
+          >
+            <SelectTrigger className="bg-background">
+              <SelectValue placeholder="Select music">
+                {selectedMusic?.name || "None"}
+              </SelectValue>
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-popover z-[100]">
               <SelectItem value="none">None</SelectItem>
               {musicList.map((m) => (
                 <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
@@ -249,12 +299,12 @@ export function AudioPanel({
               className="gap-2"
             >
               <Repeat className="w-4 h-4" />
-              Loop: {musicLoop ? 'ON' : 'OFF'}
+              {musicLoop ? 'ON' : 'OFF'}
             </Button>
           </div>
 
           <div className="flex items-center gap-2">
-            <Volume2 className="w-4 h-4 text-muted-foreground" />
+            <Volume2 className="w-4 h-4 text-muted-foreground shrink-0" />
             <Slider
               value={[musicVolume]}
               onValueChange={([v]) => onMusicVolumeChange(v)}
@@ -262,7 +312,7 @@ export function AudioPanel({
               step={1}
               className="flex-1"
             />
-            <span className="text-xs text-muted-foreground w-8">{musicVolume}%</span>
+            <span className="text-xs text-muted-foreground w-10 text-right">{musicVolume}%</span>
           </div>
         </TabsContent>
       </Tabs>
