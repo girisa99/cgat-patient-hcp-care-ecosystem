@@ -14,12 +14,11 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { 
   X, Library, Monitor, Camera, MonitorPlay, 
-  FileText, Music, Mic, Settings, ChevronLeft, ChevronRight 
+  FileText, Music, Mic, ChevronLeft, ChevronRight 
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -557,21 +556,22 @@ export function RecordingStudio({
             />
           </div>
 
-          {/* Sidebar - Collapsible */}
-          <div 
-            className={`shrink-0 border-l bg-background flex flex-col overflow-hidden transition-all duration-300 ${
-              isSidebarCollapsed ? 'w-12' : 'w-80'
+          {/* Sidebar - Fixed width, properly contained */}
+          <aside 
+            className={`shrink-0 border-l bg-card flex flex-col transition-all duration-200 relative z-10 ${
+              isSidebarCollapsed ? 'w-14' : 'w-[340px]'
             }`}
+            style={{ minWidth: isSidebarCollapsed ? '56px' : '340px' }}
           >
-            {/* Collapse Toggle */}
-            <div className="flex items-center justify-between p-2 border-b">
+            {/* Header with toggle */}
+            <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30 shrink-0">
               {!isSidebarCollapsed && (
-                <span className="text-sm font-medium px-1">Settings</span>
+                <span className="text-sm font-semibold">Settings</span>
               )}
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-7 w-7 ml-auto"
+                className="h-7 w-7 ml-auto shrink-0"
                 onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
               >
                 {isSidebarCollapsed ? (
@@ -582,100 +582,99 @@ export function RecordingStudio({
               </Button>
             </div>
             
+            {/* Content area - scrollable */}
             {!isSidebarCollapsed && (
-              <ScrollArea className="flex-1">
-                <div className="p-3 space-y-3">
-                  {/* Script Panel */}
-                  <ScriptPanel
-                    scripts={scripts}
-                    selectedScriptId={selectedScriptId}
-                    onScriptChange={setSelectedScriptId}
-                    onScriptContentUpdate={handleScriptContentUpdate}
-                    scrollSpeed={teleprompter.scrollSpeed}
-                    onScrollSpeedChange={(speed) => setTeleprompter(prev => ({ ...prev, scrollSpeed: speed }))}
-                    onAnalyzeScript={handleAnalyzeScript}
-                    onEnhanceScript={handleEnhanceScript}
-                    isAnalyzing={isAnalyzing}
-                    isEnhancing={isEnhancing}
-                  />
+              <div className="flex-1 overflow-y-auto p-3 space-y-4">
+                {/* Script Panel */}
+                <ScriptPanel
+                  scripts={scripts}
+                  selectedScriptId={selectedScriptId}
+                  onScriptChange={setSelectedScriptId}
+                  onScriptContentUpdate={handleScriptContentUpdate}
+                  scrollSpeed={teleprompter.scrollSpeed}
+                  onScrollSpeedChange={(speed) => setTeleprompter(prev => ({ ...prev, scrollSpeed: speed }))}
+                  onAnalyzeScript={handleAnalyzeScript}
+                  onEnhanceScript={handleEnhanceScript}
+                  isAnalyzing={isAnalyzing}
+                  isEnhancing={isEnhancing}
+                />
 
-                  {/* Audio Panel */}
-                  <AudioPanel
-                    activeTab={audioPlayback.activeTab}
-                    onTabChange={audioPlayback.setActiveTab}
-                    voiceovers={voiceovers}
-                    selectedVoiceoverId={selectedVoiceoverId}
-                    onVoiceoverChange={setSelectedVoiceoverId}
-                    onPlayVoiceover={() => currentVoiceover && audioPlayback.playVoiceover(currentVoiceover.url)}
-                    onStopVoiceover={audioPlayback.stopVoiceover}
-                    isVoiceoverPlaying={audioPlayback.isPlaying.voiceover}
-                    voiceoverVolume={audioPlayback.voiceoverVolume}
-                    onVoiceoverVolumeChange={audioPlayback.setVoiceoverVolume}
-                    musicList={music}
-                    selectedMusicId={selectedMusicId}
-                    onMusicChange={setSelectedMusicId}
-                    onPlayMusic={() => currentMusic && audioPlayback.playMusic(currentMusic.url)}
-                    onStopMusic={audioPlayback.stopMusic}
-                    isMusicPlaying={audioPlayback.isPlaying.music}
-                    musicVolume={audioPlayback.musicVolume}
-                    onMusicVolumeChange={audioPlayback.setMusicVolume}
-                    musicLoop={audioPlayback.musicLoop}
-                    onToggleMusicLoop={audioPlayback.toggleMusicLoop}
-                    ttsText={ttsText}
-                    onTTSTextChange={setTTSText}
-                    selectedVoice={selectedVoice}
-                    onVoiceChange={setSelectedVoice}
-                    onGenerateTTS={handleGenerateTTS}
-                    onPlayTTS={handlePlayTTS}
-                    onStopTTS={audioPlayback.stopTTS}
-                    isTTSPlaying={audioPlayback.isPlaying.tts}
-                    isTTSGenerating={isTTSGenerating}
-                    hasTTSAudio={hasTTSAudio}
-                    ttsVolume={audioPlayback.ttsVolume}
-                    onTTSVolumeChange={audioPlayback.setTTSVolume}
-                    ttsAudioUrl={ttsAudioUrl}
-                    onDownloadTTS={handleDownloadTTS}
-                    ttsProvider={ttsProvider}
-                    onTTSProviderChange={setTTSProvider}
-                    currentScriptContent={currentScript?.content}
-                  />
-                </div>
-              </ScrollArea>
+                {/* Audio Panel */}
+                <AudioPanel
+                  activeTab={audioPlayback.activeTab}
+                  onTabChange={audioPlayback.setActiveTab}
+                  voiceovers={voiceovers}
+                  selectedVoiceoverId={selectedVoiceoverId}
+                  onVoiceoverChange={setSelectedVoiceoverId}
+                  onPlayVoiceover={() => currentVoiceover && audioPlayback.playVoiceover(currentVoiceover.url)}
+                  onStopVoiceover={audioPlayback.stopVoiceover}
+                  isVoiceoverPlaying={audioPlayback.isPlaying.voiceover}
+                  voiceoverVolume={audioPlayback.voiceoverVolume}
+                  onVoiceoverVolumeChange={audioPlayback.setVoiceoverVolume}
+                  musicList={music}
+                  selectedMusicId={selectedMusicId}
+                  onMusicChange={setSelectedMusicId}
+                  onPlayMusic={() => currentMusic && audioPlayback.playMusic(currentMusic.url)}
+                  onStopMusic={audioPlayback.stopMusic}
+                  isMusicPlaying={audioPlayback.isPlaying.music}
+                  musicVolume={audioPlayback.musicVolume}
+                  onMusicVolumeChange={audioPlayback.setMusicVolume}
+                  musicLoop={audioPlayback.musicLoop}
+                  onToggleMusicLoop={audioPlayback.toggleMusicLoop}
+                  ttsText={ttsText}
+                  onTTSTextChange={setTTSText}
+                  selectedVoice={selectedVoice}
+                  onVoiceChange={setSelectedVoice}
+                  onGenerateTTS={handleGenerateTTS}
+                  onPlayTTS={handlePlayTTS}
+                  onStopTTS={audioPlayback.stopTTS}
+                  isTTSPlaying={audioPlayback.isPlaying.tts}
+                  isTTSGenerating={isTTSGenerating}
+                  hasTTSAudio={hasTTSAudio}
+                  ttsVolume={audioPlayback.ttsVolume}
+                  onTTSVolumeChange={audioPlayback.setTTSVolume}
+                  ttsAudioUrl={ttsAudioUrl}
+                  onDownloadTTS={handleDownloadTTS}
+                  ttsProvider={ttsProvider}
+                  onTTSProviderChange={setTTSProvider}
+                  currentScriptContent={currentScript?.content}
+                />
+              </div>
             )}
             
-            {/* Collapsed icons */}
+            {/* Collapsed state - icons only */}
             {isSidebarCollapsed && (
-              <div className="flex flex-col items-center gap-2 py-2">
+              <div className="flex flex-col items-center gap-3 py-4">
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-8 w-8"
+                  className="h-9 w-9"
                   onClick={() => setIsSidebarCollapsed(false)}
                   title="Script"
                 >
-                  <FileText className="w-4 h-4" />
+                  <FileText className="w-5 h-5" />
                 </Button>
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-8 w-8"
+                  className="h-9 w-9"
                   onClick={() => setIsSidebarCollapsed(false)}
                   title="Audio"
                 >
-                  <Mic className="w-4 h-4" />
+                  <Mic className="w-5 h-5" />
                 </Button>
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-8 w-8"
+                  className="h-9 w-9"
                   onClick={() => setIsSidebarCollapsed(false)}
                   title="Music"
                 >
-                  <Music className="w-4 h-4" />
+                  <Music className="w-5 h-5" />
                 </Button>
               </div>
             )}
-          </div>
+          </aside>
         </div>
 
         {/* Library Panel */}
