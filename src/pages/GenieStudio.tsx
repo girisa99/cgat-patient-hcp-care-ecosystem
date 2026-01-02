@@ -64,6 +64,7 @@ import { toast } from 'sonner';
 import { useTTSGeneration, OPENAI_VOICES, ELEVENLABS_VOICES } from '@/components/document-processing/RecordingStudio/hooks/useTTSGeneration';
 import { ScriptEditorTab } from '@/components/genie-studio/ScriptEditorTab';
 import { useGenieMediaLibrary } from '@/components/genie-studio/useGenieMediaLibrary';
+import { useGenieScripts, type GenieScript } from '@/components/genie-studio/useGenieScripts';
 import { supabase } from '@/integrations/supabase/client';
 
 // Types for media items
@@ -916,17 +917,43 @@ export default function GenieStudio() {
   const [hostName, setHostName] = useState('');
   const [attachScriptToInvite, setAttachScriptToInvite] = useState(true);
   
-  // Saved Scripts State
-  const [savedScripts, setSavedScripts] = useState<SavedScript[]>([]);
+  // Scripts from database (replaces localStorage)
+  const {
+    scripts: dbScripts,
+    videoScripts,
+    audioScripts,
+    isLoading: isScriptsLoading,
+    saveScript: saveDbScript,
+    updateScript: updateDbScript,
+    deleteScript: deleteDbScript,
+    refresh: refreshScripts
+  } = useGenieScripts();
+  
+  // Convert GenieScript to SavedScript format for compatibility
+  const savedScripts: SavedScript[] = dbScripts.map(s => ({
+    id: s.id,
+    name: s.name,
+    content: s.content,
+    type: s.type,
+    createdAt: s.createdAt,
+    updatedAt: s.updatedAt,
+    enhancedContent: s.enhancedContent || undefined,
+    cleanContent: s.cleanContent || undefined,
+    draftContent: s.draftContent || undefined,
+    draftStatus: s.draftStatus || undefined,
+    draftChanges: s.draftChanges || undefined,
+    stats: s.stats || undefined,
+    hasVoiceover: s.hasVoiceover,
+    voiceoverId: s.voiceoverId || undefined,
+  }));
+  
+  // Legacy localStorage for voiceovers and music (will merge with DB data)
   const [savedVoiceovers, setSavedVoiceovers] = useState<MediaItem[]>([]);
   const [savedMusic, setSavedMusic] = useState<MediaItem[]>([]);
 
-  // Load saved scripts from localStorage
+  // Load voiceovers and music from localStorage (legacy support)
   useEffect(() => {
     try {
-      const scripts = localStorage.getItem('genieStudioScripts');
-      if (scripts) setSavedScripts(JSON.parse(scripts));
-      
       const voiceovers = localStorage.getItem('genieStudioVoiceovers');
       if (voiceovers) setSavedVoiceovers(JSON.parse(voiceovers));
       
@@ -937,18 +964,23 @@ export default function GenieStudio() {
     }
   }, []);
 
-  const saveScript = (script?: SavedScript) => {
-    // If called with a script object (from ScriptEditorTab), use it directly
+  // Save script to database
+  const saveScript = async (script?: SavedScript) => {
     if (script) {
-      const existingIndex = savedScripts.findIndex(s => s.id === script.id);
-      let updated: SavedScript[];
-      if (existingIndex >= 0) {
-        updated = savedScripts.map(s => s.id === script.id ? script : s);
-      } else {
-        updated = [...savedScripts, script];
-      }
-      setSavedScripts(updated);
-      localStorage.setItem('genieStudioScripts', JSON.stringify(updated));
+      await saveDbScript({
+        name: script.name,
+        content: script.content,
+        type: script.type,
+        enhancedContent: script.enhancedContent,
+        cleanContent: script.cleanContent,
+        draftContent: script.draftContent,
+        draftStatus: script.draftStatus,
+        draftChanges: script.draftChanges,
+        stats: script.stats,
+        hasVoiceover: script.hasVoiceover,
+        voiceoverId: script.voiceoverId,
+        id: script.id, // Pass ID for update
+      });
       return;
     }
     
@@ -957,24 +989,28 @@ export default function GenieStudio() {
       toast.error('Please add a name and content');
       return;
     }
-    const newScript: SavedScript = {
-      id: crypto.randomUUID(),
+    await saveDbScript({
       name: scriptName,
       content: scriptContent,
-      type: 'video', // Default type
-      createdAt: Date.now(),
-      updatedAt: Date.now()
-    };
-    const updated = [...savedScripts, newScript];
-    setSavedScripts(updated);
-    localStorage.setItem('genieStudioScripts', JSON.stringify(updated));
-    toast.success('Script saved!');
+      type: 'video',
+    });
   };
   
-  const updateScript = (id: string, updates: Partial<SavedScript>) => {
-    const updated = savedScripts.map(s => s.id === id ? { ...s, ...updates, updatedAt: Date.now() } : s);
-    setSavedScripts(updated);
-    localStorage.setItem('genieStudioScripts', JSON.stringify(updated));
+  // Update script in database
+  const updateScript = async (id: string, updates: Partial<SavedScript>) => {
+    await updateDbScript(id, {
+      name: updates.name,
+      content: updates.content,
+      type: updates.type,
+      enhancedContent: updates.enhancedContent,
+      cleanContent: updates.cleanContent,
+      draftContent: updates.draftContent,
+      draftStatus: updates.draftStatus,
+      draftChanges: updates.draftChanges,
+      stats: updates.stats,
+      hasVoiceover: updates.hasVoiceover,
+      voiceoverId: updates.voiceoverId,
+    });
   };
 
   const loadScript = (script: SavedScript) => {
@@ -983,11 +1019,9 @@ export default function GenieStudio() {
     toast.success(`Loaded "${script.name}"`);
   };
 
-  const deleteScript = (id: string) => {
-    const updated = savedScripts.filter(s => s.id !== id);
-    setSavedScripts(updated);
-    localStorage.setItem('genieStudioScripts', JSON.stringify(updated));
-    toast.success('Script deleted');
+  // Delete script from database
+  const deleteScript = async (id: string) => {
+    await deleteDbScript(id);
   };
 
   const saveVoiceover = (url: string, name: string) => {
@@ -1090,7 +1124,8 @@ export default function GenieStudio() {
   const handleStudioClose = () => {
     setIsStudioOpen(false);
     loadMedia();
-    refreshDbMedia(); // Also refresh database media
+    refreshDbMedia(); // Refresh database audio files
+    refreshScripts(); // Refresh scripts from database
   };
 
   const handleFeatureClick = (featureId: string) => {
@@ -1945,7 +1980,7 @@ export default function GenieStudio() {
                     updateScript(scriptId, { hasVoiceover: true });
                   }
                 }}
-                savedVoiceovers={savedVoiceovers.map(v => ({
+                savedVoiceovers={mergedVoiceovers.map(v => ({
                   id: v.id,
                   name: v.name,
                   url: v.url
