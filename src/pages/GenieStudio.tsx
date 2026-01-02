@@ -31,7 +31,8 @@ import {
   Globe,
   TrendingUp,
   Trash2,
-  ExternalLink
+  ExternalLink,
+  Upload
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { RecordingStudio } from '@/components/document-processing/RecordingStudio';
@@ -57,7 +58,8 @@ const FEATURES = [
     icon: Video,
     color: 'from-red-500 to-orange-500',
     badge: 'Popular',
-    stats: { label: 'Quick Start', value: '< 10s' }
+    stats: { label: 'Quick Start', value: '< 10s' },
+    tab: 'record'
   },
   {
     id: 'voice',
@@ -66,7 +68,8 @@ const FEATURES = [
     icon: Mic,
     color: 'from-purple-500 to-pink-500',
     badge: 'AI Powered',
-    stats: { label: 'Voice Styles', value: '50+' }
+    stats: { label: 'Voice Styles', value: '50+' },
+    tab: 'voice'
   },
   {
     id: 'script',
@@ -75,7 +78,8 @@ const FEATURES = [
     icon: PenTool,
     color: 'from-blue-500 to-cyan-500',
     badge: null,
-    stats: { label: 'AI Enhanced', value: 'Yes' }
+    stats: { label: 'AI Enhanced', value: 'Yes' },
+    tab: 'script'
   },
   {
     id: 'music',
@@ -84,18 +88,19 @@ const FEATURES = [
     icon: Music,
     color: 'from-green-500 to-emerald-500',
     badge: 'New',
-    stats: { label: 'Genres', value: '25+' }
+    stats: { label: 'Genres', value: '25+' },
+    tab: 'music'
   }
 ];
 
-// Competitive advantages
-const ADVANTAGES = [
-  { icon: Zap, text: 'Real-time background blur with ML' },
-  { icon: Cpu, text: 'Multi-model AI routing' },
-  { icon: Globe, text: 'Enterprise-grade security' },
-  { icon: Layers, text: 'Integrated with your workflow' },
-  { icon: Film, text: 'Professional quality exports' },
-  { icon: Headphones, text: 'Studio-grade audio processing' }
+// Quick Tips for Users
+const QUICK_TIPS = [
+  { icon: Zap, title: 'Script First', text: 'Start with a script to keep your recording focused and professional' },
+  { icon: Mic, title: 'Preview Voice', text: 'Use TTS preview to hear how your script sounds before recording' },
+  { icon: Cpu, title: 'AI Enhancement', text: 'Let AI suggest improvements for clarity and engagement' },
+  { icon: Headphones, title: 'Background Audio', text: 'Add background music to enhance your video mood' },
+  { icon: Film, title: 'Quick Export', text: 'Export in multiple formats optimized for different platforms' },
+  { icon: Layers, title: 'Templates', text: 'Use templates for consistent branding across all content' }
 ];
 
 // Custom hook to load media from localStorage (same logic as removed sections)
@@ -193,9 +198,21 @@ export default function GenieStudio() {
     loadMedia(); // Refresh to pick up new recordings
   };
 
-  const handleFeatureClick = (featureId: string) => {
-    setSelectedFeature(featureId);
-    setIsStudioOpen(true);
+  const handleFeatureClick = (featureId: string, featureTab: string) => {
+    // Route to specific feature functionality
+    if (featureId === 'record') {
+      setSelectedFeature('record');
+      setIsStudioOpen(true);
+    } else if (featureId === 'voice') {
+      setSelectedFeature('voice');
+      setActiveTab('voice-generator');
+    } else if (featureId === 'script') {
+      setSelectedFeature('script');
+      setActiveTab('script-editor');
+    } else if (featureId === 'music') {
+      setSelectedFeature('music');
+      setActiveTab('music-studio');
+    }
   };
 
   const handleQuickAction = (action: string) => {
@@ -309,15 +326,27 @@ export default function GenieStudio() {
         <div className="max-w-7xl mx-auto px-6 py-8">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
             <TabsList className="bg-muted/50 border border-border/50 p-1">
-              <TabsTrigger value="dashboard" className="data-[state=active]:bg-background">
+              <TabsTrigger value="dashboard" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Layers className="h-4 w-4 mr-2" />
                 Dashboard
               </TabsTrigger>
-              <TabsTrigger value="library" className="data-[state=active]:bg-background">
+              <TabsTrigger value="script-editor" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <PenTool className="h-4 w-4 mr-2" />
+                Script Editor
+              </TabsTrigger>
+              <TabsTrigger value="voice-generator" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <Mic className="h-4 w-4 mr-2" />
+                Voice Generator
+              </TabsTrigger>
+              <TabsTrigger value="music-studio" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <Music className="h-4 w-4 mr-2" />
+                Music Studio
+              </TabsTrigger>
+              <TabsTrigger value="library" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Library className="h-4 w-4 mr-2" />
                 Library
               </TabsTrigger>
-              <TabsTrigger value="templates" className="data-[state=active]:bg-background">
+              <TabsTrigger value="templates" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <FileText className="h-4 w-4 mr-2" />
                 Templates
               </TabsTrigger>
@@ -334,7 +363,7 @@ export default function GenieStudio() {
                       "hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/10",
                       "border-border/50 bg-card/80 backdrop-blur group"
                     )}
-                    onClick={() => handleFeatureClick(feature.id)}
+                    onClick={() => handleFeatureClick(feature.id, feature.tab)}
                   >
                     <div className={cn(
                       "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity",
@@ -431,44 +460,187 @@ export default function GenieStudio() {
                   </Card>
                 </div>
 
-                {/* Why Genie Studio */}
+                {/* Quick Tips for Creating Great Content */}
                 <div>
                   <Card className="border-border/50 bg-gradient-to-br from-card/80 to-primary/5 backdrop-blur">
                     <CardContent className="p-6">
                       <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                         <TrendingUp className="h-5 w-5 text-primary" />
-                        Why Genie Studio?
+                        Quick Tips
                       </h2>
                       <div className="space-y-3">
-                        {ADVANTAGES.map((adv, i) => (
-                          <div key={i} className="flex items-center gap-3 text-sm">
-                            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                              <adv.icon className="h-4 w-4 text-primary" />
+                        {QUICK_TIPS.map((tip, i) => (
+                          <div key={i} className="flex items-start gap-3 text-sm">
+                            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <tip.icon className="h-4 w-4 text-primary" />
                             </div>
-                            <span className="text-muted-foreground">{adv.text}</span>
+                            <div>
+                              <span className="font-medium text-foreground">{tip.title}</span>
+                              <p className="text-muted-foreground text-xs">{tip.text}</p>
+                            </div>
                           </div>
                         ))}
-                      </div>
-                      <div className="mt-6 pt-4 border-t border-border/50">
-                        <p className="text-xs text-muted-foreground mb-3">
-                          Compared to Loom, Descript, Synthesia
-                        </p>
-                        <div className="flex gap-2">
-                          <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
-                            Better AI
-                          </Badge>
-                          <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20">
-                            Integrated
-                          </Badge>
-                          <Badge className="bg-purple-500/10 text-purple-600 border-purple-500/20">
-                            Secure
-                          </Badge>
-                        </div>
                       </div>
                     </CardContent>
                   </Card>
                 </div>
               </div>
+            </TabsContent>
+
+            {/* Script Editor Tab */}
+            <TabsContent value="script-editor" className="mt-0 space-y-6">
+              <Card className="border-border/50 bg-card/80 backdrop-blur">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                        <PenTool className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-semibold">Script Editor</h2>
+                        <p className="text-sm text-muted-foreground">Write and enhance scripts with AI assistance</p>
+                      </div>
+                    </div>
+                    <Button className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      New Script
+                    </Button>
+                  </div>
+                  
+                  <div className="grid md:grid-cols-3 gap-4 mb-6">
+                    <div className="p-4 rounded-lg bg-muted/50 border border-border/50">
+                      <Wand2 className="h-5 w-5 text-blue-500 mb-2" />
+                      <h3 className="font-medium mb-1">AI Writing Assistant</h3>
+                      <p className="text-xs text-muted-foreground">Get suggestions for clarity, tone, and engagement</p>
+                    </div>
+                    <div className="p-4 rounded-lg bg-muted/50 border border-border/50">
+                      <Play className="h-5 w-5 text-green-500 mb-2" />
+                      <h3 className="font-medium mb-1">TTS Preview</h3>
+                      <p className="text-xs text-muted-foreground">Hear how your script sounds before recording</p>
+                    </div>
+                    <div className="p-4 rounded-lg bg-muted/50 border border-border/50">
+                      <Clock className="h-5 w-5 text-orange-500 mb-2" />
+                      <h3 className="font-medium mb-1">Reading Time</h3>
+                      <p className="text-xs text-muted-foreground">Automatic timing estimates for your content</p>
+                    </div>
+                  </div>
+
+                  <div className="border border-dashed rounded-lg p-8 text-center text-muted-foreground">
+                    <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p className="mb-2">No scripts yet</p>
+                    <p className="text-sm mb-4">Start writing your first script or import from a document</p>
+                    <div className="flex gap-2 justify-center">
+                      <Button variant="outline">
+                        <Upload className="h-4 w-4 mr-2" />
+                        Import
+                      </Button>
+                      <Button>
+                        <PenTool className="h-4 w-4 mr-2" />
+                        Start Writing
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Voice Generator Tab */}
+            <TabsContent value="voice-generator" className="mt-0 space-y-6">
+              <Card className="border-border/50 bg-card/80 backdrop-blur">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                        <Mic className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-semibold">AI Voice Generator</h2>
+                        <p className="text-sm text-muted-foreground">Create ultra-realistic voiceovers with AI</p>
+                      </div>
+                    </div>
+                    <Badge className="bg-purple-500/10 text-purple-600 border-purple-500/20">
+                      50+ Voice Styles
+                    </Badge>
+                  </div>
+
+                  <div className="grid md:grid-cols-4 gap-4 mb-6">
+                    {['Professional', 'Friendly', 'Authoritative', 'Casual'].map((style, i) => (
+                      <div key={style} className="p-4 rounded-lg bg-muted/50 border border-border/50 cursor-pointer hover:border-purple-500/50 transition-colors">
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-3 mx-auto">
+                          <Mic className="h-5 w-5 text-white" />
+                        </div>
+                        <h3 className="font-medium text-center text-sm">{style}</h3>
+                        <p className="text-xs text-muted-foreground text-center mt-1">Click to preview</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Headphones className="h-5 w-5 text-primary" />
+                      <span className="font-medium">Quick Generate</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        placeholder="Enter text to generate voice..." 
+                        className="flex-1 px-4 py-2 rounded-lg border bg-background"
+                      />
+                      <Button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                        Generate
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Music Studio Tab */}
+            <TabsContent value="music-studio" className="mt-0 space-y-6">
+              <Card className="border-border/50 bg-card/80 backdrop-blur">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                        <Music className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-semibold">AI Music Studio</h2>
+                        <p className="text-sm text-muted-foreground">Generate background music and soundscapes</p>
+                      </div>
+                    </div>
+                    <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                      25+ Genres
+                    </Badge>
+                  </div>
+
+                  <div className="grid md:grid-cols-5 gap-3 mb-6">
+                    {['Corporate', 'Upbeat', 'Cinematic', 'Ambient', 'Motivational'].map((genre) => (
+                      <div key={genre} className="p-3 rounded-lg bg-muted/50 border border-border/50 cursor-pointer hover:border-green-500/50 transition-colors text-center">
+                        <Music className="h-5 w-5 text-green-500 mx-auto mb-2" />
+                        <span className="text-sm font-medium">{genre}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Sparkles className="h-5 w-5 text-primary" />
+                      <span className="font-medium">Describe Your Music</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        placeholder="E.g., Upbeat corporate music for product demo..." 
+                        className="flex-1 px-4 py-2 rounded-lg border bg-background"
+                      />
+                      <Button className="bg-gradient-to-r from-green-500 to-emerald-500 text-white">
+                        Generate
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="library" className="mt-0 space-y-6">
