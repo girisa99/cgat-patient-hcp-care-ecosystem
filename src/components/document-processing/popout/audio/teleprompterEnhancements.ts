@@ -9,12 +9,15 @@ export function getTeleprompterEnhancementsScript(): string {
     // TELEPROMPTER ENHANCEMENTS MODULE
     // =====================================================
 
-    let scriptWords = [];
-    let currentWordIndex = 0;
-    let wordHighlightInterval = null;
-    let readingCursorVisible = true;
-    let teleprompterScrollSpeed = 1;
-    let teleprompterScrollInterval = null;
+    var scriptWords = [];
+    var currentWordIndex = 0;
+    var wordHighlightInterval = null;
+    var readingCursorVisible = true;
+    var teleprompterScrollSpeed = 1;
+    var teleprompterScrollInterval = null;
+    
+    // Reference to shared state (declared in recordingEnhancements)
+    // isPaused and isStopped are used for sync control
 
     // =====================================================
     // WORD-LEVEL TRACKING
