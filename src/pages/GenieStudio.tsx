@@ -4,13 +4,12 @@
  * Competitor to Loom, Descript, Synthesia
  */
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Video, 
   Mic, 
@@ -21,11 +20,7 @@ import {
   Library,
   Clock,
   Zap,
-  Monitor,
-  Camera,
-  Volume2,
   Music,
-  Settings,
   Download,
   Share2,
   Layers,
@@ -34,11 +29,24 @@ import {
   PenTool,
   Cpu,
   Globe,
-  Users,
-  TrendingUp
+  TrendingUp,
+  Trash2,
+  ExternalLink
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { RecordingStudio } from '@/components/document-processing/RecordingStudio';
+import { toast } from 'sonner';
+
+// Types for media items
+interface MediaItem {
+  id: string;
+  name: string;
+  type: 'video' | 'audio';
+  url?: string;
+  timestamp: number;
+  duration?: number;
+  size?: number;
+}
 
 // Feature cards for the dashboard
 const FEATURES = [
@@ -90,17 +98,100 @@ const ADVANTAGES = [
   { icon: Headphones, text: 'Studio-grade audio processing' }
 ];
 
-// Recent projects mock data
-const RECENT_PROJECTS = [
-  { id: '1', name: 'Product Demo Video', type: 'video', duration: '3:24', lastEdited: '2 hours ago', thumbnail: '🎬' },
-  { id: '2', name: 'Onboarding Voiceover', type: 'audio', duration: '5:12', lastEdited: '1 day ago', thumbnail: '🎙️' },
-  { id: '3', name: 'Training Script', type: 'script', duration: '~8 min', lastEdited: '3 days ago', thumbnail: '📝' },
-];
+// Custom hook to load media from localStorage (same logic as removed sections)
+function useMediaLibrary() {
+  const [videos, setVideos] = useState<MediaItem[]>([]);
+  const [audios, setAudios] = useState<MediaItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadMedia = () => {
+    setIsLoading(true);
+    try {
+      // Load videos from localStorage (from VideoRecorder)
+      const savedMedia = localStorage.getItem('recordedMedia');
+      if (savedMedia) {
+        const allMedia = JSON.parse(savedMedia);
+        setVideos(allMedia.filter((m: any) => m.type === 'video').map((v: any, i: number) => ({
+          id: v.id || `video-${i}`,
+          name: v.name || `Video ${i + 1}`,
+          type: 'video' as const,
+          url: v.url,
+          timestamp: v.timestamp || Date.now(),
+          duration: v.duration,
+          size: v.size
+        })));
+        
+        const audioItems = allMedia.filter((m: any) => m.type === 'audio').map((a: any, i: number) => ({
+          id: a.id || `audio-${i}`,
+          name: a.name || `Audio ${i + 1}`,
+          type: 'audio' as const,
+          url: a.url,
+          timestamp: a.timestamp || Date.now(),
+          duration: a.duration,
+          size: a.size
+        }));
+        setAudios(audioItems);
+      }
+
+      // Load generated audios metadata
+      const generatedAudios = localStorage.getItem('generatedAudiosMetadata');
+      if (generatedAudios) {
+        const generated = JSON.parse(generatedAudios);
+        const generatedItems: MediaItem[] = generated.map((a: any, i: number) => ({
+          id: a.id || `gen-audio-${i}`,
+          name: a.title || a.name || 'Generated Audio',
+          type: 'audio' as const,
+          url: a.audioUrl || a.url,
+          timestamp: a.generatedAt ? new Date(a.generatedAt).getTime() : Date.now()
+        }));
+        setAudios(prev => [...prev, ...generatedItems]);
+      }
+    } catch (e) {
+      console.error('Failed to load media library:', e);
+    }
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    loadMedia();
+  }, []);
+
+  const deleteMedia = (id: string, type: 'video' | 'audio') => {
+    try {
+      const savedMedia = localStorage.getItem('recordedMedia');
+      if (savedMedia) {
+        const allMedia = JSON.parse(savedMedia);
+        const filtered = allMedia.filter((m: any) => m.id !== id);
+        localStorage.setItem('recordedMedia', JSON.stringify(filtered));
+      }
+      
+      if (type === 'video') {
+        setVideos(prev => prev.filter(v => v.id !== id));
+      } else {
+        setAudios(prev => prev.filter(a => a.id !== id));
+      }
+      toast.success(`${type === 'video' ? 'Video' : 'Audio'} deleted`);
+    } catch (e) {
+      toast.error('Failed to delete media');
+    }
+  };
+
+  return { videos, audios, isLoading, loadMedia, deleteMedia };
+}
 
 export default function GenieStudio() {
   const [isStudioOpen, setIsStudioOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedFeature, setSelectedFeature] = useState<string | null>(null);
+  
+  // Load real media from localStorage
+  const { videos, audios, isLoading, loadMedia, deleteMedia } = useMediaLibrary();
+
+  // Refresh library when studio closes
+  const handleStudioClose = () => {
+    setIsStudioOpen(false);
+    loadMedia(); // Refresh to pick up new recordings
+  };
 
   const handleFeatureClick = (featureId: string) => {
     setSelectedFeature(featureId);
@@ -119,6 +210,31 @@ export default function GenieStudio() {
         break;
     }
   };
+  
+  // Combine videos and audios for recent projects display
+  const recentProjects = [...videos, ...audios]
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, 5)
+    .map(item => ({
+      id: item.id,
+      name: item.name,
+      type: item.type,
+      duration: item.duration ? `${Math.floor(item.duration / 60)}:${String(item.duration % 60).padStart(2, '0')}` : '--:--',
+      lastEdited: getRelativeTime(item.timestamp),
+      thumbnail: item.type === 'video' ? '🎬' : '🎙️',
+      url: item.url
+    }));
+
+  function getRelativeTime(timestamp: number): string {
+    const diff = Date.now() - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    
+    if (minutes < 60) return `${minutes} min ago`;
+    if (hours < 24) return `${hours} hours ago`;
+    return `${days} days ago`;
+  }
 
   return (
     <AppLayout>
@@ -273,7 +389,13 @@ export default function GenieStudio() {
                         </Button>
                       </div>
                       <div className="space-y-3">
-                        {RECENT_PROJECTS.map((project) => (
+                        {recentProjects.length === 0 ? (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <Film className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                            <p>No recordings yet</p>
+                            <p className="text-sm">Start recording to see your projects here</p>
+                          </div>
+                        ) : recentProjects.map((project) => (
                           <div 
                             key={project.id}
                             className="flex items-center gap-4 p-3 rounded-lg border border-border/50 hover:border-primary/30 hover:bg-muted/30 transition-all cursor-pointer group"
@@ -349,18 +471,113 @@ export default function GenieStudio() {
               </div>
             </TabsContent>
 
-            <TabsContent value="library" className="mt-0">
+            <TabsContent value="library" className="mt-0 space-y-6">
+              {/* Videos Section */}
               <Card className="border-border/50 bg-card/80 backdrop-blur">
-                <CardContent className="p-12 text-center">
-                  <Library className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">Your Media Library</h3>
-                  <p className="text-muted-foreground mb-6">
-                    All your recordings, voiceovers, and generated content in one place
-                  </p>
-                  <Button onClick={() => setIsStudioOpen(true)}>
-                    <Video className="h-4 w-4 mr-2" />
-                    Create Your First Recording
-                  </Button>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Video className="h-5 w-5 text-red-500" />
+                    <h2 className="text-lg font-semibold">Video Recordings</h2>
+                    <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/30">
+                      {videos.length} Videos
+                    </Badge>
+                  </div>
+                  
+                  {videos.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
+                      <Video className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No videos recorded yet</p>
+                      <Button variant="outline" className="mt-4" onClick={() => setIsStudioOpen(true)}>
+                        <Video className="h-4 w-4 mr-2" />
+                        Record Your First Video
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {videos.map((video) => (
+                        <div key={video.id} className="border rounded-lg overflow-hidden bg-card group">
+                          {video.url ? (
+                            <video 
+                              src={video.url} 
+                              className="w-full aspect-video object-cover"
+                              controls
+                            />
+                          ) : (
+                            <div className="w-full aspect-video bg-muted flex items-center justify-center">
+                              <Video className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                          )}
+                          <div className="p-3 flex items-center justify-between">
+                            <div>
+                              <p className="font-medium truncate">{video.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(video.timestamp).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                              onClick={() => deleteMedia(video.id, 'video')}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Audio Section */}
+              <Card className="border-border/50 bg-card/80 backdrop-blur">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Music className="h-5 w-5 text-purple-500" />
+                    <h2 className="text-lg font-semibold">Audio & Voiceovers</h2>
+                    <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30">
+                      {audios.length} Audio Files
+                    </Badge>
+                  </div>
+                  
+                  {audios.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
+                      <Music className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No audio files yet</p>
+                      <Button variant="outline" className="mt-4" onClick={() => setIsStudioOpen(true)}>
+                        <Mic className="h-4 w-4 mr-2" />
+                        Generate Voiceover
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {audios.map((audio) => (
+                        <div key={audio.id} className="border rounded-lg p-4 bg-card flex items-center gap-4 group">
+                          <div className="h-12 w-12 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                            <Music className="h-6 w-6 text-purple-500" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{audio.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(audio.timestamp).toLocaleDateString()}
+                            </p>
+                          </div>
+                          {audio.url && (
+                            <audio src={audio.url} controls className="max-w-xs" />
+                          )}
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                            onClick={() => deleteMedia(audio.id, 'audio')}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -386,7 +603,7 @@ export default function GenieStudio() {
         {/* Recording Studio Modal */}
         <RecordingStudio
           isOpen={isStudioOpen}
-          onClose={() => setIsStudioOpen(false)}
+          onClose={handleStudioClose}
           scripts={[
             { id: 'video-script', title: 'Video Script', content: '' },
             { id: 'voiceover-script', title: 'Voiceover Script', content: '' }

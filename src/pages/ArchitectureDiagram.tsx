@@ -76,12 +76,18 @@ const ArchitectureDiagram = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   
-  // Initialize from URL params or defaults
-  const initialCategory = searchParams.get('category') || 'overview';
-  const initialDiagram = searchParams.get('diagram') || 'solution';
+  // Initialize from URL params or defaults - validate that category exists
+  const urlCategory = searchParams.get('category') || 'overview';
+  const urlDiagram = searchParams.get('diagram') || 'solution';
   
-  const [activeCategory, setActiveCategory] = useState(initialCategory);
-  const [activeDiagram, setActiveDiagram] = useState(initialDiagram);
+  // Validate category exists, fallback to 'overview' if not
+  const validCategory = diagramCategories[urlCategory as keyof typeof diagramCategories] ? urlCategory : 'overview';
+  const validDiagram = diagramCategories[validCategory as keyof typeof diagramCategories]?.diagrams.some(d => d.id === urlDiagram) 
+    ? urlDiagram 
+    : diagramCategories[validCategory as keyof typeof diagramCategories]?.diagrams[0]?.id || 'solution';
+  
+  const [activeCategory, setActiveCategory] = useState(validCategory);
+  const [activeDiagram, setActiveDiagram] = useState(validDiagram);
   const [diagramVersions, setDiagramVersions] = useState<Record<string, DiagramVersion[]>>({});
   const [selectedVersion, setSelectedVersion] = useState<string>('latest');
 
