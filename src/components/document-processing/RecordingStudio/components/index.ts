@@ -18,3 +18,5 @@ export { RecordingQualitySettings, QUALITY_SETTINGS } from './RecordingQualitySe
 export type { RecordingQuality } from './RecordingQualitySettings';
 export { ProjectSelector } from './ProjectSelector';
 export { StudioSoundPanel } from './StudioSoundPanel';
+export { ProjectAssetBreakdown } from './ProjectAssetBreakdown';
+export { AvatarCreator } from './AvatarCreator';
