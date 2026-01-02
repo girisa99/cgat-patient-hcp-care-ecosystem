@@ -39,7 +39,9 @@ import {
   useKeyboardShortcuts,
   useMediaProject,
   useStudioSound,
-  useTTSGeneration
+  useTTSGeneration,
+  useMLBackgroundBlur,
+  useFFmpegTrim
 } from './hooks';
 import { 
   VideoPreview, 
@@ -54,7 +56,9 @@ import {
   KeyboardShortcutsHelp,
   RecordingQualitySettings,
   ProjectSelector,
-  StudioSoundPanel
+  StudioSoundPanel,
+  PictureInPicture,
+  VideoEditorIntegration
 } from './components';
 import type { RecordingStudioProps, LogoState, TeleprompterState, ScriptData } from './types';
 import type { RecordingMode } from './hooks/useScreenShare';
@@ -162,6 +166,13 @@ export function RecordingStudio({
   // Logo position persistence (saved per session)
   const [savedLogoPosition, setSavedLogoPosition] = useState<{ x: number; y: number } | null>(null);
   
+  // PIP mode for screen+camera
+  const [pipEnabled, setPipEnabled] = useState(true);
+  
+  // Video editor integration
+  const [showVideoEditor, setShowVideoEditor] = useState(false);
+  const [editingBlob, setEditingBlob] = useState<Blob | null>(null);
+  
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   // Script draft storage hook
@@ -191,6 +202,12 @@ export function RecordingStudio({
   
   // TTS generation with real API integration
   const ttsGeneration = useTTSGeneration();
+  
+  // ML-based background blur with person segmentation
+  const mlBlur = useMLBackgroundBlur({ blurAmount: 15, enabled: isBlurEnabled });
+  
+  // FFmpeg for precise video trimming
+  const ffmpegTrim = useFFmpegTrim();
   
   // Get current data early for keyboard shortcuts
   const currentScript = scripts.find(s => s.id === selectedScriptId);
@@ -666,6 +683,15 @@ export function RecordingStudio({
     toast.info('Recording discarded');
   }, []);
 
+  // Open recording in video editor
+  const handleOpenInEditor = useCallback(() => {
+    if (lastRecordingBlob) {
+      setEditingBlob(lastRecordingBlob);
+      setShowRecordingPreview(false);
+      setShowVideoEditor(true);
+    }
+  }, [lastRecordingBlob]);
+
   // TTS download
   const handleDownloadTTS = useCallback(() => {
     if (ttsAudioUrl) {
@@ -848,24 +874,35 @@ export function RecordingStudio({
           {/* Video Section */}
           <div className="flex-1 flex flex-col p-4 gap-3 min-w-0 overflow-hidden">
             <div className="flex-1 min-h-0 relative">
-              <VideoPreview
-                stream={recordingMode === 'camera' ? camera.stream : (screenShare.screenStream || camera.stream)}
-                isLoading={camera.isLoading || screenShare.isLoading}
-                error={camera.error || screenShare.error}
-                isRecording={recording.isRecording}
-                countdown={recording.countdown}
-                formattedDuration={recording.formattedDuration}
-                teleprompter={{
-                  ...teleprompter,
-                  content: '', // Teleprompter is now in separate window
-                }}
-                logo={logo}
-                onLogoPositionChange={handleLogoPositionChange}
-                audioCurrentTime={audioCurrentTime}
-                audioDuration={audioDuration}
-                isAudioPlaying={isAudioPlaying}
-                onRetryCamera={camera.retryCamera}
-              />
+              {/* Use PictureInPicture for screen+camera mode */}
+              {recordingMode === 'screen+camera' && pipEnabled ? (
+                <PictureInPicture
+                  mainStream={screenShare.screenStream}
+                  pipStream={camera.stream}
+                  isEnabled={pipEnabled}
+                  onToggle={() => setPipEnabled(!pipEnabled)}
+                  className="w-full h-full"
+                />
+              ) : (
+                <VideoPreview
+                  stream={recordingMode === 'camera' ? camera.stream : (screenShare.screenStream || camera.stream)}
+                  isLoading={camera.isLoading || screenShare.isLoading}
+                  error={camera.error || screenShare.error}
+                  isRecording={recording.isRecording}
+                  countdown={recording.countdown}
+                  formattedDuration={recording.formattedDuration}
+                  teleprompter={{
+                    ...teleprompter,
+                    content: '', // Teleprompter is now in separate window
+                  }}
+                  logo={logo}
+                  onLogoPositionChange={handleLogoPositionChange}
+                  audioCurrentTime={audioCurrentTime}
+                  audioDuration={audioDuration}
+                  isAudioPlaying={isAudioPlaying}
+                  onRetryCamera={camera.retryCamera}
+                />
+              )}
             </div>
 
             <RecordingControls
@@ -1091,26 +1128,46 @@ export function RecordingStudio({
           onClose={() => setShowRecordingPreview(false)}
           onSave={handleSaveRecording}
           onDiscard={handleDiscardRecording}
+          onEdit={handleOpenInEditor}
           onTrim={async (startTime, endTime) => {
             if (!lastRecordingBlob) return;
             
             try {
-              toast.info('Trimming video...');
+              // Try FFmpeg for precise trimming
+              if (ffmpegTrim.isLoaded || !ffmpegTrim.isLoading) {
+                toast.info('Loading FFmpeg for precise trimming...');
+                const loaded = await ffmpegTrim.loadFFmpeg();
+                
+                if (loaded) {
+                  toast.info('Trimming with FFmpeg...');
+                  const trimmedBlob = await ffmpegTrim.trimVideo(
+                    lastRecordingBlob,
+                    startTime,
+                    endTime,
+                    { quality: 'high', outputFormat: 'webm' }
+                  );
+                  
+                  if (trimmedBlob) {
+                    setLastRecordingBlob(trimmedBlob);
+                    toast.success(`Trimmed to ${(endTime - startTime).toFixed(1)}s with FFmpeg`);
+                    return;
+                  }
+                }
+              }
               
-              // Create a video element to extract the trimmed portion
+              // Fallback to browser-based trimming
+              toast.info('Using browser-based trimming...');
+              
               const video = document.createElement('video');
               video.src = URL.createObjectURL(lastRecordingBlob);
               await new Promise(resolve => { video.onloadedmetadata = resolve; });
               
-              // For browser-based trimming, we'll create a MediaRecorder with the trimmed section
-              // This is a simplified approach - full implementation would use FFmpeg/WASM
               const canvas = document.createElement('canvas');
               canvas.width = video.videoWidth || 1280;
               canvas.height = video.videoHeight || 720;
               const ctx = canvas.getContext('2d');
               
               const stream = canvas.captureStream(30);
-              const audioCtx = new AudioContext();
               const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
               const chunks: Blob[] = [];
               
@@ -1144,6 +1201,28 @@ export function RecordingStudio({
               console.error('Trim error:', error);
               toast.error('Trim failed');
             }
+          }}
+        />
+        
+        {/* Video Editor Integration - for advanced post-processing */}
+        <VideoEditorIntegration
+          isOpen={showVideoEditor}
+          onClose={() => {
+            setShowVideoEditor(false);
+            setEditingBlob(null);
+          }}
+          recordingBlob={editingBlob}
+          recordingName={`Recording-${Date.now()}`}
+          voiceovers={voiceovers.map(v => ({ id: v.id, name: v.name, url: v.url }))}
+          music={music.map(m => ({ id: m.id, name: m.name, url: m.url }))}
+          onSaveEdited={(blob, transcript) => {
+            // Save to library
+            library.saveRecording(blob, {
+              name: `Edited Recording ${new Date().toLocaleString()}`,
+              duration: 0,
+              scriptTitle: currentScript?.title,
+            });
+            toast.success('Edited video saved to library!');
           }}
         />
 

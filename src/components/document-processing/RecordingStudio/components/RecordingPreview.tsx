@@ -5,7 +5,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Play, Pause, Square, Download, Trash2, Scissors, RotateCcw } from 'lucide-react';
+import { Play, Pause, Square, Download, Trash2, Scissors, RotateCcw, Edit3 } from 'lucide-react';
 
 interface RecordingPreviewProps {
   blob: Blob | null;
@@ -14,6 +14,7 @@ interface RecordingPreviewProps {
   onSave: () => void;
   onDiscard: () => void;
   onTrim?: (startTime: number, endTime: number) => void;
+  onEdit?: () => void;
 }
 
 export function RecordingPreview({
@@ -23,6 +24,7 @@ export function RecordingPreview({
   onSave,
   onDiscard,
   onTrim,
+  onEdit,
 }: RecordingPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -191,6 +193,12 @@ export function RecordingPreview({
             <Trash2 className="w-4 h-4" />
             Discard
           </Button>
+          {onEdit && (
+            <Button variant="outline" onClick={onEdit} className="gap-2">
+              <Edit3 className="w-4 h-4" />
+              Edit Video
+            </Button>
+          )}
           <Button onClick={onSave} className="gap-2">
             <Download className="w-4 h-4" />
             Save Recording
