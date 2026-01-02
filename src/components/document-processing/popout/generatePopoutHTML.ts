@@ -14,7 +14,9 @@ import {
   getAudioExportScript, getAudioExportStyles,
   getTranscriptionScript, getTranscriptionStyles,
   getScriptAudioSyncScript, getScriptAudioSyncStyles,
-  getVoiceoverManagerScript, getVoiceoverManagerStyles
+  getVoiceoverManagerScript, getVoiceoverManagerStyles,
+  getEnhancedControlsScript, getEnhancedControlsStyles,
+  getAudioPanelScript, getAudioPanelStyles
 } from './audio';
 
 /**
@@ -35,20 +37,26 @@ export function generatePopoutHTML(config: PopoutConfig): string {
     getAudioExportStyles(),
     getTranscriptionStyles(),
     getScriptAudioSyncStyles(),
-    getVoiceoverManagerStyles()
+    getVoiceoverManagerStyles(),
+    getEnhancedControlsStyles(),
+    getAudioPanelStyles()
   ].join('\n');
 
   // Get HTML content
   const htmlContent = getPopoutHTML(config);
 
-  // Get all scripts
+  // Get all scripts - order matters for dependencies
   const scripts = [
+    // Base modules first
     getAudioAnalyzerScript(),
     getAudioTrimmerScript(),
     getAudioExportScript(),
     getTranscriptionScript(config.supabaseUrl, config.supabaseKey),
     getScriptAudioSyncScript(),
     getVoiceoverManagerScript(),
+    getEnhancedControlsScript(),
+    getAudioPanelScript(config.supabaseUrl, config.supabaseKey),
+    // UI and Camera last (they use the above)
     getUIScript(),
     getCameraScript()
   ].join('\n\n');

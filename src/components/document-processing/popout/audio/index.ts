@@ -9,3 +9,5 @@ export { getAudioExportScript, getAudioExportStyles } from './audioExport';
 export { getTranscriptionScript, getTranscriptionStyles } from './transcription';
 export { getScriptAudioSyncScript, getScriptAudioSyncStyles } from './scriptAudioSync';
 export { getVoiceoverManagerScript, getVoiceoverManagerStyles } from './voiceoverManager';
+export { getEnhancedControlsScript, getEnhancedControlsStyles } from './enhancedControls';
+export { getAudioPanelScript, getAudioPanelStyles } from './audioPanel';
