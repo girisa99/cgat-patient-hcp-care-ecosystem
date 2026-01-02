@@ -128,7 +128,7 @@ export function getPopoutHTML(config: PopoutConfig): string {
             <button class="control-btn-small" data-logo-size="large">L</button>
           </div>
 
-          <!-- Record Button & Pause -->
+          <!-- Record Button & Pause & Library -->
           <div class="record-section">
             <button class="record-btn disabled" id="recordBtn" disabled>
               <span class="icon"></span>
@@ -136,6 +136,9 @@ export function getPopoutHTML(config: PopoutConfig): string {
             </button>
             <button class="pause-btn" id="pauseBtn" style="display:none;">
               ⏸️ Pause
+            </button>
+            <button class="library-btn-toggle" id="libraryBtn">
+              📚 Library <span id="libraryCount">0</span>
             </button>
           </div>
 
@@ -444,9 +447,24 @@ export function getPopoutHTML(config: PopoutConfig): string {
     <div class="assignment-toast" id="assignmentToast"></div>
     <div class="enhancement-toast" id="enhancementToast"></div>
     <div class="voice-provider-toast" id="voiceProviderToast"></div>
+    <div class="library-toast" id="libraryToast"></div>
+
+    <!-- Recording Library Panel -->
+    <div class="library-panel" id="libraryPanel">
+      <div class="library-header">
+        <h3>📚 Recording Library</h3>
+        <button class="close-library-btn" id="closeLibraryBtn">✕</button>
+      </div>
+      <div class="library-list" id="libraryList">
+        <div class="library-empty">No recordings yet</div>
+      </div>
+    </div>
+
+    <!-- Library Preview Container -->
+    <div id="libraryPreviewContainer"></div>
 
     <!-- Hidden Data -->
-    <script id="scriptsData" type="application/json">${scriptsJson}</script>
+    <script id="scriptsData" type="application/json">\${scriptsJson}</script>
   `;
 }
 

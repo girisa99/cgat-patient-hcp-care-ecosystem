@@ -23,6 +23,7 @@ import {
   getVoiceProviderSelectionScript, getVoiceProviderSelectionStyles
 } from './audio';
 import { getBackgroundBlurScript, getBackgroundBlurStyles } from './audio/backgroundBlur';
+import { getRecordingLibraryScript, getRecordingLibraryStyles } from './audio/recordingLibrary';
 
 /**
  * Generate the complete HTML for the popout recording studio
@@ -49,7 +50,8 @@ export function generatePopoutHTML(config: PopoutConfig): string {
     getRecordingEnhancementsStyles(),
     getTeleprompterEnhancementsStyles(),
     getVoiceProviderSelectionStyles(),
-    getBackgroundBlurStyles()
+    getBackgroundBlurStyles(),
+    getRecordingLibraryStyles()
   ].join('\n');
 
   // Get HTML content
@@ -72,6 +74,7 @@ export function generatePopoutHTML(config: PopoutConfig): string {
     getTeleprompterEnhancementsScript(),
     getVoiceProviderSelectionScript(config.supabaseUrl, config.supabaseKey),
     getBackgroundBlurScript(),
+    getRecordingLibraryScript(),
     // UI and Camera last (they use the above)
     getUIScript(),
     getCameraScript()
@@ -107,7 +110,9 @@ ${scripts}
         { name: 'Voice Provider Selection', check: typeof selectVoiceProvider === 'function' },
         { name: 'Countdown', check: typeof startCountdown === 'function' },
         { name: 'Audio Playback', check: typeof startAudioPlayback === 'function' },
-        { name: 'Word Highlighting', check: typeof startWordHighlightingFromAudio === 'function' }
+        { name: 'Word Highlighting', check: typeof startWordHighlightingFromAudio === 'function' },
+        { name: 'Background Blur', check: typeof toggleBackgroundBlur === 'function' },
+        { name: 'Recording Library', check: typeof saveRecordingToLibrary === 'function' }
       ];
       
       console.log('[Popout] ===== MODULE VALIDATION =====');
