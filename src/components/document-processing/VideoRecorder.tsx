@@ -48,7 +48,7 @@ import {
 } from '@/components/ui/dialog';
 import { TeleprompterPopup } from './TeleprompterPopup';
 import { VideoEditor } from './VideoEditor';
-import { openPopoutRecordingStudio } from './popout';
+import { RecordingStudio } from './RecordingStudio';
 
 interface MediaItem {
   id: string;
@@ -99,6 +99,9 @@ export const VideoRecorder: React.FC = () => {
   
   // Countdown state
   const [countdown, setCountdown] = useState<number | null>(null);
+  
+  // Recording Studio modal state
+  const [isRecordingStudioOpen, setIsRecordingStudioOpen] = useState(false);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   const previewRef = useRef<HTMLVideoElement>(null);
@@ -674,47 +677,9 @@ Thanks for watching!`,
     }
   };
 
-  // Pop out recording to a separate window (completely outside app frame)
+  // Open fullscreen recording studio modal
   const handlePopOutRecording = () => {
-    const popoutWindow = openPopoutRecordingStudio({
-      mediaItems: mediaItems.map(m => ({
-        id: m.id,
-        name: m.name,
-        url: m.url,
-        file_type: m.file_type,
-        metadata: m.metadata,
-      })),
-      availableScripts: availableScripts.map(s => ({
-        id: s.id,
-        title: s.title,
-        content: s.content,
-      })),
-      selectedScript: selectedScript ? {
-        id: selectedScript.id,
-        title: selectedScript.title,
-        content: selectedScript.content,
-      } : null,
-      selectedAudioFile: selectedAudioFile ? {
-        id: selectedAudioFile.id,
-        name: selectedAudioFile.name,
-        url: selectedAudioFile.url,
-        file_type: selectedAudioFile.file_type,
-        metadata: selectedAudioFile.metadata,
-      } : null,
-      selectedBackgroundMusic: selectedBackgroundMusic ? {
-        id: selectedBackgroundMusic.id,
-        name: selectedBackgroundMusic.name,
-        url: selectedBackgroundMusic.url,
-        file_type: selectedBackgroundMusic.file_type,
-        metadata: selectedBackgroundMusic.metadata,
-      } : null,
-      onSuccess: () => showSuccess('Recording studio opened in separate window'),
-      onError: (message) => showError(message),
-    });
-
-    if (!popoutWindow) {
-      console.error('Failed to open pop-out window');
-    }
+    setIsRecordingStudioOpen(true);
   };
 
   const handleSaveRecording = async () => {
@@ -1968,6 +1933,36 @@ Thanks for watching!`,
           isRecording={isRecording}
         />
       )}
+
+      {/* Fullscreen Recording Studio Modal */}
+      <RecordingStudio
+        isOpen={isRecordingStudioOpen}
+        onClose={() => setIsRecordingStudioOpen(false)}
+        scripts={availableScripts.map(s => ({
+          id: s.id,
+          title: s.title,
+          content: s.content,
+        }))}
+        voiceovers={mediaItems
+          .filter(m => m.file_type === 'audio' && !m.name.toLowerCase().includes('music') && !m.name.toLowerCase().includes('instrumental'))
+          .map(v => ({
+            id: v.id,
+            name: v.name,
+            url: v.url,
+            scriptText: v.metadata?.scriptText as string | null,
+            scriptType: v.metadata?.scriptType as string | null,
+          }))}
+        music={mediaItems
+          .filter(m => m.file_type === 'audio' && (m.name.toLowerCase().includes('music') || m.name.toLowerCase().includes('instrumental') || m.name.toLowerCase().includes('bgm')))
+          .map(m => ({
+            id: m.id,
+            name: m.name,
+            url: m.url,
+          }))}
+        selectedScriptId={selectedScript?.id}
+        selectedVoiceoverId={selectedAudioFile?.id}
+        selectedMusicId={selectedBackgroundMusic?.id}
+      />
     </>
   );
 };
