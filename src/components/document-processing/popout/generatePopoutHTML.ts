@@ -1732,12 +1732,13 @@ function generateScript(config: PopoutConfig): string {
         
         window.debugPopout && window.debugPopout('Initializing variables...');
       
+      try {
       var mediaRecorder = null;
       var chunks = [];
       var stream = null;
       var startTime = 0;
-      var pausedTime = 0; // Track total paused time
-      var pauseStartTime = 0; // Track when pause started
+      var pausedTime = 0;
+      var pauseStartTime = 0;
       var timerInterval = null;
       var isPaused = false;
       var countdownInterval = null;
@@ -1758,41 +1759,39 @@ function generateScript(config: PopoutConfig): string {
       var voiceoverAudioSource = null;
       var ttsAudioSource = null;
       var musicAudioSource = null;
-      var audioSourcesConnected = false; // Track if sources already connected
-      var audioProgressInterval = null; // Track the progress interval to avoid duplicates
-      var voiceoverClone = null; // Track cloned audio elements
+      var audioSourcesConnected = false;
+      var audioProgressInterval = null;
+      var voiceoverClone = null;
       var musicClone = null;
-      var animationFrameId = null; // Track animation frame for cleanup
-      var isSaving = false; // Prevent multiple saves and accidental restarts
-      var isStopped = false; // Guard flag to prevent audio restart after stop
+      var animationFrameId = null;
+      var isSaving = false;
+      var isStopped = false;
       
-      // Word-level tracking for cursor sync
-      var scriptWords = []; // Array of word objects with positions
+      var scriptWords = [];
       var currentWordIndex = 0;
       var wordHighlightInterval = null;
-      var estimatedWPM = 150; // Words per minute for TTS (adjustable)
-      var recordedMimeType = 'video/webm'; // Track the mime type used for recording
+      var estimatedWPM = 150;
+      var recordedMimeType = 'video/webm';
       
-      // Trim and transcription state
-      var trimmedChunks = []; // Stack to store trimmed chunks for undo
-      var transcriptText = ''; // Stored transcription text
-      var captionsEnabled = false; // Caption display toggle
-      var isTranscribing = false; // Transcription in progress
+      var trimmedChunks = [];
+      var transcriptText = '';
+      var captionsEnabled = false;
+      var isTranscribing = false;
       
-      // Script analysis and segment state
-      var scriptAnalysis = null; // Stores AI analysis results
-      var currentSegmentIndex = 0; // Current segment during recording
-      var isSegmentViewEnabled = false; // Toggle between plain text and segment view
-      var insertMode = 'demo'; // 'demo', 'silent', 'skip'
-      var isAnalyzing = false; // Analysis in progress
+      var scriptAnalysis = null;
+      var currentSegmentIndex = 0;
+      var isSegmentViewEnabled = false;
+      var insertMode = 'demo';
+      var isAnalyzing = false;
       
-      // Teleprompter speed and cursor state
-      var teleprompterSpeedMultiplier = 1.0; // User-adjustable speed multiplier
-      var baseScrollSpeed = 2; // Base pixels per interval at 1.0x speed
-      var readingCursorEnabled = true; // Show reading cursor during playback
-      var currentScrollPixelsPerInterval = 2; // Current calculated speed
+      var teleprompterSpeedMultiplier = 1.0;
+      var baseScrollSpeed = 2;
+      var readingCursorEnabled = true;
+      var currentScrollPixelsPerInterval = 2;
       
-      // DOM Elements
+      window.debugPopout && window.debugPopout('Getting DOM elements...');
+      
+      // DOM Elements - with null checks
       var preview = document.getElementById('preview');
       var startBtn = document.getElementById('startBtn');
       var pauseBtn = document.getElementById('pauseBtn');
@@ -1818,8 +1817,14 @@ function generateScript(config: PopoutConfig): string {
       var bgMusicName = document.getElementById('bgMusicName');
       var audioControlPanel = document.getElementById('audioControlPanel');
       
+      window.debugPopout && window.debugPopout('DOM elements retrieved, hiding audio panel...');
+      
       // Initially hide audio control panel until recording starts
-      audioControlPanel.style.display = 'none';
+      if (audioControlPanel) {
+        audioControlPanel.style.display = 'none';
+      } else {
+        window.debugPopout && window.debugPopout('WARNING: audioControlPanel not found!');
+      }
       var voiceoverControls = document.getElementById('voiceoverControls');
       var ttsControls = document.getElementById('ttsControls');
       var musicControls = document.getElementById('musicControls');
@@ -1986,6 +1991,8 @@ function generateScript(config: PopoutConfig): string {
       var customLogoDataUrl = null;
       var customLogoImage = null;
       
+      window.debugPopout && window.debugPopout('Setting up logo and camera...');
+      
       // Load saved logo from localStorage
       try {
         var savedLogo = localStorage.getItem('recording_studio_custom_logo');
@@ -1993,57 +2000,73 @@ function generateScript(config: PopoutConfig): string {
           customLogoDataUrl = savedLogo;
           customLogoImage = new Image();
           customLogoImage.src = savedLogo;
-          logoPlaceholder.innerHTML = '<img src="' + savedLogo + '" alt="Logo"><span class="drag-hint">Drag to position</span>';
+          if (logoPlaceholder) {
+            logoPlaceholder.innerHTML = '<img src="' + savedLogo + '" alt="Logo"><span class="drag-hint">Drag to position</span>';
+          }
           // Also update PIP logo container
-          pipLogoContainer.innerHTML = '<img src="' + savedLogo + '" alt="Logo">';
+          if (pipLogoContainer) {
+            pipLogoContainer.innerHTML = '<img src="' + savedLogo + '" alt="Logo">';
+          }
         }
       } catch(e) { console.error('Failed to load saved logo:', e); }
       
-      // Logo upload handling
-      uploadLogoBtn.onclick = function() {
-        logoUploadInput.click();
-      };
+      window.debugPopout && window.debugPopout('Setting up logo upload handlers...');
       
-      logoUploadInput.onchange = function(e) {
-        var file = e.target.files[0];
-        if (file && file.type.startsWith('image/')) {
-          var reader = new FileReader();
-          reader.onload = function(evt) {
-            customLogoDataUrl = evt.target.result;
-            customLogoImage = new Image();
-            customLogoImage.src = customLogoDataUrl;
-            logoPlaceholder.innerHTML = '<img src="' + customLogoDataUrl + '" alt="Logo"><span class="drag-hint">Drag to position</span>';
-            // Also update PIP logo container
-            pipLogoContainer.innerHTML = '<img src="' + customLogoDataUrl + '" alt="Logo">';
-            // Save to localStorage
-            try {
-              localStorage.setItem('recording_studio_custom_logo', customLogoDataUrl);
-            } catch(err) { console.error('Failed to save logo:', err); }
-          };
-          reader.readAsDataURL(file);
-        }
-      };
+      // Logo upload handling - with null checks
+      if (uploadLogoBtn) {
+        uploadLogoBtn.onclick = function() {
+          if (logoUploadInput) logoUploadInput.click();
+        };
+      }
+      
+      if (logoUploadInput) {
+        logoUploadInput.onchange = function(e) {
+          var file = e.target.files[0];
+          if (file && file.type.startsWith('image/')) {
+            var reader = new FileReader();
+            reader.onload = function(evt) {
+              customLogoDataUrl = evt.target.result;
+              customLogoImage = new Image();
+              customLogoImage.src = customLogoDataUrl;
+              if (logoPlaceholder) {
+                logoPlaceholder.innerHTML = '<img src="' + customLogoDataUrl + '" alt="Logo"><span class="drag-hint">Drag to position</span>';
+              }
+              // Also update PIP logo container
+              if (pipLogoContainer) {
+                pipLogoContainer.innerHTML = '<img src="' + customLogoDataUrl + '" alt="Logo">';
+              }
+              // Save to localStorage
+              try {
+                localStorage.setItem('recording_studio_custom_logo', customLogoDataUrl);
+              } catch(err) { console.error('Failed to save logo:', err); }
+            };
+            reader.readAsDataURL(file);
+          }
+        };
+      }
       
       // Make logo placeholder draggable for positioning before recording
       var isLogoDragging = false;
       var logoDragOffsetX = 0;
       var logoDragOffsetY = 0;
       
-      logoPlaceholder.addEventListener('mousedown', function(e) {
-        if (e.target.tagName === 'BUTTON') return;
-        e.preventDefault();
-        e.stopPropagation();
-        isLogoDragging = true;
-        logoPlaceholder.classList.add('dragging');
-        
-        var rect = logoPlaceholder.getBoundingClientRect();
-        logoDragOffsetX = e.clientX - rect.left;
-        logoDragOffsetY = e.clientY - rect.top;
-        console.log('🖱️ Logo drag started');
-      });
+      if (logoPlaceholder) {
+        logoPlaceholder.addEventListener('mousedown', function(e) {
+          if (e.target.tagName === 'BUTTON') return;
+          e.preventDefault();
+          e.stopPropagation();
+          isLogoDragging = true;
+          logoPlaceholder.classList.add('dragging');
+          
+          var rect = logoPlaceholder.getBoundingClientRect();
+          logoDragOffsetX = e.clientX - rect.left;
+          logoDragOffsetY = e.clientY - rect.top;
+          console.log('🖱️ Logo drag started');
+        });
+      }
       
       document.addEventListener('mousemove', function(e) {
-        if (!isLogoDragging) return;
+        if (!isLogoDragging || !logoPlaceholder || !cameraOffOverlay) return;
         e.preventDefault();
         
         var container = cameraOffOverlay;
@@ -2074,7 +2097,7 @@ function generateScript(config: PopoutConfig): string {
       });
       
       document.addEventListener('mouseup', function(e) {
-        if (isLogoDragging) {
+        if (isLogoDragging && logoPlaceholder) {
           isLogoDragging = false;
           logoPlaceholder.classList.remove('dragging');
           console.log('🖱️ Logo drag ended at:', logoPreviewPosition);
@@ -2082,20 +2105,22 @@ function generateScript(config: PopoutConfig): string {
       });
       
       // Touch events for logo dragging on mobile
-      logoPlaceholder.addEventListener('touchstart', function(e) {
-        if (e.target.tagName === 'BUTTON') return;
-        e.preventDefault();
-        isLogoDragging = true;
-        logoPlaceholder.classList.add('dragging');
-        
-        var touch = e.touches[0];
-        var rect = logoPlaceholder.getBoundingClientRect();
-        logoDragOffsetX = touch.clientX - rect.left;
-        logoDragOffsetY = touch.clientY - rect.top;
-      }, { passive: false });
+      if (logoPlaceholder) {
+        logoPlaceholder.addEventListener('touchstart', function(e) {
+          if (e.target.tagName === 'BUTTON') return;
+          e.preventDefault();
+          isLogoDragging = true;
+          logoPlaceholder.classList.add('dragging');
+          
+          var touch = e.touches[0];
+          var rect = logoPlaceholder.getBoundingClientRect();
+          logoDragOffsetX = touch.clientX - rect.left;
+          logoDragOffsetY = touch.clientY - rect.top;
+        }, { passive: false });
+      }
       
       document.addEventListener('touchmove', function(e) {
-        if (!isLogoDragging) return;
+        if (!isLogoDragging || !logoPlaceholder || !cameraOffOverlay) return;
         e.preventDefault();
         
         var touch = e.touches[0];
@@ -2121,11 +2146,13 @@ function generateScript(config: PopoutConfig): string {
       }, { passive: false });
       
       document.addEventListener('touchend', function() {
-        if (isLogoDragging) {
+        if (isLogoDragging && logoPlaceholder) {
           isLogoDragging = false;
           logoPlaceholder.classList.remove('dragging');
         }
       });
+      
+      window.debugPopout && window.debugPopout('Setting up dropdowns...');
       
       // Currently selected IDs
       var selectedScriptId = '${config.selectedScriptId}';
@@ -2134,34 +2161,44 @@ function generateScript(config: PopoutConfig): string {
       
       // Populate dropdowns
       try {
-        scripts.forEach(function(s) {
-          var opt = document.createElement('option');
-          opt.value = s.id;
-          opt.textContent = s.title;
-          if (s.id === selectedScriptId) opt.selected = true;
-          scriptSelect.appendChild(opt);
-        });
+        if (scriptSelect) {
+          scripts.forEach(function(s) {
+            var opt = document.createElement('option');
+            opt.value = s.id;
+            opt.textContent = s.title;
+            if (s.id === selectedScriptId) opt.selected = true;
+            scriptSelect.appendChild(opt);
+          });
+        }
         
-        voiceovers.forEach(function(v) {
-          var opt = document.createElement('option');
-          opt.value = v.id;
-          opt.textContent = v.name;
-          if (v.id === selectedVoiceoverId) opt.selected = true;
-          voiceoverSelect.appendChild(opt);
-        });
+        if (voiceoverSelect) {
+          voiceovers.forEach(function(v) {
+            var opt = document.createElement('option');
+            opt.value = v.id;
+            opt.textContent = v.name;
+            if (v.id === selectedVoiceoverId) opt.selected = true;
+            voiceoverSelect.appendChild(opt);
+          });
+        }
         
-        musicList.forEach(function(m) {
-          var opt = document.createElement('option');
-          opt.value = m.id;
-          opt.textContent = m.name;
-          if (m.id === selectedMusicId) opt.selected = true;
-          musicSelect.appendChild(opt);
-        });
+        if (musicSelect) {
+          musicList.forEach(function(m) {
+            var opt = document.createElement('option');
+            opt.value = m.id;
+            opt.textContent = m.name;
+            if (m.id === selectedMusicId) opt.selected = true;
+            musicSelect.appendChild(opt);
+          });
+        }
         
+        window.debugPopout && window.debugPopout('Dropdowns populated');
         console.log('✅ Dropdowns populated');
       } catch(e) {
         console.error('Dropdown error:', e);
+        window.debugPopout && window.debugPopout('Dropdown error: ' + e.message);
       }
+      
+      window.debugPopout && window.debugPopout('Setting up camera and UI...');
       
       // Clean script for TTS - remove markers, notes sections that shouldn't be spoken
       // Defined early so it can be used by download handlers
@@ -2232,35 +2269,42 @@ function generateScript(config: PopoutConfig): string {
       
       // Function to update audio control panel based on dropdown selections
       function updateControlPanelFromDropdowns() {
-        var hasVoiceover = voiceoverSelect.value && voiceovers.find(function(v) { return v.id === voiceoverSelect.value; });
-        var hasScript = scriptSelect.value && scripts.find(function(s) { return s.id === scriptSelect.value; });
-        var hasMusic = musicSelect.value && musicList.find(function(m) { return m.id === musicSelect.value; });
+        var hasVoiceover = voiceoverSelect && voiceoverSelect.value && voiceovers.find(function(v) { return v.id === voiceoverSelect.value; });
+        var hasScript = scriptSelect && scriptSelect.value && scripts.find(function(s) { return s.id === scriptSelect.value; });
+        var hasMusic = musicSelect && musicSelect.value && musicList.find(function(m) { return m.id === musicSelect.value; });
         
         console.log('🎛️ Updating control panel:', { hasVoiceover: !!hasVoiceover, hasScript: !!hasScript, hasMusic: !!hasMusic });
         
         // Update voiceover controls
-        if (hasVoiceover) {
-          voiceoverControls.classList.remove('disabled');
-          voiceoverControls.classList.add('active');
-          voiceoverControls.querySelector('.track-status').textContent = 'Ready';
-          voiceoverControls.querySelectorAll('button').forEach(function(btn) { btn.disabled = false; });
-        } else {
-          voiceoverControls.classList.remove('active');
-          voiceoverControls.classList.add('disabled');
-          voiceoverControls.querySelector('.track-status').textContent = 'Not Selected';
-          voiceoverControls.querySelectorAll('button').forEach(function(btn) { btn.disabled = true; });
+        if (voiceoverControls) {
+          if (hasVoiceover) {
+            voiceoverControls.classList.remove('disabled');
+            voiceoverControls.classList.add('active');
+            var vStatus = voiceoverControls.querySelector('.track-status');
+            if (vStatus) vStatus.textContent = 'Ready';
+            voiceoverControls.querySelectorAll('button').forEach(function(btn) { btn.disabled = false; });
+          } else {
+            voiceoverControls.classList.remove('active');
+            voiceoverControls.classList.add('disabled');
+            var vStatus = voiceoverControls.querySelector('.track-status');
+            if (vStatus) vStatus.textContent = 'Not Selected';
+            voiceoverControls.querySelectorAll('button').forEach(function(btn) { btn.disabled = true; });
+          }
         }
         
         // Update TTS controls (based on script selection)
-        if (hasScript) {
-          ttsControls.classList.remove('disabled');
-          ttsControls.classList.add('active');
-          ttsControls.querySelector('.track-status').textContent = 'Ready';
-          ttsControls.querySelectorAll('button').forEach(function(btn) { btn.disabled = false; });
-        } else {
-          ttsControls.classList.remove('active');
-          ttsControls.classList.add('disabled');
-          ttsControls.querySelector('.track-status').textContent = 'Not Selected';
+        if (ttsControls) {
+          if (hasScript) {
+            ttsControls.classList.remove('disabled');
+            ttsControls.classList.add('active');
+            var tStatus = ttsControls.querySelector('.track-status');
+            if (tStatus) tStatus.textContent = 'Ready';
+            ttsControls.querySelectorAll('button').forEach(function(btn) { btn.disabled = false; });
+          } else {
+            ttsControls.classList.remove('active');
+            ttsControls.classList.add('disabled');
+            var tStatus = ttsControls.querySelector('.track-status');
+            if (tStatus) tStatus.textContent = 'Not Selected';
           ttsControls.querySelectorAll('button').forEach(function(btn) { btn.disabled = true; });
         }
         
@@ -3960,14 +4004,22 @@ function generateScript(config: PopoutConfig): string {
       }
       
       // Initialize camera
+      window.debugPopout && window.debugPopout('Setting up camera function...');
+      
       function initCamera() {
         console.log('🎥 Requesting camera access...');
+        window.debugPopout && window.debugPopout('Requesting camera access...');
         
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
           console.error('Camera API not available');
-          cameraLoadingContent.innerHTML = '<p style="color:#f87171;">Camera API not available in this browser</p>';
-          status.textContent = 'Error';
-          status.className = 'status error';
+          window.debugPopout && window.debugPopout('ERROR: Camera API not available');
+          if (cameraLoadingContent) {
+            cameraLoadingContent.innerHTML = '<p style="color:#f87171;">Camera API not available in this browser</p>';
+          }
+          if (status) {
+            status.textContent = 'Error';
+            status.className = 'status error';
+          }
           return;
         }
         
@@ -3976,55 +4028,81 @@ function generateScript(config: PopoutConfig): string {
           audio: true
         }).then(function(mediaStream) {
           console.log('✅ Camera stream obtained');
+          window.debugPopout && window.debugPopout('Camera stream obtained!');
           stream = mediaStream;
           window.cameraStream = mediaStream;
           isCameraStreamActive = true;
           isCameraOn = true;
           
-          preview.srcObject = mediaStream;
-          preview.muted = true;
+          if (preview) {
+            preview.srcObject = mediaStream;
+            preview.muted = true;
+          }
           
           // Also set PIP video source
-          pipVideo.srcObject = mediaStream;
-          pipVideo.muted = true;
-          pipVideo.play().catch(console.error);
+          if (pipVideo) {
+            pipVideo.srcObject = mediaStream;
+            pipVideo.muted = true;
+            pipVideo.play().catch(console.error);
+          }
           
-          preview.play().then(function() {
-            console.log('✅ Preview playing');
-            cameraLoading.classList.add('hidden');
-            status.textContent = 'Camera Ready';
-            status.className = 'status ready';
-          }).catch(function(playErr) {
-            console.error('Preview play error:', playErr);
-            cameraLoading.classList.add('hidden');
-            status.textContent = 'Camera Ready';
-            status.className = 'status ready';
-          });
+          if (preview) {
+            preview.play().then(function() {
+              console.log('✅ Preview playing');
+              window.debugPopout && window.debugPopout('Camera ready and playing!');
+              if (cameraLoading) cameraLoading.classList.add('hidden');
+              if (status) {
+                status.textContent = 'Camera Ready';
+                status.className = 'status ready';
+              }
+            }).catch(function(playErr) {
+              console.error('Preview play error:', playErr);
+              if (cameraLoading) cameraLoading.classList.add('hidden');
+              if (status) {
+                status.textContent = 'Camera Ready';
+                status.className = 'status ready';
+              }
+            });
+          } else {
+            if (cameraLoading) cameraLoading.classList.add('hidden');
+          }
           
         }).catch(function(e) {
           console.error('❌ Camera error:', e.name, e.message);
+          window.debugPopout && window.debugPopout('Camera error: ' + e.name + ' - ' + e.message);
           
           if (e.name === 'NotAllowedError') {
             showPermissionDenied();
           } else if (e.name === 'NotFoundError') {
-            cameraLoadingContent.style.display = 'none';
-            cameraPermissionRequest.innerHTML = '<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5" style="margin-bottom:20px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg><p style="font-size:18px;font-weight:600;color:#ef4444;margin-bottom:10px;">No Camera Found</p><p style="font-size:14px;opacity:0.7;margin-bottom:20px;">Please connect a camera and try again</p><button onclick="location.reload()" style="padding:12px 25px;background:#3b82f6;border:none;color:white;border-radius:8px;cursor:pointer;">Retry</button>';
-            cameraPermissionRequest.style.display = 'block';
-            status.textContent = 'No Camera';
-            status.className = 'status error';
+            if (cameraLoadingContent) cameraLoadingContent.style.display = 'none';
+            if (cameraPermissionRequest) {
+              cameraPermissionRequest.innerHTML = '<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5" style="margin-bottom:20px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg><p style="font-size:18px;font-weight:600;color:#ef4444;margin-bottom:10px;">No Camera Found</p><p style="font-size:14px;opacity:0.7;margin-bottom:20px;">Please connect a camera and try again</p><button onclick="location.reload()" style="padding:12px 25px;background:#3b82f6;border:none;color:white;border-radius:8px;cursor:pointer;">Retry</button>';
+              cameraPermissionRequest.style.display = 'block';
+            }
+            if (status) {
+              status.textContent = 'No Camera';
+              status.className = 'status error';
+            }
           } else {
-            cameraLoadingContent.innerHTML = '<p style="color:#f87171;font-size:16px;margin-bottom:10px;">Camera Error</p><p style="font-size:13px;opacity:0.7;margin-bottom:15px;">' + (e.message || 'Unknown error') + '</p><button onclick="initCamera()" style="padding:10px 20px;background:#3b82f6;border:none;color:white;border-radius:8px;cursor:pointer;">Retry</button>';
-            status.textContent = 'Error';
-            status.className = 'status error';
+            if (cameraLoadingContent) {
+              cameraLoadingContent.innerHTML = '<p style="color:#f87171;font-size:16px;margin-bottom:10px;">Camera Error</p><p style="font-size:13px;opacity:0.7;margin-bottom:15px;">' + (e.message || 'Unknown error') + '</p><button onclick="initCamera()" style="padding:10px 20px;background:#3b82f6;border:none;color:white;border-radius:8px;cursor:pointer;">Retry</button>';
+            }
+            if (status) {
+              status.textContent = 'Error';
+              status.className = 'status error';
+            }
           }
         });
       }
       
       // Button to retry camera
-      requestCameraBtn.onclick = initCamera;
+      if (requestCameraBtn) {
+        requestCameraBtn.onclick = initCamera;
+      }
       
       // Initialize camera immediately
       console.log('🎬 Starting camera initialization...');
+      window.debugPopout && window.debugPopout('Starting camera initialization...');
       initCamera();
       
       // Safety timeout: If camera loading takes too long, show retry option
