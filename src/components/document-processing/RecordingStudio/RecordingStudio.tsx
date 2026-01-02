@@ -1,13 +1,17 @@
 /**
  * Fullscreen Recording Studio - Complete Implementation
  * Features:
- * - Screen sharing with countdown
+ * - Screen sharing with 5-second countdown
  * - Floating teleprompter (separate window)
  * - Script enhancement with diff review
  * - TTS with ElevenLabs/OpenAI
  * - Audio sync and playback
- * - Trim controls
+ * - Trim controls with undo
  * - Recording library
+ * - Background blur
+ * - Keyboard shortcuts
+ * - Quality settings
+ * - Music generation
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
@@ -22,7 +26,15 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { useCamera, useRecording, useAudioPlayback, useRecordingLibrary, useScreenShare, useScriptDraftStorage } from './hooks';
+import { 
+  useCamera, 
+  useRecording, 
+  useAudioPlayback, 
+  useRecordingLibrary, 
+  useScreenShare, 
+  useScriptDraftStorage,
+  useKeyboardShortcuts
+} from './hooks';
 import { 
   VideoPreview, 
   RecordingControls, 
@@ -31,10 +43,14 @@ import {
   RecordingLibraryPanel,
   RecordingPreview,
   FloatingTeleprompter,
-  PreRecordingDialog
+  PreRecordingDialog,
+  MusicGenerator,
+  KeyboardShortcutsHelp,
+  RecordingQualitySettings
 } from './components';
 import type { RecordingStudioProps, LogoState, TeleprompterState, ScriptData } from './types';
 import type { RecordingMode } from './hooks/useScreenShare';
+import type { RecordingQuality } from './components/RecordingQualitySettings';
 
 export function RecordingStudio({
   isOpen,
@@ -77,6 +93,9 @@ export function RecordingStudio({
   });
   
   const [isBlurEnabled, setIsBlurEnabled] = useState(false);
+  
+  // Recording quality
+  const [recordingQuality, setRecordingQuality] = useState<RecordingQuality>('high');
   const [ttsText, setTTSText] = useState('');
   const [selectedVoice, setSelectedVoice] = useState('alloy');
   const [hasTTSAudio, setHasTTSAudio] = useState(false);
@@ -144,6 +163,11 @@ export function RecordingStudio({
   const library = useRecordingLibrary();
   const audioPlayback = useAudioPlayback();
   
+  // Get current data early for keyboard shortcuts
+  const currentScript = scripts.find(s => s.id === selectedScriptId);
+  const currentVoiceover = voiceovers.find(v => v.id === selectedVoiceoverId);
+  const currentMusic = music.find(m => m.id === selectedMusicId);
+  
   // Calculate current word index from audio time
   useEffect(() => {
     if (audioPlayback.audioTimeInfo) {
@@ -203,13 +227,14 @@ export function RecordingStudio({
         tts: audioPlayback.audioElements?.tts,
         music: audioPlayback.audioElements?.music,
       },
+      // Recording quality
+      quality: recordingQuality,
+      // 5-second countdown (default in hook)
+      countdownSeconds: 5,
     }
   );
 
-  // Get current data
-  const currentScript = scripts.find(s => s.id === selectedScriptId);
-  const currentVoiceover = voiceovers.find(v => v.id === selectedVoiceoverId);
-  const currentMusic = music.find(m => m.id === selectedMusicId);
+  // Note: currentScript, currentVoiceover, currentMusic defined above after hooks
 
   // Sync enhanced script to draft storage when it changes
   useEffect(() => {

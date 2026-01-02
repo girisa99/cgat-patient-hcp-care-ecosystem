@@ -12,3 +12,7 @@ export { AudioAnalyzer } from './AudioAnalyzer';
 export { FloatingTeleprompter } from './FloatingTeleprompter';
 export { SidePanel, SectionIcons } from './SidePanel';
 export { PreRecordingDialog } from './PreRecordingDialog';
+export { MusicGenerator } from './MusicGenerator';
+export { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp';
+export { RecordingQualitySettings, QUALITY_SETTINGS } from './RecordingQualitySettings';
+export type { RecordingQuality } from './RecordingQualitySettings';
