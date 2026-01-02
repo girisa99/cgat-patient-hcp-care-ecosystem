@@ -1,14 +1,17 @@
 /**
  * Audio Panel Component - Voiceover, TTS, Music tabs with export features
+ * TTS with ElevenLabs/OpenAI provider selection and download
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Play, Square, Repeat, Volume2, Download, FileText, Mic } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Play, Square, Repeat, Volume2, Download, FileText, Mic, Loader2 } from 'lucide-react';
 import type { VoiceoverData, MusicData, AudioTabType } from '../types';
 
 interface AudioPanelProps {
@@ -51,19 +54,37 @@ interface AudioPanelProps {
   ttsVolume: number;
   onTTSVolumeChange: (volume: number) => void;
   
+  // TTS Download - new props
+  ttsAudioUrl?: string | null;
+  onDownloadTTS?: () => void;
+  
+  // Provider selection
+  ttsProvider?: 'openai' | 'elevenlabs';
+  onTTSProviderChange?: (provider: 'openai' | 'elevenlabs') => void;
+  
   currentScriptContent?: string;
   onTranscribe?: () => void;
   isTranscribing?: boolean;
   transcriptionText?: string;
 }
 
-const VOICE_OPTIONS = [
+const OPENAI_VOICES = [
   { value: 'alloy', label: 'Alloy' },
   { value: 'echo', label: 'Echo' },
   { value: 'fable', label: 'Fable' },
   { value: 'onyx', label: 'Onyx' },
   { value: 'nova', label: 'Nova' },
   { value: 'shimmer', label: 'Shimmer' },
+];
+
+const ELEVENLABS_VOICES = [
+  { value: 'CwhRBWXzGAHq8TQ4Fs17', label: 'Roger' },
+  { value: 'EXAVITQu4vr4xnSDxMaL', label: 'Sarah' },
+  { value: 'FGY2WhTYpPnrIDTdsKH5', label: 'Laura' },
+  { value: 'IKne3meq5aSn9XLyUdCD', label: 'Charlie' },
+  { value: 'JBFqnCBsd6RMkjVDRZzb', label: 'George' },
+  { value: 'onwK4e9ZLuTAKqWW03F9', label: 'Daniel' },
+  { value: 'pFZP5JQG7iQjIQuC4Bku', label: 'Lily' },
 ];
 
 export function AudioPanel({
@@ -99,6 +120,10 @@ export function AudioPanel({
   hasTTSAudio,
   ttsVolume,
   onTTSVolumeChange,
+  ttsAudioUrl,
+  onDownloadTTS,
+  ttsProvider = 'openai',
+  onTTSProviderChange,
   currentScriptContent,
   onTranscribe,
   isTranscribing,
@@ -107,12 +132,26 @@ export function AudioPanel({
   const selectedVoiceover = voiceovers.find(v => v.id === selectedVoiceoverId);
   const selectedMusic = musicList.find(m => m.id === selectedMusicId);
 
+  const voiceOptions = ttsProvider === 'elevenlabs' ? ELEVENLABS_VOICES : OPENAI_VOICES;
+
   // Export audio helper
   const handleExportAudio = (url: string, name: string, format: 'mp3' | 'wav' = 'mp3') => {
     const a = document.createElement('a');
     a.href = url;
     a.download = `${name}.${format}`;
     a.click();
+  };
+
+  // Download TTS audio
+  const handleDownloadTTS = () => {
+    if (ttsAudioUrl) {
+      const a = document.createElement('a');
+      a.href = ttsAudioUrl;
+      a.download = `tts-audio-${Date.now()}.mp3`;
+      a.click();
+    } else if (onDownloadTTS) {
+      onDownloadTTS();
+    }
   };
 
   return (
@@ -208,6 +247,27 @@ export function AudioPanel({
 
         {/* TTS Tab */}
         <TabsContent value="tts" className="space-y-2 mt-0">
+          {/* Provider Selection */}
+          {onTTSProviderChange && (
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Provider</Label>
+              <RadioGroup 
+                value={ttsProvider} 
+                onValueChange={(v) => onTTSProviderChange(v as 'openai' | 'elevenlabs')}
+                className="flex gap-3"
+              >
+                <div className="flex items-center space-x-1">
+                  <RadioGroupItem value="openai" id="openai" className="h-3 w-3" />
+                  <Label htmlFor="openai" className="text-xs cursor-pointer">OpenAI</Label>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <RadioGroupItem value="elevenlabs" id="elevenlabs" className="h-3 w-3" />
+                  <Label htmlFor="elevenlabs" className="text-xs cursor-pointer">ElevenLabs</Label>
+                </div>
+              </RadioGroup>
+            </div>
+          )}
+
           {currentScriptContent && (
             <Button
               size="sm"
@@ -222,18 +282,18 @@ export function AudioPanel({
           <Textarea
             value={ttsText}
             onChange={(e) => onTTSTextChange(e.target.value)}
-            placeholder="Enter text..."
-            className="min-h-[60px] text-xs"
+            placeholder="Enter text for TTS..."
+            className="min-h-[60px] text-xs resize-none"
           />
 
           <Select value={selectedVoice} onValueChange={onVoiceChange}>
             <SelectTrigger className="bg-background h-8 text-xs">
               <SelectValue>
-                {VOICE_OPTIONS.find(v => v.value === selectedVoice)?.label || "Select voice"}
+                {voiceOptions.find(v => v.value === selectedVoice)?.label || "Select voice"}
               </SelectValue>
             </SelectTrigger>
             <SelectContent className="bg-popover border shadow-md z-[9999]">
-              {VOICE_OPTIONS.map((v) => (
+              {voiceOptions.map((v) => (
                 <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>
               ))}
             </SelectContent>
@@ -246,18 +306,38 @@ export function AudioPanel({
               disabled={!ttsText || isTTSGenerating}
               className="gap-1 h-7 text-xs flex-1"
             >
-              {isTTSGenerating ? '⏳...' : '🔊 Generate'}
+              {isTTSGenerating ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  🔊 Generate
+                </>
+              )}
             </Button>
             
             {hasTTSAudio && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={isTTSPlaying ? onStopTTS : onPlayTTS}
-                className="gap-1 h-7 text-xs"
-              >
-                {isTTSPlaying ? <Square className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-              </Button>
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={isTTSPlaying ? onStopTTS : onPlayTTS}
+                  className="h-7 px-2"
+                >
+                  {isTTSPlaying ? <Square className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleDownloadTTS}
+                  className="h-7 px-2"
+                  title="Download TTS audio"
+                >
+                  <Download className="w-3 h-3" />
+                </Button>
+              </>
             )}
           </div>
 

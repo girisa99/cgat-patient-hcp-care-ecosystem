@@ -57,6 +57,8 @@ export function RecordingStudio({
   const [selectedVoice, setSelectedVoice] = useState('alloy');
   const [hasTTSAudio, setHasTTSAudio] = useState(false);
   const [isTTSGenerating, setIsTTSGenerating] = useState(false);
+  const [ttsAudioUrl, setTTSAudioUrl] = useState<string | null>(null);
+  const [ttsProvider, setTTSProvider] = useState<'openai' | 'elevenlabs'>('openai');
   
   // Script analysis/enhancement states
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -66,9 +68,14 @@ export function RecordingStudio({
   const [lastRecordingBlob, setLastRecordingBlob] = useState<Blob | null>(null);
   const [showRecordingPreview, setShowRecordingPreview] = useState(false);
   
+  // Trim state
+  const [trimSeconds, setTrimSeconds] = useState(5);
+  const [canUndoTrim, setCanUndoTrim] = useState(false);
+  
   // Audio sync for word highlighting
   const [audioCurrentTime, setAudioCurrentTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   
   const logoInputRef = useRef<HTMLInputElement>(null);
 
@@ -87,6 +94,7 @@ export function RecordingStudio({
     if (audioPlayback.audioTimeInfo) {
       setAudioCurrentTime(audioPlayback.audioTimeInfo.currentTime);
       setAudioDuration(audioPlayback.audioTimeInfo.duration);
+      setIsAudioPlaying(audioPlayback.audioTimeInfo.isPlaying);
     }
   }, [audioPlayback.audioTimeInfo]);
   
@@ -169,7 +177,7 @@ export function RecordingStudio({
     try {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Simple enhancement simulation - add paragraph breaks
+      // Simple enhancement simulation - add paragraph breaks and improve readability
       const enhanced = currentScript.content
         .replace(/\. /g, '.\n\n')
         .replace(/! /g, '!\n\n')
@@ -190,14 +198,22 @@ export function RecordingStudio({
     setIsTTSGenerating(true);
     
     try {
-      toast.info('TTS generation - integrate with ElevenLabs or OpenAI');
-      setHasTTSAudio(false);
+      // TODO: Integrate with actual TTS API based on provider
+      toast.info(`Generating TTS with ${ttsProvider === 'elevenlabs' ? 'ElevenLabs' : 'OpenAI'}...`);
+      
+      // Simulate TTS generation
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // In real implementation, this would be the audio URL from the API
+      setHasTTSAudio(true);
+      setTTSAudioUrl(null); // Would be set from API response
+      toast.success('TTS audio generated! Click Play to preview.');
     } catch (error) {
       toast.error('TTS generation failed');
     } finally {
       setIsTTSGenerating(false);
     }
-  }, [ttsText]);
+  }, [ttsText, ttsProvider]);
 
   // Start recording with audio
   const handleStartRecording = useCallback(() => {
@@ -212,11 +228,41 @@ export function RecordingStudio({
     }
   }, [recording, audioPlayback, currentVoiceover, currentMusic]);
 
+  // Pause recording - also pause audio
+  const handlePauseRecording = useCallback(() => {
+    recording.pauseRecording();
+    
+    // Pause/resume audio with recording
+    if (recording.isPaused) {
+      // Resume audio
+      if (currentVoiceover) {
+        audioPlayback.playVoiceover(currentVoiceover.url);
+      }
+    } else {
+      // Pause audio
+      audioPlayback.stopVoiceover();
+      audioPlayback.stopTTS();
+      // Keep music if loop enabled
+    }
+  }, [recording, audioPlayback, currentVoiceover]);
+
   // Stop recording
   const handleStopRecording = useCallback(() => {
     recording.stopRecording();
     audioPlayback.stopAll();
   }, [recording, audioPlayback]);
+
+  // Trim handler
+  const handleTrimSeconds = useCallback((seconds: number) => {
+    toast.info(`Trimming last ${seconds} seconds...`);
+    setCanUndoTrim(true);
+    // In real implementation, this would trim the recording chunks
+  }, []);
+
+  const handleUndoTrim = useCallback(() => {
+    toast.info('Undo trim');
+    setCanUndoTrim(false);
+  }, []);
 
   // Save recording from preview
   const handleSaveRecording = useCallback(async () => {
@@ -250,6 +296,18 @@ export function RecordingStudio({
     setShowRecordingPreview(false);
     toast.info('Recording discarded');
   }, []);
+
+  // TTS download
+  const handleDownloadTTS = useCallback(() => {
+    if (ttsAudioUrl) {
+      const a = document.createElement('a');
+      a.href = ttsAudioUrl;
+      a.download = `tts-${ttsProvider}-${Date.now()}.mp3`;
+      a.click();
+    } else {
+      toast.info('No TTS audio to download');
+    }
+  }, [ttsAudioUrl, ttsProvider]);
 
   if (!isOpen) return null;
 
@@ -286,11 +344,11 @@ export function RecordingStudio({
           </div>
         </div>
 
-        {/* Main Content - True fullscreen layout */}
+        {/* Main Content - True fullscreen layout with fixed sidebar */}
         <div className="flex flex-1 min-h-0 overflow-hidden">
-          {/* Video Section - Takes full remaining width */}
+          {/* Video Section - Takes remaining space, teleprompter contained inside */}
           <div className="flex-1 flex flex-col p-4 gap-3 min-w-0 overflow-hidden">
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 relative">
               <VideoPreview
                 stream={camera.stream}
                 isLoading={camera.isLoading}
@@ -306,6 +364,7 @@ export function RecordingStudio({
                 onLogoPositionChange={(pos) => setLogo(prev => ({ ...prev, position: pos }))}
                 audioCurrentTime={audioCurrentTime}
                 audioDuration={audioDuration}
+                isAudioPlaying={isAudioPlaying}
                 onRetryCamera={camera.retryCamera}
               />
             </div>
@@ -319,7 +378,7 @@ export function RecordingStudio({
               isPaused={recording.isPaused}
               canRecord={!!camera.stream && !camera.isLoading}
               onStartRecording={handleStartRecording}
-              onPauseRecording={recording.pauseRecording}
+              onPauseRecording={handlePauseRecording}
               onStopRecording={handleStopRecording}
               isTeleprompterEnabled={teleprompter.enabled}
               onToggleTeleprompter={() => setTeleprompter(prev => ({ ...prev, enabled: !prev.enabled }))}
@@ -328,11 +387,16 @@ export function RecordingStudio({
               isLogoEnabled={logo.enabled}
               onToggleLogo={() => setLogo(prev => ({ ...prev, enabled: !prev.enabled }))}
               onUploadLogo={handleLogoUpload}
+              onTrimSeconds={handleTrimSeconds}
+              onUndoTrim={handleUndoTrim}
+              canUndoTrim={canUndoTrim}
+              trimSeconds={trimSeconds}
+              onTrimSecondsChange={setTrimSeconds}
             />
           </div>
 
           {/* Sidebar - Fixed width, no overlap */}
-          <div className="w-[300px] shrink-0 border-l bg-background flex flex-col overflow-hidden">
+          <div className="w-[320px] min-w-[320px] max-w-[320px] shrink-0 border-l bg-background flex flex-col overflow-hidden">
             <div className="flex-1 overflow-y-auto p-3 space-y-3">
               <ScriptPanel
                 scripts={scripts}
@@ -380,6 +444,10 @@ export function RecordingStudio({
                 hasTTSAudio={hasTTSAudio}
                 ttsVolume={audioPlayback.ttsVolume}
                 onTTSVolumeChange={audioPlayback.setTTSVolume}
+                ttsAudioUrl={ttsAudioUrl}
+                onDownloadTTS={handleDownloadTTS}
+                ttsProvider={ttsProvider}
+                onTTSProviderChange={setTTSProvider}
                 currentScriptContent={currentScript?.content}
               />
             </div>

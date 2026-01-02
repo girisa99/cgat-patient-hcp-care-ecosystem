@@ -1,12 +1,13 @@
 /**
  * Video Preview Component - Enhanced with word tracking teleprompter
+ * Teleprompter is CONTAINED inside the video area only
  * Syncs TTS/voiceover audio with visual cursor for reading at same speed
  */
 
 import React, { useRef, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, ChevronUp, ChevronDown } from 'lucide-react';
 import type { LogoState, TeleprompterState } from '../types';
 
 interface VideoPreviewProps {
@@ -22,8 +23,12 @@ interface VideoPreviewProps {
   // Audio sync for word highlighting
   audioCurrentTime?: number;
   audioDuration?: number;
+  isAudioPlaying?: boolean;
   // Retry camera
   onRetryCamera?: () => void;
+  // Manual scroll controls
+  onScrollUp?: () => void;
+  onScrollDown?: () => void;
 }
 
 export function VideoPreview({
@@ -38,6 +43,7 @@ export function VideoPreview({
   onLogoPositionChange,
   audioCurrentTime = 0,
   audioDuration = 0,
+  isAudioPlaying = false,
   onRetryCamera,
 }: VideoPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -49,6 +55,7 @@ export function VideoPreview({
   // Word tracking state
   const [words, setWords] = useState<string[]>([]);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const [manualScrollOffset, setManualScrollOffset] = useState(0);
 
   // Parse script into words with punctuation preserved
   useEffect(() => {
@@ -56,39 +63,55 @@ export function VideoPreview({
       const parsed = teleprompter.content.split(/\s+/).filter(w => w.length > 0);
       setWords(parsed);
       setCurrentWordIndex(0);
+      setManualScrollOffset(0);
     } else {
       setWords([]);
       setCurrentWordIndex(0);
+      setManualScrollOffset(0);
     }
   }, [teleprompter.content]);
 
-  // Sync word highlighting with audio - ensure cursor follows audio precisely
+  // Sync word highlighting with audio - precise word-by-word sync
   useEffect(() => {
-    if (audioDuration > 0 && words.length > 0 && audioCurrentTime >= 0) {
-      // Calculate exact position based on audio progress
-      const progress = Math.min(audioCurrentTime / audioDuration, 1);
-      const targetIndex = Math.min(Math.floor(progress * words.length), words.length - 1);
+    if (audioDuration > 0 && words.length > 0 && (isAudioPlaying || audioCurrentTime > 0)) {
+      // Calculate word based on time - assuming even distribution
+      const wordsPerSecond = words.length / audioDuration;
+      const targetIndex = Math.min(
+        Math.floor(audioCurrentTime * wordsPerSecond),
+        words.length - 1
+      );
       
-      if (targetIndex !== currentWordIndex) {
+      if (targetIndex !== currentWordIndex && targetIndex >= 0) {
         setCurrentWordIndex(targetIndex);
       }
-    } else if (audioCurrentTime === 0 && !isRecording) {
-      // Reset when audio stops
+    }
+  }, [audioCurrentTime, audioDuration, words.length, currentWordIndex, isAudioPlaying]);
+
+  // Reset when audio stops
+  useEffect(() => {
+    if (!isAudioPlaying && audioCurrentTime === 0 && !isRecording) {
       setCurrentWordIndex(0);
     }
-  }, [audioCurrentTime, audioDuration, words.length, currentWordIndex, isRecording]);
+  }, [isAudioPlaying, audioCurrentTime, isRecording]);
 
-  // Auto-scroll teleprompter to keep current word in view
+  // Auto-scroll teleprompter to keep current word in view at 35% position
   useEffect(() => {
     if (!teleprompterRef.current || !teleprompter.enabled || words.length === 0) return;
     
     const wordElements = teleprompterRef.current.querySelectorAll('.teleprompter-word');
-    const currentWordEl = wordElements[currentWordIndex];
+    const currentWordEl = wordElements[currentWordIndex] as HTMLElement;
     
-    if (currentWordEl) {
-      currentWordEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (currentWordEl && teleprompterRef.current) {
+      const containerHeight = teleprompterRef.current.offsetHeight;
+      const targetPosition = containerHeight * 0.35; // 35% from top
+      const wordOffset = currentWordEl.offsetTop;
+      
+      teleprompterRef.current.scrollTo({
+        top: wordOffset - targetPosition + manualScrollOffset,
+        behavior: 'smooth'
+      });
     }
-  }, [currentWordIndex, teleprompter.enabled, words.length]);
+  }, [currentWordIndex, teleprompter.enabled, words.length, manualScrollOffset]);
 
   // Attach stream to video element
   useEffect(() => {
@@ -143,6 +166,15 @@ export function VideoPreview({
     small: 'w-12 h-12',
     medium: 'w-20 h-20',
     large: 'w-32 h-32',
+  };
+
+  // Manual scroll handlers
+  const handleManualScrollUp = () => {
+    setManualScrollOffset(prev => prev - 50);
+  };
+
+  const handleManualScrollDown = () => {
+    setManualScrollOffset(prev => prev + 50);
   };
 
   return (
@@ -207,10 +239,10 @@ export function VideoPreview({
       )}
 
       {/* Progress indicator - shows audio sync progress */}
-      {isRecording && audioDuration > 0 && countdown === null && (
+      {audioDuration > 0 && countdown === null && (
         <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full z-20">
           <span className="text-white/80 text-xs">
-            {Math.round((audioCurrentTime / audioDuration) * 100)}% synced
+            Word {currentWordIndex + 1}/{words.length} • {Math.round((audioCurrentTime / audioDuration) * 100)}%
           </span>
         </div>
       )}
@@ -227,27 +259,56 @@ export function VideoPreview({
         />
       )}
 
-      {/* Teleprompter Overlay with Audio-Synced Word Tracking */}
+      {/* Teleprompter Overlay - CONTAINED inside video area */}
       {teleprompter.enabled && teleprompter.content && words.length > 0 && (
-        <div 
-          ref={teleprompterRef}
-          className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent p-6 z-15 max-h-[50%] overflow-y-auto scroll-smooth"
-        >
-          <p className="text-xl leading-loose text-center">
-            {words.map((word, idx) => (
-              <span
-                key={idx}
-                className={cn(
-                  'teleprompter-word inline transition-all duration-200 mx-0.5',
-                  idx === currentWordIndex && 'text-green-400 font-bold text-2xl bg-green-500/30 px-1.5 py-0.5 rounded-md shadow-lg',
-                  idx < currentWordIndex && 'text-white/40',
-                  idx > currentWordIndex && 'text-white/90'
-                )}
-              >
-                {word}{' '}
-              </span>
-            ))}
-          </p>
+        <div className="absolute inset-0 pointer-events-none z-15">
+          {/* Gradient overlay for readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+          
+          {/* Teleprompter text container */}
+          <div 
+            ref={teleprompterRef}
+            className="absolute inset-x-0 bottom-0 top-[20%] overflow-hidden px-8 py-4 pointer-events-auto"
+            style={{ maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)' }}
+          >
+            <div className="min-h-full flex flex-col justify-center">
+              <p className="text-xl md:text-2xl leading-loose text-center">
+                {words.map((word, idx) => (
+                  <span
+                    key={idx}
+                    className={cn(
+                      'teleprompter-word inline transition-all duration-150 mx-0.5',
+                      idx === currentWordIndex && 'text-green-400 font-bold text-2xl md:text-3xl bg-green-500/30 px-2 py-1 rounded-md shadow-lg',
+                      idx < currentWordIndex && 'text-white/40',
+                      idx > currentWordIndex && 'text-white/90'
+                    )}
+                  >
+                    {word}{' '}
+                  </span>
+                ))}
+              </p>
+            </div>
+          </div>
+
+          {/* Manual scroll controls */}
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 pointer-events-auto z-30">
+            <Button
+              size="icon"
+              variant="secondary"
+              className="h-8 w-8 opacity-70 hover:opacity-100"
+              onClick={handleManualScrollUp}
+            >
+              <ChevronUp className="w-4 h-4" />
+            </Button>
+            <Button
+              size="icon"
+              variant="secondary"
+              className="h-8 w-8 opacity-70 hover:opacity-100"
+              onClick={handleManualScrollDown}
+            >
+              <ChevronDown className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       )}
 
