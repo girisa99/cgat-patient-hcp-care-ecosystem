@@ -209,6 +209,13 @@ const AppContent = () => {
                       <DocumentProcessing />
                     </ProtectedRoute>
                   } />
+                  <Route path="/genie-studio" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
+                      <Suspense fallback={<PageLoading message="Loading Genie Studio..." />}>
+                        {React.createElement(React.lazy(() => import('@/pages/GenieStudio')))}
+                      </Suspense>
+                    </ProtectedRoute>
+                  } />
                   <Route path="/data-import" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam', 'demoUser']}>
                       <DataImport />

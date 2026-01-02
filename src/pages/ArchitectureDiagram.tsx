@@ -5,14 +5,13 @@ import {
   SolutionArchitectureDiagram,
   DocumentProcessingArchitectureDiagram,
   MedicalImagingAIPipelineDiagram,
-  ContentTypeRoutingDiagram,
-  ScriptsManager
+  ContentTypeRoutingDiagram
 } from '@/components/document-processing';
 import { TwoStagePipelineSVGDiagram } from '@/components/document-processing/TwoStagePipelineSVGDiagram';
 import { PatientOnboardingFlowDiagram, SubAgentArchitectureDiagram, BeforeAfterArchitectureDiagram } from '@/components/diagrams';
 import { Button } from '@/components/ui/button';
 // Tabs imports kept for potential future use but not needed for current category navigation
-import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building, Users, Network, ArrowRightLeft, Download, Workflow, Bot, Video, Music, History } from 'lucide-react';
+import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building, Users, Network, ArrowRightLeft, Download, Workflow, Bot, History } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { Badge } from '@/components/ui/badge';
@@ -61,15 +60,6 @@ const diagramCategories = {
     diagrams: [
       { id: 'onboarding', label: 'Onboarding', icon: Users },
       { id: 'sub-agents', label: 'Sub-Agents', icon: Network },
-    ]
-  },
-  resources: {
-    label: 'Resources',
-    icon: Download,
-    diagrams: [
-      { id: 'videos', label: 'Videos', icon: Video },
-      { id: 'audio', label: 'Audio', icon: Music },
-      { id: 'scripts', label: 'Scripts', icon: Download },
     ]
   }
 };
@@ -135,15 +125,8 @@ const ArchitectureDiagram = () => {
         return <MedicalImagingAIPipelineDiagram />;
       case 'onboarding':
         return <PatientOnboardingFlowDiagram />;
-      case 'sub-agents':
-        return <SubAgentArchitectureDiagram />;
-      case 'videos':
-        return <VideoResourcesSection />;
-      case 'audio':
-        return <AudioResourcesSection />;
-      case 'scripts':
-        return <ScriptsManager />;
       default:
+        return <SolutionArchitectureDiagram />;
         return <SolutionArchitectureDiagram />;
     }
   };
@@ -160,8 +143,8 @@ const ArchitectureDiagram = () => {
     setSelectedVersion('latest');
   };
 
-  // Check if current diagram supports versioning (not resources)
-  const supportsVersioning = !['videos', 'audio', 'scripts'].includes(activeDiagram);
+  // All diagrams now support versioning
+  const supportsVersioning = true;
 
   return (
     <AppLayout>
@@ -260,12 +243,6 @@ const ArchitectureDiagram = () => {
                 >
                   <diagram.icon className="h-3.5 w-3.5" />
                   <span>{diagram.label}</span>
-                  {diagram.id === 'videos' && (
-                    <Badge variant="secondary" className="ml-1 text-xs bg-red-500/20 text-red-600">New</Badge>
-                  )}
-                  {diagram.id === 'audio' && (
-                    <Badge variant="secondary" className="ml-1 text-xs bg-purple-500/20 text-purple-600">New</Badge>
-                  )}
                 </Button>
               ))}
             </div>
@@ -280,124 +257,5 @@ const ArchitectureDiagram = () => {
   );
 };
 
-// Video Resources Section Component
-const VideoResourcesSection = () => {
-  const [videos, setVideos] = useState<any[]>([]);
-
-  useEffect(() => {
-    // Load videos from localStorage (from VideoRecorder)
-    const savedMedia = localStorage.getItem('recordedMedia');
-    if (savedMedia) {
-      const allMedia = JSON.parse(savedMedia);
-      setVideos(allMedia.filter((m: any) => m.type === 'video'));
-    }
-  }, []);
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-4">
-        <Video className="h-5 w-5 text-red-500" />
-        <h2 className="text-lg font-semibold">Video Resources</h2>
-        <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/30">
-          {videos.length} Videos
-        </Badge>
-      </div>
-      
-      {videos.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground border border-dashed rounded-lg">
-          <Video className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p>No videos recorded yet</p>
-          <p className="text-sm">Record videos in Document Processing → Video Studio</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {videos.map((video, index) => (
-            <div key={index} className="border rounded-lg overflow-hidden bg-card">
-              <video 
-                src={video.url} 
-                className="w-full aspect-video object-cover"
-                controls
-              />
-              <div className="p-3">
-                <p className="font-medium truncate">{video.name || `Video ${index + 1}`}</p>
-                <p className="text-xs text-muted-foreground">
-                  {new Date(video.timestamp).toLocaleDateString()}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-// Audio Resources Section Component
-const AudioResourcesSection = () => {
-  const [audios, setAudios] = useState<any[]>([]);
-
-  useEffect(() => {
-    // Load audios from localStorage
-    const savedMedia = localStorage.getItem('recordedMedia');
-    const generatedAudios = localStorage.getItem('generatedAudiosMetadata');
-    
-    let allAudios: any[] = [];
-    
-    if (savedMedia) {
-      const allMedia = JSON.parse(savedMedia);
-      allAudios = [...allAudios, ...allMedia.filter((m: any) => m.type === 'audio')];
-    }
-    
-    if (generatedAudios) {
-      const generated = JSON.parse(generatedAudios);
-      allAudios = [...allAudios, ...generated.map((a: any) => ({
-        ...a,
-        type: 'audio',
-        name: a.title || 'Generated Audio'
-      }))];
-    }
-    
-    setAudios(allAudios);
-  }, []);
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-4">
-        <Music className="h-5 w-5 text-purple-500" />
-        <h2 className="text-lg font-semibold">Audio Resources</h2>
-        <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30">
-          {audios.length} Audio Files
-        </Badge>
-      </div>
-      
-      {audios.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground border border-dashed rounded-lg">
-          <Music className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p>No audio files yet</p>
-          <p className="text-sm">Generate voiceovers in Document Processing → Scripts</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {audios.map((audio, index) => (
-            <div key={index} className="border rounded-lg p-4 bg-card flex items-center gap-4">
-              <div className="h-12 w-12 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
-                <Music className="h-6 w-6 text-purple-500" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{audio.name || audio.title || `Audio ${index + 1}`}</p>
-                <p className="text-xs text-muted-foreground">
-                  {audio.timestamp ? new Date(audio.timestamp).toLocaleDateString() : 'Generated'}
-                </p>
-              </div>
-              {audio.url && (
-                <audio src={audio.url} controls className="max-w-xs" />
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
 
 export default ArchitectureDiagram;
