@@ -60,9 +60,40 @@ export function generatePopoutHTML(config: PopoutConfig): string {
   // Shared global variables declaration (must come first)
   const sharedGlobals = `
     // =====================================================
+    // DEBUG LOGGING FUNCTION (writes to visible panel)
+    // =====================================================
+    function debugLog(msg) {
+      console.log(msg);
+      var panel = document.getElementById('debugLog');
+      if (panel) {
+        var time = new Date().toLocaleTimeString();
+        panel.innerHTML += '<div>[' + time + '] ' + msg + '</div>';
+        panel.scrollTop = panel.scrollHeight;
+      }
+    }
+    
+    function hideDebugPanel() {
+      var panel = document.getElementById('debugPanel');
+      if (panel) {
+        panel.style.display = 'none';
+        // Also remove the margin from container
+        var container = document.querySelector('.container');
+        if (container) container.style.marginTop = '0';
+      }
+    }
+    
+    debugLog('🚀 Script execution started');
+    debugLog('📍 Location: ' + window.location.href);
+    debugLog('📍 Origin: ' + window.location.origin);
+    debugLog('🔧 mediaDevices available: ' + !!navigator.mediaDevices);
+    if (navigator.mediaDevices) {
+      debugLog('🔧 getUserMedia available: ' + !!navigator.mediaDevices.getUserMedia);
+    }
+    
+    // =====================================================
     // SHARED GLOBAL VARIABLES
     // =====================================================
-    console.log('[Popout] Initializing shared globals...');
+    debugLog('Initializing shared globals...');
     
     // These are declared first so all modules can access them
     var mediaStream = null;
@@ -92,10 +123,10 @@ export function generatePopoutHTML(config: PopoutConfig): string {
           setTimeout(function() { container.innerHTML = ''; }, 5000);
         }
       }
-      console.log('[Status] ' + type + ': ' + message);
+      debugLog('[Status] ' + type + ': ' + message);
     }
     
-    console.log('[Popout] ✅ Shared globals initialized');
+    debugLog('✅ Shared globals initialized');
   `;
 
   // Get all scripts - order matters for dependencies

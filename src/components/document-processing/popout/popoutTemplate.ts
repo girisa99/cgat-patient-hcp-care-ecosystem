@@ -31,7 +31,13 @@ export function getPopoutHTML(config: PopoutConfig): string {
   const scriptsJson = JSON.stringify(config.scripts);
 
   return `
-    <div class="container">
+    <!-- Debug Panel - Shows initialization status -->
+    <div id="debugPanel" style="position:fixed;top:0;left:0;right:0;background:#1a1a2e;color:#0f0;font-family:monospace;font-size:11px;padding:8px;z-index:10000;max-height:150px;overflow-y:auto;border-bottom:2px solid #0f0;">
+      <strong>🔧 Debug Panel</strong> (will hide when camera works)
+      <div id="debugLog"></div>
+    </div>
+
+    <div class="container" style="margin-top:150px;">
       <!-- Header -->
       <header class="header">
         <div style="display: flex; align-items: center; gap: 12px;">
