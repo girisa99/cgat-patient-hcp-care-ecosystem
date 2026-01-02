@@ -16,3 +16,5 @@ export { MusicGenerator } from './MusicGenerator';
 export { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp';
 export { RecordingQualitySettings, QUALITY_SETTINGS } from './RecordingQualitySettings';
 export type { RecordingQuality } from './RecordingQualitySettings';
+export { ProjectSelector } from './ProjectSelector';
+export { StudioSoundPanel } from './StudioSoundPanel';

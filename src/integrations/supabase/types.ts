@@ -9296,6 +9296,202 @@ export type Database = {
         }
         Relationships: []
       }
+      media_project_assets: {
+        Row: {
+          asset_id: string
+          asset_name: string
+          asset_type: string
+          asset_url: string | null
+          cost: number | null
+          cost_details: Json | null
+          created_at: string
+          duration_seconds: number | null
+          file_size_bytes: number | null
+          id: string
+          metadata: Json | null
+          project_id: string
+          user_id: string
+        }
+        Insert: {
+          asset_id: string
+          asset_name: string
+          asset_type: string
+          asset_url?: string | null
+          cost?: number | null
+          cost_details?: Json | null
+          created_at?: string
+          duration_seconds?: number | null
+          file_size_bytes?: number | null
+          id?: string
+          metadata?: Json | null
+          project_id: string
+          user_id: string
+        }
+        Update: {
+          asset_id?: string
+          asset_name?: string
+          asset_type?: string
+          asset_url?: string | null
+          cost?: number | null
+          cost_details?: Json | null
+          created_at?: string
+          duration_seconds?: number | null
+          file_size_bytes?: number | null
+          id?: string
+          metadata?: Json | null
+          project_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_project_assets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "media_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      media_project_cost_logs: {
+        Row: {
+          characters_processed: number | null
+          cost: number
+          cost_unit: string | null
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          input_tokens: number | null
+          metadata: Json | null
+          model: string | null
+          operation_name: string
+          operation_type: string
+          output_tokens: number | null
+          project_id: string
+          provider: string | null
+          request_id: string | null
+          user_id: string
+        }
+        Insert: {
+          characters_processed?: number | null
+          cost?: number
+          cost_unit?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          input_tokens?: number | null
+          metadata?: Json | null
+          model?: string | null
+          operation_name: string
+          operation_type: string
+          output_tokens?: number | null
+          project_id: string
+          provider?: string | null
+          request_id?: string | null
+          user_id: string
+        }
+        Update: {
+          characters_processed?: number | null
+          cost?: number
+          cost_unit?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          input_tokens?: number | null
+          metadata?: Json | null
+          model?: string | null
+          operation_name?: string
+          operation_type?: string
+          output_tokens?: number | null
+          project_id?: string
+          provider?: string | null
+          request_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_project_cost_logs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "media_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      media_projects: {
+        Row: {
+          ai_enhancement_cost: number | null
+          created_at: string
+          description: string | null
+          id: string
+          music_generation_cost: number | null
+          name: string
+          settings: Json | null
+          status: string
+          storage_cost: number | null
+          tags: string[] | null
+          total_duration_seconds: number | null
+          total_estimated_cost: number | null
+          total_music_generations: number | null
+          total_recordings: number | null
+          total_script_enhancements: number | null
+          total_storage_bytes: number | null
+          total_transcriptions: number | null
+          total_tts_generations: number | null
+          transcription_cost: number | null
+          tts_cost: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_enhancement_cost?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          music_generation_cost?: number | null
+          name: string
+          settings?: Json | null
+          status?: string
+          storage_cost?: number | null
+          tags?: string[] | null
+          total_duration_seconds?: number | null
+          total_estimated_cost?: number | null
+          total_music_generations?: number | null
+          total_recordings?: number | null
+          total_script_enhancements?: number | null
+          total_storage_bytes?: number | null
+          total_transcriptions?: number | null
+          total_tts_generations?: number | null
+          transcription_cost?: number | null
+          tts_cost?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_enhancement_cost?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          music_generation_cost?: number | null
+          name?: string
+          settings?: Json | null
+          status?: string
+          storage_cost?: number | null
+          tags?: string[] | null
+          total_duration_seconds?: number | null
+          total_estimated_cost?: number | null
+          total_music_generations?: number | null
+          total_recordings?: number | null
+          total_script_enhancements?: number | null
+          total_storage_bytes?: number | null
+          total_transcriptions?: number | null
+          total_tts_generations?: number | null
+          transcription_cost?: number | null
+          tts_cost?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       medical_imaging_knowledge: {
         Row: {
           body_part: string | null
