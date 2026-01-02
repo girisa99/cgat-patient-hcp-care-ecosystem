@@ -8028,6 +8028,68 @@ export type Database = {
           },
         ]
       }
+      genie_scripts: {
+        Row: {
+          clean_content: string | null
+          content: string
+          created_at: string
+          draft_changes: Json | null
+          draft_content: string | null
+          draft_status: string | null
+          enhanced_content: string | null
+          has_voiceover: boolean | null
+          id: string
+          name: string
+          stats: Json | null
+          type: string
+          updated_at: string
+          user_id: string
+          voiceover_id: string | null
+        }
+        Insert: {
+          clean_content?: string | null
+          content: string
+          created_at?: string
+          draft_changes?: Json | null
+          draft_content?: string | null
+          draft_status?: string | null
+          enhanced_content?: string | null
+          has_voiceover?: boolean | null
+          id?: string
+          name: string
+          stats?: Json | null
+          type?: string
+          updated_at?: string
+          user_id: string
+          voiceover_id?: string | null
+        }
+        Update: {
+          clean_content?: string | null
+          content?: string
+          created_at?: string
+          draft_changes?: Json | null
+          draft_content?: string | null
+          draft_status?: string | null
+          enhanced_content?: string | null
+          has_voiceover?: boolean | null
+          id?: string
+          name?: string
+          stats?: Json | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+          voiceover_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_scripts_voiceover_id_fkey"
+            columns: ["voiceover_id"]
+            isOneToOne: false
+            referencedRelation: "generated_media"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       genie_token_budgets: {
         Row: {
           allocated_tokens: number
