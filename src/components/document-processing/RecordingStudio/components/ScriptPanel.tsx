@@ -1,24 +1,39 @@
 /**
- * Script Panel Component - Script selection, teleprompter, analysis, enhancement, and export
- * Shows enhancement diff with accept/reject per change
+ * Script Panel Component - Full script view, analysis with detailed recommendations, 
+ * word count comparison, clean enhanced script for TTS
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Minus, Plus, FileText, Sparkles, Search, Check, X, Download, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { 
+  Minus, Plus, FileText, Sparkles, Search, Check, X, Download, 
+  ChevronDown, ChevronUp, RotateCcw, Copy, Edit2, Save
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import type { ScriptData } from '../types';
+
+interface AnalysisRecommendation {
+  id: string;
+  type: 'readability' | 'pacing' | 'clarity' | 'engagement' | 'length';
+  title: string;
+  description: string;
+  severity: 'info' | 'warning' | 'suggestion';
+  accepted: boolean | null;
+}
 
 interface EnhancementChange {
   id: string;
-  type: 'addition' | 'modification' | 'removal';
+  type: 'addition' | 'modification' | 'removal' | 'formatting';
   original: string;
   enhanced: string;
-  accepted: boolean | null; // null = pending, true = accepted, false = rejected
+  reason: string;
+  accepted: boolean | null;
 }
 
 interface ScriptPanelProps {
@@ -36,6 +51,10 @@ interface ScriptPanelProps {
   onEnhanceScript?: () => Promise<string | null>;
   isAnalyzing?: boolean;
   isEnhancing?: boolean;
+  
+  // Enhanced script state - passed up to parent
+  onEnhancedScriptReady?: (cleanScript: string) => void;
+  onUseEnhancedChange?: (useEnhanced: boolean) => void;
 }
 
 export function ScriptPanel({
@@ -49,21 +68,120 @@ export function ScriptPanel({
   onEnhanceScript,
   isAnalyzing = false,
   isEnhancing = false,
+  onEnhancedScriptReady,
+  onUseEnhancedChange,
 }: ScriptPanelProps) {
   const selectedScript = scripts.find(s => s.id === selectedScriptId);
-  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+  
+  // Analysis state
+  const [analysisResult, setAnalysisResult] = useState<AnalysisRecommendation[]>([]);
+  const [showAnalysis, setShowAnalysis] = useState(false);
+  
+  // Enhancement state
   const [originalContent, setOriginalContent] = useState<string | null>(null);
   const [enhancedContent, setEnhancedContent] = useState<string | null>(null);
+  const [cleanEnhancedContent, setCleanEnhancedContent] = useState<string | null>(null);
   const [enhancementChanges, setEnhancementChanges] = useState<EnhancementChange[]>([]);
-  const [showEnhancedPreview, setShowEnhancedPreview] = useState(false);
   const [showChanges, setShowChanges] = useState(false);
   const [isUsingEnhanced, setIsUsingEnhanced] = useState(false);
+  
+  // Word count stats
+  const [originalWordCount, setOriginalWordCount] = useState(0);
+  const [enhancedWordCount, setEnhancedWordCount] = useState(0);
+  
+  // Edit mode
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState('');
+  
+  // Expanded view
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Calculate word count
+  const countWords = (text: string) => text.split(/\s+/).filter(w => w.length > 0).length;
+
+  // Update word counts when script changes
+  useEffect(() => {
+    if (selectedScript) {
+      setOriginalWordCount(countWords(selectedScript.content));
+      setEditContent(selectedScript.content);
+    }
+  }, [selectedScript]);
+
+  // Generate clean script for TTS (remove pauses, breaks, stage directions)
+  const generateCleanScript = (text: string): string => {
+    return text
+      .replace(/\[.*?\]/g, '') // Remove [stage directions]
+      .replace(/\(.*?\)/g, '') // Remove (parentheticals)
+      .replace(/\.{3,}/g, '.') // Replace ... with single .
+      .replace(/---+/g, '') // Remove horizontal rules
+      .replace(/\*\*\*/g, '') // Remove break markers
+      .replace(/\n{3,}/g, '\n\n') // Max 2 newlines
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .trim();
+  };
 
   const handleAnalyze = async () => {
-    if (!onAnalyzeScript) return;
+    if (!onAnalyzeScript || !selectedScript) return;
+    
     const result = await onAnalyzeScript();
     if (result) {
-      setAnalysisResult(result);
+      // Parse result and generate detailed recommendations
+      const wordCount = countWords(selectedScript.content);
+      const sentences = selectedScript.content.split(/[.!?]+/).filter(s => s.trim()).length;
+      const avgWordsPerSentence = Math.round(wordCount / sentences);
+      const estimatedDuration = Math.ceil(wordCount / 150); // 150 wpm speaking rate
+      
+      const recommendations: AnalysisRecommendation[] = [];
+      
+      // Pacing analysis
+      if (avgWordsPerSentence > 25) {
+        recommendations.push({
+          id: 'pacing-1',
+          type: 'pacing',
+          title: 'Long sentences detected',
+          description: `Average ${avgWordsPerSentence} words/sentence. Consider breaking into shorter sentences for better pacing.`,
+          severity: 'warning',
+          accepted: null,
+        });
+      }
+      
+      // Length analysis
+      if (wordCount > 500) {
+        recommendations.push({
+          id: 'length-1',
+          type: 'length',
+          title: 'Script may be too long',
+          description: `${wordCount} words (~${estimatedDuration} min). Consider trimming for better engagement.`,
+          severity: 'suggestion',
+          accepted: null,
+        });
+      }
+      
+      // Readability
+      if (selectedScript.content.includes('...')) {
+        recommendations.push({
+          id: 'clarity-1',
+          type: 'clarity',
+          title: 'Ellipses found',
+          description: 'Ellipses can cause awkward pauses in TTS. Consider replacing with periods.',
+          severity: 'info',
+          accepted: null,
+        });
+      }
+      
+      // Always add stats
+      recommendations.push({
+        id: 'stats-1',
+        type: 'readability',
+        title: 'Script Statistics',
+        description: `${wordCount} words • ${sentences} sentences • ~${estimatedDuration} min read time`,
+        severity: 'info',
+        accepted: true, // Auto-accepted info
+      });
+      
+      setAnalysisResult(recommendations);
+      setShowAnalysis(true);
+      toast.success('Analysis complete!');
     }
   };
 
@@ -72,28 +190,39 @@ export function ScriptPanel({
     
     // Store original before enhancing
     setOriginalContent(selectedScript.content);
+    setOriginalWordCount(countWords(selectedScript.content));
     
     const result = await onEnhanceScript();
     if (result) {
       setEnhancedContent(result);
-      setShowEnhancedPreview(true);
+      setEnhancedWordCount(countWords(result));
       
-      // Generate diff changes
-      const changes = generateChanges(selectedScript.content, result);
+      // Generate clean version for TTS
+      const cleanVersion = generateCleanScript(result);
+      setCleanEnhancedContent(cleanVersion);
+      
+      // Notify parent
+      if (onEnhancedScriptReady) {
+        onEnhancedScriptReady(cleanVersion);
+      }
+      
+      // Generate detailed changes
+      const changes = generateDetailedChanges(selectedScript.content, result);
       setEnhancementChanges(changes);
       setShowChanges(true);
+      
+      toast.success('Enhancement complete! Review changes below.');
     }
   };
 
-  // Generate changes between original and enhanced
-  const generateChanges = (original: string, enhanced: string): EnhancementChange[] => {
+  // Generate detailed changes with reasons
+  const generateDetailedChanges = (original: string, enhanced: string): EnhancementChange[] => {
     const origSentences = original.split(/[.!?]+/).filter(s => s.trim());
     const enhSentences = enhanced.split(/[.!?]+/).filter(s => s.trim());
     
     const changes: EnhancementChange[] = [];
-    
-    // Simple diff - compare sentences
     const maxLen = Math.max(origSentences.length, enhSentences.length);
+    
     for (let i = 0; i < maxLen; i++) {
       const orig = origSentences[i]?.trim() || '';
       const enh = enhSentences[i]?.trim() || '';
@@ -104,6 +233,7 @@ export function ScriptPanel({
           type: 'addition',
           original: '',
           enhanced: enh,
+          reason: 'Added for better flow and engagement',
           accepted: null
         });
       } else if (orig && !enh) {
@@ -112,6 +242,7 @@ export function ScriptPanel({
           type: 'removal',
           original: orig,
           enhanced: '',
+          reason: 'Removed redundant content',
           accepted: null
         });
       } else if (orig !== enh && orig && enh) {
@@ -120,6 +251,7 @@ export function ScriptPanel({
           type: 'modification',
           original: orig,
           enhanced: enh,
+          reason: 'Improved clarity and readability',
           accepted: null
         });
       }
@@ -140,24 +272,33 @@ export function ScriptPanel({
     );
   };
 
+  const handleAcceptRecommendation = (recId: string) => {
+    setAnalysisResult(prev => 
+      prev.map(r => r.id === recId ? { ...r, accepted: true } : r)
+    );
+  };
+
+  const handleRejectRecommendation = (recId: string) => {
+    setAnalysisResult(prev => 
+      prev.map(r => r.id === recId ? { ...r, accepted: false } : r)
+    );
+  };
+
   const handleAcceptAll = () => {
     if (enhancedContent && selectedScriptId && onScriptContentUpdate) {
       onScriptContentUpdate(selectedScriptId, enhancedContent);
       setIsUsingEnhanced(true);
+      if (onUseEnhancedChange) onUseEnhancedChange(true);
       setEnhancementChanges([]);
-      setShowEnhancedPreview(false);
       setShowChanges(false);
-      setAnalysisResult(null);
+      toast.success('All changes accepted!');
     }
   };
 
   const handleAcceptSelected = () => {
     if (!originalContent || !selectedScript || !onScriptContentUpdate) return;
     
-    // Build new content with only accepted changes
-    const origSentences = originalContent.split(/([.!?]+)/).filter(s => s);
     let result = originalContent;
-    
     enhancementChanges.forEach(change => {
       if (change.accepted === true && change.type === 'modification') {
         result = result.replace(change.original, change.enhanced);
@@ -166,50 +307,85 @@ export function ScriptPanel({
     
     onScriptContentUpdate(selectedScriptId, result);
     setIsUsingEnhanced(true);
+    if (onUseEnhancedChange) onUseEnhancedChange(true);
     setEnhancementChanges([]);
-    setShowEnhancedPreview(false);
     setShowChanges(false);
+    toast.success('Selected changes applied!');
   };
 
   const handleRejectAll = () => {
     setEnhancedContent(null);
-    setShowEnhancedPreview(false);
+    setCleanEnhancedContent(null);
     setShowChanges(false);
     setEnhancementChanges([]);
+    toast.info('Changes rejected');
   };
 
   const handleRevertToOriginal = () => {
     if (originalContent && selectedScriptId && onScriptContentUpdate) {
       onScriptContentUpdate(selectedScriptId, originalContent);
       setIsUsingEnhanced(false);
+      if (onUseEnhancedChange) onUseEnhancedChange(false);
+      toast.success('Reverted to original');
     }
   };
 
-  // Export script as text file
-  const handleExportScript = () => {
+  const handleSaveEdit = () => {
+    if (selectedScriptId && onScriptContentUpdate && editContent) {
+      onScriptContentUpdate(selectedScriptId, editContent);
+      setIsEditing(false);
+      toast.success('Script saved!');
+    }
+  };
+
+  const handleExportScript = (type: 'original' | 'enhanced' | 'clean') => {
     if (!selectedScript) return;
     
-    const content = showEnhancedPreview && enhancedContent ? enhancedContent : selectedScript.content;
+    let content = selectedScript.content;
+    let filename = selectedScript.title;
+    
+    if (type === 'enhanced' && enhancedContent) {
+      content = enhancedContent;
+      filename += '-enhanced';
+    } else if (type === 'clean' && cleanEnhancedContent) {
+      content = cleanEnhancedContent;
+      filename += '-clean-tts';
+    }
+    
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${selectedScript.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.txt`;
+    a.download = `${filename.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.txt`;
     a.click();
     URL.revokeObjectURL(url);
+    toast.success('Script downloaded!');
+  };
+
+  const handleCopyToClipboard = () => {
+    const content = cleanEnhancedContent || enhancedContent || selectedScript?.content;
+    if (content) {
+      navigator.clipboard.writeText(content);
+      toast.success('Copied to clipboard!');
+    }
   };
 
   const pendingChanges = enhancementChanges.filter(c => c.accepted === null).length;
   const acceptedChanges = enhancementChanges.filter(c => c.accepted === true).length;
+  const pendingRecs = analysisResult.filter(r => r.accepted === null).length;
+
+  // Build script options including enhanced version
+  const scriptOptions = [...scripts];
 
   return (
     <div className="bg-card rounded-lg border p-3 space-y-3">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FileText className="w-4 h-4 text-primary" />
           <h3 className="font-medium text-sm">Script</h3>
           {isUsingEnhanced && (
-            <Badge variant="secondary" className="text-[10px] h-5">Enhanced</Badge>
+            <Badge variant="default" className="text-[10px] h-5 bg-green-600">Enhanced</Badge>
           )}
         </div>
         <div className="flex items-center gap-1">
@@ -224,13 +400,22 @@ export function ScriptPanel({
               <RotateCcw className="w-3 h-3" />
             </Button>
           )}
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-6 w-6"
+            onClick={handleCopyToClipboard}
+            title="Copy script"
+          >
+            <Copy className="w-3 h-3" />
+          </Button>
           {selectedScript && (
             <Button
               size="icon"
               variant="ghost"
               className="h-6 w-6"
-              onClick={handleExportScript}
-              title="Export script"
+              onClick={() => handleExportScript('original')}
+              title="Download script"
             >
               <Download className="w-3 h-3" />
             </Button>
@@ -238,9 +423,14 @@ export function ScriptPanel({
         </div>
       </div>
 
+      {/* Script Selection */}
       <Select 
         value={selectedScriptId || "none"} 
-        onValueChange={(v) => onScriptChange(v === "none" ? "" : v)}
+        onValueChange={(v) => {
+          onScriptChange(v === "none" ? "" : v);
+          setShowAnalysis(false);
+          setShowChanges(false);
+        }}
       >
         <SelectTrigger className="bg-background h-9 text-sm">
           <SelectValue>
@@ -257,13 +447,160 @@ export function ScriptPanel({
 
       {selectedScript && (
         <>
-          {/* Current Script Preview */}
-          <ScrollArea className="h-20 rounded-md border bg-muted/30 p-2">
-            <p className="text-xs text-muted-foreground whitespace-pre-wrap">
-              {selectedScript.content.slice(0, 300)}
-              {selectedScript.content.length > 300 && '...'}
-            </p>
-          </ScrollArea>
+          {/* Full Script Content (Expandable) */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">
+                {originalWordCount} words • ~{Math.ceil(originalWordCount / 150)} min
+              </span>
+              <div className="flex items-center gap-1">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-5 w-5"
+                  onClick={() => setIsEditing(!isEditing)}
+                  title={isEditing ? "Cancel edit" : "Edit script"}
+                >
+                  {isEditing ? <X className="w-3 h-3" /> : <Edit2 className="w-3 h-3" />}
+                </Button>
+                {isEditing && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-5 w-5"
+                    onClick={handleSaveEdit}
+                    title="Save changes"
+                  >
+                    <Save className="w-3 h-3" />
+                  </Button>
+                )}
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-5 w-5"
+                  onClick={() => setIsExpanded(!isExpanded)}
+                >
+                  {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                </Button>
+              </div>
+            </div>
+            
+            {isEditing ? (
+              <Textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className={cn(
+                  "text-xs resize-none",
+                  isExpanded ? "min-h-[200px]" : "min-h-[80px]"
+                )}
+              />
+            ) : (
+              <ScrollArea className={cn(
+                "rounded-md border bg-muted/30 p-2",
+                isExpanded ? "h-48" : "h-20"
+              )}>
+                <p className="text-xs text-foreground whitespace-pre-wrap">
+                  {isExpanded ? selectedScript.content : (
+                    selectedScript.content.slice(0, 300) + 
+                    (selectedScript.content.length > 300 ? '...' : '')
+                  )}
+                </p>
+              </ScrollArea>
+            )}
+          </div>
+
+          {/* Word Count Comparison (when enhanced) */}
+          {enhancedContent && (
+            <div className="flex items-center gap-2 p-2 bg-primary/10 rounded-md">
+              <div className="flex-1 text-center">
+                <div className="text-xs text-muted-foreground">Original</div>
+                <div className="text-sm font-medium">{originalWordCount} words</div>
+              </div>
+              <div className="text-muted-foreground">→</div>
+              <div className="flex-1 text-center">
+                <div className="text-xs text-muted-foreground">Enhanced</div>
+                <div className="text-sm font-medium text-primary">{enhancedWordCount} words</div>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                ({enhancedWordCount > originalWordCount ? '+' : ''}{enhancedWordCount - originalWordCount})
+              </div>
+            </div>
+          )}
+
+          {/* Analysis Results */}
+          {showAnalysis && analysisResult.length > 0 && (
+            <div className="space-y-2 border rounded-md p-2 bg-blue-500/5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-blue-600">
+                  Analysis: {pendingRecs} pending
+                </span>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-5 w-5"
+                  onClick={() => setShowAnalysis(false)}
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+              
+              <ScrollArea className="max-h-32">
+                <div className="space-y-1.5">
+                  {analysisResult.map((rec) => (
+                    <div 
+                      key={rec.id} 
+                      className={cn(
+                        "p-2 rounded text-xs border",
+                        rec.accepted === true && "bg-green-500/10 border-green-500/30",
+                        rec.accepted === false && "bg-red-500/10 border-red-500/30 opacity-50",
+                        rec.accepted === null && "bg-muted/50"
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <Badge 
+                              variant="outline" 
+                              className={cn(
+                                "text-[8px] h-4",
+                                rec.severity === 'warning' && "border-amber-500 text-amber-600",
+                                rec.severity === 'suggestion' && "border-blue-500 text-blue-600",
+                                rec.severity === 'info' && "border-gray-500 text-gray-600"
+                              )}
+                            >
+                              {rec.type}
+                            </Badge>
+                            <span className="font-medium">{rec.title}</span>
+                          </div>
+                          <p className="text-muted-foreground">{rec.description}</p>
+                        </div>
+                        {rec.accepted === null && rec.severity !== 'info' && (
+                          <div className="flex gap-0.5 shrink-0">
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="h-5 w-5"
+                              onClick={() => handleAcceptRecommendation(rec.id)}
+                            >
+                              <Check className="w-3 h-3 text-green-500" />
+                            </Button>
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="h-5 w-5"
+                              onClick={() => handleRejectRecommendation(rec.id)}
+                            >
+                              <X className="w-3 h-3 text-red-500" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+          )}
 
           {/* Enhancement Changes Review */}
           {showChanges && enhancementChanges.length > 0 && (
@@ -278,34 +615,37 @@ export function ScriptPanel({
                   className="h-5 w-5"
                   onClick={() => setShowChanges(!showChanges)}
                 >
-                  {showChanges ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                  <ChevronUp className="w-3 h-3" />
                 </Button>
               </div>
               
-              <ScrollArea className="max-h-32">
-                <div className="space-y-1">
+              <ScrollArea className="max-h-40">
+                <div className="space-y-1.5">
                   {enhancementChanges.map((change) => (
                     <div 
                       key={change.id} 
                       className={cn(
-                        "p-1.5 rounded text-[10px] border",
+                        "p-2 rounded text-xs border",
                         change.accepted === true && "bg-green-500/10 border-green-500/30",
                         change.accepted === false && "bg-red-500/10 border-red-500/30 opacity-50",
                         change.accepted === null && "bg-muted/50"
                       )}
                     >
-                      <div className="flex items-start justify-between gap-1">
+                      <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <Badge variant="outline" className="text-[8px] h-4 mb-1">
-                            {change.type}
-                          </Badge>
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <Badge variant="outline" className="text-[8px] h-4">
+                              {change.type}
+                            </Badge>
+                            <span className="text-muted-foreground italic">{change.reason}</span>
+                          </div>
                           {change.original && (
-                            <p className="text-muted-foreground line-through truncate">
-                              {change.original.slice(0, 50)}...
+                            <p className="text-muted-foreground line-through mb-1">
+                              {change.original.slice(0, 80)}...
                             </p>
                           )}
-                          <p className="text-foreground truncate">
-                            {change.enhanced.slice(0, 50)}...
+                          <p className="text-foreground">
+                            {change.enhanced.slice(0, 80)}...
                           </p>
                         </div>
                         {change.accepted === null && (
@@ -364,19 +704,29 @@ export function ScriptPanel({
                   <X className="w-3 h-3" />
                 </Button>
               </div>
-            </div>
-          )}
 
-          {/* Analysis Result */}
-          {analysisResult && (
-            <div className="p-2 bg-primary/10 rounded-md text-xs">
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-medium text-xs">Analysis:</span>
-                <Button size="icon" variant="ghost" className="h-4 w-4" onClick={() => setAnalysisResult(null)}>
-                  <X className="w-2 h-2" />
+              {/* Download Enhanced/Clean versions */}
+              <div className="flex gap-1 pt-1 border-t">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleExportScript('enhanced')}
+                  className="flex-1 gap-1 text-xs h-7"
+                >
+                  <Download className="w-3 h-3" />
+                  Enhanced
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleExportScript('clean')}
+                  className="flex-1 gap-1 text-xs h-7"
+                  title="Clean version for TTS (no pauses/breaks)"
+                >
+                  <Download className="w-3 h-3" />
+                  Clean (TTS)
                 </Button>
               </div>
-              <p className="text-muted-foreground text-xs">{analysisResult}</p>
             </div>
           )}
 
@@ -425,7 +775,7 @@ export function ScriptPanel({
                 className="flex-1 gap-1 text-xs h-7"
               >
                 <Search className="w-3 h-3" />
-                {isAnalyzing ? '...' : 'Analyze'}
+                {isAnalyzing ? 'Analyzing...' : 'Analyze'}
               </Button>
             )}
             {onEnhanceScript && (
@@ -437,7 +787,7 @@ export function ScriptPanel({
                 className="flex-1 gap-1 text-xs h-7"
               >
                 <Sparkles className="w-3 h-3" />
-                {isEnhancing ? '...' : 'Enhance'}
+                {isEnhancing ? 'Enhancing...' : 'Enhance'}
               </Button>
             )}
           </div>
