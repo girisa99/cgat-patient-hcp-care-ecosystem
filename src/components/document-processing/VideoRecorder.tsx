@@ -1944,7 +1944,7 @@ Thanks for watching!`,
           content: s.content,
         }))}
         voiceovers={mediaItems
-          .filter(m => m.file_type === 'audio' && !m.name.toLowerCase().includes('music') && !m.name.toLowerCase().includes('instrumental'))
+          .filter(m => m.file_type === 'audio')
           .map(v => ({
             id: v.id,
             name: v.name,
@@ -1953,7 +1953,13 @@ Thanks for watching!`,
             scriptType: v.metadata?.scriptType as string | null,
           }))}
         music={mediaItems
-          .filter(m => m.file_type === 'audio' && (m.name.toLowerCase().includes('music') || m.name.toLowerCase().includes('instrumental') || m.name.toLowerCase().includes('bgm')))
+          .filter(m => m.file_type === 'audio' && (
+            m.name.toLowerCase().includes('music') || 
+            m.name.toLowerCase().includes('instrumental') || 
+            m.name.toLowerCase().includes('bgm') ||
+            m.name.toLowerCase().includes('background') ||
+            (m.metadata?.scriptType as string | null) === 'instrumental'
+          ))
           .map(m => ({
             id: m.id,
             name: m.name,
