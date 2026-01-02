@@ -66,7 +66,7 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
     if (userRoles.includes('healthcareProvider')) {
       return {
         primary: availableTabs.filter(tab => 
-          ['/', '/order-management', '/document-processing', '/patient-onboarding', '/patients', '/genie-studio'].includes(tab.to)
+          ['/', '/order-management', '/document-processing', '/patient-onboarding', '/patients'].includes(tab.to)
         ),
         treatmentCenters: [],
         agents: availableTabs.filter(tab => ['/agents'].includes(tab.to)),
@@ -84,7 +84,7 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
     }
 
     // Dynamic groupings for all other roles based on available tabs
-    const primary = availableTabs.filter(tab => ['/', '/patients', '/genie-studio'].includes(tab.to));
+    const primary = availableTabs.filter(tab => ['/', '/patients'].includes(tab.to));
     const treatmentCenters = availableTabs.filter(tab => ['/treatment-centers'].includes(tab.to));
     const agents = availableTabs.filter(tab => ['/agents'].includes(tab.to));
     const genieStudio = availableTabs.filter(tab => ['/genie-studio'].includes(tab.to));
