@@ -509,20 +509,70 @@ export function ScriptPanel({
             )}
           </div>
 
-          {/* Word Count Comparison (when enhanced) */}
+          {/* Enhanced Script Preview - Shows when enhancement is complete */}
           {enhancedContent && (
-            <div className="flex items-center gap-2 p-2 bg-primary/10 rounded-md">
-              <div className="flex-1 text-center">
-                <div className="text-xs text-muted-foreground">Original</div>
-                <div className="text-sm font-medium">{originalWordCount} words</div>
+            <div className="space-y-2 border rounded-md p-2 bg-green-500/5 border-green-500/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5 text-green-600" />
+                  <span className="text-xs font-medium text-green-700">Enhanced Script</span>
+                </div>
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleExportScript('enhanced')}
+                    className="h-6 px-2 text-[10px] gap-1"
+                  >
+                    <Download className="w-3 h-3" />
+                    Download
+                  </Button>
+                </div>
               </div>
-              <div className="text-muted-foreground">→</div>
-              <div className="flex-1 text-center">
-                <div className="text-xs text-muted-foreground">Enhanced</div>
-                <div className="text-sm font-medium text-primary">{enhancedWordCount} words</div>
+              
+              {/* Word Count Comparison */}
+              <div className="flex items-center gap-2 p-1.5 bg-background/50 rounded text-xs">
+                <div className="flex-1 text-center">
+                  <span className="text-muted-foreground">Original: </span>
+                  <span className="font-medium">{originalWordCount} words</span>
+                </div>
+                <span className="text-muted-foreground">→</span>
+                <div className="flex-1 text-center">
+                  <span className="text-muted-foreground">Enhanced: </span>
+                  <span className="font-medium text-green-600">{enhancedWordCount} words</span>
+                  <span className="text-[10px] text-muted-foreground ml-1">
+                    ({enhancedWordCount >= originalWordCount ? '+' : ''}{enhancedWordCount - originalWordCount})
+                  </span>
+                </div>
               </div>
-              <div className="text-xs text-muted-foreground">
-                ({enhancedWordCount > originalWordCount ? '+' : ''}{enhancedWordCount - originalWordCount})
+              
+              {/* Enhanced Script Preview */}
+              <div className="overflow-y-auto max-h-32 rounded bg-muted/30 p-2">
+                <p className="text-xs text-foreground whitespace-pre-wrap">
+                  {enhancedContent.slice(0, 500)}{enhancedContent.length > 500 ? '...' : ''}
+                </p>
+              </div>
+              
+              {/* Apply Enhanced Button */}
+              <div className="flex gap-1">
+                <Button 
+                  size="sm" 
+                  variant="default" 
+                  onClick={handleAcceptAll}
+                  className="flex-1 gap-1 text-xs h-7 bg-green-600 hover:bg-green-700"
+                >
+                  <Check className="w-3 h-3" />
+                  Use Enhanced Script
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={handleRejectAll}
+                  className="gap-1 text-xs h-7"
+                >
+                  <X className="w-3 h-3" />
+                  Discard
+                </Button>
               </div>
             </div>
           )}

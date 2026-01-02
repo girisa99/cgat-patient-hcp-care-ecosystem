@@ -281,42 +281,6 @@ export function AudioPanel({
                 </SelectContent>
               </Select>
             </div>
-            
-            {/* Voiceover files list */}
-            {actualVoiceovers.length > 0 && (
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Available Files</Label>
-                <ScrollArea className="max-h-24">
-                  <div className="space-y-1">
-                    {actualVoiceovers.map((v) => (
-                      <div 
-                        key={v.id}
-                        className={`flex items-center justify-between p-1.5 rounded text-xs cursor-pointer ${
-                          selectedVoiceoverId === v.id ? 'bg-primary/10 border border-primary' : 'bg-muted/30 hover:bg-muted/50'
-                        }`}
-                        onClick={() => onVoiceoverChange(v.id)}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Mic className="w-3 h-3 text-muted-foreground" />
-                          <span className="truncate max-w-[180px]">{v.name}</span>
-                        </div>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-5 w-5"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleExportAudio(v.url, v.name);
-                          }}
-                        >
-                          <Download className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </div>
-            )}
 
             <div className="flex gap-2">
               <Button
@@ -659,41 +623,6 @@ export function AudioPanel({
               <span className="text-xs text-muted-foreground w-9 text-right">{musicVolume}%</span>
             </div>
 
-            {/* Music files list */}
-            {actualMusic.length > 0 && (
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Available Tracks</Label>
-                <ScrollArea className="max-h-24">
-                  <div className="space-y-1">
-                    {actualMusic.map((m) => (
-                      <div 
-                        key={m.id}
-                        className={`flex items-center justify-between p-1.5 rounded text-xs cursor-pointer ${
-                          selectedMusicId === m.id ? 'bg-primary/10 border border-primary' : 'bg-muted/30 hover:bg-muted/50'
-                        }`}
-                        onClick={() => onMusicChange(m.id)}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Music className="w-3 h-3 text-muted-foreground" />
-                          <span>{m.name}</span>
-                        </div>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-5 w-5"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleExportAudio(m.url, m.name);
-                          }}
-                        >
-                          <Download className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </div>
-            )}
           </div>
         )}
       </div>
