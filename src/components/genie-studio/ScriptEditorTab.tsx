@@ -1561,68 +1561,149 @@ export function ScriptEditorTab({
               <BookOpen className="h-5 w-5 text-blue-500" />
               Saved Scripts ({savedScripts.length})
             </h3>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {savedScripts.map(script => (
-                <div
-                  key={script.id}
-                  className={cn(
-                    "p-4 rounded-lg border transition-all group cursor-pointer",
-                    selectedScriptId === script.id 
-                      ? "border-primary bg-primary/5" 
-                      : "border-border/50 hover:border-primary/30"
-                  )}
-                  onClick={() => handleSelectScript(script.id)}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      {script.type === 'video' ? (
-                        <Video className="h-4 w-4 text-red-500" />
-                      ) : (
-                        <Mic className="h-4 w-4 text-purple-500" />
-                      )}
-                      <h4 className="font-medium truncate">{script.name}</h4>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteScript(script.id);
-                      }}
-                    >
-                      <Trash2 className="h-3 w-3 text-destructive" />
-                    </Button>
+            
+            <Tabs defaultValue="video" className="w-full">
+              <TabsList level="child" className="mb-4">
+                <TabsTrigger value="video" level="child">
+                  <Video className="h-4 w-4 mr-2 text-red-500" />
+                  Video ({videoScripts.length})
+                </TabsTrigger>
+                <TabsTrigger value="audio" level="child">
+                  <Mic className="h-4 w-4 mr-2 text-purple-500" />
+                  Audio ({audioScripts.length})
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="video" level="child" className="mt-0 p-0 border-0 shadow-none bg-transparent">
+                {videoScripts.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">No video scripts saved yet</p>
+                ) : (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {videoScripts.map(script => (
+                      <div
+                        key={script.id}
+                        className={cn(
+                          "p-4 rounded-lg border transition-all group cursor-pointer",
+                          selectedScriptId === script.id 
+                            ? "border-primary bg-primary/5" 
+                            : "border-border/50 hover:border-primary/30"
+                        )}
+                        onClick={() => handleSelectScript(script.id)}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <Video className="h-4 w-4 text-red-500 flex-shrink-0" />
+                            <h4 className="font-medium truncate">{script.name}</h4>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 flex-shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteScript(script.id);
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3 text-destructive" />
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                          {script.content.slice(0, 100)}...
+                        </p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs text-muted-foreground">
+                            {script.stats?.wordCount || 0} words
+                          </span>
+                          {script.enhancedContent && (
+                            <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600">
+                              <Sparkles className="h-3 w-3 mr-1" />
+                              Enhanced
+                            </Badge>
+                          )}
+                          {script.draftStatus === 'in_progress' && (
+                            <Badge variant="secondary" className="text-xs">
+                              <Edit3 className="h-3 w-3 mr-1" />
+                              Draft
+                            </Badge>
+                          )}
+                          {script.hasVoiceover && (
+                            <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600">
+                              <Volume2 className="h-3 w-3 mr-1" />
+                              Voiceover
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-                    {script.content.slice(0, 100)}...
-                  </p>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {script.enhancedContent && (
-                      <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600">
-                        <Sparkles className="h-3 w-3 mr-1" />
-                        Enhanced
-                      </Badge>
-                    )}
-                    {script.draftStatus === 'in_progress' && (
-                      <Badge variant="secondary" className="text-xs">
-                        <Edit3 className="h-3 w-3 mr-1" />
-                        Draft
-                      </Badge>
-                    )}
-                    {script.hasVoiceover && (
-                      <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600">
-                        <Volume2 className="h-3 w-3 mr-1" />
-                        Has TTS
-                      </Badge>
-                    )}
-                    <span className="text-xs text-muted-foreground ml-auto">
-                      {new Date(script.updatedAt).toLocaleDateString()}
-                    </span>
+                )}
+              </TabsContent>
+              
+              <TabsContent value="audio" level="child" className="mt-0 p-0 border-0 shadow-none bg-transparent">
+                {audioScripts.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">No audio scripts saved yet</p>
+                ) : (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {audioScripts.map(script => (
+                      <div
+                        key={script.id}
+                        className={cn(
+                          "p-4 rounded-lg border transition-all group cursor-pointer",
+                          selectedScriptId === script.id 
+                            ? "border-primary bg-primary/5" 
+                            : "border-border/50 hover:border-primary/30"
+                        )}
+                        onClick={() => handleSelectScript(script.id)}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <Mic className="h-4 w-4 text-purple-500 flex-shrink-0" />
+                            <h4 className="font-medium truncate">{script.name}</h4>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 flex-shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteScript(script.id);
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3 text-destructive" />
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                          {script.content.slice(0, 100)}...
+                        </p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs text-muted-foreground">
+                            {script.stats?.wordCount || 0} words
+                          </span>
+                          {script.enhancedContent && (
+                            <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600">
+                              <Sparkles className="h-3 w-3 mr-1" />
+                              Enhanced
+                            </Badge>
+                          )}
+                          {script.draftStatus === 'in_progress' && (
+                            <Badge variant="secondary" className="text-xs">
+                              <Edit3 className="h-3 w-3 mr-1" />
+                              Draft
+                            </Badge>
+                          )}
+                          {script.hasVoiceover && (
+                            <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600">
+                              <Volume2 className="h-3 w-3 mr-1" />
+                              Voiceover
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </div>
-              ))}
-            </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       )}
