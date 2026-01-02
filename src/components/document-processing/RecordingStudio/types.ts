@@ -32,6 +32,10 @@ export interface RecordingStudioProps {
   selectedScriptId?: string;
   selectedVoiceoverId?: string;
   selectedMusicId?: string;
+  // Optional upload callbacks from parent
+  onUploadVoiceover?: (file: File) => Promise<void>;
+  onUploadMusic?: (file: File) => Promise<void>;
+  isUploading?: boolean;
 }
 
 export interface RecordingState {

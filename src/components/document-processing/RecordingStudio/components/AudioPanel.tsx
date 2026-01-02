@@ -4,7 +4,7 @@
  * TTS = generated audio with download options (MP3/WAV)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -13,9 +13,9 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Play, Square, Repeat, Volume2, Download, FileText, Mic, Loader2, Music, Trash2 } from 'lucide-react';
+import { Play, Square, Repeat, Volume2, Download, FileText, Mic, Loader2, Music, Trash2, Upload } from 'lucide-react';
 import type { VoiceoverData, MusicData, AudioTabType } from '../types';
-
+import { toast } from 'sonner';
 interface GeneratedTTSFile {
   id: string;
   name: string;
@@ -79,6 +79,11 @@ interface AudioPanelProps {
   onTranscribe?: () => void;
   isTranscribing?: boolean;
   transcriptionText?: string;
+  
+  // Upload callbacks (optional - for uploading voiceovers/music)
+  onUploadVoiceover?: (file: File) => Promise<void>;
+  onUploadMusic?: (file: File) => Promise<void>;
+  isUploading?: boolean;
 }
 
 const OPENAI_VOICES = [
@@ -142,6 +147,9 @@ export function AudioPanel({
   onTranscribe,
   isTranscribing,
   transcriptionText,
+  onUploadVoiceover,
+  onUploadMusic,
+  isUploading = false,
 }: AudioPanelProps) {
   const selectedVoiceover = voiceovers.find(v => v.id === selectedVoiceoverId);
   const selectedMusic = musicList.find(m => m.id === selectedMusicId);
@@ -150,44 +158,78 @@ export function AudioPanel({
   const [generatedTTSFiles, setGeneratedTTSFiles] = useState<GeneratedTTSFile[]>([]);
   const [selectedTTSFileId, setSelectedTTSFileId] = useState<string>('');
   const [downloadFormat, setDownloadFormat] = useState<'mp3' | 'wav'>('mp3');
+  
+  // File input refs for upload
+  const voiceoverInputRef = useRef<HTMLInputElement>(null);
+  const musicInputRef = useRef<HTMLInputElement>(null);
 
   const voiceOptions = ttsProvider === 'elevenlabs' ? ELEVENLABS_VOICES : OPENAI_VOICES;
 
   // Helper to check if file is instrumental/music based on metadata or name
   const isInstrumental = (v: VoiceoverData) => {
     const lowerName = v.name.toLowerCase();
-    return (
-      v.metadataType === 'instrumental' || // From database metadata.type
-      v.scriptType === 'instrumental' ||
-      lowerName.includes('instrumental') ||
-      lowerName.includes('🎵') || // Music emoji indicator
-      lowerName.includes('song_') || // Generated music pattern
-      (lowerName.includes('music') && !lowerName.includes('voiceover')) ||
-      lowerName.includes('bgm') ||
-      lowerName.includes('background_music') ||
-      lowerName.includes('background')
-    );
+    
+    // Primary check: metadata.type from database
+    if (v.metadataType === 'instrumental') return true;
+    if (v.scriptType === 'instrumental') return true;
+    
+    // Secondary check: name patterns for music/instrumental
+    if (lowerName.includes('🎵')) return true; // Music emoji indicator
+    if (lowerName.includes('instrumental')) return true;
+    if (lowerName.includes('song_')) return true; // Generated music pattern
+    if (lowerName.includes('bgm')) return true;
+    if (lowerName.includes('background_music')) return true;
+    // "music" in name but NOT voiceover-related
+    if (lowerName.includes('music') && !lowerName.includes('voiceover') && !lowerName.includes('voice')) return true;
+    // Check for pure "background" but avoid false positives
+    if (lowerName.startsWith('background') && !lowerName.includes('voice')) return true;
+    
+    return false;
   };
 
-  // Helper to check if file is TTS generated
+  // Helper to check if file is TTS generated (text-to-speech from script)
   const isTTSFile = (v: VoiceoverData) => {
     const lowerName = v.name.toLowerCase();
-    return (
-      v.scriptType === 'tts' ||
-      v.scriptType === 'audio' || // ScriptsManager uses 'audio' scriptType for TTS
-      lowerName.includes('tts') ||
-      (lowerName.includes('generated') && !lowerName.includes('music')) ||
-      (v.scriptText && v.scriptText.length > 0) // Has script text = TTS generated
-    );
+    
+    // Primary check: scriptType
+    if (v.scriptType === 'tts') return true;
+    if (v.scriptType === 'audio') return true; // ScriptsManager uses 'audio' scriptType for TTS
+    
+    // Check if has script text embedded (indicates TTS generation)
+    if (v.scriptText && v.scriptText.length > 0) return true;
+    
+    // Name patterns for TTS
+    if (lowerName.includes('tts')) return true;
+    if (lowerName.includes('text-to-speech')) return true;
+    // "generated" in name but not music
+    if (lowerName.includes('generated') && !lowerName.includes('music') && !lowerName.includes('instrumental')) return true;
+    
+    return false;
+  };
+
+  // Helper to check if file is a true voiceover (recorded narration, not TTS or music)
+  const isVoiceover = (v: VoiceoverData) => {
+    const lowerName = v.name.toLowerCase();
+    
+    // Explicit voiceover type
+    if (v.scriptType === 'voiceover' || v.scriptType === 'narration') return true;
+    if (v.metadataType === 'voiceover') return true;
+    
+    // Name patterns for voiceover
+    if (lowerName.includes('voiceover') || lowerName.includes('voice-over')) return true;
+    if (lowerName.includes('narration') || lowerName.includes('narrator')) return true;
+    if (lowerName.includes('recording') && !lowerName.includes('music')) return true;
+    
+    return false;
   };
 
   // FILTER: Instrumental/Music files (exclude from voiceovers)
   const instrumentalFiles = voiceovers.filter(isInstrumental);
-  console.log('[AudioPanel] Instrumental files found:', instrumentalFiles.length, instrumentalFiles.map(v => v.name));
+  console.log('[AudioPanel] Instrumental files:', instrumentalFiles.length, instrumentalFiles.map(v => ({ name: v.name, type: v.metadataType || v.scriptType })));
 
   // FILTER: TTS files (generated from script, not instrumental)
   const ttsFiles = voiceovers.filter(v => !isInstrumental(v) && isTTSFile(v));
-  console.log('[AudioPanel] TTS files found:', ttsFiles.length, ttsFiles.map(v => v.name));
+  console.log('[AudioPanel] TTS files:', ttsFiles.length, ttsFiles.map(v => ({ name: v.name, scriptText: !!v.scriptText })));
 
   // FILTER: Actual voiceovers (recorded voice, not TTS, not instrumental)
   const actualVoiceovers = voiceovers.filter(v => {
@@ -195,12 +237,12 @@ export function AudioPanel({
     if (isInstrumental(v)) return false;
     // Exclude TTS files
     if (isTTSFile(v)) return false;
-    // If has specific voiceover/narration type, include
-    if (v.scriptType === 'voiceover' || v.scriptType === 'narration') return true;
-    // Default: if not TTS and not instrumental, it's likely a voiceover
+    // Include if explicitly marked as voiceover
+    if (isVoiceover(v)) return true;
+    // Default: remaining files are assumed to be voiceovers
     return true;
   });
-  console.log('[AudioPanel] Actual voiceovers found:', actualVoiceovers.length, actualVoiceovers.map(v => v.name));
+  console.log('[AudioPanel] Voiceovers:', actualVoiceovers.length, actualVoiceovers.map(v => v.name));
   
   // FILTER: Combine musicList prop with instrumental files from voiceovers (avoid duplicates)
   const actualMusic = [
@@ -213,7 +255,7 @@ export function AudioPanel({
         url: v.url
       }))
   ];
-  console.log('[AudioPanel] Actual music found:', actualMusic.length, actualMusic.map(m => m.name));
+  console.log('[AudioPanel] Music:', actualMusic.length, actualMusic.map(m => m.name));
 
   // Handle TTS generation and add to files list
   const handleGenerateAndSave = () => {
@@ -391,6 +433,36 @@ export function AudioPanel({
               />
               <span className="text-xs text-muted-foreground w-9 text-right">{voiceoverVolume}%</span>
             </div>
+
+            {/* Upload Voiceover Button */}
+            {onUploadVoiceover && (
+              <>
+                <input
+                  ref={voiceoverInputRef}
+                  type="file"
+                  accept="audio/*,video/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      await onUploadVoiceover(file);
+                      toast.success(`Uploaded: ${file.name}`);
+                    }
+                    if (voiceoverInputRef.current) voiceoverInputRef.current.value = '';
+                  }}
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => voiceoverInputRef.current?.click()}
+                  disabled={isUploading}
+                  className="w-full gap-1.5 h-8"
+                >
+                  {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                  {isUploading ? 'Uploading...' : 'Upload Voiceover (MP3/MP4)'}
+                </Button>
+              </>
+            )}
 
             {onTranscribe && (
               <Button

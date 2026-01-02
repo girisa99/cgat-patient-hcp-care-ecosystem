@@ -912,6 +912,68 @@ Thanks for watching!`,
     }
   };
 
+  // Upload voiceover files (for RecordingStudio)
+  const handleUploadVoiceover = async (file: File): Promise<void> => {
+    setIsUploading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const bucket = 'generated-audio';
+      const fileName = `voiceover_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+      
+      const { data, error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(fileName, file, {
+          contentType: file.type,
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(data.path);
+
+      const { data: dbData, error: dbError } = await supabase
+        .from('generated_media')
+        .insert({
+          user_id: user.id,
+          name: file.name,
+          file_type: 'audio',
+          storage_bucket: bucket,
+          storage_path: data.path,
+          file_url: urlData.publicUrl,
+          file_size_bytes: file.size,
+          source: 'upload',
+          metadata: { type: 'voiceover', uploadedAs: 'voiceover' }
+        })
+        .select()
+        .single();
+
+      if (!dbError && dbData) {
+        const newMedia: MediaItem = {
+          id: dbData.id,
+          name: file.name,
+          url: urlData.publicUrl,
+          file_type: 'audio',
+          storage_bucket: bucket,
+          storage_path: data.path,
+          source: 'upload',
+          created_at: dbData.created_at,
+          metadata: { type: 'voiceover' }
+        };
+        setMediaItems(prev => [newMedia, ...prev]);
+      }
+      showSuccess('Voiceover uploaded successfully!');
+    } catch (err) {
+      console.error('Voiceover upload error:', err);
+      showError('Failed to upload voiceover');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleDownload = async (media: MediaItem) => {
     try {
       const response = await fetch(media.url);
@@ -1970,6 +2032,65 @@ Thanks for watching!`,
         selectedScriptId={selectedScript?.id}
         selectedVoiceoverId={selectedAudioFile?.id}
         selectedMusicId={selectedBackgroundMusic?.id}
+        onUploadVoiceover={handleUploadVoiceover}
+        onUploadMusic={async (file) => {
+          // Reuse the music upload logic
+          const event = { target: { files: [file] } } as unknown as React.ChangeEvent<HTMLInputElement>;
+          // Can't directly reuse handleMusicUpload because it expects an event
+          // Instead, inline the upload logic
+          setIsUploading(true);
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('User not authenticated');
+
+            const bucket = 'generated-audio';
+            const fileName = `music_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+            
+            const { data, error: uploadError } = await supabase.storage
+              .from(bucket)
+              .upload(fileName, file, { contentType: file.type, upsert: false });
+
+            if (uploadError) throw uploadError;
+
+            const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(data.path);
+
+            const { data: dbData } = await supabase
+              .from('generated_media')
+              .insert({
+                user_id: user.id,
+                name: `🎵 ${file.name}`,
+                file_type: 'audio',
+                storage_bucket: bucket,
+                storage_path: data.path,
+                file_url: urlData.publicUrl,
+                file_size_bytes: file.size,
+                source: 'upload',
+                metadata: { type: 'instrumental', uploadedAs: 'background_music' }
+              })
+              .select()
+              .single();
+
+            if (dbData) {
+              setMediaItems(prev => [{
+                id: dbData.id,
+                name: `🎵 ${file.name}`,
+                url: urlData.publicUrl,
+                file_type: 'audio',
+                storage_bucket: bucket,
+                storage_path: data.path,
+                source: 'upload',
+                created_at: dbData.created_at,
+                metadata: { type: 'instrumental' }
+              }, ...prev]);
+            }
+            showSuccess('Music uploaded!');
+          } catch (err) {
+            showError('Failed to upload music');
+          } finally {
+            setIsUploading(false);
+          }
+        }}
+        isUploading={isUploading}
       />
     </>
   );
