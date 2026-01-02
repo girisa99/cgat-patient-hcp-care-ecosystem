@@ -56,10 +56,12 @@ export function getUIScript(): string {
 
     function initAudioTabs() {
       const tabBtns = document.querySelectorAll('.audio-tab-btn');
+      console.log('[UI] Found', tabBtns.length, 'audio tab buttons');
       
       tabBtns.forEach(function(btn) {
         btn.addEventListener('click', function() {
           const tabId = this.dataset.tab;
+          console.log('[UI] Switching to tab:', tabId);
           
           // Update button states
           tabBtns.forEach(function(b) { b.classList.remove('active'); });
@@ -73,12 +75,18 @@ export function getUIScript(): string {
           const targetContent = document.getElementById('audioTab-' + tabId);
           if (targetContent) {
             targetContent.classList.add('active');
+            console.log('[UI] Tab content shown:', tabId);
+          } else {
+            console.warn('[UI] Tab content not found:', 'audioTab-' + tabId);
           }
         });
       });
       
       console.log('[UI] Audio tabs initialized');
     }
+    
+    // Initialize audio tabs immediately
+    initAudioTabs();
 
     // =====================================================
     // TELEPROMPTER

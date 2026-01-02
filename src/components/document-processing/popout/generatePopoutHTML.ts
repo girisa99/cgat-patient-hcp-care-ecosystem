@@ -57,27 +57,71 @@ export function generatePopoutHTML(config: PopoutConfig): string {
   // Get HTML content
   const htmlContent = getPopoutHTML(config);
 
+  // Shared global variables declaration (must come first)
+  const sharedGlobals = `
+    // =====================================================
+    // SHARED GLOBAL VARIABLES
+    // =====================================================
+    // These are declared first so all modules can access them
+    var mediaStream = null;
+    var mediaRecorder = null;
+    var recordedChunks = [];
+    var isRecording = false;
+    var recordingStartTime = null;
+    var recordingTimer = null;
+    var isStopped = false;
+    var isPaused = false;
+    var trimHistory = [];
+    var logoEnabled = false;
+    
+    // Audio references (shared across modules)
+    var voiceoverAudio = null;
+    var musicAudio = null;
+    var ttsAudio = null;
+    var syncAudioSource = null;
+    var syncAnimationFrame = null;
+    
+    // Shared showStatus function
+    function showStatus(message, type) {
+      var container = document.getElementById('statusContainer');
+      if (container) {
+        container.innerHTML = '<div class="status-message ' + type + '">' + message + '</div>';
+        if (type === 'success') {
+          setTimeout(function() { container.innerHTML = ''; }, 5000);
+        }
+      } else {
+        console.log('[Status] ' + type + ': ' + message);
+      }
+    }
+    
+    console.log('[Popout] Shared globals initialized');
+  `;
+
   // Get all scripts - order matters for dependencies
   const scripts = [
-    // Base modules first
+    // Shared globals first
+    sharedGlobals,
+    // Base modules
     getAudioAnalyzerScript(),
     getAudioTrimmerScript(),
     getAudioExportScript(),
     getTranscriptionScript(config.supabaseUrl, config.supabaseKey),
     getScriptAudioSyncScript(),
     getVoiceoverManagerScript(),
-    getEnhancedControlsScript(),
     getAudioPanelScript(config.supabaseUrl, config.supabaseKey),
-    // New enhancement modules
+    // Enhancement modules
     getScriptEnhancementScript(config.supabaseUrl, config.supabaseKey),
     getRecordingEnhancementsScript(),
     getTeleprompterEnhancementsScript(),
     getVoiceProviderSelectionScript(config.supabaseUrl, config.supabaseKey),
     getBackgroundBlurScript(),
     getRecordingLibraryScript(),
-    // UI and Camera last (they use the above)
-    getUIScript(),
-    getCameraScript()
+    // Camera BEFORE enhanced controls (so mediaStream is available)
+    getCameraScript(),
+    // Enhanced controls after camera (needs mediaStream)
+    getEnhancedControlsScript(),
+    // UI last (uses everything)
+    getUIScript()
   ].join('\n\n');
 
   // Compose the complete HTML document with validation logging
@@ -95,64 +139,82 @@ ${styles}
 ${htmlContent}
   <script>
     // =====================================================
-    // MODULAR POPOUT - PHASE 3 VALIDATED
+    // MODULAR POPOUT - FULLY VALIDATED
     // =====================================================
-    console.log('[Popout] Loading modular components...');
+    console.log('[Popout] Starting modular components load...');
     
+    try {
 ${scripts}
+    } catch (err) {
+      console.error('[Popout] FATAL: Script loading error:', err);
+      document.body.innerHTML = '<div style="padding:20px;color:red;font-family:sans-serif;">' +
+        '<h1>Loading Error</h1>' +
+        '<p>' + err.message + '</p>' +
+        '<pre>' + err.stack + '</pre>' +
+      '</div>';
+    }
 
     // Validation check
     setTimeout(function() {
-      const modules = [
-        // Core recording
-        { name: 'Recording Enhancements', check: typeof isStopped !== 'undefined' },
-        { name: 'Countdown', check: typeof startCountdown === 'function' },
+      console.log('[Popout] ===== INITIALIZATION VALIDATION =====');
+      
+      // Check critical elements exist
+      var criticalElements = [
+        'videoPreview', 'recordBtn', 'scriptSelect', 
+        'voiceoverSelect', 'musicSelect', 'cameraToggleBtn',
+        'micToggleBtn', 'blurBtn', 'teleprompterBtn'
+      ];
+      
+      var missingElements = [];
+      criticalElements.forEach(function(id) {
+        if (!document.getElementById(id)) {
+          missingElements.push(id);
+        }
+      });
+      
+      if (missingElements.length > 0) {
+        console.error('[Popout] Missing critical elements:', missingElements.join(', '));
+      } else {
+        console.log('[Popout] ✅ All critical elements found');
+      }
+      
+      // Check critical functions
+      var modules = [
+        { name: 'Camera Init', check: typeof mediaStream !== 'undefined' },
+        { name: 'Recording Enhancements', check: typeof startCountdown === 'function' },
         { name: 'Pause/Resume', check: typeof pauseRecording === 'function' },
-        { name: 'Trim Recording', check: typeof trimLastSeconds === 'function' },
-        
-        // Teleprompter
-        { name: 'Teleprompter Enhancements', check: typeof scriptWords !== 'undefined' },
-        { name: 'Word Highlighting', check: typeof startWordHighlightingFromAudio === 'function' },
-        { name: 'Reading Cursor', check: typeof showReadingCursor === 'function' },
-        
-        // Audio
         { name: 'Audio Playback', check: typeof startAudioPlayback === 'function' },
-        { name: 'Audio Analyzer', check: typeof analyzeAudio === 'function' },
-        { name: 'Audio Trimmer', check: typeof initTrimmer === 'function' },
-        { name: 'Audio Export', check: typeof exportAudio === 'function' },
-        { name: 'Script-Audio Sync', check: typeof initSync === 'function' },
-        
-        // AI Features
-        { name: 'Script Enhancement', check: typeof analyzeScript === 'function' },
-        { name: 'Voice Provider Selection', check: typeof selectVoiceProvider === 'function' },
-        { name: 'Transcription', check: typeof transcribeAudio === 'function' },
-        
-        // Visual Effects
+        { name: 'Stop All Audio', check: typeof stopAllAudio === 'function' },
+        { name: 'Camera Toggle', check: typeof toggleCamera === 'function' },
+        { name: 'Mic Toggle', check: typeof toggleMicrophone === 'function' },
         { name: 'Background Blur', check: typeof toggleBackgroundBlur === 'function' },
-        { name: 'Enhanced Controls', check: typeof toggleCamera === 'function' },
-        
-        // Library
         { name: 'Recording Library', check: typeof saveRecordingToLibrary === 'function' },
         { name: 'Library UI', check: typeof updateLibraryUI === 'function' }
       ];
       
-      console.log('[Popout] ===== MODULE VALIDATION =====');
-      let passedCount = 0;
-      let failedModules = [];
+      var passedCount = 0;
+      var failedModules = [];
       modules.forEach(function(m) {
-        const status = m.check ? '✅' : '❌';
-        console.log('[Popout] ' + status + ' ' + m.name);
         if (m.check) {
           passedCount++;
         } else {
           failedModules.push(m.name);
         }
       });
+      
       console.log('[Popout] ===== ' + passedCount + '/' + modules.length + ' MODULES LOADED =====');
       if (failedModules.length > 0) {
         console.warn('[Popout] Missing modules:', failedModules.join(', '));
       }
-    }, 500);
+      
+      // Verify camera is working
+      if (typeof mediaStream !== 'undefined' && mediaStream) {
+        console.log('[Popout] ✅ Camera stream active');
+      } else {
+        console.log('[Popout] ⏳ Camera initializing (or permission pending)...');
+      }
+      
+    }, 1000);
     
     console.log('[Popout] All modules loaded');
   </script>

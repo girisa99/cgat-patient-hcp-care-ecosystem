@@ -213,16 +213,36 @@ export function getEnhancedControlsScript(): string {
 
     // Initialize enhanced controls
     function initEnhancedControls() {
+      console.log('[EnhancedControls] Initializing...');
+      
       // Camera toggle
       const cameraBtn = document.getElementById('cameraToggleBtn');
       if (cameraBtn) {
-        cameraBtn.addEventListener('click', toggleCamera);
+        cameraBtn.addEventListener('click', function() {
+          if (typeof mediaStream !== 'undefined' && mediaStream) {
+            toggleCamera();
+          } else {
+            console.log('[EnhancedControls] Camera not ready yet');
+          }
+        });
+        console.log('[EnhancedControls] Camera button attached');
+      } else {
+        console.warn('[EnhancedControls] Camera button not found');
       }
 
       // Mic toggle
       const micBtn = document.getElementById('micToggleBtn');
       if (micBtn) {
-        micBtn.addEventListener('click', toggleMicrophone);
+        micBtn.addEventListener('click', function() {
+          if (typeof mediaStream !== 'undefined' && mediaStream) {
+            toggleMicrophone();
+          } else {
+            console.log('[EnhancedControls] Mic not ready yet');
+          }
+        });
+        console.log('[EnhancedControls] Mic button attached');
+      } else {
+        console.warn('[EnhancedControls] Mic button not found');
       }
 
       // Logo upload
@@ -235,7 +255,8 @@ export function getEnhancedControlsScript(): string {
       const logoUploadBtn = document.getElementById('logoUploadBtn');
       if (logoUploadBtn) {
         logoUploadBtn.addEventListener('click', function() {
-          document.getElementById('logoUploadInput').click();
+          var input = document.getElementById('logoUploadInput');
+          if (input) input.click();
         });
       }
 
@@ -243,6 +264,11 @@ export function getEnhancedControlsScript(): string {
       document.querySelectorAll('[data-logo-size]').forEach(function(btn) {
         btn.addEventListener('click', function() {
           setLogoSize(this.dataset.logoSize);
+          // Update active state
+          document.querySelectorAll('[data-logo-size]').forEach(function(b) {
+            b.classList.remove('active');
+          });
+          this.classList.add('active');
         });
       });
 
@@ -256,11 +282,11 @@ export function getEnhancedControlsScript(): string {
       // Initialize logo drag
       initLogoDrag();
 
-      console.log('[EnhancedControls] Initialized');
+      console.log('[EnhancedControls] Initialized successfully');
     }
 
-    // Initialize after DOM ready
-    setTimeout(initEnhancedControls, 100);
+    // Initialize after DOM and camera are ready (give camera time to init)
+    setTimeout(initEnhancedControls, 500);
 
     console.log('[EnhancedControls] Module loaded');
   `;
