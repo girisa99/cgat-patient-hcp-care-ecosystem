@@ -450,5 +450,74 @@ export function getPopoutStyles(): string {
       border: 1px solid rgba(34, 197, 94, 0.3);
       color: #4ade80;
     }
+
+    /* Logo Position Controls */
+    .logo-position-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 8px;
+      flex-wrap: wrap;
+    }
+
+    .control-label {
+      font-size: 0.7rem;
+      color: #666;
+      margin-left: 8px;
+    }
+
+    .control-btn-upload {
+      padding: 8px 16px;
+      background: rgba(139, 92, 246, 0.2);
+      border: 1px dashed rgba(139, 92, 246, 0.4);
+      border-radius: 8px;
+      color: #a78bfa;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+
+    .control-btn-upload:hover {
+      background: rgba(139, 92, 246, 0.3);
+    }
+
+    /* Sync Section */
+    .sync-section {
+      padding: 12px 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      margin-top: 8px;
+    }
+
+    /* Canvas Waveform */
+    .waveform-canvas {
+      width: 100%;
+      height: 60px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    /* Scrollable Sidebar */
+    .sidebar {
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(139, 92, 246, 0.3) transparent;
+    }
+
+    .sidebar::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .sidebar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb {
+      background: rgba(139, 92, 246, 0.3);
+      border-radius: 3px;
+    }
   `;
 }
