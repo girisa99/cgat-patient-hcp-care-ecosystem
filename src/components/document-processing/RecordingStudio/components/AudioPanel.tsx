@@ -111,12 +111,12 @@ export function AudioPanel({
 
         {/* Voiceover Tab */}
         <TabsContent value="voiceover" className="space-y-3 mt-4">
-          <Select value={selectedVoiceoverId} onValueChange={onVoiceoverChange}>
+          <Select value={selectedVoiceoverId || "none"} onValueChange={(v) => onVoiceoverChange(v === "none" ? "" : v)}>
             <SelectTrigger>
               <SelectValue placeholder="Select voiceover" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">None</SelectItem>
+              <SelectItem value="none">None</SelectItem>
               {voiceovers.map((v) => (
                 <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
               ))}
@@ -218,12 +218,12 @@ export function AudioPanel({
 
         {/* Music Tab */}
         <TabsContent value="music" className="space-y-3 mt-4">
-          <Select value={selectedMusicId} onValueChange={onMusicChange}>
+          <Select value={selectedMusicId || "none"} onValueChange={(v) => onMusicChange(v === "none" ? "" : v)}>
             <SelectTrigger>
               <SelectValue placeholder="Select music" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">None</SelectItem>
+              <SelectItem value="none">None</SelectItem>
               {musicList.map((m) => (
                 <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
               ))}
