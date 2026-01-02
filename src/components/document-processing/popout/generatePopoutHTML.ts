@@ -6221,6 +6221,30 @@ export function generatePopoutHTML(config: PopoutConfig): string {
   // Generate the main script
   const mainScript = generateScript(config);
   
+  // Validate syntax before encoding - helps catch issues early
+  try {
+    // eslint-disable-next-line no-new-func
+    new Function(mainScript);
+    console.log('✅ Generated script syntax is valid');
+  } catch (syntaxError) {
+    console.error('❌ SYNTAX ERROR in generated script:', syntaxError);
+    // Find the problematic area
+    const lines = mainScript.split('\n');
+    const errorMatch = String(syntaxError).match(/position (\d+)/i);
+    if (errorMatch) {
+      const pos = parseInt(errorMatch[1], 10);
+      let charCount = 0;
+      for (let i = 0; i < lines.length; i++) {
+        charCount += lines[i].length + 1;
+        if (charCount >= pos) {
+          console.error('Error likely around line', i + 1, ':', lines[i]);
+          console.error('Context:', lines.slice(Math.max(0, i - 2), i + 3).join('\n'));
+          break;
+        }
+      }
+    }
+  }
+  
   // Encode the script as base64 to avoid any HTML parsing issues
   const scriptBase64 = btoa(unescape(encodeURIComponent(mainScript)));
 
