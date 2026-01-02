@@ -55,12 +55,14 @@ import {
   Calendar,
   Mail,
   UserPlus,
-  X
+  X,
+  Save
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { RecordingStudio } from '@/components/document-processing/RecordingStudio';
 import { toast } from 'sonner';
 import { useTTSGeneration, OPENAI_VOICES, ELEVENLABS_VOICES } from '@/components/document-processing/RecordingStudio/hooks/useTTSGeneration';
+import { ScriptEditorTab } from '@/components/genie-studio/ScriptEditorTab';
 import { supabase } from '@/integrations/supabase/client';
 
 // Types for media items
@@ -74,13 +76,29 @@ interface MediaItem {
   size?: number;
 }
 
-// Types for saved scripts
+// Types for saved scripts - Extended for full script workflow
 interface SavedScript {
   id: string;
   name: string;
   content: string;
+  type: 'video' | 'audio';
   createdAt: number;
   updatedAt: number;
+  enhancedContent?: string;
+  cleanContent?: string; // For TTS
+  draftContent?: string;
+  draftStatus?: 'in_progress' | 'completed';
+  draftChanges?: any[];
+  stats?: {
+    wordCount: number;
+    sentenceCount: number;
+    characterCount: number;
+    estimatedReadingMinutes: number;
+    estimatedSpeakingMinutes: number;
+    readabilityScore: 'easy' | 'moderate' | 'difficult';
+  };
+  hasVoiceover?: boolean;
+  voiceoverId?: string;
 }
 
 // Types for shows/events
@@ -918,7 +936,22 @@ export default function GenieStudio() {
     }
   }, []);
 
-  const saveScript = () => {
+  const saveScript = (script?: SavedScript) => {
+    // If called with a script object (from ScriptEditorTab), use it directly
+    if (script) {
+      const existingIndex = savedScripts.findIndex(s => s.id === script.id);
+      let updated: SavedScript[];
+      if (existingIndex >= 0) {
+        updated = savedScripts.map(s => s.id === script.id ? script : s);
+      } else {
+        updated = [...savedScripts, script];
+      }
+      setSavedScripts(updated);
+      localStorage.setItem('genieStudioScripts', JSON.stringify(updated));
+      return;
+    }
+    
+    // Legacy: if called without args, use the state values
     if (!scriptName.trim() || !scriptContent.trim()) {
       toast.error('Please add a name and content');
       return;
@@ -927,6 +960,7 @@ export default function GenieStudio() {
       id: crypto.randomUUID(),
       name: scriptName,
       content: scriptContent,
+      type: 'video', // Default type
       createdAt: Date.now(),
       updatedAt: Date.now()
     };
@@ -934,6 +968,12 @@ export default function GenieStudio() {
     setSavedScripts(updated);
     localStorage.setItem('genieStudioScripts', JSON.stringify(updated));
     toast.success('Script saved!');
+  };
+  
+  const updateScript = (id: string, updates: Partial<SavedScript>) => {
+    const updated = savedScripts.map(s => s.id === id ? { ...s, ...updates, updatedAt: Date.now() } : s);
+    setSavedScripts(updated);
+    localStorage.setItem('genieStudioScripts', JSON.stringify(updated));
   };
 
   const loadScript = (script: SavedScript) => {
@@ -1846,417 +1886,76 @@ export default function GenieStudio() {
               </div>
             </TabsContent>
 
-            {/* Script Editor Tab */}
-            <TabsContent value="script-editor" className="mt-0 space-y-6">
-              <Card className="border-border/50 bg-card/80 backdrop-blur">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-                        <PenTool className="h-6 w-6 text-white" />
+            {/* Script Editor Tab - Using dedicated component */}
+            <TabsContent value="script-editor" className="mt-0">
+              <ScriptEditorTab
+                savedScripts={savedScripts}
+                onSaveScript={(script) => saveScript(script)}
+                onDeleteScript={deleteScript}
+                onUpdateScript={updateScript}
+                onSaveVoiceover={(url, name, scriptId) => {
+                  saveVoiceover(url, name);
+                  if (scriptId) {
+                    updateScript(scriptId, { hasVoiceover: true });
+                  }
+                }}
+                savedVoiceovers={savedVoiceovers.map(v => ({
+                  id: v.id,
+                  name: v.name,
+                  url: v.url
+                }))}
+              />
+            </TabsContent>
+
+            {/* Voice Generator Tab */}
+            <TabsContent value="voice-generator" className="mt-0 space-y-6">
+              {/* Scripts Ready for Voice Assignment */}
+              {savedScripts.filter(s => (s.enhancedContent || s.content) && !s.hasVoiceover).length > 0 && (
+                <Card className="border-border/50 bg-card/80 backdrop-blur border-blue-500/30 bg-blue-500/5">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                        <FileText className="h-5 w-5 text-white" />
                       </div>
                       <div>
-                        <h2 className="text-xl font-semibold">Script Editor</h2>
-                        <p className="text-sm text-muted-foreground">Write and enhance scripts with AI assistance</p>
+                        <h3 className="text-lg font-semibold">Scripts Ready for Voice</h3>
+                        <p className="text-sm text-muted-foreground">Add voiceovers to your saved scripts</p>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" onClick={handleNewScript}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        New Script
-                      </Button>
-                      <Button variant="outline" onClick={() => setActiveTab('templates')}>
-                        <FileText className="h-4 w-4 mr-2" />
-                        Templates
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {/* Script Stats & Actions */}
-                  <div className="grid md:grid-cols-5 gap-4 mb-6">
-                    <div className="p-4 rounded-lg bg-muted/50 border border-border/50">
-                      <div className="flex items-center gap-2 mb-1">
-                        <FileText className="h-4 w-4 text-blue-500" />
-                        <span className="text-xs text-muted-foreground">Words</span>
-                      </div>
-                      <span className="text-xl font-bold">{words}</span>
-                    </div>
-                    <div className="p-4 rounded-lg bg-muted/50 border border-border/50">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Clock className="h-4 w-4 text-orange-500" />
-                        <span className="text-xs text-muted-foreground">Reading Time</span>
-                      </div>
-                      <span className="text-xl font-bold">{minutes} min</span>
-                    </div>
-                    <div 
-                      className="p-4 rounded-lg bg-muted/50 border border-border/50 cursor-pointer hover:border-blue-500/50 transition-colors"
-                      onClick={handleAnalyzeScript}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <Search className="h-4 w-4 text-blue-500" />
-                        <span className="text-xs text-muted-foreground">AI Analyze</span>
-                      </div>
-                      <span className="text-sm font-medium">
-                        {isAnalyzing ? 'Analyzing...' : 'Click to analyze'}
-                      </span>
-                    </div>
-                    <div 
-                      className="p-4 rounded-lg bg-muted/50 border border-border/50 cursor-pointer hover:border-purple-500/50 transition-colors"
-                      onClick={handleEnhanceScript}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <Wand2 className="h-4 w-4 text-purple-500" />
-                        <span className="text-xs text-muted-foreground">AI Enhance</span>
-                      </div>
-                      <span className="text-sm font-medium">
-                        {isEnhancing ? 'Enhancing...' : 'Click to enhance'}
-                      </span>
-                    </div>
-                    <div 
-                      className="p-4 rounded-lg bg-muted/50 border border-border/50 cursor-pointer hover:border-green-500/50 transition-colors"
-                      onClick={handleGenerateFullTTS}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <Volume2 className="h-4 w-4 text-green-500" />
-                        <span className="text-xs text-muted-foreground">Generate TTS</span>
-                      </div>
-                      <span className="text-sm font-medium">
-                        {isTTSGenerating ? 'Generating...' : 'Full script TTS'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Analysis Results */}
-                  {showAnalysis && analysisResult && (
-                    <div className="mb-6 p-4 rounded-lg border border-blue-500/30 bg-blue-500/5">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-semibold flex items-center gap-2">
-                          <Search className="h-4 w-4 text-blue-500" />
-                          Script Analysis
-                        </h3>
-                        <Button variant="ghost" size="sm" onClick={() => setShowAnalysis(false)}>
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      
-                      {analysisResult.stats && (
-                        <div className="grid grid-cols-4 gap-3 mb-4 text-sm">
-                          <div className="p-2 rounded bg-background">
-                            <span className="text-muted-foreground">Words:</span>
-                            <span className="ml-2 font-medium">{analysisResult.stats.wordCount}</span>
-                          </div>
-                          <div className="p-2 rounded bg-background">
-                            <span className="text-muted-foreground">Sentences:</span>
-                            <span className="ml-2 font-medium">{analysisResult.stats.sentenceCount}</span>
-                          </div>
-                          <div className="p-2 rounded bg-background">
-                            <span className="text-muted-foreground">Duration:</span>
-                            <span className="ml-2 font-medium">~{analysisResult.stats.estimatedDurationMinutes} min</span>
-                          </div>
-                          <div className="p-2 rounded bg-background">
-                            <span className="text-muted-foreground">Readability:</span>
-                            <span className="ml-2 font-medium">{analysisResult.stats.readabilityScore}</span>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {analysisResult.recommendations && analysisResult.recommendations.length > 0 && (
-                        <div className="space-y-2">
-                          <Label className="text-xs text-muted-foreground">Recommendations</Label>
-                          {analysisResult.recommendations.map((rec) => (
-                            <div 
-                              key={rec.id}
-                              className={cn(
-                                "p-3 rounded-lg border flex items-start gap-3",
-                                rec.severity === 'warning' ? 'border-orange-500/30 bg-orange-500/5' :
-                                rec.severity === 'suggestion' ? 'border-purple-500/30 bg-purple-500/5' :
-                                'border-border bg-background'
-                              )}
-                            >
-                              <div className="flex-1">
-                                <p className="font-medium text-sm">{rec.title}</p>
-                                <p className="text-xs text-muted-foreground mt-1">{rec.description}</p>
-                              </div>
-                              {rec.accepted === null && (
-                                <div className="flex gap-1">
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="h-7 px-2"
-                                    onClick={() => setAnalysisResult(prev => prev ? {
-                                      ...prev,
-                                      recommendations: prev.recommendations?.map(r => 
-                                        r.id === rec.id ? { ...r, accepted: true } : r
-                                      )
-                                    } : null)}
-                                  >
-                                    <Check className="h-3 w-3 text-green-500" />
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="h-7 px-2"
-                                    onClick={() => setAnalysisResult(prev => prev ? {
-                                      ...prev,
-                                      recommendations: prev.recommendations?.map(r => 
-                                        r.id === rec.id ? { ...r, accepted: false } : r
-                                      )
-                                    } : null)}
-                                  >
-                                    <X className="h-3 w-3 text-red-500" />
-                                  </Button>
-                                </div>
-                              )}
-                              {rec.accepted !== null && (
-                                <Badge variant={rec.accepted ? 'default' : 'secondary'} className="text-xs">
-                                  {rec.accepted ? 'Noted' : 'Dismissed'}
-                                </Badge>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Enhancement Changes Review */}
-                  {showEnhancementChanges && enhancedScriptContent && (
-                    <div className="mb-6 p-4 rounded-lg border border-purple-500/30 bg-purple-500/5">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-semibold flex items-center gap-2">
-                          <Wand2 className="h-4 w-4 text-purple-500" />
-                          Review AI Enhancements
-                        </h3>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm" onClick={handleRejectAllEnhancements}>
-                            <X className="h-4 w-4 mr-1" />
-                            Reject All
-                          </Button>
-                          <Button size="sm" onClick={handleAcceptAllEnhancements} className="bg-green-500 hover:bg-green-600">
-                            <Check className="h-4 w-4 mr-1" />
-                            Accept All
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      {enhancementChanges.length > 0 && (
-                        <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">
-                          {enhancementChanges.map((change) => (
-                            <div 
-                              key={change.id}
-                              className="p-3 rounded-lg border border-border bg-background text-sm"
-                            >
-                              <div className="flex items-center gap-2 mb-2">
-                                <Badge variant="outline" className="text-xs capitalize">{change.type}</Badge>
-                                <span className="text-xs text-muted-foreground">{change.reason}</span>
-                              </div>
-                              {change.original && (
-                                <p className="text-red-500/80 line-through text-xs mb-1">{change.original}</p>
-                              )}
-                              {change.enhanced && (
-                                <p className="text-green-600 text-xs">{change.enhanced}</p>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      
-                      <div className="p-3 rounded bg-background border">
-                        <Label className="text-xs text-muted-foreground mb-2 block">Enhanced Script Preview</Label>
-                        <p className="text-sm line-clamp-4">{enhancedScriptContent.slice(0, 300)}...</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Revert Option */}
-                  {originalScriptContent && !showEnhancementChanges && (
-                    <div className="mb-4">
-                      <Button variant="outline" size="sm" onClick={handleRevertToOriginal}>
-                        <RotateCcw className="h-4 w-4 mr-2" />
-                        Revert to Original
-                      </Button>
-                    </div>
-                  )}
-
-                  {/* TTS Result - Save to use in recording */}
-                  {ttsResult && (
-                    <div className="mb-6 p-4 rounded-lg border border-green-500/30 bg-green-500/5">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="font-semibold flex items-center gap-2">
-                          <Headphones className="h-4 w-4 text-green-500" />
-                          TTS Generated from Script
-                        </h3>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm" onClick={playTTS}>
-                            <Play className="h-4 w-4 mr-1" />
-                            Play
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => downloadTTS()}>
-                            <Download className="h-4 w-4 mr-1" />
-                            Download
-                          </Button>
-                          <Button 
-                            size="sm"
-                            onClick={() => {
-                              if (ttsResult?.audioUrl) {
-                                saveVoiceover(ttsResult.audioUrl, `${scriptName || 'Script'} TTS - ${new Date().toLocaleTimeString()}`);
-                              }
-                            }}
-                          >
-                            Save for Recording
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">Duration:</span>
-                          <span className="ml-2 font-medium">{ttsResult.duration.toFixed(1)}s</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Provider:</span>
-                          <span className="ml-2 font-medium capitalize">{ttsResult.provider}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Characters:</span>
-                          <span className="ml-2 font-medium">{ttsResult.charactersProcessed}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Script Input */}
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="script-name">Script Name</Label>
-                      <Input 
-                        id="script-name"
-                        value={scriptName}
-                        onChange={(e) => setScriptName(e.target.value)}
-                        placeholder="Enter a name for your script..."
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="script-content">Script Content</Label>
-                      <Textarea
-                        id="script-content"
-                        value={scriptContent}
-                        onChange={(e) => setScriptContent(e.target.value)}
-                        placeholder="Start writing your script here... Or select a template to get started!"
-                        className="mt-1 min-h-[300px] font-mono"
-                      />
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button 
-                        onClick={handleAnalyzeScript}
-                        disabled={isAnalyzing || !scriptContent.trim()}
-                        variant="outline"
-                      >
-                        {isAnalyzing ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Analyzing...
-                          </>
-                        ) : (
-                          <>
-                            <Search className="h-4 w-4 mr-2" />
-                            Analyze
-                          </>
-                        )}
-                      </Button>
-                      <Button 
-                        onClick={handleEnhanceScript}
-                        disabled={isEnhancing || !scriptContent.trim()}
-                        className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
-                      >
-                        {isEnhancing ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Enhancing...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="h-4 w-4 mr-2" />
-                            AI Enhance
-                          </>
-                        )}
-                      </Button>
-                      <Button 
-                        variant="outline"
-                        onClick={handleGenerateFullTTS}
-                        disabled={isTTSGenerating || !scriptContent.trim()}
-                      >
-                        {isTTSGenerating ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Generating...
-                          </>
-                        ) : (
-                          <>
-                            <Mic className="h-4 w-4 mr-2" />
-                            Generate TTS
-                          </>
-                        )}
-                      </Button>
-                      <Button 
-                        variant="outline"
-                        onClick={() => navigator.clipboard.writeText(scriptContent)}
-                        disabled={!scriptContent.trim()}
-                      >
-                        <Copy className="h-4 w-4 mr-2" />
-                        Copy
-                      </Button>
-                      <Button 
-                        variant="default"
-                        onClick={saveScript}
-                        disabled={!scriptContent.trim() || !scriptName.trim()}
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Save
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Saved Scripts Section */}
-              {savedScripts.length > 0 && (
-                <Card className="border-border/50 bg-card/80 backdrop-blur">
-                  <CardContent className="p-6">
-                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                      <FileText className="h-5 w-5 text-blue-500" />
-                      Saved Scripts ({savedScripts.length})
-                    </h3>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {savedScripts.map((script) => (
+                      {savedScripts.filter(s => (s.enhancedContent || s.content) && !s.hasVoiceover).map(script => (
                         <div 
                           key={script.id}
-                          className="p-4 rounded-lg border border-border/50 hover:border-primary/30 transition-all group"
+                          className="p-4 rounded-lg border border-border/50 bg-background hover:border-purple-500/30 transition-all"
                         >
-                          <div className="flex items-start justify-between mb-2">
-                            <h4 className="font-medium truncate flex-1">{script.name}</h4>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0"
-                              onClick={() => deleteScript(script.id)}
-                            >
-                              <Trash2 className="h-3 w-3 text-muted-foreground" />
-                            </Button>
+                          <div className="flex items-center gap-2 mb-2">
+                            {script.type === 'video' ? (
+                              <Video className="h-4 w-4 text-red-500" />
+                            ) : (
+                              <Mic className="h-4 w-4 text-purple-500" />
+                            )}
+                            <span className="font-medium truncate">{script.name}</span>
+                            {script.enhancedContent && (
+                              <Badge variant="outline" className="text-xs bg-purple-500/10">Enhanced</Badge>
+                            )}
                           </div>
                           <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
-                            {script.content.slice(0, 100)}...
+                            {(script.enhancedContent || script.content).slice(0, 80)}...
                           </p>
                           <div className="flex items-center justify-between">
                             <span className="text-xs text-muted-foreground">
-                              {new Date(script.updatedAt).toLocaleDateString()}
+                              {script.stats?.wordCount || 0} words • ~{script.stats?.estimatedSpeakingMinutes || 1}m
                             </span>
-                            <Button
+                            <Button 
+                              size="sm" 
                               variant="outline"
-                              size="sm"
-                              onClick={() => loadScript(script)}
+                              onClick={() => {
+                                setVoiceText(script.cleanContent || script.enhancedContent || script.content);
+                                toast.success(`Loaded "${script.name}" - Select a voice and generate TTS`);
+                              }}
                             >
-                              Load
+                              <Volume2 className="h-3 w-3 mr-1" />
+                              Add Voice
                             </Button>
                           </div>
                         </div>
@@ -2265,10 +1964,7 @@ export default function GenieStudio() {
                   </CardContent>
                 </Card>
               )}
-            </TabsContent>
-
-            {/* Voice Generator Tab */}
-            <TabsContent value="voice-generator" className="mt-0 space-y-6">
+              
               <Card className="border-border/50 bg-card/80 backdrop-blur">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-6">
@@ -2347,12 +2043,12 @@ export default function GenieStudio() {
                         id="voice-text"
                         value={voiceText}
                         onChange={(e) => setVoiceText(e.target.value)}
-                        placeholder="Enter the text you want to convert to speech..."
+                        placeholder="Enter the text you want to convert to speech, or load a script from above..."
                         className="mt-1 min-h-[150px]"
                       />
                     </div>
                     
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <Button 
                         onClick={handleGenerateVoice}
                         disabled={isTTSGenerating || !voiceText.trim()}
@@ -2382,7 +2078,7 @@ export default function GenieStudio() {
                           </Button>
                           <Button variant="outline" onClick={() => downloadTTS()}>
                             <Download className="h-4 w-4 mr-2" />
-                            Download
+                            Download MP3
                           </Button>
                           <Button 
                             variant="default"
@@ -2392,7 +2088,8 @@ export default function GenieStudio() {
                               }
                             }}
                           >
-                            Save
+                            <Save className="h-4 w-4 mr-2" />
+                            Save to Library
                           </Button>
                         </>
                       )}
@@ -2926,8 +2623,25 @@ export default function GenieStudio() {
           <RecordingStudio
             isOpen={isStudioOpen}
             onClose={handleStudioClose}
-            scripts={savedScripts.map(s => ({ id: s.id, title: s.name, name: s.name, content: s.content }))}
-            voiceovers={savedVoiceovers.map(v => ({ id: v.id, name: v.name, url: v.url || '' }))}
+            scripts={savedScripts.map(s => ({ 
+              id: s.id, 
+              title: s.name, 
+              content: s.enhancedContent || s.content,
+              // Pass both original and enhanced versions
+              originalContent: s.content,
+              enhancedContent: s.enhancedContent,
+              cleanContent: s.cleanContent,
+              type: s.type
+            }))}
+            voiceovers={savedVoiceovers.map(v => ({ 
+              id: v.id, 
+              name: v.name, 
+              url: v.url || '',
+              // Flag which voiceovers came from script TTS
+              scriptText: undefined,
+              scriptType: undefined,
+              metadataType: undefined
+            }))}
             music={savedMusic.map(m => ({ id: m.id, name: m.name, url: m.url || '' }))}
           />
         )}
