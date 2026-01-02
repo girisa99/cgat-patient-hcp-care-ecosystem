@@ -2052,45 +2052,103 @@ export default function GenieStudio() {
                         <p className="text-sm text-muted-foreground">Add voiceovers to your saved scripts</p>
                       </div>
                     </div>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {savedScripts.filter(s => (s.enhancedContent || s.content) && !s.hasVoiceover).map(script => (
-                        <div 
-                          key={script.id}
-                          className="p-4 rounded-lg border border-border/50 bg-background hover:border-purple-500/30 transition-all"
-                        >
-                          <div className="flex items-center gap-2 mb-2">
-                            {script.type === 'video' ? (
-                              <Video className="h-4 w-4 text-red-500" />
-                            ) : (
-                              <Mic className="h-4 w-4 text-purple-500" />
-                            )}
-                            <span className="font-medium truncate">{script.name}</span>
-                            {script.enhancedContent && (
-                              <Badge variant="outline" className="text-xs bg-purple-500/10">Enhanced</Badge>
-                            )}
+                    
+                    <Tabs defaultValue="video" className="w-full">
+                      <TabsList level="child" className="mb-4">
+                        <TabsTrigger value="video" level="child">
+                          <Video className="h-4 w-4 mr-2 text-red-500" />
+                          Video ({savedScripts.filter(s => s.type === 'video' && (s.enhancedContent || s.content) && !s.hasVoiceover).length})
+                        </TabsTrigger>
+                        <TabsTrigger value="audio" level="child">
+                          <Mic className="h-4 w-4 mr-2 text-purple-500" />
+                          Audio ({savedScripts.filter(s => s.type === 'audio' && (s.enhancedContent || s.content) && !s.hasVoiceover).length})
+                        </TabsTrigger>
+                      </TabsList>
+                      
+                      <TabsContent value="video" level="child" className="mt-0 p-0 border-0 shadow-none bg-transparent">
+                        {savedScripts.filter(s => s.type === 'video' && (s.enhancedContent || s.content) && !s.hasVoiceover).length === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-6">No video scripts ready for voice</p>
+                        ) : (
+                          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {savedScripts.filter(s => s.type === 'video' && (s.enhancedContent || s.content) && !s.hasVoiceover).map(script => (
+                              <div 
+                                key={script.id}
+                                className="p-4 rounded-lg border border-border/50 bg-background hover:border-red-500/30 transition-all"
+                              >
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Video className="h-4 w-4 text-red-500 flex-shrink-0" />
+                                  <span className="font-medium truncate">{script.name}</span>
+                                  {script.enhancedContent && (
+                                    <Badge variant="outline" className="text-xs bg-purple-500/10">Enhanced</Badge>
+                                  )}
+                                </div>
+                                <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
+                                  {(script.enhancedContent || script.content).slice(0, 80)}...
+                                </p>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-muted-foreground">
+                                    {script.stats?.wordCount || 0} words • ~{script.stats?.estimatedSpeakingMinutes || 1}m
+                                  </span>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={() => {
+                                      setVoiceText(script.cleanContent || script.enhancedContent || script.content);
+                                      toast.success(`Loaded "${script.name}" - Select a voice and generate TTS`);
+                                    }}
+                                  >
+                                    <Volume2 className="h-3 w-3 mr-1" />
+                                    Add Voice
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                          <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
-                            {(script.enhancedContent || script.content).slice(0, 80)}...
-                          </p>
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-muted-foreground">
-                              {script.stats?.wordCount || 0} words • ~{script.stats?.estimatedSpeakingMinutes || 1}m
-                            </span>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => {
-                                setVoiceText(script.cleanContent || script.enhancedContent || script.content);
-                                toast.success(`Loaded "${script.name}" - Select a voice and generate TTS`);
-                              }}
-                            >
-                              <Volume2 className="h-3 w-3 mr-1" />
-                              Add Voice
-                            </Button>
+                        )}
+                      </TabsContent>
+                      
+                      <TabsContent value="audio" level="child" className="mt-0 p-0 border-0 shadow-none bg-transparent">
+                        {savedScripts.filter(s => s.type === 'audio' && (s.enhancedContent || s.content) && !s.hasVoiceover).length === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-6">No audio scripts ready for voice</p>
+                        ) : (
+                          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {savedScripts.filter(s => s.type === 'audio' && (s.enhancedContent || s.content) && !s.hasVoiceover).map(script => (
+                              <div 
+                                key={script.id}
+                                className="p-4 rounded-lg border border-border/50 bg-background hover:border-purple-500/30 transition-all"
+                              >
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Mic className="h-4 w-4 text-purple-500 flex-shrink-0" />
+                                  <span className="font-medium truncate">{script.name}</span>
+                                  {script.enhancedContent && (
+                                    <Badge variant="outline" className="text-xs bg-purple-500/10">Enhanced</Badge>
+                                  )}
+                                </div>
+                                <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
+                                  {(script.enhancedContent || script.content).slice(0, 80)}...
+                                </p>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-muted-foreground">
+                                    {script.stats?.wordCount || 0} words • ~{script.stats?.estimatedSpeakingMinutes || 1}m
+                                  </span>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={() => {
+                                      setVoiceText(script.cleanContent || script.enhancedContent || script.content);
+                                      toast.success(`Loaded "${script.name}" - Select a voice and generate TTS`);
+                                    }}
+                                  >
+                                    <Volume2 className="h-3 w-3 mr-1" />
+                                    Add Voice
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        )}
+                      </TabsContent>
+                    </Tabs>
                   </CardContent>
                 </Card>
               )}
