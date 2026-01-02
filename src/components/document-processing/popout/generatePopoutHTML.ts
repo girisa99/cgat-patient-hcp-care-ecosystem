@@ -74,7 +74,7 @@ export function generatePopoutHTML(config: PopoutConfig): string {
     getCameraScript()
   ].join('\n\n');
 
-  // Compose the complete HTML document
+  // Compose the complete HTML document with validation logging
   const fullHTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -88,7 +88,35 @@ ${styles}
 <body>
 ${htmlContent}
   <script>
+    // =====================================================
+    // MODULAR POPOUT - PHASE 3 VALIDATED
+    // =====================================================
+    console.log('[Popout] Loading modular components...');
+    
 ${scripts}
+
+    // Validation check
+    setTimeout(function() {
+      const modules = [
+        { name: 'Recording Enhancements', check: typeof isStopped !== 'undefined' },
+        { name: 'Teleprompter Enhancements', check: typeof scriptWords !== 'undefined' },
+        { name: 'Script Enhancement', check: typeof analyzeScript === 'function' },
+        { name: 'Voice Provider Selection', check: typeof selectVoiceProvider === 'function' },
+        { name: 'Countdown', check: typeof startCountdown === 'function' },
+        { name: 'Audio Playback', check: typeof startAudioPlayback === 'function' },
+        { name: 'Word Highlighting', check: typeof startWordHighlightingFromAudio === 'function' }
+      ];
+      
+      console.log('[Popout] ===== MODULE VALIDATION =====');
+      let allPassed = true;
+      modules.forEach(function(m) {
+        const status = m.check ? '✅' : '❌';
+        console.log('[Popout] ' + status + ' ' + m.name);
+        if (!m.check) allPassed = false;
+      });
+      console.log('[Popout] ===== ' + (allPassed ? 'ALL MODULES OK' : 'SOME MODULES MISSING') + ' =====');
+    }, 500);
+    
     console.log('[Popout] All modules loaded');
   </script>
 </body>

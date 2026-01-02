@@ -9,10 +9,11 @@ export function getRecordingEnhancementsScript(): string {
     // RECORDING ENHANCEMENTS MODULE
     // =====================================================
 
-    let isStopped = false;
-    let isPaused = false;
-    let trimHistory = [];
-    let countdownInterval = null;
+    // Global state for recording - shared with camera module
+    var isStopped = false;
+    var isPaused = false;
+    var trimHistory = [];
+    var countdownInterval = null;
 
     // =====================================================
     // 5-SECOND COUNTDOWN
@@ -354,84 +355,19 @@ export function getRecordingEnhancementsScript(): string {
     function confirmAudioOptions() {
       hideAudioOptionsDialog();
       
-      // Start countdown then record
+      // Start countdown then record - delegate to camera module's actuallyStartRecording
       startCountdown(function() {
-        actuallyStartRecording();
+        // actuallyStartRecording is defined in popoutCameraScript.ts
+        if (typeof actuallyStartRecording === 'function') {
+          actuallyStartRecording();
+        } else {
+          console.error('[Recording] actuallyStartRecording not found');
+        }
       });
     }
 
-    function actuallyStartRecording() {
-      if (!mediaStream) {
-        console.error('[Recording] No media stream');
-        return;
-      }
-
-      isStopped = false;
-      isPaused = false;
-      recordedChunks = [];
-      trimHistory = [];
-
-      try {
-        const options = { mimeType: 'video/webm;codecs=vp9,opus' };
-        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-          options.mimeType = 'video/webm';
-        }
-
-        mediaRecorder = new MediaRecorder(mediaStream, options);
-
-        mediaRecorder.ondataavailable = function(event) {
-          if (event.data && event.data.size > 0 && !isStopped) {
-            recordedChunks.push(event.data);
-          }
-        };
-
-        mediaRecorder.onstop = function() {
-          if (!isStopped) {
-            processRecording();
-          }
-        };
-
-        mediaRecorder.start(1000);
-        isRecording = true;
-        recordingStartTime = Date.now();
-
-        // Update UI
-        const recordBtn = document.getElementById('recordBtn');
-        const recordBtnText = document.getElementById('recordBtnText');
-        const recordingIndicator = document.getElementById('recordingIndicator');
-
-        if (recordBtn) {
-          recordBtn.classList.remove('ready');
-          recordBtn.classList.add('recording');
-        }
-        if (recordBtnText) {
-          recordBtnText.textContent = 'Stop Recording';
-        }
-        if (recordingIndicator) {
-          recordingIndicator.classList.add('visible');
-        }
-
-        // Start timer
-        recordingTimer = setInterval(function() {
-          if (!isPaused) {
-            const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
-            const timeEl = document.getElementById('recordingTime');
-            if (timeEl) timeEl.textContent = formatTime(elapsed);
-          }
-        }, 1000);
-
-        // Start audio playback
-        if (typeof startAudioPlayback === 'function') {
-          startAudioPlayback();
-        }
-
-        console.log('[Recording] Started with enhancements');
-
-      } catch (err) {
-        console.error('[Recording] Start error:', err);
-        showStatus('Failed to start: ' + err.message, 'error');
-      }
-    }
+    // NOTE: actuallyStartRecording is defined in popoutCameraScript.ts
+    // This module only provides countdown, pause/resume, and trim functionality
 
     // =====================================================
     // INITIALIZE RECORDING ENHANCEMENTS

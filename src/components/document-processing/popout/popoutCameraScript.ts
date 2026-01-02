@@ -16,6 +16,12 @@ export function getCameraScript(): string {
     let isRecording = false;
     let recordingStartTime = null;
     let recordingTimer = null;
+    
+    // Shared state with recording enhancements module
+    // These are also declared in recordingEnhancements but we need defaults here
+    if (typeof isStopped === 'undefined') var isStopped = false;
+    if (typeof isPaused === 'undefined') var isPaused = false;
+    if (typeof trimHistory === 'undefined') var trimHistory = [];
 
     // DOM Elements
     const videoPreview = document.getElementById('videoPreview');
