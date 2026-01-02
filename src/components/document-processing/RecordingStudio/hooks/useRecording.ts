@@ -16,13 +16,14 @@ interface UseRecordingOptions {
   onRecordingComplete?: (blob: Blob, duration: number) => void;
   countdownSeconds?: number;
   audioSources?: AudioSources;
+  quality?: 'low' | 'medium' | 'high' | 'ultra';
 }
 
 export function useRecording(
   stream: MediaStream | null,
   options: UseRecordingOptions = {}
 ) {
-  const { onRecordingComplete, countdownSeconds = 3, audioSources } = options;
+  const { onRecordingComplete, countdownSeconds = 5, audioSources, quality = 'high' } = options;
   
   const [state, setState] = useState<RecordingState>({
     isRecording: false,
@@ -134,7 +135,19 @@ export function useRecording(
           recordingStream = createCombinedStream(stream, audioSources);
         }
         
-        const options = { mimeType: 'video/webm;codecs=vp9,opus' };
+        // Quality settings for video bitrate
+        const qualitySettings: Record<string, number> = {
+          low: 1000000,
+          medium: 2500000,
+          high: 5000000,
+          ultra: 8000000,
+        };
+        const videoBitsPerSecond = qualitySettings[quality] || qualitySettings.high;
+        
+        const options = { 
+          mimeType: 'video/webm;codecs=vp9,opus',
+          videoBitsPerSecond,
+        };
         let mimeType = options.mimeType;
         
         if (!MediaRecorder.isTypeSupported(mimeType)) {
@@ -144,10 +157,12 @@ export function useRecording(
           mimeType = '';
         }
 
-        const recorder = new MediaRecorder(
-          recordingStream, 
-          mimeType ? { mimeType } : undefined
-        );
+        const recorderOptions: MediaRecorderOptions = mimeType ? { mimeType } : {};
+        if (videoBitsPerSecond && mimeType) {
+          recorderOptions.videoBitsPerSecond = videoBitsPerSecond;
+        }
+
+        const recorder = new MediaRecorder(recordingStream, recorderOptions);
         mediaRecorderRef.current = recorder;
 
         recorder.ondataavailable = (event) => {
