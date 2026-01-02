@@ -91,12 +91,17 @@ export function getCameraScript(): string {
       }
     }
 
-    // Enable record button
+    // Enable record button - with null checks
     function enableRecordButton() {
+      if (!recordBtn || !recordBtnText) {
+        console.error('[Camera] Cannot enable record button - elements not found');
+        return;
+      }
       recordBtn.disabled = false;
       recordBtn.classList.remove('disabled');
       recordBtn.classList.add('ready');
       recordBtnText.textContent = 'Start Recording';
+      console.log('[Camera] Record button enabled');
     }
 
     // Start recording with countdown
@@ -169,11 +174,17 @@ export function getCameraScript(): string {
         isRecording = true;
         recordingStartTime = Date.now();
 
-        // Update UI
-        recordBtn.classList.remove('ready');
-        recordBtn.classList.add('recording');
-        recordBtnText.textContent = 'Stop Recording';
-        recordingIndicator.classList.add('visible');
+        // Update UI - with null checks
+        if (recordBtn) {
+          recordBtn.classList.remove('ready');
+          recordBtn.classList.add('recording');
+        }
+        if (recordBtnText) {
+          recordBtnText.textContent = 'Stop Recording';
+        }
+        if (recordingIndicator) {
+          recordingIndicator.classList.add('visible');
+        }
 
         // Start timer (respects pause state)
         let pausedTime = 0;
@@ -191,7 +202,9 @@ export function getCameraScript(): string {
           }
           
           const elapsed = Math.floor((Date.now() - recordingStartTime - pausedTime) / 1000);
-          recordingTimeEl.textContent = formatTime(elapsed);
+          if (recordingTimeEl) {
+            recordingTimeEl.textContent = formatTime(elapsed);
+          }
         }, 1000);
 
         // Trigger audio playback and show recording UI
@@ -219,11 +232,17 @@ export function getCameraScript(): string {
       isRecording = false;
       clearInterval(recordingTimer);
       
-      // Update UI
-      recordBtn.classList.remove('recording');
-      recordBtn.classList.add('ready');
-      recordBtnText.textContent = 'Start Recording';
-      recordingIndicator.classList.remove('visible');
+      // Update UI - with null checks
+      if (recordBtn) {
+        recordBtn.classList.remove('recording');
+        recordBtn.classList.add('ready');
+      }
+      if (recordBtnText) {
+        recordBtnText.textContent = 'Start Recording';
+      }
+      if (recordingIndicator) {
+        recordingIndicator.classList.remove('visible');
+      }
 
       // Stop any audio playback
       if (typeof stopAudioPlayback === 'function') {
@@ -303,16 +322,25 @@ export function getCameraScript(): string {
       }
     }
 
-    // Record button click handler
-    recordBtn.addEventListener('click', toggleRecording);
+    // Record button click handler - with null check
+    if (recordBtn) {
+      recordBtn.addEventListener('click', toggleRecording);
+      console.log('[Camera] Record button event attached');
+    } else {
+      console.error('[Camera] Record button not found - cannot attach event');
+    }
 
-    // Close button handler
-    document.getElementById('closeBtn').addEventListener('click', function() {
-      if (mediaStream) {
-        mediaStream.getTracks().forEach(function(track) { track.stop(); });
-      }
-      window.close();
-    });
+    // Close button handler - with null check
+    var closeBtn = document.getElementById('closeBtn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function() {
+        if (mediaStream) {
+          mediaStream.getTracks().forEach(function(track) { track.stop(); });
+        }
+        window.close();
+      });
+      console.log('[Camera] Close button event attached');
+    }
 
     // Cleanup on window close
     window.addEventListener('beforeunload', function() {
@@ -321,8 +349,16 @@ export function getCameraScript(): string {
       }
     });
 
-    // Initialize camera on load
-    initCamera();
+    // Initialize camera on DOM ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('[Camera] DOM ready, initializing camera...');
+        initCamera();
+      });
+    } else {
+      console.log('[Camera] DOM already ready, initializing camera...');
+      initCamera();
+    }
 
     console.log('[Camera] Module loaded with Phase 2 integrations');
   `;
