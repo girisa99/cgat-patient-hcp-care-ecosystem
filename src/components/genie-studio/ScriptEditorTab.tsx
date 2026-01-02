@@ -728,13 +728,13 @@ export function ScriptEditorTab({
           <Tabs defaultValue="video" className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <Label className="text-sm font-medium">Script Library</Label>
-              <TabsList className="grid grid-cols-2 w-[240px]">
-                <TabsTrigger value="video" className="flex items-center gap-2">
-                  <Video className="h-4 w-4" />
+              <TabsList level="child">
+                <TabsTrigger value="video" level="child">
+                  <Video className="h-4 w-4 mr-2 text-red-500" />
                   Video ({videoScripts.length})
                 </TabsTrigger>
-                <TabsTrigger value="audio" className="flex items-center gap-2">
-                  <Mic className="h-4 w-4" />
+                <TabsTrigger value="audio" level="child">
+                  <Mic className="h-4 w-4 mr-2 text-purple-500" />
                   Audio ({audioScripts.length})
                 </TabsTrigger>
               </TabsList>
