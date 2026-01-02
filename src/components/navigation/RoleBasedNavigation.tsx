@@ -66,7 +66,7 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
     if (userRoles.includes('healthcareProvider')) {
       return {
         primary: availableTabs.filter(tab => 
-          ['/', '/order-management', '/document-processing', '/patient-onboarding', '/patients'].includes(tab.to)
+          ['/', '/order-management', '/document-processing', '/patient-onboarding', '/patients', '/genie-studio'].includes(tab.to)
         ),
         treatmentCenters: [],
         agents: availableTabs.filter(tab => ['/agents'].includes(tab.to)),
@@ -78,14 +78,16 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
         architecture: availableTabs.filter(tab => 
           ['/architecture', '/healthcare-ai', '/database-performance'].includes(tab.to)
         ),
-        specialized: []
+        specialized: [],
+        genieStudio: availableTabs.filter(tab => ['/genie-studio'].includes(tab.to))
       };
     }
 
     // Dynamic groupings for all other roles based on available tabs
-    const primary = availableTabs.filter(tab => ['/', '/patients'].includes(tab.to));
+    const primary = availableTabs.filter(tab => ['/', '/patients', '/genie-studio'].includes(tab.to));
     const treatmentCenters = availableTabs.filter(tab => ['/treatment-centers'].includes(tab.to));
     const agents = availableTabs.filter(tab => ['/agents'].includes(tab.to));
+    const genieStudio = availableTabs.filter(tab => ['/genie-studio'].includes(tab.to));
 
     // Group remaining tabs dynamically by category
     const managementTabs = ['/users', '/facilities', '/onboarding', '/modules', '/role-management'];
@@ -99,6 +101,7 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
       primary,
       treatmentCenters,
       agents,
+      genieStudio,
       management: availableTabs.filter(tab => managementTabs.includes(tab.to)),
       systemIntegration: availableTabs.filter(tab => systemTabs.includes(tab.to)),
       reportsCompliance: availableTabs.filter(tab => reportsTabs.includes(tab.to)),
@@ -235,7 +238,13 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
                 </div>
               ))}
 
-              {/* Management Dropdown */}
+              {/* Genie Studio - Media Production */}
+              {navigationGroups.genieStudio && navigationGroups.genieStudio.length > 0 && navigationGroups.genieStudio.map(tab => (
+                <div key={tab.to} className="nav-item">
+                  {renderNavButton(tab)}
+                </div>
+              ))}
+
               {navigationGroups.management.length > 0 && (
                 <div className="nav-item">
                   <DropdownMenu>
