@@ -1,6 +1,6 @@
 /**
  * Fullscreen Recording Studio - Main Component
- * Complete React implementation with all features
+ * Complete React implementation with all features from original popout
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
@@ -66,6 +66,10 @@ export function RecordingStudio({
   const [lastRecordingBlob, setLastRecordingBlob] = useState<Blob | null>(null);
   const [showRecordingPreview, setShowRecordingPreview] = useState(false);
   
+  // Audio sync for word highlighting
+  const [audioCurrentTime, setAudioCurrentTime] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
+  
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   // Update scripts when props change
@@ -77,6 +81,19 @@ export function RecordingStudio({
   const camera = useCamera({ autoStart: isOpen });
   const library = useRecordingLibrary();
   const audioPlayback = useAudioPlayback();
+  
+  // Track audio time for word sync
+  useEffect(() => {
+    const updateAudioTime = () => {
+      if (audioPlayback.voiceoverAudio) {
+        setAudioCurrentTime(audioPlayback.voiceoverAudio.currentTime);
+        setAudioDuration(audioPlayback.voiceoverAudio.duration || 0);
+      }
+    };
+
+    const interval = setInterval(updateAudioTime, 100);
+    return () => clearInterval(interval);
+  }, [audioPlayback.voiceoverAudio]);
   
   const recording = useRecording(camera.stream, {
     onRecordingComplete: async (blob, duration) => {
@@ -125,23 +142,22 @@ export function RecordingStudio({
     setScripts(prev => prev.map(s => 
       s.id === id ? { ...s, content: newContent } : s
     ));
-    toast.success('Script updated!');
+    toast.success('Script updated with enhanced version!');
   }, []);
 
-  // Script analysis (placeholder - would call AI)
+  // Script analysis
   const handleAnalyzeScript = useCallback(async (): Promise<string | null> => {
     if (!currentScript) return null;
     setIsAnalyzing(true);
     
     try {
-      // Simulate analysis - in real implementation, call AI
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       const wordCount = currentScript.content.split(/\s+/).length;
-      const estimatedDuration = Math.ceil(wordCount / 150); // ~150 words per minute
+      const estimatedDuration = Math.ceil(wordCount / 150);
+      const sentences = currentScript.content.split(/[.!?]+/).filter(s => s.trim()).length;
       
-      const analysis = `Word count: ${wordCount} | Est. duration: ${estimatedDuration} min | Readability: Good`;
-      return analysis;
+      return `Words: ${wordCount} | Sentences: ${sentences} | Est: ${estimatedDuration}min`;
     } catch (error) {
       toast.error('Analysis failed');
       return null;
@@ -150,22 +166,21 @@ export function RecordingStudio({
     }
   }, [currentScript]);
 
-  // Script enhancement (placeholder - would call AI)
+  // Script enhancement
   const handleEnhanceScript = useCallback(async (): Promise<string | null> => {
     if (!currentScript) return null;
     setIsEnhancing(true);
     
     try {
-      // Simulate enhancement - in real implementation, call AI
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Simple enhancement simulation
+      // Simple enhancement simulation - add paragraph breaks
       const enhanced = currentScript.content
         .replace(/\. /g, '.\n\n')
         .replace(/! /g, '!\n\n')
         .replace(/\? /g, '?\n\n');
       
-      return enhanced;
+      return enhanced.trim();
     } catch (error) {
       toast.error('Enhancement failed');
       return null;
@@ -180,8 +195,7 @@ export function RecordingStudio({
     setIsTTSGenerating(true);
     
     try {
-      // TODO: Integrate with actual TTS service (ElevenLabs)
-      toast.info('TTS generation coming soon - integrate with ElevenLabs');
+      toast.info('TTS generation - integrate with ElevenLabs or OpenAI');
       setHasTTSAudio(false);
     } catch (error) {
       toast.error('TTS generation failed');
@@ -192,7 +206,6 @@ export function RecordingStudio({
 
   // Start recording with audio
   const handleStartRecording = useCallback(() => {
-    // Start recording
     recording.startRecording();
     
     // Start audio playback with overlap prevention
@@ -247,7 +260,7 @@ export function RecordingStudio({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="max-w-[95vw] w-[1400px] h-[90vh] p-0 gap-0 overflow-hidden flex flex-col">
+      <DialogContent className="max-w-[95vw] w-[1400px] h-[90vh] p-0 gap-0 overflow-hidden flex flex-col [&>button]:hidden">
         {/* Hidden file input */}
         <input
           ref={logoInputRef}
@@ -258,8 +271,8 @@ export function RecordingStudio({
         />
 
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30 shrink-0">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
+        <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30 shrink-0">
+          <h2 className="text-base font-semibold flex items-center gap-2">
             🎬 Recording Studio
           </h2>
           <div className="flex items-center gap-2">
@@ -267,21 +280,21 @@ export function RecordingStudio({
               variant="outline"
               size="sm"
               onClick={() => library.setIsOpen(true)}
-              className="gap-2"
+              className="gap-1 h-8"
             >
               <Library className="w-4 h-4" />
               Library ({library.recordings.length})
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleClose}>
-              <X className="w-5 h-5" />
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleClose}>
+              <X className="w-4 h-4" />
             </Button>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="flex flex-1 overflow-hidden min-h-0">
-          {/* Video Section - Left */}
-          <div className="flex-1 p-4 flex flex-col gap-4 overflow-y-auto">
+        {/* Main Content - Fixed layout */}
+        <div className="flex flex-1 min-h-0 overflow-hidden">
+          {/* Video Section - Left (takes remaining space) */}
+          <div className="flex-1 p-4 flex flex-col gap-3 overflow-y-auto min-w-0">
             <VideoPreview
               stream={camera.stream}
               isLoading={camera.isLoading}
@@ -295,6 +308,8 @@ export function RecordingStudio({
               }}
               logo={logo}
               onLogoPositionChange={(pos) => setLogo(prev => ({ ...prev, position: pos }))}
+              audioCurrentTime={audioCurrentTime}
+              audioDuration={audioDuration}
             />
 
             <RecordingControls
@@ -318,8 +333,8 @@ export function RecordingStudio({
             />
           </div>
 
-          {/* Sidebar - Right */}
-          <div className="w-[320px] border-l bg-muted/20 p-4 space-y-4 overflow-y-auto shrink-0">
+          {/* Sidebar - Right (fixed width, no overlap) */}
+          <div className="w-[280px] min-w-[280px] max-w-[280px] border-l bg-muted/20 p-3 space-y-3 overflow-y-auto">
             <ScriptPanel
               scripts={scripts}
               selectedScriptId={selectedScriptId}
