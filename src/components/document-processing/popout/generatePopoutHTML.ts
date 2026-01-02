@@ -142,17 +142,31 @@ ${htmlContent}
     // =====================================================
     // MODULAR POPOUT - FULLY VALIDATED
     // =====================================================
-    console.log('[Popout] Starting modular components load...');
+    console.log('[Popout] Script starting...');
     
-    try {
+    // Wrap everything in DOMContentLoaded to ensure DOM is ready
+    function initializePopout() {
+      console.log('[Popout] DOM ready, initializing modules...');
+      
+      try {
 ${scripts}
-    } catch (err) {
-      console.error('[Popout] FATAL: Script loading error:', err);
-      document.body.innerHTML = '<div style="padding:20px;color:red;font-family:sans-serif;">' +
-        '<h1>Loading Error</h1>' +
-        '<p>' + err.message + '</p>' +
-        '<pre>' + err.stack + '</pre>' +
-      '</div>';
+      } catch (err) {
+        console.error('[Popout] FATAL: Script loading error:', err);
+        document.body.innerHTML = '<div style="padding:20px;color:red;font-family:sans-serif;">' +
+          '<h1>Loading Error</h1>' +
+          '<p>' + err.message + '</p>' +
+          '<pre>' + err.stack + '</pre>' +
+        '</div>';
+      }
+    }
+    
+    // Use DOMContentLoaded if document is still loading, otherwise init immediately
+    if (document.readyState === 'loading') {
+      console.log('[Popout] Waiting for DOM...');
+      document.addEventListener('DOMContentLoaded', initializePopout);
+    } else {
+      console.log('[Popout] DOM already ready');
+      initializePopout();
     }
 
     // Validation check

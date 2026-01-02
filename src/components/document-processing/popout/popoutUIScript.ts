@@ -427,54 +427,58 @@ export function getUIScript(): string {
       }
 
       // Start voiceover if selected (mutually exclusive with TTS)
-      const voOption = voiceoverSelect.options[voiceoverSelect.selectedIndex];
-      const voUrl = voOption ? voOption.dataset.url : null;
-      
-      if (voUrl && voiceoverSelect.value) {
-        // Stop any existing voiceover
-        if (voiceoverAudio) {
-          voiceoverAudio.pause();
-          voiceoverAudio.currentTime = 0;
+      if (voiceoverSelect) {
+        const voOption = voiceoverSelect.options[voiceoverSelect.selectedIndex];
+        const voUrl = voOption ? voOption.dataset.url : null;
+        
+        if (voUrl && voiceoverSelect.value) {
+          // Stop any existing voiceover
+          if (voiceoverAudio) {
+            voiceoverAudio.pause();
+            voiceoverAudio.currentTime = 0;
+          }
+          
+          voiceoverAudio = new Audio(voUrl);
+          voiceoverAudio.volume = voiceoverVolume ? voiceoverVolume.value / 100 : 1;
+          
+          // Setup sync
+          voiceoverAudio.addEventListener('loadedmetadata', function() {
+            if (typeof startWordHighlightingFromAudio === 'function') {
+              startWordHighlightingFromAudio(voiceoverAudio);
+            }
+            if (typeof startTeleprompterScrollSync === 'function') {
+              startTeleprompterScrollSync(voiceoverAudio.duration);
+            }
+            if (typeof showReadingCursor === 'function') {
+              showReadingCursor();
+            }
+          });
+          
+          voiceoverAudio.play().catch(function(e) {
+            console.error('[Recording] Voiceover play error:', e);
+          });
         }
-        
-        voiceoverAudio = new Audio(voUrl);
-        voiceoverAudio.volume = voiceoverVolume.value / 100;
-        
-        // Setup sync
-        voiceoverAudio.addEventListener('loadedmetadata', function() {
-          if (typeof startWordHighlightingFromAudio === 'function') {
-            startWordHighlightingFromAudio(voiceoverAudio);
-          }
-          if (typeof startTeleprompterScrollSync === 'function') {
-            startTeleprompterScrollSync(voiceoverAudio.duration);
-          }
-          if (typeof showReadingCursor === 'function') {
-            showReadingCursor();
-          }
-        });
-        
-        voiceoverAudio.play().catch(function(e) {
-          console.error('[Recording] Voiceover play error:', e);
-        });
       }
 
       // Start music if selected (can play alongside voiceover)
-      const musicOption = musicSelect.options[musicSelect.selectedIndex];
-      const musicUrl = musicOption ? musicOption.dataset.url : null;
-      
-      if (musicUrl && musicSelect.value) {
-        // Stop any existing music
-        if (musicAudio) {
-          musicAudio.pause();
-          musicAudio.currentTime = 0;
-        }
+      if (musicSelect) {
+        const musicOption = musicSelect.options[musicSelect.selectedIndex];
+        const musicUrl = musicOption ? musicOption.dataset.url : null;
         
-        musicAudio = new Audio(musicUrl);
-        musicAudio.volume = musicVolume.value / 100;
-        musicAudio.loop = musicLoopEnabled;
-        musicAudio.play().catch(function(e) {
-          console.error('[Recording] Music play error:', e);
-        });
+        if (musicUrl && musicSelect.value) {
+          // Stop any existing music
+          if (musicAudio) {
+            musicAudio.pause();
+            musicAudio.currentTime = 0;
+          }
+          
+          musicAudio = new Audio(musicUrl);
+          musicAudio.volume = musicVolume ? musicVolume.value / 100 : 0.5;
+          musicAudio.loop = musicLoopEnabled;
+          musicAudio.play().catch(function(e) {
+            console.error('[Recording] Music play error:', e);
+          });
+        }
       }
       
       // Show recording UI elements
