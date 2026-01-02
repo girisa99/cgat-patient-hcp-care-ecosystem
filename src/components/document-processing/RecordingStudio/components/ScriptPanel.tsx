@@ -41,12 +41,12 @@ export function ScriptPanel({
         <h3 className="font-medium">Script</h3>
       </div>
 
-      <Select value={selectedScriptId} onValueChange={onScriptChange}>
+      <Select value={selectedScriptId || "none"} onValueChange={(v) => onScriptChange(v === "none" ? "" : v)}>
         <SelectTrigger>
           <SelectValue placeholder="Select a script" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">None</SelectItem>
+          <SelectItem value="none">None</SelectItem>
           {scripts.map((s) => (
             <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>
           ))}
