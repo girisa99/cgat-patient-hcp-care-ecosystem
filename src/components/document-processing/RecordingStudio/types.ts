@@ -14,6 +14,7 @@ export interface VoiceoverData {
   url: string;
   scriptText?: string | null;
   scriptType?: string | null;
+  metadataType?: string | null; // From database metadata.type field
 }
 
 export interface MusicData {

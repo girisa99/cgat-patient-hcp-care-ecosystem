@@ -1950,7 +1950,9 @@ Thanks for watching!`,
             name: v.name,
             url: v.url,
             scriptText: v.metadata?.scriptText as string | null,
-            scriptType: v.metadata?.scriptType as string | null,
+            // Pass both scriptType and metadataType for proper filtering
+            scriptType: (v.metadata?.scriptType as string | null) || (v.metadata?.type as string | null),
+            metadataType: v.metadata?.type as string | null, // Additional metadata for filtering
           }))}
         music={mediaItems
           .filter(m => m.file_type === 'audio' && (
