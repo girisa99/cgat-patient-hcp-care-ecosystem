@@ -16,7 +16,11 @@ import {
   getScriptAudioSyncScript, getScriptAudioSyncStyles,
   getVoiceoverManagerScript, getVoiceoverManagerStyles,
   getEnhancedControlsScript, getEnhancedControlsStyles,
-  getAudioPanelScript, getAudioPanelStyles
+  getAudioPanelScript, getAudioPanelStyles,
+  getScriptEnhancementScript, getScriptEnhancementStyles,
+  getRecordingEnhancementsScript, getRecordingEnhancementsStyles,
+  getTeleprompterEnhancementsScript, getTeleprompterEnhancementsStyles,
+  getVoiceProviderSelectionScript, getVoiceProviderSelectionStyles
 } from './audio';
 
 /**
@@ -39,7 +43,11 @@ export function generatePopoutHTML(config: PopoutConfig): string {
     getScriptAudioSyncStyles(),
     getVoiceoverManagerStyles(),
     getEnhancedControlsStyles(),
-    getAudioPanelStyles()
+    getAudioPanelStyles(),
+    getScriptEnhancementStyles(),
+    getRecordingEnhancementsStyles(),
+    getTeleprompterEnhancementsStyles(),
+    getVoiceProviderSelectionStyles()
   ].join('\n');
 
   // Get HTML content
@@ -56,6 +64,11 @@ export function generatePopoutHTML(config: PopoutConfig): string {
     getVoiceoverManagerScript(),
     getEnhancedControlsScript(),
     getAudioPanelScript(config.supabaseUrl, config.supabaseKey),
+    // New enhancement modules
+    getScriptEnhancementScript(config.supabaseUrl, config.supabaseKey),
+    getRecordingEnhancementsScript(),
+    getTeleprompterEnhancementsScript(),
+    getVoiceProviderSelectionScript(config.supabaseUrl, config.supabaseKey),
     // UI and Camera last (they use the above)
     getUIScript(),
     getCameraScript()
