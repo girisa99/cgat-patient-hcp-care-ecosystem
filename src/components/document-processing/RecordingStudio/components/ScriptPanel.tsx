@@ -113,11 +113,11 @@ export function ScriptPanel({
         onValueChange={(v) => onScriptChange(v === "none" ? "" : v)}
       >
         <SelectTrigger className="bg-background h-9 text-sm">
-          <SelectValue placeholder="Select a script">
-            {selectedScript?.title || "None"}
+          <SelectValue>
+            {selectedScript?.title || (scripts.length > 0 ? "Select a script" : "No scripts available")}
           </SelectValue>
         </SelectTrigger>
-        <SelectContent className="bg-popover z-[200]">
+        <SelectContent className="bg-popover border shadow-md z-[9999]">
           <SelectItem value="none">None</SelectItem>
           {scripts.map((s) => (
             <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>

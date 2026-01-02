@@ -118,32 +118,31 @@ export function AudioPanel({
   return (
     <div className="bg-card rounded-lg border p-3">
       <Tabs value={activeTab} onValueChange={(v) => onTabChange(v as AudioTabType)}>
-        <TabsList className="w-full grid grid-cols-3 h-8 mb-3">
-          <TabsTrigger value="voiceover" className="text-xs px-2">
-            <Mic className="w-3 h-3 mr-1" />
-            Voice
+        <TabsList className="w-full grid grid-cols-3 h-9 mb-3 bg-muted p-1">
+          <TabsTrigger value="voiceover" className="text-xs gap-1 data-[state=active]:bg-background">
+            <Mic className="w-3 h-3" />
+            <span>Voice</span>
           </TabsTrigger>
-          <TabsTrigger value="tts" className="text-xs px-2">
-            <Volume2 className="w-3 h-3 mr-1" />
-            TTS
+          <TabsTrigger value="tts" className="text-xs gap-1 data-[state=active]:bg-background">
+            <Volume2 className="w-3 h-3" />
+            <span>TTS</span>
           </TabsTrigger>
-          <TabsTrigger value="music" className="text-xs px-2">
-            🎵 Music
+          <TabsTrigger value="music" className="text-xs gap-1 data-[state=active]:bg-background">
+            🎵 <span>Music</span>
           </TabsTrigger>
         </TabsList>
 
-        {/* Voiceover Tab */}
         <TabsContent value="voiceover" className="space-y-2 mt-0">
           <Select 
             value={selectedVoiceoverId || "none"} 
             onValueChange={(v) => onVoiceoverChange(v === "none" ? "" : v)}
           >
             <SelectTrigger className="bg-background h-8 text-xs">
-              <SelectValue placeholder="Select voiceover">
-                {selectedVoiceover?.name || "None"}
+              <SelectValue>
+                {selectedVoiceover?.name || (voiceovers.length > 0 ? "Select voiceover" : "No voiceovers")}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent className="bg-popover z-[200]">
+            <SelectContent className="bg-popover border shadow-md z-[9999]">
               <SelectItem value="none">None</SelectItem>
               {voiceovers.map((v) => (
                 <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
@@ -229,9 +228,11 @@ export function AudioPanel({
 
           <Select value={selectedVoice} onValueChange={onVoiceChange}>
             <SelectTrigger className="bg-background h-8 text-xs">
-              <SelectValue placeholder="Voice" />
+              <SelectValue>
+                {VOICE_OPTIONS.find(v => v.value === selectedVoice)?.label || "Select voice"}
+              </SelectValue>
             </SelectTrigger>
-            <SelectContent className="bg-popover z-[200]">
+            <SelectContent className="bg-popover border shadow-md z-[9999]">
               {VOICE_OPTIONS.map((v) => (
                 <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>
               ))}
@@ -273,18 +274,17 @@ export function AudioPanel({
           </div>
         </TabsContent>
 
-        {/* Music Tab */}
         <TabsContent value="music" className="space-y-2 mt-0">
           <Select 
             value={selectedMusicId || "none"} 
             onValueChange={(v) => onMusicChange(v === "none" ? "" : v)}
           >
             <SelectTrigger className="bg-background h-8 text-xs">
-              <SelectValue placeholder="Select music">
-                {selectedMusic?.name || "None"}
+              <SelectValue>
+                {selectedMusic?.name || (musicList.length > 0 ? "Select music" : "No music")}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent className="bg-popover z-[200]">
+            <SelectContent className="bg-popover border shadow-md z-[9999]">
               <SelectItem value="none">None</SelectItem>
               {musicList.map((m) => (
                 <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>

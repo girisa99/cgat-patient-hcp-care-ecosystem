@@ -5,6 +5,8 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 import type { LogoState, TeleprompterState } from '../types';
 
 interface VideoPreviewProps {
@@ -20,6 +22,8 @@ interface VideoPreviewProps {
   // Audio sync for word highlighting
   audioCurrentTime?: number;
   audioDuration?: number;
+  // Retry camera
+  onRetryCamera?: () => void;
 }
 
 export function VideoPreview({
@@ -34,6 +38,7 @@ export function VideoPreview({
   onLogoPositionChange,
   audioCurrentTime = 0,
   audioDuration = 0,
+  onRetryCamera,
 }: VideoPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -164,10 +169,21 @@ export function VideoPreview({
         </div>
       )}
 
-      {/* Error Display */}
+      {/* Error Display with Retry */}
       {!isLoading && error && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-30">
-          <span className="text-destructive text-sm text-center px-4">{error}</span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-30 gap-4">
+          <span className="text-destructive text-sm text-center px-4 max-w-md">{error}</span>
+          {onRetryCamera && (
+            <Button 
+              onClick={onRetryCamera} 
+              variant="outline" 
+              size="sm"
+              className="gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Retry Camera
+            </Button>
+          )}
         </div>
       )}
 
