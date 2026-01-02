@@ -52,6 +52,7 @@ import {
   RecordingPreview,
   FloatingTeleprompter,
   PreRecordingDialog,
+  CameraSetupDialog,
   MusicGenerator,
   KeyboardShortcutsHelp,
   RecordingQualitySettings,
@@ -60,6 +61,7 @@ import {
   PictureInPicture,
   VideoEditorIntegration
 } from './components';
+import type { CameraSetupOptions } from './components';
 import type { RecordingStudioProps, LogoState, TeleprompterState, ScriptData } from './types';
 import type { RecordingMode } from './hooks/useScreenShare';
 import type { RecordingQuality } from './components/RecordingQualitySettings';
@@ -132,6 +134,9 @@ export function RecordingStudio({
   
   // Pre-recording dialog state
   const [showPreRecordingDialog, setShowPreRecordingDialog] = useState(false);
+  
+  // Camera setup dialog state
+  const [showCameraSetupDialog, setShowCameraSetupDialog] = useState(false);
   
   // Captions and transcription state
   const [captionsEnabled, setCaptionsEnabled] = useState(false);
@@ -496,28 +501,48 @@ export function RecordingStudio({
     }
   }, [ttsText, currentScript, ttsProvider, selectedVoice, ttsGeneration, mediaProject]);
 
-  // Start recording - show pre-recording dialog first if enhanced script available
+  // Start recording - show camera setup dialog first
   const handleStartRecording = useCallback(async () => {
-    // If we have an enhanced script, show the dialog to choose
+    // Always show camera setup dialog first to let user configure recording mode
+    setShowCameraSetupDialog(true);
+  }, []);
+
+  // Handle camera setup confirmation
+  const handleCameraSetupConfirm = useCallback(async (mode: RecordingMode, options: CameraSetupOptions) => {
+    // Apply selected mode
+    setRecordingMode(mode);
+    
+    // Apply options
+    setPipEnabled(options.enablePIP);
+    setIsBlurEnabled(options.enableBackgroundBlur);
+    
+    // Apply studio sound settings
+    if (options.enableStudioSound) {
+      studioSound.applyPreset('podcast');
+    } else {
+      studioSound.applyPreset('off');
+    }
+    
+    // If we have an enhanced script, show the script selection dialog
     if (cleanEnhancedScript && currentScript) {
       setShowPreRecordingDialog(true);
       return;
     }
     
-    // No enhanced script - proceed directly with original
-    await proceedWithRecording();
-  }, [cleanEnhancedScript, currentScript]);
+    // No enhanced script - proceed directly
+    await proceedWithRecording(mode);
+  }, [cleanEnhancedScript, currentScript, studioSound]);
 
   // Handle script selection from pre-recording dialog
   const handlePreRecordingScriptSelect = useCallback(async (useEnhanced: boolean) => {
     setIsUsingEnhancedScript(useEnhanced);
-    await proceedWithRecording();
-  }, []);
+    await proceedWithRecording(recordingMode);
+  }, [recordingMode]);
 
   // Actual recording start logic
-  const proceedWithRecording = useCallback(async () => {
+  const proceedWithRecording = useCallback(async (mode: RecordingMode) => {
     // If screen mode, start screen share first
-    if (recordingMode !== 'camera' && !screenShare.isSharing) {
+    if (mode !== 'camera' && !screenShare.isSharing) {
       toast.info('Select your screen to share...');
       const stream = await screenShare.startScreenShare();
       if (!stream) {
@@ -549,7 +574,7 @@ export function RecordingStudio({
       // Reset word index for teleprompter
       setCurrentWordIndex(0);
     }, 3500); // After 3 second countdown + buffer
-  }, [recording, audioPlayback, currentVoiceover, currentMusic, recordingMode, screenShare, currentScript]);
+  }, [recording, audioPlayback, currentVoiceover, currentMusic, screenShare, currentScript]);
 
   // Pause recording - also pause audio
   const handlePauseRecording = useCallback(() => {
@@ -1235,6 +1260,14 @@ export function RecordingStudio({
           originalScriptPreview={currentScript?.content || ''}
           enhancedScriptPreview={cleanEnhancedScript || ''}
           scriptTitle={currentScript?.title}
+        />
+
+        {/* Camera Setup Dialog - shown before recording */}
+        <CameraSetupDialog
+          isOpen={showCameraSetupDialog}
+          onClose={() => setShowCameraSetupDialog(false)}
+          onConfirm={handleCameraSetupConfirm}
+          currentMode={recordingMode}
         />
 
         {/* Project Asset Breakdown */}
