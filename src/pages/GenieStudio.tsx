@@ -37,6 +37,12 @@ import {
   Cpu,
   TrendingUp,
   Loader2,
+  Upload,
+  Check,
+  Search,
+  RotateCcw,
+  ChevronDown,
+  ChevronUp,
   Volume2,
   Copy,
   Plus,
@@ -835,6 +841,24 @@ export default function GenieStudio() {
   const [scriptContent, setScriptContent] = useState('');
   const [scriptName, setScriptName] = useState('');
   const [isEnhancing, setIsEnhancing] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  
+  // Script Analysis State
+  const [analysisResult, setAnalysisResult] = useState<{
+    stats?: { wordCount: number; sentenceCount: number; estimatedDurationMinutes: number; readabilityScore: string };
+    recommendations?: Array<{ id: string; type: string; severity: string; title: string; description: string; accepted: boolean | null }>;
+  } | null>(null);
+  const [showAnalysis, setShowAnalysis] = useState(false);
+  
+  // Script Enhancement State
+  const [enhancedScriptContent, setEnhancedScriptContent] = useState<string | null>(null);
+  const [enhancementChanges, setEnhancementChanges] = useState<Array<{ id: string; type: string; original: string; enhanced: string; reason: string; accepted: boolean | null }>>([]);
+  const [showEnhancementChanges, setShowEnhancementChanges] = useState(false);
+  const [originalScriptContent, setOriginalScriptContent] = useState<string | null>(null);
+  
+  // File upload refs
+  const voiceoverUploadRef = useRef<HTMLInputElement>(null);
+  const musicUploadRef = useRef<HTMLInputElement>(null);
   
   // Voice Generator State
   const [voiceText, setVoiceText] = useState('');
@@ -1005,15 +1029,63 @@ export default function GenieStudio() {
   const handleNewScript = () => {
     setScriptContent('');
     setScriptName('');
+    setAnalysisResult(null);
+    setShowAnalysis(false);
+    setEnhancedScriptContent(null);
+    setEnhancementChanges([]);
+    setShowEnhancementChanges(false);
+    setOriginalScriptContent(null);
     toast.success('Ready for a new script!');
   };
 
+  // Script Analysis - AI powered
+  const handleAnalyzeScript = async () => {
+    if (!scriptContent.trim()) {
+      toast.error('Please write some content first');
+      return;
+    }
+    
+    setIsAnalyzing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('enhance-script', {
+        body: { scriptContent, mode: 'analyze' }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.stats || data?.recommendations) {
+        const recs = (data.recommendations || []).map((r: any, i: number) => ({
+          id: `rec-${i}`,
+          type: r.type || 'readability',
+          severity: r.severity || 'info',
+          title: r.title,
+          description: r.description,
+          accepted: null
+        }));
+        
+        setAnalysisResult({
+          stats: data.stats,
+          recommendations: recs
+        });
+        setShowAnalysis(true);
+        toast.success('Script analyzed!');
+      }
+    } catch (err) {
+      console.error('Analysis error:', err);
+      toast.error('Failed to analyze script');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // Script Enhancement - with change tracking
   const handleEnhanceScript = async () => {
     if (!scriptContent.trim()) {
       toast.error('Please write some content first');
       return;
     }
     
+    setOriginalScriptContent(scriptContent);
     setIsEnhancing(true);
     try {
       const { data, error } = await supabase.functions.invoke('enhance-script', {
@@ -1023,14 +1095,84 @@ export default function GenieStudio() {
       if (error) throw error;
       
       if (data?.enhancedScript) {
-        setScriptContent(data.enhancedScript);
-        toast.success('Script enhanced with AI!');
+        setEnhancedScriptContent(data.enhancedScript);
+        
+        // Parse changes if provided
+        if (data.changes && Array.isArray(data.changes)) {
+          setEnhancementChanges(data.changes.map((c: any, i: number) => ({
+            id: `change-${i}`,
+            type: c.type || 'modification',
+            original: c.original || '',
+            enhanced: c.enhanced || '',
+            reason: c.reason || 'AI improvement',
+            accepted: null
+          })));
+        } else {
+          // Generate simple diff
+          const origWords = scriptContent.split(/\s+/).length;
+          const enhWords = data.enhancedScript.split(/\s+/).length;
+          setEnhancementChanges([{
+            id: 'change-summary',
+            type: 'modification',
+            original: `${origWords} words`,
+            enhanced: `${enhWords} words`,
+            reason: 'Script enhanced for clarity and engagement',
+            accepted: null
+          }]);
+        }
+        
+        setShowEnhancementChanges(true);
+        toast.success('Script enhanced! Review the changes below.');
       }
     } catch (err) {
       console.error('Enhancement error:', err);
       toast.error('Failed to enhance script');
     } finally {
       setIsEnhancing(false);
+    }
+  };
+
+  const handleAcceptAllEnhancements = () => {
+    if (enhancedScriptContent) {
+      setScriptContent(enhancedScriptContent);
+      setEnhancementChanges([]);
+      setShowEnhancementChanges(false);
+      setEnhancedScriptContent(null);
+      toast.success('All enhancements applied!');
+    }
+  };
+
+  const handleRejectAllEnhancements = () => {
+    setEnhancementChanges([]);
+    setShowEnhancementChanges(false);
+    setEnhancedScriptContent(null);
+    toast.info('Enhancements rejected');
+  };
+
+  const handleRevertToOriginal = () => {
+    if (originalScriptContent) {
+      setScriptContent(originalScriptContent);
+      setOriginalScriptContent(null);
+      toast.success('Reverted to original');
+    }
+  };
+
+  // Generate TTS from full script
+  const handleGenerateFullTTS = async () => {
+    if (!scriptContent.trim()) {
+      toast.error('Please write some content first');
+      return;
+    }
+    
+    const result = await generateTTS({
+      provider: selectedProvider,
+      voice: selectedVoice || (selectedProvider === 'openai' ? 'alloy' : 'EXAVITQu4vr4xnSDxMaL'),
+      text: scriptContent
+    });
+    
+    if (result) {
+      playTTS();
+      toast.success('Full script TTS generated! Save it to use in recording.');
     }
   };
 
@@ -1057,6 +1199,25 @@ export default function GenieStudio() {
     setScriptName(template.name);
     setActiveTab('script-editor');
     toast.success(`Loaded "${template.name}" template`);
+  };
+
+  // Upload handlers
+  const handleUploadVoiceover = async (file: File) => {
+    try {
+      const url = URL.createObjectURL(file);
+      saveVoiceover(url, file.name);
+    } catch (err) {
+      toast.error('Failed to upload voiceover');
+    }
+  };
+
+  const handleUploadMusic = async (file: File) => {
+    try {
+      const url = URL.createObjectURL(file);
+      saveMusicTrack(url, file.name);
+    } catch (err) {
+      toast.error('Failed to upload music');
+    }
   };
 
   // Voice Generator Functions
@@ -1711,8 +1872,8 @@ export default function GenieStudio() {
                     </div>
                   </div>
                   
-                  {/* Script Stats */}
-                  <div className="grid md:grid-cols-4 gap-4 mb-6">
+                  {/* Script Stats & Actions */}
+                  <div className="grid md:grid-cols-5 gap-4 mb-6">
                     <div className="p-4 rounded-lg bg-muted/50 border border-border/50">
                       <div className="flex items-center gap-2 mb-1">
                         <FileText className="h-4 w-4 text-blue-500" />
@@ -1728,6 +1889,18 @@ export default function GenieStudio() {
                       <span className="text-xl font-bold">{minutes} min</span>
                     </div>
                     <div 
+                      className="p-4 rounded-lg bg-muted/50 border border-border/50 cursor-pointer hover:border-blue-500/50 transition-colors"
+                      onClick={handleAnalyzeScript}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <Search className="h-4 w-4 text-blue-500" />
+                        <span className="text-xs text-muted-foreground">AI Analyze</span>
+                      </div>
+                      <span className="text-sm font-medium">
+                        {isAnalyzing ? 'Analyzing...' : 'Click to analyze'}
+                      </span>
+                    </div>
+                    <div 
                       className="p-4 rounded-lg bg-muted/50 border border-border/50 cursor-pointer hover:border-purple-500/50 transition-colors"
                       onClick={handleEnhanceScript}
                     >
@@ -1741,17 +1914,215 @@ export default function GenieStudio() {
                     </div>
                     <div 
                       className="p-4 rounded-lg bg-muted/50 border border-border/50 cursor-pointer hover:border-green-500/50 transition-colors"
-                      onClick={handleScriptTTSPreview}
+                      onClick={handleGenerateFullTTS}
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <Volume2 className="h-4 w-4 text-green-500" />
-                        <span className="text-xs text-muted-foreground">TTS Preview</span>
+                        <span className="text-xs text-muted-foreground">Generate TTS</span>
                       </div>
                       <span className="text-sm font-medium">
-                        {isTTSGenerating ? 'Generating...' : 'Click to preview'}
+                        {isTTSGenerating ? 'Generating...' : 'Full script TTS'}
                       </span>
                     </div>
                   </div>
+
+                  {/* Analysis Results */}
+                  {showAnalysis && analysisResult && (
+                    <div className="mb-6 p-4 rounded-lg border border-blue-500/30 bg-blue-500/5">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="font-semibold flex items-center gap-2">
+                          <Search className="h-4 w-4 text-blue-500" />
+                          Script Analysis
+                        </h3>
+                        <Button variant="ghost" size="sm" onClick={() => setShowAnalysis(false)}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      {analysisResult.stats && (
+                        <div className="grid grid-cols-4 gap-3 mb-4 text-sm">
+                          <div className="p-2 rounded bg-background">
+                            <span className="text-muted-foreground">Words:</span>
+                            <span className="ml-2 font-medium">{analysisResult.stats.wordCount}</span>
+                          </div>
+                          <div className="p-2 rounded bg-background">
+                            <span className="text-muted-foreground">Sentences:</span>
+                            <span className="ml-2 font-medium">{analysisResult.stats.sentenceCount}</span>
+                          </div>
+                          <div className="p-2 rounded bg-background">
+                            <span className="text-muted-foreground">Duration:</span>
+                            <span className="ml-2 font-medium">~{analysisResult.stats.estimatedDurationMinutes} min</span>
+                          </div>
+                          <div className="p-2 rounded bg-background">
+                            <span className="text-muted-foreground">Readability:</span>
+                            <span className="ml-2 font-medium">{analysisResult.stats.readabilityScore}</span>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {analysisResult.recommendations && analysisResult.recommendations.length > 0 && (
+                        <div className="space-y-2">
+                          <Label className="text-xs text-muted-foreground">Recommendations</Label>
+                          {analysisResult.recommendations.map((rec) => (
+                            <div 
+                              key={rec.id}
+                              className={cn(
+                                "p-3 rounded-lg border flex items-start gap-3",
+                                rec.severity === 'warning' ? 'border-orange-500/30 bg-orange-500/5' :
+                                rec.severity === 'suggestion' ? 'border-purple-500/30 bg-purple-500/5' :
+                                'border-border bg-background'
+                              )}
+                            >
+                              <div className="flex-1">
+                                <p className="font-medium text-sm">{rec.title}</p>
+                                <p className="text-xs text-muted-foreground mt-1">{rec.description}</p>
+                              </div>
+                              {rec.accepted === null && (
+                                <div className="flex gap-1">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="h-7 px-2"
+                                    onClick={() => setAnalysisResult(prev => prev ? {
+                                      ...prev,
+                                      recommendations: prev.recommendations?.map(r => 
+                                        r.id === rec.id ? { ...r, accepted: true } : r
+                                      )
+                                    } : null)}
+                                  >
+                                    <Check className="h-3 w-3 text-green-500" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="h-7 px-2"
+                                    onClick={() => setAnalysisResult(prev => prev ? {
+                                      ...prev,
+                                      recommendations: prev.recommendations?.map(r => 
+                                        r.id === rec.id ? { ...r, accepted: false } : r
+                                      )
+                                    } : null)}
+                                  >
+                                    <X className="h-3 w-3 text-red-500" />
+                                  </Button>
+                                </div>
+                              )}
+                              {rec.accepted !== null && (
+                                <Badge variant={rec.accepted ? 'default' : 'secondary'} className="text-xs">
+                                  {rec.accepted ? 'Noted' : 'Dismissed'}
+                                </Badge>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Enhancement Changes Review */}
+                  {showEnhancementChanges && enhancedScriptContent && (
+                    <div className="mb-6 p-4 rounded-lg border border-purple-500/30 bg-purple-500/5">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="font-semibold flex items-center gap-2">
+                          <Wand2 className="h-4 w-4 text-purple-500" />
+                          Review AI Enhancements
+                        </h3>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" onClick={handleRejectAllEnhancements}>
+                            <X className="h-4 w-4 mr-1" />
+                            Reject All
+                          </Button>
+                          <Button size="sm" onClick={handleAcceptAllEnhancements} className="bg-green-500 hover:bg-green-600">
+                            <Check className="h-4 w-4 mr-1" />
+                            Accept All
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {enhancementChanges.length > 0 && (
+                        <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">
+                          {enhancementChanges.map((change) => (
+                            <div 
+                              key={change.id}
+                              className="p-3 rounded-lg border border-border bg-background text-sm"
+                            >
+                              <div className="flex items-center gap-2 mb-2">
+                                <Badge variant="outline" className="text-xs capitalize">{change.type}</Badge>
+                                <span className="text-xs text-muted-foreground">{change.reason}</span>
+                              </div>
+                              {change.original && (
+                                <p className="text-red-500/80 line-through text-xs mb-1">{change.original}</p>
+                              )}
+                              {change.enhanced && (
+                                <p className="text-green-600 text-xs">{change.enhanced}</p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      <div className="p-3 rounded bg-background border">
+                        <Label className="text-xs text-muted-foreground mb-2 block">Enhanced Script Preview</Label>
+                        <p className="text-sm line-clamp-4">{enhancedScriptContent.slice(0, 300)}...</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Revert Option */}
+                  {originalScriptContent && !showEnhancementChanges && (
+                    <div className="mb-4">
+                      <Button variant="outline" size="sm" onClick={handleRevertToOriginal}>
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        Revert to Original
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* TTS Result - Save to use in recording */}
+                  {ttsResult && (
+                    <div className="mb-6 p-4 rounded-lg border border-green-500/30 bg-green-500/5">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-semibold flex items-center gap-2">
+                          <Headphones className="h-4 w-4 text-green-500" />
+                          TTS Generated from Script
+                        </h3>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" onClick={playTTS}>
+                            <Play className="h-4 w-4 mr-1" />
+                            Play
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => downloadTTS()}>
+                            <Download className="h-4 w-4 mr-1" />
+                            Download
+                          </Button>
+                          <Button 
+                            size="sm"
+                            onClick={() => {
+                              if (ttsResult?.audioUrl) {
+                                saveVoiceover(ttsResult.audioUrl, `${scriptName || 'Script'} TTS - ${new Date().toLocaleTimeString()}`);
+                              }
+                            }}
+                          >
+                            Save for Recording
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Duration:</span>
+                          <span className="ml-2 font-medium">{ttsResult.duration.toFixed(1)}s</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Provider:</span>
+                          <span className="ml-2 font-medium capitalize">{ttsResult.provider}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Characters:</span>
+                          <span className="ml-2 font-medium">{ttsResult.charactersProcessed}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Script Input */}
                   <div className="space-y-4">
@@ -1775,7 +2146,24 @@ export default function GenieStudio() {
                         className="mt-1 min-h-[300px] font-mono"
                       />
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      <Button 
+                        onClick={handleAnalyzeScript}
+                        disabled={isAnalyzing || !scriptContent.trim()}
+                        variant="outline"
+                      >
+                        {isAnalyzing ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Analyzing...
+                          </>
+                        ) : (
+                          <>
+                            <Search className="h-4 w-4 mr-2" />
+                            Analyze
+                          </>
+                        )}
+                      </Button>
                       <Button 
                         onClick={handleEnhanceScript}
                         disabled={isEnhancing || !scriptContent.trim()}
@@ -1795,7 +2183,7 @@ export default function GenieStudio() {
                       </Button>
                       <Button 
                         variant="outline"
-                        onClick={handleScriptTTSPreview}
+                        onClick={handleGenerateFullTTS}
                         disabled={isTTSGenerating || !scriptContent.trim()}
                       >
                         {isTTSGenerating ? (
@@ -1805,8 +2193,8 @@ export default function GenieStudio() {
                           </>
                         ) : (
                           <>
-                            <Play className="h-4 w-4 mr-2" />
-                            TTS Preview
+                            <Mic className="h-4 w-4 mr-2" />
+                            Generate TTS
                           </>
                         )}
                       </Button>
@@ -2037,14 +2425,58 @@ export default function GenieStudio() {
                 </CardContent>
               </Card>
 
-              {/* Saved Voiceovers Section */}
-              {savedVoiceovers.length > 0 && (
-                <Card className="border-border/50 bg-card/80 backdrop-blur">
-                  <CardContent className="p-6">
-                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                      <Mic className="h-5 w-5 text-purple-500" />
-                      Saved Voiceovers ({savedVoiceovers.length})
+              {/* Upload Voiceover Section */}
+              <Card className="border-border/50 bg-card/80 backdrop-blur">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Upload className="h-5 w-5 text-purple-500" />
+                      Upload Voiceover
                     </h3>
+                  </div>
+                  <div className="flex gap-3">
+                    <input
+                      ref={voiceoverUploadRef}
+                      type="file"
+                      accept="audio/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleUploadVoiceover(file);
+                        }
+                        if (voiceoverUploadRef.current) voiceoverUploadRef.current.value = '';
+                      }}
+                    />
+                    <Button 
+                      variant="outline" 
+                      onClick={() => voiceoverUploadRef.current?.click()}
+                      className="flex-1"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Audio File (MP3, WAV, etc.)
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Upload pre-recorded voiceovers to use in your recordings.
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Saved Voiceovers Section */}
+              <Card className="border-border/50 bg-card/80 backdrop-blur">
+                <CardContent className="p-6">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <Mic className="h-5 w-5 text-purple-500" />
+                    Saved Voiceovers ({savedVoiceovers.length})
+                  </h3>
+                  {savedVoiceovers.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
+                      <Mic className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No voiceovers saved yet</p>
+                      <p className="text-sm">Generate TTS or upload audio files above</p>
+                    </div>
+                  ) : (
                     <div className="space-y-3">
                       {savedVoiceovers.map((voiceover) => (
                         <div 
@@ -2078,9 +2510,9 @@ export default function GenieStudio() {
                         </div>
                       ))}
                     </div>
-                  </CardContent>
-                </Card>
-              )}
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
 
             {/* Music Studio Tab */}
@@ -2208,14 +2640,58 @@ export default function GenieStudio() {
                 </CardContent>
               </Card>
 
-              {/* Saved Music Section */}
-              {savedMusic.length > 0 && (
-                <Card className="border-border/50 bg-card/80 backdrop-blur">
-                  <CardContent className="p-6">
-                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                      <Music className="h-5 w-5 text-green-500" />
-                      Saved Music Tracks ({savedMusic.length})
+              {/* Upload Music Section */}
+              <Card className="border-border/50 bg-card/80 backdrop-blur">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Upload className="h-5 w-5 text-green-500" />
+                      Upload Music
                     </h3>
+                  </div>
+                  <div className="flex gap-3">
+                    <input
+                      ref={musicUploadRef}
+                      type="file"
+                      accept="audio/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleUploadMusic(file);
+                        }
+                        if (musicUploadRef.current) musicUploadRef.current.value = '';
+                      }}
+                    />
+                    <Button 
+                      variant="outline" 
+                      onClick={() => musicUploadRef.current?.click()}
+                      className="flex-1"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Music File (MP3, WAV, etc.)
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Upload background music to use in your recordings.
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Saved Music Section */}
+              <Card className="border-border/50 bg-card/80 backdrop-blur">
+                <CardContent className="p-6">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <Music className="h-5 w-5 text-green-500" />
+                    Saved Music Tracks ({savedMusic.length})
+                  </h3>
+                  {savedMusic.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
+                      <Music className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No music saved yet</p>
+                      <p className="text-sm">Generate music or upload audio files above</p>
+                    </div>
+                  ) : (
                     <div className="space-y-3">
                       {savedMusic.map((track) => (
                         <div 
@@ -2249,9 +2725,9 @@ export default function GenieStudio() {
                         </div>
                       ))}
                     </div>
-                  </CardContent>
-                </Card>
-              )}
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
 
             {/* Library Tab */}
