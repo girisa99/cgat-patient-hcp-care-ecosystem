@@ -9,19 +9,9 @@ export function getCameraScript(): string {
     // =====================================================
     // CAMERA & RECORDING MODULE
     // =====================================================
-
-    let mediaStream = null;
-    let mediaRecorder = null;
-    let recordedChunks = [];
-    let isRecording = false;
-    let recordingStartTime = null;
-    let recordingTimer = null;
-    
-    // Shared state with recording enhancements module
-    // These are also declared in recordingEnhancements but we need defaults here
-    if (typeof isStopped === 'undefined') var isStopped = false;
-    if (typeof isPaused === 'undefined') var isPaused = false;
-    if (typeof trimHistory === 'undefined') var trimHistory = [];
+    // Note: mediaStream, mediaRecorder, recordedChunks, isRecording, 
+    // recordingStartTime, recordingTimer, isStopped, isPaused, trimHistory
+    // and showStatus are declared in shared globals
 
     // DOM Elements
     const videoPreview = document.getElementById('videoPreview');
@@ -32,14 +22,6 @@ export function getCameraScript(): string {
     const recordingIndicator = document.getElementById('recordingIndicator');
     const recordingTimeEl = document.getElementById('recordingTime');
     const statusContainer = document.getElementById('statusContainer');
-
-    // Show status message
-    function showStatus(message, type) {
-      statusContainer.innerHTML = '<div class="status-message ' + type + '">' + message + '</div>';
-      if (type === 'success') {
-        setTimeout(function() { statusContainer.innerHTML = ''; }, 5000);
-      }
-    }
 
     // Format time as MM:SS
     function formatTime(seconds) {
