@@ -17,7 +17,7 @@ export function getVoiceProviderSelectionScript(supabaseUrl: string, supabaseKey
     let generatedAudioUrl = null;
     let isGeneratingAudio = false;
 
-    // Voice options
+    // Voice options with real ElevenLabs voice IDs
     const voiceProviders = {
       openai: {
         name: 'OpenAI',
@@ -33,15 +33,18 @@ export function getVoiceProviderSelectionScript(supabaseUrl: string, supabaseKey
       elevenlabs: {
         name: 'ElevenLabs',
         voices: [
-          { id: 'rachel', name: 'Rachel', description: 'Warm, conversational' },
-          { id: 'domi', name: 'Domi', description: 'Strong, confident' },
-          { id: 'bella', name: 'Bella', description: 'Soft, gentle' },
-          { id: 'antoni', name: 'Antoni', description: 'Well-rounded male' },
-          { id: 'elli', name: 'Elli', description: 'Young female' },
-          { id: 'josh', name: 'Josh', description: 'Deep, mature male' },
-          { id: 'arnold', name: 'Arnold', description: 'Crisp, clear male' },
-          { id: 'adam', name: 'Adam', description: 'Narrator style' },
-          { id: 'sam', name: 'Sam', description: 'Raspy, unique male' }
+          { id: 'sarah', name: 'Sarah', description: 'Clear, professional female' },
+          { id: 'brian', name: 'Brian', description: 'Narrator, warm male' },
+          { id: 'alice', name: 'Alice', description: 'Friendly, approachable' },
+          { id: 'daniel', name: 'Daniel', description: 'Authoritative male' },
+          { id: 'aria', name: 'Aria', description: 'Neutral, balanced' },
+          { id: 'jessica', name: 'Jessica', description: 'Soft, gentle female' },
+          { id: 'roger', name: 'Roger', description: 'Crisp, clear male' },
+          { id: 'liam', name: 'Liam', description: 'Young, energetic male' },
+          { id: 'lily', name: 'Lily', description: 'Soft, pleasant female' },
+          { id: 'george', name: 'George', description: 'Deep, mature male' },
+          { id: 'matilda', name: 'Matilda', description: 'Strong, confident' },
+          { id: 'will', name: 'Will', description: 'Raspy, unique male' }
         ]
       }
     };

@@ -22,6 +22,7 @@ import {
   getTeleprompterEnhancementsScript, getTeleprompterEnhancementsStyles,
   getVoiceProviderSelectionScript, getVoiceProviderSelectionStyles
 } from './audio';
+import { getBackgroundBlurScript, getBackgroundBlurStyles } from './audio/backgroundBlur';
 
 /**
  * Generate the complete HTML for the popout recording studio
@@ -47,7 +48,8 @@ export function generatePopoutHTML(config: PopoutConfig): string {
     getScriptEnhancementStyles(),
     getRecordingEnhancementsStyles(),
     getTeleprompterEnhancementsStyles(),
-    getVoiceProviderSelectionStyles()
+    getVoiceProviderSelectionStyles(),
+    getBackgroundBlurStyles()
   ].join('\n');
 
   // Get HTML content
@@ -69,6 +71,7 @@ export function generatePopoutHTML(config: PopoutConfig): string {
     getRecordingEnhancementsScript(),
     getTeleprompterEnhancementsScript(),
     getVoiceProviderSelectionScript(config.supabaseUrl, config.supabaseKey),
+    getBackgroundBlurScript(),
     // UI and Camera last (they use the above)
     getUIScript(),
     getCameraScript()
