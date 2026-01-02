@@ -6307,20 +6307,29 @@ export function generatePopoutHTML(config: PopoutConfig): string {
         window.debugPopout('SYNTAX ERROR: ' + syntaxErr.message);
         console.error('Syntax error in generated script:', syntaxErr);
         
-        // Find the problematic line
+        // Count braces to find mismatches
         var lines = scriptCode.split('\\n');
-        var match = syntaxErr.message.match(/line (\\d+)/i);
-        if (match) {
-          var lineNum = parseInt(match[1], 10);
-          window.debugPopout('Error around line ' + lineNum + ':');
-          for (var i = Math.max(0, lineNum - 3); i < Math.min(lines.length, lineNum + 3); i++) {
-            var prefix = (i + 1) === lineNum ? '>>> ' : '    ';
-            console.log(prefix + 'Line ' + (i + 1) + ': ' + lines[i]);
-            if (Math.abs(i + 1 - lineNum) <= 1) {
-              window.debugPopout(prefix + (i + 1) + ': ' + lines[i].substring(0, 60));
+        var braceCount = 0;
+        var problemLines = [];
+        for (var i = 0; i < lines.length; i++) {
+          var line = lines[i];
+          var opens = (line.match(/\\{/g) || []).length;
+          var closes = (line.match(/\\}/g) || []).length;
+          braceCount += opens - closes;
+          
+          // Flag lines where catch appears
+          if (line.indexOf('catch') !== -1 && line.indexOf('try') === -1) {
+            console.log('Line ' + (i+1) + ' (braces: ' + braceCount + '): ' + line.trim());
+            if (problemLines.length < 5) {
+              problemLines.push((i+1) + ': ' + line.trim().substring(0, 50));
             }
           }
         }
+        
+        window.debugPopout('Problem lines with catch:');
+        problemLines.forEach(function(pl) { window.debugPopout(pl); });
+        window.debugPopout('Final brace count: ' + braceCount + ' (should be 0)');
+        
         throw syntaxErr;
       }
       
