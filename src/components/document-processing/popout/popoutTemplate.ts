@@ -452,7 +452,10 @@ export function getPopoutHTML(config: PopoutConfig): string {
     <!-- Recording Library Panel -->
     <div class="library-panel" id="libraryPanel">
       <div class="library-header">
-        <h3>📚 Recording Library</h3>
+        <div>
+          <h3>📚 Recording Library</h3>
+          <span class="library-count" id="libraryCount">0 recordings</span>
+        </div>
         <button class="close-library-btn" id="closeLibraryBtn">✕</button>
       </div>
       <div class="library-list" id="libraryList">
