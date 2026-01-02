@@ -11,3 +11,7 @@ export { getScriptAudioSyncScript, getScriptAudioSyncStyles } from './scriptAudi
 export { getVoiceoverManagerScript, getVoiceoverManagerStyles } from './voiceoverManager';
 export { getEnhancedControlsScript, getEnhancedControlsStyles } from './enhancedControls';
 export { getAudioPanelScript, getAudioPanelStyles } from './audioPanel';
+export { getScriptEnhancementScript, getScriptEnhancementStyles } from './scriptEnhancement';
+export { getRecordingEnhancementsScript, getRecordingEnhancementsStyles } from './recordingEnhancements';
+export { getTeleprompterEnhancementsScript, getTeleprompterEnhancementsStyles } from './teleprompterEnhancements';
+export { getVoiceProviderSelectionScript, getVoiceProviderSelectionStyles } from './voiceProviderSelection';
