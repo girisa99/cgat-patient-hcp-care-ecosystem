@@ -1732,8 +1732,7 @@ function generateScript(config: PopoutConfig): string {
         
         window.debugPopout && window.debugPopout('Initializing variables...');
       
-      try {
-      var mediaRecorder = null;
+        var mediaRecorder = null;
       var chunks = [];
       var stream = null;
       var startTime = 0;
