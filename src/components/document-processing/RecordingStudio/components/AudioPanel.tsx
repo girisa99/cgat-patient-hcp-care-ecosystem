@@ -153,43 +153,67 @@ export function AudioPanel({
 
   const voiceOptions = ttsProvider === 'elevenlabs' ? ELEVENLABS_VOICES : OPENAI_VOICES;
 
-  // FILTER voiceovers - only show files that are actual voiceovers (have scriptText or no scriptType, exclude TTS and instrumental)
+  // Helper to check if file is instrumental/music based on metadata or name
+  const isInstrumental = (v: VoiceoverData) => {
+    const lowerName = v.name.toLowerCase();
+    return (
+      v.metadataType === 'instrumental' || // From database metadata.type
+      v.scriptType === 'instrumental' ||
+      lowerName.includes('instrumental') ||
+      lowerName.includes('🎵') || // Music emoji indicator
+      lowerName.includes('song_') || // Generated music pattern
+      (lowerName.includes('music') && !lowerName.includes('voiceover')) ||
+      lowerName.includes('bgm') ||
+      lowerName.includes('background_music') ||
+      lowerName.includes('background')
+    );
+  };
+
+  // Helper to check if file is TTS generated
+  const isTTSFile = (v: VoiceoverData) => {
+    const lowerName = v.name.toLowerCase();
+    return (
+      v.scriptType === 'tts' ||
+      v.scriptType === 'audio' || // ScriptsManager uses 'audio' scriptType for TTS
+      lowerName.includes('tts') ||
+      (lowerName.includes('generated') && !lowerName.includes('music')) ||
+      (v.scriptText && v.scriptText.length > 0) // Has script text = TTS generated
+    );
+  };
+
+  // FILTER: Instrumental/Music files (exclude from voiceovers)
+  const instrumentalFiles = voiceovers.filter(isInstrumental);
+  console.log('[AudioPanel] Instrumental files found:', instrumentalFiles.length, instrumentalFiles.map(v => v.name));
+
+  // FILTER: TTS files (generated from script, not instrumental)
+  const ttsFiles = voiceovers.filter(v => !isInstrumental(v) && isTTSFile(v));
+  console.log('[AudioPanel] TTS files found:', ttsFiles.length, ttsFiles.map(v => v.name));
+
+  // FILTER: Actual voiceovers (recorded voice, not TTS, not instrumental)
   const actualVoiceovers = voiceovers.filter(v => {
-    // If has scriptType, must be 'voiceover' or 'narration'
-    if (v.scriptType) {
-      return v.scriptType === 'voiceover' || v.scriptType === 'narration';
-    }
-    // If name suggests instrumental/music, exclude
-    const lowerName = v.name.toLowerCase();
-    if (lowerName.includes('instrumental') || lowerName.includes('music') || lowerName.includes('bgm') || lowerName.includes('background')) {
-      return false;
-    }
-    // If it has script text, it's a voiceover
-    return !!v.scriptText || true; // Default to showing if unclear
+    // Exclude instrumental files
+    if (isInstrumental(v)) return false;
+    // Exclude TTS files
+    if (isTTSFile(v)) return false;
+    // If has specific voiceover/narration type, include
+    if (v.scriptType === 'voiceover' || v.scriptType === 'narration') return true;
+    // Default: if not TTS and not instrumental, it's likely a voiceover
+    return true;
   });
-
-  // FILTER TTS files - files that are specifically TTS generated
-  const ttsFiles = voiceovers.filter(v => {
-    if (v.scriptType === 'tts') return true;
-    const lowerName = v.name.toLowerCase();
-    return lowerName.includes('tts') || lowerName.includes('generated');
-  });
-
-  // FILTER music - use musicList prop (already separated) PLUS any instrumental from voiceovers
-  const instrumentalFromVoiceovers = voiceovers.filter(v => {
-    const lowerName = v.name.toLowerCase();
-    return lowerName.includes('instrumental') || lowerName.includes('music') || lowerName.includes('bgm') || lowerName.includes('background') || v.scriptType === 'instrumental';
-  });
+  console.log('[AudioPanel] Actual voiceovers found:', actualVoiceovers.length, actualVoiceovers.map(v => v.name));
   
-  // Combine musicList with instrumental files from voiceovers
+  // FILTER: Combine musicList prop with instrumental files from voiceovers (avoid duplicates)
   const actualMusic = [
     ...musicList,
-    ...instrumentalFromVoiceovers.map(v => ({
-      id: v.id,
-      name: v.name,
-      url: v.url
-    }))
+    ...instrumentalFiles
+      .filter(v => !musicList.some(m => m.id === v.id)) // Avoid duplicates
+      .map(v => ({
+        id: v.id,
+        name: v.name,
+        url: v.url
+      }))
   ];
+  console.log('[AudioPanel] Actual music found:', actualMusic.length, actualMusic.map(m => m.name));
 
   // Handle TTS generation and add to files list
   const handleGenerateAndSave = () => {
@@ -237,12 +261,14 @@ export function AudioPanel({
     }
   };
 
-  // Debug logging
-  console.log('[AudioPanel] Total voiceovers prop:', voiceovers.length, voiceovers.map(v => ({ name: v.name, scriptType: v.scriptType })));
-  console.log('[AudioPanel] Filtered actualVoiceovers:', actualVoiceovers.length);
-  console.log('[AudioPanel] Filtered ttsFiles:', ttsFiles.length);
-  console.log('[AudioPanel] Total musicList prop:', musicList.length);
-  console.log('[AudioPanel] Filtered actualMusic:', actualMusic.length);
+  // Debug logging - comprehensive view
+  console.log('[AudioPanel] === AUDIO FILTERING DEBUG ===');
+  console.log('[AudioPanel] Input voiceovers:', voiceovers.length, voiceovers.map(v => ({ 
+    name: v.name, 
+    scriptType: v.scriptType,
+    hasScriptText: !!v.scriptText 
+  })));
+  console.log('[AudioPanel] Input musicList:', musicList.length);
 
   return (
     <div className="bg-card rounded-lg border overflow-hidden">
