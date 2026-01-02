@@ -45,15 +45,12 @@ import {
 } from './hooks';
 import { 
   VideoPreview, 
-  RecordingControls, 
-  AudioPanel, 
-  ScriptPanel, 
+  RecordingControls,
   RecordingLibraryPanel,
   RecordingPreview,
   FloatingTeleprompter,
   PreRecordingDialog,
   CameraSetupDialog,
-  MusicGenerator,
   KeyboardShortcutsHelp,
   RecordingQualitySettings,
   ProjectSelector,
@@ -1023,77 +1020,161 @@ export function RecordingStudio({
             {/* Content area - scrollable */}
             {!isSidebarCollapsed && (
               <div className="flex-1 overflow-y-auto p-3 space-y-4">
-                {/* Script Panel */}
-                <ScriptPanel
-                  scripts={scripts}
-                  selectedScriptId={selectedScriptId}
-                  onScriptChange={setSelectedScriptId}
-                  onScriptContentUpdate={handleScriptContentUpdate}
-                  scrollSpeed={teleprompter.scrollSpeed}
-                  onScrollSpeedChange={(speed) => setTeleprompter(prev => ({ ...prev, scrollSpeed: speed }))}
-                  onAnalyzeScript={handleAnalyzeScript}
-                  onEnhanceScript={handleEnhanceScript}
-                  isAnalyzing={isAnalyzing}
-                  isEnhancing={isEnhancing}
-                  onEnhancedScriptReady={setCleanEnhancedScript}
-                  onUseEnhancedChange={setIsUsingEnhancedScript}
-                  // Lifted state props for persistence
-                  enhancedContent={enhancedScriptContent}
-                  onEnhancedContentChange={setEnhancedScriptContent}
-                  enhancementChanges={enhancementChangesData}
-                  onEnhancementChangesChange={setEnhancementChangesData}
-                  showChanges={showEnhancementChanges}
-                  onShowChangesChange={setShowEnhancementChanges}
-                  analysisResult={analysisResultData}
-                  onAnalysisResultChange={setAnalysisResultData}
-                  showAnalysis={showAnalysisResult}
-                  onShowAnalysisChange={setShowAnalysisResult}
-                />
+                {/* Info Banner - Pre-production in GenieStudio */}
+                <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 text-sm">
+                  <p className="text-muted-foreground">
+                    <span className="font-medium text-primary">Tip:</span> Script enhancement, TTS, and music generation are done in GenieStudio. Select prepared assets here for recording.
+                  </p>
+                </div>
 
-                {/* Audio Panel */}
-                <AudioPanel
-                  activeTab={audioPlayback.activeTab}
-                  onTabChange={audioPlayback.setActiveTab}
-                  voiceovers={voiceovers}
-                  selectedVoiceoverId={selectedVoiceoverId}
-                  onVoiceoverChange={setSelectedVoiceoverId}
-                  onPlayVoiceover={() => currentVoiceover && audioPlayback.playVoiceover(currentVoiceover.url)}
-                  onStopVoiceover={audioPlayback.stopVoiceover}
-                  isVoiceoverPlaying={audioPlayback.isPlaying.voiceover}
-                  voiceoverVolume={audioPlayback.voiceoverVolume}
-                  onVoiceoverVolumeChange={audioPlayback.setVoiceoverVolume}
-                  musicList={music}
-                  selectedMusicId={selectedMusicId}
-                  onMusicChange={setSelectedMusicId}
-                  onPlayMusic={() => currentMusic && audioPlayback.playMusic(currentMusic.url)}
-                  onStopMusic={audioPlayback.stopMusic}
-                  isMusicPlaying={audioPlayback.isPlaying.music}
-                  musicVolume={audioPlayback.musicVolume}
-                  onMusicVolumeChange={audioPlayback.setMusicVolume}
-                  musicLoop={audioPlayback.musicLoop}
-                  onToggleMusicLoop={audioPlayback.toggleMusicLoop}
-                  ttsText={ttsText}
-                  onTTSTextChange={setTTSText}
-                  selectedVoice={selectedVoice}
-                  onVoiceChange={setSelectedVoice}
-                  onGenerateTTS={handleGenerateTTS}
-                  onPlayTTS={handlePlayTTS}
-                  onStopTTS={audioPlayback.stopTTS}
-                  isTTSPlaying={audioPlayback.isPlaying.tts}
-                  isTTSGenerating={isTTSGenerating}
-                  hasTTSAudio={hasTTSAudio}
-                  ttsVolume={audioPlayback.ttsVolume}
-                  onTTSVolumeChange={audioPlayback.setTTSVolume}
-                  ttsAudioUrl={ttsAudioUrl}
-                  onDownloadTTS={handleDownloadTTS}
-                  ttsProvider={ttsProvider}
-                  onTTSProviderChange={setTTSProvider}
-                  currentScriptContent={currentScript?.content}
-                  cleanScriptContent={cleanEnhancedScript || undefined}
-                  onUploadVoiceover={onUploadVoiceover}
-                  onUploadMusic={onUploadMusic}
-                  isUploading={isUploading}
-                />
+                {/* Script Selection (Simplified) */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-primary" />
+                      <span className="font-medium text-sm">Script</span>
+                    </div>
+                    {currentScript && (
+                      <Badge variant="outline" className="text-xs">
+                        {scripts.length} available
+                      </Badge>
+                    )}
+                  </div>
+                  <select
+                    value={selectedScriptId}
+                    onChange={(e) => setSelectedScriptId(e.target.value)}
+                    className="w-full p-2 rounded-md border bg-background text-sm"
+                  >
+                    <option value="">Select script for teleprompter...</option>
+                    {scripts.map((s) => (
+                      <option key={s.id} value={s.id}>{s.title}</option>
+                    ))}
+                  </select>
+                  {currentScript && (
+                    <div className="p-2 rounded bg-muted/50 text-xs text-muted-foreground max-h-24 overflow-y-auto">
+                      {currentScript.content.slice(0, 200)}...
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Scroll Speed:</span>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="3"
+                      step="0.1"
+                      value={teleprompter.scrollSpeed}
+                      onChange={(e) => setTeleprompter(prev => ({ ...prev, scrollSpeed: parseFloat(e.target.value) }))}
+                      className="flex-1 h-2"
+                    />
+                    <span className="text-xs font-medium">{teleprompter.scrollSpeed.toFixed(1)}x</span>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Voiceover Selection */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Mic className="w-4 h-4 text-purple-500" />
+                    <span className="font-medium text-sm">Voiceover</span>
+                    {voiceovers.length > 0 && (
+                      <Badge variant="outline" className="text-xs ml-auto">{voiceovers.length}</Badge>
+                    )}
+                  </div>
+                  <select
+                    value={selectedVoiceoverId}
+                    onChange={(e) => setSelectedVoiceoverId(e.target.value)}
+                    className="w-full p-2 rounded-md border bg-background text-sm"
+                  >
+                    <option value="">No voiceover</option>
+                    {voiceovers.map((v) => (
+                      <option key={v.id} value={v.id}>{v.name}</option>
+                    ))}
+                  </select>
+                  {currentVoiceover && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => audioPlayback.isPlaying.voiceover 
+                          ? audioPlayback.stopVoiceover() 
+                          : audioPlayback.playVoiceover(currentVoiceover.url)
+                        }
+                        className="h-8 flex-1"
+                      >
+                        {audioPlayback.isPlaying.voiceover ? 'Stop' : 'Preview'}
+                      </Button>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={audioPlayback.voiceoverVolume}
+                        onChange={(e) => audioPlayback.setVoiceoverVolume(parseInt(e.target.value))}
+                        className="w-20 h-2"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* Music Selection */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Music className="w-4 h-4 text-green-500" />
+                    <span className="font-medium text-sm">Background Music</span>
+                    {music.length > 0 && (
+                      <Badge variant="outline" className="text-xs ml-auto">{music.length}</Badge>
+                    )}
+                  </div>
+                  <select
+                    value={selectedMusicId}
+                    onChange={(e) => setSelectedMusicId(e.target.value)}
+                    className="w-full p-2 rounded-md border bg-background text-sm"
+                  >
+                    <option value="">No music</option>
+                    {music.map((m) => (
+                      <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
+                  {currentMusic && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => audioPlayback.isPlaying.music 
+                          ? audioPlayback.stopMusic() 
+                          : audioPlayback.playMusic(currentMusic.url)
+                        }
+                        className="h-8 flex-1"
+                      >
+                        {audioPlayback.isPlaying.music ? 'Stop' : 'Preview'}
+                      </Button>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={audioPlayback.musicVolume}
+                        onChange={(e) => audioPlayback.setMusicVolume(parseInt(e.target.value))}
+                        className="w-20 h-2"
+                      />
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={audioPlayback.musicLoop}
+                      onChange={() => audioPlayback.toggleMusicLoop()}
+                      id="music-loop"
+                      className="rounded"
+                    />
+                    <label htmlFor="music-loop" className="text-xs text-muted-foreground cursor-pointer">
+                      Loop music
+                    </label>
+                  </div>
+                </div>
+
+                <Separator />
                 
                 {/* Studio Sound Panel for Podcast Audio */}
                 <StudioSoundPanel
@@ -1101,25 +1182,6 @@ export function RecordingStudio({
                   activePreset={studioSound.activePreset}
                   onPresetChange={studioSound.applyPreset}
                   onSettingsChange={studioSound.updateSettings}
-                />
-                
-                {/* Music Generator */}
-                <MusicGenerator 
-                  onMusicGenerated={(generatedMusic) => {
-                    // Log cost if project selected
-                    if (mediaProject.currentProject) {
-                      mediaProject.logCost({
-                        operation_type: 'music_gen',
-                        operation_name: `Music: ${generatedMusic.prompt.substring(0, 30)}...`,
-                        cost: 0.05,
-                        provider: 'elevenlabs',
-                        duration_seconds: generatedMusic.duration,
-                      });
-                    }
-                  }}
-                  onPlayMusic={(url) => audioPlayback.playMusic(url)}
-                  onStopMusic={audioPlayback.stopMusic}
-                  isPlaying={audioPlayback.isPlaying.music}
                 />
               </div>
             )}
