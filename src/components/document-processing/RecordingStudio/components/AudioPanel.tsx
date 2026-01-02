@@ -153,22 +153,11 @@ export function AudioPanel({
 
   const voiceOptions = ttsProvider === 'elevenlabs' ? ELEVENLABS_VOICES : OPENAI_VOICES;
 
-  // Filter voiceovers to only show actual voice recordings (not instrumental)
-  const actualVoiceovers = voiceovers.filter(v => 
-    v.scriptType === 'voiceover' || 
-    !v.name.toLowerCase().includes('instrumental') &&
-    !v.name.toLowerCase().includes('music') &&
-    !v.name.toLowerCase().includes('background')
-  );
+  // Show ALL voiceovers in dropdown (don't filter)
+  const actualVoiceovers = voiceovers;
 
-  // Filter music to only show instrumental/background tracks
-  const actualMusic = musicList.filter(m =>
-    m.name.toLowerCase().includes('instrumental') ||
-    m.name.toLowerCase().includes('music') ||
-    m.name.toLowerCase().includes('background') ||
-    m.name.toLowerCase().includes('ambient') ||
-    true // Show all music files
-  );
+  // Show ALL music files in dropdown (don't filter)
+  const actualMusic = musicList;
 
   // Handle TTS generation and add to files list
   const handleGenerateAndSave = () => {
@@ -261,7 +250,9 @@ export function AudioPanel({
         {activeTab === 'voiceover' && (
           <div className="space-y-3">
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Recorded Voiceovers</Label>
+              <Label className="text-xs text-muted-foreground">
+                Recorded Voiceovers ({actualVoiceovers.length})
+              </Label>
               <Select 
                 value={selectedVoiceoverId || "none"} 
                 onValueChange={(v) => onVoiceoverChange(v === "none" ? "" : v)}
@@ -271,11 +262,16 @@ export function AudioPanel({
                     {selectedVoiceover?.name || "Select voiceover file"}
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent className="bg-popover border shadow-md z-[9999]">
+                <SelectContent className="bg-popover border shadow-md z-[9999] max-h-[200px]">
                   <SelectItem value="none">None</SelectItem>
                   {actualVoiceovers.length > 0 ? (
                     actualVoiceovers.map((v) => (
-                      <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+                      <SelectItem key={v.id} value={v.id}>
+                        <div className="flex items-center gap-2">
+                          <Mic className="w-3 h-3 text-muted-foreground" />
+                          {v.name}
+                        </div>
+                      </SelectItem>
                     ))
                   ) : (
                     <div className="px-2 py-1.5 text-xs text-muted-foreground">
@@ -285,6 +281,42 @@ export function AudioPanel({
                 </SelectContent>
               </Select>
             </div>
+            
+            {/* Voiceover files list */}
+            {actualVoiceovers.length > 0 && (
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Available Files</Label>
+                <ScrollArea className="max-h-24">
+                  <div className="space-y-1">
+                    {actualVoiceovers.map((v) => (
+                      <div 
+                        key={v.id}
+                        className={`flex items-center justify-between p-1.5 rounded text-xs cursor-pointer ${
+                          selectedVoiceoverId === v.id ? 'bg-primary/10 border border-primary' : 'bg-muted/30 hover:bg-muted/50'
+                        }`}
+                        onClick={() => onVoiceoverChange(v.id)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Mic className="w-3 h-3 text-muted-foreground" />
+                          <span className="truncate max-w-[180px]">{v.name}</span>
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-5 w-5"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleExportAudio(v.url, v.name);
+                          }}
+                        >
+                          <Download className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
 
             <div className="flex gap-2">
               <Button
@@ -548,7 +580,9 @@ export function AudioPanel({
         {activeTab === 'music' && (
           <div className="space-y-3">
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Instrumental / Background Music</Label>
+              <Label className="text-xs text-muted-foreground">
+                Instrumental / Background Music ({actualMusic.length})
+              </Label>
               <Select 
                 value={selectedMusicId || "none"} 
                 onValueChange={(v) => onMusicChange(v === "none" ? "" : v)}
@@ -558,11 +592,16 @@ export function AudioPanel({
                     {selectedMusic?.name || "Select instrumental/music"}
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent className="bg-popover border shadow-md z-[9999]">
+                <SelectContent className="bg-popover border shadow-md z-[9999] max-h-[200px]">
                   <SelectItem value="none">None</SelectItem>
                   {actualMusic.length > 0 ? (
                     actualMusic.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                      <SelectItem key={m.id} value={m.id}>
+                        <div className="flex items-center gap-2">
+                          <Music className="w-3 h-3 text-muted-foreground" />
+                          {m.name}
+                        </div>
+                      </SelectItem>
                     ))
                   ) : (
                     <div className="px-2 py-1.5 text-xs text-muted-foreground">

@@ -83,6 +83,8 @@ export function RecordingStudio({
   // Script analysis/enhancement states
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
+  const [cleanEnhancedScript, setCleanEnhancedScript] = useState<string | null>(null);
+  const [isUsingEnhancedScript, setIsUsingEnhancedScript] = useState(false);
   
   // Recording preview
   const [lastRecordingBlob, setLastRecordingBlob] = useState<Blob | null>(null);
@@ -597,6 +599,8 @@ export function RecordingStudio({
                   onEnhanceScript={handleEnhanceScript}
                   isAnalyzing={isAnalyzing}
                   isEnhancing={isEnhancing}
+                  onEnhancedScriptReady={setCleanEnhancedScript}
+                  onUseEnhancedChange={setIsUsingEnhancedScript}
                 />
 
                 {/* Audio Panel */}
@@ -638,6 +642,7 @@ export function RecordingStudio({
                   ttsProvider={ttsProvider}
                   onTTSProviderChange={setTTSProvider}
                   currentScriptContent={currentScript?.content}
+                  cleanScriptContent={cleanEnhancedScript || undefined}
                 />
               </div>
             )}

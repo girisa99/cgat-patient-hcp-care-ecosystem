@@ -527,12 +527,12 @@ export function ScriptPanel({
             </div>
           )}
 
-          {/* Analysis Results */}
+          {/* Analysis Results - Scrollable */}
           {showAnalysis && analysisResult.length > 0 && (
-            <div className="space-y-2 border rounded-md p-2 bg-blue-500/5">
-              <div className="flex items-center justify-between">
+            <div className="space-y-2 border rounded-md p-2 bg-blue-500/5 max-h-[280px] overflow-hidden flex flex-col">
+              <div className="flex items-center justify-between shrink-0">
                 <span className="text-xs font-medium text-blue-600">
-                  Analysis: {pendingRecs} pending
+                  📊 Analysis: {pendingRecs} pending review
                 </span>
                 <Button
                   size="icon"
@@ -544,7 +544,7 @@ export function ScriptPanel({
                 </Button>
               </div>
               
-              <ScrollArea className="max-h-32">
+              <div className="flex-1 overflow-y-auto min-h-0 pr-1">
                 <div className="space-y-1.5">
                   {analysisResult.map((rec) => (
                     <div 
@@ -581,6 +581,7 @@ export function ScriptPanel({
                               variant="ghost" 
                               className="h-5 w-5"
                               onClick={() => handleAcceptRecommendation(rec.id)}
+                              title="Accept recommendation"
                             >
                               <Check className="w-3 h-3 text-green-500" />
                             </Button>
@@ -589,6 +590,7 @@ export function ScriptPanel({
                               variant="ghost" 
                               className="h-5 w-5"
                               onClick={() => handleRejectRecommendation(rec.id)}
+                              title="Skip recommendation"
                             >
                               <X className="w-3 h-3 text-red-500" />
                             </Button>
@@ -598,16 +600,16 @@ export function ScriptPanel({
                     </div>
                   ))}
                 </div>
-              </ScrollArea>
+              </div>
             </div>
           )}
 
-          {/* Enhancement Changes Review */}
+          {/* Enhancement Changes Review - Scrollable */}
           {showChanges && enhancementChanges.length > 0 && (
-            <div className="space-y-2 border rounded-md p-2 bg-primary/5">
-              <div className="flex items-center justify-between">
+            <div className="space-y-2 border rounded-md p-2 bg-primary/5 max-h-[320px] overflow-hidden flex flex-col">
+              <div className="flex items-center justify-between shrink-0">
                 <span className="text-xs font-medium text-primary">
-                  {pendingChanges} pending • {acceptedChanges} accepted
+                  ✨ Enhancements: {pendingChanges} pending • {acceptedChanges} accepted
                 </span>
                 <Button
                   size="icon"
@@ -619,7 +621,7 @@ export function ScriptPanel({
                 </Button>
               </div>
               
-              <ScrollArea className="max-h-40">
+              <div className="flex-1 overflow-y-auto min-h-0 pr-1">
                 <div className="space-y-1.5">
                   {enhancementChanges.map((change) => (
                     <div 
@@ -637,15 +639,15 @@ export function ScriptPanel({
                             <Badge variant="outline" className="text-[8px] h-4">
                               {change.type}
                             </Badge>
-                            <span className="text-muted-foreground italic">{change.reason}</span>
+                            <span className="text-muted-foreground italic text-[10px]">{change.reason}</span>
                           </div>
                           {change.original && (
-                            <p className="text-muted-foreground line-through mb-1">
-                              {change.original.slice(0, 80)}...
+                            <p className="text-muted-foreground line-through mb-1 text-[11px]">
+                              {change.original.slice(0, 100)}{change.original.length > 100 ? '...' : ''}
                             </p>
                           )}
-                          <p className="text-foreground">
-                            {change.enhanced.slice(0, 80)}...
+                          <p className="text-foreground text-[11px]">
+                            {change.enhanced.slice(0, 100)}{change.enhanced.length > 100 ? '...' : ''}
                           </p>
                         </div>
                         {change.accepted === null && (
@@ -655,6 +657,7 @@ export function ScriptPanel({
                               variant="ghost" 
                               className="h-5 w-5"
                               onClick={() => handleAcceptChange(change.id)}
+                              title="Accept change"
                             >
                               <Check className="w-3 h-3 text-green-500" />
                             </Button>
@@ -663,6 +666,7 @@ export function ScriptPanel({
                               variant="ghost" 
                               className="h-5 w-5"
                               onClick={() => handleRejectChange(change.id)}
+                              title="Skip change"
                             >
                               <X className="w-3 h-3 text-red-500" />
                             </Button>
@@ -672,10 +676,10 @@ export function ScriptPanel({
                     </div>
                   ))}
                 </div>
-              </ScrollArea>
+              </div>
 
-              {/* Accept/Reject All */}
-              <div className="flex gap-1">
+              {/* Accept/Reject All - Fixed at bottom */}
+              <div className="flex gap-1 shrink-0 pt-1 border-t border-primary/20">
                 <Button 
                   size="sm" 
                   variant="default" 
@@ -700,13 +704,14 @@ export function ScriptPanel({
                   variant="outline" 
                   onClick={handleRejectAll}
                   className="gap-1 text-xs h-7"
+                  title="Reject all changes"
                 >
                   <X className="w-3 h-3" />
                 </Button>
               </div>
 
               {/* Download Enhanced/Clean versions */}
-              <div className="flex gap-1 pt-1 border-t">
+              <div className="flex gap-1 shrink-0">
                 <Button
                   size="sm"
                   variant="outline"
