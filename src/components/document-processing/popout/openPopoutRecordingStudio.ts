@@ -105,33 +105,37 @@ export function openPopoutRecordingStudio(options: OpenPopoutOptions): Window | 
       supabaseKey,
     };
 
-    // Generate HTML content BEFORE opening window
+    // Generate HTML content
     console.log('🎬 Generating HTML content...');
     const htmlContent = generatePopoutHTML(config);
     console.log('📝 Generated HTML length:', htmlContent.length);
 
-    // Open empty window first (less likely to be blocked by popup blockers)
-    console.log('🪟 Opening popup window...');
+    // Create a Blob URL - this gives the popup a proper origin for permissions
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const blobUrl = URL.createObjectURL(blob);
+    
+    console.log('🪟 Opening popup window with blob URL...');
     const popoutWindow = window.open(
-      'about:blank',
+      blobUrl,
       'recording-studio',
       'width=1400,height=900,left=100,top=50,toolbar=no,menubar=no,scrollbars=no,resizable=yes'
     );
 
     if (!popoutWindow) {
       console.error('❌ Pop-up blocked by browser - window.open returned null');
+      URL.revokeObjectURL(blobUrl);
       onError?.('Pop-up blocked. Please allow pop-ups for this site.');
       return null;
     }
 
     console.log('✅ Pop-out window opened successfully');
-
-    // Write content to the popup window
-    console.log('📝 Writing content to popup...');
-    popoutWindow.document.open();
-    popoutWindow.document.write(htmlContent);
-    popoutWindow.document.close();
-    console.log('✅ Content written to pop-out window successfully');
+    
+    // Clean up blob URL after window loads
+    popoutWindow.addEventListener('load', () => {
+      console.log('✅ Popup loaded, revoking blob URL');
+      // Don't revoke immediately - give it a moment
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+    });
     
     onSuccess?.();
     return popoutWindow;
