@@ -73,6 +73,7 @@ export const useRoleBasedNavigation = () => {
       'patient-onboarding-standard': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Standard patient enrollment 
       'patient-onboarding-whatsapp': ['superAdmin', 'onboardingTeam', 'healthcareProvider'], // WhatsApp patient enrollment
       'architecture': ['superAdmin', 'admin', 'onboardingTeam', 'healthcareProvider', 'caseManager', 'nurse', 'provider', 'demoUser'], // Architecture diagrams - accessible to all roles
+      'genie-studio': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'caseManager', 'nurse', 'provider', 'patientCaregiver', 'demoUser'], // Genie Studio - Media production hub
     };
 
     const filteredItems = navItems.filter(item => {
@@ -134,6 +135,7 @@ export const useRoleBasedNavigation = () => {
       'order-management': ['healthcareProvider'], // Healthcare provider specific
       'document-processing': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'customerOnboarding', 'demoUser'], // Document processing page
       'architecture': ['superAdmin', 'admin', 'onboardingTeam', 'healthcareProvider', 'caseManager', 'nurse', 'provider', 'demoUser'], // Architecture diagrams
+      'genie-studio': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'caseManager', 'nurse', 'provider', 'patientCaregiver', 'demoUser'], // Genie Studio - Media production hub
     };
 
     const allowedRoles = roleAccess[cleanPath as keyof typeof roleAccess] || [];
