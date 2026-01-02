@@ -153,11 +153,43 @@ export function AudioPanel({
 
   const voiceOptions = ttsProvider === 'elevenlabs' ? ELEVENLABS_VOICES : OPENAI_VOICES;
 
-  // Show ALL voiceovers in dropdown (don't filter)
-  const actualVoiceovers = voiceovers;
+  // FILTER voiceovers - only show files that are actual voiceovers (have scriptText or no scriptType, exclude TTS and instrumental)
+  const actualVoiceovers = voiceovers.filter(v => {
+    // If has scriptType, must be 'voiceover' or 'narration'
+    if (v.scriptType) {
+      return v.scriptType === 'voiceover' || v.scriptType === 'narration';
+    }
+    // If name suggests instrumental/music, exclude
+    const lowerName = v.name.toLowerCase();
+    if (lowerName.includes('instrumental') || lowerName.includes('music') || lowerName.includes('bgm') || lowerName.includes('background')) {
+      return false;
+    }
+    // If it has script text, it's a voiceover
+    return !!v.scriptText || true; // Default to showing if unclear
+  });
 
-  // Show ALL music files in dropdown (don't filter)
-  const actualMusic = musicList;
+  // FILTER TTS files - files that are specifically TTS generated
+  const ttsFiles = voiceovers.filter(v => {
+    if (v.scriptType === 'tts') return true;
+    const lowerName = v.name.toLowerCase();
+    return lowerName.includes('tts') || lowerName.includes('generated');
+  });
+
+  // FILTER music - use musicList prop (already separated) PLUS any instrumental from voiceovers
+  const instrumentalFromVoiceovers = voiceovers.filter(v => {
+    const lowerName = v.name.toLowerCase();
+    return lowerName.includes('instrumental') || lowerName.includes('music') || lowerName.includes('bgm') || lowerName.includes('background') || v.scriptType === 'instrumental';
+  });
+  
+  // Combine musicList with instrumental files from voiceovers
+  const actualMusic = [
+    ...musicList,
+    ...instrumentalFromVoiceovers.map(v => ({
+      id: v.id,
+      name: v.name,
+      url: v.url
+    }))
+  ];
 
   // Handle TTS generation and add to files list
   const handleGenerateAndSave = () => {
@@ -205,6 +237,13 @@ export function AudioPanel({
     }
   };
 
+  // Debug logging
+  console.log('[AudioPanel] Total voiceovers prop:', voiceovers.length, voiceovers.map(v => ({ name: v.name, scriptType: v.scriptType })));
+  console.log('[AudioPanel] Filtered actualVoiceovers:', actualVoiceovers.length);
+  console.log('[AudioPanel] Filtered ttsFiles:', ttsFiles.length);
+  console.log('[AudioPanel] Total musicList prop:', musicList.length);
+  console.log('[AudioPanel] Filtered actualMusic:', actualMusic.length);
+
   return (
     <div className="bg-card rounded-lg border overflow-hidden">
       {/* Tab Header */}
@@ -219,6 +258,9 @@ export function AudioPanel({
         >
           <Mic className="w-3.5 h-3.5" />
           Voiceover
+          {actualVoiceovers.length > 0 && (
+            <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">{actualVoiceovers.length}</Badge>
+          )}
         </button>
         <button
           onClick={() => onTabChange('tts')}
@@ -230,6 +272,9 @@ export function AudioPanel({
         >
           <Volume2 className="w-3.5 h-3.5" />
           TTS
+          {ttsFiles.length > 0 && (
+            <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">{ttsFiles.length}</Badge>
+          )}
         </button>
         <button
           onClick={() => onTabChange('music')}
@@ -241,6 +286,9 @@ export function AudioPanel({
         >
           <Music className="w-3.5 h-3.5" />
           Music
+          {actualMusic.length > 0 && (
+            <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">{actualMusic.length}</Badge>
+          )}
         </button>
       </div>
 
@@ -342,6 +390,68 @@ export function AudioPanel({
         {/* TTS Tab */}
         {activeTab === 'tts' && (
           <div className="space-y-3">
+            {/* Existing TTS Files */}
+            {ttsFiles.length > 0 && (
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">
+                  Existing TTS Files ({ttsFiles.length})
+                </Label>
+                <Select
+                  value={selectedTTSFileId || "none"}
+                  onValueChange={(v) => setSelectedTTSFileId(v === "none" ? "" : v)}
+                >
+                  <SelectTrigger className="bg-background h-9 text-sm">
+                    <SelectValue placeholder="Select existing TTS file">
+                      {ttsFiles.find(f => f.id === selectedTTSFileId)?.name || "Select existing TTS file"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border shadow-md z-[9999] max-h-[200px]">
+                    <SelectItem value="none">None</SelectItem>
+                    {ttsFiles.map((file) => (
+                      <SelectItem key={file.id} value={file.id}>
+                        <div className="flex items-center gap-2">
+                          <Volume2 className="w-3 h-3 text-muted-foreground" />
+                          {file.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedTTSFileId && (
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 h-7 text-xs"
+                      onClick={() => {
+                        const file = ttsFiles.find(f => f.id === selectedTTSFileId);
+                        if (file) {
+                          // Set the audio URL and play using the passed-in handler
+                          const audio = new Audio(file.url);
+                          audio.play();
+                        }
+                      }}
+                    >
+                      <Play className="w-3 h-3 mr-1" />
+                      Play
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 h-7 text-xs"
+                      onClick={() => {
+                        const file = ttsFiles.find(f => f.id === selectedTTSFileId);
+                        if (file) handleExportAudio(file.url, file.name);
+                      }}
+                    >
+                      <Download className="w-3 h-3 mr-1" />
+                      Download
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Provider Selection */}
             {onTTSProviderChange && (
               <div className="space-y-1.5">
