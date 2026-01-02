@@ -143,3 +143,9 @@ verify_jwt = false
 
 [functions.enhance-script]
 verify_jwt = false
+
+[functions.send-show-invite]
+verify_jwt = false
+
+[functions.elevenlabs-music]
+verify_jwt = false

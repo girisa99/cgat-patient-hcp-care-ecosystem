@@ -13,6 +13,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
   Video, 
   Mic, 
@@ -37,7 +40,16 @@ import {
   Volume2,
   Copy,
   Plus,
-  RefreshCw
+  RefreshCw,
+  Radio,
+  Podcast,
+  Tv,
+  Send,
+  Users,
+  Calendar,
+  Mail,
+  UserPlus,
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { RecordingStudio } from '@/components/document-processing/RecordingStudio';
@@ -56,6 +68,26 @@ interface MediaItem {
   size?: number;
 }
 
+// Types for shows/events
+interface ShowEvent {
+  id: string;
+  type: 'podcast' | 'webcast' | 'broadcast';
+  title: string;
+  description: string;
+  scheduledDate: Date;
+  participants: Participant[];
+  scriptId?: string;
+  status: 'scheduled' | 'live' | 'completed' | 'cancelled';
+}
+
+interface Participant {
+  id: string;
+  name: string;
+  email: string;
+  role: 'host' | 'co-host' | 'guest' | 'panelist';
+  status: 'pending' | 'confirmed' | 'declined';
+}
+
 // Script Templates
 const SCRIPT_TEMPLATES = [
   {
@@ -63,6 +95,7 @@ const SCRIPT_TEMPLATES = [
     name: 'Product Demo',
     description: 'Showcase your product features',
     category: 'Marketing',
+    type: 'video' as const,
     content: `Welcome to [Product Name]! 
 
 Today, I'll walk you through the key features that make our solution stand out.
@@ -80,6 +113,7 @@ Ready to get started? Click the link below to try it free today!`
     name: 'Tutorial / How-To',
     description: 'Step-by-step educational content',
     category: 'Education',
+    type: 'video' as const,
     content: `Hey everyone! In this tutorial, I'll show you how to [topic].
 
 By the end of this video, you'll be able to [outcome].
@@ -102,6 +136,7 @@ If you found this helpful, don't forget to subscribe for more tutorials!`
     name: 'Announcement',
     description: 'Share news or updates',
     category: 'Corporate',
+    type: 'video' as const,
     content: `We're excited to announce [news/update]!
 
 After [timeframe/effort], we're proud to share that [details].
@@ -122,6 +157,7 @@ Thank you for your continued support!`
     name: 'Explainer Video',
     description: 'Explain complex topics simply',
     category: 'Education',
+    type: 'video' as const,
     content: `Have you ever wondered how [topic] works?
 
 Let me break it down for you in simple terms.
@@ -141,6 +177,7 @@ Now you know the basics of [topic]! Have questions? Drop them in the comments.`
     name: 'Customer Testimonial',
     description: 'Share customer success stories',
     category: 'Marketing',
+    type: 'video' as const,
     content: `Before using [Product/Service], I was struggling with [problem].
 
 I tried [previous solutions] but nothing worked.
@@ -155,20 +192,418 @@ I highly recommend [Product/Service] to anyone dealing with [problem].
 
 It's been a game-changer for my [business/life/workflow].`
   },
+  // Podcast Template
   {
-    id: 'podcast-intro',
-    name: 'Podcast Introduction',
-    description: 'Welcome listeners to your show',
-    category: 'Entertainment',
-    content: `Welcome to [Podcast Name]! I'm your host, [Name].
+    id: 'podcast-episode',
+    name: 'Podcast Episode',
+    description: 'Full podcast episode structure',
+    category: 'Podcast',
+    type: 'podcast' as const,
+    icon: Podcast,
+    content: `# [Podcast Name] - Episode [Number]
+## Topic: [Episode Topic]
 
-Today's episode is all about [topic].
+---
 
-We've got [guest name or content preview] joining us to discuss [specific angle].
+### INTRO [0:00 - 2:00]
 
-Before we dive in, a quick reminder to subscribe and leave a review if you're enjoying the show.
+🎵 [Intro music plays]
 
-Alright, let's get into it!`
+HOST: Welcome back to [Podcast Name]! I'm your host, [Host Name], and today we're diving deep into [topic].
+
+If you're new here, make sure to hit subscribe and leave us a review—it really helps us grow!
+
+Today's episode is sponsored by [Sponsor Name]. [Brief sponsor message].
+
+---
+
+### GUEST INTRODUCTION [2:00 - 5:00]
+
+HOST: I'm thrilled to welcome [Guest Name] to the show today. [Guest Name] is [brief bio/credentials].
+
+[Guest Name], welcome to the show!
+
+GUEST: Thanks for having me! I'm excited to be here.
+
+HOST: Before we dive in, tell our listeners a bit about yourself and your journey.
+
+GUEST: [Guest introduction/background]
+
+---
+
+### MAIN DISCUSSION [5:00 - 35:00]
+
+HOST: Let's get into today's topic: [Topic].
+
+**Question 1:** [First discussion point]
+**Question 2:** [Second discussion point]  
+**Question 3:** [Third discussion point]
+**Question 4:** [Fourth discussion point]
+
+---
+
+### RAPID FIRE / FUN SEGMENT [35:00 - 40:00]
+
+HOST: Now for our rapid-fire round! Quick answers only.
+
+1. [Fun question 1]
+2. [Fun question 2]
+3. [Fun question 3]
+
+---
+
+### CLOSING [40:00 - 45:00]
+
+HOST: [Guest Name], this has been incredible. Where can our listeners find you and learn more about your work?
+
+GUEST: [Social media handles, website, etc.]
+
+HOST: Amazing! Thank you so much for being here.
+
+And to our listeners, thank you for tuning in! Don't forget to subscribe, leave a review, and share this episode with someone who needs to hear it.
+
+Until next time, stay [podcast tagline]!
+
+🎵 [Outro music plays]
+
+---
+
+### SHOW NOTES
+
+**Episode Links:**
+- [Guest's website/resource]
+- [Mentioned resource 1]
+- [Mentioned resource 2]
+
+**Connect with us:**
+- Website: [podcast website]
+- Twitter: @[handle]
+- Instagram: @[handle]`
+  },
+  // Webcast Template
+  {
+    id: 'webcast-webinar',
+    name: 'Webcast / Webinar',
+    description: 'Live webcast or webinar structure',
+    category: 'Webcast',
+    type: 'webcast' as const,
+    icon: Tv,
+    content: `# [Webcast Title]
+## Live Event Script
+
+**Date:** [Date]
+**Time:** [Time with timezone]
+**Platform:** [Zoom/Teams/YouTube Live/etc.]
+**Duration:** [Expected duration]
+
+---
+
+### PRE-SHOW [10 min before]
+
+TECH HOST: [Run tech checks]
+- Audio levels ✓
+- Screen sharing ✓
+- Chat moderator ready ✓
+- Recording started ✓
+
+[Background music or holding slide displayed]
+
+---
+
+### OPENING [0:00 - 5:00]
+
+HOST: Good [morning/afternoon/evening] everyone! Welcome to [Webcast Title].
+
+I'm [Host Name], [your role/title], and I'll be your host today.
+
+Before we begin:
+• Please use the chat for questions—we'll have Q&A at the end
+• This session is being recorded and will be shared afterward
+• Feel free to [specific call to action]
+
+Let me introduce today's [speakers/panelists]:
+- [Speaker 1]: [Brief intro]
+- [Speaker 2]: [Brief intro]
+- [Speaker 3]: [Brief intro]
+
+---
+
+### AGENDA OVERVIEW [5:00 - 7:00]
+
+HOST: Here's what we'll cover today:
+
+1. [Topic 1] - [Duration]
+2. [Topic 2] - [Duration]
+3. [Topic 3] - [Duration]
+4. Live Q&A - 15 minutes
+
+---
+
+### MAIN CONTENT [7:00 - 45:00]
+
+**SECTION 1: [Topic 1]**
+SPEAKER 1: [Content for section 1]
+
+🖥️ [Slide: Key Visual]
+
+Key points:
+• [Point 1]
+• [Point 2]
+• [Point 3]
+
+---
+
+**SECTION 2: [Topic 2]**
+SPEAKER 2: [Content for section 2]
+
+🖥️ [Slide: Demo/Screenshot]
+
+Live demonstration: [Description]
+
+---
+
+**SECTION 3: [Topic 3]**
+SPEAKER 3: [Content for section 3]
+
+---
+
+### Q&A SESSION [45:00 - 55:00]
+
+HOST: Now let's open it up for questions. [Moderator], what questions do we have?
+
+MODERATOR: [Reads questions from chat]
+
+[Allow 2-3 minutes per question]
+
+---
+
+### CLOSING [55:00 - 60:00]
+
+HOST: We're at time! Thank you all for joining us today.
+
+Key takeaways:
+1. [Takeaway 1]
+2. [Takeaway 2]
+3. [Takeaway 3]
+
+**Next steps:**
+- Recording will be sent within 24 hours
+- [Resource/follow-up link]
+- Next webcast: [Date/Topic]
+
+Thank you to our speakers and everyone who attended. Have a great [day/evening]!
+
+---
+
+### POST-SHOW
+
+- Stop recording
+- Export chat for follow-up
+- Send thank you to speakers
+- Schedule recording distribution`
+  },
+  // Broadcast Template
+  {
+    id: 'live-broadcast',
+    name: 'Live Broadcast',
+    description: 'Live streaming broadcast format',
+    category: 'Broadcast',
+    type: 'broadcast' as const,
+    icon: Radio,
+    content: `# [Broadcast Title] - LIVE
+## Run of Show
+
+**Broadcast Date:** [Date]
+**Start Time:** [Time]
+**Platform(s):** [YouTube/Twitch/LinkedIn/Facebook/etc.]
+**Estimated Duration:** [Duration]
+
+---
+
+### TECHNICAL SETUP [-30 min]
+
+☐ Stream settings configured (1080p, 6000kbps)
+☐ Audio levels tested
+☐ Camera angles checked
+☐ Graphics/overlays loaded
+☐ Chat moderation active
+☐ Backup internet ready
+
+---
+
+### COUNTDOWN [-5 min]
+
+🎵 [Countdown music/animation]
+
+MODERATOR: "Going live in 5 minutes! Get your questions ready!"
+
+---
+
+### COLD OPEN [0:00]
+
+🔴 LIVE
+
+[Opening animation/graphic]
+
+HOST: We're LIVE! Welcome everyone to [Broadcast Name]!
+
+[Wait 30 seconds for viewers to join]
+
+I see we've got viewers joining from [locations]. Drop where you're watching from in the chat!
+
+---
+
+### WELCOME SEGMENT [1:00 - 5:00]
+
+HOST: For those new here, I'm [Name], and every [frequency] we [what you do on this broadcast].
+
+Today's show is packed:
+• [Segment 1 preview]
+• [Segment 2 preview]  
+• [Segment 3 preview]
+
+Smash that like button if you're excited! Let's get into it.
+
+---
+
+### SEGMENT 1: [Title] [5:00 - 20:00]
+
+HOST: First up, [segment description]...
+
+🎥 [Camera angle/graphic change]
+
+[Main content for segment]
+
+💬 CHAT CHECK: "What do you think about [related question]?"
+
+---
+
+### SEGMENT 2: [Title] [20:00 - 35:00]
+
+HOST: Moving on to [transition]...
+
+[Guest/demo/discussion]
+
+GUEST (if applicable): [Guest content]
+
+---
+
+### SEGMENT 3: [Title] [35:00 - 50:00]
+
+HOST: Now for [segment description]...
+
+[Interactive element: poll, Q&A, demo]
+
+---
+
+### LIVE Q&A [50:00 - 58:00]
+
+HOST: Let's answer YOUR questions!
+
+MODERATOR: [Feeds questions from chat]
+
+[Answer 3-5 questions]
+
+---
+
+### CLOSING [58:00 - 60:00]
+
+HOST: That's all we have time for today!
+
+**QUICK RECAP:**
+- [Key point 1]
+- [Key point 2]
+- [Key point 3]
+
+**NEXT BROADCAST:** [Date/time/topic]
+
+Don't forget to:
+✓ Subscribe/Follow
+✓ Ring the notification bell
+✓ Share with someone who'd enjoy this
+
+Thank you for watching! See you next time!
+
+🔴 END STREAM
+
+---
+
+### POST-BROADCAST
+
+- Review analytics
+- Clip highlights for social
+- Respond to unanswered questions
+- Archive recording`
+  },
+  {
+    id: 'podcast-interview',
+    name: 'Interview Podcast',
+    description: 'One-on-one interview format',
+    category: 'Podcast',
+    type: 'podcast' as const,
+    icon: Podcast,
+    content: `# Interview Episode: [Guest Name]
+
+---
+
+## PRE-INTERVIEW CHECKLIST
+
+☐ Guest bio confirmed
+☐ Recording software tested
+☐ Backup recording ready
+☐ Questions reviewed with guest
+☐ Release form signed
+
+---
+
+## INTRO
+
+HOST: Welcome to [Podcast Name]. I'm [Host], and today I have the privilege of speaking with [Guest Name], [their credentials/why they matter].
+
+[Guest], thank you for being here.
+
+GUEST: [Expected response/pleasantries]
+
+---
+
+## BACKGROUND [5 min]
+
+HOST: Let's start at the beginning. Tell us about your journey—how did you get to where you are today?
+
+[Follow-up questions based on response]
+
+---
+
+## DEEP DIVE [25 min]
+
+HOST: Now, I want to explore [main topic]. Can you walk us through [specific aspect]?
+
+**Key questions:**
+1. [Question about their expertise]
+2. [Question about challenges]
+3. [Question about lessons learned]
+4. [Question about future/what's next]
+
+---
+
+## RAPID ROUND [5 min]
+
+HOST: Quick questions, first thing that comes to mind:
+
+• Best advice you've received?
+• Biggest mistake that taught you something?
+• One book everyone should read?
+• What would you tell your younger self?
+
+---
+
+## WRAP UP
+
+HOST: This has been fantastic. Before we go, where can people find you?
+
+GUEST: [Their handles/website/etc.]
+
+HOST: Thank you so much for your time and insights. This was [Podcast Name]—see you next episode!`
   }
 ];
 
@@ -317,6 +752,70 @@ function useMediaLibrary() {
   return { videos, audios, isLoading, loadMedia, deleteMedia };
 }
 
+// Custom hook for managing shows/events
+function useShowEvents() {
+  const [events, setEvents] = useState<ShowEvent[]>([]);
+  
+  useEffect(() => {
+    const saved = localStorage.getItem('genieStudioEvents');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setEvents(parsed.map((e: any) => ({
+          ...e,
+          scheduledDate: new Date(e.scheduledDate)
+        })));
+      } catch (e) {
+        console.error('Failed to load events:', e);
+      }
+    }
+  }, []);
+
+  const saveEvents = (newEvents: ShowEvent[]) => {
+    setEvents(newEvents);
+    localStorage.setItem('genieStudioEvents', JSON.stringify(newEvents));
+  };
+
+  const addEvent = (event: Omit<ShowEvent, 'id'>) => {
+    const newEvent: ShowEvent = {
+      ...event,
+      id: crypto.randomUUID()
+    };
+    saveEvents([...events, newEvent]);
+    return newEvent;
+  };
+
+  const updateEvent = (id: string, updates: Partial<ShowEvent>) => {
+    const updated = events.map(e => e.id === id ? { ...e, ...updates } : e);
+    saveEvents(updated);
+  };
+
+  const deleteEvent = (id: string) => {
+    saveEvents(events.filter(e => e.id !== id));
+  };
+
+  const addParticipant = (eventId: string, participant: Omit<Participant, 'id'>) => {
+    const event = events.find(e => e.id === eventId);
+    if (event) {
+      const newParticipant: Participant = {
+        ...participant,
+        id: crypto.randomUUID()
+      };
+      updateEvent(eventId, {
+        participants: [...event.participants, newParticipant]
+      });
+      return newParticipant;
+    }
+    return null;
+  };
+
+  const upcomingEvents = events
+    .filter(e => e.scheduledDate > new Date() && e.status === 'scheduled')
+    .sort((a, b) => a.scheduledDate.getTime() - b.scheduledDate.getTime());
+
+  return { events, upcomingEvents, addEvent, updateEvent, deleteEvent, addParticipant };
+}
+
 export default function GenieStudio() {
   const [isStudioOpen, setIsStudioOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -338,6 +837,20 @@ export default function GenieStudio() {
   const [generatedMusicUrl, setGeneratedMusicUrl] = useState<string | null>(null);
   const musicAudioRef = useRef<HTMLAudioElement | null>(null);
   
+  // Show/Event State
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [selectedEventForInvite, setSelectedEventForInvite] = useState<ShowEvent | null>(null);
+  const [isCreateShowDialogOpen, setIsCreateShowDialogOpen] = useState(false);
+  const [newShowType, setNewShowType] = useState<'podcast' | 'webcast' | 'broadcast'>('podcast');
+  const [newShowTitle, setNewShowTitle] = useState('');
+  const [newShowDescription, setNewShowDescription] = useState('');
+  const [newShowDate, setNewShowDate] = useState('');
+  const [newShowTime, setNewShowTime] = useState('');
+  const [isSendingInvite, setIsSendingInvite] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteName, setInviteName] = useState('');
+  const [inviteRole, setInviteRole] = useState<'host' | 'co-host' | 'guest' | 'panelist'>('guest');
+  
   // TTS Hook
   const { 
     isGenerating: isTTSGenerating, 
@@ -350,6 +863,9 @@ export default function GenieStudio() {
   
   // Load real media from localStorage
   const { videos, audios, isLoading, loadMedia, deleteMedia } = useMediaLibrary();
+  
+  // Show events
+  const { events, upcomingEvents, addEvent, updateEvent, deleteEvent, addParticipant } = useShowEvents();
 
   // Set default voice when provider changes
   useEffect(() => {
@@ -380,7 +896,7 @@ export default function GenieStudio() {
   // Script Editor Functions
   const calculateReadingTime = (text: string) => {
     const words = text.trim().split(/\s+/).length;
-    const minutes = Math.ceil(words / 150); // Average speaking pace
+    const minutes = Math.ceil(words / 150);
     return { words, minutes };
   };
 
@@ -422,7 +938,6 @@ export default function GenieStudio() {
       return;
     }
     
-    // Use first 500 chars for preview
     const previewText = scriptContent.slice(0, 500);
     const result = await generateTTS({
       provider: selectedProvider,
@@ -497,11 +1012,9 @@ export default function GenieStudio() {
 
       const data = await response.json();
       
-      // Use data URI for proper base64 audio decoding
       const audioUrl = `data:audio/mpeg;base64,${data.audioContent}`;
       setGeneratedMusicUrl(audioUrl);
       
-      // Play automatically
       if (musicAudioRef.current) {
         musicAudioRef.current.src = audioUrl;
         musicAudioRef.current.play();
@@ -513,6 +1026,89 @@ export default function GenieStudio() {
       toast.error('Failed to generate music. Make sure ELEVENLABS_API_KEY is configured.');
     } finally {
       setIsGeneratingMusic(false);
+    }
+  };
+
+  // Show/Event Functions
+  const handleCreateShow = () => {
+    if (!newShowTitle.trim() || !newShowDate || !newShowTime) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const scheduledDate = new Date(`${newShowDate}T${newShowTime}`);
+    
+    const newEvent = addEvent({
+      type: newShowType,
+      title: newShowTitle,
+      description: newShowDescription,
+      scheduledDate,
+      participants: [],
+      status: 'scheduled'
+    });
+
+    toast.success(`${newShowType.charAt(0).toUpperCase() + newShowType.slice(1)} scheduled!`);
+    setIsCreateShowDialogOpen(false);
+    setNewShowTitle('');
+    setNewShowDescription('');
+    setNewShowDate('');
+    setNewShowTime('');
+    
+    // Load the appropriate template
+    const templateId = newShowType === 'podcast' ? 'podcast-episode' : 
+                       newShowType === 'webcast' ? 'webcast-webinar' : 'live-broadcast';
+    const template = SCRIPT_TEMPLATES.find(t => t.id === templateId);
+    if (template) {
+      setScriptContent(template.content.replace('[Episode Topic]', newShowTitle).replace('[Webcast Title]', newShowTitle).replace('[Broadcast Title]', newShowTitle));
+      setScriptName(`${newShowTitle} Script`);
+    }
+  };
+
+  const handleSendInvite = async () => {
+    if (!selectedEventForInvite || !inviteEmail.trim() || !inviteName.trim()) {
+      toast.error('Please fill in all invite details');
+      return;
+    }
+
+    setIsSendingInvite(true);
+    try {
+      // Add participant to event
+      const participant = addParticipant(selectedEventForInvite.id, {
+        name: inviteName,
+        email: inviteEmail,
+        role: inviteRole,
+        status: 'pending'
+      });
+
+      // Send email invite via edge function
+      const { error } = await supabase.functions.invoke('send-show-invite', {
+        body: {
+          to: inviteEmail,
+          participantName: inviteName,
+          role: inviteRole,
+          showType: selectedEventForInvite.type,
+          showTitle: selectedEventForInvite.title,
+          showDescription: selectedEventForInvite.description,
+          scheduledDate: selectedEventForInvite.scheduledDate.toISOString(),
+          hostName: 'Genie Studio'
+        }
+      });
+
+      if (error) {
+        console.error('Invite email error:', error);
+        toast.success('Participant added! (Email sending requires email configuration)');
+      } else {
+        toast.success(`Invite sent to ${inviteEmail}!`);
+      }
+
+      setInviteEmail('');
+      setInviteName('');
+      setInviteRole('guest');
+    } catch (err) {
+      console.error('Send invite error:', err);
+      toast.error('Failed to send invite');
+    } finally {
+      setIsSendingInvite(false);
     }
   };
 
@@ -542,6 +1138,22 @@ export default function GenieStudio() {
   }
 
   const { words, minutes } = calculateReadingTime(scriptContent);
+
+  const getShowTypeIcon = (type: 'podcast' | 'webcast' | 'broadcast') => {
+    switch (type) {
+      case 'podcast': return Podcast;
+      case 'webcast': return Tv;
+      case 'broadcast': return Radio;
+    }
+  };
+
+  const getShowTypeColor = (type: 'podcast' | 'webcast' | 'broadcast') => {
+    switch (type) {
+      case 'podcast': return 'from-purple-500 to-indigo-500';
+      case 'webcast': return 'from-blue-500 to-cyan-500';
+      case 'broadcast': return 'from-red-500 to-pink-500';
+    }
+  };
 
   return (
     <AppLayout>
@@ -581,11 +1193,11 @@ export default function GenieStudio() {
                   <Button 
                     size="lg" 
                     variant="outline"
-                    onClick={() => setActiveTab('library')}
+                    onClick={() => setIsCreateShowDialogOpen(true)}
                     className="border-border/50 hover:bg-muted/50"
                   >
-                    <Library className="h-5 w-5 mr-2" />
-                    My Library
+                    <Calendar className="h-5 w-5 mr-2" />
+                    Schedule Show
                   </Button>
                 </div>
               </div>
@@ -595,7 +1207,7 @@ export default function GenieStudio() {
                 {[
                   { label: 'Videos Created', value: String(videos.length), icon: Film, trend: 'Recorded' },
                   { label: 'Voiceovers', value: String(audios.length), icon: Mic, trend: 'Generated' },
-                  { label: 'Total Duration', value: '2.5h', icon: Clock, trend: 'Saved' },
+                  { label: 'Upcoming Shows', value: String(upcomingEvents.length), icon: Calendar, trend: 'Scheduled' },
                   { label: 'AI Credits Used', value: '847', icon: Zap, trend: '153 left' }
                 ].map((stat, i) => (
                   <div key={i} className="bg-card/50 backdrop-blur border border-border/50 rounded-xl p-4 hover:border-primary/30 transition-colors">
@@ -615,32 +1227,36 @@ export default function GenieStudio() {
         {/* Main Content */}
         <div className="max-w-7xl mx-auto px-6 py-8">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-            <TabsList className="bg-muted/50 border border-border/50 p-1">
-              <TabsTrigger value="dashboard" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <Layers className="h-4 w-4 mr-2" />
-                Dashboard
-              </TabsTrigger>
-              <TabsTrigger value="script-editor" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <PenTool className="h-4 w-4 mr-2" />
-                Script Editor
-              </TabsTrigger>
-              <TabsTrigger value="voice-generator" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <Mic className="h-4 w-4 mr-2" />
-                Voice Generator
-              </TabsTrigger>
-              <TabsTrigger value="music-studio" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <Music className="h-4 w-4 mr-2" />
-                Music Studio
-              </TabsTrigger>
-              <TabsTrigger value="library" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <Library className="h-4 w-4 mr-2" />
-                Library
-              </TabsTrigger>
-              <TabsTrigger value="templates" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <FileText className="h-4 w-4 mr-2" />
-                Templates
-              </TabsTrigger>
-            </TabsList>
+            {/* Scrollable Tabs */}
+            <ScrollArea className="w-full">
+              <TabsList className="bg-muted/50 border border-border/50 p-1 inline-flex w-auto min-w-full">
+                <TabsTrigger value="dashboard" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
+                  <Layers className="h-4 w-4 mr-2" />
+                  Dashboard
+                </TabsTrigger>
+                <TabsTrigger value="script-editor" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
+                  <PenTool className="h-4 w-4 mr-2" />
+                  Script Editor
+                </TabsTrigger>
+                <TabsTrigger value="voice-generator" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
+                  <Mic className="h-4 w-4 mr-2" />
+                  Voice Generator
+                </TabsTrigger>
+                <TabsTrigger value="music-studio" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
+                  <Music className="h-4 w-4 mr-2" />
+                  Music Studio
+                </TabsTrigger>
+                <TabsTrigger value="library" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
+                  <Library className="h-4 w-4 mr-2" />
+                  Library
+                </TabsTrigger>
+                <TabsTrigger value="templates" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Templates
+                </TabsTrigger>
+              </TabsList>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
 
             {/* Dashboard Tab */}
             <TabsContent value="dashboard" className="space-y-8 mt-0">
@@ -692,6 +1308,79 @@ export default function GenieStudio() {
                   </Card>
                 ))}
               </div>
+
+              {/* Upcoming Shows Section */}
+              {upcomingEvents.length > 0 && (
+                <Card className="border-border/50 bg-card/80 backdrop-blur">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-lg font-semibold flex items-center gap-2">
+                        <Calendar className="h-5 w-5 text-primary" />
+                        Upcoming Shows
+                      </h2>
+                      <Button variant="ghost" size="sm" onClick={() => setIsCreateShowDialogOpen(true)}>
+                        <Plus className="h-4 w-4 mr-1" />
+                        Schedule New
+                      </Button>
+                    </div>
+                    <div className="space-y-4">
+                      {upcomingEvents.slice(0, 3).map((event) => {
+                        const TypeIcon = getShowTypeIcon(event.type);
+                        return (
+                          <div 
+                            key={event.id}
+                            className="flex items-center gap-4 p-4 rounded-lg border border-border/50 hover:border-primary/30 hover:bg-muted/30 transition-all"
+                          >
+                            <div className={cn(
+                              "h-12 w-12 rounded-xl flex items-center justify-center",
+                              "bg-gradient-to-br", getShowTypeColor(event.type)
+                            )}>
+                              <TypeIcon className="h-6 w-6 text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium truncate">{event.title}</div>
+                              <div className="text-sm text-muted-foreground flex items-center gap-2">
+                                <Badge variant="outline" className="text-xs capitalize">
+                                  {event.type}
+                                </Badge>
+                                <span>•</span>
+                                <span>{event.scheduledDate.toLocaleDateString()} at {event.scheduledDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="flex -space-x-2">
+                                {event.participants.slice(0, 3).map((p, i) => (
+                                  <Avatar key={p.id} className="h-8 w-8 border-2 border-background">
+                                    <AvatarFallback className="text-xs bg-primary/10">
+                                      {p.name.split(' ').map(n => n[0]).join('')}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                ))}
+                                {event.participants.length > 3 && (
+                                  <div className="h-8 w-8 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs">
+                                    +{event.participants.length - 3}
+                                  </div>
+                                )}
+                              </div>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedEventForInvite(event);
+                                  setIsInviteDialogOpen(true);
+                                }}
+                              >
+                                <UserPlus className="h-4 w-4 mr-1" />
+                                Invite
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Two Column Layout */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1299,43 +1988,67 @@ export default function GenieStudio() {
                       </div>
                       <div>
                         <h2 className="text-xl font-semibold">Script Templates</h2>
-                        <p className="text-sm text-muted-foreground">Pre-built templates for demos, tutorials, and presentations</p>
+                        <p className="text-sm text-muted-foreground">Pre-built templates for videos, podcasts, webcasts & broadcasts</p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {SCRIPT_TEMPLATES.map((template) => (
-                      <Card 
-                        key={template.id}
-                        className="border-border/50 hover:border-primary/30 transition-all cursor-pointer group"
-                        onClick={() => handleLoadTemplate(template)}
+                  {/* Category Filter */}
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    {['All', 'Podcast', 'Webcast', 'Broadcast', 'Marketing', 'Education', 'Corporate'].map((cat) => (
+                      <Badge 
+                        key={cat}
+                        variant="outline"
+                        className="cursor-pointer hover:bg-primary/10 transition-colors"
                       >
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
-                              <FileText className="h-5 w-5 text-white" />
-                            </div>
-                            <Badge variant="outline" className="text-xs">
-                              {template.category}
-                            </Badge>
-                          </div>
-                          <h3 className="font-semibold mb-1">{template.name}</h3>
-                          <p className="text-sm text-muted-foreground mb-3">{template.description}</p>
-                          <p className="text-xs text-muted-foreground line-clamp-2 italic">
-                            "{template.content.slice(0, 100)}..."
-                          </p>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="w-full mt-3 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <PenTool className="h-4 w-4 mr-2" />
-                            Use Template
-                          </Button>
-                        </CardContent>
-                      </Card>
+                        {cat}
+                      </Badge>
                     ))}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {SCRIPT_TEMPLATES.map((template) => {
+                      const TemplateIcon = template.type === 'podcast' ? Podcast 
+                        : template.type === 'webcast' ? Tv 
+                        : template.type === 'broadcast' ? Radio 
+                        : FileText;
+                      const iconColor = template.type === 'podcast' ? 'from-purple-500 to-indigo-500'
+                        : template.type === 'webcast' ? 'from-blue-500 to-cyan-500'
+                        : template.type === 'broadcast' ? 'from-red-500 to-pink-500'
+                        : 'from-amber-500 to-orange-500';
+                      
+                      return (
+                        <Card 
+                          key={template.id}
+                          className="border-border/50 hover:border-primary/30 transition-all cursor-pointer group"
+                          onClick={() => handleLoadTemplate(template)}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between mb-3">
+                              <div className={cn("h-10 w-10 rounded-lg bg-gradient-to-br flex items-center justify-center", iconColor)}>
+                                <TemplateIcon className="h-5 w-5 text-white" />
+                              </div>
+                              <Badge variant="outline" className="text-xs">
+                                {template.category}
+                              </Badge>
+                            </div>
+                            <h3 className="font-semibold mb-1">{template.name}</h3>
+                            <p className="text-sm text-muted-foreground mb-3">{template.description}</p>
+                            <p className="text-xs text-muted-foreground line-clamp-2 italic">
+                              "{template.content.slice(0, 100)}..."
+                            </p>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="w-full mt-3 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <PenTool className="h-4 w-4 mr-2" />
+                              Use Template
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
@@ -1353,6 +2066,225 @@ export default function GenieStudio() {
             music={[]}
           />
         )}
+
+        {/* Create Show Dialog */}
+        <Dialog open={isCreateShowDialogOpen} onOpenChange={setIsCreateShowDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Schedule a Show
+              </DialogTitle>
+              <DialogDescription>
+                Create a new podcast, webcast, or broadcast event
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <Label>Show Type</Label>
+                <Select value={newShowType} onValueChange={(v: 'podcast' | 'webcast' | 'broadcast') => setNewShowType(v)}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="podcast">
+                      <div className="flex items-center gap-2">
+                        <Podcast className="h-4 w-4" />
+                        Podcast
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="webcast">
+                      <div className="flex items-center gap-2">
+                        <Tv className="h-4 w-4" />
+                        Webcast / Webinar
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="broadcast">
+                      <div className="flex items-center gap-2">
+                        <Radio className="h-4 w-4" />
+                        Live Broadcast
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="show-title">Title *</Label>
+                <Input
+                  id="show-title"
+                  value={newShowTitle}
+                  onChange={(e) => setNewShowTitle(e.target.value)}
+                  placeholder="Enter show title..."
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="show-description">Description</Label>
+                <Textarea
+                  id="show-description"
+                  value={newShowDescription}
+                  onChange={(e) => setNewShowDescription(e.target.value)}
+                  placeholder="Brief description of the show..."
+                  className="mt-1"
+                  rows={3}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="show-date">Date *</Label>
+                  <Input
+                    id="show-date"
+                    type="date"
+                    value={newShowDate}
+                    onChange={(e) => setNewShowDate(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="show-time">Time *</Label>
+                  <Input
+                    id="show-time"
+                    type="time"
+                    value={newShowTime}
+                    onChange={(e) => setNewShowTime(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsCreateShowDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleCreateShow} className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                <Calendar className="h-4 w-4 mr-2" />
+                Schedule Show
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Invite Participants Dialog */}
+        <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <UserPlus className="h-5 w-5" />
+                Invite Participants
+              </DialogTitle>
+              <DialogDescription>
+                {selectedEventForInvite && (
+                  <span>
+                    Invite guests to "{selectedEventForInvite.title}" ({selectedEventForInvite.type})
+                  </span>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              {/* Current Participants */}
+              {selectedEventForInvite && selectedEventForInvite.participants.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Current Participants</Label>
+                  <div className="space-y-2">
+                    {selectedEventForInvite.participants.map((p) => (
+                      <div key={p.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="text-xs">
+                            {p.name.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{p.name}</p>
+                          <p className="text-xs text-muted-foreground">{p.email}</p>
+                        </div>
+                        <Badge variant="outline" className="capitalize text-xs">
+                          {p.role}
+                        </Badge>
+                        <Badge 
+                          variant="outline" 
+                          className={cn(
+                            "text-xs",
+                            p.status === 'confirmed' && "bg-green-500/10 text-green-600",
+                            p.status === 'pending' && "bg-yellow-500/10 text-yellow-600",
+                            p.status === 'declined' && "bg-red-500/10 text-red-600"
+                          )}
+                        >
+                          {p.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* New Invite Form */}
+              <div className="border-t pt-4">
+                <Label className="mb-2 block">Add New Participant</Label>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="invite-name" className="text-xs">Name *</Label>
+                      <Input
+                        id="invite-name"
+                        value={inviteName}
+                        onChange={(e) => setInviteName(e.target.value)}
+                        placeholder="Full name"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="invite-role" className="text-xs">Role</Label>
+                      <Select value={inviteRole} onValueChange={(v: any) => setInviteRole(v)}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="host">Host</SelectItem>
+                          <SelectItem value="co-host">Co-Host</SelectItem>
+                          <SelectItem value="guest">Guest</SelectItem>
+                          <SelectItem value="panelist">Panelist</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="invite-email" className="text-xs">Email *</Label>
+                    <Input
+                      id="invite-email"
+                      type="email"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      placeholder="email@example.com"
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsInviteDialogOpen(false)}>
+                Close
+              </Button>
+              <Button 
+                onClick={handleSendInvite}
+                disabled={isSendingInvite || !inviteEmail.trim() || !inviteName.trim()}
+                className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white"
+              >
+                {isSendingInvite ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    Send Invite
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Hidden audio element for music */}
         <audio ref={musicAudioRef} className="hidden" />
