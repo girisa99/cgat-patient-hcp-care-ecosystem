@@ -724,55 +724,144 @@ export function ScriptEditorTab({
             </div>
           </div>
           
-          {/* Script Selection */}
-          <div className="grid md:grid-cols-2 gap-4 mb-6">
-            <div>
-              <Label className="text-xs text-muted-foreground mb-2 block">Video Scripts ({videoScripts.length})</Label>
-              <Select
-                value={selectedScriptId && videoScripts.find(s => s.id === selectedScriptId) ? selectedScriptId : ''}
-                onValueChange={(v) => { if (v) handleSelectScript(v); }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a video script..." />
-                </SelectTrigger>
-                <SelectContent>
+          {/* Script Library - Separated by Type */}
+          <Tabs defaultValue="video" className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <Label className="text-sm font-medium">Script Library</Label>
+              <TabsList className="grid grid-cols-2 w-[240px]">
+                <TabsTrigger value="video" className="flex items-center gap-2">
+                  <Video className="h-4 w-4" />
+                  Video ({videoScripts.length})
+                </TabsTrigger>
+                <TabsTrigger value="audio" className="flex items-center gap-2">
+                  <Mic className="h-4 w-4" />
+                  Audio ({audioScripts.length})
+                </TabsTrigger>
+              </TabsList>
+            </div>
+            
+            <TabsContent value="video" className="mt-0">
+              {videoScripts.length === 0 ? (
+                <div className="text-center py-8 border border-dashed rounded-lg bg-muted/30">
+                  <Video className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
+                  <p className="text-sm text-muted-foreground">No video scripts yet</p>
+                  <p className="text-xs text-muted-foreground">Create or upload a video script to get started</p>
+                </div>
+              ) : (
+                <div className="grid gap-2 max-h-[200px] overflow-y-auto pr-2">
                   {videoScripts.map(script => (
-                    <SelectItem key={script.id} value={script.id}>
-                      <div className="flex items-center gap-2">
-                        <Video className="h-4 w-4 text-red-500" />
-                        <span>{script.name}</span>
-                        {script.enhancedContent && <Badge variant="outline" className="text-xs">Enhanced</Badge>}
-                        {script.draftStatus === 'in_progress' && <Badge variant="secondary" className="text-xs">Draft</Badge>}
+                    <div 
+                      key={script.id}
+                      onClick={() => handleSelectScript(script.id)}
+                      className={cn(
+                        "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all",
+                        selectedScriptId === script.id 
+                          ? "border-red-500/50 bg-red-500/5" 
+                          : "border-border/50 hover:border-red-500/30 hover:bg-muted/50"
+                      )}
+                    >
+                      <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center shrink-0">
+                        <Video className="h-4 w-4 text-white" />
                       </div>
-                    </SelectItem>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{script.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {script.stats?.wordCount || script.content.split(/\s+/).length} words
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {script.enhancedContent && (
+                          <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/30">
+                            Enhanced
+                          </Badge>
+                        )}
+                        {script.draftStatus === 'in_progress' && (
+                          <Badge variant="secondary" className="text-xs">Draft</Badge>
+                        )}
+                        {script.hasVoiceover && (
+                          <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
+                            <Volume2 className="h-3 w-3" />
+                          </Badge>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteScript(script.id);
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                      </Button>
+                    </div>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground mb-2 block">Audio Scripts ({audioScripts.length})</Label>
-              <Select
-                value={selectedScriptId && audioScripts.find(s => s.id === selectedScriptId) ? selectedScriptId : ''}
-                onValueChange={(v) => { if (v) handleSelectScript(v); }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select an audio script..." />
-                </SelectTrigger>
-                <SelectContent>
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="audio" className="mt-0">
+              {audioScripts.length === 0 ? (
+                <div className="text-center py-8 border border-dashed rounded-lg bg-muted/30">
+                  <Mic className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
+                  <p className="text-sm text-muted-foreground">No audio scripts yet</p>
+                  <p className="text-xs text-muted-foreground">Create or upload an audio script to get started</p>
+                </div>
+              ) : (
+                <div className="grid gap-2 max-h-[200px] overflow-y-auto pr-2">
                   {audioScripts.map(script => (
-                    <SelectItem key={script.id} value={script.id}>
-                      <div className="flex items-center gap-2">
-                        <Mic className="h-4 w-4 text-purple-500" />
-                        <span>{script.name}</span>
-                        {script.enhancedContent && <Badge variant="outline" className="text-xs">Enhanced</Badge>}
-                        {script.draftStatus === 'in_progress' && <Badge variant="secondary" className="text-xs">Draft</Badge>}
+                    <div 
+                      key={script.id}
+                      onClick={() => handleSelectScript(script.id)}
+                      className={cn(
+                        "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all",
+                        selectedScriptId === script.id 
+                          ? "border-purple-500/50 bg-purple-500/5" 
+                          : "border-border/50 hover:border-purple-500/30 hover:bg-muted/50"
+                      )}
+                    >
+                      <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0">
+                        <Mic className="h-4 w-4 text-white" />
                       </div>
-                    </SelectItem>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{script.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {script.stats?.wordCount || script.content.split(/\s+/).length} words
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {script.enhancedContent && (
+                          <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/30">
+                            Enhanced
+                          </Badge>
+                        )}
+                        {script.draftStatus === 'in_progress' && (
+                          <Badge variant="secondary" className="text-xs">Draft</Badge>
+                        )}
+                        {script.hasVoiceover && (
+                          <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
+                            <Volume2 className="h-3 w-3" />
+                          </Badge>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteScript(script.id);
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                      </Button>
+                    </div>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
           
           {/* Resume Draft Banner */}
           {hasDraft && selectedScriptId && (
