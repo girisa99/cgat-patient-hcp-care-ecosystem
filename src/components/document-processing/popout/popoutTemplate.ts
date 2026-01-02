@@ -55,6 +55,12 @@ export function getPopoutHTML(config: PopoutConfig): string {
               <span id="loadingText">Checking camera permissions...</span>
             </div>
 
+            <!-- Countdown Overlay -->
+            <div class="countdown-overlay" id="countdownOverlay">
+              <div class="countdown-number" id="countdownNumber">5</div>
+              <div class="countdown-label">Get Ready...</div>
+            </div>
+
             <!-- Recording Indicator -->
             <div class="recording-indicator" id="recordingIndicator">
               <span class="dot"></span>
@@ -65,6 +71,15 @@ export function getPopoutHTML(config: PopoutConfig): string {
             <!-- Teleprompter -->
             <div class="teleprompter" id="teleprompter">
               <div class="teleprompter-text" id="teleprompterText"></div>
+              <div class="reading-cursor" id="readingCursor"></div>
+              <!-- Teleprompter Controls -->
+              <div id="teleprompterControls" class="teleprompter-controls">
+                <button class="teleprompter-control-btn" id="readingCursorToggle">📍 Cursor</button>
+                <button class="teleprompter-control-btn" id="speedDownBtn">−</button>
+                <span id="scrollSpeedValue">1.0x</span>
+                <button class="teleprompter-control-btn" id="speedUpBtn">+</button>
+              </div>
+              <div class="sync-active-indicator" id="syncActiveIndicator">🔄 Synced</div>
             </div>
 
             <!-- Logo Overlay (Draggable) -->
@@ -113,12 +128,37 @@ export function getPopoutHTML(config: PopoutConfig): string {
             <button class="control-btn-small" data-logo-size="large">L</button>
           </div>
 
-          <!-- Record Button -->
+          <!-- Record Button & Pause -->
           <div class="record-section">
             <button class="record-btn disabled" id="recordBtn" disabled>
               <span class="icon"></span>
               <span id="recordBtnText">Waiting for camera...</span>
             </button>
+            <button class="pause-btn" id="pauseBtn" style="display:none;">
+              ⏸️ Pause
+            </button>
+          </div>
+
+          <!-- Trim Controls (shown during recording) -->
+          <div class="trim-controls-bar" id="trimControlsBar" style="display:none;">
+            <span class="trim-label">Trim Last:</span>
+            <button class="trim-amount-btn" data-seconds="3">3s</button>
+            <button class="trim-amount-btn active" data-seconds="5">5s</button>
+            <button class="trim-amount-btn" data-seconds="10">10s</button>
+            <button class="undo-trim-btn" id="undoTrimBtn" disabled>↩️ Undo</button>
+            <span class="trim-info" id="trimInfo"></span>
+            <div class="trim-feedback" id="trimFeedback"></div>
+          </div>
+
+          <!-- Edit Panel (shown when paused) -->
+          <div class="edit-panel" id="editPanel" style="display:none;">
+            <h4>⏸️ Recording Paused</h4>
+            <p>You can trim the last few seconds or resume recording.</p>
+            <div class="edit-panel-actions">
+              <button class="edit-action-btn" onclick="trimLastSeconds(5)">✂️ Trim 5s</button>
+              <button class="edit-action-btn" onclick="trimLastSeconds(10)">✂️ Trim 10s</button>
+              <button class="edit-action-btn primary" onclick="resumeRecording()">▶️ Resume</button>
+            </div>
           </div>
 
           <!-- Sync Progress -->
@@ -142,8 +182,67 @@ export function getPopoutHTML(config: PopoutConfig): string {
               <option value="">None</option>
               ${scriptOptions}
             </select>
-            <button class="assign-btn" id="assignVoiceoverBtn" style="margin-top:8px;">
-              🔗 Assign Voiceover
+            <div class="script-actions">
+              <button class="assign-btn" id="assignVoiceoverBtn">
+                🔗 Assign Voiceover
+              </button>
+              <button class="analyze-btn" id="analyzeScriptBtn">
+                🔍 Analyze & Enhance
+              </button>
+            </div>
+            <div id="analysisStatus"></div>
+          </div>
+
+          <!-- Analysis Panel (hidden by default) -->
+          <div class="sidebar-card analysis-panel" id="analysisPanel" style="display:none;">
+            <h3>✨ Script Enhancement</h3>
+            <div id="changeCounts"></div>
+            <div id="analysisResults"></div>
+          </div>
+
+          <!-- Enhanced Downloads Section (hidden by default) -->
+          <div class="sidebar-card enhanced-downloads" id="enhancedDownloadsSection" style="display:none;">
+            <h3>📥 Enhanced Downloads</h3>
+            
+            <!-- Voice Provider Toggle -->
+            <div class="provider-toggle">
+              <button class="provider-btn active" data-provider="openai">
+                <span class="provider-name">OpenAI</span>
+                <span class="provider-desc">High quality TTS</span>
+              </button>
+              <button class="provider-btn" data-provider="elevenlabs">
+                <span class="provider-name">ElevenLabs</span>
+                <span class="provider-desc">Natural voices</span>
+              </button>
+            </div>
+
+            <!-- Voice Select -->
+            <select class="custom-select" id="enhancedVoiceSelect">
+              <option value="alloy">Alloy - Neutral, balanced</option>
+              <option value="echo">Echo - Male, warm</option>
+              <option value="fable">Fable - British, storyteller</option>
+              <option value="onyx">Onyx - Deep male</option>
+              <option value="nova">Nova - Female, energetic</option>
+              <option value="shimmer">Shimmer - Soft female</option>
+            </select>
+
+            <!-- Generate Button -->
+            <button class="generate-enhanced-btn" id="generateEnhancedAudioBtn">
+              🔊 Generate Audio
+            </button>
+            <div id="voiceGenStatus"></div>
+
+            <!-- Download Buttons (hidden until generated) -->
+            <div class="enhanced-download-btns" id="enhancedDownloadBtns" style="display:none;">
+              <button class="download-btn" id="previewEnhancedBtn">▶️ Preview</button>
+              <button class="download-btn" id="stopPreviewBtn">⏹️ Stop</button>
+              <button class="download-btn primary" id="downloadMp3Btn">📥 MP3</button>
+              <button class="download-btn" id="downloadWavBtn">📥 WAV</button>
+            </div>
+
+            <!-- Download Enhanced Script -->
+            <button class="download-script-btn" id="downloadEnhancedBtn">
+              📝 Download Enhanced Script
             </button>
           </div>
 
@@ -311,8 +410,40 @@ export function getPopoutHTML(config: PopoutConfig): string {
       </div>
     </div>
 
-    <!-- Toast Notification -->
+    <!-- Audio Options Dialog -->
+    <div class="audio-options-dialog" id="audioOptionsDialog">
+      <div class="dialog-content">
+        <h3>🎵 Audio Options</h3>
+        <p>Select audio to play during recording:</p>
+        <div class="audio-option-row">
+          <label>
+            <input type="checkbox" id="playVoiceoverOption" checked>
+            Play Voiceover
+          </label>
+        </div>
+        <div class="audio-option-row">
+          <label>
+            <input type="checkbox" id="playMusicOption" checked>
+            Play Background Music
+          </label>
+        </div>
+        <div class="audio-option-row">
+          <label>
+            <input type="checkbox" id="syncTeleprompterOption" checked>
+            Sync Teleprompter with Audio
+          </label>
+        </div>
+        <div class="dialog-actions">
+          <button class="dialog-btn secondary" id="cancelOptionsBtn">Cancel</button>
+          <button class="dialog-btn primary" id="confirmOptionsBtn">Start Recording</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notifications -->
     <div class="assignment-toast" id="assignmentToast"></div>
+    <div class="enhancement-toast" id="enhancementToast"></div>
+    <div class="voice-provider-toast" id="voiceProviderToast"></div>
 
     <!-- Hidden Data -->
     <script id="scriptsData" type="application/json">${scriptsJson}</script>
