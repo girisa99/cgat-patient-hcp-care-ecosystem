@@ -1024,32 +1024,74 @@ export default function GenieStudio() {
     await deleteDbScript(id);
   };
 
-  const saveVoiceover = (url: string, name: string) => {
-    const newVoiceover: MediaItem = {
-      id: crypto.randomUUID(),
-      name,
-      type: 'audio',
-      url,
-      timestamp: Date.now()
-    };
-    const updated = [...savedVoiceovers, newVoiceover];
-    setSavedVoiceovers(updated);
-    localStorage.setItem('genieStudioVoiceovers', JSON.stringify(updated));
-    toast.success('Voiceover saved!');
+  // Save voiceover to database (generated_media table)
+  const saveVoiceover = async (url: string, name: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Please log in to save voiceovers');
+        return;
+      }
+      
+      // Generate a unique path for the file reference
+      const uniquePath = `voiceovers/${user.id}/${Date.now()}_${name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      
+      const { error } = await supabase
+        .from('generated_media')
+        .insert({
+          user_id: user.id,
+          name,
+          file_type: 'audio',
+          file_url: url,
+          source: 'upload',
+          storage_bucket: 'genie-media',
+          storage_path: uniquePath,
+          metadata: { type: 'voiceover', uploadedAs: 'voiceover' }
+        });
+      
+      if (error) throw error;
+      
+      toast.success('Voiceover saved!');
+      refreshDbMedia();
+    } catch (err) {
+      console.error('Failed to save voiceover:', err);
+      toast.error('Failed to save voiceover');
+    }
   };
 
-  const saveMusicTrack = (url: string, name: string) => {
-    const newMusic: MediaItem = {
-      id: crypto.randomUUID(),
-      name,
-      type: 'audio',
-      url,
-      timestamp: Date.now()
-    };
-    const updated = [...savedMusic, newMusic];
-    setSavedMusic(updated);
-    localStorage.setItem('genieStudioMusic', JSON.stringify(updated));
-    toast.success('Music saved!');
+  // Save music track to database (generated_media table)
+  const saveMusicTrack = async (url: string, name: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Please log in to save music');
+        return;
+      }
+      
+      // Generate a unique path for the file reference
+      const uniquePath = `music/${user.id}/${Date.now()}_${name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      
+      const { error } = await supabase
+        .from('generated_media')
+        .insert({
+          user_id: user.id,
+          name,
+          file_type: 'audio',
+          file_url: url,
+          source: 'upload',
+          storage_bucket: 'genie-media',
+          storage_path: uniquePath,
+          metadata: { type: 'instrumental', uploadedAs: 'music' }
+        });
+      
+      if (error) throw error;
+      
+      toast.success('Music saved!');
+      refreshDbMedia();
+    } catch (err) {
+      console.error('Failed to save music:', err);
+      toast.error('Failed to save music');
+    }
   };
   
   // TTS Hook
@@ -1076,20 +1118,27 @@ export default function GenieStudio() {
   } = useGenieMediaLibrary();
   
   // Merge localStorage voiceovers with database voiceovers (DB takes priority)
+  // Preserve metadata for proper categorization and teleprompter sync
   const mergedVoiceovers = [
     ...dbVoiceovers.map(v => ({
       id: v.id,
       name: v.name,
       type: 'audio' as const,
       url: v.url,
-      timestamp: v.timestamp || Date.now()
+      timestamp: v.timestamp || Date.now(),
+      scriptText: v.scriptText,
+      scriptType: v.scriptType,
+      metadataType: v.metadataType
     })),
     ...dbTtsFiles.map(v => ({
       id: v.id,
       name: v.name,
       type: 'audio' as const,
       url: v.url,
-      timestamp: v.timestamp || Date.now()
+      timestamp: v.timestamp || Date.now(),
+      scriptText: v.scriptText,
+      scriptType: v.scriptType,
+      metadataType: v.metadataType || 'tts'
     })),
     ...savedVoiceovers.filter(sv => 
       !dbVoiceovers.some(dv => dv.id === sv.id) && 
@@ -2917,10 +2966,10 @@ export default function GenieStudio() {
               id: v.id, 
               name: v.name, 
               url: v.url || '',
-              // Flag which voiceovers came from database
-              scriptText: undefined,
-              scriptType: undefined,
-              metadataType: undefined
+              // Pass metadata for teleprompter sync and filtering
+              scriptText: (v as any).scriptText || null,
+              scriptType: (v as any).scriptType || null,
+              metadataType: (v as any).metadataType || null
             }))}
             music={mergedMusic.map(m => ({ id: m.id, name: m.name, url: m.url || '' }))}
           />

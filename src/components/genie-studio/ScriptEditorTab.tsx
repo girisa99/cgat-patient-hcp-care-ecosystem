@@ -40,7 +40,8 @@ import {
   Trash2,
   Plus,
   Edit3,
-  FileCheck
+  FileCheck,
+  Upload
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -135,12 +136,16 @@ export function ScriptEditorTab({
   onSaveVoiceover,
   savedVoiceovers
 }: ScriptEditorTabProps) {
+  // Refs
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   // Script Selection & Content State
   const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
   const [scriptName, setScriptName] = useState('');
   const [scriptContent, setScriptContent] = useState('');
   const [scriptType, setScriptType] = useState<'video' | 'audio'>('video');
   const [isNewScript, setIsNewScript] = useState(true);
+  const [isUploadingScript, setIsUploadingScript] = useState(false);
   
   // Enhanced Content State
   const [originalContent, setOriginalContent] = useState<string | null>(null);
@@ -252,6 +257,52 @@ export function ScriptEditorTab({
     setAnalysisResult(null);
     setEnhancementChanges([]);
   };
+  
+  // Handle script file upload (.txt, .md)
+  const handleScriptFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    // Validate file type
+    const validExtensions = ['.txt', '.md'];
+    const hasValidExtension = validExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+    
+    if (!hasValidExtension && file.type !== 'text/plain') {
+      toast.error('Please upload a .txt or .md file');
+      return;
+    }
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File must be less than 5MB');
+      return;
+    }
+    
+    setIsUploadingScript(true);
+    
+    try {
+      const content = await file.text();
+      const fileName = file.name.replace(/\.(txt|md)$/i, '');
+      
+      setScriptName(fileName);
+      setScriptContent(content);
+      setOriginalContent(content);
+      setIsNewScript(true);
+      setSelectedScriptId(null);
+      setEnhancedContent(null);
+      setCleanTTSContent(null);
+      
+      toast.success(`Loaded "${fileName}" - ${content.split(/\s+/).filter(w => w).length} words`);
+    } catch (error) {
+      console.error('Error reading script file:', error);
+      toast.error('Failed to read file');
+    } finally {
+      setIsUploadingScript(false);
+      if (event.target) {
+        event.target.value = '';
+      }
+    }
+  }, []);
   
   // Set default TTS voice based on provider
   useEffect(() => {
@@ -645,10 +696,32 @@ export function ScriptEditorTab({
                 <p className="text-sm text-muted-foreground">Create, analyze, and enhance your scripts</p>
               </div>
             </div>
-            <Button onClick={handleNewScript} variant="outline" size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              New Script
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button onClick={handleNewScript} variant="outline" size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                New Script
+              </Button>
+              <Button 
+                onClick={() => fileInputRef.current?.click()} 
+                variant="outline" 
+                size="sm"
+                disabled={isUploadingScript}
+              >
+                {isUploadingScript ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4 mr-2" />
+                )}
+                Upload Script
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".txt,.md,text/plain"
+                onChange={handleScriptFileUpload}
+                className="hidden"
+              />
+            </div>
           </div>
           
           {/* Script Selection */}
