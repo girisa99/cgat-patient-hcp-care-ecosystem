@@ -110,32 +110,35 @@ export function openPopoutRecordingStudio(options: OpenPopoutOptions): Window | 
     const htmlContent = generatePopoutHTML(config);
     console.log('📝 Generated HTML length:', htmlContent.length);
 
-    // Create a Blob URL - this gives the popup a proper origin for permissions
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const blobUrl = URL.createObjectURL(blob);
-    
-    console.log('🪟 Opening popup window with blob URL...');
+    // Use about:blank and document.write - this inherits the parent origin
+    // which is CRITICAL for camera permissions to work
+    console.log('🪟 Opening popup window...');
     const popoutWindow = window.open(
-      blobUrl,
+      '',  // Empty string = about:blank, inherits origin
       'recording-studio',
       'width=1400,height=900,left=100,top=50,toolbar=no,menubar=no,scrollbars=no,resizable=yes'
     );
 
     if (!popoutWindow) {
       console.error('❌ Pop-up blocked by browser - window.open returned null');
-      URL.revokeObjectURL(blobUrl);
       onError?.('Pop-up blocked. Please allow pop-ups for this site.');
       return null;
     }
 
-    console.log('✅ Pop-out window opened successfully');
-    
-    // Clean up blob URL after window loads
-    popoutWindow.addEventListener('load', () => {
-      console.log('✅ Popup loaded, revoking blob URL');
-      // Don't revoke immediately - give it a moment
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
-    });
+    console.log('✅ Pop-out window opened, origin:', popoutWindow.location.origin);
+
+    // Write content to the popup window
+    // IMPORTANT: We need to write and close the document in the same tick
+    try {
+      popoutWindow.document.open();
+      popoutWindow.document.write(htmlContent);
+      popoutWindow.document.close();
+      console.log('✅ Content written to pop-out window successfully');
+    } catch (writeErr) {
+      console.error('❌ Error writing to popup:', writeErr);
+      onError?.('Failed to initialize recording studio window');
+      return null;
+    }
     
     onSuccess?.();
     return popoutWindow;

@@ -142,36 +142,55 @@ ${htmlContent}
     // =====================================================
     // MODULAR POPOUT - FULLY VALIDATED
     // =====================================================
-    console.log('[Popout] Script starting...');
+    console.log('[Popout] Script tag executing...');
+    console.log('[Popout] Document readyState:', document.readyState);
+    console.log('[Popout] Location origin:', window.location.origin);
+    console.log('[Popout] Location href:', window.location.href);
     
-    // Wrap everything in DOMContentLoaded to ensure DOM is ready
+    // Check if we have access to mediaDevices
+    console.log('[Popout] navigator.mediaDevices available:', !!navigator.mediaDevices);
+    if (navigator.mediaDevices) {
+      console.log('[Popout] getUserMedia available:', !!navigator.mediaDevices.getUserMedia);
+    }
+    
+    // Wrap everything to ensure DOM is ready
     function initializePopout() {
-      console.log('[Popout] DOM ready, initializing modules...');
+      console.log('[Popout] initializePopout called, readyState:', document.readyState);
+      
+      // Double-check video element exists
+      var videoCheck = document.getElementById('videoPreview');
+      console.log('[Popout] Video element exists:', !!videoCheck);
       
       try {
 ${scripts}
       } catch (err) {
         console.error('[Popout] FATAL: Script loading error:', err);
-        document.body.innerHTML = '<div style="padding:20px;color:red;font-family:sans-serif;">' +
-          '<h1>Loading Error</h1>' +
-          '<p>' + err.message + '</p>' +
-          '<pre>' + err.stack + '</pre>' +
-        '</div>';
+        var errorDiv = document.createElement('div');
+        errorDiv.style.cssText = 'padding:20px;color:red;font-family:sans-serif;position:fixed;top:0;left:0;right:0;background:white;z-index:9999;';
+        errorDiv.innerHTML = '<h1>Loading Error</h1><p>' + err.message + '</p><pre>' + err.stack + '</pre>';
+        document.body.insertBefore(errorDiv, document.body.firstChild);
       }
     }
     
-    // Use DOMContentLoaded if document is still loading, otherwise init immediately
-    if (document.readyState === 'loading') {
-      console.log('[Popout] Waiting for DOM...');
-      document.addEventListener('DOMContentLoaded', initializePopout);
-    } else {
-      console.log('[Popout] DOM already ready');
+    // Always wait for window.onload with document.write content
+    // This ensures the full document is parsed
+    window.onload = function() {
+      console.log('[Popout] window.onload fired');
       initializePopout();
-    }
-
-    // Validation check
+    };
+    
+    // Fallback: if onload doesn't fire within 2 seconds, try anyway
     setTimeout(function() {
-      console.log('[Popout] ===== INITIALIZATION VALIDATION =====');
+      if (!window._popoutInitialized) {
+        console.log('[Popout] Fallback initialization after timeout');
+        initializePopout();
+        window._popoutInitialized = true;
+      }
+    }, 2000);
+
+    // Validation check - runs after a delay to check everything initialized
+    setTimeout(function() {
+      console.log('[Popout] ===== INITIALIZATION VALIDATION (3s) =====');
       
       // Check critical elements exist
       var criticalElements = [
@@ -189,49 +208,40 @@ ${scripts}
       
       if (missingElements.length > 0) {
         console.error('[Popout] Missing critical elements:', missingElements.join(', '));
+        if (typeof showStatus === 'function') {
+          showStatus('Missing elements: ' + missingElements.join(', '), 'error');
+        }
       } else {
         console.log('[Popout] ✅ All critical elements found');
       }
       
-      // Check critical functions
-      var modules = [
-        { name: 'Camera Init', check: typeof mediaStream !== 'undefined' },
-        { name: 'Recording Enhancements', check: typeof startCountdown === 'function' },
-        { name: 'Pause/Resume', check: typeof pauseRecording === 'function' },
-        { name: 'Audio Playback', check: typeof startAudioPlayback === 'function' },
-        { name: 'Stop All Audio', check: typeof stopAllAudio === 'function' },
-        { name: 'Camera Toggle', check: typeof toggleCamera === 'function' },
-        { name: 'Mic Toggle', check: typeof toggleMicrophone === 'function' },
-        { name: 'Background Blur', check: typeof toggleBackgroundBlur === 'function' },
-        { name: 'Recording Library', check: typeof saveRecordingToLibrary === 'function' },
-        { name: 'Library UI', check: typeof updateLibraryUI === 'function' }
-      ];
+      // Check critical functions/variables
+      console.log('[Popout] Checking functions/variables...');
+      console.log('[Popout] mediaStream defined:', typeof mediaStream !== 'undefined');
+      console.log('[Popout] mediaStream value:', mediaStream);
+      console.log('[Popout] initCamera:', typeof initCamera);
+      console.log('[Popout] toggleCamera:', typeof toggleCamera);
+      console.log('[Popout] showStatus:', typeof showStatus);
       
-      var passedCount = 0;
-      var failedModules = [];
-      modules.forEach(function(m) {
-        if (m.check) {
-          passedCount++;
+      // Check camera status
+      if (typeof mediaStream !== 'undefined') {
+        if (mediaStream) {
+          console.log('[Popout] ✅ Camera stream is ACTIVE');
+          console.log('[Popout] Video tracks:', mediaStream.getVideoTracks().length);
+          console.log('[Popout] Audio tracks:', mediaStream.getAudioTracks().length);
         } else {
-          failedModules.push(m.name);
+          console.log('[Popout] ⚠️ mediaStream is null - camera may have failed or permission denied');
+          if (typeof showStatus === 'function') {
+            showStatus('Camera not initialized - check browser permissions', 'error');
+          }
         }
-      });
-      
-      console.log('[Popout] ===== ' + passedCount + '/' + modules.length + ' MODULES LOADED =====');
-      if (failedModules.length > 0) {
-        console.warn('[Popout] Missing modules:', failedModules.join(', '));
-      }
-      
-      // Verify camera is working
-      if (typeof mediaStream !== 'undefined' && mediaStream) {
-        console.log('[Popout] ✅ Camera stream active');
       } else {
-        console.log('[Popout] ⏳ Camera initializing (or permission pending)...');
+        console.error('[Popout] ❌ mediaStream variable not defined!');
       }
       
-    }, 1000);
+    }, 3000);
     
-    console.log('[Popout] All modules loaded');
+    console.log('[Popout] Script tag complete, waiting for onload...');
   </script>
 </body>
 </html>`;
