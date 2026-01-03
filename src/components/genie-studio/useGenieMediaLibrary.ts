@@ -93,23 +93,43 @@ export function useGenieMediaLibrary(): GenieMediaLibrary {
         
         // Determine the correct URL to use
         // Priority: 
-        // 1. If file_url starts with http, use it directly
-        // 2. If storage_path exists, construct public URL from storage
+        // 1. If storage_path exists, ALWAYS construct public URL from storage (most reliable)
+        // 2. If file_url starts with http, use it directly
         // 3. Fall back to file_url (may be blob, but at least we have something)
         let finalUrl = item.file_url || undefined;
         
-        if (finalUrl && (finalUrl.startsWith('blob:') || finalUrl.startsWith('data:'))) {
-          // Blob/data URLs won't work in pop-out windows - try to use storage path
-          if (item.storage_path && item.storage_bucket) {
-            const { data: { publicUrl } } = supabase.storage
-              .from(item.storage_bucket)
-              .getPublicUrl(item.storage_path);
-            finalUrl = publicUrl;
-            console.log(`📀 Fixed blob URL for ${item.name}, using storage:`, finalUrl);
-          } else {
-            console.warn(`📀 Warning: ${item.name} has blob URL but no storage path`);
+        // Always prefer storage URL when available - blob URLs won't work across sessions
+        if (item.storage_path) {
+          // Try multiple bucket names as fallbacks (handle legacy data inconsistencies)
+          const bucketCandidates = [
+            item.storage_bucket,
+            'generated-media',
+            'generated-audio',
+            'genie-media'
+          ].filter(Boolean);
+          
+          for (const bucket of bucketCandidates) {
+            try {
+              const { data: { publicUrl } } = supabase.storage
+                .from(bucket!)
+                .getPublicUrl(item.storage_path);
+              if (publicUrl) {
+                finalUrl = publicUrl;
+                console.log(`📀 Using storage URL for ${item.name}:`, finalUrl.substring(0, 60));
+                break;
+              }
+            } catch (e) {
+              console.warn(`📀 Bucket ${bucket} not accessible for ${item.name}`);
+            }
           }
+        } else if (finalUrl && (finalUrl.startsWith('blob:') || finalUrl.startsWith('data:'))) {
+          console.warn(`📀 Warning: ${item.name} has blob URL but no storage path - file may not be accessible`);
         }
+        
+        // Determine metadataType with better fallback logic
+        const metadataType = metadata.type || metadata.uploadedAs || undefined;
+        
+        console.log(`📀 Loaded audio file: ${item.name}, metadataType: ${metadataType}, hasUrl: ${!!finalUrl}`);
         
         return {
           id: item.id,
@@ -119,7 +139,7 @@ export function useGenieMediaLibrary(): GenieMediaLibrary {
           scriptText: metadata.scriptText as string | undefined,
           originalScript: metadata.originalScript as string | undefined,
           scriptType: metadata.scriptType as VoiceoverData['scriptType'],
-          metadataType: (metadata.type || metadata.uploadedAs) as string | undefined
+          metadataType: metadataType
         };
       });
 
