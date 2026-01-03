@@ -10,7 +10,7 @@ const corsHeaders = {
 const PROVIDERS = {
   gemini: {
     name: "Google Gemini",
-    model: "gemini-2.5-flash-preview-05-20",
+    model: "gemini-2.0-flash",
     getApiKey: () => Deno.env.get("GOOGLE_API_KEY") || Deno.env.get("GEMINI_API_KEY"),
   },
   openai: {
@@ -159,7 +159,7 @@ async function callOpenAI(
         { role: "user", content: userPrompt },
       ],
       temperature: 0.7,
-      max_tokens: 8192,
+      max_tokens: 16384,
     }),
   });
 
@@ -195,7 +195,7 @@ async function callGemini(
         contents: [{ parts: [{ text: fullPrompt }] }],
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 8192,
+          maxOutputTokens: 16384,
         },
       }),
     }
@@ -229,7 +229,7 @@ async function callClaude(
     },
     body: JSON.stringify({
       model,
-      max_tokens: 8192,
+      max_tokens: 16384,
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
     }),
@@ -411,8 +411,10 @@ Return this JSON structure:
 
 Include 10-15 specific changes showing before/after. Prioritize engagement and conversational improvements.
 
+IMPORTANT: Return the COMPLETE enhanced script. Do not truncate or summarize. Include every section from start to finish.
+
 Script to enhance:
-${scriptContent.substring(0, 6000)}`;
+${scriptContent}`;
     }
 
     let content: string | undefined;
