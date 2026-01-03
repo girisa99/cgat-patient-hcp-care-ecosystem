@@ -62,6 +62,7 @@ import { cn } from '@/lib/utils';
 import { RecordingStudio } from '@/components/document-processing/RecordingStudio';
 import { toast } from 'sonner';
 import { useTTSGeneration, OPENAI_VOICES, ELEVENLABS_VOICES } from '@/components/document-processing/RecordingStudio/hooks/useTTSGeneration';
+import { useMediaProject } from '@/components/document-processing/RecordingStudio/hooks/useMediaProject';
 import { ScriptEditorTab } from '@/components/genie-studio/ScriptEditorTab';
 import { useGenieMediaLibrary } from '@/components/genie-studio/useGenieMediaLibrary';
 import { useGenieScripts, type GenieScript } from '@/components/genie-studio/useGenieScripts';
@@ -929,6 +930,9 @@ export default function GenieStudio() {
     refresh: refreshScripts
   } = useGenieScripts();
   
+  // Media projects from Recording Studio
+  const { projects: mediaProjects, isLoading: isProjectsLoading } = useMediaProject();
+  
   // Convert GenieScript to SavedScript format for compatibility
   const savedScripts: SavedScript[] = dbScripts.map(s => ({
     id: s.id,
@@ -1770,7 +1774,7 @@ export default function GenieStudio() {
                   { label: 'Upcoming Shows', value: String(upcomingEvents.length), icon: Calendar, trend: 'Scheduled' },
                   { label: 'Video Scripts', value: String(videoScripts.length), icon: Video, trend: 'Created' },
                   { label: 'Audio Scripts', value: String(audioScripts.length), icon: Headphones, trend: 'Created' },
-                  { label: 'Total Projects', value: String(videos.length + savedScripts.length + savedVoiceovers.length), icon: Layers, trend: 'All media' }
+                  { label: 'Projects', value: String(mediaProjects.length), icon: Layers, trend: 'Active' }
                 ].map((stat, i) => (
                   <div key={i} className="bg-card/50 backdrop-blur border border-border/50 rounded-xl p-4 hover:border-primary/30 transition-colors">
                     <div className="flex items-center gap-2 text-muted-foreground mb-1">
