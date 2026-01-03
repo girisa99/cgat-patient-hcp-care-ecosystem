@@ -122,33 +122,32 @@ export function AudioAssetSelector({
       .map(v => ({ id: v.id, name: v.name, url: v.url || '' }))
   ];
 
-  // Debug logging
+  // Debug logging - comprehensive
   useEffect(() => {
-    console.log('[AudioAssetSelector] Input data:', {
-      rawVoiceovers: voiceovers.map(v => ({ 
-        id: v.id.substring(0, 8),
-        name: v.name, 
-        scriptType: v.scriptType, 
-        metadataType: v.metadataType,
-        hasUrl: !!v.url
-      })),
-      rawTtsFiles: ttsFiles.map(f => ({
-        id: f.id.substring(0, 8),
-        name: f.name,
-        metadataType: f.metadataType
-      })),
-      rawMusicList: musicList.length
+    console.log('[AudioAssetSelector] === DATA ANALYSIS ===');
+    console.log('[AudioAssetSelector] Raw voiceovers input:', voiceovers.length, 'files');
+    voiceovers.forEach((v, i) => {
+      console.log(`  [${i}] ${v.name.substring(0, 40)}... | scriptType: ${v.scriptType || 'null'} | metadataType: ${v.metadataType || 'null'} | hasUrl: ${!!v.url}`);
     });
     
-    console.log('[AudioAssetSelector] After filtering:', {
-      totalVoiceoversInput: voiceovers.length,
-      actualVoiceovers: actualVoiceovers.length,
-      actualVoiceoversDetails: actualVoiceovers.map(v => ({ id: v.id.substring(0, 8), name: v.name })),
-      actualTTSFiles: actualTTSFiles.length,
-      actualTTSDetails: actualTTSFiles.map(f => ({ id: f.id.substring(0, 8), name: f.name })),
-      instrumentalFiles: instrumentalFiles.length,
-      actualMusic: actualMusic.length,
+    console.log('[AudioAssetSelector] Raw ttsFiles input:', ttsFiles.length, 'files');
+    ttsFiles.forEach((f, i) => {
+      console.log(`  [${i}] ${f.name.substring(0, 40)}... | metadataType: ${f.metadataType || 'null'} | hasUrl: ${!!f.url}`);
     });
+    
+    console.log('[AudioAssetSelector] Raw musicList input:', musicList.length, 'files');
+    
+    console.log('[AudioAssetSelector] === FILTERED RESULTS ===');
+    console.log('  Actual Voiceovers:', actualVoiceovers.length);
+    actualVoiceovers.forEach(v => console.log(`    - ${v.name}`));
+    
+    console.log('  Actual TTS Files:', actualTTSFiles.length);
+    actualTTSFiles.forEach(f => console.log(`    - ${f.name}`));
+    
+    console.log('  Instrumental Music:', instrumentalFiles.length);
+    instrumentalFiles.forEach(m => console.log(`    - ${m.name}`));
+    
+    console.log('  Combined Music (with musicList):', actualMusic.length);
   }, [voiceovers, ttsFiles, musicList, actualVoiceovers, actualTTSFiles, instrumentalFiles, actualMusic]);
 
   // Download helper
