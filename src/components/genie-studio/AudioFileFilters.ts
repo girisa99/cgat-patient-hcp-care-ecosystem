@@ -8,7 +8,8 @@ export interface VoiceoverData {
   name: string;
   url?: string;
   timestamp?: number;
-  scriptText?: string;
+  scriptText?: string; // Enhanced/clean script used for TTS
+  originalScript?: string; // Original script before enhancement
   scriptType?: 'video' | 'audio' | 'tts' | 'voiceover' | 'narration' | 'instrumental' | 'music';
   metadataType?: string;
 }

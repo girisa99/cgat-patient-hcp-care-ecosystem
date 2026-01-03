@@ -67,6 +67,7 @@ import { toast } from 'sonner';
 import { useTTSGeneration, OPENAI_VOICES, ELEVENLABS_VOICES } from '@/components/document-processing/RecordingStudio/hooks/useTTSGeneration';
 import { useMediaProject } from '@/components/document-processing/RecordingStudio/hooks/useMediaProject';
 import { ScriptEditorTab } from '@/components/genie-studio/ScriptEditorTab';
+import { SavedAudioCard } from '@/components/genie-studio/SavedAudioCard';
 import { useGenieMediaLibrary } from '@/components/genie-studio/useGenieMediaLibrary';
 import { useGenieScripts, type GenieScript } from '@/components/genie-studio/useGenieScripts';
 import { supabase } from '@/integrations/supabase/client';
@@ -80,6 +81,10 @@ interface MediaItem {
   timestamp: number;
   duration?: number;
   size?: number;
+  scriptText?: string;
+  originalScript?: string;
+  scriptType?: string;
+  metadataType?: string;
 }
 
 // Types for saved scripts - Extended for full script workflow
@@ -1058,7 +1063,12 @@ export default function GenieStudio() {
   };
 
   // Save voiceover to database (generated_media table) - handles blob URLs and data URIs
-  const saveVoiceover = async (url: string, name: string, audioBlob?: Blob) => {
+  const saveVoiceover = async (
+    url: string, 
+    name: string, 
+    audioBlob?: Blob,
+    scriptMeta?: { originalScript?: string; scriptText?: string; scriptType?: string }
+  ) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -1130,7 +1140,14 @@ export default function GenieStudio() {
           source: 'tts',
           storage_bucket: 'genie-media',
           storage_path: uniquePath,
-          metadata: { type: 'voiceover', uploadedAs: 'voiceover', generatedAt: new Date().toISOString() }
+          metadata: { 
+            type: 'voiceover', 
+            uploadedAs: 'voiceover', 
+            generatedAt: new Date().toISOString(),
+            scriptText: scriptMeta?.scriptText,
+            originalScript: scriptMeta?.originalScript,
+            scriptType: scriptMeta?.scriptType || 'tts'
+          }
         });
       
       if (error) throw error;
@@ -1211,6 +1228,7 @@ export default function GenieStudio() {
       url: v.url,
       timestamp: v.timestamp || Date.now(),
       scriptText: v.scriptText,
+      originalScript: v.originalScript,
       scriptType: v.scriptType,
       metadataType: v.metadataType
     })),
@@ -1221,6 +1239,7 @@ export default function GenieStudio() {
       url: v.url,
       timestamp: v.timestamp || Date.now(),
       scriptText: v.scriptText,
+      originalScript: v.originalScript,
       scriptType: v.scriptType,
       metadataType: v.metadataType || 'tts'
     })),
@@ -2160,8 +2179,8 @@ export default function GenieStudio() {
                 onSaveScript={(script) => saveScript(script)}
                 onDeleteScript={deleteScript}
                 onUpdateScript={updateScript}
-                onSaveVoiceover={(url, name, scriptId, audioBlob) => {
-                  saveVoiceover(url, name, audioBlob);
+                onSaveVoiceover={(url, name, scriptId, audioBlob, scriptMeta) => {
+                  saveVoiceover(url, name, audioBlob, scriptMeta);
                   if (scriptId) {
                     updateScript(scriptId, { hasVoiceover: true });
                   }
@@ -2664,49 +2683,27 @@ export default function GenieStudio() {
                           voiceover.name?.toLowerCase().includes('recording');
                         
                         return (
-                          <div 
+                          <SavedAudioCard
                             key={voiceover.id}
-                            className="flex items-center gap-4 p-3 rounded-lg border border-border/50 hover:border-primary/30 transition-all"
-                          >
-                            <div className={cn(
-                              "h-10 w-10 rounded-lg flex items-center justify-center",
-                              isTTS ? "bg-green-500/10" : isVO ? "bg-blue-500/10" : "bg-purple-500/10"
-                            )}>
-                              {isTTS ? (
-                                <Volume2 className="h-5 w-5 text-green-500" />
-                              ) : isVO ? (
-                                <Mic className="h-5 w-5 text-blue-500" />
-                              ) : (
-                                <Headphones className="h-5 w-5 text-purple-500" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <p className="font-medium truncate">{voiceover.name}</p>
-                                <Badge variant="outline" className="text-xs shrink-0">
-                                  {isTTS ? 'TTS' : isVO ? 'Voiceover' : 'Audio'}
-                                </Badge>
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                {new Date(voiceover.timestamp).toLocaleDateString()}
-                              </p>
-                            </div>
-                            {voiceover.url && (
-                              <audio src={voiceover.url} controls className="h-8 w-40" />
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                const updated = savedVoiceovers.filter(v => v.id !== voiceover.id);
-                                setSavedVoiceovers(updated);
-                                localStorage.setItem('genieStudioVoiceovers', JSON.stringify(updated));
-                                toast.success('Audio file deleted');
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 text-muted-foreground" />
-                            </Button>
-                          </div>
+                            audio={{
+                              id: voiceover.id,
+                              name: voiceover.name,
+                              url: voiceover.url,
+                              timestamp: voiceover.timestamp,
+                              scriptText: voiceover.scriptText,
+                              originalScript: voiceover.originalScript,
+                              scriptType: voiceover.scriptType,
+                              metadataType: voiceover.metadataType
+                            }}
+                            isTTS={isTTS}
+                            isVoiceover={isVO}
+                            onDelete={() => {
+                              const updated = savedVoiceovers.filter(v => v.id !== voiceover.id);
+                              setSavedVoiceovers(updated);
+                              localStorage.setItem('genieStudioVoiceovers', JSON.stringify(updated));
+                              toast.success('Audio file deleted');
+                            }}
+                          />
                         );
                       })}
                     </div>

@@ -97,6 +97,7 @@ export function useGenieMediaLibrary(): GenieMediaLibrary {
           url: item.file_url || undefined,
           timestamp: new Date(item.created_at).getTime(),
           scriptText: metadata.scriptText as string | undefined,
+          originalScript: metadata.originalScript as string | undefined,
           scriptType: metadata.scriptType as VoiceoverData['scriptType'],
           metadataType: (metadata.type || metadata.uploadedAs) as string | undefined
         };
