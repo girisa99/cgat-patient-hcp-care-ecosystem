@@ -1831,7 +1831,7 @@ export default function GenieStudio() {
                     className={cn(
                       "relative overflow-hidden cursor-pointer transition-all duration-300",
                       "hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/10",
-                      "border-border/50 bg-card/80 backdrop-blur group"
+                      "border-border/50 bg-card backdrop-blur group h-full"
                     )}
                     onClick={() => handleFeatureClick(feature.id)}
                   >
@@ -1839,10 +1839,11 @@ export default function GenieStudio() {
                       "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity",
                       "bg-gradient-to-br", feature.color
                     )} style={{ opacity: 0.05 }} />
-                    <CardContent className="p-6">
+                    <CardContent className="p-5 flex flex-col h-full">
+                      {/* Top row: Icon + Badge */}
                       <div className="flex items-start justify-between mb-4">
                         <div className={cn(
-                          "h-12 w-12 rounded-xl flex items-center justify-center",
+                          "h-12 w-12 rounded-xl flex items-center justify-center shadow-lg",
                           "bg-gradient-to-br", feature.color
                         )}>
                           <feature.icon className="h-6 w-6 text-white" />
@@ -1851,7 +1852,7 @@ export default function GenieStudio() {
                           <Badge 
                             variant="secondary" 
                             className={cn(
-                              "text-xs",
+                              "text-[10px] font-medium px-2 py-0.5",
                               feature.badge === 'New' && "bg-green-500/10 text-green-600 border-green-500/20",
                               feature.badge === 'AI Powered' && "bg-purple-500/10 text-purple-600 border-purple-500/20",
                               feature.badge === 'Popular' && "bg-orange-500/10 text-orange-600 border-orange-500/20"
@@ -1861,11 +1862,17 @@ export default function GenieStudio() {
                           </Badge>
                         )}
                       </div>
-                      <h3 className="font-semibold text-lg mb-1">{feature.title}</h3>
-                      <p className="text-sm text-muted-foreground mb-4">{feature.description}</p>
-                      <div className="flex items-center justify-between text-xs">
+                      
+                      {/* Title */}
+                      <h3 className="font-semibold text-base mb-1.5">{feature.title}</h3>
+                      
+                      {/* Description - fixed height for alignment */}
+                      <p className="text-sm text-muted-foreground mb-4 flex-1 line-clamp-2">{feature.description}</p>
+                      
+                      {/* Footer stats - aligned at bottom */}
+                      <div className="flex items-center justify-between text-xs pt-3 border-t border-border/30">
                         <span className="text-muted-foreground">{feature.stats.label}</span>
-                        <span className="font-medium">{feature.stats.value}</span>
+                        <span className="font-semibold text-foreground">{feature.stats.value}</span>
                       </div>
                     </CardContent>
                   </Card>
