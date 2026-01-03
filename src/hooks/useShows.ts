@@ -68,6 +68,7 @@ export function useShows() {
     description?: string;
     show_type: ShowType;
     scheduled_date?: string;
+    starting_stage?: ProductionStage;
   }) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -81,7 +82,7 @@ export function useShows() {
           description: data.description || null,
           show_type: data.show_type,
           scheduled_date: data.scheduled_date || null,
-          current_stage: 'outreach' as ProductionStage,
+          current_stage: data.starting_stage || 'outreach' as ProductionStage,
         })
         .select()
         .single();

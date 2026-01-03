@@ -33,7 +33,8 @@ import {
   Loader2,
   Trash2,
   Settings,
-  ExternalLink
+  ExternalLink,
+  GripVertical
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -47,6 +48,17 @@ import {
   type ShowType
 } from '@/types/shows';
 import { format } from 'date-fns';
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  useDroppable,
+} from '@dnd-kit/core';
+import { useDraggable } from '@dnd-kit/core';
 
 const STAGE_ICONS: Record<string, React.ElementType> = {
   Mail: Mail,
@@ -64,6 +76,155 @@ const SHOW_TYPE_ICONS: Record<string, React.ElementType> = {
   GraduationCap: GraduationCap,
   Video: Video,
 };
+
+// Draggable Show Card component
+function DraggableShowCard({ 
+  show, 
+  getShowTypeIcon, 
+  onSelect,
+  onOpenRecordingStudio,
+  stageId
+}: { 
+  show: ShowWithParticipants; 
+  getShowTypeIcon: (type: ShowType) => React.ElementType;
+  onSelect: (show: ShowWithParticipants) => void;
+  onOpenRecordingStudio: (show: ShowWithParticipants) => void;
+  stageId: ProductionStage;
+}) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: show.id,
+    data: { show, fromStage: stageId },
+  });
+  
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+    zIndex: 1000,
+  } : undefined;
+
+  const ShowTypeIcon = getShowTypeIcon(show.show_type);
+  const confirmedCount = show.participants?.filter(p => p.status === 'confirmed').length || 0;
+  const totalCount = show.participants?.length || 0;
+
+  return (
+    <Card 
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "cursor-grab hover:shadow-md transition-shadow",
+        isDragging && "opacity-50 shadow-lg"
+      )}
+    >
+      <CardContent className="p-3">
+        <div className="flex items-start justify-between mb-2">
+          <div 
+            className="flex items-center gap-1 cursor-grab active:cursor-grabbing"
+            {...listeners}
+            {...attributes}
+          >
+            <GripVertical className="h-4 w-4 text-muted-foreground/50" />
+            <ShowTypeIcon className="h-4 w-4 text-muted-foreground" />
+            <Badge variant="outline" className="text-xs capitalize">
+              {show.show_type}
+            </Badge>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-6 w-6"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect(show);
+            }}
+          >
+            <MoreHorizontal className="h-3 w-3" />
+          </Button>
+        </div>
+        
+        <h4 
+          className="font-medium text-sm mb-1 line-clamp-2 cursor-pointer hover:text-primary"
+          onClick={() => onSelect(show)}
+        >
+          {show.title}
+        </h4>
+        
+        {show.description && (
+          <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+            {show.description}
+          </p>
+        )}
+
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <Users className="h-3 w-3" />
+            <span>{confirmedCount}/{totalCount}</span>
+          </div>
+          {show.scheduled_date && (
+            <div className="flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              <span>{format(new Date(show.scheduled_date), 'MMM d')}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Quick Actions */}
+        {stageId === 'recording' && (
+          <Button 
+            size="sm" 
+            className="w-full mt-2"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenRecordingStudio(show);
+            }}
+          >
+            <Video className="h-3 w-3 mr-1" />
+            Open Recording Studio
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// Droppable Stage Column component
+function DroppableStageColumn({ 
+  stage, 
+  children,
+  isOver 
+}: { 
+  stage: typeof PRODUCTION_STAGES[0]; 
+  children: React.ReactNode;
+  isOver: boolean;
+}) {
+  const { setNodeRef } = useDroppable({
+    id: stage.id,
+  });
+
+  const StageIcon = STAGE_ICONS[stage.icon] || Mail;
+
+  return (
+    <div 
+      ref={setNodeRef}
+      className={cn(
+        "w-80 flex-shrink-0 bg-muted/30 rounded-lg flex flex-col transition-colors",
+        isOver && "bg-primary/10 ring-2 ring-primary/50"
+      )}
+    >
+      {/* Stage Header */}
+      <div className="p-3 border-b bg-card/50 rounded-t-lg">
+        <div className="flex items-center gap-2">
+          <div className={cn("p-1.5 rounded", stage.color)}>
+            <StageIcon className="h-4 w-4 text-white" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-sm">{stage.label}</h3>
+            <p className="text-xs text-muted-foreground">{stage.description}</p>
+          </div>
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
 
 export default function ProductionHub() {
   const navigate = useNavigate();
@@ -84,10 +245,47 @@ export default function ProductionHub() {
     description: '',
     show_type: 'podcast' as ShowType,
     scheduled_date: '',
+    starting_stage: 'outreach' as ProductionStage,
   });
   const [isCreating, setIsCreating] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
 
   const showsByStage = getShowsByStage();
+
+  // Drag sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragOver = (event: any) => {
+    setOverId(event.over?.id || null);
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+    setOverId(null);
+
+    if (!over) return;
+
+    const showId = active.id as string;
+    const targetStage = over.id as ProductionStage;
+    const activeData = active.data.current as { show: ShowWithParticipants; fromStage: ProductionStage };
+
+    // Only update if dropped on a different stage
+    if (activeData.fromStage !== targetStage) {
+      await updateStage(showId, targetStage);
+    }
+  };
 
   const handleCreateShow = async () => {
     if (!newShow.title.trim()) return;
@@ -99,23 +297,22 @@ export default function ProductionHub() {
         description: newShow.description || undefined,
         show_type: newShow.show_type,
         scheduled_date: newShow.scheduled_date || undefined,
+        starting_stage: newShow.starting_stage,
       });
       setIsCreateDialogOpen(false);
-      setNewShow({ title: '', description: '', show_type: 'podcast', scheduled_date: '' });
+      setNewShow({ 
+        title: '', 
+        description: '', 
+        show_type: 'podcast', 
+        scheduled_date: '',
+        starting_stage: 'outreach',
+      });
     } finally {
       setIsCreating(false);
     }
   };
 
-  const handleMoveToNextStage = async (show: ShowWithParticipants) => {
-    const stageIndex = PRODUCTION_STAGES.findIndex(s => s.id === show.current_stage);
-    if (stageIndex < PRODUCTION_STAGES.length - 1) {
-      await updateStage(show.id, PRODUCTION_STAGES[stageIndex + 1].id);
-    }
-  };
-
   const handleOpenRecordingStudio = (show: ShowWithParticipants) => {
-    // Navigate to genie studio with show context
     navigate(`/genie-studio?showId=${show.id}`);
   };
 
@@ -124,6 +321,8 @@ export default function ProductionHub() {
     const IconComponent = SHOW_TYPE_ICONS[typeConfig?.icon || 'Video'] || Video;
     return IconComponent;
   };
+
+  const activeShow = activeId ? shows.find(s => s.id === activeId) : null;
 
   return (
     <AppLayout>
@@ -147,119 +346,79 @@ export default function ProductionHub() {
           </Button>
         </div>
 
-        {/* Kanban Board */}
+        {/* Kanban Board with Drag and Drop */}
         <div className="flex-1 overflow-x-auto p-4">
           {isLoading ? (
             <div className="flex items-center justify-center h-64">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <div className="flex gap-4 h-full min-w-max">
-              {PRODUCTION_STAGES.map((stage) => {
-                const StageIcon = STAGE_ICONS[stage.icon] || Mail;
-                const stageShows = showsByStage[stage.id] || [];
-                
-                return (
-                  <div 
-                    key={stage.id}
-                    className="w-80 flex-shrink-0 bg-muted/30 rounded-lg flex flex-col"
-                  >
-                    {/* Stage Header */}
-                    <div className="p-3 border-b bg-card/50 rounded-t-lg">
-                      <div className="flex items-center gap-2">
-                        <div className={cn("p-1.5 rounded", stage.color)}>
-                          <StageIcon className="h-4 w-4 text-white" />
+            <DndContext
+              sensors={sensors}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDragEnd={handleDragEnd}
+            >
+              <div className="flex gap-4 h-full min-w-max">
+                {PRODUCTION_STAGES.map((stage) => {
+                  const stageShows = showsByStage[stage.id] || [];
+                  const isOverThisStage = overId === stage.id;
+                  
+                  return (
+                    <DroppableStageColumn 
+                      key={stage.id} 
+                      stage={stage}
+                      isOver={isOverThisStage}
+                    >
+                      <ScrollArea className="flex-1 p-2">
+                        <div className="space-y-2 min-h-[200px]">
+                          <Badge variant="secondary" className="text-xs mb-2">
+                            {stageShows.length} production{stageShows.length !== 1 ? 's' : ''}
+                          </Badge>
+                          
+                          {stageShows.map((show) => (
+                            <DraggableShowCard
+                              key={show.id}
+                              show={show}
+                              getShowTypeIcon={getShowTypeIcon}
+                              onSelect={setSelectedShow}
+                              onOpenRecordingStudio={handleOpenRecordingStudio}
+                              stageId={stage.id}
+                            />
+                          ))}
+
+                          {stageShows.length === 0 && (
+                            <div className="text-center py-8 text-muted-foreground text-sm border-2 border-dashed rounded-lg">
+                              Drag productions here
+                            </div>
+                          )}
                         </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-sm">{stage.label}</h3>
-                          <p className="text-xs text-muted-foreground">{stage.description}</p>
-                        </div>
-                        <Badge variant="secondary" className="text-xs">
-                          {stageShows.length}
+                      </ScrollArea>
+                    </DroppableStageColumn>
+                  );
+                })}
+              </div>
+
+              {/* Drag Overlay */}
+              <DragOverlay>
+                {activeShow && (
+                  <Card className="w-72 shadow-2xl rotate-3 opacity-90">
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        {(() => {
+                          const Icon = getShowTypeIcon(activeShow.show_type);
+                          return <Icon className="h-4 w-4 text-muted-foreground" />;
+                        })()}
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {activeShow.show_type}
                         </Badge>
                       </div>
-                    </div>
-
-                    {/* Stage Cards */}
-                    <ScrollArea className="flex-1 p-2">
-                      <div className="space-y-2">
-                        {stageShows.map((show) => {
-                          const ShowTypeIcon = getShowTypeIcon(show.show_type);
-                          const confirmedCount = show.participants?.filter(p => p.status === 'confirmed').length || 0;
-                          const totalCount = show.participants?.length || 0;
-
-                          return (
-                            <Card 
-                              key={show.id}
-                              className="cursor-pointer hover:shadow-md transition-shadow"
-                              onClick={() => setSelectedShow(show)}
-                            >
-                              <CardContent className="p-3">
-                                <div className="flex items-start justify-between mb-2">
-                                  <div className="flex items-center gap-2">
-                                    <ShowTypeIcon className="h-4 w-4 text-muted-foreground" />
-                                    <Badge variant="outline" className="text-xs capitalize">
-                                      {show.show_type}
-                                    </Badge>
-                                  </div>
-                                  <Button variant="ghost" size="icon" className="h-6 w-6">
-                                    <MoreHorizontal className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                                
-                                <h4 className="font-medium text-sm mb-1 line-clamp-2">
-                                  {show.title}
-                                </h4>
-                                
-                                {show.description && (
-                                  <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-                                    {show.description}
-                                  </p>
-                                )}
-
-                                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                  <div className="flex items-center gap-1">
-                                    <Users className="h-3 w-3" />
-                                    <span>{confirmedCount}/{totalCount}</span>
-                                  </div>
-                                  {show.scheduled_date && (
-                                    <div className="flex items-center gap-1">
-                                      <Calendar className="h-3 w-3" />
-                                      <span>{format(new Date(show.scheduled_date), 'MMM d')}</span>
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Quick Actions */}
-                                {stage.id === 'recording' && (
-                                  <Button 
-                                    size="sm" 
-                                    className="w-full mt-2"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleOpenRecordingStudio(show);
-                                    }}
-                                  >
-                                    <Video className="h-3 w-3 mr-1" />
-                                    Open Recording Studio
-                                  </Button>
-                                )}
-                              </CardContent>
-                            </Card>
-                          );
-                        })}
-
-                        {stageShows.length === 0 && (
-                          <div className="text-center py-8 text-muted-foreground text-sm">
-                            No productions in this stage
-                          </div>
-                        )}
-                      </div>
-                    </ScrollArea>
-                  </div>
-                );
-              })}
-            </div>
+                      <h4 className="font-medium text-sm">{activeShow.title}</h4>
+                    </CardContent>
+                  </Card>
+                )}
+              </DragOverlay>
+            </DndContext>
           )}
         </div>
 
@@ -319,6 +478,31 @@ export default function ProductionHub() {
                   value={newShow.scheduled_date}
                   onChange={(e) => setNewShow(prev => ({ ...prev, scheduled_date: e.target.value }))}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="starting_stage">Starting Stage</Label>
+                <Select
+                  value={newShow.starting_stage}
+                  onValueChange={(value: ProductionStage) => setNewShow(prev => ({ ...prev, starting_stage: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select starting stage" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRODUCTION_STAGES.map((stage) => (
+                      <SelectItem key={stage.id} value={stage.id}>
+                        <div className="flex items-center gap-2">
+                          <div className={cn("w-2 h-2 rounded-full", stage.color)} />
+                          {stage.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Choose where this production starts in the pipeline
+                </p>
               </div>
             </div>
 
@@ -479,8 +663,11 @@ export default function ProductionHub() {
                       </Button>
                     )}
                     {selectedShow.current_stage !== 'published' && (
-                      <Button onClick={() => {
-                        handleMoveToNextStage(selectedShow);
+                      <Button onClick={async () => {
+                        const stageIndex = PRODUCTION_STAGES.findIndex(s => s.id === selectedShow.current_stage);
+                        if (stageIndex < PRODUCTION_STAGES.length - 1) {
+                          await updateStage(selectedShow.id, PRODUCTION_STAGES[stageIndex + 1].id);
+                        }
                         setSelectedShow(null);
                       }}>
                         Move to Next Stage
