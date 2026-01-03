@@ -1303,16 +1303,8 @@ export function RecordingStudio({
                   duckingEnabled={audioPlayback.duckingEnabled}
                   onToggleDucking={audioPlayback.toggleDucking}
                 />
-
-                <Separator />
                 
-                {/* Studio Sound Panel for Podcast Audio */}
-                <StudioSoundPanel
-                  settings={studioSound.settings}
-                  activePreset={studioSound.activePreset}
-                  onPresetChange={studioSound.applyPreset}
-                  onSettingsChange={studioSound.updateSettings}
-                />
+                {/* Studio Sound moved to GenieStudio - Recording Studio is for playback only */}
               </div>
             )}
             
