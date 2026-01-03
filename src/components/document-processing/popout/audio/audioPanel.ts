@@ -81,9 +81,19 @@ export function getAudioPanelScript(supabaseUrl: string, supabaseKey: string): s
           const audioUrl = 'data:audio/mpeg;base64,' + data.audioContent;
           ttsAudio = new Audio(audioUrl);
           
+          // Store URL globally for recording playback
+          window._generatedTtsUrl = audioUrl;
+          
           console.log('[AudioPanel] TTS generated successfully');
+          console.log('[AudioPanel] TTS URL stored for recording playback');
           isGeneratingTTS = false;
           updateTTSUI('ready');
+          
+          // Enable play button and show success message
+          const ttsPlayBtn = document.getElementById('ttsPlayBtn');
+          const ttsStopBtn = document.getElementById('ttsStopBtn');
+          if (ttsPlayBtn) ttsPlayBtn.disabled = false;
+          if (ttsStopBtn) ttsStopBtn.disabled = false;
           
           return ttsAudio;
         }
@@ -126,10 +136,62 @@ export function getAudioPanelScript(supabaseUrl: string, supabaseKey: string): s
       }
     }
 
-    // Play TTS audio
+    // Play TTS audio with teleprompter sync
     function playTTS() {
       if (ttsAudio) {
-        ttsAudio.volume = document.getElementById('ttsVolume').value / 100;
+        const ttsVolEl = document.getElementById('ttsVolume');
+        ttsAudio.volume = ttsVolEl ? ttsVolEl.value / 100 : 1;
+        
+        // Setup teleprompter sync
+        ttsAudio.addEventListener('loadedmetadata', function onMeta() {
+          ttsAudio.removeEventListener('loadedmetadata', onMeta);
+          if (typeof startWordHighlightingFromAudio === 'function') {
+            startWordHighlightingFromAudio(ttsAudio);
+          }
+          if (typeof startTeleprompterScrollSync === 'function') {
+            startTeleprompterScrollSync(ttsAudio.duration);
+          }
+          if (typeof showReadingCursor === 'function') {
+            showReadingCursor();
+          }
+        });
+        
+        // Apply ducking when TTS plays
+        ttsAudio.addEventListener('play', function() {
+          if (typeof applyDucking === 'function') {
+            applyDucking(true);
+          }
+          // Update audio bar button if visible
+          var voiceBtn = document.getElementById('voicePlayPauseBtn');
+          if (voiceBtn) {
+            voiceBtn.textContent = '⏸';
+            voiceBtn.classList.add('playing');
+          }
+        });
+        
+        ttsAudio.addEventListener('pause', function() {
+          if (typeof applyDucking === 'function') {
+            applyDucking(false);
+          }
+        });
+        
+        ttsAudio.addEventListener('ended', function() {
+          if (typeof applyDucking === 'function') {
+            applyDucking(false);
+          }
+          if (typeof stopWordHighlighting === 'function') {
+            stopWordHighlighting();
+          }
+          if (typeof hideReadingCursor === 'function') {
+            hideReadingCursor();
+          }
+          var voiceBtn = document.getElementById('voicePlayPauseBtn');
+          if (voiceBtn) {
+            voiceBtn.textContent = '▶';
+            voiceBtn.classList.remove('playing');
+          }
+        });
+        
         ttsAudio.play().catch(function(e) {
           console.error('[AudioPanel] TTS play error:', e);
         });
@@ -140,6 +202,12 @@ export function getAudioPanelScript(supabaseUrl: string, supabaseKey: string): s
       if (ttsAudio) {
         ttsAudio.pause();
         ttsAudio.currentTime = 0;
+      }
+      if (typeof stopWordHighlighting === 'function') {
+        stopWordHighlighting();
+      }
+      if (typeof hideReadingCursor === 'function') {
+        hideReadingCursor();
       }
     }
 

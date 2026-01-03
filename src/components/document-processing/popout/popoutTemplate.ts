@@ -226,9 +226,12 @@ export function getPopoutHTML(config: PopoutConfig): string {
           <div class="sidebar-card tip-banner">
             <div class="tip-icon">💡</div>
             <div class="tip-text">
-              <strong>Tips:</strong><br/>
-              • Script enhancement, TTS, and music generation are done in GenieStudio<br/>
-              • Select voiceover/music below, then press <strong>Start Recording</strong> to auto-play
+              <strong>Quick Start:</strong><br/>
+              1. Select a script for the teleprompter<br/>
+              2. Choose voiceover or generate TTS in the TTS tab<br/>
+              3. Optionally select background music<br/>
+              4. Press <strong>Start Recording</strong> - audio plays automatically!<br/>
+              <em>Tip: The teleprompter syncs with your audio word-by-word</em>
             </div>
           </div>
 

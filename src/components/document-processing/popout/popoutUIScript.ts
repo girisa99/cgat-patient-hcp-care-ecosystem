@@ -515,6 +515,8 @@ export function getUIScript(): string {
     // =====================================================
 
     function showRecordingUI() {
+      console.log('[RecordingUI] Showing recording controls...');
+      
       // Show pause button
       var pauseBtn = document.getElementById('pauseBtn');
       if (pauseBtn) pauseBtn.style.display = 'inline-block';
@@ -523,15 +525,26 @@ export function getUIScript(): string {
       var trimBar = document.getElementById('trimControlsBar');
       if (trimBar) trimBar.style.display = 'flex';
       
-      // Show audio controls bar
+      // Show audio controls bar - ALWAYS show during recording
       var audioBar = document.getElementById('audioControlsBar');
-      if (audioBar) audioBar.style.display = 'flex';
+      if (audioBar) {
+        audioBar.style.display = 'flex';
+        console.log('[RecordingUI] Audio controls bar shown');
+      } else {
+        console.warn('[RecordingUI] Audio controls bar element not found!');
+      }
       
-      // Show sync indicator if audio selected
-      if ((voiceoverSelect && voiceoverSelect.value) || (musicSelect && musicSelect.value)) {
+      // Show sync indicator if audio or TTS is available
+      var hasTTS = !!window._generatedTtsUrl;
+      var hasVoiceover = voiceoverSelect && voiceoverSelect.value;
+      var hasMusic = musicSelect && musicSelect.value;
+      
+      if (hasVoiceover || hasMusic || hasTTS) {
         var syncIndicator = document.getElementById('syncActiveIndicator');
         if (syncIndicator) syncIndicator.classList.add('visible');
       }
+      
+      console.log('[RecordingUI] Recording UI shown');
     }
 
     function hideRecordingUI() {
@@ -574,26 +587,31 @@ export function getUIScript(): string {
       console.log('[Recording Audio] voiceoverSelect:', !!voiceoverSelect, voiceoverSelect ? voiceoverSelect.value : 'N/A');
       console.log('[Recording Audio] musicSelect:', !!musicSelect, musicSelect ? musicSelect.value : 'N/A');
 
-      // Stop any existing TTS to prevent overlap
-      if (ttsAudio) {
-        ttsAudio.pause();
-        ttsAudio.currentTime = 0;
-        ttsAudio = null;
-      }
+      // Track if any voice audio was started
+      let voiceStarted = false;
 
+      // Check for pre-generated TTS audio first (from TTS tab)
+      const ttsPlayBtn = document.getElementById('ttsPlayBtn');
+      const existingTtsUrl = window._generatedTtsUrl;
+      
       // Start voiceover if selected (mutually exclusive with TTS)
-      if (voiceoverSelect) {
+      if (voiceoverSelect && voiceoverSelect.value) {
         const voOption = voiceoverSelect.options[voiceoverSelect.selectedIndex];
         const voUrl = voOption ? voOption.dataset.url : null;
         
         console.log('[Recording Audio] Voiceover option:', voOption ? voOption.text : 'none');
         console.log('[Recording Audio] Voiceover URL:', voUrl);
         
-        if (voUrl && voiceoverSelect.value) {
-          // Stop any existing voiceover
+        if (voUrl) {
+          // Stop any existing audio
           if (voiceoverAudio) {
             voiceoverAudio.pause();
             voiceoverAudio.currentTime = 0;
+          }
+          if (ttsAudio) {
+            ttsAudio.pause();
+            ttsAudio.currentTime = 0;
+            ttsAudio = null;
           }
           
           console.log('[Recording Audio] Creating new voiceover audio element...');
@@ -662,12 +680,83 @@ export function getUIScript(): string {
             console.error('[Recording Audio] Voiceover play error:', e);
             showStatus('Could not play voiceover: ' + e.message, 'error');
           });
-        } else {
-          console.log('[Recording Audio] No voiceover selected or no URL');
+          
+          voiceStarted = true;
         }
       }
+      
+      // If no voiceover, try to play TTS if available
+      if (!voiceStarted && existingTtsUrl) {
+        console.log('[Recording Audio] No voiceover, using pre-generated TTS');
+        
+        if (ttsAudio) {
+          ttsAudio.pause();
+          ttsAudio.currentTime = 0;
+        }
+        
+        ttsAudio = new Audio(existingTtsUrl);
+        const ttsVolumeEl = document.getElementById('ttsVolume');
+        ttsAudio.volume = ttsVolumeEl ? ttsVolumeEl.value / 100 : 1;
+        
+        // Setup sync with teleprompter for TTS
+        ttsAudio.addEventListener('loadedmetadata', function() {
+          console.log('[Recording Audio] TTS metadata loaded, duration:', ttsAudio.duration);
+          if (typeof startWordHighlightingFromAudio === 'function') {
+            startWordHighlightingFromAudio(ttsAudio);
+          }
+          if (typeof startTeleprompterScrollSync === 'function') {
+            startTeleprompterScrollSync(ttsAudio.duration);
+          }
+          if (typeof showReadingCursor === 'function') {
+            showReadingCursor();
+          }
+        });
+        
+        ttsAudio.addEventListener('play', function() {
+          console.log('[Recording Audio] TTS play event - applying ducking');
+          applyDucking(true);
+          var voiceBtn = document.getElementById('voicePlayPauseBtn');
+          if (voiceBtn) {
+            voiceBtn.textContent = '⏸';
+            voiceBtn.classList.add('playing');
+          }
+        });
+        
+        ttsAudio.addEventListener('pause', function() {
+          applyDucking(false);
+          var voiceBtn = document.getElementById('voicePlayPauseBtn');
+          if (voiceBtn && ttsAudio.currentTime > 0 && ttsAudio.currentTime < ttsAudio.duration) {
+            voiceBtn.textContent = '▶';
+            voiceBtn.classList.remove('playing');
+          }
+        });
+        
+        ttsAudio.addEventListener('ended', function() {
+          console.log('[Recording Audio] TTS finished playing');
+          applyDucking(false);
+          if (typeof stopWordHighlighting === 'function') {
+            stopWordHighlighting();
+          }
+          if (typeof hideReadingCursor === 'function') {
+            hideReadingCursor();
+          }
+          var voiceBtn = document.getElementById('voicePlayPauseBtn');
+          if (voiceBtn) {
+            voiceBtn.textContent = '▶';
+            voiceBtn.classList.remove('playing');
+          }
+        });
+        
+        ttsAudio.play().then(function() {
+          console.log('[Recording Audio] TTS started playing!');
+        }).catch(function(e) {
+          console.error('[Recording Audio] TTS play error:', e);
+        });
+        
+        voiceStarted = true;
+      }
 
-      // Start music if selected (can play alongside voiceover)
+      // Start music if selected (can play alongside voiceover/TTS)
       if (musicSelect) {
         const musicOption = musicSelect.options[musicSelect.selectedIndex];
         const musicUrl = musicOption ? musicOption.dataset.url : null;
@@ -684,9 +773,8 @@ export function getUIScript(): string {
           
           console.log('[Recording Audio] Creating new music audio element...');
           musicAudio = new Audio(musicUrl);
-          // Start music at lower volume if voiceover is playing (ducking)
-          var hasVoice = voiceoverSelect && voiceoverSelect.value;
-          musicAudio.volume = hasVoice && duckingEnabled ? duckedMusicVolume : (musicVolume ? musicVolume.value / 100 : 0.3);
+          // Start music at lower volume if voice is playing (ducking)
+          musicAudio.volume = voiceStarted && duckingEnabled ? duckedMusicVolume : (musicVolume ? musicVolume.value / 100 : 0.3);
           musicAudio.loop = musicLoopEnabled;
 
           musicAudio.addEventListener('play', function() {
@@ -720,9 +808,18 @@ export function getUIScript(): string {
         }
       }
       
-      // Show recording UI elements
+      // ALWAYS show recording UI elements when recording starts
       showRecordingUI();
-      console.log('[Recording Audio] Audio playback setup complete');
+      
+      // Start teleprompter scrolling if enabled
+      if (teleprompterEnabled && teleprompter && teleprompter.classList.contains('visible')) {
+        console.log('[Recording Audio] Starting teleprompter auto-scroll');
+        if (typeof startTeleprompterAutoScroll === 'function') {
+          startTeleprompterAutoScroll();
+        }
+      }
+      
+      console.log('[Recording Audio] Audio playback setup complete, voiceStarted:', voiceStarted);
     }
 
     function stopAudioPlayback() {
@@ -750,6 +847,9 @@ export function getUIScript(): string {
       }
       if (typeof stopTeleprompterScrollSync === 'function') {
         stopTeleprompterScrollSync();
+      }
+      if (typeof stopTeleprompterAutoScroll === 'function') {
+        stopTeleprompterAutoScroll();
       }
       if (typeof hideReadingCursor === 'function') {
         hideReadingCursor();
