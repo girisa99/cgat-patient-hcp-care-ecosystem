@@ -49,11 +49,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTTSGeneration, OPENAI_VOICES, ELEVENLABS_VOICES, GOOGLE_VOICES } from '@/components/document-processing/RecordingStudio/hooks/useTTSGeneration';
 
 // Types
+export type ScriptPurpose = 'video' | 'audio' | 'podcast' | 'webcast' | 'interview' | 'panel' | 'tutorial';
+
 export interface SavedScript {
   id: string;
   name: string;
   content: string;
   type: 'video' | 'audio';
+  purpose?: ScriptPurpose; // New: specific purpose/show type
+  showId?: string; // New: linked show ID
+  showTitle?: string; // New: linked show title
   createdAt: number;
   updatedAt: number;
   enhancedContent?: string;
@@ -136,6 +141,14 @@ interface EngagementScore {
   improvements: string[];
 }
 
+// Show info for linking scripts to productions
+export interface ShowInfo {
+  id: string;
+  title: string;
+  show_type: 'podcast' | 'webcast' | 'interview' | 'panel' | 'tutorial' | 'other';
+  current_stage: string;
+}
+
 interface ScriptEditorTabProps {
   savedScripts: SavedScript[];
   onSaveScript: (script: SavedScript) => void;
@@ -143,6 +156,10 @@ interface ScriptEditorTabProps {
   onUpdateScript: (id: string, updates: Partial<SavedScript>) => void;
   onSaveVoiceover: (url: string, name: string, scriptId?: string) => void;
   savedVoiceovers: Array<{ id: string; name: string; url?: string; scriptId?: string }>;
+  // New props for show integration
+  availableShows?: ShowInfo[];
+  selectedShowId?: string;
+  onShowSelect?: (showId: string | null) => void;
 }
 
 // Calculate reading stats
@@ -174,16 +191,32 @@ export function ScriptEditorTab({
   onDeleteScript,
   onUpdateScript,
   onSaveVoiceover,
-  savedVoiceovers
+  savedVoiceovers,
+  availableShows = [],
+  selectedShowId,
+  onShowSelect
 }: ScriptEditorTabProps) {
   // Refs
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Show Selection State
+  const [linkedShowId, setLinkedShowId] = useState<string | null>(selectedShowId || null);
+  const selectedShow = availableShows.find(s => s.id === linkedShowId);
+  
+  // Determine if TTS should be available based on show type
+  // Podcasts: NO TTS (live recording with hosts)
+  // Webcasts: TTS available for preview/rehearsal
+  // Videos: TTS available
+  const showType = selectedShow?.show_type;
+  const isTTSEnabled = !showType || showType === 'webcast' || showType === 'tutorial' || showType === 'other';
+  const isPodcastMode = showType === 'podcast' || showType === 'interview' || showType === 'panel';
   
   // Script Selection & Content State
   const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
   const [scriptName, setScriptName] = useState('');
   const [scriptContent, setScriptContent] = useState('');
   const [scriptType, setScriptType] = useState<'video' | 'audio'>('video');
+  const [scriptPurpose, setScriptPurpose] = useState<ScriptPurpose>('video');
   const [isNewScript, setIsNewScript] = useState(true);
   const [isUploadingScript, setIsUploadingScript] = useState(false);
   
@@ -781,6 +814,74 @@ export function ScriptEditorTab({
   
   return (
     <div className="space-y-6">
+      {/* Show Linking Card - Only show if shows are available */}
+      {availableShows.length > 0 && (
+        <Card className="border-border/50 bg-gradient-to-r from-indigo-500/5 to-violet-500/5">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center">
+                  <FileText className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Link to Production</Label>
+                  <p className="text-xs text-muted-foreground">
+                    {isPodcastMode ? 'Podcast mode: TTS disabled (live recording)' : 'Script linked to production pipeline'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Select 
+                  value={linkedShowId || ''} 
+                  onValueChange={(v) => {
+                    const newId = v || null;
+                    setLinkedShowId(newId);
+                    onShowSelect?.(newId);
+                  }}
+                >
+                  <SelectTrigger className="w-[250px]">
+                    <SelectValue placeholder="Select a production..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No production linked</SelectItem>
+                    {availableShows.map(show => (
+                      <SelectItem key={show.id} value={show.id}>
+                        <span className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-[10px] capitalize">
+                            {show.show_type}
+                          </Badge>
+                          {show.title}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {linkedShowId && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => {
+                      setLinkedShowId(null);
+                      onShowSelect?.(null);
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+            {isPodcastMode && (
+              <div className="mt-3 p-2 rounded bg-amber-500/10 border border-amber-500/20">
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  <strong>Podcast/Interview Mode:</strong> TTS voiceover is disabled for live recording formats. 
+                  AI enhancement and background music are available.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Script Selection Card */}
       <Card className="border-border/50 bg-card/80 backdrop-blur">
         <CardContent className="p-6">
@@ -791,7 +892,11 @@ export function ScriptEditorTab({
               </div>
               <div>
                 <h2 className="text-xl font-semibold">Script Editor</h2>
-                <p className="text-sm text-muted-foreground">Create, analyze, and enhance your scripts</p>
+                <p className="text-sm text-muted-foreground">
+                  {isPodcastMode 
+                    ? 'Create scripts for your podcast/interview - AI enhance available' 
+                    : 'Create, analyze, and enhance your scripts'}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -1084,21 +1189,33 @@ export function ScriptEditorTab({
               <span className="text-sm font-medium">AI Enhance</span>
               <p className="text-xs text-muted-foreground mt-1">Improve script</p>
             </div>
-            <div 
-              className={cn(
-                "p-4 rounded-lg border cursor-pointer transition-all text-center",
-                isTTSGenerating ? "bg-green-500/10 border-green-500/50" : "bg-muted/50 border-border/50 hover:border-green-500/50"
-              )}
-              onClick={() => setShowTTSOptions(!showTTSOptions)}
-            >
-              {isTTSGenerating ? (
-                <Loader2 className="h-6 w-6 mx-auto mb-2 text-green-500 animate-spin" />
-              ) : (
-                <Volume2 className="h-6 w-6 mx-auto mb-2 text-green-500" />
-              )}
-              <span className="text-sm font-medium">Generate TTS</span>
-              <p className="text-xs text-muted-foreground mt-1">Full script audio</p>
-            </div>
+            {/* TTS Button - Only show if TTS is enabled for this show type */}
+            {isTTSEnabled ? (
+              <div 
+                className={cn(
+                  "p-4 rounded-lg border cursor-pointer transition-all text-center",
+                  isTTSGenerating ? "bg-green-500/10 border-green-500/50" : "bg-muted/50 border-border/50 hover:border-green-500/50"
+                )}
+                onClick={() => setShowTTSOptions(!showTTSOptions)}
+              >
+                {isTTSGenerating ? (
+                  <Loader2 className="h-6 w-6 mx-auto mb-2 text-green-500 animate-spin" />
+                ) : (
+                  <Volume2 className="h-6 w-6 mx-auto mb-2 text-green-500" />
+                )}
+                <span className="text-sm font-medium">Generate TTS</span>
+                <p className="text-xs text-muted-foreground mt-1">Full script audio</p>
+              </div>
+            ) : (
+              <div 
+                className="p-4 rounded-lg border bg-muted/30 border-border/30 text-center opacity-50 cursor-not-allowed"
+                title="TTS not available for podcast/interview formats"
+              >
+                <Volume2 className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+                <span className="text-sm font-medium text-muted-foreground">TTS Disabled</span>
+                <p className="text-xs text-muted-foreground mt-1">Podcast mode</p>
+              </div>
+            )}
             <div 
               className="p-4 rounded-lg border bg-muted/50 border-border/50 hover:border-primary/50 cursor-pointer transition-all text-center"
               onClick={handleSaveScript}
@@ -1109,7 +1226,8 @@ export function ScriptEditorTab({
             </div>
           </div>
           
-          {/* TTS Options Panel */}
+          {/* TTS Options Panel - Only render if TTS is enabled */}
+          {isTTSEnabled && (
           <Collapsible open={showTTSOptions} onOpenChange={setShowTTSOptions}>
             <CollapsibleContent className="mb-6 p-4 rounded-lg bg-green-500/5 border border-green-500/20">
               <div className="flex items-center justify-between mb-4">
@@ -1376,6 +1494,7 @@ export function ScriptEditorTab({
               )}
             </CollapsibleContent>
           </Collapsible>
+          )}
           
           {/* Progressive Analysis Walkthrough */}
           {showProgressiveAnalysis && isAnalyzing && (
