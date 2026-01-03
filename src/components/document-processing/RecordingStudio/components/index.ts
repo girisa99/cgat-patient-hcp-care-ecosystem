@@ -5,6 +5,7 @@
 export { VideoPreview } from './VideoPreview';
 export { RecordingControls } from './RecordingControls';
 export { AudioPanel } from './AudioPanel';
+export { AudioAssetSelector } from './AudioAssetSelector';
 export { ScriptPanel } from './ScriptPanel';
 export { RecordingLibraryPanel } from './RecordingLibraryPanel';
 export { RecordingPreview } from './RecordingPreview';
