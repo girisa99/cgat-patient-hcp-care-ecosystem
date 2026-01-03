@@ -10,13 +10,15 @@ import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Minus, Plus, FileText, Sparkles, Search, Check, X, Download, 
-  ChevronDown, ChevronUp, RotateCcw, Copy, Edit2, Save
+  ChevronDown, ChevronUp, RotateCcw, Copy, Edit2, Save, Eye, List
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { ScriptData } from '../types';
+import { InlineScriptDiff, type ScriptChange } from './InlineScriptDiff';
 
 interface AnalysisRecommendation {
   id: string;
@@ -164,6 +166,9 @@ export function ScriptPanel({
   
   // Expanded view
   const [isExpanded, setIsExpanded] = useState(false);
+  
+  // View mode for changes: 'inline' (in-context) or 'list' (separate list)
+  const [changesViewMode, setChangesViewMode] = useState<'inline' | 'list'>('inline');
 
   // Calculate word count
   const countWords = (text: string) => text.split(/\s+/).filter(w => w.length > 0).length;
@@ -774,115 +779,161 @@ export function ScriptPanel({
             </div>
           )}
 
-          {/* Enhancement Changes Review - Scrollable */}
+          {/* Enhancement Changes Review */}
           {showChanges && enhancementChanges.length > 0 && (
-            <div className="space-y-2 border rounded-md p-2 bg-primary/5 max-h-[380px] overflow-hidden flex flex-col">
-              <div className="flex items-center justify-between shrink-0">
-                <span className="text-xs font-medium text-primary">
-                  ✨ AI Enhancements: {pendingChanges} pending • {acceptedChanges} accepted
-                </span>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-5 w-5"
-                  onClick={() => setShowChanges(!showChanges)}
-                >
-                  <ChevronUp className="w-3 h-3" />
-                </Button>
-              </div>
-              
-              <div className="flex-1 overflow-y-auto min-h-0 pr-1">
-                <div className="space-y-2">
-                  {enhancementChanges.map((change) => (
-                    <div 
-                      key={change.id} 
-                      className={cn(
-                        "p-2.5 rounded text-xs border transition-all",
-                        change.accepted === true && "bg-green-500/15 border-green-500/40",
-                        change.accepted === false && "bg-red-500/10 border-red-500/30 opacity-40",
-                        change.accepted === null && "bg-background border-border hover:border-primary/50"
-                      )}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0 space-y-1.5">
-                          {/* Change type and reason */}
-                          <div className="flex items-center gap-1.5">
-                            <Badge 
-                              variant="outline" 
-                              className={cn(
-                                "text-[9px] h-4 font-medium",
-                                change.type === 'addition' && "border-green-500 text-green-600 bg-green-500/10",
-                                change.type === 'removal' && "border-red-500 text-red-600 bg-red-500/10",
-                                change.type === 'modification' && "border-blue-500 text-blue-600 bg-blue-500/10",
-                                change.type === 'formatting' && "border-purple-500 text-purple-600 bg-purple-500/10"
-                              )}
-                            >
-                              {change.type}
-                            </Badge>
-                            <span className="text-muted-foreground text-[10px] italic truncate">{change.reason}</span>
-                          </div>
-                          
-                          {/* Original text with strikethrough */}
-                          {change.original && change.type !== 'addition' && (
-                            <div className="p-1.5 rounded bg-red-500/5 border border-red-500/20">
-                              <p className="text-red-600/80 line-through text-[11px] leading-relaxed">
-                                {change.original.length > 150 ? change.original.slice(0, 150) + '...' : change.original}
-                              </p>
-                            </div>
-                          )}
-                          
-                          {/* Enhanced text with highlight */}
-                          {change.enhanced && (
-                            <div className="p-1.5 rounded bg-green-500/5 border border-green-500/20">
-                              <p className="text-green-700 text-[11px] leading-relaxed font-medium">
-                                {change.enhanced.length > 150 ? change.enhanced.slice(0, 150) + '...' : change.enhanced}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                        
-                        {/* Accept/Reject buttons */}
-                        {change.accepted === null && (
-                          <div className="flex flex-col gap-0.5 shrink-0">
-                            <Button 
-                              size="icon" 
-                              variant="outline" 
-                              className="h-6 w-6 border-green-500/30 hover:bg-green-500/10 hover:border-green-500"
-                              onClick={() => handleAcceptChange(change.id)}
-                              title="Accept this change"
-                            >
-                              <Check className="w-3 h-3 text-green-600" />
-                            </Button>
-                            <Button 
-                              size="icon" 
-                              variant="outline" 
-                              className="h-6 w-6 border-red-500/30 hover:bg-red-500/10 hover:border-red-500"
-                              onClick={() => handleRejectChange(change.id)}
-                              title="Skip this change"
-                            >
-                              <X className="w-3 h-3 text-red-500" />
-                            </Button>
-                          </div>
-                        )}
-                        
-                        {/* Status indicator for resolved changes */}
-                        {change.accepted !== null && (
-                          <div className="shrink-0">
-                            {change.accepted ? (
-                              <Check className="w-4 h-4 text-green-600" />
-                            ) : (
-                              <X className="w-4 h-4 text-red-400" />
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+            <div className="space-y-2 border rounded-md p-3 bg-primary/5">
+              {/* Header with view toggle */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium text-primary">
+                    Review AI Enhancements
+                  </span>
+                  <Badge variant="outline" className="text-[10px]">
+                    {pendingChanges} pending • {acceptedChanges} accepted
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-1">
+                  {/* View mode toggle */}
+                  <Tabs value={changesViewMode} onValueChange={(v) => setChangesViewMode(v as 'inline' | 'list')}>
+                    <TabsList className="h-7">
+                      <TabsTrigger value="inline" className="h-5 px-2 text-[10px] gap-1">
+                        <Eye className="w-3 h-3" />
+                        In-Context
+                      </TabsTrigger>
+                      <TabsTrigger value="list" className="h-5 px-2 text-[10px] gap-1">
+                        <List className="w-3 h-3" />
+                        List
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6"
+                    onClick={() => setShowChanges(false)}
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
                 </div>
               </div>
 
-              {/* Accept/Reject All - Fixed at bottom */}
-              <div className="flex gap-1 shrink-0 pt-1 border-t border-primary/20">
+              {/* Word count comparison */}
+              <div className="flex items-center gap-4 px-2 py-1.5 rounded bg-muted/50 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">Original:</span>
+                  <span className="font-medium">{originalWordCount} words</span>
+                  <span className="text-muted-foreground">~{Math.ceil(originalWordCount / 150)} min</span>
+                </div>
+                <span className="text-muted-foreground">→</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">Enhanced:</span>
+                  <span className="font-medium text-green-600">{enhancedWordCount} words</span>
+                  <span className="text-muted-foreground">~{Math.ceil(enhancedWordCount / 150)} min</span>
+                </div>
+              </div>
+              
+              {/* Inline View - Show changes in context */}
+              {changesViewMode === 'inline' && selectedScript && (
+                <InlineScriptDiff
+                  originalScript={selectedScript.content}
+                  changes={enhancementChanges.map(c => ({
+                    ...c,
+                    type: c.type as ScriptChange['type']
+                  }))}
+                  onAcceptChange={handleAcceptChange}
+                  onRejectChange={handleRejectChange}
+                />
+              )}
+              
+              {/* List View - Original separate list */}
+              {changesViewMode === 'list' && (
+                <div className="max-h-[350px] overflow-y-auto pr-1">
+                  <div className="space-y-2">
+                    {enhancementChanges.map((change) => (
+                      <div 
+                        key={change.id} 
+                        className={cn(
+                          "p-2.5 rounded text-xs border transition-all",
+                          change.accepted === true && "bg-green-500/15 border-green-500/40",
+                          change.accepted === false && "bg-red-500/10 border-red-500/30 opacity-40",
+                          change.accepted === null && "bg-background border-border hover:border-primary/50"
+                        )}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0 space-y-1.5">
+                            <div className="flex items-center gap-1.5">
+                              <Badge 
+                                variant="outline" 
+                                className={cn(
+                                  "text-[9px] h-4 font-medium",
+                                  change.type === 'addition' && "border-green-500 text-green-600 bg-green-500/10",
+                                  change.type === 'removal' && "border-red-500 text-red-600 bg-red-500/10",
+                                  change.type === 'modification' && "border-blue-500 text-blue-600 bg-blue-500/10",
+                                  change.type === 'formatting' && "border-purple-500 text-purple-600 bg-purple-500/10"
+                                )}
+                              >
+                                {change.type}
+                              </Badge>
+                              <span className="text-muted-foreground text-[10px] italic truncate">{change.reason}</span>
+                            </div>
+                            
+                            {change.original && change.type !== 'addition' && (
+                              <div className="p-1.5 rounded bg-red-500/5 border border-red-500/20">
+                                <p className="text-red-600/80 line-through text-[11px] leading-relaxed">
+                                  {change.original.length > 150 ? change.original.slice(0, 150) + '...' : change.original}
+                                </p>
+                              </div>
+                            )}
+                            
+                            {change.enhanced && (
+                              <div className="p-1.5 rounded bg-green-500/5 border border-green-500/20">
+                                <p className="text-green-700 text-[11px] leading-relaxed font-medium">
+                                  {change.enhanced.length > 150 ? change.enhanced.slice(0, 150) + '...' : change.enhanced}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {change.accepted === null && (
+                            <div className="flex flex-col gap-0.5 shrink-0">
+                              <Button 
+                                size="icon" 
+                                variant="outline" 
+                                className="h-6 w-6 border-green-500/30 hover:bg-green-500/10 hover:border-green-500"
+                                onClick={() => handleAcceptChange(change.id)}
+                              >
+                                <Check className="w-3 h-3 text-green-600" />
+                              </Button>
+                              <Button 
+                                size="icon" 
+                                variant="outline" 
+                                className="h-6 w-6 border-red-500/30 hover:bg-red-500/10 hover:border-red-500"
+                                onClick={() => handleRejectChange(change.id)}
+                              >
+                                <X className="w-3 h-3 text-red-500" />
+                              </Button>
+                            </div>
+                          )}
+                          
+                          {change.accepted !== null && (
+                            <div className="shrink-0">
+                              {change.accepted ? (
+                                <Check className="w-4 h-4 text-green-600" />
+                              ) : (
+                                <X className="w-4 h-4 text-red-400" />
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Action buttons */}
+              <div className="flex gap-1 pt-2 border-t border-primary/20">
                 <Button 
                   size="sm" 
                   variant="default" 
@@ -907,14 +958,13 @@ export function ScriptPanel({
                   variant="outline" 
                   onClick={handleRejectAll}
                   className="gap-1 text-xs h-7"
-                  title="Reject all changes"
                 >
                   <X className="w-3 h-3" />
                 </Button>
               </div>
 
-              {/* Download Enhanced/Clean versions */}
-              <div className="flex gap-1 shrink-0">
+              {/* Download options */}
+              <div className="flex gap-1">
                 <Button
                   size="sm"
                   variant="outline"
