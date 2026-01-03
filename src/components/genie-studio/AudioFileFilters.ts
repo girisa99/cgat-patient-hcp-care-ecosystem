@@ -41,21 +41,26 @@ export function isInstrumental(v: VoiceoverData): boolean {
 }
 
 // Check if file is TTS generated (text-to-speech from script)
+// STRICT check - only files explicitly marked as TTS
 export function isTTSFile(v: VoiceoverData): boolean {
   const lowerName = v.name.toLowerCase();
   
-  // Primary check: scriptType
+  // Primary check: scriptType must be explicitly 'tts'
   if (v.scriptType === 'tts') return true;
-  if (v.scriptType === 'audio') return true; // ScriptsManager uses 'audio' scriptType for TTS
   
-  // Check if has script text embedded (indicates TTS generation)
-  if (v.scriptText && v.scriptText.length > 0) return true;
+  // Metadata type explicitly marked as tts
+  if (v.metadataType === 'tts') return true;
   
-  // Name patterns for TTS
-  if (lowerName.includes('tts')) return true;
+  // Name patterns for TTS - must be explicit TTS markers
+  if (lowerName.includes(' tts') || lowerName.includes('_tts') || lowerName.includes('-tts')) return true;
+  if (lowerName.includes('enhanced tts')) return true;
   if (lowerName.includes('text-to-speech')) return true;
-  // "generated" in name but not music
-  if (lowerName.includes('generated') && !lowerName.includes('music') && !lowerName.includes('instrumental')) return true;
+  
+  // Only if scriptType is 'audio' AND name includes TTS explicitly
+  if (v.scriptType === 'audio' && lowerName.includes('tts')) return true;
+  
+  // NOTE: Having scriptText alone does NOT make it TTS
+  // Many voiceovers have associated script text for reference
   
   return false;
 }
