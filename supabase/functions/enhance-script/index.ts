@@ -251,7 +251,9 @@ serve(async (req) => {
   }
 
   try {
-    const { scriptContent, mode, provider = "gemini" } = await req.json();
+    const { scriptContent, mode, provider = "gemini", focus = "balanced", customInstructions } = await req.json();
+    
+    console.log(`Enhancement request - mode: ${mode}, provider: ${provider}, focus: ${focus}, customInstructions: ${customInstructions ? 'provided' : 'none'}`);
     
     if (!scriptContent) {
       return new Response(
@@ -347,7 +349,44 @@ Provide 8-12 specific, actionable recommendations. Focus on:
 Script to analyze:
 ${scriptContent.substring(0, 6000)}`;
     } else {
-      // Enhancement mode - comprehensive rewrite with engagement and conversational style
+      // Enhancement mode - comprehensive rewrite with optional focus customization
+      
+      // Build focus-specific instructions based on user selection
+      const focusInstructions: Record<string, string> = {
+        balanced: `Focus on general improvements across all areas: engagement, clarity, pacing, and conversational tone.`,
+        engagement: `PRIORITIZE ENGAGEMENT ABOVE ALL:
+- Create powerful hooks at the start and throughout
+- Add rhetorical questions every 2-3 paragraphs
+- Include power words (imagine, discover, transform, unlock, secret)
+- Build anticipation and curiosity
+- Add surprise elements and emotional peaks`,
+        clarity: `PRIORITIZE CLARITY AND SIMPLICITY:
+- Break down complex sentences into shorter, clearer ones
+- Replace jargon with simple everyday language
+- Use concrete examples instead of abstract concepts
+- Ensure each paragraph has ONE clear point
+- Add transition phrases between ideas`,
+        pacing: `PRIORITIZE PACING AND RHYTHM:
+- Add strategic pauses (...) after key points
+- Vary sentence length (short-medium-long pattern)
+- Add section breaks (---) for breathing room
+- Create natural speech rhythm
+- Include emphasis markers for key words`,
+        conversational: `PRIORITIZE CONVERSATIONAL, PERSONAL TONE:
+- Use "I" instead of "we" for personal sharing
+- Add casual phrases (here's the thing, honestly, you know what)
+- Include personal anecdotes and examples
+- Make it sound like talking to a friend
+- Remove formal/corporate language`
+      };
+      
+      const selectedFocus = focusInstructions[focus] || focusInstructions.balanced;
+      
+      // Add custom instructions if provided
+      const customInstructionSection = customInstructions 
+        ? `\n\n🎯 USER'S CUSTOM INSTRUCTIONS (HIGH PRIORITY - FOLLOW THESE):\n${customInstructions}\n`
+        : '';
+      
       systemPrompt = `You are an expert script editor and storytelling coach specializing in voiceover content for video and audio. You enhance scripts to be:
 - More ENGAGING and conversational (like talking to a friend)
 - Natural with proper pacing (pause markers: ..., section breaks: ---)
@@ -355,14 +394,18 @@ ${scriptContent.substring(0, 6000)}`;
 - Clear and easy to follow
 Return ONLY valid JSON, no markdown or code blocks.`;
 
-      userPrompt = `Enhance this script for professional voiceover recording with focus on ENGAGEMENT and CONVERSATIONAL STYLE.
+      userPrompt = `Enhance this script for professional voiceover recording.
+
+🎯 ENHANCEMENT FOCUS: ${focus.toUpperCase()}
+${selectedFocus}
+${customInstructionSection}
 
 ENHANCEMENT REQUIREMENTS:
 
 📢 ENGAGEMENT & CONVERSATIONAL STYLE:
 1. Convert formal/stiff language to warm, conversational tone
-2. Add rhetorical questions to engage the audience ("Ever wondered why...?")
-3. Use "you" and "we" to create connection with viewers
+2. Add rhetorical questions to engage the audience
+3. Use "you" and personal pronouns as appropriate
 4. Add power words for emotion (imagine, discover, transform, unlock)
 5. Create curiosity hooks at section starts
 6. Add personal touches and relatable examples
@@ -376,7 +419,7 @@ ENHANCEMENT REQUIREMENTS:
 
 🎯 STRUCTURE:
 12. Strong opening hook that grabs attention in first 5 seconds
-13. Clear transitions between ideas ("Here's the thing...", "Now let's talk about...")
+13. Clear transitions between ideas
 14. Compelling call-to-action at the end
 15. End with memorable closing statement
 
@@ -406,10 +449,10 @@ Return this JSON structure:
     "after": number (1-10),
     "improvements": ["list of key engagement improvements made"]
   },
-  "summary": "2-3 sentence summary of key improvements including engagement and conversational changes"
+  "summary": "2-3 sentence summary of key improvements including focus: ${focus} and any custom instructions applied"
 }
 
-Include 10-15 specific changes showing before/after. Prioritize engagement and conversational improvements.
+Include 10-15 specific changes showing before/after. Apply the focus (${focus}) and any custom instructions as highest priority.
 
 IMPORTANT: Return the COMPLETE enhanced script. Do not truncate or summarize. Include every section from start to finish.
 
