@@ -184,13 +184,16 @@ export default function ProductionHub() {
           </div>
           <div className="flex items-center gap-2">
             {/* Project Selector */}
-            <Select value={selectedProject || ''} onValueChange={setSelectedProject}>
+            <Select 
+              value={selectedProject || '__all__'} 
+              onValueChange={(val) => setSelectedProject(val === '__all__' ? null : val)}
+            >
               <SelectTrigger className="w-[200px]">
                 <FolderOpen className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="All Projects" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Projects</SelectItem>
+                <SelectItem value="__all__">All Projects</SelectItem>
                 {projects.map(project => (
                   <SelectItem key={project.id} value={project.id}>
                     {project.name}
@@ -440,14 +443,14 @@ export default function ProductionHub() {
                           Script
                         </Label>
                         <Select
-                          value={newShow.linked_script_id}
-                          onValueChange={(value) => setNewShow(prev => ({ ...prev, linked_script_id: value }))}
+                          value={newShow.linked_script_id || '__none__'}
+                          onValueChange={(value) => setNewShow(prev => ({ ...prev, linked_script_id: value === '__none__' ? '' : value }))}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select a script (optional)" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">None</SelectItem>
+                            <SelectItem value="__none__">None</SelectItem>
                             {availableScripts.map((script) => (
                               <SelectItem key={script.id} value={script.id}>
                                 {script.name}
@@ -468,14 +471,14 @@ export default function ProductionHub() {
                           Background Music
                         </Label>
                         <Select
-                          value={newShow.linked_music_id}
-                          onValueChange={(value) => setNewShow(prev => ({ ...prev, linked_music_id: value }))}
+                          value={newShow.linked_music_id || '__none__'}
+                          onValueChange={(value) => setNewShow(prev => ({ ...prev, linked_music_id: value === '__none__' ? '' : value }))}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select music (optional)" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">None</SelectItem>
+                            <SelectItem value="__none__">None</SelectItem>
                             <SelectItem value="ambient-1">Ambient Background</SelectItem>
                             <SelectItem value="upbeat-1">Upbeat Intro</SelectItem>
                             <SelectItem value="corporate-1">Corporate Theme</SelectItem>
