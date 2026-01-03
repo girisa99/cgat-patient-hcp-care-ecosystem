@@ -1632,8 +1632,8 @@ export function ScriptEditorTab({
           
           {/* Analysis Results */}
           {showAnalysis && analysisResult && (
-            <div className="mb-6 p-4 rounded-lg border border-blue-500/30 bg-blue-500/5">
-              <div className="flex items-center justify-between mb-4">
+            <div className="mb-6 p-4 rounded-lg border border-blue-500/30 bg-blue-500/5 max-h-[600px] overflow-hidden flex flex-col">
+              <div className="flex items-center justify-between mb-4 shrink-0">
                 <h3 className="font-semibold flex items-center gap-2">
                   <Search className="h-5 w-5 text-blue-500" />
                   Script Analysis Results
@@ -1642,6 +1642,7 @@ export function ScriptEditorTab({
                   <X className="h-4 w-4" />
                 </Button>
               </div>
+              <ScrollArea className="flex-1 pr-2">
               
               {/* Overall Assessment - NEW */}
               {analysisResult.overallAssessment && (
@@ -1889,8 +1890,7 @@ export function ScriptEditorTab({
                       </Button>
                     </div>
                   </div>
-                  <ScrollArea className="h-72">
-                    <div className="space-y-2 pr-4">
+                  <div className="space-y-2">
                       {analysisResult.recommendations.map(rec => (
                         <div 
                           key={rec.id}
@@ -1997,7 +1997,6 @@ export function ScriptEditorTab({
                         </div>
                       ))}
                     </div>
-                  </ScrollArea>
                 </div>
               ) : (
                 <div className="text-center py-4 text-muted-foreground">
@@ -2005,13 +2004,14 @@ export function ScriptEditorTab({
                   <p>Script looks great! No major issues found.</p>
                 </div>
               )}
+              </ScrollArea>
             </div>
           )}
           
           {/* Enhancement Review Panel */}
           {showEnhancementReview && enhancedContent && (
-            <div className="mb-6 p-4 rounded-lg border border-purple-500/30 bg-purple-500/5">
-              <div className="flex items-center justify-between mb-4">
+            <div className="mb-6 p-4 rounded-lg border border-purple-500/30 bg-purple-500/5 max-h-[600px] flex flex-col">
+              <div className="flex items-center justify-between mb-4 shrink-0">
                 <h3 className="font-semibold flex items-center gap-2">
                   <Wand2 className="h-5 w-5 text-purple-500" />
                   Review AI Enhancements
@@ -2026,6 +2026,8 @@ export function ScriptEditorTab({
                   </Button>
                 </div>
               </div>
+              
+              <div className="flex-1 overflow-y-auto min-h-0">
               
               {/* Engagement Score - Before/After */}
               {engagementScore && (
@@ -2104,10 +2106,9 @@ export function ScriptEditorTab({
                 </Button>
               </div>
               
-              {/* Changes List - with explicit height for scrolling */}
-              <ScrollArea className="h-72 mb-4">
-                <div className="space-y-3 pr-4">
-                  {enhancementChanges.map((change, index) => (
+              {/* Changes List */}
+              <div className="space-y-3 mb-4">
+                {enhancementChanges.map((change, index) => (
                     <div 
                       key={change.id}
                       className={cn(
@@ -2157,8 +2158,7 @@ export function ScriptEditorTab({
                       )}
                     </div>
                   ))}
-                </div>
-              </ScrollArea>
+              </div>
               
               {/* Compare Versions */}
               <div className="grid md:grid-cols-2 gap-4 mb-4">
@@ -2187,6 +2187,7 @@ export function ScriptEditorTab({
                 <FileCheck className="h-4 w-4 mr-2" />
                 Complete Enhancement & Apply Changes
               </Button>
+              </div>
             </div>
           )}
           
