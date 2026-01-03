@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -662,6 +663,18 @@ const MUSIC_GENRES = [
 // Feature cards for the dashboard - Workflow order: Script → Voice → Music → Record
 const FEATURES = [
   {
+    id: 'productions',
+    title: 'Production Hub',
+    description: 'Manage podcast & webcast productions pipeline',
+    icon: Layers,
+    color: 'from-indigo-500 to-violet-500',
+    badge: 'New',
+    stats: { label: '6 Stages', value: 'Kanban' },
+    tab: 'productions',
+    isExternal: true,
+    route: '/genie-studio/productions'
+  },
+  {
     id: 'script',
     title: 'Script Editor',
     description: 'Write & enhance scripts with AI assistance',
@@ -868,6 +881,7 @@ function useShowEvents() {
 }
 
 export default function GenieStudio() {
+  const navigate = useNavigate();
   const [isStudioOpen, setIsStudioOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   
@@ -1197,7 +1211,9 @@ export default function GenieStudio() {
   };
 
   const handleFeatureClick = (featureId: string) => {
-    if (featureId === 'record') {
+    if (featureId === 'productions') {
+      navigate('/genie-studio/productions');
+    } else if (featureId === 'record') {
       setIsStudioOpen(true);
     } else if (featureId === 'voice') {
       setActiveTab('voice-generator');
