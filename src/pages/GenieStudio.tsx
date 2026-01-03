@@ -726,15 +726,15 @@ const FEATURES = [
   }
 ];
 
-// Quick Tips for Users - Following workflow sequence: Script → AI Enhance → TTS → Music → Record → Publish
+// Quick Tips for Users - Updated for Production Hub workflow
 const QUICK_TIPS = [
-  { icon: PenTool, title: '1. Write Script', text: 'Create your script in the Script Editor - video or audio format' },
-  { icon: Wand2, title: '2. AI Enhance', text: 'Analyze & enhance with AI - review suggestions, accept or skip recommendations' },
-  { icon: Mic, title: '3. Generate TTS', text: 'Convert your original or enhanced script to AI voiceover with ElevenLabs or OpenAI' },
-  { icon: Music, title: '4. Add Music', text: 'Generate or upload background music to set the perfect mood' },
-  { icon: Video, title: '5. Record Video', text: 'Open Recording Studio with teleprompter, play voiceover/TTS and music while recording' },
-  { icon: Download, title: '6. Export', text: 'Download your final video with synced audio in multiple formats' },
-  { icon: Radio, title: '7. Go Live', text: 'Publish as podcast, schedule webcast, or broadcast live to your audience across platforms' }
+  { icon: Layers, title: '1. Create Production', text: 'Start in Production Hub - create podcast, webcast, or video project' },
+  { icon: Users, title: '2. Outreach', text: 'Invite participants, hosts, and guests - track confirmations' },
+  { icon: PenTool, title: '3. Write Script', text: 'Upload or write your script - AI enhance for clarity and engagement' },
+  { icon: Music, title: '4. Add Music', text: 'Generate or upload background music (podcasts) or intro/outro music' },
+  { icon: Video, title: '5. Record/Rehearse', text: 'Open Recording Studio with teleprompter - for webcasts, TTS preview available' },
+  { icon: Film, title: '6. Post-Production', text: 'Edit, trim, and polish your recording in the studio' },
+  { icon: Radio, title: '7. Publish', text: 'Go live with landing page and embeddable widget' }
 ];
 
 // Custom hook to load media from localStorage
