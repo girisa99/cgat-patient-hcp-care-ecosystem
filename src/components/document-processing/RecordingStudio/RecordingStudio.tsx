@@ -219,19 +219,38 @@ export function RecordingStudio({
   const currentScript = scripts.find(s => s.id === selectedScriptId);
   const currentVoiceover = voiceovers.find(v => v.id === selectedVoiceoverId);
   const currentMusic = music.find(m => m.id === selectedMusicId);
+  const currentTTSFile = voiceovers.find(v => v.id === selectedTTSFileId);
+  
+  // Track script text from selected TTS/voiceover for teleprompter
+  const [audioLinkedScriptText, setAudioLinkedScriptText] = useState<string | null>(null);
   
   // Debug logging for voiceover selection
   useEffect(() => {
-    console.log('[RecordingStudio] Voiceover state:', {
+    console.log('[RecordingStudio] Audio asset state:', {
       voiceoversCount: voiceovers.length,
-      voiceovers: voiceovers.map(v => ({ id: v.id, name: v.name })),
+      voiceovers: voiceovers.map(v => ({ id: v.id, name: v.name, metadataType: v.metadataType })),
       selectedVoiceoverId,
       currentVoiceover: currentVoiceover ? { id: currentVoiceover.id, name: currentVoiceover.name, url: currentVoiceover.url?.substring(0, 40) } : 'None',
+      selectedTTSFileId,
+      currentTTSFile: currentTTSFile ? { id: currentTTSFile.id, name: currentTTSFile.name, hasScriptText: !!currentTTSFile.scriptText } : 'None',
       musicCount: music.length,
       selectedMusicId,
       currentMusic: currentMusic ? { id: currentMusic.id, name: currentMusic.name } : 'None'
     });
-  }, [voiceovers, selectedVoiceoverId, currentVoiceover, music, selectedMusicId, currentMusic]);
+  }, [voiceovers, selectedVoiceoverId, currentVoiceover, selectedTTSFileId, currentTTSFile, music, selectedMusicId, currentMusic]);
+
+  // Auto-load script text from TTS/voiceover when selected (for teleprompter sync)
+  useEffect(() => {
+    if (currentTTSFile?.scriptText) {
+      console.log('[RecordingStudio] Loading script text from TTS file for teleprompter:', currentTTSFile.name);
+      setAudioLinkedScriptText(currentTTSFile.scriptText);
+    } else if (currentVoiceover?.scriptText) {
+      console.log('[RecordingStudio] Loading script text from voiceover for teleprompter:', currentVoiceover.name);
+      setAudioLinkedScriptText(currentVoiceover.scriptText);
+    } else {
+      setAudioLinkedScriptText(null);
+    }
+  }, [currentTTSFile, currentVoiceover]);
 
   // Apply production context settings when opened from Production Hub
   useEffect(() => {
@@ -673,30 +692,35 @@ export function RecordingStudio({
     setTimeout(() => {
       console.log('[RecordingStudio] Starting audio playback after countdown...');
       console.log('[RecordingStudio] Available audio sources:', {
-        voiceover: currentVoiceover ? currentVoiceover.url.substring(0, 40) : 'None',
+        voiceover: currentVoiceover ? currentVoiceover.url?.substring(0, 40) : 'None',
+        selectedTTSFile: currentTTSFile ? currentTTSFile.url?.substring(0, 40) : 'None',
         ttsLastResult: ttsGeneration.lastResult?.audioUrl ? 'Available' : 'None',
         ttsAudioUrl: ttsAudioUrl ? 'Available' : 'None',
         hasTTSAudio: hasTTSAudio,
-        music: currentMusic ? currentMusic.url.substring(0, 40) : 'None'
+        music: currentMusic ? currentMusic.url?.substring(0, 40) : 'None'
       });
       
-      // Play voiceover OR TTS (not both - TTS is fallback when no voiceover)
-      if (currentVoiceover && currentVoiceover.url) {
+      // Priority for voice audio:
+      // 1. Selected TTS file from AudioAssetSelector
+      // 2. Selected voiceover from AudioAssetSelector
+      // 3. Generated TTS audio (from ttsGeneration hook)
+      // 4. Local TTS URL state
+      if (currentTTSFile?.url) {
+        console.log('[RecordingStudio] Playing selected TTS file:', currentTTSFile.url.substring(0, 60));
+        audioPlayback.playTTS(currentTTSFile.url);
+      } else if (currentVoiceover?.url) {
         console.log('[RecordingStudio] Playing voiceover:', currentVoiceover.url.substring(0, 60));
         audioPlayback.playVoiceover(currentVoiceover.url);
       } else if (ttsGeneration.lastResult?.audioUrl) {
-        // TTS was generated via hook - play it
         console.log('[RecordingStudio] Playing TTS audio from ttsGeneration.lastResult');
         const ttsAudioElement = new Audio(ttsGeneration.lastResult.audioUrl);
         audioPlayback.playTTS(ttsAudioElement);
       } else if (ttsAudioUrl) {
-        // Local TTS URL state
         console.log('[RecordingStudio] Playing TTS audio from ttsAudioUrl state');
         const ttsAudioElement = new Audio(ttsAudioUrl);
         audioPlayback.playTTS(ttsAudioElement);
       } else {
-        console.log('[RecordingStudio] No voice audio (voiceover or TTS) available to play');
-        console.log('[RecordingStudio] To add voice: Select a voiceover OR generate TTS before recording');
+        console.log('[RecordingStudio] No voice audio available to auto-play');
       }
       
       // Play music (can play alongside voice)
@@ -711,7 +735,7 @@ export function RecordingStudio({
       // Reset word index for teleprompter
       setCurrentWordIndex(0);
     }, countdownMs);
-  }, [recording, audioPlayback, currentVoiceover, currentMusic, screenShare, currentScript, ttsGeneration.lastResult, ttsAudioUrl, hasTTSAudio]);
+  }, [recording, audioPlayback, currentVoiceover, currentTTSFile, currentMusic, screenShare, currentScript, ttsGeneration.lastResult, ttsAudioUrl, hasTTSAudio]);
 
   // Pause recording - also pause audio
   const handlePauseRecording = useCallback(() => {
@@ -997,11 +1021,19 @@ export function RecordingStudio({
           </div>
           
           <div className="flex items-center gap-2">
-            {/* Teleprompter Button */}
-            {currentScript && (
+            {/* Teleprompter Button - works with script OR audio-linked script text */}
+            {(currentScript || audioLinkedScriptText) && (
               <FloatingTeleprompter
-                content={isUsingEnhancedScript && cleanEnhancedScript ? cleanEnhancedScript : currentScript.content}
-                title={currentScript.title + (isUsingEnhancedScript ? ' (Enhanced)' : '')}
+                content={
+                  currentScript 
+                    ? (isUsingEnhancedScript && cleanEnhancedScript ? cleanEnhancedScript : currentScript.content)
+                    : audioLinkedScriptText || ''
+                }
+                title={
+                  currentScript 
+                    ? (currentScript.title + (isUsingEnhancedScript ? ' (Enhanced)' : ''))
+                    : (currentTTSFile?.name || currentVoiceover?.name || 'Audio Script')
+                }
                 isRecording={recording.isRecording}
                 scrollSpeed={teleprompter.scrollSpeed}
                 isOpen={teleprompterOpen}
