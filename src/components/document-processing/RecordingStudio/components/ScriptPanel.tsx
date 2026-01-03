@@ -237,7 +237,8 @@ export function ScriptPanel({
             type: (rec.type as 'readability' | 'pacing' | 'clarity' | 'engagement' | 'length') || 'readability',
             title: rec.title,
             description: rec.description,
-            severity: (rec.severity as 'info' | 'warning' | 'suggestion') || 'info',
+            // Default to 'suggestion' so action buttons show - 'info' hides them
+            severity: (rec.severity as 'info' | 'warning' | 'suggestion') || 'suggestion',
             accepted: null,
             status: 'pending' as RecommendationStatus,
             originalText: rec.originalText,
@@ -955,12 +956,28 @@ export function ScriptPanel({
 
           {/* Analysis Results - Scrollable */}
           {showAnalysis && analysisResult.length > 0 && (
-            <div className="flex flex-col border rounded-md p-2 bg-blue-500/5 max-h-[400px] overflow-hidden">
-              <div className="flex items-center justify-between shrink-0 mb-2">
+            <div className="border rounded-md p-2 bg-blue-500/5">
+              <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium text-blue-600">
                   📊 Analysis: {pendingRecs} pending review
                 </span>
                 <div className="flex items-center gap-1">
+                  {/* Note All button */}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-5 px-2 text-[10px] gap-1"
+                    onClick={() => {
+                      analysisResult.forEach(r => {
+                        if (r.status === 'pending') {
+                          handleAcceptRecommendation(r.id);
+                        }
+                      });
+                    }}
+                  >
+                    <Check className="w-3 h-3" />
+                    Note All
+                  </Button>
                   {/* Re-analyze button */}
                   <Button
                     size="sm"
@@ -984,7 +1001,7 @@ export function ScriptPanel({
                 </div>
               </div>
               
-              <ScrollArea className="flex-1 min-h-0 pr-1">
+              <ScrollArea className="h-[320px] pr-1">
                 <div className="space-y-2 pr-3">
                   {analysisResult.map((rec) => (
                     <div 
@@ -1084,8 +1101,8 @@ export function ScriptPanel({
                         </div>
                       )}
                       
-                      {/* Action buttons for pending recommendations */}
-                      {rec.status === 'pending' && rec.severity !== 'info' && editingRecId !== rec.id && (
+                      {/* Action buttons for pending recommendations - show for all except stats */}
+                      {rec.status === 'pending' && rec.id !== 'stats-ai' && editingRecId !== rec.id && (
                         <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/50">
                           {/* Apply AI Fix button */}
                           <Button 
@@ -1138,9 +1155,9 @@ export function ScriptPanel({
 
           {/* Enhancement Changes Review */}
           {showChanges && enhancementChanges.length > 0 && (
-            <div className="flex flex-col border rounded-md p-3 bg-primary/5 max-h-[500px] overflow-hidden">
+            <div className="border rounded-md p-3 bg-primary/5">
               {/* Header with view toggle */}
-              <div className="flex items-center justify-between shrink-0 mb-2">
+              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-primary" />
                   <span className="text-sm font-medium text-primary">
@@ -1187,8 +1204,40 @@ export function ScriptPanel({
                 </div>
               </div>
 
+              {/* Review Progress Bar */}
+              <div className="flex items-center justify-between mb-2 px-1">
+                <span className="text-xs text-muted-foreground">
+                  Review Progress: {acceptedChanges + enhancementChanges.filter(c => c.accepted === false).length}/{enhancementChanges.length}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {Math.round(((acceptedChanges + enhancementChanges.filter(c => c.accepted === false).length) / enhancementChanges.length) * 100)}%
+                </span>
+              </div>
+
+              {/* Bulk Action Buttons */}
+              <div className="flex gap-2 mb-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 px-3 text-xs gap-1"
+                  onClick={handleRejectAll}
+                >
+                  <X className="w-3 h-3" />
+                  Skip All Remaining
+                </Button>
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="h-7 px-3 text-xs gap-1 bg-green-600 hover:bg-green-700"
+                  onClick={handleAcceptAll}
+                >
+                  <Check className="w-3 h-3" />
+                  Accept All
+                </Button>
+              </div>
+
               {/* Word count comparison */}
-              <div className="flex items-center gap-4 px-2 py-1.5 rounded bg-muted/50 text-xs">
+              <div className="flex items-center gap-4 px-2 py-1.5 rounded bg-muted/50 text-xs mb-2">
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground">Original:</span>
                   <span className="font-medium">{originalWordCount} words</span>
@@ -1202,8 +1251,8 @@ export function ScriptPanel({
                 </div>
               </div>
               
-              {/* Scrollable content area */}
-              <ScrollArea className="flex-1 min-h-0">
+              {/* Scrollable content area - with explicit height */}
+              <ScrollArea className="h-[300px]">
                 {/* Inline View - Show changes in context */}
                 {changesViewMode === 'inline' && selectedScript && (
                   <InlineScriptDiff

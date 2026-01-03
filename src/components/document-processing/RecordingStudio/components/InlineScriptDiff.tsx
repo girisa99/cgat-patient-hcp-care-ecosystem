@@ -208,9 +208,9 @@ export function InlineScriptDiff({
         </div>
       </div>
 
-      {/* Inline diff view - flexible height with scroll */}
-      <ScrollArea className="flex-1 min-h-0 max-h-[300px] rounded-lg border bg-muted/20 p-4">
-        <div className="text-sm leading-relaxed whitespace-pre-wrap">
+      {/* Inline diff view - with explicit height for scrolling */}
+      <ScrollArea className="h-[250px] rounded-lg border bg-muted/20 p-4">
+        <div className="text-sm leading-relaxed whitespace-pre-wrap pr-3">
           {segments.map((segment, idx) => {
             if (segment.type === 'text') {
               return (
