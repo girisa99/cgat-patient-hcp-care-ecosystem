@@ -8040,6 +8040,8 @@ export type Database = {
           has_voiceover: boolean | null
           id: string
           name: string
+          purpose: string | null
+          show_id: string | null
           stats: Json | null
           type: string
           updated_at: string
@@ -8057,6 +8059,8 @@ export type Database = {
           has_voiceover?: boolean | null
           id?: string
           name: string
+          purpose?: string | null
+          show_id?: string | null
           stats?: Json | null
           type?: string
           updated_at?: string
@@ -8074,6 +8078,8 @@ export type Database = {
           has_voiceover?: boolean | null
           id?: string
           name?: string
+          purpose?: string | null
+          show_id?: string | null
           stats?: Json | null
           type?: string
           updated_at?: string
@@ -8081,6 +8087,13 @@ export type Database = {
           voiceover_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "genie_scripts_show_id_fkey"
+            columns: ["show_id"]
+            isOneToOne: false
+            referencedRelation: "shows"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "genie_scripts_voiceover_id_fkey"
             columns: ["voiceover_id"]
@@ -13759,8 +13772,12 @@ export type Database = {
           current_stage: Database["public"]["Enums"]["production_stage"]
           description: string | null
           embed_enabled: boolean | null
+          guest_info: Json | null
+          host_name: string | null
           id: string
           landing_page_enabled: boolean | null
+          linked_music_id: string | null
+          linked_script_id: string | null
           metadata: Json | null
           published_at: string | null
           scheduled_date: string | null
@@ -13776,8 +13793,12 @@ export type Database = {
           current_stage?: Database["public"]["Enums"]["production_stage"]
           description?: string | null
           embed_enabled?: boolean | null
+          guest_info?: Json | null
+          host_name?: string | null
           id?: string
           landing_page_enabled?: boolean | null
+          linked_music_id?: string | null
+          linked_script_id?: string | null
           metadata?: Json | null
           published_at?: string | null
           scheduled_date?: string | null
@@ -13793,8 +13814,12 @@ export type Database = {
           current_stage?: Database["public"]["Enums"]["production_stage"]
           description?: string | null
           embed_enabled?: boolean | null
+          guest_info?: Json | null
+          host_name?: string | null
           id?: string
           landing_page_enabled?: boolean | null
+          linked_music_id?: string | null
+          linked_script_id?: string | null
           metadata?: Json | null
           published_at?: string | null
           scheduled_date?: string | null

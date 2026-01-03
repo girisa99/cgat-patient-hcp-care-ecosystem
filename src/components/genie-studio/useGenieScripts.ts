@@ -16,11 +16,15 @@ export interface ScriptStats {
   readabilityScore: 'easy' | 'moderate' | 'difficult';
 }
 
+export type ScriptPurpose = 'video' | 'audio' | 'podcast' | 'webcast' | 'interview' | 'panel' | 'tutorial';
+
 export interface GenieScript {
   id: string;
   name: string;
   content: string;
   type: 'video' | 'audio';
+  purpose?: ScriptPurpose;
+  showId?: string | null;
   enhancedContent?: string | null;
   cleanContent?: string | null;
   draftContent?: string | null;
@@ -80,6 +84,8 @@ export function useGenieScripts(): UseGenieScriptsReturn {
         name: row.name,
         content: row.content,
         type: row.type as 'video' | 'audio',
+        purpose: row.purpose as ScriptPurpose | undefined,
+        showId: row.show_id,
         enhancedContent: row.enhanced_content,
         cleanContent: row.clean_content,
         draftContent: row.draft_content,
@@ -130,6 +136,8 @@ export function useGenieScripts(): UseGenieScriptsReturn {
             name: script.name,
             content: script.content,
             type: script.type,
+            purpose: (script as any).purpose ?? null,
+            show_id: (script as any).showId ?? null,
             enhanced_content: script.enhancedContent ?? null,
             clean_content: script.cleanContent ?? null,
             draft_content: script.draftContent ?? null,
@@ -151,6 +159,8 @@ export function useGenieScripts(): UseGenieScriptsReturn {
           name: data.name,
           content: data.content,
           type: data.type as 'video' | 'audio',
+          purpose: data.purpose as ScriptPurpose | undefined,
+          showId: data.show_id,
           enhancedContent: data.enhanced_content,
           cleanContent: data.clean_content,
           draftContent: data.draft_content,
@@ -176,6 +186,8 @@ export function useGenieScripts(): UseGenieScriptsReturn {
             name: script.name,
             content: script.content,
             type: script.type,
+            purpose: (script as any).purpose ?? null,
+            show_id: (script as any).showId ?? null,
             enhanced_content: script.enhancedContent ?? null,
             clean_content: script.cleanContent ?? null,
             draft_content: script.draftContent ?? null,
@@ -195,6 +207,8 @@ export function useGenieScripts(): UseGenieScriptsReturn {
           name: data.name,
           content: data.content,
           type: data.type as 'video' | 'audio',
+          purpose: data.purpose as ScriptPurpose | undefined,
+          showId: data.show_id,
           enhancedContent: data.enhanced_content,
           cleanContent: data.clean_content,
           draftContent: data.draft_content,
@@ -228,6 +242,8 @@ export function useGenieScripts(): UseGenieScriptsReturn {
       if (updates.name !== undefined) dbUpdates.name = updates.name;
       if (updates.content !== undefined) dbUpdates.content = updates.content;
       if (updates.type !== undefined) dbUpdates.type = updates.type;
+      if ((updates as any).purpose !== undefined) dbUpdates.purpose = (updates as any).purpose;
+      if ((updates as any).showId !== undefined) dbUpdates.show_id = (updates as any).showId;
       if (updates.enhancedContent !== undefined) dbUpdates.enhanced_content = updates.enhancedContent;
       if (updates.cleanContent !== undefined) dbUpdates.clean_content = updates.cleanContent;
       if (updates.draftContent !== undefined) dbUpdates.draft_content = updates.draftContent;
