@@ -1057,8 +1057,8 @@ export default function GenieStudio() {
     await deleteDbScript(id);
   };
 
-  // Save voiceover to database (generated_media table)
-  const saveVoiceover = async (url: string, name: string) => {
+  // Save voiceover to database (generated_media table) - handles blob URLs and data URIs
+  const saveVoiceover = async (url: string, name: string, audioBlob?: Blob) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -1066,8 +1066,59 @@ export default function GenieStudio() {
         return;
       }
       
-      // Generate a unique path for the file reference
-      const uniquePath = `voiceovers/${user.id}/${Date.now()}_${name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const sanitizedName = name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const uniquePath = `voiceovers/${user.id}/${Date.now()}_${sanitizedName}.mp3`;
+      
+      let finalUrl = url;
+      
+      // If we have a blob, upload it to storage
+      if (audioBlob) {
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('genie-media')
+          .upload(uniquePath, audioBlob, {
+            contentType: 'audio/mpeg',
+            upsert: true
+          });
+          
+        if (uploadError) {
+          console.error('Storage upload error:', uploadError);
+          throw new Error('Failed to upload audio file');
+        }
+        
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('genie-media')
+          .getPublicUrl(uniquePath);
+          
+        finalUrl = publicUrl;
+      } else if (url.startsWith('data:') || url.startsWith('blob:')) {
+        // Convert data URI or blob URL to actual blob and upload
+        try {
+          const response = await fetch(url);
+          const blob = await response.blob();
+          
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('genie-media')
+            .upload(uniquePath, blob, {
+              contentType: 'audio/mpeg',
+              upsert: true
+            });
+            
+          if (uploadError) {
+            console.error('Storage upload error:', uploadError);
+            throw new Error('Failed to upload audio file');
+          }
+          
+          const { data: { publicUrl } } = supabase.storage
+            .from('genie-media')
+            .getPublicUrl(uniquePath);
+            
+          finalUrl = publicUrl;
+        } catch (fetchErr) {
+          console.error('Failed to fetch blob:', fetchErr);
+          throw new Error('Failed to process audio data');
+        }
+      }
       
       const { error } = await supabase
         .from('generated_media')
@@ -1075,20 +1126,20 @@ export default function GenieStudio() {
           user_id: user.id,
           name,
           file_type: 'audio',
-          file_url: url,
-          source: 'upload',
+          file_url: finalUrl,
+          source: 'tts',
           storage_bucket: 'genie-media',
           storage_path: uniquePath,
-          metadata: { type: 'voiceover', uploadedAs: 'voiceover' }
+          metadata: { type: 'voiceover', uploadedAs: 'voiceover', generatedAt: new Date().toISOString() }
         });
       
       if (error) throw error;
       
-      toast.success('Voiceover saved!');
+      toast.success('Voiceover saved to library!');
       refreshDbMedia();
     } catch (err) {
       console.error('Failed to save voiceover:', err);
-      toast.error('Failed to save voiceover');
+      toast.error('Failed to save voiceover: ' + (err instanceof Error ? err.message : 'Unknown error'));
     }
   };
 
@@ -2109,8 +2160,8 @@ export default function GenieStudio() {
                 onSaveScript={(script) => saveScript(script)}
                 onDeleteScript={deleteScript}
                 onUpdateScript={updateScript}
-                onSaveVoiceover={(url, name, scriptId) => {
-                  saveVoiceover(url, name);
+                onSaveVoiceover={(url, name, scriptId, audioBlob) => {
+                  saveVoiceover(url, name, audioBlob);
                   if (scriptId) {
                     updateScript(scriptId, { hasVoiceover: true });
                   }
