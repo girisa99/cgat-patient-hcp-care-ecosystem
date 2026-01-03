@@ -198,8 +198,8 @@ export function RecordingStudio({
   const library = useRecordingLibrary();
   const audioPlayback = useAudioPlayback();
   
-  // Media project tracking for cost management
-  const mediaProject = useMediaProject();
+  // Media project tracking for cost management - linked to production when available
+  const mediaProject = useMediaProject({ productionContext });
   
   // Studio sound processing for podcast-quality audio
   const studioSound = useStudioSound();
@@ -911,6 +911,8 @@ export function RecordingStudio({
                     onCreateProject={mediaProject.createProject}
                     totalSessionCost={mediaProject.totalSessionCost}
                     isLoading={mediaProject.isLoading}
+                    isLinkedToProduction={mediaProject.isLinkedToProduction}
+                    productionContext={productionContext}
                   />
                   {mediaProject.currentProject && (
                     <Button

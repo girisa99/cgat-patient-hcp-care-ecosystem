@@ -1,10 +1,12 @@
 /**
  * Media Project Hook - Track costs and assets for recording studio
+ * Now unified with Production Hub shows
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import type { ProductionContextForStudio } from '../types';
 
 export interface MediaProject {
   id: string;
@@ -12,6 +14,7 @@ export interface MediaProject {
   name: string;
   description: string | null;
   status: 'active' | 'completed' | 'archived';
+  show_id: string | null; // Link to Production Hub show
   total_estimated_cost: number;
   tts_cost: number;
   music_generation_cost: number;
@@ -81,19 +84,26 @@ export const COST_ESTIMATES = {
   },
 };
 
-export function useMediaProject() {
+interface UseMediaProjectOptions {
+  productionContext?: ProductionContextForStudio;
+}
+
+export function useMediaProject(options?: UseMediaProjectOptions) {
+  const { productionContext } = options || {};
   const [projects, setProjects] = useState<MediaProject[]>([]);
   const [currentProject, setCurrentProject] = useState<MediaProject | null>(null);
   const [assets, setAssets] = useState<MediaProjectAsset[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [totalSessionCost, setTotalSessionCost] = useState(0);
+  const [isLinkedToProduction, setIsLinkedToProduction] = useState(false);
+  const hasInitializedRef = useRef(false);
 
   // Load projects for current user
   const loadProjects = useCallback(async () => {
     setIsLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) return [];
 
       const { data, error } = await supabase
         .from('media_projects')
@@ -109,36 +119,40 @@ export function useMediaProject() {
         status: p.status as 'active' | 'completed' | 'archived',
         settings: p.settings as Record<string, unknown>,
         tags: p.tags as string[] | null,
+        show_id: (p as any).show_id || null,
       })) as MediaProject[];
       
       setProjects(typedProjects);
-      
-      // Auto-select first active project
-      const activeProject = typedProjects.find(p => p.status === 'active');
-      if (activeProject && !currentProject) {
-        setCurrentProject(activeProject);
-      }
+      return typedProjects;
     } catch (error) {
       console.error('Error loading projects:', error);
+      return [];
     } finally {
       setIsLoading(false);
     }
-  }, [currentProject]);
+  }, []);
 
-  // Create new project
-  const createProject = useCallback(async (name: string, description?: string) => {
+  // Create new project - optionally linked to a show
+  const createProject = useCallback(async (name: string, description?: string, showId?: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      const insertData: Record<string, unknown> = {
+        user_id: user.id,
+        name,
+        description: description || null,
+        status: 'active',
+      };
+      
+      // Link to show if provided
+      if (showId) {
+        insertData.show_id = showId;
+      }
+
       const { data, error } = await supabase
         .from('media_projects')
-        .insert({
-          user_id: user.id,
-          name,
-          description: description || null,
-          status: 'active',
-        })
+        .insert(insertData as any)
         .select()
         .single();
 
@@ -149,11 +163,19 @@ export function useMediaProject() {
         status: data.status as 'active' | 'completed' | 'archived',
         settings: data.settings as Record<string, unknown>,
         tags: data.tags as string[] | null,
+        show_id: (data as any).show_id || null,
       } as MediaProject;
       
       setProjects(prev => [newProject, ...prev]);
       setCurrentProject(newProject);
-      toast.success(`Project "${name}" created!`);
+      
+      if (showId) {
+        setIsLinkedToProduction(true);
+        toast.success(`Project linked to production "${name}"`);
+      } else {
+        toast.success(`Project "${name}" created!`);
+      }
+      
       return newProject;
     } catch (error) {
       console.error('Error creating project:', error);
@@ -161,6 +183,44 @@ export function useMediaProject() {
       return null;
     }
   }, []);
+
+  // Find or create project for a production show
+  const findOrCreateProjectForShow = useCallback(async (showId: string, showTitle: string): Promise<MediaProject | null> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // First check if project already exists for this show
+      const { data: existing, error: findError } = await supabase
+        .from('media_projects')
+        .select('*')
+        .eq('show_id', showId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (findError) throw findError;
+
+      if (existing) {
+        const typedProject = {
+          ...existing,
+          status: existing.status as 'active' | 'completed' | 'archived',
+          settings: existing.settings as Record<string, unknown>,
+          tags: existing.tags as string[] | null,
+          show_id: (existing as any).show_id || null,
+        } as MediaProject;
+        
+        setCurrentProject(typedProject);
+        setIsLinkedToProduction(true);
+        return typedProject;
+      }
+
+      // Create new project linked to show
+      return await createProject(showTitle, `Production project for ${showTitle}`, showId);
+    } catch (error) {
+      console.error('Error finding/creating project for show:', error);
+      return null;
+    }
+  }, [createProject]);
 
   // Select project
   const selectProject = useCallback((projectId: string) => {
@@ -368,10 +428,37 @@ export function useMediaProject() {
     return minutes * COST_ESTIMATES.transcription.openai;
   }, []);
 
-  // Load projects on mount
+  // Load projects on mount, auto-link to production if context provided
   useEffect(() => {
-    loadProjects();
-  }, [loadProjects]);
+    const initialize = async () => {
+      if (hasInitializedRef.current) return;
+      hasInitializedRef.current = true;
+      
+      const loadedProjects = await loadProjects();
+      
+      // If we have production context, find or create linked project
+      if (productionContext?.showId && productionContext?.showTitle) {
+        // Check if we already have a project for this show
+        const existingLinked = loadedProjects.find(p => p.show_id === productionContext.showId);
+        
+        if (existingLinked) {
+          setCurrentProject(existingLinked);
+          setIsLinkedToProduction(true);
+        } else {
+          // Create new project linked to production
+          await findOrCreateProjectForShow(productionContext.showId, productionContext.showTitle);
+        }
+      } else {
+        // No production context - auto-select first active project
+        const activeProject = loadedProjects.find(p => p.status === 'active');
+        if (activeProject && !currentProject) {
+          setCurrentProject(activeProject);
+        }
+      }
+    };
+    
+    initialize();
+  }, [loadProjects, productionContext, findOrCreateProjectForShow, currentProject]);
 
   return {
     projects,
@@ -379,9 +466,11 @@ export function useMediaProject() {
     assets,
     isLoading,
     totalSessionCost,
+    isLinkedToProduction,
     loadProjects,
     createProject,
     selectProject,
+    findOrCreateProjectForShow,
     loadProjectAssets,
     addAsset,
     logCost,
