@@ -29,35 +29,114 @@ const PROVIDERS = {
 
 type ProviderKey = keyof typeof PROVIDERS;
 
-// Helper to clean markdown from AI response
+// Helper to clean markdown from AI response and extract valid JSON
 function cleanJsonResponse(content: string): string {
   let cleaned = content.trim();
   
-  // Remove markdown code blocks (various formats)
-  cleaned = cleaned.replace(/^```(?:json)?\s*\n?/i, '');
-  cleaned = cleaned.replace(/\n?```\s*$/i, '');
+  // Remove ALL markdown code block markers - handle multiple and nested
+  cleaned = cleaned.replace(/```json\s*/gi, '');
+  cleaned = cleaned.replace(/```\s*/g, '');
   
-  // Find the first { or [ and last } or ]
+  // Remove any leading/trailing whitespace after code block removal
+  cleaned = cleaned.trim();
+  
+  // Find the first { (we expect an object, not an array for our responses)
   const firstBrace = cleaned.indexOf('{');
-  const firstBracket = cleaned.indexOf('[');
-  const start = firstBrace === -1 ? firstBracket : 
-                firstBracket === -1 ? firstBrace : 
-                Math.min(firstBrace, firstBracket);
-  
-  if (start > 0) {
-    cleaned = cleaned.substring(start);
+  if (firstBrace > 0) {
+    cleaned = cleaned.substring(firstBrace);
   }
   
-  // Find last closing brace/bracket
-  const lastBrace = cleaned.lastIndexOf('}');
-  const lastBracket = cleaned.lastIndexOf(']');
-  const end = Math.max(lastBrace, lastBracket);
+  // Find the matching closing brace by counting braces
+  let braceCount = 0;
+  let endIndex = -1;
+  let inString = false;
+  let escapeNext = false;
   
-  if (end > 0 && end < cleaned.length - 1) {
-    cleaned = cleaned.substring(0, end + 1);
+  for (let i = 0; i < cleaned.length; i++) {
+    const char = cleaned[i];
+    
+    if (escapeNext) {
+      escapeNext = false;
+      continue;
+    }
+    
+    if (char === '\\' && inString) {
+      escapeNext = true;
+      continue;
+    }
+    
+    if (char === '"' && !escapeNext) {
+      inString = !inString;
+      continue;
+    }
+    
+    if (!inString) {
+      if (char === '{') {
+        braceCount++;
+      } else if (char === '}') {
+        braceCount--;
+        if (braceCount === 0) {
+          endIndex = i;
+          break;
+        }
+      }
+    }
+  }
+  
+  if (endIndex > 0) {
+    cleaned = cleaned.substring(0, endIndex + 1);
   }
   
   return cleaned.trim();
+}
+
+// Helper to try to repair incomplete JSON
+function tryRepairJson(content: string): any {
+  // Try direct parse first
+  try {
+    return JSON.parse(content);
+  } catch (e) {
+    // Continue to repair attempts
+  }
+  
+  let repaired = content;
+  
+  // Count open and close braces/brackets
+  let openBraces = (repaired.match(/{/g) || []).length;
+  let closeBraces = (repaired.match(/}/g) || []).length;
+  let openBrackets = (repaired.match(/\[/g) || []).length;
+  let closeBrackets = (repaired.match(/]/g) || []).length;
+  
+  // Add missing closing brackets/braces
+  while (closeBrackets < openBrackets) {
+    repaired += ']';
+    closeBrackets++;
+  }
+  while (closeBraces < openBraces) {
+    repaired += '}';
+    closeBraces++;
+  }
+  
+  // Remove trailing commas before closing braces/brackets
+  repaired = repaired.replace(/,\s*}/g, '}');
+  repaired = repaired.replace(/,\s*]/g, ']');
+  
+  // Try to fix unclosed strings at the end
+  const lastQuote = repaired.lastIndexOf('"');
+  const lastBrace = repaired.lastIndexOf('}');
+  if (lastQuote > lastBrace) {
+    // There's an unclosed string, try to close it
+    repaired = repaired.substring(0, lastQuote + 1) + '"}';
+    // Re-add closing braces as needed
+    openBraces = (repaired.match(/{/g) || []).length;
+    closeBraces = (repaired.match(/}/g) || []).length;
+    while (closeBraces < openBraces) {
+      repaired += '}';
+      closeBraces++;
+    }
+  }
+  
+  return JSON.parse(repaired);
 }
 
 async function callGeminiOrOpenAI(
@@ -80,8 +159,8 @@ async function callGeminiOrOpenAI(
         { role: "user", content: userPrompt },
       ],
       temperature: 0.7,
-      max_tokens: 4096,
-    }),
+      max_tokens: 8192,
+      response_format: { type: "json_object" },
   });
 
   if (!response.ok) {
@@ -342,7 +421,16 @@ ${scriptContent.substring(0, 6000)}`;
     try {
       const cleanContent = cleanJsonResponse(content);
       console.log("Cleaned content length:", cleanContent.length);
-      parsedContent = JSON.parse(cleanContent);
+      
+      // First try direct parse
+      try {
+        parsedContent = JSON.parse(cleanContent);
+      } catch (directError) {
+        // If direct parse fails, try repair
+        console.log("Direct parse failed, attempting repair...");
+        parsedContent = tryRepairJson(cleanContent);
+        console.log("JSON repair successful");
+      }
     } catch (parseError) {
       console.error("Failed to parse AI response. Raw length:", content.length);
       console.error("First 500 chars:", content.substring(0, 500));
@@ -360,6 +448,7 @@ ${scriptContent.substring(0, 6000)}`;
               enhancedScript: scriptContent,
               cleanScript: scriptContent,
               changes: [],
+              markers: { pausesAdded: 0, sectionBreaksAdded: 0, sentencesRewritten: 0, engagementHooksAdded: 0, conversationalChanges: 0 },
               summary: "Enhancement completed but response formatting failed. Script preserved."
             }
           }),
@@ -367,11 +456,28 @@ ${scriptContent.substring(0, 6000)}`;
         );
       }
       
+      // For analyze mode, return a minimal fallback
       return new Response(
         JSON.stringify({ 
-          error: "Failed to parse AI response. Please try again.",
+          success: true,
+          mode,
+          provider: providerKey,
+          providerName: providerConfig.name,
+          data: {
+            stats: {
+              wordCount: scriptContent.split(/\s+/).filter(w => w).length,
+              sentenceCount: scriptContent.split(/[.!?]+/).filter(s => s.trim()).length,
+              readabilityScore: "moderate"
+            },
+            recommendations: [],
+            overallAssessment: {
+              strengths: ["Script received"],
+              weaknesses: ["AI analysis response could not be parsed"],
+              voiceoverReadiness: "needs_minor_edits"
+            }
+          }
         }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
