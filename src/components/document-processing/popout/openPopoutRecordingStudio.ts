@@ -83,19 +83,33 @@ export function openPopoutRecordingStudio(options: OpenPopoutOptions): Window | 
       cleanContent: (s as any).cleanContent
     }));
 
-    const voiceoversData: PopoutVoiceoverData[] = voiceoverFiles.map(a => ({
-      id: a.id,
-      name: a.name,
-      url: a.url,
-      scriptText: (a.metadata?.scriptText as string) || null,
-      scriptType: (a.metadata?.scriptType as string) || null
-    }));
+    const voiceoversData: PopoutVoiceoverData[] = voiceoverFiles.map(a => {
+      const url = a.url;
+      // Warn about blob URLs - they won't work in the popout
+      if (url && (url.startsWith('blob:') || url.startsWith('data:'))) {
+        console.warn(`⚠️ Voiceover "${a.name}" has blob/data URL which won't work in popout:`, url.substring(0, 50));
+      }
+      return {
+        id: a.id,
+        name: a.name,
+        url: url,
+        scriptText: (a.metadata?.scriptText as string) || null,
+        scriptType: (a.metadata?.scriptType as string) || null
+      };
+    });
 
-    const musicData: PopoutMusicData[] = musicFiles.map(m => ({
-      id: m.id,
-      name: m.name,
-      url: m.url
-    }));
+    const musicData: PopoutMusicData[] = musicFiles.map(m => {
+      const url = m.url;
+      // Warn about blob URLs - they won't work in the popout
+      if (url && (url.startsWith('blob:') || url.startsWith('data:'))) {
+        console.warn(`⚠️ Music "${m.name}" has blob/data URL which won't work in popout:`, url.substring(0, 50));
+      }
+      return {
+        id: m.id,
+        name: m.name,
+        url: url
+      };
+    });
 
     const config: PopoutConfig = {
       scripts: scriptsData,

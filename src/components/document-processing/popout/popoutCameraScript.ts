@@ -131,9 +131,14 @@ export function getCameraScript(): string {
         debugLog('[Camera] Error message: ' + errorMessage);
         
         if (loadingText) {
-          loadingText.textContent = errorMessage;
+          loadingText.textContent = errorMessage + ' - You can still record audio!';
         }
         showStatus(errorMessage, 'error');
+        
+        // Even if camera fails, enable recording for audio-only scenarios
+        // User can still play voiceovers, TTS, and music
+        enableRecordButtonAudioOnly();
+        hideDebugPanel();
       }
     }
 
@@ -149,12 +154,27 @@ export function getCameraScript(): string {
       recordBtnText.textContent = 'Start Recording';
       console.log('[Camera] Record button enabled');
     }
+    
+    // Enable record button for audio-only mode (no camera needed)
+    function enableRecordButtonAudioOnly() {
+      if (!recordBtn || !recordBtnText) {
+        console.error('[Camera] Cannot enable record button - elements not found');
+        return;
+      }
+      recordBtn.disabled = false;
+      recordBtn.classList.remove('disabled');
+      recordBtn.classList.add('ready');
+      recordBtnText.textContent = 'Start Recording (Audio Only)';
+      console.log('[Camera] Record button enabled for audio-only mode');
+    }
 
     // Start recording with countdown
     function startRecordingWithCountdown() {
-      if (!mediaStream || isRecording) return;
-
-      console.log('[Recording] Starting with countdown...');
+      if (isRecording) return;
+      
+      // Allow recording even without camera (audio-only mode)
+      var hasMedia = !!mediaStream;
+      console.log('[Recording] Starting with countdown... hasMediaStream:', hasMedia);
       
       // Use enhanced countdown if available
       if (typeof startCountdown === 'function') {
@@ -169,18 +189,52 @@ export function getCameraScript(): string {
 
     // Actually start recording (called after countdown)
     function actuallyStartRecording() {
-      if (!mediaStream) {
-        console.error('[Recording] No media stream');
-        return;
-      }
-
       // Reset enhanced state
       if (typeof isStopped !== 'undefined') isStopped = false;
       if (typeof isPaused !== 'undefined') isPaused = false;
       
       recordedChunks = [];
       if (typeof trimHistory !== 'undefined') trimHistory = [];
+      
+      // Check if we have media stream for video recording
+      var hasMediaStream = !!mediaStream;
+      
+      // If no media stream, just start audio playback (audio-only mode)
+      if (!hasMediaStream) {
+        console.log('[Recording] Audio-only mode - no video capture');
+        isRecording = true;
+        recordingStartTime = Date.now();
+        
+        // Update UI
+        if (recordBtn) {
+          recordBtn.classList.remove('ready');
+          recordBtn.classList.add('recording');
+        }
+        if (recordBtnText) {
+          recordBtnText.textContent = 'Stop Recording';
+        }
+        if (recordingIndicator) {
+          recordingIndicator.classList.add('visible');
+        }
+        
+        // Start timer
+        recordingTimer = setInterval(function() {
+          const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+          if (recordingTimeEl) {
+            recordingTimeEl.textContent = formatTime(elapsed);
+          }
+        }, 1000);
+        
+        // Trigger audio playback
+        if (typeof startAudioPlayback === 'function') {
+          startAudioPlayback();
+        }
+        
+        showStatus('Audio-only recording started', 'success');
+        return;
+      }
 
+      // Video recording mode - we have media stream
       try {
         const options = { mimeType: 'video/webm;codecs=vp9,opus' };
         if (!MediaRecorder.isTypeSupported(options.mimeType)) {
@@ -268,7 +322,7 @@ export function getCameraScript(): string {
 
     // Stop recording
     function stopRecording() {
-      if (!isRecording || !mediaRecorder) return;
+      if (!isRecording) return;
 
       console.log('[Recording] Stopping...');
       
@@ -300,9 +354,12 @@ export function getCameraScript(): string {
         stopAllAudio();
       }
 
-      // Stop MediaRecorder
-      if (mediaRecorder.state !== 'inactive') {
+      // Stop MediaRecorder (only if it exists - won't exist in audio-only mode)
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
         mediaRecorder.stop();
+      } else {
+        console.log('[Recording] Audio-only mode - no media to process');
+        showStatus('Audio playback stopped', 'success');
       }
     }
 
