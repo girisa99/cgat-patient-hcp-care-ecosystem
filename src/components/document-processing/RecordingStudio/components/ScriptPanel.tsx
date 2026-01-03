@@ -955,7 +955,7 @@ export function ScriptPanel({
 
           {/* Analysis Results - Scrollable */}
           {showAnalysis && analysisResult.length > 0 && (
-            <div className="flex flex-col border rounded-md p-2 bg-blue-500/5 max-h-[320px]">
+            <div className="flex flex-col border rounded-md p-2 bg-blue-500/5 max-h-[400px] overflow-hidden">
               <div className="flex items-center justify-between shrink-0 mb-2">
                 <span className="text-xs font-medium text-blue-600">
                   📊 Analysis: {pendingRecs} pending review
@@ -984,8 +984,8 @@ export function ScriptPanel({
                 </div>
               </div>
               
-              <div className="flex-1 min-h-0 overflow-y-auto pr-1">
-                <div className="space-y-2">
+              <ScrollArea className="flex-1 min-h-0 pr-1">
+                <div className="space-y-2 pr-3">
                   {analysisResult.map((rec) => (
                     <div 
                       key={rec.id} 
@@ -1132,13 +1132,13 @@ export function ScriptPanel({
                     </div>
                   ))}
                 </div>
-              </div>
+              </ScrollArea>
             </div>
           )}
 
           {/* Enhancement Changes Review */}
           {showChanges && enhancementChanges.length > 0 && (
-            <div className="flex flex-col border rounded-md p-3 bg-primary/5 max-h-[500px]">
+            <div className="flex flex-col border rounded-md p-3 bg-primary/5 max-h-[500px] overflow-hidden">
               {/* Header with view toggle */}
               <div className="flex items-center justify-between shrink-0 mb-2">
                 <div className="flex items-center gap-2">
@@ -1203,7 +1203,7 @@ export function ScriptPanel({
               </div>
               
               {/* Scrollable content area */}
-              <div className="flex-1 min-h-0 overflow-y-auto">
+              <ScrollArea className="flex-1 min-h-0">
                 {/* Inline View - Show changes in context */}
                 {changesViewMode === 'inline' && selectedScript && (
                   <InlineScriptDiff
@@ -1301,7 +1301,7 @@ export function ScriptPanel({
                     ))}
                   </div>
                 )}
-              </div>
+              </ScrollArea>
 
               {/* Action buttons */}
               <div className="flex gap-1 pt-2 border-t border-primary/20">
