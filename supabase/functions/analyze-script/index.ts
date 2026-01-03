@@ -1,3 +1,4 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -29,6 +30,29 @@ interface ScriptAnalysis {
   conversationalTips: string[];
 }
 
+// Get the best available API key (Universal AI pattern)
+function getUniversalAIConfig(): { apiKey: string; provider: 'gemini' | 'openai' | 'claude'; model: string } | null {
+  // Try Gemini first (preferred for script analysis)
+  const geminiKey = Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GEMINI_API_KEY');
+  if (geminiKey) {
+    return { apiKey: geminiKey, provider: 'gemini', model: 'gemini-2.5-flash-preview-05-20' };
+  }
+  
+  // Try OpenAI
+  const openaiKey = Deno.env.get('OPENAI_API_KEY');
+  if (openaiKey) {
+    return { apiKey: openaiKey, provider: 'openai', model: 'gpt-4o-mini' };
+  }
+  
+  // Try Claude
+  const claudeKey = Deno.env.get('ANTHROPIC_API_KEY') || Deno.env.get('CLAUDE_API_KEY');
+  if (claudeKey) {
+    return { apiKey: claudeKey, provider: 'claude', model: 'claude-3-5-haiku-20241022' };
+  }
+  
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -44,15 +68,18 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
+    const aiConfig = getUniversalAIConfig();
+    if (!aiConfig) {
       // Fall back to rule-based analysis
+      console.log("No AI API key configured, using rule-based analysis");
       const analysis = performRuleBasedAnalysis(script);
       return new Response(
         JSON.stringify(analysis),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    console.log(`Using ${aiConfig.provider} (${aiConfig.model}) for script analysis`);
 
     // Use AI for enhanced analysis
     const systemPrompt = `You are an expert script coach and presentation specialist. Analyze the given script and provide detailed feedback to make it more engaging for video recording with TTS (text-to-speech).
@@ -99,33 +126,91 @@ Return your analysis as a JSON object with this exact structure:
   "conversationalTips": ["Use 'you' and 'we' more", "Add transition phrases"]
 }`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `Context: ${context}\n\nScript to analyze:\n\n${script}` }
-        ],
-        temperature: 0.7,
-      }),
-    });
-
-    if (!response.ok) {
-      console.error("AI analysis failed, falling back to rule-based:", response.status);
-      const analysis = performRuleBasedAnalysis(script);
-      return new Response(
-        JSON.stringify(analysis),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    let response;
+    const userMessage = `Context: ${context}\n\nScript to analyze:\n\n${script}`;
+    
+    if (aiConfig.provider === 'gemini') {
+      const fullPrompt = `${systemPrompt}\n\n${userMessage}`;
+      response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${aiConfig.model}:generateContent?key=${aiConfig.apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: fullPrompt }] }],
+            generationConfig: { temperature: 0.7, maxOutputTokens: 4096 },
+          }),
+        }
       );
+      
+      if (!response.ok) {
+        console.error("Gemini API failed, falling back to rule-based:", response.status);
+        const analysis = performRuleBasedAnalysis(script);
+        return new Response(
+          JSON.stringify(analysis),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      const data = await response.json();
+      var content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    } else if (aiConfig.provider === 'openai') {
+      response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${aiConfig.apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: aiConfig.model,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userMessage }
+          ],
+          temperature: 0.7,
+        }),
+      });
+      
+      if (!response.ok) {
+        console.error("OpenAI API failed, falling back to rule-based:", response.status);
+        const analysis = performRuleBasedAnalysis(script);
+        return new Response(
+          JSON.stringify(analysis),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      const data = await response.json();
+      var content = data.choices?.[0]?.message?.content;
+    } else {
+      // Claude
+      response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": aiConfig.apiKey,
+          "anthropic-version": "2023-06-01",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: aiConfig.model,
+          max_tokens: 4096,
+          system: systemPrompt,
+          messages: [{ role: "user", content: userMessage }],
+        }),
+      });
+      
+      if (!response.ok) {
+        console.error("Claude API failed, falling back to rule-based:", response.status);
+        const analysis = performRuleBasedAnalysis(script);
+        return new Response(
+          JSON.stringify(analysis),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      const data = await response.json();
+      var content = data.content?.[0]?.text;
     }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
 
     if (!content) {
       const analysis = performRuleBasedAnalysis(script);

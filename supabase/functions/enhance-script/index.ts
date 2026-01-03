@@ -1,3 +1,4 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -5,24 +6,21 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Provider configurations
+// Provider configurations - Using Universal AI pattern (direct API keys)
 const PROVIDERS = {
   gemini: {
     name: "Google Gemini",
-    endpoint: "https://ai.gateway.lovable.dev/v1/chat/completions",
-    model: "google/gemini-2.5-flash",
-    getApiKey: () => Deno.env.get("LOVABLE_API_KEY"),
+    model: "gemini-2.5-flash-preview-05-20",
+    getApiKey: () => Deno.env.get("GOOGLE_API_KEY") || Deno.env.get("GEMINI_API_KEY"),
   },
   openai: {
     name: "OpenAI GPT",
-    endpoint: "https://api.openai.com/v1/chat/completions",
     model: "gpt-4o-mini",
     getApiKey: () => Deno.env.get("OPENAI_API_KEY"),
   },
   claude: {
     name: "Anthropic Claude",
-    endpoint: "https://api.anthropic.com/v1/messages",
-    model: "claude-sonnet-4-20250514",
+    model: "claude-3-5-haiku-20241022",
     getApiKey: () => Deno.env.get("ANTHROPIC_API_KEY") || Deno.env.get("CLAUDE_API_KEY"),
   },
 };
@@ -139,14 +137,16 @@ function tryRepairJson(content: string): any {
   return JSON.parse(repaired);
 }
 
-async function callGeminiOrOpenAI(
-  endpoint: string,
+// Call OpenAI API directly
+async function callOpenAI(
   apiKey: string,
   model: string,
   systemPrompt: string,
   userPrompt: string
 ) {
-  const response = await fetch(endpoint, {
+  console.log(`Calling OpenAI API with model: ${model}`);
+  
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -165,19 +165,61 @@ async function callGeminiOrOpenAI(
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`API error ${response.status}: ${errorText}`);
+    console.error(`OpenAI API error (${response.status}):`, errorText);
+    throw new Error(`OpenAI API error ${response.status}: ${errorText}`);
   }
 
   const data = await response.json();
   return data.choices?.[0]?.message?.content;
 }
 
+// Call Gemini API directly (Universal AI pattern)
+async function callGemini(
+  apiKey: string,
+  model: string,
+  systemPrompt: string,
+  userPrompt: string
+) {
+  console.log(`Calling Gemini API with model: ${model}`);
+  
+  const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
+  
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: fullPrompt }] }],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 8192,
+        },
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`Gemini API error (${response.status}):`, errorText);
+    throw new Error(`Gemini API error ${response.status}: ${errorText}`);
+  }
+
+  const data = await response.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text;
+}
+
+// Call Claude API directly
 async function callClaude(
   apiKey: string,
   model: string,
   systemPrompt: string,
   userPrompt: string
 ) {
+  console.log(`Calling Claude API with model: ${model}`);
+  
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -187,7 +229,7 @@ async function callClaude(
     },
     body: JSON.stringify({
       model,
-      max_tokens: 4096,
+      max_tokens: 8192,
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
     }),
@@ -195,6 +237,7 @@ async function callClaude(
 
   if (!response.ok) {
     const errorText = await response.text();
+    console.error(`Claude API error (${response.status}):`, errorText);
     throw new Error(`Claude API error ${response.status}: ${errorText}`);
   }
 
@@ -377,14 +420,12 @@ ${scriptContent.substring(0, 6000)}`;
     try {
       if (providerKey === "claude") {
         content = await callClaude(apiKey, providerConfig.model, systemPrompt, userPrompt);
+      } else if (providerKey === "gemini") {
+        content = await callGemini(apiKey, providerConfig.model, systemPrompt, userPrompt);
+      } else if (providerKey === "openai") {
+        content = await callOpenAI(apiKey, providerConfig.model, systemPrompt, userPrompt);
       } else {
-        content = await callGeminiOrOpenAI(
-          providerConfig.endpoint,
-          apiKey,
-          providerConfig.model,
-          systemPrompt,
-          userPrompt
-        );
+        throw new Error(`Unsupported provider: ${providerKey}`);
       }
     } catch (apiError) {
       console.error(`${providerConfig.name} API error:`, apiError);
