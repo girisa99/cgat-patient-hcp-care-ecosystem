@@ -13,12 +13,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Minus, Plus, FileText, Sparkles, Search, Check, X, Download, 
-  ChevronDown, ChevronUp, RotateCcw, Copy, Edit2, Save, Eye, List, RefreshCw
+  ChevronDown, ChevronUp, RotateCcw, Copy, Edit2, Save, Eye, List, RefreshCw,
+  Wand2, Pencil, XCircle, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { ScriptData } from '../types';
 import { InlineScriptDiff, type ScriptChange } from './InlineScriptDiff';
+
+// Recommendation status: pending → applied/edited/dismissed
+type RecommendationStatus = 'pending' | 'applied' | 'edited' | 'dismissed';
 
 interface AnalysisRecommendation {
   id: string;
@@ -27,6 +31,12 @@ interface AnalysisRecommendation {
   description: string;
   severity: 'info' | 'warning' | 'suggestion';
   accepted: boolean | null;
+  // New fields for actionable recommendations
+  status: RecommendationStatus;
+  originalText?: string;  // Text in script that has the issue
+  suggestedText?: string; // AI-suggested fix (from analysis)
+  userEditedText?: string; // User's manual edit
+  isEnhancing?: boolean;  // Loading state for targeted enhance
 }
 
 interface EnhancementChange {
@@ -212,6 +222,9 @@ export function ScriptPanel({
             description: rec.description,
             severity: (rec.severity as 'info' | 'warning' | 'suggestion') || 'info',
             accepted: null,
+            status: 'pending' as RecommendationStatus,
+            originalText: rec.originalText,
+            suggestedText: rec.suggestedText,
           }));
           
           // Add stats from AI analysis
@@ -223,6 +236,7 @@ export function ScriptPanel({
               description: `${aiResult.stats.wordCount} words • ${aiResult.stats.sentenceCount} sentences • ~${aiResult.stats.estimatedDurationMinutes} min • Readability: ${aiResult.stats.readabilityScore}`,
               severity: 'info',
               accepted: true,
+              status: 'applied' as RecommendationStatus, // Stats are always "applied"
             });
           }
           
@@ -247,6 +261,7 @@ export function ScriptPanel({
           description: `${wordCount} words • ${sentences} sentences • ~${estimatedDuration} min read time`,
           severity: 'info',
           accepted: true,
+          status: 'applied' as RecommendationStatus,
         }
       ];
       
@@ -258,6 +273,7 @@ export function ScriptPanel({
           description: `Average ${avgWordsPerSentence} words/sentence. Consider breaking into shorter sentences.`,
           severity: 'warning',
           accepted: null,
+          status: 'pending' as RecommendationStatus,
         });
       }
       
@@ -399,14 +415,109 @@ export function ScriptPanel({
 
   const handleAcceptRecommendation = (recId: string) => {
     setAnalysisResult(prev => 
-      prev.map(r => r.id === recId ? { ...r, accepted: true } : r)
+      prev.map(r => r.id === recId ? { ...r, accepted: true, status: 'applied' as RecommendationStatus } : r)
     );
   };
 
   const handleRejectRecommendation = (recId: string) => {
     setAnalysisResult(prev => 
-      prev.map(r => r.id === recId ? { ...r, accepted: false } : r)
+      prev.map(r => r.id === recId ? { ...r, accepted: false, status: 'dismissed' as RecommendationStatus } : r)
     );
+  };
+
+  // State for inline editing of recommendations
+  const [editingRecId, setEditingRecId] = useState<string | null>(null);
+  const [recEditText, setRecEditText] = useState('');
+
+  // Handle "Apply AI Fix" - triggers targeted enhance for this specific recommendation
+  const handleApplyAIFix = async (rec: AnalysisRecommendation) => {
+    if (!onEnhanceScript || !selectedScript) return;
+    
+    // Mark as enhancing
+    setAnalysisResult(prev => 
+      prev.map(r => r.id === rec.id ? { ...r, isEnhancing: true } : r)
+    );
+
+    try {
+      // If the recommendation already has a suggested fix, apply it directly
+      if (rec.suggestedText && rec.originalText) {
+        const newContent = selectedScript.content.replace(rec.originalText, rec.suggestedText);
+        if (newContent !== selectedScript.content && onScriptContentUpdate) {
+          onScriptContentUpdate(selectedScriptId, newContent);
+          setAnalysisResult(prev => 
+            prev.map(r => r.id === rec.id ? { ...r, status: 'applied' as RecommendationStatus, accepted: true, isEnhancing: false } : r)
+          );
+          toast.success(`Applied fix: ${rec.title}`);
+          return;
+        }
+      }
+      
+      // Otherwise trigger full enhance and let user review
+      const result = await onEnhanceScript();
+      setAnalysisResult(prev => 
+        prev.map(r => r.id === rec.id ? { ...r, isEnhancing: false } : r)
+      );
+      
+      if (result) {
+        toast.success('Enhancement generated - review changes below');
+      }
+    } catch (error) {
+      setAnalysisResult(prev => 
+        prev.map(r => r.id === rec.id ? { ...r, isEnhancing: false } : r)
+      );
+      toast.error('Failed to apply AI fix');
+    }
+  };
+
+  // Handle "Edit Manually" - opens inline editor for this recommendation
+  const handleEditManually = (rec: AnalysisRecommendation) => {
+    setEditingRecId(rec.id);
+    // Pre-fill with suggested text if available, otherwise original text
+    setRecEditText(rec.suggestedText || rec.originalText || '');
+  };
+
+  // Save manual edit for a recommendation
+  const handleSaveRecEdit = (rec: AnalysisRecommendation) => {
+    if (!selectedScript || !onScriptContentUpdate || !recEditText.trim()) {
+      setEditingRecId(null);
+      return;
+    }
+
+    // If we have original text, replace it in the script
+    if (rec.originalText) {
+      const newContent = selectedScript.content.replace(rec.originalText, recEditText);
+      if (newContent !== selectedScript.content) {
+        onScriptContentUpdate(selectedScriptId, newContent);
+      }
+    }
+
+    // Update recommendation status
+    setAnalysisResult(prev => 
+      prev.map(r => r.id === rec.id ? { 
+        ...r, 
+        status: 'edited' as RecommendationStatus, 
+        accepted: true,
+        userEditedText: recEditText 
+      } : r)
+    );
+    
+    setEditingRecId(null);
+    setRecEditText('');
+    toast.success('Manual edit applied');
+  };
+
+  // Cancel manual edit
+  const handleCancelRecEdit = () => {
+    setEditingRecId(null);
+    setRecEditText('');
+  };
+
+  // Dismiss a recommendation (mark as not applicable)
+  const handleDismissRecommendation = (recId: string) => {
+    setAnalysisResult(prev => 
+      prev.map(r => r.id === recId ? { ...r, status: 'dismissed' as RecommendationStatus, accepted: false } : r)
+    );
+    toast.info('Recommendation dismissed');
   };
 
   const handleAcceptAll = () => {
@@ -734,20 +845,22 @@ export function ScriptPanel({
               </div>
               
               <div className="flex-1 min-h-0 overflow-y-auto pr-1">
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   {analysisResult.map((rec) => (
                     <div 
                       key={rec.id} 
                       className={cn(
-                        "p-2 rounded text-xs border",
-                        rec.accepted === true && "bg-green-500/10 border-green-500/30",
-                        rec.accepted === false && "bg-red-500/10 border-red-500/30 opacity-50",
-                        rec.accepted === null && "bg-muted/50"
+                        "p-2.5 rounded text-xs border transition-all",
+                        rec.status === 'applied' && "bg-green-500/10 border-green-500/30",
+                        rec.status === 'edited' && "bg-blue-500/10 border-blue-500/30",
+                        rec.status === 'dismissed' && "bg-muted/30 border-muted opacity-50",
+                        rec.status === 'pending' && "bg-muted/50 border-border"
                       )}
                     >
-                      <div className="flex items-start justify-between gap-2">
+                      {/* Header with type badge and title */}
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 mb-0.5">
+                          <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                             <Badge 
                               variant="outline" 
                               className={cn(
@@ -759,33 +872,123 @@ export function ScriptPanel({
                             >
                               {rec.type}
                             </Badge>
+                            {rec.status !== 'pending' && (
+                              <Badge 
+                                variant="secondary" 
+                                className={cn(
+                                  "text-[8px] h-4",
+                                  rec.status === 'applied' && "bg-green-500/20 text-green-700",
+                                  rec.status === 'edited' && "bg-blue-500/20 text-blue-700",
+                                  rec.status === 'dismissed' && "bg-muted text-muted-foreground"
+                                )}
+                              >
+                                {rec.status === 'applied' && '✓ Applied'}
+                                {rec.status === 'edited' && '✏️ Edited'}
+                                {rec.status === 'dismissed' && 'Dismissed'}
+                              </Badge>
+                            )}
                             <span className="font-medium">{rec.title}</span>
                           </div>
                           <p className="text-muted-foreground">{rec.description}</p>
+                          
+                          {/* Show original text if available */}
+                          {rec.originalText && rec.status === 'pending' && (
+                            <div className="mt-1.5 p-1.5 rounded bg-amber-500/5 border border-amber-500/20">
+                              <span className="text-[10px] text-amber-600 font-medium">Issue in script:</span>
+                              <p className="text-[11px] text-foreground/80 mt-0.5 italic">
+                                "{rec.originalText.length > 100 ? rec.originalText.slice(0, 100) + '...' : rec.originalText}"
+                              </p>
+                            </div>
+                          )}
+                          
+                          {/* Show suggested fix if available */}
+                          {rec.suggestedText && rec.status === 'pending' && (
+                            <div className="mt-1 p-1.5 rounded bg-green-500/5 border border-green-500/20">
+                              <span className="text-[10px] text-green-600 font-medium">Suggested fix:</span>
+                              <p className="text-[11px] text-foreground/80 mt-0.5">
+                                "{rec.suggestedText.length > 100 ? rec.suggestedText.slice(0, 100) + '...' : rec.suggestedText}"
+                              </p>
+                            </div>
+                          )}
                         </div>
-                        {rec.accepted === null && rec.severity !== 'info' && (
-                          <div className="flex gap-0.5 shrink-0">
+                      </div>
+                      
+                      {/* Inline editor when editing this recommendation */}
+                      {editingRecId === rec.id && (
+                        <div className="mt-2 space-y-2 border-t pt-2">
+                          <Textarea
+                            value={recEditText}
+                            onChange={(e) => setRecEditText(e.target.value)}
+                            placeholder="Enter your edited text..."
+                            className="text-xs min-h-[60px] resize-none"
+                          />
+                          <div className="flex gap-1">
                             <Button 
-                              size="icon" 
-                              variant="ghost" 
-                              className="h-5 w-5"
-                              onClick={() => handleAcceptRecommendation(rec.id)}
-                              title="Accept recommendation"
+                              size="sm" 
+                              variant="default" 
+                              onClick={() => handleSaveRecEdit(rec)}
+                              className="h-6 px-2 text-[10px] gap-1"
                             >
-                              <Check className="w-3 h-3 text-green-500" />
+                              <Save className="w-3 h-3" />
+                              Save Edit
                             </Button>
                             <Button 
-                              size="icon" 
-                              variant="ghost" 
-                              className="h-5 w-5"
-                              onClick={() => handleRejectRecommendation(rec.id)}
-                              title="Skip recommendation"
+                              size="sm" 
+                              variant="outline" 
+                              onClick={handleCancelRecEdit}
+                              className="h-6 px-2 text-[10px]"
                             >
-                              <X className="w-3 h-3 text-red-500" />
+                              Cancel
                             </Button>
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
+                      
+                      {/* Action buttons for pending recommendations */}
+                      {rec.status === 'pending' && rec.severity !== 'info' && editingRecId !== rec.id && (
+                        <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/50">
+                          {/* Apply AI Fix button */}
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="h-6 px-2 text-[10px] gap-1 border-green-500/30 hover:bg-green-500/10 hover:border-green-500"
+                            onClick={() => handleApplyAIFix(rec)}
+                            disabled={rec.isEnhancing}
+                            title={rec.suggestedText ? "Apply the suggested fix" : "Generate AI fix for this issue"}
+                          >
+                            {rec.isEnhancing ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Wand2 className="w-3 h-3 text-green-600" />
+                            )}
+                            {rec.isEnhancing ? 'Fixing...' : (rec.suggestedText ? 'Apply Fix' : 'AI Fix')}
+                          </Button>
+                          
+                          {/* Edit Manually button */}
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="h-6 px-2 text-[10px] gap-1 border-blue-500/30 hover:bg-blue-500/10 hover:border-blue-500"
+                            onClick={() => handleEditManually(rec)}
+                            title="Edit this section manually"
+                          >
+                            <Pencil className="w-3 h-3 text-blue-600" />
+                            Edit
+                          </Button>
+                          
+                          {/* Dismiss button */}
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-6 px-2 text-[10px] gap-1 text-muted-foreground hover:text-foreground"
+                            onClick={() => handleDismissRecommendation(rec.id)}
+                            title="Dismiss this recommendation"
+                          >
+                            <XCircle className="w-3 h-3" />
+                            Dismiss
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
