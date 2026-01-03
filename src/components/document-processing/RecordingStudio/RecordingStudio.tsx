@@ -833,9 +833,50 @@ export function RecordingStudio({
 
   if (!isOpen) return null;
 
+  // Prevent closing during recording - only allow explicit close button
+  const handleDialogOpenChange = useCallback((open: boolean) => {
+    if (!open) {
+      // If recording, warn user before closing
+      if (recording.isRecording) {
+        const confirmed = window.confirm('Recording in progress. Are you sure you want to close? Your recording will be lost.');
+        if (confirmed) {
+          recording.stopRecording();
+          handleClose();
+        }
+        // Don't close if not confirmed
+        return;
+      }
+      handleClose();
+    }
+  }, [recording.isRecording, recording.stopRecording, handleClose]);
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="!max-w-[100vw] !w-screen !h-screen !rounded-none p-0 gap-0 overflow-hidden flex flex-col [&>button]:hidden">
+    <Dialog 
+      open={isOpen} 
+      onOpenChange={handleDialogOpenChange}
+      modal={true}
+    >
+      <DialogContent 
+        className="!max-w-[100vw] !w-screen !h-screen !rounded-none p-0 gap-0 overflow-hidden flex flex-col [&>button]:hidden"
+        onPointerDownOutside={(e) => {
+          // Prevent closing when clicking outside during recording
+          if (recording.isRecording) {
+            e.preventDefault();
+          }
+        }}
+        onEscapeKeyDown={(e) => {
+          // Prevent escape key closing during recording
+          if (recording.isRecording) {
+            e.preventDefault();
+          }
+        }}
+        onInteractOutside={(e) => {
+          // Prevent any outside interaction from closing during recording
+          if (recording.isRecording) {
+            e.preventDefault();
+          }
+        }}
+      >
         {/* Hidden file input */}
         <input
           ref={logoInputRef}
