@@ -261,7 +261,7 @@ export function ScriptEditorTab({
   // Custom Enhancement Instructions State
   const [showEnhancementDialog, setShowEnhancementDialog] = useState(false);
   const [customEnhancementInstructions, setCustomEnhancementInstructions] = useState('');
-  const [enhancementFocus, setEnhancementFocus] = useState<'engagement' | 'clarity' | 'pacing' | 'conversational' | 'balanced'>('balanced');
+  const [enhancementFocus, setEnhancementFocus] = useState<'engagement' | 'clarity' | 'pacing' | 'conversational' | 'balanced' | 'humor'>('balanced');
   
   // Progressive Analysis State - Step by step walkthrough
   const [analysisSteps, setAnalysisSteps] = useState<{
@@ -2184,10 +2184,32 @@ export function ScriptEditorTab({
                               variant="outline" 
                               size="sm" 
                               className="h-7 px-2 border-green-500/30 hover:bg-green-500/10"
-                              onClick={() => handleAcceptChange(change.id)}
+                              onClick={() => {
+                                // Apply this specific change to the script
+                                if (change.original && change.enhanced) {
+                                  const newContent = scriptContent.replace(change.original, change.enhanced);
+                                  if (newContent !== scriptContent) {
+                                    setScriptContent(newContent);
+                                    toast.success('Applied fix to script');
+                                  }
+                                }
+                                handleAcceptChange(change.id);
+                              }}
                             >
-                              <Check className="h-3 w-3 text-green-500 mr-1" />
-                              Accept
+                              <Wand2 className="h-3 w-3 text-green-600 mr-1" />
+                              Apply Fix
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-7 px-2 border-blue-500/30 hover:bg-blue-500/10"
+                              onClick={() => {
+                                toast.info('Edit mode: Make changes in the script editor');
+                                handleAcceptChange(change.id);
+                              }}
+                            >
+                              <Edit3 className="h-3 w-3 text-blue-600 mr-1" />
+                              Edit
                             </Button>
                             <Button 
                               variant="ghost" 
@@ -2195,8 +2217,8 @@ export function ScriptEditorTab({
                               className="h-7 px-2"
                               onClick={() => handleSkipChange(change.id)}
                             >
-                              <X className="h-3 w-3 text-red-500 mr-1" />
-                              Skip
+                              <X className="h-3 w-3 text-muted-foreground mr-1" />
+                              Dismiss
                             </Button>
                           </div>
                         ) : (
@@ -2632,6 +2654,13 @@ export function ScriptEditorTab({
                   <Label htmlFor="conversational" className="flex-1 cursor-pointer">
                     <span className="font-medium">Conversational</span>
                     <p className="text-xs text-muted-foreground">Natural, spoken-word friendly</p>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 p-2 rounded-lg border hover:bg-muted/50 cursor-pointer">
+                  <RadioGroupItem value="humor" id="humor" />
+                  <Label htmlFor="humor" className="flex-1 cursor-pointer">
+                    <span className="font-medium">Humor & Personality</span>
+                    <p className="text-xs text-muted-foreground">Add wit, light humor, personality</p>
                   </Label>
                 </div>
               </RadioGroup>
