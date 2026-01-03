@@ -215,8 +215,12 @@ export function useAudioPlayback() {
     setIsPlaying(prev => ({ ...prev, music: false }));
   }, []);
 
-  const playTTS = useCallback((audio: HTMLAudioElement) => {
-    console.log('[useAudioPlayback] playTTS called with audio element, src:', audio.src.substring(0, 60));
+  const playTTS = useCallback((urlOrAudio: string | HTMLAudioElement) => {
+    // Support both URL strings and HTMLAudioElement for backward compatibility
+    const audio = typeof urlOrAudio === 'string' ? new Audio(urlOrAudio) : urlOrAudio;
+    
+    console.log('[useAudioPlayback] playTTS called:', typeof urlOrAudio === 'string' ? 'URL' : 'HTMLAudioElement', 
+      ', src:', audio.src?.substring(0, 60) || 'no src');
     
     // Stop voiceover and existing TTS to prevent overlap
     if (voiceoverRef.current) voiceoverRef.current.pause();
