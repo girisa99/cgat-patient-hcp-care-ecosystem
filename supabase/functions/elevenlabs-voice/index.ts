@@ -53,6 +53,14 @@ const AGENT_TYPE_VOICES: Record<string, string> = {
   'friendly': 'alice',
 }
 
+// Script mode to voice and settings mapping
+const SCRIPT_MODE_VOICES: Record<string, { voice: string; stability: number; similarity: number; style: number; speed: number }> = {
+  'podcast': { voice: 'brian', stability: 0.45, similarity: 0.75, style: 0.35, speed: 1.0 },
+  'webcast': { voice: 'daniel', stability: 0.65, similarity: 0.7, style: 0.15, speed: 0.95 },
+  'video': { voice: 'george', stability: 0.55, similarity: 0.85, style: 0.4, speed: 0.9 },
+  'audio': { voice: 'matilda', stability: 0.7, similarity: 0.8, style: 0.1, speed: 0.92 },
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -60,7 +68,7 @@ serve(async (req) => {
   }
 
   try {
-    const { text, voice, model, agentType } = await req.json()
+    const { text, voice, model, agentType, scriptMode, voiceSettings } = await req.json()
 
     if (!text) {
       throw new Error('Text is required')
@@ -71,10 +79,14 @@ serve(async (req) => {
       throw new Error('ElevenLabs API key not configured')
     }
 
-    console.log(`[ElevenLabs] Generating speech - agent type: ${agentType}, requested voice: ${voice}`)
+    console.log(`[ElevenLabs] Generating speech - agent type: ${agentType}, script mode: ${scriptMode}, requested voice: ${voice}`)
 
-    // Determine voice: user-specified > agent type default > fallback
+    // Get script mode settings if provided
+    const modeSettings = scriptMode ? SCRIPT_MODE_VOICES[scriptMode] : null
+
+    // Determine voice: user-specified > script mode default > agent type default > fallback
     let selectedVoiceName = voice?.toLowerCase() || 
+      (modeSettings ? modeSettings.voice : null) ||
       (agentType ? AGENT_TYPE_VOICES[agentType] : null) || 
       'aria'
 
@@ -95,7 +107,13 @@ serve(async (req) => {
 
     const modelId = model || 'eleven_multilingual_v2'
 
-    console.log(`[ElevenLabs] Using voice: ${selectedVoiceName} (${voiceId}) with model: ${modelId}`)
+    // Voice settings priority: explicit voiceSettings > script mode settings > defaults
+    const stability = voiceSettings?.stability ?? modeSettings?.stability ?? 0.5
+    const similarityBoost = voiceSettings?.similarity_boost ?? modeSettings?.similarity ?? 0.75
+    const style = voiceSettings?.style ?? modeSettings?.style ?? 0.0
+    const speed = voiceSettings?.speed ?? modeSettings?.speed ?? 1.0
+
+    console.log(`[ElevenLabs] Using voice: ${selectedVoiceName} (${voiceId}) with model: ${modelId}, settings: stability=${stability}, similarity=${similarityBoost}, style=${style}`)
 
     // Generate speech using ElevenLabs API
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
@@ -109,10 +127,11 @@ serve(async (req) => {
         text,
         model_id: modelId,
         voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.75,
-          style: 0.0,
-          use_speaker_boost: true
+          stability,
+          similarity_boost: similarityBoost,
+          style,
+          use_speaker_boost: true,
+          speed
         }
       }),
     })

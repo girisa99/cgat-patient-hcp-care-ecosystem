@@ -13,6 +13,13 @@ export interface TTSOptions {
   stability?: number;
   similarityBoost?: number;
   pitch?: number;
+  scriptMode?: 'podcast' | 'webcast' | 'video' | 'audio';
+  voiceSettings?: {
+    stability: number;
+    similarityBoost: number;
+    style: number;
+    speed: number;
+  };
 }
 
 export interface TTSResult {
@@ -178,6 +185,13 @@ export function useTTSGeneration() {
           text: options.text,
           voice: options.voice,
           model: 'eleven_multilingual_v2',
+          scriptMode: options.scriptMode, // Pass script mode for mode-aware settings
+          voiceSettings: options.voiceSettings ? {
+            stability: options.voiceSettings.stability,
+            similarity_boost: options.voiceSettings.similarityBoost,
+            style: options.voiceSettings.style,
+            speed: options.voiceSettings.speed,
+          } : undefined,
         }),
       }
     );
