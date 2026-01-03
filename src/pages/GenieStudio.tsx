@@ -657,17 +657,17 @@ const MUSIC_GENRES = [
   { id: 'acoustic', name: 'Acoustic', prompt: 'Warm acoustic guitar melody, natural and organic, coffeehouse atmosphere', color: 'amber' }
 ];
 
-// Feature cards for the dashboard
+// Feature cards for the dashboard - Workflow order: Script → Voice → Music → Record
 const FEATURES = [
   {
-    id: 'record',
-    title: 'Record Video',
-    description: 'Camera, screen, or both with AI teleprompter',
-    icon: Video,
-    color: 'from-red-500 to-orange-500',
-    badge: 'Popular',
-    stats: { label: 'Quick Start', value: '< 10s' },
-    tab: 'record'
+    id: 'script',
+    title: 'Script Editor',
+    description: 'Write & enhance scripts with AI assistance',
+    icon: PenTool,
+    color: 'from-blue-500 to-cyan-500',
+    badge: null,
+    stats: { label: 'AI Enhanced', value: 'Yes' },
+    tab: 'script'
   },
   {
     id: 'voice',
@@ -680,16 +680,6 @@ const FEATURES = [
     tab: 'voice'
   },
   {
-    id: 'script',
-    title: 'Script Editor',
-    description: 'Write & enhance scripts with AI assistance',
-    icon: PenTool,
-    color: 'from-blue-500 to-cyan-500',
-    badge: null,
-    stats: { label: 'AI Enhanced', value: 'Yes' },
-    tab: 'script'
-  },
-  {
     id: 'music',
     title: 'AI Music Studio',
     description: 'Generate background music & soundscapes',
@@ -698,6 +688,16 @@ const FEATURES = [
     badge: 'New',
     stats: { label: 'Genres', value: '25+' },
     tab: 'music'
+  },
+  {
+    id: 'record',
+    title: 'Record Video',
+    description: 'Camera, screen, or both with AI teleprompter',
+    icon: Video,
+    color: 'from-red-500 to-orange-500',
+    badge: 'Popular',
+    stats: { label: 'Quick Start', value: '< 10s' },
+    tab: 'record'
   }
 ];
 
