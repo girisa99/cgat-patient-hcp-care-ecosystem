@@ -48,7 +48,10 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useTTSGeneration, OPENAI_VOICES, ELEVENLABS_VOICES, GOOGLE_VOICES } from '@/components/document-processing/RecordingStudio/hooks/useTTSGeneration';
 import { ScriptModeToolbar } from './ScriptModeToolbar';
+import { VoiceSelector } from './VoiceSelector';
+import { RecordingLayoutPreview } from './RecordingLayoutPreview';
 import { SCRIPT_MODES, type ScriptMode } from '@/types/projects';
+import { SCRIPT_MODE_CONFIGS, getVoiceSettingsForMode, type VoicePreset } from '@/config/scriptModePresets';
 
 // Types
 export type ScriptPurpose = 'video' | 'audio' | 'podcast' | 'webcast' | 'interview' | 'panel' | 'tutorial';
@@ -271,6 +274,15 @@ export function ScriptEditorTab({
   const [ttsVoice, setTtsVoice] = useState('');
   const [selectedTTSScriptId, setSelectedTTSScriptId] = useState<string | null>(null);
   
+  // Mode-aware voice settings
+  const [selectedVoicePreset, setSelectedVoicePreset] = useState<VoicePreset | null>(null);
+  const [customVoiceSettings, setCustomVoiceSettings] = useState<{
+    stability: number;
+    similarityBoost: number;
+    style: number;
+    speed: number;
+  } | undefined>(undefined);
+  
   // AI Provider State for Script Analysis/Enhancement
   const [aiProvider, setAiProvider] = useState<'gemini' | 'openai' | 'claude'>('gemini');
   
@@ -403,6 +415,23 @@ export function ScriptEditorTab({
       setTtsVoice(ELEVENLABS_VOICES[0]?.value || 'aria');
     }
   }, [ttsProvider]);
+  
+  // Update voice preset when script mode changes
+  useEffect(() => {
+    const modeConfig = SCRIPT_MODE_CONFIGS[scriptMode];
+    if (modeConfig) {
+      const defaultVoice = modeConfig.tts.defaultVoice;
+      setSelectedVoicePreset(defaultVoice);
+      setTtsVoice(defaultVoice.voiceName.toLowerCase());
+      setTtsProvider(defaultVoice.provider);
+      setCustomVoiceSettings({
+        stability: defaultVoice.stability,
+        similarityBoost: defaultVoice.similarityBoost,
+        style: defaultVoice.style,
+        speed: defaultVoice.speed,
+      });
+    }
+  }, [scriptMode]);
   
   // Analysis steps for progressive walkthrough
   const ANALYSIS_STEPS = [
@@ -791,10 +820,20 @@ export function ScriptEditorTab({
       return;
     }
     
+    // Use mode-aware voice settings if available
+    const voiceSettings = customVoiceSettings || (selectedVoicePreset ? {
+      stability: selectedVoicePreset.stability,
+      similarityBoost: selectedVoicePreset.similarityBoost,
+      style: selectedVoicePreset.style,
+      speed: selectedVoicePreset.speed,
+    } : undefined);
+    
     const result = await generateTTS({
       provider: ttsProvider,
       voice: ttsVoice,
-      text: textForTTS
+      text: textForTTS,
+      scriptMode, // Pass script mode for mode-aware TTS
+      voiceSettings, // Pass custom voice settings
     });
     
     if (result) {
