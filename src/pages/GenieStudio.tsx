@@ -43,6 +43,8 @@ import {
   RotateCcw,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Volume2,
   Copy,
   Plus,
@@ -891,8 +893,10 @@ export default function GenieStudio() {
   // File upload refs
   const voiceoverUploadRef = useRef<HTMLInputElement>(null);
   const musicUploadRef = useRef<HTMLInputElement>(null);
+  const featuresScrollRef = useRef<HTMLDivElement>(null);
   
-  // Voice Generator State
+  // Publish Dialog State
+  const [isPublishDialogOpen, setIsPublishDialogOpen] = useState(false);
   const [voiceText, setVoiceText] = useState('');
   const [selectedProvider, setSelectedProvider] = useState<'openai' | 'elevenlabs'>('elevenlabs');
   const [selectedVoice, setSelectedVoice] = useState('');
@@ -1202,9 +1206,17 @@ export default function GenieStudio() {
     } else if (featureId === 'music') {
       setActiveTab('music-studio');
     } else if (featureId === 'publish') {
-      // Navigate to publish/broadcast functionality
-      toast.info('Publish & Go Live', {
-        description: 'Distribute as podcast, schedule webcast, or go live with broadcast!'
+      setIsPublishDialogOpen(true);
+    }
+  };
+
+  // Scroll features cards
+  const scrollFeatures = (direction: 'left' | 'right') => {
+    if (featuresScrollRef.current) {
+      const scrollAmount = 300;
+      featuresScrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
       });
     }
   };
@@ -1839,9 +1851,24 @@ export default function GenieStudio() {
 
             {/* Dashboard Tab */}
             <TabsContent value="dashboard" className="space-y-8 mt-0">
-              {/* Feature Cards - Horizontal Scrolling */}
-              <div className="relative">
-                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent snap-x snap-mandatory">
+              {/* Feature Cards - Horizontal Scrolling with Arrows */}
+              <div className="relative group/scroll">
+                {/* Left Arrow */}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 backdrop-blur border-border/50 shadow-lg opacity-0 group-hover/scroll:opacity-100 transition-opacity hover:bg-primary hover:text-primary-foreground"
+                  onClick={() => scrollFeatures('left')}
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+                
+                {/* Scrollable Container */}
+                <div 
+                  ref={featuresScrollRef}
+                  className="flex gap-4 overflow-x-auto pb-4 px-2 scrollbar-hide snap-x snap-mandatory scroll-smooth"
+                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                >
                   {FEATURES.map((feature) => (
                     <Card 
                       key={feature.id}
@@ -1897,6 +1924,16 @@ export default function GenieStudio() {
                     </Card>
                   ))}
                 </div>
+                
+                {/* Right Arrow */}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 backdrop-blur border-border/50 shadow-lg opacity-0 group-hover/scroll:opacity-100 transition-opacity hover:bg-primary hover:text-primary-foreground"
+                  onClick={() => scrollFeatures('right')}
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
               </div>
 
               {/* Upcoming Shows Section */}
@@ -3066,7 +3103,88 @@ export default function GenieStudio() {
           />
         )}
 
-        {/* Create Show Dialog - Multi-step with content and participants */}
+        {/* Publish & Go Live Dialog */}
+        <Dialog open={isPublishDialogOpen} onOpenChange={setIsPublishDialogOpen}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center">
+                  <Radio className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <span>Publish & Go Live</span>
+                  <p className="text-sm font-normal text-muted-foreground">Distribute your content across platforms</p>
+                </div>
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="grid gap-4 py-4">
+              {/* Podcast Option */}
+              <Card 
+                className="cursor-pointer hover:border-primary/50 transition-colors group"
+                onClick={() => {
+                  toast.info('Podcast Publishing', { description: 'Coming soon! Distribute to Spotify, Apple Podcasts, and more.' });
+                }}
+              >
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                    <Podcast className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold">Publish as Podcast</h4>
+                    <p className="text-sm text-muted-foreground">Distribute to Spotify, Apple Podcasts, Google Podcasts</p>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                </CardContent>
+              </Card>
+              
+              {/* Webcast Option */}
+              <Card 
+                className="cursor-pointer hover:border-primary/50 transition-colors group"
+                onClick={() => {
+                  toast.info('Webcast Scheduling', { description: 'Coming soon! Schedule live webcasts with your audience.' });
+                }}
+              >
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
+                    <Tv className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold">Schedule Webcast</h4>
+                    <p className="text-sm text-muted-foreground">Plan and schedule live sessions with your audience</p>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                </CardContent>
+              </Card>
+              
+              {/* Broadcast Option */}
+              <Card 
+                className="cursor-pointer hover:border-primary/50 transition-colors group"
+                onClick={() => {
+                  toast.info('Live Broadcast', { description: 'Coming soon! Go live on YouTube, LinkedIn, and social platforms.' });
+                }}
+              >
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center">
+                    <Radio className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold">Go Live Broadcast</h4>
+                    <p className="text-sm text-muted-foreground">Stream live to YouTube, LinkedIn, Facebook, and more</p>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                </CardContent>
+              </Card>
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsPublishDialogOpen(false)}>
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <Dialog open={isCreateShowDialogOpen} onOpenChange={(open) => {
           setIsCreateShowDialogOpen(open);
           if (!open) {
