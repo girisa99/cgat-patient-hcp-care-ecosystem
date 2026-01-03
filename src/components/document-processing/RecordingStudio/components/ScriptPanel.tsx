@@ -14,12 +14,13 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Minus, Plus, FileText, Sparkles, Search, Check, X, Download, 
   ChevronDown, ChevronUp, RotateCcw, Copy, Edit2, Save, Eye, List, RefreshCw,
-  Wand2, Pencil, XCircle, Loader2
+  Wand2, Pencil, XCircle, Loader2, Upload, History
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { ScriptData } from '../types';
 import { InlineScriptDiff, type ScriptChange } from './InlineScriptDiff';
+import { useScriptVersions } from '../hooks/useScriptVersions';
 
 // Recommendation status: pending → applied/edited/dismissed
 type RecommendationStatus = 'pending' | 'applied' | 'edited' | 'dismissed';
@@ -177,6 +178,22 @@ export function ScriptPanel({
   // Expanded view
   const [isExpanded, setIsExpanded] = useState(false);
   
+  // Version management
+  const { 
+    versions, 
+    currentVersion, 
+    isSaving: isSavingVersion, 
+    loadVersions, 
+    saveNewVersion 
+  } = useScriptVersions();
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  
+  // Load versions when script changes
+  useEffect(() => {
+    if (selectedScriptId) {
+      loadVersions(selectedScriptId);
+    }
+  }, [selectedScriptId, loadVersions]);
   // View mode for changes: 'inline' (in-context) or 'list' (separate list)
   const [changesViewMode, setChangesViewMode] = useState<'inline' | 'list'>('inline');
 
@@ -574,6 +591,39 @@ export function ScriptPanel({
     }
   };
 
+  // Save enhanced script as a new version to Production
+  const handleSaveToProduction = async () => {
+    if (!selectedScript || !enhancedContent) return;
+    
+    const changesData = enhancementChanges.map(c => ({
+      type: c.type,
+      original: c.original,
+      enhanced: c.enhanced,
+      reason: c.reason,
+      accepted: c.accepted,
+    }));
+    
+    const analysisData = analysisResult.length > 0 ? {
+      recommendations: analysisResult.map(r => ({
+        type: r.type,
+        title: r.title,
+        description: r.description,
+        status: r.status,
+      })),
+    } : undefined;
+
+    await saveNewVersion({
+      scriptId: selectedScriptId,
+      originalContent: selectedScript.content,
+      enhancedContent: enhancedContent,
+      cleanContent: cleanEnhancedContent || undefined,
+      versionType: 'enhanced',
+      changeSummary: `Enhanced version with ${enhancementChanges.length} changes`,
+      enhancementChanges: { changes: changesData } as Record<string, unknown>,
+      analysisResults: analysisData as Record<string, unknown> | undefined,
+    });
+  };
+
   const handleExportScript = (type: 'original' | 'enhanced' | 'clean') => {
     if (!selectedScript) return;
     
@@ -789,27 +839,117 @@ export function ScriptPanel({
                 </p>
               </div>
               
-              {/* Apply Enhanced Button */}
-              <div className="flex gap-1">
+              {/* Action Buttons */}
+              <div className="flex flex-col gap-1.5">
+                {/* Primary actions */}
+                <div className="flex gap-1">
+                  <Button 
+                    size="sm" 
+                    variant="default" 
+                    onClick={handleAcceptAll}
+                    className="flex-1 gap-1 text-xs h-7 bg-green-600 hover:bg-green-700"
+                  >
+                    <Check className="w-3 h-3" />
+                    Use Enhanced
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={handleRejectAll}
+                    className="gap-1 text-xs h-7"
+                  >
+                    <X className="w-3 h-3" />
+                    Discard
+                  </Button>
+                </div>
+                
+                {/* Save to Production button */}
                 <Button 
                   size="sm" 
-                  variant="default" 
-                  onClick={handleAcceptAll}
-                  className="flex-1 gap-1 text-xs h-7 bg-green-600 hover:bg-green-700"
+                  variant="secondary" 
+                  onClick={handleSaveToProduction}
+                  disabled={isSavingVersion}
+                  className="w-full gap-1.5 text-xs h-7"
+                  title="Save enhanced version to Production Hub"
                 >
-                  <Check className="w-3 h-3" />
-                  Use Enhanced Script
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={handleRejectAll}
-                  className="gap-1 text-xs h-7"
-                >
-                  <X className="w-3 h-3" />
-                  Discard
+                  {isSavingVersion ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Upload className="w-3 h-3" />
+                  )}
+                  {isSavingVersion ? 'Saving...' : 'Save to Production'}
+                  {currentVersion && (
+                    <Badge variant="outline" className="ml-1 text-[8px] h-4">
+                      v{currentVersion.version_number} → v{currentVersion.version_number + 1}
+                    </Badge>
+                  )}
                 </Button>
               </div>
+            </div>
+          )}
+
+          {/* Version History Indicator */}
+          {versions.length > 0 && (
+            <div className="flex items-center justify-between p-2 border rounded-md bg-muted/30">
+              <div className="flex items-center gap-2">
+                <History className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">
+                  Current: v{currentVersion?.version_number || 1}
+                </span>
+                {versions.length > 1 && (
+                  <Badge variant="secondary" className="text-[9px] h-4">
+                    {versions.length} versions
+                  </Badge>
+                )}
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 px-2 text-[10px] gap-1"
+                onClick={() => setShowVersionHistory(!showVersionHistory)}
+              >
+                <History className="w-3 h-3" />
+                {showVersionHistory ? 'Hide' : 'History'}
+              </Button>
+            </div>
+          )}
+
+          {/* Version History List */}
+          {showVersionHistory && versions.length > 0 && (
+            <div className="border rounded-md p-2 bg-muted/20 space-y-1.5 max-h-40 overflow-y-auto">
+              <div className="text-xs font-medium text-muted-foreground mb-1">Version History</div>
+              {versions.map((version) => (
+                <div 
+                  key={version.id}
+                  className={cn(
+                    "flex items-center justify-between p-1.5 rounded text-xs border",
+                    version.id === currentVersion?.id 
+                      ? "bg-primary/10 border-primary/30" 
+                      : "bg-background border-border"
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      variant={version.version_type === 'enhanced' ? 'default' : 'secondary'}
+                      className="text-[8px] h-4"
+                    >
+                      v{version.version_number}
+                    </Badge>
+                    <span className="text-muted-foreground">
+                      {version.version_type === 'enhanced' ? 'Enhanced' : 
+                       version.version_type === 'manual_edit' ? 'Manual Edit' : 'Original'}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {new Date(version.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  {version.id === currentVersion?.id && (
+                    <Badge variant="outline" className="text-[8px] h-4 text-green-600 border-green-500/30">
+                      Current
+                    </Badge>
+                  )}
+                </div>
+              ))}
             </div>
           )}
 
