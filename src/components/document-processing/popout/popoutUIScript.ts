@@ -97,8 +97,63 @@ export function getUIScript(): string {
     initAudioTabs();
 
     // =====================================================
-    // TELEPROMPTER
+    // TELEPROMPTER WITH SCRIPT VERSIONS
     // =====================================================
+
+    var currentScriptVersion = 'original'; // 'original' | 'enhanced' | 'clean'
+    var scriptVersionToggle = document.getElementById('scriptVersionToggle');
+    var versionOriginalBtn = document.getElementById('versionOriginalBtn');
+    var versionEnhancedBtn = document.getElementById('versionEnhancedBtn');
+    var versionCleanBtn = document.getElementById('versionCleanBtn');
+
+    function getScriptContentByVersion(script, version) {
+      if (!script) return '';
+      switch(version) {
+        case 'enhanced':
+          return script.enhancedContent || script.content || '';
+        case 'clean':
+          return script.cleanContent || script.content || '';
+        case 'original':
+        default:
+          return script.originalContent || script.content || '';
+      }
+    }
+
+    function updateVersionButtonStates(script) {
+      if (!script) {
+        if (scriptVersionToggle) scriptVersionToggle.style.display = 'none';
+        return;
+      }
+      
+      // Show toggle only if we have versions
+      var hasVersions = script.enhancedContent || script.cleanContent;
+      if (scriptVersionToggle) {
+        scriptVersionToggle.style.display = hasVersions ? 'flex' : 'none';
+      }
+      
+      // Update button active states
+      [versionOriginalBtn, versionEnhancedBtn, versionCleanBtn].forEach(function(btn) {
+        if (btn) btn.classList.remove('active');
+      });
+      
+      if (currentScriptVersion === 'original' && versionOriginalBtn) {
+        versionOriginalBtn.classList.add('active');
+      } else if (currentScriptVersion === 'enhanced' && versionEnhancedBtn) {
+        versionEnhancedBtn.classList.add('active');
+      } else if (currentScriptVersion === 'clean' && versionCleanBtn) {
+        versionCleanBtn.classList.add('active');
+      }
+      
+      // Disable buttons if version not available
+      if (versionEnhancedBtn) {
+        versionEnhancedBtn.disabled = !script.enhancedContent;
+        versionEnhancedBtn.style.opacity = script.enhancedContent ? '1' : '0.5';
+      }
+      if (versionCleanBtn) {
+        versionCleanBtn.disabled = !script.cleanContent;
+        versionCleanBtn.style.opacity = script.cleanContent ? '1' : '0.5';
+      }
+    }
 
     function updateTeleprompter() {
       if (!scriptSelect) return;
@@ -106,12 +161,17 @@ export function getUIScript(): string {
       var selectedId = scriptSelect.value;
       var script = scriptsData.find(function(s) { return s.id === selectedId; });
       
+      // Update version button states
+      updateVersionButtonStates(script);
+      
       if (script && teleprompterEnabled) {
+        var content = getScriptContentByVersion(script, currentScriptVersion);
+        
         // Use word tracking if available
         if (typeof renderScriptWithWordTracking === 'function') {
-          renderScriptWithWordTracking(script.content || '');
+          renderScriptWithWordTracking(content);
         } else if (teleprompterText) {
-          teleprompterText.textContent = script.content || '';
+          teleprompterText.textContent = content;
         }
         if (teleprompter) teleprompter.classList.add('visible');
         
@@ -124,8 +184,40 @@ export function getUIScript(): string {
       }
     }
 
+    // Version toggle handlers
+    if (versionOriginalBtn) {
+      versionOriginalBtn.addEventListener('click', function() {
+        currentScriptVersion = 'original';
+        updateTeleprompter();
+      });
+    }
+    if (versionEnhancedBtn) {
+      versionEnhancedBtn.addEventListener('click', function() {
+        var selectedId = scriptSelect ? scriptSelect.value : '';
+        var script = scriptsData.find(function(s) { return s.id === selectedId; });
+        if (script && script.enhancedContent) {
+          currentScriptVersion = 'enhanced';
+          updateTeleprompter();
+        }
+      });
+    }
+    if (versionCleanBtn) {
+      versionCleanBtn.addEventListener('click', function() {
+        var selectedId = scriptSelect ? scriptSelect.value : '';
+        var script = scriptsData.find(function(s) { return s.id === selectedId; });
+        if (script && script.cleanContent) {
+          currentScriptVersion = 'clean';
+          updateTeleprompter();
+        }
+      });
+    }
+
     if (scriptSelect) {
-      scriptSelect.addEventListener('change', updateTeleprompter);
+      scriptSelect.addEventListener('change', function() {
+        // Reset to original when changing scripts
+        currentScriptVersion = 'original';
+        updateTeleprompter();
+      });
     }
 
     if (teleprompterBtn) {
@@ -779,12 +871,97 @@ export function getUIScript(): string {
       }
     }
 
+    // =====================================================
+    // STUDIO SOUND PANEL
+    // =====================================================
+
+    function initStudioSound() {
+      const toggle = document.getElementById('studioSoundToggle');
+      const label = document.getElementById('studioSoundLabel');
+      const options = document.getElementById('studioSoundOptions');
+      const presetSelect = document.getElementById('audioPresetSelect');
+
+      let studioSoundEnabled = false;
+
+      // Preset configurations
+      const presets = {
+        podcast: { compressor: false, eq: true, noiseGate: true, limiter: false },
+        interview: { compressor: true, eq: true, noiseGate: false, limiter: false },
+        narration: { compressor: true, eq: true, noiseGate: true, limiter: true },
+        webcast: { compressor: false, eq: true, noiseGate: true, limiter: true }
+      };
+
+      if (toggle) {
+        toggle.addEventListener('click', function() {
+          studioSoundEnabled = !studioSoundEnabled;
+
+          if (studioSoundEnabled) {
+            toggle.classList.add('on');
+            if (label) {
+              label.textContent = 'ON';
+              label.classList.add('on');
+            }
+            if (options) options.style.display = 'block';
+            console.log('[StudioSound] Enabled');
+          } else {
+            toggle.classList.remove('on');
+            if (label) {
+              label.textContent = 'OFF';
+              label.classList.remove('on');
+            }
+            if (options) options.style.display = 'none';
+            console.log('[StudioSound] Disabled');
+          }
+        });
+      }
+
+      // Apply preset
+      if (presetSelect) {
+        presetSelect.addEventListener('change', function() {
+          const preset = presets[this.value];
+          if (preset) {
+            // Update effect toggles based on preset
+            updateEffectToggle('compressorToggle', preset.compressor);
+            updateEffectToggle('eqToggle', preset.eq);
+            updateEffectToggle('noiseGateToggle', preset.noiseGate);
+            updateEffectToggle('limiterToggle', preset.limiter);
+            console.log('[StudioSound] Applied preset:', this.value, preset);
+          }
+        });
+      }
+
+      // Effect toggle clicks
+      ['compressorToggle', 'eqToggle', 'noiseGateToggle', 'limiterToggle'].forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el) {
+          el.addEventListener('click', function() {
+            this.classList.toggle('on');
+            console.log('[StudioSound] Toggled:', id, this.classList.contains('on'));
+          });
+        }
+      });
+
+      function updateEffectToggle(id, enabled) {
+        const el = document.getElementById(id);
+        if (el) {
+          if (enabled) {
+            el.classList.add('on');
+          } else {
+            el.classList.remove('on');
+          }
+        }
+      }
+
+      console.log('[StudioSound] Panel initialized');
+    }
+
     // Initialize all integrations
     initAudioTabs();
     initSyncControls();
     initExportControls();
     initTrimPanel();
     initTranscribe();
+    initStudioSound();
 
     console.log('[UI] Module initialized with complete integrations');
   `;

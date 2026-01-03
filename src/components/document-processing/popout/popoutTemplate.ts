@@ -184,20 +184,26 @@ export function getPopoutHTML(config: PopoutConfig): string {
 
         <!-- Sidebar -->
         <aside class="sidebar">
+          <!-- Tip Banner -->
+          <div class="sidebar-card tip-banner">
+            <div class="tip-icon">💡</div>
+            <div class="tip-text">
+              <strong>Tip:</strong> Script enhancement, TTS, and music generation are done in GenieStudio. Select prepared assets here for recording.
+            </div>
+          </div>
+
           <!-- Script Selection -->
           <div class="sidebar-card">
             <h3>📝 Script</h3>
             <select class="custom-select" id="scriptSelect">
-              <option value="">None</option>
+              <option value="">Select script for teleprompter...</option>
               ${scriptOptions}
             </select>
-            <div class="script-actions">
-              <button class="assign-btn" id="assignVoiceoverBtn">
-                🔗 Assign Voiceover
-              </button>
-              <button class="analyze-btn" id="analyzeScriptBtn">
-                🔍 Analyze & Enhance
-              </button>
+            <!-- Script Version Toggle -->
+            <div class="script-version-toggle" id="scriptVersionToggle" style="display:none;">
+              <button class="version-btn active" data-version="original" id="versionOriginalBtn">Original</button>
+              <button class="version-btn" data-version="enhanced" id="versionEnhancedBtn">Enhanced</button>
+              <button class="version-btn" data-version="clean" id="versionCleanBtn">Clean (TTS)</button>
             </div>
             <div id="analysisStatus"></div>
           </div>
@@ -331,6 +337,50 @@ export function getPopoutHTML(config: PopoutConfig): string {
               <div class="volume-control">
                 <label>Vol:</label>
                 <input type="range" class="volume-slider" id="musicVolume" min="0" max="100" value="50">
+              </div>
+            </div>
+          </div>
+
+          <!-- Studio Sound Panel -->
+          <div class="sidebar-card studio-sound-card">
+            <div class="studio-sound-header">
+              <h3>🎙️ Studio Sound</h3>
+              <div class="studio-sound-toggle">
+                <div class="toggle-switch" id="studioSoundToggle">
+                  <div class="toggle-switch-thumb"></div>
+                </div>
+                <span class="toggle-label" id="studioSoundLabel">OFF</span>
+              </div>
+            </div>
+            
+            <div id="studioSoundOptions" style="display:none;">
+              <div class="audio-preset-section">
+                <label class="preset-label">Audio Preset</label>
+                <select class="custom-select" id="audioPresetSelect">
+                  <option value="podcast">🎙️ Podcast - Warm, clear voice</option>
+                  <option value="interview">🎤 Interview - Natural conversation</option>
+                  <option value="narration">📖 Narration - Rich, immersive</option>
+                  <option value="webcast">💻 Webcast - Balanced for screen</option>
+                </select>
+              </div>
+              
+              <div class="audio-effects-toggles">
+                <div class="effect-toggle">
+                  <label>Compressor</label>
+                  <div class="mini-toggle" id="compressorToggle"></div>
+                </div>
+                <div class="effect-toggle">
+                  <label>EQ</label>
+                  <div class="mini-toggle on" id="eqToggle"></div>
+                </div>
+                <div class="effect-toggle">
+                  <label>Noise Gate</label>
+                  <div class="mini-toggle on" id="noiseGateToggle"></div>
+                </div>
+                <div class="effect-toggle">
+                  <label>Limiter</label>
+                  <div class="mini-toggle" id="limiterToggle"></div>
+                </div>
               </div>
             </div>
           </div>
