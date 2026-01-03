@@ -570,179 +570,247 @@ export function getUIScript(): string {
     }
 
     // =====================================================
-    // AUDIO PLAYBACK FOR RECORDING (Simplified & Robust)
+    // AUDIO PLAYBACK FOR RECORDING (COMPLETELY REWRITTEN)
     // =====================================================
 
-    var isStoppingAudio = false;
+    // Pre-loaded audio elements - create them ONCE and reuse
+    var preloadedVoice = null;
+    var preloadedMusic = null;
+    var audioIsActive = false;
 
-    // Main audio playback function - called when recording starts
-    function startAudioPlayback() {
-      if (isStoppingAudio) {
-        console.log('[Audio] Skipping - stop in progress');
-        return;
-      }
+    // Helper: Check if URL is valid for audio playback
+    function isValidAudioUrl(url) {
+      if (!url) return false;
+      // Accept http(s) URLs and data: URLs (for TTS base64)
+      return url.startsWith('http') || url.startsWith('data:audio');
+    }
 
-      console.log('[Audio] ========== STARTING AUDIO PLAYBACK ==========');
+    // Pre-load audio when selections change (not during recording)
+    function preloadAudioAssets() {
+      console.log('[Audio] Pre-loading audio assets...');
       
-      var voiceStarted = false;
-      
-      // Step 1: Try to play voiceover if selected
+      // Pre-load voiceover
       if (voiceoverSelect && voiceoverSelect.value) {
         var option = voiceoverSelect.options[voiceoverSelect.selectedIndex];
         var url = option ? option.dataset.url : null;
-        
-        console.log('[Audio] Voiceover URL:', url);
-        
-        if (url && url.startsWith('http')) {
-          voiceStarted = playVoiceAudio(url, 'voiceover');
-        } else if (url) {
-          console.warn('[Audio] Invalid voiceover URL (blob/data) - re-upload needed');
-          showStatus('Please re-upload voiceover audio', 'error');
+        if (isValidAudioUrl(url)) {
+          console.log('[Audio] Pre-loading voiceover:', url.substring(0, 60));
+          preloadedVoice = new Audio(url);
+          preloadedVoice.preload = 'auto';
+          preloadedVoice.load();
         }
+      } else if (isValidAudioUrl(window._generatedTtsUrl)) {
+        // Pre-load TTS (data: URL is valid)
+        console.log('[Audio] Pre-loading TTS:', window._generatedTtsUrl.substring(0, 60));
+        preloadedVoice = new Audio(window._generatedTtsUrl);
+        preloadedVoice.preload = 'auto';
+        preloadedVoice.load();
       }
       
-      // Step 2: If no voiceover, try TTS
-      if (!voiceStarted && window._generatedTtsUrl) {
-        console.log('[Audio] Using TTS URL:', window._generatedTtsUrl);
-        voiceStarted = playVoiceAudio(window._generatedTtsUrl, 'tts');
-      }
-      
-      // Step 3: Play music (can play alongside voice)
+      // Pre-load music
       if (musicSelect && musicSelect.value) {
-        var musicOption = musicSelect.options[musicSelect.selectedIndex];
-        var musicUrl = musicOption ? musicOption.dataset.url : null;
+        var mOption = musicSelect.options[musicSelect.selectedIndex];
+        var mUrl = mOption ? mOption.dataset.url : null;
+        if (isValidAudioUrl(mUrl)) {
+          console.log('[Audio] Pre-loading music:', mUrl.substring(0, 60));
+          preloadedMusic = new Audio(mUrl);
+          preloadedMusic.preload = 'auto';
+          preloadedMusic.loop = true;
+          preloadedMusic.load();
+        }
+      }
+    }
+
+    // Call preload on selection changes
+    if (voiceoverSelect) {
+      voiceoverSelect.addEventListener('change', function() {
+        preloadedVoice = null;
+        preloadAudioAssets();
+      });
+    }
+    if (musicSelect) {
+      musicSelect.addEventListener('change', function() {
+        preloadedMusic = null;
+        preloadAudioAssets();
+      });
+    }
+    
+    // Preload TTS when it's generated (set via window._generatedTtsUrl)
+    // Check every 2 seconds for new TTS URL
+    setInterval(function() {
+      if (window._generatedTtsUrl && !preloadedVoice && !voiceoverSelect.value) {
+        console.log('[Audio] New TTS detected, preloading...');
+        preloadAudioAssets();
+      }
+    }, 2000);
+    
+    // Initial preload after a delay
+    setTimeout(preloadAudioAssets, 2000);
+
+    // Main audio playback function - called when recording starts
+    function startAudioPlayback() {
+      if (audioIsActive) {
+        console.log('[Audio] Already active, skipping');
+        return;
+      }
+      
+      audioIsActive = true;
+      console.log('[Audio] ========== STARTING PLAYBACK ==========');
+      
+      var voicePlaying = false;
+      
+      // STEP 1: Play voice (voiceover or TTS)
+      if (preloadedVoice && preloadedVoice.src) {
+        console.log('[Audio] Using preloaded voice');
+        voiceoverAudio = preloadedVoice;
+        voiceoverAudio.volume = voiceoverVolume ? voiceoverVolume.value / 100 : 1;
+        voiceoverAudio.currentTime = 0;
         
-        console.log('[Audio] Music URL:', musicUrl);
+        // Setup events before playing
+        voiceoverAudio.onplay = function() {
+          console.log('[Audio] Voice started');
+          applyDucking(true);
+          updateVoiceButton(true);
+        };
+        voiceoverAudio.onpause = function() {
+          applyDucking(false);
+          updateVoiceButton(false);
+        };
+        voiceoverAudio.onended = function() {
+          console.log('[Audio] Voice ended');
+          applyDucking(false);
+          updateVoiceButton(false);
+        };
+        voiceoverAudio.onerror = function(e) {
+          console.error('[Audio] Voice error:', e);
+        };
         
-        if (musicUrl && musicUrl.startsWith('http')) {
-          playMusicAudio(musicUrl, voiceStarted);
-        } else if (musicUrl) {
-          console.warn('[Audio] Invalid music URL (blob/data) - re-upload needed');
+        // Teleprompter sync when metadata loads
+        if (!voiceoverAudio.duration) {
+          voiceoverAudio.onloadedmetadata = function() {
+            startTeleprompterSync(voiceoverAudio);
+          };
+        } else {
+          startTeleprompterSync(voiceoverAudio);
+        }
+        
+        voiceoverAudio.play()
+          .then(function() { 
+            voicePlaying = true;
+            console.log('[Audio] ✅ Voice playing'); 
+          })
+          .catch(function(e) { 
+            console.error('[Audio] Voice play error:', e.name, e.message);
+            voicePlaying = false;
+          });
+      } else {
+        console.log('[Audio] No preloaded voice, trying direct URL...');
+        
+        // Fallback: try to get URL directly
+        var voiceUrl = getVoiceUrl();
+        if (voiceUrl) {
+          console.log('[Audio] Creating voice from URL:', voiceUrl.substring(0, 60));
+          voiceoverAudio = new Audio(voiceUrl);
+          voiceoverAudio.volume = voiceoverVolume ? voiceoverVolume.value / 100 : 1;
+          
+          voiceoverAudio.onloadedmetadata = function() {
+            startTeleprompterSync(voiceoverAudio);
+          };
+          voiceoverAudio.onplay = function() { applyDucking(true); updateVoiceButton(true); };
+          voiceoverAudio.onpause = function() { applyDucking(false); updateVoiceButton(false); };
+          voiceoverAudio.onended = function() { applyDucking(false); updateVoiceButton(false); };
+          
+          voiceoverAudio.play()
+            .then(function() { 
+              voicePlaying = true;
+              console.log('[Audio] ✅ Voice playing from direct URL'); 
+            })
+            .catch(function(e) { 
+              console.error('[Audio] Voice play error:', e.name, e.message);
+            });
         }
       }
       
-      // Step 4: Show recording UI
+      // STEP 2: Play music
+      if (preloadedMusic && preloadedMusic.src) {
+        console.log('[Audio] Using preloaded music');
+        musicAudio = preloadedMusic;
+        musicAudio.volume = duckingEnabled ? duckedMusicVolume : normalMusicVolume;
+        musicAudio.loop = musicLoopEnabled;
+        musicAudio.currentTime = 0;
+        
+        musicAudio.onplay = function() { updateMusicButton(true); };
+        musicAudio.onpause = function() { updateMusicButton(false); };
+        
+        musicAudio.play()
+          .then(function() { console.log('[Audio] ✅ Music playing'); })
+          .catch(function(e) { console.error('[Audio] Music play error:', e.message); });
+      } else {
+        // Fallback
+        var musicUrl = getMusicUrl();
+        if (musicUrl) {
+          console.log('[Audio] Creating music from URL:', musicUrl.substring(0, 60));
+          musicAudio = new Audio(musicUrl);
+          musicAudio.volume = duckingEnabled ? duckedMusicVolume : normalMusicVolume;
+          musicAudio.loop = musicLoopEnabled;
+          
+          musicAudio.onplay = function() { updateMusicButton(true); };
+          musicAudio.onpause = function() { updateMusicButton(false); };
+          
+          musicAudio.play()
+            .then(function() { console.log('[Audio] ✅ Music playing'); })
+            .catch(function(e) { console.error('[Audio] Music play error:', e.message); });
+        }
+      }
+      
+      // STEP 3: Show UI
       showRecordingUI();
       
-      // Step 5: Start teleprompter scroll if enabled
-      if (teleprompterEnabled && teleprompter && teleprompter.classList.contains('visible')) {
+      // STEP 4: Auto-scroll teleprompter if no voice audio
+      if (!voicePlaying && teleprompterEnabled && teleprompter && teleprompter.classList.contains('visible')) {
         if (typeof startTeleprompterAutoScroll === 'function') {
           startTeleprompterAutoScroll();
         }
       }
       
-      console.log('[Audio] ========== AUDIO SETUP COMPLETE ==========');
+      console.log('[Audio] ========== SETUP COMPLETE ==========');
     }
     
-    // Helper: Play voice audio (voiceover or TTS)
-    function playVoiceAudio(url, type) {
-      console.log('[Audio] Playing', type, 'from:', url.substring(0, 50) + '...');
-      
-      // Stop existing audio
-      if (voiceoverAudio) {
-        voiceoverAudio.pause();
-        voiceoverAudio = null;
+    // Helper to get voice URL
+    function getVoiceUrl() {
+      // First check voiceover select
+      if (voiceoverSelect && voiceoverSelect.value) {
+        var option = voiceoverSelect.options[voiceoverSelect.selectedIndex];
+        var url = option ? option.dataset.url : null;
+        if (isValidAudioUrl(url)) return url;
       }
-      if (ttsAudio) {
-        ttsAudio.pause();
-        ttsAudio = null;
+      // Then check TTS (data: URLs are valid!)
+      if (isValidAudioUrl(window._generatedTtsUrl)) {
+        return window._generatedTtsUrl;
       }
-      
-      try {
-        var audio = new Audio(url);
-        audio.volume = voiceoverVolume ? voiceoverVolume.value / 100 : 1;
-        
-        // Store reference
-        if (type === 'voiceover') {
-          voiceoverAudio = audio;
-        } else {
-          ttsAudio = audio;
-        }
-        
-        // Setup events
-        audio.addEventListener('loadedmetadata', function() {
-          console.log('[Audio]', type, 'loaded, duration:', audio.duration);
-          if (typeof startWordHighlightingFromAudio === 'function') {
-            startWordHighlightingFromAudio(audio);
-          }
-          if (typeof startTeleprompterScrollSync === 'function') {
-            startTeleprompterScrollSync(audio.duration);
-          }
-        });
-        
-        audio.addEventListener('play', function() {
-          console.log('[Audio]', type, 'playing - applying ducking');
-          applyDucking(true);
-          updateVoiceButton(true);
-        });
-        
-        audio.addEventListener('pause', function() {
-          applyDucking(false);
-          updateVoiceButton(false);
-        });
-        
-        audio.addEventListener('ended', function() {
-          console.log('[Audio]', type, 'ended');
-          applyDucking(false);
-          updateVoiceButton(false);
-          if (typeof stopWordHighlighting === 'function') stopWordHighlighting();
-        });
-        
-        audio.addEventListener('error', function(e) {
-          console.error('[Audio]', type, 'error:', e);
-          showStatus('Failed to load ' + type + ' audio', 'error');
-        });
-        
-        // Play
-        audio.play().then(function() {
-          console.log('[Audio] ✅', type, 'playing!');
-        }).catch(function(e) {
-          console.error('[Audio]', type, 'play failed:', e.message);
-          showStatus('Could not play ' + type + ': ' + e.message, 'error');
-        });
-        
-        return true;
-      } catch (e) {
-        console.error('[Audio] Failed to create', type, 'audio:', e);
-        return false;
-      }
+      return null;
     }
     
-    // Helper: Play music audio
-    function playMusicAudio(url, voiceIsPlaying) {
-      console.log('[Audio] Playing music from:', url.substring(0, 50) + '...');
-      
-      if (musicAudio) {
-        musicAudio.pause();
-        musicAudio = null;
+    // Helper to get music URL
+    function getMusicUrl() {
+      if (musicSelect && musicSelect.value) {
+        var option = musicSelect.options[musicSelect.selectedIndex];
+        var url = option ? option.dataset.url : null;
+        if (isValidAudioUrl(url)) return url;
       }
+      return null;
+    }
+    
+    // Teleprompter sync helper
+    function startTeleprompterSync(audio) {
+      if (!audio || !audio.duration) return;
+      console.log('[Audio] Starting teleprompter sync, duration:', audio.duration);
       
-      try {
-        musicAudio = new Audio(url);
-        musicAudio.volume = voiceIsPlaying && duckingEnabled ? duckedMusicVolume : normalMusicVolume;
-        musicAudio.loop = musicLoopEnabled;
-        
-        musicAudio.addEventListener('play', function() {
-          updateMusicButton(true);
-        });
-        
-        musicAudio.addEventListener('pause', function() {
-          updateMusicButton(false);
-        });
-        
-        musicAudio.addEventListener('error', function(e) {
-          console.error('[Audio] Music error:', e);
-          showStatus('Failed to load music', 'error');
-        });
-        
-        musicAudio.play().then(function() {
-          console.log('[Audio] ✅ Music playing!');
-        }).catch(function(e) {
-          console.error('[Audio] Music play failed:', e.message);
-        });
-        
-      } catch (e) {
-        console.error('[Audio] Failed to create music audio:', e);
+      if (typeof startWordHighlightingFromAudio === 'function') {
+        startWordHighlightingFromAudio(audio);
+      }
+      if (typeof startTeleprompterScrollSync === 'function') {
+        startTeleprompterScrollSync(audio.duration);
       }
     }
     
@@ -764,48 +832,31 @@ export function getUIScript(): string {
     }
 
     function stopAudioPlayback() {
-      isStoppingAudio = true;  // Set flag to prevent new audio from starting
+      console.log('[Audio] Stopping all playback');
+      audioIsActive = false;
       
       if (voiceoverAudio) {
         voiceoverAudio.pause();
         voiceoverAudio.currentTime = 0;
-        voiceoverAudio = null;
       }
       if (musicAudio) {
         musicAudio.pause();
         musicAudio.currentTime = 0;
-        musicAudio = null;
       }
       if (ttsAudio) {
         ttsAudio.pause();
         ttsAudio.currentTime = 0;
-        ttsAudio = null;
       }
       
       // Stop sync
-      if (typeof stopWordHighlighting === 'function') {
-        stopWordHighlighting();
-      }
-      if (typeof stopTeleprompterScrollSync === 'function') {
-        stopTeleprompterScrollSync();
-      }
-      if (typeof stopTeleprompterAutoScroll === 'function') {
-        stopTeleprompterAutoScroll();
-      }
-      if (typeof hideReadingCursor === 'function') {
-        hideReadingCursor();
-      }
+      if (typeof stopWordHighlighting === 'function') stopWordHighlighting();
+      if (typeof stopTeleprompterScrollSync === 'function') stopTeleprompterScrollSync();
+      if (typeof stopTeleprompterAutoScroll === 'function') stopTeleprompterAutoScroll();
+      if (typeof hideReadingCursor === 'function') hideReadingCursor();
       
-      // Hide recording UI elements
       hideRecordingUI();
-      
-      // Reset flag after a short delay
-      setTimeout(function() {
-        isStoppingAudio = false;
-      }, 500);
     }
     
-    // Global stop all audio function (accessible from camera script)
     function stopAllAudio() {
       stopAudioPlayback();
     }
