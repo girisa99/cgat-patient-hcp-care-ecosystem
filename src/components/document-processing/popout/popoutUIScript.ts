@@ -602,7 +602,11 @@ export function getUIScript(): string {
         console.log('[Recording Audio] Voiceover option:', voOption ? voOption.text : 'none');
         console.log('[Recording Audio] Voiceover URL:', voUrl);
         
-        if (voUrl) {
+        // Check if URL is valid (not blob or data URL)
+        if (voUrl && (voUrl.startsWith('blob:') || voUrl.startsWith('data:'))) {
+          console.error('[Recording Audio] ❌ Voiceover URL is blob/data URL - cannot play in popout window!');
+          showStatus('Voiceover has invalid URL. Please re-upload the audio file.', 'error');
+        } else if (voUrl && voUrl.startsWith('http')) {
           // Stop any existing audio
           if (voiceoverAudio) {
             voiceoverAudio.pause();
@@ -614,7 +618,7 @@ export function getUIScript(): string {
             ttsAudio = null;
           }
           
-          console.log('[Recording Audio] Creating new voiceover audio element...');
+          console.log('[Recording Audio] Creating new voiceover audio element with URL:', voUrl);
           voiceoverAudio = new Audio(voUrl);
           voiceoverAudio.volume = voiceoverVolume ? voiceoverVolume.value / 100 : 1;
           
@@ -765,14 +769,19 @@ export function getUIScript(): string {
         console.log('[Recording Audio] Music URL:', musicUrl);
         
         if (musicUrl && musicSelect.value) {
-          // Stop any existing music
-          if (musicAudio) {
-            musicAudio.pause();
-            musicAudio.currentTime = 0;
-          }
-          
-          console.log('[Recording Audio] Creating new music audio element...');
-          musicAudio = new Audio(musicUrl);
+          // Check if URL is valid (not blob or data URL)
+          if (musicUrl.startsWith('blob:') || musicUrl.startsWith('data:')) {
+            console.error('[Recording Audio] ❌ Music URL is blob/data URL - cannot play in popout window!');
+            showStatus('Music has invalid URL. Please re-upload the audio file.', 'error');
+          } else if (musicUrl.startsWith('http')) {
+            // Stop any existing music
+            if (musicAudio) {
+              musicAudio.pause();
+              musicAudio.currentTime = 0;
+            }
+            
+            console.log('[Recording Audio] Creating new music audio element with URL:', musicUrl);
+            musicAudio = new Audio(musicUrl);
           // Start music at lower volume if voice is playing (ducking)
           musicAudio.volume = voiceStarted && duckingEnabled ? duckedMusicVolume : (musicVolume ? musicVolume.value / 100 : 0.3);
           musicAudio.loop = musicLoopEnabled;
@@ -803,6 +812,7 @@ export function getUIScript(): string {
           }).catch(function(e) {
             console.error('[Recording Audio] Music play error:', e);
           });
+          }
         } else {
           console.log('[Recording Audio] No music selected or no URL');
         }
