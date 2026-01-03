@@ -1,6 +1,7 @@
 /**
  * Audio Playback Hook - Handles voiceover, music, and TTS playback
  * Provides audio time tracking for teleprompter sync
+ * Includes automatic music ducking when voice is playing
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
@@ -18,7 +19,7 @@ export function useAudioPlayback() {
     musicAudio: null,
     ttsAudio: null,
     voiceoverVolume: 100,
-    musicVolume: 50,
+    musicVolume: 30, // Lower default for background music
     ttsVolume: 100,
     musicLoop: true,
   });
@@ -29,6 +30,11 @@ export function useAudioPlayback() {
     music: false,
     tts: false,
   });
+  
+  // Music ducking settings
+  const [duckingEnabled, setDuckingEnabled] = useState(true);
+  const normalMusicVolumeRef = useRef(0.3); // 30%
+  const duckedMusicVolumeRef = useRef(0.08); // 8% when voice plays
 
   // Audio time tracking for teleprompter sync
   const [audioTimeInfo, setAudioTimeInfo] = useState<AudioTimeInfo>({
@@ -41,6 +47,38 @@ export function useAudioPlayback() {
   const musicRef = useRef<HTMLAudioElement | null>(null);
   const ttsRef = useRef<HTMLAudioElement | null>(null);
   const timeUpdateIntervalRef = useRef<number | null>(null);
+  const duckTransitionRef = useRef<number | null>(null);
+
+  // Apply music ducking with smooth transition
+  const applyDucking = useCallback((voicePlaying: boolean) => {
+    if (!musicRef.current || !duckingEnabled) return;
+    
+    const targetVolume = voicePlaying ? duckedMusicVolumeRef.current : normalMusicVolumeRef.current;
+    const currentVolume = musicRef.current.volume;
+    
+    // Cancel previous transition
+    if (duckTransitionRef.current) {
+      cancelAnimationFrame(duckTransitionRef.current);
+    }
+    
+    // Smooth volume transition
+    const step = (targetVolume - currentVolume) / 10;
+    let currentStep = 0;
+    
+    const transition = () => {
+      if (!musicRef.current || currentStep >= 10) {
+        if (musicRef.current) musicRef.current.volume = targetVolume;
+        return;
+      }
+      
+      musicRef.current.volume = currentVolume + (step * currentStep);
+      currentStep++;
+      duckTransitionRef.current = requestAnimationFrame(transition);
+    };
+    
+    transition();
+    console.log('[AudioDucking] Voice playing:', voicePlaying, 'Target volume:', targetVolume);
+  }, [duckingEnabled]);
 
   // Update audio time info for teleprompter sync
   const startTimeTracking = useCallback((audio: HTMLAudioElement) => {
@@ -73,6 +111,9 @@ export function useAudioPlayback() {
       if (timeUpdateIntervalRef.current) {
         clearInterval(timeUpdateIntervalRef.current);
       }
+      if (duckTransitionRef.current) {
+        cancelAnimationFrame(duckTransitionRef.current);
+      }
     };
   }, []);
 
@@ -88,11 +129,16 @@ export function useAudioPlayback() {
     audio.onplay = () => {
       setIsPlaying(prev => ({ ...prev, voiceover: true, tts: false }));
       startTimeTracking(audio);
+      applyDucking(true); // Duck music when voice starts
     };
-    audio.onpause = () => setIsPlaying(prev => ({ ...prev, voiceover: false }));
+    audio.onpause = () => {
+      setIsPlaying(prev => ({ ...prev, voiceover: false }));
+      applyDucking(false); // Restore music volume
+    };
     audio.onended = () => {
       setIsPlaying(prev => ({ ...prev, voiceover: false }));
       stopTimeTracking();
+      applyDucking(false); // Restore music volume
     };
     audio.onloadedmetadata = () => {
       setAudioTimeInfo(prev => ({ ...prev, duration: audio.duration }));
@@ -100,7 +146,7 @@ export function useAudioPlayback() {
     
     audio.play().catch(console.error);
     setState(prev => ({ ...prev, voiceoverAudio: audio }));
-  }, [state.voiceoverVolume, startTimeTracking, stopTimeTracking]);
+  }, [state.voiceoverVolume, startTimeTracking, stopTimeTracking, applyDucking]);
 
   const stopVoiceover = useCallback(() => {
     if (voiceoverRef.current) {
@@ -109,7 +155,8 @@ export function useAudioPlayback() {
     }
     setIsPlaying(prev => ({ ...prev, voiceover: false }));
     stopTimeTracking();
-  }, [stopTimeTracking]);
+    applyDucking(false); // Restore music volume
+  }, [stopTimeTracking, applyDucking]);
 
   const playMusic = useCallback((url: string) => {
     if (musicRef.current) {
@@ -117,7 +164,13 @@ export function useAudioPlayback() {
     }
     
     const audio = new Audio(url);
-    audio.volume = state.musicVolume / 100;
+    // Check if voice is currently playing to set initial volume
+    const voicePlaying = isPlaying.voiceover || isPlaying.tts;
+    const initialVolume = duckingEnabled && voicePlaying 
+      ? duckedMusicVolumeRef.current 
+      : normalMusicVolumeRef.current;
+    
+    audio.volume = initialVolume;
     audio.loop = state.musicLoop;
     musicRef.current = audio;
     
@@ -131,7 +184,7 @@ export function useAudioPlayback() {
     
     audio.play().catch(console.error);
     setState(prev => ({ ...prev, musicAudio: audio }));
-  }, [state.musicVolume, state.musicLoop]);
+  }, [state.musicLoop, isPlaying.voiceover, isPlaying.tts, duckingEnabled]);
 
   const stopMusic = useCallback(() => {
     if (musicRef.current) {
@@ -152,11 +205,16 @@ export function useAudioPlayback() {
     audio.onplay = () => {
       setIsPlaying(prev => ({ ...prev, tts: true, voiceover: false }));
       startTimeTracking(audio);
+      applyDucking(true); // Duck music when TTS starts
     };
-    audio.onpause = () => setIsPlaying(prev => ({ ...prev, tts: false }));
+    audio.onpause = () => {
+      setIsPlaying(prev => ({ ...prev, tts: false }));
+      applyDucking(false); // Restore music volume
+    };
     audio.onended = () => {
       setIsPlaying(prev => ({ ...prev, tts: false }));
       stopTimeTracking();
+      applyDucking(false); // Restore music volume
     };
     audio.onloadedmetadata = () => {
       setAudioTimeInfo(prev => ({ ...prev, duration: audio.duration }));
@@ -164,7 +222,7 @@ export function useAudioPlayback() {
     
     audio.play().catch(console.error);
     setState(prev => ({ ...prev, ttsAudio: audio }));
-  }, [state.ttsVolume, startTimeTracking, stopTimeTracking]);
+  }, [state.ttsVolume, startTimeTracking, stopTimeTracking, applyDucking]);
 
   const stopTTS = useCallback(() => {
     if (ttsRef.current) {
@@ -173,7 +231,8 @@ export function useAudioPlayback() {
     }
     setIsPlaying(prev => ({ ...prev, tts: false }));
     stopTimeTracking();
-  }, [stopTimeTracking]);
+    applyDucking(false); // Restore music volume
+  }, [stopTimeTracking, applyDucking]);
 
   const stopAll = useCallback(() => {
     stopVoiceover();
@@ -190,10 +249,12 @@ export function useAudioPlayback() {
 
   const setMusicVolume = useCallback((volume: number) => {
     setState(prev => ({ ...prev, musicVolume: volume }));
-    if (musicRef.current) {
+    normalMusicVolumeRef.current = volume / 100;
+    // Only update if voice not playing (otherwise ducking controls it)
+    if (musicRef.current && !isPlaying.voiceover && !isPlaying.tts) {
       musicRef.current.volume = volume / 100;
     }
-  }, []);
+  }, [isPlaying.voiceover, isPlaying.tts]);
 
   const setTTSVolume = useCallback((volume: number) => {
     setState(prev => ({ ...prev, ttsVolume: volume }));
@@ -212,11 +273,16 @@ export function useAudioPlayback() {
     });
   }, []);
 
+  const toggleDucking = useCallback(() => {
+    setDuckingEnabled(prev => !prev);
+  }, []);
+
   return {
     ...state,
     activeTab,
     isPlaying,
     audioTimeInfo, // Expose for teleprompter sync
+    duckingEnabled,
     // Expose audio element refs for recording mix
     audioElements: {
       voiceover: voiceoverRef.current,
@@ -235,5 +301,6 @@ export function useAudioPlayback() {
     setMusicVolume,
     setTTSVolume,
     toggleMusicLoop,
+    toggleDucking,
   };
 }
