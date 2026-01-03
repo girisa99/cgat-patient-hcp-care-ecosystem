@@ -163,7 +163,7 @@ interface ScriptEditorTabProps {
   onSaveScript: (script: SavedScript) => void;
   onDeleteScript: (id: string) => void;
   onUpdateScript: (id: string, updates: Partial<SavedScript>) => void;
-  onSaveVoiceover: (url: string, name: string, scriptId?: string, audioBlob?: Blob) => void;
+  onSaveVoiceover: (url: string, name: string, scriptId?: string, audioBlob?: Blob, scriptMeta?: { originalScript?: string; scriptText?: string; scriptType?: string }) => void;
   savedVoiceovers: Array<{ id: string; name: string; url?: string; scriptId?: string }>;
   // New props for show integration
   availableShows?: ShowInfo[];
@@ -883,9 +883,18 @@ export function ScriptEditorTab({
   
   // Save TTS as voiceover and link to script
   const handleSaveTTSAsVoiceover = () => {
+    // Get original and enhanced scripts from current state
+    const originalScript = scriptContent;
+    const enhancedScript = cleanTTSContent || enhancedContent;
+    const scriptMeta = {
+      originalScript,
+      scriptText: enhancedScript || originalScript,
+      scriptType: scriptType as string
+    };
+    
     if (ttsResult?.audioUrl && ttsResult?.audioBlob) {
       const voiceoverName = `${scriptName || 'Script'} - ${activeVersion === 'enhanced' ? 'Enhanced' : 'Original'} TTS`;
-      onSaveVoiceover(ttsResult.audioUrl, voiceoverName, selectedScriptId || undefined, ttsResult.audioBlob);
+      onSaveVoiceover(ttsResult.audioUrl, voiceoverName, selectedScriptId || undefined, ttsResult.audioBlob, scriptMeta);
       
       // Update script to mark it has a voiceover
       if (selectedScriptId) {
@@ -894,7 +903,7 @@ export function ScriptEditorTab({
     } else if (ttsResult?.audioUrl) {
       // Fallback if no blob available
       const voiceoverName = `${scriptName || 'Script'} - ${activeVersion === 'enhanced' ? 'Enhanced' : 'Original'} TTS`;
-      onSaveVoiceover(ttsResult.audioUrl, voiceoverName, selectedScriptId || undefined);
+      onSaveVoiceover(ttsResult.audioUrl, voiceoverName, selectedScriptId || undefined, undefined, scriptMeta);
       
       if (selectedScriptId) {
         onUpdateScript(selectedScriptId, { hasVoiceover: true });
