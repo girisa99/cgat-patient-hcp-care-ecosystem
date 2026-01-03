@@ -8041,6 +8041,7 @@ export type Database = {
           id: string
           name: string
           purpose: string | null
+          script_mode: string | null
           show_id: string | null
           stats: Json | null
           type: string
@@ -8060,6 +8061,7 @@ export type Database = {
           id?: string
           name: string
           purpose?: string | null
+          script_mode?: string | null
           show_id?: string | null
           stats?: Json | null
           type?: string
@@ -8079,6 +8081,7 @@ export type Database = {
           id?: string
           name?: string
           purpose?: string | null
+          script_mode?: string | null
           show_id?: string | null
           stats?: Json | null
           type?: string
@@ -12228,6 +12231,42 @@ export type Database = {
           },
         ]
       }
+      projects: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          name: string
+          status: string
+          thumbnail_url: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          name: string
+          status?: string
+          thumbnail_url?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string
+          status?: string
+          thumbnail_url?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       prompt_governance: {
         Row: {
           analysis_results: Json
@@ -13779,6 +13818,7 @@ export type Database = {
           linked_music_id: string | null
           linked_script_id: string | null
           metadata: Json | null
+          project_id: string | null
           published_at: string | null
           scheduled_date: string | null
           show_type: Database["public"]["Enums"]["show_type"]
@@ -13800,6 +13840,7 @@ export type Database = {
           linked_music_id?: string | null
           linked_script_id?: string | null
           metadata?: Json | null
+          project_id?: string | null
           published_at?: string | null
           scheduled_date?: string | null
           show_type?: Database["public"]["Enums"]["show_type"]
@@ -13821,6 +13862,7 @@ export type Database = {
           linked_music_id?: string | null
           linked_script_id?: string | null
           metadata?: Json | null
+          project_id?: string | null
           published_at?: string | null
           scheduled_date?: string | null
           show_type?: Database["public"]["Enums"]["show_type"]
@@ -13830,7 +13872,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "shows_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       site_stats: {
         Row: {
