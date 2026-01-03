@@ -831,9 +831,8 @@ export function RecordingStudio({
     }
   }, [ttsAudioUrl, audioPlayback]);
 
-  if (!isOpen) return null;
-
   // Prevent closing during recording - only allow explicit close button
+  // MUST be before any early returns to avoid hooks order issues
   const handleDialogOpenChange = useCallback((open: boolean) => {
     if (!open) {
       // If recording, warn user before closing
@@ -849,6 +848,8 @@ export function RecordingStudio({
       handleClose();
     }
   }, [recording.isRecording, recording.stopRecording, handleClose]);
+
+  if (!isOpen) return null;
 
   return (
     <Dialog 
