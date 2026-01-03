@@ -56,7 +56,8 @@ import {
   ProjectSelector,
   StudioSoundPanel,
   PictureInPicture,
-  VideoEditorIntegration
+  VideoEditorIntegration,
+  ProductionInfo
 } from './components';
 import type { CameraSetupOptions } from './components';
 import type { RecordingStudioProps, LogoState, TeleprompterState, ScriptData } from './types';
@@ -77,6 +78,7 @@ export function RecordingStudio({
   onUploadVoiceover,
   onUploadMusic,
   isUploading = false,
+  productionContext,
 }: RecordingStudioProps) {
   // Scripts with local content management
   const [scripts, setScripts] = useState<ScriptData[]>(initialScripts);
@@ -215,7 +217,50 @@ export function RecordingStudio({
   const currentScript = scripts.find(s => s.id === selectedScriptId);
   const currentVoiceover = voiceovers.find(v => v.id === selectedVoiceoverId);
   const currentMusic = music.find(m => m.id === selectedMusicId);
-  
+
+  // Apply production context settings when opened from Production Hub
+  useEffect(() => {
+    if (productionContext) {
+      console.log('[RecordingStudio] Applying production context:', productionContext.showTitle);
+      
+      // Auto-select linked script if available
+      if (productionContext.linkedScriptId) {
+        const linkedScript = scripts.find(s => s.id === productionContext.linkedScriptId);
+        if (linkedScript) {
+          setSelectedScriptId(linkedScript.id);
+        }
+      }
+      
+      // Auto-select linked music if available  
+      if (productionContext.linkedMusicId) {
+        const linkedMusic = music.find(m => m.id === productionContext.linkedMusicId);
+        if (linkedMusic) {
+          setSelectedMusicId(linkedMusic.id);
+        }
+      }
+      
+      // Apply studio settings from production context
+      if (productionContext.studioSettings) {
+        const settings = productionContext.studioSettings;
+        
+        // Set teleprompter speed
+        setTeleprompter(prev => ({
+          ...prev,
+          scrollSpeed: settings.teleprompterSpeed,
+          enabled: settings.teleprompterEnabled,
+        }));
+        
+        // Set TTS provider and voice
+        setTTSProvider(settings.ttsProvider);
+        setSelectedVoice(settings.ttsVoiceId);
+        
+        // Apply studio sound preset based on production type
+        if (settings.studioSoundEnabled) {
+          studioSound.applyPreset('podcast');
+        }
+      }
+    }
+  }, [productionContext, scripts, music, studioSound]);
   // Persist logo position when dragged
   useEffect(() => {
     if (logo.enabled && logo.src && savedLogoPosition) {
@@ -1020,12 +1065,19 @@ export function RecordingStudio({
             {/* Content area - scrollable */}
             {!isSidebarCollapsed && (
               <div className="flex-1 overflow-y-auto p-3 space-y-4">
+                {/* Production Info - Show when opened from Production Hub */}
+                {productionContext && (
+                  <ProductionInfo productionContext={productionContext} />
+                )}
+
                 {/* Info Banner - Pre-production in GenieStudio */}
-                <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 text-sm">
-                  <p className="text-muted-foreground">
-                    <span className="font-medium text-primary">Tip:</span> Script enhancement, TTS, and music generation are done in GenieStudio. Select prepared assets here for recording.
-                  </p>
-                </div>
+                {!productionContext && (
+                  <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 text-sm">
+                    <p className="text-muted-foreground">
+                      <span className="font-medium text-primary">Tip:</span> Script enhancement, TTS, and music generation are done in GenieStudio. Select prepared assets here for recording.
+                    </p>
+                  </div>
+                )}
 
                 {/* Script Selection (Simplified) */}
                 <div className="space-y-3">

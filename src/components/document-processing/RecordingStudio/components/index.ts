@@ -24,3 +24,4 @@ export { ProjectAssetBreakdown } from './ProjectAssetBreakdown';
 export { AvatarCreator } from './AvatarCreator';
 export { PictureInPicture } from './PictureInPicture';
 export { VideoEditorIntegration } from './VideoEditorIntegration';
+export { ProductionInfo } from './ProductionInfo';

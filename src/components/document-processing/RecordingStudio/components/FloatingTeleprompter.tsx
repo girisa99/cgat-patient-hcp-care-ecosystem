@@ -17,6 +17,7 @@ interface FloatingTeleprompterProps {
   onClose: () => void;
   currentWordIndex?: number;
   audioProgress?: number; // 0-1
+  scriptMode?: 'podcast' | 'webcast' | 'video' | 'audio'; // For mode-specific styling
 }
 
 export function FloatingTeleprompter({

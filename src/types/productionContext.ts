@@ -1,0 +1,125 @@
+/**
+ * Production Context - Flows from Production Hub to Recording Studio
+ * Contains all info needed to configure studio based on production settings
+ */
+
+import type { ShowType, ProductionStage, ShowWithParticipants, ShowAsset, ShowParticipant } from './shows';
+import type { ScriptMode } from './projects';
+
+/**
+ * Maps ShowType to ScriptMode for unified configuration
+ */
+export const SHOW_TYPE_TO_SCRIPT_MODE: Record<ShowType, ScriptMode> = {
+  podcast: 'podcast',
+  webcast: 'webcast',
+  interview: 'podcast', // Interview is treated like podcast
+  panel: 'podcast', // Panel discussion is treated like podcast
+  tutorial: 'video', // Tutorial is treated like video
+  other: 'audio', // Default to audio
+};
+
+/**
+ * Production context passed to Recording Studio
+ */
+export interface ProductionContext {
+  // Show/Production info
+  showId: string;
+  showTitle: string;
+  showType: ShowType;
+  showDescription?: string;
+  currentStage: ProductionStage;
+  scheduledDate?: string;
+  
+  // Script mode derived from show type
+  scriptMode: ScriptMode;
+  
+  // Linked assets
+  linkedScriptId?: string;
+  linkedMusicId?: string;
+  
+  // Participants
+  participants: {
+    id: string;
+    name: string;
+    email?: string;
+    role: string;
+    avatarUrl?: string;
+  }[];
+  
+  // Assets from the production
+  assets: {
+    scripts: { id: string; name: string; url?: string }[];
+    voiceovers: { id: string; name: string; url: string }[];
+    music: { id: string; name: string; url: string }[];
+    recordings: { id: string; name: string; url: string }[];
+  };
+  
+  // Metadata
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Builds production context from a show with participants
+ */
+export function buildProductionContext(show: ShowWithParticipants): ProductionContext {
+  const assets = show.assets || [];
+  
+  const scriptAssets = assets.filter(a => a.asset_type === 'script');
+  const voiceoverAssets = assets.filter(a => a.asset_type === 'voiceover');
+  const musicAssets = assets.filter(a => a.asset_type === 'music');
+  const recordingAssets = assets.filter(a => a.asset_type === 'recording' || a.asset_type === 'audio' || a.asset_type === 'video');
+  
+  return {
+    showId: show.id,
+    showTitle: show.title,
+    showType: show.show_type,
+    showDescription: show.description || undefined,
+    currentStage: show.current_stage,
+    scheduledDate: show.scheduled_date || undefined,
+    scriptMode: SHOW_TYPE_TO_SCRIPT_MODE[show.show_type] || 'audio',
+    linkedScriptId: show.metadata?.linked_script_id,
+    linkedMusicId: show.metadata?.linked_music_id,
+    participants: (show.participants || []).map(p => ({
+      id: p.id,
+      name: p.name,
+      email: p.email || undefined,
+      role: p.role,
+      avatarUrl: p.avatar_url || undefined,
+    })),
+    assets: {
+      scripts: scriptAssets.map(a => ({ id: a.id, name: a.name, url: a.file_url || undefined })),
+      voiceovers: voiceoverAssets.map(a => ({ id: a.id, name: a.name, url: a.file_url || '' })),
+      music: musicAssets.map(a => ({ id: a.id, name: a.name, url: a.file_url || '' })),
+      recordings: recordingAssets.map(a => ({ id: a.id, name: a.name, url: a.file_url || '' })),
+    },
+    metadata: show.metadata,
+  };
+}
+
+/**
+ * Recording studio settings derived from production context
+ */
+export interface StudioSettingsFromProduction {
+  // Teleprompter settings
+  teleprompterSpeed: number;
+  teleprompterEnabled: boolean;
+  
+  // TTS settings
+  ttsVoiceId: string;
+  ttsProvider: 'openai' | 'elevenlabs';
+  ttsVoiceSettings: {
+    stability: number;
+    similarity_boost: number;
+    style: number;
+    speed: number;
+  };
+  
+  // Recording layout
+  showParticipantList: boolean;
+  showTimer: boolean;
+  showVisualCues: boolean;
+  
+  // Audio settings
+  studioSoundEnabled: boolean;
+  noiseReductionLevel: 'low' | 'medium' | 'high';
+}
