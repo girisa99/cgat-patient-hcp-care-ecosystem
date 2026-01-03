@@ -57,10 +57,11 @@ import {
   StudioSoundPanel,
   PictureInPicture,
   VideoEditorIntegration,
-  ProductionInfo
+  ProductionInfo,
+  AudioPanel
 } from './components';
 import type { CameraSetupOptions } from './components';
-import type { RecordingStudioProps, LogoState, TeleprompterState, ScriptData } from './types';
+import type { RecordingStudioProps, LogoState, TeleprompterState, ScriptData, AudioTabType } from './types';
 import type { RecordingMode } from './hooks/useScreenShare';
 import type { RecordingQuality } from './components/RecordingQualitySettings';
 import { ProjectAssetBreakdown } from './components/ProjectAssetBreakdown';
@@ -117,7 +118,7 @@ export function RecordingStudio({
   const [isTTSGenerating, setIsTTSGenerating] = useState(false);
   const [ttsAudioUrl, setTTSAudioUrl] = useState<string | null>(null);
   const [ttsProvider, setTTSProvider] = useState<'openai' | 'elevenlabs'>('openai');
-  
+  const [activeAudioTab, setActiveAudioTab] = useState<AudioTabType>('voiceover');
   // Script analysis/enhancement states - LIFTED from ScriptPanel to persist
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
@@ -1238,114 +1239,76 @@ export function RecordingStudio({
 
                 <Separator />
 
-                {/* Voiceover Selection */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Mic className="w-4 h-4 text-purple-500" />
-                    <span className="font-medium text-sm">Voiceover</span>
-                    {voiceovers.length > 0 && (
-                      <Badge variant="outline" className="text-xs ml-auto">{voiceovers.length}</Badge>
-                    )}
-                  </div>
-                  <select
-                    value={selectedVoiceoverId}
-                    onChange={(e) => setSelectedVoiceoverId(e.target.value)}
-                    className="w-full p-2 rounded-md border bg-background text-sm"
-                  >
-                    <option value="">No voiceover</option>
-                    {voiceovers.map((v) => (
-                      <option key={v.id} value={v.id}>{v.name}</option>
-                    ))}
-                  </select>
-                  {currentVoiceover && (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          console.log('[RecordingStudio] Voiceover play clicked:', {
-                            currentVoiceover: currentVoiceover ? { id: currentVoiceover.id, url: currentVoiceover.url?.substring(0, 50) } : 'None',
-                            isPlaying: audioPlayback.isPlaying.voiceover
-                          });
-                          if (audioPlayback.isPlaying.voiceover) {
-                            audioPlayback.stopVoiceover();
-                          } else if (currentVoiceover?.url) {
-                            audioPlayback.playVoiceover(currentVoiceover.url);
-                          }
-                        }}
-                        className="h-8 flex-1"
-                      >
-                        {audioPlayback.isPlaying.voiceover ? 'Stop' : 'Preview'}
-                      </Button>
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={audioPlayback.voiceoverVolume}
-                        onChange={(e) => audioPlayback.setVoiceoverVolume(parseInt(e.target.value))}
-                        className="w-20 h-2"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <Separator />
-
-                {/* Music Selection */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Music className="w-4 h-4 text-green-500" />
-                    <span className="font-medium text-sm">Background Music</span>
-                    {music.length > 0 && (
-                      <Badge variant="outline" className="text-xs ml-auto">{music.length}</Badge>
-                    )}
-                  </div>
-                  <select
-                    value={selectedMusicId}
-                    onChange={(e) => setSelectedMusicId(e.target.value)}
-                    className="w-full p-2 rounded-md border bg-background text-sm"
-                  >
-                    <option value="">No music</option>
-                    {music.map((m) => (
-                      <option key={m.id} value={m.id}>{m.name}</option>
-                    ))}
-                  </select>
-                  {currentMusic && (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => audioPlayback.isPlaying.music 
-                          ? audioPlayback.stopMusic() 
-                          : audioPlayback.playMusic(currentMusic.url)
-                        }
-                        className="h-8 flex-1"
-                      >
-                        {audioPlayback.isPlaying.music ? 'Stop' : 'Preview'}
-                      </Button>
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={audioPlayback.musicVolume}
-                        onChange={(e) => audioPlayback.setMusicVolume(parseInt(e.target.value))}
-                        className="w-20 h-2"
-                      />
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={audioPlayback.musicLoop}
-                      onChange={() => audioPlayback.toggleMusicLoop()}
-                      id="music-loop"
-                      className="rounded"
-                    />
-                    <label htmlFor="music-loop" className="text-xs text-muted-foreground cursor-pointer">
-                      Loop music
-                    </label>
-                  </div>
-                </div>
+                {/* Audio Panel - Voiceover, TTS, Music tabs */}
+                <AudioPanel
+                  activeTab={activeAudioTab}
+                  onTabChange={setActiveAudioTab}
+                  
+                  // Voiceover
+                  voiceovers={voiceovers}
+                  selectedVoiceoverId={selectedVoiceoverId}
+                  onVoiceoverChange={setSelectedVoiceoverId}
+                  onPlayVoiceover={() => {
+                    if (currentVoiceover?.url) {
+                      audioPlayback.playVoiceover(currentVoiceover.url);
+                    }
+                  }}
+                  onStopVoiceover={audioPlayback.stopVoiceover}
+                  isVoiceoverPlaying={audioPlayback.isPlaying.voiceover}
+                  voiceoverVolume={audioPlayback.voiceoverVolume}
+                  onVoiceoverVolumeChange={audioPlayback.setVoiceoverVolume}
+                  
+                  // Music
+                  musicList={music}
+                  selectedMusicId={selectedMusicId}
+                  onMusicChange={setSelectedMusicId}
+                  onPlayMusic={() => {
+                    if (currentMusic?.url) {
+                      audioPlayback.playMusic(currentMusic.url);
+                    }
+                  }}
+                  onStopMusic={audioPlayback.stopMusic}
+                  isMusicPlaying={audioPlayback.isPlaying.music}
+                  musicVolume={audioPlayback.musicVolume}
+                  onMusicVolumeChange={audioPlayback.setMusicVolume}
+                  musicLoop={audioPlayback.musicLoop}
+                  onToggleMusicLoop={audioPlayback.toggleMusicLoop}
+                  
+                  // TTS
+                  ttsText={ttsText}
+                  onTTSTextChange={setTTSText}
+                  selectedVoice={selectedVoice}
+                  onVoiceChange={setSelectedVoice}
+                  onGenerateTTS={handleGenerateTTS}
+                  onPlayTTS={() => {
+                    const url = ttsAudioUrl || ttsGeneration.lastResult?.audioUrl;
+                    if (url) {
+                      audioPlayback.playTTS(url);
+                    } else {
+                      toast.error('No TTS audio available. Generate TTS first.');
+                    }
+                  }}
+                  onStopTTS={audioPlayback.stopTTS}
+                  isTTSPlaying={audioPlayback.isPlaying.tts}
+                  isTTSGenerating={isTTSGenerating}
+                  hasTTSAudio={hasTTSAudio || !!ttsGeneration.lastResult?.audioUrl}
+                  ttsVolume={audioPlayback.ttsVolume}
+                  onTTSVolumeChange={audioPlayback.setTTSVolume}
+                  
+                  // TTS Download & Provider
+                  ttsAudioUrl={ttsAudioUrl}
+                  ttsProvider={ttsProvider}
+                  onTTSProviderChange={setTTSProvider}
+                  
+                  // Script content for TTS
+                  currentScriptContent={currentScript?.content}
+                  cleanScriptContent={cleanEnhancedScript || currentScript?.cleanContent}
+                  
+                  // Upload callbacks
+                  onUploadVoiceover={onUploadVoiceover}
+                  onUploadMusic={onUploadMusic}
+                  isUploading={isUploading}
+                />
 
                 <Separator />
                 
