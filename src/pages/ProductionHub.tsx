@@ -2,7 +2,7 @@
  * Production Hub - Kanban-style production pipeline management
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,9 +11,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   Plus, 
   ArrowLeft, 
@@ -30,15 +32,21 @@ import {
   GraduationCap,
   MoreHorizontal,
   ChevronRight,
+  ChevronDown,
   Loader2,
   Trash2,
   Settings,
   ExternalLink,
-  GripVertical
+  GripVertical,
+  Music,
+  User,
+  UserPlus,
+  Link
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { useShows } from '@/hooks/useShows';
+import { useGenieScripts } from '@/components/genie-studio/useGenieScripts';
 import { 
   PRODUCTION_STAGES, 
   SHOW_TYPES, 
@@ -75,6 +83,26 @@ const SHOW_TYPE_ICONS: Record<string, React.ElementType> = {
   Users: Users,
   GraduationCap: GraduationCap,
   Video: Video,
+};
+
+// Helper to get stage-specific required fields
+const getStageRequirements = (stage: ProductionStage) => {
+  switch (stage) {
+    case 'outreach':
+      return { showHost: true, showGuests: true, showScript: false, showMusic: false };
+    case 'script':
+      return { showHost: true, showGuests: true, showScript: true, showMusic: false };
+    case 'rehearsal':
+      return { showHost: true, showGuests: true, showScript: true, showMusic: true };
+    case 'recording':
+      return { showHost: true, showGuests: true, showScript: true, showMusic: true };
+    case 'post_production':
+      return { showHost: false, showGuests: false, showScript: true, showMusic: true };
+    case 'published':
+      return { showHost: false, showGuests: false, showScript: false, showMusic: false };
+    default:
+      return { showHost: true, showGuests: true, showScript: false, showMusic: false };
+  }
 };
 
 // Draggable Show Card component
@@ -237,6 +265,9 @@ export default function ProductionHub() {
     addParticipant,
     getShowsByStage 
   } = useShows();
+  
+  // Get scripts for linking
+  const { scripts: availableScripts } = useGenieScripts();
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedShow, setSelectedShow] = useState<ShowWithParticipants | null>(null);
@@ -246,12 +277,22 @@ export default function ProductionHub() {
     show_type: 'podcast' as ShowType,
     scheduled_date: '',
     starting_stage: 'outreach' as ProductionStage,
+    host_name: '',
+    guests: [] as { name: string; email: string }[],
+    linked_script_id: '',
+    linked_music_id: '',
   });
+  const [newGuestName, setNewGuestName] = useState('');
+  const [newGuestEmail, setNewGuestEmail] = useState('');
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
 
   const showsByStage = getShowsByStage();
+  
+  // Get stage requirements based on starting stage
+  const stageRequirements = getStageRequirements(newShow.starting_stage);
 
   // Drag sensors
   const sensors = useSensors(
@@ -286,6 +327,23 @@ export default function ProductionHub() {
       await updateStage(showId, targetStage);
     }
   };
+  
+  const handleAddGuest = () => {
+    if (!newGuestName.trim()) return;
+    setNewShow(prev => ({
+      ...prev,
+      guests: [...prev.guests, { name: newGuestName.trim(), email: newGuestEmail.trim() }]
+    }));
+    setNewGuestName('');
+    setNewGuestEmail('');
+  };
+  
+  const handleRemoveGuest = (index: number) => {
+    setNewShow(prev => ({
+      ...prev,
+      guests: prev.guests.filter((_, i) => i !== index)
+    }));
+  };
 
   const handleCreateShow = async () => {
     if (!newShow.title.trim()) return;
@@ -298,6 +356,10 @@ export default function ProductionHub() {
         show_type: newShow.show_type,
         scheduled_date: newShow.scheduled_date || undefined,
         starting_stage: newShow.starting_stage,
+        host_name: newShow.host_name || undefined,
+        guest_info: newShow.guests.length > 0 ? newShow.guests : undefined,
+        linked_script_id: newShow.linked_script_id || undefined,
+        linked_music_id: newShow.linked_music_id || undefined,
       });
       setIsCreateDialogOpen(false);
       setNewShow({ 
@@ -306,7 +368,12 @@ export default function ProductionHub() {
         show_type: 'podcast', 
         scheduled_date: '',
         starting_stage: 'outreach',
+        host_name: '',
+        guests: [],
+        linked_script_id: '',
+        linked_music_id: '',
       });
+      setShowAdvancedOptions(false);
     } finally {
       setIsCreating(false);
     }
@@ -424,89 +491,231 @@ export default function ProductionHub() {
 
         {/* Create Show Dialog */}
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New Production</DialogTitle>
+              <DialogDescription>
+                Set up your {newShow.show_type} production. Fields adapt based on starting stage.
+              </DialogDescription>
             </DialogHeader>
             
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  placeholder="Enter production title..."
-                  value={newShow.title}
-                  onChange={(e) => setNewShow(prev => ({ ...prev, title: e.target.value }))}
-                />
-              </div>
+            <ScrollArea className="max-h-[60vh] pr-4">
+              <div className="space-y-4 py-4">
+                {/* Basic Info */}
+                <div className="space-y-2">
+                  <Label htmlFor="title">Title *</Label>
+                  <Input
+                    id="title"
+                    placeholder="Enter production title..."
+                    value={newShow.title}
+                    onChange={(e) => setNewShow(prev => ({ ...prev, title: e.target.value }))}
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="type">Type</Label>
-                <Select
-                  value={newShow.show_type}
-                  onValueChange={(value: ShowType) => setNewShow(prev => ({ ...prev, show_type: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SHOW_TYPES.map((type) => (
-                      <SelectItem key={type.id} value={type.id}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="type">Type</Label>
+                    <Select
+                      value={newShow.show_type}
+                      onValueChange={(value: ShowType) => setNewShow(prev => ({ ...prev, show_type: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SHOW_TYPES.map((type) => (
+                          <SelectItem key={type.id} value={type.id}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">Description (optional)</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Brief description..."
-                  value={newShow.description}
-                  onChange={(e) => setNewShow(prev => ({ ...prev, description: e.target.value }))}
-                  rows={3}
-                />
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="starting_stage">Starting Stage</Label>
+                    <Select
+                      value={newShow.starting_stage}
+                      onValueChange={(value: ProductionStage) => setNewShow(prev => ({ ...prev, starting_stage: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select stage" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PRODUCTION_STAGES.map((stage) => (
+                          <SelectItem key={stage.id} value={stage.id}>
+                            <div className="flex items-center gap-2">
+                              <div className={cn("w-2 h-2 rounded-full", stage.color)} />
+                              {stage.label}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="date">Scheduled Date (optional)</Label>
-                <Input
-                  id="date"
-                  type="datetime-local"
-                  value={newShow.scheduled_date}
-                  onChange={(e) => setNewShow(prev => ({ ...prev, scheduled_date: e.target.value }))}
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="date">Scheduled Date</Label>
+                  <Input
+                    id="date"
+                    type="datetime-local"
+                    value={newShow.scheduled_date}
+                    onChange={(e) => setNewShow(prev => ({ ...prev, scheduled_date: e.target.value }))}
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="starting_stage">Starting Stage</Label>
-                <Select
-                  value={newShow.starting_stage}
-                  onValueChange={(value: ProductionStage) => setNewShow(prev => ({ ...prev, starting_stage: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select starting stage" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PRODUCTION_STAGES.map((stage) => (
-                      <SelectItem key={stage.id} value={stage.id}>
-                        <div className="flex items-center gap-2">
-                          <div className={cn("w-2 h-2 rounded-full", stage.color)} />
-                          {stage.label}
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Brief description..."
+                    value={newShow.description}
+                    onChange={(e) => setNewShow(prev => ({ ...prev, description: e.target.value }))}
+                    rows={2}
+                  />
+                </div>
+
+                {/* Dynamic Fields Based on Stage */}
+                {(stageRequirements.showHost || stageRequirements.showGuests) && (
+                  <div className="border-t pt-4 space-y-4">
+                    <h4 className="text-sm font-medium flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      Participants
+                    </h4>
+                    
+                    {stageRequirements.showHost && (
+                      <div className="space-y-2">
+                        <Label htmlFor="host_name" className="flex items-center gap-2">
+                          <User className="h-3 w-3" />
+                          Host Name
+                        </Label>
+                        <Input
+                          id="host_name"
+                          placeholder="Enter host name..."
+                          value={newShow.host_name}
+                          onChange={(e) => setNewShow(prev => ({ ...prev, host_name: e.target.value }))}
+                        />
+                      </div>
+                    )}
+
+                    {stageRequirements.showGuests && (
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <UserPlus className="h-3 w-3" />
+                          Guests
+                        </Label>
+                        
+                        {newShow.guests.length > 0 && (
+                          <div className="space-y-1">
+                            {newShow.guests.map((guest, idx) => (
+                              <div key={idx} className="flex items-center justify-between p-2 bg-muted/50 rounded text-sm">
+                                <span>{guest.name} {guest.email && `(${guest.email})`}</span>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-6 w-6"
+                                  onClick={() => handleRemoveGuest(idx)}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Guest name"
+                            value={newGuestName}
+                            onChange={(e) => setNewGuestName(e.target.value)}
+                            className="flex-1"
+                          />
+                          <Input
+                            placeholder="Email (optional)"
+                            value={newGuestEmail}
+                            onChange={(e) => setNewGuestEmail(e.target.value)}
+                            className="flex-1"
+                          />
+                          <Button 
+                            variant="outline" 
+                            size="icon"
+                            onClick={handleAddGuest}
+                            disabled={!newGuestName.trim()}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
                         </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Choose where this production starts in the pipeline
-                </p>
-              </div>
-            </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
-            <DialogFooter>
+                {/* Script & Music Linking */}
+                {(stageRequirements.showScript || stageRequirements.showMusic) && (
+                  <div className="border-t pt-4 space-y-4">
+                    <h4 className="text-sm font-medium flex items-center gap-2">
+                      <Link className="h-4 w-4" />
+                      Link Assets
+                    </h4>
+                    
+                    {stageRequirements.showScript && (
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <FileText className="h-3 w-3" />
+                          Script
+                        </Label>
+                        <Select
+                          value={newShow.linked_script_id}
+                          onValueChange={(value) => setNewShow(prev => ({ ...prev, linked_script_id: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a script (optional)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">None</SelectItem>
+                            {availableScripts.map((script) => (
+                              <SelectItem key={script.id} value={script.id}>
+                                {script.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                          Link an existing script or create one later
+                        </p>
+                      </div>
+                    )}
+
+                    {stageRequirements.showMusic && (
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <Music className="h-3 w-3" />
+                          Background Music
+                        </Label>
+                        <Select
+                          value={newShow.linked_music_id}
+                          onValueChange={(value) => setNewShow(prev => ({ ...prev, linked_music_id: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select music (optional)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">None</SelectItem>
+                            {/* Music options would come from a music library */}
+                            <SelectItem value="ambient-1">Ambient Background</SelectItem>
+                            <SelectItem value="upbeat-1">Upbeat Intro</SelectItem>
+                            <SelectItem value="corporate-1">Corporate Theme</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+
+            <DialogFooter className="border-t pt-4">
               <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                 Cancel
               </Button>

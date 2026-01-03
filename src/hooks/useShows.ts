@@ -69,6 +69,10 @@ export function useShows() {
     show_type: ShowType;
     scheduled_date?: string;
     starting_stage?: ProductionStage;
+    host_name?: string;
+    guest_info?: { name: string; email?: string }[];
+    linked_script_id?: string;
+    linked_music_id?: string;
   }) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -83,6 +87,10 @@ export function useShows() {
           show_type: data.show_type,
           scheduled_date: data.scheduled_date || null,
           current_stage: data.starting_stage || 'outreach' as ProductionStage,
+          host_name: data.host_name || null,
+          guest_info: data.guest_info || [],
+          linked_script_id: data.linked_script_id || null,
+          linked_music_id: data.linked_music_id || null,
         })
         .select()
         .single();
