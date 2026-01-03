@@ -53,6 +53,7 @@ import { useTTSGeneration, OPENAI_VOICES, ELEVENLABS_VOICES, GOOGLE_VOICES } fro
 import { ScriptModeToolbar } from './ScriptModeToolbar';
 import { VoiceSelector } from './VoiceSelector';
 import { RecordingLayoutPreview } from './RecordingLayoutPreview';
+import { SavedScriptCard } from './SavedScriptCard';
 import { SCRIPT_MODES, type ScriptMode } from '@/types/projects';
 import { SCRIPT_MODE_CONFIGS, getVoiceSettingsForMode, type VoicePreset } from '@/config/scriptModePresets';
 
@@ -162,7 +163,7 @@ interface ScriptEditorTabProps {
   onSaveScript: (script: SavedScript) => void;
   onDeleteScript: (id: string) => void;
   onUpdateScript: (id: string, updates: Partial<SavedScript>) => void;
-  onSaveVoiceover: (url: string, name: string, scriptId?: string) => void;
+  onSaveVoiceover: (url: string, name: string, scriptId?: string, audioBlob?: Blob) => void;
   savedVoiceovers: Array<{ id: string; name: string; url?: string; scriptId?: string }>;
   // New props for show integration
   availableShows?: ShowInfo[];
@@ -882,11 +883,19 @@ export function ScriptEditorTab({
   
   // Save TTS as voiceover and link to script
   const handleSaveTTSAsVoiceover = () => {
-    if (ttsResult?.audioUrl) {
+    if (ttsResult?.audioUrl && ttsResult?.audioBlob) {
+      const voiceoverName = `${scriptName || 'Script'} - ${activeVersion === 'enhanced' ? 'Enhanced' : 'Original'} TTS`;
+      onSaveVoiceover(ttsResult.audioUrl, voiceoverName, selectedScriptId || undefined, ttsResult.audioBlob);
+      
+      // Update script to mark it has a voiceover
+      if (selectedScriptId) {
+        onUpdateScript(selectedScriptId, { hasVoiceover: true });
+      }
+    } else if (ttsResult?.audioUrl) {
+      // Fallback if no blob available
       const voiceoverName = `${scriptName || 'Script'} - ${activeVersion === 'enhanced' ? 'Enhanced' : 'Original'} TTS`;
       onSaveVoiceover(ttsResult.audioUrl, voiceoverName, selectedScriptId || undefined);
       
-      // Update script to mark it has a voiceover
       if (selectedScriptId) {
         onUpdateScript(selectedScriptId, { hasVoiceover: true });
       }
@@ -2526,62 +2535,20 @@ export function ScriptEditorTab({
                   <p className="text-sm text-muted-foreground text-center py-8">No video scripts saved yet</p>
                 ) : (
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {videoScripts.map(script => (
-                      <div
-                        key={script.id}
-                        className={cn(
-                          "p-4 rounded-lg border transition-all group cursor-pointer",
-                          selectedScriptId === script.id 
-                            ? "border-primary bg-primary/5" 
-                            : "border-border/50 hover:border-primary/30"
-                        )}
-                        onClick={() => handleSelectScript(script.id)}
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <Video className="h-4 w-4 text-red-500 flex-shrink-0" />
-                            <h4 className="font-medium truncate">{script.name}</h4>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 flex-shrink-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDeleteScript(script.id);
-                            }}
-                          >
-                            <Trash2 className="h-3 w-3 text-destructive" />
-                          </Button>
-                        </div>
-                        <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-                          {script.content.slice(0, 100)}...
-                        </p>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs text-muted-foreground">
-                            {script.stats?.wordCount || 0} words
-                          </span>
-                          {script.enhancedContent && (
-                            <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600">
-                              <Sparkles className="h-3 w-3 mr-1" />
-                              Enhanced
-                            </Badge>
-                          )}
-                          {script.draftStatus === 'in_progress' && (
-                            <Badge variant="secondary" className="text-xs">
-                              <Edit3 className="h-3 w-3 mr-1" />
-                              Draft
-                            </Badge>
-                          )}
-                          {script.hasVoiceover && (
-                            <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600">
-                              <Volume2 className="h-3 w-3 mr-1" />
-                              Voiceover
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                    {videoScripts.map(script => {
+                      // Find voiceover URL if available
+                      const voiceover = savedVoiceovers.find(v => v.scriptId === script.id);
+                      return (
+                        <SavedScriptCard
+                          key={script.id}
+                          script={script}
+                          isSelected={selectedScriptId === script.id}
+                          onSelect={() => handleSelectScript(script.id)}
+                          onDelete={() => onDeleteScript(script.id)}
+                          voiceoverUrl={voiceover?.url}
+                        />
+                      );
+                    })}
                   </div>
                 )}
               </TabsContent>
@@ -2591,62 +2558,19 @@ export function ScriptEditorTab({
                   <p className="text-sm text-muted-foreground text-center py-8">No audio scripts saved yet</p>
                 ) : (
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {audioScripts.map(script => (
-                      <div
-                        key={script.id}
-                        className={cn(
-                          "p-4 rounded-lg border transition-all group cursor-pointer",
-                          selectedScriptId === script.id 
-                            ? "border-primary bg-primary/5" 
-                            : "border-border/50 hover:border-primary/30"
-                        )}
-                        onClick={() => handleSelectScript(script.id)}
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <Mic className="h-4 w-4 text-purple-500 flex-shrink-0" />
-                            <h4 className="font-medium truncate">{script.name}</h4>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 flex-shrink-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDeleteScript(script.id);
-                            }}
-                          >
-                            <Trash2 className="h-3 w-3 text-destructive" />
-                          </Button>
-                        </div>
-                        <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-                          {script.content.slice(0, 100)}...
-                        </p>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs text-muted-foreground">
-                            {script.stats?.wordCount || 0} words
-                          </span>
-                          {script.enhancedContent && (
-                            <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600">
-                              <Sparkles className="h-3 w-3 mr-1" />
-                              Enhanced
-                            </Badge>
-                          )}
-                          {script.draftStatus === 'in_progress' && (
-                            <Badge variant="secondary" className="text-xs">
-                              <Edit3 className="h-3 w-3 mr-1" />
-                              Draft
-                            </Badge>
-                          )}
-                          {script.hasVoiceover && (
-                            <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600">
-                              <Volume2 className="h-3 w-3 mr-1" />
-                              Voiceover
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                    {audioScripts.map(script => {
+                      const voiceover = savedVoiceovers.find(v => v.scriptId === script.id);
+                      return (
+                        <SavedScriptCard
+                          key={script.id}
+                          script={script}
+                          isSelected={selectedScriptId === script.id}
+                          onSelect={() => handleSelectScript(script.id)}
+                          onDelete={() => onDeleteScript(script.id)}
+                          voiceoverUrl={voiceover?.url}
+                        />
+                      );
+                    })}
                   </div>
                 )}
               </TabsContent>
