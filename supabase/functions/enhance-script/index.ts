@@ -377,7 +377,14 @@ ${scriptContent.substring(0, 6000)}`;
 - Add casual phrases (here's the thing, honestly, you know what)
 - Include personal anecdotes and examples
 - Make it sound like talking to a friend
-- Remove formal/corporate language`
+- Remove formal/corporate language`,
+        humor: `PRIORITIZE HUMOR AND PERSONALITY:
+- Add light wit and clever observations
+- Include unexpected analogies and comparisons
+- Add self-deprecating humor where appropriate
+- Make the audience smile or chuckle
+- Keep it tasteful and professional
+- Add personality quirks and memorable phrases`
       };
       
       const selectedFocus = focusInstructions[focus] || focusInstructions.balanced;
