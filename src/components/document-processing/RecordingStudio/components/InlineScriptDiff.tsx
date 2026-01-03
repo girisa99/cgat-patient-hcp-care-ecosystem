@@ -191,9 +191,9 @@ export function InlineScriptDiff({
   const acceptedCount = changes.filter(c => c.accepted === true).length;
 
   return (
-    <div className={cn("space-y-3", className)}>
+    <div className={cn("flex flex-col", className)}>
       {/* Stats header */}
-      <div className="flex items-center justify-between px-1">
+      <div className="flex items-center justify-between px-1 mb-2 shrink-0">
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-primary" />
           <span className="text-sm font-medium">Review Changes in Context</span>
@@ -208,8 +208,8 @@ export function InlineScriptDiff({
         </div>
       </div>
 
-      {/* Inline diff view */}
-      <ScrollArea className="h-[400px] rounded-lg border bg-muted/20 p-4">
+      {/* Inline diff view - flexible height with scroll */}
+      <div className="flex-1 min-h-0 max-h-[400px] overflow-y-auto rounded-lg border bg-muted/20 p-4">
         <div className="text-sm leading-relaxed whitespace-pre-wrap">
           {segments.map((segment, idx) => {
             if (segment.type === 'text') {
@@ -310,7 +310,7 @@ export function InlineScriptDiff({
             );
           })}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Unpositioned changes (couldn't match in script) */}
       {unpositionedChanges.length > 0 && (
