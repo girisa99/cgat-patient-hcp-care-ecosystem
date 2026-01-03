@@ -545,15 +545,24 @@ export function RecordingStudio({
   // TTS generation - uses real API integration with cost tracking
   const handleGenerateTTS = useCallback(async () => {
     const textToSpeak = ttsText || currentScript?.content;
+    
+    console.log('[RecordingStudio] handleGenerateTTS called:', {
+      ttsTextLength: ttsText?.length || 0,
+      currentScriptContent: currentScript?.content?.substring(0, 50) || 'None',
+      textToSpeakLength: textToSpeak?.length || 0,
+      provider: ttsProvider,
+      voice: selectedVoice
+    });
+    
     if (!textToSpeak) {
-      toast.error('No text to generate TTS');
+      toast.error('No text to generate TTS. Enter text or select a script first.');
       return;
     }
     
     setIsTTSGenerating(true);
     
     try {
-      console.log('[RecordingStudio] Starting TTS generation with provider:', ttsProvider);
+      console.log('[RecordingStudio] Calling ttsGeneration.generate...');
       
       const result = await ttsGeneration.generate({
         text: textToSpeak,
@@ -561,7 +570,12 @@ export function RecordingStudio({
         provider: ttsProvider,
       });
       
-      console.log('[RecordingStudio] TTS generation result:', result ? 'Success' : 'Failed', result?.audioUrl ? 'Has URL' : 'No URL');
+      console.log('[RecordingStudio] TTS generation result:', {
+        success: !!result,
+        hasAudioUrl: !!result?.audioUrl,
+        audioUrlPreview: result?.audioUrl?.substring(0, 60) || 'None',
+        duration: result?.duration
+      });
       
       if (result && result.audioUrl) {
         setHasTTSAudio(true);
@@ -586,7 +600,7 @@ export function RecordingStudio({
       }
     } catch (error) {
       console.error('[RecordingStudio] TTS generation error:', error);
-      toast.error('TTS generation failed');
+      toast.error('TTS generation failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setIsTTSGenerating(false);
     }
