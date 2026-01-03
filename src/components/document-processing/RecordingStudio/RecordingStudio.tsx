@@ -217,6 +217,19 @@ export function RecordingStudio({
   const currentScript = scripts.find(s => s.id === selectedScriptId);
   const currentVoiceover = voiceovers.find(v => v.id === selectedVoiceoverId);
   const currentMusic = music.find(m => m.id === selectedMusicId);
+  
+  // Debug logging for voiceover selection
+  useEffect(() => {
+    console.log('[RecordingStudio] Voiceover state:', {
+      voiceoversCount: voiceovers.length,
+      voiceovers: voiceovers.map(v => ({ id: v.id, name: v.name })),
+      selectedVoiceoverId,
+      currentVoiceover: currentVoiceover ? { id: currentVoiceover.id, name: currentVoiceover.name, url: currentVoiceover.url?.substring(0, 40) } : 'None',
+      musicCount: music.length,
+      selectedMusicId,
+      currentMusic: currentMusic ? { id: currentMusic.id, name: currentMusic.name } : 'None'
+    });
+  }, [voiceovers, selectedVoiceoverId, currentVoiceover, music, selectedMusicId, currentMusic]);
 
   // Apply production context settings when opened from Production Hub
   useEffect(() => {
@@ -1235,10 +1248,17 @@ export function RecordingStudio({
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => audioPlayback.isPlaying.voiceover 
-                          ? audioPlayback.stopVoiceover() 
-                          : audioPlayback.playVoiceover(currentVoiceover.url)
-                        }
+                        onClick={() => {
+                          console.log('[RecordingStudio] Voiceover play clicked:', {
+                            currentVoiceover: currentVoiceover ? { id: currentVoiceover.id, url: currentVoiceover.url?.substring(0, 50) } : 'None',
+                            isPlaying: audioPlayback.isPlaying.voiceover
+                          });
+                          if (audioPlayback.isPlaying.voiceover) {
+                            audioPlayback.stopVoiceover();
+                          } else if (currentVoiceover?.url) {
+                            audioPlayback.playVoiceover(currentVoiceover.url);
+                          }
+                        }}
                         className="h-8 flex-1"
                       >
                         {audioPlayback.isPlaying.voiceover ? 'Stop' : 'Preview'}
