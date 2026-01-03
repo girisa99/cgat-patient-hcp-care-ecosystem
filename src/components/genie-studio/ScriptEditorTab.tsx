@@ -1889,16 +1889,17 @@ export function ScriptEditorTab({
                       </Button>
                     </div>
                   </div>
-                  <ScrollArea className="max-h-72">
+                  <ScrollArea className="h-72">
                     <div className="space-y-2 pr-4">
                       {analysisResult.recommendations.map(rec => (
                         <div 
                           key={rec.id}
                           className={cn(
-                            "p-3 rounded-lg border flex items-start gap-3",
+                            "p-3 rounded-lg border",
                             rec.severity === 'warning' && "border-orange-500/30 bg-orange-500/5",
                             rec.severity === 'suggestion' && "border-purple-500/30 bg-purple-500/5",
-                            rec.severity === 'info' && "border-border bg-background"
+                            rec.severity === 'info' && "border-border bg-background",
+                            rec.accepted !== null && "opacity-60"
                           )}
                         >
                           <div className="flex-1">
@@ -1908,43 +1909,79 @@ export function ScriptEditorTab({
                                 <Badge variant="secondary" className="text-[10px]">{rec.location}</Badge>
                               )}
                               {rec.severity === 'warning' && <AlertTriangle className="h-3 w-3 text-orange-500" />}
+                              {rec.accepted !== null && (
+                                <Badge variant={rec.accepted ? 'default' : 'secondary'} className="text-[10px]">
+                                  {rec.accepted ? '✓ Noted' : 'Dismissed'}
+                                </Badge>
+                              )}
                             </div>
                             <p className="font-medium text-sm">{rec.title}</p>
                             <p className="text-xs text-muted-foreground mt-1">{rec.description}</p>
                             
-                            {/* Original vs Suggested Text - NEW */}
-                            {rec.originalText && (
+                            {/* Original vs Suggested Text */}
+                            {rec.originalText && rec.accepted === null && (
                               <div className="mt-2 p-2 rounded bg-red-500/5 border border-red-500/20">
                                 <span className="text-[10px] text-red-600 font-medium">Original: </span>
                                 <span className="text-xs text-red-600/80 line-through">{rec.originalText}</span>
                               </div>
                             )}
-                            {rec.suggestedText && (
+                            {rec.suggestedText && rec.accepted === null && (
                               <div className="mt-1 p-2 rounded bg-green-500/10 border border-green-500/20">
                                 <span className="text-[10px] text-green-600 font-medium">Suggested: </span>
                                 <span className="text-xs text-green-700">{rec.suggestedText}</span>
                               </div>
                             )}
                           </div>
-                          {rec.accepted === null ? (
-                            <div className="flex gap-1 shrink-0">
+                          
+                          {/* Action Buttons - Apply Fix, Edit, Dismiss */}
+                          {rec.accepted === null && (
+                            <div className="flex items-center gap-2 mt-3 pt-2 border-t border-border/50">
+                              {rec.suggestedText && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="h-7 px-2 text-xs gap-1 border-green-500/30 hover:bg-green-500/10"
+                                  onClick={() => {
+                                    // Apply the suggested fix to the script
+                                    if (rec.originalText && rec.suggestedText) {
+                                      const newContent = scriptContent.replace(rec.originalText, rec.suggestedText);
+                                      setScriptContent(newContent);
+                                      toast.success('Applied fix to script');
+                                    }
+                                    setAnalysisResult(prev => prev ? {
+                                      ...prev,
+                                      recommendations: prev.recommendations.map(r => 
+                                        r.id === rec.id ? { ...r, accepted: true } : r
+                                      )
+                                    } : null);
+                                  }}
+                                >
+                                  <Wand2 className="h-3 w-3 text-green-600" />
+                                  Apply Fix
+                                </Button>
+                              )}
                               <Button 
-                                variant="ghost" 
+                                variant="outline" 
                                 size="sm" 
-                                className="h-7 px-2"
-                                onClick={() => setAnalysisResult(prev => prev ? {
-                                  ...prev,
-                                  recommendations: prev.recommendations.map(r => 
-                                    r.id === rec.id ? { ...r, accepted: true } : r
-                                  )
-                                } : null)}
+                                className="h-7 px-2 text-xs gap-1 border-blue-500/30 hover:bg-blue-500/10"
+                                onClick={() => {
+                                  // Scroll to and highlight the issue in editor
+                                  toast.info('Edit mode: Make changes in the script editor');
+                                  setAnalysisResult(prev => prev ? {
+                                    ...prev,
+                                    recommendations: prev.recommendations.map(r => 
+                                      r.id === rec.id ? { ...r, accepted: true } : r
+                                    )
+                                  } : null);
+                                }}
                               >
-                                <Check className="h-3 w-3 text-green-500" />
+                                <Edit3 className="h-3 w-3 text-blue-600" />
+                                Edit
                               </Button>
                               <Button 
                                 variant="ghost" 
                                 size="sm" 
-                                className="h-7 px-2"
+                                className="h-7 px-2 text-xs gap-1"
                                 onClick={() => setAnalysisResult(prev => prev ? {
                                   ...prev,
                                   recommendations: prev.recommendations.map(r => 
@@ -1952,13 +1989,10 @@ export function ScriptEditorTab({
                                   )
                                 } : null)}
                               >
-                                <X className="h-3 w-3 text-red-500" />
+                                <X className="h-3 w-3 text-muted-foreground" />
+                                Dismiss
                               </Button>
                             </div>
-                          ) : (
-                            <Badge variant={rec.accepted ? 'default' : 'secondary'} className="text-xs shrink-0">
-                              {rec.accepted ? 'Noted' : 'Dismissed'}
-                            </Badge>
                           )}
                         </div>
                       ))}
@@ -2070,8 +2104,8 @@ export function ScriptEditorTab({
                 </Button>
               </div>
               
-              {/* Changes List */}
-              <ScrollArea className="max-h-72 mb-4">
+              {/* Changes List - with explicit height for scrolling */}
+              <ScrollArea className="h-72 mb-4">
                 <div className="space-y-3 pr-4">
                   {enhancementChanges.map((change, index) => (
                     <div 
@@ -2092,7 +2126,7 @@ export function ScriptEditorTab({
                             <Button 
                               variant="outline" 
                               size="sm" 
-                              className="h-7 px-2"
+                              className="h-7 px-2 border-green-500/30 hover:bg-green-500/10"
                               onClick={() => handleAcceptChange(change.id)}
                             >
                               <Check className="h-3 w-3 text-green-500 mr-1" />
