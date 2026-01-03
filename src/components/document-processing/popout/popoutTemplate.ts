@@ -6,17 +6,21 @@
 import type { PopoutConfig } from './types';
 
 export function getPopoutHTML(config: PopoutConfig): string {
-  // Generate script options with version badges
+  // Generate script options with version label at end
   const scriptOptions = config.scripts.length > 0
     ? config.scripts.map(s => {
         const hasEnhanced = !!(s as any).enhancedContent;
-        const hasClean = !!(s as any).cleanContent;
-        const badges = [];
-        badges.push('Original');
-        if (hasEnhanced) badges.push('Enhanced');
-        if (hasClean) badges.push('TTS');
-        const badgeText = badges.length > 1 ? ` [${badges.join(', ')}]` : '';
-        return `<option value="${s.id}" ${s.id === config.selectedScriptId ? 'selected' : ''}>${escapeHtml(s.title)}${badgeText}</option>`;
+        const hasOriginal = !!(s as any).originalContent || !!(s as any).content;
+        // Determine version label based on what's available
+        let versionLabel = '';
+        if (hasEnhanced && hasOriginal) {
+          versionLabel = ' — Enhanced + Original';
+        } else if (hasEnhanced) {
+          versionLabel = ' — Enhanced';
+        } else if (hasOriginal) {
+          versionLabel = ' — Original';
+        }
+        return `<option value="${s.id}" ${s.id === config.selectedScriptId ? 'selected' : ''}>${escapeHtml(s.title)}${versionLabel}</option>`;
       }).join('')
     : '';
 
@@ -153,6 +157,25 @@ export function getPopoutHTML(config: PopoutConfig): string {
             <button class="library-btn-toggle" id="libraryBtn">
               📚 Library <span id="libraryCount">0</span>
             </button>
+          </div>
+
+          <!-- Audio Controls Bar (shown during recording) -->
+          <div class="audio-controls-bar" id="audioControlsBar" style="display:none;">
+            <div class="audio-bar-item">
+              <span class="audio-bar-label">🎙️ Voice</span>
+              <button class="audio-bar-btn" id="voicePlayPauseBtn">▶</button>
+              <button class="audio-bar-btn" id="voiceStopBtn">⏹</button>
+              <input type="range" class="audio-bar-volume" id="voiceBarVolume" min="0" max="100" value="100" title="Voice Volume">
+            </div>
+            <div class="audio-bar-item">
+              <span class="audio-bar-label">🎵 Music</span>
+              <button class="audio-bar-btn" id="musicPlayPauseBtn">▶</button>
+              <button class="audio-bar-btn" id="musicBarStopBtn">⏹</button>
+              <input type="range" class="audio-bar-volume" id="musicBarVolume" min="0" max="100" value="30" title="Music Volume">
+              <label class="duck-label" title="Auto-reduce music when voice plays">
+                <input type="checkbox" id="duckMusicCheckbox" checked> Duck
+              </label>
+            </div>
           </div>
 
           <!-- Trim Controls (shown during recording) -->

@@ -523,6 +523,10 @@ export function getUIScript(): string {
       var trimBar = document.getElementById('trimControlsBar');
       if (trimBar) trimBar.style.display = 'flex';
       
+      // Show audio controls bar
+      var audioBar = document.getElementById('audioControlsBar');
+      if (audioBar) audioBar.style.display = 'flex';
+      
       // Show sync indicator if audio selected
       if ((voiceoverSelect && voiceoverSelect.value) || (musicSelect && musicSelect.value)) {
         var syncIndicator = document.getElementById('syncActiveIndicator');
@@ -538,6 +542,10 @@ export function getUIScript(): string {
       // Hide trim controls
       const trimBar = document.getElementById('trimControlsBar');
       if (trimBar) trimBar.style.display = 'none';
+      
+      // Hide audio controls bar
+      const audioBar = document.getElementById('audioControlsBar');
+      if (audioBar) audioBar.style.display = 'none';
       
       // Hide edit panel
       const editPanel = document.getElementById('editPanel');
@@ -606,13 +614,40 @@ export function getUIScript(): string {
             }
           });
 
+          voiceoverAudio.addEventListener('play', function() {
+            console.log('[Recording Audio] Voiceover play event - applying ducking');
+            applyDucking(true);
+            // Update bar button
+            var voiceBtn = document.getElementById('voicePlayPauseBtn');
+            if (voiceBtn) {
+              voiceBtn.textContent = '⏸';
+              voiceBtn.classList.add('playing');
+            }
+          });
+
+          voiceoverAudio.addEventListener('pause', function() {
+            console.log('[Recording Audio] Voiceover paused - removing ducking');
+            applyDucking(false);
+            var voiceBtn = document.getElementById('voicePlayPauseBtn');
+            if (voiceBtn && voiceoverAudio.currentTime > 0 && voiceoverAudio.currentTime < voiceoverAudio.duration) {
+              voiceBtn.textContent = '▶';
+              voiceBtn.classList.remove('playing');
+            }
+          });
+
           voiceoverAudio.addEventListener('ended', function() {
             console.log('[Recording Audio] Voiceover finished playing');
+            applyDucking(false);
             if (typeof stopWordHighlighting === 'function') {
               stopWordHighlighting();
             }
             if (typeof hideReadingCursor === 'function') {
               hideReadingCursor();
+            }
+            var voiceBtn = document.getElementById('voicePlayPauseBtn');
+            if (voiceBtn) {
+              voiceBtn.textContent = '▶';
+              voiceBtn.classList.remove('playing');
             }
           });
 
@@ -649,8 +684,26 @@ export function getUIScript(): string {
           
           console.log('[Recording Audio] Creating new music audio element...');
           musicAudio = new Audio(musicUrl);
-          musicAudio.volume = musicVolume ? musicVolume.value / 100 : 0.5;
+          // Start music at lower volume if voiceover is playing (ducking)
+          var hasVoice = voiceoverSelect && voiceoverSelect.value;
+          musicAudio.volume = hasVoice && duckingEnabled ? duckedMusicVolume : (musicVolume ? musicVolume.value / 100 : 0.3);
           musicAudio.loop = musicLoopEnabled;
+
+          musicAudio.addEventListener('play', function() {
+            var musicBtn = document.getElementById('musicPlayPauseBtn');
+            if (musicBtn) {
+              musicBtn.textContent = '⏸';
+              musicBtn.classList.add('playing');
+            }
+          });
+
+          musicAudio.addEventListener('pause', function() {
+            var musicBtn = document.getElementById('musicPlayPauseBtn');
+            if (musicBtn && musicAudio.currentTime > 0) {
+              musicBtn.textContent = '▶';
+              musicBtn.classList.remove('playing');
+            }
+          });
 
           musicAudio.addEventListener('error', function(e) {
             console.error('[Recording Audio] Music error:', e);
@@ -715,6 +768,171 @@ export function getUIScript(): string {
     function stopAllAudio() {
       stopAudioPlayback();
     }
+
+    // =====================================================
+    // AUDIO DUCKING - Reduce music when voice plays
+    // =====================================================
+
+    var duckingEnabled = true;
+    var normalMusicVolume = 0.3;
+    var duckedMusicVolume = 0.08; // Very low when voice plays
+
+    function initAudioDucking() {
+      var duckCheckbox = document.getElementById('duckMusicCheckbox');
+      if (duckCheckbox) {
+        duckCheckbox.addEventListener('change', function() {
+          duckingEnabled = this.checked;
+          console.log('[Ducking] Enabled:', duckingEnabled);
+        });
+      }
+    }
+
+    function applyDucking(voicePlaying) {
+      if (!musicAudio || !duckingEnabled) return;
+      
+      var targetVolume = voicePlaying ? duckedMusicVolume : normalMusicVolume;
+      
+      // Smooth transition
+      var currentVolume = musicAudio.volume;
+      var step = (targetVolume - currentVolume) / 10;
+      var stepCount = 0;
+      
+      var fadeInterval = setInterval(function() {
+        stepCount++;
+        musicAudio.volume = Math.max(0, Math.min(1, currentVolume + (step * stepCount)));
+        
+        if (stepCount >= 10) {
+          clearInterval(fadeInterval);
+          musicAudio.volume = targetVolume;
+        }
+      }, 30);
+      
+      console.log('[Ducking] Voice playing:', voicePlaying, 'Music volume:', targetVolume);
+    }
+
+    // =====================================================
+    // AUDIO BAR CONTROLS (During Recording)
+    // =====================================================
+
+    function initAudioBarControls() {
+      console.log('[AudioBar] Initializing controls...');
+      
+      var voicePlayPauseBtn = document.getElementById('voicePlayPauseBtn');
+      var voiceStopBtn = document.getElementById('voiceStopBtn');
+      var voiceBarVolume = document.getElementById('voiceBarVolume');
+      var musicPlayPauseBtn = document.getElementById('musicPlayPauseBtn');
+      var musicBarStopBtn = document.getElementById('musicBarStopBtn');
+      var musicBarVolume = document.getElementById('musicBarVolume');
+      
+      // Voice play/pause
+      if (voicePlayPauseBtn) {
+        voicePlayPauseBtn.addEventListener('click', function() {
+          if (voiceoverAudio && !voiceoverAudio.paused) {
+            // Pause voice
+            voiceoverAudio.pause();
+            this.textContent = '▶';
+            this.classList.remove('playing');
+            applyDucking(false);
+          } else if (voiceoverAudio) {
+            // Resume voice
+            voiceoverAudio.play();
+            this.textContent = '⏸';
+            this.classList.add('playing');
+            applyDucking(true);
+          } else if (ttsAudio && !ttsAudio.paused) {
+            ttsAudio.pause();
+            this.textContent = '▶';
+            this.classList.remove('playing');
+            applyDucking(false);
+          } else if (ttsAudio) {
+            ttsAudio.play();
+            this.textContent = '⏸';
+            this.classList.add('playing');
+            applyDucking(true);
+          }
+        });
+      }
+      
+      // Voice stop
+      if (voiceStopBtn) {
+        voiceStopBtn.addEventListener('click', function() {
+          if (voiceoverAudio) {
+            voiceoverAudio.pause();
+            voiceoverAudio.currentTime = 0;
+          }
+          if (ttsAudio) {
+            ttsAudio.pause();
+            ttsAudio.currentTime = 0;
+          }
+          if (voicePlayPauseBtn) {
+            voicePlayPauseBtn.textContent = '▶';
+            voicePlayPauseBtn.classList.remove('playing');
+          }
+          applyDucking(false);
+        });
+      }
+      
+      // Voice volume
+      if (voiceBarVolume) {
+        voiceBarVolume.addEventListener('input', function() {
+          var vol = this.value / 100;
+          if (voiceoverAudio) voiceoverAudio.volume = vol;
+          if (ttsAudio) ttsAudio.volume = vol;
+          if (voiceoverVolume) voiceoverVolume.value = this.value;
+          if (ttsVolume) ttsVolume.value = this.value;
+        });
+      }
+      
+      // Music play/pause
+      if (musicPlayPauseBtn) {
+        musicPlayPauseBtn.addEventListener('click', function() {
+          if (musicAudio && !musicAudio.paused) {
+            musicAudio.pause();
+            this.textContent = '▶';
+            this.classList.remove('playing');
+          } else if (musicAudio) {
+            musicAudio.play();
+            this.textContent = '⏸';
+            this.classList.add('playing');
+          }
+        });
+      }
+      
+      // Music stop
+      if (musicBarStopBtn) {
+        musicBarStopBtn.addEventListener('click', function() {
+          if (musicAudio) {
+            musicAudio.pause();
+            musicAudio.currentTime = 0;
+          }
+          if (musicPlayPauseBtn) {
+            musicPlayPauseBtn.textContent = '▶';
+            musicPlayPauseBtn.classList.remove('playing');
+          }
+        });
+      }
+      
+      // Music volume
+      if (musicBarVolume) {
+        normalMusicVolume = musicBarVolume.value / 100;
+        musicBarVolume.addEventListener('input', function() {
+          var vol = this.value / 100;
+          normalMusicVolume = vol;
+          if (musicAudio && !voiceoverAudio && !ttsAudio) {
+            musicAudio.volume = vol;
+          }
+          if (musicVolume) musicVolume.value = this.value;
+        });
+      }
+      
+      // Initialize ducking
+      initAudioDucking();
+      
+      console.log('[AudioBar] Controls initialized');
+    }
+
+    // Initialize audio bar controls
+    setTimeout(initAudioBarControls, 500);
 
     // =====================================================
     // TTS FUNCTIONALITY
