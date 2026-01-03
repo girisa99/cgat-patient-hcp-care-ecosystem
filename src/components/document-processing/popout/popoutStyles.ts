@@ -156,7 +156,7 @@ export function getPopoutStyles(): string {
       text-align: center;
     }
 
-    /* Logo overlay */
+    /* Logo overlay - high z-index to show above screen share and camera */
     .logo-overlay {
       position: absolute;
       bottom: 20px;
@@ -166,19 +166,66 @@ export function getPopoutStyles(): string {
       border-radius: 8px;
       overflow: hidden;
       display: none;
-      z-index: 50;
-      background: rgba(0, 0, 0, 0.3);
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.5);
       backdrop-filter: blur(4px);
+      pointer-events: auto;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     }
 
     .logo-overlay.visible {
-      display: block;
+      display: block !important;
     }
 
     .logo-overlay img {
       width: 100%;
       height: 100%;
       object-fit: contain;
+    }
+
+    /* Logo size variants */
+    .logo-overlay.size-small {
+      width: 60px;
+      height: 60px;
+    }
+
+    .logo-overlay.size-medium {
+      width: 80px;
+      height: 80px;
+    }
+
+    .logo-overlay.size-large {
+      width: 120px;
+      height: 120px;
+    }
+
+    /* Logo position variants */
+    .logo-overlay.pos-top-left {
+      top: 20px;
+      left: 20px;
+      bottom: auto;
+      right: auto;
+    }
+
+    .logo-overlay.pos-top-right {
+      top: 20px;
+      right: 20px;
+      bottom: auto;
+      left: auto;
+    }
+
+    .logo-overlay.pos-bottom-left {
+      bottom: 20px;
+      left: 20px;
+      top: auto;
+      right: auto;
+    }
+
+    .logo-overlay.pos-bottom-right {
+      bottom: 20px;
+      right: 20px;
+      top: auto;
+      left: auto;
     }
 
     /* Recording indicator */
