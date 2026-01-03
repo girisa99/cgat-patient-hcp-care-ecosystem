@@ -701,14 +701,14 @@ const FEATURES = [
   }
 ];
 
-// Quick Tips for Users - Following workflow sequence: Script → Voice → Music → Record
+// Quick Tips for Users - Following workflow sequence: Script → AI Enhance → TTS → Music → Record
 const QUICK_TIPS = [
-  { icon: PenTool, title: '1. Write Script', text: 'Start with a script in the Script Editor - use AI to analyze and enhance it' },
-  { icon: Wand2, title: '2. AI Enhance', text: 'Let AI add pauses, improve engagement, and make your script conversational' },
-  { icon: Mic, title: '3. Generate Voice', text: 'Use AI Voice Generator to create professional voiceovers from your script' },
-  { icon: Music, title: '4. Add Music', text: 'Generate or select background music in AI Music Studio to set the mood' },
-  { icon: Video, title: '5. Record Video', text: 'Open Recording Studio with your voiceover and music ready to go' },
-  { icon: Download, title: '6. Export', text: 'Save your recording and export in multiple formats for different platforms' }
+  { icon: PenTool, title: '1. Write Script', text: 'Create your script in the Script Editor - video or audio format' },
+  { icon: Wand2, title: '2. AI Enhance', text: 'Analyze & enhance with AI - review suggestions, accept or skip recommendations' },
+  { icon: Mic, title: '3. Generate TTS', text: 'Convert your original or enhanced script to AI voiceover with ElevenLabs or OpenAI' },
+  { icon: Music, title: '4. Add Music', text: 'Generate or upload background music to set the perfect mood' },
+  { icon: Video, title: '5. Record Video', text: 'Open Recording Studio with teleprompter, play voiceover/TTS and music while recording' },
+  { icon: Download, title: '6. Export', text: 'Download your final video with synced audio in multiple formats' }
 ];
 
 // Custom hook to load media from localStorage
@@ -1769,11 +1769,11 @@ export default function GenieStudio() {
               {/* Stats Bar */}
               <div className="mt-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 {[
-                  { label: 'Videos Created', value: String(videos.length), icon: Film, trend: 'Recorded' },
-                  { label: 'Voiceovers', value: String(audios.length + savedVoiceovers.length), icon: Mic, trend: 'Generated' },
-                  { label: 'Upcoming Shows', value: String(upcomingEvents.length), icon: Calendar, trend: 'Scheduled' },
-                  { label: 'Video Scripts', value: String(videoScripts.length), icon: Video, trend: 'Created' },
+                  { label: 'Video Scripts', value: String(videoScripts.length), icon: FileText, trend: 'Created' },
                   { label: 'Audio Scripts', value: String(audioScripts.length), icon: Headphones, trend: 'Created' },
+                  { label: 'Voiceovers', value: String(audios.length + savedVoiceovers.length), icon: Mic, trend: 'Generated' },
+                  { label: 'Music Tracks', value: String(mergedMusic.length), icon: Music, trend: 'Available' },
+                  { label: 'Videos Created', value: String(videos.length), icon: Film, trend: 'Recorded' },
                   { label: 'Projects', value: String(mediaProjects.length), icon: Layers, trend: 'Active' }
                 ].map((stat, i) => (
                   <div key={i} className="bg-card/50 backdrop-blur border border-border/50 rounded-xl p-4 hover:border-primary/30 transition-colors">
