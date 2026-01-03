@@ -161,21 +161,101 @@ serve(async (req) => {
     let userPrompt = "";
 
     if (mode === "analyze") {
-      systemPrompt = `You are a professional script analyst. Analyze scripts and return ONLY valid JSON, no markdown.`;
-      userPrompt = `Analyze this script and return a JSON object with this exact structure (no markdown, just JSON):
-{"stats":{"wordCount":0,"sentenceCount":0,"avgWordsPerSentence":0,"estimatedDurationMinutes":0,"readabilityScore":"easy"},"recommendations":[{"type":"pacing","severity":"info","title":"Title","description":"Description"}]}
+      systemPrompt = `You are an expert script analyst for video and audio voiceover content. You analyze scripts for professional voice recording and provide detailed, actionable recommendations. Return ONLY valid JSON, no markdown.`;
+      
+      userPrompt = `Analyze this script thoroughly for voiceover recording. Return a JSON object with this structure:
 
-Provide 3-5 specific recommendations. Script:
-${scriptContent.substring(0, 3000)}`;
+{
+  "stats": {
+    "wordCount": number,
+    "sentenceCount": number,
+    "avgWordsPerSentence": number,
+    "estimatedDurationMinutes": number,
+    "readabilityScore": "easy" | "moderate" | "difficult",
+    "sectionsCount": number,
+    "hasPauseMarkers": boolean
+  },
+  "recommendations": [
+    {
+      "type": "pacing" | "clarity" | "engagement" | "pause" | "break" | "section" | "readability",
+      "severity": "warning" | "suggestion" | "info",
+      "title": "Short descriptive title",
+      "description": "Detailed explanation of why this matters",
+      "originalText": "The exact text from the script that needs attention (if applicable)",
+      "suggestedText": "The improved version with markers like ... for pauses or --- for breaks (if applicable)",
+      "location": "Beginning | Middle | End | Section name"
+    }
+  ],
+  "pauseOpportunities": [
+    {
+      "afterText": "exact phrase where pause should be added",
+      "reason": "why a pause here improves delivery"
+    }
+  ],
+  "sectionBreaks": [
+    {
+      "beforeText": "text that should start a new section",
+      "sectionTitle": "suggested section title"
+    }
+  ],
+  "overallAssessment": {
+    "strengths": ["list of what works well"],
+    "weaknesses": ["list of areas needing improvement"],
+    "voiceoverReadiness": "ready" | "needs_minor_edits" | "needs_significant_work"
+  }
+}
+
+Provide 5-10 specific, actionable recommendations. Focus on:
+1. Places where pauses (...) should be added for natural breathing and emphasis
+2. Long sentences that should be broken up
+3. Sections that need clearer transitions (---)
+4. Technical terms that may need slower delivery
+5. Engagement hooks and call-to-action effectiveness
+6. Pacing issues - too fast or too slow sections
+
+Script to analyze:
+${scriptContent.substring(0, 6000)}`;
     } else {
-      // Enhancement mode - keep response concise
-      systemPrompt = `You are a script editor. Enhance scripts for voiceover delivery. Return ONLY valid JSON, no markdown or code blocks.`;
+      // Enhancement mode - comprehensive rewrite
+      systemPrompt = `You are an expert script editor specializing in voiceover content for video and audio. You enhance scripts for natural, engaging delivery. Add pause markers (...) for breathing and emphasis, section breaks (---), and improve pacing. Return ONLY valid JSON, no markdown or code blocks.`;
 
-      userPrompt = `Enhance this script for voiceover. Return ONLY this JSON structure (no markdown):
-{"enhancedScript":"full enhanced text with ... for pauses","cleanScript":"same text without pause markers","changes":[{"type":"modification","original":"short excerpt","enhanced":"improved version","reason":"why"}],"summary":"2-3 sentence summary"}
+      userPrompt = `Enhance this script for professional voiceover recording. 
 
-Keep changes array to 5 most important changes max. Script:
-${scriptContent.substring(0, 3000)}`;
+REQUIREMENTS:
+1. Add pause markers (...) after important points, before new topics, and for natural breathing
+2. Add section breaks (---) between major topics
+3. Break long sentences into shorter, speakable chunks
+4. Add emphasis markers for key terms
+5. Improve transitions between sections
+6. Make the opening more engaging
+7. Strengthen the call-to-action if present
+
+Return this JSON structure:
+
+{
+  "enhancedScript": "The complete enhanced script with all pause markers (...), section breaks (---), and improvements included",
+  "cleanScript": "The same enhanced script but with pause markers and breaks removed (for TTS that doesn't handle them)",
+  "changes": [
+    {
+      "type": "pause" | "break" | "modification" | "addition" | "removal" | "pacing",
+      "original": "The exact original text (10-50 words)",
+      "enhanced": "The enhanced version with markers",
+      "reason": "Why this change improves delivery",
+      "position": "start" | "middle" | "end"
+    }
+  ],
+  "markers": {
+    "pausesAdded": number,
+    "sectionBreaksAdded": number,
+    "sentencesRewritten": number
+  },
+  "summary": "2-3 sentence summary of key improvements"
+}
+
+Include 8-15 specific changes that show the before/after. Focus on the most impactful improvements.
+
+Script to enhance:
+${scriptContent.substring(0, 6000)}`;
     }
 
     let content: string | undefined;
