@@ -41,22 +41,20 @@ export function useCamera(options: UseCameraOptions = {}) {
         throw new Error('Camera API not available in this browser');
       }
 
-      // Request with timeout wrapper
+      // Stop any existing stream before requesting new one
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+
+      // Request with simpler constraints first to avoid timeout
       const streamPromise = navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 1280, min: 640 },
-          height: { ideal: 720, min: 480 },
-          facingMode: 'user',
-        },
+        video: true,
         audio: true,
       });
 
-      // 30 second timeout for slower devices
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Camera request timeout')), 30000);
-      });
-
-      const stream = await Promise.race([streamPromise, timeoutPromise]);
+      // No timeout - let browser handle it naturally
+      const stream = await streamPromise;
 
       if (!mountedRef.current) {
         stream.getTracks().forEach(track => track.stop());

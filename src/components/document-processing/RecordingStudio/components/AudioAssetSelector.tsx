@@ -13,6 +13,13 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Play, Square, Repeat, Volume2, Download, Mic, Music, VolumeX } from 'lucide-react';
 import type { VoiceoverData, MusicData, AudioTabType } from '../types';
+import { 
+  isInstrumental, 
+  isTTSFile, 
+  filterActualVoiceovers, 
+  filterTTSFiles,
+  filterInstrumentalFiles 
+} from '@/components/genie-studio/AudioFileFilters';
 
 interface AudioAssetSelectorProps {
   activeTab: AudioTabType;
@@ -92,50 +99,27 @@ export function AudioAssetSelector({
   const selectedMusic = musicList.find(m => m.id === selectedMusicId);
   const selectedTTSFile = ttsFiles.find(f => f.id === selectedTTSFileId);
 
-  // Helper to check if file is instrumental/music
-  const isInstrumental = (v: VoiceoverData) => {
-    const lowerName = v.name.toLowerCase();
-    if (v.metadataType === 'instrumental') return true;
-    if (v.scriptType === 'instrumental') return true;
-    if (lowerName.includes('🎵')) return true;
-    if (lowerName.includes('instrumental')) return true;
-    if (lowerName.includes('song_')) return true;
-    if (lowerName.includes('bgm')) return true;
-    if (lowerName.includes('background_music')) return true;
-    if (lowerName.includes('music') && !lowerName.includes('voiceover') && !lowerName.includes('voice')) return true;
-    return false;
-  };
-
-  // Helper to check if file is TTS generated - STRICT check
-  // Only files explicitly marked as TTS go to TTS tab
-  const isTTSFile = (v: VoiceoverData) => {
-    // Explicit TTS types only
-    if (v.scriptType === 'tts') return true;
-    if (v.metadataType === 'tts') return true;
-    
-    // Check name for TTS indicators - must be explicit
-    const lowerName = v.name.toLowerCase();
-    if (lowerName.includes(' tts') || lowerName.includes('_tts') || lowerName.includes('-tts')) return true;
-    if (lowerName.includes('enhanced tts')) return true;
-    if (lowerName.includes('text-to-speech')) return true;
-    
-    // Files with scriptType 'audio' that also have TTS in name
-    if (v.scriptType === 'audio' && lowerName.includes('tts')) return true;
-    
-    return false;
-  };
-
-  // Filter files by type - TTS files go to TTS tab, rest go to voiceover tab
-  const actualTTSFiles = voiceovers.filter(v => !isInstrumental(v) && isTTSFile(v));
-  const actualVoiceovers = voiceovers.filter(v => !isInstrumental(v) && !isTTSFile(v));
-  const instrumentalFiles = voiceovers.filter(isInstrumental);
+  // Use shared filter functions for consistent categorization
+  const voiceoverDataForFiltering = voiceovers.map(v => ({
+    id: v.id,
+    name: v.name,
+    url: v.url,
+    scriptText: v.scriptText || undefined,
+    scriptType: v.scriptType as any,
+    metadataType: v.metadataType || undefined
+  }));
+  
+  // Filter using shared functions
+  const actualTTSFiles = filterTTSFiles(voiceoverDataForFiltering);
+  const actualVoiceovers = filterActualVoiceovers(voiceoverDataForFiltering);
+  const instrumentalFiles = filterInstrumentalFiles(voiceoverDataForFiltering);
   
   // Combine musicList prop with instrumental files
   const actualMusic = [
     ...musicList,
     ...instrumentalFiles
       .filter(v => !musicList.some(m => m.id === v.id))
-      .map(v => ({ id: v.id, name: v.name, url: v.url }))
+      .map(v => ({ id: v.id, name: v.name, url: v.url || '' }))
   ];
 
   // Debug logging
@@ -146,7 +130,12 @@ export function AudioAssetSelector({
       actualTTSFiles: actualTTSFiles.length,
       instrumentalFiles: instrumentalFiles.length,
       actualMusic: actualMusic.length,
-      voiceovers: voiceovers.map(v => ({ name: v.name, scriptType: v.scriptType, isTTS: isTTSFile(v) })),
+      voiceovers: voiceovers.map(v => ({ 
+        name: v.name, 
+        scriptType: v.scriptType, 
+        metadataType: v.metadataType,
+        isTTS: isTTSFile({ id: v.id, name: v.name, scriptType: v.scriptType as any, metadataType: v.metadataType })
+      })),
     });
   }, [voiceovers, musicList]);
 
