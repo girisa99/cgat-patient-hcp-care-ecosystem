@@ -1250,8 +1250,11 @@ export function RecordingStudio({
                   selectedVoiceoverId={selectedVoiceoverId}
                   onVoiceoverChange={setSelectedVoiceoverId}
                   onPlayVoiceover={() => {
+                    console.log('[RecordingStudio] Playing Voiceover:', { selectedVoiceoverId, currentVoiceover: currentVoiceover?.name, url: currentVoiceover?.url?.substring(0, 50) });
                     if (currentVoiceover?.url) {
                       audioPlayback.playVoiceover(currentVoiceover.url);
+                    } else {
+                      toast.error('Select a voiceover file first');
                     }
                   }}
                   onStopVoiceover={audioPlayback.stopVoiceover}
@@ -1264,8 +1267,11 @@ export function RecordingStudio({
                   selectedMusicId={selectedMusicId}
                   onMusicChange={setSelectedMusicId}
                   onPlayMusic={() => {
+                    console.log('[RecordingStudio] Playing Music:', { selectedMusicId, currentMusic: currentMusic?.name, url: currentMusic?.url?.substring(0, 50) });
                     if (currentMusic?.url) {
                       audioPlayback.playMusic(currentMusic.url);
+                    } else {
+                      toast.error('Select a music file first');
                     }
                   }}
                   onStopMusic={audioPlayback.stopMusic}
@@ -1281,6 +1287,7 @@ export function RecordingStudio({
                   onTTSFileChange={setSelectedTTSFileId}
                   onPlayTTS={() => {
                     const ttsFile = voiceovers.find(v => v.id === selectedTTSFileId);
+                    console.log('[RecordingStudio] Playing TTS:', { selectedTTSFileId, ttsFile: ttsFile?.name, url: ttsFile?.url?.substring(0, 50) });
                     if (ttsFile?.url) {
                       audioPlayback.playTTS(ttsFile.url);
                     } else {
@@ -1291,6 +1298,10 @@ export function RecordingStudio({
                   isTTSPlaying={audioPlayback.isPlaying.tts}
                   ttsVolume={audioPlayback.ttsVolume}
                   onTTSVolumeChange={audioPlayback.setTTSVolume}
+                  
+                  // Ducking control
+                  duckingEnabled={audioPlayback.duckingEnabled}
+                  onToggleDucking={audioPlayback.toggleDucking}
                 />
 
                 <Separator />

@@ -4,13 +4,14 @@
  * NO generation - just selection and playback
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Play, Square, Repeat, Volume2, Download, Mic, Music } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Play, Square, Repeat, Volume2, Download, Mic, Music, VolumeX } from 'lucide-react';
 import type { VoiceoverData, MusicData, AudioTabType } from '../types';
 
 interface AudioAssetSelectorProps {
@@ -48,6 +49,10 @@ interface AudioAssetSelectorProps {
   isTTSPlaying: boolean;
   ttsVolume: number;
   onTTSVolumeChange: (volume: number) => void;
+  
+  // Ducking controls
+  duckingEnabled?: boolean;
+  onToggleDucking?: () => void;
 }
 
 export function AudioAssetSelector({
@@ -79,6 +84,8 @@ export function AudioAssetSelector({
   isTTSPlaying,
   ttsVolume,
   onTTSVolumeChange,
+  duckingEnabled = true,
+  onToggleDucking,
 }: AudioAssetSelectorProps) {
   
   const selectedVoiceover = voiceovers.find(v => v.id === selectedVoiceoverId);
@@ -111,9 +118,9 @@ export function AudioAssetSelector({
     return false;
   };
 
-  // Filter files by type
+  // Filter files by type - TTS files go to TTS tab, rest go to voiceover tab
+  const actualTTSFiles = voiceovers.filter(v => !isInstrumental(v) && isTTSFile(v));
   const actualVoiceovers = voiceovers.filter(v => !isInstrumental(v) && !isTTSFile(v));
-  const actualTTSFiles = ttsFiles.length > 0 ? ttsFiles : voiceovers.filter(v => !isInstrumental(v) && isTTSFile(v));
   const instrumentalFiles = voiceovers.filter(isInstrumental);
   
   // Combine musicList prop with instrumental files
@@ -123,6 +130,18 @@ export function AudioAssetSelector({
       .filter(v => !musicList.some(m => m.id === v.id))
       .map(v => ({ id: v.id, name: v.name, url: v.url }))
   ];
+
+  // Debug logging
+  useEffect(() => {
+    console.log('[AudioAssetSelector] File classification:', {
+      totalVoiceovers: voiceovers.length,
+      actualVoiceovers: actualVoiceovers.length,
+      actualTTSFiles: actualTTSFiles.length,
+      instrumentalFiles: instrumentalFiles.length,
+      actualMusic: actualMusic.length,
+      voiceovers: voiceovers.map(v => ({ name: v.name, scriptType: v.scriptType, isTTS: isTTSFile(v) })),
+    });
+  }, [voiceovers, musicList]);
 
   // Download helper
   const handleDownload = (url: string, name: string) => {
@@ -414,18 +433,36 @@ export function AudioAssetSelector({
               <span className="text-xs text-muted-foreground w-9 text-right">{musicVolume}%</span>
             </div>
 
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={musicLoop}
-                onChange={onToggleMusicLoop}
-                id="music-loop-selector"
-                className="rounded"
-              />
-              <label htmlFor="music-loop-selector" className="text-xs text-muted-foreground cursor-pointer flex items-center gap-1">
-                <Repeat className="w-3 h-3" />
-                Loop music
-              </label>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={musicLoop}
+                  onChange={onToggleMusicLoop}
+                  id="music-loop-selector"
+                  className="rounded"
+                />
+                <label htmlFor="music-loop-selector" className="text-xs text-muted-foreground cursor-pointer flex items-center gap-1">
+                  <Repeat className="w-3 h-3" />
+                  Loop
+                </label>
+              </div>
+              
+              {/* Ducking control */}
+              {onToggleDucking && (
+                <div className="flex items-center gap-2">
+                  <label htmlFor="ducking-toggle" className="text-xs text-muted-foreground cursor-pointer flex items-center gap-1">
+                    <VolumeX className="w-3 h-3" />
+                    Duck
+                  </label>
+                  <Switch
+                    id="ducking-toggle"
+                    checked={duckingEnabled}
+                    onCheckedChange={onToggleDucking}
+                    className="h-4 w-7"
+                  />
+                </div>
+              )}
             </div>
 
             {actualMusic.length === 0 && (
