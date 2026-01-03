@@ -698,17 +698,28 @@ const FEATURES = [
     badge: 'Popular',
     stats: { label: 'Quick Start', value: '< 10s' },
     tab: 'record'
+  },
+  {
+    id: 'publish',
+    title: 'Publish & Go Live',
+    description: 'Podcast, webcast, or broadcast to your audience',
+    icon: Radio,
+    color: 'from-cyan-500 to-teal-500',
+    badge: 'Coming Soon',
+    stats: { label: 'Platforms', value: '10+' },
+    tab: 'publish'
   }
 ];
 
-// Quick Tips for Users - Following workflow sequence: Script → AI Enhance → TTS → Music → Record
+// Quick Tips for Users - Following workflow sequence: Script → AI Enhance → TTS → Music → Record → Publish
 const QUICK_TIPS = [
   { icon: PenTool, title: '1. Write Script', text: 'Create your script in the Script Editor - video or audio format' },
   { icon: Wand2, title: '2. AI Enhance', text: 'Analyze & enhance with AI - review suggestions, accept or skip recommendations' },
   { icon: Mic, title: '3. Generate TTS', text: 'Convert your original or enhanced script to AI voiceover with ElevenLabs or OpenAI' },
   { icon: Music, title: '4. Add Music', text: 'Generate or upload background music to set the perfect mood' },
   { icon: Video, title: '5. Record Video', text: 'Open Recording Studio with teleprompter, play voiceover/TTS and music while recording' },
-  { icon: Download, title: '6. Export', text: 'Download your final video with synced audio in multiple formats' }
+  { icon: Download, title: '6. Export', text: 'Download your final video with synced audio in multiple formats' },
+  { icon: Radio, title: '7. Go Live', text: 'Publish as podcast, schedule webcast, or broadcast live to your audience across platforms' }
 ];
 
 // Custom hook to load media from localStorage
