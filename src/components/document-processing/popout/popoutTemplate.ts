@@ -218,7 +218,9 @@ export function getPopoutHTML(config: PopoutConfig): string {
           <div class="sidebar-card screen-share-warning" id="screenShareWarning" style="display:none;">
             <div class="warning-icon">⚠️</div>
             <div class="warning-text">
-              <strong>Screen Mirror Effect:</strong> If you see infinite screens, select a <strong>specific window</strong> instead of "Entire Screen" in the share dialog.
+              <strong>Screen Mirror Effect:</strong><br/>
+              Seeing infinite screens? This happens when you share this window.<br/>
+              <strong>Fix:</strong> Share a <em>different</em> window or app, not this Recording Studio.
             </div>
           </div>
 
@@ -227,11 +229,10 @@ export function getPopoutHTML(config: PopoutConfig): string {
             <div class="tip-icon">💡</div>
             <div class="tip-text">
               <strong>Quick Start:</strong><br/>
-              1. Select a script for the teleprompter<br/>
-              2. Choose voiceover or generate TTS in the TTS tab<br/>
-              3. Optionally select background music<br/>
-              4. Press <strong>Start Recording</strong> - audio plays automatically!<br/>
-              <em>Tip: The teleprompter syncs with your audio word-by-word</em>
+              1. Select a <strong>script</strong> for the teleprompter<br/>
+              2. Go to <strong>TTS tab</strong> → Generate TTS audio, OR select a <strong>Voiceover</strong><br/>
+              3. Optionally add background music<br/>
+              4. Click <strong>Start Recording</strong> → audio plays automatically!
             </div>
           </div>
 
