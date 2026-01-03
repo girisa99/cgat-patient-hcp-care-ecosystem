@@ -47,6 +47,8 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useTTSGeneration, OPENAI_VOICES, ELEVENLABS_VOICES, GOOGLE_VOICES } from '@/components/document-processing/RecordingStudio/hooks/useTTSGeneration';
+import { ScriptModeToolbar } from './ScriptModeToolbar';
+import { SCRIPT_MODES, type ScriptMode } from '@/types/projects';
 
 // Types
 export type ScriptPurpose = 'video' | 'audio' | 'podcast' | 'webcast' | 'interview' | 'panel' | 'tutorial';
@@ -216,9 +218,11 @@ export function ScriptEditorTab({
   const [scriptName, setScriptName] = useState('');
   const [scriptContent, setScriptContent] = useState('');
   const [scriptType, setScriptType] = useState<'video' | 'audio'>('video');
+  const [scriptMode, setScriptMode] = useState<ScriptMode>('video');
   const [scriptPurpose, setScriptPurpose] = useState<ScriptPurpose>('video');
   const [isNewScript, setIsNewScript] = useState(true);
   const [isUploadingScript, setIsUploadingScript] = useState(false);
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   
   // Enhanced Content State
   const [originalContent, setOriginalContent] = useState<string | null>(null);
@@ -2129,7 +2133,7 @@ export function ScriptEditorTab({
           
           {/* Script Editor */}
           <div className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="script-name">Script Name *</Label>
                 <Input
@@ -2156,9 +2160,29 @@ export function ScriptEditorTab({
                     <SelectItem value="audio">
                       <div className="flex items-center gap-2">
                         <Mic className="h-4 w-4 text-purple-500" />
-                        Audio Script (Podcast/Voiceover)
+                        Audio Script
                       </div>
                     </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Script Mode</Label>
+                <Select value={scriptMode} onValueChange={(v: ScriptMode) => setScriptMode(v)}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SCRIPT_MODES.map((mode) => (
+                      <SelectItem key={mode.id} value={mode.id}>
+                        <div className="flex items-center gap-2">
+                          <span className="capitalize">{mode.label}</span>
+                          {!mode.ttsEnabled && (
+                            <Badge variant="outline" className="text-[10px] ml-1">No TTS</Badge>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -2187,7 +2211,34 @@ export function ScriptEditorTab({
                   </div>
                 )}
               </div>
+              
+              {/* Script Mode Toolbar */}
+              <ScriptModeToolbar 
+                mode={scriptMode} 
+                onInsert={(marker) => {
+                  const textarea = textareaRef.current;
+                  if (textarea) {
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const text = activeVersion === 'enhanced' && enhancedContent ? enhancedContent : scriptContent;
+                    const newText = text.slice(0, start) + marker + text.slice(end);
+                    if (activeVersion === 'enhanced') {
+                      setEnhancedContent(newText);
+                    } else {
+                      setScriptContent(newText);
+                    }
+                    // Focus and set cursor position after the inserted marker
+                    setTimeout(() => {
+                      textarea.focus();
+                      textarea.setSelectionRange(start + marker.length, start + marker.length);
+                    }, 0);
+                  }
+                }}
+                disabled={!scriptContent.trim() && !enhancedContent}
+              />
+              
               <Textarea
+                ref={textareaRef}
                 id="script-content"
                 value={activeVersion === 'enhanced' && enhancedContent ? enhancedContent : scriptContent}
                 onChange={(e) => {
@@ -2197,7 +2248,7 @@ export function ScriptEditorTab({
                     setScriptContent(e.target.value);
                   }
                 }}
-                placeholder="Start writing your script here... Use '...' for pauses in speech."
+                placeholder="Start writing your script here... Use the toolbar above to insert markers."
                 className="mt-1 min-h-[300px] font-mono text-sm"
               />
             </div>
