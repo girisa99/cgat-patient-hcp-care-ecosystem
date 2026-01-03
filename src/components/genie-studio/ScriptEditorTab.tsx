@@ -41,7 +41,8 @@ import {
   Plus,
   Edit3,
   FileCheck,
-  Upload
+  Upload,
+  RefreshCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -1632,17 +1633,29 @@ export function ScriptEditorTab({
           
           {/* Analysis Results */}
           {showAnalysis && analysisResult && (
-            <div className="mb-6 p-4 rounded-lg border border-blue-500/30 bg-blue-500/5 max-h-[600px] overflow-hidden flex flex-col">
-              <div className="flex items-center justify-between mb-4 shrink-0">
+            <div className="mb-6 p-4 rounded-lg border border-blue-500/30 bg-blue-500/5">
+              <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold flex items-center gap-2">
                   <Search className="h-5 w-5 text-blue-500" />
                   Script Analysis Results
                 </h3>
-                <Button variant="ghost" size="sm" onClick={() => setShowAnalysis(false)}>
-                  <X className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleAnalyze()}
+                    disabled={isAnalyzing}
+                    className="gap-1"
+                  >
+                    {isAnalyzing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                    Re-Analyze
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setShowAnalysis(false)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-              <ScrollArea className="flex-1 pr-2">
+              <ScrollArea className="h-[400px] pr-2">
               
               {/* Overall Assessment - NEW */}
               {analysisResult.overallAssessment && (
@@ -2010,13 +2023,23 @@ export function ScriptEditorTab({
           
           {/* Enhancement Review Panel */}
           {showEnhancementReview && enhancedContent && (
-            <div className="mb-6 p-4 rounded-lg border border-purple-500/30 bg-purple-500/5 max-h-[600px] flex flex-col">
-              <div className="flex items-center justify-between mb-4 shrink-0">
+            <div className="mb-6 p-4 rounded-lg border border-purple-500/30 bg-purple-500/5">
+              <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold flex items-center gap-2">
                   <Wand2 className="h-5 w-5 text-purple-500" />
-                  Review AI Enhancements
+                  Review AI Enhancements ({enhancementChanges.filter(c => c.accepted !== null).length}/{enhancementChanges.length})
                 </h3>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleEnhance()}
+                    disabled={isEnhancing}
+                    className="gap-1"
+                  >
+                    {isEnhancing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                    Request New Enhancement
+                  </Button>
                   <Button variant="outline" size="sm" onClick={handleSaveDraft} disabled={isSavingDraft}>
                     {isSavingDraft ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
                     Save Draft
@@ -2027,7 +2050,7 @@ export function ScriptEditorTab({
                 </div>
               </div>
               
-              <div className="flex-1 overflow-y-auto min-h-0">
+              <ScrollArea className="h-[400px] pr-2">
               
               {/* Engagement Score - Before/After */}
               {engagementScore && (
@@ -2187,7 +2210,7 @@ export function ScriptEditorTab({
                 <FileCheck className="h-4 w-4 mr-2" />
                 Complete Enhancement & Apply Changes
               </Button>
-              </div>
+              </ScrollArea>
             </div>
           )}
           
