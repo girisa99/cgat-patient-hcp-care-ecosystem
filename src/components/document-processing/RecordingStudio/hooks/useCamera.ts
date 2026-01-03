@@ -13,7 +13,7 @@ interface UseCameraOptions {
 }
 
 export function useCamera(options: UseCameraOptions = {}) {
-  const { autoStart = true, maxRetries = 3, retryDelay = 1000 } = options;
+  const { autoStart = true, maxRetries = 5, retryDelay = 1500 } = options;
   
   const [state, setState] = useState<CameraState>({
     stream: null,
@@ -51,9 +51,9 @@ export function useCamera(options: UseCameraOptions = {}) {
         audio: true,
       });
 
-      // 10 second timeout
+      // 30 second timeout for slower devices
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Camera request timeout')), 10000);
+        setTimeout(() => reject(new Error('Camera request timeout')), 30000);
       });
 
       const stream = await Promise.race([streamPromise, timeoutPromise]);

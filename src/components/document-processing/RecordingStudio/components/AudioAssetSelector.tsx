@@ -106,15 +106,22 @@ export function AudioAssetSelector({
     return false;
   };
 
-  // Helper to check if file is TTS generated
+  // Helper to check if file is TTS generated - STRICT check
+  // Only files explicitly marked as TTS go to TTS tab
   const isTTSFile = (v: VoiceoverData) => {
+    // Explicit TTS types only
     if (v.scriptType === 'tts') return true;
-    if (v.scriptType === 'audio') return true;
-    if (v.scriptText && v.scriptText.length > 0) return true;
+    if (v.metadataType === 'tts') return true;
+    
+    // Check name for TTS indicators - must be explicit
     const lowerName = v.name.toLowerCase();
-    if (lowerName.includes('tts')) return true;
+    if (lowerName.includes(' tts') || lowerName.includes('_tts') || lowerName.includes('-tts')) return true;
+    if (lowerName.includes('enhanced tts')) return true;
     if (lowerName.includes('text-to-speech')) return true;
-    if (lowerName.includes('generated') && !lowerName.includes('music') && !lowerName.includes('instrumental')) return true;
+    
+    // Files with scriptType 'audio' that also have TTS in name
+    if (v.scriptType === 'audio' && lowerName.includes('tts')) return true;
+    
     return false;
   };
 
