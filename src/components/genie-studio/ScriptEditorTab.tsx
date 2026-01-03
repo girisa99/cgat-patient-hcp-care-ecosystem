@@ -15,6 +15,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   FileText,
   Video,
@@ -255,6 +257,11 @@ export function ScriptEditorTab({
   const [enhancementChanges, setEnhancementChanges] = useState<EnhancementChange[]>([]);
   const [showEnhancementReview, setShowEnhancementReview] = useState(false);
   const [reviewProgress, setReviewProgress] = useState(0);
+  
+  // Custom Enhancement Instructions State
+  const [showEnhancementDialog, setShowEnhancementDialog] = useState(false);
+  const [customEnhancementInstructions, setCustomEnhancementInstructions] = useState('');
+  const [enhancementFocus, setEnhancementFocus] = useState<'engagement' | 'clarity' | 'pacing' | 'conversational' | 'balanced'>('balanced');
   
   // Progressive Analysis State - Step by step walkthrough
   const [analysisSteps, setAnalysisSteps] = useState<{
@@ -614,18 +621,44 @@ export function ScriptEditorTab({
     }
   };
   
-  // Enhance Script
-  const handleEnhance = async () => {
+  // Open enhancement dialog for customization
+  const openEnhancementDialog = () => {
+    if (!scriptContent.trim()) {
+      toast.error('Please enter script content first');
+      return;
+    }
+    setShowEnhancementDialog(true);
+  };
+  
+  // Enhance Script with optional custom instructions
+  const handleEnhance = async (useCustomInstructions = false) => {
     if (!scriptContent.trim()) {
       toast.error('Please enter script content first');
       return;
     }
     
+    setShowEnhancementDialog(false);
     setIsEnhancing(true);
     const providerNames = { gemini: 'Gemini', openai: 'OpenAI', claude: 'Claude' };
+    
     try {
+      // Build enhancement request with optional customization
+      const enhancementBody: any = { 
+        scriptContent, 
+        mode: 'enhance', 
+        provider: aiProvider 
+      };
+      
+      // Add customization if provided
+      if (useCustomInstructions) {
+        enhancementBody.focus = enhancementFocus;
+        if (customEnhancementInstructions.trim()) {
+          enhancementBody.customInstructions = customEnhancementInstructions.trim();
+        }
+      }
+      
       const { data, error } = await supabase.functions.invoke('enhance-script', {
-        body: { scriptContent, mode: 'enhance', provider: aiProvider }
+        body: enhancementBody
       });
       
       if (error) throw error;
@@ -1223,7 +1256,7 @@ export function ScriptEditorTab({
                 "p-4 rounded-lg border cursor-pointer transition-all text-center",
                 isEnhancing ? "bg-purple-500/10 border-purple-500/50" : "bg-muted/50 border-border/50 hover:border-purple-500/50"
               )}
-              onClick={handleEnhance}
+              onClick={openEnhancementDialog}
             >
               {isEnhancing ? (
                 <Loader2 className="h-6 w-6 mx-auto mb-2 text-purple-500 animate-spin" />
@@ -1231,7 +1264,7 @@ export function ScriptEditorTab({
                 <Wand2 className="h-6 w-6 mx-auto mb-2 text-purple-500" />
               )}
               <span className="text-sm font-medium">AI Enhance</span>
-              <p className="text-xs text-muted-foreground mt-1">Improve script</p>
+              <p className="text-xs text-muted-foreground mt-1">Customize & improve</p>
             </div>
             {/* TTS Button - Only show if TTS is enabled for this show type */}
             {isTTSEnabled ? (
@@ -2033,7 +2066,7 @@ export function ScriptEditorTab({
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    onClick={() => handleEnhance()}
+                    onClick={openEnhancementDialog}
                     disabled={isEnhancing}
                     className="gap-1"
                   >
@@ -2361,7 +2394,7 @@ export function ScriptEditorTab({
                 Analyze
               </Button>
               <Button 
-                onClick={handleEnhance}
+                onClick={openEnhancementDialog}
                 disabled={isEnhancing || !scriptContent.trim()}
                 className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
               >
@@ -2543,6 +2576,109 @@ export function ScriptEditorTab({
           </CardContent>
         </Card>
       )}
+      
+      {/* Enhancement Customization Dialog */}
+      <Dialog open={showEnhancementDialog} onOpenChange={setShowEnhancementDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wand2 className="h-5 w-5 text-purple-500" />
+              Customize AI Enhancement
+            </DialogTitle>
+            <DialogDescription>
+              Customize how AI enhances your script before generating suggestions.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Enhancement Focus */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Enhancement Focus</Label>
+              <RadioGroup
+                value={enhancementFocus}
+                onValueChange={(v) => setEnhancementFocus(v as typeof enhancementFocus)}
+                className="grid grid-cols-1 gap-2"
+              >
+                <div className="flex items-center space-x-2 p-2 rounded-lg border hover:bg-muted/50 cursor-pointer">
+                  <RadioGroupItem value="balanced" id="balanced" />
+                  <Label htmlFor="balanced" className="flex-1 cursor-pointer">
+                    <span className="font-medium">Balanced</span>
+                    <p className="text-xs text-muted-foreground">General improvements across all areas</p>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 p-2 rounded-lg border hover:bg-muted/50 cursor-pointer">
+                  <RadioGroupItem value="engagement" id="engagement" />
+                  <Label htmlFor="engagement" className="flex-1 cursor-pointer">
+                    <span className="font-medium">Engagement</span>
+                    <p className="text-xs text-muted-foreground">Hooks, CTAs, audience connection</p>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 p-2 rounded-lg border hover:bg-muted/50 cursor-pointer">
+                  <RadioGroupItem value="clarity" id="clarity" />
+                  <Label htmlFor="clarity" className="flex-1 cursor-pointer">
+                    <span className="font-medium">Clarity</span>
+                    <p className="text-xs text-muted-foreground">Simpler sentences, better structure</p>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 p-2 rounded-lg border hover:bg-muted/50 cursor-pointer">
+                  <RadioGroupItem value="pacing" id="pacing" />
+                  <Label htmlFor="pacing" className="flex-1 cursor-pointer">
+                    <span className="font-medium">Pacing</span>
+                    <p className="text-xs text-muted-foreground">Pauses, rhythm, breathing room</p>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 p-2 rounded-lg border hover:bg-muted/50 cursor-pointer">
+                  <RadioGroupItem value="conversational" id="conversational" />
+                  <Label htmlFor="conversational" className="flex-1 cursor-pointer">
+                    <span className="font-medium">Conversational</span>
+                    <p className="text-xs text-muted-foreground">Natural, spoken-word friendly</p>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+            
+            {/* Custom Instructions */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Custom Instructions (Optional)</Label>
+              <Textarea
+                placeholder="E.g., 'Make it more formal', 'Add humor', 'Focus on the opening hook', 'Keep medical terminology'..."
+                value={customEnhancementInstructions}
+                onChange={(e) => setCustomEnhancementInstructions(e.target.value)}
+                rows={3}
+                className="resize-none"
+              />
+              <p className="text-xs text-muted-foreground">
+                Add specific instructions for how AI should enhance your script
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowEnhancementDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => {
+                setCustomEnhancementInstructions('');
+                setEnhancementFocus('balanced');
+                handleEnhance(false);
+              }}
+              disabled={isEnhancing}
+            >
+              Quick Enhance
+            </Button>
+            <Button 
+              onClick={() => handleEnhance(true)}
+              disabled={isEnhancing}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+            >
+              {isEnhancing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+              Enhance with Settings
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

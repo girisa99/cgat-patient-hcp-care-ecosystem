@@ -2102,8 +2102,8 @@ export default function GenieStudio() {
               </div>
             </TabsContent>
 
-            {/* Script Editor Tab - Using dedicated component */}
-            <TabsContent value="script-editor" className="mt-0">
+            {/* Script Editor Tab - Using dedicated component - forceMount to preserve state */}
+            <TabsContent value="script-editor" className="mt-0" forceMount hidden={activeTab !== 'script-editor'}>
               <ScriptEditorTab
                 savedScripts={savedScripts}
                 onSaveScript={(script) => saveScript(script)}
@@ -2123,8 +2123,8 @@ export default function GenieStudio() {
               />
             </TabsContent>
 
-            {/* Voice Generator Tab */}
-            <TabsContent value="voice-generator" className="mt-0 space-y-6">
+            {/* Voice Generator Tab - forceMount to preserve TTS state */}
+            <TabsContent value="voice-generator" className="mt-0 space-y-6" forceMount hidden={activeTab !== 'voice-generator'}>
               {/* Scripts Ready for Voice Assignment */}
               {savedScripts.filter(s => (s.enhancedContent || s.content) && !s.hasVoiceover).length > 0 && (
                 <Card className="border-border/50 bg-card/80 backdrop-blur border-blue-500/30 bg-blue-500/5">
@@ -2664,8 +2664,8 @@ export default function GenieStudio() {
               </Card>
             </TabsContent>
 
-            {/* Music Studio Tab */}
-            <TabsContent value="music-studio" className="mt-0 space-y-6">
+            {/* Music Studio Tab - forceMount to preserve generation state */}
+            <TabsContent value="music-studio" className="mt-0 space-y-6" forceMount hidden={activeTab !== 'music-studio'}>
               <Card className="border-border/50 bg-card/80 backdrop-blur">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-6">
