@@ -263,6 +263,10 @@ export function ScriptEditorTab({
   const [customEnhancementInstructions, setCustomEnhancementInstructions] = useState('');
   const [enhancementFocus, setEnhancementFocus] = useState<'engagement' | 'clarity' | 'pacing' | 'conversational' | 'balanced' | 'humor'>('balanced');
   
+  // Inline Edit State for Enhancement Review
+  const [editingChangeId, setEditingChangeId] = useState<string | null>(null);
+  const [editedEnhancedText, setEditedEnhancedText] = useState('');
+  
   // Progressive Analysis State - Step by step walkthrough
   const [analysisSteps, setAnalysisSteps] = useState<{
     step: string;
@@ -2179,48 +2183,89 @@ export function ScriptEditorTab({
                           <span className="text-xs text-muted-foreground">Change {index + 1}</span>
                         </div>
                         {change.accepted === null ? (
-                          <div className="flex gap-1">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="h-7 px-2 border-green-500/30 hover:bg-green-500/10"
-                              onClick={() => {
-                                // Apply this specific change to the script
-                                if (change.original && change.enhanced) {
-                                  const newContent = scriptContent.replace(change.original, change.enhanced);
-                                  if (newContent !== scriptContent) {
-                                    setScriptContent(newContent);
-                                    toast.success('Applied fix to script');
+                          editingChangeId === change.id ? (
+                            // Inline Editing Mode
+                            <div className="flex gap-1">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-7 px-2 border-green-500/30 hover:bg-green-500/10"
+                                onClick={() => {
+                                  // Apply the edited version
+                                  if (change.original && editedEnhancedText) {
+                                    const newContent = scriptContent.replace(change.original, editedEnhancedText);
+                                    if (newContent !== scriptContent) {
+                                      setScriptContent(newContent);
+                                      toast.success('Applied edited change to script');
+                                    }
                                   }
-                                }
-                                handleAcceptChange(change.id);
-                              }}
-                            >
-                              <Wand2 className="h-3 w-3 text-green-600 mr-1" />
-                              Apply Fix
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="h-7 px-2 border-blue-500/30 hover:bg-blue-500/10"
-                              onClick={() => {
-                                toast.info('Edit mode: Make changes in the script editor');
-                                handleAcceptChange(change.id);
-                              }}
-                            >
-                              <Edit3 className="h-3 w-3 text-blue-600 mr-1" />
-                              Edit
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-7 px-2"
-                              onClick={() => handleSkipChange(change.id)}
-                            >
-                              <X className="h-3 w-3 text-muted-foreground mr-1" />
-                              Dismiss
-                            </Button>
-                          </div>
+                                  setEditingChangeId(null);
+                                  setEditedEnhancedText('');
+                                  handleAcceptChange(change.id);
+                                }}
+                              >
+                                <Check className="h-3 w-3 text-green-600 mr-1" />
+                                Save
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-7 px-2"
+                                onClick={() => {
+                                  setEditingChangeId(null);
+                                  setEditedEnhancedText('');
+                                }}
+                              >
+                                <X className="h-3 w-3 text-muted-foreground mr-1" />
+                                Cancel
+                              </Button>
+                            </div>
+                          ) : (
+                            // Normal Action Buttons
+                            <div className="flex gap-1">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-7 px-2 border-green-500/30 hover:bg-green-500/10"
+                                onClick={() => {
+                                  // Apply this specific change to the script
+                                  if (change.original && change.enhanced) {
+                                    const newContent = scriptContent.replace(change.original, change.enhanced);
+                                    if (newContent !== scriptContent) {
+                                      setScriptContent(newContent);
+                                      toast.success('Applied fix to script');
+                                    }
+                                  }
+                                  handleAcceptChange(change.id);
+                                }}
+                              >
+                                <Wand2 className="h-3 w-3 text-green-600 mr-1" />
+                                Apply Fix
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-7 px-2 border-blue-500/30 hover:bg-blue-500/10"
+                                onClick={() => {
+                                  // Enter inline edit mode
+                                  setEditingChangeId(change.id);
+                                  setEditedEnhancedText(change.enhanced || '');
+                                }}
+                              >
+                                <Edit3 className="h-3 w-3 text-blue-600 mr-1" />
+                                Edit
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-7 px-2"
+                                onClick={() => handleSkipChange(change.id)}
+                              >
+                                <X className="h-3 w-3 text-muted-foreground mr-1" />
+                                Dismiss
+                              </Button>
+                            </div>
+                          )
                         ) : (
                           <Badge variant={change.accepted ? 'default' : 'secondary'} className="text-xs">
                             {change.accepted ? 'Accepted' : 'Skipped'}
@@ -2231,8 +2276,19 @@ export function ScriptEditorTab({
                       {change.original && (
                         <p className="text-sm text-red-500/80 line-through mb-1">{change.original}</p>
                       )}
-                      {change.enhanced && (
-                        <p className="text-sm text-green-600">{change.enhanced}</p>
+                      {editingChangeId === change.id ? (
+                        // Editable textarea for the enhanced text
+                        <textarea
+                          value={editedEnhancedText}
+                          onChange={(e) => setEditedEnhancedText(e.target.value)}
+                          className="w-full p-2 text-sm border border-blue-500/50 rounded-md bg-blue-500/5 focus:ring-2 focus:ring-blue-500/30 focus:outline-none min-h-[80px] resize-y"
+                          placeholder="Edit the enhanced text..."
+                          autoFocus
+                        />
+                      ) : (
+                        change.enhanced && (
+                          <p className="text-sm text-green-600">{change.enhanced}</p>
+                        )
                       )}
                     </div>
                   ))}
