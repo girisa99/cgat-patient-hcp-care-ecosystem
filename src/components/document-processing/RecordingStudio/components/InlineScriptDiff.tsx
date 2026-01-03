@@ -209,7 +209,7 @@ export function InlineScriptDiff({
       </div>
 
       {/* Inline diff view - flexible height with scroll */}
-      <div className="flex-1 min-h-0 max-h-[400px] overflow-y-auto rounded-lg border bg-muted/20 p-4">
+      <ScrollArea className="flex-1 min-h-0 max-h-[300px] rounded-lg border bg-muted/20 p-4">
         <div className="text-sm leading-relaxed whitespace-pre-wrap">
           {segments.map((segment, idx) => {
             if (segment.type === 'text') {
@@ -310,7 +310,7 @@ export function InlineScriptDiff({
             );
           })}
         </div>
-      </div>
+      </ScrollArea>
 
       {/* Unpositioned changes (couldn't match in script) */}
       {unpositionedChanges.length > 0 && (
