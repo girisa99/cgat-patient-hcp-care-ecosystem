@@ -13603,6 +13603,210 @@ export type Database = {
           },
         ]
       }
+      show_assets: {
+        Row: {
+          asset_type: string
+          created_at: string
+          duration_seconds: number | null
+          file_size: number | null
+          file_url: string | null
+          id: string
+          is_primary: boolean | null
+          metadata: Json | null
+          name: string
+          show_id: string
+          stage: Database["public"]["Enums"]["production_stage"] | null
+          updated_at: string
+        }
+        Insert: {
+          asset_type: string
+          created_at?: string
+          duration_seconds?: number | null
+          file_size?: number | null
+          file_url?: string | null
+          id?: string
+          is_primary?: boolean | null
+          metadata?: Json | null
+          name: string
+          show_id: string
+          stage?: Database["public"]["Enums"]["production_stage"] | null
+          updated_at?: string
+        }
+        Update: {
+          asset_type?: string
+          created_at?: string
+          duration_seconds?: number | null
+          file_size?: number | null
+          file_url?: string | null
+          id?: string
+          is_primary?: boolean | null
+          metadata?: Json | null
+          name?: string
+          show_id?: string
+          stage?: Database["public"]["Enums"]["production_stage"] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "show_assets_show_id_fkey"
+            columns: ["show_id"]
+            isOneToOne: false
+            referencedRelation: "shows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      show_participants: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          confirmed_at: string | null
+          created_at: string
+          email: string | null
+          id: string
+          invited_at: string | null
+          name: string
+          notes: string | null
+          role: Database["public"]["Enums"]["participant_role"]
+          show_id: string
+          social_links: Json | null
+          status: Database["public"]["Enums"]["participant_status"]
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          invited_at?: string | null
+          name: string
+          notes?: string | null
+          role?: Database["public"]["Enums"]["participant_role"]
+          show_id: string
+          social_links?: Json | null
+          status?: Database["public"]["Enums"]["participant_status"]
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          invited_at?: string | null
+          name?: string
+          notes?: string | null
+          role?: Database["public"]["Enums"]["participant_role"]
+          show_id?: string
+          social_links?: Json | null
+          status?: Database["public"]["Enums"]["participant_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "show_participants_show_id_fkey"
+            columns: ["show_id"]
+            isOneToOne: false
+            referencedRelation: "shows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      show_stage_history: {
+        Row: {
+          completed_at: string | null
+          completed_by: string | null
+          entered_at: string
+          id: string
+          notes: string | null
+          show_id: string
+          stage: Database["public"]["Enums"]["production_stage"]
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_by?: string | null
+          entered_at?: string
+          id?: string
+          notes?: string | null
+          show_id: string
+          stage: Database["public"]["Enums"]["production_stage"]
+        }
+        Update: {
+          completed_at?: string | null
+          completed_by?: string | null
+          entered_at?: string
+          id?: string
+          notes?: string | null
+          show_id?: string
+          stage?: Database["public"]["Enums"]["production_stage"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "show_stage_history_show_id_fkey"
+            columns: ["show_id"]
+            isOneToOne: false
+            referencedRelation: "shows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shows: {
+        Row: {
+          created_at: string
+          current_stage: Database["public"]["Enums"]["production_stage"]
+          description: string | null
+          embed_enabled: boolean | null
+          id: string
+          landing_page_enabled: boolean | null
+          metadata: Json | null
+          published_at: string | null
+          scheduled_date: string | null
+          show_type: Database["public"]["Enums"]["show_type"]
+          slug: string | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_stage?: Database["public"]["Enums"]["production_stage"]
+          description?: string | null
+          embed_enabled?: boolean | null
+          id?: string
+          landing_page_enabled?: boolean | null
+          metadata?: Json | null
+          published_at?: string | null
+          scheduled_date?: string | null
+          show_type?: Database["public"]["Enums"]["show_type"]
+          slug?: string | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_stage?: Database["public"]["Enums"]["production_stage"]
+          description?: string | null
+          embed_enabled?: boolean | null
+          id?: string
+          landing_page_enabled?: boolean | null
+          metadata?: Json | null
+          published_at?: string | null
+          scheduled_date?: string | null
+          show_type?: Database["public"]["Enums"]["show_type"]
+          slug?: string | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       site_stats: {
         Row: {
           created_at: string
@@ -18445,6 +18649,21 @@ export type Database = {
         | "c_corp"
         | "professional_corp"
         | "non_profit_corp"
+      participant_role:
+        | "host"
+        | "co_host"
+        | "guest"
+        | "panelist"
+        | "interviewer"
+        | "interviewee"
+        | "narrator"
+        | "other"
+      participant_status:
+        | "invited"
+        | "confirmed"
+        | "declined"
+        | "tentative"
+        | "cancelled"
       product_status:
         | "preclinical"
         | "phase_1"
@@ -18452,6 +18671,13 @@ export type Database = {
         | "phase_3"
         | "approved"
         | "discontinued"
+      production_stage:
+        | "outreach"
+        | "script"
+        | "rehearsal"
+        | "recording"
+        | "post_production"
+        | "published"
       purchasing_method:
         | "just_in_time"
         | "bulk_ordering"
@@ -18466,6 +18692,13 @@ export type Database = {
         | "specialty_pharmacy"
         | "order_management"
         | "patient_hub_services"
+      show_type:
+        | "podcast"
+        | "webcast"
+        | "interview"
+        | "panel"
+        | "tutorial"
+        | "other"
       sla_tier: "standard" | "priority" | "critical" | "emergency_only"
       technology_integration:
         | "edi_integration"
@@ -18730,6 +18963,23 @@ export const Constants = {
         "professional_corp",
         "non_profit_corp",
       ],
+      participant_role: [
+        "host",
+        "co_host",
+        "guest",
+        "panelist",
+        "interviewer",
+        "interviewee",
+        "narrator",
+        "other",
+      ],
+      participant_status: [
+        "invited",
+        "confirmed",
+        "declined",
+        "tentative",
+        "cancelled",
+      ],
       product_status: [
         "preclinical",
         "phase_1",
@@ -18737,6 +18987,14 @@ export const Constants = {
         "phase_3",
         "approved",
         "discontinued",
+      ],
+      production_stage: [
+        "outreach",
+        "script",
+        "rehearsal",
+        "recording",
+        "post_production",
+        "published",
       ],
       purchasing_method: [
         "just_in_time",
@@ -18753,6 +19011,14 @@ export const Constants = {
         "specialty_pharmacy",
         "order_management",
         "patient_hub_services",
+      ],
+      show_type: [
+        "podcast",
+        "webcast",
+        "interview",
+        "panel",
+        "tutorial",
+        "other",
       ],
       sla_tier: ["standard", "priority", "critical", "emergency_only"],
       technology_integration: [
