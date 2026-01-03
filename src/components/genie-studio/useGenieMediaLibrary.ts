@@ -91,10 +91,30 @@ export function useGenieMediaLibrary(): GenieMediaLibrary {
           ? item.metadata as Record<string, any>
           : {};
         
+        // Determine the correct URL to use
+        // Priority: 
+        // 1. If file_url starts with http, use it directly
+        // 2. If storage_path exists, construct public URL from storage
+        // 3. Fall back to file_url (may be blob, but at least we have something)
+        let finalUrl = item.file_url || undefined;
+        
+        if (finalUrl && (finalUrl.startsWith('blob:') || finalUrl.startsWith('data:'))) {
+          // Blob/data URLs won't work in pop-out windows - try to use storage path
+          if (item.storage_path && item.storage_bucket) {
+            const { data: { publicUrl } } = supabase.storage
+              .from(item.storage_bucket)
+              .getPublicUrl(item.storage_path);
+            finalUrl = publicUrl;
+            console.log(`📀 Fixed blob URL for ${item.name}, using storage:`, finalUrl);
+          } else {
+            console.warn(`📀 Warning: ${item.name} has blob URL but no storage path`);
+          }
+        }
+        
         return {
           id: item.id,
           name: item.name,
-          url: item.file_url || undefined,
+          url: finalUrl,
           timestamp: new Date(item.created_at).getTime(),
           scriptText: metadata.scriptText as string | undefined,
           originalScript: metadata.originalScript as string | undefined,

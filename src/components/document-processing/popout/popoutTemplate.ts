@@ -191,11 +191,21 @@ export function getPopoutHTML(config: PopoutConfig): string {
 
         <!-- Sidebar -->
         <aside class="sidebar">
+          <!-- Screen Share Warning (hidden by default) -->
+          <div class="sidebar-card screen-share-warning" id="screenShareWarning" style="display:none;">
+            <div class="warning-icon">⚠️</div>
+            <div class="warning-text">
+              <strong>Screen Mirror Effect:</strong> If you see infinite screens, select a <strong>specific window</strong> instead of "Entire Screen" in the share dialog.
+            </div>
+          </div>
+
           <!-- Tip Banner -->
           <div class="sidebar-card tip-banner">
             <div class="tip-icon">💡</div>
             <div class="tip-text">
-              <strong>Tip:</strong> Script enhancement, TTS, and music generation are done in GenieStudio. Select prepared assets here for recording.
+              <strong>Tips:</strong><br/>
+              • Script enhancement, TTS, and music generation are done in GenieStudio<br/>
+              • Select voiceover/music below, then press <strong>Start Recording</strong> to auto-play
             </div>
           </div>
 
