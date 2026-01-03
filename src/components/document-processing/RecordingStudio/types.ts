@@ -27,6 +27,34 @@ export interface MusicData {
   url: string;
 }
 
+// Production context for when studio is opened from Production Hub
+export interface ProductionContextForStudio {
+  showId: string;
+  showTitle: string;
+  showType: string;
+  scriptMode: 'podcast' | 'webcast' | 'video' | 'audio';
+  currentStage: string;
+  participants: { id: string; name: string; role: string }[];
+  linkedScriptId?: string;
+  linkedMusicId?: string;
+  studioSettings?: {
+    teleprompterSpeed: number;
+    teleprompterEnabled: boolean;
+    ttsVoiceId: string;
+    ttsProvider: 'openai' | 'elevenlabs';
+    ttsVoiceSettings: {
+      stability: number;
+      similarity_boost: number;
+      style: number;
+      speed: number;
+    };
+    showParticipantList: boolean;
+    showTimer: boolean;
+    showVisualCues: boolean;
+    studioSoundEnabled: boolean;
+  };
+}
+
 export interface RecordingStudioProps {
   isOpen: boolean;
   onClose: () => void;
@@ -40,6 +68,8 @@ export interface RecordingStudioProps {
   onUploadVoiceover?: (file: File) => Promise<void>;
   onUploadMusic?: (file: File) => Promise<void>;
   isUploading?: boolean;
+  // Production context when opened from Production Hub
+  productionContext?: ProductionContextForStudio;
 }
 
 export interface RecordingState {

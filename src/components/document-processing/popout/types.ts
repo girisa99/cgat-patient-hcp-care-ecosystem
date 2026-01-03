@@ -31,6 +31,20 @@ export interface PopoutConfig {
   selectedMusicId: string;
   supabaseUrl: string;
   supabaseKey: string;
+  // Production context (optional)
+  productionContext?: {
+    showId: string;
+    showTitle: string;
+    showType: string;
+    scriptMode: 'podcast' | 'webcast' | 'video' | 'audio';
+    currentStage: string;
+    participants: { id: string; name: string; role: string }[];
+    studioSettings?: {
+      teleprompterSpeed: number;
+      ttsVoiceId: string;
+      ttsProvider: 'openai' | 'elevenlabs';
+    };
+  };
 }
 
 export interface MediaItemForPopout {
