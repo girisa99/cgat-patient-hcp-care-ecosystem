@@ -849,7 +849,8 @@ export function RecordingStudio({
     }
   }, [recording.isRecording, recording.stopRecording, handleClose]);
 
-  if (!isOpen) return null;
+  // Don't use early return - let Dialog handle open/close state
+  // This ensures hooks are always called in the same order
 
   return (
     <Dialog 
