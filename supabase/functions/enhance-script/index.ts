@@ -160,7 +160,7 @@ async function callGeminiOrOpenAI(
       ],
       temperature: 0.7,
       max_tokens: 8192,
-      response_format: { type: "json_object" },
+    }),
   });
 
   if (!response.ok) {
