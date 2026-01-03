@@ -185,6 +185,9 @@ export function ScriptEditorTab({
   const [ttsProvider, setTtsProvider] = useState<'openai' | 'elevenlabs'>('elevenlabs');
   const [ttsVoice, setTtsVoice] = useState('');
   
+  // AI Provider State for Script Analysis/Enhancement
+  const [aiProvider, setAiProvider] = useState<'gemini' | 'openai' | 'claude'>('gemini');
+  
   const {
     isGenerating: isTTSGenerating,
     lastResult: ttsResult,
@@ -425,9 +428,10 @@ export function ScriptEditorTab({
       
       // Step 6: AI recommendations
       updateStep('ai', 'running');
+      const providerNames = { gemini: 'Gemini', openai: 'OpenAI', claude: 'Claude' };
       try {
         const { data, error } = await supabase.functions.invoke('enhance-script', {
-          body: { scriptContent, mode: 'analyze' }
+          body: { scriptContent, mode: 'analyze', provider: aiProvider }
         });
         
         if (!error && data?.success && data.data?.recommendations) {
@@ -437,9 +441,9 @@ export function ScriptEditorTab({
             accepted: null
           }));
           localRecommendations.push(...aiRecs);
-          updateStep('ai', 'complete', `Found ${aiRecs.length} AI suggestions`);
+          updateStep('ai', 'complete', `Found ${aiRecs.length} ${providerNames[aiProvider]} suggestions`);
         } else {
-          updateStep('ai', 'complete', '✓ AI analysis complete');
+          updateStep('ai', 'complete', `✓ ${providerNames[aiProvider]} analysis complete`);
         }
       } catch (err) {
         console.log('AI analysis skipped:', err);
@@ -476,9 +480,10 @@ export function ScriptEditorTab({
     }
     
     setIsEnhancing(true);
+    const providerNames = { gemini: 'Gemini', openai: 'OpenAI', claude: 'Claude' };
     try {
       const { data, error } = await supabase.functions.invoke('enhance-script', {
-        body: { scriptContent, mode: 'enhance' }
+        body: { scriptContent, mode: 'enhance', provider: aiProvider }
       });
       
       if (error) throw error;
@@ -499,11 +504,11 @@ export function ScriptEditorTab({
         setShowEnhancementReview(true);
         setReviewProgress(0);
         
-        toast.success(`Enhancement complete! ${changes.length} changes suggested.`);
+        toast.success(`${providerNames[aiProvider]} enhancement complete! ${changes.length} changes suggested.`);
       }
     } catch (err) {
       console.error('Enhancement error:', err);
-      toast.error('Enhancement failed. Please try again.');
+      toast.error(`${providerNames[aiProvider]} enhancement failed. Please try again.`);
     } finally {
       setIsEnhancing(false);
     }
@@ -917,6 +922,41 @@ export function ScriptEditorTab({
               </Badge>
               <div className="text-xs text-muted-foreground mt-1">Readability</div>
             </div>
+          </div>
+          
+          {/* AI Provider Selector */}
+          <div className="flex items-center gap-3 mb-4 p-3 rounded-lg bg-gradient-to-r from-purple-500/5 to-blue-500/5 border border-border/50">
+            <Label className="text-sm font-medium whitespace-nowrap">AI Provider:</Label>
+            <Select value={aiProvider} onValueChange={(v) => setAiProvider(v as 'gemini' | 'openai' | 'claude')}>
+              <SelectTrigger className="w-[180px] h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="gemini">
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 rounded bg-gradient-to-br from-blue-500 to-green-500" />
+                    <span>Google Gemini</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="openai">
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 rounded bg-gradient-to-br from-green-600 to-teal-500" />
+                    <span>OpenAI GPT</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="claude">
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 rounded bg-gradient-to-br from-orange-500 to-amber-500" />
+                    <span>Anthropic Claude</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-muted-foreground">
+              {aiProvider === 'gemini' && 'Fast & balanced analysis'}
+              {aiProvider === 'openai' && 'Advanced reasoning'}
+              {aiProvider === 'claude' && 'Nuanced writing improvements'}
+            </span>
           </div>
           
           {/* Action Buttons */}
