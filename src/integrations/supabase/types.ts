@@ -8033,6 +8033,7 @@ export type Database = {
           clean_content: string | null
           content: string
           created_at: string
+          current_version_id: string | null
           draft_changes: Json | null
           draft_content: string | null
           draft_status: string | null
@@ -8053,6 +8054,7 @@ export type Database = {
           clean_content?: string | null
           content: string
           created_at?: string
+          current_version_id?: string | null
           draft_changes?: Json | null
           draft_content?: string | null
           draft_status?: string | null
@@ -8073,6 +8075,7 @@ export type Database = {
           clean_content?: string | null
           content?: string
           created_at?: string
+          current_version_id?: string | null
           draft_changes?: Json | null
           draft_content?: string | null
           draft_status?: string | null
@@ -8090,6 +8093,13 @@ export type Database = {
           voiceover_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "genie_scripts_current_version_id_fkey"
+            columns: ["current_version_id"]
+            isOneToOne: false
+            referencedRelation: "script_versions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "genie_scripts_show_id_fkey"
             columns: ["show_id"]
@@ -13257,6 +13267,59 @@ export type Database = {
         }
         Relationships: []
       }
+      script_versions: {
+        Row: {
+          analysis_results: Json | null
+          change_summary: string | null
+          clean_content: string | null
+          created_at: string
+          created_by: string | null
+          enhanced_content: string | null
+          enhancement_changes: Json | null
+          id: string
+          original_content: string
+          script_id: string
+          version_number: number
+          version_type: string
+        }
+        Insert: {
+          analysis_results?: Json | null
+          change_summary?: string | null
+          clean_content?: string | null
+          created_at?: string
+          created_by?: string | null
+          enhanced_content?: string | null
+          enhancement_changes?: Json | null
+          id?: string
+          original_content: string
+          script_id: string
+          version_number?: number
+          version_type?: string
+        }
+        Update: {
+          analysis_results?: Json | null
+          change_summary?: string | null
+          clean_content?: string | null
+          created_at?: string
+          created_by?: string | null
+          enhanced_content?: string | null
+          enhancement_changes?: Json | null
+          id?: string
+          original_content?: string
+          script_id?: string
+          version_number?: number
+          version_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "script_versions_script_id_fkey"
+            columns: ["script_id"]
+            isOneToOne: false
+            referencedRelation: "genie_scripts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       security_alerts: {
         Row: {
           alert_details: Json
@@ -13677,6 +13740,7 @@ export type Database = {
           is_primary: boolean | null
           metadata: Json | null
           name: string
+          script_version_id: string | null
           show_id: string
           stage: Database["public"]["Enums"]["production_stage"] | null
           updated_at: string
@@ -13691,6 +13755,7 @@ export type Database = {
           is_primary?: boolean | null
           metadata?: Json | null
           name: string
+          script_version_id?: string | null
           show_id: string
           stage?: Database["public"]["Enums"]["production_stage"] | null
           updated_at?: string
@@ -13705,11 +13770,19 @@ export type Database = {
           is_primary?: boolean | null
           metadata?: Json | null
           name?: string
+          script_version_id?: string | null
           show_id?: string
           stage?: Database["public"]["Enums"]["production_stage"] | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "show_assets_script_version_id_fkey"
+            columns: ["script_version_id"]
+            isOneToOne: false
+            referencedRelation: "script_versions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "show_assets_show_id_fkey"
             columns: ["show_id"]
@@ -18212,6 +18285,10 @@ export type Database = {
         Returns: Json
       }
       get_import_statistics: { Args: { p_user_id?: string }; Returns: Json }
+      get_next_script_version_number: {
+        Args: { p_script_id: string }
+        Returns: number
+      }
       get_old_draft_agents: {
         Args: { p_user_id?: string }
         Returns: {
