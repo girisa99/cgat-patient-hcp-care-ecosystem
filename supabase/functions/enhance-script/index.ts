@@ -29,6 +29,37 @@ const PROVIDERS = {
 
 type ProviderKey = keyof typeof PROVIDERS;
 
+// Helper to clean markdown from AI response
+function cleanJsonResponse(content: string): string {
+  let cleaned = content.trim();
+  
+  // Remove markdown code blocks (various formats)
+  cleaned = cleaned.replace(/^```(?:json)?\s*\n?/i, '');
+  cleaned = cleaned.replace(/\n?```\s*$/i, '');
+  
+  // Find the first { or [ and last } or ]
+  const firstBrace = cleaned.indexOf('{');
+  const firstBracket = cleaned.indexOf('[');
+  const start = firstBrace === -1 ? firstBracket : 
+                firstBracket === -1 ? firstBrace : 
+                Math.min(firstBrace, firstBracket);
+  
+  if (start > 0) {
+    cleaned = cleaned.substring(start);
+  }
+  
+  // Find last closing brace/bracket
+  const lastBrace = cleaned.lastIndexOf('}');
+  const lastBracket = cleaned.lastIndexOf(']');
+  const end = Math.max(lastBrace, lastBracket);
+  
+  if (end > 0 && end < cleaned.length - 1) {
+    cleaned = cleaned.substring(0, end + 1);
+  }
+  
+  return cleaned.trim();
+}
+
 async function callGeminiOrOpenAI(
   endpoint: string,
   apiKey: string,
@@ -49,6 +80,7 @@ async function callGeminiOrOpenAI(
         { role: "user", content: userPrompt },
       ],
       temperature: 0.7,
+      max_tokens: 4096,
     }),
   });
 
@@ -129,59 +161,21 @@ serve(async (req) => {
     let userPrompt = "";
 
     if (mode === "analyze") {
-      systemPrompt = `You are a professional script analyst for video content. Analyze the given script and provide detailed, actionable recommendations.`;
-      userPrompt = `Analyze this video script and provide recommendations in the following JSON format:
-{
-  "stats": {
-    "wordCount": number,
-    "sentenceCount": number,
-    "avgWordsPerSentence": number,
-    "estimatedDurationMinutes": number,
-    "readabilityScore": "easy" | "moderate" | "difficult"
-  },
-  "recommendations": [
-    {
-      "type": "pacing" | "clarity" | "engagement" | "length" | "readability",
-      "severity": "info" | "warning" | "suggestion",
-      "title": "Brief title",
-      "description": "Detailed actionable recommendation",
-      "originalText": "text from script if applicable",
-      "suggestedText": "improved version if applicable"
-    }
-  ]
-}
+      systemPrompt = `You are a professional script analyst. Analyze scripts and return ONLY valid JSON, no markdown.`;
+      userPrompt = `Analyze this script and return a JSON object with this exact structure (no markdown, just JSON):
+{"stats":{"wordCount":0,"sentenceCount":0,"avgWordsPerSentence":0,"estimatedDurationMinutes":0,"readabilityScore":"easy"},"recommendations":[{"type":"pacing","severity":"info","title":"Title","description":"Description"}]}
 
-Script to analyze:
-${scriptContent}`;
+Provide 3-5 specific recommendations. Script:
+${scriptContent.substring(0, 3000)}`;
     } else {
-      // Enhancement mode
-      systemPrompt = `You are a professional script editor for video voiceovers. Your job is to enhance scripts for better delivery while preserving the original meaning and voice. Focus on:
-- Improving flow and pacing for spoken delivery
-- Fixing awkward phrasing
-- Adding natural pauses where needed (use "..." for pauses)
-- Removing filler words and redundancy
-- Making sentences more conversational
-- Improving clarity without changing the core message
+      // Enhancement mode - keep response concise
+      systemPrompt = `You are a script editor. Enhance scripts for voiceover delivery. Return ONLY valid JSON, no markdown or code blocks.`;
 
-IMPORTANT: Return your response in the exact JSON format specified.`;
+      userPrompt = `Enhance this script for voiceover. Return ONLY this JSON structure (no markdown):
+{"enhancedScript":"full enhanced text with ... for pauses","cleanScript":"same text without pause markers","changes":[{"type":"modification","original":"short excerpt","enhanced":"improved version","reason":"why"}],"summary":"2-3 sentence summary"}
 
-      userPrompt = `Enhance this video script for better voiceover delivery. Return a JSON response with:
-{
-  "enhancedScript": "The full enhanced script text",
-  "cleanScript": "Script optimized for TTS (no pause markers, clean punctuation)",
-  "changes": [
-    {
-      "type": "modification" | "addition" | "removal" | "formatting",
-      "original": "original text",
-      "enhanced": "enhanced text",
-      "reason": "brief explanation of why this change improves the script"
-    }
-  ],
-  "summary": "Brief summary of key improvements made"
-}
-
-Original script:
-${scriptContent}`;
+Keep changes array to 5 most important changes max. Script:
+${scriptContent.substring(0, 3000)}`;
     }
 
     let content: string | undefined;
@@ -201,7 +195,6 @@ ${scriptContent}`;
     } catch (apiError) {
       console.error(`${providerConfig.name} API error:`, apiError);
       
-      // Check for rate limits
       const errorMessage = apiError instanceof Error ? apiError.message : String(apiError);
       if (errorMessage.includes("429")) {
         return new Response(
@@ -232,15 +225,36 @@ ${scriptContent}`;
     // Parse the JSON response from AI
     let parsedContent;
     try {
-      // Remove markdown code blocks if present
-      const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const cleanContent = cleanJsonResponse(content);
+      console.log("Cleaned content length:", cleanContent.length);
       parsedContent = JSON.parse(cleanContent);
     } catch (parseError) {
-      console.error("Failed to parse AI response:", content);
+      console.error("Failed to parse AI response. Raw length:", content.length);
+      console.error("First 500 chars:", content.substring(0, 500));
+      console.error("Last 500 chars:", content.substring(content.length - 500));
+      
+      // Try to provide a fallback response for enhancement mode
+      if (mode !== "analyze") {
+        return new Response(
+          JSON.stringify({ 
+            success: true,
+            mode,
+            provider: providerKey,
+            providerName: providerConfig.name,
+            data: {
+              enhancedScript: scriptContent,
+              cleanScript: scriptContent,
+              changes: [],
+              summary: "Enhancement completed but response formatting failed. Script preserved."
+            }
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
       return new Response(
         JSON.stringify({ 
-          error: "Failed to parse AI response",
-          rawContent: content 
+          error: "Failed to parse AI response. Please try again.",
         }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
