@@ -118,6 +118,8 @@ export function useAudioPlayback() {
   }, []);
 
   const playVoiceover = useCallback((url: string) => {
+    console.log('[useAudioPlayback] playVoiceover called with URL:', url.substring(0, 60));
+    
     // Stop ALL audio first to prevent overlap
     if (voiceoverRef.current) voiceoverRef.current.pause();
     if (ttsRef.current) ttsRef.current.pause();
@@ -127,6 +129,7 @@ export function useAudioPlayback() {
     voiceoverRef.current = audio;
     
     audio.onplay = () => {
+      console.log('[useAudioPlayback] Voiceover started playing');
       setIsPlaying(prev => ({ ...prev, voiceover: true, tts: false }));
       startTimeTracking(audio);
       applyDucking(true); // Duck music when voice starts
@@ -136,15 +139,22 @@ export function useAudioPlayback() {
       applyDucking(false); // Restore music volume
     };
     audio.onended = () => {
+      console.log('[useAudioPlayback] Voiceover ended');
       setIsPlaying(prev => ({ ...prev, voiceover: false }));
       stopTimeTracking();
       applyDucking(false); // Restore music volume
     };
     audio.onloadedmetadata = () => {
+      console.log('[useAudioPlayback] Voiceover loaded, duration:', audio.duration);
       setAudioTimeInfo(prev => ({ ...prev, duration: audio.duration }));
     };
+    audio.onerror = (e) => {
+      console.error('[useAudioPlayback] Voiceover playback error:', e);
+    };
     
-    audio.play().catch(console.error);
+    audio.play().catch((err) => {
+      console.error('[useAudioPlayback] Voiceover play() failed:', err);
+    });
     setState(prev => ({ ...prev, voiceoverAudio: audio }));
   }, [state.voiceoverVolume, startTimeTracking, stopTimeTracking, applyDucking]);
 
@@ -159,6 +169,8 @@ export function useAudioPlayback() {
   }, [stopTimeTracking, applyDucking]);
 
   const playMusic = useCallback((url: string) => {
+    console.log('[useAudioPlayback] playMusic called with URL:', url.substring(0, 60));
+    
     if (musicRef.current) {
       musicRef.current.pause();
     }
@@ -174,15 +186,24 @@ export function useAudioPlayback() {
     audio.loop = state.musicLoop;
     musicRef.current = audio;
     
-    audio.onplay = () => setIsPlaying(prev => ({ ...prev, music: true }));
+    audio.onplay = () => {
+      console.log('[useAudioPlayback] Music started playing');
+      setIsPlaying(prev => ({ ...prev, music: true }));
+    };
     audio.onpause = () => setIsPlaying(prev => ({ ...prev, music: false }));
     audio.onended = () => {
       if (!state.musicLoop) {
+        console.log('[useAudioPlayback] Music ended (not looping)');
         setIsPlaying(prev => ({ ...prev, music: false }));
       }
     };
+    audio.onerror = (e) => {
+      console.error('[useAudioPlayback] Music playback error:', e);
+    };
     
-    audio.play().catch(console.error);
+    audio.play().catch((err) => {
+      console.error('[useAudioPlayback] Music play() failed:', err);
+    });
     setState(prev => ({ ...prev, musicAudio: audio }));
   }, [state.musicLoop, isPlaying.voiceover, isPlaying.tts, duckingEnabled]);
 
@@ -195,6 +216,8 @@ export function useAudioPlayback() {
   }, []);
 
   const playTTS = useCallback((audio: HTMLAudioElement) => {
+    console.log('[useAudioPlayback] playTTS called with audio element, src:', audio.src.substring(0, 60));
+    
     // Stop voiceover and existing TTS to prevent overlap
     if (voiceoverRef.current) voiceoverRef.current.pause();
     if (ttsRef.current) ttsRef.current.pause();
@@ -203,6 +226,7 @@ export function useAudioPlayback() {
     ttsRef.current = audio;
     
     audio.onplay = () => {
+      console.log('[useAudioPlayback] TTS started playing');
       setIsPlaying(prev => ({ ...prev, tts: true, voiceover: false }));
       startTimeTracking(audio);
       applyDucking(true); // Duck music when TTS starts
@@ -212,15 +236,22 @@ export function useAudioPlayback() {
       applyDucking(false); // Restore music volume
     };
     audio.onended = () => {
+      console.log('[useAudioPlayback] TTS ended');
       setIsPlaying(prev => ({ ...prev, tts: false }));
       stopTimeTracking();
       applyDucking(false); // Restore music volume
     };
     audio.onloadedmetadata = () => {
+      console.log('[useAudioPlayback] TTS loaded, duration:', audio.duration);
       setAudioTimeInfo(prev => ({ ...prev, duration: audio.duration }));
     };
+    audio.onerror = (e) => {
+      console.error('[useAudioPlayback] TTS playback error:', e);
+    };
     
-    audio.play().catch(console.error);
+    audio.play().catch((err) => {
+      console.error('[useAudioPlayback] TTS play() failed:', err);
+    });
     setState(prev => ({ ...prev, ttsAudio: audio }));
   }, [state.ttsVolume, startTimeTracking, stopTimeTracking, applyDucking]);
 

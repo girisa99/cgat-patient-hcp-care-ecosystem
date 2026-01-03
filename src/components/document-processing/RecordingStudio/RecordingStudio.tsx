@@ -540,7 +540,7 @@ export function RecordingStudio({
     setIsTTSGenerating(true);
     
     try {
-      toast.info(`Generating TTS with ${ttsProvider === 'elevenlabs' ? 'ElevenLabs' : 'OpenAI'}...`);
+      console.log('[RecordingStudio] Starting TTS generation with provider:', ttsProvider);
       
       const result = await ttsGeneration.generate({
         text: textToSpeak,
@@ -548,7 +548,9 @@ export function RecordingStudio({
         provider: ttsProvider,
       });
       
-      if (result.audioUrl) {
+      console.log('[RecordingStudio] TTS generation result:', result ? 'Success' : 'Failed', result?.audioUrl ? 'Has URL' : 'No URL');
+      
+      if (result && result.audioUrl) {
         setHasTTSAudio(true);
         setTTSAudioUrl(result.audioUrl);
         
@@ -565,8 +567,12 @@ export function RecordingStudio({
         }
         
         toast.success('TTS audio generated! Click Play to preview.');
+      } else {
+        console.error('[RecordingStudio] TTS generation returned no result or no audioUrl');
+        toast.error('TTS generation failed - no audio returned');
       }
     } catch (error) {
+      console.error('[RecordingStudio] TTS generation error:', error);
       toast.error('TTS generation failed');
     } finally {
       setIsTTSGenerating(false);
@@ -637,27 +643,35 @@ export function RecordingStudio({
     // Start audio playback after countdown completes
     setTimeout(() => {
       console.log('[RecordingStudio] Starting audio playback after countdown...');
+      console.log('[RecordingStudio] Available audio sources:', {
+        voiceover: currentVoiceover ? currentVoiceover.url.substring(0, 40) : 'None',
+        ttsLastResult: ttsGeneration.lastResult?.audioUrl ? 'Available' : 'None',
+        ttsAudioUrl: ttsAudioUrl ? 'Available' : 'None',
+        hasTTSAudio: hasTTSAudio,
+        music: currentMusic ? currentMusic.url.substring(0, 40) : 'None'
+      });
       
       // Play voiceover OR TTS (not both - TTS is fallback when no voiceover)
-      if (currentVoiceover) {
+      if (currentVoiceover && currentVoiceover.url) {
         console.log('[RecordingStudio] Playing voiceover:', currentVoiceover.url.substring(0, 60));
         audioPlayback.playVoiceover(currentVoiceover.url);
       } else if (ttsGeneration.lastResult?.audioUrl) {
-        // TTS was generated - play it
-        console.log('[RecordingStudio] Playing TTS audio from lastResult');
+        // TTS was generated via hook - play it
+        console.log('[RecordingStudio] Playing TTS audio from ttsGeneration.lastResult');
         const ttsAudioElement = new Audio(ttsGeneration.lastResult.audioUrl);
         audioPlayback.playTTS(ttsAudioElement);
       } else if (ttsAudioUrl) {
-        // Legacy TTS URL support
-        console.log('[RecordingStudio] Playing legacy TTS audio');
+        // Local TTS URL state
+        console.log('[RecordingStudio] Playing TTS audio from ttsAudioUrl state');
         const ttsAudioElement = new Audio(ttsAudioUrl);
         audioPlayback.playTTS(ttsAudioElement);
       } else {
-        console.log('[RecordingStudio] No voice audio (voiceover or TTS) to play');
+        console.log('[RecordingStudio] No voice audio (voiceover or TTS) available to play');
+        console.log('[RecordingStudio] To add voice: Select a voiceover OR generate TTS before recording');
       }
       
       // Play music (can play alongside voice)
-      if (currentMusic) {
+      if (currentMusic && currentMusic.url) {
         console.log('[RecordingStudio] Playing music:', currentMusic.url.substring(0, 60));
         audioPlayback.playMusic(currentMusic.url);
       }
@@ -668,7 +682,7 @@ export function RecordingStudio({
       // Reset word index for teleprompter
       setCurrentWordIndex(0);
     }, countdownMs);
-  }, [recording, audioPlayback, currentVoiceover, currentMusic, screenShare, currentScript, ttsGeneration.lastResult, ttsAudioUrl]);
+  }, [recording, audioPlayback, currentVoiceover, currentMusic, screenShare, currentScript, ttsGeneration.lastResult, ttsAudioUrl, hasTTSAudio]);
 
   // Pause recording - also pause audio
   const handlePauseRecording = useCallback(() => {
@@ -823,13 +837,19 @@ export function RecordingStudio({
     }
   }, [ttsAudioUrl, ttsProvider]);
 
-  // Play TTS - create audio element from URL
+  // Play TTS - create audio element from URL (check both local state and hook result)
   const handlePlayTTS = useCallback(() => {
-    if (ttsAudioUrl) {
-      const audio = new Audio(ttsAudioUrl);
+    const audioUrl = ttsAudioUrl || ttsGeneration.lastResult?.audioUrl;
+    console.log('[RecordingStudio] handlePlayTTS called, audioUrl:', audioUrl ? 'Available' : 'Missing');
+    
+    if (audioUrl) {
+      const audio = new Audio(audioUrl);
+      console.log('[RecordingStudio] Playing TTS audio');
       audioPlayback.playTTS(audio);
+    } else {
+      toast.info('No TTS audio available. Generate TTS first.');
     }
-  }, [ttsAudioUrl, audioPlayback]);
+  }, [ttsAudioUrl, ttsGeneration.lastResult?.audioUrl, audioPlayback]);
 
   // Prevent closing during recording - only allow explicit close button
   // MUST be before any early returns to avoid hooks order issues
