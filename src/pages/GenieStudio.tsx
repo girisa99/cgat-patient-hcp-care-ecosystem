@@ -701,14 +701,14 @@ const FEATURES = [
   }
 ];
 
-// Quick Tips for Users
+// Quick Tips for Users - Following workflow sequence: Script → Voice → Music → Record
 const QUICK_TIPS = [
-  { icon: Zap, title: 'Script First', text: 'Start with a script to keep your recording focused and professional' },
-  { icon: Mic, title: 'Preview Voice', text: 'Use TTS preview to hear how your script sounds before recording' },
-  { icon: Cpu, title: 'AI Enhancement', text: 'Let AI suggest improvements for clarity and engagement' },
-  { icon: Headphones, title: 'Background Audio', text: 'Add background music to enhance your video mood' },
-  { icon: Film, title: 'Quick Export', text: 'Export in multiple formats optimized for different platforms' },
-  { icon: Layers, title: 'Templates', text: 'Use templates for consistent branding across all content' }
+  { icon: PenTool, title: '1. Write Script', text: 'Start with a script in the Script Editor - use AI to analyze and enhance it' },
+  { icon: Wand2, title: '2. AI Enhance', text: 'Let AI add pauses, improve engagement, and make your script conversational' },
+  { icon: Mic, title: '3. Generate Voice', text: 'Use AI Voice Generator to create professional voiceovers from your script' },
+  { icon: Music, title: '4. Add Music', text: 'Generate or select background music in AI Music Studio to set the mood' },
+  { icon: Video, title: '5. Record Video', text: 'Open Recording Studio with your voiceover and music ready to go' },
+  { icon: Download, title: '6. Export', text: 'Save your recording and export in multiple formats for different platforms' }
 ];
 
 // Custom hook to load media from localStorage

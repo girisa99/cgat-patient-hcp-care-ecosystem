@@ -161,9 +161,9 @@ serve(async (req) => {
     let userPrompt = "";
 
     if (mode === "analyze") {
-      systemPrompt = `You are an expert script analyst for video and audio voiceover content. You analyze scripts for professional voice recording and provide detailed, actionable recommendations. Return ONLY valid JSON, no markdown.`;
+      systemPrompt = `You are an expert script analyst and engagement coach for video and audio voiceover content. You analyze scripts for professional voice recording, focusing on engagement, conversational tone, and delivery. Return ONLY valid JSON, no markdown.`;
       
-      userPrompt = `Analyze this script thoroughly for voiceover recording. Return a JSON object with this structure:
+      userPrompt = `Analyze this script thoroughly for voiceover recording with focus on ENGAGEMENT and CONVERSATIONAL STYLE. Return a JSON object:
 
 {
   "stats": {
@@ -173,16 +173,18 @@ serve(async (req) => {
     "estimatedDurationMinutes": number,
     "readabilityScore": "easy" | "moderate" | "difficult",
     "sectionsCount": number,
-    "hasPauseMarkers": boolean
+    "hasPauseMarkers": boolean,
+    "engagementLevel": "low" | "medium" | "high",
+    "conversationalTone": "formal" | "neutral" | "conversational"
   },
   "recommendations": [
     {
-      "type": "pacing" | "clarity" | "engagement" | "pause" | "break" | "section" | "readability",
+      "type": "engagement" | "conversational" | "pacing" | "clarity" | "hook" | "cta" | "pause" | "break" | "section" | "readability",
       "severity": "warning" | "suggestion" | "info",
       "title": "Short descriptive title",
-      "description": "Detailed explanation of why this matters",
-      "originalText": "The exact text from the script that needs attention (if applicable)",
-      "suggestedText": "The improved version with markers like ... for pauses or --- for breaks (if applicable)",
+      "description": "Detailed explanation of why this matters for audience connection",
+      "originalText": "The exact text that needs attention",
+      "suggestedText": "The improved conversational/engaging version",
       "location": "Beginning | Middle | End | Section name"
     }
   ],
@@ -198,61 +200,94 @@ serve(async (req) => {
       "sectionTitle": "suggested section title"
     }
   ],
+  "engagementAnalysis": {
+    "openingHook": { "present": boolean, "quality": "weak" | "moderate" | "strong", "suggestion": "how to improve" },
+    "audienceConnection": { "score": 1-10, "uses_you": boolean, "uses_questions": boolean, "suggestions": ["improvements"] },
+    "callToAction": { "present": boolean, "clarity": "weak" | "moderate" | "strong", "suggestion": "how to improve" },
+    "emotionalResonance": { "score": 1-10, "powerWords": number, "suggestions": ["improvements"] }
+  },
   "overallAssessment": {
     "strengths": ["list of what works well"],
     "weaknesses": ["list of areas needing improvement"],
-    "voiceoverReadiness": "ready" | "needs_minor_edits" | "needs_significant_work"
+    "voiceoverReadiness": "ready" | "needs_minor_edits" | "needs_significant_work",
+    "engagementScore": number (1-10),
+    "topPriority": "What to fix first for maximum impact"
   }
 }
 
-Provide 5-10 specific, actionable recommendations. Focus on:
-1. Places where pauses (...) should be added for natural breathing and emphasis
-2. Long sentences that should be broken up
-3. Sections that need clearer transitions (---)
-4. Technical terms that may need slower delivery
-5. Engagement hooks and call-to-action effectiveness
-6. Pacing issues - too fast or too slow sections
+Provide 8-12 specific, actionable recommendations. Focus on:
+1. ENGAGEMENT: Opening hook strength, audience questions, power words
+2. CONVERSATIONAL TONE: "You" usage, informal language, personal touches  
+3. PACING: Pause opportunities, section breaks, rhythm
+4. STRUCTURE: Clear transitions, compelling CTA, memorable close
+5. CLARITY: Long sentences, technical jargon, readability
 
 Script to analyze:
 ${scriptContent.substring(0, 6000)}`;
     } else {
-      // Enhancement mode - comprehensive rewrite
-      systemPrompt = `You are an expert script editor specializing in voiceover content for video and audio. You enhance scripts for natural, engaging delivery. Add pause markers (...) for breathing and emphasis, section breaks (---), and improve pacing. Return ONLY valid JSON, no markdown or code blocks.`;
+      // Enhancement mode - comprehensive rewrite with engagement and conversational style
+      systemPrompt = `You are an expert script editor and storytelling coach specializing in voiceover content for video and audio. You enhance scripts to be:
+- More ENGAGING and conversational (like talking to a friend)
+- Natural with proper pacing (pause markers: ..., section breaks: ---)
+- Emotionally resonant with the audience
+- Clear and easy to follow
+Return ONLY valid JSON, no markdown or code blocks.`;
 
-      userPrompt = `Enhance this script for professional voiceover recording. 
+      userPrompt = `Enhance this script for professional voiceover recording with focus on ENGAGEMENT and CONVERSATIONAL STYLE.
 
-REQUIREMENTS:
-1. Add pause markers (...) after important points, before new topics, and for natural breathing
-2. Add section breaks (---) between major topics
-3. Break long sentences into shorter, speakable chunks
-4. Add emphasis markers for key terms
-5. Improve transitions between sections
-6. Make the opening more engaging
-7. Strengthen the call-to-action if present
+ENHANCEMENT REQUIREMENTS:
+
+📢 ENGAGEMENT & CONVERSATIONAL STYLE:
+1. Convert formal/stiff language to warm, conversational tone
+2. Add rhetorical questions to engage the audience ("Ever wondered why...?")
+3. Use "you" and "we" to create connection with viewers
+4. Add power words for emotion (imagine, discover, transform, unlock)
+5. Create curiosity hooks at section starts
+6. Add personal touches and relatable examples
+7. Use active voice instead of passive
+
+⏸️ PACING & DELIVERY:
+8. Add pause markers (...) after important points, before reveals, for emphasis
+9. Add section breaks (---) between major topics
+10. Break long sentences into shorter, speakable chunks
+11. Add emphasis markers for key terms
+
+🎯 STRUCTURE:
+12. Strong opening hook that grabs attention in first 5 seconds
+13. Clear transitions between ideas ("Here's the thing...", "Now let's talk about...")
+14. Compelling call-to-action at the end
+15. End with memorable closing statement
 
 Return this JSON structure:
 
 {
-  "enhancedScript": "The complete enhanced script with all pause markers (...), section breaks (---), and improvements included",
-  "cleanScript": "The same enhanced script but with pause markers and breaks removed (for TTS that doesn't handle them)",
+  "enhancedScript": "The complete enhanced script with all improvements, pause markers (...), section breaks (---), and conversational style",
+  "cleanScript": "Same script but without pause markers and breaks (for TTS)",
   "changes": [
     {
-      "type": "pause" | "break" | "modification" | "addition" | "removal" | "pacing",
+      "type": "engagement" | "conversational" | "pause" | "break" | "hook" | "transition" | "cta" | "pacing",
       "original": "The exact original text (10-50 words)",
-      "enhanced": "The enhanced version with markers",
-      "reason": "Why this change improves delivery",
+      "enhanced": "The enhanced version",
+      "reason": "Why this change improves engagement or delivery",
       "position": "start" | "middle" | "end"
     }
   ],
   "markers": {
     "pausesAdded": number,
     "sectionBreaksAdded": number,
-    "sentencesRewritten": number
+    "sentencesRewritten": number,
+    "engagementHooksAdded": number,
+    "conversationalChanges": number
   },
-  "summary": "2-3 sentence summary of key improvements"
+  "engagementScore": {
+    "before": number (1-10),
+    "after": number (1-10),
+    "improvements": ["list of key engagement improvements made"]
+  },
+  "summary": "2-3 sentence summary of key improvements including engagement and conversational changes"
 }
 
-Include 8-15 specific changes that show the before/after. Focus on the most impactful improvements.
+Include 10-15 specific changes showing before/after. Prioritize engagement and conversational improvements.
 
 Script to enhance:
 ${scriptContent.substring(0, 6000)}`;
