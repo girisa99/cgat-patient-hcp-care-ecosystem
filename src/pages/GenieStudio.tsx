@@ -3191,33 +3191,31 @@ export default function GenieStudio() {
           </Tabs>
         </div>
 
-        {/* Recording Studio Modal */}
-        {isStudioOpen && (
-          <RecordingStudio
-            isOpen={isStudioOpen}
-            onClose={handleStudioClose}
-            scripts={savedScripts.map(s => ({ 
-              id: s.id, 
-              title: s.name, 
-              content: s.enhancedContent || s.content,
-              // Pass both original and enhanced versions
-              originalContent: s.content,
-              enhancedContent: s.enhancedContent,
-              cleanContent: s.cleanContent,
-              type: s.type
-            }))}
-            voiceovers={mergedVoiceovers.map(v => ({ 
-              id: v.id, 
-              name: v.name, 
-              url: v.url || '',
-              // Pass metadata for teleprompter sync and filtering
-              scriptText: (v as any).scriptText || null,
-              scriptType: (v as any).scriptType || null,
-              metadataType: (v as any).metadataType || null
-            }))}
-            music={mergedMusic.map(m => ({ id: m.id, name: m.name, url: m.url || '' }))}
-          />
-        )}
+        {/* Recording Studio Modal - Always mounted to preserve state */}
+        <RecordingStudio
+          isOpen={isStudioOpen}
+          onClose={handleStudioClose}
+          scripts={savedScripts.map(s => ({ 
+            id: s.id, 
+            title: s.name, 
+            content: s.enhancedContent || s.content,
+            // Pass both original and enhanced versions
+            originalContent: s.content,
+            enhancedContent: s.enhancedContent,
+            cleanContent: s.cleanContent,
+            type: s.type
+          }))}
+          voiceovers={mergedVoiceovers.map(v => ({ 
+            id: v.id, 
+            name: v.name, 
+            url: v.url || '',
+            // Pass metadata for teleprompter sync and filtering
+            scriptText: (v as any).scriptText || null,
+            scriptType: (v as any).scriptType || null,
+            metadataType: (v as any).metadataType || null
+          }))}
+          music={mergedMusic.map(m => ({ id: m.id, name: m.name, url: m.url || '' }))}
+        />
 
         {/* Publish & Go Live Dialog */}
         <Dialog open={isPublishDialogOpen} onOpenChange={setIsPublishDialogOpen}>
