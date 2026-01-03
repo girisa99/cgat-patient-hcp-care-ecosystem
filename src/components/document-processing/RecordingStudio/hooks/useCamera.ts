@@ -159,19 +159,30 @@ export function useCamera(options: UseCameraOptions = {}) {
     initCamera();
   }, [initCamera]);
 
-  // Auto-start camera
+  // Auto-start camera when enabled (handles changes to autoStart prop)
   useEffect(() => {
     mountedRef.current = true;
     
     if (autoStart) {
+      console.log('[Camera] autoStart triggered, initializing...');
       initCamera();
     }
     
     return () => {
       mountedRef.current = false;
+      // Don't stop camera on cleanup - let explicit stopCamera() handle it
+      // This prevents camera stopping when component re-renders
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStart]); // Only depend on autoStart, not initCamera to avoid loops
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
       stopCamera();
     };
-  }, [autoStart, initCamera, stopCamera]);
+  }, [stopCamera]);
 
   return {
     ...state,

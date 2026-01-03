@@ -124,20 +124,32 @@ export function AudioAssetSelector({
 
   // Debug logging
   useEffect(() => {
-    console.log('[AudioAssetSelector] File classification:', {
-      totalVoiceovers: voiceovers.length,
-      actualVoiceovers: actualVoiceovers.length,
-      actualTTSFiles: actualTTSFiles.length,
-      instrumentalFiles: instrumentalFiles.length,
-      actualMusic: actualMusic.length,
-      voiceovers: voiceovers.map(v => ({ 
+    console.log('[AudioAssetSelector] Input data:', {
+      rawVoiceovers: voiceovers.map(v => ({ 
+        id: v.id.substring(0, 8),
         name: v.name, 
         scriptType: v.scriptType, 
         metadataType: v.metadataType,
-        isTTS: isTTSFile({ id: v.id, name: v.name, scriptType: v.scriptType as any, metadataType: v.metadataType })
+        hasUrl: !!v.url
       })),
+      rawTtsFiles: ttsFiles.map(f => ({
+        id: f.id.substring(0, 8),
+        name: f.name,
+        metadataType: f.metadataType
+      })),
+      rawMusicList: musicList.length
     });
-  }, [voiceovers, musicList]);
+    
+    console.log('[AudioAssetSelector] After filtering:', {
+      totalVoiceoversInput: voiceovers.length,
+      actualVoiceovers: actualVoiceovers.length,
+      actualVoiceoversDetails: actualVoiceovers.map(v => ({ id: v.id.substring(0, 8), name: v.name })),
+      actualTTSFiles: actualTTSFiles.length,
+      actualTTSDetails: actualTTSFiles.map(f => ({ id: f.id.substring(0, 8), name: f.name })),
+      instrumentalFiles: instrumentalFiles.length,
+      actualMusic: actualMusic.length,
+    });
+  }, [voiceovers, ttsFiles, musicList, actualVoiceovers, actualTTSFiles, instrumentalFiles, actualMusic]);
 
   // Download helper
   const handleDownload = (url: string, name: string) => {

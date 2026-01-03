@@ -21,35 +21,45 @@ export interface MusicItem {
 }
 
 // Check if file is instrumental/background music
+// PRIORITY: metadataType (from database) > scriptType > name patterns
 export function isInstrumental(v: VoiceoverData): boolean {
-  const lowerName = v.name.toLowerCase();
+  // 1. Database metadata is the HIGHEST priority - most reliable source
+  if (v.metadataType === 'instrumental' || v.metadataType === 'music' || v.metadataType === 'background_music') return true;
+  if (v.metadataType === 'voiceover' || v.metadataType === 'tts' || v.metadataType === 'custom-voice') return false;
   
-  // Check scriptType/metadataType first (most reliable)
+  // 2. Script type next
   if (v.scriptType === 'instrumental' || v.scriptType === 'music') return true;
-  if (v.metadataType === 'instrumental' || v.metadataType === 'music') return true;
+  if (v.scriptType === 'voiceover' || v.scriptType === 'tts' || v.scriptType === 'narration') return false;
   
-  // Check name patterns
+  // 3. Fall back to name patterns only if no metadata
+  const lowerName = v.name.toLowerCase();
   if (lowerName.includes('instrumental')) return true;
   if (lowerName.includes('bgm')) return true;
   if (lowerName.includes('background_music')) return true;
-  // "music" in name but NOT voiceover-related
   if (lowerName.includes('music') && !lowerName.includes('voiceover') && !lowerName.includes('voice')) return true;
-  // Check for pure "background" but avoid false positives
   if (lowerName.startsWith('background') && !lowerName.includes('voice')) return true;
   
   return false;
 }
 
 // Check if file is TTS generated (text-to-speech from script)
-// STRICT check - only files explicitly marked as TTS
+// PRIORITY: metadataType (from database) > scriptType > name patterns
+// CRITICAL: If metadataType is "voiceover", this file is NOT TTS regardless of name
 export function isTTSFile(v: VoiceoverData): boolean {
-  const lowerName = v.name.toLowerCase();
+  // 1. Database metadata is the HIGHEST priority - NEVER override this
+  // If marked as voiceover or instrumental in database, it's NOT TTS
+  if (v.metadataType === 'voiceover' || v.metadataType === 'custom-voice') return false;
+  if (v.metadataType === 'instrumental' || v.metadataType === 'music' || v.metadataType === 'background_music') return false;
+  // If explicitly marked as TTS in database
+  if (v.metadataType === 'tts') return true;
   
-  // Primary check: scriptType must be explicitly 'tts'
+  // 2. Script type next
+  if (v.scriptType === 'voiceover' || v.scriptType === 'narration') return false;
+  if (v.scriptType === 'instrumental' || v.scriptType === 'music') return false;
   if (v.scriptType === 'tts') return true;
   
-  // Metadata type explicitly marked as tts
-  if (v.metadataType === 'tts') return true;
+  // 3. Fall back to name patterns only if no metadata
+  const lowerName = v.name.toLowerCase();
   
   // Name patterns for TTS - must be explicit TTS markers
   if (lowerName.includes(' tts') || lowerName.includes('_tts') || lowerName.includes('-tts')) return true;
@@ -66,14 +76,18 @@ export function isTTSFile(v: VoiceoverData): boolean {
 }
 
 // Check if file is a true voiceover (recorded narration, not TTS or music)
+// PRIORITY: metadataType (from database) > scriptType > name patterns
 export function isVoiceover(v: VoiceoverData): boolean {
-  const lowerName = v.name.toLowerCase();
-  
-  // Explicit voiceover type
-  if (v.scriptType === 'voiceover' || v.scriptType === 'narration') return true;
+  // 1. Database metadata is the HIGHEST priority
   if (v.metadataType === 'voiceover') return true;
+  if (v.metadataType === 'tts' || v.metadataType === 'instrumental' || v.metadataType === 'music' || v.metadataType === 'background_music') return false;
   
-  // Name patterns for voiceover
+  // 2. Explicit voiceover/narration type from scriptType
+  if (v.scriptType === 'voiceover' || v.scriptType === 'narration') return true;
+  if (v.scriptType === 'tts' || v.scriptType === 'instrumental' || v.scriptType === 'music') return false;
+  
+  // 3. Name patterns for voiceover (only if no metadata)
+  const lowerName = v.name.toLowerCase();
   if (lowerName.includes('voiceover') || lowerName.includes('voice-over')) return true;
   if (lowerName.includes('narration') || lowerName.includes('narrator')) return true;
   if (lowerName.includes('recording') && !lowerName.includes('music')) return true;
@@ -83,9 +97,11 @@ export function isVoiceover(v: VoiceoverData): boolean {
 
 // Check if file is a custom recorded voice
 export function isCustomVoice(v: VoiceoverData): boolean {
-  const lowerName = v.name.toLowerCase();
-  
+  // 1. Database metadata is the HIGHEST priority
   if (v.metadataType === 'custom-voice') return true;
+  
+  // 2. Name patterns
+  const lowerName = v.name.toLowerCase();
   if (lowerName.includes('my voice') || lowerName.includes('custom voice')) return true;
   if (lowerName.includes('voice sample') || lowerName.includes('voice recording')) return true;
   
