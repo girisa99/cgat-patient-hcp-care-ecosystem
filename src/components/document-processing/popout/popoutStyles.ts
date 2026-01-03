@@ -1758,5 +1758,97 @@ export function getPopoutStyles(): string {
     .mini-toggle.on::after {
       left: 16px;
     }
+
+    /* =====================================================
+       AUDIO CONTROLS BAR (During Recording)
+       ===================================================== */
+    .audio-controls-bar {
+      display: flex;
+      gap: 16px;
+      padding: 12px 16px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 10px;
+      backdrop-filter: blur(8px);
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .audio-bar-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .audio-bar-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #a78bfa;
+      min-width: 60px;
+    }
+
+    .audio-bar-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(0, 0, 0, 0.4);
+      color: #fff;
+      cursor: pointer;
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .audio-bar-btn:hover {
+      background: rgba(139, 92, 246, 0.3);
+      border-color: rgba(139, 92, 246, 0.5);
+    }
+
+    .audio-bar-btn.playing {
+      background: rgba(34, 197, 94, 0.3);
+      border-color: rgba(34, 197, 94, 0.5);
+    }
+
+    .audio-bar-volume {
+      width: 80px;
+      height: 4px;
+      -webkit-appearance: none;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      outline: none;
+    }
+
+    .audio-bar-volume::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      background: #a78bfa;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .duck-label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.65rem;
+      color: #94a3b8;
+      cursor: pointer;
+    }
+
+    .duck-label input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+      accent-color: #a78bfa;
+    }
+
+    .audio-controls-bar.visible {
+      display: flex;
+    }
   `;
 }
