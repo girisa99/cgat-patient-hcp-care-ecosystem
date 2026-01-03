@@ -101,11 +101,20 @@ interface OverallAssessment {
   strengths: string[];
   weaknesses: string[];
   voiceoverReadiness: 'ready' | 'needs_minor_edits' | 'needs_significant_work';
+  engagementScore?: number;
+  topPriority?: string;
+}
+
+interface EngagementAnalysis {
+  openingHook?: { present: boolean; quality: 'weak' | 'moderate' | 'strong'; suggestion?: string };
+  audienceConnection?: { score: number; uses_you: boolean; uses_questions: boolean; suggestions?: string[] };
+  callToAction?: { present: boolean; clarity: 'weak' | 'moderate' | 'strong'; suggestion?: string };
+  emotionalResonance?: { score: number; powerWords: number; suggestions?: string[] };
 }
 
 interface EnhancementChange {
   id: string;
-  type: 'modification' | 'addition' | 'removal' | 'formatting' | 'pause' | 'break' | 'pacing';
+  type: 'modification' | 'addition' | 'removal' | 'formatting' | 'pause' | 'break' | 'pacing' | 'engagement' | 'conversational' | 'hook' | 'transition' | 'cta';
   original: string;
   enhanced: string;
   reason: string;
@@ -117,6 +126,14 @@ interface EnhancementMarkers {
   pausesAdded: number;
   sectionBreaksAdded: number;
   sentencesRewritten: number;
+  engagementHooksAdded?: number;
+  conversationalChanges?: number;
+}
+
+interface EngagementScore {
+  before: number;
+  after: number;
+  improvements: string[];
 }
 
 interface ScriptEditorTabProps {
@@ -184,11 +201,13 @@ export function ScriptEditorTab({
     pauseOpportunities?: PauseOpportunity[];
     sectionBreaks?: SectionBreak[];
     overallAssessment?: OverallAssessment;
+    engagementAnalysis?: EngagementAnalysis;
   } | null>(null);
   const [showAnalysis, setShowAnalysis] = useState(false);
   
-  // Enhancement markers for summary
+  // Enhancement markers and engagement score for summary
   const [enhancementMarkers, setEnhancementMarkers] = useState<EnhancementMarkers | null>(null);
+  const [engagementScore, setEngagementScore] = useState<EngagementScore | null>(null);
   
   // Enhancement State
   const [isEnhancing, setIsEnhancing] = useState(false);
@@ -479,12 +498,14 @@ export function ScriptEditorTab({
             localRecommendations.push(...aiRecs);
           }
           
-          // Capture pause opportunities and section breaks
+          // Capture all analysis data
           const pauseOpps = aiData.pauseOpportunities || [];
           const sectionBrks = aiData.sectionBreaks || [];
           const overallAssess = aiData.overallAssessment || null;
+          const engagementAnalysis = aiData.engagementAnalysis || null;
           
-          updateStep('ai', 'complete', `Found ${localRecommendations.length} suggestions, ${pauseOpps.length} pause points`);
+          const engagementInfo = overallAssess?.engagementScore ? `, engagement: ${overallAssess.engagementScore}/10` : '';
+          updateStep('ai', 'complete', `Found ${localRecommendations.length} suggestions${engagementInfo}`);
           
           // Set full analysis result with all data
           setAnalysisResult({
@@ -492,7 +513,8 @@ export function ScriptEditorTab({
             recommendations: localRecommendations,
             pauseOpportunities: pauseOpps,
             sectionBreaks: sectionBrks,
-            overallAssessment: overallAssess
+            overallAssessment: overallAssess,
+            engagementAnalysis: engagementAnalysis
           });
         } else {
           updateStep('ai', 'complete', `✓ ${providerNames[aiProvider]} analysis complete`);
@@ -554,19 +576,28 @@ export function ScriptEditorTab({
         const markers = data.data.markers || {
           pausesAdded: 0,
           sectionBreaksAdded: 0,
-          sentencesRewritten: 0
+          sentencesRewritten: 0,
+          engagementHooksAdded: 0,
+          conversationalChanges: 0
         };
+        
+        // Capture engagement score if available
+        const engScore = data.data.engagementScore || null;
         
         setOriginalContent(scriptContent);
         setEnhancedContent(enhanced);
         setCleanTTSContent(clean);
         setEnhancementChanges(changes);
         setEnhancementMarkers(markers);
+        setEngagementScore(engScore);
         setShowEnhancementReview(true);
         setReviewProgress(0);
         
-        const markerSummary = markers.pausesAdded > 0 ? ` (${markers.pausesAdded} pauses, ${markers.sectionBreaksAdded} breaks)` : '';
-        toast.success(`${providerNames[aiProvider]} enhancement complete! ${changes.length} changes suggested${markerSummary}`);
+        const engagementInfo = engScore ? ` Engagement: ${engScore.before}→${engScore.after}/10` : '';
+        const markerSummary = markers.pausesAdded > 0 || markers.engagementHooksAdded > 0 
+          ? ` (${markers.pausesAdded} pauses, ${markers.engagementHooksAdded || 0} hooks)` 
+          : '';
+        toast.success(`${providerNames[aiProvider]} enhancement complete! ${changes.length} changes.${engagementInfo}${markerSummary}`);
       }
     } catch (err) {
       console.error('Enhancement error:', err);
@@ -1498,6 +1529,121 @@ export function ScriptEditorTab({
                       </div>
                     )}
                   </div>
+                  
+                  {/* Engagement Score & Top Priority */}
+                  {(analysisResult.overallAssessment.engagementScore || analysisResult.overallAssessment.topPriority) && (
+                    <div className="mt-3 pt-3 border-t border-border/50">
+                      <div className="flex items-center gap-4">
+                        {analysisResult.overallAssessment.engagementScore && (
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="h-4 w-4 text-purple-500" />
+                            <span className="text-xs text-muted-foreground">Engagement:</span>
+                            <Badge variant="outline" className={cn(
+                              "text-xs",
+                              analysisResult.overallAssessment.engagementScore >= 7 && "bg-green-500/10 text-green-600 border-green-500/30",
+                              analysisResult.overallAssessment.engagementScore >= 4 && analysisResult.overallAssessment.engagementScore < 7 && "bg-yellow-500/10 text-yellow-600 border-yellow-500/30",
+                              analysisResult.overallAssessment.engagementScore < 4 && "bg-red-500/10 text-red-600 border-red-500/30"
+                            )}>
+                              {analysisResult.overallAssessment.engagementScore}/10
+                            </Badge>
+                          </div>
+                        )}
+                        {analysisResult.overallAssessment.topPriority && (
+                          <div className="flex-1">
+                            <span className="text-xs text-muted-foreground">Top Priority: </span>
+                            <span className="text-xs font-medium text-foreground">{analysisResult.overallAssessment.topPriority}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Engagement Analysis - NEW */}
+              {analysisResult.engagementAnalysis && (
+                <div className="mb-4">
+                  <Collapsible defaultOpen>
+                    <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:text-primary w-full justify-between p-2 rounded-lg hover:bg-muted/50">
+                      <span className="flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-purple-500" />
+                        Engagement Analysis
+                      </span>
+                      <ChevronDown className="h-4 w-4" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-2">
+                      <div className="grid md:grid-cols-2 gap-3 pl-2">
+                        {/* Opening Hook */}
+                        {analysisResult.engagementAnalysis.openingHook && (
+                          <div className="p-2 rounded border border-purple-500/20 bg-purple-500/5">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-medium">Opening Hook</span>
+                              <Badge variant="outline" className={cn(
+                                "text-[10px]",
+                                analysisResult.engagementAnalysis.openingHook.quality === 'strong' && "bg-green-500/10 text-green-600",
+                                analysisResult.engagementAnalysis.openingHook.quality === 'moderate' && "bg-yellow-500/10 text-yellow-600",
+                                analysisResult.engagementAnalysis.openingHook.quality === 'weak' && "bg-red-500/10 text-red-600"
+                              )}>
+                                {analysisResult.engagementAnalysis.openingHook.quality}
+                              </Badge>
+                            </div>
+                            {analysisResult.engagementAnalysis.openingHook.suggestion && (
+                              <p className="text-[10px] text-muted-foreground">{analysisResult.engagementAnalysis.openingHook.suggestion}</p>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Audience Connection */}
+                        {analysisResult.engagementAnalysis.audienceConnection && (
+                          <div className="p-2 rounded border border-blue-500/20 bg-blue-500/5">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-medium">Audience Connection</span>
+                              <Badge variant="outline" className="text-[10px]">
+                                {analysisResult.engagementAnalysis.audienceConnection.score}/10
+                              </Badge>
+                            </div>
+                            <div className="flex gap-2 text-[10px] text-muted-foreground">
+                              {analysisResult.engagementAnalysis.audienceConnection.uses_you && <span className="text-green-600">✓ Uses "you"</span>}
+                              {analysisResult.engagementAnalysis.audienceConnection.uses_questions && <span className="text-green-600">✓ Has questions</span>}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Call to Action */}
+                        {analysisResult.engagementAnalysis.callToAction && (
+                          <div className="p-2 rounded border border-green-500/20 bg-green-500/5">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-medium">Call to Action</span>
+                              <Badge variant="outline" className={cn(
+                                "text-[10px]",
+                                analysisResult.engagementAnalysis.callToAction.present ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-600"
+                              )}>
+                                {analysisResult.engagementAnalysis.callToAction.present ? analysisResult.engagementAnalysis.callToAction.clarity : 'Missing'}
+                              </Badge>
+                            </div>
+                            {analysisResult.engagementAnalysis.callToAction.suggestion && (
+                              <p className="text-[10px] text-muted-foreground">{analysisResult.engagementAnalysis.callToAction.suggestion}</p>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Emotional Resonance */}
+                        {analysisResult.engagementAnalysis.emotionalResonance && (
+                          <div className="p-2 rounded border border-pink-500/20 bg-pink-500/5">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-medium">Emotional Impact</span>
+                              <Badge variant="outline" className="text-[10px]">
+                                {analysisResult.engagementAnalysis.emotionalResonance.score}/10
+                              </Badge>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground">
+                              {analysisResult.engagementAnalysis.emotionalResonance.powerWords} power words found
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                 </div>
               )}
               
@@ -1685,20 +1831,56 @@ export function ScriptEditorTab({
                 </div>
               </div>
               
-              {/* Enhancement Summary - NEW */}
+              {/* Engagement Score - Before/After */}
+              {engagementScore && (
+                <div className="mb-4 p-3 rounded-lg bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30">
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="text-sm font-medium flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-purple-500" />
+                      Engagement Score
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/30">
+                        Before: {engagementScore.before}/10
+                      </Badge>
+                      <span className="text-muted-foreground">→</span>
+                      <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
+                        After: {engagementScore.after}/10
+                      </Badge>
+                    </div>
+                  </div>
+                  {engagementScore.improvements?.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {engagementScore.improvements.slice(0, 4).map((imp, i) => (
+                        <Badge key={i} variant="secondary" className="text-[10px]">{imp}</Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Enhancement Summary */}
               {enhancementMarkers && (
-                <div className="mb-4 p-3 rounded-lg bg-background border grid grid-cols-3 gap-4 text-center">
+                <div className="mb-4 p-3 rounded-lg bg-background border grid grid-cols-5 gap-3 text-center">
                   <div>
-                    <p className="text-2xl font-bold text-blue-500">{enhancementMarkers.pausesAdded}</p>
-                    <p className="text-xs text-muted-foreground">Pauses Added</p>
+                    <p className="text-xl font-bold text-blue-500">{enhancementMarkers.pausesAdded}</p>
+                    <p className="text-[10px] text-muted-foreground">Pauses</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-purple-500">{enhancementMarkers.sectionBreaksAdded}</p>
-                    <p className="text-xs text-muted-foreground">Section Breaks</p>
+                    <p className="text-xl font-bold text-purple-500">{enhancementMarkers.sectionBreaksAdded}</p>
+                    <p className="text-[10px] text-muted-foreground">Breaks</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-green-500">{enhancementMarkers.sentencesRewritten}</p>
-                    <p className="text-xs text-muted-foreground">Sentences Improved</p>
+                    <p className="text-xl font-bold text-green-500">{enhancementMarkers.sentencesRewritten}</p>
+                    <p className="text-[10px] text-muted-foreground">Rewritten</p>
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold text-orange-500">{enhancementMarkers.engagementHooksAdded || 0}</p>
+                    <p className="text-[10px] text-muted-foreground">Hooks</p>
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold text-pink-500">{enhancementMarkers.conversationalChanges || 0}</p>
+                    <p className="text-[10px] text-muted-foreground">Conversational</p>
                   </div>
                 </div>
               )}
