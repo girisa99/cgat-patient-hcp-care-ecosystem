@@ -268,8 +268,11 @@ export function getUIScript(): string {
     }
 
     // =====================================================
-    // LOGO OVERLAY
+    // LOGO OVERLAY WITH POSITION AND SIZE CONTROLS
     // =====================================================
+
+    var currentLogoPosition = 'bottom-right';
+    var currentLogoSize = 'medium';
 
     if (logoBtn) {
       logoBtn.addEventListener('click', function() {
@@ -279,7 +282,11 @@ export function getUIScript(): string {
           logoBtn.classList.remove('toggle-off');
           logoBtn.classList.add('toggle-on');
           logoBtn.textContent = '🖼️ Logo: ON';
-          if (logoOverlay) logoOverlay.classList.add('visible');
+          if (logoOverlay) {
+            logoOverlay.classList.add('visible');
+            // Force z-index for screen share scenarios
+            logoOverlay.style.zIndex = '9999';
+          }
           
           // Show position controls
           var posControls = document.getElementById('logoPositionControls');
@@ -296,6 +303,50 @@ export function getUIScript(): string {
         }
       });
     }
+
+    // Logo position buttons
+    document.querySelectorAll('[data-logo-position]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        const pos = this.dataset.logoPosition;
+        if (!pos || !logoOverlay) return;
+
+        // Remove old position classes
+        logoOverlay.classList.remove('pos-top-left', 'pos-top-right', 'pos-bottom-left', 'pos-bottom-right');
+        // Add new position class
+        logoOverlay.classList.add('pos-' + pos);
+        currentLogoPosition = pos;
+
+        // Update active state
+        document.querySelectorAll('[data-logo-position]').forEach(function(b) {
+          b.classList.remove('active');
+        });
+        this.classList.add('active');
+
+        console.log('[Logo] Position set to:', pos);
+      });
+    });
+
+    // Logo size buttons
+    document.querySelectorAll('[data-logo-size]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        const size = this.dataset.logoSize;
+        if (!size || !logoOverlay) return;
+
+        // Remove old size classes
+        logoOverlay.classList.remove('size-small', 'size-medium', 'size-large');
+        // Add new size class
+        logoOverlay.classList.add('size-' + size);
+        currentLogoSize = size;
+
+        // Update active state
+        document.querySelectorAll('[data-logo-size]').forEach(function(b) {
+          b.classList.remove('active');
+        });
+        this.classList.add('active');
+
+        console.log('[Logo] Size set to:', size);
+      });
+    });
 
     // =====================================================
     // VOICEOVER AUDIO
@@ -511,6 +562,10 @@ export function getUIScript(): string {
         return;
       }
 
+      console.log('[Recording Audio] Starting audio playback...');
+      console.log('[Recording Audio] voiceoverSelect:', !!voiceoverSelect, voiceoverSelect ? voiceoverSelect.value : 'N/A');
+      console.log('[Recording Audio] musicSelect:', !!musicSelect, musicSelect ? musicSelect.value : 'N/A');
+
       // Stop any existing TTS to prevent overlap
       if (ttsAudio) {
         ttsAudio.pause();
@@ -523,6 +578,9 @@ export function getUIScript(): string {
         const voOption = voiceoverSelect.options[voiceoverSelect.selectedIndex];
         const voUrl = voOption ? voOption.dataset.url : null;
         
+        console.log('[Recording Audio] Voiceover option:', voOption ? voOption.text : 'none');
+        console.log('[Recording Audio] Voiceover URL:', voUrl);
+        
         if (voUrl && voiceoverSelect.value) {
           // Stop any existing voiceover
           if (voiceoverAudio) {
@@ -530,11 +588,13 @@ export function getUIScript(): string {
             voiceoverAudio.currentTime = 0;
           }
           
+          console.log('[Recording Audio] Creating new voiceover audio element...');
           voiceoverAudio = new Audio(voUrl);
           voiceoverAudio.volume = voiceoverVolume ? voiceoverVolume.value / 100 : 1;
           
-          // Setup sync
+          // Setup sync with teleprompter
           voiceoverAudio.addEventListener('loadedmetadata', function() {
+            console.log('[Recording Audio] Voiceover metadata loaded, duration:', voiceoverAudio.duration);
             if (typeof startWordHighlightingFromAudio === 'function') {
               startWordHighlightingFromAudio(voiceoverAudio);
             }
@@ -545,10 +605,30 @@ export function getUIScript(): string {
               showReadingCursor();
             }
           });
-          
-          voiceoverAudio.play().catch(function(e) {
-            console.error('[Recording] Voiceover play error:', e);
+
+          voiceoverAudio.addEventListener('ended', function() {
+            console.log('[Recording Audio] Voiceover finished playing');
+            if (typeof stopWordHighlighting === 'function') {
+              stopWordHighlighting();
+            }
+            if (typeof hideReadingCursor === 'function') {
+              hideReadingCursor();
+            }
           });
+
+          voiceoverAudio.addEventListener('error', function(e) {
+            console.error('[Recording Audio] Voiceover error:', e);
+            showStatus('Failed to load voiceover audio', 'error');
+          });
+          
+          voiceoverAudio.play().then(function() {
+            console.log('[Recording Audio] Voiceover started playing!');
+          }).catch(function(e) {
+            console.error('[Recording Audio] Voiceover play error:', e);
+            showStatus('Could not play voiceover: ' + e.message, 'error');
+          });
+        } else {
+          console.log('[Recording Audio] No voiceover selected or no URL');
         }
       }
 
@@ -557,6 +637,9 @@ export function getUIScript(): string {
         const musicOption = musicSelect.options[musicSelect.selectedIndex];
         const musicUrl = musicOption ? musicOption.dataset.url : null;
         
+        console.log('[Recording Audio] Music option:', musicOption ? musicOption.text : 'none');
+        console.log('[Recording Audio] Music URL:', musicUrl);
+        
         if (musicUrl && musicSelect.value) {
           // Stop any existing music
           if (musicAudio) {
@@ -564,17 +647,29 @@ export function getUIScript(): string {
             musicAudio.currentTime = 0;
           }
           
+          console.log('[Recording Audio] Creating new music audio element...');
           musicAudio = new Audio(musicUrl);
           musicAudio.volume = musicVolume ? musicVolume.value / 100 : 0.5;
           musicAudio.loop = musicLoopEnabled;
-          musicAudio.play().catch(function(e) {
-            console.error('[Recording] Music play error:', e);
+
+          musicAudio.addEventListener('error', function(e) {
+            console.error('[Recording Audio] Music error:', e);
+            showStatus('Failed to load music', 'error');
           });
+
+          musicAudio.play().then(function() {
+            console.log('[Recording Audio] Music started playing!');
+          }).catch(function(e) {
+            console.error('[Recording Audio] Music play error:', e);
+          });
+        } else {
+          console.log('[Recording Audio] No music selected or no URL');
         }
       }
       
       // Show recording UI elements
       showRecordingUI();
+      console.log('[Recording Audio] Audio playback setup complete');
     }
 
     function stopAudioPlayback() {

@@ -51,8 +51,12 @@ export function getTeleprompterEnhancementsScript(): string {
     }
 
     // =====================================================
-    // WORD HIGHLIGHTING SYNC WITH AUDIO
+    // WORD HIGHLIGHTING SYNC WITH AUDIO - PRECISE 1:1 SYNC
     // =====================================================
+
+    // Store audio reference for precise sync
+    var syncedAudioElement = null;
+    var wordSyncAnimationId = null;
 
     function startWordHighlighting(audioDuration) {
       if (scriptWords.length === 0 || !audioDuration) {
@@ -79,32 +83,78 @@ export function getTeleprompterEnhancementsScript(): string {
     }
 
     function startWordHighlightingFromAudio(audioElement) {
-      if (!audioElement || scriptWords.length === 0) return;
-
-      const duration = audioElement.duration;
-      if (!duration || isNaN(duration)) {
-        console.warn('[Teleprompter] Audio duration not available');
+      if (!audioElement || scriptWords.length === 0) {
+        console.log('[Teleprompter] Cannot sync - no audio or no words');
         return;
       }
 
-      // Use audio currentTime for sync
-      function updateHighlight() {
-        if (isPaused || isStopped || !audioElement) return;
-
-        const progress = audioElement.currentTime / duration;
-        const wordIdx = Math.floor(progress * scriptWords.length);
-        
-        if (wordIdx !== currentWordIndex && wordIdx < scriptWords.length) {
-          currentWordIndex = wordIdx;
-          highlightWord(currentWordIndex);
-        }
-
-        if (!audioElement.ended && !isStopped) {
-          requestAnimationFrame(updateHighlight);
-        }
+      const duration = audioElement.duration;
+      if (!duration || isNaN(duration)) {
+        console.warn('[Teleprompter] Audio duration not available, waiting...');
+        // Try again when we have duration
+        audioElement.addEventListener('durationchange', function onDuration() {
+          if (audioElement.duration && !isNaN(audioElement.duration)) {
+            audioElement.removeEventListener('durationchange', onDuration);
+            startWordHighlightingFromAudio(audioElement);
+          }
+        });
+        return;
       }
 
-      requestAnimationFrame(updateHighlight);
+      console.log('[Teleprompter] Starting PRECISE word sync with audio');
+      console.log('[Teleprompter] Audio duration:', duration, 'seconds');
+      console.log('[Teleprompter] Total words:', scriptWords.length);
+      console.log('[Teleprompter] Time per word:', (duration / scriptWords.length).toFixed(3), 'seconds');
+
+      syncedAudioElement = audioElement;
+      currentWordIndex = -1; // Reset to force first highlight
+
+      // Use audio currentTime for PRECISE sync - word by word
+      function updateHighlight() {
+        if (isPaused || isStopped || !syncedAudioElement) {
+          wordSyncAnimationId = null;
+          return;
+        }
+
+        // Don't continue if audio is paused or ended
+        if (syncedAudioElement.paused && !syncedAudioElement.ended) {
+          wordSyncAnimationId = requestAnimationFrame(updateHighlight);
+          return;
+        }
+
+        if (syncedAudioElement.ended) {
+          console.log('[Teleprompter] Audio ended, stopping sync');
+          stopWordHighlighting();
+          return;
+        }
+
+        const currentTime = syncedAudioElement.currentTime;
+        const progress = currentTime / duration;
+        
+        // Calculate exact word index based on audio position
+        const wordIdx = Math.min(
+          Math.floor(progress * scriptWords.length),
+          scriptWords.length - 1
+        );
+        
+        // Only update if word changed - prevents unnecessary DOM updates
+        if (wordIdx !== currentWordIndex && wordIdx >= 0) {
+          currentWordIndex = wordIdx;
+          highlightWord(currentWordIndex);
+          
+          // Log every 10th word for debugging
+          if (currentWordIndex % 10 === 0) {
+            console.log('[Teleprompter] Word', currentWordIndex + 1, '/', scriptWords.length, 
+                        'at', currentTime.toFixed(2) + 's');
+          }
+        }
+
+        // Continue animation loop
+        wordSyncAnimationId = requestAnimationFrame(updateHighlight);
+      }
+
+      // Start the sync loop
+      wordSyncAnimationId = requestAnimationFrame(updateHighlight);
       console.log('[Teleprompter] Started audio-synced word highlighting');
     }
 
@@ -112,8 +162,11 @@ export function getTeleprompterEnhancementsScript(): string {
       const teleprompterEl = document.getElementById('teleprompterText');
       if (!teleprompterEl) return;
 
-      // Remove previous highlights
-      teleprompterEl.querySelectorAll('.script-word').forEach(function(el, i) {
+      // Get all word elements
+      const wordEls = teleprompterEl.querySelectorAll('.script-word');
+      
+      // Update classes - mark past, current, and future words
+      wordEls.forEach(function(el, i) {
         el.classList.remove('word-current', 'word-past');
         if (i < idx) {
           el.classList.add('word-past');
@@ -122,7 +175,7 @@ export function getTeleprompterEnhancementsScript(): string {
         }
       });
 
-      // Scroll to current word
+      // Scroll to current word - center it in view
       const currentEl = teleprompterEl.querySelector('.word-current');
       if (currentEl) {
         currentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -134,6 +187,12 @@ export function getTeleprompterEnhancementsScript(): string {
         clearInterval(wordHighlightInterval);
         wordHighlightInterval = null;
       }
+      if (wordSyncAnimationId) {
+        cancelAnimationFrame(wordSyncAnimationId);
+        wordSyncAnimationId = null;
+      }
+      syncedAudioElement = null;
+      currentWordIndex = 0;
       console.log('[Teleprompter] Stopped word highlighting');
     }
 

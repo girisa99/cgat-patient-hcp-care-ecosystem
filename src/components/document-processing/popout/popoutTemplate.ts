@@ -6,11 +6,18 @@
 import type { PopoutConfig } from './types';
 
 export function getPopoutHTML(config: PopoutConfig): string {
-  // Generate script options
+  // Generate script options with version badges
   const scriptOptions = config.scripts.length > 0
-    ? config.scripts.map(s => 
-        `<option value="${s.id}" ${s.id === config.selectedScriptId ? 'selected' : ''}>${escapeHtml(s.title)}</option>`
-      ).join('')
+    ? config.scripts.map(s => {
+        const hasEnhanced = !!(s as any).enhancedContent;
+        const hasClean = !!(s as any).cleanContent;
+        const badges = [];
+        badges.push('Original');
+        if (hasEnhanced) badges.push('Enhanced');
+        if (hasClean) badges.push('TTS');
+        const badgeText = badges.length > 1 ? ` [${badges.join(', ')}]` : '';
+        return `<option value="${s.id}" ${s.id === config.selectedScriptId ? 'selected' : ''}>${escapeHtml(s.title)}${badgeText}</option>`;
+      }).join('')
     : '';
 
   // Generate voiceover options
