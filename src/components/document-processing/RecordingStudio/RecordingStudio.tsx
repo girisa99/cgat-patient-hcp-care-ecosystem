@@ -631,12 +631,34 @@ export function RecordingStudio({
     // Start recording (countdown handled by useRecording)
     recording.startRecording();
     
-    // Start audio playback after countdown
+    // Get the countdown duration (default 5 seconds + small buffer)
+    const countdownMs = 5000 + 500;
+    
+    // Start audio playback after countdown completes
     setTimeout(() => {
+      console.log('[RecordingStudio] Starting audio playback after countdown...');
+      
+      // Play voiceover OR TTS (not both - TTS is fallback when no voiceover)
       if (currentVoiceover) {
+        console.log('[RecordingStudio] Playing voiceover:', currentVoiceover.url.substring(0, 60));
         audioPlayback.playVoiceover(currentVoiceover.url);
+      } else if (ttsGeneration.lastResult?.audioUrl) {
+        // TTS was generated - play it
+        console.log('[RecordingStudio] Playing TTS audio from lastResult');
+        const ttsAudioElement = new Audio(ttsGeneration.lastResult.audioUrl);
+        audioPlayback.playTTS(ttsAudioElement);
+      } else if (ttsAudioUrl) {
+        // Legacy TTS URL support
+        console.log('[RecordingStudio] Playing legacy TTS audio');
+        const ttsAudioElement = new Audio(ttsAudioUrl);
+        audioPlayback.playTTS(ttsAudioElement);
+      } else {
+        console.log('[RecordingStudio] No voice audio (voiceover or TTS) to play');
       }
+      
+      // Play music (can play alongside voice)
       if (currentMusic) {
+        console.log('[RecordingStudio] Playing music:', currentMusic.url.substring(0, 60));
         audioPlayback.playMusic(currentMusic.url);
       }
       
@@ -645,8 +667,8 @@ export function RecordingStudio({
       
       // Reset word index for teleprompter
       setCurrentWordIndex(0);
-    }, 3500); // After 3 second countdown + buffer
-  }, [recording, audioPlayback, currentVoiceover, currentMusic, screenShare, currentScript]);
+    }, countdownMs);
+  }, [recording, audioPlayback, currentVoiceover, currentMusic, screenShare, currentScript, ttsGeneration.lastResult, ttsAudioUrl]);
 
   // Pause recording - also pause audio
   const handlePauseRecording = useCallback(() => {
