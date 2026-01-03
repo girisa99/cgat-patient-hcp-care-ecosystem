@@ -282,7 +282,53 @@ export function getEnhancedControlsScript(): string {
       // Initialize logo drag
       initLogoDrag();
 
+      // Listen for screen share to show warning
+      if (navigator.mediaDevices) {
+        navigator.mediaDevices.addEventListener('devicechange', function() {
+          checkForScreenShare();
+        });
+      }
+
       console.log('[EnhancedControls] Initialized successfully');
+    }
+
+    // Check if user is screen sharing and show warning
+    function checkForScreenShare() {
+      const warning = document.getElementById('screenShareWarning');
+      if (!warning) return;
+
+      // Check if we have a screen capture track
+      if (typeof mediaStream !== 'undefined' && mediaStream) {
+        const videoTracks = mediaStream.getVideoTracks();
+        const hasScreenShare = videoTracks.some(function(track) {
+          // Screen share tracks often have "screen" in their label
+          return track.label.toLowerCase().includes('screen') ||
+                 track.label.toLowerCase().includes('display') ||
+                 track.label.toLowerCase().includes('monitor');
+        });
+        
+        if (hasScreenShare) {
+          warning.style.display = 'flex';
+          console.log('[EnhancedControls] Screen share detected, showing warning');
+        }
+      }
+    }
+
+    // Show warning when getDisplayMedia is used
+    var originalGetDisplayMedia = navigator.mediaDevices.getDisplayMedia;
+    if (originalGetDisplayMedia) {
+      navigator.mediaDevices.getDisplayMedia = async function(constraints) {
+        const stream = await originalGetDisplayMedia.call(navigator.mediaDevices, constraints);
+        
+        // Show the warning when screen share starts
+        const warning = document.getElementById('screenShareWarning');
+        if (warning) {
+          warning.style.display = 'flex';
+        }
+        
+        console.log('[EnhancedControls] Screen share started via getDisplayMedia');
+        return stream;
+      };
     }
 
     // Initialize after DOM and camera are ready (give camera time to init)

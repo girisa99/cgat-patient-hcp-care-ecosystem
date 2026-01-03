@@ -1160,8 +1160,8 @@ export default function GenieStudio() {
     }
   };
 
-  // Save music track to database (generated_media table)
-  const saveMusicTrack = async (url: string, name: string) => {
+  // Save music track to database (generated_media table) - handles blob URLs
+  const saveMusicTrack = async (url: string, name: string, audioBlob?: Blob) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -1169,8 +1169,58 @@ export default function GenieStudio() {
         return;
       }
       
-      // Generate a unique path for the file reference
-      const uniquePath = `music/${user.id}/${Date.now()}_${name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const sanitizedName = name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const uniquePath = `music/${user.id}/${Date.now()}_${sanitizedName}`;
+      
+      let finalUrl = url;
+      
+      // If we have a blob, upload it to storage for proper URL
+      if (audioBlob) {
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('genie-media')
+          .upload(uniquePath, audioBlob, {
+            contentType: audioBlob.type || 'audio/mpeg',
+            upsert: true
+          });
+          
+        if (uploadError) {
+          console.error('Storage upload error:', uploadError);
+          throw new Error('Failed to upload music file');
+        }
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('genie-media')
+          .getPublicUrl(uniquePath);
+          
+        finalUrl = publicUrl;
+      } else if (url.startsWith('blob:') || url.startsWith('data:')) {
+        // Convert blob/data URL to actual blob and upload
+        try {
+          const response = await fetch(url);
+          const blob = await response.blob();
+          
+          const { error: uploadError } = await supabase.storage
+            .from('genie-media')
+            .upload(uniquePath, blob, {
+              contentType: blob.type || 'audio/mpeg',
+              upsert: true
+            });
+            
+          if (uploadError) {
+            console.error('Storage upload error:', uploadError);
+            throw new Error('Failed to upload music file');
+          }
+          
+          const { data: { publicUrl } } = supabase.storage
+            .from('genie-media')
+            .getPublicUrl(uniquePath);
+            
+          finalUrl = publicUrl;
+        } catch (fetchErr) {
+          console.error('Failed to fetch blob:', fetchErr);
+          throw new Error('Failed to process music data');
+        }
+      }
       
       const { error } = await supabase
         .from('generated_media')
@@ -1178,7 +1228,7 @@ export default function GenieStudio() {
           user_id: user.id,
           name,
           file_type: 'audio',
-          file_url: url,
+          file_url: finalUrl,
           source: 'upload',
           storage_bucket: 'genie-media',
           storage_path: uniquePath,
@@ -1191,7 +1241,7 @@ export default function GenieStudio() {
       refreshDbMedia();
     } catch (err) {
       console.error('Failed to save music:', err);
-      toast.error('Failed to save music');
+      toast.error('Failed to save music: ' + (err instanceof Error ? err.message : 'Unknown error'));
     }
   };
   
@@ -1489,11 +1539,12 @@ export default function GenieStudio() {
     toast.success(`Loaded "${template.name}" template`);
   };
 
-  // Upload handlers
+  // Upload handlers - pass the actual File blob for proper storage upload
   const handleUploadVoiceover = async (file: File) => {
     try {
       const url = URL.createObjectURL(file);
-      saveVoiceover(url, file.name);
+      // Pass the file as blob so it gets uploaded to storage with a proper URL
+      saveVoiceover(url, file.name, file);
     } catch (err) {
       toast.error('Failed to upload voiceover');
     }
@@ -1502,7 +1553,8 @@ export default function GenieStudio() {
   const handleUploadMusic = async (file: File) => {
     try {
       const url = URL.createObjectURL(file);
-      saveMusicTrack(url, file.name);
+      // Pass the file as blob so it gets uploaded to storage with a proper URL
+      saveMusicTrack(url, file.name, file);
     } catch (err) {
       toast.error('Failed to upload music');
     }

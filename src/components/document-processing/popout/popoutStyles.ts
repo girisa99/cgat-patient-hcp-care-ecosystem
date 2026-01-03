@@ -1545,6 +1545,38 @@ export function getPopoutStyles(): string {
       background: rgba(239, 68, 68, 0.3);
     }
 
+    /* Screen Share Warning Banner */
+    .screen-share-warning {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: linear-gradient(135deg, rgba(251, 146, 60, 0.15), rgba(234, 88, 12, 0.1));
+      border: 1px solid rgba(251, 146, 60, 0.4);
+      padding: 12px;
+      border-radius: 8px;
+      animation: pulse-warning 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-warning {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .warning-icon {
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    .warning-text {
+      font-size: 0.75rem;
+      color: #fdba74;
+      line-height: 1.4;
+    }
+
+    .warning-text strong {
+      color: #fb923c;
+    }
+
     /* Tip Banner */
     .tip-banner {
       display: flex;
