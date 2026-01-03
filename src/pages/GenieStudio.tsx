@@ -3118,12 +3118,38 @@ export default function GenieStudio() {
               </DialogTitle>
             </DialogHeader>
             
-            <div className="grid gap-4 py-4">
-              {/* Podcast Option */}
+            <div className="grid gap-3 py-4">
+              {/* Schedule Webcast/Podcast - connects to existing flow */}
+              <Card 
+                className="cursor-pointer hover:border-primary/50 transition-colors group border-2"
+                onClick={() => {
+                  setIsPublishDialogOpen(false);
+                  setIsCreateShowDialogOpen(true);
+                }}
+              >
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                    <Calendar className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold">Schedule Webcast / Podcast</h4>
+                    <p className="text-sm text-muted-foreground">Plan and schedule your show with participants</p>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                </CardContent>
+              </Card>
+              
+              {/* Publish as Podcast */}
               <Card 
                 className="cursor-pointer hover:border-primary/50 transition-colors group"
                 onClick={() => {
-                  toast.info('Podcast Publishing', { description: 'Coming soon! Distribute to Spotify, Apple Podcasts, and more.' });
+                  toast.info('Podcast Publishing', { 
+                    description: 'Connect your podcast platforms to distribute automatically.',
+                    action: {
+                      label: 'Coming Soon',
+                      onClick: () => {}
+                    }
+                  });
                 }}
               >
                 <CardContent className="p-4 flex items-center gap-4">
@@ -3132,52 +3158,79 @@ export default function GenieStudio() {
                   </div>
                   <div className="flex-1">
                     <h4 className="font-semibold">Publish as Podcast</h4>
-                    <p className="text-sm text-muted-foreground">Distribute to Spotify, Apple Podcasts, Google Podcasts</p>
+                    <p className="text-sm text-muted-foreground">Spotify, Apple Podcasts, Google Podcasts</p>
+                    <div className="flex gap-1 mt-1">
+                      <Badge variant="outline" className="text-[10px] px-1.5">Spotify</Badge>
+                      <Badge variant="outline" className="text-[10px] px-1.5">Apple</Badge>
+                      <Badge variant="outline" className="text-[10px] px-1.5">Google</Badge>
+                    </div>
                   </div>
                   <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                 </CardContent>
               </Card>
               
-              {/* Webcast Option */}
+              {/* Go Live Broadcast */}
               <Card 
                 className="cursor-pointer hover:border-primary/50 transition-colors group"
                 onClick={() => {
-                  toast.info('Webcast Scheduling', { description: 'Coming soon! Schedule live webcasts with your audience.' });
+                  toast.info('Go Live Broadcast', { 
+                    description: 'Connect LinkedIn, YouTube, or X to go live.',
+                    action: {
+                      label: 'Setup',
+                      onClick: () => {}
+                    }
+                  });
+                }}
+              >
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center">
+                    <Tv className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold">Go Live Broadcast</h4>
+                    <p className="text-sm text-muted-foreground">Stream live to your audience</p>
+                    <div className="flex gap-1 mt-1">
+                      <Badge variant="outline" className="text-[10px] px-1.5 bg-blue-500/10 text-blue-600 border-blue-500/30">LinkedIn</Badge>
+                      <Badge variant="outline" className="text-[10px] px-1.5 bg-red-500/10 text-red-600 border-red-500/30">YouTube</Badge>
+                      <Badge variant="outline" className="text-[10px] px-1.5 bg-gray-500/10 text-gray-600 border-gray-500/30">X</Badge>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                </CardContent>
+              </Card>
+              
+              {/* Share Recording */}
+              <Card 
+                className="cursor-pointer hover:border-primary/50 transition-colors group"
+                onClick={() => {
+                  toast.info('Share Recording', { 
+                    description: 'Connect LinkedIn or X to share your recordings.',
+                    action: {
+                      label: 'Setup',
+                      onClick: () => {}
+                    }
+                  });
                 }}
               >
                 <CardContent className="p-4 flex items-center gap-4">
                   <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
-                    <Tv className="h-6 w-6 text-white" />
+                    <Send className="h-6 w-6 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold">Schedule Webcast</h4>
-                    <p className="text-sm text-muted-foreground">Plan and schedule live sessions with your audience</p>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                </CardContent>
-              </Card>
-              
-              {/* Broadcast Option */}
-              <Card 
-                className="cursor-pointer hover:border-primary/50 transition-colors group"
-                onClick={() => {
-                  toast.info('Live Broadcast', { description: 'Coming soon! Go live on YouTube, LinkedIn, and social platforms.' });
-                }}
-              >
-                <CardContent className="p-4 flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center">
-                    <Radio className="h-6 w-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold">Go Live Broadcast</h4>
-                    <p className="text-sm text-muted-foreground">Stream live to YouTube, LinkedIn, Facebook, and more</p>
+                    <h4 className="font-semibold">Share Recording</h4>
+                    <p className="text-sm text-muted-foreground">Post your video to social platforms</p>
+                    <div className="flex gap-1 mt-1">
+                      <Badge variant="outline" className="text-[10px] px-1.5 bg-blue-500/10 text-blue-600 border-blue-500/30">LinkedIn</Badge>
+                      <Badge variant="outline" className="text-[10px] px-1.5 bg-gray-500/10 text-gray-600 border-gray-500/30">X</Badge>
+                    </div>
                   </div>
                   <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                 </CardContent>
               </Card>
             </div>
             
-            <DialogFooter>
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              <p className="text-xs text-muted-foreground flex-1">Connect your accounts to enable publishing</p>
               <Button variant="outline" onClick={() => setIsPublishDialogOpen(false)}>
                 Close
               </Button>
