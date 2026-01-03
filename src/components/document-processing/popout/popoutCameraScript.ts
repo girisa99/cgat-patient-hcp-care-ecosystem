@@ -1,21 +1,17 @@
 /**
  * Popout Recording Studio - Camera & Recording Logic
  * Handles camera initialization, MediaRecorder, and video capture
- * Integrates with enhanced recording features (countdown, pause, trim)
+ * Simplified and robust implementation
  */
 
 export function getCameraScript(): string {
   return `
     // =====================================================
-    // CAMERA & RECORDING MODULE
+    // CAMERA & RECORDING MODULE (Simplified & Robust)
     // =====================================================
-    debugLog('[Camera] Module loading...');
+    console.log('[Camera] Module loading...');
     
-    // Note: mediaStream, mediaRecorder, recordedChunks, isRecording, 
-    // recordingStartTime, recordingTimer, isStopped, isPaused, trimHistory
-    // and showStatus are declared in shared globals
-
-    // DOM Elements - with null checks
+    // DOM Elements
     var videoPreview = document.getElementById('videoPreview');
     var loadingOverlay = document.getElementById('loadingOverlay');
     var loadingText = document.getElementById('loadingText');
@@ -24,299 +20,224 @@ export function getCameraScript(): string {
     var recordingIndicator = document.getElementById('recordingIndicator');
     var recordingTimeEl = document.getElementById('recordingTime');
     
-    debugLog('[Camera] DOM: video=' + !!videoPreview + ', overlay=' + !!loadingOverlay + ', btn=' + !!recordBtn);
+    console.log('[Camera] DOM elements found:', {
+      videoPreview: !!videoPreview,
+      loadingOverlay: !!loadingOverlay,
+      recordBtn: !!recordBtn
+    });
 
     // Format time as MM:SS
     function formatTime(seconds) {
-      const mins = Math.floor(seconds / 60);
-      const secs = seconds % 60;
+      var mins = Math.floor(seconds / 60);
+      var secs = seconds % 60;
       return String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
     }
 
-    // Initialize camera
+    // ALWAYS enable record button - works with or without camera
+    function enableRecordButton(hasCamera) {
+      if (!recordBtn || !recordBtnText) {
+        console.error('[Camera] Record button elements not found');
+        return;
+      }
+      
+      recordBtn.disabled = false;
+      recordBtn.classList.remove('disabled');
+      recordBtn.classList.add('ready');
+      recordBtnText.textContent = hasCamera ? 'Start Recording' : 'Start Recording (Audio Only)';
+      console.log('[Camera] ✅ Record button ENABLED, hasCamera:', hasCamera);
+    }
+
+    // Initialize camera with better error handling
     async function initCamera() {
-      debugLog('[Camera] 🎬 initCamera() called');
+      console.log('[Camera] 🎬 initCamera() called');
+      
+      // IMMEDIATELY enable the record button (user can always record audio)
+      setTimeout(function() {
+        enableRecordButton(false);
+      }, 1000);
       
       if (!videoPreview) {
-        debugLog('[Camera] ❌ videoPreview element not found!');
-        if (loadingText) loadingText.textContent = 'Error: Video element not found';
+        console.error('[Camera] ❌ videoPreview element not found!');
+        if (loadingText) loadingText.textContent = 'Video element not found - Audio only mode';
+        hideDebugPanel();
         return;
       }
       
-      debugLog('[Camera] ✅ Video element found');
-      
-      if (loadingText) {
-        loadingText.textContent = 'Requesting camera access...';
-      }
-
-      // Check if getUserMedia is available
+      // Check for mediaDevices API
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        debugLog('[Camera] ❌ getUserMedia not supported in this context!');
-        if (loadingText) {
-          loadingText.textContent = 'Camera not supported in this browser/context';
-        }
-        showStatus('Camera API not available', 'error');
+        console.log('[Camera] ⚠️ getUserMedia not available - Audio only mode');
+        if (loadingText) loadingText.textContent = 'Camera not available - Audio only mode';
+        if (loadingOverlay) loadingOverlay.classList.add('hidden');
+        hideDebugPanel();
         return;
       }
       
-      debugLog('[Camera] ✅ getUserMedia API available');
+      if (loadingText) loadingText.textContent = 'Requesting camera...';
 
       try {
-        debugLog('[Camera] 📹 Calling getUserMedia...');
+        console.log('[Camera] 📹 Calling getUserMedia...');
         
-        // Request camera permission
-        mediaStream = await navigator.mediaDevices.getUserMedia({
+        // Simple camera request with fallback options
+        var constraints = {
           video: { 
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
+            width: { ideal: 1280, min: 640 },
+            height: { ideal: 720, min: 480 },
             facingMode: 'user'
           },
           audio: true
-        });
+        };
+        
+        mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
 
-        debugLog('[Camera] ✅ Got media stream! ID: ' + mediaStream.id);
-        debugLog('[Camera] Video tracks: ' + mediaStream.getVideoTracks().length);
-        debugLog('[Camera] Audio tracks: ' + mediaStream.getAudioTracks().length);
+        console.log('[Camera] ✅ Got media stream!');
+        console.log('[Camera] Video tracks:', mediaStream.getVideoTracks().length);
+        console.log('[Camera] Audio tracks:', mediaStream.getAudioTracks().length);
 
         // Attach to video element
         videoPreview.srcObject = mediaStream;
-        
-        // Set video properties
         videoPreview.muted = true;
         videoPreview.playsInline = true;
         
         // Wait for video to be ready
         videoPreview.onloadedmetadata = function() {
-          debugLog('[Camera] Video metadata loaded: ' + videoPreview.videoWidth + 'x' + videoPreview.videoHeight);
+          console.log('[Camera] Video metadata loaded:', videoPreview.videoWidth + 'x' + videoPreview.videoHeight);
           
           videoPreview.play().then(function() {
-            debugLog('[Camera] ✅ Video playing successfully!');
+            console.log('[Camera] ✅ Video playing successfully!');
             if (loadingOverlay) loadingOverlay.classList.add('hidden');
-            enableRecordButton();
+            enableRecordButton(true);
             showStatus('Camera ready!', 'success');
-            // Hide debug panel once camera works
             hideDebugPanel();
-          }).catch(function(playErr) {
-            debugLog('[Camera] ❌ Play error: ' + playErr.message);
-            showStatus('Video play error: ' + playErr.message, 'error');
+          }).catch(function(err) {
+            console.log('[Camera] Video play warning:', err.message);
+            if (loadingOverlay) loadingOverlay.classList.add('hidden');
+            enableRecordButton(true);
+            hideDebugPanel();
           });
-        };
-        
-        // Handle errors
-        videoPreview.onerror = function(e) {
-          debugLog('[Camera] ❌ Video element error');
-          showStatus('Video element error', 'error');
-        };
-
-        // Handle video playing
-        videoPreview.onplaying = function() {
-          debugLog('[Camera] Video is now playing');
         };
 
       } catch (err) {
-        debugLog('[Camera] ❌ getUserMedia error: ' + err.name + ' - ' + err.message);
+        console.log('[Camera] Camera error:', err.name, '-', err.message);
         
-        var errorMessage = 'Camera error: ' + err.message;
-        
+        var msg = 'Camera unavailable';
         if (err.name === 'NotAllowedError') {
-          errorMessage = 'Camera access denied. Please allow camera permission and refresh.';
+          msg = 'Camera permission denied';
         } else if (err.name === 'NotFoundError') {
-          errorMessage = 'No camera found. Please connect a camera.';
+          msg = 'No camera found';
         } else if (err.name === 'NotReadableError') {
-          errorMessage = 'Camera is in use by another application.';
-        } else if (err.name === 'SecurityError') {
-          errorMessage = 'Camera blocked due to security restrictions.';
+          msg = 'Camera in use by another app';
         }
         
-        debugLog('[Camera] Error message: ' + errorMessage);
+        if (loadingText) loadingText.textContent = msg + ' - Audio recording available';
+        if (loadingOverlay) loadingOverlay.classList.add('hidden');
         
-        if (loadingText) {
-          loadingText.textContent = errorMessage + ' - You can still record audio!';
-        }
-        showStatus(errorMessage, 'error');
-        
-        // Even if camera fails, enable recording for audio-only scenarios
-        // User can still play voiceovers, TTS, and music
-        enableRecordButtonAudioOnly();
+        // Still enable recording for audio-only
+        enableRecordButton(false);
+        showStatus(msg + ' - You can still record audio!', 'success');
         hideDebugPanel();
       }
-    }
-
-    // Enable record button - with null checks
-    function enableRecordButton() {
-      if (!recordBtn || !recordBtnText) {
-        console.error('[Camera] Cannot enable record button - elements not found');
-        return;
-      }
-      recordBtn.disabled = false;
-      recordBtn.classList.remove('disabled');
-      recordBtn.classList.add('ready');
-      recordBtnText.textContent = 'Start Recording';
-      console.log('[Camera] Record button enabled');
-    }
-    
-    // Enable record button for audio-only mode (no camera needed)
-    function enableRecordButtonAudioOnly() {
-      if (!recordBtn || !recordBtnText) {
-        console.error('[Camera] Cannot enable record button - elements not found');
-        return;
-      }
-      recordBtn.disabled = false;
-      recordBtn.classList.remove('disabled');
-      recordBtn.classList.add('ready');
-      recordBtnText.textContent = 'Start Recording (Audio Only)';
-      console.log('[Camera] Record button enabled for audio-only mode');
     }
 
     // Start recording with countdown
     function startRecordingWithCountdown() {
       if (isRecording) return;
       
-      // Allow recording even without camera (audio-only mode)
-      var hasMedia = !!mediaStream;
-      console.log('[Recording] Starting with countdown... hasMediaStream:', hasMedia);
+      console.log('[Recording] Starting with countdown...');
       
-      // Use enhanced countdown if available
       if (typeof startCountdown === 'function') {
         startCountdown(function() {
           actuallyStartRecording();
         });
       } else {
-        // Fallback: start immediately
         actuallyStartRecording();
       }
     }
 
-    // Actually start recording (called after countdown)
+    // Actually start recording
     function actuallyStartRecording() {
-      // Reset enhanced state
-      if (typeof isStopped !== 'undefined') isStopped = false;
-      if (typeof isPaused !== 'undefined') isPaused = false;
+      console.log('[Recording] actuallyStartRecording called');
       
+      isStopped = false;
+      isPaused = false;
       recordedChunks = [];
-      if (typeof trimHistory !== 'undefined') trimHistory = [];
+      trimHistory = [];
       
-      // Check if we have media stream for video recording
-      var hasMediaStream = !!mediaStream;
+      isRecording = true;
+      recordingStartTime = Date.now();
       
-      // If no media stream, just start audio playback (audio-only mode)
-      if (!hasMediaStream) {
-        console.log('[Recording] Audio-only mode - no video capture');
-        isRecording = true;
-        recordingStartTime = Date.now();
-        
-        // Update UI
-        if (recordBtn) {
-          recordBtn.classList.remove('ready');
-          recordBtn.classList.add('recording');
-        }
-        if (recordBtnText) {
-          recordBtnText.textContent = 'Stop Recording';
-        }
-        if (recordingIndicator) {
-          recordingIndicator.classList.add('visible');
-        }
-        
-        // Start timer
-        recordingTimer = setInterval(function() {
-          const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
-          if (recordingTimeEl) {
-            recordingTimeEl.textContent = formatTime(elapsed);
-          }
-        }, 1000);
-        
-        // Trigger audio playback
-        if (typeof startAudioPlayback === 'function') {
-          startAudioPlayback();
-        }
-        
-        showStatus('Audio-only recording started', 'success');
-        return;
+      // Update UI
+      if (recordBtn) {
+        recordBtn.classList.remove('ready');
+        recordBtn.classList.add('recording');
       }
-
-      // Video recording mode - we have media stream
-      try {
-        const options = { mimeType: 'video/webm;codecs=vp9,opus' };
-        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-          options.mimeType = 'video/webm';
+      if (recordBtnText) {
+        recordBtnText.textContent = 'Stop Recording';
+      }
+      if (recordingIndicator) {
+        recordingIndicator.classList.add('visible');
+      }
+      
+      // Start timer
+      recordingTimer = setInterval(function() {
+        if (isPaused) return;
+        var elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+        if (recordingTimeEl) {
+          recordingTimeEl.textContent = formatTime(elapsed);
         }
-        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-          options.mimeType = '';
-        }
+      }, 1000);
+      
+      // Start audio playback (voiceover, TTS, music)
+      console.log('[Recording] Triggering audio playback...');
+      if (typeof startAudioPlayback === 'function') {
+        startAudioPlayback();
+      } else {
+        console.warn('[Recording] startAudioPlayback function not found');
+      }
+      
+      // Start video recording if we have a stream
+      if (mediaStream) {
+        try {
+          var options = { mimeType: 'video/webm;codecs=vp9,opus' };
+          if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            options.mimeType = 'video/webm';
+          }
+          if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            options.mimeType = '';
+          }
 
-        mediaRecorder = new MediaRecorder(mediaStream, options);
+          mediaRecorder = new MediaRecorder(mediaStream, options);
 
-        mediaRecorder.ondataavailable = function(event) {
-          if (event.data && event.data.size > 0) {
-            // Check isStopped flag from enhanced module
-            if (typeof isStopped === 'undefined' || !isStopped) {
+          mediaRecorder.ondataavailable = function(event) {
+            if (event.data && event.data.size > 0 && !isStopped) {
               recordedChunks.push(event.data);
               console.log('[Recording] Chunk received:', event.data.size, 'bytes');
             }
-          }
-        };
+          };
 
-        mediaRecorder.onstop = function() {
-          console.log('[Recording] Stopped, processing...');
-          // Only process if not stopped via enhanced stop
-          if (typeof isStopped === 'undefined' || !isStopped) {
-            processRecording();
-          }
-        };
+          mediaRecorder.onstop = function() {
+            console.log('[Recording] MediaRecorder stopped');
+            if (!isStopped) {
+              processRecording();
+            }
+          };
 
-        mediaRecorder.onerror = function(event) {
-          console.error('[Recording] Error:', event.error);
-          showStatus('Recording error: ' + event.error.message, 'error');
-          stopRecording();
-        };
+          mediaRecorder.onerror = function(event) {
+            console.error('[Recording] Error:', event.error);
+            showStatus('Recording error: ' + event.error?.message, 'error');
+            stopRecording();
+          };
 
-        mediaRecorder.start(1000); // Capture in 1-second chunks
-        isRecording = true;
-        recordingStartTime = Date.now();
-
-        // Update UI - with null checks
-        if (recordBtn) {
-          recordBtn.classList.remove('ready');
-          recordBtn.classList.add('recording');
-        }
-        if (recordBtnText) {
-          recordBtnText.textContent = 'Stop Recording';
-        }
-        if (recordingIndicator) {
-          recordingIndicator.classList.add('visible');
-        }
-
-        // Start timer (respects pause state)
-        let pausedTime = 0;
-        let lastPauseStart = null;
-        
-        recordingTimer = setInterval(function() {
-          if (typeof isPaused !== 'undefined' && isPaused) {
-            if (!lastPauseStart) lastPauseStart = Date.now();
-            return;
-          }
+          mediaRecorder.start(1000);
+          console.log('[Recording] ✅ Video recording started');
+          showStatus('Recording started!', 'success');
           
-          if (lastPauseStart) {
-            pausedTime += Date.now() - lastPauseStart;
-            lastPauseStart = null;
-          }
-          
-          const elapsed = Math.floor((Date.now() - recordingStartTime - pausedTime) / 1000);
-          if (recordingTimeEl) {
-            recordingTimeEl.textContent = formatTime(elapsed);
-          }
-        }, 1000);
-
-        // Trigger audio playback and show recording UI
-        if (typeof startAudioPlayback === 'function') {
-          startAudioPlayback();
+        } catch (err) {
+          console.error('[Recording] MediaRecorder error:', err);
+          showStatus('Video recording failed - audio only', 'error');
         }
-
-        console.log('[Recording] Started successfully');
-
-      } catch (err) {
-        console.error('[Recording] Start error:', err);
-        showStatus('Failed to start recording: ' + err.message, 'error');
+      } else {
+        console.log('[Recording] Audio-only mode (no camera stream)');
+        showStatus('Audio playback started!', 'success');
       }
     }
 
@@ -326,13 +247,11 @@ export function getCameraScript(): string {
 
       console.log('[Recording] Stopping...');
       
-      // Set stopped flag for enhanced module
-      if (typeof isStopped !== 'undefined') isStopped = true;
-      
+      isStopped = true;
       isRecording = false;
       clearInterval(recordingTimer);
       
-      // Update UI - with null checks
+      // Update UI
       if (recordBtn) {
         recordBtn.classList.remove('recording');
         recordBtn.classList.add('ready');
@@ -344,75 +263,61 @@ export function getCameraScript(): string {
         recordingIndicator.classList.remove('visible');
       }
 
-      // Stop any audio playback
+      // Stop audio
       if (typeof stopAudioPlayback === 'function') {
         stopAudioPlayback();
       }
-      
-      // Use enhanced stop if available
       if (typeof stopAllAudio === 'function') {
         stopAllAudio();
       }
 
-      // Stop MediaRecorder (only if it exists - won't exist in audio-only mode)
+      // Stop MediaRecorder
       if (mediaRecorder && mediaRecorder.state !== 'inactive') {
         mediaRecorder.stop();
       } else {
-        console.log('[Recording] Audio-only mode - no media to process');
-        showStatus('Audio playback stopped', 'success');
+        console.log('[Recording] No video to process (audio-only)');
+        showStatus('Recording stopped', 'success');
       }
     }
 
-    // Process and save/download recording
+    // Process and save recording
     async function processRecording() {
       if (recordedChunks.length === 0) {
-        showStatus('No recording data captured', 'error');
+        showStatus('No video data captured', 'error');
         return;
       }
 
       console.log('[Recording] Processing', recordedChunks.length, 'chunks');
 
       try {
-        const blob = new Blob(recordedChunks, { type: 'video/webm' });
-        const recordingName = 'recording-' + new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
-        
-        // Calculate duration
-        const duration = recordingStartTime ? Math.floor((Date.now() - recordingStartTime) / 1000) : 0;
-        
-        // Get metadata
-        const selectedScriptOption = document.getElementById('scriptSelect')?.options[document.getElementById('scriptSelect')?.selectedIndex];
-        const selectedVoiceover = document.getElementById('voiceoverSelect')?.value;
-        const selectedMusic = document.getElementById('musicSelect')?.value;
+        var blob = new Blob(recordedChunks, { type: 'video/webm' });
+        var recordingName = 'recording-' + new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
+        var duration = recordingStartTime ? Math.floor((Date.now() - recordingStartTime) / 1000) : 0;
         
         // Save to library if available
         if (typeof saveRecordingToLibrary === 'function') {
           await saveRecordingToLibrary(blob, {
             name: recordingName,
-            duration: duration,
-            scriptTitle: selectedScriptOption ? selectedScriptOption.text : null,
-            hasVoiceover: !!selectedVoiceover,
-            hasMusic: !!selectedMusic
+            duration: duration
           });
         }
         
-        // Also trigger download
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        // Download
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
         a.href = url;
         a.download = recordingName + '.webm';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-
-        // Clean up
         setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
 
-        showStatus('Recording saved! Check downloads and library.', 'success');
-        console.log('[Recording] Saved successfully');
+        showStatus('Recording saved!', 'success');
+        console.log('[Recording] ✅ Saved successfully');
 
       } catch (err) {
         console.error('[Recording] Process error:', err);
-        showStatus('Failed to save recording: ' + err.message, 'error');
+        showStatus('Failed to save: ' + err.message, 'error');
       }
     }
 
@@ -425,15 +330,13 @@ export function getCameraScript(): string {
       }
     }
 
-    // Record button click handler - with null check
+    // Attach record button event
     if (recordBtn) {
       recordBtn.addEventListener('click', toggleRecording);
-      console.log('[Camera] Record button event attached');
-    } else {
-      console.error('[Camera] Record button not found - cannot attach event');
+      console.log('[Camera] Record button click handler attached');
     }
 
-    // Close button handler - with null check
+    // Close button handler
     var closeBtn = document.getElementById('closeBtn');
     if (closeBtn) {
       closeBtn.addEventListener('click', function() {
@@ -442,7 +345,6 @@ export function getCameraScript(): string {
         }
         window.close();
       });
-      console.log('[Camera] Close button event attached');
     }
 
     // Cleanup on window close
@@ -452,10 +354,10 @@ export function getCameraScript(): string {
       }
     });
 
-    // Initialize camera immediately (DOM is already ready from wrapper)
-    console.log('[Camera] Initializing camera...');
+    // Initialize camera
+    console.log('[Camera] Initializing...');
     initCamera();
 
-    console.log('[Camera] Module loaded with Phase 2 integrations');
+    console.log('[Camera] ✅ Module loaded');
   `;
 }
