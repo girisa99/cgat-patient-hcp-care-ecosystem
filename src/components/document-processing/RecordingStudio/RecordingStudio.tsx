@@ -58,7 +58,7 @@ import {
   PictureInPicture,
   VideoEditorIntegration,
   ProductionInfo,
-  AudioPanel
+  AudioAssetSelector
 } from './components';
 import type { CameraSetupOptions } from './components';
 import type { RecordingStudioProps, LogoState, TeleprompterState, ScriptData, AudioTabType } from './types';
@@ -119,6 +119,7 @@ export function RecordingStudio({
   const [ttsAudioUrl, setTTSAudioUrl] = useState<string | null>(null);
   const [ttsProvider, setTTSProvider] = useState<'openai' | 'elevenlabs'>('openai');
   const [activeAudioTab, setActiveAudioTab] = useState<AudioTabType>('voiceover');
+  const [selectedTTSFileId, setSelectedTTSFileId] = useState('');
   // Script analysis/enhancement states - LIFTED from ScriptPanel to persist
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
@@ -1239,12 +1240,12 @@ export function RecordingStudio({
 
                 <Separator />
 
-                {/* Audio Panel - Voiceover, TTS, Music tabs */}
-                <AudioPanel
+                {/* Audio Asset Selector - Selection only, no generation */}
+                <AudioAssetSelector
                   activeTab={activeAudioTab}
                   onTabChange={setActiveAudioTab}
                   
-                  // Voiceover
+                  // Voiceover - select and play existing files
                   voiceovers={voiceovers}
                   selectedVoiceoverId={selectedVoiceoverId}
                   onVoiceoverChange={setSelectedVoiceoverId}
@@ -1258,7 +1259,7 @@ export function RecordingStudio({
                   voiceoverVolume={audioPlayback.voiceoverVolume}
                   onVoiceoverVolumeChange={audioPlayback.setVoiceoverVolume}
                   
-                  // Music
+                  // Music - select and play existing files
                   musicList={music}
                   selectedMusicId={selectedMusicId}
                   onMusicChange={setSelectedMusicId}
@@ -1274,40 +1275,22 @@ export function RecordingStudio({
                   musicLoop={audioPlayback.musicLoop}
                   onToggleMusicLoop={audioPlayback.toggleMusicLoop}
                   
-                  // TTS
-                  ttsText={ttsText}
-                  onTTSTextChange={setTTSText}
-                  selectedVoice={selectedVoice}
-                  onVoiceChange={setSelectedVoice}
-                  onGenerateTTS={handleGenerateTTS}
+                  // TTS - select and play existing TTS files from GenieStudio
+                  ttsFiles={voiceovers} // Pass all voiceovers, component will filter TTS files
+                  selectedTTSFileId={selectedTTSFileId}
+                  onTTSFileChange={setSelectedTTSFileId}
                   onPlayTTS={() => {
-                    const url = ttsAudioUrl || ttsGeneration.lastResult?.audioUrl;
-                    if (url) {
-                      audioPlayback.playTTS(url);
+                    const ttsFile = voiceovers.find(v => v.id === selectedTTSFileId);
+                    if (ttsFile?.url) {
+                      audioPlayback.playTTS(ttsFile.url);
                     } else {
-                      toast.error('No TTS audio available. Generate TTS first.');
+                      toast.error('Select a TTS file first');
                     }
                   }}
                   onStopTTS={audioPlayback.stopTTS}
                   isTTSPlaying={audioPlayback.isPlaying.tts}
-                  isTTSGenerating={isTTSGenerating}
-                  hasTTSAudio={hasTTSAudio || !!ttsGeneration.lastResult?.audioUrl}
                   ttsVolume={audioPlayback.ttsVolume}
                   onTTSVolumeChange={audioPlayback.setTTSVolume}
-                  
-                  // TTS Download & Provider
-                  ttsAudioUrl={ttsAudioUrl}
-                  ttsProvider={ttsProvider}
-                  onTTSProviderChange={setTTSProvider}
-                  
-                  // Script content for TTS
-                  currentScriptContent={currentScript?.content}
-                  cleanScriptContent={cleanEnhancedScript || currentScript?.cleanContent}
-                  
-                  // Upload callbacks
-                  onUploadVoiceover={onUploadVoiceover}
-                  onUploadMusic={onUploadMusic}
-                  isUploading={isUploading}
                 />
 
                 <Separator />
