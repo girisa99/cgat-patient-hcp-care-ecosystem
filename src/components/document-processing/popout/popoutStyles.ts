@@ -166,6 +166,9 @@ export function getPopoutStyles(): string {
       border-radius: 8px;
       overflow: hidden;
       display: none;
+      z-index: 50;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(4px);
     }
 
     .logo-overlay.visible {
@@ -1493,6 +1496,188 @@ export function getPopoutStyles(): string {
 
     .trim-btn:hover {
       background: rgba(239, 68, 68, 0.3);
+    }
+
+    /* Tip Banner */
+    .tip-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(99, 102, 241, 0.1));
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      padding: 12px;
+      border-radius: 8px;
+    }
+
+    .tip-icon {
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .tip-text {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      line-height: 1.4;
+    }
+
+    .tip-text strong {
+      color: #60a5fa;
+    }
+
+    /* Script Version Toggle */
+    .script-version-toggle {
+      display: flex;
+      gap: 4px;
+      margin-top: 8px;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 4px;
+      border-radius: 8px;
+    }
+
+    .version-btn {
+      flex: 1;
+      padding: 6px 8px;
+      font-size: 0.7rem;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      color: #94a3b8;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .version-btn:hover:not(:disabled) {
+      background: rgba(139, 92, 246, 0.2);
+      color: #a78bfa;
+    }
+
+    .version-btn.active {
+      background: rgba(139, 92, 246, 0.3);
+      color: #a78bfa;
+      font-weight: 500;
+    }
+
+    .version-btn:disabled {
+      cursor: not-allowed;
+    }
+
+    /* Studio Sound Panel Toggle */
+    .studio-sound-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .studio-sound-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      background: rgba(100, 116, 139, 0.3);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .toggle-switch.on {
+      background: rgba(34, 197, 94, 0.4);
+    }
+
+    .toggle-switch-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: #fff;
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+
+    .toggle-switch.on .toggle-switch-thumb {
+      left: 22px;
+    }
+
+    .toggle-label {
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+
+    .toggle-label.on {
+      color: #4ade80;
+    }
+
+    /* Studio Sound Card */
+    .studio-sound-card {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05));
+      border: 1px solid rgba(99, 102, 241, 0.2);
+    }
+
+    .audio-preset-section {
+      margin-bottom: 12px;
+    }
+
+    .preset-label {
+      display: block;
+      font-size: 0.7rem;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+
+    .audio-effects-toggles {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .effect-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 8px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 6px;
+    }
+
+    .effect-toggle label {
+      font-size: 0.7rem;
+      color: #94a3b8;
+    }
+
+    .mini-toggle {
+      width: 32px;
+      height: 18px;
+      background: rgba(100, 116, 139, 0.3);
+      border-radius: 9px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s;
+    }
+
+    .mini-toggle::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 14px;
+      height: 14px;
+      background: #fff;
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+
+    .mini-toggle.on {
+      background: rgba(34, 197, 94, 0.5);
+    }
+
+    .mini-toggle.on::after {
+      left: 16px;
     }
   `;
 }

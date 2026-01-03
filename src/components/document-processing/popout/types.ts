@@ -6,6 +6,9 @@ export interface PopoutScriptData {
   id: string;
   title: string;
   content: string;
+  originalContent?: string;
+  enhancedContent?: string;
+  cleanContent?: string; // Clean version for TTS (no pause markers)
 }
 
 export interface PopoutVoiceoverData {

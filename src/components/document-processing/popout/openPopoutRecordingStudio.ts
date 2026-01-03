@@ -73,11 +73,14 @@ export function openPopoutRecordingStudio(options: OpenPopoutOptions): Window | 
       allAudio: audioFiles.length
     });
 
-    // Prepare data for the pop-out
+    // Prepare data for the pop-out with version info
     const scriptsData: PopoutScriptData[] = availableScripts.map(s => ({
       id: s.id,
       title: s.title,
-      content: s.content
+      content: s.content,
+      originalContent: (s as any).originalContent || s.content,
+      enhancedContent: (s as any).enhancedContent,
+      cleanContent: (s as any).cleanContent
     }));
 
     const voiceoversData: PopoutVoiceoverData[] = voiceoverFiles.map(a => ({
