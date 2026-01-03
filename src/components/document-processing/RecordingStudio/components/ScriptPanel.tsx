@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Minus, Plus, FileText, Sparkles, Search, Check, X, Download, 
-  ChevronDown, ChevronUp, RotateCcw, Copy, Edit2, Save, Eye, List
+  ChevronDown, ChevronUp, RotateCcw, Copy, Edit2, Save, Eye, List, RefreshCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -704,22 +704,36 @@ export function ScriptPanel({
 
           {/* Analysis Results - Scrollable */}
           {showAnalysis && analysisResult.length > 0 && (
-            <div className="space-y-2 border rounded-md p-2 bg-blue-500/5 max-h-[280px] overflow-hidden flex flex-col">
-              <div className="flex items-center justify-between shrink-0">
+            <div className="flex flex-col border rounded-md p-2 bg-blue-500/5 max-h-[320px]">
+              <div className="flex items-center justify-between shrink-0 mb-2">
                 <span className="text-xs font-medium text-blue-600">
                   📊 Analysis: {pendingRecs} pending review
                 </span>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-5 w-5"
-                  onClick={() => setShowAnalysis(false)}
-                >
-                  <X className="w-3 h-3" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  {/* Re-analyze button */}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-5 px-2 text-[10px] gap-1"
+                    onClick={handleAnalyze}
+                    disabled={isAnalyzing}
+                    title="Get fresh analysis"
+                  >
+                    <RefreshCw className={cn("w-3 h-3", isAnalyzing && "animate-spin")} />
+                    {isAnalyzing ? 'Analyzing...' : 'Re-analyze'}
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-5 w-5"
+                    onClick={() => setShowAnalysis(false)}
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                </div>
               </div>
               
-              <div className="flex-1 overflow-y-auto min-h-0 pr-1">
+              <div className="flex-1 min-h-0 overflow-y-auto pr-1">
                 <div className="space-y-1.5">
                   {analysisResult.map((rec) => (
                     <div 
@@ -781,9 +795,9 @@ export function ScriptPanel({
 
           {/* Enhancement Changes Review */}
           {showChanges && enhancementChanges.length > 0 && (
-            <div className="space-y-2 border rounded-md p-3 bg-primary/5">
+            <div className="flex flex-col border rounded-md p-3 bg-primary/5 max-h-[500px]">
               {/* Header with view toggle */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between shrink-0 mb-2">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-primary" />
                   <span className="text-sm font-medium text-primary">
@@ -794,6 +808,18 @@ export function ScriptPanel({
                   </Badge>
                 </div>
                 <div className="flex items-center gap-1">
+                  {/* Re-enhance button for alternative suggestions */}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-6 px-2 text-[10px] gap-1"
+                    onClick={handleEnhance}
+                    disabled={isEnhancing}
+                    title="Get alternative AI suggestions"
+                  >
+                    <RefreshCw className={cn("w-3 h-3", isEnhancing && "animate-spin")} />
+                    {isEnhancing ? 'Re-enhancing...' : 'Re-enhance'}
+                  </Button>
                   {/* View mode toggle */}
                   <Tabs value={changesViewMode} onValueChange={(v) => setChangesViewMode(v as 'inline' | 'list')}>
                     <TabsList className="h-7">
@@ -833,23 +859,25 @@ export function ScriptPanel({
                 </div>
               </div>
               
-              {/* Inline View - Show changes in context */}
-              {changesViewMode === 'inline' && selectedScript && (
-                <InlineScriptDiff
-                  originalScript={selectedScript.content}
-                  changes={enhancementChanges.map(c => ({
-                    ...c,
-                    type: c.type as ScriptChange['type']
-                  }))}
-                  onAcceptChange={handleAcceptChange}
-                  onRejectChange={handleRejectChange}
-                />
-              )}
+              {/* Scrollable content area */}
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                {/* Inline View - Show changes in context */}
+                {changesViewMode === 'inline' && selectedScript && (
+                  <InlineScriptDiff
+                    originalScript={selectedScript.content}
+                    changes={enhancementChanges.map(c => ({
+                      ...c,
+                      type: c.type as ScriptChange['type']
+                    }))}
+                    onAcceptChange={handleAcceptChange}
+                    onRejectChange={handleRejectChange}
+                    className="h-full"
+                  />
+                )}
               
-              {/* List View - Original separate list */}
-              {changesViewMode === 'list' && (
-                <div className="max-h-[350px] overflow-y-auto pr-1">
-                  <div className="space-y-2">
+                {/* List View - Original separate list */}
+                {changesViewMode === 'list' && (
+                  <div className="space-y-2 pr-1">
                     {enhancementChanges.map((change) => (
                       <div 
                         key={change.id} 
@@ -929,8 +957,8 @@ export function ScriptPanel({
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
+                )}
+              </div>
 
               {/* Action buttons */}
               <div className="flex gap-1 pt-2 border-t border-primary/20">
