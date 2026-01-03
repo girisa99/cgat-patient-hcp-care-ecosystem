@@ -46,7 +46,7 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { useTTSGeneration, OPENAI_VOICES, ELEVENLABS_VOICES } from '@/components/document-processing/RecordingStudio/hooks/useTTSGeneration';
+import { useTTSGeneration, OPENAI_VOICES, ELEVENLABS_VOICES, GOOGLE_VOICES } from '@/components/document-processing/RecordingStudio/hooks/useTTSGeneration';
 
 // Types
 export interface SavedScript {
@@ -182,8 +182,9 @@ export function ScriptEditorTab({
   
   // TTS State
   const [showTTSOptions, setShowTTSOptions] = useState(false);
-  const [ttsProvider, setTtsProvider] = useState<'openai' | 'elevenlabs'>('elevenlabs');
+  const [ttsProvider, setTtsProvider] = useState<'openai' | 'elevenlabs' | 'google'>('elevenlabs');
   const [ttsVoice, setTtsVoice] = useState('');
+  const [selectedTTSScriptId, setSelectedTTSScriptId] = useState<string | null>(null);
   
   // AI Provider State for Script Analysis/Enhancement
   const [aiProvider, setAiProvider] = useState<'gemini' | 'openai' | 'claude'>('gemini');
@@ -311,6 +312,8 @@ export function ScriptEditorTab({
   useEffect(() => {
     if (ttsProvider === 'openai') {
       setTtsVoice(OPENAI_VOICES[0]?.value || 'alloy');
+    } else if (ttsProvider === 'google') {
+      setTtsVoice(GOOGLE_VOICES[0]?.value || 'en-US-Neural2-D');
     } else {
       setTtsVoice(ELEVENLABS_VOICES[0]?.value || 'aria');
     }
@@ -1025,18 +1028,148 @@ export function ScriptEditorTab({
                   TTS Generation Options
                 </h3>
               </div>
+              
+              {/* Script Selection for TTS */}
+              <div className="mb-4 p-3 rounded-lg bg-muted/50 border border-border/50">
+                <Label className="text-xs font-medium mb-2 block">Select Script for TTS</Label>
+                <Select 
+                  value={selectedTTSScriptId || selectedScriptId || ''} 
+                  onValueChange={(v) => {
+                    setSelectedTTSScriptId(v);
+                    const script = savedScripts.find(s => s.id === v);
+                    if (script) {
+                      setScriptContent(script.content);
+                      setScriptName(script.name);
+                      setOriginalContent(script.content);
+                      if (script.enhancedContent) {
+                        setEnhancedContent(script.enhancedContent);
+                        setCleanTTSContent(script.cleanContent || null);
+                        setActiveVersion('enhanced');
+                      } else {
+                        setEnhancedContent(null);
+                        setActiveVersion('original');
+                      }
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Choose a script..." />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    {savedScripts.length === 0 ? (
+                      <div className="p-4 text-center text-sm text-muted-foreground">
+                        No scripts saved yet. Create one above!
+                      </div>
+                    ) : (
+                      <>
+                        {/* Video Scripts */}
+                        {videoScripts.length > 0 && (
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                            Video Scripts
+                          </div>
+                        )}
+                        {videoScripts.map(script => (
+                          <SelectItem key={script.id} value={script.id}>
+                            <div className="flex items-center gap-2 w-full">
+                              <Video className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                              <span className="truncate">{script.name}</span>
+                              <div className="flex items-center gap-1 ml-auto shrink-0">
+                                {script.enhancedContent && (
+                                  <Badge variant="outline" className="text-[10px] h-4 px-1 bg-purple-500/10 text-purple-600 border-purple-500/30">
+                                    Enhanced
+                                  </Badge>
+                                )}
+                                {script.hasVoiceover && (
+                                  <Badge variant="outline" className="text-[10px] h-4 px-1 bg-green-500/10 text-green-600 border-green-500/30">
+                                    <Volume2 className="h-2.5 w-2.5" />
+                                  </Badge>
+                                )}
+                                <span className="text-[10px] text-muted-foreground">
+                                  {script.stats?.wordCount || script.content.split(/\s+/).length}w
+                                </span>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                        {/* Audio Scripts */}
+                        {audioScripts.length > 0 && (
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50 mt-1">
+                            Audio Scripts
+                          </div>
+                        )}
+                        {audioScripts.map(script => (
+                          <SelectItem key={script.id} value={script.id}>
+                            <div className="flex items-center gap-2 w-full">
+                              <Mic className="h-3.5 w-3.5 text-purple-500 shrink-0" />
+                              <span className="truncate">{script.name}</span>
+                              <div className="flex items-center gap-1 ml-auto shrink-0">
+                                {script.enhancedContent && (
+                                  <Badge variant="outline" className="text-[10px] h-4 px-1 bg-purple-500/10 text-purple-600 border-purple-500/30">
+                                    Enhanced
+                                  </Badge>
+                                )}
+                                {script.hasVoiceover && (
+                                  <Badge variant="outline" className="text-[10px] h-4 px-1 bg-green-500/10 text-green-600 border-green-500/30">
+                                    <Volume2 className="h-2.5 w-2.5" />
+                                  </Badge>
+                                )}
+                                <span className="text-[10px] text-muted-foreground">
+                                  {script.stats?.wordCount || script.content.split(/\s+/).length}w
+                                </span>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
+                  </SelectContent>
+                </Select>
+                {(selectedTTSScriptId || selectedScriptId) && (
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    {(() => {
+                      const script = savedScripts.find(s => s.id === (selectedTTSScriptId || selectedScriptId));
+                      if (!script) return null;
+                      const wordCount = script.stats?.wordCount || script.content.split(/\s+/).length;
+                      const speakingMin = Math.ceil(wordCount / 130);
+                      return `${wordCount} words • ~${speakingMin} min speaking time${script.enhancedContent ? ' • Enhanced version available' : ''}`;
+                    })()}
+                  </p>
+                )}
+              </div>
+              
               <div className="grid md:grid-cols-3 gap-4 mb-4">
                 <div>
                   <Label>Provider</Label>
-                  <Select value={ttsProvider} onValueChange={(v: 'openai' | 'elevenlabs') => setTtsProvider(v)}>
+                  <Select value={ttsProvider} onValueChange={(v: 'openai' | 'elevenlabs' | 'google') => setTtsProvider(v)}>
                     <SelectTrigger className="mt-1">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="elevenlabs">ElevenLabs (Premium)</SelectItem>
-                      <SelectItem value="openai">OpenAI (Standard)</SelectItem>
+                      <SelectItem value="elevenlabs">
+                        <div className="flex items-center gap-2">
+                          <div className="h-3 w-3 rounded bg-gradient-to-br from-purple-500 to-pink-500" />
+                          ElevenLabs (Premium)
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="openai">
+                        <div className="flex items-center gap-2">
+                          <div className="h-3 w-3 rounded bg-gradient-to-br from-green-600 to-teal-500" />
+                          OpenAI (Standard)
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="google">
+                        <div className="flex items-center gap-2">
+                          <div className="h-3 w-3 rounded bg-gradient-to-br from-blue-500 to-green-500" />
+                          Google Cloud (Neural)
+                        </div>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    {ttsProvider === 'elevenlabs' && 'Best quality, expressive voices'}
+                    {ttsProvider === 'openai' && 'Fast, natural-sounding'}
+                    {ttsProvider === 'google' && 'Multi-language, neural voices'}
+                  </p>
                 </div>
                 <div>
                   <Label>Voice</Label>
@@ -1044,9 +1177,19 @@ export function ScriptEditorTab({
                     <SelectTrigger className="mt-1">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      {(ttsProvider === 'openai' ? OPENAI_VOICES : ELEVENLABS_VOICES).map(voice => (
-                        <SelectItem key={voice.value} value={voice.value}>{voice.label}</SelectItem>
+                    <SelectContent className="max-h-[250px]">
+                      {(ttsProvider === 'openai' 
+                        ? OPENAI_VOICES 
+                        : ttsProvider === 'google' 
+                          ? GOOGLE_VOICES 
+                          : ELEVENLABS_VOICES
+                      ).map(voice => (
+                        <SelectItem key={voice.value} value={voice.value}>
+                          <div className="flex items-center justify-between gap-3">
+                            <span>{voice.label}</span>
+                            <span className="text-[10px] text-muted-foreground">{voice.description}</span>
+                          </div>
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -1074,24 +1217,31 @@ export function ScriptEditorTab({
               
               {/* Version Selection for TTS */}
               {enhancedContent && (
-                <div className="mb-4">
-                  <Label className="text-xs text-muted-foreground mb-2 block">Generate TTS from:</Label>
+                <div className="mb-4 p-3 rounded-lg bg-purple-500/5 border border-purple-500/20">
+                  <Label className="text-xs font-medium mb-2 block">Generate TTS from:</Label>
                   <div className="flex gap-2">
                     <Button 
                       variant={activeVersion === 'original' ? 'default' : 'outline'} 
                       size="sm"
                       onClick={() => setActiveVersion('original')}
+                      className={activeVersion === 'original' ? '' : 'border-border/50'}
                     >
+                      <FileText className="h-3.5 w-3.5 mr-1.5" />
                       Original ({originalStats?.wordCount || stats.wordCount} words)
                     </Button>
                     <Button 
                       variant={activeVersion === 'enhanced' ? 'default' : 'outline'} 
                       size="sm"
                       onClick={() => setActiveVersion('enhanced')}
+                      className={activeVersion === 'enhanced' ? 'bg-purple-600 hover:bg-purple-700' : 'border-purple-500/30 text-purple-600'}
                     >
+                      <Wand2 className="h-3.5 w-3.5 mr-1.5" />
                       Enhanced ({enhancedStats?.wordCount || 0} words)
                     </Button>
                   </div>
+                  <p className="text-[10px] text-muted-foreground mt-2">
+                    Enhanced version includes improved pacing and natural pauses for better voiceover delivery
+                  </p>
                 </div>
               )}
               

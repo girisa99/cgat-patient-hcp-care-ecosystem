@@ -1,17 +1,18 @@
 /**
- * TTS Generation Hook - Real integration with ElevenLabs and OpenAI
+ * TTS Generation Hook - Real integration with ElevenLabs, OpenAI, and Google Cloud TTS
  */
 
 import { useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 
 export interface TTSOptions {
-  provider: 'openai' | 'elevenlabs';
+  provider: 'openai' | 'elevenlabs' | 'google';
   voice: string;
   text: string;
   speed?: number;
   stability?: number;
   similarityBoost?: number;
+  pitch?: number;
 }
 
 export interface TTSResult {
@@ -20,6 +21,7 @@ export interface TTSResult {
   duration: number;
   provider: string;
   voice: string;
+  voiceName?: string;
   charactersProcessed: number;
   estimatedCost: number;
 }
@@ -44,6 +46,26 @@ export const ELEVENLABS_VOICES = [
   { value: 'pFZP5JQG7iQjIQuC4Bku', label: 'Lily', description: 'Female, British' },
   { value: 'nPczCjzI2devNBz1zQrb', label: 'Brian', description: 'Male, narrator' },
   { value: 'cgSgspJ2msm6clMCkdW9', label: 'Jessica', description: 'Female, professional' },
+];
+
+export const GOOGLE_VOICES = [
+  // US English - Neural2
+  { value: 'en-US-Neural2-A', label: 'Adam (US)', description: 'Male, American' },
+  { value: 'en-US-Neural2-C', label: 'Claire (US)', description: 'Female, American' },
+  { value: 'en-US-Neural2-D', label: 'David (US)', description: 'Male, American' },
+  { value: 'en-US-Neural2-E', label: 'Emma (US)', description: 'Female, American' },
+  { value: 'en-US-Neural2-F', label: 'Fiona (US)', description: 'Female, American' },
+  { value: 'en-US-Neural2-G', label: 'Grace (US)', description: 'Female, American' },
+  { value: 'en-US-Neural2-I', label: 'Ian (US)', description: 'Male, American' },
+  { value: 'en-US-Neural2-J', label: 'James (US)', description: 'Male, American' },
+  // UK English
+  { value: 'en-GB-Neural2-A', label: 'Alice (UK)', description: 'Female, British' },
+  { value: 'en-GB-Neural2-B', label: 'Benjamin (UK)', description: 'Male, British' },
+  { value: 'en-GB-Neural2-C', label: 'Charlotte (UK)', description: 'Female, British' },
+  { value: 'en-GB-Neural2-D', label: 'Daniel (UK)', description: 'Male, British' },
+  // Studio (Premium)
+  { value: 'en-US-Studio-M', label: 'Studio Male', description: 'Premium, Male' },
+  { value: 'en-US-Studio-O', label: 'Studio Female', description: 'Premium, Female' },
 ];
 
 export function useTTSGeneration() {
@@ -183,6 +205,50 @@ export function useTTSGeneration() {
     };
   }, []);
 
+  // Generate TTS with Google Cloud
+  const generateGoogle = useCallback(async (options: TTSOptions): Promise<TTSResult> => {
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-tts`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          text: options.text,
+          voice: options.voice,
+          speed: options.speed || 1.0,
+          pitch: options.pitch || 0,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Google TTS generation failed');
+    }
+
+    const data = await response.json();
+    
+    // Use data URI for proper decoding
+    const audioUrl = `data:audio/mpeg;base64,${data.audioContent}`;
+    const audioBlob = base64ToBlob(data.audioContent, 'audio/mpeg');
+    const duration = await getAudioDuration(audioUrl);
+
+    return {
+      audioUrl,
+      audioBlob,
+      duration,
+      provider: 'google',
+      voice: options.voice,
+      voiceName: data.voiceName,
+      charactersProcessed: options.text.length,
+      estimatedCost: (options.text.length / 1000000) * 4, // Google pricing ~$4 per 1M chars
+    };
+  }, []);
+
   // Main generate function
   const generate = useCallback(async (options: TTSOptions): Promise<TTSResult | null> => {
     if (!options.text?.trim()) {
@@ -193,12 +259,29 @@ export function useTTSGeneration() {
     setIsGenerating(true);
     setError(null);
 
-    try {
-      toast.info(`Generating TTS with ${options.provider === 'elevenlabs' ? 'ElevenLabs' : 'OpenAI'}...`);
+    const providerNames = {
+      elevenlabs: 'ElevenLabs',
+      openai: 'OpenAI',
+      google: 'Google Cloud',
+    };
 
-      const result = options.provider === 'elevenlabs'
-        ? await generateElevenLabs(options)
-        : await generateOpenAI(options);
+    try {
+      toast.info(`Generating TTS with ${providerNames[options.provider]}...`);
+
+      let result: TTSResult;
+      
+      switch (options.provider) {
+        case 'elevenlabs':
+          result = await generateElevenLabs(options);
+          break;
+        case 'google':
+          result = await generateGoogle(options);
+          break;
+        case 'openai':
+        default:
+          result = await generateOpenAI(options);
+          break;
+      }
 
       setLastResult(result);
       toast.success(`TTS generated! Duration: ${result.duration.toFixed(1)}s`);
@@ -212,7 +295,7 @@ export function useTTSGeneration() {
     } finally {
       setIsGenerating(false);
     }
-  }, [generateOpenAI, generateElevenLabs]);
+  }, [generateOpenAI, generateElevenLabs, generateGoogle]);
 
   // Play generated audio
   const play = useCallback(() => {
@@ -268,6 +351,7 @@ export function useTTSGeneration() {
     getAudioElement,
     openaiVoices: OPENAI_VOICES,
     elevenlabsVoices: ELEVENLABS_VOICES,
+    googleVoices: GOOGLE_VOICES,
   };
 }
 
