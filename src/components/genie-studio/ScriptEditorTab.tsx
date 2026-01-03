@@ -77,23 +77,46 @@ interface ScriptStats {
 
 interface AnalysisRecommendation {
   id: string;
-  type: 'pacing' | 'clarity' | 'engagement' | 'length' | 'readability' | 'pause' | 'break';
+  type: 'pacing' | 'clarity' | 'engagement' | 'length' | 'readability' | 'pause' | 'break' | 'section';
   severity: 'info' | 'warning' | 'suggestion';
   title: string;
   description: string;
   originalText?: string;
   suggestedText?: string;
+  location?: string;
   accepted: boolean | null;
+}
+
+interface PauseOpportunity {
+  afterText: string;
+  reason: string;
+}
+
+interface SectionBreak {
+  beforeText: string;
+  sectionTitle: string;
+}
+
+interface OverallAssessment {
+  strengths: string[];
+  weaknesses: string[];
+  voiceoverReadiness: 'ready' | 'needs_minor_edits' | 'needs_significant_work';
 }
 
 interface EnhancementChange {
   id: string;
-  type: 'modification' | 'addition' | 'removal' | 'formatting' | 'pause' | 'break';
+  type: 'modification' | 'addition' | 'removal' | 'formatting' | 'pause' | 'break' | 'pacing';
   original: string;
   enhanced: string;
   reason: string;
   accepted: boolean | null;
-  position?: number;
+  position?: string;
+}
+
+interface EnhancementMarkers {
+  pausesAdded: number;
+  sectionBreaksAdded: number;
+  sentencesRewritten: number;
 }
 
 interface ScriptEditorTabProps {
@@ -158,8 +181,14 @@ export function ScriptEditorTab({
   const [analysisResult, setAnalysisResult] = useState<{
     stats: ScriptStats;
     recommendations: AnalysisRecommendation[];
+    pauseOpportunities?: PauseOpportunity[];
+    sectionBreaks?: SectionBreak[];
+    overallAssessment?: OverallAssessment;
   } | null>(null);
   const [showAnalysis, setShowAnalysis] = useState(false);
+  
+  // Enhancement markers for summary
+  const [enhancementMarkers, setEnhancementMarkers] = useState<EnhancementMarkers | null>(null);
   
   // Enhancement State
   const [isEnhancing, setIsEnhancing] = useState(false);
@@ -437,27 +466,51 @@ export function ScriptEditorTab({
           body: { scriptContent, mode: 'analyze', provider: aiProvider }
         });
         
-        if (!error && data?.success && data.data?.recommendations) {
-          const aiRecs = (data.data.recommendations || []).map((rec: any, i: number) => ({
-            ...rec,
-            id: `ai-rec-${i}`,
-            accepted: null
-          }));
-          localRecommendations.push(...aiRecs);
-          updateStep('ai', 'complete', `Found ${aiRecs.length} ${providerNames[aiProvider]} suggestions`);
+        if (!error && data?.success && data.data) {
+          const aiData = data.data;
+          
+          // Add AI recommendations
+          if (aiData.recommendations) {
+            const aiRecs = (aiData.recommendations || []).map((rec: any, i: number) => ({
+              ...rec,
+              id: `ai-rec-${i}`,
+              accepted: null
+            }));
+            localRecommendations.push(...aiRecs);
+          }
+          
+          // Capture pause opportunities and section breaks
+          const pauseOpps = aiData.pauseOpportunities || [];
+          const sectionBrks = aiData.sectionBreaks || [];
+          const overallAssess = aiData.overallAssessment || null;
+          
+          updateStep('ai', 'complete', `Found ${localRecommendations.length} suggestions, ${pauseOpps.length} pause points`);
+          
+          // Set full analysis result with all data
+          setAnalysisResult({
+            stats: currentStats,
+            recommendations: localRecommendations,
+            pauseOpportunities: pauseOpps,
+            sectionBreaks: sectionBrks,
+            overallAssessment: overallAssess
+          });
         } else {
           updateStep('ai', 'complete', `✓ ${providerNames[aiProvider]} analysis complete`);
+          setAnalysisResult({
+            stats: currentStats,
+            recommendations: localRecommendations
+          });
         }
       } catch (err) {
         console.log('AI analysis skipped:', err);
         updateStep('ai', 'complete', '✓ Using local analysis');
+        setAnalysisResult({
+          stats: currentStats,
+          recommendations: localRecommendations
+        });
       }
       
-      // All done - show results
-      setAnalysisResult({
-        stats: currentStats,
-        recommendations: localRecommendations
-      });
+      // Show results
       setShowAnalysis(true);
       toast.success(`Analysis complete! Found ${localRecommendations.length} recommendations.`);
       
@@ -466,12 +519,9 @@ export function ScriptEditorTab({
       toast.error('Analysis failed. Please try again.');
     } finally {
       setIsAnalyzing(false);
-      // Keep progressive view visible for a moment, then user can dismiss
       setTimeout(() => {
-        if (localRecommendations.length > 0) {
-          setShowProgressiveAnalysis(false);
-        }
-      }, 2000);
+        setShowProgressiveAnalysis(false);
+      }, 1500);
     }
   };
   
@@ -493,21 +543,30 @@ export function ScriptEditorTab({
       
       if (data?.success && data.data) {
         const enhanced = data.data.enhancedScript || '';
-        const clean = data.data.cleanScript || enhanced.replace(/\.\.\./g, '. ').replace(/—/g, ', ');
+        const clean = data.data.cleanScript || enhanced.replace(/\.\.\./g, '. ').replace(/—/g, ', ').replace(/---/g, '');
         const changes = (data.data.changes || []).map((change: any, i: number) => ({
           ...change,
           id: `change-${i}`,
           accepted: null
         }));
         
+        // Capture markers for summary
+        const markers = data.data.markers || {
+          pausesAdded: 0,
+          sectionBreaksAdded: 0,
+          sentencesRewritten: 0
+        };
+        
         setOriginalContent(scriptContent);
         setEnhancedContent(enhanced);
         setCleanTTSContent(clean);
         setEnhancementChanges(changes);
+        setEnhancementMarkers(markers);
         setShowEnhancementReview(true);
         setReviewProgress(0);
         
-        toast.success(`${providerNames[aiProvider]} enhancement complete! ${changes.length} changes suggested.`);
+        const markerSummary = markers.pausesAdded > 0 ? ` (${markers.pausesAdded} pauses, ${markers.sectionBreaksAdded} breaks)` : '';
+        toast.success(`${providerNames[aiProvider]} enhancement complete! ${changes.length} changes suggested${markerSummary}`);
       }
     } catch (err) {
       console.error('Enhancement error:', err);
@@ -1384,12 +1443,122 @@ export function ScriptEditorTab({
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold flex items-center gap-2">
                   <Search className="h-5 w-5 text-blue-500" />
-                  Script Analysis
+                  Script Analysis Results
                 </h3>
                 <Button variant="ghost" size="sm" onClick={() => setShowAnalysis(false)}>
                   <X className="h-4 w-4" />
                 </Button>
               </div>
+              
+              {/* Overall Assessment - NEW */}
+              {analysisResult.overallAssessment && (
+                <div className="mb-4 p-3 rounded-lg bg-background border">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Badge 
+                      variant="outline" 
+                      className={cn(
+                        "text-xs px-2",
+                        analysisResult.overallAssessment.voiceoverReadiness === 'ready' && "border-green-500/50 text-green-600 bg-green-500/10",
+                        analysisResult.overallAssessment.voiceoverReadiness === 'needs_minor_edits' && "border-yellow-500/50 text-yellow-600 bg-yellow-500/10",
+                        analysisResult.overallAssessment.voiceoverReadiness === 'needs_significant_work' && "border-orange-500/50 text-orange-600 bg-orange-500/10"
+                      )}
+                    >
+                      {analysisResult.overallAssessment.voiceoverReadiness === 'ready' && '✓ Ready for Recording'}
+                      {analysisResult.overallAssessment.voiceoverReadiness === 'needs_minor_edits' && '⚠ Needs Minor Edits'}
+                      {analysisResult.overallAssessment.voiceoverReadiness === 'needs_significant_work' && '⚡ Needs Significant Work'}
+                    </Badge>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {analysisResult.overallAssessment.strengths?.length > 0 && (
+                      <div>
+                        <Label className="text-xs text-green-600 flex items-center gap-1 mb-1.5">
+                          <Check className="h-3 w-3" /> Strengths
+                        </Label>
+                        <ul className="space-y-1">
+                          {analysisResult.overallAssessment.strengths.map((s, i) => (
+                            <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                              <span className="text-green-500 shrink-0">•</span>{s}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {analysisResult.overallAssessment.weaknesses?.length > 0 && (
+                      <div>
+                        <Label className="text-xs text-orange-600 flex items-center gap-1 mb-1.5">
+                          <AlertTriangle className="h-3 w-3" /> Areas to Improve
+                        </Label>
+                        <ul className="space-y-1">
+                          {analysisResult.overallAssessment.weaknesses.map((w, i) => (
+                            <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                              <span className="text-orange-500 shrink-0">•</span>{w}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {/* Pause Opportunities - NEW */}
+              {analysisResult.pauseOpportunities && analysisResult.pauseOpportunities.length > 0 && (
+                <div className="mb-4">
+                  <Collapsible>
+                    <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:text-primary w-full justify-between p-2 rounded-lg hover:bg-muted/50">
+                      <span className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-blue-500" />
+                        Pause Opportunities ({analysisResult.pauseOpportunities.length})
+                      </span>
+                      <ChevronDown className="h-4 w-4" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-2">
+                      <div className="space-y-2 pl-6">
+                        {analysisResult.pauseOpportunities.map((pause, i) => (
+                          <div key={i} className="p-2 rounded border border-blue-500/20 bg-blue-500/5">
+                            <p className="text-xs font-medium text-foreground">
+                              After: "<span className="text-blue-600">{pause.afterText}</span>"
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">{pause.reason}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </div>
+              )}
+              
+              {/* Section Breaks - NEW */}
+              {analysisResult.sectionBreaks && analysisResult.sectionBreaks.length > 0 && (
+                <div className="mb-4">
+                  <Collapsible>
+                    <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:text-primary w-full justify-between p-2 rounded-lg hover:bg-muted/50">
+                      <span className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-purple-500" />
+                        Suggested Section Breaks ({analysisResult.sectionBreaks.length})
+                      </span>
+                      <ChevronDown className="h-4 w-4" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-2">
+                      <div className="space-y-2 pl-6">
+                        {analysisResult.sectionBreaks.map((section, i) => (
+                          <div key={i} className="p-2 rounded border border-purple-500/20 bg-purple-500/5">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge variant="outline" className="text-xs bg-purple-500/10 border-purple-500/30 text-purple-600">
+                                Section {i + 1}
+                              </Badge>
+                              <span className="text-xs font-medium text-foreground">{section.sectionTitle}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Starts at: "<span className="text-purple-600">{section.beforeText.slice(0, 60)}...</span>"
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </div>
+              )}
               
               {/* Recommendations */}
               {analysisResult.recommendations.length > 0 ? (
@@ -1412,7 +1581,7 @@ export function ScriptEditorTab({
                       </Button>
                     </div>
                   </div>
-                  <ScrollArea className="max-h-64">
+                  <ScrollArea className="max-h-72">
                     <div className="space-y-2 pr-4">
                       {analysisResult.recommendations.map(rec => (
                         <div 
@@ -1425,21 +1594,32 @@ export function ScriptEditorTab({
                           )}
                         >
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
                               <Badge variant="outline" className="text-xs capitalize">{rec.type}</Badge>
+                              {rec.location && (
+                                <Badge variant="secondary" className="text-[10px]">{rec.location}</Badge>
+                              )}
                               {rec.severity === 'warning' && <AlertTriangle className="h-3 w-3 text-orange-500" />}
                             </div>
                             <p className="font-medium text-sm">{rec.title}</p>
                             <p className="text-xs text-muted-foreground mt-1">{rec.description}</p>
+                            
+                            {/* Original vs Suggested Text - NEW */}
+                            {rec.originalText && (
+                              <div className="mt-2 p-2 rounded bg-red-500/5 border border-red-500/20">
+                                <span className="text-[10px] text-red-600 font-medium">Original: </span>
+                                <span className="text-xs text-red-600/80 line-through">{rec.originalText}</span>
+                              </div>
+                            )}
                             {rec.suggestedText && (
-                              <div className="mt-2 p-2 rounded bg-green-500/10 text-xs">
-                                <span className="text-green-600">Suggestion: </span>
-                                {rec.suggestedText}
+                              <div className="mt-1 p-2 rounded bg-green-500/10 border border-green-500/20">
+                                <span className="text-[10px] text-green-600 font-medium">Suggested: </span>
+                                <span className="text-xs text-green-700">{rec.suggestedText}</span>
                               </div>
                             )}
                           </div>
-                          {rec.accepted === null && (
-                            <div className="flex gap-1">
+                          {rec.accepted === null ? (
+                            <div className="flex gap-1 shrink-0">
                               <Button 
                                 variant="ghost" 
                                 size="sm" 
@@ -1467,8 +1647,7 @@ export function ScriptEditorTab({
                                 <X className="h-3 w-3 text-red-500" />
                               </Button>
                             </div>
-                          )}
-                          {rec.accepted !== null && (
+                          ) : (
                             <Badge variant={rec.accepted ? 'default' : 'secondary'} className="text-xs shrink-0">
                               {rec.accepted ? 'Noted' : 'Dismissed'}
                             </Badge>
@@ -1505,6 +1684,24 @@ export function ScriptEditorTab({
                   </Button>
                 </div>
               </div>
+              
+              {/* Enhancement Summary - NEW */}
+              {enhancementMarkers && (
+                <div className="mb-4 p-3 rounded-lg bg-background border grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <p className="text-2xl font-bold text-blue-500">{enhancementMarkers.pausesAdded}</p>
+                    <p className="text-xs text-muted-foreground">Pauses Added</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-purple-500">{enhancementMarkers.sectionBreaksAdded}</p>
+                    <p className="text-xs text-muted-foreground">Section Breaks</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-green-500">{enhancementMarkers.sentencesRewritten}</p>
+                    <p className="text-xs text-muted-foreground">Sentences Improved</p>
+                  </div>
+                </div>
+              )}
               
               {/* Review Progress */}
               <div className="mb-4">
