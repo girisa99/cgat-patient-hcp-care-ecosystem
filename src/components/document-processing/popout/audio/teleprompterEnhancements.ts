@@ -309,6 +309,71 @@ export function getTeleprompterEnhancementsScript(): string {
     }
 
     // =====================================================
+    // AUTO-SCROLL WITHOUT AUDIO (for teleprompter only mode)
+    // =====================================================
+    
+    var autoScrollInterval = null;
+    var manualScrollSpeed = 60; // pixels per second default
+
+    function startTeleprompterAutoScroll() {
+      const teleprompterEl = document.getElementById('teleprompterText');
+      const teleprompter = document.getElementById('teleprompter');
+      
+      if (!teleprompterEl || !teleprompter) return;
+
+      const scrollHeight = teleprompterEl.scrollHeight;
+      const containerHeight = teleprompter.offsetHeight;
+      const totalScroll = scrollHeight - containerHeight;
+
+      if (totalScroll <= 0) {
+        console.log('[Teleprompter] No scrolling needed');
+        return;
+      }
+
+      // Reset scroll position
+      teleprompter.scrollTop = 0;
+      const startTime = performance.now();
+
+      // Get user-adjusted speed if available
+      const currentSpeed = manualScrollSpeed * teleprompterScrollSpeed;
+      const duration = totalScroll / currentSpeed;
+
+      function scrollStep() {
+        if (isStopped) {
+          autoScrollInterval = null;
+          return;
+        }
+
+        if (isPaused) {
+          autoScrollInterval = requestAnimationFrame(scrollStep);
+          return;
+        }
+
+        const elapsed = (performance.now() - startTime) / 1000;
+        const targetScroll = elapsed * currentSpeed;
+
+        if (targetScroll <= totalScroll) {
+          teleprompter.scrollTop = targetScroll;
+          autoScrollInterval = requestAnimationFrame(scrollStep);
+        } else {
+          teleprompter.scrollTop = totalScroll;
+          autoScrollInterval = null;
+          console.log('[Teleprompter] Auto-scroll complete');
+        }
+      }
+
+      autoScrollInterval = requestAnimationFrame(scrollStep);
+      console.log('[Teleprompter] Started auto-scroll, speed:', currentSpeed.toFixed(2) + 'px/s');
+    }
+
+    function stopTeleprompterAutoScroll() {
+      if (autoScrollInterval) {
+        cancelAnimationFrame(autoScrollInterval);
+        autoScrollInterval = null;
+      }
+    }
+
+    // =====================================================
     // TELEPROMPTER CONTROLS UI
     // =====================================================
 
