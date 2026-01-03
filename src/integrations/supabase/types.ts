@@ -9504,6 +9504,7 @@ export type Database = {
           music_generation_cost: number | null
           name: string
           settings: Json | null
+          show_id: string | null
           status: string
           storage_cost: number | null
           tags: string[] | null
@@ -9528,6 +9529,7 @@ export type Database = {
           music_generation_cost?: number | null
           name: string
           settings?: Json | null
+          show_id?: string | null
           status?: string
           storage_cost?: number | null
           tags?: string[] | null
@@ -9552,6 +9554,7 @@ export type Database = {
           music_generation_cost?: number | null
           name?: string
           settings?: Json | null
+          show_id?: string | null
           status?: string
           storage_cost?: number | null
           tags?: string[] | null
@@ -9568,7 +9571,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "media_projects_show_id_fkey"
+            columns: ["show_id"]
+            isOneToOne: false
+            referencedRelation: "shows"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       medical_imaging_knowledge: {
         Row: {

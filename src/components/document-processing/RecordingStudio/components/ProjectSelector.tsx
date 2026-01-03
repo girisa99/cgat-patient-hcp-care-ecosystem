@@ -1,5 +1,6 @@
 /**
  * Project Selector Component - Select or create media projects for cost tracking
+ * Now unified with Production Hub shows
  */
 
 import React, { useState } from 'react';
@@ -9,8 +10,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { FolderOpen, Plus, DollarSign, Loader2 } from 'lucide-react';
+import { FolderOpen, Plus, DollarSign, Loader2, Link2 } from 'lucide-react';
 import type { MediaProject } from '../hooks/useMediaProject';
+import type { ProductionContextForStudio } from '../types';
 
 interface ProjectSelectorProps {
   projects: MediaProject[];
@@ -19,6 +21,8 @@ interface ProjectSelectorProps {
   onCreateProject: (name: string, description?: string) => Promise<MediaProject | null>;
   isLoading: boolean;
   totalSessionCost: number;
+  isLinkedToProduction?: boolean;
+  productionContext?: ProductionContextForStudio;
 }
 
 export function ProjectSelector({
@@ -28,6 +32,8 @@ export function ProjectSelector({
   onCreateProject,
   isLoading,
   totalSessionCost,
+  isLinkedToProduction = false,
+  productionContext,
 }: ProjectSelectorProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
@@ -59,6 +65,12 @@ export function ProjectSelector({
         <div className="flex items-center gap-2">
           <FolderOpen className="w-4 h-4 text-muted-foreground" />
           <Label className="text-xs font-medium">Project</Label>
+          {isLinkedToProduction && (
+            <Badge variant="secondary" className="gap-1 text-[10px] h-5">
+              <Link2 className="w-3 h-3" />
+              Linked
+            </Badge>
+          )}
         </div>
         
         {/* Session Cost Display */}
@@ -69,6 +81,20 @@ export function ProjectSelector({
           </Badge>
         )}
       </div>
+
+      {/* Production Info when linked */}
+      {isLinkedToProduction && productionContext && (
+        <div className="bg-primary/5 rounded px-2 py-1.5 border border-primary/20">
+          <div className="text-xs font-medium text-primary truncate">
+            {productionContext.showTitle}
+          </div>
+          <div className="text-[10px] text-muted-foreground flex items-center gap-2">
+            <span className="capitalize">{productionContext.showType}</span>
+            <span>•</span>
+            <span className="capitalize">{productionContext.currentStage}</span>
+          </div>
+        </div>
+      )}
 
       <div className="flex gap-2">
         <Select
