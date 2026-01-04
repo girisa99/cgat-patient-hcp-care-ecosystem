@@ -10,10 +10,10 @@ import {
   GenieStudioVisualAssets
 } from '@/components/document-processing';
 import { TwoStagePipelineSVGDiagram } from '@/components/document-processing/TwoStagePipelineSVGDiagram';
-import { PatientOnboardingFlowDiagram, SubAgentArchitectureDiagram, BeforeAfterArchitectureDiagram, GenieRecordingStudioArchitectureDiagram } from '@/components/diagrams';
+import { PatientOnboardingFlowDiagram, SubAgentArchitectureDiagram, BeforeAfterArchitectureDiagram, GenieRecordingStudioArchitectureDiagram, GenieStudioTechnicalArchDiagram, GenieStudioFunctionalArchDiagram, GenieStudioScenarioMapDiagram } from '@/components/diagrams';
 import { Button } from '@/components/ui/button';
 // Tabs imports kept for potential future use but not needed for current category navigation
-import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building, Users, Network, ArrowRightLeft, Download, Workflow, Bot, History, Sparkles, Image, Video } from 'lucide-react';
+import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building, Users, Network, ArrowRightLeft, Download, Workflow, Bot, History, Sparkles, Image, Video, Server, Target } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { Badge } from '@/components/ui/badge';
@@ -69,6 +69,9 @@ const diagramCategories = {
     icon: Sparkles,
     diagrams: [
       { id: 'genie-architecture', label: 'Architecture', icon: Layers },
+      { id: 'genie-technical', label: 'Technical', icon: Server },
+      { id: 'genie-functional', label: 'Functional', icon: Users },
+      { id: 'genie-scenarios', label: 'Scenarios', icon: Target },
       { id: 'genie-assets', label: 'Visual Assets', icon: Image },
       { id: 'genie-gallery', label: 'Full Gallery', icon: Video },
     ]
@@ -144,6 +147,12 @@ const ArchitectureDiagram = () => {
         return <PatientOnboardingFlowDiagram />;
       case 'genie-architecture':
         return <GenieRecordingStudioArchitectureDiagram />;
+      case 'genie-technical':
+        return <GenieStudioTechnicalArchDiagram />;
+      case 'genie-functional':
+        return <GenieStudioFunctionalArchDiagram />;
+      case 'genie-scenarios':
+        return <GenieStudioScenarioMapDiagram />;
       case 'genie-assets':
         return <GenieStudioVisualAssets />;
       case 'genie-gallery':
