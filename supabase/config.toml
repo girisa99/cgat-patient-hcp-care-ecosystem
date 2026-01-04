@@ -149,3 +149,12 @@ verify_jwt = false
 
 [functions.elevenlabs-music]
 verify_jwt = false
+
+[functions.amazon-polly]
+verify_jwt = false
+
+[functions.azure-tts]
+verify_jwt = false
+
+[functions.google-tts]
+verify_jwt = false
