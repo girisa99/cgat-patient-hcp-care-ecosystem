@@ -43,13 +43,36 @@ interface RecordingPreviewProps {
   onUploadVideo?: (file: File) => Promise<void>;
   // Recording metadata
   recordingName?: string;
+  // Audio assets metadata
+  audioMetadata?: {
+    hasTTS?: boolean;
+    hasVoiceover?: boolean;
+    hasMusic?: boolean;
+    ttsName?: string;
+    voiceoverName?: string;
+    musicName?: string;
+    voiceoverUrl?: string;
+    ttsUrl?: string;
+    musicUrl?: string;
+  };
 }
 
-interface SaveOptions {
+export interface SaveOptions {
   format: 'webm' | 'mp4';
   includeAudio: boolean;
   includeCaptions: boolean;
   captionsText?: string;
+  metadata?: {
+    scriptTitle?: string;
+    scriptContent?: string;
+    audioAssets?: {
+      tts?: string;
+      voiceover?: string;
+      music?: string;
+    };
+    duration?: number;
+    createdAt?: string;
+  };
 }
 
 // Filler words to detect and optionally remove
@@ -84,6 +107,7 @@ export function RecordingPreview({
   onGenerateTTS,
   onUploadVideo,
   recordingName = 'Recording',
+  audioMetadata,
 }: RecordingPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -536,15 +560,26 @@ ${editedTranscript}
     }
   }, [onUploadVideo]);
 
-  // Save to library with options
+  // Save to library with options and metadata
   const handleSaveToLibrary = useCallback(() => {
     onSave({
       format: exportFormat,
       includeAudio: true,
       includeCaptions: captionsEnabled,
       captionsText: editedTranscript || undefined,
+      metadata: {
+        scriptTitle: scriptTitle,
+        scriptContent: scriptContent,
+        audioAssets: {
+          tts: audioMetadata?.ttsName,
+          voiceover: audioMetadata?.voiceoverName,
+          music: audioMetadata?.musicName,
+        },
+        duration: duration,
+        createdAt: new Date().toISOString(),
+      },
     });
-  }, [onSave, exportFormat, captionsEnabled, editedTranscript]);
+  }, [onSave, exportFormat, captionsEnabled, editedTranscript, scriptTitle, scriptContent, audioMetadata, duration]);
 
   if (!isOpen || !blob) return null;
 
@@ -554,31 +589,43 @@ ${editedTranscript}
 
   return (
     <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-      <div className="bg-card rounded-lg max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col">
+      <div className="bg-card rounded-lg max-w-7xl w-full max-h-[95vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
-          <div className="flex items-center gap-3">
-            <h3 className="font-semibold">Recording Preview</h3>
-            {transcription && (
-              <Badge variant="secondary" className="gap-1">
+        <div className="flex items-center justify-between p-3 border-b shrink-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-semibold text-lg">Review Recording</h3>
+            <Badge variant="outline" className="text-xs">
+              {formatTime(duration)}
+            </Badge>
+            {scriptTitle && (
+              <Badge variant="secondary" className="gap-1 text-xs">
                 <FileText className="w-3 h-3" />
+                {scriptTitle}
+              </Badge>
+            )}
+            {audioMetadata?.hasTTS && (
+              <Badge variant="outline" className="gap-1 text-xs text-green-600 border-green-500/30">
+                TTS: {audioMetadata.ttsName}
+              </Badge>
+            )}
+            {audioMetadata?.hasVoiceover && (
+              <Badge variant="outline" className="gap-1 text-xs text-blue-600 border-blue-500/30">
+                VO: {audioMetadata.voiceoverName}
+              </Badge>
+            )}
+            {audioMetadata?.hasMusic && (
+              <Badge variant="outline" className="gap-1 text-xs text-purple-600 border-purple-500/30">
+                Music: {audioMetadata.musicName}
+              </Badge>
+            )}
+            {transcription && (
+              <Badge variant="secondary" className="gap-1 text-xs">
+                <CheckCircle2 className="w-3 h-3" />
                 Transcribed
               </Badge>
             )}
-            {fillerWordsFound.length > 0 && (
-              <Badge variant="outline" className="gap-1 text-amber-600 border-amber-500/30">
-                <AlertCircle className="w-3 h-3" />
-                {fillerWordsFound.length} filler words
-              </Badge>
-            )}
-            {captionsEnabled && (
-              <Badge variant="outline" className="gap-1 text-blue-600 border-blue-500/30">
-                <Subtitles className="w-3 h-3" />
-                Captions
-              </Badge>
-            )}
           </div>
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          <Button variant="ghost" size="icon" onClick={onClose} className="shrink-0">
             <X className="w-4 h-4" />
           </Button>
         </div>
@@ -719,29 +766,242 @@ ${editedTranscript}
             </div>
           </div>
 
-          {/* Side Panel - Tabs for different features */}
-          <div className="w-80 border-l flex flex-col bg-muted/20">
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col">
-              <TabsList className="grid grid-cols-4 m-2">
-                <TabsTrigger value="export" className="text-xs">
-                  Export
-                </TabsTrigger>
-                <TabsTrigger value="transcript" disabled={!transcription} className="text-xs">
-                  Text
-                </TabsTrigger>
-                <TabsTrigger value="script" disabled={!scriptContent} className="text-xs">
+          {/* Side Panel - Script Review + Actions */}
+          <div className="w-96 border-l flex flex-col bg-muted/10 shrink-0">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col overflow-hidden">
+              <TabsList className="grid grid-cols-3 m-2 shrink-0">
+                <TabsTrigger value="script" className="text-xs gap-1">
+                  <FileText className="w-3 h-3" />
                   Script
                 </TabsTrigger>
-                <TabsTrigger value="preview" className="text-xs">
-                  Add
+                <TabsTrigger value="transcript" disabled={!transcription} className="text-xs gap-1">
+                  <Edit3 className="w-3 h-3" />
+                  Transcript
+                </TabsTrigger>
+                <TabsTrigger value="export" className="text-xs gap-1">
+                  <Download className="w-3 h-3" />
+                  Export
                 </TabsTrigger>
               </TabsList>
 
+              {/* Script Tab - Shows script for review alongside recording */}
+              <TabsContent value="script" className="flex-1 flex flex-col p-2 pt-0 m-0 overflow-hidden">
+                {scriptContent ? (
+                  <div className="flex-1 flex flex-col overflow-hidden">
+                    {/* Script Header */}
+                    <div className="flex items-center justify-between mb-2 shrink-0">
+                      <div>
+                        <h4 className="text-sm font-medium">{scriptTitle || 'Script'}</h4>
+                        <p className="text-xs text-muted-foreground">
+                          Review while watching your recording
+                        </p>
+                      </div>
+                      {transcription && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={compareToScript}
+                          className="gap-1 text-xs"
+                        >
+                          <RefreshCw className="w-3 h-3" />
+                          Compare
+                        </Button>
+                      )}
+                    </div>
+                    
+                    {/* Comparison Results */}
+                    {scriptDifferences && (
+                      <div className="mb-2 p-2 bg-muted/50 rounded-lg border shrink-0">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium">Script Match</span>
+                          <Badge variant={matchPercentage >= 80 ? 'default' : matchPercentage >= 50 ? 'secondary' : 'destructive'}>
+                            {matchPercentage}%
+                          </Badge>
+                        </div>
+                        {scriptDifferences.missing.length > 0 && (
+                          <p className="text-xs text-red-600 mt-1">
+                            Missing: {scriptDifferences.missing.slice(0, 5).join(', ')}
+                            {scriptDifferences.missing.length > 5 && ` +${scriptDifferences.missing.length - 5} more`}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Script Content - Scrollable */}
+                    <ScrollArea className="flex-1">
+                      <div className="text-sm p-3 bg-background rounded-lg border whitespace-pre-wrap leading-relaxed">
+                        {scriptContent}
+                      </div>
+                    </ScrollArea>
+
+                    {/* Audio Assets Info */}
+                    {audioMetadata && (audioMetadata.hasTTS || audioMetadata.hasVoiceover || audioMetadata.hasMusic) && (
+                      <div className="mt-2 p-2 bg-primary/5 rounded-lg border border-primary/20 shrink-0">
+                        <p className="text-xs font-medium mb-1">Audio Assets</p>
+                        <div className="flex flex-wrap gap-1">
+                          {audioMetadata.hasTTS && (
+                            <Badge variant="outline" className="text-xs">TTS: {audioMetadata.ttsName}</Badge>
+                          )}
+                          {audioMetadata.hasVoiceover && (
+                            <Badge variant="outline" className="text-xs">VO: {audioMetadata.voiceoverName}</Badge>
+                          )}
+                          {audioMetadata.hasMusic && (
+                            <Badge variant="outline" className="text-xs">Music: {audioMetadata.musicName}</Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
+                    <FileText className="w-8 h-8 text-muted-foreground/50 mb-2" />
+                    <p className="text-sm text-muted-foreground">No script associated</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Select a script before recording to see it here
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Transcript Tab */}
+              <TabsContent value="transcript" className="flex-1 flex flex-col p-2 pt-0 m-0 overflow-hidden">
+                {transcription ? (
+                  <div className="flex-1 flex flex-col overflow-hidden">
+                    {/* Filler Word Actions */}
+                    {fillerWordsFound.length > 0 && (
+                      <div className="mb-2 p-2 bg-amber-500/10 rounded-lg border border-amber-500/20 shrink-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-medium text-amber-700">
+                            {fillerWordsFound.length} filler words detected
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={cleanTranscript}
+                            className="h-6 text-xs gap-1"
+                          >
+                            <Sparkles className="w-3 h-3" />
+                            Clean
+                          </Button>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {[...new Set(fillerWordsFound)].slice(0, 5).map((word, i) => (
+                            <Badge key={i} variant="outline" className="text-xs">
+                              {word}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Editable Transcript */}
+                    <ScrollArea className="flex-1">
+                      <Textarea
+                        value={editedTranscript}
+                        onChange={(e) => setEditedTranscript(e.target.value)}
+                        className="min-h-[200px] text-sm resize-none"
+                        placeholder="Transcription will appear here..."
+                      />
+                    </ScrollArea>
+
+                    {/* Transcript Actions */}
+                    <div className="flex gap-2 mt-2 shrink-0">
+                      {scriptContent && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={compareToScript}
+                          className="flex-1 gap-1"
+                        >
+                          <RefreshCw className="w-3 h-3" />
+                          Compare
+                        </Button>
+                      )}
+                      {onScriptUpdate && (
+                        <Button
+                          size="sm"
+                          onClick={applyTranscriptToScript}
+                          className="flex-1 gap-1"
+                        >
+                          <Save className="w-3 h-3" />
+                          Update Script
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
+                    <FileText className="w-8 h-8 text-muted-foreground/50 mb-2" />
+                    <p className="text-sm text-muted-foreground">No transcript yet</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Click "Transcribe" below the video to generate
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+
               {/* Export Tab */}
-              <TabsContent value="export" className="flex-1 flex flex-col p-2 pt-0 m-0">
-                <div className="space-y-4">
-                  <div className="p-3 bg-background/50 rounded-lg space-y-3">
-                    <h4 className="text-sm font-medium">Download Options</h4>
+              <TabsContent value="export" className="flex-1 flex flex-col p-2 pt-0 m-0 overflow-auto">
+                <div className="space-y-3">
+                  {/* Save Settings */}
+                  <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 space-y-3">
+                    <h4 className="text-sm font-medium flex items-center gap-2">
+                      <Save className="w-4 h-4" />
+                      Save to Library
+                    </h4>
+                    <p className="text-xs text-muted-foreground">
+                      Save recording with metadata and audio assets
+                    </p>
+                    
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="captions-save" className="text-xs">Include Captions</Label>
+                      <Switch
+                        id="captions-save"
+                        checked={captionsEnabled}
+                        onCheckedChange={setCaptionsEnabled}
+                        disabled={!editedTranscript}
+                      />
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs">Format:</Label>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant={exportFormat === 'mp4' ? 'default' : 'outline'}
+                          onClick={() => setExportFormat('mp4')}
+                          className="text-xs h-7"
+                        >
+                          MP4
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={exportFormat === 'webm' ? 'default' : 'outline'}
+                          onClick={() => setExportFormat('webm')}
+                          className="text-xs h-7"
+                        >
+                          WebM
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Metadata Preview */}
+                    <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                      <p className="font-medium mb-1">Will include:</p>
+                      <ul className="list-disc list-inside space-y-0.5">
+                        <li>Video recording ({formatTime(duration)})</li>
+                        {captionsEnabled && editedTranscript && <li>Captions/transcript</li>}
+                        {scriptTitle && <li>Script: {scriptTitle}</li>}
+                        {audioMetadata?.hasTTS && <li>TTS audio reference</li>}
+                        {audioMetadata?.hasVoiceover && <li>Voiceover reference</li>}
+                        {audioMetadata?.hasMusic && <li>Background music reference</li>}
+                      </ul>
+                    </div>
+                  </div>
+                  
+                  {/* Download Options */}
+                  <div className="p-3 bg-background/50 rounded-lg border space-y-2">
+                    <h4 className="text-sm font-medium">Download</h4>
                     
                     <Button
                       size="sm"
@@ -790,11 +1050,9 @@ ${editedTranscript}
                     )}
                   </div>
                   
-                  <div className="p-3 bg-background/50 rounded-lg space-y-3">
-                    <h4 className="text-sm font-medium">Upload New Video</h4>
-                    <p className="text-xs text-muted-foreground">
-                      Replace the current recording with a new video file.
-                    </p>
+                  {/* Upload replacement */}
+                  <div className="p-3 bg-background/50 rounded-lg border space-y-2">
+                    <h4 className="text-sm font-medium">Replace Video</h4>
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -812,300 +1070,11 @@ ${editedTranscript}
                       Upload Video
                     </Button>
                   </div>
-                  
-                  <div className="p-3 bg-background/50 rounded-lg space-y-3">
-                    <h4 className="text-sm font-medium">Save Settings</h4>
-                    
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="captions-save" className="text-xs">Include Captions</Label>
-                      <Switch
-                        id="captions-save"
-                        checked={captionsEnabled}
-                        onCheckedChange={setCaptionsEnabled}
-                        disabled={!editedTranscript}
-                      />
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Label className="text-xs">Format:</Label>
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant={exportFormat === 'mp4' ? 'default' : 'outline'}
-                          onClick={() => setExportFormat('mp4')}
-                          className="text-xs h-7"
-                        >
-                          MP4
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={exportFormat === 'webm' ? 'default' : 'outline'}
-                          onClick={() => setExportFormat('webm')}
-                          className="text-xs h-7"
-                        >
-                          WebM
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-
-              {/* Transcript Tab */}
-              <TabsContent value="transcript" className="flex-1 flex flex-col p-2 pt-0 m-0">
-                {transcription ? (
-                  <>
-                    {/* Filler Word Actions */}
-                    {fillerWordsFound.length > 0 && (
-                      <div className="mb-2 p-2 bg-amber-500/10 rounded-lg border border-amber-500/20">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-medium text-amber-700">
-                            {fillerWordsFound.length} filler words detected
-                          </span>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={cleanTranscript}
-                            className="h-6 text-xs gap-1"
-                          >
-                            <Sparkles className="w-3 h-3" />
-                            Clean
-                          </Button>
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {[...new Set(fillerWordsFound)].slice(0, 8).map((word, i) => (
-                            <Badge key={i} variant="outline" className="text-xs">
-                              {word}
-                            </Badge>
-                          ))}
-                          {fillerWordsFound.length > 8 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{fillerWordsFound.length - 8} more
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Editable Transcript */}
-                    <ScrollArea className="flex-1">
-                      <Textarea
-                        value={editedTranscript}
-                        onChange={(e) => setEditedTranscript(e.target.value)}
-                        className="min-h-[200px] text-sm resize-none"
-                        placeholder="Transcription will appear here..."
-                      />
-                    </ScrollArea>
-
-                    {/* Transcript Actions */}
-                    <div className="flex gap-2 mt-2">
-                      {scriptContent && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={compareToScript}
-                          className="flex-1 gap-1"
-                        >
-                          <RefreshCw className="w-3 h-3" />
-                          Compare
-                        </Button>
-                      )}
-                      {onScriptUpdate && (
-                        <Button
-                          size="sm"
-                          onClick={applyTranscriptToScript}
-                          className="flex-1 gap-1"
-                        >
-                          <Save className="w-3 h-3" />
-                          Update Script
-                        </Button>
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
-                    Click "Transcribe" to get transcript
-                  </div>
-                )}
-              </TabsContent>
-
-              {/* Script Tab */}
-              <TabsContent value="script" className="flex-1 flex flex-col p-2 pt-0 m-0">
-                {scriptContent ? (
-                  <>
-                    {/* Script Comparison Results */}
-                    {scriptDifferences && (
-                      <div className="mb-2 space-y-2">
-                        <div className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
-                          <span className="text-xs font-medium">Match Score</span>
-                          <div className="flex items-center gap-2">
-                            {matchPercentage >= 80 ? (
-                              <CheckCircle2 className="w-4 h-4 text-green-500" />
-                            ) : matchPercentage >= 50 ? (
-                              <AlertCircle className="w-4 h-4 text-amber-500" />
-                            ) : (
-                              <AlertCircle className="w-4 h-4 text-red-500" />
-                            )}
-                            <span className={`text-sm font-bold ${
-                              matchPercentage >= 80 ? 'text-green-600' :
-                              matchPercentage >= 50 ? 'text-amber-600' : 'text-red-600'
-                            }`}>
-                              {matchPercentage}%
-                            </span>
-                          </div>
-                        </div>
-
-                        {scriptDifferences.missing.length > 0 && (
-                          <div className="p-2 bg-red-500/10 rounded-lg border border-red-500/20">
-                            <p className="text-xs font-medium text-red-700 mb-1">
-                              Words from script not spoken:
-                            </p>
-                            <div className="flex flex-wrap gap-1">
-                              {scriptDifferences.missing.map((word, i) => (
-                                <Badge key={i} variant="outline" className="text-xs text-red-600 border-red-500/30">
-                                  {word}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {scriptDifferences.extra.length > 0 && (
-                          <div className="p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                            <p className="text-xs font-medium text-blue-700 mb-1">
-                              Ad-libbed words:
-                            </p>
-                            <div className="flex flex-wrap gap-1">
-                              {scriptDifferences.extra.map((word, i) => (
-                                <Badge key={i} variant="outline" className="text-xs text-blue-600 border-blue-500/30">
-                                  {word}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Original Script */}
-                    <div className="mb-2">
-                      <p className="text-xs font-medium text-muted-foreground mb-1">
-                        {scriptTitle || 'Original Script'}
-                      </p>
-                    </div>
-                    <ScrollArea className="flex-1">
-                      <div className="text-sm p-2 bg-background/50 rounded border whitespace-pre-wrap">
-                        {scriptContent}
-                      </div>
-                    </ScrollArea>
-
-                    {/* Script Actions */}
-                    {transcription && (
-                      <div className="mt-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={compareToScript}
-                          className="w-full gap-1"
-                        >
-                          <RefreshCw className="w-3 h-3" />
-                          Compare with Transcript
-                        </Button>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
-                    No script selected
-                  </div>
-                )}
-              </TabsContent>
-
-              {/* Add Content Tab - TTS for additions */}
-              <TabsContent value="preview" className="flex-1 flex flex-col p-2 pt-0 m-0">
-                <div className="space-y-4">
-                  <div className="p-3 bg-background/50 rounded-lg space-y-3">
-                    <h4 className="text-sm font-medium flex items-center gap-2">
-                      <Wand2 className="w-4 h-4" />
-                      Add Script & Convert to TTS
-                    </h4>
-                    <p className="text-xs text-muted-foreground">
-                      Add additional script text and automatically convert it to voiceover.
-                    </p>
-                    
-                    <Textarea
-                      value={additionalScript}
-                      onChange={(e) => setAdditionalScript(e.target.value)}
-                      placeholder="Enter additional script text to convert to speech..."
-                      className="min-h-[100px] text-sm"
-                    />
-                    
-                    <Button
-                      size="sm"
-                      onClick={handleGenerateAdditionalTTS}
-                      disabled={isGeneratingTTS || !additionalScript.trim() || !onGenerateTTS}
-                      className="w-full gap-2"
-                    >
-                      {isGeneratingTTS ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Generating...
-                        </>
-                      ) : (
-                        <>
-                          <Volume2 className="w-4 h-4" />
-                          Generate TTS
-                        </>
-                      )}
-                    </Button>
-                    
-                    {generatedTTSUrl && (
-                      <div className="p-2 bg-green-500/10 rounded-lg border border-green-500/20">
-                        <p className="text-xs font-medium text-green-700 mb-2">
-                          TTS Generated!
-                        </p>
-                        <audio
-                          src={generatedTTSUrl}
-                          controls
-                          className="w-full h-8"
-                        />
-                      </div>
-                    )}
-                  </div>
-                  
-                  {onScriptUpdate && (
-                    <div className="p-3 bg-background/50 rounded-lg space-y-3">
-                      <h4 className="text-sm font-medium flex items-center gap-2">
-                        <Plus className="w-4 h-4" />
-                        Append to Script
-                      </h4>
-                      <p className="text-xs text-muted-foreground">
-                        Add the text above to your main script.
-                      </p>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          if (additionalScript.trim()) {
-                            onScriptUpdate((scriptContent || '') + '\n\n' + additionalScript);
-                            toast.success('Script updated!');
-                            setAdditionalScript('');
-                          }
-                        }}
-                        disabled={!additionalScript.trim()}
-                        className="w-full gap-2"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Add to Script
-                      </Button>
-                    </div>
-                  )}
                 </div>
               </TabsContent>
             </Tabs>
           </div>
         </div>
-
         {/* Actions */}
         <div className="flex items-center justify-end gap-2 p-4 border-t">
           <Button variant="outline" onClick={onDiscard} className="gap-2">

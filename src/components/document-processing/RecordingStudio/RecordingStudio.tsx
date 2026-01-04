@@ -1046,12 +1046,23 @@ export function RecordingStudio({
     toast.success('Trim undone');
   }, []);
 
-  // Save recording from preview with options
+  // Save recording from preview with options and metadata
   const handleSaveRecording = useCallback(async (options?: {
     format: 'webm' | 'mp4';
     includeAudio: boolean;
     includeCaptions: boolean;
     captionsText?: string;
+    metadata?: {
+      scriptTitle?: string;
+      scriptContent?: string;
+      audioAssets?: {
+        tts?: string;
+        voiceover?: string;
+        music?: string;
+      };
+      duration?: number;
+      createdAt?: string;
+    };
   }) => {
     if (!lastRecordingBlob) return;
     
@@ -1075,29 +1086,41 @@ export function RecordingStudio({
       }
     }
     
-    await library.saveRecording(blobToSave, {
+    // Prepare comprehensive metadata
+    const saveMetadata = {
       name: `Recording ${new Date().toLocaleString()}`,
-      duration: recording.duration,
-      scriptTitle: script?.title,
+      duration: options?.metadata?.duration || recording.duration,
+      scriptTitle: options?.metadata?.scriptTitle || script?.title,
+      scriptContent: options?.metadata?.scriptContent || script?.content,
       hasVoiceover: !!selectedVoiceoverId,
       hasMusic: !!selectedMusicId,
+      hasTTS: !!selectedTTSFileId,
       hasCaptions: options?.includeCaptions || false,
       captionsText: options?.captionsText,
       format: downloadExtension,
-    });
+      audioAssets: options?.metadata?.audioAssets || {
+        tts: currentTTSFile?.name,
+        voiceover: currentVoiceover?.name,
+        music: currentMusic?.name,
+      },
+      createdAt: options?.metadata?.createdAt || new Date().toISOString(),
+    };
     
-    // Download
+    await library.saveRecording(blobToSave, saveMetadata);
+    
+    // Download with metadata in filename
+    const safeName = (saveMetadata.scriptTitle || 'untitled').replace(/[^a-zA-Z0-9]/g, '-').substring(0, 30);
     const url = URL.createObjectURL(blobToSave);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `recording-${Date.now()}.${downloadExtension}`;
+    a.download = `${safeName}-${Date.now()}.${downloadExtension}`;
     a.click();
     URL.revokeObjectURL(url);
     
-    toast.success(`Recording saved as ${downloadExtension.toUpperCase()}!`);
+    toast.success(`Recording saved as ${downloadExtension.toUpperCase()} with metadata!`);
     setShowRecordingPreview(false);
     setLastRecordingBlob(null);
-  }, [lastRecordingBlob, scripts, selectedScriptId, library, recording.duration, selectedVoiceoverId, selectedMusicId, ffmpegTrim]);
+  }, [lastRecordingBlob, scripts, selectedScriptId, library, recording.duration, selectedVoiceoverId, selectedMusicId, selectedTTSFileId, currentTTSFile, currentVoiceover, currentMusic, ffmpegTrim]);
 
   // Discard recording
   const handleDiscardRecording = useCallback(() => {
@@ -1934,6 +1957,18 @@ export function RecordingStudio({
             if (currentScript) {
               handleScriptContentUpdate(currentScript.id, newContent);
             }
+          }}
+          // Pass audio metadata for saving with the recording
+          audioMetadata={{
+            hasTTS: !!selectedTTSFileId && !!currentTTSFile,
+            hasVoiceover: !!selectedVoiceoverId && !!currentVoiceover,
+            hasMusic: !!selectedMusicId && !!currentMusic,
+            ttsName: currentTTSFile?.name,
+            voiceoverName: currentVoiceover?.name,
+            musicName: currentMusic?.name,
+            voiceoverUrl: currentVoiceover?.url,
+            ttsUrl: currentTTSFile?.url,
+            musicUrl: currentMusic?.url,
           }}
           // TTS generation for additional script text
           onGenerateTTS={async (text: string) => {
