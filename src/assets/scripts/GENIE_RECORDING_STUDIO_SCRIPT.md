@@ -1,9 +1,10 @@
-# Genie Studio & Recording Studio: A Non-Developer's Journey
-## Video & Audio Script — From Fear to Publishing
+# 🎬 "I Hate My Voice, I Can't Edit, and Production Terrifies Me"
+## How I Accidentally Built a Recording Studio in 4 Days — Without Being a Developer
 
 **Total Runtime: ~15-18 minutes**
 **Tone: Personal, Vulnerable, Relatable, with Self-Deprecating Humor**
 **Perspective: First-person (I), Non-developer, Self-learner**
+**Target: Anyone who's comfortable on Zoom but panics at "post-production"**
 
 ---
 
