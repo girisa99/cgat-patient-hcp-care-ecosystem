@@ -1130,6 +1130,20 @@ export default function GenieStudio() {
         }
       }
       
+      // Determine the correct metadata type:
+      // - If scriptMeta.scriptType is 'tts' or name contains 'TTS' -> type = 'tts'
+      // - Otherwise -> type = 'voiceover'
+      const isTTSGenerated = 
+        scriptMeta?.scriptType === 'tts' || 
+        name.toLowerCase().includes(' tts') || 
+        name.toLowerCase().includes('_tts') || 
+        name.toLowerCase().includes('-tts') ||
+        name.toLowerCase().includes('enhanced tts') ||
+        name.toLowerCase().includes('original tts');
+      
+      const metadataType = isTTSGenerated ? 'tts' : 'voiceover';
+      console.log('[GenieStudio] saveVoiceover:', { name, scriptType: scriptMeta?.scriptType, isTTSGenerated, metadataType });
+      
       const { error } = await supabase
         .from('generated_media')
         .insert({
@@ -1141,8 +1155,8 @@ export default function GenieStudio() {
           storage_bucket: 'genie-media',
           storage_path: uniquePath,
           metadata: { 
-            type: 'voiceover', 
-            uploadedAs: 'voiceover', 
+            type: metadataType, 
+            uploadedAs: metadataType, 
             generatedAt: new Date().toISOString(),
             scriptText: scriptMeta?.scriptText,
             originalScript: scriptMeta?.originalScript,
