@@ -1200,9 +1200,14 @@ export function RecordingStudio({
           headerMinimized ? 'py-1 opacity-60 hover:opacity-100' : 'py-2'
         }`}>
           <div className="flex items-center gap-3">
-            <h2 className={`font-semibold flex items-center gap-2 ${headerMinimized ? 'text-sm' : 'text-base'}`}>
-              🎬 {!headerMinimized && 'Genie Vibe'}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className={`font-semibold flex items-center gap-2 ${headerMinimized ? 'text-sm' : 'text-base'}`}>
+                🎬 {!headerMinimized && 'Genie Vibe'}
+              </h2>
+              {!headerMinimized && (
+                <span className="text-xs text-muted-foreground italic">Script to Screen</span>
+              )}
+            </div>
             
             {/* Recording Mode Selector - Hidden in focus mode */}
             {!headerMinimized && (

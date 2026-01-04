@@ -51,6 +51,12 @@ export function getPopoutStyles(): string {
       font-weight: 500;
     }
 
+    .header-tagline {
+      font-size: 0.75rem;
+      font-style: italic;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
     .close-btn {
       background: rgba(239, 68, 68, 0.2);
       border: 1px solid rgba(239, 68, 68, 0.3);
