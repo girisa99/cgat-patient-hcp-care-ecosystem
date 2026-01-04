@@ -17,6 +17,20 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 
+// Color legend for consistent enterprise styling
+const colorLegend = {
+  background: '#1e293b',
+  cardBg: '#0f172a',
+  headerBg: '#1e3a5f',
+  borderDefault: '#475569',
+  textPrimary: '#f1f5f9',
+  textSecondary: '#cbd5e1',
+  textMuted: '#94a3b8',
+  done: '#22c55e',
+  partial: '#f59e0b',
+  planned: '#475569',
+};
+
 interface Scenario {
   id: number;
   name: string;
@@ -89,11 +103,11 @@ const scenarios: Record<string, Scenario[]> = {
 };
 
 const priorityConfig = {
-  p0: { label: 'P0 - Core', icon: Zap, description: 'Essential MVP features' },
-  p1: { label: 'P1 - Enhanced', icon: Layers, description: 'Important enhancements' },
-  p2: { label: 'P2 - Advanced', icon: TrendingUp, description: 'Advanced capabilities' },
-  p3: { label: 'P3 - Differentiator', icon: Target, description: 'Competitive features' },
-  p4: { label: 'P4 - Future', icon: Shield, description: 'Future roadmap' },
+  p0: { label: 'P0 - Core', icon: Zap, description: 'Essential MVP features', color: '#22c55e' },
+  p1: { label: 'P1 - Enhanced', icon: Layers, description: 'Important enhancements', color: '#3b82f6' },
+  p2: { label: 'P2 - Advanced', icon: TrendingUp, description: 'Advanced capabilities', color: '#f59e0b' },
+  p3: { label: 'P3 - Differentiator', icon: Target, description: 'Competitive features', color: '#7c3aed' },
+  p4: { label: 'P4 - Future', icon: Shield, description: 'Future roadmap', color: '#94a3b8' },
 };
 
 export const GenieStudioScenarioMapDiagram = () => {
@@ -108,7 +122,7 @@ export const GenieStudioScenarioMapDiagram = () => {
     if (!diagramRef.current) return;
     try {
       const canvas = await html2canvas(diagramRef.current, {
-        backgroundColor: '#0f172a',
+        backgroundColor: colorLegend.background,
         scale: 2
       });
       const url = canvas.toDataURL('image/png');
@@ -128,11 +142,11 @@ export const GenieStudioScenarioMapDiagram = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'implemented':
-        return <Badge variant="outline" className="border-slate-500 text-slate-400 text-xs">✓ Done</Badge>;
+        return <Badge variant="outline" className="border-[#22c55e] text-[#86efac] text-xs">✓ Done</Badge>;
       case 'partial':
-        return <Badge variant="outline" className="border-slate-600 text-slate-500 text-xs">◐ Partial</Badge>;
+        return <Badge variant="outline" className="border-[#f59e0b] text-[#fcd34d] text-xs">◐ Partial</Badge>;
       default:
-        return <Badge variant="outline" className="border-slate-700 text-slate-600 text-xs">○ Planned</Badge>;
+        return <Badge variant="outline" className="border-[#475569] text-[#94a3b8] text-xs">○ Planned</Badge>;
     }
   };
 
@@ -148,22 +162,22 @@ export const GenieStudioScenarioMapDiagram = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <Card className="bg-slate-900 border-slate-700">
+      <Card className="bg-[#1e293b] border-[#475569]">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Target className="h-8 w-8 text-slate-400" />
+              <Target className="h-8 w-8 text-[#94a3b8]" />
               <div>
-                <CardTitle className="text-2xl text-slate-100">Scenario Priority Map</CardTitle>
-                <p className="text-slate-400 text-sm">60 Scenarios across P0-P4 priorities</p>
+                <CardTitle className="text-2xl text-[#f1f5f9]">Scenario Priority Map</CardTitle>
+                <p className="text-[#94a3b8] text-sm">60 Scenarios across P0-P4 priorities</p>
               </div>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleDownload} className="gap-2 border-slate-600 text-slate-300 hover:bg-slate-800">
+              <Button variant="outline" size="sm" onClick={handleDownload} className="gap-2 border-[#475569] text-[#cbd5e1] hover:bg-[#334155] hover:text-[#f1f5f9]">
                 <Download className="h-4 w-4" />
                 Download PNG
               </Button>
-              <Button variant="outline" size="sm" onClick={openDocs} className="gap-2 border-slate-600 text-slate-300 hover:bg-slate-800">
+              <Button variant="outline" size="sm" onClick={openDocs} className="gap-2 border-[#475569] text-[#cbd5e1] hover:bg-[#334155] hover:text-[#f1f5f9]">
                 <FileText className="h-4 w-4" />
                 Documentation
                 <ExternalLink className="h-3 w-3" />
@@ -174,28 +188,34 @@ export const GenieStudioScenarioMapDiagram = () => {
       </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-6 w-full bg-slate-800/50 border border-slate-700">
-          <TabsTrigger value="overview" className="data-[state=active]:bg-slate-700">Overview</TabsTrigger>
-          <TabsTrigger value="p0" className="data-[state=active]:bg-slate-700">P0 Core</TabsTrigger>
-          <TabsTrigger value="p1" className="data-[state=active]:bg-slate-700">P1 Enhanced</TabsTrigger>
-          <TabsTrigger value="p2" className="data-[state=active]:bg-slate-700">P2 Advanced</TabsTrigger>
-          <TabsTrigger value="p3" className="data-[state=active]:bg-slate-700">P3 Differentiator</TabsTrigger>
-          <TabsTrigger value="p4" className="data-[state=active]:bg-slate-700">P4 Future</TabsTrigger>
+        <TabsList className="grid grid-cols-6 w-full bg-[#0f172a] border border-[#475569]">
+          <TabsTrigger value="overview" className="data-[state=active]:bg-[#334155] text-[#cbd5e1] data-[state=active]:text-[#f1f5f9]">Overview</TabsTrigger>
+          <TabsTrigger value="p0" className="data-[state=active]:bg-[#334155] text-[#cbd5e1] data-[state=active]:text-[#f1f5f9]">P0 Core</TabsTrigger>
+          <TabsTrigger value="p1" className="data-[state=active]:bg-[#334155] text-[#cbd5e1] data-[state=active]:text-[#f1f5f9]">P1 Enhanced</TabsTrigger>
+          <TabsTrigger value="p2" className="data-[state=active]:bg-[#334155] text-[#cbd5e1] data-[state=active]:text-[#f1f5f9]">P2 Advanced</TabsTrigger>
+          <TabsTrigger value="p3" className="data-[state=active]:bg-[#334155] text-[#cbd5e1] data-[state=active]:text-[#f1f5f9]">P3 Differentiator</TabsTrigger>
+          <TabsTrigger value="p4" className="data-[state=active]:bg-[#334155] text-[#cbd5e1] data-[state=active]:text-[#f1f5f9]">P4 Future</TabsTrigger>
         </TabsList>
 
         <ScrollArea className="h-[600px] mt-4">
           <div ref={diagramRef}>
             <TabsContent value="overview" className="space-y-4">
               {/* Overview SVG */}
-              <Card className="bg-slate-900 border-slate-700">
+              <Card className="bg-[#1e293b] border-[#475569]">
                 <CardContent className="pt-6">
                   <svg viewBox="0 0 1200 450" className="w-full h-auto">
-                    <rect width="1200" height="450" fill="#0f172a" rx="8" />
+                    <defs>
+                      <filter id="scenarioShadow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.3"/>
+                      </filter>
+                    </defs>
                     
-                    <text x="600" y="40" textAnchor="middle" fill="#e2e8f0" fontSize="22" fontWeight="600">
+                    <rect width="1200" height="450" fill="#1e293b" rx="8" />
+                    
+                    <text x="600" y="40" textAnchor="middle" fill="#f1f5f9" fontSize="22" fontWeight="600">
                       Genie Studio Scenario Implementation Status
                     </text>
-                    <text x="600" y="65" textAnchor="middle" fill="#64748b" fontSize="14">
+                    <text x="600" y="65" textAnchor="middle" fill="#94a3b8" fontSize="14">
                       60 Total Scenarios | 18 Implemented | 12 Partial | 30 Planned
                     </text>
 
@@ -206,44 +226,44 @@ export const GenieStudioScenarioMapDiagram = () => {
                       
                       return (
                         <g key={key} transform={`translate(${x}, 100)`}>
-                          <rect width="200" height="300" rx="12" fill="#1e293b" stroke="#334155" strokeWidth="1" />
-                          <rect width="200" height="50" rx="12" fill="#334155" />
+                          <rect width="200" height="300" rx="12" fill="#0f172a" stroke="#475569" strokeWidth="1" filter="url(#scenarioShadow)" />
+                          <rect width="200" height="50" rx="12" fill={config.color} fillOpacity="0.2" stroke={config.color} strokeWidth="1" />
                           
-                          <text x="100" y="32" textAnchor="middle" fill="#e2e8f0" fontSize="13" fontWeight="600">
+                          <text x="100" y="32" textAnchor="middle" fill="#f1f5f9" fontSize="13" fontWeight="600">
                             {config.label}
                           </text>
                           
                           {/* Stats */}
-                          <text x="100" y="80" textAnchor="middle" fill="#64748b" fontSize="12">
+                          <text x="100" y="80" textAnchor="middle" fill="#94a3b8" fontSize="12">
                             {stats.total} scenarios
                           </text>
                           
                           {/* Progress bar */}
-                          <rect x="20" y="95" width="160" height="12" rx="6" fill="#0f172a" />
-                          <rect x="20" y="95" width={160 * (stats.percent / 100)} height="12" rx="6" fill="#475569" />
-                          <text x="100" y="123" textAnchor="middle" fill="#94a3b8" fontSize="11">
+                          <rect x="20" y="95" width="160" height="12" rx="6" fill="#1e293b" />
+                          <rect x="20" y="95" width={160 * (stats.percent / 100)} height="12" rx="6" fill={config.color} />
+                          <text x="100" y="123" textAnchor="middle" fill="#cbd5e1" fontSize="11">
                             {stats.percent}% Complete
                           </text>
                           
                           {/* Status breakdown */}
                           <g transform="translate(20, 140)">
-                            <rect width="50" height="20" rx="4" fill="#475569" />
-                            <text x="25" y="14" textAnchor="middle" fill="#e2e8f0" fontSize="10">{stats.implemented}</text>
-                            <text x="70" y="14" fill="#94a3b8" fontSize="9">Done</text>
+                            <rect width="50" height="20" rx="4" fill="#22c55e" fillOpacity="0.2" stroke="#22c55e" strokeWidth="1" />
+                            <text x="25" y="14" textAnchor="middle" fill="#86efac" fontSize="10">{stats.implemented}</text>
+                            <text x="70" y="14" fill="#86efac" fontSize="9">Done</text>
                             
-                            <rect y="30" width="50" height="20" rx="4" fill="#334155" />
-                            <text x="25" y="44" textAnchor="middle" fill="#e2e8f0" fontSize="10">{stats.partial}</text>
-                            <text x="70" y="44" fill="#64748b" fontSize="9">Partial</text>
+                            <rect y="30" width="50" height="20" rx="4" fill="#f59e0b" fillOpacity="0.2" stroke="#f59e0b" strokeWidth="1" />
+                            <text x="25" y="44" textAnchor="middle" fill="#fcd34d" fontSize="10">{stats.partial}</text>
+                            <text x="70" y="44" fill="#fcd34d" fontSize="9">Partial</text>
                             
-                            <rect y="60" width="50" height="20" rx="4" fill="#1e293b" stroke="#334155" strokeWidth="1" />
+                            <rect y="60" width="50" height="20" rx="4" fill="#475569" fillOpacity="0.2" stroke="#475569" strokeWidth="1" />
                             <text x="25" y="74" textAnchor="middle" fill="#94a3b8" fontSize="10">{stats.planned}</text>
-                            <text x="70" y="74" fill="#475569" fontSize="9">Planned</text>
+                            <text x="70" y="74" fill="#94a3b8" fontSize="9">Planned</text>
                           </g>
                           
                           {/* Category highlights */}
-                          <text x="20" y="240" fill="#64748b" fontSize="9" fontWeight="600">Top Categories:</text>
+                          <text x="20" y="240" fill="#94a3b8" fontSize="9" fontWeight="600">Top Categories:</text>
                           {scenarios[key]?.slice(0, 3).map((s, i) => (
-                            <text key={s.id} x="20" y={258 + i * 14} fill="#475569" fontSize="8">
+                            <text key={s.id} x="20" y={258 + i * 14} fill="#cbd5e1" fontSize="8">
                               • {s.category}
                             </text>
                           ))}
@@ -253,13 +273,13 @@ export const GenieStudioScenarioMapDiagram = () => {
 
                     {/* Legend */}
                     <g transform="translate(60, 420)">
-                      <text x="0" y="0" fill="#64748b" fontSize="10">Legend:</text>
-                      <rect x="60" y="-10" width="12" height="12" rx="2" fill="#475569" />
-                      <text x="78" y="0" fill="#94a3b8" fontSize="10">Implemented</text>
-                      <rect x="160" y="-10" width="12" height="12" rx="2" fill="#334155" />
-                      <text x="178" y="0" fill="#64748b" fontSize="10">Partial</text>
-                      <rect x="240" y="-10" width="12" height="12" rx="2" fill="#1e293b" stroke="#334155" strokeWidth="1" />
-                      <text x="258" y="0" fill="#475569" fontSize="10">Planned</text>
+                      <text x="0" y="0" fill="#94a3b8" fontSize="10">Status Legend:</text>
+                      <rect x="90" y="-10" width="12" height="12" rx="2" fill="#22c55e" />
+                      <text x="108" y="0" fill="#86efac" fontSize="10">Implemented</text>
+                      <rect x="190" y="-10" width="12" height="12" rx="2" fill="#f59e0b" />
+                      <text x="208" y="0" fill="#fcd34d" fontSize="10">Partial</text>
+                      <rect x="270" y="-10" width="12" height="12" rx="2" fill="#475569" />
+                      <text x="288" y="0" fill="#94a3b8" fontSize="10">Planned</text>
                     </g>
                   </svg>
                 </CardContent>
@@ -271,14 +291,14 @@ export const GenieStudioScenarioMapDiagram = () => {
                   const stats = getStats(key);
                   const IconComponent = config.icon;
                   return (
-                    <Card key={key} className="bg-slate-900 border-slate-700">
+                    <Card key={key} className="bg-[#1e293b] border-[#475569]" style={{ borderColor: config.color }}>
                       <CardContent className="pt-4">
                         <div className="flex items-center gap-2 mb-2">
-                          <IconComponent className="h-4 w-4 text-slate-500" />
-                          <span className="text-sm font-medium text-slate-400">{config.label}</span>
+                          <IconComponent className="h-4 w-4" style={{ color: config.color }} />
+                          <span className="text-sm font-medium text-[#cbd5e1]">{config.label}</span>
                         </div>
-                        <div className="text-2xl font-bold text-slate-200">{stats.percent}%</div>
-                        <p className="text-xs text-slate-600">{stats.implemented}/{stats.total} complete</p>
+                        <div className="text-2xl font-bold text-[#f1f5f9]">{stats.percent}%</div>
+                        <p className="text-xs text-[#94a3b8]">{stats.implemented}/{stats.total} complete</p>
                       </CardContent>
                     </Card>
                   );
@@ -289,37 +309,41 @@ export const GenieStudioScenarioMapDiagram = () => {
             {/* Priority-specific tabs */}
             {Object.entries(scenarios).map(([priority, items]) => (
               <TabsContent key={priority} value={priority} className="space-y-4">
-                <Card className="bg-slate-900 border-slate-700">
+                <Card className="bg-[#1e293b] border-[#475569]">
                   <CardHeader>
                     <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2 text-slate-200">
+                      <CardTitle className="flex items-center gap-2 text-[#f1f5f9]">
                         {React.createElement(priorityConfig[priority as keyof typeof priorityConfig].icon, {
-                          className: 'h-5 w-5 text-slate-400'
+                          className: 'h-5 w-5',
+                          style: { color: priorityConfig[priority as keyof typeof priorityConfig].color }
                         })}
                         {priorityConfig[priority as keyof typeof priorityConfig].label} Scenarios
                       </CardTitle>
-                      <Badge variant="outline" className="border-slate-600 text-slate-400">
+                      <Badge variant="outline" style={{ 
+                        borderColor: priorityConfig[priority as keyof typeof priorityConfig].color,
+                        color: priorityConfig[priority as keyof typeof priorityConfig].color
+                      }}>
                         {getStats(priority).percent}% Complete
                       </Badge>
                     </div>
-                    <p className="text-slate-500 text-sm">
+                    <p className="text-[#94a3b8] text-sm">
                       {priorityConfig[priority as keyof typeof priorityConfig].description}
                     </p>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 gap-3">
                       {items.map((scenario) => (
-                        <div key={scenario.id} className="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+                        <div key={scenario.id} className="p-4 bg-[#0f172a] rounded-lg border border-[#475569]">
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex items-center gap-2">
-                              <span className="text-slate-500 text-xs font-mono">#{scenario.id}</span>
-                              <span className="text-slate-300 font-medium text-sm">{scenario.name}</span>
+                              <span className="text-[#94a3b8] text-xs font-mono">#{scenario.id}</span>
+                              <span className="text-[#f1f5f9] font-medium text-sm">{scenario.name}</span>
                             </div>
                             {getStatusBadge(scenario.status)}
                           </div>
-                          <p className="text-slate-500 text-xs">{scenario.description}</p>
+                          <p className="text-[#94a3b8] text-xs">{scenario.description}</p>
                           <div className="mt-2">
-                            <Badge variant="outline" className="border-slate-700 text-slate-500 text-xs">
+                            <Badge variant="outline" className="border-[#475569] text-[#cbd5e1] text-xs">
                               {scenario.category}
                             </Badge>
                           </div>
