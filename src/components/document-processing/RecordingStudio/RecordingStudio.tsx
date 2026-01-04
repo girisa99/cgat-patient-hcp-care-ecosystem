@@ -221,31 +221,78 @@ export function RecordingStudio({
   const currentMusic = music.find(m => m.id === selectedMusicId);
   const currentTTSFile = voiceovers.find(v => v.id === selectedTTSFileId);
   
-  // Filter scripts to only show those with TTS audio ready
-  // A script has TTS audio if there's a voiceover/TTS file with matching scriptText or name pattern
-  const scriptsWithTTS = scripts.filter(script => {
-    // Check if any voiceover has scriptText that matches this script's content
-    const hasTTSAudio = voiceovers.some(v => {
+  // Analyze scripts for TTS/Voiceover status
+  // Returns detailed info about each script's audio availability
+  const scriptAudioStatus = scripts.map(script => {
+    const scriptTitle = script.title.toLowerCase().replace(/[^a-z0-9]/g, '');
+    
+    // Find matching TTS files (metadataType = 'tts')
+    const matchingTTS = voiceovers.filter(v => {
+      if (v.metadataType !== 'tts') return false;
+      
       // Match by scriptText content
       if (v.scriptText && script.content) {
         const scriptContent = script.enhancedContent || script.content;
-        // Partial match - scriptText should be similar to script content
         if (v.scriptText.substring(0, 100) === scriptContent.substring(0, 100)) {
           return true;
         }
       }
-      // Match by name pattern - TTS file name contains script title
-      const scriptTitle = script.title.toLowerCase().replace(/[^a-z0-9]/g, '');
+      // Match by name pattern
       const voName = v.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-      if (voName.includes(scriptTitle) || scriptTitle.includes(voName.substring(0, 20))) {
-        return true;
-      }
-      return false;
+      return voName.includes(scriptTitle) || scriptTitle.includes(voName.substring(0, 20));
     });
-    return hasTTSAudio;
+    
+    // Find matching Voiceover files (metadataType = 'voiceover')
+    const matchingVoiceover = voiceovers.filter(v => {
+      if (v.metadataType !== 'voiceover') return false;
+      
+      // Match by scriptText content
+      if (v.scriptText && script.content) {
+        const scriptContent = script.enhancedContent || script.content;
+        if (v.scriptText.substring(0, 100) === scriptContent.substring(0, 100)) {
+          return true;
+        }
+      }
+      // Match by name pattern
+      const voName = v.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      return voName.includes(scriptTitle) || scriptTitle.includes(voName.substring(0, 20));
+    });
+    
+    // Determine if TTS is for enhanced or original version
+    const hasTTSForEnhanced = matchingTTS.some(t => 
+      t.name.toLowerCase().includes('enhanced') || 
+      (t.scriptText && script.enhancedContent && t.scriptText.substring(0, 50) === script.enhancedContent.substring(0, 50))
+    );
+    const hasTTSForOriginal = matchingTTS.some(t => 
+      !t.name.toLowerCase().includes('enhanced') &&
+      (t.scriptText && script.content && t.scriptText.substring(0, 50) === script.content.substring(0, 50))
+    );
+    
+    return {
+      script,
+      hasTTS: matchingTTS.length > 0,
+      hasVoiceover: matchingVoiceover.length > 0,
+      hasEnhanced: !!script.enhancedContent,
+      hasTTSForEnhanced,
+      hasTTSForOriginal: hasTTSForOriginal || (matchingTTS.length > 0 && !hasTTSForEnhanced),
+      ttsFiles: matchingTTS,
+      voiceoverFiles: matchingVoiceover,
+      // Best audio file to use (prefer TTS, then voiceover)
+      bestAudioFile: matchingTTS[0] || matchingVoiceover[0] || null
+    };
   });
   
-  console.log('[RecordingStudio] Scripts with TTS:', scriptsWithTTS.length, 'of', scripts.length, 'total scripts');
+  // Group scripts by status
+  const scriptsWithTTS = scriptAudioStatus.filter(s => s.hasTTS);
+  const scriptsWithVoiceoverOnly = scriptAudioStatus.filter(s => !s.hasTTS && s.hasVoiceover);
+  const scriptsNeedingAudio = scriptAudioStatus.filter(s => !s.hasTTS && !s.hasVoiceover);
+  
+  console.log('[RecordingStudio] Script audio status:', {
+    withTTS: scriptsWithTTS.length,
+    withVoiceoverOnly: scriptsWithVoiceoverOnly.length,
+    needingAudio: scriptsNeedingAudio.length,
+    total: scripts.length
+  });
   
   // Track script text from selected TTS/voiceover for teleprompter
   const [audioLinkedScriptText, setAudioLinkedScriptText] = useState<string | null>(null);
@@ -1295,16 +1342,24 @@ export function RecordingStudio({
                   </div>
                 )}
 
-                {/* Script Selection - Only shows scripts with TTS audio ready */}
+                {/* Script Selection - Shows all scripts with status indicators */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4 text-primary" />
-                      <span className="font-medium text-sm">Script (TTS Ready)</span>
+                      <span className="font-medium text-sm">Script</span>
                     </div>
-                    <Badge variant="outline" className="text-xs">
-                      {scriptsWithTTS.length} with audio
-                    </Badge>
+                    <div className="flex gap-1">
+                      <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
+                        {scriptsWithTTS.length} TTS
+                      </Badge>
+                      <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600 border-blue-500/30">
+                        {scriptsWithVoiceoverOnly.length} VO
+                      </Badge>
+                      <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/30">
+                        {scriptsNeedingAudio.length} need audio
+                      </Badge>
+                    </div>
                   </div>
                   <select
                     value={selectedScriptId}
@@ -1312,31 +1367,17 @@ export function RecordingStudio({
                       const scriptId = e.target.value;
                       setSelectedScriptId(scriptId);
                       
-                      // Auto-select matching TTS file when script is selected
+                      // Auto-select matching audio file when script is selected
                       if (scriptId) {
-                        const selectedScript = scripts.find(s => s.id === scriptId);
-                        if (selectedScript) {
-                          const matchingTTS = voiceovers.find(v => {
-                            // Match by scriptText content
-                            if (v.scriptText && selectedScript.content) {
-                              const scriptContent = selectedScript.enhancedContent || selectedScript.content;
-                              if (v.scriptText.substring(0, 100) === scriptContent.substring(0, 100)) {
-                                return true;
-                              }
-                            }
-                            // Match by name pattern
-                            const scriptTitle = selectedScript.title.toLowerCase().replace(/[^a-z0-9]/g, '');
-                            const voName = v.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-                            if (voName.includes(scriptTitle) || scriptTitle.includes(voName.substring(0, 20))) {
-                              return true;
-                            }
-                            return false;
-                          });
-                          
-                          if (matchingTTS) {
-                            console.log('[RecordingStudio] Auto-selected TTS file for script:', matchingTTS.name);
-                            setSelectedTTSFileId(matchingTTS.id);
+                        const scriptStatus = scriptAudioStatus.find(s => s.script.id === scriptId);
+                        if (scriptStatus?.bestAudioFile) {
+                          console.log('[RecordingStudio] Auto-selected audio for script:', scriptStatus.bestAudioFile.name);
+                          if (scriptStatus.hasTTS) {
+                            setSelectedTTSFileId(scriptStatus.bestAudioFile.id);
                             setActiveAudioTab('tts');
+                          } else if (scriptStatus.hasVoiceover) {
+                            setSelectedVoiceoverId(scriptStatus.bestAudioFile.id);
+                            setActiveAudioTab('voiceover');
                           }
                         }
                       }
@@ -1344,18 +1385,67 @@ export function RecordingStudio({
                     className="w-full p-2 rounded-md border bg-background text-sm"
                   >
                     <option value="">Select script for teleprompter...</option>
-                    {scriptsWithTTS.map((s) => (
-                      <option key={s.id} value={s.id}>{s.title}</option>
-                    ))}
-                    {scriptsWithTTS.length === 0 && scripts.length > 0 && (
-                      <option disabled>No scripts have TTS audio yet</option>
+                    
+                    {/* Scripts with TTS - Ready to record */}
+                    {scriptsWithTTS.length > 0 && (
+                      <optgroup label="✓ TTS Ready">
+                        {scriptsWithTTS.map((s) => (
+                          <option key={s.script.id} value={s.script.id}>
+                            {s.script.title} {s.hasEnhanced ? '(Enhanced)' : '(Original)'} {s.hasTTSForEnhanced ? '• Enhanced TTS' : s.hasTTSForOriginal ? '• Original TTS' : ''}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    
+                    {/* Scripts with Voiceover only */}
+                    {scriptsWithVoiceoverOnly.length > 0 && (
+                      <optgroup label="🎙 Voiceover Only">
+                        {scriptsWithVoiceoverOnly.map((s) => (
+                          <option key={s.script.id} value={s.script.id}>
+                            {s.script.title} {s.hasEnhanced ? '(Enhanced)' : '(Original)'}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    
+                    {/* Scripts needing audio */}
+                    {scriptsNeedingAudio.length > 0 && (
+                      <optgroup label="⚠ Needs Audio">
+                        {scriptsNeedingAudio.map((s) => (
+                          <option key={s.script.id} value={s.script.id} className="text-muted-foreground">
+                            {s.script.title} {s.hasEnhanced ? '(Enhanced available)' : '(Original only)'}
+                          </option>
+                        ))}
+                      </optgroup>
                     )}
                   </select>
-                  {scriptsWithTTS.length === 0 && scripts.length > 0 && (
-                    <p className="text-xs text-amber-600">
-                      Generate TTS audio in Genie Studio first
-                    </p>
-                  )}
+                  
+                  {/* Status message based on selected script */}
+                  {selectedScriptId && (() => {
+                    const status = scriptAudioStatus.find(s => s.script.id === selectedScriptId);
+                    if (!status) return null;
+                    
+                    if (status.hasTTS) {
+                      return (
+                        <p className="text-xs text-green-600 flex items-center gap-1">
+                          ✓ TTS audio ready - will auto-play during recording
+                        </p>
+                      );
+                    } else if (status.hasVoiceover) {
+                      return (
+                        <p className="text-xs text-blue-600 flex items-center gap-1">
+                          🎙 Voiceover available - will auto-play during recording
+                        </p>
+                      );
+                    } else {
+                      return (
+                        <p className="text-xs text-amber-600 flex items-center gap-1">
+                          ⚠ No audio for this script - generate TTS in Genie Studio
+                        </p>
+                      );
+                    }
+                  })()}
+                  
                   {currentScript && (
                     <div className="p-2 rounded bg-muted/50 text-xs text-muted-foreground max-h-24 overflow-y-auto">
                       {currentScript.content?.slice(0, 200)}...
