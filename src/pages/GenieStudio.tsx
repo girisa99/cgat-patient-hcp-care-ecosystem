@@ -1908,6 +1908,13 @@ export default function GenieStudio() {
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-purple-500/5 to-pink-500/5" />
           <div className="relative px-6 py-8 md:py-12">
             <div className="max-w-7xl mx-auto">
+              {/* Suite Tagline */}
+              <div className="text-center mb-6">
+                <span className="inline-block px-4 py-1.5 rounded-full bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 text-sm font-medium text-purple-400">
+                  ✨ Mind to Media
+                </span>
+              </div>
+              
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
@@ -1927,14 +1934,17 @@ export default function GenieStudio() {
 
                 {/* Quick Actions */}
                 <div className="flex flex-wrap gap-3">
-                  <Button 
-                    size="lg" 
-                    onClick={() => setIsStudioOpen(true)}
-                    className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white shadow-lg shadow-red-500/25 transition-all hover:scale-105"
-                  >
-                    <Video className="h-5 w-5 mr-2" />
-                    Open Genie Vibe
-                  </Button>
+                  <div className="flex flex-col items-end gap-1">
+                    <Button 
+                      size="lg" 
+                      onClick={() => setIsStudioOpen(true)}
+                      className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white shadow-lg shadow-red-500/25 transition-all hover:scale-105"
+                    >
+                      <Video className="h-5 w-5 mr-2" />
+                      Open Genie Vibe
+                    </Button>
+                    <span className="text-xs text-muted-foreground italic">Script to Screen</span>
+                  </div>
                   <Button 
                     size="lg" 
                     variant="outline"
