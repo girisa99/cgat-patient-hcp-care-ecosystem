@@ -448,7 +448,8 @@ export function RecordingStudio({
     setLogo(prev => ({ ...prev, position: pos }));
   }, []);
   
-  // Calculate current word index from audio time
+  // Calculate current word index from audio time with improved sync algorithm
+  // Uses weighted timing based on word length and punctuation for better TTS alignment
   useEffect(() => {
     if (audioPlayback.audioTimeInfo) {
       setAudioCurrentTime(audioPlayback.audioTimeInfo.currentTime);
@@ -458,12 +459,47 @@ export function RecordingStudio({
       const currentScript = scripts.find(s => s.id === selectedScriptId);
       if (currentScript && audioPlayback.audioTimeInfo.duration > 0) {
         const words = currentScript.content.split(/\s+/).filter(w => w.length > 0);
-        const wordsPerSecond = words.length / audioPlayback.audioTimeInfo.duration;
-        const index = Math.min(
-          Math.floor(audioPlayback.audioTimeInfo.currentTime * wordsPerSecond),
-          words.length - 1
-        );
-        setCurrentWordIndex(Math.max(0, index));
+        
+        // Calculate weighted durations for each word
+        // Longer words take more time, punctuation adds pauses
+        const wordWeights = words.map(word => {
+          let weight = word.length; // Base weight = character count
+          
+          // Add pause weight for punctuation
+          if (word.match(/[.!?]$/)) weight += 4; // End of sentence pause
+          else if (word.match(/[,;:]$/)) weight += 2; // Comma pause
+          else if (word.match(/[-–—]$/)) weight += 1; // Dash pause
+          
+          // Minimum weight to prevent too-fast words
+          return Math.max(weight, 2);
+        });
+        
+        const totalWeight = wordWeights.reduce((sum, w) => sum + w, 0);
+        const currentTime = audioPlayback.audioTimeInfo.currentTime;
+        const duration = audioPlayback.audioTimeInfo.duration;
+        
+        // Find which word we should be at based on elapsed time proportion
+        const timeProgress = currentTime / duration;
+        let accumulatedWeight = 0;
+        let targetIndex = 0;
+        
+        for (let i = 0; i < words.length; i++) {
+          accumulatedWeight += wordWeights[i];
+          const progress = accumulatedWeight / totalWeight;
+          
+          if (progress >= timeProgress) {
+            targetIndex = i;
+            break;
+          }
+          targetIndex = i;
+        }
+        
+        // Add slight lead time (cursor slightly ahead of voice for readability)
+        // This helps the speaker see what's coming next
+        const leadWords = Math.ceil(words.length * 0.01); // 1% lead
+        targetIndex = Math.min(targetIndex + leadWords, words.length - 1);
+        
+        setCurrentWordIndex(Math.max(0, targetIndex));
       }
     }
   }, [audioPlayback.audioTimeInfo, scripts, selectedScriptId]);
