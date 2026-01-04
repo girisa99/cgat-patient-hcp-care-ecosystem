@@ -22,6 +22,7 @@ export { VideoRecorder } from './VideoRecorder';
 export { TeleprompterPopup } from './TeleprompterPopup';
 export { VideoEditor } from './VideoEditor';
 export { GenieStudioScriptGallery } from './GenieStudioScriptGallery';
+export { GenieStudioVisualAssets } from './GenieStudioVisualAssets';
 
 // New Improvement Components
 export { ModelUsageAnalyticsDashboard } from './ModelUsageAnalyticsDashboard';
