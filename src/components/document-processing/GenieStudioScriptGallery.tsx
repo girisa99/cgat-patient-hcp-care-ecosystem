@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -6,6 +6,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Download, ExternalLink, Play, FileText, Image, Video, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { GenieRecordingStudioArchitectureDiagram } from '@/components/diagrams';
+
+// Import the full script as raw text
+import fullScriptContent from '@/assets/scripts/GENIE_RECORDING_STUDIO_SCRIPT.md?raw';
 
 // Import generated images
 import heroImage from '@/assets/genie-recording-architecture-hero.png';
@@ -72,59 +75,8 @@ export const GenieStudioScriptGallery = () => {
     window.open(image.src, '_blank');
   };
 
-  const scriptContent = `
-# Genie Studio & Recording Studio: From Frustration to Innovation
-
-## The Story
-
-It was New Year's weekend 2025. After countless hours wrestling with Loom, Descript, and other 
-recording tools—burning tokens, wasting time, feeling like a "video editing tourist"—I made 
-a decision: Build exactly what I need.
-
-**4 days. One weekend. A complete production studio.**
-
-## What We Built
-
-### 🧞 Genie Studio (Pre-Production)
-- Project management & organization
-- Script writing with AI enhancement  
-- TTS generation (ElevenLabs + fallbacks)
-- Agent canvas for workflow building
-- Knowledge base with RAG capabilities
-
-### 🎬 Recording Studio (Production)
-- Teleprompter with sync controls
-- Multi-source video capture (Camera, Screen, PiP)
-- Floating audio mixer (TTS, VO, Music, Mic)
-- One-click recording with countdown
-- Export to MP4, WebM, Audio, SRT captions
-
-## The Magic: Context Handoff
-
-When you open Recording Studio from Genie Studio, everything transfers:
-- Scripts with timing cues
-- Generated TTS audio files
-- Project metadata & settings
-- Background music tracks
-
-No file management. No import/export dance. It just works.
-
-## Key Technical Patterns
-
-- **MediaRecorder API** for video capture
-- **Web Audio API** for real-time mixing
-- **FFmpeg.wasm** for in-browser transcoding
-- **Custom React hooks** for state coordination
-- **ElevenLabs integration** for premium TTS
-
-## The Result
-
-Created the Patient Onboarding technical video in under 24 hours—
-what previously took days of frustration with other tools.
-
-**This is what vibe-based development enables:**
-Solo developers building production-ready tools in days, not months.
-  `.trim();
+  // Use the imported full script content
+  const scriptContent = fullScriptContent;
 
   return (
     <Card className="w-full bg-slate-900 border-slate-700">
