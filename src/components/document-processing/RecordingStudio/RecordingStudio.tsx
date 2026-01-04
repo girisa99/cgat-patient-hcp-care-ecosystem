@@ -33,8 +33,8 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-// Import Genie Vibe logo
-import genieVibeLogo from '@/assets/logos/genie-vibe-product.png';
+// Import Genie Vibe logo - using presentation version for better visibility
+import genieVibeLogo from '@/assets/logos/genie-vibe-presentation.png';
 
 import { 
   useCamera, 
