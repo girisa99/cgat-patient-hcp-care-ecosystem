@@ -1,7 +1,7 @@
 /**
  * Genie Mind - AI-Powered Media Production Hub
  * "AI That Understands" - Pre-production command center for content creation
- * Part of the Genie Mind + Genie Vibe suite: "From Mind to Media"
+ * Part of the Genie Suite
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -72,6 +72,11 @@ import { SavedAudioCard } from '@/components/genie-studio/SavedAudioCard';
 import { useGenieMediaLibrary } from '@/components/genie-studio/useGenieMediaLibrary';
 import { useGenieScripts, type GenieScript } from '@/components/genie-studio/useGenieScripts';
 import { supabase } from '@/integrations/supabase/client';
+
+// Import Genie logos
+import genieMindLogo from '@/assets/logos/genie-mind-product.png';
+import genieVibeLogo from '@/assets/logos/genie-vibe-product.png';
+import genieArcLogo from '@/assets/logos/genie-arc-product.png';
 
 // Types for media items
 interface MediaItem {
@@ -1911,7 +1916,7 @@ export default function GenieStudio() {
               {/* Suite Tagline - Enterprise Style */}
               <div className="text-center mb-8">
                 <div className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-card/80 backdrop-blur border border-border/50 shadow-sm">
-                  <span className="text-sm font-semibold tracking-wide text-foreground">Mind to Media</span>
+                  <span className="text-sm font-semibold tracking-wide text-foreground">Genie Suite</span>
                   <span className="w-px h-4 bg-border" />
                   <span className="text-xs text-muted-foreground">AI-Powered Production Suite</span>
                 </div>
@@ -1920,8 +1925,8 @@ export default function GenieStudio() {
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/25">
-                      <Sparkles className="h-6 w-6 text-white" />
+                    <div className="h-14 w-14 rounded-xl bg-white flex items-center justify-center shadow-lg overflow-hidden">
+                      <img src={genieMindLogo} alt="Genie Mind" className="h-12 w-12 object-contain" />
                     </div>
                     <div>
                       <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground via-foreground to-muted-foreground bg-clip-text">
@@ -1940,13 +1945,13 @@ export default function GenieStudio() {
                   <Button 
                     size="lg" 
                     onClick={() => setIsStudioOpen(true)}
-                    className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white shadow-lg shadow-red-500/25 transition-all hover:scale-105 flex-col h-auto py-2.5 px-5"
+                    className="bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white shadow-lg shadow-purple-500/25 transition-all hover:scale-105 flex items-center gap-3 h-auto py-2.5 px-5"
                   >
-                    <span className="flex items-center">
-                      <Video className="h-5 w-5 mr-2" />
-                      Open Genie Vibe
-                    </span>
-                    <span className="text-[10px] font-normal opacity-80 mt-0.5">Script to Screen</span>
+                    <img src={genieVibeLogo} alt="Genie Vibe" className="h-8 w-8 object-contain rounded bg-white p-0.5" />
+                    <div className="flex flex-col items-start">
+                      <span className="font-semibold">Genie Vibe</span>
+                      <span className="text-[10px] font-normal opacity-80">Script to Screen</span>
+                    </div>
                   </Button>
                   
                   {/* Genie Arc Button */}
@@ -1954,13 +1959,13 @@ export default function GenieStudio() {
                     size="lg" 
                     variant="outline"
                     onClick={() => setIsCreateShowDialogOpen(true)}
-                    className="border-border/50 hover:bg-muted/50 flex-col h-auto py-2.5 px-5"
+                    className="border-border/50 hover:bg-muted/50 flex items-center gap-3 h-auto py-2.5 px-5"
                   >
-                    <span className="flex items-center">
-                      <Calendar className="h-5 w-5 mr-2" />
-                      Genie Arc
-                    </span>
-                    <span className="text-[10px] font-normal text-muted-foreground mt-0.5">Your Production Journey</span>
+                    <img src={genieArcLogo} alt="Genie Arc" className="h-8 w-8 object-contain rounded bg-white p-0.5" />
+                    <div className="flex flex-col items-start">
+                      <span className="font-semibold">Genie Arc</span>
+                      <span className="text-[10px] font-normal text-muted-foreground">Your Production Journey</span>
+                    </div>
                   </Button>
                 </div>
               </div>
