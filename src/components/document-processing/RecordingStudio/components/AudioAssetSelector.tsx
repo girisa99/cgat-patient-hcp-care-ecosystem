@@ -95,11 +95,7 @@ export function AudioAssetSelector({
   onToggleDucking,
 }: AudioAssetSelectorProps) {
   
-  const selectedVoiceover = voiceovers.find(v => v.id === selectedVoiceoverId);
-  const selectedMusic = musicList.find(m => m.id === selectedMusicId);
-  const selectedTTSFile = ttsFiles.find(f => f.id === selectedTTSFileId);
-
-  // Use shared filter functions for consistent categorization
+  // Convert to filter-compatible format
   const voiceoverDataForFiltering = voiceovers.map(v => ({
     id: v.id,
     name: v.name,
@@ -109,10 +105,24 @@ export function AudioAssetSelector({
     metadataType: v.metadataType || undefined
   }));
   
-  // Filter using shared functions
-  const actualTTSFiles = filterTTSFiles(voiceoverDataForFiltering);
+  const ttsDataForFiltering = ttsFiles.map(v => ({
+    id: v.id,
+    name: v.name,
+    url: v.url,
+    scriptText: v.scriptText || undefined,
+    scriptType: v.scriptType as any,
+    metadataType: v.metadataType || undefined
+  }));
+  
+  // Filter using shared functions FIRST to get properly categorized lists
   const actualVoiceovers = filterActualVoiceovers(voiceoverDataForFiltering);
+  const actualTTSFiles = filterTTSFiles(ttsDataForFiltering);
   const instrumentalFiles = filterInstrumentalFiles(voiceoverDataForFiltering);
+  
+  // Find selected items from the ORIGINAL arrays using the ID (since IDs are preserved)
+  const selectedVoiceover = voiceovers.find(v => v.id === selectedVoiceoverId);
+  const selectedMusic = musicList.find(m => m.id === selectedMusicId);
+  const selectedTTSFile = ttsFiles.find(f => f.id === selectedTTSFileId);
   
   // Combine musicList prop with instrumental files
   const actualMusic = [
@@ -127,28 +137,32 @@ export function AudioAssetSelector({
     console.log('[AudioAssetSelector] === DATA ANALYSIS ===');
     console.log('[AudioAssetSelector] Raw voiceovers input:', voiceovers.length, 'files');
     voiceovers.forEach((v, i) => {
-      console.log(`  [${i}] ${v.name.substring(0, 40)}... | scriptType: ${v.scriptType || 'null'} | metadataType: ${v.metadataType || 'null'} | hasUrl: ${!!v.url}`);
+      console.log(`  [${i}] id=${v.id.substring(0, 8)}... | ${v.name.substring(0, 35)}... | scriptType: ${v.scriptType || 'null'} | metadataType: ${v.metadataType || 'null'} | hasUrl: ${!!v.url} | urlPreview: ${v.url?.substring(0, 50) || 'none'}`);
     });
     
     console.log('[AudioAssetSelector] Raw ttsFiles input:', ttsFiles.length, 'files');
-    ttsFiles.forEach((f, i) => {
-      console.log(`  [${i}] ${f.name.substring(0, 40)}... | metadataType: ${f.metadataType || 'null'} | hasUrl: ${!!f.url}`);
-    });
     
     console.log('[AudioAssetSelector] Raw musicList input:', musicList.length, 'files');
     
     console.log('[AudioAssetSelector] === FILTERED RESULTS ===');
     console.log('  Actual Voiceovers:', actualVoiceovers.length);
-    actualVoiceovers.forEach(v => console.log(`    - ${v.name}`));
+    actualVoiceovers.forEach(v => console.log(`    - id=${v.id.substring(0, 8)}... | ${v.name}`));
     
     console.log('  Actual TTS Files:', actualTTSFiles.length);
-    actualTTSFiles.forEach(f => console.log(`    - ${f.name}`));
+    actualTTSFiles.forEach(f => console.log(`    - id=${f.id.substring(0, 8)}... | ${f.name}`));
     
     console.log('  Instrumental Music:', instrumentalFiles.length);
-    instrumentalFiles.forEach(m => console.log(`    - ${m.name}`));
     
     console.log('  Combined Music (with musicList):', actualMusic.length);
-  }, [voiceovers, ttsFiles, musicList, actualVoiceovers, actualTTSFiles, instrumentalFiles, actualMusic]);
+    
+    console.log('[AudioAssetSelector] === SELECTION STATE ===');
+    console.log('  selectedVoiceoverId:', selectedVoiceoverId || '(none)');
+    console.log('  selectedVoiceover:', selectedVoiceover ? `${selectedVoiceover.name} | hasUrl: ${!!selectedVoiceover.url}` : '(none)');
+    console.log('  selectedTTSFileId:', selectedTTSFileId || '(none)');
+    console.log('  selectedTTSFile:', selectedTTSFile ? `${selectedTTSFile.name} | hasUrl: ${!!selectedTTSFile.url}` : '(none)');
+    console.log('  selectedMusicId:', selectedMusicId || '(none)');
+    console.log('  selectedMusic:', selectedMusic ? `${selectedMusic.name} | hasUrl: ${!!selectedMusic.url}` : '(none)');
+  }, [voiceovers, ttsFiles, musicList, actualVoiceovers, actualTTSFiles, instrumentalFiles, actualMusic, selectedVoiceoverId, selectedVoiceover, selectedTTSFileId, selectedTTSFile, selectedMusicId, selectedMusic]);
 
   // Download helper
   const handleDownload = (url: string, name: string) => {

@@ -1324,9 +1324,17 @@ export function RecordingStudio({
                   selectedVoiceoverId={selectedVoiceoverId}
                   onVoiceoverChange={setSelectedVoiceoverId}
                   onPlayVoiceover={() => {
-                    console.log('[RecordingStudio] Playing Voiceover:', { selectedVoiceoverId, currentVoiceover: currentVoiceover?.name, url: currentVoiceover?.url?.substring(0, 50) });
-                    if (currentVoiceover?.url) {
-                      audioPlayback.playVoiceover(currentVoiceover.url);
+                    // Find voiceover fresh in callback to avoid stale closure
+                    const voiceoverToPlay = voiceovers.find(v => v.id === selectedVoiceoverId);
+                    console.log('[RecordingStudio] onPlayVoiceover:', { 
+                      selectedVoiceoverId, 
+                      found: !!voiceoverToPlay, 
+                      name: voiceoverToPlay?.name,
+                      url: voiceoverToPlay?.url?.substring(0, 80),
+                      allVoiceoverIds: voiceovers.map(v => v.id)
+                    });
+                    if (voiceoverToPlay?.url) {
+                      audioPlayback.playVoiceover(voiceoverToPlay.url);
                     } else {
                       toast.error('Select a voiceover file first');
                     }
@@ -1341,9 +1349,16 @@ export function RecordingStudio({
                   selectedMusicId={selectedMusicId}
                   onMusicChange={setSelectedMusicId}
                   onPlayMusic={() => {
-                    console.log('[RecordingStudio] Playing Music:', { selectedMusicId, currentMusic: currentMusic?.name, url: currentMusic?.url?.substring(0, 50) });
-                    if (currentMusic?.url) {
-                      audioPlayback.playMusic(currentMusic.url);
+                    // Find music fresh in callback to avoid stale closure
+                    const musicToPlay = music.find(m => m.id === selectedMusicId);
+                    console.log('[RecordingStudio] onPlayMusic:', { 
+                      selectedMusicId, 
+                      found: !!musicToPlay, 
+                      name: musicToPlay?.name,
+                      url: musicToPlay?.url?.substring(0, 80)
+                    });
+                    if (musicToPlay?.url) {
+                      audioPlayback.playMusic(musicToPlay.url);
                     } else {
                       toast.error('Select a music file first');
                     }
