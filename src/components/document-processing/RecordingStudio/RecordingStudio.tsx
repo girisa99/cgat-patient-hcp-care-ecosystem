@@ -1542,10 +1542,24 @@ export function RecordingStudio({
                   selectedTTSFileId={selectedTTSFileId}
                   onTTSFileChange={setSelectedTTSFileId}
                   onPlayTTS={() => {
+                    // Find TTS file from voiceovers - search by ID
                     const ttsFile = voiceovers.find(v => v.id === selectedTTSFileId);
-                    console.log('[RecordingStudio] Playing TTS:', { selectedTTSFileId, ttsFile: ttsFile?.name, url: ttsFile?.url?.substring(0, 50) });
+                    console.log('[RecordingStudio] Playing TTS:', { 
+                      selectedTTSFileId, 
+                      ttsFile: ttsFile?.name, 
+                      url: ttsFile?.url?.substring(0, 80),
+                      urlType: typeof ttsFile?.url,
+                      voiceoverCount: voiceovers.length
+                    });
+                    
                     if (ttsFile?.url) {
-                      audioPlayback.playTTS(ttsFile.url);
+                      // Ensure URL is a valid string before playing
+                      const audioUrl = String(ttsFile.url);
+                      console.log('[RecordingStudio] Calling playTTS with URL:', audioUrl.substring(0, 80));
+                      audioPlayback.playTTS(audioUrl);
+                    } else if (selectedTTSFileId) {
+                      console.error('[RecordingStudio] TTS file found but no URL:', ttsFile);
+                      toast.error('TTS file has no audio URL');
                     } else {
                       toast.error('Select a TTS file first');
                     }
