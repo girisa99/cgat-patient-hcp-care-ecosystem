@@ -1,12 +1,16 @@
 /**
  * Recording Hook - Handles MediaRecorder and recording state
- * Now supports combining multiple audio sources (voiceover, TTS, music) into recording
+ * Uses AudioMixer for dynamic audio capture during recording.
+ * 
+ * Key improvement: Audio can be started/stopped/replayed during recording
+ * without losing the recording session.
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import type { RecordingState } from '../types';
+import { useRecordingAudioMixer } from './useRecordingAudioMixer';
 
-interface AudioSources {
+interface AudioElements {
   voiceover?: HTMLAudioElement | null;
   tts?: HTMLAudioElement | null;
   music?: HTMLAudioElement | null;
@@ -15,7 +19,6 @@ interface AudioSources {
 interface UseRecordingOptions {
   onRecordingComplete?: (blob: Blob, duration: number) => void;
   countdownSeconds?: number;
-  audioSources?: AudioSources;
   quality?: 'low' | 'medium' | 'high' | 'ultra';
 }
 
@@ -23,7 +26,7 @@ export function useRecording(
   stream: MediaStream | null,
   options: UseRecordingOptions = {}
 ) {
-  const { onRecordingComplete, countdownSeconds = 5, audioSources, quality = 'high' } = options;
+  const { onRecordingComplete, countdownSeconds = 5, quality = 'high' } = options;
   
   const [state, setState] = useState<RecordingState>({
     isRecording: false,
@@ -41,70 +44,18 @@ export function useRecording(
   const startTimeRef = useRef<number>(0);
   const pausedTimeRef = useRef<number>(0);
   const combinedStreamRef = useRef<MediaStream | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
+  
+  // Use the audio mixer for dynamic audio capture
+  const audioMixer = useRecordingAudioMixer();
 
-  // Create combined stream with all audio sources
-  const createCombinedStream = useCallback((
-    videoStream: MediaStream,
-    audios: AudioSources
-  ): MediaStream => {
-    try {
-      // Create AudioContext for mixing
-      const audioContext = new AudioContext();
-      audioContextRef.current = audioContext;
-      
-      const destination = audioContext.createMediaStreamDestination();
-      
-      // Add microphone audio from video stream
-      const audioTracks = videoStream.getAudioTracks();
-      if (audioTracks.length > 0) {
-        const micSource = audioContext.createMediaStreamSource(
-          new MediaStream([audioTracks[0]])
-        );
-        micSource.connect(destination);
-        console.log('[Recording] Added microphone audio');
-      }
-      
-      // Add voiceover audio
-      if (audios.voiceover && !audios.voiceover.paused) {
-        const voiceoverSource = audioContext.createMediaElementSource(audios.voiceover);
-        voiceoverSource.connect(destination);
-        voiceoverSource.connect(audioContext.destination); // Also play through speakers
-        console.log('[Recording] Added voiceover audio');
-      }
-      
-      // Add TTS audio
-      if (audios.tts && !audios.tts.paused) {
-        const ttsSource = audioContext.createMediaElementSource(audios.tts);
-        ttsSource.connect(destination);
-        ttsSource.connect(audioContext.destination);
-        console.log('[Recording] Added TTS audio');
-      }
-      
-      // Add music audio
-      if (audios.music && !audios.music.paused) {
-        const musicSource = audioContext.createMediaElementSource(audios.music);
-        musicSource.connect(destination);
-        musicSource.connect(audioContext.destination);
-        console.log('[Recording] Added music audio');
-      }
-      
-      // Combine video tracks with mixed audio
-      const videoTracks = videoStream.getVideoTracks();
-      const combinedStream = new MediaStream([
-        ...videoTracks,
-        ...destination.stream.getAudioTracks(),
-      ]);
-      
-      combinedStreamRef.current = combinedStream;
-      console.log('[Recording] Created combined stream with', combinedStream.getTracks().length, 'tracks');
-      
-      return combinedStream;
-    } catch (err) {
-      console.error('[Recording] Failed to create combined stream:', err);
-      return videoStream; // Fallback to original stream
+  /**
+   * Connect audio element to recording (can be called anytime during recording)
+   */
+  const connectAudio = useCallback((audio: HTMLAudioElement | null, type: 'tts' | 'voiceover' | 'music') => {
+    if (audioMixer.isActive() && audio) {
+      audioMixer.connectAudioElement(audio, type);
     }
-  }, []);
+  }, [audioMixer]);
 
   const startCountdown = useCallback((onComplete: () => void) => {
     let count = countdownSeconds;
@@ -129,11 +80,26 @@ export function useRecording(
       try {
         chunksRef.current = [];
         
-        // Create combined stream with audio sources if provided
-        let recordingStream = stream;
-        if (audioSources) {
-          recordingStream = createCombinedStream(stream, audioSources);
+        // Initialize audio mixer with microphone
+        const mixedAudioStream = audioMixer.initialize(stream);
+        
+        // Create combined stream with video + mixed audio
+        const videoTracks = stream.getVideoTracks();
+        let recordingStream: MediaStream;
+        
+        if (mixedAudioStream) {
+          recordingStream = new MediaStream([
+            ...videoTracks,
+            ...mixedAudioStream.getAudioTracks(),
+          ]);
+          console.log('[Recording] Created stream with dynamic audio mixer');
+        } else {
+          // Fallback to original stream
+          recordingStream = stream;
+          console.log('[Recording] Using original stream (no mixer)');
         }
+        
+        combinedStreamRef.current = recordingStream;
         
         // Quality settings for video bitrate
         const qualitySettings: Record<string, number> = {
@@ -144,11 +110,11 @@ export function useRecording(
         };
         const videoBitsPerSecond = qualitySettings[quality] || qualitySettings.high;
         
-        const options = { 
+        const mimeOptions = { 
           mimeType: 'video/webm;codecs=vp9,opus',
           videoBitsPerSecond,
         };
-        let mimeType = options.mimeType;
+        let mimeType = mimeOptions.mimeType;
         
         if (!MediaRecorder.isTypeSupported(mimeType)) {
           mimeType = 'video/webm';
@@ -168,7 +134,6 @@ export function useRecording(
         recorder.ondataavailable = (event) => {
           if (event.data && event.data.size > 0) {
             chunksRef.current.push(event.data);
-            // Update state with current chunks for trim functionality
             setState(prev => ({
               ...prev,
               recordedChunks: [...chunksRef.current],
@@ -176,18 +141,28 @@ export function useRecording(
           }
         };
 
-        recorder.onstop = () => {
-          const blob = new Blob(chunksRef.current, { type: 'video/webm' });
-          const duration = Math.floor((Date.now() - startTimeRef.current - pausedTimeRef.current) / 1000);
-          onRecordingComplete?.(blob, duration);
-          
-          // Cleanup audio context
-          if (audioContextRef.current) {
-            audioContextRef.current.close();
-            audioContextRef.current = null;
-          }
+        recorder.onerror = (event: any) => {
+          console.error('[Recording] MediaRecorder error:', event.error);
+          // Don't stop recording on minor errors - just log
         };
 
+        recorder.onstop = () => {
+          console.log('[Recording] MediaRecorder stopped, chunks:', chunksRef.current.length);
+          
+          if (chunksRef.current.length > 0) {
+            const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+            const duration = Math.floor((Date.now() - startTimeRef.current - pausedTimeRef.current) / 1000);
+            console.log('[Recording] Created blob:', blob.size, 'bytes, duration:', duration, 's');
+            onRecordingComplete?.(blob, duration);
+          } else {
+            console.error('[Recording] No chunks recorded!');
+          }
+          
+          // Cleanup audio mixer
+          audioMixer.cleanup();
+        };
+
+        // Request data every second for reliability
         recorder.start(1000);
         startTimeRef.current = Date.now();
         pausedTimeRef.current = 0;
@@ -208,12 +183,13 @@ export function useRecording(
           recordedChunks: [],
         });
 
-        console.log('[Recording] Started with combined audio');
+        console.log('[Recording] Started with dynamic audio mixer');
       } catch (err) {
         console.error('[Recording] Failed to start:', err);
+        audioMixer.cleanup();
       }
     });
-  }, [stream, state.isRecording, startCountdown, onRecordingComplete, audioSources, createCombinedStream]);
+  }, [stream, state.isRecording, startCountdown, onRecordingComplete, quality, audioMixer]);
 
   const pauseRecording = useCallback(() => {
     if (!mediaRecorderRef.current || !state.isRecording) return;
@@ -232,7 +208,12 @@ export function useRecording(
   }, [state.isRecording, state.isPaused]);
 
   const stopRecording = useCallback(() => {
-    if (!mediaRecorderRef.current) return;
+    if (!mediaRecorderRef.current) {
+      console.warn('[Recording] No MediaRecorder to stop');
+      return;
+    }
+
+    console.log('[Recording] Stopping, recorder state:', mediaRecorderRef.current.state);
 
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -242,10 +223,16 @@ export function useRecording(
     setState(prev => ({ ...prev, isRecording: false, isStopped: true }));
 
     if (mediaRecorderRef.current.state !== 'inactive') {
+      // Request final data before stopping
+      try {
+        mediaRecorderRef.current.requestData();
+      } catch (e) {
+        // Ignore if not supported
+      }
       mediaRecorderRef.current.stop();
     }
 
-    // Cleanup combined stream
+    // Cleanup combined stream tracks
     if (combinedStreamRef.current) {
       combinedStreamRef.current.getTracks().forEach(track => track.stop());
       combinedStreamRef.current = null;
@@ -258,12 +245,10 @@ export function useRecording(
   const trimLastSeconds = useCallback((seconds: number): Blob | null => {
     if (chunksRef.current.length === 0) return null;
     
-    // Estimate bytes per second based on total size and duration
     const totalSize = chunksRef.current.reduce((sum, chunk) => sum + chunk.size, 0);
     const bytesPerSecond = totalSize / Math.max(1, state.duration);
     const bytesToTrim = Math.floor(bytesPerSecond * seconds);
     
-    // Remove chunks from the end until we've trimmed enough bytes
     let bytesRemoved = 0;
     const trimmedChunks = [...chunksRef.current];
     
@@ -297,6 +282,16 @@ export function useRecording(
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   }, []);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+      audioMixer.cleanup();
+    };
+  }, [audioMixer]);
+
   return {
     ...state,
     countdown,
@@ -306,5 +301,7 @@ export function useRecording(
     stopRecording,
     trimLastSeconds,
     getCurrentBlob,
+    // Expose method to connect audio dynamically during recording
+    connectAudio,
   };
 }
