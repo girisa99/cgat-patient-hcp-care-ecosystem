@@ -221,6 +221,32 @@ export function RecordingStudio({
   const currentMusic = music.find(m => m.id === selectedMusicId);
   const currentTTSFile = voiceovers.find(v => v.id === selectedTTSFileId);
   
+  // Filter scripts to only show those with TTS audio ready
+  // A script has TTS audio if there's a voiceover/TTS file with matching scriptText or name pattern
+  const scriptsWithTTS = scripts.filter(script => {
+    // Check if any voiceover has scriptText that matches this script's content
+    const hasTTSAudio = voiceovers.some(v => {
+      // Match by scriptText content
+      if (v.scriptText && script.content) {
+        const scriptContent = script.enhancedContent || script.content;
+        // Partial match - scriptText should be similar to script content
+        if (v.scriptText.substring(0, 100) === scriptContent.substring(0, 100)) {
+          return true;
+        }
+      }
+      // Match by name pattern - TTS file name contains script title
+      const scriptTitle = script.title.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const voName = v.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (voName.includes(scriptTitle) || scriptTitle.includes(voName.substring(0, 20))) {
+        return true;
+      }
+      return false;
+    });
+    return hasTTSAudio;
+  });
+  
+  console.log('[RecordingStudio] Scripts with TTS:', scriptsWithTTS.length, 'of', scripts.length, 'total scripts');
+  
   // Track script text from selected TTS/voiceover for teleprompter
   const [audioLinkedScriptText, setAudioLinkedScriptText] = useState<string | null>(null);
   
@@ -1269,32 +1295,70 @@ export function RecordingStudio({
                   </div>
                 )}
 
-                {/* Script Selection (Simplified) */}
+                {/* Script Selection - Only shows scripts with TTS audio ready */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4 text-primary" />
-                      <span className="font-medium text-sm">Script</span>
+                      <span className="font-medium text-sm">Script (TTS Ready)</span>
                     </div>
-                    {currentScript && (
-                      <Badge variant="outline" className="text-xs">
-                        {scripts.length} available
-                      </Badge>
-                    )}
+                    <Badge variant="outline" className="text-xs">
+                      {scriptsWithTTS.length} with audio
+                    </Badge>
                   </div>
                   <select
                     value={selectedScriptId}
-                    onChange={(e) => setSelectedScriptId(e.target.value)}
+                    onChange={(e) => {
+                      const scriptId = e.target.value;
+                      setSelectedScriptId(scriptId);
+                      
+                      // Auto-select matching TTS file when script is selected
+                      if (scriptId) {
+                        const selectedScript = scripts.find(s => s.id === scriptId);
+                        if (selectedScript) {
+                          const matchingTTS = voiceovers.find(v => {
+                            // Match by scriptText content
+                            if (v.scriptText && selectedScript.content) {
+                              const scriptContent = selectedScript.enhancedContent || selectedScript.content;
+                              if (v.scriptText.substring(0, 100) === scriptContent.substring(0, 100)) {
+                                return true;
+                              }
+                            }
+                            // Match by name pattern
+                            const scriptTitle = selectedScript.title.toLowerCase().replace(/[^a-z0-9]/g, '');
+                            const voName = v.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                            if (voName.includes(scriptTitle) || scriptTitle.includes(voName.substring(0, 20))) {
+                              return true;
+                            }
+                            return false;
+                          });
+                          
+                          if (matchingTTS) {
+                            console.log('[RecordingStudio] Auto-selected TTS file for script:', matchingTTS.name);
+                            setSelectedTTSFileId(matchingTTS.id);
+                            setActiveAudioTab('tts');
+                          }
+                        }
+                      }
+                    }}
                     className="w-full p-2 rounded-md border bg-background text-sm"
                   >
                     <option value="">Select script for teleprompter...</option>
-                    {scripts.map((s) => (
+                    {scriptsWithTTS.map((s) => (
                       <option key={s.id} value={s.id}>{s.title}</option>
                     ))}
+                    {scriptsWithTTS.length === 0 && scripts.length > 0 && (
+                      <option disabled>No scripts have TTS audio yet</option>
+                    )}
                   </select>
+                  {scriptsWithTTS.length === 0 && scripts.length > 0 && (
+                    <p className="text-xs text-amber-600">
+                      Generate TTS audio in Genie Studio first
+                    </p>
+                  )}
                   {currentScript && (
                     <div className="p-2 rounded bg-muted/50 text-xs text-muted-foreground max-h-24 overflow-y-auto">
-                      {currentScript.content.slice(0, 200)}...
+                      {currentScript.content?.slice(0, 200)}...
                     </div>
                   )}
                   <div className="flex items-center gap-2">
