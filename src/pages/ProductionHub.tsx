@@ -320,14 +320,53 @@ export default function ProductionHub() {
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Create New Production</DialogTitle>
+              <DialogTitle>Create New {EVENT_CATEGORIES.find(c => c.id === newEventCategory)?.label || 'Production'}</DialogTitle>
               <DialogDescription>
-                Set up your {newShow.show_type} production. Fields adapt based on starting stage.
+                Set up your {getShowTypesForCategory(newEventCategory).find(t => t.id === newShow.show_type)?.label || 'production'}. Fields adapt based on starting stage.
               </DialogDescription>
             </DialogHeader>
             
             <ScrollArea className="max-h-[60vh] pr-4">
               <div className="space-y-4 py-4">
+                {/* Event Category Selection */}
+                <div className="space-y-2">
+                  <Label>Category</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {EVENT_CATEGORIES.map((cat) => {
+                      const isSelected = newEventCategory === cat.id;
+                      const Icon = cat.id === 'media_production' ? Podcast : cat.id === 'business_meeting' ? Briefcase : Calendar;
+                      return (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => {
+                            setNewEventCategory(cat.id);
+                            const types = getShowTypesForCategory(cat.id);
+                            const stages = getStagesForCategory(cat.id);
+                            setNewShow(prev => ({
+                              ...prev,
+                              show_type: types[0]?.id as ShowType,
+                              starting_stage: stages[0]?.id as ProductionStage,
+                              event_category: cat.id,
+                            }));
+                          }}
+                          className={cn(
+                            "flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all",
+                            isSelected 
+                              ? "border-primary bg-primary/10" 
+                              : "border-border hover:border-primary/50"
+                          )}
+                        >
+                          <Icon className={cn("h-5 w-5", isSelected ? "text-primary" : "text-muted-foreground")} />
+                          <span className={cn("text-xs font-medium", isSelected ? "text-primary" : "text-muted-foreground")}>
+                            {cat.label.replace(' Production', '').replace(' Meeting', 's')}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 {/* Basic Info */}
                 <div className="space-y-2">
                   <Label htmlFor="title">Title *</Label>
@@ -350,7 +389,7 @@ export default function ProductionHub() {
                         <SelectValue placeholder="Select type" />
                       </SelectTrigger>
                       <SelectContent>
-                        {SHOW_TYPES.map((type) => (
+                        {getShowTypesForCategory(newEventCategory).map((type) => (
                           <SelectItem key={type.id} value={type.id}>
                             {type.label}
                           </SelectItem>
@@ -369,7 +408,7 @@ export default function ProductionHub() {
                         <SelectValue placeholder="Select stage" />
                       </SelectTrigger>
                       <SelectContent>
-                        {PRODUCTION_STAGES.map((stage) => (
+                        {getStagesForCategory(newEventCategory).map((stage) => (
                           <SelectItem key={stage.id} value={stage.id}>
                             <div className="flex items-center gap-2">
                               <div className={cn("w-2 h-2 rounded-full", stage.color)} />
