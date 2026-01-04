@@ -8,7 +8,7 @@ import html2canvas from 'html2canvas';
 export const SubAgentArchitectureDiagram: React.FC = () => {
   const diagramRef = useRef<HTMLDivElement>(null);
 
-  const handleDownload = async () => {
+  const handleDownloadPNG = async () => {
     if (!diagramRef.current) return;
     
     try {
@@ -24,11 +24,108 @@ export const SubAgentArchitectureDiagram: React.FC = () => {
       link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
       
-      toast.success('Diagram downloaded as PNG!');
+      toast.success('PNG downloaded successfully!');
     } catch (error) {
       console.error('Download failed:', error);
-      toast.error('Failed to download diagram.');
+      toast.error('Failed to download PNG.');
     }
+  };
+
+  const handleDownloadSVG = () => {
+    const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <rect width="1200" height="800" fill="#0f172a"/>
+  <text x="600" y="40" text-anchor="middle" fill="#ffffff" font-size="24" font-weight="bold">Sub-Agent Architecture</text>
+  <text x="600" y="70" text-anchor="middle" fill="#94a3b8" font-size="14">Domain Orchestrator Routes Tasks to Specialist Agents</text>
+  
+  <!-- Legend -->
+  <g transform="translate(50, 720)">
+    <rect width="1100" height="60" rx="8" fill="#1e293b" stroke="#475569"/>
+    <text x="20" y="25" fill="#94a3b8" font-size="12" font-weight="bold">Legend:</text>
+    <circle cx="100" cy="20" r="8" fill="#6366f1"/>
+    <text x="115" y="25" fill="#94a3b8" font-size="11">Domain Orchestrator</text>
+    <circle cx="280" cy="20" r="8" fill="#22d3ee"/>
+    <text x="295" y="25" fill="#94a3b8" font-size="11">Task Routing</text>
+    <circle cx="420" cy="20" r="8" fill="#22c55e"/>
+    <text x="435" y="25" fill="#94a3b8" font-size="11">Result Aggregation</text>
+    
+    <text x="20" y="48" fill="#94a3b8" font-size="12" font-weight="bold">Agents:</text>
+    <rect x="80" y="35" width="16" height="16" rx="2" fill="#3b82f6"/>
+    <text x="102" y="48" fill="#94a3b8" font-size="10">Verification</text>
+    <rect x="180" y="35" width="16" height="16" rx="2" fill="#22c55e"/>
+    <text x="202" y="48" fill="#94a3b8" font-size="10">Benefits</text>
+    <rect x="270" y="35" width="16" height="16" rx="2" fill="#f97316"/>
+    <text x="292" y="48" fill="#94a3b8" font-size="10">Prior Auth</text>
+    <rect x="370" y="35" width="16" height="16" rx="2" fill="#a855f7"/>
+    <text x="392" y="48" fill="#94a3b8" font-size="10">Coding</text>
+    <rect x="450" y="35" width="16" height="16" rx="2" fill="#06b6d4"/>
+    <text x="472" y="48" fill="#94a3b8" font-size="10">Adherence</text>
+    <rect x="550" y="35" width="16" height="16" rx="2" fill="#eab308"/>
+    <text x="572" y="48" fill="#94a3b8" font-size="10">Custom</text>
+  </g>
+  
+  <!-- Orchestrator -->
+  <g transform="translate(400, 150)">
+    <rect width="400" height="120" rx="16" fill="#312e81" stroke="#6366f1" stroke-width="2"/>
+    <text x="200" y="40" text-anchor="middle" fill="#ffffff" font-size="20" font-weight="bold">🧠 Domain Orchestrator</text>
+    <text x="200" y="65" text-anchor="middle" fill="#a5b4fc" font-size="12">Central Intelligence Hub</text>
+    <text x="200" y="90" text-anchor="middle" fill="#c7d2fe" font-size="11">Task Analysis • Agent Selection • Result Aggregation</text>
+  </g>
+  
+  <!-- Agent boxes -->
+  <g transform="translate(50, 350)">
+    <rect width="160" height="150" rx="10" fill="#1e3a8a" stroke="#3b82f6" stroke-width="2"/>
+    <text x="80" y="30" text-anchor="middle" fill="#ffffff" font-size="24">🔍</text>
+    <text x="80" y="55" text-anchor="middle" fill="#93c5fd" font-size="12" font-weight="bold">Verification</text>
+    <text x="80" y="75" text-anchor="middle" fill="#bfdbfe" font-size="10">Agent</text>
+  </g>
+  <g transform="translate(230, 350)">
+    <rect width="160" height="150" rx="10" fill="#14532d" stroke="#22c55e" stroke-width="2"/>
+    <text x="80" y="30" text-anchor="middle" fill="#ffffff" font-size="24">💊</text>
+    <text x="80" y="55" text-anchor="middle" fill="#86efac" font-size="12" font-weight="bold">Benefits</text>
+    <text x="80" y="75" text-anchor="middle" fill="#bbf7d0" font-size="10">Investigation</text>
+  </g>
+  <g transform="translate(410, 350)">
+    <rect width="160" height="150" rx="10" fill="#7c2d12" stroke="#f97316" stroke-width="2"/>
+    <text x="80" y="30" text-anchor="middle" fill="#ffffff" font-size="24">📋</text>
+    <text x="80" y="55" text-anchor="middle" fill="#fdba74" font-size="12" font-weight="bold">Prior Auth</text>
+    <text x="80" y="75" text-anchor="middle" fill="#fed7aa" font-size="10">Agent</text>
+  </g>
+  <g transform="translate(590, 350)">
+    <rect width="160" height="150" rx="10" fill="#581c87" stroke="#a855f7" stroke-width="2"/>
+    <text x="80" y="30" text-anchor="middle" fill="#ffffff" font-size="24">🏷️</text>
+    <text x="80" y="55" text-anchor="middle" fill="#d8b4fe" font-size="12" font-weight="bold">Coding</text>
+    <text x="80" y="75" text-anchor="middle" fill="#e9d5ff" font-size="10">Agent</text>
+  </g>
+  <g transform="translate(770, 350)">
+    <rect width="160" height="150" rx="10" fill="#164e63" stroke="#06b6d4" stroke-width="2"/>
+    <text x="80" y="30" text-anchor="middle" fill="#ffffff" font-size="24">💚</text>
+    <text x="80" y="55" text-anchor="middle" fill="#67e8f9" font-size="12" font-weight="bold">Adherence</text>
+    <text x="80" y="75" text-anchor="middle" fill="#a5f3fc" font-size="10">Agent</text>
+  </g>
+  <g transform="translate(950, 350)">
+    <rect width="160" height="150" rx="10" fill="#713f12" stroke="#eab308" stroke-width="2"/>
+    <text x="80" y="30" text-anchor="middle" fill="#ffffff" font-size="24">⚙️</text>
+    <text x="80" y="55" text-anchor="middle" fill="#fde047" font-size="12" font-weight="bold">Custom</text>
+    <text x="80" y="75" text-anchor="middle" fill="#fef08a" font-size="10">Agents</text>
+  </g>
+  
+  <!-- Output -->
+  <g transform="translate(300, 580)">
+    <rect width="600" height="80" rx="12" fill="#064e3b" stroke="#22c55e" stroke-width="2"/>
+    <text x="300" y="35" text-anchor="middle" fill="#22c55e" font-size="16" font-weight="bold">Aggregated Response</text>
+    <text x="300" y="60" text-anchor="middle" fill="#a7f3d0" font-size="12">✓ Validated • ✓ Checked • ✓ Approved • ✓ Assigned • ✓ Tracked • ✓ Processed</text>
+  </g>
+</svg>`;
+    
+    const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'sub-agent-architecture-diagram.svg';
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('SVG downloaded successfully!');
   };
 
   const handleOpenFullSize = () => {
@@ -112,9 +209,13 @@ export const SubAgentArchitectureDiagram: React.FC = () => {
             <Maximize2 className="h-4 w-4" />
             Full Size
           </Button>
-          <Button variant="default" size="sm" onClick={handleDownload} className="gap-2 bg-cyan-600 hover:bg-cyan-700">
+          <Button variant="outline" size="sm" onClick={handleDownloadSVG} className="gap-2 text-slate-300 border-slate-600 hover:bg-slate-800">
             <Download className="h-4 w-4" />
-            Download PNG
+            SVG
+          </Button>
+          <Button variant="default" size="sm" onClick={handleDownloadPNG} className="gap-2 bg-cyan-600 hover:bg-cyan-700">
+            <Download className="h-4 w-4" />
+            PNG
           </Button>
         </div>
       </CardHeader>

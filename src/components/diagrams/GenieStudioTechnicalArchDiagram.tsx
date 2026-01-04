@@ -48,7 +48,7 @@ export const GenieStudioTechnicalArchDiagram = () => {
     window.open('/docs/GENIE_STUDIO_TECHNICAL_ARCHITECTURE.md', '_blank');
   };
 
-  const handleDownload = async () => {
+  const handleDownloadPNG = async () => {
     if (!diagramRef.current) return;
     try {
       const canvas = await html2canvas(diagramRef.current, {
@@ -62,11 +62,72 @@ export const GenieStudioTechnicalArchDiagram = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      toast.success('Diagram downloaded successfully');
+      toast.success('PNG downloaded successfully');
     } catch (error) {
       console.error('Download error:', error);
-      toast.error('Failed to download diagram');
+      toast.error('Failed to download PNG');
     }
+  };
+
+  const handleDownloadSVG = () => {
+    const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600">
+  <rect width="1200" height="600" fill="${colors.background}"/>
+  <text x="600" y="35" text-anchor="middle" fill="${colors.text}" font-size="20" font-weight="bold">Genie Studio Technical Architecture</text>
+  
+  <!-- Legend -->
+  <g transform="translate(50, 50)">
+    <rect width="400" height="50" rx="6" fill="${colors.cardBg}" stroke="${colors.border}"/>
+    <text x="15" y="22" fill="${colors.text}" font-size="11" font-weight="bold">Status:</text>
+    <rect x="60" y="10" width="12" height="12" rx="2" fill="${colors.completed.bg}"/>
+    <text x="78" y="20" fill="${colors.textMuted}" font-size="10">Completed</text>
+    <rect x="145" y="10" width="12" height="12" rx="2" fill="${colors.inProgress.bg}"/>
+    <text x="163" y="20" fill="${colors.textMuted}" font-size="10">In Progress</text>
+    <rect x="240" y="10" width="12" height="12" rx="2" fill="${colors.planned.bg}"/>
+    <text x="258" y="20" fill="${colors.textMuted}" font-size="10">Planned</text>
+    
+    <text x="15" y="42" fill="${colors.text}" font-size="11" font-weight="bold">Layers:</text>
+    <rect x="60" y="30" width="12" height="12" rx="2" fill="${colors.presentation.bg}"/>
+    <text x="78" y="40" fill="${colors.textMuted}" font-size="10">Presentation</text>
+    <rect x="155" y="30" width="12" height="12" rx="2" fill="${colors.application.bg}"/>
+    <text x="173" y="40" fill="${colors.textMuted}" font-size="10">Application</text>
+    <rect x="250" y="30" width="12" height="12" rx="2" fill="${colors.domain.bg}"/>
+    <text x="268" y="40" fill="${colors.textMuted}" font-size="10">Domain</text>
+    <rect x="320" y="30" width="12" height="12" rx="2" fill="${colors.infrastructure.bg}"/>
+    <text x="338" y="40" fill="${colors.textMuted}" font-size="10">Infrastructure</text>
+  </g>
+  
+  <!-- Layers -->
+  <g transform="translate(50, 120)">
+    <rect width="1100" height="100" rx="8" fill="${colors.presentation.light}" stroke="${colors.presentation.bg}" stroke-width="2"/>
+    <text x="20" y="25" fill="${colors.presentation.bg}" font-size="14" font-weight="bold">FRONTEND LAYER</text>
+    <text x="20" y="50" fill="${colors.text}" font-size="11">React + Vite + TypeScript • GenieStudio.tsx • RecordingStudio.tsx • Teleprompter.tsx</text>
+  </g>
+  <g transform="translate(50, 240)">
+    <rect width="1100" height="100" rx="8" fill="${colors.application.light}" stroke="${colors.application.bg}" stroke-width="2"/>
+    <text x="20" y="25" fill="${colors.application.bg}" font-size="14" font-weight="bold">SERVICES LAYER</text>
+    <text x="20" y="50" fill="${colors.text}" font-size="11">useUniversalAI • genieConversationService • useRecordingStudio • useTTSGeneration</text>
+  </g>
+  <g transform="translate(50, 360)">
+    <rect width="1100" height="100" rx="8" fill="${colors.domain.light}" stroke="${colors.domain.bg}" stroke-width="2"/>
+    <text x="20" y="25" fill="${colors.domain.bg}" font-size="14" font-weight="bold">EDGE FUNCTIONS</text>
+    <text x="20" y="50" fill="${colors.text}" font-size="11">ai-universal-processor • tts-generate • script-enhance • media-processor</text>
+  </g>
+  <g transform="translate(50, 480)">
+    <rect width="1100" height="100" rx="8" fill="${colors.infrastructure.light}" stroke="${colors.infrastructure.bg}" stroke-width="2"/>
+    <text x="20" y="25" fill="${colors.infrastructure.bg}" font-size="14" font-weight="bold">DATABASE LAYER</text>
+    <text x="20" y="50" fill="${colors.text}" font-size="11">genie_projects • genie_scripts • genie_recordings • universal_knowledge_base</text>
+  </g>
+</svg>`;
+    
+    const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `genie-studio-technical-architecture-${activeTab}.svg`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('SVG downloaded successfully');
   };
 
   return (
@@ -83,9 +144,13 @@ export const GenieStudioTechnicalArchDiagram = () => {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleDownload} className="gap-2">
+              <Button variant="outline" size="sm" onClick={handleDownloadSVG} className="gap-2">
                 <Download className="h-4 w-4" />
-                Download PNG
+                SVG
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleDownloadPNG} className="gap-2">
+                <Download className="h-4 w-4" />
+                PNG
               </Button>
               <Button variant="outline" size="sm" onClick={openDocs} className="gap-2">
                 <FileText className="h-4 w-4" />
