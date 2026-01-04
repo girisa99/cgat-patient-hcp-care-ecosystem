@@ -1,18 +1,20 @@
 /**
- * TTS Generation Hook - Real integration with ElevenLabs, OpenAI, and Google Cloud TTS
+ * TTS Generation Hook - Real integration with ElevenLabs, OpenAI, Google Cloud, Amazon Polly, and Azure TTS
  */
 
 import { useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 
 export interface TTSOptions {
-  provider: 'openai' | 'elevenlabs' | 'google';
+  provider: 'openai' | 'elevenlabs' | 'google' | 'amazon' | 'azure';
   voice: string;
   text: string;
   speed?: number;
   stability?: number;
   similarityBoost?: number;
   pitch?: number;
+  style?: string; // For Azure style support
+  engine?: string; // For Amazon Polly engine selection
   scriptMode?: 'podcast' | 'webcast' | 'video' | 'audio';
   voiceSettings?: {
     stability: number;
@@ -73,6 +75,74 @@ export const GOOGLE_VOICES = [
   // Studio (Premium)
   { value: 'en-US-Studio-M', label: 'Studio Male', description: 'Premium, Male' },
   { value: 'en-US-Studio-O', label: 'Studio Female', description: 'Premium, Female' },
+];
+
+export const AMAZON_POLLY_VOICES = [
+  // US English - Neural
+  { value: 'Joanna', label: 'Joanna', description: 'Female, American Neural' },
+  { value: 'Matthew', label: 'Matthew', description: 'Male, American Neural' },
+  { value: 'Kendra', label: 'Kendra', description: 'Female, American Neural' },
+  { value: 'Kimberly', label: 'Kimberly', description: 'Female, American Neural' },
+  { value: 'Salli', label: 'Salli', description: 'Female, American Neural' },
+  { value: 'Joey', label: 'Joey', description: 'Male, American Neural' },
+  { value: 'Justin', label: 'Justin', description: 'Male, American Neural' },
+  { value: 'Kevin', label: 'Kevin', description: 'Male, American Neural' },
+  { value: 'Ruth', label: 'Ruth', description: 'Female, American Neural' },
+  { value: 'Stephen', label: 'Stephen', description: 'Male, American Neural' },
+  // UK English - Neural
+  { value: 'Amy', label: 'Amy', description: 'Female, British Neural' },
+  { value: 'Emma', label: 'Emma (UK)', description: 'Female, British Neural' },
+  { value: 'Brian', label: 'Brian (UK)', description: 'Male, British Neural' },
+  { value: 'Arthur', label: 'Arthur', description: 'Male, British Neural' },
+  // Australian English
+  { value: 'Olivia', label: 'Olivia (AU)', description: 'Female, Australian Neural' },
+  // Generative (Long-form)
+  { value: 'Matthew-generative', label: 'Matthew (Long-form)', description: 'Male, Generative Engine' },
+  { value: 'Ruth-generative', label: 'Ruth (Long-form)', description: 'Female, Generative Engine' },
+];
+
+export const AZURE_VOICES = [
+  // US English - Neural
+  { value: 'en-US-JennyNeural', label: 'Jenny', description: 'Female, American', styles: ['cheerful', 'sad', 'angry'] },
+  { value: 'en-US-GuyNeural', label: 'Guy', description: 'Male, American', styles: ['newscast'] },
+  { value: 'en-US-AriaNeural', label: 'Aria', description: 'Female, American', styles: ['chat', 'customerservice', 'narration'] },
+  { value: 'en-US-DavisNeural', label: 'Davis', description: 'Male, American', styles: ['chat', 'angry', 'cheerful'] },
+  { value: 'en-US-AmberNeural', label: 'Amber', description: 'Female, American' },
+  { value: 'en-US-AnaNeural', label: 'Ana (Child)', description: 'Female, American' },
+  { value: 'en-US-AshleyNeural', label: 'Ashley', description: 'Female, American' },
+  { value: 'en-US-BrandonNeural', label: 'Brandon', description: 'Male, American' },
+  { value: 'en-US-ChristopherNeural', label: 'Christopher', description: 'Male, American' },
+  { value: 'en-US-CoraNeural', label: 'Cora', description: 'Female, American' },
+  { value: 'en-US-ElizabethNeural', label: 'Elizabeth', description: 'Female, American' },
+  { value: 'en-US-EricNeural', label: 'Eric', description: 'Male, American' },
+  { value: 'en-US-JacobNeural', label: 'Jacob', description: 'Male, American' },
+  { value: 'en-US-JaneNeural', label: 'Jane', description: 'Female, American', styles: ['angry', 'cheerful', 'sad'] },
+  { value: 'en-US-JasonNeural', label: 'Jason', description: 'Male, American', styles: ['angry', 'cheerful', 'sad'] },
+  { value: 'en-US-MichelleNeural', label: 'Michelle', description: 'Female, American' },
+  { value: 'en-US-MonicaNeural', label: 'Monica', description: 'Female, American' },
+  { value: 'en-US-NancyNeural', label: 'Nancy', description: 'Female, American', styles: ['angry', 'cheerful', 'sad'] },
+  { value: 'en-US-RogerNeural', label: 'Roger', description: 'Male, American' },
+  { value: 'en-US-SaraNeural', label: 'Sara', description: 'Female, American', styles: ['angry', 'cheerful', 'sad'] },
+  { value: 'en-US-SteffanNeural', label: 'Steffan', description: 'Male, American' },
+  { value: 'en-US-TonyNeural', label: 'Tony', description: 'Male, American', styles: ['angry', 'cheerful', 'sad'] },
+  // UK English - Neural
+  { value: 'en-GB-SoniaNeural', label: 'Sonia', description: 'Female, British', styles: ['cheerful', 'sad'] },
+  { value: 'en-GB-RyanNeural', label: 'Ryan', description: 'Male, British', styles: ['chat', 'cheerful'] },
+  { value: 'en-GB-LibbyNeural', label: 'Libby', description: 'Female, British' },
+  { value: 'en-GB-AbbiNeural', label: 'Abbi', description: 'Female, British' },
+  { value: 'en-GB-AlfieNeural', label: 'Alfie', description: 'Male, British' },
+  { value: 'en-GB-BellaNeural', label: 'Bella', description: 'Female, British' },
+  { value: 'en-GB-ElliotNeural', label: 'Elliot', description: 'Male, British' },
+  { value: 'en-GB-EthanNeural', label: 'Ethan', description: 'Male, British' },
+  { value: 'en-GB-HollieNeural', label: 'Hollie', description: 'Female, British' },
+  { value: 'en-GB-MaisieNeural', label: 'Maisie (Child)', description: 'Female, British' },
+  { value: 'en-GB-NoahNeural', label: 'Noah', description: 'Male, British' },
+  { value: 'en-GB-OliverNeural', label: 'Oliver', description: 'Male, British' },
+  { value: 'en-GB-OliviaNeural', label: 'Olivia (UK)', description: 'Female, British' },
+  { value: 'en-GB-ThomasNeural', label: 'Thomas', description: 'Male, British' },
+  // Australian English
+  { value: 'en-AU-NatashaNeural', label: 'Natasha', description: 'Female, Australian' },
+  { value: 'en-AU-WilliamNeural', label: 'William', description: 'Male, Australian' },
 ];
 
 export function useTTSGeneration() {
@@ -263,6 +333,95 @@ export function useTTSGeneration() {
     };
   }, []);
 
+  // Generate TTS with Amazon Polly
+  const generateAmazon = useCallback(async (options: TTSOptions): Promise<TTSResult> => {
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/amazon-polly`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          text: options.text,
+          voice: options.voice,
+          speed: options.speed || 1.0,
+          engine: options.engine, // 'neural' or 'generative'
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Amazon Polly TTS generation failed');
+    }
+
+    const data = await response.json();
+    
+    // Use data URI for proper decoding
+    const audioUrl = `data:audio/mpeg;base64,${data.audioContent}`;
+    const audioBlob = base64ToBlob(data.audioContent, 'audio/mpeg');
+    const duration = await getAudioDuration(audioUrl);
+
+    return {
+      audioUrl,
+      audioBlob,
+      duration,
+      provider: 'amazon',
+      voice: options.voice,
+      voiceName: data.voiceName,
+      charactersProcessed: options.text.length,
+      estimatedCost: (options.text.length / 1000000) * 4, // Polly Neural ~$4 per 1M chars
+    };
+  }, []);
+
+  // Generate TTS with Azure
+  const generateAzure = useCallback(async (options: TTSOptions): Promise<TTSResult> => {
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/azure-tts`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          text: options.text,
+          voice: options.voice,
+          speed: options.speed || 1.0,
+          pitch: options.pitch || 0,
+          style: options.style, // e.g., 'cheerful', 'sad', 'angry'
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Azure TTS generation failed');
+    }
+
+    const data = await response.json();
+    
+    // Use data URI for proper decoding
+    const audioUrl = `data:audio/mpeg;base64,${data.audioContent}`;
+    const audioBlob = base64ToBlob(data.audioContent, 'audio/mpeg');
+    const duration = await getAudioDuration(audioUrl);
+
+    return {
+      audioUrl,
+      audioBlob,
+      duration,
+      provider: 'azure',
+      voice: options.voice,
+      voiceName: data.voiceName,
+      charactersProcessed: options.text.length,
+      estimatedCost: (options.text.length / 1000000) * 4, // Azure ~$4 per 1M chars for neural
+    };
+  }, []);
+
   // Main generate function
   const generate = useCallback(async (options: TTSOptions): Promise<TTSResult | null> => {
     if (!options.text?.trim()) {
@@ -277,6 +436,8 @@ export function useTTSGeneration() {
       elevenlabs: 'ElevenLabs',
       openai: 'OpenAI',
       google: 'Google Cloud',
+      amazon: 'Amazon Polly',
+      azure: 'Microsoft Azure',
     };
 
     try {
@@ -290,6 +451,12 @@ export function useTTSGeneration() {
           break;
         case 'google':
           result = await generateGoogle(options);
+          break;
+        case 'amazon':
+          result = await generateAmazon(options);
+          break;
+        case 'azure':
+          result = await generateAzure(options);
           break;
         case 'openai':
         default:
@@ -309,7 +476,7 @@ export function useTTSGeneration() {
     } finally {
       setIsGenerating(false);
     }
-  }, [generateOpenAI, generateElevenLabs, generateGoogle]);
+  }, [generateOpenAI, generateElevenLabs, generateGoogle, generateAmazon, generateAzure]);
 
   // Play generated audio
   const play = useCallback(() => {
@@ -366,6 +533,8 @@ export function useTTSGeneration() {
     openaiVoices: OPENAI_VOICES,
     elevenlabsVoices: ELEVENLABS_VOICES,
     googleVoices: GOOGLE_VOICES,
+    amazonVoices: AMAZON_POLLY_VOICES,
+    azureVoices: AZURE_VOICES,
   };
 }
 
