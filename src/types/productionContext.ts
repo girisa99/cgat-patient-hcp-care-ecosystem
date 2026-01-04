@@ -10,12 +10,25 @@ import type { ScriptMode } from './projects';
  * Maps ShowType to ScriptMode for unified configuration
  */
 export const SHOW_TYPE_TO_SCRIPT_MODE: Record<ShowType, ScriptMode> = {
+  // Media Productions
   podcast: 'podcast',
   webcast: 'webcast',
-  interview: 'podcast', // Interview is treated like podcast
-  panel: 'podcast', // Panel discussion is treated like podcast
-  tutorial: 'video', // Tutorial is treated like video
-  other: 'audio', // Default to audio
+  interview: 'podcast',
+  panel: 'podcast',
+  tutorial: 'video',
+  broadcast: 'webcast',
+  other: 'audio',
+  // Business Meetings - default to audio/podcast style
+  discovery_call: 'audio',
+  sales_meeting: 'audio',
+  project_kickoff: 'audio',
+  status_update: 'audio',
+  consultation: 'audio',
+  // Events - default to webcast style
+  workshop: 'video',
+  webinar: 'webcast',
+  conference: 'webcast',
+  training_session: 'video',
 };
 
 /**
