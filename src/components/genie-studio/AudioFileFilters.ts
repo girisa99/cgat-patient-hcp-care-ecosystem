@@ -61,7 +61,7 @@ export function isInstrumental(v: VoiceoverData): boolean {
   }
   
   // 3. Fall back to name patterns only if no metadata
-  const lowerName = v.name.toLowerCase();
+  const lowerName = (v.name || '').toLowerCase();
   
   // Explicit instrumental markers
   if (lowerName.includes('instrumental')) return true;
@@ -107,7 +107,7 @@ export function isTTSFile(v: VoiceoverData): boolean {
   }
   
   // 3. Fall back to name patterns only if no metadata
-  const lowerName = v.name.toLowerCase();
+  const lowerName = (v.name || '').toLowerCase();
   
   // Explicit TTS markers in name
   if (lowerName.includes(' tts') || lowerName.includes('_tts') || lowerName.includes('-tts')) return true;
@@ -144,7 +144,7 @@ export function isVoiceover(v: VoiceoverData): boolean {
   }
   
   // 3. Name patterns for voiceover (only if no metadata)
-  const lowerName = v.name.toLowerCase();
+  const lowerName = (v.name || '').toLowerCase();
   if (lowerName.includes('voiceover') || lowerName.includes('voice-over')) return true;
   if (lowerName.includes('narration') || lowerName.includes('narrator')) return true;
   if (lowerName.includes('recording') && !lowerName.includes('music') && !lowerName.includes('tts')) return true;
@@ -163,7 +163,7 @@ export function isCustomVoice(v: VoiceoverData): boolean {
   }
   
   // 2. Name patterns
-  const lowerName = v.name.toLowerCase();
+  const lowerName = (v.name || '').toLowerCase();
   if (lowerName.includes('my voice') || lowerName.includes('my-voice')) return true;
   if (lowerName.includes('custom voice') || lowerName.includes('custom-voice')) return true;
   if (lowerName.includes('voice sample') || lowerName.includes('voice-sample')) return true;
