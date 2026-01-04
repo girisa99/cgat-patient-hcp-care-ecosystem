@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, ExternalLink, CheckCircle2, Clock, Calendar, Layers } from 'lucide-react';
+import { Download, ExternalLink, CheckCircle2, Clock, Calendar, Layers, FileImage, FileCode } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Enterprise color palette - consistent across all diagrams
@@ -109,7 +109,7 @@ const layers = [
 export const GenieStudioFullArchitectureDiagram: React.FC = () => {
   const diagramRef = useRef<HTMLDivElement>(null);
 
-  const handleDownload = async () => {
+  const handleDownloadPNG = async () => {
     if (!diagramRef.current) return;
     
     try {
@@ -124,11 +124,67 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
       link.download = 'genie-studio-full-architecture.png';
       link.href = canvas.toDataURL('image/png');
       link.click();
-      toast.success('Architecture diagram downloaded');
+      toast.success('PNG downloaded successfully');
     } catch (error) {
       console.error('Download failed:', error);
-      toast.error('Failed to download diagram');
+      toast.error('Failed to download PNG');
     }
+  };
+
+  const handleDownloadSVG = () => {
+    if (!diagramRef.current) return;
+    
+    // Create SVG from the diagram content
+    const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <rect width="1200" height="800" fill="#ffffff"/>
+  <text x="600" y="40" text-anchor="middle" fill="${colors.text}" font-size="24" font-weight="bold">Genie Studio - Complete Architecture &amp; Roadmap</text>
+  
+  <!-- Legend -->
+  <g transform="translate(50, 70)">
+    <rect width="500" height="60" rx="8" fill="#f8fafc" stroke="${colors.border}"/>
+    <text x="20" y="25" fill="${colors.text}" font-size="12" font-weight="bold">Status:</text>
+    <rect x="80" y="12" width="16" height="16" rx="2" fill="${colors.completed.bg}"/>
+    <text x="102" y="25" fill="${colors.textMuted}" font-size="11">Completed</text>
+    <rect x="170" y="12" width="16" height="16" rx="2" fill="${colors.inProgress.bg}"/>
+    <text x="192" y="25" fill="${colors.textMuted}" font-size="11">In Progress</text>
+    <rect x="270" y="12" width="16" height="16" rx="2" fill="${colors.planned.bg}"/>
+    <text x="292" y="25" fill="${colors.textMuted}" font-size="11">Planned</text>
+    
+    <text x="20" y="48" fill="${colors.text}" font-size="12" font-weight="bold">Layers:</text>
+    <rect x="80" y="35" width="16" height="16" rx="2" fill="${colors.presentation.bg}"/>
+    <text x="102" y="48" fill="${colors.textMuted}" font-size="11">Presentation</text>
+    <rect x="180" y="35" width="16" height="16" rx="2" fill="${colors.application.bg}"/>
+    <text x="202" y="48" fill="${colors.textMuted}" font-size="11">Application</text>
+    <rect x="280" y="35" width="16" height="16" rx="2" fill="${colors.domain.bg}"/>
+    <text x="302" y="48" fill="${colors.textMuted}" font-size="11">Domain</text>
+    <rect x="360" y="35" width="16" height="16" rx="2" fill="${colors.infrastructure.bg}"/>
+    <text x="382" y="48" fill="${colors.textMuted}" font-size="11">Infrastructure</text>
+  </g>
+  
+  <!-- Phases -->
+  ${phases.map((phase, i) => `
+    <g transform="translate(${50 + i * 220}, 160)">
+      <rect width="200" height="280" rx="8" fill="${getStatusColor(phase.status).light}" stroke="${getStatusColor(phase.status).bg}" stroke-width="2"/>
+      <text x="100" y="30" text-anchor="middle" fill="${getStatusColor(phase.status).bg}" font-size="16" font-weight="bold">${phase.id}: ${phase.name}</text>
+      <text x="100" y="50" text-anchor="middle" fill="${colors.textMuted}" font-size="12">${phase.completion}% Complete</text>
+      ${phase.features.map((f, j) => `
+        <rect x="10" y="${70 + j * 50}" width="180" height="40" rx="4" fill="${getStatusColor(f.status).light}" stroke="${getStatusColor(f.status).bg}"/>
+        <circle cx="25" cy="${90 + j * 50}" r="6" fill="${getLayerColor(f.layer).bg}"/>
+        <text x="40" y="${94 + j * 50}" fill="${colors.text}" font-size="10">${f.name}</text>
+      `).join('')}
+    </g>
+  `).join('')}
+</svg>`;
+    
+    const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'genie-studio-full-architecture.svg';
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('SVG downloaded successfully');
   };
 
   const getStatusColor = (status: 'completed' | 'in-progress' | 'planned') => {
@@ -183,13 +239,22 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
             Functional Docs
           </Button>
           <Button
-            variant="default"
+            variant="outline"
             size="sm"
-            onClick={handleDownload}
+            onClick={handleDownloadSVG}
             className="flex items-center gap-1"
           >
-            <Download className="h-4 w-4" />
-            Download PNG
+            <FileCode className="h-4 w-4" />
+            SVG
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleDownloadPNG}
+            className="flex items-center gap-1"
+          >
+            <FileImage className="h-4 w-4" />
+            PNG
           </Button>
         </div>
       </CardHeader>

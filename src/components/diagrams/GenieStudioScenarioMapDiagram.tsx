@@ -126,7 +126,7 @@ export const GenieStudioScenarioMapDiagram = () => {
     window.open('/docs/GENIE_STUDIO_SCENARIO_MAP.md', '_blank');
   };
 
-  const handleDownload = async () => {
+  const handleDownloadPNG = async () => {
     if (!diagramRef.current) return;
     try {
       const canvas = await html2canvas(diagramRef.current, {
@@ -140,11 +140,72 @@ export const GenieStudioScenarioMapDiagram = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      toast.success('Diagram downloaded successfully');
+      toast.success('PNG downloaded successfully');
     } catch (error) {
       console.error('Download error:', error);
-      toast.error('Failed to download diagram');
+      toast.error('Failed to download PNG');
     }
+  };
+
+  const handleDownloadSVG = () => {
+    const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="500" viewBox="0 0 1200 500">
+  <rect width="1200" height="500" fill="${colors.background}"/>
+  <text x="600" y="35" text-anchor="middle" fill="${colors.text}" font-size="20" font-weight="bold">Genie Studio Scenario Priority Map</text>
+  <text x="600" y="58" text-anchor="middle" fill="${colors.textMuted}" font-size="13">60 Total Scenarios | 18 Implemented | 12 Partial | 30 Planned</text>
+  
+  <!-- Legend -->
+  <g transform="translate(50, 70)">
+    <rect width="500" height="50" rx="6" fill="${colors.cardBg}" stroke="${colors.border}"/>
+    <text x="15" y="22" fill="${colors.text}" font-size="11" font-weight="bold">Status:</text>
+    <rect x="60" y="10" width="12" height="12" rx="2" fill="${colors.completed.bg}"/>
+    <text x="78" y="20" fill="${colors.textMuted}" font-size="10">Implemented</text>
+    <rect x="155" y="10" width="12" height="12" rx="2" fill="${colors.inProgress.bg}"/>
+    <text x="173" y="20" fill="${colors.textMuted}" font-size="10">Partial</text>
+    <rect x="230" y="10" width="12" height="12" rx="2" fill="${colors.planned.bg}"/>
+    <text x="248" y="20" fill="${colors.textMuted}" font-size="10">Planned</text>
+    
+    <text x="15" y="42" fill="${colors.text}" font-size="11" font-weight="bold">Priority:</text>
+    <rect x="70" y="30" width="12" height="12" rx="2" fill="${colors.p0.bg}"/>
+    <text x="88" y="40" fill="${colors.textMuted}" font-size="10">P0 Core</text>
+    <rect x="145" y="30" width="12" height="12" rx="2" fill="${colors.p1.bg}"/>
+    <text x="163" y="40" fill="${colors.textMuted}" font-size="10">P1 Enhanced</text>
+    <rect x="245" y="30" width="12" height="12" rx="2" fill="${colors.p2.bg}"/>
+    <text x="263" y="40" fill="${colors.textMuted}" font-size="10">P2 Advanced</text>
+    <rect x="345" y="30" width="12" height="12" rx="2" fill="${colors.p3.bg}"/>
+    <text x="363" y="40" fill="${colors.textMuted}" font-size="10">P3 Differentiator</text>
+    <rect x="465" y="30" width="12" height="12" rx="2" fill="${colors.p4.bg}"/>
+    <text x="483" y="40" fill="${colors.textMuted}" font-size="10">P4 Future</text>
+  </g>
+  
+  <!-- Priority Columns -->
+  ${Object.entries(priorityConfig).map(([key, config], index) => {
+    const stats = getStats(key);
+    return `
+      <g transform="translate(${60 + index * 220}, 140)">
+        <rect width="200" height="300" rx="10" fill="${colors.cardBg}" stroke="${colors.border}"/>
+        <rect width="200" height="40" rx="10" fill="${config.color.light}" stroke="${config.color.bg}"/>
+        <text x="100" y="28" text-anchor="middle" fill="${config.color.bg}" font-size="13" font-weight="bold">${config.label}</text>
+        <text x="100" y="70" text-anchor="middle" fill="${colors.textMuted}" font-size="11">${stats.total} scenarios</text>
+        <rect x="20" y="85" width="160" height="12" rx="6" fill="${colors.border}"/>
+        <rect x="20" y="85" width="${160 * (stats.percent / 100)}" height="12" rx="6" fill="${config.color.bg}"/>
+        <text x="100" y="115" text-anchor="middle" fill="${colors.text}" font-size="11">${stats.percent}% Complete</text>
+        <text x="100" y="140" text-anchor="middle" fill="${colors.completed.bg}" font-size="10">${stats.implemented} Done</text>
+        <text x="100" y="160" text-anchor="middle" fill="${colors.inProgress.bg}" font-size="10">${stats.partial} Partial</text>
+        <text x="100" y="180" text-anchor="middle" fill="${colors.planned.bg}" font-size="10">${stats.planned} Planned</text>
+      </g>
+    `;
+  }).join('')}
+</svg>`;
+    
+    const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `genie-studio-scenario-map-${activeTab}.svg`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('SVG downloaded successfully');
   };
 
   const getStatusBadge = (status: string) => {
@@ -181,9 +242,13 @@ export const GenieStudioScenarioMapDiagram = () => {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleDownload} className="gap-2">
+              <Button variant="outline" size="sm" onClick={handleDownloadSVG} className="gap-2">
                 <Download className="h-4 w-4" />
-                Download PNG
+                SVG
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleDownloadPNG} className="gap-2">
+                <Download className="h-4 w-4" />
+                PNG
               </Button>
               <Button variant="outline" size="sm" onClick={openDocs} className="gap-2">
                 <FileText className="h-4 w-4" />

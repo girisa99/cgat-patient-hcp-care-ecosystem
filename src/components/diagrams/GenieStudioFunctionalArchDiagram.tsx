@@ -43,7 +43,7 @@ export const GenieStudioFunctionalArchDiagram = () => {
     window.open('/docs/GENIE_STUDIO_FUNCTIONAL_ARCHITECTURE.md', '_blank');
   };
 
-  const handleDownload = async () => {
+  const handleDownloadPNG = async () => {
     if (!diagramRef.current) return;
     try {
       const canvas = await html2canvas(diagramRef.current, {
@@ -57,11 +57,88 @@ export const GenieStudioFunctionalArchDiagram = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      toast.success('Diagram downloaded successfully');
+      toast.success('PNG downloaded successfully');
     } catch (error) {
       console.error('Download error:', error);
-      toast.error('Failed to download diagram');
+      toast.error('Failed to download PNG');
     }
+  };
+
+  const handleDownloadSVG = () => {
+    const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="500" viewBox="0 0 1200 500">
+  <rect width="1200" height="500" fill="${colors.background}"/>
+  <text x="600" y="35" text-anchor="middle" fill="${colors.text}" font-size="20" font-weight="bold">Genie Studio Functional Architecture</text>
+  
+  <!-- Legend -->
+  <g transform="translate(50, 50)">
+    <rect width="400" height="50" rx="6" fill="${colors.cardBg}" stroke="${colors.border}"/>
+    <text x="15" y="22" fill="${colors.text}" font-size="11" font-weight="bold">Status:</text>
+    <rect x="60" y="10" width="12" height="12" rx="2" fill="${colors.completed.bg}"/>
+    <text x="78" y="20" fill="${colors.textMuted}" font-size="10">Completed</text>
+    <rect x="145" y="10" width="12" height="12" rx="2" fill="${colors.inProgress.bg}"/>
+    <text x="163" y="20" fill="${colors.textMuted}" font-size="10">In Progress</text>
+    <rect x="240" y="10" width="12" height="12" rx="2" fill="${colors.planned.bg}"/>
+    <text x="258" y="20" fill="${colors.textMuted}" font-size="10">Planned</text>
+    
+    <text x="15" y="42" fill="${colors.text}" font-size="11" font-weight="bold">Personas:</text>
+    <rect x="80" y="30" width="12" height="12" rx="2" fill="${colors.presentation.bg}"/>
+    <text x="98" y="40" fill="${colors.textMuted}" font-size="10">Content Creator</text>
+    <rect x="195" y="30" width="12" height="12" rx="2" fill="${colors.completed.bg}"/>
+    <text x="213" y="40" fill="${colors.textMuted}" font-size="10">Training Producer</text>
+    <rect x="325" y="30" width="12" height="12" rx="2" fill="${colors.inProgress.bg}"/>
+    <text x="343" y="40" fill="${colors.textMuted}" font-size="10">Marketing Team</text>
+  </g>
+  
+  <!-- User Journey -->
+  <g transform="translate(50, 130)">
+    <text x="0" y="20" fill="${colors.presentation.bg}" font-size="16" font-weight="bold">Primary User Journey: Script to Video</text>
+    
+    ${[
+      { num: 1, label: 'CREATE', color: colors.presentation.bg },
+      { num: 2, label: 'WRITE', color: colors.application.bg },
+      { num: 3, label: 'ENHANCE', color: colors.domain.bg },
+      { num: 4, label: 'VOICE', color: colors.inProgress.bg },
+      { num: 5, label: 'RECORD', color: colors.completed.bg },
+      { num: 6, label: 'EXPORT', color: colors.planned.bg },
+    ].map((step, i) => `
+      <g transform="translate(${i * 180}, 40)">
+        <circle cx="60" cy="60" r="40" fill="${step.color}" opacity="0.2" stroke="${step.color}" stroke-width="2"/>
+        <text x="60" y="55" text-anchor="middle" fill="${step.color}" font-size="20" font-weight="bold">${step.num}</text>
+        <text x="60" y="75" text-anchor="middle" fill="${colors.textMuted}" font-size="10">${step.label}</text>
+      </g>
+    `).join('')}
+  </g>
+  
+  <!-- Variants -->
+  <g transform="translate(50, 320)">
+    <rect width="350" height="100" rx="8" fill="${colors.presentation.light}" stroke="${colors.presentation.bg}" stroke-width="2"/>
+    <text x="20" y="30" fill="${colors.presentation.bg}" font-size="14" font-weight="bold">Content Creator</text>
+    <text x="20" y="55" fill="${colors.text}" font-size="11">• AI script generation</text>
+    <text x="20" y="75" fill="${colors.text}" font-size="11">• TTS voiceover</text>
+  </g>
+  <g transform="translate(420, 320)">
+    <rect width="350" height="100" rx="8" fill="${colors.completed.light}" stroke="${colors.completed.bg}" stroke-width="2"/>
+    <text x="20" y="30" fill="${colors.completed.bg}" font-size="14" font-weight="bold">Training Producer</text>
+    <text x="20" y="55" fill="${colors.text}" font-size="11">• Teleprompter recording</text>
+    <text x="20" y="75" fill="${colors.text}" font-size="11">• Multi-take editing</text>
+  </g>
+  <g transform="translate(790, 320)">
+    <rect width="350" height="100" rx="8" fill="${colors.inProgress.light}" stroke="${colors.inProgress.bg}" stroke-width="2"/>
+    <text x="20" y="30" fill="${colors.inProgress.bg}" font-size="14" font-weight="bold">Marketing Team</text>
+    <text x="20" y="55" fill="${colors.text}" font-size="11">• Template library</text>
+    <text x="20" y="75" fill="${colors.text}" font-size="11">• Batch processing</text>
+  </g>
+</svg>`;
+    
+    const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `genie-studio-functional-architecture-${activeTab}.svg`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('SVG downloaded successfully');
   };
 
   return (
@@ -78,9 +155,13 @@ export const GenieStudioFunctionalArchDiagram = () => {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleDownload} className="gap-2">
+              <Button variant="outline" size="sm" onClick={handleDownloadSVG} className="gap-2">
                 <Download className="h-4 w-4" />
-                Download PNG
+                SVG
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleDownloadPNG} className="gap-2">
+                <Download className="h-4 w-4" />
+                PNG
               </Button>
               <Button variant="outline" size="sm" onClick={openDocs} className="gap-2">
                 <FileText className="h-4 w-4" />

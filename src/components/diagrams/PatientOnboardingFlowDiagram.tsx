@@ -8,11 +8,11 @@ import html2canvas from 'html2canvas';
 export const PatientOnboardingFlowDiagram: React.FC = () => {
   const diagramRef = useRef<HTMLDivElement>(null);
 
-  const handleDownload = async () => {
+  const handleDownloadPNG = async () => {
     if (!diagramRef.current) return;
     
     try {
-      toast.info('Generating image...');
+      toast.info('Generating PNG...');
       const canvas = await html2canvas(diagramRef.current, {
         backgroundColor: '#0f172a',
         scale: 3,
@@ -25,11 +25,75 @@ export const PatientOnboardingFlowDiagram: React.FC = () => {
       link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
       
-      toast.success('Patient Onboarding Flow diagram downloaded!');
+      toast.success('PNG downloaded successfully!');
     } catch (error) {
       console.error('Download failed:', error);
-      toast.error('Failed to download diagram.');
+      toast.error('Failed to download PNG.');
     }
+  };
+
+  const handleDownloadSVG = () => {
+    const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <rect width="1200" height="800" fill="#0f172a"/>
+  <text x="600" y="40" text-anchor="middle" fill="#ffffff" font-size="24" font-weight="bold">Patient Onboarding AI Pipeline</text>
+  <text x="600" y="65" text-anchor="middle" fill="#94a3b8" font-size="12">6-Step Multi-Model AI Document Processing &amp; Verification Flow</text>
+  
+  <!-- Legend -->
+  <g transform="translate(50, 700)">
+    <rect width="1100" height="50" rx="8" fill="#1e293b" stroke="#475569"/>
+    <text x="20" y="20" fill="#94a3b8" font-size="11" font-weight="bold">Legend:</text>
+    <circle cx="100" cy="25" r="6" fill="#a855f7"/>
+    <text x="115" y="30" fill="#94a3b8" font-size="10">Stage 1: Classification</text>
+    <circle cx="260" cy="25" r="6" fill="#22d3ee"/>
+    <text x="275" y="30" fill="#94a3b8" font-size="10">Stage 2: Routing</text>
+    <circle cx="400" cy="25" r="6" fill="#facc15"/>
+    <text x="415" y="30" fill="#94a3b8" font-size="10">Sub-Agent Verification</text>
+    <circle cx="580" cy="25" r="6" fill="#ec4899"/>
+    <text x="595" y="30" fill="#94a3b8" font-size="10">MCP SDK Integration</text>
+  </g>
+  
+  <!-- Steps -->
+  <g transform="translate(50, 100)">
+    <circle cx="40" cy="40" r="30" fill="#3b82f6"/>
+    <text x="40" y="45" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="bold">1</text>
+    <text x="90" y="45" fill="#60a5fa" font-size="14" font-weight="bold">Multi-Document Intake</text>
+  </g>
+  <g transform="translate(50, 200)">
+    <circle cx="40" cy="40" r="30" fill="#a855f7"/>
+    <text x="40" y="45" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="bold">2</text>
+    <text x="90" y="45" fill="#c084fc" font-size="14" font-weight="bold">Stage 1 Classification (Gemini 2.5 Flash)</text>
+  </g>
+  <g transform="translate(50, 300)">
+    <circle cx="40" cy="40" r="30" fill="#22d3ee"/>
+    <text x="40" y="45" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="bold">3</text>
+    <text x="90" y="45" fill="#67e8f9" font-size="14" font-weight="bold">Stage 2 Intelligent Routing</text>
+  </g>
+  <g transform="translate(50, 400)">
+    <circle cx="40" cy="40" r="30" fill="#22c55e"/>
+    <text x="40" y="45" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="bold">4</text>
+    <text x="90" y="45" fill="#4ade80" font-size="14" font-weight="bold">Unified Patient Record</text>
+  </g>
+  <g transform="translate(50, 500)">
+    <circle cx="40" cy="40" r="30" fill="#facc15"/>
+    <text x="40" y="45" text-anchor="middle" fill="#1e293b" font-size="18" font-weight="bold">5</text>
+    <text x="90" y="45" fill="#fde047" font-size="14" font-weight="bold">Sub-Agent Verification</text>
+  </g>
+  <g transform="translate(50, 600)">
+    <circle cx="40" cy="40" r="30" fill="#ec4899"/>
+    <text x="40" y="45" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="bold">6</text>
+    <text x="90" y="45" fill="#f472b6" font-size="14" font-weight="bold">MCP SDK Export</text>
+  </g>
+</svg>`;
+    
+    const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'patient-onboarding-flow-diagram.svg';
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('SVG downloaded successfully!');
   };
 
   const handleOpenFullSize = () => {
@@ -56,9 +120,13 @@ export const PatientOnboardingFlowDiagram: React.FC = () => {
             <Maximize2 className="h-4 w-4" />
             Full Size
           </Button>
-          <Button variant="default" size="sm" onClick={handleDownload} className="gap-2 bg-cyan-600 hover:bg-cyan-700">
+          <Button variant="outline" size="sm" onClick={handleDownloadSVG} className="gap-2 text-slate-300 border-slate-600 hover:bg-slate-800">
             <Download className="h-4 w-4" />
-            Download PNG
+            SVG
+          </Button>
+          <Button variant="default" size="sm" onClick={handleDownloadPNG} className="gap-2 bg-cyan-600 hover:bg-cyan-700">
+            <Download className="h-4 w-4" />
+            PNG
           </Button>
         </div>
       </CardHeader>
