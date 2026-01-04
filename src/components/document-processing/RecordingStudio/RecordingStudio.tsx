@@ -1,6 +1,6 @@
 /**
  * Genie Vibe - Script to Screen Media Production Studio
- * Part of the Genie Mind + Genie Vibe suite: "From Mind to Media"
+ * Part of the Genie Suite
  * 
  * Features:
  * - Screen sharing with 5-second countdown
@@ -33,6 +33,9 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
+// Import Genie Vibe logo
+import genieVibeLogo from '@/assets/logos/genie-vibe-product.png';
+
 import { 
   useCamera, 
   useRecording, 
@@ -47,7 +50,7 @@ import {
   useMLBackgroundBlur,
   useFFmpegTrim
 } from './hooks';
-import { 
+import {
   VideoPreview, 
   RecordingControls,
   RecordingLibraryPanel,
@@ -1201,12 +1204,19 @@ export function RecordingStudio({
         }`}>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <h2 className={`font-semibold flex items-center gap-2 ${headerMinimized ? 'text-sm' : 'text-base'}`}>
-                🎬 {!headerMinimized && 'Genie Vibe'}
-              </h2>
               {!headerMinimized && (
-                <span className="text-xs text-muted-foreground italic">Script to Screen</span>
+                <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center shadow-sm overflow-hidden border border-border/30">
+                  <img src={genieVibeLogo} alt="Genie Vibe" className="h-8 w-8 object-contain" />
+                </div>
               )}
+              <div>
+                <h2 className={`font-semibold flex items-center gap-2 ${headerMinimized ? 'text-sm' : 'text-base'}`}>
+                  {headerMinimized && '🎬'} {!headerMinimized && 'Genie Vibe'}
+                </h2>
+                {!headerMinimized && (
+                  <span className="text-xs text-purple-500">Script to Screen</span>
+                )}
+              </div>
             </div>
             
             {/* Recording Mode Selector - Hidden in focus mode */}
