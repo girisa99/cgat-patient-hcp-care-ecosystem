@@ -1151,7 +1151,7 @@ export default function GenieStudio() {
           name,
           file_type: 'audio',
           file_url: finalUrl,
-          source: 'tts',
+          source: 'generated',
           storage_bucket: 'genie-media',
           storage_path: uniquePath,
           metadata: { 
