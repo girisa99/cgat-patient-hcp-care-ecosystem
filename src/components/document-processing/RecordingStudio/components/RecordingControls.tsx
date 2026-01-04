@@ -71,6 +71,10 @@ interface RecordingControlsProps {
 
   // Audio combination status
   audioCombination?: AudioCombinationStatus;
+  
+  // Audio mixer toggle
+  onToggleAudioMixer?: () => void;
+  showAudioMixer?: boolean;
 }
 
 export function RecordingControls({
@@ -105,6 +109,8 @@ export function RecordingControls({
   onRestartRecording,
   currentDuration = 0,
   audioCombination,
+  onToggleAudioMixer,
+  showAudioMixer = false,
 }: RecordingControlsProps) {
   
   // Compute audio combination label
@@ -170,10 +176,18 @@ export function RecordingControls({
               </Badge>
             )}
           </div>
-          {audioLabel && audioLabel !== 'No audio selected' && (
-            <span className="ml-auto text-xs text-muted-foreground">
-              {audioLabel}
-            </span>
+          {/* Audio Mixer Toggle Button */}
+          {onToggleAudioMixer && (
+            <Button
+              size="sm"
+              variant={showAudioMixer ? 'default' : 'ghost'}
+              className="ml-auto h-7 px-2 gap-1"
+              onClick={onToggleAudioMixer}
+              title="Open Audio Mixer"
+            >
+              <AudioLines className="w-3.5 h-3.5" />
+              Mixer
+            </Button>
           )}
         </div>
       )}

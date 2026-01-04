@@ -25,9 +25,11 @@ import { Badge } from '@/components/ui/badge';
 import { 
   X, Library, Monitor, Camera, MonitorPlay, 
   FileText, Music, Mic, ChevronLeft, ChevronRight,
-  FolderOpen, Sliders, Keyboard, Settings2
+  FolderOpen, Sliders, Keyboard, Settings2,
+  Play, Pause, Square, AudioLines
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 import { 
   useCamera, 
@@ -58,7 +60,8 @@ import {
   PictureInPicture,
   VideoEditorIntegration,
   ProductionInfo,
-  AudioAssetSelector
+  AudioAssetSelector,
+  FloatingAudioMixer
 } from './components';
 import type { CameraSetupOptions } from './components';
 import type { RecordingStudioProps, LogoState, TeleprompterState, ScriptData, AudioTabType } from './types';
@@ -165,6 +168,10 @@ export function RecordingStudio({
   // Focus mode - auto-collapse panels during recording
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [headerMinimized, setHeaderMinimized] = useState(false);
+  const [controlsCollapsed, setControlsCollapsed] = useState(false);
+  
+  // Floating panels
+  const [showAudioMixer, setShowAudioMixer] = useState(false);
   
   // Asset breakdown panel
   const [showAssetBreakdown, setShowAssetBreakdown] = useState(false);
@@ -1378,46 +1385,121 @@ export function RecordingStudio({
               )}
             </div>
 
-            <RecordingControls
-              isCameraEnabled={camera.isEnabled}
-              isMicEnabled={camera.isMicEnabled}
-              onToggleCamera={camera.toggleCamera}
-              onToggleMic={camera.toggleMic}
-              isRecording={recording.isRecording}
-              isPaused={recording.isPaused}
-              canRecord={!!(camera.stream || screenShare.screenStream) && !camera.isLoading}
-              onStartRecording={handleStartRecording}
-              onPauseRecording={handlePauseRecording}
-              onStopRecording={handleStopRecording}
-              isTeleprompterEnabled={teleprompterOpen}
-              onToggleTeleprompter={() => setTeleprompterOpen(!teleprompterOpen)}
-              isBlurEnabled={isBlurEnabled}
-              onToggleBlur={() => setIsBlurEnabled(!isBlurEnabled)}
-              isLogoEnabled={logo.enabled}
-              onToggleLogo={() => setLogo(prev => ({ ...prev, enabled: !prev.enabled }))}
-              onUploadLogo={handleLogoUpload}
-              captionsEnabled={captionsEnabled}
-              onToggleCaptions={() => setCaptionsEnabled(!captionsEnabled)}
-              onTrimSeconds={handleTrimSeconds}
-              onUndoTrim={handleUndoTrim}
-              canUndoTrim={canUndoTrim}
-              trimSeconds={trimSeconds}
-              onTrimSecondsChange={setTrimSeconds}
-              onTranscribe={handleTranscribeRecording}
-              isTranscribing={isTranscribing}
-              transcriptionText={transcriptionText}
-              onRewindSeconds={handleRewindSeconds}
-              onRestartRecording={handleRestartRecording}
-              currentDuration={recording.duration}
-              audioCombination={{
-                hasTTS: !!selectedTTSFileId && !!currentTTSFile,
-                hasVoiceover: !!selectedVoiceoverId && !!currentVoiceover,
-                hasMusic: !!selectedMusicId && !!currentMusic,
-                ttsName: currentTTSFile?.name,
-                voiceoverName: currentVoiceover?.name,
-                musicName: currentMusic?.name,
-              }}
-            />
+            {/* Collapsible Recording Controls */}
+            <div className={cn(
+              "transition-all duration-300 overflow-hidden",
+              controlsCollapsed ? "h-10" : "h-auto"
+            )}>
+              {controlsCollapsed ? (
+                <div className="flex items-center justify-center gap-4 py-2 bg-muted/30 rounded-lg border">
+                  {/* Minimal controls when collapsed */}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setControlsCollapsed(false)}
+                    className="h-7 text-xs gap-1"
+                  >
+                    <ChevronRight className="w-3 h-3 rotate-90" />
+                    Show Controls
+                  </Button>
+                  
+                  {/* Essential recording controls always visible */}
+                  {recording.isRecording && (
+                    <>
+                      <Badge variant="destructive" className="animate-pulse gap-1">
+                        <span className="w-2 h-2 rounded-full bg-white" />
+                        {recording.formattedDuration}
+                      </Badge>
+                      <Button
+                        size="sm"
+                        variant={recording.isPaused ? 'default' : 'secondary'}
+                        onClick={handlePauseRecording}
+                        className="h-7"
+                      >
+                        {recording.isPaused ? <Play className="w-3 h-3 mr-1" /> : <Pause className="w-3 h-3 mr-1" />}
+                        {recording.isPaused ? 'Resume' : 'Pause'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={handleStopRecording}
+                        className="h-7"
+                      >
+                        <Square className="w-3 h-3 mr-1" />
+                        Stop
+                      </Button>
+                    </>
+                  )}
+                  
+                  {/* Audio mixer toggle */}
+                  <Button
+                    size="icon"
+                    variant={showAudioMixer ? 'default' : 'ghost'}
+                    className="h-7 w-7"
+                    onClick={() => setShowAudioMixer(!showAudioMixer)}
+                    title="Audio Mixer"
+                  >
+                    <AudioLines className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="relative">
+                  {/* Collapse button */}
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="absolute -top-1 right-0 h-6 w-6 z-10"
+                    onClick={() => setControlsCollapsed(true)}
+                    title="Collapse controls"
+                  >
+                    <ChevronRight className="w-3 h-3 -rotate-90" />
+                  </Button>
+                  
+                  <RecordingControls
+                    isCameraEnabled={camera.isEnabled}
+                    isMicEnabled={camera.isMicEnabled}
+                    onToggleCamera={camera.toggleCamera}
+                    onToggleMic={camera.toggleMic}
+                    isRecording={recording.isRecording}
+                    isPaused={recording.isPaused}
+                    canRecord={!!(camera.stream || screenShare.screenStream) && !camera.isLoading}
+                    onStartRecording={handleStartRecording}
+                    onPauseRecording={handlePauseRecording}
+                    onStopRecording={handleStopRecording}
+                    isTeleprompterEnabled={teleprompterOpen}
+                    onToggleTeleprompter={() => setTeleprompterOpen(!teleprompterOpen)}
+                    isBlurEnabled={isBlurEnabled}
+                    onToggleBlur={() => setIsBlurEnabled(!isBlurEnabled)}
+                    isLogoEnabled={logo.enabled}
+                    onToggleLogo={() => setLogo(prev => ({ ...prev, enabled: !prev.enabled }))}
+                    onUploadLogo={handleLogoUpload}
+                    captionsEnabled={captionsEnabled}
+                    onToggleCaptions={() => setCaptionsEnabled(!captionsEnabled)}
+                    onTrimSeconds={handleTrimSeconds}
+                    onUndoTrim={handleUndoTrim}
+                    canUndoTrim={canUndoTrim}
+                    trimSeconds={trimSeconds}
+                    onTrimSecondsChange={setTrimSeconds}
+                    onTranscribe={handleTranscribeRecording}
+                    isTranscribing={isTranscribing}
+                    transcriptionText={transcriptionText}
+                    onRewindSeconds={handleRewindSeconds}
+                    onRestartRecording={handleRestartRecording}
+                    currentDuration={recording.duration}
+                    audioCombination={{
+                      hasTTS: !!selectedTTSFileId && !!currentTTSFile,
+                      hasVoiceover: !!selectedVoiceoverId && !!currentVoiceover,
+                      hasMusic: !!selectedMusicId && !!currentMusic,
+                      ttsName: currentTTSFile?.name,
+                      voiceoverName: currentVoiceover?.name,
+                      musicName: currentMusic?.name,
+                    }}
+                    onToggleAudioMixer={() => setShowAudioMixer(!showAudioMixer)}
+                    showAudioMixer={showAudioMixer}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Sidebar - Fixed width, properly contained */}
@@ -1752,6 +1834,61 @@ export function RecordingStudio({
             )}
           </aside>
         </div>
+
+        {/* Floating Audio Mixer Panel */}
+        <FloatingAudioMixer
+          isOpen={showAudioMixer}
+          onClose={() => setShowAudioMixer(false)}
+          defaultPosition={{ x: 20, y: 150 }}
+          tracks={[
+            ...(currentTTSFile ? [{
+              id: 'tts',
+              name: currentTTSFile.name,
+              type: 'tts' as const,
+              isPlaying: audioPlayback.isPlaying.tts,
+              volume: audioPlayback.ttsVolume,
+              onPlay: () => {
+                if (currentTTSFile.url) {
+                  audioPlayback.playTTS(currentTTSFile.url);
+                }
+              },
+              onStop: audioPlayback.stopTTS,
+              onVolumeChange: audioPlayback.setTTSVolume,
+            }] : []),
+            ...(currentVoiceover ? [{
+              id: 'voiceover',
+              name: currentVoiceover.name,
+              type: 'voiceover' as const,
+              isPlaying: audioPlayback.isPlaying.voiceover,
+              volume: audioPlayback.voiceoverVolume,
+              onPlay: () => {
+                if (currentVoiceover.url) {
+                  audioPlayback.playVoiceover(currentVoiceover.url);
+                }
+              },
+              onStop: audioPlayback.stopVoiceover,
+              onVolumeChange: audioPlayback.setVoiceoverVolume,
+            }] : []),
+            ...(currentMusic ? [{
+              id: 'music',
+              name: currentMusic.name,
+              type: 'music' as const,
+              isPlaying: audioPlayback.isPlaying.music,
+              volume: audioPlayback.musicVolume,
+              onPlay: () => {
+                if (currentMusic.url) {
+                  audioPlayback.playMusic(currentMusic.url);
+                }
+              },
+              onStop: audioPlayback.stopMusic,
+              onVolumeChange: audioPlayback.setMusicVolume,
+              loop: audioPlayback.musicLoop,
+              onToggleLoop: audioPlayback.toggleMusicLoop,
+            }] : []),
+          ]}
+          duckingEnabled={audioPlayback.duckingEnabled}
+          onToggleDucking={audioPlayback.toggleDucking}
+        />
 
         {/* Library Panel */}
         <RecordingLibraryPanel
