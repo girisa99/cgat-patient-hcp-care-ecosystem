@@ -28,13 +28,19 @@ import arcPresentation from '@/assets/logos/genie-arc-presentation.png';
 import arcProduct from '@/assets/logos/genie-arc-product.png';
 import arcSmallIcon from '@/assets/logos/genie-arc-small-icon.png';
 
+// Import Genie Vibe logos
+import vibeCombined from '@/assets/logos/genie-vibe-combined.png';
+import vibePresentation from '@/assets/logos/genie-vibe-presentation.png';
+import vibeProduct from '@/assets/logos/genie-vibe-product.png';
+import vibeSmallIcon from '@/assets/logos/genie-vibe-small-icon.png';
+
 interface ImageAsset {
   id: string;
   title: string;
   description: string;
   src: string;
   category: 'architecture' | 'comparison' | 'flow' | 'logo';
-  brand?: 'studio' | 'mind' | 'arc';
+  brand?: 'studio' | 'mind' | 'arc' | 'vibe';
 }
 
 const imageAssets: ImageAsset[] = [
@@ -160,6 +166,39 @@ const logoAssets: ImageAsset[] = [
     src: arcSmallIcon,
     category: 'logo',
     brand: 'arc',
+  },
+  // Genie Vibe logos
+  {
+    id: 'vibe-combined',
+    title: 'Genie Vibe - Original',
+    description: 'Combined logo - "Script to Screen"',
+    src: vibeCombined,
+    category: 'logo',
+    brand: 'vibe',
+  },
+  {
+    id: 'vibe-presentation',
+    title: 'Genie Vibe - Presentation',
+    description: 'Large format for presentations and marketing',
+    src: vibePresentation,
+    category: 'logo',
+    brand: 'vibe',
+  },
+  {
+    id: 'vibe-product',
+    title: 'Genie Vibe - Product',
+    description: 'Compact logo for app interfaces',
+    src: vibeProduct,
+    category: 'logo',
+    brand: 'vibe',
+  },
+  {
+    id: 'vibe-small-icon',
+    title: 'Genie Vibe - Small Icon',
+    description: 'Compact icon version',
+    src: vibeSmallIcon,
+    category: 'logo',
+    brand: 'vibe',
   },
 ];
 
