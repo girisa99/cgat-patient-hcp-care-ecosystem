@@ -1,5 +1,5 @@
 /**
- * Recording Controls Component - Camera, Mic, Record buttons with pause/trim/transcribe
+ * Recording Controls Component - Camera, Mic, Record buttons with pause/trim/transcribe/rewind
  */
 
 import React from 'react';
@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Camera, CameraOff, Mic, MicOff, Play, Pause, Square, 
   Type, Sparkles, Image, Scissors, Undo, Subtitles, FileText, Loader2,
-  Volume2, Music, AudioLines
+  Volume2, Music, AudioLines, RotateCcw, SkipBack, RefreshCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -64,6 +64,11 @@ interface RecordingControlsProps {
   isTranscribing?: boolean;
   transcriptionText?: string | null;
 
+  // Rewind/restart controls during pause
+  onRewindSeconds?: (seconds: number) => void;
+  onRestartRecording?: () => void;
+  currentDuration?: number;
+
   // Audio combination status
   audioCombination?: AudioCombinationStatus;
 }
@@ -96,6 +101,9 @@ export function RecordingControls({
   onTranscribe,
   isTranscribing = false,
   transcriptionText,
+  onRewindSeconds,
+  onRestartRecording,
+  currentDuration = 0,
   audioCombination,
 }: RecordingControlsProps) {
   
@@ -247,19 +255,68 @@ export function RecordingControls({
         )}
       </div>
 
-      {/* Trim & Transcribe Controls - visible during recording when paused */}
+      {/* Pause Controls - Rewind, Trim, Transcribe - visible during recording when paused */}
       {isRecording && isPaused && (
-        <div className="space-y-2 p-2 bg-muted/50 rounded-md">
+        <div className="space-y-3 p-3 bg-amber-500/10 rounded-lg border border-amber-500/20">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-amber-700">⏸ Recording Paused</span>
+            <Badge variant="outline" className="text-xs">
+              {Math.floor(currentDuration / 60)}:{(currentDuration % 60).toString().padStart(2, '0')} recorded
+            </Badge>
+          </div>
+
+          {/* Quick Actions Row */}
+          <div className="flex flex-wrap gap-2">
+            {/* Rewind buttons */}
+            {onRewindSeconds && currentDuration >= 5 && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onRewindSeconds(5)}
+                  className="gap-1.5 h-8 text-xs"
+                >
+                  <SkipBack className="w-3 h-3" />
+                  -5s
+                </Button>
+                {currentDuration >= 10 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onRewindSeconds(10)}
+                    className="gap-1.5 h-8 text-xs"
+                  >
+                    <SkipBack className="w-3 h-3" />
+                    -10s
+                  </Button>
+                )}
+              </>
+            )}
+            
+            {/* Restart button */}
+            {onRestartRecording && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onRestartRecording}
+                className="gap-1.5 h-8 text-xs text-red-600 border-red-500/30 hover:bg-red-500/10"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Start Over
+              </Button>
+            )}
+          </div>
+
           {/* Trim Controls */}
           {onTrimSeconds && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 p-2 bg-background/50 rounded-md">
               <span className="text-xs text-muted-foreground">Trim last</span>
               {onTrimSecondsChange && (
                 <Slider
                   value={[trimSeconds]}
                   onValueChange={([v]) => onTrimSecondsChange(v)}
                   min={1}
-                  max={30}
+                  max={Math.min(30, currentDuration)}
                   step={1}
                   className="w-20"
                 />
@@ -269,6 +326,7 @@ export function RecordingControls({
                 size="sm"
                 variant="outline"
                 onClick={() => onTrimSeconds(trimSeconds)}
+                disabled={currentDuration < trimSeconds}
                 className="gap-1 h-7 text-xs"
               >
                 <Scissors className="w-3 h-3" />
@@ -293,26 +351,26 @@ export function RecordingControls({
             <div className="flex items-center gap-2">
               <Button
                 size="sm"
-                variant="outline"
+                variant="secondary"
                 onClick={onTranscribe}
                 disabled={isTranscribing}
-                className="gap-1.5 h-7 text-xs"
+                className="gap-1.5 h-8 text-xs flex-1"
               >
                 {isTranscribing ? (
                   <Loader2 className="w-3 h-3 animate-spin" />
                 ) : (
                   <FileText className="w-3 h-3" />
                 )}
-                {isTranscribing ? 'Transcribing...' : 'Transcribe Recording'}
+                {isTranscribing ? 'Transcribing...' : 'Transcribe Current Recording'}
               </Button>
             </div>
           )}
 
           {/* Transcription Result */}
           {transcriptionText && (
-            <div className="p-2 bg-background/50 rounded text-xs max-h-20 overflow-y-auto border">
-              <p className="text-muted-foreground font-medium mb-1">Transcription:</p>
-              <p>{transcriptionText}</p>
+            <div className="p-2 bg-background/70 rounded-md text-xs max-h-24 overflow-y-auto border">
+              <p className="text-muted-foreground font-medium mb-1">📝 Transcription:</p>
+              <p className="text-foreground">{transcriptionText}</p>
             </div>
           )}
         </div>
@@ -339,9 +397,9 @@ export function RecordingControls({
           <>
             <Button
               size="lg"
-              variant="outline"
+              variant={isPaused ? 'default' : 'outline'}
               onClick={onPauseRecording}
-              className="gap-2"
+              className={cn("gap-2", isPaused && "bg-green-600 hover:bg-green-700 text-white")}
             >
               {isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
               {isPaused ? 'Resume' : 'Pause'}
