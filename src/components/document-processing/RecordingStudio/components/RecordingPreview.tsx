@@ -6,6 +6,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,7 +19,7 @@ import {
   Play, Pause, Square, Download, Trash2, Scissors, RotateCcw, Edit3, 
   FileText, Loader2, Sparkles, Save, X, RefreshCw, AlertCircle, CheckCircle2,
   FileVideo, FileAudio, Subtitles, Upload, Plus, Volume2, Wand2,
-  Library, Film
+  Library, Film, Mic, Music
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -766,315 +767,402 @@ ${editedTranscript}
             </div>
           </div>
 
-          {/* Side Panel - Script Review + Actions */}
-          <div className="w-96 border-l flex flex-col bg-muted/10 shrink-0">
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col overflow-hidden">
-              <TabsList className="grid grid-cols-3 m-2 shrink-0">
-                <TabsTrigger value="script" className="text-xs gap-1">
-                  <FileText className="w-3 h-3" />
+          {/* Side Panel - Script Review + Actions - Standardized like popout */}
+          <div className="w-96 border-l flex flex-col bg-muted/10 shrink-0 overflow-hidden">
+            {/* Fixed Header with Tabs */}
+            <div className="shrink-0 border-b bg-background/50">
+              <div className="p-2">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">Review Panel</span>
+                  <div className="flex gap-1">
+                    {scriptContent && (
+                      <Badge variant="outline" className="text-xs h-5">
+                        Script
+                      </Badge>
+                    )}
+                    {transcription && (
+                      <Badge variant="secondary" className="text-xs h-5">
+                        Transcribed
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Tab Navigation - Standardized button style */}
+              <div className="flex border-t bg-muted/20">
+                <button
+                  onClick={() => setActiveTab('script')}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors border-b-2",
+                    activeTab === 'script'
+                      ? "border-primary text-primary bg-background/80"
+                      : "border-transparent text-muted-foreground hover:text-foreground hover:bg-background/50"
+                  )}
+                >
+                  <FileText className="w-3.5 h-3.5" />
                   Script
-                </TabsTrigger>
-                <TabsTrigger value="transcript" disabled={!transcription} className="text-xs gap-1">
-                  <Edit3 className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={() => transcription && setActiveTab('transcript')}
+                  disabled={!transcription}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors border-b-2",
+                    activeTab === 'transcript'
+                      ? "border-primary text-primary bg-background/80"
+                      : "border-transparent text-muted-foreground hover:text-foreground hover:bg-background/50",
+                    !transcription && "opacity-50 cursor-not-allowed"
+                  )}
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
                   Transcript
-                </TabsTrigger>
-                <TabsTrigger value="export" className="text-xs gap-1">
-                  <Download className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={() => setActiveTab('export')}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors border-b-2",
+                    activeTab === 'export'
+                      ? "border-primary text-primary bg-background/80"
+                      : "border-transparent text-muted-foreground hover:text-foreground hover:bg-background/50"
+                  )}
+                >
+                  <Download className="w-3.5 h-3.5" />
                   Export
-                </TabsTrigger>
-              </TabsList>
+                </button>
+              </div>
+            </div>
+            
+            {/* Tab Content - Scrollable */}
+            <div className="flex-1 overflow-hidden">
+              {/* Script Tab */}
+              {activeTab === 'script' && (
+                <div className="h-full flex flex-col p-3 overflow-hidden">
 
-              {/* Script Tab - Shows script for review alongside recording */}
-              <TabsContent value="script" className="flex-1 flex flex-col p-2 pt-0 m-0 overflow-hidden">
-                {scriptContent ? (
-                  <div className="flex-1 flex flex-col overflow-hidden">
-                    {/* Script Header */}
-                    <div className="flex items-center justify-between mb-2 shrink-0">
-                      <div>
-                        <h4 className="text-sm font-medium">{scriptTitle || 'Script'}</h4>
-                        <p className="text-xs text-muted-foreground">
-                          Review while watching your recording
-                        </p>
-                      </div>
-                      {transcription && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={compareToScript}
-                          className="gap-1 text-xs"
-                        >
-                          <RefreshCw className="w-3 h-3" />
-                          Compare
-                        </Button>
-                      )}
-                    </div>
-                    
-                    {/* Comparison Results */}
-                    {scriptDifferences && (
-                      <div className="mb-2 p-2 bg-muted/50 rounded-lg border shrink-0">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium">Script Match</span>
-                          <Badge variant={matchPercentage >= 80 ? 'default' : matchPercentage >= 50 ? 'secondary' : 'destructive'}>
-                            {matchPercentage}%
-                          </Badge>
-                        </div>
-                        {scriptDifferences.missing.length > 0 && (
-                          <p className="text-xs text-red-600 mt-1">
-                            Missing: {scriptDifferences.missing.slice(0, 5).join(', ')}
-                            {scriptDifferences.missing.length > 5 && ` +${scriptDifferences.missing.length - 5} more`}
+                  {scriptContent ? (
+                    <>
+                      {/* Script Header */}
+                      <div className="flex items-center justify-between mb-2 shrink-0">
+                        <div>
+                          <h4 className="text-sm font-medium">{scriptTitle || 'Script'}</h4>
+                          <p className="text-xs text-muted-foreground">
+                            Review while watching your recording
                           </p>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Script Content - Scrollable */}
-                    <ScrollArea className="flex-1">
-                      <div className="text-sm p-3 bg-background rounded-lg border whitespace-pre-wrap leading-relaxed">
-                        {scriptContent}
-                      </div>
-                    </ScrollArea>
-
-                    {/* Audio Assets Info */}
-                    {audioMetadata && (audioMetadata.hasTTS || audioMetadata.hasVoiceover || audioMetadata.hasMusic) && (
-                      <div className="mt-2 p-2 bg-primary/5 rounded-lg border border-primary/20 shrink-0">
-                        <p className="text-xs font-medium mb-1">Audio Assets</p>
-                        <div className="flex flex-wrap gap-1">
-                          {audioMetadata.hasTTS && (
-                            <Badge variant="outline" className="text-xs">TTS: {audioMetadata.ttsName}</Badge>
-                          )}
-                          {audioMetadata.hasVoiceover && (
-                            <Badge variant="outline" className="text-xs">VO: {audioMetadata.voiceoverName}</Badge>
-                          )}
-                          {audioMetadata.hasMusic && (
-                            <Badge variant="outline" className="text-xs">Music: {audioMetadata.musicName}</Badge>
-                          )}
                         </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
-                    <FileText className="w-8 h-8 text-muted-foreground/50 mb-2" />
-                    <p className="text-sm text-muted-foreground">No script associated</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Select a script before recording to see it here
-                    </p>
-                  </div>
-                )}
-              </TabsContent>
-
-              {/* Transcript Tab */}
-              <TabsContent value="transcript" className="flex-1 flex flex-col p-2 pt-0 m-0 overflow-hidden">
-                {transcription ? (
-                  <div className="flex-1 flex flex-col overflow-hidden">
-                    {/* Filler Word Actions */}
-                    {fillerWordsFound.length > 0 && (
-                      <div className="mb-2 p-2 bg-amber-500/10 rounded-lg border border-amber-500/20 shrink-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-medium text-amber-700">
-                            {fillerWordsFound.length} filler words detected
-                          </span>
+                        {transcription && (
                           <Button
                             size="sm"
-                            variant="ghost"
-                            onClick={cleanTranscript}
-                            className="h-6 text-xs gap-1"
+                            variant="outline"
+                            onClick={compareToScript}
+                            className="gap-1 text-xs h-7"
                           >
-                            <Sparkles className="w-3 h-3" />
-                            Clean
+                            <RefreshCw className="w-3 h-3" />
+                            Compare
                           </Button>
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {[...new Set(fillerWordsFound)].slice(0, 5).map((word, i) => (
-                            <Badge key={i} variant="outline" className="text-xs">
-                              {word}
-                            </Badge>
-                          ))}
-                        </div>
+                        )}
                       </div>
-                    )}
-
-                    {/* Editable Transcript */}
-                    <ScrollArea className="flex-1">
-                      <Textarea
-                        value={editedTranscript}
-                        onChange={(e) => setEditedTranscript(e.target.value)}
-                        className="min-h-[200px] text-sm resize-none"
-                        placeholder="Transcription will appear here..."
-                      />
-                    </ScrollArea>
-
-                    {/* Transcript Actions */}
-                    <div className="flex gap-2 mt-2 shrink-0">
-                      {scriptContent && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={compareToScript}
-                          className="flex-1 gap-1"
-                        >
-                          <RefreshCw className="w-3 h-3" />
-                          Compare
-                        </Button>
+                      
+                      {/* Comparison Results */}
+                      {scriptDifferences && (
+                        <div className="mb-2 p-2 bg-muted/50 rounded-lg border shrink-0">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium">Script Match</span>
+                            <Badge variant={matchPercentage >= 80 ? 'default' : matchPercentage >= 50 ? 'secondary' : 'destructive'}>
+                              {matchPercentage}%
+                            </Badge>
+                          </div>
+                          {scriptDifferences.missing.length > 0 && (
+                            <p className="text-xs text-red-600 mt-1">
+                              Missing: {scriptDifferences.missing.slice(0, 5).join(', ')}
+                              {scriptDifferences.missing.length > 5 && ` +${scriptDifferences.missing.length - 5} more`}
+                            </p>
+                          )}
+                        </div>
                       )}
-                      {onScriptUpdate && (
-                        <Button
-                          size="sm"
-                          onClick={applyTranscriptToScript}
-                          className="flex-1 gap-1"
-                        >
-                          <Save className="w-3 h-3" />
-                          Update Script
-                        </Button>
+
+                      {/* Script Content - Scrollable */}
+                      <ScrollArea className="flex-1 min-h-0">
+                        <div className="text-sm p-3 bg-background rounded-lg border whitespace-pre-wrap leading-relaxed">
+                          {scriptContent}
+                        </div>
+                      </ScrollArea>
+
+                      {/* Audio Assets Info */}
+                      {audioMetadata && (audioMetadata.hasTTS || audioMetadata.hasVoiceover || audioMetadata.hasMusic) && (
+                        <div className="mt-2 p-2 bg-primary/5 rounded-lg border border-primary/20 shrink-0">
+                          <p className="text-xs font-medium mb-1 flex items-center gap-1">
+                            <Volume2 className="w-3 h-3" />
+                            Audio Assets
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {audioMetadata.hasTTS && (
+                              <Badge variant="outline" className="text-xs gap-1">
+                                <Sparkles className="w-2.5 h-2.5" />
+                                TTS: {audioMetadata.ttsName}
+                              </Badge>
+                            )}
+                            {audioMetadata.hasVoiceover && (
+                              <Badge variant="outline" className="text-xs gap-1">
+                                <Mic className="w-2.5 h-2.5" />
+                                VO: {audioMetadata.voiceoverName}
+                              </Badge>
+                            )}
+                            {audioMetadata.hasMusic && (
+                              <Badge variant="outline" className="text-xs gap-1">
+                                <Music className="w-2.5 h-2.5" />
+                                Music: {audioMetadata.musicName}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
+                      <FileText className="w-8 h-8 text-muted-foreground/50 mb-2" />
+                      <p className="text-sm text-muted-foreground">No script associated</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Select a script before recording to see it here
+                      </p>
+                      
+                      {/* Still show audio info if available */}
+                      {audioMetadata && (audioMetadata.hasTTS || audioMetadata.hasVoiceover || audioMetadata.hasMusic) && (
+                        <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20 w-full max-w-xs">
+                          <p className="text-xs font-medium mb-2">Audio Assets Used</p>
+                          <div className="flex flex-wrap gap-1 justify-center">
+                            {audioMetadata.hasTTS && (
+                              <Badge variant="outline" className="text-xs">TTS: {audioMetadata.ttsName}</Badge>
+                            )}
+                            {audioMetadata.hasVoiceover && (
+                              <Badge variant="outline" className="text-xs">VO: {audioMetadata.voiceoverName}</Badge>
+                            )}
+                            {audioMetadata.hasMusic && (
+                              <Badge variant="outline" className="text-xs">Music: {audioMetadata.musicName}</Badge>
+                            )}
+                          </div>
+                        </div>
                       )}
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
-                    <FileText className="w-8 h-8 text-muted-foreground/50 mb-2" />
-                    <p className="text-sm text-muted-foreground">No transcript yet</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Click "Transcribe" below the video to generate
-                    </p>
-                  </div>
-                )}
-              </TabsContent>
+                  )}
+                </div>
+              )}
+
+              {/* Transcript Tab */}
+              {activeTab === 'transcript' && (
+                <div className="h-full flex flex-col p-3 overflow-hidden">
+                  {transcription ? (
+                    <>
+                      {/* Filler Word Actions */}
+                      {fillerWordsFound.length > 0 && (
+                        <div className="mb-2 p-2 bg-amber-500/10 rounded-lg border border-amber-500/20 shrink-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-medium text-amber-700">
+                              {fillerWordsFound.length} filler words detected
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={cleanTranscript}
+                              className="h-6 text-xs gap-1"
+                            >
+                              <Sparkles className="w-3 h-3" />
+                              Clean
+                            </Button>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {[...new Set(fillerWordsFound)].slice(0, 5).map((word, i) => (
+                              <Badge key={i} variant="outline" className="text-xs">
+                                {word}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Editable Transcript */}
+                      <ScrollArea className="flex-1 min-h-0">
+                        <Textarea
+                          value={editedTranscript}
+                          onChange={(e) => setEditedTranscript(e.target.value)}
+                          className="min-h-[200px] text-sm resize-none"
+                          placeholder="Transcription will appear here..."
+                        />
+                      </ScrollArea>
+
+                      {/* Transcript Actions */}
+                      <div className="flex gap-2 mt-2 shrink-0">
+                        {scriptContent && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={compareToScript}
+                            className="flex-1 gap-1"
+                          >
+                            <RefreshCw className="w-3 h-3" />
+                            Compare
+                          </Button>
+                        )}
+                        {onScriptUpdate && (
+                          <Button
+                            size="sm"
+                            onClick={applyTranscriptToScript}
+                            className="flex-1 gap-1"
+                          >
+                            <Save className="w-3 h-3" />
+                            Update Script
+                          </Button>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
+                      <FileText className="w-8 h-8 text-muted-foreground/50 mb-2" />
+                      <p className="text-sm text-muted-foreground">No transcript yet</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Click "Transcribe" below the video to generate
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Export Tab */}
-              <TabsContent value="export" className="flex-1 flex flex-col p-2 pt-0 m-0 overflow-auto">
-                <div className="space-y-3">
-                  {/* Save Settings */}
-                  <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 space-y-3">
-                    <h4 className="text-sm font-medium flex items-center gap-2">
-                      <Save className="w-4 h-4" />
-                      Save to Library
-                    </h4>
-                    <p className="text-xs text-muted-foreground">
-                      Save recording with metadata and audio assets
-                    </p>
-                    
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="captions-save" className="text-xs">Include Captions</Label>
-                      <Switch
-                        id="captions-save"
-                        checked={captionsEnabled}
-                        onCheckedChange={setCaptionsEnabled}
-                        disabled={!editedTranscript}
-                      />
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Label className="text-xs">Format:</Label>
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant={exportFormat === 'mp4' ? 'default' : 'outline'}
-                          onClick={() => setExportFormat('mp4')}
-                          className="text-xs h-7"
-                        >
-                          MP4
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={exportFormat === 'webm' ? 'default' : 'outline'}
-                          onClick={() => setExportFormat('webm')}
-                          className="text-xs h-7"
-                        >
-                          WebM
-                        </Button>
+              {activeTab === 'export' && (
+                <div className="h-full overflow-auto p-3">
+                  <div className="space-y-3">
+                    {/* Save Settings */}
+                    <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 space-y-3">
+                      <h4 className="text-sm font-medium flex items-center gap-2">
+                        <Save className="w-4 h-4" />
+                        Save to Library
+                      </h4>
+                      <p className="text-xs text-muted-foreground">
+                        Save recording with metadata and audio assets
+                      </p>
+                      
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="captions-save" className="text-xs">Include Captions</Label>
+                        <Switch
+                          id="captions-save"
+                          checked={captionsEnabled}
+                          onCheckedChange={setCaptionsEnabled}
+                          disabled={!editedTranscript}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs">Format:</Label>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant={exportFormat === 'mp4' ? 'default' : 'outline'}
+                            onClick={() => setExportFormat('mp4')}
+                            className="text-xs h-7"
+                          >
+                            MP4
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={exportFormat === 'webm' ? 'default' : 'outline'}
+                            onClick={() => setExportFormat('webm')}
+                            className="text-xs h-7"
+                          >
+                            WebM
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Metadata Preview */}
+                      <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                        <p className="font-medium mb-1">Will include:</p>
+                        <ul className="list-disc list-inside space-y-0.5">
+                          <li>Video recording ({formatTime(duration)})</li>
+                          {captionsEnabled && editedTranscript && <li>Captions/transcript</li>}
+                          {scriptTitle && <li>Script: {scriptTitle}</li>}
+                          {audioMetadata?.hasTTS && <li>TTS audio reference</li>}
+                          {audioMetadata?.hasVoiceover && <li>Voiceover reference</li>}
+                          {audioMetadata?.hasMusic && <li>Background music reference</li>}
+                        </ul>
                       </div>
                     </div>
-
-                    {/* Metadata Preview */}
-                    <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-                      <p className="font-medium mb-1">Will include:</p>
-                      <ul className="list-disc list-inside space-y-0.5">
-                        <li>Video recording ({formatTime(duration)})</li>
-                        {captionsEnabled && editedTranscript && <li>Captions/transcript</li>}
-                        {scriptTitle && <li>Script: {scriptTitle}</li>}
-                        {audioMetadata?.hasTTS && <li>TTS audio reference</li>}
-                        {audioMetadata?.hasVoiceover && <li>Voiceover reference</li>}
-                        {audioMetadata?.hasMusic && <li>Background music reference</li>}
-                      </ul>
-                    </div>
-                  </div>
-                  
-                  {/* Download Options */}
-                  <div className="p-3 bg-background/50 rounded-lg border space-y-2">
-                    <h4 className="text-sm font-medium">Download</h4>
                     
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleExportMp4}
-                      disabled={isExporting}
-                      className="w-full gap-2 justify-start"
-                    >
-                      <FileVideo className="w-4 h-4" />
-                      Download MP4
-                    </Button>
-                    
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleExportWebm}
-                      disabled={isExporting}
-                      className="w-full gap-2 justify-start"
-                    >
-                      <Film className="w-4 h-4" />
-                      Download WebM
-                    </Button>
-                    
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleExportAudio}
-                      disabled={isExporting}
-                      className="w-full gap-2 justify-start"
-                    >
-                      <FileAudio className="w-4 h-4" />
-                      Extract Audio (MP3)
-                    </Button>
-                    
-                    {editedTranscript && (
+                    {/* Download Options */}
+                    <div className="p-3 bg-background/50 rounded-lg border space-y-2">
+                      <h4 className="text-sm font-medium">Download</h4>
+                      
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={handleExportCaptions}
+                        onClick={handleExportMp4}
                         disabled={isExporting}
                         className="w-full gap-2 justify-start"
                       >
-                        <Subtitles className="w-4 h-4" />
-                        Download Captions (SRT)
+                        <FileVideo className="w-4 h-4" />
+                        Download MP4
                       </Button>
-                    )}
-                  </div>
-                  
-                  {/* Upload replacement */}
-                  <div className="p-3 bg-background/50 rounded-lg border space-y-2">
-                    <h4 className="text-sm font-medium">Replace Video</h4>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="video/*"
-                      onChange={handleVideoUpload}
-                      className="hidden"
-                    />
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full gap-2"
-                    >
-                      <Upload className="w-4 h-4" />
-                      Upload Video
-                    </Button>
+                      
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleExportWebm}
+                        disabled={isExporting}
+                        className="w-full gap-2 justify-start"
+                      >
+                        <Film className="w-4 h-4" />
+                        Download WebM
+                      </Button>
+                      
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleExportAudio}
+                        disabled={isExporting}
+                        className="w-full gap-2 justify-start"
+                      >
+                        <FileAudio className="w-4 h-4" />
+                        Extract Audio (MP3)
+                      </Button>
+                      
+                      {editedTranscript && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleExportCaptions}
+                          disabled={isExporting}
+                          className="w-full gap-2 justify-start"
+                        >
+                          <Subtitles className="w-4 h-4" />
+                          Download Captions (SRT)
+                        </Button>
+                      )}
+                    </div>
+                    
+                    {/* Upload replacement */}
+                    <div className="p-3 bg-background/50 rounded-lg border space-y-2">
+                      <h4 className="text-sm font-medium">Replace Video</h4>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="video/*"
+                        onChange={handleVideoUpload}
+                        className="hidden"
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full gap-2"
+                      >
+                        <Upload className="w-4 h-4" />
+                        Upload Video
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </TabsContent>
-            </Tabs>
+              )}
+            </div>
           </div>
         </div>
+
         {/* Actions */}
         <div className="flex items-center justify-end gap-2 p-4 border-t">
           <Button variant="outline" onClick={onDiscard} className="gap-2">
