@@ -5,7 +5,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
-import { hmac } from "https://deno.land/x/hmac@v2.0.1/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -36,6 +35,31 @@ const POLLY_VOICES = {
   'Matthew-generative': { id: 'Matthew', engine: 'generative', lang: 'en-US', gender: 'Male' },
   'Ruth-generative': { id: 'Ruth', engine: 'generative', lang: 'en-US', gender: 'Female' },
 };
+
+// HMAC-SHA256 using Web Crypto API
+async function hmacSha256(key: Uint8Array, message: string): Promise<Uint8Array> {
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    key,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = await crypto.subtle.sign('HMAC', cryptoKey, new TextEncoder().encode(message));
+  return new Uint8Array(signature);
+}
+
+async function hmacSha256Hex(key: Uint8Array, message: string): Promise<string> {
+  const signature = await hmacSha256(key, message);
+  return Array.from(signature).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function sha256Hex(message: string): Promise<string> {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 // AWS Signature V4 Helper
 async function signAWSRequest(
@@ -82,12 +106,12 @@ async function signAWSRequest(
     await sha256Hex(canonicalRequest),
   ].join('\n');
   
-  // Calculate signature
-  const kDate = hmac('sha256', `AWS4${secretKey}`, dateStamp, 'utf8', 'hex');
-  const kRegion = hmac('sha256', hexToBytes(kDate), region, 'utf8', 'hex');
-  const kService = hmac('sha256', hexToBytes(kRegion), service, 'utf8', 'hex');
-  const kSigning = hmac('sha256', hexToBytes(kService), 'aws4_request', 'utf8', 'hex');
-  const signature = hmac('sha256', hexToBytes(kSigning), stringToSign, 'utf8', 'hex');
+  // Calculate signature using Web Crypto API
+  const kDate = await hmacSha256(new TextEncoder().encode(`AWS4${secretKey}`), dateStamp);
+  const kRegion = await hmacSha256(kDate, region);
+  const kService = await hmacSha256(kRegion, service);
+  const kSigning = await hmacSha256(kService, 'aws4_request');
+  const signature = await hmacSha256Hex(kSigning, stringToSign);
   
   const authorizationHeader = `${algorithm} Credential=${accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
   
@@ -98,20 +122,6 @@ async function signAWSRequest(
   };
 }
 
-async function sha256Hex(message: string): Promise<string> {
-  const msgBuffer = new TextEncoder().encode(message);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-function hexToBytes(hex: string): Uint8Array {
-  const bytes = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < hex.length; i += 2) {
-    bytes[i / 2] = parseInt(hex.slice(i, i + 2), 16);
-  }
-  return bytes;
-}
 
 serve(async (req) => {
   // Handle CORS preflight
