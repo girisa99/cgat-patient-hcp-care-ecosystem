@@ -1,8 +1,9 @@
-# Genie Studio & Recording Studio: Functional Architecture
+# Genie Mind & Genie Vibe: Functional Architecture
 
-> **Version:** 1.0  
+> **Version:** 1.1  
 > **Last Updated:** 2026-01-04  
 > **Scope:** P0-P2 Implementation | P3-P4 Roadmap
+> **Suite:** Mind to Media — AI-Powered Production Suite
 
 ---
 

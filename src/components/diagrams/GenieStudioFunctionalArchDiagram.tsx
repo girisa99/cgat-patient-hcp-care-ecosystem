@@ -329,11 +329,11 @@ export const GenieStudioFunctionalArchDiagram = () => {
                   <svg viewBox="0 0 1200 480" className="w-full h-auto">
                     <rect width="1200" height="480" fill={colors.background} rx="8" />
 
-                    {/* Genie Studio UI */}
+                    {/* Genie Mind UI */}
                     <g transform="translate(30, 20)">
                       <rect width="550" height="430" rx="12" fill={colors.cardBg} stroke={colors.presentation.bg} strokeWidth="2" />
                       <rect width="550" height="36" rx="12" fill={colors.presentation.bg} />
-                      <text x="275" y="24" textAnchor="middle" fill="#ffffff" fontSize="13" fontWeight="600">GENIE STUDIO UI</text>
+                      <text x="275" y="24" textAnchor="middle" fill="#ffffff" fontSize="13" fontWeight="600">GENIE MIND UI</text>
 
                       {/* Sidebar */}
                       <g transform="translate(10, 46)">
@@ -395,11 +395,11 @@ export const GenieStudioFunctionalArchDiagram = () => {
                       <text x="20" y="5" textAnchor="middle" fill="#ffffff" fontSize="16" fontWeight="bold">→</text>
                     </g>
 
-                    {/* Recording Studio UI */}
+                    {/* Genie Vibe UI */}
                     <g transform="translate(620, 20)">
                       <rect width="550" height="430" rx="12" fill={colors.cardBg} stroke={colors.completed.bg} strokeWidth="2" />
                       <rect width="550" height="36" rx="12" fill={colors.completed.bg} />
-                      <text x="275" y="24" textAnchor="middle" fill="#ffffff" fontSize="13" fontWeight="600">RECORDING STUDIO UI</text>
+                      <text x="275" y="24" textAnchor="middle" fill="#ffffff" fontSize="13" fontWeight="600">GENIE VIBE UI</text>
 
                       {/* Video Preview */}
                       <g transform="translate(10, 46)">
