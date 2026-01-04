@@ -13891,17 +13891,27 @@ export type Database = {
       }
       shows: {
         Row: {
+          agenda: string | null
+          attendees_count: number | null
           created_at: string
           current_stage: Database["public"]["Enums"]["production_stage"]
           description: string | null
+          duration_minutes: number | null
           embed_enabled: boolean | null
+          event_category: Database["public"]["Enums"]["event_category"] | null
+          event_stage: Database["public"]["Enums"]["event_stage"] | null
+          follow_up_notes: string | null
           guest_info: Json | null
           host_name: string | null
           id: string
           landing_page_enabled: boolean | null
           linked_music_id: string | null
           linked_script_id: string | null
+          location: string | null
+          meeting_link: string | null
+          meeting_stage: Database["public"]["Enums"]["meeting_stage"] | null
           metadata: Json | null
+          priority: string | null
           project_id: string | null
           published_at: string | null
           scheduled_date: string | null
@@ -13913,17 +13923,27 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agenda?: string | null
+          attendees_count?: number | null
           created_at?: string
           current_stage?: Database["public"]["Enums"]["production_stage"]
           description?: string | null
+          duration_minutes?: number | null
           embed_enabled?: boolean | null
+          event_category?: Database["public"]["Enums"]["event_category"] | null
+          event_stage?: Database["public"]["Enums"]["event_stage"] | null
+          follow_up_notes?: string | null
           guest_info?: Json | null
           host_name?: string | null
           id?: string
           landing_page_enabled?: boolean | null
           linked_music_id?: string | null
           linked_script_id?: string | null
+          location?: string | null
+          meeting_link?: string | null
+          meeting_stage?: Database["public"]["Enums"]["meeting_stage"] | null
           metadata?: Json | null
+          priority?: string | null
           project_id?: string | null
           published_at?: string | null
           scheduled_date?: string | null
@@ -13935,17 +13955,27 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agenda?: string | null
+          attendees_count?: number | null
           created_at?: string
           current_stage?: Database["public"]["Enums"]["production_stage"]
           description?: string | null
+          duration_minutes?: number | null
           embed_enabled?: boolean | null
+          event_category?: Database["public"]["Enums"]["event_category"] | null
+          event_stage?: Database["public"]["Enums"]["event_stage"] | null
+          follow_up_notes?: string | null
           guest_info?: Json | null
           host_name?: string | null
           id?: string
           landing_page_enabled?: boolean | null
           linked_music_id?: string | null
           linked_script_id?: string | null
+          location?: string | null
+          meeting_link?: string | null
+          meeting_stage?: Database["public"]["Enums"]["meeting_stage"] | null
           metadata?: Json | null
+          priority?: string | null
           project_id?: string | null
           published_at?: string | null
           scheduled_date?: string | null
@@ -18761,6 +18791,15 @@ export type Database = {
         | "conversational"
         | "ai_structure"
         | "online"
+      event_category: "media_production" | "business_meeting" | "event"
+      event_stage:
+        | "planning"
+        | "promotion"
+        | "registration"
+        | "live"
+        | "wrap_up"
+        | "archived"
+        | "cancelled"
       facility_type:
         | "treatmentFacility"
         | "referralFacility"
@@ -18776,6 +18815,14 @@ export type Database = {
         | "vendor_managed"
         | "drop_ship_only"
         | "hybrid"
+      meeting_stage:
+        | "scheduled"
+        | "confirmed"
+        | "agenda_prep"
+        | "in_progress"
+        | "follow_up"
+        | "completed"
+        | "cancelled"
       modality_type:
         | "autologous"
         | "allogeneic"
@@ -18862,6 +18909,16 @@ export type Database = {
         | "panel"
         | "tutorial"
         | "other"
+        | "broadcast"
+        | "discovery_call"
+        | "sales_meeting"
+        | "project_kickoff"
+        | "status_update"
+        | "consultation"
+        | "workshop"
+        | "webinar"
+        | "conference"
+        | "training_session"
       sla_tier: "standard" | "priority" | "critical" | "emergency_only"
       technology_integration:
         | "edi_integration"
@@ -19069,6 +19126,16 @@ export const Constants = {
         "ai_structure",
         "online",
       ],
+      event_category: ["media_production", "business_meeting", "event"],
+      event_stage: [
+        "planning",
+        "promotion",
+        "registration",
+        "live",
+        "wrap_up",
+        "archived",
+        "cancelled",
+      ],
       facility_type: [
         "treatmentFacility",
         "referralFacility",
@@ -19085,6 +19152,15 @@ export const Constants = {
         "vendor_managed",
         "drop_ship_only",
         "hybrid",
+      ],
+      meeting_stage: [
+        "scheduled",
+        "confirmed",
+        "agenda_prep",
+        "in_progress",
+        "follow_up",
+        "completed",
+        "cancelled",
       ],
       modality_type: [
         "autologous",
@@ -19182,6 +19258,16 @@ export const Constants = {
         "panel",
         "tutorial",
         "other",
+        "broadcast",
+        "discovery_call",
+        "sales_meeting",
+        "project_kickoff",
+        "status_update",
+        "consultation",
+        "workshop",
+        "webinar",
+        "conference",
+        "training_session",
       ],
       sla_tier: ["standard", "priority", "critical", "emergency_only"],
       technology_integration: [

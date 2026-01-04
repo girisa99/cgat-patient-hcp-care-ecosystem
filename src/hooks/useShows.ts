@@ -1,5 +1,5 @@
 /**
- * Hook for managing shows/productions
+ * Hook for managing shows/productions and scheduling
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -11,7 +11,10 @@ import type {
   ShowAsset, 
   ShowWithParticipants,
   ProductionStage,
-  ShowType
+  MeetingStage,
+  EventStage,
+  ShowType,
+  EventCategory
 } from '@/types/shows';
 
 export function useShows() {
@@ -174,9 +177,9 @@ export function useShows() {
           show_id: showId,
           name: participant.name,
           email: participant.email || null,
-          role: participant.role,
-          status: 'invited',
-        });
+          role: participant.role as any, // Cast to avoid type mismatch with new roles
+          status: 'invited' as any,
+        } as any);
 
       if (error) throw error;
 
