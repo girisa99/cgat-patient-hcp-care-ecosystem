@@ -52,7 +52,8 @@ export function getPopoutHTML(config: PopoutConfig): string {
       <!-- Header -->
       <header class="header">
         <div style="display: flex; align-items: center; gap: 12px;">
-          <h1>🎬 Recording Studio</h1>
+          <h1>🎬 Genie Vibe</h1>
+          <span class="header-tagline">Script to Screen</span>
           <span class="header-badge">Pop-out Mode</span>
         </div>
         <button class="close-btn" id="closeBtn">✕ Close</button>
