@@ -1916,10 +1916,13 @@ export default function GenieStudio() {
             <div className="max-w-7xl mx-auto">
               {/* Suite Tagline - Enterprise Style with Logo */}
               <div className="text-center mb-8">
-                <div className="inline-flex items-center gap-3 px-5 py-2 rounded-lg bg-card/80 backdrop-blur border border-border/50 shadow-sm">
-                  <img src={genieStudioLogo} alt="Genie Studio" className="h-8 w-8 object-contain" />
-                  <span className="text-sm font-semibold tracking-wide text-foreground">Genie Suite</span>
-                  <span className="w-px h-4 bg-border" />
+                <div className="inline-flex items-center gap-3 px-5 py-3 rounded-lg bg-card/80 backdrop-blur border border-border/50 shadow-sm">
+                  <img src={genieStudioLogo} alt="Genie Studio" className="h-10 w-10 object-contain" />
+                  <div className="flex flex-col items-start">
+                    <span className="text-base font-semibold tracking-wide text-foreground">Genie Suite</span>
+                    <span className="text-xs text-muted-foreground">Mind to Media</span>
+                  </div>
+                  <span className="w-px h-8 bg-border" />
                   <span className="text-xs text-muted-foreground">AI-Powered Production Suite</span>
                 </div>
               </div>
@@ -3403,12 +3406,15 @@ export default function GenieStudio() {
         }}>
           <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                  <Sparkles className="h-5 w-5 text-white" />
+              <DialogTitle className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-xl bg-white flex items-center justify-center shadow-md overflow-hidden border border-border/30">
+                  <img src={genieArcLogo} alt="Genie Arc" className="h-10 w-10 object-contain" />
                 </div>
                 <div>
-                  <span>Schedule a Show</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">Genie Arc</span>
+                    <span className="text-xs text-muted-foreground">Schedule a Show</span>
+                  </div>
                   <p className="text-sm font-normal text-muted-foreground">
                     Step {scheduleStep === 'details' ? '1' : scheduleStep === 'content' ? '2' : '3'} of 3: {
                       scheduleStep === 'details' ? 'Basic Details' : 
@@ -3416,6 +3422,7 @@ export default function GenieStudio() {
                       'Invite Participants'
                     }
                   </p>
+                  <p className="text-xs text-purple-500 mt-0.5">Your Production Journey With Infinite Possibilities</p>
                 </div>
               </DialogTitle>
             </DialogHeader>
