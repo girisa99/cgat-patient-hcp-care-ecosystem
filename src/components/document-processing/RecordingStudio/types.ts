@@ -109,6 +109,9 @@ export interface LibraryRecording {
   scriptTitle?: string | null;
   hasVoiceover?: boolean;
   hasMusic?: boolean;
+  hasCaptions?: boolean;
+  captionsText?: string;
+  format?: string;
 }
 
 export interface LogoState {
