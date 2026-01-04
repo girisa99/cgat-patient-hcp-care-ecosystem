@@ -1068,7 +1068,7 @@ export function ScriptEditorTab({
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{script.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {script.stats?.wordCount || script.content.split(/\s+/).length} words
+                          {script.stats?.wordCount || (script.content?.split(/\s+/).length ?? 0)} words
                         </p>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
@@ -1129,7 +1129,7 @@ export function ScriptEditorTab({
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{script.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {script.stats?.wordCount || script.content.split(/\s+/).length} words
+                          {script.stats?.wordCount || (script.content?.split(/\s+/).length ?? 0)} words
                         </p>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
@@ -1392,7 +1392,7 @@ export function ScriptEditorTab({
                                   </Badge>
                                 )}
                                 <span className="text-[10px] text-muted-foreground">
-                                  {script.stats?.wordCount || script.content.split(/\s+/).length}w
+                                  {script.stats?.wordCount || (script.content?.split(/\s+/).length ?? 0)}w
                                 </span>
                               </div>
                             </div>
@@ -1421,7 +1421,7 @@ export function ScriptEditorTab({
                                   </Badge>
                                 )}
                                 <span className="text-[10px] text-muted-foreground">
-                                  {script.stats?.wordCount || script.content.split(/\s+/).length}w
+                                  {script.stats?.wordCount || (script.content?.split(/\s+/).length ?? 0)}w
                                 </span>
                               </div>
                             </div>
@@ -1436,7 +1436,7 @@ export function ScriptEditorTab({
                     {(() => {
                       const script = savedScripts.find(s => s.id === (selectedTTSScriptId || selectedScriptId));
                       if (!script) return null;
-                      const wordCount = script.stats?.wordCount || script.content.split(/\s+/).length;
+                      const wordCount = script.stats?.wordCount || (script.content?.split(/\s+/).length ?? 0);
                       const speakingMin = Math.ceil(wordCount / 130);
                       return `${wordCount} words • ~${speakingMin} min speaking time${script.enhancedContent ? ' • Enhanced version available' : ''}`;
                     })()}
