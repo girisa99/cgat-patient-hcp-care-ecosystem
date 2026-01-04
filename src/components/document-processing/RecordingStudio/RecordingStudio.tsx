@@ -28,10 +28,11 @@ import {
   X, Library, Monitor, Camera, MonitorPlay, 
   FileText, Music, Mic, ChevronLeft, ChevronRight,
   FolderOpen, Sliders, Keyboard, Settings2,
-  Play, Pause, Square, AudioLines
+  Play, Pause, Square, AudioLines, ExternalLink
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 // Import Genie Vibe logo - using combined version (finalized with tagline)
 import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
@@ -74,6 +75,7 @@ import type { RecordingMode } from './hooks/useScreenShare';
 import type { RecordingQuality } from './components/RecordingQualitySettings';
 import { ProjectAssetBreakdown } from './components/ProjectAssetBreakdown';
 import { AvatarCreator } from './components/AvatarCreator';
+import { openPopoutRecordingStudio, type MediaItemForPopout, type ScriptItemForPopout } from '../popout';
 
 export function RecordingStudio({
   isOpen,
@@ -1138,6 +1140,95 @@ export function RecordingStudio({
     }
   }, [lastRecordingBlob]);
 
+  // Open pop-out window for screen recording scenarios
+  const handleOpenPopout = useCallback(async () => {
+    try {
+      // Get user session for backend saves
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+
+      // Prepare media items for popout
+      const mediaItems: MediaItemForPopout[] = [
+        ...voiceovers.map(v => ({
+          id: v.id,
+          name: v.name,
+          url: v.url,
+          file_type: 'audio' as const,
+          metadata: {
+            scriptText: v.scriptText,
+            scriptType: v.scriptType,
+            type: v.metadataType,
+          }
+        })),
+        ...music.map(m => ({
+          id: m.id,
+          name: m.name,
+          url: m.url,
+          file_type: 'audio' as const,
+          metadata: { type: 'instrumental' }
+        }))
+      ];
+
+      // Prepare scripts for popout
+      const availableScripts: ScriptItemForPopout[] = scripts.map(s => ({
+        id: s.id,
+        title: s.title,
+        content: s.content,
+      }));
+
+      // Open the popout window with all context
+      const popoutWindow = openPopoutRecordingStudio({
+        mediaItems,
+        availableScripts,
+        selectedScript: currentScript,
+        selectedAudioFile: currentVoiceover ? {
+          id: currentVoiceover.id,
+          name: currentVoiceover.name,
+          url: currentVoiceover.url,
+          file_type: 'audio',
+        } : null,
+        selectedBackgroundMusic: currentMusic ? {
+          id: currentMusic.id,
+          name: currentMusic.name,
+          url: currentMusic.url,
+          file_type: 'audio',
+        } : null,
+        userAccessToken: accessToken,
+        productionContext: productionContext ? {
+          showId: productionContext.showId,
+          showTitle: productionContext.showTitle,
+          showType: productionContext.showType,
+          scriptMode: productionContext.scriptMode,
+          currentStage: productionContext.currentStage,
+          participants: productionContext.participants.map(p => ({
+            id: p.id,
+            name: p.name,
+            role: p.role,
+          })),
+          studioSettings: productionContext.studioSettings ? {
+            teleprompterSpeed: productionContext.studioSettings.teleprompterSpeed,
+            ttsVoiceId: productionContext.studioSettings.ttsVoiceId,
+            ttsProvider: productionContext.studioSettings.ttsProvider,
+          } : undefined,
+        } : undefined,
+        onSuccess: () => {
+          toast.success('Pop-out window opened. Your recording session will be saved to the project.');
+        },
+        onError: (message) => {
+          toast.error(message);
+        },
+      });
+
+      if (popoutWindow) {
+        // Close the modal since we're now in popout mode
+        onClose();
+      }
+    } catch (err) {
+      console.error('Failed to open popout:', err);
+      toast.error('Failed to open pop-out window');
+    }
+  }, [voiceovers, music, scripts, currentScript, currentVoiceover, currentMusic, productionContext, onClose]);
+
   // TTS download
   const handleDownloadTTS = useCallback(() => {
     if (ttsAudioUrl) {
@@ -1364,6 +1455,17 @@ export function RecordingStudio({
                 >
                   <Library className="w-4 h-4" />
                   Library ({library.recordings.length})
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleOpenPopout}
+                  className="gap-1 h-8"
+                  title="Open in separate window (for screen recording)"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Pop Out
                 </Button>
               </>
             )}

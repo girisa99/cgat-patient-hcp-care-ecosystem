@@ -34,7 +34,7 @@ export interface PopoutConfig {
   selectedMusicId: string;
   supabaseUrl: string;
   supabaseKey: string;
-  // Production context (optional)
+  // Production context (optional) - required for saving to project
   productionContext?: {
     showId: string;
     showTitle: string;
@@ -48,6 +48,8 @@ export interface PopoutConfig {
       ttsProvider: 'openai' | 'elevenlabs';
     };
   };
+  // User auth token for backend saves
+  userAccessToken?: string;
 }
 
 export interface MediaItemForPopout {

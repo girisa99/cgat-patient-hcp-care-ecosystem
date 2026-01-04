@@ -20,6 +20,20 @@ interface OpenPopoutOptions {
   selectedBackgroundMusic: MediaItemForPopout | null;
   supabaseUrl?: string;
   supabaseKey?: string;
+  userAccessToken?: string;
+  productionContext?: {
+    showId: string;
+    showTitle: string;
+    showType: string;
+    scriptMode: 'podcast' | 'webcast' | 'video' | 'audio';
+    currentStage: string;
+    participants: { id: string; name: string; role: string }[];
+    studioSettings?: {
+      teleprompterSpeed: number;
+      ttsVoiceId: string;
+      ttsProvider: 'openai' | 'elevenlabs';
+    };
+  };
   onSuccess?: () => void;
   onError?: (message: string) => void;
 }
@@ -37,6 +51,8 @@ export function openPopoutRecordingStudio(options: OpenPopoutOptions): Window | 
       selectedBackgroundMusic,
       supabaseUrl = 'https://ithspbabhmdntioslfqe.supabase.co',
       supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0aHNwYmFiaG1kbnRpb3NsZnFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY5MjU5OTMsImV4cCI6MjA2MjUwMTk5M30.yUZZHsz2wIHboVuWWfqXeAH5oHRxzJIz20NWSUmHPhw',
+      userAccessToken,
+      productionContext,
       onSuccess,
       onError,
     } = options;
@@ -120,6 +136,8 @@ export function openPopoutRecordingStudio(options: OpenPopoutOptions): Window | 
       selectedMusicId: selectedBackgroundMusic?.id || '',
       supabaseUrl,
       supabaseKey,
+      userAccessToken,
+      productionContext,
     };
 
     // Generate HTML content

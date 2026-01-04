@@ -25,6 +25,7 @@ import {
 import { getBackgroundBlurScript, getBackgroundBlurStyles } from './audio/backgroundBlur';
 import { getRecordingLibraryScript, getRecordingLibraryStyles } from './audio/recordingLibrary';
 import { getStatePersistenceScript, getStatePersistenceStyles } from './popoutStatePersistence';
+import { getBackendSyncScript, getBackendSyncStyles } from './popoutBackendSync';
 
 /**
  * Generate the complete HTML for the popout recording studio
@@ -53,7 +54,8 @@ export function generatePopoutHTML(config: PopoutConfig): string {
     getVoiceProviderSelectionStyles(),
     getBackgroundBlurStyles(),
     getRecordingLibraryStyles(),
-    getStatePersistenceStyles()
+    getStatePersistenceStyles(),
+    getBackendSyncStyles()
   ].join('\n');
 
   // Get HTML content
@@ -156,6 +158,13 @@ export function generatePopoutHTML(config: PopoutConfig): string {
     getEnhancedControlsScript(),
     // UI last (uses everything)
     getUIScript(),
+    // Backend sync module (saves to Supabase)
+    getBackendSyncScript({
+      supabaseUrl: config.supabaseUrl,
+      supabaseKey: config.supabaseKey,
+      userAccessToken: config.userAccessToken,
+      showId: config.productionContext?.showId
+    }),
     // State persistence module (must be last to hook into other modules)
     getStatePersistenceScript()
   ].join('\n\n');

@@ -311,10 +311,17 @@ export function getStatePersistenceScript(): string {
       }
     });
     
-    // Handle before unload
-    window.addEventListener('beforeunload', function() {
+    // Handle before unload - CRITICAL: prevent close during recording
+    window.addEventListener('beforeunload', function(e) {
       console.log('[Persistence] Window closing, saving final state...');
       saveState();
+      
+      // Warn if recording is in progress
+      if (isRecording && !isStopped) {
+        e.preventDefault();
+        e.returnValue = 'Recording in progress. Are you sure you want to close?';
+        return e.returnValue;
+      }
     });
     
     // Handle page show (back/forward cache)
@@ -324,6 +331,53 @@ export function getStatePersistenceScript(): string {
         restoreState();
       }
     });
+    
+    // =====================================================
+    // ENHANCED CROSS-WINDOW SYNC
+    // =====================================================
+    
+    // Listen for events from parent window
+    window.addEventListener('storage', function(e) {
+      if (e.key === 'genie_vibe_parent_command') {
+        try {
+          var command = JSON.parse(e.newValue);
+          console.log('[Persistence] Received parent command:', command.type);
+          
+          if (command.type === 'ping') {
+            // Respond to ping
+            localStorage.setItem('genie_vibe_popout_response', JSON.stringify({
+              type: 'pong',
+              sessionId: sessionId,
+              isRecording: isRecording,
+              timestamp: Date.now()
+            }));
+          } else if (command.type === 'pause_recording') {
+            if (typeof pauseRecording === 'function' && isRecording && !isPaused) {
+              pauseRecording();
+            }
+          } else if (command.type === 'stop_recording') {
+            if (typeof stopRecording === 'function' && isRecording) {
+              stopRecording();
+            }
+          }
+        } catch (err) {
+          console.warn('[Persistence] Error handling parent command:', err);
+        }
+      }
+    });
+    
+    // Heartbeat to let parent know we're alive
+    var heartbeatInterval = setInterval(function() {
+      try {
+        localStorage.setItem('genie_vibe_popout_heartbeat', JSON.stringify({
+          sessionId: sessionId,
+          isRecording: isRecording,
+          isPaused: isPaused,
+          hasCamera: !!mediaStream,
+          timestamp: Date.now()
+        }));
+      } catch (e) {}
+    }, 1000);
     
     // Start periodic state saving when recording
     function startStateSaving() {
@@ -376,6 +430,12 @@ export function getStatePersistenceScript(): string {
       // Start state saving regardless
       startStateSaving();
     }, 2000);
+    
+    // Cleanup on unload
+    window.addEventListener('unload', function() {
+      clearInterval(heartbeatInterval);
+      stopStateSaving();
+    });
     
     console.log('[Persistence] ✅ Module loaded with sessionId:', sessionId);
   `;
