@@ -6,3 +6,4 @@ export { GenieRecordingStudioArchitectureDiagram } from './GenieRecordingStudioA
 export { GenieStudioTechnicalArchDiagram } from './GenieStudioTechnicalArchDiagram';
 export { GenieStudioFunctionalArchDiagram } from './GenieStudioFunctionalArchDiagram';
 export { GenieStudioScenarioMapDiagram } from './GenieStudioScenarioMapDiagram';
+export { GenieStudioFullArchitectureDiagram } from './GenieStudioFullArchitectureDiagram';
