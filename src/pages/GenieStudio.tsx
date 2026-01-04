@@ -74,6 +74,7 @@ import { useGenieScripts, type GenieScript } from '@/components/genie-studio/use
 import { supabase } from '@/integrations/supabase/client';
 
 // Import Genie logos
+import genieStudioLogo from '@/assets/logos/genie-studio-product.png';
 import genieMindLogo from '@/assets/logos/genie-mind-product.png';
 import genieVibeLogo from '@/assets/logos/genie-vibe-product.png';
 import genieArcLogo from '@/assets/logos/genie-arc-product.png';
@@ -1913,9 +1914,10 @@ export default function GenieStudio() {
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-purple-500/5 to-pink-500/5" />
           <div className="relative px-6 py-8 md:py-12">
             <div className="max-w-7xl mx-auto">
-              {/* Suite Tagline - Enterprise Style */}
+              {/* Suite Tagline - Enterprise Style with Logo */}
               <div className="text-center mb-8">
-                <div className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-card/80 backdrop-blur border border-border/50 shadow-sm">
+                <div className="inline-flex items-center gap-3 px-5 py-2 rounded-lg bg-card/80 backdrop-blur border border-border/50 shadow-sm">
+                  <img src={genieStudioLogo} alt="Genie Studio" className="h-8 w-8 object-contain" />
                   <span className="text-sm font-semibold tracking-wide text-foreground">Genie Suite</span>
                   <span className="w-px h-4 bg-border" />
                   <span className="text-xs text-muted-foreground">AI-Powered Production Suite</span>
