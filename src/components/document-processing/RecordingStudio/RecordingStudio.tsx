@@ -224,7 +224,7 @@ export function RecordingStudio({
   // Analyze scripts for TTS/Voiceover status
   // Returns detailed info about each script's audio availability
   const scriptAudioStatus = scripts.map(script => {
-    const scriptTitle = script.title.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const scriptTitle = (script.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     
     // Find matching TTS files (metadataType = 'tts') - must have valid URL
     const matchingTTS = voiceovers.filter(v => {
@@ -241,7 +241,7 @@ export function RecordingStudio({
       }
       
       // Priority 2: Strict name matching - require significant overlap
-      const voName = v.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const voName = (v.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
       // Only match if the TTS name contains most of the script title (>80% of title)
       const titleWords = scriptTitle.split(/(?=[A-Z])|_|-/).filter(w => w.length > 2);
       const matchedWords = titleWords.filter(word => voName.includes(word));
@@ -272,7 +272,7 @@ export function RecordingStudio({
       }
       
       // Priority 2: Name matching similar to TTS
-      const voName = v.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const voName = (v.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
       const titleWords = scriptTitle.split(/(?=[A-Z])|_|-/).filter(w => w.length > 2);
       const matchedWords = titleWords.filter(word => voName.includes(word));
       if (titleWords.length > 0 && matchedWords.length >= Math.ceil(titleWords.length * 0.6)) {
@@ -284,11 +284,11 @@ export function RecordingStudio({
     
     // Determine if TTS is for enhanced or original version
     const hasTTSForEnhanced = matchingTTS.some(t => 
-      t.name.toLowerCase().includes('enhanced') || 
+      (t.name || '').toLowerCase().includes('enhanced') || 
       (t.scriptText && script.enhancedContent && t.scriptText.substring(0, 50) === script.enhancedContent.substring(0, 50))
     );
     const hasTTSForOriginal = matchingTTS.some(t => 
-      !t.name.toLowerCase().includes('enhanced') &&
+      !(t.name || '').toLowerCase().includes('enhanced') &&
       (t.scriptText && script.content && t.scriptText.substring(0, 50) === script.content.substring(0, 50))
     );
     
