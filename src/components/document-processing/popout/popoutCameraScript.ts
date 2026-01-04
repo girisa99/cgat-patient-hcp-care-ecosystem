@@ -343,6 +343,10 @@ export function getCameraScript(): string {
         if (mediaStream) {
           mediaStream.getTracks().forEach(function(track) { track.stop(); });
         }
+        // Clear saved state on intentional close
+        try {
+          localStorage.removeItem('genie_vibe_popout_state');
+        } catch (e) {}
         window.close();
       });
     }
@@ -351,6 +355,41 @@ export function getCameraScript(): string {
     window.addEventListener('beforeunload', function() {
       if (mediaStream) {
         mediaStream.getTracks().forEach(function(track) { track.stop(); });
+      }
+    });
+    
+    // Handle visibility change - reinitialize camera if stream was lost
+    document.addEventListener('visibilitychange', function() {
+      if (!document.hidden) {
+        console.log('[Camera] Tab became visible, checking stream...');
+        // Check if video stream is still active
+        if (videoPreview && (!videoPreview.srcObject || !mediaStream)) {
+          console.log('[Camera] Stream lost, reinitializing...');
+          initCamera();
+        } else if (mediaStream) {
+          var videoTracks = mediaStream.getVideoTracks();
+          var hasActiveVideo = videoTracks.some(function(track) { return track.readyState === 'live'; });
+          if (!hasActiveVideo) {
+            console.log('[Camera] Video track ended, reinitializing...');
+            initCamera();
+          }
+        }
+      }
+    });
+    
+    // Handle window focus - check and restore stream
+    window.addEventListener('focus', function() {
+      console.log('[Camera] Window focused, checking stream...');
+      if (videoPreview && videoPreview.srcObject) {
+        var stream = videoPreview.srcObject;
+        if (stream && stream.getTracks) {
+          var tracks = stream.getTracks();
+          var allEnded = tracks.every(function(track) { return track.readyState === 'ended'; });
+          if (allEnded) {
+            console.log('[Camera] All tracks ended, reinitializing...');
+            initCamera();
+          }
+        }
       }
     });
 
