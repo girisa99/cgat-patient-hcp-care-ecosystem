@@ -15,6 +15,7 @@ import smallIcon from '@/assets/logos/genie-studio-small-icon.png';
 import banner from '@/assets/logos/genie-studio-banner.png';
 import presentation from '@/assets/logos/genie-studio-presentation-v2.png';
 import product from '@/assets/logos/genie-studio-product.png';
+import genieArcCombined from '@/assets/logos/genie-arc-combined.png';
 
 interface ImageAsset {
   id: string;
@@ -75,6 +76,13 @@ const logoAssets: ImageAsset[] = [
     title: 'Product Logo',
     description: 'Compact logo for app interfaces',
     src: product,
+    category: 'logo',
+  },
+  {
+    id: 'genie-arc-combined',
+    title: 'Genie Arc Combined',
+    description: 'Combined Genie Arc logo with compass and infinity symbols',
+    src: genieArcCombined,
     category: 'logo',
   },
 ];
