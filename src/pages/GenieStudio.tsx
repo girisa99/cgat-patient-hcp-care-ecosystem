@@ -60,7 +60,18 @@ import {
   Mail,
   UserPlus,
   X,
-  Save
+  Save,
+  // New icons for extended scheduling
+  GraduationCap,
+  Phone,
+  Briefcase,
+  Rocket,
+  BarChart,
+  MessageCircle,
+  Wrench,
+  Monitor,
+  Building,
+  BookOpen
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { RecordingStudio } from '@/components/document-processing/RecordingStudio';
@@ -123,10 +134,11 @@ interface SavedScript {
   voiceoverId?: string;
 }
 
-// Types for shows/events
+// Types for shows/events - Extended for all scheduling types
 interface ShowEvent {
   id: string;
-  type: 'podcast' | 'webcast' | 'broadcast';
+  type: 'podcast' | 'webcast' | 'broadcast' | 'interview' | 'panel' | 'tutorial' | 'discovery_call' | 'sales_meeting' | 'project_kickoff' | 'status_update' | 'consultation' | 'workshop' | 'webinar' | 'conference' | 'training_session' | 'other';
+  eventCategory?: 'media_production' | 'business_meeting' | 'event';
   title: string;
   description: string;
   scheduledDate: Date;
@@ -135,13 +147,19 @@ interface ShowEvent {
   scriptContent?: string;
   hostName?: string;
   status: 'scheduled' | 'live' | 'completed' | 'cancelled';
+  // Additional fields for meetings/events
+  agenda?: string;
+  meetingLink?: string;
+  location?: string;
+  durationMinutes?: number;
+  priority?: 'low' | 'normal' | 'high' | 'urgent';
 }
 
 interface Participant {
   id: string;
   name: string;
   email: string;
-  role: 'host' | 'co-host' | 'guest' | 'panelist';
+  role: 'host' | 'co-host' | 'guest' | 'panelist' | 'attendee' | 'organizer' | 'speaker';
   status: 'pending' | 'confirmed' | 'declined';
 }
 
@@ -943,7 +961,8 @@ export default function GenieStudio() {
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [selectedEventForInvite, setSelectedEventForInvite] = useState<ShowEvent | null>(null);
   const [isCreateShowDialogOpen, setIsCreateShowDialogOpen] = useState(false);
-  const [newShowType, setNewShowType] = useState<'podcast' | 'webcast' | 'broadcast'>('podcast');
+  const [newShowType, setNewShowType] = useState<string>('podcast');
+  const [newEventCategory, setNewEventCategory] = useState<'media_production' | 'business_meeting' | 'event'>('media_production');
   const [newShowTitle, setNewShowTitle] = useState('');
   const [newShowDescription, setNewShowDescription] = useState('');
   const [newShowDate, setNewShowDate] = useState('');
@@ -1746,14 +1765,15 @@ export default function GenieStudio() {
     
     // Create event with participants
     const newEvent = addEvent({
-      type: newShowType,
+      type: newShowType as 'podcast' | 'webcast' | 'broadcast',
       title: newShowTitle,
       description: newShowDescription,
       scheduledDate,
       participants: allParticipants,
       scriptContent: showScript,
       hostName: hostName,
-      status: 'scheduled'
+      status: 'scheduled',
+      eventCategory: newEventCategory
     });
 
     // Send invites to all participants (except host unless they have email)
@@ -1895,19 +1915,51 @@ export default function GenieStudio() {
 
   const { words, minutes } = calculateReadingTime(scriptContent);
 
-  const getShowTypeIcon = (type: 'podcast' | 'webcast' | 'broadcast') => {
+  const getShowTypeIcon = (type: string) => {
     switch (type) {
+      // Media Productions
       case 'podcast': return Podcast;
       case 'webcast': return Tv;
       case 'broadcast': return Radio;
+      case 'interview': return Users;
+      case 'panel': return Users;
+      case 'tutorial': return GraduationCap;
+      // Business Meetings
+      case 'discovery_call': return Phone;
+      case 'sales_meeting': return Briefcase;
+      case 'project_kickoff': return Rocket;
+      case 'status_update': return BarChart;
+      case 'consultation': return MessageCircle;
+      // Events
+      case 'workshop': return Wrench;
+      case 'webinar': return Monitor;
+      case 'conference': return Building;
+      case 'training_session': return BookOpen;
+      default: return Video;
     }
   };
 
-  const getShowTypeColor = (type: 'podcast' | 'webcast' | 'broadcast') => {
+  const getShowTypeColor = (type: string) => {
     switch (type) {
+      // Media Productions
       case 'podcast': return 'from-purple-500 to-indigo-500';
       case 'webcast': return 'from-blue-500 to-cyan-500';
       case 'broadcast': return 'from-red-500 to-pink-500';
+      case 'interview': return 'from-green-500 to-emerald-500';
+      case 'panel': return 'from-yellow-500 to-orange-500';
+      case 'tutorial': return 'from-pink-500 to-rose-500';
+      // Business Meetings
+      case 'discovery_call': return 'from-blue-500 to-cyan-500';
+      case 'sales_meeting': return 'from-green-500 to-emerald-500';
+      case 'project_kickoff': return 'from-purple-500 to-indigo-500';
+      case 'status_update': return 'from-yellow-500 to-orange-500';
+      case 'consultation': return 'from-pink-500 to-rose-500';
+      // Events
+      case 'workshop': return 'from-blue-500 to-cyan-500';
+      case 'webinar': return 'from-purple-500 to-indigo-500';
+      case 'conference': return 'from-green-500 to-emerald-500';
+      case 'training_session': return 'from-orange-500 to-red-500';
+      default: return 'from-gray-500 to-slate-500';
     }
   };
 
@@ -3706,28 +3758,111 @@ export default function GenieStudio() {
             {/* Step 1: Basic Details */}
             {scheduleStep === 'details' && (
               <div className="space-y-4 py-4">
+                {/* Event Category Selector */}
                 <div>
-                  <Label>Show Type</Label>
+                  <Label>Category</Label>
                   <div className="grid grid-cols-3 gap-3 mt-2">
                     {[
+                      { value: 'media_production', label: 'Media Production', icon: Video, color: 'from-purple-500 to-indigo-500', description: 'Podcasts, webcasts, interviews' },
+                      { value: 'business_meeting', label: 'Meeting', icon: Users, color: 'from-blue-500 to-cyan-500', description: 'Calls, consultations' },
+                      { value: 'event', label: 'Event', icon: Calendar, color: 'from-orange-500 to-red-500', description: 'Workshops, webinars' }
+                    ].map((cat) => (
+                      <div
+                        key={cat.value}
+                        className={cn(
+                          "p-3 rounded-lg border-2 cursor-pointer transition-all text-center",
+                          newEventCategory === cat.value
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-primary/50"
+                        )}
+                        onClick={() => {
+                          setNewEventCategory(cat.value as any);
+                          // Set default type for category
+                          if (cat.value === 'media_production') setNewShowType('podcast');
+                          else if (cat.value === 'business_meeting') setNewShowType('discovery_call');
+                          else setNewShowType('workshop');
+                        }}
+                      >
+                        <div className={cn("h-8 w-8 rounded-lg bg-gradient-to-br flex items-center justify-center mx-auto mb-1", cat.color)}>
+                          <cat.icon className="h-4 w-4 text-white" />
+                        </div>
+                        <span className="text-xs font-medium block">{cat.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Show Type based on Category */}
+                <div>
+                  <Label>Type</Label>
+                  <div className="grid grid-cols-3 gap-3 mt-2">
+                    {newEventCategory === 'media_production' && [
                       { value: 'podcast', label: 'Podcast', icon: Podcast, color: 'from-purple-500 to-indigo-500' },
                       { value: 'webcast', label: 'Webcast', icon: Tv, color: 'from-blue-500 to-cyan-500' },
+                      { value: 'interview', label: 'Interview', icon: Users, color: 'from-green-500 to-emerald-500' },
+                      { value: 'panel', label: 'Panel', icon: Users, color: 'from-yellow-500 to-orange-500' },
+                      { value: 'tutorial', label: 'Tutorial', icon: GraduationCap, color: 'from-pink-500 to-rose-500' },
                       { value: 'broadcast', label: 'Broadcast', icon: Radio, color: 'from-red-500 to-pink-500' }
                     ].map((type) => (
                       <div
                         key={type.value}
                         className={cn(
-                          "p-4 rounded-lg border-2 cursor-pointer transition-all text-center",
+                          "p-3 rounded-lg border-2 cursor-pointer transition-all text-center",
                           newShowType === type.value
                             ? "border-primary bg-primary/5"
                             : "border-border hover:border-primary/50"
                         )}
-                        onClick={() => setNewShowType(type.value as 'podcast' | 'webcast' | 'broadcast')}
+                        onClick={() => setNewShowType(type.value)}
                       >
-                        <div className={cn("h-10 w-10 rounded-lg bg-gradient-to-br flex items-center justify-center mx-auto mb-2", type.color)}>
-                          <type.icon className="h-5 w-5 text-white" />
+                        <div className={cn("h-8 w-8 rounded-lg bg-gradient-to-br flex items-center justify-center mx-auto mb-1", type.color)}>
+                          <type.icon className="h-4 w-4 text-white" />
                         </div>
-                        <span className="text-sm font-medium">{type.label}</span>
+                        <span className="text-xs font-medium">{type.label}</span>
+                      </div>
+                    ))}
+                    {newEventCategory === 'business_meeting' && [
+                      { value: 'discovery_call', label: 'Discovery Call', icon: Phone, color: 'from-blue-500 to-cyan-500' },
+                      { value: 'sales_meeting', label: 'Sales Meeting', icon: Briefcase, color: 'from-green-500 to-emerald-500' },
+                      { value: 'project_kickoff', label: 'Project Kickoff', icon: Rocket, color: 'from-purple-500 to-indigo-500' },
+                      { value: 'status_update', label: 'Status Update', icon: BarChart, color: 'from-yellow-500 to-orange-500' },
+                      { value: 'consultation', label: 'Consultation', icon: MessageCircle, color: 'from-pink-500 to-rose-500' }
+                    ].map((type) => (
+                      <div
+                        key={type.value}
+                        className={cn(
+                          "p-3 rounded-lg border-2 cursor-pointer transition-all text-center",
+                          newShowType === type.value
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-primary/50"
+                        )}
+                        onClick={() => setNewShowType(type.value)}
+                      >
+                        <div className={cn("h-8 w-8 rounded-lg bg-gradient-to-br flex items-center justify-center mx-auto mb-1", type.color)}>
+                          <type.icon className="h-4 w-4 text-white" />
+                        </div>
+                        <span className="text-xs font-medium">{type.label}</span>
+                      </div>
+                    ))}
+                    {newEventCategory === 'event' && [
+                      { value: 'workshop', label: 'Workshop', icon: Wrench, color: 'from-blue-500 to-cyan-500' },
+                      { value: 'webinar', label: 'Webinar', icon: Monitor, color: 'from-purple-500 to-indigo-500' },
+                      { value: 'conference', label: 'Conference', icon: Building, color: 'from-green-500 to-emerald-500' },
+                      { value: 'training_session', label: 'Training', icon: BookOpen, color: 'from-orange-500 to-red-500' }
+                    ].map((type) => (
+                      <div
+                        key={type.value}
+                        className={cn(
+                          "p-3 rounded-lg border-2 cursor-pointer transition-all text-center",
+                          newShowType === type.value
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-primary/50"
+                        )}
+                        onClick={() => setNewShowType(type.value)}
+                      >
+                        <div className={cn("h-8 w-8 rounded-lg bg-gradient-to-br flex items-center justify-center mx-auto mb-1", type.color)}>
+                          <type.icon className="h-4 w-4 text-white" />
+                        </div>
+                        <span className="text-xs font-medium">{type.label}</span>
                       </div>
                     ))}
                   </div>
@@ -3735,15 +3870,15 @@ export default function GenieStudio() {
                 
                 {/* Host Name */}
                 <div>
-                  <Label htmlFor="host-name">Host Name *</Label>
+                  <Label htmlFor="host-name">{newEventCategory === 'business_meeting' ? 'Organizer Name' : 'Host Name'} *</Label>
                   <Input
                     id="host-name"
                     value={hostName}
                     onChange={(e) => setHostName(e.target.value)}
-                    placeholder="Your name as the host..."
+                    placeholder={newEventCategory === 'business_meeting' ? "Your name as the organizer..." : "Your name as the host..."}
                     className="mt-1"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">You will be automatically added as host and receive an invite.</p>
+                  <p className="text-xs text-muted-foreground mt-1">You will be automatically added and receive an invite.</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
