@@ -73,11 +73,15 @@ import { useGenieMediaLibrary } from '@/components/genie-studio/useGenieMediaLib
 import { useGenieScripts, type GenieScript } from '@/components/genie-studio/useGenieScripts';
 import { supabase } from '@/integrations/supabase/client';
 
-// Import Genie logos
-import genieStudioLogo from '@/assets/logos/genie-studio-product.png';
-import genieMindLogo from '@/assets/logos/genie-mind-product.png';
-import genieVibeLogo from '@/assets/logos/genie-vibe-product.png';
-import genieArcLogo from '@/assets/logos/genie-arc-product.png';
+// Import Genie logos - Using presentation versions for better visibility
+import genieStudioLogo from '@/assets/logos/genie-studio-presentation-v2.png';
+import genieMindLogo from '@/assets/logos/genie-mind-presentation.png';
+import genieVibeLogo from '@/assets/logos/genie-vibe-presentation.png';
+import genieArcLogo from '@/assets/logos/genie-arc-presentation.png';
+// Product logos for smaller use
+import genieMindProductLogo from '@/assets/logos/genie-mind-product.png';
+import genieVibeProductLogo from '@/assets/logos/genie-vibe-product.png';
+import genieArcProductLogo from '@/assets/logos/genie-arc-product.png';
 
 // Types for media items
 interface MediaItem {
@@ -1909,177 +1913,231 @@ export default function GenieStudio() {
   return (
     <AppLayout>
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-        {/* Hero Header */}
-        <div className="relative overflow-hidden border-b border-border/50">
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-purple-500/10" />
-          <div className="relative px-6 py-8 md:py-12">
-            <div className="max-w-7xl mx-auto">
-              {/* Suite Hero Banner */}
-              <div className="text-center mb-10">
-                <div className="inline-flex flex-col items-center gap-4 px-8 py-6 rounded-2xl bg-gradient-to-br from-purple-600/90 to-pink-500/90 backdrop-blur border border-white/20 shadow-2xl shadow-purple-500/30">
-                  <img src={genieStudioLogo} alt="Genie Studio" className="h-16 w-16 object-contain bg-white rounded-xl p-1 shadow-lg" />
-                  <div className="flex flex-col items-center">
-                    <span className="text-2xl font-bold tracking-wide text-white">Genie Suite</span>
-                    <span className="text-lg text-white/90 font-medium">Mind to Media</span>
-                    <span className="text-sm text-white/70 mt-1">AI-Powered Production Suite</span>
+        {/* Hero Banners Section */}
+        <div className="border-b border-border/50">
+          {/* Banner 1: Genie Suite */}
+          <div className="relative overflow-hidden bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600">
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSA2MCAwIEwgMCAwIDAgNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-30" />
+            <div className="relative max-w-7xl mx-auto px-6 py-12 md:py-16">
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                <div className="flex-shrink-0">
+                  <div className="h-32 w-32 md:h-40 md:w-40 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center p-4 shadow-2xl">
+                    <img src={genieStudioLogo} alt="Genie Suite" className="h-full w-full object-contain" />
+                  </div>
+                </div>
+                <div className="text-center md:text-left">
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-2">
+                    Genie Suite
+                  </h1>
+                  <p className="text-2xl md:text-3xl text-white/90 font-medium mb-4">
+                    Mind to Media
+                  </p>
+                  <p className="text-lg text-white/80 max-w-2xl">
+                    Your complete AI-powered production suite. From idea to published content, Genie Suite orchestrates your entire creative workflow.
+                  </p>
+                  <div className="mt-6 flex flex-wrap gap-3 justify-center md:justify-start">
+                    <span className="px-4 py-2 bg-white/20 backdrop-blur rounded-full text-sm font-medium text-white">Pre-Production</span>
+                    <span className="px-4 py-2 bg-white/20 backdrop-blur rounded-full text-sm font-medium text-white">Production</span>
+                    <span className="px-4 py-2 bg-white/20 backdrop-blur rounded-full text-sm font-medium text-white">Scheduling</span>
+                    <span className="px-4 py-2 bg-white/20 backdrop-blur rounded-full text-sm font-medium text-white">AI-Powered</span>
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
 
-              {/* Product Showcase - Horizontal Scroll */}
-              <div className="mb-10">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Genie Mind Card */}
+          {/* Banner 2: Genie Arc */}
+          <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
+            <div className="relative max-w-7xl mx-auto px-6 py-10 md:py-14">
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                <div className="flex-shrink-0">
                   <div 
-                    className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 to-purple-800 p-6 shadow-xl shadow-purple-500/20 hover:shadow-2xl hover:shadow-purple-500/30 transition-all duration-300 hover:scale-[1.02] cursor-pointer"
-                    onClick={() => {/* Already on Genie Mind */}}
-                  >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
-                    <div className="relative">
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="h-16 w-16 rounded-xl bg-white flex items-center justify-center shadow-lg">
-                          <img src={genieMindLogo} alt="Genie Mind" className="h-14 w-14 object-contain" />
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-bold text-white">Genie Mind</h3>
-                          <p className="text-purple-200 text-sm">AI That Understands</p>
-                        </div>
-                      </div>
-                      <p className="text-white/80 text-sm leading-relaxed">
-                        Pre-production command center. Create scripts, generate voiceovers, compose music, and prepare all your content assets with AI assistance.
-                      </p>
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        <span className="px-2 py-1 bg-white/20 rounded-full text-xs text-white">Scripts</span>
-                        <span className="px-2 py-1 bg-white/20 rounded-full text-xs text-white">Voiceovers</span>
-                        <span className="px-2 py-1 bg-white/20 rounded-full text-xs text-white">Music</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Genie Vibe Card */}
-                  <div 
-                    className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 p-6 shadow-xl shadow-pink-500/20 hover:shadow-2xl hover:shadow-pink-500/30 transition-all duration-300 hover:scale-[1.02] cursor-pointer"
-                    onClick={() => setIsStudioOpen(true)}
-                  >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
-                    <div className="relative">
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="h-16 w-16 rounded-xl bg-white flex items-center justify-center shadow-lg">
-                          <img src={genieVibeLogo} alt="Genie Vibe" className="h-14 w-14 object-contain" />
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-bold text-white">Genie Vibe</h3>
-                          <p className="text-pink-200 text-sm">Script to Screen</p>
-                        </div>
-                      </div>
-                      <p className="text-white/80 text-sm leading-relaxed">
-                        Production studio. Record videos, capture screens, sync with teleprompter, add overlays, and produce professional content effortlessly.
-                      </p>
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        <span className="px-2 py-1 bg-white/20 rounded-full text-xs text-white">Recording</span>
-                        <span className="px-2 py-1 bg-white/20 rounded-full text-xs text-white">Teleprompter</span>
-                        <span className="px-2 py-1 bg-white/20 rounded-full text-xs text-white">Editing</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Genie Arc Card */}
-                  <div 
-                    className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-700 p-6 shadow-xl shadow-indigo-500/20 hover:shadow-2xl hover:shadow-indigo-500/30 transition-all duration-300 hover:scale-[1.02] cursor-pointer"
+                    className="h-28 w-28 md:h-36 md:w-36 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center p-4 shadow-xl cursor-pointer hover:scale-105 transition-transform"
                     onClick={() => setIsCreateShowDialogOpen(true)}
                   >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
-                    <div className="relative">
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="h-16 w-16 rounded-xl bg-white flex items-center justify-center shadow-lg">
-                          <img src={genieArcLogo} alt="Genie Arc" className="h-14 w-14 object-contain" />
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-bold text-white">Genie Arc</h3>
-                          <p className="text-indigo-200 text-sm">Infinite Possibilities</p>
-                        </div>
-                      </div>
-                      <p className="text-white/80 text-sm leading-relaxed">
-                        Your production journey. Schedule shows, coordinate with guests, manage episodes, and plan your entire content calendar in one place.
-                      </p>
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        <span className="px-2 py-1 bg-white/20 rounded-full text-xs text-white">Scheduling</span>
-                        <span className="px-2 py-1 bg-white/20 rounded-full text-xs text-white">Collaboration</span>
-                        <span className="px-2 py-1 bg-white/20 rounded-full text-xs text-white">Planning</span>
-                      </div>
-                    </div>
+                    <img src={genieArcLogo} alt="Genie Arc" className="h-full w-full object-contain" />
                   </div>
                 </div>
-              </div>
-              
-              {/* Current View - Genie Mind Header */}
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 bg-card/50 backdrop-blur rounded-xl p-6 border border-border/50">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="h-14 w-14 rounded-xl bg-white flex items-center justify-center shadow-lg overflow-hidden">
-                      <img src={genieMindLogo} alt="Genie Mind" className="h-12 w-12 object-contain" />
-                    </div>
-                    <div>
-                      <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent">
-                        Genie Mind
-                      </h1>
-                      <p className="text-muted-foreground">
-                        AI That Understands — Pre-production command center
-                      </p>
-                    </div>
+                <div className="flex-1 text-center md:text-left">
+                  <div className="flex items-center gap-3 justify-center md:justify-start mb-2">
+                    <h2 className="text-3xl md:text-4xl font-bold text-white">Genie Arc</h2>
+                    <Badge className="bg-white/20 text-white border-white/30">Planning</Badge>
+                  </div>
+                  <p className="text-xl text-indigo-200 font-medium mb-3">Your Production Journey</p>
+                  <p className="text-white/80 max-w-xl">
+                    Schedule shows, coordinate with guests, manage episodes, and plan your entire content calendar. Your complete production journey companion.
+                  </p>
+                  <div className="mt-5 flex flex-wrap gap-2 justify-center md:justify-start">
+                    <span className="px-3 py-1.5 bg-white/15 rounded-full text-xs text-white">Show Scheduling</span>
+                    <span className="px-3 py-1.5 bg-white/15 rounded-full text-xs text-white">Guest Coordination</span>
+                    <span className="px-3 py-1.5 bg-white/15 rounded-full text-xs text-white">Episode Management</span>
+                    <span className="px-3 py-1.5 bg-white/15 rounded-full text-xs text-white">Calendar Planning</span>
                   </div>
                 </div>
-
-                {/* Quick Actions */}
-                <div className="flex flex-wrap items-start gap-3">
-                  {/* Genie Vibe Button */}
-                  <Button 
-                    size="lg" 
-                    onClick={() => setIsStudioOpen(true)}
-                    className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white shadow-lg shadow-pink-500/25 transition-all hover:scale-105 flex items-center gap-3 h-auto py-2.5 px-5"
-                  >
-                    <img src={genieVibeLogo} alt="Genie Vibe" className="h-8 w-8 object-contain rounded bg-white p-0.5" />
-                    <div className="flex flex-col items-start">
-                      <span className="font-semibold">Genie Vibe</span>
-                      <span className="text-[10px] font-normal opacity-80">Script to Screen</span>
-                    </div>
-                  </Button>
-                  
-                  {/* Genie Arc Button */}
+                <div className="flex-shrink-0">
                   <Button 
                     size="lg" 
                     onClick={() => setIsCreateShowDialogOpen(true)}
-                    className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25 transition-all hover:scale-105 flex items-center gap-3 h-auto py-2.5 px-5"
+                    className="bg-white text-indigo-700 hover:bg-white/90 shadow-lg font-semibold"
                   >
-                    <img src={genieArcLogo} alt="Genie Arc" className="h-8 w-8 object-contain rounded bg-white p-0.5" />
-                    <div className="flex flex-col items-start">
-                      <span className="font-semibold">Genie Arc</span>
-                      <span className="text-[10px] font-normal opacity-80">Your Production Journey</span>
-                    </div>
+                    <Calendar className="h-5 w-5 mr-2" />
+                    Open Arc
                   </Button>
                 </div>
               </div>
+            </div>
+          </div>
 
-              {/* Stats Bar */}
-              <div className="mt-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                {[
-                  { label: 'Video Scripts', value: String(videoScripts.length), icon: FileText, trend: 'Created' },
-                  { label: 'Audio Scripts', value: String(audioScripts.length), icon: Headphones, trend: 'Created' },
-                  { label: 'Voiceovers', value: String(audios.length + savedVoiceovers.length), icon: Mic, trend: 'Generated' },
-                  { label: 'Music Tracks', value: String(mergedMusic.length), icon: Music, trend: 'Available' },
-                  { label: 'Videos Created', value: String(videos.length), icon: Film, trend: 'Recorded' },
-                  { label: 'Projects', value: String(mediaProjects.length), icon: Layers, trend: 'Active' }
-                ].map((stat, i) => (
-                  <div key={i} className="bg-card/50 backdrop-blur border border-border/50 rounded-xl p-4 hover:border-primary/30 transition-colors">
-                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                      <stat.icon className="h-4 w-4" />
-                      <span className="text-xs">{stat.label}</span>
-                    </div>
-                    <div className="text-2xl font-bold">{stat.value}</div>
-                    <div className="text-xs text-muted-foreground">{stat.trend}</div>
+          {/* Banner 3: Genie Mind */}
+          <div className="relative overflow-hidden bg-gradient-to-r from-purple-700 via-purple-600 to-pink-600">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
+            <div className="relative max-w-7xl mx-auto px-6 py-10 md:py-14">
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                <div className="flex-shrink-0">
+                  <div className="h-28 w-28 md:h-36 md:w-36 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center p-4 shadow-xl">
+                    <img src={genieMindLogo} alt="Genie Mind" className="h-full w-full object-contain" />
                   </div>
-                ))}
+                </div>
+                <div className="flex-1 text-center md:text-left">
+                  <div className="flex items-center gap-3 justify-center md:justify-start mb-2">
+                    <h2 className="text-3xl md:text-4xl font-bold text-white">Genie Mind</h2>
+                    <Badge className="bg-white/20 text-white border-white/30">Pre-Production</Badge>
+                  </div>
+                  <p className="text-xl text-purple-200 font-medium mb-3">AI That Understands</p>
+                  <p className="text-white/80 max-w-xl">
+                    Pre-production command center. Create scripts, generate voiceovers, compose music, and prepare all your content assets with AI assistance.
+                  </p>
+                  <div className="mt-5 flex flex-wrap gap-2 justify-center md:justify-start">
+                    <span className="px-3 py-1.5 bg-white/15 rounded-full text-xs text-white">Script Writing</span>
+                    <span className="px-3 py-1.5 bg-white/15 rounded-full text-xs text-white">AI Voiceovers</span>
+                    <span className="px-3 py-1.5 bg-white/15 rounded-full text-xs text-white">Music Generation</span>
+                    <span className="px-3 py-1.5 bg-white/15 rounded-full text-xs text-white">Asset Prep</span>
+                  </div>
+                </div>
+                <div className="flex-shrink-0">
+                  <Badge variant="outline" className="bg-white/10 text-white border-white/30 text-sm px-4 py-2">
+                    Currently Active
+                  </Badge>
+                </div>
               </div>
+            </div>
+          </div>
+
+          {/* Banner 4: Genie Vibe */}
+          <div className="relative overflow-hidden bg-gradient-to-r from-pink-600 via-rose-500 to-purple-600">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
+            <div className="relative max-w-7xl mx-auto px-6 py-10 md:py-14">
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                <div className="flex-shrink-0">
+                  <div 
+                    className="h-28 w-28 md:h-36 md:w-36 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center p-4 shadow-xl cursor-pointer hover:scale-105 transition-transform"
+                    onClick={() => setIsStudioOpen(true)}
+                  >
+                    <img src={genieVibeLogo} alt="Genie Vibe" className="h-full w-full object-contain" />
+                  </div>
+                </div>
+                <div className="flex-1 text-center md:text-left">
+                  <div className="flex items-center gap-3 justify-center md:justify-start mb-2">
+                    <h2 className="text-3xl md:text-4xl font-bold text-white">Genie Vibe</h2>
+                    <Badge className="bg-white/20 text-white border-white/30">Production</Badge>
+                  </div>
+                  <p className="text-xl text-pink-200 font-medium mb-3">Script to Screen</p>
+                  <p className="text-white/80 max-w-xl">
+                    Production studio. Record videos, capture screens, sync with teleprompter, add overlays, and produce professional content effortlessly.
+                  </p>
+                  <div className="mt-5 flex flex-wrap gap-2 justify-center md:justify-start">
+                    <span className="px-3 py-1.5 bg-white/15 rounded-full text-xs text-white">Video Recording</span>
+                    <span className="px-3 py-1.5 bg-white/15 rounded-full text-xs text-white">Screen Capture</span>
+                    <span className="px-3 py-1.5 bg-white/15 rounded-full text-xs text-white">Teleprompter</span>
+                    <span className="px-3 py-1.5 bg-white/15 rounded-full text-xs text-white">Overlays</span>
+                  </div>
+                </div>
+                <div className="flex-shrink-0">
+                  <Button 
+                    size="lg" 
+                    onClick={() => setIsStudioOpen(true)}
+                    className="bg-white text-pink-600 hover:bg-white/90 shadow-lg font-semibold"
+                  >
+                    <Video className="h-5 w-5 mr-2" />
+                    Open Vibe
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Genie Mind Metrics Section - Separate from Banners */}
+        <div className="bg-gradient-to-br from-background via-background to-muted/20 border-b border-border/50">
+          <div className="max-w-7xl mx-auto px-6 py-8">
+            {/* Current View Header */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 bg-card/50 backdrop-blur rounded-xl p-6 border border-border/50 mb-8">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg overflow-hidden p-1">
+                    <img src={genieMindProductLogo} alt="Genie Mind" className="h-full w-full object-contain" />
+                  </div>
+                  <div>
+                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent">
+                      Genie Mind
+                    </h1>
+                    <p className="text-muted-foreground">
+                      AI That Understands — Pre-production command center
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="flex flex-wrap items-start gap-3">
+                {/* Genie Vibe Button */}
+                <Button 
+                  size="lg" 
+                  onClick={() => setIsStudioOpen(true)}
+                  className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white shadow-lg shadow-pink-500/25 transition-all hover:scale-105 flex items-center gap-3 h-auto py-2.5 px-5"
+                >
+                  <img src={genieVibeProductLogo} alt="Genie Vibe" className="h-8 w-8 object-contain rounded bg-white p-0.5" />
+                  <div className="flex flex-col items-start">
+                    <span className="font-semibold">Genie Vibe</span>
+                    <span className="text-[10px] font-normal opacity-80">Script to Screen</span>
+                  </div>
+                </Button>
+                
+                {/* Genie Arc Button */}
+                <Button 
+                  size="lg" 
+                  onClick={() => setIsCreateShowDialogOpen(true)}
+                  className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25 transition-all hover:scale-105 flex items-center gap-3 h-auto py-2.5 px-5"
+                >
+                  <img src={genieArcProductLogo} alt="Genie Arc" className="h-8 w-8 object-contain rounded bg-white p-0.5" />
+                  <div className="flex flex-col items-start">
+                    <span className="font-semibold">Genie Arc</span>
+                    <span className="text-[10px] font-normal opacity-80">Your Production Journey</span>
+                  </div>
+                </Button>
+              </div>
+            </div>
+
+            {/* Stats Bar */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {[
+                { label: 'Video Scripts', value: String(videoScripts.length), icon: FileText, trend: 'Created' },
+                { label: 'Audio Scripts', value: String(audioScripts.length), icon: Headphones, trend: 'Created' },
+                { label: 'Voiceovers', value: String(audios.length + savedVoiceovers.length), icon: Mic, trend: 'Generated' },
+                { label: 'Music Tracks', value: String(mergedMusic.length), icon: Music, trend: 'Available' },
+                { label: 'Videos Created', value: String(videos.length), icon: Film, trend: 'Recorded' },
+                { label: 'Projects', value: String(mediaProjects.length), icon: Layers, trend: 'Active' }
+              ].map((stat, i) => (
+                <div key={i} className="bg-card/50 backdrop-blur border border-border/50 rounded-xl p-4 hover:border-primary/30 transition-colors">
+                  <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                    <stat.icon className="h-4 w-4" />
+                    <span className="text-xs">{stat.label}</span>
+                  </div>
+                  <div className="text-2xl font-bold">{stat.value}</div>
+                  <div className="text-xs text-muted-foreground">{stat.trend}</div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -3507,7 +3565,7 @@ export default function GenieStudio() {
                       'Invite Participants'
                     }
                   </p>
-                  <p className="text-xs text-purple-500 mt-0.5">Your Production Journey With Infinite Possibilities</p>
+                  <p className="text-xs text-indigo-500 mt-0.5">Your Production Journey</p>
                 </div>
               </DialogTitle>
             </DialogHeader>
