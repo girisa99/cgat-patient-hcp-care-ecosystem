@@ -17,18 +17,26 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 
-// Color legend for consistent enterprise styling
-const colorLegend = {
-  background: '#1e293b',
-  cardBg: '#0f172a',
-  headerBg: '#1e3a5f',
-  borderDefault: '#475569',
-  textPrimary: '#f1f5f9',
-  textSecondary: '#cbd5e1',
-  textMuted: '#94a3b8',
-  done: '#22c55e',
-  partial: '#f59e0b',
-  planned: '#475569',
+// Consistent enterprise color palette (matching Full Architecture diagram)
+const colors = {
+  // Status colors
+  completed: { bg: '#10b981', text: '#ffffff', light: '#d1fae5' },
+  inProgress: { bg: '#f59e0b', text: '#ffffff', light: '#fef3c7' },
+  planned: { bg: '#6366f1', text: '#ffffff', light: '#e0e7ff' },
+  
+  // Priority colors
+  p0: { bg: '#10b981', text: '#ffffff', light: '#d1fae5' },
+  p1: { bg: '#0ea5e9', text: '#ffffff', light: '#e0f2fe' },
+  p2: { bg: '#f59e0b', text: '#ffffff', light: '#fef3c7' },
+  p3: { bg: '#8b5cf6', text: '#ffffff', light: '#ede9fe' },
+  p4: { bg: '#64748b', text: '#ffffff', light: '#f1f5f9' },
+  
+  // Neutral
+  border: '#e2e8f0',
+  background: '#ffffff',
+  cardBg: '#f8fafc',
+  text: '#1e293b',
+  textMuted: '#64748b',
 };
 
 interface Scenario {
@@ -103,11 +111,11 @@ const scenarios: Record<string, Scenario[]> = {
 };
 
 const priorityConfig = {
-  p0: { label: 'P0 - Core', icon: Zap, description: 'Essential MVP features', color: '#22c55e' },
-  p1: { label: 'P1 - Enhanced', icon: Layers, description: 'Important enhancements', color: '#3b82f6' },
-  p2: { label: 'P2 - Advanced', icon: TrendingUp, description: 'Advanced capabilities', color: '#f59e0b' },
-  p3: { label: 'P3 - Differentiator', icon: Target, description: 'Competitive features', color: '#7c3aed' },
-  p4: { label: 'P4 - Future', icon: Shield, description: 'Future roadmap', color: '#94a3b8' },
+  p0: { label: 'P0 - Core', icon: Zap, description: 'Essential MVP features', color: colors.p0 },
+  p1: { label: 'P1 - Enhanced', icon: Layers, description: 'Important enhancements', color: colors.p1 },
+  p2: { label: 'P2 - Advanced', icon: TrendingUp, description: 'Advanced capabilities', color: colors.p2 },
+  p3: { label: 'P3 - Differentiator', icon: Target, description: 'Competitive features', color: colors.p3 },
+  p4: { label: 'P4 - Future', icon: Shield, description: 'Future roadmap', color: colors.p4 },
 };
 
 export const GenieStudioScenarioMapDiagram = () => {
@@ -122,7 +130,7 @@ export const GenieStudioScenarioMapDiagram = () => {
     if (!diagramRef.current) return;
     try {
       const canvas = await html2canvas(diagramRef.current, {
-        backgroundColor: colorLegend.background,
+        backgroundColor: colors.background,
         scale: 2
       });
       const url = canvas.toDataURL('image/png');
@@ -142,11 +150,11 @@ export const GenieStudioScenarioMapDiagram = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'implemented':
-        return <Badge variant="outline" className="border-[#22c55e] text-[#86efac] text-xs">✓ Done</Badge>;
+        return <Badge className="text-xs" style={{ backgroundColor: colors.completed.light, color: colors.completed.bg, border: `1px solid ${colors.completed.bg}` }}>✓ Done</Badge>;
       case 'partial':
-        return <Badge variant="outline" className="border-[#f59e0b] text-[#fcd34d] text-xs">◐ Partial</Badge>;
+        return <Badge className="text-xs" style={{ backgroundColor: colors.inProgress.light, color: colors.inProgress.bg, border: `1px solid ${colors.inProgress.bg}` }}>◐ Partial</Badge>;
       default:
-        return <Badge variant="outline" className="border-[#475569] text-[#94a3b8] text-xs">○ Planned</Badge>;
+        return <Badge className="text-xs" style={{ backgroundColor: colors.planned.light, color: colors.planned.bg, border: `1px solid ${colors.planned.bg}` }}>○ Planned</Badge>;
     }
   };
 
@@ -162,22 +170,22 @@ export const GenieStudioScenarioMapDiagram = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <Card className="bg-[#1e293b] border-[#475569]">
+      <Card className="bg-card border-border">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Target className="h-8 w-8 text-[#94a3b8]" />
+              <Target className="h-8 w-8 text-muted-foreground" />
               <div>
-                <CardTitle className="text-2xl text-[#f1f5f9]">Scenario Priority Map</CardTitle>
-                <p className="text-[#94a3b8] text-sm">60 Scenarios across P0-P4 priorities</p>
+                <CardTitle className="text-2xl text-foreground">Scenario Priority Map</CardTitle>
+                <p className="text-muted-foreground text-sm">60 Scenarios across P0-P4 priorities</p>
               </div>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleDownload} className="gap-2 border-[#475569] text-[#cbd5e1] hover:bg-[#334155] hover:text-[#f1f5f9]">
+              <Button variant="outline" size="sm" onClick={handleDownload} className="gap-2">
                 <Download className="h-4 w-4" />
                 Download PNG
               </Button>
-              <Button variant="outline" size="sm" onClick={openDocs} className="gap-2 border-[#475569] text-[#cbd5e1] hover:bg-[#334155] hover:text-[#f1f5f9]">
+              <Button variant="outline" size="sm" onClick={openDocs} className="gap-2">
                 <FileText className="h-4 w-4" />
                 Documentation
                 <ExternalLink className="h-3 w-3" />
@@ -188,34 +196,62 @@ export const GenieStudioScenarioMapDiagram = () => {
       </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-6 w-full bg-[#0f172a] border border-[#475569]">
-          <TabsTrigger value="overview" className="data-[state=active]:bg-[#334155] text-[#cbd5e1] data-[state=active]:text-[#f1f5f9]">Overview</TabsTrigger>
-          <TabsTrigger value="p0" className="data-[state=active]:bg-[#334155] text-[#cbd5e1] data-[state=active]:text-[#f1f5f9]">P0 Core</TabsTrigger>
-          <TabsTrigger value="p1" className="data-[state=active]:bg-[#334155] text-[#cbd5e1] data-[state=active]:text-[#f1f5f9]">P1 Enhanced</TabsTrigger>
-          <TabsTrigger value="p2" className="data-[state=active]:bg-[#334155] text-[#cbd5e1] data-[state=active]:text-[#f1f5f9]">P2 Advanced</TabsTrigger>
-          <TabsTrigger value="p3" className="data-[state=active]:bg-[#334155] text-[#cbd5e1] data-[state=active]:text-[#f1f5f9]">P3 Differentiator</TabsTrigger>
-          <TabsTrigger value="p4" className="data-[state=active]:bg-[#334155] text-[#cbd5e1] data-[state=active]:text-[#f1f5f9]">P4 Future</TabsTrigger>
+        <TabsList className="grid grid-cols-6 w-full">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="p0">P0 Core</TabsTrigger>
+          <TabsTrigger value="p1">P1 Enhanced</TabsTrigger>
+          <TabsTrigger value="p2">P2 Advanced</TabsTrigger>
+          <TabsTrigger value="p3">P3 Differentiator</TabsTrigger>
+          <TabsTrigger value="p4">P4 Future</TabsTrigger>
         </TabsList>
 
         <ScrollArea className="h-[600px] mt-4">
-          <div ref={diagramRef}>
-            <TabsContent value="overview" className="space-y-4">
+          <div ref={diagramRef} className="p-4 bg-white rounded-lg">
+            {/* Legend */}
+            <div className="mb-4 p-3 rounded-lg border" style={{ borderColor: colors.border, backgroundColor: colors.cardBg }}>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-semibold mb-2" style={{ color: colors.text }}>Implementation Status</h4>
+                  <div className="flex flex-wrap gap-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded" style={{ backgroundColor: colors.completed.bg }} />
+                      <span className="text-xs" style={{ color: colors.textMuted }}>Implemented</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded" style={{ backgroundColor: colors.inProgress.bg }} />
+                      <span className="text-xs" style={{ color: colors.textMuted }}>Partial</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded" style={{ backgroundColor: colors.planned.bg }} />
+                      <span className="text-xs" style={{ color: colors.textMuted }}>Planned</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold mb-2" style={{ color: colors.text }}>Priority Levels</h4>
+                  <div className="flex flex-wrap gap-3">
+                    {Object.entries(priorityConfig).map(([key, config]) => (
+                      <div key={key} className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded" style={{ backgroundColor: config.color.bg }} />
+                        <span className="text-xs" style={{ color: colors.textMuted }}>{config.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <TabsContent value="overview" className="space-y-4 mt-0">
               {/* Overview SVG */}
-              <Card className="bg-[#1e293b] border-[#475569]">
+              <Card className="border" style={{ borderColor: colors.border, backgroundColor: colors.background }}>
                 <CardContent className="pt-6">
-                  <svg viewBox="0 0 1200 450" className="w-full h-auto">
-                    <defs>
-                      <filter id="scenarioShadow" x="-20%" y="-20%" width="140%" height="140%">
-                        <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.3"/>
-                      </filter>
-                    </defs>
+                  <svg viewBox="0 0 1200 420" className="w-full h-auto">
+                    <rect width="1200" height="420" fill={colors.background} rx="8" />
                     
-                    <rect width="1200" height="450" fill="#1e293b" rx="8" />
-                    
-                    <text x="600" y="40" textAnchor="middle" fill="#f1f5f9" fontSize="22" fontWeight="600">
+                    <text x="600" y="35" textAnchor="middle" fill={colors.text} fontSize="20" fontWeight="600">
                       Genie Studio Scenario Implementation Status
                     </text>
-                    <text x="600" y="65" textAnchor="middle" fill="#94a3b8" fontSize="14">
+                    <text x="600" y="58" textAnchor="middle" fill={colors.textMuted} fontSize="13">
                       60 Total Scenarios | 18 Implemented | 12 Partial | 30 Planned
                     </text>
 
@@ -225,62 +261,51 @@ export const GenieStudioScenarioMapDiagram = () => {
                       const x = 60 + index * 220;
                       
                       return (
-                        <g key={key} transform={`translate(${x}, 100)`}>
-                          <rect width="200" height="300" rx="12" fill="#0f172a" stroke="#475569" strokeWidth="1" filter="url(#scenarioShadow)" />
-                          <rect width="200" height="50" rx="12" fill={config.color} fillOpacity="0.2" stroke={config.color} strokeWidth="1" />
+                        <g key={key} transform={`translate(${x}, 85)`}>
+                          <rect width="200" height="290" rx="10" fill={colors.cardBg} stroke={colors.border} strokeWidth="1" />
+                          <rect width="200" height="45" rx="10" fill={config.color.light} stroke={config.color.bg} strokeWidth="1" />
                           
-                          <text x="100" y="32" textAnchor="middle" fill="#f1f5f9" fontSize="13" fontWeight="600">
+                          <text x="100" y="30" textAnchor="middle" fill={config.color.bg} fontSize="13" fontWeight="600">
                             {config.label}
                           </text>
                           
                           {/* Stats */}
-                          <text x="100" y="80" textAnchor="middle" fill="#94a3b8" fontSize="12">
+                          <text x="100" y="70" textAnchor="middle" fill={colors.textMuted} fontSize="11">
                             {stats.total} scenarios
                           </text>
                           
                           {/* Progress bar */}
-                          <rect x="20" y="95" width="160" height="12" rx="6" fill="#1e293b" />
-                          <rect x="20" y="95" width={160 * (stats.percent / 100)} height="12" rx="6" fill={config.color} />
-                          <text x="100" y="123" textAnchor="middle" fill="#cbd5e1" fontSize="11">
+                          <rect x="20" y="82" width="160" height="10" rx="5" fill={colors.border} />
+                          <rect x="20" y="82" width={160 * (stats.percent / 100)} height="10" rx="5" fill={config.color.bg} />
+                          <text x="100" y="108" textAnchor="middle" fill={colors.text} fontSize="11">
                             {stats.percent}% Complete
                           </text>
                           
                           {/* Status breakdown */}
-                          <g transform="translate(20, 140)">
-                            <rect width="50" height="20" rx="4" fill="#22c55e" fillOpacity="0.2" stroke="#22c55e" strokeWidth="1" />
-                            <text x="25" y="14" textAnchor="middle" fill="#86efac" fontSize="10">{stats.implemented}</text>
-                            <text x="70" y="14" fill="#86efac" fontSize="9">Done</text>
+                          <g transform="translate(20, 125)">
+                            <rect width="50" height="22" rx="4" fill={colors.completed.light} stroke={colors.completed.bg} strokeWidth="1" />
+                            <text x="25" y="15" textAnchor="middle" fill={colors.completed.bg} fontSize="10">{stats.implemented}</text>
+                            <text x="65" y="15" fill={colors.completed.bg} fontSize="9">Done</text>
                             
-                            <rect y="30" width="50" height="20" rx="4" fill="#f59e0b" fillOpacity="0.2" stroke="#f59e0b" strokeWidth="1" />
-                            <text x="25" y="44" textAnchor="middle" fill="#fcd34d" fontSize="10">{stats.partial}</text>
-                            <text x="70" y="44" fill="#fcd34d" fontSize="9">Partial</text>
+                            <rect y="30" width="50" height="22" rx="4" fill={colors.inProgress.light} stroke={colors.inProgress.bg} strokeWidth="1" />
+                            <text x="25" y="45" textAnchor="middle" fill={colors.inProgress.bg} fontSize="10">{stats.partial}</text>
+                            <text x="65" y="45" fill={colors.inProgress.bg} fontSize="9">Partial</text>
                             
-                            <rect y="60" width="50" height="20" rx="4" fill="#475569" fillOpacity="0.2" stroke="#475569" strokeWidth="1" />
-                            <text x="25" y="74" textAnchor="middle" fill="#94a3b8" fontSize="10">{stats.planned}</text>
-                            <text x="70" y="74" fill="#94a3b8" fontSize="9">Planned</text>
+                            <rect y="60" width="50" height="22" rx="4" fill={colors.planned.light} stroke={colors.planned.bg} strokeWidth="1" />
+                            <text x="25" y="75" textAnchor="middle" fill={colors.planned.bg} fontSize="10">{stats.planned}</text>
+                            <text x="65" y="75" fill={colors.planned.bg} fontSize="9">Planned</text>
                           </g>
                           
                           {/* Category highlights */}
-                          <text x="20" y="240" fill="#94a3b8" fontSize="9" fontWeight="600">Top Categories:</text>
+                          <text x="20" y="225" fill={colors.textMuted} fontSize="9" fontWeight="600">Top Categories:</text>
                           {scenarios[key]?.slice(0, 3).map((s, i) => (
-                            <text key={s.id} x="20" y={258 + i * 14} fill="#cbd5e1" fontSize="8">
+                            <text key={s.id} x="20" y={242 + i * 14} fill={colors.text} fontSize="8">
                               • {s.category}
                             </text>
                           ))}
                         </g>
                       );
                     })}
-
-                    {/* Legend */}
-                    <g transform="translate(60, 420)">
-                      <text x="0" y="0" fill="#94a3b8" fontSize="10">Status Legend:</text>
-                      <rect x="90" y="-10" width="12" height="12" rx="2" fill="#22c55e" />
-                      <text x="108" y="0" fill="#86efac" fontSize="10">Implemented</text>
-                      <rect x="190" y="-10" width="12" height="12" rx="2" fill="#f59e0b" />
-                      <text x="208" y="0" fill="#fcd34d" fontSize="10">Partial</text>
-                      <rect x="270" y="-10" width="12" height="12" rx="2" fill="#475569" />
-                      <text x="288" y="0" fill="#94a3b8" fontSize="10">Planned</text>
-                    </g>
                   </svg>
                 </CardContent>
               </Card>
@@ -289,16 +314,14 @@ export const GenieStudioScenarioMapDiagram = () => {
               <div className="grid grid-cols-5 gap-4">
                 {Object.entries(priorityConfig).map(([key, config]) => {
                   const stats = getStats(key);
-                  const IconComponent = config.icon;
                   return (
-                    <Card key={key} className="bg-[#1e293b] border-[#475569]" style={{ borderColor: config.color }}>
-                      <CardContent className="pt-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <IconComponent className="h-4 w-4" style={{ color: config.color }} />
-                          <span className="text-sm font-medium text-[#cbd5e1]">{config.label}</span>
+                    <Card key={key} className="border-2" style={{ borderColor: config.color.bg, backgroundColor: config.color.light }}>
+                      <CardContent className="pt-4 text-center">
+                        <div className="text-2xl font-bold" style={{ color: config.color.bg }}>{stats.percent}%</div>
+                        <div className="text-xs" style={{ color: colors.textMuted }}>{config.label}</div>
+                        <div className="mt-2 text-xs" style={{ color: colors.text }}>
+                          {stats.implemented} done, {stats.partial} partial
                         </div>
-                        <div className="text-2xl font-bold text-[#f1f5f9]">{stats.percent}%</div>
-                        <p className="text-xs text-[#94a3b8]">{stats.implemented}/{stats.total} complete</p>
                       </CardContent>
                     </Card>
                   );
@@ -306,46 +329,48 @@ export const GenieStudioScenarioMapDiagram = () => {
               </div>
             </TabsContent>
 
-            {/* Priority-specific tabs */}
+            {/* Priority Detail Tabs */}
             {Object.entries(scenarios).map(([priority, items]) => (
-              <TabsContent key={priority} value={priority} className="space-y-4">
-                <Card className="bg-[#1e293b] border-[#475569]">
+              <TabsContent key={priority} value={priority} className="space-y-4 mt-0">
+                <Card className="border" style={{ borderColor: colors.border, backgroundColor: colors.background }}>
                   <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2 text-[#f1f5f9]">
-                        {React.createElement(priorityConfig[priority as keyof typeof priorityConfig].icon, {
-                          className: 'h-5 w-5',
-                          style: { color: priorityConfig[priority as keyof typeof priorityConfig].color }
-                        })}
-                        {priorityConfig[priority as keyof typeof priorityConfig].label} Scenarios
-                      </CardTitle>
-                      <Badge variant="outline" style={{ 
-                        borderColor: priorityConfig[priority as keyof typeof priorityConfig].color,
-                        color: priorityConfig[priority as keyof typeof priorityConfig].color
-                      }}>
-                        {getStats(priority).percent}% Complete
-                      </Badge>
-                    </div>
-                    <p className="text-[#94a3b8] text-sm">
+                    <CardTitle className="flex items-center gap-2" style={{ color: priorityConfig[priority as keyof typeof priorityConfig].color.bg }}>
+                      {React.createElement(priorityConfig[priority as keyof typeof priorityConfig].icon, { className: "h-5 w-5" })}
+                      {priorityConfig[priority as keyof typeof priorityConfig].label} Scenarios
+                    </CardTitle>
+                    <p className="text-sm" style={{ color: colors.textMuted }}>
                       {priorityConfig[priority as keyof typeof priorityConfig].description}
                     </p>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 gap-3">
                       {items.map((scenario) => (
-                        <div key={scenario.id} className="p-4 bg-[#0f172a] rounded-lg border border-[#475569]">
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[#94a3b8] text-xs font-mono">#{scenario.id}</span>
-                              <span className="text-[#f1f5f9] font-medium text-sm">{scenario.name}</span>
+                        <div 
+                          key={scenario.id} 
+                          className="p-3 rounded-lg border"
+                          style={{ 
+                            borderColor: colors.border,
+                            backgroundColor: scenario.status === 'implemented' ? colors.completed.light : 
+                                            scenario.status === 'partial' ? colors.inProgress.light : colors.cardBg
+                          }}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-xs font-medium px-2 py-0.5 rounded" style={{ 
+                                  backgroundColor: priorityConfig[priority as keyof typeof priorityConfig].color.light,
+                                  color: priorityConfig[priority as keyof typeof priorityConfig].color.bg
+                                }}>
+                                  #{scenario.id}
+                                </span>
+                                <span className="font-medium text-sm" style={{ color: colors.text }}>{scenario.name}</span>
+                              </div>
+                              <p className="text-xs" style={{ color: colors.textMuted }}>{scenario.description}</p>
+                              <span className="text-xs mt-1 inline-block px-2 py-0.5 rounded" style={{ backgroundColor: colors.cardBg, color: colors.textMuted }}>
+                                {scenario.category}
+                              </span>
                             </div>
                             {getStatusBadge(scenario.status)}
-                          </div>
-                          <p className="text-[#94a3b8] text-xs">{scenario.description}</p>
-                          <div className="mt-2">
-                            <Badge variant="outline" className="border-[#475569] text-[#cbd5e1] text-xs">
-                              {scenario.category}
-                            </Badge>
                           </div>
                         </div>
                       ))}
@@ -360,5 +385,3 @@ export const GenieStudioScenarioMapDiagram = () => {
     </div>
   );
 };
-
-export default GenieStudioScenarioMapDiagram;
