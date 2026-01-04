@@ -93,71 +93,73 @@ export function useGenieMediaLibrary(): GenieMediaLibrary {
         
         // Determine the correct URL to use
         // Priority: 
-        // 1. If storage_path exists, ALWAYS construct public URL from storage (most reliable)
-        // 2. If file_url starts with http (not blob), use it directly
-        // 3. Mark file as inaccessible if only blob URL
+        // 1. If file_url is already a valid HTTPS URL (not blob), use it directly
+        // 2. If storage_path exists and file_url was blob, mark as potentially inaccessible
+        // 3. Blob URLs are NEVER usable across sessions
         let finalUrl: string | undefined = undefined;
-        let storageUrlConstructed = false;
+        let needsRegeneration = false;
         
-        // Always prefer storage URL when available - blob URLs won't work across sessions
-        if (item.storage_path) {
-          // Ensure storage path has .mp3 extension for audio files
-          let storagePath = item.storage_path;
-          if (!storagePath.endsWith('.mp3') && !storagePath.endsWith('.wav') && !storagePath.endsWith('.ogg')) {
-            storagePath = `${storagePath}.mp3`;
-          }
-          
-          // Try multiple bucket names as fallbacks (handle legacy data inconsistencies)
-          const bucketCandidates = [
-            item.storage_bucket,
-            'genie-media',
-            'generated-media',
-            'generated-audio'
-          ].filter(Boolean) as string[];
-          
-          for (const bucket of bucketCandidates) {
+        // Check if file_url is already a valid storage URL
+        if (item.file_url && item.file_url.startsWith('https://') && !item.file_url.includes('blob:')) {
+          finalUrl = item.file_url;
+          console.log(`📀 Using existing URL for ${item.name}:`, finalUrl.substring(0, 80));
+        } 
+        // If file_url is a blob/data URL, try to construct storage URL
+        else if (item.file_url && (item.file_url.startsWith('blob:') || item.file_url.startsWith('data:'))) {
+          if (item.storage_path) {
+            // Ensure storage path has .mp3 extension for audio files
+            let storagePath = item.storage_path;
+            if (!storagePath.endsWith('.mp3') && !storagePath.endsWith('.wav') && !storagePath.endsWith('.ogg')) {
+              storagePath = `${storagePath}.mp3`;
+            }
+            
+            // Construct URL from storage - but note this file may not actually exist
+            // (the original blob may not have been uploaded properly)
+            const bucket = item.storage_bucket || 'genie-media';
             try {
               const { data: { publicUrl } } = supabase.storage
                 .from(bucket)
                 .getPublicUrl(storagePath);
               if (publicUrl) {
                 finalUrl = publicUrl;
-                storageUrlConstructed = true;
-                console.log(`📀 Using storage URL for ${item.name}:`, finalUrl.substring(0, 80));
-                break;
+                // Mark that this URL is a guess - file may not exist
+                needsRegeneration = true;
+                console.warn(`📀 Constructed URL for ${item.name} (original was blob - may need regeneration):`, finalUrl.substring(0, 80));
               }
             } catch (e) {
-              console.warn(`📀 Bucket ${bucket} not accessible for ${item.name}`);
+              console.error(`📀 Failed to construct storage URL for ${item.name}:`, e);
             }
+          } else {
+            // Blob URL with no storage path - definitely inaccessible
+            console.warn(`📀 ${item.name} has blob URL but NO storage path - file is INACCESSIBLE and needs regeneration`);
+            needsRegeneration = true;
           }
         }
-        
-        // If no storage URL, check if file_url is valid (not blob)
-        if (!storageUrlConstructed && item.file_url) {
-          if (item.file_url.startsWith('https://') && !item.file_url.startsWith('blob:')) {
-            finalUrl = item.file_url;
-            console.log(`📀 Using direct URL for ${item.name}:`, finalUrl.substring(0, 80));
-          } else if (item.file_url.startsWith('blob:') || item.file_url.startsWith('data:')) {
-            console.warn(`📀 Warning: ${item.name} has blob/data URL but no valid storage path - file is NOT accessible`);
-            // Don't use blob URL - it won't work across sessions
-            finalUrl = undefined;
-          }
+        // No URL at all
+        else if (!item.file_url) {
+          console.warn(`📀 ${item.name} has no file_url at all`);
         }
         
         // Determine metadataType with better fallback logic
         const metadataType = metadata.type || metadata.uploadedAs || undefined;
         
-        console.log(`📀 Loaded audio file: ${item.name}, metadataType: ${metadataType}, hasUrl: ${!!finalUrl}`);
+        // Log with regeneration status
+        if (needsRegeneration) {
+          console.log(`📀 Audio file ${item.name}: metadataType=${metadataType}, hasUrl=${!!finalUrl}, ⚠️ NEEDS REGENERATION`);
+        } else {
+          console.log(`📀 Audio file ${item.name}: metadataType=${metadataType}, hasUrl=${!!finalUrl}`);
+        }
         
         return {
           id: item.id,
-          name: item.name,
+          name: needsRegeneration ? `⚠️ ${item.name}` : item.name, // Mark files that need regeneration
           url: finalUrl,
           timestamp: new Date(item.created_at).getTime(),
           scriptText: metadata.scriptText as string | undefined,
           originalScript: metadata.originalScript as string | undefined,
           scriptType: metadata.scriptType as VoiceoverData['scriptType'],
-          metadataType: metadataType
+          metadataType: metadataType,
+          needsRegeneration // Include flag for UI to show warning
         };
       });
 

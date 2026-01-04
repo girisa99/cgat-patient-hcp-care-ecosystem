@@ -115,9 +115,12 @@ export function AudioAssetSelector({
   }));
   
   // Filter using shared functions FIRST to get properly categorized lists
-  const actualVoiceovers = filterActualVoiceovers(voiceoverDataForFiltering);
-  const actualTTSFiles = filterTTSFiles(ttsDataForFiltering);
-  const instrumentalFiles = filterInstrumentalFiles(voiceoverDataForFiltering);
+  // Also filter out files without valid URLs (blob URLs won't work)
+  const hasValidUrl = (v: { url?: string }) => v.url && v.url.startsWith('https://');
+  
+  const actualVoiceovers = filterActualVoiceovers(voiceoverDataForFiltering).filter(hasValidUrl);
+  const actualTTSFiles = filterTTSFiles(ttsDataForFiltering).filter(hasValidUrl);
+  const instrumentalFiles = filterInstrumentalFiles(voiceoverDataForFiltering).filter(hasValidUrl);
   
   // Find selected items from the ORIGINAL arrays using the ID (since IDs are preserved)
   const selectedVoiceover = voiceovers.find(v => v.id === selectedVoiceoverId);

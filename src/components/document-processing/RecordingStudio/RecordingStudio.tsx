@@ -226,36 +226,60 @@ export function RecordingStudio({
   const scriptAudioStatus = scripts.map(script => {
     const scriptTitle = script.title.toLowerCase().replace(/[^a-z0-9]/g, '');
     
-    // Find matching TTS files (metadataType = 'tts')
+    // Find matching TTS files (metadataType = 'tts') - must have valid URL
     const matchingTTS = voiceovers.filter(v => {
       if (v.metadataType !== 'tts') return false;
+      // Skip files without valid URL
+      if (!v.url || v.url.startsWith('blob:') || v.url.startsWith('data:')) return false;
       
-      // Match by scriptText content
+      // Priority 1: Match by scriptText content (most reliable)
       if (v.scriptText && script.content) {
         const scriptContent = script.enhancedContent || script.content;
         if (v.scriptText.substring(0, 100) === scriptContent.substring(0, 100)) {
           return true;
         }
       }
-      // Match by name pattern
+      
+      // Priority 2: Strict name matching - require significant overlap
       const voName = v.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-      return voName.includes(scriptTitle) || scriptTitle.includes(voName.substring(0, 20));
+      // Only match if the TTS name contains most of the script title (>80% of title)
+      const titleWords = scriptTitle.split(/(?=[A-Z])|_|-/).filter(w => w.length > 2);
+      const matchedWords = titleWords.filter(word => voName.includes(word));
+      if (titleWords.length > 0 && matchedWords.length >= Math.ceil(titleWords.length * 0.6)) {
+        return true;
+      }
+      
+      // Fallback: exact prefix match (first 15 chars)
+      if (scriptTitle.length >= 10 && voName.includes(scriptTitle.substring(0, 15))) {
+        return true;
+      }
+      
+      return false;
     });
     
-    // Find matching Voiceover files (metadataType = 'voiceover')
+    // Find matching Voiceover files (metadataType = 'voiceover') - must have valid URL
     const matchingVoiceover = voiceovers.filter(v => {
       if (v.metadataType !== 'voiceover') return false;
+      // Skip files without valid URL
+      if (!v.url || v.url.startsWith('blob:') || v.url.startsWith('data:')) return false;
       
-      // Match by scriptText content
+      // Priority 1: Match by scriptText content (most reliable)
       if (v.scriptText && script.content) {
         const scriptContent = script.enhancedContent || script.content;
         if (v.scriptText.substring(0, 100) === scriptContent.substring(0, 100)) {
           return true;
         }
       }
-      // Match by name pattern
+      
+      // Priority 2: Name matching similar to TTS
       const voName = v.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-      return voName.includes(scriptTitle) || scriptTitle.includes(voName.substring(0, 20));
+      const titleWords = scriptTitle.split(/(?=[A-Z])|_|-/).filter(w => w.length > 2);
+      const matchedWords = titleWords.filter(word => voName.includes(word));
+      if (titleWords.length > 0 && matchedWords.length >= Math.ceil(titleWords.length * 0.6)) {
+        return true;
+      }
+      
+      return false;
     });
     
     // Determine if TTS is for enhanced or original version
