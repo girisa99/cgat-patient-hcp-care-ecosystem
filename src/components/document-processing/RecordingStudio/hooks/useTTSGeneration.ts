@@ -422,7 +422,7 @@ export function useTTSGeneration() {
     };
   }, []);
 
-  // Main generate function
+  // Main generate function with fallback support
   const generate = useCallback(async (options: TTSOptions): Promise<TTSResult | null> => {
     if (!options.text?.trim()) {
       toast.error('No text to generate');
@@ -432,7 +432,7 @@ export function useTTSGeneration() {
     setIsGenerating(true);
     setError(null);
 
-    const providerNames = {
+    const providerNames: Record<string, string> = {
       elevenlabs: 'ElevenLabs',
       openai: 'OpenAI',
       google: 'Google Cloud',
@@ -440,32 +440,59 @@ export function useTTSGeneration() {
       azure: 'Microsoft Azure',
     };
 
+    // Define fallback chain: if primary fails, try fallback
+    const fallbackProvider: Record<string, TTSOptions['provider']> = {
+      google: 'elevenlabs',
+      amazon: 'elevenlabs',
+      azure: 'elevenlabs',
+      openai: 'elevenlabs',
+    };
+
+    const generateWithProvider = async (provider: TTSOptions['provider'], opts: TTSOptions): Promise<TTSResult> => {
+      switch (provider) {
+        case 'elevenlabs':
+          return await generateElevenLabs(opts);
+        case 'google':
+          return await generateGoogle(opts);
+        case 'amazon':
+          return await generateAmazon(opts);
+        case 'azure':
+          return await generateAzure(opts);
+        case 'openai':
+        default:
+          return await generateOpenAI(opts);
+      }
+    };
+
     try {
       toast.info(`Generating TTS with ${providerNames[options.provider]}...`);
 
       let result: TTSResult;
       
-      switch (options.provider) {
-        case 'elevenlabs':
-          result = await generateElevenLabs(options);
-          break;
-        case 'google':
-          result = await generateGoogle(options);
-          break;
-        case 'amazon':
-          result = await generateAmazon(options);
-          break;
-        case 'azure':
-          result = await generateAzure(options);
-          break;
-        case 'openai':
-        default:
-          result = await generateOpenAI(options);
-          break;
+      try {
+        result = await generateWithProvider(options.provider, options);
+      } catch (primaryError) {
+        // If primary provider fails and there's a fallback, try fallback
+        const fallback = fallbackProvider[options.provider];
+        if (fallback && options.provider !== 'elevenlabs') {
+          console.warn(`[TTS] ${providerNames[options.provider]} failed, falling back to ${providerNames[fallback]}:`, primaryError);
+          toast.warning(`${providerNames[options.provider]} failed, trying ${providerNames[fallback]}...`);
+          
+          // Get default voice for fallback provider
+          const fallbackVoice = fallback === 'elevenlabs' ? 'EXAVITQu4vr4xnSDxMaL' : options.voice; // Sarah voice as default
+          
+          result = await generateWithProvider(fallback, {
+            ...options,
+            provider: fallback,
+            voice: fallbackVoice,
+          });
+        } else {
+          throw primaryError;
+        }
       }
 
       setLastResult(result);
-      toast.success(`TTS generated! Duration: ${result.duration.toFixed(1)}s`);
+      toast.success(`TTS generated with ${providerNames[result.provider as keyof typeof providerNames]}! Duration: ${result.duration.toFixed(1)}s`);
       
       return result;
     } catch (err) {
