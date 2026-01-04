@@ -45,7 +45,7 @@
 ---
 
 # SCENE 2: THE TOOLS THAT BROKE ME
-**[2:00 - 4:00]**
+**[2:00 - 4:30]**
 
 *[Screen recording montage of various tools with frustrated expressions]*
 
@@ -53,13 +53,21 @@
 
 > Let me tell you about my journey with production tools. It's... not pretty.
 
-> I had this AI Document Processing platform I built—patient onboarding, prescription processing, intelligent extraction—really cool stuff. And I needed to record tutorials and share updates. Simple, right?
+> I had this AI Document Processing platform I built—patient onboarding, prescription processing, intelligent extraction—really cool stuff. And I needed to record tutorials and share updates on LinkedIn. Simple, right?
 
 > I tried Loom first. Loom is great for quick recordings! But then I needed to edit. Stitch takes together. Add voiceovers. And suddenly I'm clicking buttons that do things I don't understand, watching tutorials about tutorials.
 
-> Then I tried Descript. Now, Descript is genuinely impressive—the technology is amazing. But me? I'm more of a "Navi" when it comes to these tools. Not sure how to use them efficiently. I burned through tokens like they were going out of style. Hours just trying to get the basics right.
+> Then I tried Descript. Now, Descript is genuinely impressive—the technology is amazing. But me? I'm more of a "Navi" when it comes to these tools. Not sure how to use them efficiently. I burned through tokens like they were going out of style. Hours just trying to get the basics right. Got burnt—badly—on Descript.
+
+> After the Descript experience, I was hesitant. But I still tried Camtasia and Vidyard. They're on the higher side cost-wise, and after burning all those tokens on Descript, I was worried about investing more money into tools I might struggle with again.
 
 > *[Frustrated sigh]*
+
+> Here's the irony: I was successfully completing my experimentations. I was learning new things, exploring new use cases, building my knowledge. The experimentation part? Going great!
+
+> But sharing those learnings on LinkedIn? That became the bottleneck.
+
+> It was taking me *weeks*—not days, WEEKS—to produce content and publish it. The gap between what I was learning and what I could share was growing wider every day. I had so much to show, so many use cases to demonstrate, but the production-to-publish pipeline was killing my momentum.
 
 > And the worst part? My own voice. Every time I recorded something and played it back... I couldn't stand it. Is that really what I sound like? Why does it sound so different from what I hear in my head?
 
@@ -67,13 +75,16 @@
 
 > *[Light laugh]*
 
-> So there I was: frustrated with tools, anxious about my voice, and completely overwhelmed by the whole production pipeline. This was definitely NOT my league.
+> So there I was: frustrated with tools, anxious about my voice, weeks behind on sharing my work, and completely overwhelmed by the whole production pipeline. I started questioning: Am I even on the right path? Is there a better way?
+
+> This was definitely NOT my league.
 
 > But then something clicked.
 
 **🎬 VIDEO NOTES:**
-- Show actual Loom/Descript interfaces briefly (blurred for legal)
+- Show actual Loom/Descript/Camtasia/Vidyard interfaces briefly (blurred for legal)
 - Animated "Token Counter" depleting rapidly with sad face
+- Calendar showing "WEEKS" passing with LinkedIn posts not published
 - Visual of "MY VOICE" with question marks
 - Lightbulb moment animation
 
