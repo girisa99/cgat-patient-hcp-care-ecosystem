@@ -1021,31 +1021,58 @@ export function RecordingStudio({
     toast.success('Trim undone');
   }, []);
 
-  // Save recording from preview
-  const handleSaveRecording = useCallback(async () => {
+  // Save recording from preview with options
+  const handleSaveRecording = useCallback(async (options?: {
+    format: 'webm' | 'mp4';
+    includeAudio: boolean;
+    includeCaptions: boolean;
+    captionsText?: string;
+  }) => {
     if (!lastRecordingBlob) return;
     
     const script = scripts.find(s => s.id === selectedScriptId);
-    await library.saveRecording(lastRecordingBlob, {
+    const format = options?.format || 'webm';
+    
+    // Convert to MP4 if requested
+    let blobToSave = lastRecordingBlob;
+    let downloadExtension = 'webm';
+    
+    if (format === 'mp4' && ffmpegTrim.isLoaded) {
+      try {
+        toast.info('Converting to MP4 for save...');
+        const mp4Blob = await ffmpegTrim.convertToMp4(lastRecordingBlob);
+        if (mp4Blob) {
+          blobToSave = mp4Blob;
+          downloadExtension = 'mp4';
+        }
+      } catch (err) {
+        console.error('MP4 conversion failed, saving as WebM:', err);
+      }
+    }
+    
+    await library.saveRecording(blobToSave, {
       name: `Recording ${new Date().toLocaleString()}`,
       duration: recording.duration,
       scriptTitle: script?.title,
       hasVoiceover: !!selectedVoiceoverId,
       hasMusic: !!selectedMusicId,
+      hasCaptions: options?.includeCaptions || false,
+      captionsText: options?.captionsText,
+      format: downloadExtension,
     });
     
     // Download
-    const url = URL.createObjectURL(lastRecordingBlob);
+    const url = URL.createObjectURL(blobToSave);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `recording-${Date.now()}.webm`;
+    a.download = `recording-${Date.now()}.${downloadExtension}`;
     a.click();
     URL.revokeObjectURL(url);
     
-    toast.success('Recording saved!');
+    toast.success(`Recording saved as ${downloadExtension.toUpperCase()}!`);
     setShowRecordingPreview(false);
     setLastRecordingBlob(null);
-  }, [lastRecordingBlob, scripts, selectedScriptId, library, recording.duration, selectedVoiceoverId, selectedMusicId]);
+  }, [lastRecordingBlob, scripts, selectedScriptId, library, recording.duration, selectedVoiceoverId, selectedMusicId, ffmpegTrim]);
 
   // Discard recording
   const handleDiscardRecording = useCallback(() => {
@@ -1724,6 +1751,7 @@ export function RecordingStudio({
           onSave={handleSaveRecording}
           onDiscard={handleDiscardRecording}
           onEdit={handleOpenInEditor}
+          recordingName={`Recording-${currentScript?.title || 'Untitled'}-${Date.now()}`}
           // Pass script content for comparison
           scriptContent={currentScript?.enhancedContent || currentScript?.content}
           scriptTitle={currentScript?.title}
@@ -1731,6 +1759,42 @@ export function RecordingStudio({
             if (currentScript) {
               handleScriptContentUpdate(currentScript.id, newContent);
             }
+          }}
+          // TTS generation for additional script text
+          onGenerateTTS={async (text: string) => {
+            try {
+              const result = await ttsGeneration.generate({
+                text,
+                voice: selectedVoice,
+                provider: ttsProvider,
+              });
+              
+              if (result && result.audioUrl && result.audioBlob) {
+                // Log cost if project tracking enabled
+                if (mediaProject.currentProject) {
+                  await mediaProject.logCost({
+                    operation_type: 'tts',
+                    operation_name: `Additional TTS: ${text.substring(0, 30)}...`,
+                    cost: result.estimatedCost || 0.01,
+                    provider: ttsProvider,
+                    characters_processed: text.length,
+                    metadata: { voice: selectedVoice, source: 'recording-preview' }
+                  });
+                }
+                return { audioUrl: result.audioUrl, audioBlob: result.audioBlob };
+              }
+              return null;
+            } catch (error) {
+              console.error('TTS generation for additional script failed:', error);
+              return null;
+            }
+          }}
+          // Video upload handler
+          onUploadVideo={async (file: File) => {
+            // Create blob from file and update lastRecordingBlob
+            const blob = new Blob([await file.arrayBuffer()], { type: file.type });
+            setLastRecordingBlob(blob);
+            toast.success('Video replaced with uploaded file');
           }}
           onTrim={async (startTime, endTime) => {
             if (!lastRecordingBlob) return;

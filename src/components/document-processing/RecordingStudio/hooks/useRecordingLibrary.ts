@@ -82,6 +82,9 @@ export function useRecordingLibrary() {
       scriptTitle?: string | null;
       hasVoiceover?: boolean;
       hasMusic?: boolean;
+      hasCaptions?: boolean;
+      captionsText?: string;
+      format?: string;
     }
   ): Promise<number> => {
     try {
@@ -101,6 +104,9 @@ export function useRecordingLibrary() {
           scriptTitle: metadata.scriptTitle,
           hasVoiceover: metadata.hasVoiceover,
           hasMusic: metadata.hasMusic,
+          hasCaptions: metadata.hasCaptions,
+          captionsText: metadata.captionsText,
+          format: metadata.format,
         };
         
         const request = store.add(recording);
