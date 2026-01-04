@@ -4,48 +4,48 @@ import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { toast } from 'sonner';
 
-// Import all logo versions
-import smallIcon from '@/assets/logos/genie-studio-small-icon.png';
-import banner from '@/assets/logos/genie-studio-banner.png';
-import presentation from '@/assets/logos/genie-studio-presentation-v2.png';
-import product from '@/assets/logos/genie-studio-product.png';
+// Import finalized combined logos (same logo used for all purposes)
+import genieStudioBanner from '@/assets/logos/genie-studio-banner.png';
+import genieMindCombined from '@/assets/logos/genie-mind-combined.png';
+import genieVibeCombined from '@/assets/logos/genie-vibe-combined.png';
+import genieArcCombined from '@/assets/logos/genie-arc-combined.png';
 
 interface LogoAsset {
   id: string;
   title: string;
+  tagline: string;
   description: string;
   src: string;
-  dimensions: string;
 }
 
 const logoAssets: LogoAsset[] = [
   {
-    id: 'small-icon',
-    title: 'Small Icon',
-    description: 'Compact icon for favicons, app icons, and small displays',
-    src: smallIcon,
-    dimensions: '1:1 Square',
+    id: 'genie-studio',
+    title: 'Genie Studio',
+    tagline: 'Mind to Media — AI-Powered Production Suite',
+    description: 'The complete suite banner logo for presentations, websites, products, and all use cases',
+    src: genieStudioBanner,
   },
   {
-    id: 'banner',
-    title: 'Banner Logo',
-    description: 'Wide format for website headers and social media banners',
-    src: banner,
-    dimensions: '16:9 Wide',
+    id: 'genie-arc',
+    title: 'Genie Arc',
+    tagline: 'Your Production Journey With Infinite Possibilities',
+    description: 'Planning & scheduling module logo for presentations, websites, products, and all use cases',
+    src: genieArcCombined,
   },
   {
-    id: 'presentation',
-    title: 'Presentation Logo',
-    description: 'Large format for presentations and marketing materials',
-    src: presentation,
-    dimensions: '1:1 Square',
+    id: 'genie-mind',
+    title: 'Genie Mind',
+    tagline: 'AI That Understands',
+    description: 'Pre-production module logo for presentations, websites, products, and all use cases',
+    src: genieMindCombined,
   },
   {
-    id: 'product',
-    title: 'Product Logo',
-    description: 'Compact logo for app interfaces and product headers',
-    src: product,
-    dimensions: '4:3 Landscape',
+    id: 'genie-vibe',
+    title: 'Genie Vibe',
+    tagline: 'Script to Screen',
+    description: 'Production module logo for presentations, websites, products, and all use cases',
+    src: genieVibeCombined,
   },
 ];
 
@@ -58,7 +58,7 @@ export const GenieStudioLogoAssets = () => {
       
       const link = document.createElement('a');
       link.href = url;
-      link.download = `genie-studio-${logo.id}.png`;
+      link.download = `${logo.id}-combined.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -83,8 +83,8 @@ export const GenieStudioLogoAssets = () => {
     <Card className="w-full bg-slate-900 border-slate-700">
       <div className="p-4 border-b border-slate-700 flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-white">Genie Studio Logo Assets</h3>
-          <p className="text-sm text-slate-400">Download logos in PNG format</p>
+          <h3 className="text-lg font-semibold text-white">Genie Suite Logo Assets</h3>
+          <p className="text-sm text-slate-400">Finalized logos with taglines — Use for all purposes (presentations, websites, products, icons)</p>
         </div>
         <Button onClick={handleDownloadAll} variant="outline" size="sm" className="gap-2">
           <Download className="h-4 w-4" />
@@ -106,8 +106,8 @@ export const GenieStudioLogoAssets = () => {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h4 className="text-white font-medium">{logo.title}</h4>
-                    <p className="text-slate-400 text-sm mt-1">{logo.description}</p>
-                    <p className="text-slate-500 text-xs mt-1">{logo.dimensions}</p>
+                    <p className="text-purple-400 text-sm mt-1 font-medium">{logo.tagline}</p>
+                    <p className="text-slate-400 text-xs mt-1">{logo.description}</p>
                   </div>
                   <Button
                     size="sm"

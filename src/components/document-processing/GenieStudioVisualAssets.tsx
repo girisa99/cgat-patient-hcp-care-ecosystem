@@ -10,29 +10,17 @@ import heroImage from '@/assets/genie-recording-architecture-hero.png';
 import beforeAfterImage from '@/assets/genie-before-after-comparison.png';
 import contextHandoffImage from '@/assets/genie-context-handoff.png';
 
-// Import Genie Studio logos
-import studioSmallIcon from '@/assets/logos/genie-studio-small-icon.png';
+// Import Genie Studio logo (finalized banner)
 import studioBanner from '@/assets/logos/genie-studio-banner.png';
-import studioPresentation from '@/assets/logos/genie-studio-presentation-v2.png';
-import studioProduct from '@/assets/logos/genie-studio-product.png';
 
-// Import Genie Mind logos
+// Import Genie Mind logo (finalized combined)
 import mindCombined from '@/assets/logos/genie-mind-combined.png';
-import mindPresentation from '@/assets/logos/genie-mind-presentation.png';
-import mindProduct from '@/assets/logos/genie-mind-product.png';
-import mindSmallIcon from '@/assets/logos/genie-mind-small-icon.png';
 
-// Import Genie Arc logos
+// Import Genie Arc logo (finalized combined)
 import arcCombined from '@/assets/logos/genie-arc-combined.png';
-import arcPresentation from '@/assets/logos/genie-arc-presentation.png';
-import arcProduct from '@/assets/logos/genie-arc-product.png';
-import arcSmallIcon from '@/assets/logos/genie-arc-small-icon.png';
 
-// Import Genie Vibe logos
+// Import Genie Vibe logo (finalized combined)
 import vibeCombined from '@/assets/logos/genie-vibe-combined.png';
-import vibePresentation from '@/assets/logos/genie-vibe-presentation.png';
-import vibeProduct from '@/assets/logos/genie-vibe-product.png';
-import vibeSmallIcon from '@/assets/logos/genie-vibe-small-icon.png';
 
 interface ImageAsset {
   id: string;
@@ -67,136 +55,41 @@ const imageAssets: ImageAsset[] = [
   },
 ];
 
+// Finalized logo assets - one combined version per brand (used for all purposes)
 const logoAssets: ImageAsset[] = [
-  // Genie Studio logos
+  // Genie Studio
   {
-    id: 'studio-small-icon',
-    title: 'Genie Studio - Small Icon',
-    description: 'Compact icon with tagline "From Mind to Media"',
-    src: studioSmallIcon,
-    category: 'logo',
-    brand: 'studio',
-  },
-  {
-    id: 'studio-banner',
-    title: 'Genie Studio - Banner',
-    description: 'Wide format for website headers and social media',
+    id: 'studio-combined',
+    title: 'Genie Studio',
+    description: 'Mind to Media — AI-Powered Production Suite (use for presentations, websites, products, icons)',
     src: studioBanner,
     category: 'logo',
     brand: 'studio',
   },
-  {
-    id: 'studio-presentation',
-    title: 'Genie Studio - Presentation',
-    description: 'Large format for presentations and marketing',
-    src: studioPresentation,
-    category: 'logo',
-    brand: 'studio',
-  },
-  {
-    id: 'studio-product',
-    title: 'Genie Studio - Product',
-    description: 'Compact logo for app interfaces',
-    src: studioProduct,
-    category: 'logo',
-    brand: 'studio',
-  },
-  // Genie Mind logos
-  {
-    id: 'mind-combined',
-    title: 'Genie Mind - Original',
-    description: 'Combined logo with genie lamp and brain - "AI That Understands"',
-    src: mindCombined,
-    category: 'logo',
-    brand: 'mind',
-  },
-  {
-    id: 'mind-presentation',
-    title: 'Genie Mind - Presentation',
-    description: 'Large format for presentations and marketing',
-    src: mindPresentation,
-    category: 'logo',
-    brand: 'mind',
-  },
-  {
-    id: 'mind-product',
-    title: 'Genie Mind - Product',
-    description: 'Compact logo for app interfaces',
-    src: mindProduct,
-    category: 'logo',
-    brand: 'mind',
-  },
-  {
-    id: 'mind-small-icon',
-    title: 'Genie Mind - Small Icon',
-    description: 'Compact icon version',
-    src: mindSmallIcon,
-    category: 'logo',
-    brand: 'mind',
-  },
-  // Genie Arc logos
+  // Genie Arc
   {
     id: 'arc-combined',
-    title: 'Genie Arc - Original',
-    description: 'Combined logo - "Your Production Journey With Infinite Possibilities"',
+    title: 'Genie Arc',
+    description: 'Your Production Journey With Infinite Possibilities (use for presentations, websites, products, icons)',
     src: arcCombined,
     category: 'logo',
     brand: 'arc',
   },
+  // Genie Mind
   {
-    id: 'arc-presentation',
-    title: 'Genie Arc - Presentation',
-    description: 'Large format for presentations and marketing',
-    src: arcPresentation,
+    id: 'mind-combined',
+    title: 'Genie Mind',
+    description: 'AI That Understands (use for presentations, websites, products, icons)',
+    src: mindCombined,
     category: 'logo',
-    brand: 'arc',
+    brand: 'mind',
   },
-  {
-    id: 'arc-product',
-    title: 'Genie Arc - Product',
-    description: 'Compact logo for app interfaces',
-    src: arcProduct,
-    category: 'logo',
-    brand: 'arc',
-  },
-  {
-    id: 'arc-small-icon',
-    title: 'Genie Arc - Small Icon',
-    description: 'Compact icon version',
-    src: arcSmallIcon,
-    category: 'logo',
-    brand: 'arc',
-  },
-  // Genie Vibe logos
+  // Genie Vibe
   {
     id: 'vibe-combined',
-    title: 'Genie Vibe - Original',
-    description: 'Combined logo - "Script to Screen"',
+    title: 'Genie Vibe',
+    description: 'Script to Screen (use for presentations, websites, products, icons)',
     src: vibeCombined,
-    category: 'logo',
-    brand: 'vibe',
-  },
-  {
-    id: 'vibe-presentation',
-    title: 'Genie Vibe - Presentation',
-    description: 'Large format for presentations and marketing',
-    src: vibePresentation,
-    category: 'logo',
-    brand: 'vibe',
-  },
-  {
-    id: 'vibe-product',
-    title: 'Genie Vibe - Product',
-    description: 'Compact logo for app interfaces',
-    src: vibeProduct,
-    category: 'logo',
-    brand: 'vibe',
-  },
-  {
-    id: 'vibe-small-icon',
-    title: 'Genie Vibe - Small Icon',
-    description: 'Compact icon version',
-    src: vibeSmallIcon,
     category: 'logo',
     brand: 'vibe',
   },

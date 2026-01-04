@@ -73,15 +73,15 @@ import { useGenieMediaLibrary } from '@/components/genie-studio/useGenieMediaLib
 import { useGenieScripts, type GenieScript } from '@/components/genie-studio/useGenieScripts';
 import { supabase } from '@/integrations/supabase/client';
 
-// Import Genie logos - Using presentation versions for better visibility
-import genieStudioLogo from '@/assets/logos/genie-studio-presentation-v2.png';
-import genieMindLogo from '@/assets/logos/genie-mind-presentation.png';
-import genieVibeLogo from '@/assets/logos/genie-vibe-presentation.png';
-import genieArcLogo from '@/assets/logos/genie-arc-presentation.png';
-// Product logos for smaller use
-import genieMindProductLogo from '@/assets/logos/genie-mind-product.png';
-import genieVibeProductLogo from '@/assets/logos/genie-vibe-product.png';
-import genieArcProductLogo from '@/assets/logos/genie-arc-product.png';
+// Import Genie logos - Using combined versions with taglines (finalized)
+import genieStudioLogo from '@/assets/logos/genie-studio-banner.png';
+import genieMindLogo from '@/assets/logos/genie-mind-combined.png';
+import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
+import genieArcLogo from '@/assets/logos/genie-arc-combined.png';
+// Same logos used for all sizes (combined is the finalized version)
+import genieMindProductLogo from '@/assets/logos/genie-mind-combined.png';
+import genieVibeProductLogo from '@/assets/logos/genie-vibe-combined.png';
+import genieArcProductLogo from '@/assets/logos/genie-arc-combined.png';
 
 // Types for media items
 interface MediaItem {
@@ -1964,7 +1964,7 @@ export default function GenieStudio() {
                     <h2 className="text-3xl md:text-4xl font-bold text-white">Genie Arc</h2>
                     <Badge className="bg-white/20 text-white border-white/30">Planning</Badge>
                   </div>
-                  <p className="text-xl text-indigo-200 font-medium mb-3">Your Production Journey</p>
+                  <p className="text-xl text-indigo-200 font-medium mb-3">Your Production Journey With Infinite Possibilities</p>
                   <p className="text-white/80 max-w-xl">
                     Schedule shows, coordinate with guests, manage episodes, and plan your entire content calendar. Your complete production journey companion.
                   </p>
@@ -3565,7 +3565,7 @@ export default function GenieStudio() {
                       'Invite Participants'
                     }
                   </p>
-                  <p className="text-xs text-indigo-500 mt-0.5">Your Production Journey</p>
+                  <p className="text-xs text-indigo-500 mt-0.5">Your Production Journey With Infinite Possibilities</p>
                 </div>
               </DialogTitle>
             </DialogHeader>
