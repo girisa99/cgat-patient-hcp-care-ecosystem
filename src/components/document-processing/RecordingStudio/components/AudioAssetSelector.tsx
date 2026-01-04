@@ -1,6 +1,6 @@
 /**
- * Audio Asset Selector - Simplified panel for Recording Studio
- * Only selects and plays pre-existing assets from GenieStudio
+ * Audio Asset Selector - Simplified panel for Genie Vibe
+ * Only selects and plays pre-existing assets from Genie Mind
  * NO generation - just selection and playback
  */
 

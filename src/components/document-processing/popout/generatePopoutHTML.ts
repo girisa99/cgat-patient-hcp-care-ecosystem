@@ -1,5 +1,5 @@
 /**
- * Popout Recording Studio - Main HTML Generator
+ * Popout Genie Vibe - Main HTML Generator
  * Composes all modules into a complete HTML document
  */
 
@@ -162,7 +162,7 @@ export function generatePopoutHTML(config: PopoutConfig): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Recording Studio - Pop-out</title>
+  <title>Genie Vibe - Pop-out</title>
   <style>
 ${styles}
   </style>

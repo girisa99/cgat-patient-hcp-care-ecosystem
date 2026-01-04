@@ -1,6 +1,7 @@
 /**
- * Genie Studio - Professional Media Production Hub
- * Unified dashboard for video recording, voice generation, and content creation
+ * Genie Mind - AI-Powered Media Production Hub
+ * "AI That Understands" - Pre-production command center for content creation
+ * Part of the Genie Mind + Genie Vibe suite: "From Mind to Media"
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -737,7 +738,7 @@ const QUICK_TIPS = [
   { icon: Users, title: '2. Outreach', text: 'Invite participants, hosts, and guests - track confirmations' },
   { icon: PenTool, title: '3. Write Script', text: 'Upload or write your script - AI enhance for clarity and engagement' },
   { icon: Music, title: '4. Add Music', text: 'Generate or upload background music (podcasts) or intro/outro music' },
-  { icon: Video, title: '5. Record/Rehearse', text: 'Open Recording Studio with teleprompter - for webcasts, TTS preview available' },
+  { icon: Video, title: '5. Record/Rehearse', text: 'Open Genie Vibe with teleprompter - for webcasts, TTS preview available' },
   { icon: Film, title: '6. Post-Production', text: 'Edit, trim, and polish your recording in the studio' },
   { icon: Radio, title: '7. Publish', text: 'Go live with landing page and embeddable widget' }
 ];
@@ -1834,7 +1835,7 @@ export default function GenieStudio() {
           showTitle: selectedEventForInvite.title,
           showDescription: selectedEventForInvite.description,
           scheduledDate: selectedEventForInvite.scheduledDate.toISOString(),
-          hostName: 'Genie Studio'
+          hostName: 'Genie Mind'
         }
       });
 
@@ -1915,10 +1916,10 @@ export default function GenieStudio() {
                     </div>
                     <div>
                       <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground via-foreground to-muted-foreground bg-clip-text">
-                        Genie Studio
+                        Genie Mind
                       </h1>
                       <p className="text-muted-foreground">
-                        Professional media production powered by AI
+                        AI That Understands — Pre-production command center
                       </p>
                     </div>
                   </div>
@@ -1932,7 +1933,7 @@ export default function GenieStudio() {
                     className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white shadow-lg shadow-red-500/25 transition-all hover:scale-105"
                   >
                     <Video className="h-5 w-5 mr-2" />
-                    Start Recording
+                    Open Genie Vibe
                   </Button>
                   <Button 
                     size="lg" 

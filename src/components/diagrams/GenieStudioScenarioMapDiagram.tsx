@@ -151,8 +151,8 @@ export const GenieStudioScenarioMapDiagram = () => {
     const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="500" viewBox="0 0 1200 500">
   <rect width="1200" height="500" fill="${colors.background}"/>
-  <text x="600" y="35" text-anchor="middle" fill="${colors.text}" font-size="20" font-weight="bold">Genie Studio Scenario Priority Map</text>
-  <text x="600" y="58" text-anchor="middle" fill="${colors.textMuted}" font-size="13">60 Total Scenarios | 18 Implemented | 12 Partial | 30 Planned</text>
+  <text x="600" y="30" text-anchor="middle" fill="${colors.text}" font-size="20" font-weight="bold">Genie Mind + Genie Vibe — Scenario Priority Map</text>
+  <text x="600" y="52" text-anchor="middle" fill="${colors.textMuted}" font-size="13">60 Total Scenarios | 18 Implemented | 12 Partial | 30 Planned</text>
   
   <!-- Legend -->
   <g transform="translate(50, 70)">

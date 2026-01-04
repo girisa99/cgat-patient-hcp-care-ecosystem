@@ -103,10 +103,10 @@ export const GenieRecordingStudioArchitectureDiagram = () => {
 
       {/* Title */}
       <text x="800" y="50" textAnchor="middle" fill="#ffffff" fontSize="32" fontWeight="bold" fontFamily="system-ui, -apple-system, sans-serif">
-        Genie Studio ↔ Recording Studio Architecture
+        Genie Mind ↔ Genie Vibe Architecture
       </text>
       <text x="800" y="80" textAnchor="middle" fill="#94a3b8" fontSize="16" fontFamily="system-ui, -apple-system, sans-serif">
-        End-to-End Content Production Pipeline • Built in 4 Days
+        "From Mind to Media" — End-to-End Content Production Pipeline • Built in 4 Days
       </text>
 
       {/* GENIE STUDIO SECTION */}
@@ -116,8 +116,8 @@ export const GenieRecordingStudioArchitectureDiagram = () => {
         
         {/* Header */}
         <rect x="0" y="0" width="680" height="60" rx="16" fill="url(#genieStudioGrad)" />
-        <text x="340" y="38" textAnchor="middle" fill="#ffffff" fontSize="24" fontWeight="bold">🧞 Genie Studio</text>
-        <text x="340" y="55" textAnchor="middle" fill="#e0e7ff" fontSize="11">Production Command Center</text>
+        <text x="340" y="38" textAnchor="middle" fill="#ffffff" fontSize="24" fontWeight="bold">🧞 Genie Mind</text>
+        <text x="340" y="55" textAnchor="middle" fill="#e0e7ff" fontSize="11">AI That Understands — Pre-Production Command Center</text>
 
         {/* Project Management */}
         <g transform="translate(20, 80)">
@@ -193,7 +193,7 @@ export const GenieRecordingStudioArchitectureDiagram = () => {
         <g transform="translate(20, 370)">
           <rect x="0" y="0" width="640" height="130" rx="12" fill="url(#contextGrad)" filter="url(#dropShadow)" />
           <text x="320" y="30" textAnchor="middle" fill="#1e293b" fontSize="16" fontWeight="bold">📦 Production Context Builder</text>
-          <text x="320" y="50" textAnchor="middle" fill="#422006" fontSize="12">Bundles all assets for Recording Studio handoff</text>
+          <text x="320" y="50" textAnchor="middle" fill="#422006" fontSize="12">Bundles all assets for Genie Vibe handoff</text>
           
           <rect x="20" y="65" width="140" height="50" rx="8" fill="#fef3c7" stroke="#f59e0b" strokeWidth="2" />
           <text x="90" y="88" textAnchor="middle" fill="#78350f" fontSize="11" fontWeight="bold">Scripts + Timings</text>
@@ -228,8 +228,8 @@ export const GenieRecordingStudioArchitectureDiagram = () => {
         
         {/* Header */}
         <rect x="0" y="0" width="680" height="60" rx="16" fill="url(#recordingStudioGrad)" />
-        <text x="340" y="38" textAnchor="middle" fill="#ffffff" fontSize="24" fontWeight="bold">🎬 Recording Studio</text>
-        <text x="340" y="55" textAnchor="middle" fill="#d1fae5" fontSize="11">Professional Recording Environment</text>
+        <text x="340" y="38" textAnchor="middle" fill="#ffffff" fontSize="24" fontWeight="bold">🎬 Genie Vibe</text>
+        <text x="340" y="55" textAnchor="middle" fill="#d1fae5" fontSize="11">Script to Screen — Professional Recording Environment</text>
 
         {/* Teleprompter */}
         <g transform="translate(20, 80)">
@@ -419,7 +419,7 @@ export const GenieRecordingStudioArchitectureDiagram = () => {
           
           <text x="900" y="20" fill="#94a3b8" fontSize="14">Result:</text>
           <text x="970" y="20" fill="#f59e0b" fontSize="18" fontWeight="bold">Production-Ready</text>
-          <text x="1150" y="20" fill="#94a3b8" fontSize="14">Recording Studio</text>
+          <text x="1150" y="20" fill="#94a3b8" fontSize="14">Genie Vibe</text>
         </g>
       </g>
     </svg>
@@ -428,7 +428,7 @@ export const GenieRecordingStudioArchitectureDiagram = () => {
   return (
     <Card className={`w-full ${isFullscreen ? 'fixed inset-0 z-50 rounded-none' : 'bg-slate-900 border-slate-700'}`}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-white text-lg">Genie Studio ↔ Recording Studio Architecture</CardTitle>
+        <CardTitle className="text-white text-lg">Genie Mind ↔ Genie Vibe Architecture</CardTitle>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleDownloadSVG} className="gap-2">
             <FileCode className="h-4 w-4" />
@@ -457,7 +457,7 @@ export const GenieRecordingStudioArchitectureDiagram = () => {
           <DiagramContent />
         </div>
         <p className="text-slate-500 text-xs mt-3 text-center">
-          Genie Studio (Pre-Production) → Context Handoff → Recording Studio (Production) • End-to-End Pipeline
+          Genie Mind (Pre-Production) → Context Handoff → Genie Vibe (Production) • "From Mind to Media" Pipeline
         </p>
       </CardContent>
     </Card>

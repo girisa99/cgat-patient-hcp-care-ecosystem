@@ -55,7 +55,7 @@ const phases: PhaseData[] = [
     status: 'completed',
     completion: 100,
     features: [
-      { name: 'Recording Studio UI', status: 'completed', layer: 'presentation' },
+      { name: 'Genie Vibe UI', status: 'completed', layer: 'presentation' },
       { name: 'Multi-Track Recorder', status: 'completed', layer: 'application' },
       { name: 'Audio Processing', status: 'completed', layer: 'domain' },
       { name: 'WebRTC/MediaRecorder', status: 'completed', layer: 'infrastructure' },
@@ -138,7 +138,8 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
     const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
   <rect width="1200" height="800" fill="#ffffff"/>
-  <text x="600" y="40" text-anchor="middle" fill="${colors.text}" font-size="24" font-weight="bold">Genie Studio - Complete Architecture &amp; Roadmap</text>
+  <text x="600" y="35" text-anchor="middle" fill="${colors.text}" font-size="24" font-weight="bold">Genie Mind + Genie Vibe — Complete Architecture &amp; Roadmap</text>
+  <text x="600" y="58" text-anchor="middle" fill="${colors.textMuted}" font-size="12">"From Mind to Media" | AI That Understands → Script to Screen</text>
   
   <!-- Legend -->
   <g transform="translate(50, 70)">
@@ -213,10 +214,10 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
         <div>
           <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
             <Layers className="h-5 w-5" />
-            Genie Studio - Complete Architecture & Roadmap
+            Genie Mind + Genie Vibe — Complete Architecture & Roadmap
           </CardTitle>
           <p className="text-sm text-muted-foreground mt-1">
-            Full technical and functional architecture with implementation status
+            "From Mind to Media" — Full technical and functional architecture with implementation status
           </p>
         </div>
         <div className="flex gap-2">

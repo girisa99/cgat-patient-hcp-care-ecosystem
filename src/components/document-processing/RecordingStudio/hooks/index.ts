@@ -1,5 +1,5 @@
 /**
- * Recording Studio Hooks - Export all hooks
+ * Genie Vibe Hooks - Export all hooks for the media production studio
  */
 
 export { useCamera } from './useCamera';

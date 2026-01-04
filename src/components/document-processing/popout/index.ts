@@ -1,7 +1,7 @@
 /**
- * Pop-out Recording Studio
+ * Pop-out Genie Vibe
  * 
- * This module provides the pop-out recording studio functionality.
+ * This module provides the pop-out Genie Vibe (recording studio) functionality.
  * Modular architecture with separate files for styles, template, camera, and UI logic.
  */
 

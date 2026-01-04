@@ -1,5 +1,7 @@
 # 🎬 "I Hate My Voice, I Can't Edit, and Production Terrifies Me"
-## How I Accidentally Built a Recording Studio in 4 Days — Without Being a Developer
+## How I Accidentally Built a Media Production Suite in 4 Days — Without Being a Developer
+
+**Featuring: Genie Mind™ + Genie Vibe™ — "From Mind to Media"**
 
 **Total Runtime: ~15-18 minutes**
 **Tone: Personal, Vulnerable, Relatable, with Self-Deprecating Humor**
@@ -11,7 +13,7 @@
 # SCENE 1: THE OPENING — CONFESSION OF A NON-PRODUCER
 **[0:00 - 2:00]**
 
-*[Show title card with animated Genie Studio logo, then fade to speaker looking slightly nervous]*
+*[Show title card with animated Genie Mind + Genie Vibe logo, then fade to speaker looking slightly nervous]*
 
 **🎙️ AUDIO SCRIPT:**
 
@@ -42,6 +44,7 @@
 - Zoom/Teams logos transitioning to scary "PRODUCTION STUDIO" text
 - Comedy sound effect when mentioning voice anxiety
 - Calendar animation: Dec 31 → Jan 4
+- Reveal "Genie Mind + Genie Vibe" branding
 
 ---
 
@@ -112,24 +115,25 @@
 
 > And what happened next became one of the best examples I can share of how vibe tools and AI-assisted coding support building new tools with almost no time.
 
-> Let me show you what I created.
+> Let me show you what I created. I call it: **Genie Mind + Genie Vibe** — *From Mind to Media*.
 
 **🎬 VIDEO NOTES:**
 - "VIBE CODING" text animation
 - Split screen: Non-technical person + building interface
 - "4 DAYS" dramatic reveal
 - Quick montage of building process
+- Reveal brand: "Genie Mind + Genie Vibe"
 
 ---
 
-# SCENE 4: INTRODUCING GENIE STUDIO — YOUR PRODUCTION COMMAND CENTER
+# SCENE 4: INTRODUCING GENIE MIND — AI THAT UNDERSTANDS
 **[5:30 - 8:00]**
 
-*[Navigate to Genie Studio interface]*
+*[Navigate to Genie Mind interface]*
 
 **🎙️ AUDIO SCRIPT:**
 
-> Welcome to Genie Studio. Think of this as your production command center—but designed for people who don't think in "production" terms.
+> Welcome to **Genie Mind** — your production command center. The tagline? *"AI That Understands."* Because it's designed for people who don't think in "production" terms.
 
 > Let me walk you through what's here:
 
@@ -149,25 +153,28 @@
 
 > **Studio Sound** — Audio presets and enhancements. Background music, sound effects, audio quality improvements. All pre-configured so I don't have to be an audio engineer.
 
+> That's Genie Mind. *AI That Understands.* Your production command center.
+
 **🎬 VIDEO NOTES:**
 - Navigate through each feature as mentioned
 - Highlight UI elements with glow effects
 - Show Templates dropdown with presets
 - Demo Voice Generator creating TTS
+- Show "Genie Mind — AI That Understands" tagline
 
 ---
 
-# SCENE 5: THE RECORDING STUDIO — WHERE IT ALL COMES TOGETHER
+# SCENE 5: GENIE VIBE — SCRIPT TO SCREEN
 **[8:00 - 11:00]**
 
-*[Navigate to Recording Studio]*
+*[Navigate to Genie Vibe interface]*
 
 **🎙️ AUDIO SCRIPT:**
 
-> Now let's enter the Recording Studio. This is where I actually capture content.
+> Now let's enter **Genie Vibe** — *Script to Screen*. This is where ideas become reality. Where you actually capture content.
 
 > The interface has three main areas:
-> - **Left panel**: My scripts and voiceovers from Genie Studio—already here, no importing needed
+> - **Left panel**: My scripts and voiceovers from Genie Mind—already here, no importing needed
 > - **Center**: The preview—my camera feed, screen capture, or both
 > - **Right**: Media library and export options
 
@@ -188,9 +195,9 @@
 
 > **One-Click TTS** — See this "Additional Script" field? I can type anything, click generate, and it creates a voiceover instantly. Mid-recording I realize I forgot something? Generate it right here.
 
-> And the best part? **Everything is connected to my Project**. My script from Genie Studio's Production Hub? Already loaded. My TTS from Voice Generator? Already available. My audio preferences from Templates? Already applied.
+> And the best part? **Everything is connected to my Project**. My script from Genie Mind's Production Hub? Already loaded. My TTS from Voice Generator? Already available. My audio preferences from Templates? Already applied.
 
-> One system. Everything connected.
+> One system. Everything connected. That's the Vibe.
 
 **🎬 VIDEO NOTES:**
 - Live demo of each feature
@@ -198,19 +205,20 @@
 - Demonstrate audio mixer dragging
 - Show trim functionality in action
 - Quick TTS generation demo
+- Show "Genie Vibe — Script to Screen" tagline
 
 ---
 
-# SCENE 6: THE MAGIC OF PROJECT CONNECTION
+# SCENE 6: THE MAGIC OF PROJECT CONNECTION — FROM MIND TO MEDIA
 **[11:00 - 13:00]**
 
 *[Show architecture diagram with data flow]*
 
 **🎙️ AUDIO SCRIPT:**
 
-> Let me show you the magic—how everything connects.
+> Let me show you the magic—how everything connects. This is why we call it *"From Mind to Media."*
 
-> **Stage 1: Pre-Production in Genie Studio**
+> **Stage 1: Pre-Production in Genie Mind**
 
 > I start in Production Hub, create a Project. Write my script (or have AI enhance it). Generate TTS in Voice Generator. Set up my audio in Studio Sound. Save everything as a Template for next time.
 
@@ -218,7 +226,7 @@
 
 > **Stage 2: The Handoff**
 
-> When I open Recording Studio, I don't export files. I don't copy-paste. The system knows my project. Everything transfers automatically:
+> When I open Genie Vibe, I don't export files. I don't copy-paste. The system knows my project. Everything transfers automatically:
 > - My script with timing marks
 > - My TTS audio aligned to script segments  
 > - My template preferences
@@ -246,11 +254,14 @@
 
 > This is what I wanted. This is what those other tools couldn't give me. A workflow designed for how MY brain works.
 
+> **From Mind to Media.** That's the complete journey.
+
 **🎬 VIDEO NOTES:**
 - Animated architecture diagram
 - Data flow arrows highlighting each stage
 - Show "one button" press with everything activating
 - Publishing flow visualization
+- Show "From Mind to Media" tagline
 
 ---
 
@@ -265,7 +276,7 @@
 
 > My AI Document Processing platform—patient onboarding, prescription processing, insurance verification, the whole thing. I needed documentation videos. Demos. Tutorials.
 
-> Using Genie Studio and Recording Studio, I created the complete Patient Onboarding documentation in under 24 hours. From script to published video.
+> Using Genie Mind and Genie Vibe, I created the complete Patient Onboarding documentation in under 24 hours. From script to published video.
 
 > Previously? Just syncing audio properly would take me 24 hours of frustration.
 
@@ -303,11 +314,11 @@
 
 > With vibe-based tools, with AI assistance, with some experimentation and self-learning—you can build exactly what you need.
 
-> Genie Studio's Schedule Show means I don't forget to record. The Templates mean I don't waste time configuring. The Voice Generator means I have options when I'm not feeling confident. The Production Hub keeps me organized. The Library stores everything.
+> **Genie Mind's** Schedule Show means I don't forget to record. The Templates mean I don't waste time configuring. The Voice Generator means I have options when I'm not feeling confident. The Production Hub keeps me organized. The Library stores everything.
 
-> Recording Studio's Trim means mistakes don't require starting over. The text overlay means I can add context. The one-button recording means I don't have to coordinate anything.
+> **Genie Vibe's** Trim means mistakes don't require starting over. The text overlay means I can add context. The one-button recording means I don't have to coordinate anything.
 
-> It all connects through Projects. Everything flows.
+> It all connects through Projects. Everything flows. **From Mind to Media.**
 
 **🎬 VIDEO NOTES:**
 - Heartfelt speaker moment
@@ -338,7 +349,7 @@
 
 > This was my experiment. My self-learning project. My proof that new tools are changing what's possible for people who would never call themselves "developers."
 
-> I built a complete recording and publishing system—Schedule Show, Production Hub, Projects, Templates, Library, Voice Generator, Podcast capabilities, Studio Sound presets, full Recording Studio with Trim and text overlays—in 4 days.
+> I built a complete recording and publishing system—Schedule Show, Production Hub, Projects, Templates, Library, Voice Generator, Podcast capabilities, Studio Sound presets, full media studio with Trim and text overlays—in 4 days.
 
 > And I used it to record and publish the very video you might be watching right now.
 
@@ -370,17 +381,26 @@
 
 > And remember: the best workflow is the one that works for YOUR brain.
 
-> See you in the next one!
+> **From Mind to Media.** See you in the next one!
 
 **🎬 VIDEO NOTES:**
 - Warm, encouraging tone
 - Subscribe animation
-- Fade to Genie Studio logo
+- Fade to Genie Mind + Genie Vibe logo
 - End card with links
 
 ---
 
 # PRODUCTION NOTES
+
+## Brand Identity
+
+**Product Names:**
+- **Genie Mind** — The AI-powered command center for pre-production
+  - Tagline: *"AI That Understands"*
+- **Genie Vibe** — The media capture and production studio
+  - Tagline: *"Script to Screen"*
+- **Suite Tagline:** *"From Mind to Media"*
 
 ## Target Audience Profile
 - Comfortable with video calls (Zoom, Teams)
@@ -391,6 +411,8 @@
 - Self-learners willing to experiment
 
 ## Key Features to Highlight
+
+### Genie Mind (Pre-Production)
 1. **Schedule Show** — Plan recordings like meetings
 2. **Production Hub** — Command center for all projects
 3. **Projects** — Organizational container
@@ -399,12 +421,16 @@
 6. **Voice Generator** — TTS for scripts
 7. **Podcast/Webcast** — Audio-first options
 8. **Studio Sound** — Audio presets
+
+### Genie Vibe (Production)
 9. **Teleprompter** — Script scrolling
-10. **Trim** — Edit without external tools
-11. **Text Overlay** — Add annotations
-12. **One-Button Recording** — Synchronized start
-13. **Publishing** — Direct output
-14. **Project Connection** — Everything flows together
+10. **Recording Modes** — Camera, Screen, PiP
+11. **Audio Mixer** — Multi-track control
+12. **Trim** — Edit without external tools
+13. **Text Overlay** — Add annotations
+14. **One-Button Recording** — Synchronized start
+15. **Publishing** — Direct output
+16. **Project Connection** — Everything flows together
 
 ## Emotional Beats
 1. **Vulnerability** — Admitting fears (voice, production)
@@ -436,9 +462,9 @@
 0:00 Confession: I'm Not a Producer
 2:00 The Tools That Broke Me
 4:00 The Dangerous Thought
-5:30 Genie Studio: Command Center
-8:00 Recording Studio: Where It Happens
-11:00 How Everything Connects
+5:30 Genie Mind: AI That Understands
+8:00 Genie Vibe: Script to Screen
+11:00 From Mind to Media
 13:00 Real Example: Patient Onboarding
 14:30 Built for People Like Me
 16:00 What's Possible Now
@@ -447,7 +473,8 @@
 
 ## Data Flow Summary
 ```
-Genie Studio                    Recording Studio
+GENIE MIND                      GENIE VIBE
+"AI That Understands"          "Script to Screen"
 ─────────────────              ─────────────────
 Schedule Show ─────────────────→ Scheduled Time
 Production Hub ────────────────→ Project Context
@@ -464,6 +491,8 @@ Studio Sound ──────────────────→ Audio Pre
                                Add Text
                                      ↓
                                Publish
+                                     
+         ←── FROM MIND TO MEDIA ──→
 ```
 
 ## Suggested Background Music
@@ -474,5 +503,6 @@ Studio Sound ──────────────────→ Audio Pre
 
 ---
 
-*Version 2.0 | January 2025 | Genie Studio Documentation*
+*Version 3.0 | January 2025 | Genie Mind + Genie Vibe Documentation*
+*"From Mind to Media" — Built for people who create, not for people who produce*
 *Written from the perspective of a non-developer self-learner*
