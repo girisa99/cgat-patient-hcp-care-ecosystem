@@ -264,25 +264,111 @@ export function useShows() {
     }
   };
 
-  // Get shows by stage for Kanban view
-  const getShowsByStage = useCallback(() => {
-    const stages: Record<ProductionStage, ShowWithParticipants[]> = {
-      outreach: [],
-      script: [],
-      rehearsal: [],
-      recording: [],
-      post_production: [],
-      published: [],
-    };
+  // Get shows by stage for Kanban view - supports all categories
+  const getShowsByStage = useCallback((category?: EventCategory) => {
+    // Filter shows by category if provided
+    const filteredShows = category 
+      ? shows.filter(show => show.event_category === category || (!show.event_category && category === 'media_production'))
+      : shows;
 
-    shows.forEach(show => {
-      if (stages[show.current_stage]) {
-        stages[show.current_stage].push(show);
-      }
-    });
+    // For media productions, use current_stage
+    if (!category || category === 'media_production') {
+      const stages: Record<string, ShowWithParticipants[]> = {
+        outreach: [],
+        script: [],
+        rehearsal: [],
+        recording: [],
+        post_production: [],
+        published: [],
+      };
+      filteredShows.forEach(show => {
+        if (stages[show.current_stage]) {
+          stages[show.current_stage].push(show);
+        }
+      });
+      return stages;
+    }
 
-    return stages;
+    // For meetings, use meeting_stage
+    if (category === 'business_meeting') {
+      const stages: Record<string, ShowWithParticipants[]> = {
+        scheduled: [],
+        confirmed: [],
+        agenda_prep: [],
+        in_progress: [],
+        follow_up: [],
+        completed: [],
+        cancelled: [],
+      };
+      filteredShows.forEach(show => {
+        const stage = show.meeting_stage || 'scheduled';
+        if (stages[stage]) {
+          stages[stage].push(show);
+        }
+      });
+      return stages;
+    }
+
+    // For events, use event_stage
+    if (category === 'event') {
+      const stages: Record<string, ShowWithParticipants[]> = {
+        planning: [],
+        promotion: [],
+        registration: [],
+        live: [],
+        wrap_up: [],
+        archived: [],
+        cancelled: [],
+      };
+      filteredShows.forEach(show => {
+        const stage = show.event_stage || 'planning';
+        if (stages[stage]) {
+          stages[stage].push(show);
+        }
+      });
+      return stages;
+    }
+
+    return {};
   }, [shows]);
+
+  // Update meeting stage
+  const updateMeetingStage = async (id: string, newStage: MeetingStage) => {
+    try {
+      const { error } = await supabase
+        .from('shows')
+        .update({ meeting_stage: newStage } as any)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success(`Moved to ${newStage.replace('_', ' ')}`);
+      await fetchShows();
+    } catch (err: any) {
+      console.error('Error updating meeting stage:', err);
+      toast.error('Failed to update stage');
+      throw err;
+    }
+  };
+
+  // Update event stage
+  const updateEventStage = async (id: string, newStage: EventStage) => {
+    try {
+      const { error } = await supabase
+        .from('shows')
+        .update({ event_stage: newStage } as any)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success(`Moved to ${newStage.replace('_', ' ')}`);
+      await fetchShows();
+    } catch (err: any) {
+      console.error('Error updating event stage:', err);
+      toast.error('Failed to update stage');
+      throw err;
+    }
+  };
 
   return {
     shows,
@@ -292,6 +378,8 @@ export function useShows() {
     createShow,
     updateShow,
     updateStage,
+    updateMeetingStage,
+    updateEventStage,
     deleteShow,
     addParticipant,
     updateParticipantStatus,

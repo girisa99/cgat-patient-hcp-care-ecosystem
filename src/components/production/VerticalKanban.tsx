@@ -1,6 +1,7 @@
 /**
  * Vertical Swimlane Kanban for Production Hub
  * Each stage is a horizontal row with cards flowing left-to-right
+ * Supports Media Productions, Business Meetings, and Events
  */
 
 import React from 'react';
@@ -25,6 +26,26 @@ import {
   Podcast,
   Tv,
   GraduationCap,
+  Radio,
+  Phone,
+  Briefcase,
+  Rocket,
+  BarChart,
+  MessageCircle,
+  Wrench,
+  Monitor,
+  Building,
+  BookOpen,
+  CalendarPlus,
+  CheckCircle,
+  CheckCircle2,
+  MessageSquare,
+  XCircle,
+  Lightbulb,
+  Megaphone,
+  UserPlus,
+  Package,
+  Archive,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -39,32 +60,30 @@ import {
   useDroppable,
 } from '@dnd-kit/core';
 import { useDraggable } from '@dnd-kit/core';
-import type { ShowWithParticipants, ProductionStage, ShowType } from '@/types/shows';
-import { PRODUCTION_STAGES, SHOW_TYPES } from '@/types/shows';
+import type { ShowWithParticipants, ProductionStage, MeetingStage, EventStage, EventCategory } from '@/types/shows';
+import { PRODUCTION_STAGES, MEETING_STAGES, EVENT_STAGES, SHOW_TYPES, getStagesForCategory, getCurrentStage } from '@/types/shows';
 
+// Stage icons mapping
 const STAGE_ICONS: Record<string, React.ElementType> = {
-  Mail,
-  FileText,
-  Play,
-  Video,
-  Film,
-  Globe,
+  Mail, FileText, Play, Video, Film, Globe,
+  CalendarPlus, CheckCircle, CheckCircle2, MessageSquare, XCircle,
+  Lightbulb, Megaphone, UserPlus, Radio, Package, Archive,
 };
 
+// Show type icons mapping
 const SHOW_TYPE_ICONS: Record<string, React.ElementType> = {
-  Podcast,
-  Tv,
-  Users,
-  GraduationCap,
-  Video,
+  Podcast, Tv, Users, GraduationCap, Video, Radio,
+  Phone, Briefcase, Rocket, BarChart, MessageCircle,
+  Wrench, Monitor, Building, BookOpen,
 };
 
 interface VerticalKanbanProps {
-  showsByStage: Record<ProductionStage, ShowWithParticipants[]>;
+  showsByStage: Record<string, ShowWithParticipants[]>;
   onSelectShow: (show: ShowWithParticipants) => void;
   onOpenRecordingStudio: (show: ShowWithParticipants) => void;
-  onUpdateStage: (showId: string, newStage: ProductionStage) => Promise<void>;
+  onUpdateStage: (showId: string, newStage: ProductionStage | MeetingStage | EventStage) => Promise<void>;
   isLoading?: boolean;
+  eventCategory?: EventCategory;
 }
 
 // Draggable Show Card
@@ -73,11 +92,13 @@ function DraggableCard({
   stageId,
   onSelect,
   onOpenRecordingStudio,
+  eventCategory = 'media_production',
 }: {
   show: ShowWithParticipants;
-  stageId: ProductionStage;
+  stageId: string;
   onSelect: (show: ShowWithParticipants) => void;
   onOpenRecordingStudio: (show: ShowWithParticipants) => void;
+  eventCategory?: EventCategory;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: show.id,
@@ -159,7 +180,8 @@ function DraggableCard({
           )}
         </div>
 
-        {stageId === 'recording' && (
+        {/* Show Record button for recording stage in media, or action button for meetings */}
+        {(stageId === 'recording' || stageId === 'in_progress' || stageId === 'live') && (
           <Button
             size="sm"
             className="w-full mt-2"
@@ -169,7 +191,7 @@ function DraggableCard({
             }}
           >
             <Video className="h-3 w-3 mr-1" />
-            Record
+            {stageId === 'recording' ? 'Record' : stageId === 'in_progress' ? 'Join' : 'Go Live'}
           </Button>
         )}
       </CardContent>
@@ -268,9 +290,13 @@ export function VerticalKanban({
   onSelectShow,
   onOpenRecordingStudio,
   onUpdateStage,
+  eventCategory = 'media_production',
 }: VerticalKanbanProps) {
-  const [expandedStages, setExpandedStages] = React.useState<Set<ProductionStage>>(
-    new Set(PRODUCTION_STAGES.map((s) => s.id))
+  // Get stages based on category
+  const stages = getStagesForCategory(eventCategory);
+  
+  const [expandedStages, setExpandedStages] = React.useState<Set<string>>(
+    new Set(stages.map((s) => s.id))
   );
   const [activeId, setActiveId] = React.useState<string | null>(null);
   const [overId, setOverId] = React.useState<string | null>(null);
@@ -281,7 +307,7 @@ export function VerticalKanban({
     })
   );
 
-  const toggleStage = (stageId: ProductionStage) => {
+  const toggleStage = (stageId: string) => {
     setExpandedStages((prev) => {
       const next = new Set(prev);
       if (next.has(stageId)) {
@@ -309,11 +335,11 @@ export function VerticalKanban({
     if (!over) return;
 
     const showId = active.id as string;
-    const targetStage = over.id as ProductionStage;
-    const activeData = active.data.current as { show: ShowWithParticipants; fromStage: ProductionStage };
+    const targetStage = over.id as string;
+    const activeData = active.data.current as { show: ShowWithParticipants; fromStage: string };
 
     if (activeData.fromStage !== targetStage) {
-      await onUpdateStage(showId, targetStage);
+      await onUpdateStage(showId, targetStage as any);
     }
   };
 
@@ -332,10 +358,10 @@ export function VerticalKanban({
       onDragEnd={handleDragEnd}
     >
       <div className="space-y-3">
-        {PRODUCTION_STAGES.map((stage) => (
+        {stages.map((stage) => (
           <DroppableStageRow
             key={stage.id}
-            stage={stage}
+            stage={stage as any}
             shows={showsByStage[stage.id] || []}
             isOver={overId === stage.id}
             isExpanded={expandedStages.has(stage.id)}
@@ -353,7 +379,7 @@ export function VerticalKanban({
             <CardContent className="p-3">
               <div className="flex items-center gap-2 mb-2">
                 <Badge variant="outline" className="text-xs capitalize">
-                  {activeShow.show_type}
+                  {activeShow.show_type?.replace('_', ' ')}
                 </Badge>
               </div>
               <h4 className="font-medium text-sm">{activeShow.title}</h4>
