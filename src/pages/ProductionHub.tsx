@@ -1,5 +1,6 @@
 /**
  * Production Hub - Vertical Swimlane Kanban production pipeline management
+ * Supports Media Productions, Business Meetings, and Events
  */
 
 import React, { useState } from 'react';
@@ -10,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -28,6 +30,9 @@ import {
   UserPlus,
   Link,
   FolderOpen,
+  Podcast,
+  Calendar,
+  Briefcase,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -36,11 +41,19 @@ import { useProjects } from '@/hooks/useProjects';
 import { useGenieScripts } from '@/components/genie-studio/useGenieScripts';
 import { VerticalKanban } from '@/components/production/VerticalKanban';
 import { 
-  PRODUCTION_STAGES, 
+  PRODUCTION_STAGES,
+  MEETING_STAGES,
+  EVENT_STAGES,
   SHOW_TYPES, 
+  EVENT_CATEGORIES,
+  getStagesForCategory,
+  getShowTypesForCategory,
   type ShowWithParticipants, 
   type ProductionStage,
-  type ShowType
+  type MeetingStage,
+  type EventStage,
+  type ShowType,
+  type EventCategory
 } from '@/types/shows';
 
 // Helper to get stage-specific required fields
@@ -69,7 +82,9 @@ export default function ProductionHub() {
     shows, 
     isLoading, 
     createShow, 
-    updateStage, 
+    updateStage,
+    updateMeetingStage,
+    updateEventStage,
     deleteShow,
     getShowsByStage 
   } = useShows();
@@ -80,11 +95,14 @@ export default function ProductionHub() {
   // Get scripts for linking
   const { scripts: availableScripts } = useGenieScripts();
 
+  // Category state for tabs
+  const [activeCategory, setActiveCategory] = useState<EventCategory>('media_production');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [selectedShow, setSelectedShow] = useState<ShowWithParticipants | null>(null);
   const [newProjectName, setNewProjectName] = useState('');
+  const [newEventCategory, setNewEventCategory] = useState<EventCategory>('media_production');
   const [newShow, setNewShow] = useState({
     title: '',
     description: '',
@@ -95,12 +113,13 @@ export default function ProductionHub() {
     guests: [] as { name: string; email: string }[],
     linked_script_id: '',
     linked_music_id: '',
+    event_category: 'media_production' as EventCategory,
   });
   const [newGuestName, setNewGuestName] = useState('');
   const [newGuestEmail, setNewGuestEmail] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
-  const showsByStage = getShowsByStage();
+  const showsByStage = getShowsByStage(activeCategory);
   
   // Get stage requirements based on starting stage
   const stageRequirements = getStageRequirements(newShow.starting_stage);
@@ -149,6 +168,7 @@ export default function ProductionHub() {
         guests: [],
         linked_script_id: '',
         linked_music_id: '',
+        event_category: 'media_production',
       });
     } finally {
       setIsCreating(false);
@@ -178,7 +198,7 @@ export default function ProductionHub() {
             <div>
               <h1 className="text-2xl font-bold">Production Hub</h1>
               <p className="text-sm text-muted-foreground">
-                Manage your podcast, webcast, and broadcast productions
+                Manage productions, meetings, and events
               </p>
             </div>
           </div>
@@ -219,20 +239,50 @@ export default function ProductionHub() {
           </div>
         </div>
 
-        {/* Vertical Kanban Board */}
-        <div className="flex-1 overflow-auto p-4">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-64">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        {/* Category Tabs & Kanban Board */}
+        <div className="flex-1 overflow-auto">
+          <Tabs value={activeCategory} onValueChange={(v) => setActiveCategory(v as EventCategory)} className="h-full flex flex-col">
+            <div className="px-4 pt-4 border-b bg-muted/30">
+              <TabsList className="grid w-full max-w-md grid-cols-3">
+                <TabsTrigger value="media_production" className="flex items-center gap-2">
+                  <Podcast className="h-4 w-4" />
+                  Media
+                </TabsTrigger>
+                <TabsTrigger value="business_meeting" className="flex items-center gap-2">
+                  <Briefcase className="h-4 w-4" />
+                  Meetings
+                </TabsTrigger>
+                <TabsTrigger value="event" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Events
+                </TabsTrigger>
+              </TabsList>
             </div>
-          ) : (
-            <VerticalKanban
-              showsByStage={showsByStage}
-              onSelectShow={setSelectedShow}
-              onOpenRecordingStudio={handleOpenRecordingStudio}
-              onUpdateStage={updateStage}
-            />
-          )}
+            
+            <TabsContent value={activeCategory} className="flex-1 p-4 mt-0">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <VerticalKanban
+                  showsByStage={showsByStage}
+                  onSelectShow={setSelectedShow}
+                  onOpenRecordingStudio={handleOpenRecordingStudio}
+                  onUpdateStage={async (showId, newStage) => {
+                    if (activeCategory === 'media_production') {
+                      await updateStage(showId, newStage as ProductionStage);
+                    } else if (activeCategory === 'business_meeting') {
+                      await updateMeetingStage(showId, newStage as MeetingStage);
+                    } else {
+                      await updateEventStage(showId, newStage as EventStage);
+                    }
+                  }}
+                  eventCategory={activeCategory}
+                />
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
 
         {/* Create Project Dialog */}
