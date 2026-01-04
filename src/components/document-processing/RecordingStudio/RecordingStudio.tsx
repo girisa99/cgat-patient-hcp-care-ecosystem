@@ -311,9 +311,22 @@ export function RecordingStudio({
   const scriptsWithVoiceoverOnly = scriptAudioStatus.filter(s => !s.hasTTS && s.hasVoiceover);
   const scriptsNeedingAudio = scriptAudioStatus.filter(s => !s.hasTTS && !s.hasVoiceover);
   
+  // Count actual voiceover files (with valid URL and metadataType='voiceover')
+  const actualVoiceoverCount = voiceovers.filter(v => {
+    if (!v.url || v.url.startsWith('blob:') || v.url.startsWith('data:')) return false;
+    if (v.metadataType === 'voiceover' || v.metadataType === 'narration') return true;
+    if (v.metadataType === 'tts' || v.metadataType === 'instrumental' || v.metadataType === 'music') return false;
+    // Default: if no metadataType, check name patterns
+    const lowerName = (v.name || '').toLowerCase();
+    if (lowerName.includes('voiceover') || lowerName.includes('narration')) return true;
+    if (lowerName.includes('tts') || lowerName.includes('instrumental') || lowerName.includes('music')) return false;
+    return false; // Only count files explicitly marked as voiceover
+  }).length;
+  
   console.log('[RecordingStudio] Script audio status:', {
     withTTS: scriptsWithTTS.length,
     withVoiceoverOnly: scriptsWithVoiceoverOnly.length,
+    actualVoiceoverCount,
     needingAudio: scriptsNeedingAudio.length,
     total: scripts.length
   });
@@ -1438,7 +1451,15 @@ export function RecordingStudio({
               <div className="flex-1 overflow-y-auto p-3 space-y-4">
                 {/* Production Info - Show when opened from Production Hub */}
                 {productionContext && (
-                  <ProductionInfo productionContext={productionContext} />
+                  <ProductionInfo 
+                    productionContext={productionContext}
+                    projectStats={mediaProject.currentProject ? {
+                      totalRecordings: mediaProject.currentProject.total_recordings,
+                      totalTTS: mediaProject.currentProject.total_tts_generations,
+                      totalCost: mediaProject.currentProject.total_estimated_cost,
+                      sessionCost: mediaProject.totalSessionCost,
+                    } : undefined}
+                  />
                 )}
 
                 {/* Info Banner - Pre-production in GenieStudio */}
@@ -1462,7 +1483,7 @@ export function RecordingStudio({
                         {scriptsWithTTS.length} TTS
                       </Badge>
                       <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600 border-blue-500/30">
-                        {scriptsWithVoiceoverOnly.length} VO
+                        {actualVoiceoverCount} VO
                       </Badge>
                       <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/30">
                         {scriptsNeedingAudio.length} need audio

@@ -1,6 +1,6 @@
 /**
  * Production Info Panel - Shows current production context in Recording Studio
- * Displays show name, participants, linked assets, and stage
+ * Displays show name, participants, linked assets, stage, and project stats
  */
 
 import React from 'react';
@@ -16,7 +16,10 @@ import {
   FileText, 
   Music,
   Circle,
-  Radio
+  Radio,
+  DollarSign,
+  Volume2,
+  Film
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ProductionContextForStudio } from '../types';
@@ -24,6 +27,13 @@ import type { ProductionContextForStudio } from '../types';
 interface ProductionInfoProps {
   productionContext: ProductionContextForStudio;
   className?: string;
+  // Optional project stats - shown when available
+  projectStats?: {
+    totalRecordings: number;
+    totalTTS: number;
+    totalCost: number;
+    sessionCost?: number;
+  };
 }
 
 const SCRIPT_MODE_ICONS: Record<string, React.ComponentType<any>> = {
@@ -49,7 +59,12 @@ const STAGE_COLORS: Record<string, string> = {
   published: 'bg-green-500',
 };
 
-export function ProductionInfo({ productionContext, className }: ProductionInfoProps) {
+const formatCost = (cost: number) => {
+  if (cost < 0.01) return '<$0.01';
+  return `$${cost.toFixed(2)}`;
+};
+
+export function ProductionInfo({ productionContext, className, projectStats }: ProductionInfoProps) {
   const ModeIcon = SCRIPT_MODE_ICONS[productionContext.scriptMode] || Radio;
   const modeColor = SCRIPT_MODE_COLORS[productionContext.scriptMode] || 'bg-primary';
   const stageColor = STAGE_COLORS[productionContext.currentStage] || 'bg-muted';
@@ -84,6 +99,35 @@ export function ProductionInfo({ productionContext, className }: ProductionInfoP
           {productionContext.currentStage.replace('_', ' ').toUpperCase()}
         </Badge>
       </div>
+      
+      {/* Project Stats - Show when available */}
+      {projectStats && (
+        <>
+          <Separator />
+          <div className="grid grid-cols-4 gap-1 text-center">
+            <div className="p-1.5 rounded bg-muted/50">
+              <Film className="h-3 w-3 mx-auto text-muted-foreground mb-0.5" />
+              <div className="text-sm font-semibold">{projectStats.totalRecordings}</div>
+              <div className="text-[9px] text-muted-foreground">Recs</div>
+            </div>
+            <div className="p-1.5 rounded bg-muted/50">
+              <Volume2 className="h-3 w-3 mx-auto text-muted-foreground mb-0.5" />
+              <div className="text-sm font-semibold">{projectStats.totalTTS}</div>
+              <div className="text-[9px] text-muted-foreground">TTS</div>
+            </div>
+            <div className="p-1.5 rounded bg-muted/50">
+              <DollarSign className="h-3 w-3 mx-auto text-muted-foreground mb-0.5" />
+              <div className="text-sm font-semibold">{formatCost(projectStats.sessionCost ?? 0)}</div>
+              <div className="text-[9px] text-muted-foreground">Session</div>
+            </div>
+            <div className="p-1.5 rounded bg-muted/50">
+              <DollarSign className="h-3 w-3 mx-auto text-green-500 mb-0.5" />
+              <div className="text-sm font-semibold">{formatCost(projectStats.totalCost)}</div>
+              <div className="text-[9px] text-muted-foreground">Total</div>
+            </div>
+          </div>
+        </>
+      )}
       
       {/* Participants */}
       {productionContext.participants.length > 0 && (

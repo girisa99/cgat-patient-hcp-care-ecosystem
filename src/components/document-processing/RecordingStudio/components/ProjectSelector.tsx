@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { FolderOpen, Plus, DollarSign, Loader2, Link2 } from 'lucide-react';
+import { FolderOpen, Plus, Loader2, Link2 } from 'lucide-react';
 import type { MediaProject } from '../hooks/useMediaProject';
 import type { ProductionContextForStudio } from '../types';
 
@@ -31,7 +31,8 @@ export function ProjectSelector({
   onSelectProject,
   onCreateProject,
   isLoading,
-  totalSessionCost,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  totalSessionCost: _totalSessionCost, // Kept for interface compatibility but not displayed
   isLinkedToProduction = false,
   productionContext,
 }: ProjectSelectorProps) {
@@ -54,99 +55,54 @@ export function ProjectSelector({
     }
   };
 
-  const formatCost = (cost: number) => {
-    if (cost < 0.01) return '<$0.01';
-    return `$${cost.toFixed(2)}`;
-  };
-
   return (
-    <div className="bg-card rounded-lg border p-3 space-y-2">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <FolderOpen className="w-4 h-4 text-muted-foreground" />
-          <Label className="text-xs font-medium">Project</Label>
-          {isLinkedToProduction && (
-            <Badge variant="secondary" className="gap-1 text-[10px] h-5">
-              <Link2 className="w-3 h-3" />
-              Linked
-            </Badge>
-          )}
-        </div>
-        
-        {/* Session Cost Display */}
-        {currentProject && (
-          <Badge variant="outline" className="gap-1 text-xs">
-            <DollarSign className="w-3 h-3" />
-            Session: {formatCost(totalSessionCost)}
+    <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2">
+        <FolderOpen className="w-4 h-4 text-muted-foreground" />
+        {isLinkedToProduction && productionContext ? (
+          <span className="text-sm font-medium truncate max-w-[200px]">
+            {productionContext.showTitle}
+          </span>
+        ) : currentProject ? (
+          <span className="text-sm font-medium truncate max-w-[200px]">
+            {currentProject.name}
+          </span>
+        ) : (
+          <Select
+            value={currentProject?.id || ''}
+            onValueChange={onSelectProject}
+            disabled={isLoading}
+          >
+            <SelectTrigger className="h-7 text-xs min-w-[150px]">
+              <SelectValue placeholder="Select project..." />
+            </SelectTrigger>
+            <SelectContent className="max-h-[200px] bg-popover z-50">
+              {projects.map((project) => (
+                <SelectItem key={project.id} value={project.id}>
+                  <span className="truncate">{project.name}</span>
+                </SelectItem>
+              ))}
+              {projects.length === 0 && (
+                <div className="text-center py-4 text-xs text-muted-foreground">
+                  No projects yet
+                </div>
+              )}
+            </SelectContent>
+          </Select>
+        )}
+        {isLinkedToProduction && (
+          <Badge variant="secondary" className="gap-1 text-[10px] h-5">
+            <Link2 className="w-3 h-3" />
+            Linked
           </Badge>
         )}
       </div>
 
-      {/* Production Info when linked */}
-      {isLinkedToProduction && productionContext && (
-        <div className="bg-primary/5 rounded px-2 py-1.5 border border-primary/20">
-          <div className="text-xs font-medium text-primary truncate">
-            {productionContext.showTitle}
-          </div>
-          <div className="text-[10px] text-muted-foreground flex items-center gap-2">
-            <span className="capitalize">{productionContext.showType}</span>
-            <span>•</span>
-            <span className="capitalize">{productionContext.currentStage}</span>
-          </div>
-        </div>
-      )}
-
-      <div className="flex gap-2">
-        <Select
-          value={currentProject?.id || ''}
-          onValueChange={onSelectProject}
-          disabled={isLoading}
-        >
-          <SelectTrigger className="flex-1 h-8 text-xs">
-            <SelectValue placeholder="Select project...">
-              {currentProject ? (
-                <div className="flex items-center gap-2 truncate">
-                  <span className="truncate">{currentProject.name}</span>
-                  {currentProject.total_estimated_cost > 0 && (
-                    <Badge variant="secondary" className="text-[10px] h-4 px-1">
-                      {formatCost(currentProject.total_estimated_cost)}
-                    </Badge>
-                  )}
-                </div>
-              ) : (
-                'Select project...'
-              )}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent className="max-h-[200px]">
-            {projects.map((project) => (
-              <SelectItem key={project.id} value={project.id}>
-                <div className="flex items-center justify-between gap-3 w-full">
-                  <span className="truncate">{project.name}</span>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Badge variant={project.status === 'active' ? 'default' : 'secondary'} className="text-[10px] h-4 px-1">
-                      {project.status}
-                    </Badge>
-                    {project.total_estimated_cost > 0 && (
-                      <span className="text-[10px] text-muted-foreground">
-                        {formatCost(project.total_estimated_cost)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </SelectItem>
-            ))}
-            {projects.length === 0 && (
-              <div className="text-center py-4 text-xs text-muted-foreground">
-                No projects yet
-              </div>
-            )}
-          </SelectContent>
-        </Select>
-
+      {/* Create new project dialog - only show when not linked */}
+      {!isLinkedToProduction && (
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="outline" className="h-8 px-2 shrink-0">
+            <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0">
               <Plus className="w-4 h-4" />
             </Button>
           </DialogTrigger>
@@ -188,24 +144,6 @@ export function ProjectSelector({
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
-
-      {/* Project Stats */}
-      {currentProject && (
-        <div className="grid grid-cols-3 gap-2 pt-2 border-t">
-          <div className="text-center">
-            <div className="text-lg font-semibold">{currentProject.total_recordings}</div>
-            <div className="text-[10px] text-muted-foreground">Recordings</div>
-          </div>
-          <div className="text-center">
-            <div className="text-lg font-semibold">{currentProject.total_tts_generations}</div>
-            <div className="text-[10px] text-muted-foreground">TTS</div>
-          </div>
-          <div className="text-center">
-            <div className="text-lg font-semibold">{formatCost(currentProject.total_estimated_cost)}</div>
-            <div className="text-[10px] text-muted-foreground">Total Cost</div>
-          </div>
-        </div>
       )}
     </div>
   );
