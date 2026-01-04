@@ -1,9 +1,9 @@
 # Genie Studio & Recording Studio: Complete Scenario Map
 
-> **Version:** 1.0  
+> **Version:** 1.1  
 > **Last Updated:** 2026-01-04  
 > **Total Scenarios:** 60  
-> **Status:** Documentation Complete
+> **Status:** Documentation Complete with Implementation Status
 
 ---
 
@@ -11,17 +11,63 @@
 
 This document catalogs all identified user journeys and scenarios for the Genie Studio and Recording Studio integration. It covers the complete production pipeline from imagination to final output, including edge cases, error recovery, and advanced AI capabilities.
 
+### Implementation Overview
+
+| Status | Count | Description |
+|--------|-------|-------------|
+| ✅ **Implemented** | 18 | Fully functional in codebase |
+| 🔶 **Partial** | 12 | Core functionality exists, needs enhancement |
+| ⏳ **Planned** | 30 | Documented, not yet implemented |
+
 ---
 
 ## Priority Matrix
 
-| Priority | Category | Description | Scenarios |
-|----------|----------|-------------|-----------|
-| **P0 - Core** | MVP Features | Essential flows for launch | 1-4, 7-10 |
-| **P1 - Essential** | Production Needs | Required for production use | 5-6, 11-16, 21-24 |
-| **P2 - Important** | User Experience | Improves workflow significantly | 17-20, 25-32 |
-| **P3 - Differentiators** | Competitive Edge | Sets product apart, includes compliance | 33-42, 43-46 |
-| **P4 - Future** | Advanced Features | Long-term roadmap items | 47-60 |
+| Priority | Category | Description | Scenarios | Implementation |
+|----------|----------|-------------|-----------|----------------|
+| **P0 - Core** | MVP Features | Essential flows for launch | 1-4, 7-10 | 75% Complete |
+| **P1 - Essential** | Production Needs | Required for production use | 5-6, 11-16, 21-24 | 50% Complete |
+| **P2 - Important** | User Experience | Improves workflow significantly | 17-20, 25-32 | 20% Complete |
+| **P3 - Differentiators** | Competitive Edge | Sets product apart, includes compliance | 33-42, 43-46 | 0% (Roadmap) |
+| **P4 - Future** | Advanced Features | Long-term roadmap items | 47-60 | 0% (Roadmap) |
+
+---
+
+## Current Implementation Status
+
+### Implemented Components
+
+#### Genie Studio (`src/pages/GenieStudio.tsx` - 3,909 lines)
+- ✅ Script Editor with AI Enhancement
+- ✅ Script Templates (Product Demo, Tutorial, Podcast, Webcast, Broadcast)
+- ✅ TTS Generation (ElevenLabs + OpenAI)
+- ✅ Voice Selection (Multiple providers)
+- ✅ Media Library Management
+- ✅ Show/Event Scheduling (Podcast, Webcast, Broadcast)
+- ✅ Participant Management
+
+#### Recording Studio (`src/components/document-processing/RecordingStudio/`)
+- ✅ Multi-source Video Capture (Camera, Screen, PiP)
+- ✅ Floating Teleprompter with Sync
+- ✅ Floating Audio Mixer (TTS, VO, Music, Mic)
+- ✅ Recording Controls with Countdown
+- ✅ Recording Library with IndexedDB
+- ✅ Background Blur (ML-based)
+- ✅ FFmpeg-based Video Processing
+- ✅ Script Version Management
+- ✅ Keyboard Shortcuts
+- ✅ Export (MP4, WebM, Audio)
+
+#### Supporting Hooks
+- ✅ `useTTSGeneration` - Text-to-Speech with multiple providers
+- ✅ `useMediaProject` - Project state management
+- ✅ `useRecording` - Recording state machine
+- ✅ `useRecordingLibrary` - IndexedDB persistence
+- ✅ `useCamera` - Camera device management
+- ✅ `useScreenShare` - Screen capture
+- ✅ `useBackgroundBlur` - ML background removal
+- ✅ `useScriptVersions` - Version control
+- ✅ `useStudioSound` - Audio playback coordination
 
 ---
 
@@ -31,18 +77,18 @@ This document catalogs all identified user journeys and scenarios for the Genie 
 
 Core flows where users start from creative input and produce final content.
 
-| # | Scenario Name | Input | Process | Output | Priority |
-|---|---------------|-------|---------|--------|----------|
-| 1 | **Text Prompt → Script → Video** | Text description | AI generates script → TTS → Video assembly | MP4 video | P0 |
-| 2 | **AI Images → Script → Video** | Image generation prompts | Generate images → AI writes script → Video | MP4 with AI visuals | P0 |
-| 3 | **Script Only → Manual Record** | Written script | Load to teleprompter → Human records | Raw recording | P0 |
-| 4 | **Full Imagination Pipeline** | Ideas + prompts | AI images + AI script + AI voice + Auto-edit | Complete video | P0 |
-| 5 | **Voice Clone → Script → Video** | Voice sample + script | Clone voice → Generate TTS → Video | Personalized video | P1 |
-| 6 | **Template → Customize → Video** | Template selection | Modify template → Fill content → Generate | Branded video | P1 |
-| 7 | **PPT/Slides → Script → Video** | PowerPoint upload | Extract content → Generate script → Video | Presentation video | P0 |
-| 8 | **Document → Script → Video** | PDF/Word upload | Parse document → AI script → Video | Explainer video | P0 |
-| 9 | **URL → Script → Video** | Web URL | Scrape content → Summarize → Video | Content video | P0 |
-| 10 | **Audio → Script → Video** | Audio recording | Transcribe → Enhance → Add visuals | Video with visuals | P0 |
+| # | Scenario Name | Input | Process | Output | Priority | Status |
+|---|---------------|-------|---------|--------|----------|--------|
+| 1 | **Text Prompt → Script → Video** | Text description | AI generates script → TTS → Video assembly | MP4 video | P0 | ✅ Implemented |
+| 2 | **AI Images → Script → Video** | Image generation prompts | Generate images → AI writes script → Video | MP4 with AI visuals | P0 | 🔶 Partial (no image gen) |
+| 3 | **Script Only → Manual Record** | Written script | Load to teleprompter → Human records | Raw recording | P0 | ✅ Implemented |
+| 4 | **Full Imagination Pipeline** | Ideas + prompts | AI images + AI script + AI voice + Auto-edit | Complete video | P0 | 🔶 Partial |
+| 5 | **Voice Clone → Script → Video** | Voice sample + script | Clone voice → Generate TTS → Video | Personalized video | P1 | ⏳ Planned |
+| 6 | **Template → Customize → Video** | Template selection | Modify template → Fill content → Generate | Branded video | P1 | ✅ Implemented |
+| 7 | **PPT/Slides → Script → Video** | PowerPoint upload | Extract content → Generate script → Video | Presentation video | P0 | 🔶 Partial (extraction exists) |
+| 8 | **Document → Script → Video** | PDF/Word upload | Parse document → AI script → Video | Explainer video | P0 | 🔶 Partial (doc processing exists) |
+| 9 | **URL → Script → Video** | Web URL | Scrape content → Summarize → Video | Content video | P0 | ⏳ Planned |
+| 10 | **Audio → Script → Video** | Audio recording | Transcribe → Enhance → Add visuals | Video with visuals | P0 | 🔶 Partial (transcription needed)
 
 ---
 
