@@ -1908,11 +1908,13 @@ export default function GenieStudio() {
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-purple-500/5 to-pink-500/5" />
           <div className="relative px-6 py-8 md:py-12">
             <div className="max-w-7xl mx-auto">
-              {/* Suite Tagline */}
-              <div className="text-center mb-6">
-                <span className="inline-block px-4 py-1.5 rounded-full bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 text-sm font-medium text-purple-400">
-                  ✨ Mind to Media
-                </span>
+              {/* Suite Tagline - Enterprise Style */}
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-card/80 backdrop-blur border border-border/50 shadow-sm">
+                  <span className="text-sm font-semibold tracking-wide text-foreground">Mind to Media</span>
+                  <span className="w-px h-4 bg-border" />
+                  <span className="text-xs text-muted-foreground">AI-Powered Production Suite</span>
+                </div>
               </div>
               
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
@@ -1933,26 +1935,32 @@ export default function GenieStudio() {
                 </div>
 
                 {/* Quick Actions */}
-                <div className="flex flex-wrap gap-3">
-                  <div className="flex flex-col items-end gap-1">
-                    <Button 
-                      size="lg" 
-                      onClick={() => setIsStudioOpen(true)}
-                      className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white shadow-lg shadow-red-500/25 transition-all hover:scale-105"
-                    >
+                <div className="flex flex-wrap items-start gap-3">
+                  {/* Genie Vibe Button with Script to Screen */}
+                  <Button 
+                    size="lg" 
+                    onClick={() => setIsStudioOpen(true)}
+                    className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white shadow-lg shadow-red-500/25 transition-all hover:scale-105 flex-col h-auto py-2.5 px-5"
+                  >
+                    <span className="flex items-center">
                       <Video className="h-5 w-5 mr-2" />
                       Open Genie Vibe
-                    </Button>
-                    <span className="text-xs text-muted-foreground italic">Script to Screen</span>
-                  </div>
+                    </span>
+                    <span className="text-[10px] font-normal opacity-80 mt-0.5">Script to Screen</span>
+                  </Button>
+                  
+                  {/* Genie Arc Button */}
                   <Button 
                     size="lg" 
                     variant="outline"
                     onClick={() => setIsCreateShowDialogOpen(true)}
-                    className="border-border/50 hover:bg-muted/50"
+                    className="border-border/50 hover:bg-muted/50 flex-col h-auto py-2.5 px-5"
                   >
-                    <Calendar className="h-5 w-5 mr-2" />
-                    Schedule Show
+                    <span className="flex items-center">
+                      <Calendar className="h-5 w-5 mr-2" />
+                      Genie Arc
+                    </span>
+                    <span className="text-[10px] font-normal text-muted-foreground mt-0.5">Your Production Journey</span>
                   </Button>
                 </div>
               </div>
