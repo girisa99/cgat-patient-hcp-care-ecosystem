@@ -23,6 +23,7 @@ export interface VoiceoverData {
   originalScript?: string; // Original script before enhancement
   scriptType?: 'video' | 'audio' | 'tts' | 'voiceover' | 'narration' | 'instrumental' | 'music';
   metadataType?: string; // From database metadata.type field - HIGHEST priority
+  needsRegeneration?: boolean; // True if the original blob URL was lost and file may not exist
 }
 
 export interface MusicItem {

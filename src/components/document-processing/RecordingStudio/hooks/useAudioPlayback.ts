@@ -5,6 +5,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { toast } from 'sonner';
 import type { AudioState, AudioTabType } from '../types';
 
 interface AudioTimeInfo {
@@ -267,6 +268,13 @@ export function useAudioPlayback() {
       const mediaError = audio.error;
       if (mediaError) {
         console.error('[useAudioPlayback] MediaError code:', mediaError.code, 'message:', mediaError.message);
+        // MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED = 4 (usually 404 or invalid format)
+        // MediaError.MEDIA_ERR_NETWORK = 2 (network error)
+        if (mediaError.code === 4 || mediaError.code === 2) {
+          toast.error('Audio file not found - this TTS may need to be regenerated in GenieStudio');
+        } else {
+          toast.error('Failed to play audio: ' + (mediaError.message || 'Unknown error'));
+        }
       }
     };
     
@@ -280,6 +288,9 @@ export function useAudioPlayback() {
     }).catch((err) => {
       console.error('[useAudioPlayback] TTS play() failed:', err.name, err.message);
       setIsPlaying(prev => ({ ...prev, tts: false }));
+      if (err.name === 'NotSupportedError' || err.name === 'NotAllowedError') {
+        toast.error('Could not play audio - file may be missing or corrupted');
+      }
     });
     setState(prev => ({ ...prev, ttsAudio: audio }));
   }, [state.ttsVolume, startTimeTracking, stopTimeTracking, applyDucking]);
