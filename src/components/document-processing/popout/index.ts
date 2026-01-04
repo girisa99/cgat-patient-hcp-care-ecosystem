@@ -7,6 +7,7 @@
 
 export { openPopoutRecordingStudio } from './openPopoutRecordingStudio';
 export { generatePopoutHTML } from './generatePopoutHTML';
+export { getStatePersistenceScript, getStatePersistenceStyles } from './popoutStatePersistence';
 export type { 
   PopoutConfig, 
   PopoutScriptData, 
@@ -15,3 +16,4 @@ export type {
   MediaItemForPopout,
   ScriptItemForPopout
 } from './types';
+export type { PopoutRecordingState } from './popoutStatePersistence';

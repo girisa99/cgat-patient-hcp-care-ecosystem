@@ -24,6 +24,7 @@ import {
 } from './audio';
 import { getBackgroundBlurScript, getBackgroundBlurStyles } from './audio/backgroundBlur';
 import { getRecordingLibraryScript, getRecordingLibraryStyles } from './audio/recordingLibrary';
+import { getStatePersistenceScript, getStatePersistenceStyles } from './popoutStatePersistence';
 
 /**
  * Generate the complete HTML for the popout recording studio
@@ -51,7 +52,8 @@ export function generatePopoutHTML(config: PopoutConfig): string {
     getTeleprompterEnhancementsStyles(),
     getVoiceProviderSelectionStyles(),
     getBackgroundBlurStyles(),
-    getRecordingLibraryStyles()
+    getRecordingLibraryStyles(),
+    getStatePersistenceStyles()
   ].join('\n');
 
   // Get HTML content
@@ -153,7 +155,9 @@ export function generatePopoutHTML(config: PopoutConfig): string {
     // Enhanced controls after camera (needs mediaStream)
     getEnhancedControlsScript(),
     // UI last (uses everything)
-    getUIScript()
+    getUIScript(),
+    // State persistence module (must be last to hook into other modules)
+    getStatePersistenceScript()
   ].join('\n\n');
 
   // Compose the complete HTML document with validation logging
