@@ -4,7 +4,7 @@
 **Total Runtime: ~15-18 minutes**
 **Tone: Personal, Vulnerable, Relatable, with Self-Deprecating Humor**
 **Perspective: First-person (I), Non-developer, Self-learner**
-**Target: Anyone who's comfortable on Zoom but panics at "post-production"**
+**Target: Anyone comfortable on Zoom, Teams, Meet, and similar tools — but panics the moment someone says "post-production"**
 
 ---
 
