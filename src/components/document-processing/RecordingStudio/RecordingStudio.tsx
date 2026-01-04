@@ -501,18 +501,41 @@ export function RecordingStudio({
         setLastRecordingBlob(blob);
         setShowRecordingPreview(true);
       },
-      // Pass audio sources for mixing into recording
-      audioSources: {
-        voiceover: audioPlayback.audioElements?.voiceover,
-        tts: audioPlayback.audioElements?.tts,
-        music: audioPlayback.audioElements?.music,
-      },
       // Recording quality
       quality: recordingQuality,
       // 5-second countdown (default in hook)
       countdownSeconds: 5,
     }
   );
+
+  // Connect audio elements to recording when they start playing
+  // This enables dynamic audio capture - audio can be started/stopped during recording
+  useEffect(() => {
+    if (!recording.isRecording) return;
+    
+    // Connect TTS audio when it starts playing
+    if (audioPlayback.audioElements?.tts) {
+      recording.connectAudio(audioPlayback.audioElements.tts, 'tts');
+    }
+  }, [recording.isRecording, audioPlayback.audioElements?.tts, recording.connectAudio]);
+
+  useEffect(() => {
+    if (!recording.isRecording) return;
+    
+    // Connect voiceover audio when it starts playing
+    if (audioPlayback.audioElements?.voiceover) {
+      recording.connectAudio(audioPlayback.audioElements.voiceover, 'voiceover');
+    }
+  }, [recording.isRecording, audioPlayback.audioElements?.voiceover, recording.connectAudio]);
+
+  useEffect(() => {
+    if (!recording.isRecording) return;
+    
+    // Connect music audio when it starts playing  
+    if (audioPlayback.audioElements?.music) {
+      recording.connectAudio(audioPlayback.audioElements.music, 'music');
+    }
+  }, [recording.isRecording, audioPlayback.audioElements?.music, recording.connectAudio]);
 
   // Note: currentScript, currentVoiceover, currentMusic defined above after hooks
 
