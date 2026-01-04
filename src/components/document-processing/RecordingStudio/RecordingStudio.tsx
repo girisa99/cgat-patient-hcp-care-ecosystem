@@ -903,6 +903,47 @@ export function RecordingStudio({
     }
   }, [recording, audioPlayback, screenShare]);
 
+  // Rewind handler - trims the last N seconds during pause
+  const handleRewindSeconds = useCallback((seconds: number) => {
+    if (!recording.isPaused) {
+      toast.error('Pause recording to rewind');
+      return;
+    }
+    
+    if (recording.duration < seconds) {
+      toast.info(`Recording is only ${recording.duration}s long`);
+      return;
+    }
+    
+    // Use the hook's trim function to remove last N seconds
+    recording.trimLastSeconds?.(seconds);
+    toast.success(`Rewound ${seconds} seconds`);
+  }, [recording]);
+
+  // Restart recording - discard current and start fresh
+  const handleRestartRecording = useCallback(() => {
+    if (!recording.isRecording) return;
+    
+    const confirmed = window.confirm('Discard current recording and start over?');
+    if (!confirmed) return;
+    
+    // Stop current recording without saving
+    recording.stopRecording();
+    audioPlayback.stopAll();
+    
+    // Reset states
+    setTranscriptionText(null);
+    trimHistoryRef.current = [];
+    setCanUndoTrim(false);
+    
+    // Wait a bit then start new recording
+    setTimeout(() => {
+      handleStartRecording();
+    }, 500);
+    
+    toast.info('Starting fresh recording...');
+  }, [recording, audioPlayback, handleStartRecording]);
+
   // Trim handler with undo support - now uses hook's trimLastSeconds
   const handleTrimSeconds = useCallback((seconds: number) => {
     if (!recording.recordedChunks || recording.recordedChunks.length === 0) {
@@ -1325,6 +1366,9 @@ export function RecordingStudio({
               onTranscribe={handleTranscribeRecording}
               isTranscribing={isTranscribing}
               transcriptionText={transcriptionText}
+              onRewindSeconds={handleRewindSeconds}
+              onRestartRecording={handleRestartRecording}
+              currentDuration={recording.duration}
               audioCombination={{
                 hasTTS: !!selectedTTSFileId && !!currentTTSFile,
                 hasVoiceover: !!selectedVoiceoverId && !!currentVoiceover,
@@ -1680,6 +1724,14 @@ export function RecordingStudio({
           onSave={handleSaveRecording}
           onDiscard={handleDiscardRecording}
           onEdit={handleOpenInEditor}
+          // Pass script content for comparison
+          scriptContent={currentScript?.enhancedContent || currentScript?.content}
+          scriptTitle={currentScript?.title}
+          onScriptUpdate={(newContent) => {
+            if (currentScript) {
+              handleScriptContentUpdate(currentScript.id, newContent);
+            }
+          }}
           onTrim={async (startTime, endTime) => {
             if (!lastRecordingBlob) return;
             
