@@ -19,20 +19,25 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 
-// Color legend for consistent enterprise styling
-const colorLegend = {
-  background: '#1e293b',
-  cardBg: '#0f172a',
-  headerBg: '#1e3a5f',
-  borderDefault: '#475569',
-  borderAccent: '#3b82f6',
-  textPrimary: '#f1f5f9',
-  textSecondary: '#cbd5e1',
-  textMuted: '#94a3b8',
-  accentBlue: '#3b82f6',
-  accentPurple: '#7c3aed',
-  accentGreen: '#22c55e',
-  accentAmber: '#f59e0b',
+// Consistent enterprise color palette (matching Full Architecture diagram)
+const colors = {
+  // Status colors
+  completed: { bg: '#10b981', text: '#ffffff', light: '#d1fae5' },
+  inProgress: { bg: '#f59e0b', text: '#ffffff', light: '#fef3c7' },
+  planned: { bg: '#6366f1', text: '#ffffff', light: '#e0e7ff' },
+  
+  // Layer colors
+  presentation: { bg: '#0ea5e9', text: '#ffffff', light: '#e0f2fe' },
+  application: { bg: '#8b5cf6', text: '#ffffff', light: '#ede9fe' },
+  domain: { bg: '#ec4899', text: '#ffffff', light: '#fce7f3' },
+  infrastructure: { bg: '#64748b', text: '#ffffff', light: '#f1f5f9' },
+  
+  // Neutral
+  border: '#e2e8f0',
+  background: '#ffffff',
+  cardBg: '#f8fafc',
+  text: '#1e293b',
+  textMuted: '#64748b',
 };
 
 export const GenieStudioTechnicalArchDiagram = () => {
@@ -47,7 +52,7 @@ export const GenieStudioTechnicalArchDiagram = () => {
     if (!diagramRef.current) return;
     try {
       const canvas = await html2canvas(diagramRef.current, {
-        backgroundColor: colorLegend.background,
+        backgroundColor: colors.background,
         scale: 2
       });
       const url = canvas.toDataURL('image/png');
@@ -67,22 +72,22 @@ export const GenieStudioTechnicalArchDiagram = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <Card className="bg-[#1e293b] border-[#475569]">
+      <Card className="bg-card border-border">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Server className="h-8 w-8 text-[#94a3b8]" />
+              <Server className="h-8 w-8 text-muted-foreground" />
               <div>
-                <CardTitle className="text-2xl text-[#f1f5f9]">Technical Architecture</CardTitle>
-                <p className="text-[#94a3b8] text-sm">Genie Studio & Recording Studio - System Design</p>
+                <CardTitle className="text-2xl text-foreground">Technical Architecture</CardTitle>
+                <p className="text-muted-foreground text-sm">Genie Studio & Recording Studio - System Design</p>
               </div>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleDownload} className="gap-2 border-[#475569] text-[#cbd5e1] hover:bg-[#334155] hover:text-[#f1f5f9]">
+              <Button variant="outline" size="sm" onClick={handleDownload} className="gap-2">
                 <Download className="h-4 w-4" />
                 Download PNG
               </Button>
-              <Button variant="outline" size="sm" onClick={openDocs} className="gap-2 border-[#475569] text-[#cbd5e1] hover:bg-[#334155] hover:text-[#f1f5f9]">
+              <Button variant="outline" size="sm" onClick={openDocs} className="gap-2">
                 <FileText className="h-4 w-4" />
                 Documentation
                 <ExternalLink className="h-3 w-3" />
@@ -93,156 +98,184 @@ export const GenieStudioTechnicalArchDiagram = () => {
       </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-5 w-full bg-[#0f172a] border border-[#475569]">
-          <TabsTrigger value="overview" className="data-[state=active]:bg-[#334155] text-[#cbd5e1] data-[state=active]:text-[#f1f5f9]">System Overview</TabsTrigger>
-          <TabsTrigger value="script-pipeline" className="data-[state=active]:bg-[#334155] text-[#cbd5e1] data-[state=active]:text-[#f1f5f9]">Script Pipeline</TabsTrigger>
-          <TabsTrigger value="recording-pipeline" className="data-[state=active]:bg-[#334155] text-[#cbd5e1] data-[state=active]:text-[#f1f5f9]">Recording Pipeline</TabsTrigger>
-          <TabsTrigger value="data-model" className="data-[state=active]:bg-[#334155] text-[#cbd5e1] data-[state=active]:text-[#f1f5f9]">Data Model</TabsTrigger>
-          <TabsTrigger value="integration" className="data-[state=active]:bg-[#334155] text-[#cbd5e1] data-[state=active]:text-[#f1f5f9]">Integration Points</TabsTrigger>
+        <TabsList className="grid grid-cols-5 w-full">
+          <TabsTrigger value="overview">System Overview</TabsTrigger>
+          <TabsTrigger value="script-pipeline">Script Pipeline</TabsTrigger>
+          <TabsTrigger value="recording-pipeline">Recording Pipeline</TabsTrigger>
+          <TabsTrigger value="data-model">Data Model</TabsTrigger>
+          <TabsTrigger value="integration">Integration Points</TabsTrigger>
         </TabsList>
 
         <ScrollArea className="h-[600px] mt-4">
-          <div ref={diagramRef}>
-            <TabsContent value="overview" className="space-y-4">
+          <div ref={diagramRef} className="p-4 bg-white rounded-lg">
+            {/* Legend */}
+            <div className="mb-4 p-3 rounded-lg border" style={{ borderColor: colors.border, backgroundColor: colors.cardBg }}>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-semibold mb-2" style={{ color: colors.text }}>Implementation Status</h4>
+                  <div className="flex flex-wrap gap-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded" style={{ backgroundColor: colors.completed.bg }} />
+                      <span className="text-xs" style={{ color: colors.textMuted }}>Completed</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded" style={{ backgroundColor: colors.inProgress.bg }} />
+                      <span className="text-xs" style={{ color: colors.textMuted }}>In Progress</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded" style={{ backgroundColor: colors.planned.bg }} />
+                      <span className="text-xs" style={{ color: colors.textMuted }}>Planned</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold mb-2" style={{ color: colors.text }}>Architecture Layers</h4>
+                  <div className="flex flex-wrap gap-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded" style={{ backgroundColor: colors.presentation.bg }} />
+                      <span className="text-xs" style={{ color: colors.textMuted }}>Presentation</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded" style={{ backgroundColor: colors.application.bg }} />
+                      <span className="text-xs" style={{ color: colors.textMuted }}>Application</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded" style={{ backgroundColor: colors.domain.bg }} />
+                      <span className="text-xs" style={{ color: colors.textMuted }}>Domain</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded" style={{ backgroundColor: colors.infrastructure.bg }} />
+                      <span className="text-xs" style={{ color: colors.textMuted }}>Infrastructure</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <TabsContent value="overview" className="space-y-4 mt-0">
               {/* System Overview SVG Diagram */}
-              <Card className="bg-[#1e293b] border-[#475569]">
+              <Card className="border" style={{ borderColor: colors.border, backgroundColor: colors.background }}>
                 <CardContent className="pt-6">
-                  <svg viewBox="0 0 1200 600" className="w-full h-auto">
+                  <svg viewBox="0 0 1200 550" className="w-full h-auto">
                     <defs>
                       <marker id="arrowTech" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                        <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6" />
+                        <polygon points="0 0, 10 3.5, 0 7" fill={colors.presentation.bg} />
                       </marker>
-                      <filter id="techShadow" x="-20%" y="-20%" width="140%" height="140%">
-                        <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.3"/>
-                      </filter>
                     </defs>
 
                     {/* Background */}
-                    <rect width="1200" height="600" fill="#1e293b" rx="12" />
+                    <rect width="1200" height="550" fill={colors.background} rx="12" />
 
                     {/* Title */}
-                    <text x="600" y="40" textAnchor="middle" fill="#f1f5f9" fontSize="22" fontWeight="600">
+                    <text x="600" y="35" textAnchor="middle" fill={colors.text} fontSize="20" fontWeight="600">
                       Genie Studio Technical Architecture - P0/P1/P2
                     </text>
 
                     {/* Frontend Layer */}
-                    <g transform="translate(50, 80)">
-                      <rect width="1100" height="100" rx="12" fill="#0f172a" stroke="#3b82f6" strokeWidth="2" filter="url(#techShadow)" />
-                      <rect width="1100" height="32" rx="12" fill="#1e3a5f" />
-                      <text x="20" y="22" fill="#93c5fd" fontSize="13" fontWeight="600">FRONTEND LAYER (React + Vite + TypeScript)</text>
+                    <g transform="translate(50, 60)">
+                      <rect width="1100" height="95" rx="8" fill={colors.presentation.light} stroke={colors.presentation.bg} strokeWidth="2" />
+                      <rect width="1100" height="28" rx="8" fill={colors.presentation.bg} />
+                      <text x="20" y="19" fill="#ffffff" fontSize="12" fontWeight="600">FRONTEND LAYER (React + Vite + TypeScript)</text>
                       
                       {['GenieStudio.tsx', 'RecordingStudio.tsx', 'Teleprompter.tsx', 'AudioMixer.tsx', 'ScriptEditor.tsx', 'ProjectManager.tsx'].map((name, i) => (
                         <g key={name}>
-                          <rect x={20 + i * 180} y="45" width="160" height="40" rx="6" fill="#1e293b" stroke="#475569" strokeWidth="1" />
-                          <text x={100 + i * 180} y="70" textAnchor="middle" fill="#cbd5e1" fontSize="10">{name}</text>
+                          <rect x={20 + i * 180} y="40" width="160" height="40" rx="6" fill={colors.background} stroke={colors.border} strokeWidth="1" />
+                          <text x={100 + i * 180} y="65" textAnchor="middle" fill={colors.text} fontSize="10">{name}</text>
                         </g>
                       ))}
                     </g>
 
                     {/* Services Layer */}
-                    <g transform="translate(50, 200)">
-                      <rect width="1100" height="100" rx="12" fill="#0f172a" stroke="#7c3aed" strokeWidth="2" filter="url(#techShadow)" />
-                      <rect width="1100" height="32" rx="12" fill="#312e81" />
-                      <text x="20" y="22" fill="#c4b5fd" fontSize="13" fontWeight="600">SERVICES LAYER (Hooks & Services)</text>
+                    <g transform="translate(50, 175)">
+                      <rect width="1100" height="95" rx="8" fill={colors.application.light} stroke={colors.application.bg} strokeWidth="2" />
+                      <rect width="1100" height="28" rx="8" fill={colors.application.bg} />
+                      <text x="20" y="19" fill="#ffffff" fontSize="12" fontWeight="600">SERVICES LAYER (Hooks & Services)</text>
                       
                       {['useUniversalAI', 'genieConversationService', 'useRecordingStudio', 'useTTSGeneration', 'useMediaRecorder'].map((name, i) => (
                         <g key={name}>
-                          <rect x={20 + i * 220} y="45" width="200" height="40" rx="6" fill="#1e293b" stroke="#475569" strokeWidth="1" />
-                          <text x={120 + i * 220} y="70" textAnchor="middle" fill="#cbd5e1" fontSize="10">{name}</text>
+                          <rect x={20 + i * 220} y="40" width="200" height="40" rx="6" fill={colors.background} stroke={colors.border} strokeWidth="1" />
+                          <text x={120 + i * 220} y="65" textAnchor="middle" fill={colors.text} fontSize="10">{name}</text>
                         </g>
                       ))}
                     </g>
 
                     {/* Edge Functions Layer */}
-                    <g transform="translate(50, 320)">
-                      <rect width="1100" height="100" rx="12" fill="#0f172a" stroke="#22c55e" strokeWidth="2" filter="url(#techShadow)" />
-                      <rect width="1100" height="32" rx="12" fill="#14532d" />
-                      <text x="20" y="22" fill="#86efac" fontSize="13" fontWeight="600">EDGE FUNCTIONS (Supabase)</text>
+                    <g transform="translate(50, 290)">
+                      <rect width="1100" height="95" rx="8" fill={colors.domain.light} stroke={colors.domain.bg} strokeWidth="2" />
+                      <rect width="1100" height="28" rx="8" fill={colors.domain.bg} />
+                      <text x="20" y="19" fill="#ffffff" fontSize="12" fontWeight="600">EDGE FUNCTIONS (Supabase)</text>
                       
                       {['ai-universal-processor', 'tts-generate', 'script-enhance', 'media-processor', 'knowledge-search'].map((name, i) => (
                         <g key={name}>
-                          <rect x={20 + i * 220} y="45" width="200" height="40" rx="6" fill="#1e293b" stroke="#475569" strokeWidth="1" />
-                          <text x={120 + i * 220} y="70" textAnchor="middle" fill="#cbd5e1" fontSize="9">{name}</text>
+                          <rect x={20 + i * 220} y="40" width="200" height="40" rx="6" fill={colors.background} stroke={colors.border} strokeWidth="1" />
+                          <text x={120 + i * 220} y="65" textAnchor="middle" fill={colors.text} fontSize="9">{name}</text>
                         </g>
                       ))}
                     </g>
 
                     {/* Database Layer */}
-                    <g transform="translate(50, 440)">
-                      <rect width="1100" height="100" rx="12" fill="#0f172a" stroke="#f59e0b" strokeWidth="2" filter="url(#techShadow)" />
-                      <rect width="1100" height="32" rx="12" fill="#78350f" />
-                      <text x="20" y="22" fill="#fcd34d" fontSize="13" fontWeight="600">DATABASE LAYER (Supabase PostgreSQL)</text>
+                    <g transform="translate(50, 405)">
+                      <rect width="1100" height="95" rx="8" fill={colors.infrastructure.light} stroke={colors.infrastructure.bg} strokeWidth="2" />
+                      <rect width="1100" height="28" rx="8" fill={colors.infrastructure.bg} />
+                      <text x="20" y="19" fill="#ffffff" fontSize="12" fontWeight="600">DATABASE LAYER (Supabase PostgreSQL)</text>
                       
                       {['genie_projects', 'genie_scripts', 'genie_recordings', 'genie_tts_audio', 'universal_knowledge_base', 'agent_conversations'].map((name, i) => (
                         <g key={name}>
-                          <rect x={20 + i * 180} y="45" width="160" height="40" rx="6" fill="#1e293b" stroke="#475569" strokeWidth="1" />
-                          <text x={100 + i * 180} y="70" textAnchor="middle" fill="#cbd5e1" fontSize="9">{name}</text>
+                          <rect x={20 + i * 180} y="40" width="160" height="40" rx="6" fill={colors.background} stroke={colors.border} strokeWidth="1" />
+                          <text x={100 + i * 180} y="65" textAnchor="middle" fill={colors.text} fontSize="9">{name}</text>
                         </g>
                       ))}
                     </g>
 
                     {/* Connecting Arrows */}
-                    <line x1="600" y1="180" x2="600" y2="200" stroke="#3b82f6" strokeWidth="2" markerEnd="url(#arrowTech)" />
-                    <line x1="600" y1="300" x2="600" y2="320" stroke="#7c3aed" strokeWidth="2" markerEnd="url(#arrowTech)" />
-                    <line x1="600" y1="420" x2="600" y2="440" stroke="#22c55e" strokeWidth="2" markerEnd="url(#arrowTech)" />
-
-                    {/* Legend */}
-                    <g transform="translate(50, 560)">
-                      <text x="0" y="10" fill="#94a3b8" fontSize="10">Color Legend:</text>
-                      <rect x="80" y="0" width="16" height="12" fill="#3b82f6" rx="2" />
-                      <text x="102" y="10" fill="#cbd5e1" fontSize="10">Frontend</text>
-                      <rect x="170" y="0" width="16" height="12" fill="#7c3aed" rx="2" />
-                      <text x="192" y="10" fill="#cbd5e1" fontSize="10">Services</text>
-                      <rect x="260" y="0" width="16" height="12" fill="#22c55e" rx="2" />
-                      <text x="282" y="10" fill="#cbd5e1" fontSize="10">Edge Functions</text>
-                      <rect x="380" y="0" width="16" height="12" fill="#f59e0b" rx="2" />
-                      <text x="402" y="10" fill="#cbd5e1" fontSize="10">Database</text>
-                    </g>
+                    <line x1="600" y1="155" x2="600" y2="175" stroke={colors.presentation.bg} strokeWidth="2" markerEnd="url(#arrowTech)" />
+                    <line x1="600" y1="270" x2="600" y2="290" stroke={colors.application.bg} strokeWidth="2" markerEnd="url(#arrowTech)" />
+                    <line x1="600" y1="385" x2="600" y2="405" stroke={colors.domain.bg} strokeWidth="2" markerEnd="url(#arrowTech)" />
                   </svg>
                 </CardContent>
               </Card>
 
               {/* Implementation Status Grid */}
               <div className="grid grid-cols-3 gap-4">
-                <Card className="bg-[#1e293b] border-[#22c55e]">
+                <Card className="border-2" style={{ borderColor: colors.completed.bg, backgroundColor: colors.completed.light }}>
                   <CardContent className="pt-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <CheckCircle className="h-5 w-5 text-[#22c55e]" />
-                      <span className="text-[#86efac] font-semibold">P0 Core - 90% Done</span>
+                      <CheckCircle className="h-5 w-5" style={{ color: colors.completed.bg }} />
+                      <span className="font-semibold" style={{ color: colors.completed.bg }}>P0 Core - 90% Done</span>
                     </div>
-                    <ul className="text-sm text-[#cbd5e1] space-y-1">
-                      <li className="text-[#86efac]">✓ Script creation & editing</li>
-                      <li className="text-[#86efac]">✓ TTS generation (ElevenLabs)</li>
-                      <li className="text-[#86efac]">✓ Basic recording</li>
-                      <li className="text-[#86efac]">✓ Teleprompter sync</li>
-                      <li className="text-[#94a3b8]">○ Export pipeline</li>
+                    <ul className="text-sm space-y-1" style={{ color: colors.text }}>
+                      <li style={{ color: colors.completed.bg }}>✓ Script creation & editing</li>
+                      <li style={{ color: colors.completed.bg }}>✓ TTS generation (ElevenLabs)</li>
+                      <li style={{ color: colors.completed.bg }}>✓ Basic recording</li>
+                      <li style={{ color: colors.completed.bg }}>✓ Teleprompter sync</li>
+                      <li style={{ color: colors.textMuted }}>○ Export pipeline</li>
                     </ul>
                   </CardContent>
                 </Card>
 
-                <Card className="bg-[#1e293b] border-[#3b82f6]">
+                <Card className="border-2" style={{ borderColor: colors.inProgress.bg, backgroundColor: colors.inProgress.light }}>
                   <CardContent className="pt-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <Clock className="h-5 w-5 text-[#3b82f6]" />
-                      <span className="text-[#93c5fd] font-semibold">P1 Enhanced - 60% Done</span>
+                      <Clock className="h-5 w-5" style={{ color: colors.inProgress.bg }} />
+                      <span className="font-semibold" style={{ color: colors.inProgress.bg }}>P1 Enhanced - 60% Done</span>
                     </div>
-                    <ul className="text-sm text-[#cbd5e1] space-y-1">
-                      <li className="text-[#86efac]">✓ Multi-track audio</li>
-                      <li className="text-[#86efac]">✓ AI script enhancement</li>
-                      <li className="text-[#94a3b8]">○ Screen recording</li>
-                      <li className="text-[#94a3b8]">○ Audio ducking</li>
-                      <li className="text-[#94a3b8]">○ Template library</li>
+                    <ul className="text-sm space-y-1" style={{ color: colors.text }}>
+                      <li style={{ color: colors.completed.bg }}>✓ Multi-track audio</li>
+                      <li style={{ color: colors.completed.bg }}>✓ AI script enhancement</li>
+                      <li style={{ color: colors.textMuted }}>○ Screen recording</li>
+                      <li style={{ color: colors.textMuted }}>○ Audio ducking</li>
+                      <li style={{ color: colors.textMuted }}>○ Template library</li>
                     </ul>
                   </CardContent>
                 </Card>
 
-                <Card className="bg-[#1e293b] border-[#f59e0b]">
+                <Card className="border-2" style={{ borderColor: colors.planned.bg, backgroundColor: colors.planned.light }}>
                   <CardContent className="pt-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <AlertCircle className="h-5 w-5 text-[#f59e0b]" />
-                      <span className="text-[#fcd34d] font-semibold">P2 Advanced - 30% Done</span>
+                      <AlertCircle className="h-5 w-5" style={{ color: colors.planned.bg }} />
+                      <span className="font-semibold" style={{ color: colors.planned.bg }}>P2 Advanced - 30% Done</span>
                     </div>
-                    <ul className="text-sm text-[#94a3b8] space-y-1">
+                    <ul className="text-sm space-y-1" style={{ color: colors.textMuted }}>
                       <li>○ Collaborative editing</li>
                       <li>○ Version control</li>
                       <li>○ Analytics dashboard</li>
@@ -254,37 +287,37 @@ export const GenieStudioTechnicalArchDiagram = () => {
               </div>
             </TabsContent>
 
-            <TabsContent value="script-pipeline" className="space-y-4">
-              <Card className="bg-[#1e293b] border-[#475569]">
+            <TabsContent value="script-pipeline" className="space-y-4 mt-0">
+              <Card className="border" style={{ borderColor: colors.border, backgroundColor: colors.background }}>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-[#c4b5fd]">
+                  <CardTitle className="flex items-center gap-2" style={{ color: colors.application.bg }}>
                     <Workflow className="h-5 w-5" />
                     Script Generation Pipeline
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <svg viewBox="0 0 1000 400" className="w-full h-auto">
-                    <rect width="1000" height="400" fill="#1e293b" rx="8" />
+                  <svg viewBox="0 0 1000 380" className="w-full h-auto">
+                    <rect width="1000" height="380" fill={colors.background} rx="8" />
                     
                     {/* Pipeline Steps */}
-                    <g transform="translate(50, 50)">
+                    <g transform="translate(50, 30)">
                       {[
-                        { num: 1, title: 'INPUT', desc: ['User provides topic', 'or document'], color: '#7c3aed' },
-                        { num: 2, title: 'AI PROCESS', desc: ['useUniversalAI', 'generates script'], color: '#3b82f6' },
-                        { num: 3, title: 'ENHANCE', desc: ['Script optimization', '& timing calc'], color: '#22c55e' },
-                        { num: 4, title: 'TTS', desc: ['ElevenLabs API', 'voice generation'], color: '#f59e0b' },
-                        { num: 5, title: 'OUTPUT', desc: ['Script + Audio', 'ready for recording'], color: '#ef4444' }
+                        { num: 1, title: 'INPUT', desc: ['User provides topic', 'or document'], color: colors.application.bg },
+                        { num: 2, title: 'AI PROCESS', desc: ['useUniversalAI', 'generates script'], color: colors.presentation.bg },
+                        { num: 3, title: 'ENHANCE', desc: ['Script optimization', '& timing calc'], color: colors.completed.bg },
+                        { num: 4, title: 'TTS', desc: ['ElevenLabs API', 'voice generation'], color: colors.inProgress.bg },
+                        { num: 5, title: 'OUTPUT', desc: ['Script + Audio', 'ready for recording'], color: colors.domain.bg }
                       ].map((step, i) => (
                         <g key={step.num}>
-                          <rect x={i * 180} y="0" width="160" height="80" rx="8" fill="#0f172a" stroke={step.color} strokeWidth="2" />
-                          <text x={80 + i * 180} y="35" textAnchor="middle" fill="#f1f5f9" fontSize="12" fontWeight="600">{step.num}. {step.title}</text>
+                          <rect x={i * 180} y="0" width="160" height="80" rx="8" fill={colors.cardBg} stroke={step.color} strokeWidth="2" />
+                          <text x={80 + i * 180} y="35" textAnchor="middle" fill={step.color} fontSize="12" fontWeight="600">{step.num}. {step.title}</text>
                           {step.desc.map((d, j) => (
-                            <text key={j} x={80 + i * 180} y={55 + j * 15} textAnchor="middle" fill="#94a3b8" fontSize="10">{d}</text>
+                            <text key={j} x={80 + i * 180} y={55 + j * 14} textAnchor="middle" fill={colors.textMuted} fontSize="10">{d}</text>
                           ))}
                           {i < 4 && (
                             <g>
-                              <line x1={160 + i * 180} y1="40" x2={180 + i * 180} y2="40" stroke="#475569" strokeWidth="2" />
-                              <polygon points={`${175 + i * 180},35 ${185 + i * 180},40 ${175 + i * 180},45`} fill="#475569" />
+                              <line x1={160 + i * 180} y1="40" x2={180 + i * 180} y2="40" stroke={colors.border} strokeWidth="2" />
+                              <polygon points={`${175 + i * 180},35 ${185 + i * 180},40 ${175 + i * 180},45`} fill={colors.border} />
                             </g>
                           )}
                         </g>
@@ -292,31 +325,31 @@ export const GenieStudioTechnicalArchDiagram = () => {
                     </g>
 
                     {/* Data Flow Details */}
-                    <g transform="translate(50, 160)">
-                      <rect width="900" height="180" rx="8" fill="#0f172a" stroke="#475569" strokeWidth="1" />
-                      <rect width="900" height="32" rx="8" fill="#1e3a5f" />
-                      <text x="20" y="22" fill="#93c5fd" fontSize="12" fontWeight="600">DATA FLOW DETAILS</text>
+                    <g transform="translate(50, 130)">
+                      <rect width="900" height="160" rx="8" fill={colors.cardBg} stroke={colors.border} strokeWidth="1" />
+                      <rect width="900" height="28" rx="8" fill={colors.presentation.bg} />
+                      <text x="20" y="19" fill="#ffffff" fontSize="11" fontWeight="600">DATA FLOW DETAILS</text>
                       
-                      <text x="20" y="60" fill="#94a3b8" fontSize="11">Input Types:</text>
-                      <text x="120" y="60" fill="#cbd5e1" fontSize="11">Topic prompt | Document upload | Knowledge base query | Manual text</text>
+                      <text x="20" y="55" fill={colors.textMuted} fontSize="11">Input Types:</text>
+                      <text x="120" y="55" fill={colors.text} fontSize="11">Topic prompt | Document upload | Knowledge base query | Manual text</text>
                       
-                      <text x="20" y="90" fill="#94a3b8" fontSize="11">AI Models:</text>
-                      <text x="120" y="90" fill="#cbd5e1" fontSize="11">GPT-4 / Claude / Gemini (via useUniversalAI)</text>
+                      <text x="20" y="80" fill={colors.textMuted} fontSize="11">AI Models:</text>
+                      <text x="120" y="80" fill={colors.text} fontSize="11">GPT-4 / Claude / Gemini (via useUniversalAI)</text>
                       
-                      <text x="20" y="120" fill="#94a3b8" fontSize="11">TTS Voices:</text>
-                      <text x="120" y="120" fill="#cbd5e1" fontSize="11">ElevenLabs (30+ voices) | Browser Web Speech API (fallback)</text>
+                      <text x="20" y="105" fill={colors.textMuted} fontSize="11">TTS Voices:</text>
+                      <text x="120" y="105" fill={colors.text} fontSize="11">ElevenLabs (30+ voices) | Browser Web Speech API (fallback)</text>
                       
-                      <text x="20" y="150" fill="#94a3b8" fontSize="11">Output:</text>
-                      <text x="120" y="150" fill="#cbd5e1" fontSize="11">Script JSON | Audio WAV/MP3 | Timing metadata | Project file</text>
+                      <text x="20" y="130" fill={colors.textMuted} fontSize="11">Output:</text>
+                      <text x="120" y="130" fill={colors.text} fontSize="11">Script JSON | Audio WAV/MP3 | Timing metadata | Project file</text>
                     </g>
 
-                    {/* Tech Stack & Legend */}
-                    <g transform="translate(50, 360)">
-                      <text x="0" y="0" fill="#94a3b8" fontSize="10">Tech Stack:</text>
+                    {/* Tech Stack */}
+                    <g transform="translate(50, 310)">
+                      <text x="0" y="15" fill={colors.textMuted} fontSize="10">Tech Stack:</text>
                       {['React', 'TypeScript', 'Supabase Edge', 'ElevenLabs API', 'Web Audio API'].map((tech, i) => (
                         <g key={tech}>
-                          <rect x={80 + i * 130} y="-12" width="110" height="20" rx="4" fill="#0f172a" stroke="#475569" strokeWidth="1" />
-                          <text x={135 + i * 130} y="2" textAnchor="middle" fill="#cbd5e1" fontSize="9">{tech}</text>
+                          <rect x={80 + i * 130} y="0" width="110" height="24" rx="4" fill={colors.cardBg} stroke={colors.border} strokeWidth="1" />
+                          <text x={135 + i * 130} y="16" textAnchor="middle" fill={colors.text} fontSize="9">{tech}</text>
                         </g>
                       ))}
                     </g>
@@ -325,281 +358,231 @@ export const GenieStudioTechnicalArchDiagram = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="recording-pipeline" className="space-y-4">
-              <Card className="bg-[#1e293b] border-[#475569]">
+            <TabsContent value="recording-pipeline" className="space-y-4 mt-0">
+              <Card className="border" style={{ borderColor: colors.border, backgroundColor: colors.background }}>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-[#86efac]">
+                  <CardTitle className="flex items-center gap-2" style={{ color: colors.completed.bg }}>
                     <Cpu className="h-5 w-5" />
-                    Recording & Export Pipeline
+                    Recording Pipeline
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <svg viewBox="0 0 1000 450" className="w-full h-auto">
-                    <rect width="1000" height="450" fill="#1e293b" rx="8" />
+                  <svg viewBox="0 0 1000 400" className="w-full h-auto">
+                    <rect width="1000" height="400" fill={colors.background} rx="8" />
                     
                     {/* Recording Flow */}
                     <g transform="translate(50, 30)">
-                      <text x="0" y="0" fill="#93c5fd" fontSize="14" fontWeight="600">RECORDING FLOW</text>
-                      
                       {[
-                        { title: 'Camera Input', desc: 'MediaDevices API', color: '#3b82f6' },
-                        { title: 'Screen Capture', desc: 'getDisplayMedia', color: '#7c3aed' },
-                        { title: 'Audio Mixer', desc: 'Web Audio API', color: '#22c55e' },
-                        { title: 'MediaRecorder', desc: 'Stream capture', color: '#f59e0b' },
-                        { title: 'Output', desc: 'Blob/File', color: '#ef4444' }
-                      ].map((item, i) => (
-                        <g key={item.title}>
-                          <rect x={i * 180} y="20" width="160" height="60" rx="8" fill="#0f172a" stroke={item.color} strokeWidth="2" />
-                          <text x={80 + i * 180} y="45" textAnchor="middle" fill="#f1f5f9" fontSize="11" fontWeight="500">{item.title}</text>
-                          <text x={80 + i * 180} y="65" textAnchor="middle" fill="#94a3b8" fontSize="9">{item.desc}</text>
+                        { num: 1, title: 'SETUP', items: ['Camera selection', 'Audio input', 'Screen share'], color: colors.presentation.bg },
+                        { num: 2, title: 'TELEPROMPTER', items: ['Script sync', 'Speed control', 'Markers'], color: colors.application.bg },
+                        { num: 3, title: 'RECORD', items: ['Multi-track', 'Pause/Resume', 'Monitor levels'], color: colors.completed.bg },
+                        { num: 4, title: 'PROCESS', items: ['Audio mixing', 'Video encode', 'Compression'], color: colors.inProgress.bg },
+                        { num: 5, title: 'EXPORT', items: ['MP4/WebM', 'Audio only', 'Thumbnails'], color: colors.domain.bg },
+                      ].map((stage, i) => (
+                        <g key={stage.num}>
+                          <rect x={i * 180} y="0" width="160" height="110" rx="8" fill={colors.cardBg} stroke={stage.color} strokeWidth="2" />
+                          <text x={80 + i * 180} y="25" textAnchor="middle" fill={stage.color} fontSize="12" fontWeight="600">{stage.num}. {stage.title}</text>
+                          {stage.items.map((item, j) => (
+                            <text key={j} x={80 + i * 180} y={50 + j * 18} textAnchor="middle" fill={colors.text} fontSize="10">{item}</text>
+                          ))}
                           {i < 4 && (
-                            <g>
-                              <line x1={160 + i * 180} y1="50" x2={180 + i * 180} y2="50" stroke="#475569" strokeWidth="2" />
-                              <polygon points={`${175 + i * 180},45 ${185 + i * 180},50 ${175 + i * 180},55`} fill="#475569" />
-                            </g>
+                            <line x1={160 + i * 180} y1="55" x2={180 + i * 180} y2="55" stroke={colors.border} strokeWidth="2" markerEnd="url(#arrowTech)" />
                           )}
                         </g>
                       ))}
                     </g>
 
-                    {/* Export Pipeline */}
-                    <g transform="translate(50, 130)">
-                      <text x="0" y="0" fill="#c4b5fd" fontSize="14" fontWeight="600">EXPORT PIPELINE</text>
+                    {/* Browser APIs */}
+                    <g transform="translate(50, 160)">
+                      <rect width="900" height="90" rx="8" fill={colors.cardBg} stroke={colors.border} strokeWidth="1" />
+                      <rect width="900" height="28" rx="8" fill={colors.infrastructure.bg} />
+                      <text x="20" y="19" fill="#ffffff" fontSize="11" fontWeight="600">BROWSER APIs USED</text>
                       
                       {[
-                        { title: 'Raw Recording', desc: 'WebM/MP4 blob', color: '#7c3aed' },
-                        { title: 'Processing', desc: 'FFmpeg WASM', color: '#3b82f6' },
-                        { title: 'Encoding', desc: 'Format conversion', color: '#22c55e' },
-                        { title: 'Storage', desc: 'Supabase Storage', color: '#f59e0b' },
-                        { title: 'Download', desc: 'Signed URL', color: '#ef4444' }
-                      ].map((item, i) => (
-                        <g key={item.title}>
-                          <rect x={i * 180} y="20" width="160" height="60" rx="8" fill="#0f172a" stroke={item.color} strokeWidth="2" />
-                          <text x={80 + i * 180} y="45" textAnchor="middle" fill="#f1f5f9" fontSize="11" fontWeight="500">{item.title}</text>
-                          <text x={80 + i * 180} y="65" textAnchor="middle" fill="#94a3b8" fontSize="9">{item.desc}</text>
-                          {i < 4 && (
-                            <g>
-                              <line x1={160 + i * 180} y1="50" x2={180 + i * 180} y2="50" stroke="#475569" strokeWidth="2" />
-                              <polygon points={`${175 + i * 180},45 ${185 + i * 180},50 ${175 + i * 180},55`} fill="#475569" />
-                            </g>
-                          )}
+                        { name: 'MediaRecorder API', desc: 'Video/Audio capture' },
+                        { name: 'Web Audio API', desc: 'Audio processing' },
+                        { name: 'getDisplayMedia', desc: 'Screen capture' },
+                        { name: 'getUserMedia', desc: 'Camera/Mic access' },
+                      ].map((api, i) => (
+                        <g key={api.name}>
+                          <rect x={20 + i * 220} y="40" width="200" height="38" rx="6" fill={colors.background} stroke={colors.border} strokeWidth="1" />
+                          <text x={120 + i * 220} y="57" textAnchor="middle" fill={colors.text} fontSize="10" fontWeight="500">{api.name}</text>
+                          <text x={120 + i * 220} y="72" textAnchor="middle" fill={colors.textMuted} fontSize="9">{api.desc}</text>
                         </g>
                       ))}
                     </g>
 
-                    {/* Teleprompter Sync */}
-                    <g transform="translate(50, 230)">
-                      <text x="0" y="0" fill="#86efac" fontSize="14" fontWeight="600">TELEPROMPTER SYNC</text>
+                    {/* Output Formats */}
+                    <g transform="translate(50, 270)">
+                      <rect width="900" height="100" rx="8" fill={colors.cardBg} stroke={colors.border} strokeWidth="1" />
+                      <rect width="900" height="28" rx="8" fill={colors.domain.bg} />
+                      <text x="20" y="19" fill="#ffffff" fontSize="11" fontWeight="600">OUTPUT FORMATS</text>
                       
-                      <rect x="0" y="20" width="900" height="80" rx="8" fill="#0f172a" stroke="#22c55e" strokeWidth="1" />
-                      
-                      {[
-                        { label: 'Script Load', x: 50 },
-                        { label: 'Calculate WPM', x: 200 },
-                        { label: 'Scroll Speed', x: 350 },
-                        { label: 'Record Start', x: 500 },
-                        { label: 'Sync Playback', x: 650 },
-                        { label: 'Pause/Resume', x: 800 }
-                      ].map((item, i) => (
-                        <g key={item.label}>
-                          <circle cx={item.x} cy="60" r="20" fill="#14532d" stroke="#22c55e" strokeWidth="2" />
-                          <text x={item.x} y="65" textAnchor="middle" fill="#f1f5f9" fontSize="10">{i + 1}</text>
-                          <text x={item.x} y="95" textAnchor="middle" fill="#94a3b8" fontSize="8">{item.label}</text>
-                          {i < 5 && (
-                            <line x1={item.x + 25} y1="60" x2={item.x + 115} y2="60" stroke="#22c55e" strokeWidth="1" strokeDasharray="4" />
-                          )}
-                        </g>
-                      ))}
-                    </g>
-
-                    {/* Audio Features */}
-                    <g transform="translate(50, 340)">
-                      <text x="0" y="0" fill="#fcd34d" fontSize="14" fontWeight="600">AUDIO FEATURES</text>
-                      
-                      {[
-                        { title: 'Multi-track', status: 'done' },
-                        { title: 'Background Music', status: 'done' },
-                        { title: 'Audio Ducking', status: 'partial' },
-                        { title: 'Voice Enhancement', status: 'planned' },
-                        { title: 'Noise Reduction', status: 'planned' }
-                      ].map((item, i) => (
-                        <g key={item.title}>
-                          <rect x={i * 180} y="20" width="160" height="40" rx="6" fill="#0f172a" stroke="#475569" strokeWidth="1" />
-                          <text x={80 + i * 180} y="38" textAnchor="middle" fill="#f1f5f9" fontSize="10">{item.title}</text>
-                          <text x={80 + i * 180} y="52" textAnchor="middle" fill={item.status === 'done' ? '#86efac' : item.status === 'partial' ? '#fcd34d' : '#94a3b8'} fontSize="8">
-                            {item.status === 'done' ? '✓ Done' : item.status === 'partial' ? '◐ Partial' : '○ Planned'}
-                          </text>
-                        </g>
-                      ))}
-                    </g>
-
-                    {/* Color Legend */}
-                    <g transform="translate(50, 420)">
-                      <text x="0" y="0" fill="#94a3b8" fontSize="9">Legend:</text>
-                      <rect x="50" y="-10" width="12" height="12" rx="2" fill="#3b82f6" />
-                      <text x="68" y="0" fill="#cbd5e1" fontSize="9">Input</text>
-                      <rect x="110" y="-10" width="12" height="12" rx="2" fill="#7c3aed" />
-                      <text x="128" y="0" fill="#cbd5e1" fontSize="9">Process</text>
-                      <rect x="180" y="-10" width="12" height="12" rx="2" fill="#22c55e" />
-                      <text x="198" y="0" fill="#cbd5e1" fontSize="9">Sync</text>
-                      <rect x="240" y="-10" width="12" height="12" rx="2" fill="#f59e0b" />
-                      <text x="258" y="0" fill="#cbd5e1" fontSize="9">Storage</text>
-                      <rect x="310" y="-10" width="12" height="12" rx="2" fill="#ef4444" />
-                      <text x="328" y="0" fill="#cbd5e1" fontSize="9">Output</text>
+                      <g transform="translate(20, 45)">
+                        {[
+                          { format: 'WebM (VP9)', status: 'implemented' },
+                          { format: 'MP4 (H.264)', status: 'partial' },
+                          { format: 'MP3 Audio', status: 'implemented' },
+                          { format: 'WAV Audio', status: 'implemented' },
+                          { format: 'PNG Thumbnails', status: 'planned' },
+                        ].map((fmt, i) => (
+                          <g key={fmt.format}>
+                            <rect x={i * 175} y="0" width="160" height="40" rx="6" fill={
+                              fmt.status === 'implemented' ? colors.completed.light : 
+                              fmt.status === 'partial' ? colors.inProgress.light : colors.planned.light
+                            } stroke={
+                              fmt.status === 'implemented' ? colors.completed.bg : 
+                              fmt.status === 'partial' ? colors.inProgress.bg : colors.planned.bg
+                            } strokeWidth="1" />
+                            <text x={80 + i * 175} y="18" textAnchor="middle" fill={colors.text} fontSize="10" fontWeight="500">{fmt.format}</text>
+                            <text x={80 + i * 175} y="32" textAnchor="middle" fill={
+                              fmt.status === 'implemented' ? colors.completed.bg : 
+                              fmt.status === 'partial' ? colors.inProgress.bg : colors.planned.bg
+                            } fontSize="9">{fmt.status === 'implemented' ? '✓ Done' : fmt.status === 'partial' ? '◐ Partial' : '○ Planned'}</text>
+                          </g>
+                        ))}
+                      </g>
                     </g>
                   </svg>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            <TabsContent value="data-model" className="space-y-4">
-              <Card className="bg-[#1e293b] border-[#475569]">
+            <TabsContent value="data-model" className="space-y-4 mt-0">
+              <Card className="border" style={{ borderColor: colors.border, backgroundColor: colors.background }}>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-[#fcd34d]">
+                  <CardTitle className="flex items-center gap-2" style={{ color: colors.infrastructure.bg }}>
                     <Database className="h-5 w-5" />
                     Database Schema
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <svg viewBox="0 0 1000 500" className="w-full h-auto">
-                    <rect width="1000" height="500" fill="#1e293b" rx="8" />
-
-                    {/* Tables */}
+                  <svg viewBox="0 0 1000 450" className="w-full h-auto">
+                    <rect width="1000" height="450" fill={colors.background} rx="8" />
+                    
+                    {/* Core Tables */}
                     {[
-                      {
-                        name: 'genie_projects',
-                        x: 50, y: 30,
-                        fields: ['id (uuid)', 'user_id (uuid)', 'name (text)', 'description (text)', 'status (text)', 'created_at', 'updated_at'],
-                        color: '#3b82f6'
-                      },
-                      {
-                        name: 'genie_scripts',
-                        x: 350, y: 30,
-                        fields: ['id (uuid)', 'project_id (uuid)', 'title (text)', 'content (text)', 'version (int)', 'word_count (int)', 'estimated_duration'],
-                        color: '#7c3aed'
-                      },
-                      {
-                        name: 'genie_recordings',
-                        x: 650, y: 30,
-                        fields: ['id (uuid)', 'project_id (uuid)', 'script_id (uuid)', 'file_url (text)', 'duration_ms (int)', 'status (text)', 'metadata (jsonb)'],
-                        color: '#22c55e'
-                      },
-                      {
-                        name: 'genie_tts_audio',
-                        x: 50, y: 270,
-                        fields: ['id (uuid)', 'script_id (uuid)', 'voice_id (text)', 'audio_url (text)', 'duration_ms (int)', 'provider (text)'],
-                        color: '#f59e0b'
-                      },
-                      {
-                        name: 'universal_knowledge_base',
-                        x: 350, y: 270,
-                        fields: ['id (uuid)', 'user_id (uuid)', 'content (text)', 'metadata (jsonb)', 'embedding (vector)', 'source_type (text)'],
-                        color: '#ef4444'
-                      },
-                      {
-                        name: 'agent_conversations',
-                        x: 650, y: 270,
-                        fields: ['id (uuid)', 'agent_id (uuid)', 'user_id (uuid)', 'session_id (text)', 'conversation_data (jsonb)', 'status (text)'],
-                        color: '#06b6d4'
-                      }
+                      { name: 'genie_projects', x: 50, y: 30, fields: ['id (UUID PK)', 'user_id (FK)', 'name', 'description', 'status', 'created_at'], color: colors.presentation.bg },
+                      { name: 'genie_scripts', x: 350, y: 30, fields: ['id (UUID PK)', 'project_id (FK)', 'content', 'word_count', 'duration_estimate', 'version'], color: colors.application.bg },
+                      { name: 'genie_recordings', x: 650, y: 30, fields: ['id (UUID PK)', 'script_id (FK)', 'video_url', 'audio_url', 'duration', 'status'], color: colors.domain.bg },
+                      { name: 'genie_tts_audio', x: 50, y: 250, fields: ['id (UUID PK)', 'script_id (FK)', 'voice_id', 'audio_url', 'duration', 'settings'], color: colors.inProgress.bg },
+                      { name: 'universal_knowledge_base', x: 350, y: 250, fields: ['id (UUID PK)', 'user_id (FK)', 'content', 'embedding', 'metadata', 'source'], color: colors.completed.bg },
+                      { name: 'agent_conversations', x: 650, y: 250, fields: ['id (UUID PK)', 'agent_id (FK)', 'user_id', 'messages', 'context', 'status'], color: colors.planned.bg },
                     ].map((table) => (
                       <g key={table.name}>
-                        <rect x={table.x} y={table.y} width="280" height={30 + table.fields.length * 18} rx="8" fill="#0f172a" stroke={table.color} strokeWidth="2" />
-                        <rect x={table.x} y={table.y} width="280" height="28" rx="8" fill={table.color} fillOpacity="0.3" />
-                        <text x={table.x + 140} y={table.y + 19} textAnchor="middle" fill="#f1f5f9" fontSize="11" fontWeight="600">{table.name}</text>
+                        <rect x={table.x} y={table.y} width="280" height="180" rx="8" fill={colors.cardBg} stroke={table.color} strokeWidth="2" />
+                        <rect x={table.x} y={table.y} width="280" height="32" rx="8" fill={table.color} />
+                        <text x={table.x + 140} y={table.y + 22} textAnchor="middle" fill="#ffffff" fontSize="12" fontWeight="600">{table.name}</text>
                         {table.fields.map((field, i) => (
-                          <text key={field} x={table.x + 15} y={table.y + 48 + i * 18} fill="#94a3b8" fontSize="9">{field}</text>
+                          <text key={field} x={table.x + 15} y={table.y + 55 + i * 22} fill={colors.text} fontSize="10">{field}</text>
                         ))}
                       </g>
                     ))}
 
                     {/* Relationships */}
-                    <g stroke="#475569" strokeWidth="1" strokeDasharray="4" fill="none">
-                      <path d="M330,100 L350,100" />
-                      <path d="M630,100 L650,100" />
-                      <path d="M190,200 L190,270" />
-                      <path d="M490,200 L490,270" />
-                    </g>
-
-                    {/* Legend */}
-                    <g transform="translate(50, 470)">
-                      <text x="0" y="0" fill="#94a3b8" fontSize="9">Table Colors:</text>
-                      {[
-                        { color: '#3b82f6', label: 'Projects' },
-                        { color: '#7c3aed', label: 'Scripts' },
-                        { color: '#22c55e', label: 'Recordings' },
-                        { color: '#f59e0b', label: 'TTS' },
-                        { color: '#ef4444', label: 'Knowledge' },
-                        { color: '#06b6d4', label: 'Conversations' }
-                      ].map((item, i) => (
-                        <g key={item.label}>
-                          <rect x={80 + i * 120} y="-10" width="12" height="12" rx="2" fill={item.color} />
-                          <text x={98 + i * 120} y="0" fill="#cbd5e1" fontSize="9">{item.label}</text>
-                        </g>
-                      ))}
-                    </g>
+                    <line x1="330" y1="120" x2="350" y2="120" stroke={colors.border} strokeWidth="1.5" strokeDasharray="4" />
+                    <line x1="630" y1="120" x2="650" y2="120" stroke={colors.border} strokeWidth="1.5" strokeDasharray="4" />
+                    <line x1="190" y1="210" x2="190" y2="250" stroke={colors.border} strokeWidth="1.5" strokeDasharray="4" />
                   </svg>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            <TabsContent value="integration" className="space-y-4">
-              <Card className="bg-[#1e293b] border-[#475569]">
+            <TabsContent value="integration" className="space-y-4 mt-0">
+              <Card className="border" style={{ borderColor: colors.border, backgroundColor: colors.background }}>
                 <CardHeader>
-                  <CardTitle className="text-[#93c5fd]">External Service Integrations</CardTitle>
+                  <CardTitle className="flex items-center gap-2" style={{ color: colors.domain.bg }}>
+                    <Server className="h-5 w-5" />
+                    External Integration Points
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    {[
-                      {
-                        name: 'ElevenLabs',
-                        type: 'TTS Provider',
-                        status: 'Active',
-                        features: ['30+ voice options', 'Multi-language support', 'Voice cloning (planned)', 'Streaming audio'],
-                        color: '#22c55e'
-                      },
-                      {
-                        name: 'OpenAI / Anthropic / Google',
-                        type: 'AI Models',
-                        status: 'Active',
-                        features: ['Script generation', 'Content enhancement', 'RAG queries', 'Multi-model routing'],
-                        color: '#3b82f6'
-                      },
-                      {
-                        name: 'Supabase Storage',
-                        type: 'File Storage',
-                        status: 'Active',
-                        features: ['Recording storage', 'Audio file hosting', 'Signed URLs', 'CDN delivery'],
-                        color: '#7c3aed'
-                      },
-                      {
-                        name: 'FFmpeg WASM',
-                        type: 'Media Processing',
-                        status: 'Partial',
-                        features: ['Format conversion', 'Audio mixing', 'Video encoding', 'Client-side processing'],
-                        color: '#f59e0b'
-                      }
-                    ].map((service, i) => (
-                      <Card key={i} className="bg-[#0f172a] border-[#475569]">
-                        <CardContent className="pt-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <div>
-                              <h4 className="text-[#f1f5f9] font-medium">{service.name}</h4>
-                              <p className="text-[#94a3b8] text-sm">{service.type}</p>
-                            </div>
-                            <Badge variant="outline" style={{ borderColor: service.color, color: service.color }}>
-                              {service.status}
-                            </Badge>
-                          </div>
-                          <ul className="text-sm text-[#cbd5e1] space-y-1">
-                            {service.features.map((f, j) => (
-                              <li key={j}>• {f}</li>
-                            ))}
-                          </ul>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                  <svg viewBox="0 0 1000 380" className="w-full h-auto">
+                    <rect width="1000" height="380" fill={colors.background} rx="8" />
+                    
+                    {/* AI Providers */}
+                    <g transform="translate(50, 20)">
+                      <rect width="280" height="150" rx="8" fill={colors.cardBg} stroke={colors.application.bg} strokeWidth="2" />
+                      <rect width="280" height="28" rx="8" fill={colors.application.bg} />
+                      <text x="140" y="19" textAnchor="middle" fill="#ffffff" fontSize="11" fontWeight="600">AI PROVIDERS</text>
+                      
+                      {['OpenAI GPT-4', 'Anthropic Claude', 'Google Gemini'].map((provider, i) => (
+                        <g key={provider}>
+                          <rect x="15" y={40 + i * 35} width="250" height="28" rx="4" fill={colors.background} stroke={colors.border} strokeWidth="1" />
+                          <circle cx="30" cy={54 + i * 35} r="6" fill={colors.completed.bg} />
+                          <text x="45" y={58 + i * 35} fill={colors.text} fontSize="10">{provider}</text>
+                        </g>
+                      ))}
+                    </g>
+
+                    {/* TTS Providers */}
+                    <g transform="translate(360, 20)">
+                      <rect width="280" height="150" rx="8" fill={colors.cardBg} stroke={colors.inProgress.bg} strokeWidth="2" />
+                      <rect width="280" height="28" rx="8" fill={colors.inProgress.bg} />
+                      <text x="140" y="19" textAnchor="middle" fill="#ffffff" fontSize="11" fontWeight="600">TTS PROVIDERS</text>
+                      
+                      {[
+                        { name: 'ElevenLabs', status: 'active' },
+                        { name: 'Web Speech API', status: 'fallback' },
+                        { name: 'Amazon Polly', status: 'planned' }
+                      ].map((provider, i) => (
+                        <g key={provider.name}>
+                          <rect x="15" y={40 + i * 35} width="250" height="28" rx="4" fill={colors.background} stroke={colors.border} strokeWidth="1" />
+                          <circle cx="30" cy={54 + i * 35} r="6" fill={provider.status === 'active' ? colors.completed.bg : provider.status === 'fallback' ? colors.inProgress.bg : colors.textMuted} />
+                          <text x="45" y={58 + i * 35} fill={colors.text} fontSize="10">{provider.name}</text>
+                          <text x="250" y={58 + i * 35} textAnchor="end" fill={colors.textMuted} fontSize="9">{provider.status}</text>
+                        </g>
+                      ))}
+                    </g>
+
+                    {/* Storage */}
+                    <g transform="translate(670, 20)">
+                      <rect width="280" height="150" rx="8" fill={colors.cardBg} stroke={colors.infrastructure.bg} strokeWidth="2" />
+                      <rect width="280" height="28" rx="8" fill={colors.infrastructure.bg} />
+                      <text x="140" y="19" textAnchor="middle" fill="#ffffff" fontSize="11" fontWeight="600">STORAGE</text>
+                      
+                      {['Supabase Storage (Media)', 'PostgreSQL (Metadata)', 'pgvector (Embeddings)'].map((storage, i) => (
+                        <g key={storage}>
+                          <rect x="15" y={40 + i * 35} width="250" height="28" rx="4" fill={colors.background} stroke={colors.border} strokeWidth="1" />
+                          <circle cx="30" cy={54 + i * 35} r="6" fill={colors.completed.bg} />
+                          <text x="45" y={58 + i * 35} fill={colors.text} fontSize="10">{storage}</text>
+                        </g>
+                      ))}
+                    </g>
+
+                    {/* API Endpoints */}
+                    <g transform="translate(50, 190)">
+                      <rect width="900" height="160" rx="8" fill={colors.cardBg} stroke={colors.border} strokeWidth="1" />
+                      <rect width="900" height="28" rx="8" fill={colors.domain.bg} />
+                      <text x="20" y="19" fill="#ffffff" fontSize="11" fontWeight="600">API ENDPOINTS (Edge Functions)</text>
+                      
+                      <g transform="translate(15, 40)">
+                        {[
+                          { endpoint: '/ai-universal-processor', method: 'POST', status: 'active' },
+                          { endpoint: '/tts-generate', method: 'POST', status: 'active' },
+                          { endpoint: '/script-enhance', method: 'POST', status: 'active' },
+                          { endpoint: '/media-processor', method: 'POST', status: 'partial' },
+                          { endpoint: '/knowledge-search', method: 'POST', status: 'active' },
+                        ].map((api, i) => (
+                          <g key={api.endpoint}>
+                            <rect x={i * 175} y="0" width="165" height="50" rx="6" fill={colors.background} stroke={colors.border} strokeWidth="1" />
+                            <text x={82 + i * 175} y="20" textAnchor="middle" fill={colors.text} fontSize="9" fontWeight="500">{api.endpoint}</text>
+                            <rect x={20 + i * 175} y="30" width="40" height="14" rx="3" fill={colors.presentation.bg} />
+                            <text x={40 + i * 175} y="40" textAnchor="middle" fill="#ffffff" fontSize="8">{api.method}</text>
+                            <circle cx={130 + i * 175} cy="37" r="5" fill={api.status === 'active' ? colors.completed.bg : colors.inProgress.bg} />
+                          </g>
+                        ))}
+                      </g>
+
+                      {/* Rate Limits */}
+                      <g transform="translate(15, 100)">
+                        <text x="0" y="15" fill={colors.textMuted} fontSize="10">Rate Limits:</text>
+                        <text x="80" y="15" fill={colors.text} fontSize="10">AI: 60 req/min | TTS: 30 req/min | Media: 20 req/min</text>
+                        <text x="450" y="15" fill={colors.textMuted} fontSize="10">Auth:</text>
+                        <text x="490" y="15" fill={colors.text} fontSize="10">Supabase JWT + RLS Policies</text>
+                      </g>
+                    </g>
+                  </svg>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -609,5 +592,3 @@ export const GenieStudioTechnicalArchDiagram = () => {
     </div>
   );
 };
-
-export default GenieStudioTechnicalArchDiagram;
