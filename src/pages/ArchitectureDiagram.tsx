@@ -10,10 +10,10 @@ import {
   GenieStudioVisualAssets
 } from '@/components/document-processing';
 import { TwoStagePipelineSVGDiagram } from '@/components/document-processing/TwoStagePipelineSVGDiagram';
-import { PatientOnboardingFlowDiagram, SubAgentArchitectureDiagram, BeforeAfterArchitectureDiagram, GenieRecordingStudioArchitectureDiagram, GenieStudioTechnicalArchDiagram, GenieStudioFunctionalArchDiagram, GenieStudioScenarioMapDiagram } from '@/components/diagrams';
+import { PatientOnboardingFlowDiagram, SubAgentArchitectureDiagram, BeforeAfterArchitectureDiagram, GenieRecordingStudioArchitectureDiagram, GenieStudioTechnicalArchDiagram, GenieStudioFunctionalArchDiagram, GenieStudioScenarioMapDiagram, GenieStudioFullArchitectureDiagram } from '@/components/diagrams';
 import { Button } from '@/components/ui/button';
 // Tabs imports kept for potential future use but not needed for current category navigation
-import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building, Users, Network, ArrowRightLeft, Download, Workflow, Bot, History, Sparkles, Image, Video, Server, Target } from 'lucide-react';
+import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building, Users, Network, ArrowRightLeft, Download, Workflow, Bot, History, Sparkles, Image, Video, Server, Target, Map } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { Badge } from '@/components/ui/badge';
@@ -68,6 +68,7 @@ const diagramCategories = {
     label: 'Genie Studio',
     icon: Sparkles,
     diagrams: [
+      { id: 'genie-full', label: 'Full Architecture', icon: Map },
       { id: 'genie-architecture', label: 'Architecture', icon: Layers },
       { id: 'genie-technical', label: 'Technical', icon: Server },
       { id: 'genie-functional', label: 'Functional', icon: Users },
@@ -145,6 +146,8 @@ const ArchitectureDiagram = () => {
         return <MedicalImagingAIPipelineDiagram />;
       case 'onboarding':
         return <PatientOnboardingFlowDiagram />;
+      case 'genie-full':
+        return <GenieStudioFullArchitectureDiagram />;
       case 'genie-architecture':
         return <GenieRecordingStudioArchitectureDiagram />;
       case 'genie-technical':
