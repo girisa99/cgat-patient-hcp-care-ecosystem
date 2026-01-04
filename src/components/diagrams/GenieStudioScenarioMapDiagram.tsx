@@ -314,7 +314,7 @@ export const GenieStudioScenarioMapDiagram = () => {
                     <rect width="1200" height="420" fill={colors.background} rx="8" />
                     
                     <text x="600" y="35" textAnchor="middle" fill={colors.text} fontSize="20" fontWeight="600">
-                      Genie Studio Scenario Implementation Status
+                      Genie Mind Scenario Implementation Status
                     </text>
                     <text x="600" y="58" textAnchor="middle" fill={colors.textMuted} fontSize="13">
                       60 Total Scenarios | 18 Implemented | 12 Partial | 30 Planned

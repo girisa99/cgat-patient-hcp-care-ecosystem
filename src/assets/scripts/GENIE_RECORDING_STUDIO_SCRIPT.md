@@ -139,7 +139,7 @@
 
 > **Projects** — Everything starts with a Project. This is your container. Whether I'm creating a patient onboarding tutorial, a document processing demo, or just a quick update video—it all lives in a project. This keeps everything organized without overwhelming me with folder structures.
 
-> **Schedule Show** — This is where I plan recordings. Think of it like scheduling a Zoom meeting, but for yourself. I block time, set reminders, and when that time comes, everything is ready to go. No scrambling.
+> **Genie Arc** — This is where I plan my production journey. Think of it like scheduling a Zoom meeting, but for yourself. I map out the arc from concept to completion—setting up shows, inviting participants for podcasts, blocking time, setting reminders. When that time comes, everything is ready to go. No scrambling.
 
 > **Production Hub** — This is the nerve center. I can see all my projects, their status, what's in draft, what's ready to record, what's published. It's like a dashboard, but human-friendly.
 
@@ -314,7 +314,7 @@
 
 > With vibe-based tools, with AI assistance, with some experimentation and self-learning—you can build exactly what you need.
 
-> **Genie Mind's** Schedule Show means I don't forget to record. The Templates mean I don't waste time configuring. The Voice Generator means I have options when I'm not feeling confident. The Production Hub keeps me organized. The Library stores everything.
+> **Genie Mind's** Genie Arc means I plan my entire production journey. The Templates mean I don't waste time configuring. The Voice Generator means I have options when I'm not feeling confident. The Production Hub keeps me organized. The Library stores everything.
 
 > **Genie Vibe's** Trim means mistakes don't require starting over. The text overlay means I can add context. The one-button recording means I don't have to coordinate anything.
 
@@ -349,7 +349,7 @@
 
 > This was my experiment. My self-learning project. My proof that new tools are changing what's possible for people who would never call themselves "developers."
 
-> I built a complete recording and publishing system—Schedule Show, Production Hub, Projects, Templates, Library, Voice Generator, Podcast capabilities, Studio Sound presets, full media studio with Trim and text overlays—in 4 days.
+> I built a complete recording and publishing system—Genie Arc for planning, Production Hub, Projects, Templates, Library, Voice Generator, Podcast capabilities, Studio Sound presets, full media studio with Trim and text overlays—in 4 days.
 
 > And I used it to record and publish the very video you might be watching right now.
 
@@ -400,6 +400,8 @@
   - Tagline: *"AI That Understands"*
 - **Genie Vibe** — The media capture and production studio
   - Tagline: *"Script to Screen"*
+- **Genie Arc** — The production planning and scheduling journey
+  - Tagline: *"Your Production Journey"*
 - **Suite Tagline:** *"From Mind to Media"*
 
 ## Target Audience Profile
@@ -413,7 +415,7 @@
 ## Key Features to Highlight
 
 ### Genie Mind (Pre-Production)
-1. **Schedule Show** — Plan recordings like meetings
+1. **Genie Arc** — Plan your production journey (shows, participants, scheduling)
 2. **Production Hub** — Command center for all projects
 3. **Projects** — Organizational container
 4. **Templates** — Reusable configurations
@@ -476,7 +478,7 @@
 GENIE MIND                      GENIE VIBE
 "AI That Understands"          "Script to Screen"
 ─────────────────              ─────────────────
-Schedule Show ─────────────────→ Scheduled Time
+Genie Arc ─────────────────────→ Production Journey
 Production Hub ────────────────→ Project Context
 Projects ──────────────────────→ Loaded Content
 Templates ─────────────────────→ Applied Settings

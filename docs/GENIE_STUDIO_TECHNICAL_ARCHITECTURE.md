@@ -1,8 +1,9 @@
-# Genie Studio & Recording Studio: Technical Architecture
+# Genie Mind & Genie Vibe: Technical Architecture
 
-> **Version:** 1.0  
+> **Version:** 1.1  
 > **Last Updated:** 2026-01-04  
 > **Scope:** P0-P2 Implementation | P3-P4 Roadmap
+> **Suite:** Mind to Media — AI-Powered Production Suite
 
 ---
 
@@ -27,19 +28,20 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────┐
-│                              GENIE STUDIO ECOSYSTEM                                  │
+│                         MIND TO MEDIA — PRODUCTION SUITE                             │
 ├─────────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                      │
 │  ┌─────────────────────────────────┐      ┌─────────────────────────────────────┐   │
-│  │       GENIE STUDIO              │      │       RECORDING STUDIO              │   │
-│  │     (Pre-Production)            │◄────►│        (Production)                 │   │
+│  │       GENIE MIND                │      │       GENIE VIBE                    │   │
+│  │   "AI That Understands"         │◄────►│    "Script to Screen"               │   │
+│  │     (Pre-Production)            │      │        (Production)                 │   │
 │  │                                 │      │                                     │   │
 │  │  • Script Editor                │      │  • Video Capture                    │   │
 │  │  • TTS Generation               │      │  • Teleprompter                     │   │
 │  │  • AI Enhancement               │      │  • Audio Mixer                      │   │
 │  │  • Template Library             │      │  • Recording Controls               │   │
 │  │  • Media Library                │      │  • Export Engine                    │   │
-│  │  • Show Scheduling              │      │  • Recording Library                │   │
+│  │  • Genie Arc (Scheduling)       │      │  • Recording Library                │   │
 │  └─────────────────────────────────┘      └─────────────────────────────────────┘   │
 │                    │                                        │                        │
 │                    └────────────────┬───────────────────────┘                        │

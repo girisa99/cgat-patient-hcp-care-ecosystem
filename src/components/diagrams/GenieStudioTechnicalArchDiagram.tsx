@@ -234,7 +234,7 @@ export const GenieStudioTechnicalArchDiagram = () => {
 
                     {/* Title */}
                     <text x="600" y="35" textAnchor="middle" fill={colors.text} fontSize="20" fontWeight="600">
-                      Genie Studio Technical Architecture - P0/P1/P2
+                      Genie Mind Technical Architecture - P0/P1/P2
                     </text>
 
                     {/* Frontend Layer */}
