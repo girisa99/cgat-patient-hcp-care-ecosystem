@@ -779,29 +779,34 @@ export function RecordingStudio({
     
     // Start audio playback after countdown completes
     setTimeout(() => {
+      // Look up audio files fresh to avoid stale closures
+      const ttsFileToPlay = voiceovers.find(v => v.id === selectedTTSFileId);
+      const voiceoverToPlay = voiceovers.find(v => v.id === selectedVoiceoverId);
+      const musicToPlay = music.find(m => m.id === selectedMusicId);
+      
       console.log('[RecordingStudio] === AUDIO PLAYBACK AFTER COUNTDOWN ===');
       console.log('[RecordingStudio] Selection IDs:', {
         selectedVoiceoverId,
         selectedTTSFileId,
         selectedMusicId,
       });
-      console.log('[RecordingStudio] Resolved audio sources:', {
-        currentVoiceover: currentVoiceover ? { 
-          id: currentVoiceover.id, 
-          name: currentVoiceover.name, 
-          hasUrl: !!currentVoiceover.url,
-          urlPreview: currentVoiceover.url?.substring(0, 50)
+      console.log('[RecordingStudio] Resolved audio sources (fresh lookup):', {
+        ttsFileToPlay: ttsFileToPlay ? { 
+          id: ttsFileToPlay.id, 
+          name: ttsFileToPlay.name, 
+          hasUrl: !!ttsFileToPlay.url,
+          urlPreview: ttsFileToPlay.url?.substring(0, 50)
         } : 'None (not selected)',
-        currentTTSFile: currentTTSFile ? {
-          id: currentTTSFile.id,
-          name: currentTTSFile.name,
-          hasUrl: !!currentTTSFile.url,
-          urlPreview: currentTTSFile.url?.substring(0, 50)
+        voiceoverToPlay: voiceoverToPlay ? {
+          id: voiceoverToPlay.id,
+          name: voiceoverToPlay.name,
+          hasUrl: !!voiceoverToPlay.url,
+          urlPreview: voiceoverToPlay.url?.substring(0, 50)
         } : 'None (not selected)',
-        currentMusic: currentMusic ? {
-          id: currentMusic.id,
-          name: currentMusic.name,
-          hasUrl: !!currentMusic.url
+        musicToPlay: musicToPlay ? {
+          id: musicToPlay.id,
+          name: musicToPlay.name,
+          hasUrl: !!musicToPlay.url
         } : 'None (not selected)',
         ttsGenerationResult: ttsGeneration.lastResult?.audioUrl ? 'Available' : 'None',
         ttsAudioUrlState: ttsAudioUrl ? 'Available' : 'None',
@@ -814,13 +819,13 @@ export function RecordingStudio({
       // 4. Local TTS URL state (legacy)
       let voiceAudioPlayed = false;
       
-      if (currentTTSFile?.url) {
-        console.log('[RecordingStudio] ▶️ Playing TTS file:', currentTTSFile.name);
-        audioPlayback.playTTS(currentTTSFile.url);
+      if (ttsFileToPlay?.url) {
+        console.log('[RecordingStudio] ▶️ Playing TTS file:', ttsFileToPlay.name);
+        audioPlayback.playTTS(ttsFileToPlay.url);
         voiceAudioPlayed = true;
-      } else if (currentVoiceover?.url) {
-        console.log('[RecordingStudio] ▶️ Playing voiceover:', currentVoiceover.name);
-        audioPlayback.playVoiceover(currentVoiceover.url);
+      } else if (voiceoverToPlay?.url) {
+        console.log('[RecordingStudio] ▶️ Playing voiceover:', voiceoverToPlay.name);
+        audioPlayback.playVoiceover(voiceoverToPlay.url);
         voiceAudioPlayed = true;
       } else if (ttsGeneration.lastResult?.audioUrl) {
         console.log('[RecordingStudio] ▶️ Playing generated TTS audio');
@@ -839,9 +844,9 @@ export function RecordingStudio({
       }
       
       // Play music (can play alongside voice)
-      if (currentMusic?.url) {
-        console.log('[RecordingStudio] ▶️ Playing music:', currentMusic.name);
-        audioPlayback.playMusic(currentMusic.url);
+      if (musicToPlay?.url) {
+        console.log('[RecordingStudio] ▶️ Playing music:', musicToPlay.name);
+        audioPlayback.playMusic(musicToPlay.url);
       }
       
       // Start teleprompter scrolling
@@ -850,7 +855,7 @@ export function RecordingStudio({
       // Reset word index for teleprompter
       setCurrentWordIndex(0);
     }, countdownMs);
-  }, [recording, audioPlayback, currentVoiceover, currentTTSFile, currentMusic, screenShare, currentScript, ttsGeneration.lastResult, ttsAudioUrl, hasTTSAudio, selectedVoiceoverId, selectedTTSFileId, selectedMusicId]);
+  }, [recording, audioPlayback, voiceovers, music, screenShare, currentScript, ttsGeneration.lastResult, ttsAudioUrl, hasTTSAudio, selectedVoiceoverId, selectedTTSFileId, selectedMusicId]);
 
   // Pause recording - also pause audio
   const handlePauseRecording = useCallback(() => {
