@@ -217,10 +217,21 @@ export function useAudioPlayback() {
 
   const playTTS = useCallback((urlOrAudio: string | HTMLAudioElement) => {
     // Support both URL strings and HTMLAudioElement for backward compatibility
-    const audio = typeof urlOrAudio === 'string' ? new Audio(urlOrAudio) : urlOrAudio;
+    let audio: HTMLAudioElement;
+    
+    if (typeof urlOrAudio === 'string') {
+      // Validate URL before creating Audio element
+      if (!urlOrAudio || urlOrAudio.trim() === '') {
+        console.error('[useAudioPlayback] playTTS: Empty URL provided');
+        return;
+      }
+      audio = new Audio(urlOrAudio);
+    } else {
+      audio = urlOrAudio;
+    }
     
     console.log('[useAudioPlayback] playTTS called:', typeof urlOrAudio === 'string' ? 'URL' : 'HTMLAudioElement', 
-      ', src:', audio.src?.substring(0, 60) || 'no src');
+      ', src:', audio.src?.substring(0, 80) || 'no src');
     
     // Stop voiceover and existing TTS to prevent overlap
     if (voiceoverRef.current) voiceoverRef.current.pause();
@@ -250,11 +261,25 @@ export function useAudioPlayback() {
       setAudioTimeInfo(prev => ({ ...prev, duration: audio.duration }));
     };
     audio.onerror = (e) => {
-      console.error('[useAudioPlayback] TTS playback error:', e);
+      console.error('[useAudioPlayback] TTS playback error:', e, 'src:', audio.src?.substring(0, 80));
+      setIsPlaying(prev => ({ ...prev, tts: false }));
+      // Try to get more error details
+      const mediaError = audio.error;
+      if (mediaError) {
+        console.error('[useAudioPlayback] MediaError code:', mediaError.code, 'message:', mediaError.message);
+      }
     };
     
-    audio.play().catch((err) => {
-      console.error('[useAudioPlayback] TTS play() failed:', err);
+    // Add canplay event to ensure audio is ready
+    audio.oncanplay = () => {
+      console.log('[useAudioPlayback] TTS can play, attempting playback');
+    };
+    
+    audio.play().then(() => {
+      console.log('[useAudioPlayback] TTS play() promise resolved');
+    }).catch((err) => {
+      console.error('[useAudioPlayback] TTS play() failed:', err.name, err.message);
+      setIsPlaying(prev => ({ ...prev, tts: false }));
     });
     setState(prev => ({ ...prev, ttsAudio: audio }));
   }, [state.ttsVolume, startTimeTracking, stopTimeTracking, applyDucking]);
