@@ -5,11 +5,22 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { Badge } from '@/components/ui/badge';
 import { 
   Camera, CameraOff, Mic, MicOff, Play, Pause, Square, 
-  Type, Sparkles, Image, Scissors, Undo, Subtitles, FileText, Loader2 
+  Type, Sparkles, Image, Scissors, Undo, Subtitles, FileText, Loader2,
+  Volume2, Music, AudioLines
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+interface AudioCombinationStatus {
+  hasTTS: boolean;
+  hasVoiceover: boolean;
+  hasMusic: boolean;
+  ttsName?: string;
+  voiceoverName?: string;
+  musicName?: string;
+}
 
 interface RecordingControlsProps {
   // Camera state
@@ -52,6 +63,9 @@ interface RecordingControlsProps {
   onTranscribe?: () => void;
   isTranscribing?: boolean;
   transcriptionText?: string | null;
+
+  // Audio combination status
+  audioCombination?: AudioCombinationStatus;
 }
 
 export function RecordingControls({
@@ -82,9 +96,80 @@ export function RecordingControls({
   onTranscribe,
   isTranscribing = false,
   transcriptionText,
+  audioCombination,
 }: RecordingControlsProps) {
+  
+  // Compute audio combination label
+  const getAudioCombinationLabel = () => {
+    if (!audioCombination) return null;
+    const { hasTTS, hasVoiceover, hasMusic } = audioCombination;
+    
+    if (!hasTTS && !hasVoiceover && !hasMusic) return 'No audio selected';
+    
+    const parts: string[] = [];
+    if (hasTTS) parts.push('TTS');
+    else if (hasVoiceover) parts.push('Voiceover');
+    if (hasMusic) parts.push('Music');
+    
+    return parts.join(' + ');
+  };
+
+  const audioLabel = getAudioCombinationLabel();
+  
   return (
     <div className="space-y-3">
+      {/* Audio Combination Status */}
+      {audioCombination && (
+        <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg border border-border/50">
+          <span className="text-xs text-muted-foreground font-medium">Audio:</span>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {audioCombination.hasTTS && (
+              <Badge variant="secondary" className="gap-1 text-xs bg-blue-500/10 text-blue-600 border-blue-500/20">
+                <AudioLines className="w-3 h-3" />
+                TTS
+                {audioCombination.ttsName && (
+                  <span className="text-muted-foreground truncate max-w-[80px]">
+                    ({audioCombination.ttsName})
+                  </span>
+                )}
+              </Badge>
+            )}
+            {audioCombination.hasVoiceover && !audioCombination.hasTTS && (
+              <Badge variant="secondary" className="gap-1 text-xs bg-purple-500/10 text-purple-600 border-purple-500/20">
+                <Volume2 className="w-3 h-3" />
+                Voiceover
+                {audioCombination.voiceoverName && (
+                  <span className="text-muted-foreground truncate max-w-[80px]">
+                    ({audioCombination.voiceoverName})
+                  </span>
+                )}
+              </Badge>
+            )}
+            {audioCombination.hasMusic && (
+              <Badge variant="secondary" className="gap-1 text-xs bg-green-500/10 text-green-600 border-green-500/20">
+                <Music className="w-3 h-3" />
+                Music
+                {audioCombination.musicName && (
+                  <span className="text-muted-foreground truncate max-w-[80px]">
+                    ({audioCombination.musicName})
+                  </span>
+                )}
+              </Badge>
+            )}
+            {!audioCombination.hasTTS && !audioCombination.hasVoiceover && !audioCombination.hasMusic && (
+              <Badge variant="outline" className="gap-1 text-xs text-muted-foreground">
+                No audio selected
+              </Badge>
+            )}
+          </div>
+          {audioLabel && audioLabel !== 'No audio selected' && (
+            <span className="ml-auto text-xs text-muted-foreground">
+              {audioLabel}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Camera & Mic Controls */}
       <div className="flex flex-wrap gap-2">
         <Button

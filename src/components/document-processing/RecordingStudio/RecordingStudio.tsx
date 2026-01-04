@@ -1301,6 +1301,14 @@ export function RecordingStudio({
               onTranscribe={handleTranscribeRecording}
               isTranscribing={isTranscribing}
               transcriptionText={transcriptionText}
+              audioCombination={{
+                hasTTS: !!selectedTTSFileId && !!currentTTSFile,
+                hasVoiceover: !!selectedVoiceoverId && !!currentVoiceover,
+                hasMusic: !!selectedMusicId && !!currentMusic,
+                ttsName: currentTTSFile?.name,
+                voiceoverName: currentVoiceover?.name,
+                musicName: currentMusic?.name,
+              }}
             />
           </div>
 
