@@ -26,3 +26,5 @@ export { AvatarCreator } from './AvatarCreator';
 export { PictureInPicture } from './PictureInPicture';
 export { VideoEditorIntegration } from './VideoEditorIntegration';
 export { ProductionInfo } from './ProductionInfo';
+export { DraggablePanel } from './DraggablePanel';
+export { FloatingAudioMixer } from './FloatingAudioMixer';
