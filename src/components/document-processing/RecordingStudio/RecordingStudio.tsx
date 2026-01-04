@@ -1553,13 +1553,20 @@ export function RecordingStudio({
                     });
                     
                     if (ttsFile?.url) {
-                      // Ensure URL is a valid string before playing
+                      // Validate URL is accessible (not a blob URL)
                       const audioUrl = String(ttsFile.url);
+                      if (audioUrl.startsWith('blob:') || audioUrl.startsWith('data:')) {
+                        console.error('[RecordingStudio] TTS file has ephemeral URL:', audioUrl.substring(0, 50));
+                        toast.error('This TTS file needs to be regenerated - the audio file is no longer accessible');
+                        return;
+                      }
                       console.log('[RecordingStudio] Calling playTTS with URL:', audioUrl.substring(0, 80));
                       audioPlayback.playTTS(audioUrl);
-                    } else if (selectedTTSFileId) {
+                    } else if (selectedTTSFileId && ttsFile) {
                       console.error('[RecordingStudio] TTS file found but no URL:', ttsFile);
-                      toast.error('TTS file has no audio URL');
+                      toast.error('This TTS file needs to be regenerated - the audio file is no longer accessible');
+                    } else if (selectedTTSFileId) {
+                      toast.error('TTS file not found');
                     } else {
                       toast.error('Select a TTS file first');
                     }

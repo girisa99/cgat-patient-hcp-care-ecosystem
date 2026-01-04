@@ -94,36 +94,54 @@ export function useGenieMediaLibrary(): GenieMediaLibrary {
         // Determine the correct URL to use
         // Priority: 
         // 1. If storage_path exists, ALWAYS construct public URL from storage (most reliable)
-        // 2. If file_url starts with http, use it directly
-        // 3. Fall back to file_url (may be blob, but at least we have something)
-        let finalUrl = item.file_url || undefined;
+        // 2. If file_url starts with http (not blob), use it directly
+        // 3. Mark file as inaccessible if only blob URL
+        let finalUrl: string | undefined = undefined;
+        let storageUrlConstructed = false;
         
         // Always prefer storage URL when available - blob URLs won't work across sessions
         if (item.storage_path) {
+          // Ensure storage path has .mp3 extension for audio files
+          let storagePath = item.storage_path;
+          if (!storagePath.endsWith('.mp3') && !storagePath.endsWith('.wav') && !storagePath.endsWith('.ogg')) {
+            storagePath = `${storagePath}.mp3`;
+          }
+          
           // Try multiple bucket names as fallbacks (handle legacy data inconsistencies)
           const bucketCandidates = [
             item.storage_bucket,
+            'genie-media',
             'generated-media',
-            'generated-audio',
-            'genie-media'
-          ].filter(Boolean);
+            'generated-audio'
+          ].filter(Boolean) as string[];
           
           for (const bucket of bucketCandidates) {
             try {
               const { data: { publicUrl } } = supabase.storage
-                .from(bucket!)
-                .getPublicUrl(item.storage_path);
+                .from(bucket)
+                .getPublicUrl(storagePath);
               if (publicUrl) {
                 finalUrl = publicUrl;
-                console.log(`📀 Using storage URL for ${item.name}:`, finalUrl.substring(0, 60));
+                storageUrlConstructed = true;
+                console.log(`📀 Using storage URL for ${item.name}:`, finalUrl.substring(0, 80));
                 break;
               }
             } catch (e) {
               console.warn(`📀 Bucket ${bucket} not accessible for ${item.name}`);
             }
           }
-        } else if (finalUrl && (finalUrl.startsWith('blob:') || finalUrl.startsWith('data:'))) {
-          console.warn(`📀 Warning: ${item.name} has blob URL but no storage path - file may not be accessible`);
+        }
+        
+        // If no storage URL, check if file_url is valid (not blob)
+        if (!storageUrlConstructed && item.file_url) {
+          if (item.file_url.startsWith('https://') && !item.file_url.startsWith('blob:')) {
+            finalUrl = item.file_url;
+            console.log(`📀 Using direct URL for ${item.name}:`, finalUrl.substring(0, 80));
+          } else if (item.file_url.startsWith('blob:') || item.file_url.startsWith('data:')) {
+            console.warn(`📀 Warning: ${item.name} has blob/data URL but no valid storage path - file is NOT accessible`);
+            // Don't use blob URL - it won't work across sessions
+            finalUrl = undefined;
+          }
         }
         
         // Determine metadataType with better fallback logic
