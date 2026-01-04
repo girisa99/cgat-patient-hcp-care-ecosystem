@@ -73,7 +73,8 @@ export const GenieStudioTechnicalArchDiagram = () => {
     const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600">
   <rect width="1200" height="600" fill="${colors.background}"/>
-  <text x="600" y="35" text-anchor="middle" fill="${colors.text}" font-size="20" font-weight="bold">Genie Studio Technical Architecture</text>
+  <text x="600" y="30" text-anchor="middle" fill="${colors.text}" font-size="20" font-weight="bold">Genie Mind + Genie Vibe — Technical Architecture</text>
+  <text x="600" y="50" text-anchor="middle" fill="${colors.textMuted}" font-size="12">"From Mind to Media" | AI That Understands → Script to Screen</text>
   
   <!-- Legend -->
   <g transform="translate(50, 50)">
@@ -140,7 +141,7 @@ export const GenieStudioTechnicalArchDiagram = () => {
               <Server className="h-8 w-8 text-muted-foreground" />
               <div>
                 <CardTitle className="text-2xl text-foreground">Technical Architecture</CardTitle>
-                <p className="text-muted-foreground text-sm">Genie Studio & Recording Studio - System Design</p>
+                <p className="text-muted-foreground text-sm">Genie Mind + Genie Vibe — System Design</p>
               </div>
             </div>
             <div className="flex gap-2">

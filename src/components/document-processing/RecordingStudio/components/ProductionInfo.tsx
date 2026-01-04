@@ -1,5 +1,5 @@
 /**
- * Production Info Panel - Shows current production context in Recording Studio
+ * Production Info Panel - Shows current production context in Genie Vibe
  * Displays show name, participants, linked assets, stage, and project stats
  */
 

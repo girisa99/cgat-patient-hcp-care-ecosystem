@@ -1,5 +1,7 @@
 /**
- * Fullscreen Recording Studio - Complete Implementation
+ * Genie Vibe - Script to Screen Media Production Studio
+ * Part of the Genie Mind + Genie Vibe suite: "From Mind to Media"
+ * 
  * Features:
  * - Screen sharing with 5-second countdown
  * - Floating teleprompter (separate window)
@@ -1199,7 +1201,7 @@ export function RecordingStudio({
         }`}>
           <div className="flex items-center gap-3">
             <h2 className={`font-semibold flex items-center gap-2 ${headerMinimized ? 'text-sm' : 'text-base'}`}>
-              🎬 {!headerMinimized && 'Recording Studio'}
+              🎬 {!headerMinimized && 'Genie Vibe'}
             </h2>
             
             {/* Recording Mode Selector - Hidden in focus mode */}
@@ -1651,7 +1653,7 @@ export function RecordingStudio({
                     } else {
                       return (
                         <p className="text-xs text-amber-600 flex items-center gap-1">
-                          ⚠ No audio for this script - generate TTS in Genie Studio
+                          ⚠ No audio for this script - generate TTS in Genie Mind
                         </p>
                       );
                     }

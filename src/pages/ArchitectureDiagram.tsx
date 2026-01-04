@@ -65,7 +65,7 @@ const diagramCategories = {
     ]
   },
   genieStudio: {
-    label: 'Genie Studio',
+    label: 'Genie Mind + Vibe',
     icon: Sparkles,
     diagrams: [
       { id: 'genie-full', label: 'Full Architecture', icon: Map },

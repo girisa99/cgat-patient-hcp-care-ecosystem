@@ -68,7 +68,8 @@ export const GenieStudioFunctionalArchDiagram = () => {
     const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="500" viewBox="0 0 1200 500">
   <rect width="1200" height="500" fill="${colors.background}"/>
-  <text x="600" y="35" text-anchor="middle" fill="${colors.text}" font-size="20" font-weight="bold">Genie Studio Functional Architecture</text>
+  <text x="600" y="30" text-anchor="middle" fill="${colors.text}" font-size="20" font-weight="bold">Genie Mind + Genie Vibe — Functional Architecture</text>
+  <text x="600" y="50" text-anchor="middle" fill="${colors.textMuted}" font-size="12">"From Mind to Media" | User Journey &amp; Workflow Design</text>
   
   <!-- Legend -->
   <g transform="translate(50, 50)">

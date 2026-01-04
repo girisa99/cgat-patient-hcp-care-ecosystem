@@ -1,6 +1,6 @@
 /**
  * Hook to load and manage production context from URL params
- * Used when navigating from Production Hub to Recording Studio
+ * Used when navigating from Production Hub to Genie Vibe
  */
 
 import { useState, useEffect, useCallback } from 'react';

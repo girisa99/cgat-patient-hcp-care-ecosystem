@@ -238,7 +238,7 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
                 </div>
               ))}
 
-              {/* Genie Studio - Media Production */}
+              {/* Genie Mind + Vibe - Media Production */}
               {navigationGroups.genieStudio && navigationGroups.genieStudio.length > 0 && navigationGroups.genieStudio.map(tab => (
                 <div key={tab.to} className="nav-item">
                   {renderNavButton(tab)}

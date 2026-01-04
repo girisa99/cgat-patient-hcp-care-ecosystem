@@ -1,6 +1,6 @@
 /**
  * Recording Layout Preview
- * Shows mode-specific recording studio layout configuration
+ * Shows mode-specific Genie Vibe layout configuration
  */
 
 import React from 'react';

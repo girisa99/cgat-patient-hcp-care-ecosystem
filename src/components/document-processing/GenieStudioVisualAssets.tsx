@@ -21,7 +21,7 @@ const imageAssets: ImageAsset[] = [
   {
     id: 'hero',
     title: 'Architecture Overview',
-    description: 'Pre-Production to Post-Production pipeline showing Genie Studio and Recording Studio flow',
+    description: 'Pre-Production to Post-Production pipeline showing Genie Mind and Genie Vibe flow',
     src: heroImage,
     category: 'architecture',
   },
