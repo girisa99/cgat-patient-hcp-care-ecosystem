@@ -10,12 +10,23 @@ import heroImage from '@/assets/genie-recording-architecture-hero.png';
 import beforeAfterImage from '@/assets/genie-before-after-comparison.png';
 import contextHandoffImage from '@/assets/genie-context-handoff.png';
 
-// Import logos
-import smallIcon from '@/assets/logos/genie-studio-small-icon.png';
-import banner from '@/assets/logos/genie-studio-banner.png';
-import presentation from '@/assets/logos/genie-studio-presentation-v2.png';
-import product from '@/assets/logos/genie-studio-product.png';
-import genieArcCombined from '@/assets/logos/genie-arc-combined.png';
+// Import Genie Studio logos
+import studioSmallIcon from '@/assets/logos/genie-studio-small-icon.png';
+import studioBanner from '@/assets/logos/genie-studio-banner.png';
+import studioPresentation from '@/assets/logos/genie-studio-presentation-v2.png';
+import studioProduct from '@/assets/logos/genie-studio-product.png';
+
+// Import Genie Mind logos
+import mindCombined from '@/assets/logos/genie-mind-combined.png';
+import mindPresentation from '@/assets/logos/genie-mind-presentation.png';
+import mindProduct from '@/assets/logos/genie-mind-product.png';
+import mindSmallIcon from '@/assets/logos/genie-mind-small-icon.png';
+
+// Import Genie Arc logos
+import arcCombined from '@/assets/logos/genie-arc-combined.png';
+import arcPresentation from '@/assets/logos/genie-arc-presentation.png';
+import arcProduct from '@/assets/logos/genie-arc-product.png';
+import arcSmallIcon from '@/assets/logos/genie-arc-small-icon.png';
 
 interface ImageAsset {
   id: string;
@@ -23,6 +34,7 @@ interface ImageAsset {
   description: string;
   src: string;
   category: 'architecture' | 'comparison' | 'flow' | 'logo';
+  brand?: 'studio' | 'mind' | 'arc';
 }
 
 const imageAssets: ImageAsset[] = [
@@ -50,40 +62,104 @@ const imageAssets: ImageAsset[] = [
 ];
 
 const logoAssets: ImageAsset[] = [
+  // Genie Studio logos
   {
-    id: 'small-icon',
-    title: 'Small Icon',
+    id: 'studio-small-icon',
+    title: 'Genie Studio - Small Icon',
     description: 'Compact icon with tagline "From Mind to Media"',
-    src: smallIcon,
+    src: studioSmallIcon,
     category: 'logo',
+    brand: 'studio',
   },
   {
-    id: 'banner',
-    title: 'Banner Logo',
+    id: 'studio-banner',
+    title: 'Genie Studio - Banner',
     description: 'Wide format for website headers and social media',
-    src: banner,
+    src: studioBanner,
     category: 'logo',
+    brand: 'studio',
   },
   {
-    id: 'presentation',
-    title: 'Presentation Logo',
+    id: 'studio-presentation',
+    title: 'Genie Studio - Presentation',
     description: 'Large format for presentations and marketing',
-    src: presentation,
+    src: studioPresentation,
     category: 'logo',
+    brand: 'studio',
   },
   {
-    id: 'product',
-    title: 'Product Logo',
+    id: 'studio-product',
+    title: 'Genie Studio - Product',
     description: 'Compact logo for app interfaces',
-    src: product,
+    src: studioProduct,
     category: 'logo',
+    brand: 'studio',
+  },
+  // Genie Mind logos
+  {
+    id: 'mind-combined',
+    title: 'Genie Mind - Original',
+    description: 'Combined logo with genie lamp and brain - "AI That Understands"',
+    src: mindCombined,
+    category: 'logo',
+    brand: 'mind',
   },
   {
-    id: 'genie-arc-combined',
-    title: 'Genie Arc Combined',
-    description: 'Combined Genie Arc logo with compass and infinity symbols',
-    src: genieArcCombined,
+    id: 'mind-presentation',
+    title: 'Genie Mind - Presentation',
+    description: 'Large format for presentations and marketing',
+    src: mindPresentation,
     category: 'logo',
+    brand: 'mind',
+  },
+  {
+    id: 'mind-product',
+    title: 'Genie Mind - Product',
+    description: 'Compact logo for app interfaces',
+    src: mindProduct,
+    category: 'logo',
+    brand: 'mind',
+  },
+  {
+    id: 'mind-small-icon',
+    title: 'Genie Mind - Small Icon',
+    description: 'Compact icon version',
+    src: mindSmallIcon,
+    category: 'logo',
+    brand: 'mind',
+  },
+  // Genie Arc logos
+  {
+    id: 'arc-combined',
+    title: 'Genie Arc - Original',
+    description: 'Combined logo - "Your Production Journey With Infinite Possibilities"',
+    src: arcCombined,
+    category: 'logo',
+    brand: 'arc',
+  },
+  {
+    id: 'arc-presentation',
+    title: 'Genie Arc - Presentation',
+    description: 'Large format for presentations and marketing',
+    src: arcPresentation,
+    category: 'logo',
+    brand: 'arc',
+  },
+  {
+    id: 'arc-product',
+    title: 'Genie Arc - Product',
+    description: 'Compact logo for app interfaces',
+    src: arcProduct,
+    category: 'logo',
+    brand: 'arc',
+  },
+  {
+    id: 'arc-small-icon',
+    title: 'Genie Arc - Small Icon',
+    description: 'Compact icon version',
+    src: arcSmallIcon,
+    category: 'logo',
+    brand: 'arc',
   },
 ];
 
