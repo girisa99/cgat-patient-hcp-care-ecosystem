@@ -752,30 +752,311 @@ export function getPopoutStyles(): string {
       visibility: visible;
     }
 
-    /* Edit Panel (shown when paused) */
+    /* Edit Panel (shown when paused) - Enhanced */
     .edit-panel {
-      padding: 20px;
-      background: rgba(251, 191, 36, 0.1);
-      border: 1px solid rgba(251, 191, 36, 0.2);
+      padding: 16px;
+      background: rgba(30, 30, 35, 0.98);
+      border: 1px solid rgba(251, 191, 36, 0.3);
       border-radius: 12px;
-      text-align: center;
+      max-height: 70vh;
+      overflow-y: auto;
     }
 
-    .edit-panel h4 {
-      color: #fbbf24;
-      margin-bottom: 8px;
-    }
-
-    .edit-panel p {
-      font-size: 0.875rem;
-      color: #888;
+    .edit-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    .edit-panel-actions {
+    .edit-panel-header h4 {
+      color: #fbbf24;
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .resume-main-btn {
+      padding: 8px 16px !important;
+      font-size: 0.875rem !important;
+    }
+
+    .edit-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 0.8rem;
+      color: #888;
+    }
+
+    .edit-script-section,
+    .edit-trim-section,
+    .edit-cleanup-section,
+    .edit-add-section,
+    .edit-info-section {
+      margin-bottom: 16px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* Script Display & Editor */
+    .script-content-preview {
+      max-height: 100px;
+      overflow-y: auto;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 6px;
+      font-size: 0.8rem;
+      color: #ccc;
+      white-space: pre-wrap;
+      line-height: 1.5;
+    }
+
+    #scriptEditTextarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 0.85rem;
+      font-family: inherit;
+      resize: vertical;
+    }
+
+    .script-editor-actions {
       display: flex;
       gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    .edit-small-btn {
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .edit-small-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .edit-small-btn.primary {
+      background: rgba(34, 197, 94, 0.2);
+      border-color: rgba(34, 197, 94, 0.4);
+      color: #22c55e;
+    }
+
+    .edit-small-btn.accent {
+      background: rgba(139, 92, 246, 0.2);
+      border-color: rgba(139, 92, 246, 0.4);
+      color: #a78bfa;
+    }
+
+    /* Trim Buttons */
+    .edit-trim-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .edit-trim-btn {
+      padding: 8px 16px;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 6px;
+      color: #f87171;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .edit-trim-btn:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    .edit-trim-btn.undo {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: rgba(59, 130, 246, 0.3);
+      color: #60a5fa;
+    }
+
+    .edit-trim-btn.undo:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .trim-status {
+      font-size: 0.75rem;
+      color: #888;
+    }
+
+    /* Cleanup Tools */
+    .cleanup-tools {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .cleanup-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .cleanup-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(139, 92, 246, 0.3);
+    }
+
+    .cleanup-icon {
+      font-size: 1.5rem;
+      margin-bottom: 4px;
+    }
+
+    .cleanup-label {
+      color: #fff;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .cleanup-desc {
+      color: #666;
+      font-size: 0.7rem;
+      margin-top: 2px;
+    }
+
+    .cleanup-preview {
+      margin-top: 12px;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 6px;
+      border: 1px solid rgba(139, 92, 246, 0.2);
+    }
+
+    .cleanup-preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 0.8rem;
+      color: #a78bfa;
+    }
+
+    .cleanup-items {
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .cleanup-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .cleanup-item:last-child {
+      border-bottom: none;
+    }
+
+    .cleanup-item input[type="checkbox"] {
+      accent-color: #a78bfa;
+    }
+
+    .cleanup-item-time {
+      color: #666;
+      font-size: 0.7rem;
+      min-width: 50px;
+    }
+
+    .cleanup-item-type {
+      color: #f87171;
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      background: rgba(239, 68, 68, 0.1);
+      border-radius: 4px;
+    }
+
+    .cleanup-item-type.silence {
+      color: #60a5fa;
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    .cleanup-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    /* Add TTS Section */
+    .add-tts-container textarea {
+      width: 100%;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 0.85rem;
+      font-family: inherit;
+      resize: vertical;
+    }
+
+    .add-tts-options {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      align-items: center;
+    }
+
+    .add-tts-select {
+      flex: 1;
+      padding: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 0.8rem;
+    }
+
+    /* Edit Info Section */
+    .edit-info-section {
+      display: flex;
+      gap: 16px;
       justify-content: center;
+      padding: 8px 12px;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .edit-info-item {
+      display: flex;
+      gap: 6px;
+      font-size: 0.75rem;
+    }
+
+    .info-label {
+      color: #666;
+    }
+
+    .info-value {
+      color: #fff;
+      font-weight: 500;
     }
 
     .edit-action-btn {
@@ -796,6 +1077,12 @@ export function getPopoutStyles(): string {
       background: rgba(34, 197, 94, 0.2);
       border-color: rgba(34, 197, 94, 0.4);
       color: #22c55e;
+    }
+
+    .edit-action-btn.accent {
+      background: rgba(139, 92, 246, 0.2);
+      border-color: rgba(139, 92, 246, 0.4);
+      color: #a78bfa;
     }
 
     /* Script Actions */

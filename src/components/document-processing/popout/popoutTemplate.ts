@@ -211,6 +211,8 @@ export function getPopoutHTML(config: PopoutConfig): string {
             <button class="trim-amount-btn" data-seconds="3">3s</button>
             <button class="trim-amount-btn active" data-seconds="5">5s</button>
             <button class="trim-amount-btn" data-seconds="10">10s</button>
+            <button class="trim-amount-btn" data-seconds="15">15s</button>
+            <button class="trim-amount-btn" data-seconds="30">30s</button>
             <button class="undo-trim-btn" id="undoTrimBtn" disabled>↩️ Undo</button>
             <span class="trim-info" id="trimInfo"></span>
             <div class="trim-feedback" id="trimFeedback"></div>
@@ -218,12 +220,110 @@ export function getPopoutHTML(config: PopoutConfig): string {
 
           <!-- Edit Panel (shown when paused) -->
           <div class="edit-panel" id="editPanel" style="display:none;">
-            <h4>⏸️ Recording Paused</h4>
-            <p>You can trim the last few seconds or resume recording.</p>
-            <div class="edit-panel-actions">
-              <button class="edit-action-btn" onclick="trimLastSeconds(5)">✂️ Trim 5s</button>
-              <button class="edit-action-btn" onclick="trimLastSeconds(10)">✂️ Trim 10s</button>
-              <button class="edit-action-btn primary" onclick="resumeRecording()">▶️ Resume</button>
+            <div class="edit-panel-header">
+              <h4>⏸️ Recording Paused</h4>
+              <button class="edit-action-btn primary resume-main-btn" onclick="resumeRecording()">▶️ Resume Recording</button>
+            </div>
+            
+            <!-- Current Script Display -->
+            <div class="edit-script-section">
+              <div class="edit-section-header">
+                <span>📝 Script Used for Recording</span>
+                <button class="edit-small-btn" onclick="toggleScriptEdit()" id="editScriptToggle">✏️ Edit</button>
+              </div>
+              <div class="edit-script-display" id="editScriptDisplay">
+                <div class="script-content-preview" id="scriptContentPreview">No script selected</div>
+              </div>
+              <div class="edit-script-editor" id="editScriptEditor" style="display:none;">
+                <textarea id="scriptEditTextarea" placeholder="Edit your script here..."></textarea>
+                <div class="script-editor-actions">
+                  <button class="edit-small-btn" onclick="cancelScriptEdit()">Cancel</button>
+                  <button class="edit-small-btn primary" onclick="saveScriptEdit()">Save Changes</button>
+                  <button class="edit-small-btn accent" onclick="generateTTSForEdit()">🔊 Generate TTS for Changes</button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Trim Controls -->
+            <div class="edit-trim-section">
+              <div class="edit-section-header">
+                <span>✂️ Trim Recording</span>
+                <span class="trim-status" id="editTrimStatus"></span>
+              </div>
+              <div class="edit-trim-buttons">
+                <button class="edit-trim-btn" onclick="trimLastSeconds(5)">5s</button>
+                <button class="edit-trim-btn" onclick="trimLastSeconds(10)">10s</button>
+                <button class="edit-trim-btn" onclick="trimLastSeconds(15)">15s</button>
+                <button class="edit-trim-btn" onclick="trimLastSeconds(30)">30s</button>
+                <button class="edit-trim-btn undo" onclick="undoLastTrim()" id="editUndoBtn" disabled>↩️ Undo</button>
+              </div>
+            </div>
+            
+            <!-- Audio Cleanup Tools -->
+            <div class="edit-cleanup-section">
+              <div class="edit-section-header">
+                <span>🧹 Audio Cleanup</span>
+              </div>
+              <div class="cleanup-tools">
+                <button class="cleanup-btn" onclick="detectAndRemoveSilence()">
+                  <span class="cleanup-icon">🔇</span>
+                  <span class="cleanup-label">Remove Silence</span>
+                  <span class="cleanup-desc">Detect & trim silent parts</span>
+                </button>
+                <button class="cleanup-btn" onclick="detectFillerWords()">
+                  <span class="cleanup-icon">💬</span>
+                  <span class="cleanup-label">Remove Filler Words</span>
+                  <span class="cleanup-desc">Umm, ahh, hmm, etc.</span>
+                </button>
+              </div>
+              <div class="cleanup-preview" id="cleanupPreview" style="display:none;">
+                <div class="cleanup-preview-header">
+                  <span>Detected Issues:</span>
+                  <button class="edit-small-btn" onclick="hideCleanupPreview()">✕</button>
+                </div>
+                <div class="cleanup-items" id="cleanupItems"></div>
+                <div class="cleanup-actions">
+                  <button class="edit-small-btn" onclick="removeSelectedIssues()">Remove Selected</button>
+                  <button class="edit-small-btn accent" onclick="removeAllIssues()">Remove All</button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Add Text & TTS -->
+            <div class="edit-add-section">
+              <div class="edit-section-header">
+                <span>➕ Insert New Audio</span>
+              </div>
+              <div class="add-tts-container">
+                <textarea id="addTTSText" placeholder="Type text to insert as TTS audio at current position..." rows="2"></textarea>
+                <div class="add-tts-options">
+                  <select id="addTTSVoice" class="add-tts-select">
+                    <option value="alloy">Alloy (Neutral)</option>
+                    <option value="echo">Echo (Male)</option>
+                    <option value="fable">Fable (British)</option>
+                    <option value="onyx">Onyx (Deep)</option>
+                    <option value="nova">Nova (Female)</option>
+                    <option value="shimmer">Shimmer (Soft)</option>
+                  </select>
+                  <button class="edit-action-btn accent" onclick="insertTTSAudio()">🔊 Generate & Insert</button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Recording Info -->
+            <div class="edit-info-section">
+              <div class="edit-info-item">
+                <span class="info-label">Recorded:</span>
+                <span class="info-value" id="editRecordedTime">0:00</span>
+              </div>
+              <div class="edit-info-item">
+                <span class="info-label">Chunks:</span>
+                <span class="info-value" id="editChunkCount">0</span>
+              </div>
+              <div class="edit-info-item">
+                <span class="info-label">Trims:</span>
+                <span class="info-value" id="editTrimCount">0</span>
+              </div>
             </div>
           </div>
 
