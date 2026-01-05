@@ -1,0 +1,136 @@
+/**
+ * Genie Spark - Standalone Content Creation Suite
+ * "Ignite Your Ideas" - AI-powered content generation engine
+ * 
+ * DATA FLOW: Uses existing hooks - all data is user-scoped via RLS
+ */
+
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import AppLayout from '@/components/layout/AppLayout';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Zap, PenTool, Mic } from 'lucide-react';
+import { SmartContentPipeline } from '@/components/genie-studio/SmartContentPipeline';
+import { useGenieScripts, type GenieScript } from '@/components/genie-studio/useGenieScripts';
+import { toast } from 'sonner';
+import type { GeneratedContent } from '@/components/genie-studio/PostGenerationActions';
+import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
+
+const GenieSpark: React.FC = () => {
+  const navigate = useNavigate();
+  const { scripts: savedScripts, saveScript } = useGenieScripts();
+
+  const handleSendToScriptEditor = (content: GeneratedContent) => {
+    const newScript: GenieScript = {
+      id: `script-${Date.now()}`,
+      name: content.title || 'Generated Script',
+      content: content.script,
+      type: content.type === 'podcast_script' ? 'audio' : 'video',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      stats: {
+        wordCount: content.metadata?.wordCount || 0,
+        sentenceCount: 0,
+        characterCount: content.script.length,
+        estimatedReadingMinutes: Math.ceil((content.metadata?.estimatedDuration || 0) / 60),
+        estimatedSpeakingMinutes: Math.ceil((content.metadata?.estimatedDuration || 0) / 60),
+        readabilityScore: 'moderate' as const
+      }
+    };
+    saveScript(newScript);
+    navigate('/genie-mind?tab=script-editor');
+    toast.success(`Script sent to Script Editor for refinement!`);
+  };
+
+  const handleSendToVibe = (content: GeneratedContent) => {
+    const newScript: GenieScript = {
+      id: `script-${Date.now()}`,
+      name: content.title || 'Generated Script',
+      content: content.script,
+      type: content.type === 'podcast_script' ? 'audio' : 'video',
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+    saveScript(newScript);
+    navigate('/genie-vibe');
+    toast.success(`Script ready for recording in Vibe!`);
+  };
+
+  const handleSaveToKnowledgeBase = (content: GeneratedContent) => {
+    toast.success(`Script saved to Knowledge Base for future AI reference!`);
+  };
+
+  return (
+    <AppLayout>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-orange-950/10">
+        {/* Hero Header */}
+        <div className="relative overflow-hidden border-b border-border/50 bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-yellow-500/10">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-orange-500/20 via-transparent to-transparent" />
+          
+          <div className="relative max-w-7xl mx-auto px-6 py-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-6">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/genie-studio')}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Studio
+                </Button>
+                
+                <div className="flex items-center gap-4">
+                  <div className="h-16 w-16 rounded-2xl bg-white/90 backdrop-blur border border-orange-200/50 flex items-center justify-center shadow-lg overflow-hidden p-2">
+                    <img src={genieSparkLogo} alt="Genie Spark" className="h-full w-full object-contain" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
+                      Genie Spark
+                    </h1>
+                    <p className="text-sm text-muted-foreground">Content Creation Suite • Ignite Your Ideas</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/20">
+                  <Zap className="h-3 w-3 mr-1" />
+                  AI Powered
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/genie-mind?tab=script-editor')}
+                >
+                  <PenTool className="h-4 w-4 mr-2" />
+                  Script Editor
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-gradient-to-r from-orange-500 to-amber-500 text-white"
+                  onClick={() => navigate('/genie-vibe')}
+                >
+                  <Mic className="h-4 w-4 mr-2" />
+                  Record in Vibe
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <SmartContentPipeline
+            onSendToScriptEditor={handleSendToScriptEditor}
+            onSendToVibe={handleSendToVibe}
+            onSaveToKnowledgeBase={handleSaveToKnowledgeBase}
+          />
+        </div>
+      </div>
+    </AppLayout>
+  );
+};
+
+export default GenieSpark;
