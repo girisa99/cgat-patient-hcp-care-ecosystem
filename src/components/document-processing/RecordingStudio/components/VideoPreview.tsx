@@ -335,11 +335,11 @@ export function VideoPreview({
         </div>
       )}
 
-      {/* Progress indicator - shows audio sync progress */}
-      {audioDuration > 0 && countdown === null && (
+      {/* Progress indicator - shows audio sync progress (only when there are words to track) */}
+      {audioDuration > 0 && countdown === null && words.length > 0 && (
         <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full z-20">
           <span className="text-white/80 text-xs">
-            Word {currentWordIndex + 1}/{words.length} • {Math.round((audioCurrentTime / audioDuration) * 100)}%
+            Word {currentWordIndex + 1}/{words.length} • {Math.round((audioCurrentTime / Math.max(audioDuration, 0.01)) * 100)}%
           </span>
         </div>
       )}
