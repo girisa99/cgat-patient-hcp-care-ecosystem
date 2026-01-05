@@ -1,13 +1,14 @@
 /**
  * Popout Recording Studio - Camera & Recording Logic
  * Handles camera initialization, MediaRecorder, and video capture
- * Simplified and robust implementation
+ * WITH Web Audio API for mixing all audio sources into recording
  */
 
 export function getCameraScript(): string {
   return `
     // =====================================================
     // CAMERA & RECORDING MODULE (with Screen Share Support)
+    // INCLUDES: Web Audio API mixing for voiceover/music/TTS
     // =====================================================
     console.log('[Camera] Module loading...');
     
@@ -26,6 +27,23 @@ export function getCameraScript(): string {
     var isScreenSharing = false;
     var combinedStream = null; // Combined camera + screen stream
     
+    // =====================================================
+    // WEB AUDIO API FOR MIXING ALL AUDIO INTO RECORDING
+    // This fixes Bug #1: Voiceover/Music not being recorded
+    // =====================================================
+    var audioContext = null;
+    var audioDestination = null; // MediaStreamAudioDestinationNode
+    var microphoneSource = null;
+    var voiceoverSource = null;
+    var musicSource = null;
+    var ttsSource = null;
+    var connectedSources = []; // Track all connected sources
+    
+    // Chunk monitoring (Bug #4 fix)
+    var chunkMonitorInterval = null;
+    var lastChunkCount = 0;
+    var chunkStallCount = 0;
+    
     console.log('[Camera] DOM elements found:', {
       videoPreview: !!videoPreview,
       loadingOverlay: !!loadingOverlay,
@@ -38,6 +56,150 @@ export function getCameraScript(): string {
       var mins = Math.floor(seconds / 60);
       var secs = Math.floor(seconds % 60);
       return String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+    }
+    
+    // =====================================================
+    // AUDIO MIXING FUNCTIONS (Web Audio API)
+    // =====================================================
+    
+    function initAudioContext() {
+      if (audioContext) return;
+      
+      try {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        audioDestination = audioContext.createMediaStreamDestination();
+        console.log('[AudioMix] ✅ AudioContext initialized');
+      } catch (err) {
+        console.error('[AudioMix] Failed to create AudioContext:', err);
+      }
+    }
+    
+    function connectMicrophoneToMix(micStream) {
+      if (!audioContext || !audioDestination) {
+        initAudioContext();
+      }
+      if (!audioContext) return null;
+      
+      try {
+        if (micStream && micStream.getAudioTracks().length > 0) {
+          microphoneSource = audioContext.createMediaStreamSource(micStream);
+          microphoneSource.connect(audioDestination);
+          connectedSources.push(microphoneSource);
+          console.log('[AudioMix] ✅ Microphone connected to mix');
+          return microphoneSource;
+        }
+      } catch (err) {
+        console.error('[AudioMix] Error connecting microphone:', err);
+      }
+      return null;
+    }
+    
+    function connectAudioElementToMix(audioElement, sourceName) {
+      if (!audioContext || !audioDestination) {
+        initAudioContext();
+      }
+      if (!audioContext || !audioElement) return null;
+      
+      try {
+        var source = audioContext.createMediaElementSource(audioElement);
+        source.connect(audioDestination);
+        source.connect(audioContext.destination); // Also play through speakers
+        connectedSources.push(source);
+        console.log('[AudioMix] ✅', sourceName, 'connected to mix');
+        return source;
+      } catch (err) {
+        // Might already be connected
+        console.warn('[AudioMix] Could not connect', sourceName + ':', err.message);
+        return null;
+      }
+    }
+    
+    function getMixedAudioStream() {
+      if (!audioDestination) {
+        console.warn('[AudioMix] No audio destination available');
+        return null;
+      }
+      return audioDestination.stream;
+    }
+    
+    function cleanupAudioMix() {
+      console.log('[AudioMix] Cleaning up...');
+      
+      // Disconnect all sources
+      connectedSources.forEach(function(source) {
+        try {
+          source.disconnect();
+        } catch (e) {}
+      });
+      connectedSources = [];
+      
+      microphoneSource = null;
+      voiceoverSource = null;
+      musicSource = null;
+      ttsSource = null;
+      
+      // Close context
+      if (audioContext && audioContext.state !== 'closed') {
+        try {
+          audioContext.close();
+        } catch (e) {}
+      }
+      audioContext = null;
+      audioDestination = null;
+    }
+    
+    // =====================================================
+    // CHUNK MONITORING (Bug #4 fix)
+    // =====================================================
+    
+    function startChunkMonitoring() {
+      if (chunkMonitorInterval) return;
+      
+      lastChunkCount = recordedChunks.length;
+      chunkStallCount = 0;
+      
+      chunkMonitorInterval = setInterval(function() {
+        if (!isRecording || isPaused) return;
+        
+        var currentCount = recordedChunks.length;
+        
+        if (currentCount === lastChunkCount) {
+          chunkStallCount++;
+          console.warn('[ChunkMonitor] No new chunks for', chunkStallCount * 2, 'seconds');
+          
+          // If stalled for 4+ seconds, force requestData
+          if (chunkStallCount >= 2 && mediaRecorder && mediaRecorder.state === 'recording') {
+            console.log('[ChunkMonitor] Forcing requestData() due to stall...');
+            try {
+              mediaRecorder.requestData();
+            } catch (e) {
+              console.error('[ChunkMonitor] requestData failed:', e);
+            }
+          }
+          
+          // If stalled for 10+ seconds, likely a failure
+          if (chunkStallCount >= 5) {
+            console.error('[ChunkMonitor] Recording appears to have stalled!');
+            showStatus('Warning: Recording may have stalled', 'error');
+          }
+        } else {
+          chunkStallCount = 0;
+        }
+        
+        lastChunkCount = currentCount;
+      }, 2000);
+      
+      console.log('[ChunkMonitor] Started monitoring');
+    }
+    
+    function stopChunkMonitoring() {
+      if (chunkMonitorInterval) {
+        clearInterval(chunkMonitorInterval);
+        chunkMonitorInterval = null;
+      }
+      lastChunkCount = 0;
+      chunkStallCount = 0;
+      console.log('[ChunkMonitor] Stopped');
     }
     
     // Note: totalPausedTime and pauseStartTime are declared in shared globals
@@ -183,8 +345,17 @@ export function getCameraScript(): string {
         isScreenSharing = true;
         
         // Handle when user stops sharing via browser UI
+        // BUG #2 FIX: MUST stop recording FIRST to save data before cleanup
         screenStream.getVideoTracks()[0].onended = function() {
-          console.log('[ScreenShare] User stopped sharing');
+          console.log('[ScreenShare] User stopped sharing via browser UI');
+          
+          // CRITICAL: Stop recording first to save all data
+          if (isRecording) {
+            console.log('[ScreenShare] Stopping recording before screen share cleanup...');
+            stopRecording(); // This saves the recording data
+          }
+          
+          // Then clean up screen share
           stopScreenShare();
         };
         
@@ -358,6 +529,17 @@ export function getCameraScript(): string {
         }
       }, 100); // Update more frequently for smoother timer
       
+      // =====================================================
+      // BUG #1 FIX: Initialize Web Audio API for mixing
+      // This captures voiceover, music, TTS, AND mic into recording
+      // =====================================================
+      initAudioContext();
+      
+      // Connect microphone to audio mix
+      if (mediaStream && mediaStream.getAudioTracks().length > 0) {
+        connectMicrophoneToMix(mediaStream);
+      }
+      
       // Start audio playback (voiceover, TTS, music)
       console.log('[Recording] Triggering audio playback...');
       if (typeof startAudioPlayback === 'function') {
@@ -366,25 +548,66 @@ export function getCameraScript(): string {
         console.warn('[Recording] startAudioPlayback function not found');
       }
       
-      // Determine which stream to record
-      // Priority: combinedStream (screen+audio) > screenStream > mediaStream (camera)
-      var recordingStream = null;
-      
-      if (isScreenSharing && screenStream) {
-        // Create stream with screen video + mic audio
-        if (mediaStream && mediaStream.getAudioTracks().length > 0) {
-          recordingStream = new MediaStream([
-            ...screenStream.getVideoTracks(),
-            ...mediaStream.getAudioTracks() // Mic audio from camera
-          ]);
-          console.log('[Recording] Using screen + mic audio');
-        } else {
-          recordingStream = screenStream;
-          console.log('[Recording] Using screen only (no mic)');
+      // Wait a short moment for audio elements to be created, then connect them
+      setTimeout(function() {
+        // Connect voiceover audio to mix
+        if (typeof voiceoverAudio !== 'undefined' && voiceoverAudio && !voiceoverSource) {
+          voiceoverSource = connectAudioElementToMix(voiceoverAudio, 'Voiceover');
         }
+        
+        // Connect music audio to mix  
+        if (typeof musicAudio !== 'undefined' && musicAudio && !musicSource) {
+          musicSource = connectAudioElementToMix(musicAudio, 'Music');
+        }
+        
+        // Connect TTS audio to mix
+        if (typeof ttsAudio !== 'undefined' && ttsAudio && !ttsSource) {
+          ttsSource = connectAudioElementToMix(ttsAudio, 'TTS');
+        }
+        
+        console.log('[Recording] Audio sources connected to mix:', {
+          microphone: !!microphoneSource,
+          voiceover: !!voiceoverSource,
+          music: !!musicSource,
+          tts: !!ttsSource
+        });
+      }, 200);
+      
+      // =====================================================
+      // BUILD RECORDING STREAM WITH MIXED AUDIO
+      // =====================================================
+      var recordingStream = null;
+      var videoTracks = [];
+      
+      // Get video tracks from screen share or camera
+      if (isScreenSharing && screenStream) {
+        videoTracks = screenStream.getVideoTracks();
+        console.log('[Recording] Using screen video tracks:', videoTracks.length);
+      } else if (mediaStream && mediaStream.getVideoTracks().length > 0) {
+        videoTracks = mediaStream.getVideoTracks();
+        console.log('[Recording] Using camera video tracks:', videoTracks.length);
+      }
+      
+      // Get mixed audio stream (includes mic + voiceover + music + TTS)
+      var mixedAudioStream = getMixedAudioStream();
+      
+      if (videoTracks.length > 0 && mixedAudioStream) {
+        // Full recording: video + all mixed audio
+        recordingStream = new MediaStream([
+          ...videoTracks,
+          ...mixedAudioStream.getAudioTracks()
+        ]);
+        console.log('[Recording] ✅ Stream with video + MIXED audio (includes voiceover/music/TTS)');
+      } else if (videoTracks.length > 0 && mediaStream) {
+        // Fallback: video + mic only (if audio context failed)
+        recordingStream = new MediaStream([
+          ...videoTracks,
+          ...mediaStream.getAudioTracks()
+        ]);
+        console.log('[Recording] Using video + mic audio (fallback - no mix)');
       } else if (mediaStream) {
         recordingStream = mediaStream;
-        console.log('[Recording] Using camera stream');
+        console.log('[Recording] Using camera stream directly');
       }
       
       // Start video recording if we have a stream
@@ -419,6 +642,13 @@ export function getCameraScript(): string {
 
           mediaRecorder.onstop = function() {
             console.log('[Recording] MediaRecorder onstop fired, chunks:', recordedChunks.length);
+            
+            // Stop chunk monitoring
+            stopChunkMonitoring();
+            
+            // Clean up audio mix
+            cleanupAudioMix();
+            
             // Process recording after a small delay to ensure all chunks are captured
             setTimeout(function() {
               if (recordedChunks.length > 0) {
@@ -436,10 +666,12 @@ export function getCameraScript(): string {
             stopRecording();
           };
 
-          // CRITICAL: Use larger timeslice (500ms) to ensure chunks are captured more reliably
-          // Also request immediate first chunk after start
+          // Start with 500ms timeslice
           mediaRecorder.start(500);
           console.log('[Recording] MediaRecorder started with 500ms timeslice, state:', mediaRecorder.state);
+          
+          // Start chunk monitoring (Bug #4 fix)
+          startChunkMonitoring();
           
           // Force an immediate data request to ensure first chunk is captured
           setTimeout(function() {
@@ -450,7 +682,7 @@ export function getCameraScript(): string {
           }, 100);
           
           var modeLabel = isScreenSharing ? 'Screen recording' : 'Video recording';
-          console.log('[Recording] ✅', modeLabel, 'started');
+          console.log('[Recording] ✅', modeLabel, 'started with mixed audio');
           showStatus(modeLabel + ' started!', 'success');
           
         } catch (err) {
@@ -464,6 +696,7 @@ export function getCameraScript(): string {
     }
 
     // Stop recording
+    // BUG #3 FIX: Use proper async/Promise-based sequencing instead of nested setTimeout
     function stopRecording() {
       if (!isRecording) return;
 
@@ -477,6 +710,7 @@ export function getCameraScript(): string {
       
       isRecording = false;
       clearInterval(recordingTimer);
+      stopChunkMonitoring();
       
       // If was paused, calculate final pause time
       if (isPaused && pauseStartTime) {
@@ -512,6 +746,12 @@ export function getCameraScript(): string {
       if (audioControlsBar) {
         audioControlsBar.style.display = 'none';
       }
+      
+      // Hide edit panel
+      var editPanel = document.getElementById('editPanel');
+      if (editPanel) {
+        editPanel.style.display = 'none';
+      }
 
       // Stop audio FIRST
       console.log('[Recording] Stopping all audio...');
@@ -536,55 +776,73 @@ export function getCameraScript(): string {
         ttsAudio.currentTime = 0;
       }
 
-      // CRITICAL: Handle MediaRecorder stop properly
+      // =====================================================
+      // BUG #3 FIX: Proper sequential handling with Promises
+      // =====================================================
       if (mediaRecorder) {
         var recorderState = mediaRecorder.state;
         console.log('[Recording] MediaRecorder state before stop:', recorderState);
         
-        if (recorderState === 'paused') {
-          // PAUSED STATE: Must resume, request data, then stop
-          console.log('[Recording] Was paused - resuming to capture final data...');
-          mediaRecorder.resume();
+        // Create a promise to handle the stop sequence properly
+        var stopSequence = new Promise(function(resolve) {
           
-          setTimeout(function() {
-            if (mediaRecorder && mediaRecorder.state === 'recording') {
-              console.log('[Recording] Requesting final data chunk after resume...');
-              mediaRecorder.requestData();
-              
-              setTimeout(function() {
+          if (recorderState === 'paused') {
+            // PAUSED STATE: Must resume, wait for state change, request data, then stop
+            console.log('[Recording] Was paused - using sequential stop flow...');
+            
+            // Step 1: Resume
+            mediaRecorder.resume();
+            
+            // Step 2: Wait for resume to complete (longer delay for reliability)
+            setTimeout(function() {
+              if (mediaRecorder && mediaRecorder.state === 'recording') {
+                // Step 3: Request any remaining data
+                console.log('[Recording] Requesting data after resume...');
+                mediaRecorder.requestData();
+                
+                // Step 4: Wait for data to be captured (longer delay)
+                setTimeout(function() {
+                  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    console.log('[Recording] Final stop, chunks:', recordedChunks.length);
+                    mediaRecorder.stop();
+                  }
+                  resolve();
+                }, 300); // Longer delay for data capture
+              } else {
+                // Resume failed, try direct stop
+                console.warn('[Recording] Resume did not work, state:', mediaRecorder?.state);
                 if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                  console.log('[Recording] Stopping MediaRecorder, final chunks:', recordedChunks.length);
-                  mediaRecorder.stop();
+                  try { mediaRecorder.stop(); } catch (e) {}
                 }
-                isStopped = true;
-              }, 200);
-            } else {
-              console.warn('[Recording] Recorder not in recording state after resume:', mediaRecorder?.state);
+                resolve();
+              }
+            }, 150); // Longer delay for resume
+            
+          } else if (recorderState === 'recording') {
+            // ACTIVE RECORDING: Request final data and stop
+            console.log('[Recording] Was recording - requesting final data chunk...');
+            mediaRecorder.requestData();
+            
+            setTimeout(function() {
               if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                console.log('[Recording] Stopping MediaRecorder, final chunks:', recordedChunks.length);
                 mediaRecorder.stop();
               }
-              isStopped = true;
-            }
-          }, 100);
-          
-        } else if (recorderState === 'recording') {
-          // ACTIVE RECORDING: Request final data and stop
-          console.log('[Recording] Was recording - requesting final data chunk...');
-          mediaRecorder.requestData();
-          
-          setTimeout(function() {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-              console.log('[Recording] Stopping MediaRecorder, final chunks:', recordedChunks.length);
-              mediaRecorder.stop();
-            }
-            isStopped = true;
-          }, 200);
-          
-        } else {
-          // INACTIVE or other state
-          console.log('[Recording] Recorder already inactive or unknown state');
+              resolve();
+            }, 250); // Slightly longer delay
+            
+          } else {
+            // INACTIVE or other state
+            console.log('[Recording] Recorder already inactive or unknown state');
+            resolve();
+          }
+        });
+        
+        stopSequence.then(function() {
           isStopped = true;
-        }
+          console.log('[Recording] Stop sequence completed');
+        });
+        
       } else {
         isStopped = true;
         console.log('[Recording] No MediaRecorder (audio-only mode)');
