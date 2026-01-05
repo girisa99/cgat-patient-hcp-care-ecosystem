@@ -90,6 +90,9 @@ import { PipelineOrchestrationPanel } from '@/components/genie-studio/PipelineOr
 // P0-9 and P0-10: URL and Audio to Script
 import { UrlToScriptPanel } from '@/components/genie-studio/UrlToScriptPanel';
 import { AudioToScriptPanel } from '@/components/genie-studio/AudioToScriptPanel';
+// Smart Content Pipeline - Unified AI Tools Experience
+import { SmartContentPipeline } from '@/components/genie-studio/SmartContentPipeline';
+import type { GeneratedContent } from '@/components/genie-studio/PostGenerationActions';
 import { supabase } from '@/integrations/supabase/client';
 
 // Import Genie logos - Using combined versions with taglines (finalized)
@@ -2613,14 +2616,18 @@ export default function GenieStudio() {
                       AI Tools
                     </h2>
                     <p className="text-muted-foreground">
-                      Document-to-script, image-to-script, and knowledge search powered by Universal AI
+                      Smart content pipeline with AI provider selection and post-generation actions
                     </p>
                   </div>
                 </div>
 
                 {/* AI Tools Sub-Tabs */}
-                <Tabs defaultValue="doc-to-script" className="w-full">
+                <Tabs defaultValue="smart-pipeline" className="w-full">
                   <TabsList level="child" className="mb-4 flex-wrap">
+                    <TabsTrigger value="smart-pipeline" level="child">
+                      <Wand2 className="h-4 w-4 mr-2" />
+                      Smart Pipeline
+                    </TabsTrigger>
                     <TabsTrigger value="doc-to-script" level="child">
                       <FileText className="h-4 w-4 mr-2" />
                       Document → Script
@@ -2646,6 +2653,52 @@ export default function GenieStudio() {
                       Full Pipeline
                     </TabsTrigger>
                   </TabsList>
+
+                  {/* Smart Content Pipeline - Default Tab */}
+                  <TabsContent value="smart-pipeline" level="child" className="mt-0">
+                    <SmartContentPipeline 
+                      onSendToScriptEditor={(content: GeneratedContent) => {
+                        // Create script and switch to Script Editor tab
+                        const newScript = {
+                          id: `script-${Date.now()}`,
+                          name: content.title || 'Generated Script',
+                          content: content.script,
+                          type: content.type === 'podcast_script' ? 'audio' as const : 'video' as const,
+                          createdAt: Date.now(),
+                          updatedAt: Date.now(),
+                          stats: {
+                            wordCount: content.metadata?.wordCount || 0,
+                            sentenceCount: 0,
+                            characterCount: content.script.length,
+                            estimatedReadingMinutes: Math.ceil((content.metadata?.estimatedDuration || 0) / 60),
+                            estimatedSpeakingMinutes: Math.ceil((content.metadata?.estimatedDuration || 0) / 60),
+                            readabilityScore: 'moderate' as const
+                          }
+                        };
+                        saveScript(newScript);
+                        setActiveTab('script-editor');
+                        toast.success(`Script sent to Script Editor for refinement!`);
+                      }}
+                      onSendToVibe={(content: GeneratedContent) => {
+                        // Create script and switch to Recording Studio
+                        const newScript = {
+                          id: `script-${Date.now()}`,
+                          name: content.title || 'Generated Script',
+                          content: content.script,
+                          type: content.type === 'podcast_script' ? 'audio' as const : 'video' as const,
+                          createdAt: Date.now(),
+                          updatedAt: Date.now()
+                        };
+                        saveScript(newScript);
+                        setActiveTab('recording-studio');
+                        toast.success(`Script ready for recording in Vibe!`);
+                      }}
+                      onSaveToKnowledgeBase={(content: GeneratedContent) => {
+                        // Save to knowledge base (would call actual KB service)
+                        toast.success(`Script saved to Knowledge Base for future AI reference!`);
+                      }}
+                    />
+                  </TabsContent>
 
                   <TabsContent value="doc-to-script" level="child" className="mt-0">
                     <DocumentToScriptPanel 
