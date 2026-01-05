@@ -1766,44 +1766,92 @@ export function getPopoutStyles(): string {
     }
 
     /* =====================================================
-       AUDIO CONTROLS BAR (During Recording)
+       AUDIO CONTROLS BAR (During Recording) - Enhanced Mixer
        ===================================================== */
     .audio-controls-bar {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      padding: 16px;
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(26, 26, 46, 0.9));
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      border-radius: 12px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .audio-controls-bar.visible {
       display: flex;
-      gap: 16px;
-      padding: 12px 16px;
-      background: rgba(0, 0, 0, 0.5);
-      border: 1px solid rgba(139, 92, 246, 0.3);
-      border-radius: 10px;
-      backdrop-filter: blur(8px);
-      align-items: center;
-      flex-wrap: wrap;
+    }
+
+    .audio-bar-header {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 4px;
+    }
+
+    .audio-bar-title {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: #a78bfa;
+    }
+
+    .audio-bar-subtitle {
+      font-size: 0.65rem;
+      color: #64748b;
+    }
+
+    .audio-bar-tracks {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
     .audio-bar-item {
       display: flex;
       align-items: center;
-      gap: 8px;
-      flex: 1;
-      min-width: 200px;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .audio-bar-item.playing {
+      border-color: rgba(34, 197, 94, 0.4);
+      background: rgba(34, 197, 94, 0.1);
+    }
+
+    .audio-bar-item.stopped {
+      opacity: 0.6;
     }
 
     .audio-bar-label {
       font-size: 0.75rem;
       font-weight: 600;
-      color: #a78bfa;
-      min-width: 60px;
+      color: #e2e8f0;
+      min-width: 80px;
+    }
+
+    .audio-bar-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
     }
 
     .audio-bar-btn {
-      width: 28px;
-      height: 28px;
-      border-radius: 6px;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
       border: 1px solid rgba(255, 255, 255, 0.2);
       background: rgba(0, 0, 0, 0.4);
       color: #fff;
       cursor: pointer;
-      font-size: 0.75rem;
+      font-size: 0.875rem;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1813,48 +1861,102 @@ export function getPopoutStyles(): string {
     .audio-bar-btn:hover {
       background: rgba(139, 92, 246, 0.3);
       border-color: rgba(139, 92, 246, 0.5);
+      transform: scale(1.05);
     }
 
-    .audio-bar-btn.playing {
+    .audio-bar-btn.play-btn.playing {
       background: rgba(34, 197, 94, 0.3);
       border-color: rgba(34, 197, 94, 0.5);
+      color: #22c55e;
+    }
+
+    .audio-bar-btn.stop-btn:hover {
+      background: rgba(239, 68, 68, 0.3);
+      border-color: rgba(239, 68, 68, 0.5);
+      color: #ef4444;
     }
 
     .audio-bar-volume {
-      width: 80px;
-      height: 4px;
+      width: 100px;
+      height: 6px;
       -webkit-appearance: none;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 3px;
       outline: none;
     }
 
     .audio-bar-volume::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 12px;
-      height: 12px;
-      background: #a78bfa;
+      width: 16px;
+      height: 16px;
+      background: linear-gradient(135deg, #a78bfa, #8b5cf6);
       border-radius: 50%;
       cursor: pointer;
+      box-shadow: 0 2px 6px rgba(139, 92, 246, 0.4);
     }
 
-    .duck-label {
-      display: flex;
-      align-items: center;
-      gap: 4px;
+    .audio-bar-volume::-webkit-slider-thumb:hover {
+      transform: scale(1.1);
+    }
+
+    .volume-label {
       font-size: 0.65rem;
       color: #94a3b8;
-      cursor: pointer;
+      min-width: 35px;
+      text-align: right;
     }
 
-    .duck-label input[type="checkbox"] {
-      width: 14px;
-      height: 14px;
-      accent-color: #a78bfa;
+    .audio-status {
+      font-size: 0.65rem;
+      padding: 3px 8px;
+      border-radius: 10px;
+      background: rgba(100, 116, 139, 0.2);
+      color: #94a3b8;
     }
 
-    .audio-controls-bar.visible {
+    .audio-status.playing {
+      background: rgba(34, 197, 94, 0.2);
+      color: #22c55e;
+    }
+
+    .audio-status.paused {
+      background: rgba(251, 191, 36, 0.2);
+      color: #fbbf24;
+    }
+
+    .audio-status.stopped {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+    }
+
+    .audio-bar-options {
       display: flex;
+      gap: 16px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      flex-wrap: wrap;
+    }
+
+    .duck-label, .loop-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.7rem;
+      color: #94a3b8;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .duck-label:hover, .loop-label:hover {
+      color: #e2e8f0;
+    }
+
+    .duck-label input[type="checkbox"],
+    .loop-label input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: #a78bfa;
+      cursor: pointer;
     }
   `;
 }

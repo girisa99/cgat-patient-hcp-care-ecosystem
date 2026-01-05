@@ -903,49 +903,85 @@ export function getUIScript(): string {
     }
 
     // =====================================================
-    // AUDIO BAR CONTROLS (During Recording)
+    // AUDIO BAR CONTROLS (During Recording) - Enhanced Mixer
+    // Independent control for Voice/TTS and Music
     // =====================================================
 
     function initAudioBarControls() {
-      console.log('[AudioBar] Initializing controls...');
+      console.log('[AudioBar] Initializing enhanced audio mixer controls...');
       
       var voicePlayPauseBtn = document.getElementById('voicePlayPauseBtn');
       var voiceStopBtn = document.getElementById('voiceStopBtn');
       var voiceBarVolume = document.getElementById('voiceBarVolume');
+      var voiceVolumeLabel = document.getElementById('voiceVolumeLabel');
+      var voiceStatus = document.getElementById('voiceStatus');
+      var voiceTrack = document.getElementById('voiceTrack');
+      
       var musicPlayPauseBtn = document.getElementById('musicPlayPauseBtn');
       var musicBarStopBtn = document.getElementById('musicBarStopBtn');
       var musicBarVolume = document.getElementById('musicBarVolume');
+      var musicVolumeLabel = document.getElementById('musicVolumeLabel');
+      var musicStatus = document.getElementById('musicStatus');
+      var musicTrack = document.getElementById('musicTrack');
       
-      // Voice play/pause
+      var loopMusicCheckbox = document.getElementById('loopMusicCheckbox');
+      
+      // Helper to update voice status
+      function updateVoiceStatus(status) {
+        if (voiceStatus) {
+          voiceStatus.textContent = status;
+          voiceStatus.className = 'audio-status ' + status.toLowerCase();
+        }
+        if (voiceTrack) {
+          voiceTrack.classList.remove('playing', 'paused', 'stopped');
+          if (status === 'Playing') voiceTrack.classList.add('playing');
+          else if (status === 'Paused') voiceTrack.classList.add('paused');
+          else if (status === 'Stopped') voiceTrack.classList.add('stopped');
+        }
+      }
+      
+      // Helper to update music status
+      function updateMusicStatus(status) {
+        if (musicStatus) {
+          musicStatus.textContent = status;
+          musicStatus.className = 'audio-status ' + status.toLowerCase();
+        }
+        if (musicTrack) {
+          musicTrack.classList.remove('playing', 'paused', 'stopped');
+          if (status === 'Playing') musicTrack.classList.add('playing');
+          else if (status === 'Paused') musicTrack.classList.add('paused');
+          else if (status === 'Stopped') musicTrack.classList.add('stopped');
+        }
+      }
+      
+      // Voice/TTS play/pause - independent of music and recording
       if (voicePlayPauseBtn) {
         voicePlayPauseBtn.addEventListener('click', function() {
-          if (voiceoverAudio && !voiceoverAudio.paused) {
-            // Pause voice
-            voiceoverAudio.pause();
+          var activeVoice = voiceoverAudio || ttsAudio;
+          
+          if (activeVoice && !activeVoice.paused) {
+            // Pause voice - music and recording continue
+            activeVoice.pause();
             this.textContent = '▶';
             this.classList.remove('playing');
             applyDucking(false);
-          } else if (voiceoverAudio) {
+            updateVoiceStatus('Paused');
+            console.log('[AudioBar] Voice PAUSED - recording continues');
+          } else if (activeVoice) {
             // Resume voice
-            voiceoverAudio.play();
+            activeVoice.play();
             this.textContent = '⏸';
             this.classList.add('playing');
             applyDucking(true);
-          } else if (ttsAudio && !ttsAudio.paused) {
-            ttsAudio.pause();
-            this.textContent = '▶';
-            this.classList.remove('playing');
-            applyDucking(false);
-          } else if (ttsAudio) {
-            ttsAudio.play();
-            this.textContent = '⏸';
-            this.classList.add('playing');
-            applyDucking(true);
+            updateVoiceStatus('Playing');
+            console.log('[AudioBar] Voice RESUMED');
+          } else {
+            console.log('[AudioBar] No voice audio loaded');
           }
         });
       }
       
-      // Voice stop
+      // Voice stop - completely stop voice, music and recording continue
       if (voiceStopBtn) {
         voiceStopBtn.addEventListener('click', function() {
           if (voiceoverAudio) {
@@ -961,10 +997,17 @@ export function getUIScript(): string {
             voicePlayPauseBtn.classList.remove('playing');
           }
           applyDucking(false);
+          updateVoiceStatus('Stopped');
+          
+          // Stop teleprompter sync when voice stops
+          if (typeof stopWordHighlighting === 'function') stopWordHighlighting();
+          if (typeof stopTeleprompterScrollSync === 'function') stopTeleprompterScrollSync();
+          
+          console.log('[AudioBar] Voice STOPPED - recording and music continue');
         });
       }
       
-      // Voice volume
+      // Voice volume with label update
       if (voiceBarVolume) {
         voiceBarVolume.addEventListener('input', function() {
           var vol = this.value / 100;
@@ -972,25 +1015,34 @@ export function getUIScript(): string {
           if (ttsAudio) ttsAudio.volume = vol;
           if (voiceoverVolume) voiceoverVolume.value = this.value;
           if (ttsVolume) ttsVolume.value = this.value;
+          if (voiceVolumeLabel) voiceVolumeLabel.textContent = this.value + '%';
         });
       }
       
-      // Music play/pause
+      // Music play/pause - independent of voice and recording
       if (musicPlayPauseBtn) {
         musicPlayPauseBtn.addEventListener('click', function() {
           if (musicAudio && !musicAudio.paused) {
+            // Pause music - voice and recording continue
             musicAudio.pause();
             this.textContent = '▶';
             this.classList.remove('playing');
+            updateMusicStatus('Paused');
+            console.log('[AudioBar] Music PAUSED - recording continues');
           } else if (musicAudio) {
+            // Resume music
             musicAudio.play();
             this.textContent = '⏸';
             this.classList.add('playing');
+            updateMusicStatus('Playing');
+            console.log('[AudioBar] Music RESUMED');
+          } else {
+            console.log('[AudioBar] No music audio loaded');
           }
         });
       }
       
-      // Music stop
+      // Music stop - completely stop music, voice and recording continue
       if (musicBarStopBtn) {
         musicBarStopBtn.addEventListener('click', function() {
           if (musicAudio) {
@@ -1001,26 +1053,46 @@ export function getUIScript(): string {
             musicPlayPauseBtn.textContent = '▶';
             musicPlayPauseBtn.classList.remove('playing');
           }
+          updateMusicStatus('Stopped');
+          console.log('[AudioBar] Music STOPPED - recording and voice continue');
         });
       }
       
-      // Music volume
+      // Music volume with label update
       if (musicBarVolume) {
         normalMusicVolume = musicBarVolume.value / 100;
         musicBarVolume.addEventListener('input', function() {
           var vol = this.value / 100;
           normalMusicVolume = vol;
-          if (musicAudio && !voiceoverAudio && !ttsAudio) {
+          
+          // Check if voice is playing for ducking
+          var voicePlaying = (voiceoverAudio && !voiceoverAudio.paused) || (ttsAudio && !ttsAudio.paused);
+          if (musicAudio && !voicePlaying) {
             musicAudio.volume = vol;
           }
           if (musicVolume) musicVolume.value = this.value;
+          if (musicVolumeLabel) musicVolumeLabel.textContent = this.value + '%';
+        });
+      }
+      
+      // Music loop toggle
+      if (loopMusicCheckbox) {
+        loopMusicCheckbox.addEventListener('change', function() {
+          musicLoopEnabled = this.checked;
+          if (musicAudio) {
+            musicAudio.loop = this.checked;
+          }
+          console.log('[AudioBar] Music loop:', this.checked ? 'ON' : 'OFF');
         });
       }
       
       // Initialize ducking
       initAudioDucking();
       
-      console.log('[AudioBar] Controls initialized');
+      console.log('[AudioBar] Enhanced mixer controls initialized');
+      console.log('[AudioBar] - Voice/TTS: Independent play/pause/stop');
+      console.log('[AudioBar] - Music: Independent play/pause/stop');
+      console.log('[AudioBar] - Recording continues regardless of audio state');
     }
 
     // Initialize audio bar controls
