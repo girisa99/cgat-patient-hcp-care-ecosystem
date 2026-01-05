@@ -48,7 +48,7 @@ export const navItems = [
     icon: FileSearch,
   },
   {
-    title: "Genie Mind",
+    title: "Genie Studio",
     url: "/genie-studio",
     icon: Sparkles,
   },

@@ -1,7 +1,7 @@
 /**
  * Genie Vibe - Script to Screen Media Production Studio
- * Part of the Genie Suite
- * 
+ * Part of Genie Studio
+ *
  * Features:
  * - Screen sharing with 5-second countdown
  * - Floating teleprompter (separate window)
@@ -1755,11 +1755,11 @@ export function RecordingStudio({
                   />
                 )}
 
-                {/* Info Banner - Pre-production in GenieStudio */}
+                {/* Info Banner - Pre-production in Genie Studio */}
                 {!productionContext && (
                   <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 text-sm">
                     <p className="text-muted-foreground">
-                      <span className="font-medium text-primary">Tip:</span> Script enhancement, TTS, and music generation are done in GenieStudio. Select prepared assets here for recording.
+                      <span className="font-medium text-primary">Tip:</span> Script enhancement, TTS, and music generation are done in Genie Mind & Spark. Select prepared assets here for recording.
                     </p>
                   </div>
                 )}

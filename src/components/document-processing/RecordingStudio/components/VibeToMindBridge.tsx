@@ -1,6 +1,7 @@
 /**
  * Vibe to Mind Bridge Component
- * Quick action panel to send content from Vibe to Mind for AI processing
+ * Quick action panel to send content from Vibe to Mind/Spark for AI processing
+ * Part of Genie Studio
  */
 
 import React from 'react';
@@ -17,12 +18,14 @@ import {
   Sparkles,
   Upload,
   Monitor,
-  Film
+  Film,
+  Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Import Mind logo
 import genieMindLogo from '@/assets/logos/genie-mind-combined.png';
+import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
 
 interface ContentItem {
   id: string;
@@ -101,12 +104,12 @@ export function VibeToMindBridge({
           <div className="flex-1">
             <h3 className="font-semibold text-sm">Generate Script with AI</h3>
             <p className="text-xs text-muted-foreground">
-              Send content to Genie Mind for analysis
+              Send content to Genie Mind & Spark for analysis
             </p>
           </div>
         </div>
 
-        {/* Flow Visualization */}
+        {/* Flow Visualization - Updated with Spark */}
         <div className="flex items-center justify-center gap-2 py-2 px-3 bg-background/50 rounded-lg">
           <div className="flex items-center gap-1.5">
             <Video className="h-4 w-4 text-pink-500" />
@@ -116,6 +119,11 @@ export function VibeToMindBridge({
           <div className="flex items-center gap-1.5">
             <Brain className="h-4 w-4 text-purple-500" />
             <span className="text-xs font-medium">Mind</span>
+          </div>
+          <ArrowRight className="h-3 w-3 text-muted-foreground" />
+          <div className="flex items-center gap-1.5">
+            <Zap className="h-4 w-4 text-amber-500" />
+            <span className="text-xs font-medium">Spark</span>
           </div>
           <ArrowRight className="h-3 w-3 text-muted-foreground" />
           <div className="flex items-center gap-1.5">

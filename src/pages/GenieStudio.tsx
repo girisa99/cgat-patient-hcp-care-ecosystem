@@ -1,7 +1,7 @@
 /**
- * Genie Mind - AI-Powered Media Production Hub
- * "AI That Understands" - Pre-production command center for content creation
- * Part of the Genie Suite
+ * Genie Studio - AI-Powered Media Production Hub
+ * "Mind to Media" - Complete production suite for content creation
+ * Part of Genie Studio
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -82,7 +82,7 @@ import { ScriptEditorTab } from '@/components/genie-studio/ScriptEditorTab';
 import { SavedAudioCard } from '@/components/genie-studio/SavedAudioCard';
 import { useGenieMediaLibrary } from '@/components/genie-studio/useGenieMediaLibrary';
 import { useGenieScripts, type GenieScript } from '@/components/genie-studio/useGenieScripts';
-// AI Tools - Unified Smart Content Pipeline
+// Genie Spark - Smart Content Pipeline
 import { SmartContentPipeline } from '@/components/genie-studio/SmartContentPipeline';
 import type { GeneratedContent } from '@/components/genie-studio/PostGenerationActions';
 import { supabase } from '@/integrations/supabase/client';
@@ -1978,7 +1978,7 @@ export default function GenieStudio() {
               className="flex transition-transform duration-500 ease-out"
               style={{ transform: `translateX(-${currentHeroSlide * 100}%)` }}
             >
-              {/* Slide 1: Genie Suite */}
+              {/* Slide 1: Genie Studio */}
               <div className="min-w-full relative h-[480px] md:h-[520px]">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-purple-700 to-pink-800" />
                 <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjEuNSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-50" />
@@ -1991,26 +1991,30 @@ export default function GenieStudio() {
                         <span className="text-sm text-white font-medium">AI-Powered Production Suite</span>
                       </div>
                       <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight leading-tight">
-                        Genie <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-300 to-purple-300">Suite</span>
+                        Genie <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-300 to-purple-300">Studio</span>
                       </h1>
                       <p className="text-2xl md:text-3xl text-white/90 font-light">
                         Mind to Media
                       </p>
                       <p className="text-lg text-white/70 max-w-lg leading-relaxed">
-                        Your complete AI-powered production suite. From idea to published content, orchestrate your entire creative workflow with intelligent automation.
+                        Your complete AI-powered production studio. From idea to published content, orchestrate your entire creative workflow with intelligent automation.
                       </p>
                       <div className="flex flex-wrap gap-3 pt-4">
                         <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
                           <Cpu className="h-4 w-4 text-purple-300" />
-                          <span className="text-sm text-white">Pre-Production</span>
+                          <span className="text-sm text-white">Genie Mind</span>
+                        </div>
+                        <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
+                          <Zap className="h-4 w-4 text-amber-300" />
+                          <span className="text-sm text-white">Genie Spark</span>
                         </div>
                         <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
                           <Video className="h-4 w-4 text-pink-300" />
-                          <span className="text-sm text-white">Production</span>
+                          <span className="text-sm text-white">Genie Vibe</span>
                         </div>
                         <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
                           <Calendar className="h-4 w-4 text-blue-300" />
-                          <span className="text-sm text-white">Scheduling</span>
+                          <span className="text-sm text-white">Genie Arc</span>
                         </div>
                       </div>
                     </div>
@@ -2018,7 +2022,7 @@ export default function GenieStudio() {
                       <div className="relative">
                         <div className="absolute -inset-4 bg-gradient-to-r from-purple-500/30 to-pink-500/30 rounded-3xl blur-2xl" />
                         <div className="relative h-64 w-80 md:h-72 md:w-96 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center p-6 shadow-2xl">
-                          <img src={genieStudioLogo} alt="Genie Suite" className="h-full w-full object-contain drop-shadow-2xl" />
+                          <img src={genieStudioLogo} alt="Genie Studio" className="h-full w-full object-contain drop-shadow-2xl" />
                         </div>
                       </div>
                     </div>
@@ -2211,7 +2215,7 @@ export default function GenieStudio() {
 
             {/* Slide Indicators */}
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 z-10">
-              {['Suite', 'Arc', 'Mind', 'Vibe'].map((name, index) => (
+              {['Studio', 'Arc', 'Mind', 'Vibe'].map((name, index) => (
                 <button
                   key={name}
                   onClick={() => setCurrentHeroSlide(index)}
@@ -2335,8 +2339,8 @@ export default function GenieStudio() {
                 <span className="hidden md:inline">Dashboard</span>
               </TabsTrigger>
               <TabsTrigger value="ai-tools" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-2">
-                <Sparkles className="h-4 w-4 md:mr-1" />
-                <span className="hidden md:inline">AI Tools</span>
+                <Zap className="h-4 w-4 md:mr-1" />
+                <span className="hidden md:inline">Genie Spark</span>
               </TabsTrigger>
               <TabsTrigger value="script-editor" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-2">
                 <PenTool className="h-4 w-4 md:mr-1" />
@@ -2597,18 +2601,18 @@ export default function GenieStudio() {
               </div>
             </TabsContent>
 
-            {/* AI Tools Tab - Phase 1 Frontend Integration */}
+            {/* Genie Spark Tab - AI Content Generation Engine */}
             <TabsContent value="ai-tools" className="mt-0 space-y-6">
               <div className="grid gap-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-2xl font-bold flex items-center gap-2">
-                      <Sparkles className="h-6 w-6 text-primary" />
-                      AI Tools
+                      <Zap className="h-6 w-6 text-amber-500" />
+                      Genie Spark
                     </h2>
                     <p className="text-muted-foreground">
-                      Smart content pipeline with AI provider selection and post-generation actions
+                      Ignite Your Ideas — Smart content pipeline with AI provider selection
                     </p>
                   </div>
                 </div>
