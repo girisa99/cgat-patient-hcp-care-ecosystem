@@ -75,6 +75,12 @@ interface RecordingControlsProps {
   // Audio mixer toggle
   onToggleAudioMixer?: () => void;
   showAudioMixer?: boolean;
+  
+  // Script controls during pause
+  onViewScripts?: () => void;
+  onAddScript?: () => void;
+  currentScriptTitle?: string;
+  onPreviewRecording?: () => void;
 }
 
 export function RecordingControls({
@@ -111,6 +117,10 @@ export function RecordingControls({
   audioCombination,
   onToggleAudioMixer,
   showAudioMixer = false,
+  onViewScripts,
+  onAddScript,
+  currentScriptTitle,
+  onPreviewRecording,
 }: RecordingControlsProps) {
   
   // Compute audio combination label
@@ -269,7 +279,7 @@ export function RecordingControls({
         )}
       </div>
 
-      {/* Pause Controls - Rewind, Trim, Transcribe - visible during recording when paused */}
+      {/* Pause Controls - Rewind, Trim, Transcribe, Scripts - visible during recording when paused */}
       {isRecording && isPaused && (
         <div className="space-y-3 p-3 bg-amber-500/10 rounded-lg border border-amber-500/20">
           <div className="flex items-center justify-between">
@@ -279,8 +289,30 @@ export function RecordingControls({
             </Badge>
           </div>
 
+          {/* Current Script Info */}
+          {currentScriptTitle && (
+            <div className="flex items-center gap-2 p-2 bg-background/50 rounded-md">
+              <FileText className="w-3 h-3 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Current Script:</span>
+              <span className="text-xs font-medium truncate flex-1">{currentScriptTitle}</span>
+            </div>
+          )}
+
           {/* Quick Actions Row */}
           <div className="flex flex-wrap gap-2">
+            {/* Preview Recording */}
+            {onPreviewRecording && currentDuration > 0 && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={onPreviewRecording}
+                className="gap-1.5 h-8 text-xs"
+              >
+                <Play className="w-3 h-3" />
+                Preview
+              </Button>
+            )}
+            
             {/* Rewind buttons */}
             {onRewindSeconds && currentDuration >= 5 && (
               <>
@@ -317,6 +349,33 @@ export function RecordingControls({
               >
                 <RefreshCw className="w-3 h-3" />
                 Start Over
+              </Button>
+            )}
+          </div>
+
+          {/* Script Controls During Pause */}
+          <div className="flex items-center gap-2 p-2 bg-background/50 rounded-md">
+            <span className="text-xs text-muted-foreground">Scripts:</span>
+            {onViewScripts && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onViewScripts}
+                className="gap-1 h-7 text-xs"
+              >
+                <FileText className="w-3 h-3" />
+                View Scripts
+              </Button>
+            )}
+            {onAddScript && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onAddScript}
+                className="gap-1 h-7 text-xs"
+              >
+                <Type className="w-3 h-3" />
+                Add Script
               </Button>
             )}
           </div>
