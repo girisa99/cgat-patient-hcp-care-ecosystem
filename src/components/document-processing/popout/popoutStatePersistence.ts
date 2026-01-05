@@ -265,10 +265,11 @@ export function getStatePersistenceScript(): string {
       if (voiceoverSelect) state.selectedVoiceoverId = voiceoverSelect.value || '';
       if (musicSelect) state.selectedMusicId = musicSelect.value || '';
       
-      // Calculate recording duration
-      if (state.isRecording && state.recordingStartTime && !state.isPaused) {
-        state.recordingDuration = Math.floor((Date.now() - state.recordingStartTime) / 1000);
-      }
+        // Calculate recording duration (accounting for paused time)
+        if (state.isRecording && state.recordingStartTime && !state.isPaused) {
+          var pausedTime = typeof totalPausedTime !== 'undefined' ? totalPausedTime : 0;
+          state.recordingDuration = Math.floor((Date.now() - state.recordingStartTime - pausedTime) / 1000);
+        }
       
       // Get audio states with sources
       if (typeof voiceoverAudio !== 'undefined' && voiceoverAudio) {
@@ -476,17 +477,25 @@ export function getStatePersistenceScript(): string {
         
         // Handle interrupted recording recovery
         if (state.isRecording && !state.isStopped) {
-          console.log('[Persistence] Recording was in progress!');
-          showRecoveryNotification(state);
+          // Only show recovery if there's actual data to recover
+          var hasMeaningfulRecording = state.recordingDuration > 5 || state.recordingChunksCount > 0;
           
-          // Try to reinitialize camera if stream was lost
-          if (!mediaStream || !state.mediaStreamActive) {
-            console.log('[Persistence] Media stream lost, attempting recovery...');
-            if (typeof initCamera === 'function') {
-              setTimeout(function() {
-                initCamera();
-              }, 1000);
+          if (hasMeaningfulRecording) {
+            console.log('[Persistence] Recording was in progress with data!');
+            showRecoveryNotification(state);
+            
+            // Try to reinitialize camera if stream was lost
+            if (!mediaStream || !state.mediaStreamActive) {
+              console.log('[Persistence] Media stream lost, attempting recovery...');
+              if (typeof initCamera === 'function') {
+                setTimeout(function() {
+                  initCamera();
+                }, 1000);
+              }
             }
+          } else {
+            console.log('[Persistence] Recording was started but no meaningful data - clearing stale state');
+            clearAllState();
           }
         }
         
@@ -534,13 +543,22 @@ export function getStatePersistenceScript(): string {
     
     // Show recovery notification
     function showRecoveryNotification(state) {
+      // Don't show notification for 0:00 recordings with no chunks - nothing to recover
       var duration = state.recordingDuration || 0;
+      var hasChunks = state.recordingChunksCount > 0;
+      
+      if (duration === 0 && !hasChunks) {
+        console.log('[Persistence] Skipping recovery notification - no actual recording data');
+        clearAllState(); // Clear the stale state
+        return;
+      }
+      
       var mins = Math.floor(duration / 60);
       var secs = duration % 60;
       var timeStr = mins + ':' + (secs < 10 ? '0' : '') + secs;
       
       var message = 'Recording was interrupted at ' + timeStr + '. ';
-      if (state.recordingChunksCount > 0) {
+      if (hasChunks) {
         message += state.recordingChunksCount + ' chunks captured. Camera reinitializing...';
       } else {
         message += 'You can restart recording.';
@@ -780,12 +798,16 @@ export function getStatePersistenceScript(): string {
     
     var originalStopRecording = typeof stopRecording === 'function' ? stopRecording : null;
     stopRecording = function() {
-      console.log('[Persistence] Recording stopped, final state save...');
-      saveStateImmediately();
-      stopStateSaving();
+      console.log('[Persistence] Recording stopped, clearing state and doing final save...');
       if (originalStopRecording) {
         originalStopRecording();
       }
+      // Clear the recording state after successful stop - no need to recover this
+      setTimeout(function() {
+        clearAllState();
+        console.log('[Persistence] Recording completed, state cleared');
+      }, 2000); // Wait for processing to complete
+      stopStateSaving();
     };
     
     // =====================================================
