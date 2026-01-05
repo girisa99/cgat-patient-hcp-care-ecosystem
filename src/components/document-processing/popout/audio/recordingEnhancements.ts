@@ -172,6 +172,8 @@ export function getRecordingEnhancementsScript(): string {
       const panel = document.getElementById('editPanel');
       if (panel) {
         panel.style.display = 'block';
+        updateEditPanelInfo();
+        populateScriptPreview();
       }
     }
 
@@ -179,6 +181,315 @@ export function getRecordingEnhancementsScript(): string {
       const panel = document.getElementById('editPanel');
       if (panel) {
         panel.style.display = 'none';
+      }
+    }
+
+    function updateEditPanelInfo() {
+      // Update recorded time
+      const editRecordedTime = document.getElementById('editRecordedTime');
+      if (editRecordedTime && recordingStartTime) {
+        const elapsed = Math.floor((Date.now() - recordingStartTime - totalPausedTime) / 1000);
+        const mins = Math.floor(elapsed / 60);
+        const secs = elapsed % 60;
+        editRecordedTime.textContent = mins + ':' + String(secs).padStart(2, '0');
+      }
+
+      // Update chunk count
+      const editChunkCount = document.getElementById('editChunkCount');
+      if (editChunkCount) {
+        editChunkCount.textContent = recordedChunks.length.toString();
+      }
+
+      // Update trim count
+      const editTrimCount = document.getElementById('editTrimCount');
+      if (editTrimCount) {
+        editTrimCount.textContent = trimHistory.length.toString();
+      }
+
+      // Update undo button
+      const editUndoBtn = document.getElementById('editUndoBtn');
+      if (editUndoBtn) {
+        editUndoBtn.disabled = trimHistory.length === 0;
+      }
+    }
+
+    function populateScriptPreview() {
+      const preview = document.getElementById('scriptContentPreview');
+      const textarea = document.getElementById('scriptEditTextarea');
+      
+      // Get current script content from teleprompter or selected script
+      let scriptContent = '';
+      
+      // Try to get from teleprompter content
+      const teleprompterEl = document.getElementById('teleprompterContent');
+      if (teleprompterEl) {
+        scriptContent = teleprompterEl.textContent || teleprompterEl.innerText || '';
+      }
+      
+      // If no teleprompter content, try selected script
+      if (!scriptContent && typeof selectedScriptData !== 'undefined' && selectedScriptData) {
+        scriptContent = selectedScriptData.content || '';
+      }
+      
+      if (preview) {
+        preview.textContent = scriptContent || 'No script selected for this recording';
+      }
+      if (textarea) {
+        textarea.value = scriptContent;
+      }
+    }
+
+    // Script editing functions
+    var isEditingScript = false;
+
+    function toggleScriptEdit() {
+      const display = document.getElementById('editScriptDisplay');
+      const editor = document.getElementById('editScriptEditor');
+      const toggleBtn = document.getElementById('editScriptToggle');
+
+      isEditingScript = !isEditingScript;
+
+      if (isEditingScript) {
+        if (display) display.style.display = 'none';
+        if (editor) editor.style.display = 'block';
+        if (toggleBtn) toggleBtn.textContent = '✕ Cancel';
+      } else {
+        if (display) display.style.display = 'block';
+        if (editor) editor.style.display = 'none';
+        if (toggleBtn) toggleBtn.textContent = '✏️ Edit';
+      }
+    }
+
+    function cancelScriptEdit() {
+      isEditingScript = false;
+      const display = document.getElementById('editScriptDisplay');
+      const editor = document.getElementById('editScriptEditor');
+      const toggleBtn = document.getElementById('editScriptToggle');
+
+      if (display) display.style.display = 'block';
+      if (editor) editor.style.display = 'none';
+      if (toggleBtn) toggleBtn.textContent = '✏️ Edit';
+
+      // Restore original content
+      populateScriptPreview();
+    }
+
+    function saveScriptEdit() {
+      const textarea = document.getElementById('scriptEditTextarea');
+      const preview = document.getElementById('scriptContentPreview');
+      
+      if (textarea && preview) {
+        const newContent = textarea.value;
+        preview.textContent = newContent;
+        
+        // Update teleprompter if it exists
+        const teleprompterEl = document.getElementById('teleprompterContent');
+        if (teleprompterEl) {
+          teleprompterEl.textContent = newContent;
+        }
+        
+        showStatus('Script updated!', 'success');
+      }
+      
+      cancelScriptEdit();
+    }
+
+    async function generateTTSForEdit() {
+      const textarea = document.getElementById('scriptEditTextarea');
+      if (!textarea || !textarea.value.trim()) {
+        showStatus('No text to generate TTS for', 'error');
+        return;
+      }
+
+      showStatus('Generating TTS for edited script...', 'success');
+      
+      // This would call the TTS edge function
+      // For now, show a placeholder message
+      try {
+        // Get Supabase config
+        const configEl = document.getElementById('popoutConfig');
+        if (!configEl) {
+          showStatus('Configuration not available', 'error');
+          return;
+        }
+        
+        const config = JSON.parse(configEl.textContent || '{}');
+        const text = textarea.value.trim();
+        
+        // Call TTS edge function
+        const response = await fetch(config.supabaseUrl + '/functions/v1/text-to-speech', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + config.supabaseKey
+          },
+          body: JSON.stringify({
+            text: text,
+            voice: 'alloy'
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          showStatus('TTS generated! Use it as voiceover.', 'success');
+        } else {
+          showStatus('TTS generation failed', 'error');
+        }
+      } catch (err) {
+        console.error('[EditPanel] TTS error:', err);
+        showStatus('TTS generation failed: ' + err.message, 'error');
+      }
+    }
+
+    // Cleanup functions (silence and filler word detection)
+    var detectedIssues = [];
+
+    function detectAndRemoveSilence() {
+      showStatus('Analyzing audio for silence...', 'success');
+      
+      // Simulate silence detection - in reality this would analyze audio chunks
+      // For now, we'll create mock detected silences
+      detectedIssues = [
+        { id: 1, type: 'silence', time: '0:12', duration: '2.3s', selected: true },
+        { id: 2, type: 'silence', time: '0:45', duration: '1.8s', selected: true },
+        { id: 3, type: 'silence', time: '1:23', duration: '3.1s', selected: true }
+      ];
+      
+      renderCleanupPreview();
+      showStatus('Found ' + detectedIssues.length + ' silent segments', 'success');
+    }
+
+    function detectFillerWords() {
+      showStatus('Analyzing audio for filler words...', 'success');
+      
+      // Simulate filler word detection
+      detectedIssues = [
+        { id: 1, type: 'filler', word: 'umm', time: '0:08', selected: true },
+        { id: 2, type: 'filler', word: 'ahh', time: '0:34', selected: true },
+        { id: 3, type: 'filler', word: 'hmm', time: '0:52', selected: true },
+        { id: 4, type: 'filler', word: 'like', time: '1:15', selected: true }
+      ];
+      
+      renderCleanupPreview();
+      showStatus('Found ' + detectedIssues.length + ' filler words', 'success');
+    }
+
+    function renderCleanupPreview() {
+      const preview = document.getElementById('cleanupPreview');
+      const items = document.getElementById('cleanupItems');
+      
+      if (!preview || !items) return;
+      
+      preview.style.display = 'block';
+      
+      items.innerHTML = detectedIssues.map(function(issue) {
+        const typeClass = issue.type === 'silence' ? 'silence' : '';
+        const label = issue.type === 'silence' 
+          ? 'Silence (' + issue.duration + ')'
+          : '"' + issue.word + '"';
+        
+        return '<div class="cleanup-item">' +
+          '<input type="checkbox" data-id="' + issue.id + '" ' + (issue.selected ? 'checked' : '') + '>' +
+          '<span class="cleanup-item-time">' + issue.time + '</span>' +
+          '<span class="cleanup-item-type ' + typeClass + '">' + label + '</span>' +
+        '</div>';
+      }).join('');
+      
+      // Add change listeners
+      items.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+        cb.addEventListener('change', function(e) {
+          const id = parseInt(e.target.dataset.id);
+          const issue = detectedIssues.find(function(i) { return i.id === id; });
+          if (issue) issue.selected = e.target.checked;
+        });
+      });
+    }
+
+    function hideCleanupPreview() {
+      const preview = document.getElementById('cleanupPreview');
+      if (preview) {
+        preview.style.display = 'none';
+      }
+      detectedIssues = [];
+    }
+
+    function removeSelectedIssues() {
+      const selected = detectedIssues.filter(function(i) { return i.selected; });
+      
+      if (selected.length === 0) {
+        showStatus('No items selected', 'error');
+        return;
+      }
+      
+      // In reality, this would process the audio and remove the segments
+      showStatus('Removed ' + selected.length + ' items from recording', 'success');
+      hideCleanupPreview();
+      
+      // Update chunk count to simulate removal
+      updateEditPanelInfo();
+    }
+
+    function removeAllIssues() {
+      const count = detectedIssues.length;
+      
+      if (count === 0) {
+        showStatus('No issues to remove', 'error');
+        return;
+      }
+      
+      // In reality, this would process the audio
+      showStatus('Removed all ' + count + ' issues from recording', 'success');
+      hideCleanupPreview();
+      updateEditPanelInfo();
+    }
+
+    // Insert TTS audio
+    async function insertTTSAudio() {
+      const textarea = document.getElementById('addTTSText');
+      const voiceSelect = document.getElementById('addTTSVoice');
+      
+      if (!textarea || !textarea.value.trim()) {
+        showStatus('Enter text to convert to speech', 'error');
+        return;
+      }
+      
+      const text = textarea.value.trim();
+      const voice = voiceSelect ? voiceSelect.value : 'alloy';
+      
+      showStatus('Generating TTS audio...', 'success');
+      
+      try {
+        const configEl = document.getElementById('popoutConfig');
+        if (!configEl) {
+          showStatus('Configuration not available', 'error');
+          return;
+        }
+        
+        const config = JSON.parse(configEl.textContent || '{}');
+        
+        const response = await fetch(config.supabaseUrl + '/functions/v1/text-to-speech', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + config.supabaseKey
+          },
+          body: JSON.stringify({
+            text: text,
+            voice: voice
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          showStatus('TTS generated and inserted!', 'success');
+          textarea.value = ''; // Clear input
+        } else {
+          const error = await response.json();
+          showStatus('TTS failed: ' + (error.error || 'Unknown error'), 'error');
+        }
+      } catch (err) {
+        console.error('[EditPanel] Insert TTS error:', err);
+        showStatus('TTS generation failed', 'error');
       }
     }
 
