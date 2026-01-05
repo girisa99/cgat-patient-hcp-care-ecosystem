@@ -291,67 +291,112 @@ Return a production-ready script in JSON format with scenes, narration, and visu
     config: ProductionPipelineConfig,
     script: GeneratedScript
   ): Promise<any> {
+    // Safely extract scenes with null checks
+    const scenes = script?.scenes || [];
+    if (scenes.length === 0) {
+      console.warn('No scenes in script, returning empty media result');
+      return { status: 'no_scenes', error: 'Script has no scenes to generate media from' };
+    }
+
     switch (config.outputType) {
       case 'video':
       case 'animation':
         // Generate video frames or animation
-        const videoPrompt = script.scenes
-          .map(s => s.visualDirection || s.narration)
+        const videoPrompt = scenes
+          .map(s => s.visualDirection || s.narration || '')
+          .filter(Boolean)
           .join('. ');
         
+        if (!videoPrompt) {
+          return { status: 'no_content', error: 'No visual content to generate' };
+        }
+        
         try {
+          // Map aspect ratio to supported format
+          const aspectRatio = config.outputOptions?.aspectRatio === '9:16' ? '9:16' : 
+                             config.outputOptions?.aspectRatio === '1:1' ? '1:1' : '16:9';
+          
           const videoResult = await geminiMediaService.generateVideo({
             prompt: videoPrompt.slice(0, 500),
-            duration: config.outputOptions?.duration || 10,
-            aspectRatio: config.outputOptions?.aspectRatio || '16:9'
+            duration: Math.min(config.outputOptions?.duration || 10, 30), // Cap at 30 seconds
+            aspectRatio
           });
-          return { videoUrl: videoResult.mediaUrl };
-        } catch {
+          
+          if (videoResult.success && videoResult.mediaUrl) {
+            return { videoUrl: videoResult.mediaUrl, status: 'video_generated' };
+          }
+          throw new Error(videoResult.error || 'Video generation failed');
+        } catch (videoError) {
+          console.warn('Video generation failed, falling back to image:', videoError);
           // Fallback to image generation
-          const imageUrl = await AIMediaService.generateImage(videoPrompt.slice(0, 500));
-          return { thumbnailUrl: imageUrl, status: 'image_fallback' };
+          try {
+            const imageUrl = await AIMediaService.generateImage(videoPrompt.slice(0, 500));
+            return { thumbnailUrl: imageUrl, status: 'image_fallback' };
+          } catch {
+            return { status: 'generation_failed', error: 'Both video and image generation failed' };
+          }
         }
         
       case 'podcast':
         // Audio generation would happen here
-        return { status: 'audio_ready_for_tts', scriptPrepared: true };
+        return { 
+          status: 'audio_ready_for_tts', 
+          scriptPrepared: true,
+          totalDuration: script.totalDuration,
+          sceneCount: scenes.length
+        };
         
       case 'presentation':
-        // Generate slides/images for each scene
-        const slideImages = await Promise.all(
-          script.scenes.slice(0, 5).map(async (scene) => {
-            try {
-              return await AIMediaService.generateImage(
-                scene.visualDirection || `Slide: ${scene.narration.slice(0, 100)}`
-              );
-            } catch {
-              return null;
-            }
-          })
-        );
-        return { slides: slideImages.filter(Boolean) };
+        // Generate slides/images for each scene (limit to 5)
+        const slidePromises = scenes.slice(0, 5).map(async (scene) => {
+          const prompt = scene.visualDirection || `Slide: ${(scene.narration || '').slice(0, 100)}`;
+          if (!prompt || prompt === 'Slide: ') return null;
+          
+          try {
+            return await AIMediaService.generateImage(prompt);
+          } catch {
+            return null;
+          }
+        });
+        
+        const slideImages = await Promise.all(slidePromises);
+        return { slides: slideImages.filter(Boolean), status: 'slides_generated' };
         
       case 'webinar':
-        return { status: 'webinar_script_ready', slides: null };
+        return { 
+          status: 'webinar_script_ready', 
+          slides: null,
+          segments: scenes.length,
+          totalDuration: script.totalDuration
+        };
         
       case 'storyboard':
-        // Generate storyboard frames
-        const frames = await Promise.all(
-          script.scenes.slice(0, 8).map(async (scene) => {
-            try {
-              const imageUrl = await AIMediaService.generateImage(
-                `Storyboard frame: ${scene.visualDirection || scene.narration.slice(0, 100)}`
-              );
-              return { scene: scene.sceneNumber, imageUrl, narration: scene.narration };
-            } catch {
-              return { scene: scene.sceneNumber, narration: scene.narration };
-            }
-          })
-        );
-        return { storyboardFrames: frames };
+        // Generate storyboard frames (limit to 8)
+        const framePromises = scenes.slice(0, 8).map(async (scene, index) => {
+          const prompt = `Storyboard frame: ${scene.visualDirection || (scene.narration || '').slice(0, 100)}`;
+          
+          try {
+            const imageUrl = await AIMediaService.generateImage(prompt);
+            return { 
+              scene: scene.sceneNumber || index + 1, 
+              imageUrl, 
+              narration: scene.narration || '' 
+            };
+          } catch {
+            return { 
+              scene: scene.sceneNumber || index + 1, 
+              narration: scene.narration || '',
+              error: 'Image generation failed'
+            };
+          }
+        });
+        
+        const frames = await Promise.all(framePromises);
+        return { storyboardFrames: frames, status: 'storyboard_generated' };
         
       default:
-        return null;
+        console.warn(`Unknown output type: ${config.outputType}`);
+        return { status: 'unknown_output_type', error: `Unsupported output type: ${config.outputType}` };
     }
   }
 
