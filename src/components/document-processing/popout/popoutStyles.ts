@@ -1035,6 +1035,291 @@ export function getPopoutStyles(): string {
       font-size: 0.8rem;
     }
 
+    /* AI Suggestions Section */
+    .edit-suggestions-section {
+      margin-bottom: 16px;
+      padding: 12px;
+      background: rgba(139, 92, 246, 0.05);
+      border-radius: 8px;
+      border: 1px solid rgba(139, 92, 246, 0.15);
+    }
+
+    .suggestions-list {
+      margin-top: 10px;
+    }
+
+    .suggestion-item {
+      padding: 12px;
+      margin-bottom: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      border-left: 3px solid rgba(139, 92, 246, 0.5);
+    }
+
+    .suggestion-item.accepted {
+      border-left-color: #22c55e;
+      background: rgba(34, 197, 94, 0.1);
+    }
+
+    .suggestion-item.dismissed {
+      opacity: 0.5;
+      border-left-color: #666;
+    }
+
+    .suggestion-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .suggestion-type {
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      background: rgba(139, 92, 246, 0.2);
+      border-radius: 10px;
+      color: #a78bfa;
+      text-transform: uppercase;
+    }
+
+    .suggestion-original {
+      font-size: 0.8rem;
+      color: #f87171;
+      text-decoration: line-through;
+      margin-bottom: 4px;
+      padding: 6px;
+      background: rgba(239, 68, 68, 0.1);
+      border-radius: 4px;
+    }
+
+    .suggestion-enhanced {
+      font-size: 0.8rem;
+      color: #22c55e;
+      margin-bottom: 8px;
+      padding: 6px;
+      background: rgba(34, 197, 94, 0.1);
+      border-radius: 4px;
+    }
+
+    .suggestion-reason {
+      font-size: 0.7rem;
+      color: #888;
+      font-style: italic;
+      margin-bottom: 8px;
+    }
+
+    .suggestion-edit-area {
+      margin: 8px 0;
+    }
+
+    .suggestion-edit-area textarea {
+      width: 100%;
+      padding: 8px;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 0.8rem;
+      resize: vertical;
+    }
+
+    .suggestion-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .suggestion-btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .suggestion-btn.accept {
+      background: rgba(34, 197, 94, 0.15);
+      border-color: rgba(34, 197, 94, 0.3);
+      color: #22c55e;
+    }
+
+    .suggestion-btn.accept:hover {
+      background: rgba(34, 197, 94, 0.25);
+    }
+
+    .suggestion-btn.edit {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: rgba(59, 130, 246, 0.3);
+      color: #60a5fa;
+    }
+
+    .suggestion-btn.edit:hover {
+      background: rgba(59, 130, 246, 0.25);
+    }
+
+    .suggestion-btn.dismiss {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.1);
+      color: #888;
+    }
+
+    .suggestion-btn.dismiss:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .suggestion-btn.save {
+      background: rgba(34, 197, 94, 0.2);
+      border-color: rgba(34, 197, 94, 0.4);
+      color: #22c55e;
+    }
+
+    .suggestion-btn.cancel {
+      background: rgba(255, 255, 255, 0.1);
+      color: #aaa;
+    }
+
+    /* TTS Preview */
+    .add-tts-preview {
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      border-radius: 8px;
+    }
+
+    .tts-preview-header {
+      font-size: 0.8rem;
+      color: #a78bfa;
+      margin-bottom: 8px;
+    }
+
+    .tts-original-text {
+      font-size: 0.8rem;
+      color: #888;
+      text-decoration: line-through;
+      margin-bottom: 4px;
+    }
+
+    .tts-enhanced-text {
+      font-size: 0.85rem;
+      color: #22c55e;
+      padding: 8px;
+      background: rgba(34, 197, 94, 0.1);
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+
+    .tts-preview-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Captions Section */
+    .edit-captions-section {
+      margin-bottom: 16px;
+      padding: 12px;
+      background: rgba(59, 130, 246, 0.05);
+      border-radius: 8px;
+      border: 1px solid rgba(59, 130, 246, 0.15);
+    }
+
+    .captions-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .captions-status {
+      padding: 10px;
+      text-align: center;
+    }
+
+    .captions-info {
+      font-size: 0.8rem;
+      color: #888;
+    }
+
+    .captions-preview {
+      margin-top: 10px;
+    }
+
+    .captions-timeline {
+      max-height: 200px;
+      overflow-y: auto;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 6px;
+      padding: 8px;
+    }
+
+    .caption-entry {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px;
+      margin-bottom: 4px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .caption-entry:hover {
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    .caption-entry.selected {
+      background: rgba(59, 130, 246, 0.2);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .caption-time {
+      font-size: 0.7rem;
+      color: #60a5fa;
+      font-family: monospace;
+      min-width: 100px;
+    }
+
+    .caption-text {
+      font-size: 0.8rem;
+      color: #fff;
+      flex: 1;
+    }
+
+    .caption-text.editing {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .captions-edit-controls {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .captions-loading,
+    .suggestions-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 20px;
+      color: #888;
+      font-size: 0.8rem;
+    }
+
+    .loading-spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-top-color: #a78bfa;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+
     /* Edit Info Section */
     .edit-info-section {
       display: flex;
