@@ -1,8 +1,8 @@
 # Genie Mind & Genie Vibe - Phase Implementation Roadmap
 
 > **Last Updated:** 2026-01-05
-> **Status:** Active Implementation - Phase 1 Complete (with fixes)
-> **Version:** 1.1
+> **Status:** Active Implementation - Phase 2 In Progress
+> **Version:** 1.2
 
 ---
 
@@ -59,13 +59,28 @@
 
 ## Phase Implementation Details
 
-### Phase 1: Quick Wins - Complete P0 Partials ✅
+### Phase 1: Quick Wins - Complete P0 Partials ✅ COMPLETE
 
 | # | Feature | Primary Module | Shared Services Used | Status |
 |---|---------|---------------|---------------------|--------|
 | 1 | AI Image Gen → Script Connection | **Shared (Mind + Vibe)** | `imageToScriptService`, `aiMediaService`, `geminiMediaService` | ✅ Complete |
 | 2 | Document → Script Automation | **Genie Mind** | `documentToScriptService`, `ai-universal-processor` | ✅ Complete |
 | 3 | Full Pipeline Orchestration | **Genie Mind** | `mediaProductionOrchestrator`, `useUniversalAI` | ✅ Complete |
+| 4 | **NLP Infrastructure** | **Shared** | `rag-search`, `rag-knowledge-processor`, `ai-universal-processor` | ✅ Complete |
+
+#### 1.4 NLP Infrastructure (Universal AI Integration) ✅
+**Goal:** Unified NLP capabilities using Universal AI for all domain services
+
+**Services Updated:**
+- `supabase/functions/rag-search/index.ts` - Semantic reranking via Universal AI
+- `supabase/functions/rag-knowledge-processor/index.ts` - Classification, summarization, entity extraction
+
+**NLP Capabilities Implemented:**
+- ✅ **Semantic Search Reranking** - Universal AI reranks keyword search results for relevance
+- ✅ **Content Classification** - Auto-categorization (clinical, research, education, etc.)
+- ✅ **Entity Extraction** - Healthcare entities (diseases, treatments, drugs, genes, procedures)
+- ✅ **Content Summarization** - AI-generated summaries for knowledge entries
+- ✅ **AI Recommendations** - Clinical insights and next-best-actions via Universal AI
 
 #### 1.1 AI Image Gen → Script Connection (Genie Vibe)
 **Goal:** Connect image generation (OpenAI DALL-E, Gemini Imagen, Replicate Flux) to script generation
@@ -116,14 +131,14 @@
 
 ---
 
-### Phase 2: High Impact - New P0
+### Phase 2: High Impact - New P0 🔄 IN PROGRESS
 
 | # | Feature | Primary Module | Shared Services Used | Status |
 |---|---------|---------------|---------------------|--------|
-| 4 | Figma API Integration | **Genie Vibe** | External API + `useUniversalAI` | 📋 Planned |
-| 5 | URL → Script → Video | **Genie Mind** | `ragService`, `unifiedAIConnector` | 📋 Planned |
-| 6 | Miro/Whiteboard → Presentation | **Genie Vibe** | External API + `useUniversalAI` | 📋 Planned |
-| 7 | Canva → Script → Video | **Genie Vibe** | External API + `useUniversalAI` | 📋 Planned |
+| 5 | Figma API Integration | **Genie Vibe** | External API + `useUniversalAI` | 📋 Planned |
+| 6 | URL → Script → Video | **Genie Mind** | `ragService`, `unifiedAIConnector`, `web-scraper` | 📋 Planned |
+| 7 | Miro/Whiteboard → Presentation | **Genie Vibe** | External API + `useUniversalAI` | 📋 Planned |
+| 8 | Canva → Script → Video | **Genie Vibe** | External API + `useUniversalAI` | 📋 Planned |
 
 #### 2.1 Figma API Integration (Genie Vibe)
 **New Services Needed:**
@@ -173,12 +188,15 @@
 
 ## Implementation Status Summary
 
-| Phase | Total | Complete | Partial | Planned |
-|-------|-------|----------|---------|---------|
-| Phase 1 (P0 Partials) | 3 | 0 | 3 | 0 |
-| Phase 2 (New P0) | 4 | 0 | 0 | 4 |
+| Phase | Total | Complete | In Progress | Planned |
+|-------|-------|----------|-------------|---------|
+| Phase 1 (P0 Partials + NLP) | 4 | 4 | 0 | 0 |
+| Phase 2 (High Impact P0) | 4 | 0 | 0 | 4 |
 | Phase 3 (P1 Essentials) | 8 | 0 | 0 | 8 |
-| **Total** | **15** | **0** | **3** | **12** |
+| **Total** | **16** | **4** | **0** | **12** |
+
+**Phase 1 Completion:** 100% ✅
+**Overall Progress:** 25%
 
 ---
 
@@ -241,19 +259,36 @@ const brollSuggestions = await unifiedAIConnector.generateResponse({
 
 ## Next Steps
 
-1. **Phase 1 Implementation Order:**
-   - [ ] Create `imageToScriptService.ts` (Genie Vibe)
-   - [ ] Create `documentToScriptService.ts` (Genie Mind)
-   - [ ] Create `mediaProductionOrchestrator.ts` (Genie Mind)
+### Phase 1 ✅ COMPLETE
+- [x] Create `imageToScriptService.ts` (Genie Vibe)
+- [x] Create `documentToScriptService.ts` (Genie Mind)
+- [x] Create `mediaProductionOrchestrator.ts` (Genie Mind)
+- [x] NLP Infrastructure via Universal AI (rag-search, rag-knowledge-processor)
 
-2. **Phase 2 Preparation:**
-   - [ ] Research Figma API authentication
-   - [ ] Design web scraper edge function
-   - [ ] Plan Miro API integration
+### Phase 2 🔄 IN PROGRESS
+1. **Figma API Integration:**
+   - [ ] Research Figma API authentication & OAuth flow
+   - [ ] Create `figmaIntegrationService.ts`
+   - [ ] Create `figma-import` edge function
 
-3. **Phase 3 Planning:**
-   - [ ] Evaluate ElevenLabs vs PlayHT for voice cloning
-   - [ ] Design B-roll matching algorithm
+2. **URL → Script → Video:**
+   - [ ] Create `web-scraper` edge function
+   - [ ] Create `urlToContentService.ts`
+   - [ ] Integrate with Universal AI for content extraction
+
+3. **Miro/Whiteboard Integration:**
+   - [ ] Research Miro API authentication
+   - [ ] Create `miroIntegrationService.ts`
+   - [ ] Create `miro-import` edge function
+
+4. **Canva Integration:**
+   - [ ] Research Canva API authentication
+   - [ ] Create `canvaIntegrationService.ts`
+   - [ ] Create `canva-import` edge function
+
+### Phase 3 Planning
+- [ ] Evaluate ElevenLabs vs PlayHT for voice cloning
+- [ ] Design B-roll matching algorithm
 
 ---
 
