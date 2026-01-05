@@ -9,14 +9,20 @@ export interface PopoutScriptData {
   originalContent?: string;
   enhancedContent?: string;
   cleanContent?: string; // Clean version for TTS (no pause markers)
+  draftContent?: string; // In-progress draft content
+  draftStatus?: 'in_progress' | 'completed';
+  type?: 'video' | 'audio';
+  purpose?: 'video' | 'audio' | 'podcast' | 'webcast' | 'interview' | 'panel' | 'tutorial';
 }
 
 export interface PopoutVoiceoverData {
   id: string;
   name: string;
   url: string;
-  scriptText: string | null;
-  scriptType: string | null;
+  scriptText: string | null; // Enhanced/clean script used for TTS
+  originalScript?: string | null; // Original script before enhancement
+  scriptType: string | null; // 'video' | 'audio' | 'tts' | 'voiceover' | 'narration'
+  metadataType?: string | null; // From database metadata.type field (highest priority)
 }
 
 export interface PopoutMusicData {

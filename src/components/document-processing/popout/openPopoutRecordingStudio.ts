@@ -96,7 +96,11 @@ export function openPopoutRecordingStudio(options: OpenPopoutOptions): Window | 
       content: s.content,
       originalContent: (s as any).originalContent || s.content,
       enhancedContent: (s as any).enhancedContent,
-      cleanContent: (s as any).cleanContent
+      cleanContent: (s as any).cleanContent,
+      draftContent: (s as any).draftContent,
+      draftStatus: (s as any).draftStatus,
+      type: (s as any).type || 'video',
+      purpose: (s as any).purpose
     }));
 
     const voiceoversData: PopoutVoiceoverData[] = voiceoverFiles.map(a => {
@@ -110,7 +114,9 @@ export function openPopoutRecordingStudio(options: OpenPopoutOptions): Window | 
         name: a.name,
         url: url,
         scriptText: (a.metadata?.scriptText as string) || null,
-        scriptType: (a.metadata?.scriptType as string) || null
+        originalScript: (a.metadata?.originalScript as string) || null,
+        scriptType: (a.metadata?.scriptType as string) || null,
+        metadataType: (a.metadata?.type as string) || null
       };
     });
 
