@@ -239,12 +239,18 @@ export function useRecording(
         console.warn('[Recording] requestData not supported:', e);
       }
       
-      // Small delay to allow the final chunk to be processed
+      // Longer delay to ensure the final chunk is captured properly
+      // This helps with the "0 chunks recorded" issue
       setTimeout(() => {
-        if (recorder.state !== 'inactive') {
-          recorder.stop();
+        try {
+          if (recorder.state !== 'inactive') {
+            recorder.stop();
+            console.log('[Recording] MediaRecorder.stop() called');
+          }
+        } catch (e) {
+          console.warn('[Recording] Error stopping recorder:', e);
         }
-      }, 100);
+      }, 250); // Increased from 100ms to 250ms
     }
 
     // Cleanup combined stream tracks (but don't stop original camera)
