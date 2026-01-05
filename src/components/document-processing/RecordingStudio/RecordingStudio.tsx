@@ -1969,8 +1969,11 @@ export function RecordingStudio({
                       toast.error('Select a voiceover file first');
                     }
                   }}
+                  onPauseVoiceover={audioPlayback.pauseVoiceover}
+                  onResumeVoiceover={audioPlayback.resumeVoiceover}
                   onStopVoiceover={audioPlayback.stopVoiceover}
                   isVoiceoverPlaying={audioPlayback.isPlaying.voiceover}
+                  isVoiceoverPaused={audioPlayback.isPaused.voiceover}
                   voiceoverVolume={audioPlayback.voiceoverVolume}
                   onVoiceoverVolumeChange={audioPlayback.setVoiceoverVolume}
                   
@@ -1993,8 +1996,11 @@ export function RecordingStudio({
                       toast.error('Select a music file first');
                     }
                   }}
+                  onPauseMusic={audioPlayback.pauseMusic}
+                  onResumeMusic={audioPlayback.resumeMusic}
                   onStopMusic={audioPlayback.stopMusic}
                   isMusicPlaying={audioPlayback.isPlaying.music}
+                  isMusicPaused={audioPlayback.isPaused.music}
                   musicVolume={audioPlayback.musicVolume}
                   onMusicVolumeChange={audioPlayback.setMusicVolume}
                   musicLoop={audioPlayback.musicLoop}
@@ -2034,8 +2040,11 @@ export function RecordingStudio({
                       toast.error('Select a TTS file first');
                     }
                   }}
+                  onPauseTTS={audioPlayback.pauseTTS}
+                  onResumeTTS={audioPlayback.resumeTTS}
                   onStopTTS={audioPlayback.stopTTS}
                   isTTSPlaying={audioPlayback.isPlaying.tts}
+                  isTTSPaused={audioPlayback.isPaused.tts}
                   ttsVolume={audioPlayback.ttsVolume}
                   onTTSVolumeChange={audioPlayback.setTTSVolume}
                   
