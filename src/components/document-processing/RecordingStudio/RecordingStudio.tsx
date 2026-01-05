@@ -67,7 +67,9 @@ import {
   VideoEditorIntegration,
   ProductionInfo,
   AudioAssetSelector,
-  FloatingAudioMixer
+  FloatingAudioMixer,
+  ContentAnalyzer,
+  VibeToMindBridge
 } from './components';
 import type { CameraSetupOptions } from './components';
 import type { RecordingStudioProps, LogoState, TeleprompterState, ScriptData, AudioTabType } from './types';
@@ -192,6 +194,14 @@ export function RecordingStudio({
   // Video editor integration
   const [showVideoEditor, setShowVideoEditor] = useState(false);
   const [editingBlob, setEditingBlob] = useState<Blob | null>(null);
+  
+  // Content Analyzer (Vibe → Mind → Vibe flow)
+  const [showContentAnalyzer, setShowContentAnalyzer] = useState(false);
+  const [contentToAnalyze, setContentToAnalyze] = useState<{
+    type: 'recording' | 'ppt' | 'pdf' | 'url' | 'image';
+    name: string;
+    source?: string;
+  } | undefined>(undefined);
   
   const logoInputRef = useRef<HTMLInputElement>(null);
 
@@ -1989,6 +1999,52 @@ export function RecordingStudio({
                   onPresetChange={studioSound.applyPreset}
                   onSettingsChange={studioSound.updateSettings}
                 />
+                
+                <Separator />
+                
+                {/* Vibe → Mind Bridge - for content without scripts */}
+                <VibeToMindBridge
+                  compact
+                  recentRecordings={library.recordings.slice(0, 3).map(r => ({
+                    id: String(r.id),
+                    type: 'recording' as const,
+                    name: r.name,
+                    hasScript: false
+                  }))}
+                  onAnalyzeContent={(content) => {
+                    setContentToAnalyze({
+                      type: content.type === 'recording' ? 'recording' : 'image',
+                      name: content.name,
+                      source: undefined
+                    });
+                    setShowContentAnalyzer(true);
+                  }}
+                  onImportForAnalysis={() => {
+                    // Open file picker for import
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = '.ppt,.pptx,.pdf,image/*';
+                    input.onchange = (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (file) {
+                        const fileType = file.name.toLowerCase();
+                        let type: 'ppt' | 'pdf' | 'image' = 'image';
+                        if (fileType.endsWith('.ppt') || fileType.endsWith('.pptx')) {
+                          type = 'ppt';
+                        } else if (fileType.endsWith('.pdf')) {
+                          type = 'pdf';
+                        }
+                        setContentToAnalyze({
+                          type,
+                          name: file.name,
+                          source: URL.createObjectURL(file)
+                        });
+                        setShowContentAnalyzer(true);
+                      }
+                    };
+                    input.click();
+                  }}
+                />
               </div>
             )}
             
@@ -2290,6 +2346,32 @@ export function RecordingStudio({
           projectName={mediaProject.currentProject?.name || 'Project'}
           assets={mediaProject.assets}
           totalCost={mediaProject.currentProject?.total_estimated_cost || 0}
+        />
+        
+        {/* Content Analyzer - Vibe → Mind → Vibe bidirectional flow */}
+        <ContentAnalyzer
+          isOpen={showContentAnalyzer}
+          onClose={() => {
+            setShowContentAnalyzer(false);
+            setContentToAnalyze(undefined);
+          }}
+          content={contentToAnalyze}
+          onScriptGenerated={(script) => {
+            // Add generated script to the scripts list
+            const newScript: ScriptData = {
+              id: `generated-${Date.now()}`,
+              title: script.title,
+              content: script.content,
+            };
+            setScripts(prev => [...prev, newScript]);
+            setSelectedScriptId(newScript.id);
+            toast.success('Script generated and added!');
+          }}
+          onRequestTTS={(scriptContent) => {
+            // Set TTS text for generation in parent context
+            setTTSText(scriptContent);
+            toast.info('TTS text set - generate in Genie Mind for best results');
+          }}
         />
       </DialogContent>
     </Dialog>

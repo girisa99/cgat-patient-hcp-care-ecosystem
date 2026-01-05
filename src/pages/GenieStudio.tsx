@@ -2038,16 +2038,17 @@ export default function GenieStudio() {
                     <div className="space-y-6">
                       <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur border border-white/20">
                         <Calendar className="h-4 w-4 text-indigo-300" />
-                        <span className="text-sm text-white font-medium">Planning & Scheduling</span>
+                        <span className="text-sm text-white font-medium">Team Coordination</span>
+                        <Badge className="bg-indigo-400/20 text-indigo-200 border-indigo-300/30 text-xs">Optional</Badge>
                       </div>
                       <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight leading-tight">
                         Genie <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-purple-300">Arc</span>
                       </h1>
                       <p className="text-2xl md:text-3xl text-white/90 font-light">
-                        Your Production Journey With Infinite Possibilities
+                        Production Hub for Teams
                       </p>
                       <p className="text-lg text-white/70 max-w-lg leading-relaxed">
-                        Schedule shows, coordinate with guests, manage episodes, and plan your entire content calendar with intelligent automation.
+                        <strong className="text-white/90">Optional:</strong> For team productions with multiple contributors. Schedule shows, coordinate guests, and manage complex workflows. Solo creators can skip this and use Vibe directly.
                       </p>
                       <div className="flex flex-wrap gap-3 pt-4">
                         <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
@@ -2251,33 +2252,55 @@ export default function GenieStudio() {
                 </div>
               </div>
 
-              {/* Quick Actions */}
-              <div className="flex flex-wrap items-start gap-3">
-                {/* Genie Vibe Button */}
-                <Button 
-                  size="lg" 
-                  onClick={() => setIsStudioOpen(true)}
-                  className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white shadow-lg shadow-pink-500/25 transition-all hover:scale-105 flex items-center gap-3 h-auto py-2.5 px-5"
-                >
-                  <img src={genieVibeProductLogo} alt="Genie Vibe" className="h-8 w-8 object-contain rounded bg-white p-0.5" />
-                  <div className="flex flex-col items-start">
-                    <span className="font-semibold">Genie Vibe</span>
-                    <span className="text-[10px] font-normal opacity-80">Script to Screen</span>
+              {/* Quick Actions with Flow Indicator */}
+              <div className="space-y-3">
+                {/* Default Workflow Flow */}
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/5 rounded-lg border border-primary/10">
+                  <span className="text-xs text-muted-foreground">Default flow:</span>
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <span className="font-medium text-purple-600">Mind</span>
+                    <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                    <span className="font-medium text-green-600">Script</span>
+                    <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                    <span className="font-medium text-blue-600">TTS</span>
+                    <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                    <span className="font-medium text-pink-600">Vibe</span>
+                    <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                    <span className="font-medium text-green-600">Publish</span>
                   </div>
-                </Button>
+                </div>
                 
-                {/* Genie Arc Button */}
-                <Button 
-                  size="lg" 
-                  onClick={() => setIsCreateShowDialogOpen(true)}
-                  className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25 transition-all hover:scale-105 flex items-center gap-3 h-auto py-2.5 px-5"
-                >
-                  <img src={genieArcProductLogo} alt="Genie Arc" className="h-8 w-8 object-contain rounded bg-white p-0.5" />
-                  <div className="flex flex-col items-start">
-                    <span className="font-semibold">Genie Arc</span>
-                    <span className="text-[10px] font-normal opacity-80">Your Production Journey</span>
-                  </div>
-                </Button>
+                <div className="flex flex-wrap items-start gap-3">
+                  {/* Genie Vibe Button - Primary */}
+                  <Button 
+                    size="lg" 
+                    onClick={() => setIsStudioOpen(true)}
+                    className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white shadow-lg shadow-pink-500/25 transition-all hover:scale-105 flex items-center gap-3 h-auto py-2.5 px-5"
+                  >
+                    <img src={genieVibeProductLogo} alt="Genie Vibe" className="h-8 w-8 object-contain rounded bg-white p-0.5" />
+                    <div className="flex flex-col items-start">
+                      <span className="font-semibold">Genie Vibe</span>
+                      <span className="text-[10px] font-normal opacity-80">Script to Screen</span>
+                    </div>
+                  </Button>
+                  
+                  {/* Genie Arc Button - Optional for Teams */}
+                  <Button 
+                    size="lg" 
+                    variant="outline"
+                    onClick={() => setIsCreateShowDialogOpen(true)}
+                    className="border-indigo-500/30 hover:border-indigo-500 hover:bg-indigo-500/10 flex items-center gap-3 h-auto py-2.5 px-5"
+                  >
+                    <img src={genieArcProductLogo} alt="Genie Arc" className="h-8 w-8 object-contain rounded bg-indigo-100 p-0.5" />
+                    <div className="flex flex-col items-start">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold">Genie Arc</span>
+                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-indigo-400/50 text-indigo-600">Optional</Badge>
+                      </div>
+                      <span className="text-[10px] font-normal text-muted-foreground">Team Productions</span>
+                    </div>
+                  </Button>
+                </div>
               </div>
             </div>
 
