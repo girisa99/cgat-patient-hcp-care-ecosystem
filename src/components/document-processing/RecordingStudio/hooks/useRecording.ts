@@ -90,19 +90,26 @@ export function useRecording(
     }, 1000);
   }, [countdownSeconds]);
 
-  // Check for recoverable sessions on mount
+  // Track if we've already shown recovery toast
+  const recoveryToastShownRef = useRef(false);
+
+  // Check for recoverable sessions on mount - only once
   useEffect(() => {
     const checkForRecovery = async () => {
       if (!enablePersistence) return;
+      if (recoveryToastShownRef.current) return; // Already shown
       
       try {
         const sessions = await persistence.getIncompleteSessions();
         if (sessions.length > 0) {
           setHasRecovery(true);
           const latestSession = sessions[0];
+          
+          // Only show toast once per app session
+          recoveryToastShownRef.current = true;
           toast.info(
             `Found recoverable recording (${Math.floor(latestSession.duration / 60)}m ${latestSession.duration % 60}s). Check your library.`,
-            { duration: 10000 }
+            { duration: 10000, id: 'recovery-toast' }
           );
           console.log('[Recording] Found recoverable sessions:', sessions.length);
         }
@@ -112,7 +119,9 @@ export function useRecording(
     };
     
     checkForRecovery();
-  }, [enablePersistence, persistence]);
+    // Only run once on mount, not on dependency changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Handle stream health issues
   const handleStreamHealthIssue = useCallback(() => {
