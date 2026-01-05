@@ -84,7 +84,6 @@ import { useGenieMediaLibrary } from '@/components/genie-studio/useGenieMediaLib
 import { useGenieScripts, type GenieScript } from '@/components/genie-studio/useGenieScripts';
 // AI Tools - Unified Smart Content Pipeline
 import { SmartContentPipeline } from '@/components/genie-studio/SmartContentPipeline';
-import { KnowledgeSearchPanel } from '@/components/genie-studio/KnowledgeSearchPanel';
 import type { GeneratedContent } from '@/components/genie-studio/PostGenerationActions';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -2614,75 +2613,49 @@ export default function GenieStudio() {
                   </div>
                 </div>
 
-                {/* AI Tools - Simplified to Smart Pipeline + Knowledge Search */}
-                <Tabs defaultValue="smart-pipeline" className="w-full">
-                  <TabsList level="child" className="mb-4">
-                    <TabsTrigger value="smart-pipeline" level="child">
-                      <Wand2 className="h-4 w-4 mr-2" />
-                      Smart Pipeline
-                    </TabsTrigger>
-                    <TabsTrigger value="knowledge-search" level="child">
-                      <Search className="h-4 w-4 mr-2" />
-                      Knowledge Search
-                    </TabsTrigger>
-                  </TabsList>
-
-                  {/* Smart Content Pipeline - Default Tab */}
-                  <TabsContent value="smart-pipeline" level="child" className="mt-0">
-                    <SmartContentPipeline 
-                      onSendToScriptEditor={(content: GeneratedContent) => {
-                        // Create script and switch to Script Editor tab
-                        const newScript = {
-                          id: `script-${Date.now()}`,
-                          name: content.title || 'Generated Script',
-                          content: content.script,
-                          type: content.type === 'podcast_script' ? 'audio' as const : 'video' as const,
-                          createdAt: Date.now(),
-                          updatedAt: Date.now(),
-                          stats: {
-                            wordCount: content.metadata?.wordCount || 0,
-                            sentenceCount: 0,
-                            characterCount: content.script.length,
-                            estimatedReadingMinutes: Math.ceil((content.metadata?.estimatedDuration || 0) / 60),
-                            estimatedSpeakingMinutes: Math.ceil((content.metadata?.estimatedDuration || 0) / 60),
-                            readabilityScore: 'moderate' as const
-                          }
-                        };
-                        saveScript(newScript);
-                        setActiveTab('script-editor');
-                        toast.success(`Script sent to Script Editor for refinement!`);
-                      }}
-                      onSendToVibe={(content: GeneratedContent) => {
-                        // Create script and switch to Recording Studio
-                        const newScript = {
-                          id: `script-${Date.now()}`,
-                          name: content.title || 'Generated Script',
-                          content: content.script,
-                          type: content.type === 'podcast_script' ? 'audio' as const : 'video' as const,
-                          createdAt: Date.now(),
-                          updatedAt: Date.now()
-                        };
-                        saveScript(newScript);
-                        setActiveTab('recording-studio');
-                        toast.success(`Script ready for recording in Vibe!`);
-                      }}
-                      onSaveToKnowledgeBase={(content: GeneratedContent) => {
-                        // Save to knowledge base (would call actual KB service)
-                        toast.success(`Script saved to Knowledge Base for future AI reference!`);
-                      }}
-                    />
-                  </TabsContent>
-
-                  {/* Knowledge Search */}
-                  <TabsContent value="knowledge-search" level="child" className="mt-0">
-                    <KnowledgeSearchPanel 
-                      onResultSelect={(result) => {
-                        navigator.clipboard.writeText(result.content);
-                        toast.success('Content copied to clipboard - paste into script editor');
-                      }}
-                    />
-                  </TabsContent>
-                </Tabs>
+                {/* Smart Content Pipeline - Single unified experience */}
+                <SmartContentPipeline 
+                  onSendToScriptEditor={(content: GeneratedContent) => {
+                    // Create script and switch to Script Editor tab
+                    const newScript = {
+                      id: `script-${Date.now()}`,
+                      name: content.title || 'Generated Script',
+                      content: content.script,
+                      type: content.type === 'podcast_script' ? 'audio' as const : 'video' as const,
+                      createdAt: Date.now(),
+                      updatedAt: Date.now(),
+                      stats: {
+                        wordCount: content.metadata?.wordCount || 0,
+                        sentenceCount: 0,
+                        characterCount: content.script.length,
+                        estimatedReadingMinutes: Math.ceil((content.metadata?.estimatedDuration || 0) / 60),
+                        estimatedSpeakingMinutes: Math.ceil((content.metadata?.estimatedDuration || 0) / 60),
+                        readabilityScore: 'moderate' as const
+                      }
+                    };
+                    saveScript(newScript);
+                    setActiveTab('script-editor');
+                    toast.success(`Script sent to Script Editor for refinement!`);
+                  }}
+                  onSendToVibe={(content: GeneratedContent) => {
+                    // Create script and switch to Recording Studio
+                    const newScript = {
+                      id: `script-${Date.now()}`,
+                      name: content.title || 'Generated Script',
+                      content: content.script,
+                      type: content.type === 'podcast_script' ? 'audio' as const : 'video' as const,
+                      createdAt: Date.now(),
+                      updatedAt: Date.now()
+                    };
+                    saveScript(newScript);
+                    setActiveTab('recording-studio');
+                    toast.success(`Script ready for recording in Vibe!`);
+                  }}
+                  onSaveToKnowledgeBase={(content: GeneratedContent) => {
+                    // Save to knowledge base (would call actual KB service)
+                    toast.success(`Script saved to Knowledge Base for future AI reference!`);
+                  }}
+                />
               </div>
             </TabsContent>
 
