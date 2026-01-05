@@ -15,7 +15,8 @@ export type {
   PopoutVoiceoverData, 
   PopoutMusicData,
   MediaItemForPopout,
-  ScriptItemForPopout
+  ScriptItemForPopout,
+  RecordingMode
 } from './types';
 export type { PopoutRecordingState } from './popoutStatePersistence';
 export type { BackendSyncConfig } from './popoutBackendSync';
