@@ -82,6 +82,11 @@ import { ScriptEditorTab } from '@/components/genie-studio/ScriptEditorTab';
 import { SavedAudioCard } from '@/components/genie-studio/SavedAudioCard';
 import { useGenieMediaLibrary } from '@/components/genie-studio/useGenieMediaLibrary';
 import { useGenieScripts, type GenieScript } from '@/components/genie-studio/useGenieScripts';
+// Phase 1 AI Tools Panels
+import { DocumentToScriptPanel } from '@/components/genie-studio/DocumentToScriptPanel';
+import { ImageToScriptPanel } from '@/components/genie-studio/ImageToScriptPanel';
+import { KnowledgeSearchPanel } from '@/components/genie-studio/KnowledgeSearchPanel';
+import { PipelineOrchestrationPanel } from '@/components/genie-studio/PipelineOrchestrationPanel';
 import { supabase } from '@/integrations/supabase/client';
 
 // Import Genie logos - Using combined versions with taglines (finalized)
@@ -2303,10 +2308,14 @@ export default function GenieStudio() {
         <div className="max-w-7xl mx-auto px-6 py-8">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             {/* Compact Tabs */}
-            <TabsList className="bg-muted/50 border border-border/50 p-1 grid grid-cols-6 w-full">
+            <TabsList className="bg-muted/50 border border-border/50 p-1 grid grid-cols-7 w-full">
               <TabsTrigger value="dashboard" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-2">
                 <Layers className="h-4 w-4 md:mr-1" />
                 <span className="hidden md:inline">Dashboard</span>
+              </TabsTrigger>
+              <TabsTrigger value="ai-tools" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-2">
+                <Sparkles className="h-4 w-4 md:mr-1" />
+                <span className="hidden md:inline">AI Tools</span>
               </TabsTrigger>
               <TabsTrigger value="script-editor" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-2">
                 <PenTool className="h-4 w-4 md:mr-1" />
@@ -2564,6 +2573,129 @@ export default function GenieStudio() {
                     </CardContent>
                   </Card>
                 </div>
+              </div>
+            </TabsContent>
+
+            {/* AI Tools Tab - Phase 1 Frontend Integration */}
+            <TabsContent value="ai-tools" className="mt-0 space-y-6">
+              <div className="grid gap-6">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold flex items-center gap-2">
+                      <Sparkles className="h-6 w-6 text-primary" />
+                      AI Tools
+                    </h2>
+                    <p className="text-muted-foreground">
+                      Document-to-script, image-to-script, and knowledge search powered by Universal AI
+                    </p>
+                  </div>
+                </div>
+
+                {/* AI Tools Sub-Tabs */}
+                <Tabs defaultValue="doc-to-script" className="w-full">
+                  <TabsList level="child" className="mb-4">
+                    <TabsTrigger value="doc-to-script" level="child">
+                      <FileText className="h-4 w-4 mr-2" />
+                      Document → Script
+                    </TabsTrigger>
+                    <TabsTrigger value="img-to-script" level="child">
+                      <Film className="h-4 w-4 mr-2" />
+                      Image → Script
+                    </TabsTrigger>
+                    <TabsTrigger value="knowledge-search" level="child">
+                      <Search className="h-4 w-4 mr-2" />
+                      Knowledge Search
+                    </TabsTrigger>
+                    <TabsTrigger value="pipeline" level="child">
+                      <Zap className="h-4 w-4 mr-2" />
+                      Full Pipeline
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="doc-to-script" level="child" className="mt-0">
+                    <DocumentToScriptPanel 
+                      onScriptGenerated={(script) => {
+                        // Save generated script to scripts list
+                        const newScript = {
+                          id: `script-${Date.now()}`,
+                          name: script.title || 'Generated Script',
+                          content: script.scenes.map(s => s.narration).join('\n\n'),
+                          type: 'video' as const,
+                          createdAt: Date.now(),
+                          updatedAt: Date.now(),
+                          stats: {
+                            wordCount: script.metadata.wordCount,
+                            sentenceCount: 0,
+                            characterCount: 0,
+                            estimatedReadingMinutes: Math.ceil(script.totalDuration / 60),
+                            estimatedSpeakingMinutes: Math.ceil(script.totalDuration / 60),
+                            readabilityScore: 'moderate' as const
+                          }
+                        };
+                        saveScript(newScript);
+                        toast.success(`Script "${script.title}" saved to your scripts!`);
+                      }}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="img-to-script" level="child" className="mt-0">
+                    <ImageToScriptPanel 
+                      onScriptGenerated={(script) => {
+                        if (script) {
+                          const newScript = {
+                            id: `script-${Date.now()}`,
+                            name: script.title || 'Image-based Script',
+                            content: script.segments.map(s => s.text).join('\n\n'),
+                            type: 'video' as const,
+                            createdAt: Date.now(),
+                            updatedAt: Date.now(),
+                            stats: {
+                              wordCount: script.segments.reduce((acc, s) => acc + s.text.split(/\s+/).length, 0),
+                              sentenceCount: 0,
+                              characterCount: 0,
+                              estimatedReadingMinutes: Math.ceil(script.totalDuration / 60),
+                              estimatedSpeakingMinutes: Math.ceil(script.totalDuration / 60),
+                              readabilityScore: 'moderate' as const
+                            }
+                          };
+                          saveScript(newScript);
+                          toast.success(`Script "${script.title}" saved!`);
+                        }
+                      }}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="knowledge-search" level="child" className="mt-0">
+                    <KnowledgeSearchPanel 
+                      onResultSelect={(result) => {
+                        // Copy result content to clipboard or use in script
+                        navigator.clipboard.writeText(result.content);
+                        toast.success('Content copied to clipboard - paste into script editor');
+                      }}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="pipeline" level="child" className="mt-0">
+                    <PipelineOrchestrationPanel 
+                      onPipelineComplete={(result) => {
+                        if (result.success && result.generatedScript) {
+                          const script = result.generatedScript;
+                          const newScript = {
+                            id: `script-${Date.now()}`,
+                            name: script.title || 'Pipeline Script',
+                            content: script.scenes.map(s => s.narration).join('\n\n'),
+                            type: 'video' as const,
+                            createdAt: Date.now(),
+                            updatedAt: Date.now()
+                          };
+                          saveScript(newScript);
+                          toast.success('Pipeline complete! Script saved.');
+                        }
+                      }}
+                    />
+                  </TabsContent>
+                </Tabs>
               </div>
             </TabsContent>
 
