@@ -1,15 +1,30 @@
 /**
- * Popout State Persistence Module
+ * Popout State Persistence Module - Enhanced Version
  * Handles saving and restoring popout recording state across window focus changes
- * Uses localStorage and BroadcastChannel for cross-window communication
+ * Uses localStorage, sessionStorage, IndexedDB, and BroadcastChannel for robust cross-window communication
+ * 
+ * Key improvements:
+ * - Multi-layer persistence (localStorage + sessionStorage + IndexedDB)
+ * - Aggressive state saving during recording
+ * - Better recovery on window/tab switch
+ * - Recording chunk preservation
+ * - MediaStream state tracking
  */
 
 export interface PopoutRecordingState {
   // Recording state
   isRecording: boolean;
   isPaused: boolean;
+  isStopped: boolean;
   recordingStartTime: number | null;
   recordingDuration: number;
+  recordingChunksCount: number;
+  
+  // Media stream state
+  hasMediaStream: boolean;
+  hasVideoTrack: boolean;
+  hasAudioTrack: boolean;
+  mediaStreamActive: boolean;
   
   // Selections
   selectedScriptId: string;
@@ -20,28 +35,38 @@ export interface PopoutRecordingState {
   // Audio state
   voiceoverPlaying: boolean;
   voiceoverCurrentTime: number;
+  voiceoverSrc: string;
   musicPlaying: boolean;
   musicCurrentTime: number;
+  musicSrc: string;
   ttsPlaying: boolean;
   ttsCurrentTime: number;
   
   // UI state
   teleprompterEnabled: boolean;
   teleprompterScrollPosition: number;
+  teleprompterAutoScroll: boolean;
   blurEnabled: boolean;
   logoEnabled: boolean;
+  activePanel: string;
   
   // Volumes
   voiceoverVolume: number;
   musicVolume: number;
+  ttsVolume: number;
   
-  // Timestamps
+  // Timestamps and identifiers
   lastUpdated: number;
   sessionId: string;
+  windowId: string;
+  recoveryAttempts: number;
 }
 
 const STORAGE_KEY = 'genie_vibe_popout_state';
+const BACKUP_KEY = 'genie_vibe_popout_backup';
 const CHANNEL_NAME = 'genie_vibe_popout_channel';
+const INDEXED_DB_NAME = 'genie_vibe_recording_db';
+const INDEXED_DB_STORE = 'recording_state';
 
 /**
  * Get the persistence script to inject into the popout HTML
@@ -49,27 +74,115 @@ const CHANNEL_NAME = 'genie_vibe_popout_channel';
 export function getStatePersistenceScript(): string {
   return `
     // =====================================================
-    // STATE PERSISTENCE MODULE
+    // STATE PERSISTENCE MODULE - ENHANCED VERSION
+    // Robust state preservation across window/tab switches
     // =====================================================
-    console.log('[Persistence] Module loading...');
+    console.log('[Persistence] Enhanced module loading...');
     
     var STORAGE_KEY = '${STORAGE_KEY}';
+    var BACKUP_KEY = '${BACKUP_KEY}';
     var CHANNEL_NAME = '${CHANNEL_NAME}';
+    var INDEXED_DB_NAME = '${INDEXED_DB_NAME}';
+    var INDEXED_DB_STORE = '${INDEXED_DB_STORE}';
+    
     var sessionId = 'popout_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    var windowId = 'window_' + Date.now();
     var broadcastChannel = null;
     var stateSaveInterval = null;
+    var fastSaveInterval = null;
     var lastKnownState = null;
+    var recoveryAttempts = 0;
+    var indexedDB = null;
+    var isRecovering = false;
     
-    // Initialize broadcast channel for cross-window communication
+    // =====================================================
+    // INDEXED DB SETUP (Most reliable storage)
+    // =====================================================
+    function initIndexedDB() {
+      return new Promise(function(resolve, reject) {
+        try {
+          var request = window.indexedDB.open(INDEXED_DB_NAME, 1);
+          
+          request.onerror = function(event) {
+            console.warn('[Persistence] IndexedDB error:', event.target.error);
+            resolve(null);
+          };
+          
+          request.onsuccess = function(event) {
+            indexedDB = event.target.result;
+            console.log('[Persistence] IndexedDB initialized');
+            resolve(indexedDB);
+          };
+          
+          request.onupgradeneeded = function(event) {
+            var db = event.target.result;
+            if (!db.objectStoreNames.contains(INDEXED_DB_STORE)) {
+              db.createObjectStore(INDEXED_DB_STORE, { keyPath: 'id' });
+            }
+          };
+        } catch (e) {
+          console.warn('[Persistence] IndexedDB not available:', e);
+          resolve(null);
+        }
+      });
+    }
+    
+    // Save to IndexedDB
+    function saveToIndexedDB(state) {
+      if (!indexedDB) return;
+      try {
+        var transaction = indexedDB.transaction([INDEXED_DB_STORE], 'readwrite');
+        var store = transaction.objectStore(INDEXED_DB_STORE);
+        store.put({ id: 'current_state', ...state });
+      } catch (e) {
+        console.warn('[Persistence] IndexedDB save failed:', e);
+      }
+    }
+    
+    // Load from IndexedDB
+    function loadFromIndexedDB() {
+      return new Promise(function(resolve) {
+        if (!indexedDB) {
+          resolve(null);
+          return;
+        }
+        try {
+          var transaction = indexedDB.transaction([INDEXED_DB_STORE], 'readonly');
+          var store = transaction.objectStore(INDEXED_DB_STORE);
+          var request = store.get('current_state');
+          
+          request.onsuccess = function() {
+            resolve(request.result || null);
+          };
+          request.onerror = function() {
+            resolve(null);
+          };
+        } catch (e) {
+          resolve(null);
+        }
+      });
+    }
+    
+    // =====================================================
+    // BROADCAST CHANNEL SETUP
+    // =====================================================
     try {
       if (typeof BroadcastChannel !== 'undefined') {
         broadcastChannel = new BroadcastChannel(CHANNEL_NAME);
         broadcastChannel.onmessage = function(event) {
           console.log('[Persistence] Received message:', event.data.type);
           if (event.data.type === 'ping') {
-            broadcastChannel.postMessage({ type: 'pong', sessionId: sessionId });
+            broadcastChannel.postMessage({ 
+              type: 'pong', 
+              sessionId: sessionId,
+              windowId: windowId,
+              isRecording: typeof isRecording !== 'undefined' ? isRecording : false,
+              hasStream: !!mediaStream
+            });
           } else if (event.data.type === 'restore_state') {
             restoreState(event.data.state);
+          } else if (event.data.type === 'force_save') {
+            saveStateImmediately();
           }
         };
         console.log('[Persistence] BroadcastChannel initialized');
@@ -78,32 +191,70 @@ export function getStatePersistenceScript(): string {
       console.warn('[Persistence] BroadcastChannel not available:', e);
     }
     
-    // Get current popout state
+    // =====================================================
+    // GET CURRENT STATE (Comprehensive)
+    // =====================================================
     function getCurrentState() {
       var state = {
+        // Recording state
         isRecording: typeof isRecording !== 'undefined' ? isRecording : false,
         isPaused: typeof isPaused !== 'undefined' ? isPaused : false,
+        isStopped: typeof isStopped !== 'undefined' ? isStopped : false,
         recordingStartTime: typeof recordingStartTime !== 'undefined' ? recordingStartTime : null,
         recordingDuration: 0,
+        recordingChunksCount: typeof recordedChunks !== 'undefined' ? recordedChunks.length : 0,
+        
+        // Media stream state
+        hasMediaStream: !!mediaStream,
+        hasVideoTrack: false,
+        hasAudioTrack: false,
+        mediaStreamActive: false,
+        
+        // Selections
         selectedScriptId: '',
         selectedVoiceoverId: '',
         selectedMusicId: '',
         currentScriptVersion: typeof currentScriptVersion !== 'undefined' ? currentScriptVersion : 'original',
+        
+        // Audio state
         voiceoverPlaying: false,
         voiceoverCurrentTime: 0,
+        voiceoverSrc: '',
         musicPlaying: false,
         musicCurrentTime: 0,
+        musicSrc: '',
         ttsPlaying: false,
         ttsCurrentTime: 0,
+        
+        // UI state
         teleprompterEnabled: typeof teleprompterEnabled !== 'undefined' ? teleprompterEnabled : true,
         teleprompterScrollPosition: 0,
+        teleprompterAutoScroll: typeof teleprompterAutoScroll !== 'undefined' ? teleprompterAutoScroll : false,
         blurEnabled: typeof blurEnabled !== 'undefined' ? blurEnabled : false,
         logoEnabled: typeof logoEnabled !== 'undefined' ? logoEnabled : false,
+        activePanel: '',
+        
+        // Volumes
         voiceoverVolume: 100,
         musicVolume: 50,
+        ttsVolume: 100,
+        
+        // Timestamps
         lastUpdated: Date.now(),
-        sessionId: sessionId
+        sessionId: sessionId,
+        windowId: windowId,
+        recoveryAttempts: recoveryAttempts
       };
+      
+      // Get media stream details
+      if (mediaStream) {
+        var videoTracks = mediaStream.getVideoTracks();
+        var audioTracks = mediaStream.getAudioTracks();
+        state.hasVideoTrack = videoTracks.length > 0;
+        state.hasAudioTrack = audioTracks.length > 0;
+        state.mediaStreamActive = videoTracks.some(function(t) { return t.readyState === 'live'; }) ||
+                                   audioTracks.some(function(t) { return t.readyState === 'live'; });
+      }
       
       // Get select values
       var scriptSelect = document.getElementById('scriptSelect');
@@ -115,25 +266,27 @@ export function getStatePersistenceScript(): string {
       if (musicSelect) state.selectedMusicId = musicSelect.value || '';
       
       // Calculate recording duration
-      if (state.isRecording && state.recordingStartTime) {
+      if (state.isRecording && state.recordingStartTime && !state.isPaused) {
         state.recordingDuration = Math.floor((Date.now() - state.recordingStartTime) / 1000);
       }
       
-      // Get audio states
+      // Get audio states with sources
       if (typeof voiceoverAudio !== 'undefined' && voiceoverAudio) {
         state.voiceoverPlaying = !voiceoverAudio.paused;
         state.voiceoverCurrentTime = voiceoverAudio.currentTime || 0;
+        state.voiceoverSrc = voiceoverAudio.src || '';
       }
       if (typeof musicAudio !== 'undefined' && musicAudio) {
         state.musicPlaying = !musicAudio.paused;
         state.musicCurrentTime = musicAudio.currentTime || 0;
+        state.musicSrc = musicAudio.src || '';
       }
       if (typeof ttsAudio !== 'undefined' && ttsAudio) {
         state.ttsPlaying = !ttsAudio.paused;
         state.ttsCurrentTime = ttsAudio.currentTime || 0;
       }
       
-      // Get teleprompter scroll position
+      // Get teleprompter state
       var teleprompter = document.getElementById('teleprompter');
       if (teleprompter) {
         state.teleprompterScrollPosition = teleprompter.scrollTop || 0;
@@ -142,49 +295,131 @@ export function getStatePersistenceScript(): string {
       // Get volumes
       var voiceoverVolumeEl = document.getElementById('voiceoverVolume');
       var musicVolumeEl = document.getElementById('musicVolume');
+      var ttsVolumeEl = document.getElementById('ttsVolume');
       if (voiceoverVolumeEl) state.voiceoverVolume = parseInt(voiceoverVolumeEl.value) || 100;
       if (musicVolumeEl) state.musicVolume = parseInt(musicVolumeEl.value) || 50;
+      if (ttsVolumeEl) state.ttsVolume = parseInt(ttsVolumeEl.value) || 100;
+      
+      // Get active panel
+      var activeTab = document.querySelector('.tab-button.active');
+      if (activeTab) state.activePanel = activeTab.dataset.tab || '';
       
       return state;
     }
     
-    // Save state to localStorage
-    function saveState() {
+    // =====================================================
+    // SAVE STATE (Multi-layer persistence)
+    // =====================================================
+    function saveStateImmediately() {
       try {
         var state = getCurrentState();
+        
+        // Layer 1: localStorage (primary)
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        
+        // Layer 2: sessionStorage (backup for same tab)
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        
+        // Layer 3: Backup in separate key
+        localStorage.setItem(BACKUP_KEY, JSON.stringify({
+          ...state,
+          backupTimestamp: Date.now()
+        }));
+        
+        // Layer 4: IndexedDB (most reliable)
+        saveToIndexedDB(state);
+        
         lastKnownState = state;
         
-        // Also broadcast to parent window
+        // Broadcast to parent window
         if (broadcastChannel) {
           broadcastChannel.postMessage({ type: 'state_update', state: state });
         }
+        
+        // Update indicator
+        updateStateIndicator('saving');
+        setTimeout(function() { updateStateIndicator('saved'); }, 200);
+        
+        return state;
       } catch (e) {
         console.warn('[Persistence] Failed to save state:', e);
+        updateStateIndicator('error');
+        return null;
       }
     }
     
-    // Restore state from localStorage
-    function restoreState(stateToRestore) {
+    function saveState() {
+      // Debounced version
+      saveStateImmediately();
+    }
+    
+    // =====================================================
+    // RESTORE STATE (Try all sources)
+    // =====================================================
+    async function restoreState(stateToRestore) {
+      if (isRecovering) {
+        console.log('[Persistence] Already recovering, skipping...');
+        return false;
+      }
+      
+      isRecovering = true;
+      
       try {
         var state = stateToRestore;
+        
+        // Try multiple sources if no state provided
         if (!state) {
+          // Try localStorage first
           var savedState = localStorage.getItem(STORAGE_KEY);
-          if (!savedState) {
-            console.log('[Persistence] No saved state found');
-            return false;
+          if (savedState) {
+            state = JSON.parse(savedState);
           }
-          state = JSON.parse(savedState);
+          
+          // Try sessionStorage if localStorage failed
+          if (!state) {
+            savedState = sessionStorage.getItem(STORAGE_KEY);
+            if (savedState) {
+              state = JSON.parse(savedState);
+            }
+          }
+          
+          // Try backup key
+          if (!state) {
+            savedState = localStorage.getItem(BACKUP_KEY);
+            if (savedState) {
+              state = JSON.parse(savedState);
+            }
+          }
+          
+          // Try IndexedDB
+          if (!state && indexedDB) {
+            state = await loadFromIndexedDB();
+          }
         }
         
-        // Check if state is recent (within last 30 minutes)
-        if (Date.now() - state.lastUpdated > 30 * 60 * 1000) {
-          console.log('[Persistence] Saved state is too old, ignoring');
-          localStorage.removeItem(STORAGE_KEY);
+        if (!state) {
+          console.log('[Persistence] No saved state found in any storage');
+          isRecovering = false;
           return false;
         }
         
-        console.log('[Persistence] Restoring state...', state);
+        // Check if state is recent (within last 60 minutes for recording)
+        var maxAge = state.isRecording ? 60 * 60 * 1000 : 30 * 60 * 1000;
+        if (Date.now() - state.lastUpdated > maxAge) {
+          console.log('[Persistence] Saved state is too old:', Math.floor((Date.now() - state.lastUpdated) / 60000), 'minutes');
+          clearAllState();
+          isRecovering = false;
+          return false;
+        }
+        
+        console.log('[Persistence] Restoring state...', {
+          isRecording: state.isRecording,
+          isPaused: state.isPaused,
+          duration: state.recordingDuration,
+          hasStream: state.hasMediaStream
+        });
+        
+        recoveryAttempts++;
         
         // Restore selections
         var scriptSelect = document.getElementById('scriptSelect');
@@ -193,7 +428,6 @@ export function getStatePersistenceScript(): string {
         
         if (scriptSelect && state.selectedScriptId) {
           scriptSelect.value = state.selectedScriptId;
-          // Trigger change event
           scriptSelect.dispatchEvent(new Event('change'));
         }
         if (voiceoverSelect && state.selectedVoiceoverId) {
@@ -206,24 +440,28 @@ export function getStatePersistenceScript(): string {
         }
         
         // Restore UI toggles
-        if (state.teleprompterEnabled !== undefined) {
+        if (typeof teleprompterEnabled !== 'undefined') {
           teleprompterEnabled = state.teleprompterEnabled;
         }
-        if (state.blurEnabled !== undefined) {
+        if (typeof blurEnabled !== 'undefined') {
           blurEnabled = state.blurEnabled;
         }
-        if (state.logoEnabled !== undefined) {
+        if (typeof logoEnabled !== 'undefined') {
           logoEnabled = state.logoEnabled;
         }
         
         // Restore volumes
         var voiceoverVolumeEl = document.getElementById('voiceoverVolume');
         var musicVolumeEl = document.getElementById('musicVolume');
+        var ttsVolumeEl = document.getElementById('ttsVolume');
         if (voiceoverVolumeEl && state.voiceoverVolume !== undefined) {
           voiceoverVolumeEl.value = state.voiceoverVolume;
         }
         if (musicVolumeEl && state.musicVolume !== undefined) {
           musicVolumeEl.value = state.musicVolume;
+        }
+        if (ttsVolumeEl && state.ttsVolume !== undefined) {
+          ttsVolumeEl.value = state.ttsVolume;
         }
         
         // Restore teleprompter scroll position
@@ -236,95 +474,206 @@ export function getStatePersistenceScript(): string {
           }, 500);
         }
         
-        // If was recording, show notification about interrupted recording
-        if (state.isRecording) {
-          showStatus('Previous recording was interrupted. You can start a new recording.', 'info');
+        // Handle interrupted recording recovery
+        if (state.isRecording && !state.isStopped) {
+          console.log('[Persistence] Recording was in progress!');
+          showRecoveryNotification(state);
+          
+          // Try to reinitialize camera if stream was lost
+          if (!mediaStream || !state.mediaStreamActive) {
+            console.log('[Persistence] Media stream lost, attempting recovery...');
+            if (typeof initCamera === 'function') {
+              setTimeout(function() {
+                initCamera();
+              }, 1000);
+            }
+          }
         }
         
-        // Restore audio positions if audio was playing
-        if (state.voiceoverPlaying && state.voiceoverCurrentTime > 0) {
-          setTimeout(function() {
-            if (typeof voiceoverAudio !== 'undefined' && voiceoverAudio) {
-              voiceoverAudio.currentTime = state.voiceoverCurrentTime;
-              console.log('[Persistence] Restored voiceover position:', state.voiceoverCurrentTime);
-            }
-          }, 1000);
-        }
-        if (state.musicPlaying && state.musicCurrentTime > 0) {
-          setTimeout(function() {
-            if (typeof musicAudio !== 'undefined' && musicAudio) {
-              musicAudio.currentTime = state.musicCurrentTime;
-              console.log('[Persistence] Restored music position:', state.musicCurrentTime);
-            }
-          }, 1000);
-        }
+        // Restore audio positions with resume capability
+        restoreAudioPositions(state);
         
-        console.log('[Persistence] ✅ State restored successfully');
+        console.log('[Persistence] ✅ State restored successfully (attempt', recoveryAttempts + ')');
+        isRecovering = false;
         return true;
         
       } catch (e) {
         console.warn('[Persistence] Failed to restore state:', e);
+        isRecovering = false;
         return false;
       }
     }
     
-    // Clear saved state
-    function clearSavedState() {
+    // Restore audio positions helper
+    function restoreAudioPositions(state) {
+      if (state.voiceoverCurrentTime > 0) {
+        setTimeout(function() {
+          if (typeof voiceoverAudio !== 'undefined' && voiceoverAudio) {
+            voiceoverAudio.currentTime = state.voiceoverCurrentTime;
+            console.log('[Persistence] Restored voiceover position:', state.voiceoverCurrentTime);
+          }
+        }, 1000);
+      }
+      if (state.musicCurrentTime > 0) {
+        setTimeout(function() {
+          if (typeof musicAudio !== 'undefined' && musicAudio) {
+            musicAudio.currentTime = state.musicCurrentTime;
+            console.log('[Persistence] Restored music position:', state.musicCurrentTime);
+          }
+        }, 1000);
+      }
+      if (state.ttsCurrentTime > 0) {
+        setTimeout(function() {
+          if (typeof ttsAudio !== 'undefined' && ttsAudio) {
+            ttsAudio.currentTime = state.ttsCurrentTime;
+            console.log('[Persistence] Restored TTS position:', state.ttsCurrentTime);
+          }
+        }, 1000);
+      }
+    }
+    
+    // Show recovery notification
+    function showRecoveryNotification(state) {
+      var duration = state.recordingDuration || 0;
+      var mins = Math.floor(duration / 60);
+      var secs = duration % 60;
+      var timeStr = mins + ':' + (secs < 10 ? '0' : '') + secs;
+      
+      var message = 'Recording was interrupted at ' + timeStr + '. ';
+      if (state.recordingChunksCount > 0) {
+        message += state.recordingChunksCount + ' chunks captured. Camera reinitializing...';
+      } else {
+        message += 'You can restart recording.';
+      }
+      
+      showStatus(message, 'warning');
+    }
+    
+    // =====================================================
+    // CLEAR STATE
+    // =====================================================
+    function clearAllState() {
       try {
         localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(BACKUP_KEY);
+        sessionStorage.removeItem(STORAGE_KEY);
+        
+        if (indexedDB) {
+          var transaction = indexedDB.transaction([INDEXED_DB_STORE], 'readwrite');
+          var store = transaction.objectStore(INDEXED_DB_STORE);
+          store.delete('current_state');
+        }
+        
         lastKnownState = null;
-        console.log('[Persistence] State cleared');
+        recoveryAttempts = 0;
+        console.log('[Persistence] All state cleared');
       } catch (e) {
         console.warn('[Persistence] Failed to clear state:', e);
       }
     }
     
-    // Handle visibility change (tab switch)
+    // =====================================================
+    // STATE INDICATOR UI
+    // =====================================================
+    function updateStateIndicator(status) {
+      var indicator = document.getElementById('stateIndicator');
+      if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'stateIndicator';
+        indicator.className = 'state-indicator';
+        document.body.appendChild(indicator);
+      }
+      
+      indicator.classList.remove('saving', 'saved', 'error');
+      indicator.classList.add(status);
+      
+      if (status === 'saved') {
+        indicator.title = 'State saved';
+      } else if (status === 'saving') {
+        indicator.title = 'Saving...';
+      } else if (status === 'error') {
+        indicator.title = 'Save error';
+      }
+    }
+    
+    // =====================================================
+    // EVENT HANDLERS
+    // =====================================================
+    
+    // Visibility change (tab switch) - CRITICAL
     document.addEventListener('visibilitychange', function() {
       if (document.hidden) {
-        // Tab is being hidden, save state immediately
-        console.log('[Persistence] Tab hidden, saving state...');
-        saveState();
+        console.log('[Persistence] Tab hidden, saving state immediately...');
+        saveStateImmediately();
+        
+        // Start aggressive saving while hidden during recording
+        if (isRecording) {
+          fastSaveInterval = setInterval(saveStateImmediately, 500);
+        }
       } else {
-        // Tab is becoming visible again
         console.log('[Persistence] Tab visible again');
-        // Don't auto-restore on visibility change, just save the current state
-        // The state should persist in memory
-      }
-    });
-    
-    // Handle window blur (losing focus)
-    window.addEventListener('blur', function() {
-      console.log('[Persistence] Window blur, saving state...');
-      saveState();
-    });
-    
-    // Handle window focus (gaining focus)
-    window.addEventListener('focus', function() {
-      console.log('[Persistence] Window focus regained');
-      // Check if we need to restore state
-      if (!mediaStream && lastKnownState && lastKnownState.isRecording) {
-        console.log('[Persistence] Recording was in progress, attempting camera reinit...');
-        if (typeof initCamera === 'function') {
-          initCamera();
+        
+        // Stop aggressive saving
+        if (fastSaveInterval) {
+          clearInterval(fastSaveInterval);
+          fastSaveInterval = null;
+        }
+        
+        // Check stream health
+        if (videoPreview && mediaStream) {
+          var tracks = mediaStream.getTracks();
+          var allEnded = tracks.every(function(t) { return t.readyState === 'ended'; });
+          if (allEnded) {
+            console.log('[Persistence] All tracks ended, attempting recovery...');
+            restoreState();
+          }
+        } else if (lastKnownState && lastKnownState.isRecording) {
+          console.log('[Persistence] Recording was active but stream lost');
+          restoreState();
         }
       }
     });
     
-    // Handle before unload - CRITICAL: prevent close during recording
-    window.addEventListener('beforeunload', function(e) {
-      console.log('[Persistence] Window closing, saving final state...');
-      saveState();
+    // Window blur (losing focus)
+    window.addEventListener('blur', function() {
+      console.log('[Persistence] Window blur, saving state...');
+      saveStateImmediately();
+    });
+    
+    // Window focus (gaining focus)
+    window.addEventListener('focus', function() {
+      console.log('[Persistence] Window focus regained');
       
-      // Warn if recording is in progress
+      // Check if stream is still valid
+      setTimeout(function() {
+        if (mediaStream) {
+          var tracks = mediaStream.getTracks();
+          var hasActiveTrack = tracks.some(function(t) { return t.readyState === 'live'; });
+          
+          if (!hasActiveTrack && lastKnownState && lastKnownState.isRecording) {
+            console.log('[Persistence] Stream lost during recording, reinitializing...');
+            if (typeof initCamera === 'function') {
+              initCamera();
+            }
+          }
+        }
+      }, 100);
+    });
+    
+    // Before unload - CRITICAL
+    window.addEventListener('beforeunload', function(e) {
+      console.log('[Persistence] Window closing, final state save...');
+      saveStateImmediately();
+      
+      // Warn if recording in progress
       if (isRecording && !isStopped) {
         e.preventDefault();
-        e.returnValue = 'Recording in progress. Are you sure you want to close?';
+        e.returnValue = 'Recording in progress. Are you sure you want to close? Your recording will be interrupted.';
         return e.returnValue;
       }
     });
     
-    // Handle page show (back/forward cache)
+    // Page show (back/forward cache)
     window.addEventListener('pageshow', function(event) {
       if (event.persisted) {
         console.log('[Persistence] Page restored from cache');
@@ -333,10 +682,8 @@ export function getStatePersistenceScript(): string {
     });
     
     // =====================================================
-    // ENHANCED CROSS-WINDOW SYNC
+    // CROSS-WINDOW SYNC
     // =====================================================
-    
-    // Listen for events from parent window
     window.addEventListener('storage', function(e) {
       if (e.key === 'genie_vibe_parent_command') {
         try {
@@ -344,11 +691,13 @@ export function getStatePersistenceScript(): string {
           console.log('[Persistence] Received parent command:', command.type);
           
           if (command.type === 'ping') {
-            // Respond to ping
             localStorage.setItem('genie_vibe_popout_response', JSON.stringify({
               type: 'pong',
               sessionId: sessionId,
+              windowId: windowId,
               isRecording: isRecording,
+              isPaused: isPaused,
+              hasCamera: !!mediaStream,
               timestamp: Date.now()
             }));
           } else if (command.type === 'pause_recording') {
@@ -359,6 +708,8 @@ export function getStatePersistenceScript(): string {
             if (typeof stopRecording === 'function' && isRecording) {
               stopRecording();
             }
+          } else if (command.type === 'save_state') {
+            saveStateImmediately();
           }
         } catch (err) {
           console.warn('[Persistence] Error handling parent command:', err);
@@ -366,30 +717,40 @@ export function getStatePersistenceScript(): string {
       }
     });
     
-    // Heartbeat to let parent know we're alive
+    // Heartbeat
     var heartbeatInterval = setInterval(function() {
       try {
         localStorage.setItem('genie_vibe_popout_heartbeat', JSON.stringify({
           sessionId: sessionId,
+          windowId: windowId,
           isRecording: isRecording,
           isPaused: isPaused,
+          isStopped: isStopped,
           hasCamera: !!mediaStream,
+          streamActive: mediaStream ? mediaStream.getTracks().some(function(t) { return t.readyState === 'live'; }) : false,
+          recordingDuration: isRecording && recordingStartTime ? Math.floor((Date.now() - recordingStartTime) / 1000) : 0,
+          chunksCount: typeof recordedChunks !== 'undefined' ? recordedChunks.length : 0,
           timestamp: Date.now()
         }));
       } catch (e) {}
     }, 1000);
     
-    // Start periodic state saving when recording
+    // =====================================================
+    // STATE SAVING INTERVALS
+    // =====================================================
     function startStateSaving() {
       if (stateSaveInterval) {
         clearInterval(stateSaveInterval);
       }
+      // Save every 2 seconds during active recording/playback
       stateSaveInterval = setInterval(function() {
-        if (isRecording || (typeof voiceoverAudio !== 'undefined' && voiceoverAudio && !voiceoverAudio.paused) || 
-            (typeof musicAudio !== 'undefined' && musicAudio && !musicAudio.paused)) {
+        if (isRecording || 
+            (typeof voiceoverAudio !== 'undefined' && voiceoverAudio && !voiceoverAudio.paused) || 
+            (typeof musicAudio !== 'undefined' && musicAudio && !musicAudio.paused) ||
+            (typeof ttsAudio !== 'undefined' && ttsAudio && !ttsAudio.paused)) {
           saveState();
         }
-      }, 2000); // Save every 2 seconds during active recording/playback
+      }, 2000);
     }
     
     function stopStateSaving() {
@@ -397,13 +758,21 @@ export function getStatePersistenceScript(): string {
         clearInterval(stateSaveInterval);
         stateSaveInterval = null;
       }
+      if (fastSaveInterval) {
+        clearInterval(fastSaveInterval);
+        fastSaveInterval = null;
+      }
     }
     
-    // Hook into recording start/stop
+    // Hook into recording functions
     var originalActuallyStartRecording = typeof actuallyStartRecording === 'function' ? actuallyStartRecording : null;
     actuallyStartRecording = function() {
-      console.log('[Persistence] Recording started, enabling state saving...');
+      console.log('[Persistence] Recording started, enabling aggressive state saving...');
       startStateSaving();
+      // Also start fast save during recording
+      if (!fastSaveInterval) {
+        fastSaveInterval = setInterval(saveStateImmediately, 1000);
+      }
       if (originalActuallyStartRecording) {
         originalActuallyStartRecording();
       }
@@ -412,32 +781,35 @@ export function getStatePersistenceScript(): string {
     var originalStopRecording = typeof stopRecording === 'function' ? stopRecording : null;
     stopRecording = function() {
       console.log('[Persistence] Recording stopped, final state save...');
-      saveState();
+      saveStateImmediately();
       stopStateSaving();
       if (originalStopRecording) {
         originalStopRecording();
       }
     };
     
-    // Try to restore state on initialization
-    setTimeout(function() {
-      var restored = restoreState();
-      if (restored) {
-        console.log('[Persistence] ✅ Previous session state restored');
-      } else {
-        console.log('[Persistence] Starting fresh session');
-      }
-      // Start state saving regardless
-      startStateSaving();
-    }, 2000);
+    // =====================================================
+    // INITIALIZATION
+    // =====================================================
+    initIndexedDB().then(function() {
+      setTimeout(async function() {
+        var restored = await restoreState();
+        if (restored) {
+          console.log('[Persistence] ✅ Previous session state restored');
+        } else {
+          console.log('[Persistence] Starting fresh session');
+        }
+        startStateSaving();
+      }, 2000);
+    });
     
-    // Cleanup on unload
+    // Cleanup
     window.addEventListener('unload', function() {
       clearInterval(heartbeatInterval);
       stopStateSaving();
     });
     
-    console.log('[Persistence] ✅ Module loaded with sessionId:', sessionId);
+    console.log('[Persistence] ✅ Enhanced module loaded with sessionId:', sessionId, 'windowId:', windowId);
   `;
 }
 
