@@ -1,7 +1,7 @@
 /**
  * Audio Asset Selector - Simplified panel for Genie Vibe
  * Only selects and plays pre-existing assets from Genie Mind
- * NO generation - just selection and playback
+ * NO generation - just selection and playback with pause/resume support
  */
 
 import React, { useEffect } from 'react';
@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Play, Square, Repeat, Volume2, Download, Mic, Music, VolumeX } from 'lucide-react';
+import { Play, Pause, Square, Repeat, Volume2, Download, Mic, Music, VolumeX } from 'lucide-react';
 import type { VoiceoverData, MusicData, AudioTabType } from '../types';
 import { 
   isInstrumental, 
@@ -30,8 +30,11 @@ interface AudioAssetSelectorProps {
   selectedVoiceoverId: string;
   onVoiceoverChange: (id: string) => void;
   onPlayVoiceover: () => void;
+  onPauseVoiceover?: () => void;
+  onResumeVoiceover?: () => void;
   onStopVoiceover: () => void;
   isVoiceoverPlaying: boolean;
+  isVoiceoverPaused?: boolean;
   voiceoverVolume: number;
   onVoiceoverVolumeChange: (volume: number) => void;
   
@@ -40,8 +43,11 @@ interface AudioAssetSelectorProps {
   selectedMusicId: string;
   onMusicChange: (id: string) => void;
   onPlayMusic: () => void;
+  onPauseMusic?: () => void;
+  onResumeMusic?: () => void;
   onStopMusic: () => void;
   isMusicPlaying: boolean;
+  isMusicPaused?: boolean;
   musicVolume: number;
   onMusicVolumeChange: (volume: number) => void;
   musicLoop: boolean;
@@ -52,8 +58,11 @@ interface AudioAssetSelectorProps {
   selectedTTSFileId: string;
   onTTSFileChange: (id: string) => void;
   onPlayTTS: () => void;
+  onPauseTTS?: () => void;
+  onResumeTTS?: () => void;
   onStopTTS: () => void;
   isTTSPlaying: boolean;
+  isTTSPaused?: boolean;
   ttsVolume: number;
   onTTSVolumeChange: (volume: number) => void;
   
@@ -69,16 +78,22 @@ export function AudioAssetSelector({
   selectedVoiceoverId,
   onVoiceoverChange,
   onPlayVoiceover,
+  onPauseVoiceover,
+  onResumeVoiceover,
   onStopVoiceover,
   isVoiceoverPlaying,
+  isVoiceoverPaused = false,
   voiceoverVolume,
   onVoiceoverVolumeChange,
   musicList,
   selectedMusicId,
   onMusicChange,
   onPlayMusic,
+  onPauseMusic,
+  onResumeMusic,
   onStopMusic,
   isMusicPlaying,
+  isMusicPaused = false,
   musicVolume,
   onMusicVolumeChange,
   musicLoop,
@@ -87,8 +102,11 @@ export function AudioAssetSelector({
   selectedTTSFileId,
   onTTSFileChange,
   onPlayTTS,
+  onPauseTTS,
+  onResumeTTS,
   onStopTTS,
   isTTSPlaying,
+  isTTSPaused = false,
   ttsVolume,
   onTTSVolumeChange,
   duckingEnabled = true,
@@ -261,17 +279,56 @@ export function AudioAssetSelector({
               </Select>
             </div>
 
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={!selectedVoiceoverId}
-                onClick={isVoiceoverPlaying ? onStopVoiceover : onPlayVoiceover}
-                className="gap-1.5 h-8 flex-1"
-              >
-                {isVoiceoverPlaying ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                {isVoiceoverPlaying ? 'Stop' : 'Play'}
-              </Button>
+            <div className="flex gap-1">
+              {/* Play button - when not playing and not paused */}
+              {!isVoiceoverPlaying && !isVoiceoverPaused && (
+                <Button
+                  size="sm"
+                  variant="default"
+                  disabled={!selectedVoiceoverId}
+                  onClick={onPlayVoiceover}
+                  className="gap-1.5 h-8 flex-1"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  Play
+                </Button>
+              )}
+              {/* Resume button - when paused */}
+              {isVoiceoverPaused && onResumeVoiceover && (
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={onResumeVoiceover}
+                  className="gap-1.5 h-8 flex-1 bg-green-600 hover:bg-green-700"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  Resume
+                </Button>
+              )}
+              {/* Pause button - when playing */}
+              {isVoiceoverPlaying && onPauseVoiceover && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onPauseVoiceover}
+                  className="gap-1.5 h-8 flex-1"
+                >
+                  <Pause className="w-3.5 h-3.5" />
+                  Pause
+                </Button>
+              )}
+              {/* Stop button - when playing or paused */}
+              {(isVoiceoverPlaying || isVoiceoverPaused) && (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={onStopVoiceover}
+                  className="h-8 px-3"
+                  title="Stop"
+                >
+                  <Square className="w-3.5 h-3.5" />
+                </Button>
+              )}
               {selectedVoiceover && (
                 <Button
                   size="sm"
@@ -341,17 +398,56 @@ export function AudioAssetSelector({
               </Select>
             </div>
 
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={!selectedTTSFileId}
-                onClick={isTTSPlaying ? onStopTTS : onPlayTTS}
-                className="gap-1.5 h-8 flex-1"
-              >
-                {isTTSPlaying ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                {isTTSPlaying ? 'Stop' : 'Play'}
-              </Button>
+            <div className="flex gap-1">
+              {/* Play button - when not playing and not paused */}
+              {!isTTSPlaying && !isTTSPaused && (
+                <Button
+                  size="sm"
+                  variant="default"
+                  disabled={!selectedTTSFileId}
+                  onClick={onPlayTTS}
+                  className="gap-1.5 h-8 flex-1"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  Play
+                </Button>
+              )}
+              {/* Resume button - when paused */}
+              {isTTSPaused && onResumeTTS && (
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={onResumeTTS}
+                  className="gap-1.5 h-8 flex-1 bg-green-600 hover:bg-green-700"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  Resume
+                </Button>
+              )}
+              {/* Pause button - when playing */}
+              {isTTSPlaying && onPauseTTS && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onPauseTTS}
+                  className="gap-1.5 h-8 flex-1"
+                >
+                  <Pause className="w-3.5 h-3.5" />
+                  Pause
+                </Button>
+              )}
+              {/* Stop button - when playing or paused */}
+              {(isTTSPlaying || isTTSPaused) && (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={onStopTTS}
+                  className="h-8 px-3"
+                  title="Stop"
+                >
+                  <Square className="w-3.5 h-3.5" />
+                </Button>
+              )}
               {selectedTTSFile && (
                 <Button
                   size="sm"
@@ -421,17 +517,56 @@ export function AudioAssetSelector({
               </Select>
             </div>
 
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={!selectedMusicId}
-                onClick={isMusicPlaying ? onStopMusic : onPlayMusic}
-                className="gap-1.5 h-8 flex-1"
-              >
-                {isMusicPlaying ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                {isMusicPlaying ? 'Stop' : 'Play'}
-              </Button>
+            <div className="flex gap-1">
+              {/* Play button - when not playing and not paused */}
+              {!isMusicPlaying && !isMusicPaused && (
+                <Button
+                  size="sm"
+                  variant="default"
+                  disabled={!selectedMusicId}
+                  onClick={onPlayMusic}
+                  className="gap-1.5 h-8 flex-1"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  Play
+                </Button>
+              )}
+              {/* Resume button - when paused */}
+              {isMusicPaused && onResumeMusic && (
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={onResumeMusic}
+                  className="gap-1.5 h-8 flex-1 bg-green-600 hover:bg-green-700"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  Resume
+                </Button>
+              )}
+              {/* Pause button - when playing */}
+              {isMusicPlaying && onPauseMusic && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onPauseMusic}
+                  className="gap-1.5 h-8 flex-1"
+                >
+                  <Pause className="w-3.5 h-3.5" />
+                  Pause
+                </Button>
+              )}
+              {/* Stop button - when playing or paused */}
+              {(isMusicPlaying || isMusicPaused) && (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={onStopMusic}
+                  className="h-8 px-3"
+                  title="Stop"
+                >
+                  <Square className="w-3.5 h-3.5" />
+                </Button>
+              )}
               {selectedMusic && (
                 <Button
                   size="sm"

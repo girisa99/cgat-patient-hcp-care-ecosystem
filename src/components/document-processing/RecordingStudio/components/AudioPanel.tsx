@@ -35,8 +35,11 @@ interface AudioPanelProps {
   selectedVoiceoverId: string;
   onVoiceoverChange: (id: string) => void;
   onPlayVoiceover: () => void;
+  onPauseVoiceover?: () => void;
+  onResumeVoiceover?: () => void;
   onStopVoiceover: () => void;
   isVoiceoverPlaying: boolean;
+  isVoiceoverPaused?: boolean;
   voiceoverVolume: number;
   onVoiceoverVolumeChange: (volume: number) => void;
   
@@ -45,8 +48,11 @@ interface AudioPanelProps {
   selectedMusicId: string;
   onMusicChange: (id: string) => void;
   onPlayMusic: () => void;
+  onPauseMusic?: () => void;
+  onResumeMusic?: () => void;
   onStopMusic: () => void;
   isMusicPlaying: boolean;
+  isMusicPaused?: boolean;
   musicVolume: number;
   onMusicVolumeChange: (volume: number) => void;
   musicLoop: boolean;
@@ -59,8 +65,11 @@ interface AudioPanelProps {
   onVoiceChange: (voice: string) => void;
   onGenerateTTS: () => void;
   onPlayTTS: () => void;
+  onPauseTTS?: () => void;
+  onResumeTTS?: () => void;
   onStopTTS: () => void;
   isTTSPlaying: boolean;
+  isTTSPaused?: boolean;
   isTTSGenerating: boolean;
   hasTTSAudio: boolean;
   ttsVolume: number;
