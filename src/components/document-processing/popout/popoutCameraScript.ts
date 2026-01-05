@@ -336,23 +336,98 @@ export function getCameraScript(): string {
       console.log('[Camera] Record button click handler attached');
     }
 
-    // Close button handler
+    // Close button handler - CRITICAL: Stop all audio before closing
     var closeBtn = document.getElementById('closeBtn');
     if (closeBtn) {
       closeBtn.addEventListener('click', function() {
+        console.log('[Camera] Close button clicked - stopping everything...');
+        
+        // Stop all audio FIRST
+        if (typeof stopAllAudio === 'function') {
+          stopAllAudio();
+        }
+        
+        // Stop any audio elements directly
+        if (typeof voiceoverAudio !== 'undefined' && voiceoverAudio) {
+          voiceoverAudio.pause();
+          voiceoverAudio.src = '';
+          voiceoverAudio = null;
+        }
+        if (typeof musicAudio !== 'undefined' && musicAudio) {
+          musicAudio.pause();
+          musicAudio.src = '';
+          musicAudio = null;
+        }
+        if (typeof ttsAudio !== 'undefined' && ttsAudio) {
+          ttsAudio.pause();
+          ttsAudio.src = '';
+          ttsAudio = null;
+        }
+        
+        // Stop media stream
         if (mediaStream) {
           mediaStream.getTracks().forEach(function(track) { track.stop(); });
+          mediaStream = null;
         }
+        
+        // Clear video element
+        if (videoPreview) {
+          videoPreview.srcObject = null;
+        }
+        
         // Clear saved state on intentional close
         try {
           localStorage.removeItem('genie_vibe_popout_state');
+          localStorage.removeItem('genie_vibe_popout_backup');
+          sessionStorage.removeItem('genie_vibe_popout_state');
         } catch (e) {}
+        
+        console.log('[Camera] All audio and media stopped, closing window');
         window.close();
       });
     }
 
-    // Cleanup on window close
+    // Cleanup on window close - stop all audio
     window.addEventListener('beforeunload', function() {
+      console.log('[Camera] Window unloading - stopping all audio...');
+      
+      // Stop all audio
+      if (typeof stopAllAudio === 'function') {
+        stopAllAudio();
+      }
+      
+      // Direct audio element cleanup
+      if (typeof voiceoverAudio !== 'undefined' && voiceoverAudio) {
+        voiceoverAudio.pause();
+        voiceoverAudio.src = '';
+      }
+      if (typeof musicAudio !== 'undefined' && musicAudio) {
+        musicAudio.pause();
+        musicAudio.src = '';
+      }
+      if (typeof ttsAudio !== 'undefined' && ttsAudio) {
+        ttsAudio.pause();
+        ttsAudio.src = '';
+      }
+      
+      // Stop media stream
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(function(track) { track.stop(); });
+      }
+    });
+    
+    // Also listen for unload event for more reliable cleanup
+    window.addEventListener('unload', function() {
+      console.log('[Camera] Window unload - final cleanup...');
+      
+      // Force stop all audio elements in the page
+      var allAudioElements = document.querySelectorAll('audio');
+      allAudioElements.forEach(function(audio) {
+        audio.pause();
+        audio.src = '';
+      });
+      
+      // Stop media stream
       if (mediaStream) {
         mediaStream.getTracks().forEach(function(track) { track.stop(); });
       }

@@ -181,6 +181,22 @@ export function openPopoutRecordingStudio(options: OpenPopoutOptions): Window | 
       return null;
     }
     
+    // Monitor popout window and cleanup when it closes
+    const cleanupInterval = setInterval(() => {
+      if (popoutWindow.closed) {
+        clearInterval(cleanupInterval);
+        console.log('🧹 Popout window closed - cleanup complete');
+        
+        // Clear any lingering state
+        try {
+          localStorage.removeItem('genie_vibe_popout_state');
+          localStorage.removeItem('genie_vibe_popout_backup');
+          localStorage.removeItem('genie_vibe_popout_heartbeat');
+          sessionStorage.removeItem('genie_vibe_popout_state');
+        } catch (e) {}
+      }
+    }, 1000);
+    
     onSuccess?.();
     return popoutWindow;
   } catch (err) {

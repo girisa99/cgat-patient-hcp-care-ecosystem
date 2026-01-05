@@ -267,11 +267,18 @@ export function getTeleprompterEnhancementsScript(): string {
         return;
       }
 
-      // Calculate scroll speed (pixels per second)
-      teleprompterScrollSpeed = totalScroll / audioDuration;
-
-      const startTime = performance.now();
-      let lastScrollTop = 0;
+      // Store reference to the audio element for precise sync
+      var audioElement = syncedAudioElement || voiceoverAudio || ttsAudio;
+      
+      // Calculate base scroll speed (pixels per second) - SLOWER by default
+      // User can adjust with speed controls
+      var baseScrollSpeed = (totalScroll / audioDuration) * teleprompterScrollSpeed;
+      
+      console.log('[Teleprompter] Scroll sync started');
+      console.log('[Teleprompter] Total scroll:', totalScroll, 'px');
+      console.log('[Teleprompter] Audio duration:', audioDuration, 's');
+      console.log('[Teleprompter] Base speed:', baseScrollSpeed.toFixed(2), 'px/s');
+      console.log('[Teleprompter] Speed multiplier:', teleprompterScrollSpeed);
 
       function scrollStep() {
         if (isStopped) {
@@ -284,21 +291,36 @@ export function getTeleprompterEnhancementsScript(): string {
           return;
         }
 
-        const elapsed = (performance.now() - startTime) / 1000;
-        const targetScroll = elapsed * teleprompterScrollSpeed;
-
-        if (targetScroll <= totalScroll) {
-          teleprompter.scrollTop = targetScroll;
-          lastScrollTop = targetScroll;
+        // Use audio currentTime for PRECISE sync if available
+        if (audioElement && !audioElement.paused && !audioElement.ended) {
+          var progress = audioElement.currentTime / audioDuration;
+          var targetScroll = progress * totalScroll;
+          
+          // Smooth scroll to target position
+          var currentScroll = teleprompter.scrollTop;
+          var diff = targetScroll - currentScroll;
+          
+          // Smoothly interpolate (ease towards target)
+          if (Math.abs(diff) > 1) {
+            teleprompter.scrollTop = currentScroll + (diff * 0.1);
+          } else {
+            teleprompter.scrollTop = targetScroll;
+          }
+          
           teleprompterScrollInterval = requestAnimationFrame(scrollStep);
-        } else {
+        } else if (audioElement && audioElement.ended) {
+          // Audio ended, scroll to end
           teleprompter.scrollTop = totalScroll;
           teleprompterScrollInterval = null;
+          console.log('[Teleprompter] Scroll sync complete');
+        } else {
+          // No audio reference, continue with time-based scroll
+          teleprompterScrollInterval = requestAnimationFrame(scrollStep);
         }
       }
 
       teleprompterScrollInterval = requestAnimationFrame(scrollStep);
-      console.log('[Teleprompter] Started scroll sync, speed:', teleprompterScrollSpeed.toFixed(2) + 'px/s');
+      console.log('[Teleprompter] Started AUDIO-SYNCED scroll');
     }
 
     function stopTeleprompterScrollSync() {
