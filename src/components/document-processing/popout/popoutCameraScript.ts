@@ -911,50 +911,131 @@ export function getCameraScript(): string {
       console.log('[Camera] Record button click handler attached');
     }
 
-    // Close button handler - CRITICAL: Stop all audio and streams before closing
+    // =====================================================
+    // FORCE STOP EVERYTHING FUNCTION (Centralized cleanup)
+    // =====================================================
+    function forceStopEverything() {
+      console.log('[Camera] forceStopEverything called...');
+      
+      // Stop MediaRecorder if active
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        try {
+          mediaRecorder.stop();
+        } catch (e) {
+          console.warn('[Camera] MediaRecorder stop error:', e);
+        }
+      }
+      
+      // Stop all audio FIRST
+      if (typeof stopAllAudio === 'function') {
+        stopAllAudio();
+      }
+      
+      // Stop any audio elements directly
+      if (typeof voiceoverAudio !== 'undefined' && voiceoverAudio) {
+        try {
+          voiceoverAudio.pause();
+          voiceoverAudio.src = '';
+        } catch (e) {}
+        voiceoverAudio = null;
+      }
+      if (typeof musicAudio !== 'undefined' && musicAudio) {
+        try {
+          musicAudio.pause();
+          musicAudio.src = '';
+        } catch (e) {}
+        musicAudio = null;
+      }
+      if (typeof ttsAudio !== 'undefined' && ttsAudio) {
+        try {
+          ttsAudio.pause();
+          ttsAudio.src = '';
+        } catch (e) {}
+        ttsAudio = null;
+      }
+      
+      // Force stop ALL audio elements on page
+      var allAudio = document.querySelectorAll('audio');
+      allAudio.forEach(function(audio) {
+        try {
+          audio.pause();
+          audio.src = '';
+        } catch (e) {}
+      });
+      
+      // Stop screen share stream
+      if (screenStream) {
+        screenStream.getTracks().forEach(function(track) { track.stop(); });
+        screenStream = null;
+      }
+      
+      // Stop camera stream
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(function(track) { track.stop(); });
+        mediaStream = null;
+      }
+      
+      // Clear video element
+      if (videoPreview) {
+        videoPreview.srcObject = null;
+      }
+      
+      // Clean up audio mix
+      cleanupAudioMix();
+      
+      // Stop chunk monitoring
+      stopChunkMonitoring();
+      
+      // Reset state
+      isRecording = false;
+      isPaused = false;
+      
+      console.log('[Camera] forceStopEverything completed');
+    }
+
+    // Close button handler - FIX #2: CONFIRM AND SAVE BEFORE CLOSING
     var closeBtn = document.getElementById('closeBtn');
     if (closeBtn) {
       closeBtn.addEventListener('click', function() {
-        console.log('[Camera] Close button clicked - stopping everything...');
+        console.log('[Camera] Close button clicked...');
         
-        // Stop all audio FIRST
-        if (typeof stopAllAudio === 'function') {
-          stopAllAudio();
-        }
-        
-        // Stop any audio elements directly
-        if (typeof voiceoverAudio !== 'undefined' && voiceoverAudio) {
-          voiceoverAudio.pause();
-          voiceoverAudio.src = '';
-          voiceoverAudio = null;
-        }
-        if (typeof musicAudio !== 'undefined' && musicAudio) {
-          musicAudio.pause();
-          musicAudio.src = '';
-          musicAudio = null;
-        }
-        if (typeof ttsAudio !== 'undefined' && ttsAudio) {
-          ttsAudio.pause();
-          ttsAudio.src = '';
-          ttsAudio = null;
-        }
-        
-        // Stop screen share stream
-        if (screenStream) {
-          screenStream.getTracks().forEach(function(track) { track.stop(); });
-          screenStream = null;
-        }
-        
-        // Stop camera stream
-        if (mediaStream) {
-          mediaStream.getTracks().forEach(function(track) { track.stop(); });
-          mediaStream = null;
+        // If recording, ask user first
+        if (isRecording) {
+          if (confirm('You have an active recording. Stop and save it before closing?')) {
+            console.log('[Camera] User confirmed - stopping recording first...');
+            stopRecording();
+            
+            // Wait for recording to save, then close
+            setTimeout(function() {
+              forceStopEverything();
+              
+              // Clear saved state on intentional close
+              try {
+                localStorage.removeItem('genie_vibe_popout_state');
+                localStorage.removeItem('genie_vibe_popout_backup');
+                sessionStorage.removeItem('genie_vibe_popout_state');
+              } catch (e) {}
+              
+              console.log('[Camera] Recording saved, closing window');
+              window.close();
+            }, 1500); // Give time for recording to save
+            return;
+          } else {
+            console.log('[Camera] User cancelled close');
+            return; // Don't close
+          }
         }
         
-        // Clear video element
-        if (videoPreview) {
-          videoPreview.srcObject = null;
+        // Not recording - check for unsaved chunks
+        if (recordedChunks && recordedChunks.length > 0) {
+          if (!confirm('You have an unsaved recording. Are you sure you want to close?')) {
+            console.log('[Camera] User cancelled close - has unsaved chunks');
+            return;
+          }
         }
+        
+        // Safe to close
+        forceStopEverything();
         
         // Clear saved state on intentional close
         try {
@@ -963,43 +1044,26 @@ export function getCameraScript(): string {
           sessionStorage.removeItem('genie_vibe_popout_state');
         } catch (e) {}
         
-        console.log('[Camera] All audio and media stopped, closing window');
+        console.log('[Camera] All media stopped, closing window');
         window.close();
       });
     }
 
-    // Cleanup on window close - stop all audio and streams
-    window.addEventListener('beforeunload', function() {
-      console.log('[Camera] Window unloading - stopping all audio...');
+    // FIX #1: beforeunload WARNING when recording is active
+    window.addEventListener('beforeunload', function(event) {
+      console.log('[Camera] Window beforeunload - checking recording state...');
       
-      // Stop all audio
-      if (typeof stopAllAudio === 'function') {
-        stopAllAudio();
-      }
-      
-      // Direct audio element cleanup
-      if (typeof voiceoverAudio !== 'undefined' && voiceoverAudio) {
-        voiceoverAudio.pause();
-        voiceoverAudio.src = '';
-      }
-      if (typeof musicAudio !== 'undefined' && musicAudio) {
-        musicAudio.pause();
-        musicAudio.src = '';
-      }
-      if (typeof ttsAudio !== 'undefined' && ttsAudio) {
-        ttsAudio.pause();
-        ttsAudio.src = '';
+      // If recording is active or we have unsaved chunks, warn user
+      if (isRecording || (recordedChunks && recordedChunks.length > 0)) {
+        console.log('[Camera] WARNING: Unsaved recording detected!');
+        event.preventDefault();
+        event.returnValue = 'You have an unsaved recording. Are you sure you want to leave?';
+        return event.returnValue;
       }
       
-      // Stop screen share stream
-      if (screenStream) {
-        screenStream.getTracks().forEach(function(track) { track.stop(); });
-      }
-      
-      // Stop camera stream
-      if (mediaStream) {
-        mediaStream.getTracks().forEach(function(track) { track.stop(); });
-      }
+      // Safe to close - do cleanup
+      console.log('[Camera] No active recording, cleaning up...');
+      forceStopEverything();
     });
     
     // Also listen for unload event for more reliable cleanup
@@ -1019,10 +1083,17 @@ export function getCameraScript(): string {
       }
     });
     
-    // Handle visibility change - reinitialize camera if stream was lost
+    // FIX #4: Handle visibility change - ONLY reinitialize when NOT recording
     document.addEventListener('visibilitychange', function() {
       if (!document.hidden) {
         console.log('[Camera] Tab became visible, checking stream...');
+        
+        // CRITICAL: Do NOT reinitialize camera during active recording!
+        if (isRecording) {
+          console.log('[Camera] Recording active - skipping camera reinitialization');
+          return;
+        }
+        
         // Check if video stream is still active
         if (videoPreview && (!videoPreview.srcObject || !mediaStream)) {
           console.log('[Camera] Stream lost, reinitializing...');
