@@ -7,7 +7,7 @@
 export function getCameraScript(): string {
   return `
     // =====================================================
-    // CAMERA & RECORDING MODULE (Simplified & Robust)
+    // CAMERA & RECORDING MODULE (with Screen Share Support)
     // =====================================================
     console.log('[Camera] Module loading...');
     
@@ -19,11 +19,18 @@ export function getCameraScript(): string {
     var recordBtnText = document.getElementById('recordBtnText');
     var recordingIndicator = document.getElementById('recordingIndicator');
     var recordingTimeEl = document.getElementById('recordingTime');
+    var screenShareBtn = document.getElementById('screenShareBtn');
+    
+    // Screen share state
+    var screenStream = null;
+    var isScreenSharing = false;
+    var combinedStream = null; // Combined camera + screen stream
     
     console.log('[Camera] DOM elements found:', {
       videoPreview: !!videoPreview,
       loadingOverlay: !!loadingOverlay,
-      recordBtn: !!recordBtn
+      recordBtn: !!recordBtn,
+      screenShareBtn: !!screenShareBtn
     });
 
     // Format time as MM:SS
@@ -45,8 +52,14 @@ export function getCameraScript(): string {
       recordBtn.disabled = false;
       recordBtn.classList.remove('disabled');
       recordBtn.classList.add('ready');
-      recordBtnText.textContent = hasCamera ? 'Start Recording' : 'Start Recording (Audio Only)';
-      console.log('[Camera] ✅ Record button ENABLED, hasCamera:', hasCamera);
+      var modeText = 'Start Recording';
+      if (isScreenSharing) {
+        modeText = hasCamera ? 'Record Screen + Camera' : 'Record Screen';
+      } else if (!hasCamera) {
+        modeText = 'Start Recording (Audio Only)';
+      }
+      recordBtnText.textContent = modeText;
+      console.log('[Camera] ✅ Record button ENABLED, hasCamera:', hasCamera, 'screenShare:', isScreenSharing);
     }
 
     // Initialize camera with better error handling
@@ -140,6 +153,128 @@ export function getCameraScript(): string {
       }
     }
 
+    // =====================================================
+    // SCREEN SHARE SUPPORT
+    // =====================================================
+    
+    async function startScreenShare() {
+      console.log('[ScreenShare] Starting screen share...');
+      
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+        console.error('[ScreenShare] getDisplayMedia not supported');
+        showStatus('Screen sharing not supported in this browser', 'error');
+        return false;
+      }
+      
+      try {
+        screenStream = await navigator.mediaDevices.getDisplayMedia({
+          video: {
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            frameRate: { ideal: 30 }
+          },
+          audio: true // Capture system audio if available
+        });
+        
+        console.log('[ScreenShare] ✅ Got screen stream');
+        console.log('[ScreenShare] Video tracks:', screenStream.getVideoTracks().length);
+        console.log('[ScreenShare] Audio tracks:', screenStream.getAudioTracks().length);
+        
+        isScreenSharing = true;
+        
+        // Handle when user stops sharing via browser UI
+        screenStream.getVideoTracks()[0].onended = function() {
+          console.log('[ScreenShare] User stopped sharing');
+          stopScreenShare();
+        };
+        
+        // Update preview to show screen share
+        if (videoPreview) {
+          // Create combined stream for preview (screen + camera audio)
+          if (mediaStream && mediaStream.getAudioTracks().length > 0) {
+            combinedStream = new MediaStream([
+              ...screenStream.getVideoTracks(),
+              ...mediaStream.getAudioTracks() // Use mic audio from camera stream
+            ]);
+            // Also add screen audio if available
+            if (screenStream.getAudioTracks().length > 0) {
+              // For preview, just show the screen video
+            }
+          } else {
+            combinedStream = screenStream;
+          }
+          
+          videoPreview.srcObject = combinedStream;
+        }
+        
+        // Update UI
+        if (screenShareBtn) {
+          screenShareBtn.classList.remove('toggle-off');
+          screenShareBtn.classList.add('toggle-on');
+          screenShareBtn.textContent = '🖥️ Screen: ON';
+        }
+        
+        enableRecordButton(true);
+        showStatus('Screen sharing active! Ready to record.', 'success');
+        
+        return true;
+      } catch (err) {
+        console.error('[ScreenShare] Error:', err.name, err.message);
+        
+        var msg = 'Screen share failed';
+        if (err.name === 'NotAllowedError') {
+          msg = 'Screen share cancelled or denied';
+        }
+        
+        showStatus(msg, 'error');
+        isScreenSharing = false;
+        return false;
+      }
+    }
+    
+    function stopScreenShare() {
+      console.log('[ScreenShare] Stopping screen share...');
+      
+      if (screenStream) {
+        screenStream.getTracks().forEach(function(track) {
+          track.stop();
+        });
+        screenStream = null;
+      }
+      
+      combinedStream = null;
+      isScreenSharing = false;
+      
+      // Revert preview to camera
+      if (videoPreview && mediaStream) {
+        videoPreview.srcObject = mediaStream;
+      }
+      
+      // Update UI
+      if (screenShareBtn) {
+        screenShareBtn.classList.remove('toggle-on');
+        screenShareBtn.classList.add('toggle-off');
+        screenShareBtn.textContent = '🖥️ Screen: OFF';
+      }
+      
+      enableRecordButton(!!mediaStream);
+      showStatus('Screen sharing stopped', 'success');
+    }
+    
+    function toggleScreenShare() {
+      if (isScreenSharing) {
+        stopScreenShare();
+      } else {
+        startScreenShare();
+      }
+    }
+    
+    // Attach screen share button handler
+    if (screenShareBtn) {
+      screenShareBtn.addEventListener('click', toggleScreenShare);
+      console.log('[ScreenShare] Button handler attached');
+    }
+
     // Start recording with countdown
     function startRecordingWithCountdown() {
       if (isRecording) return;
@@ -221,18 +356,45 @@ export function getCameraScript(): string {
         console.warn('[Recording] startAudioPlayback function not found');
       }
       
+      // Determine which stream to record
+      // Priority: combinedStream (screen+audio) > screenStream > mediaStream (camera)
+      var recordingStream = null;
+      
+      if (isScreenSharing && screenStream) {
+        // Create stream with screen video + mic audio
+        if (mediaStream && mediaStream.getAudioTracks().length > 0) {
+          recordingStream = new MediaStream([
+            ...screenStream.getVideoTracks(),
+            ...mediaStream.getAudioTracks() // Mic audio from camera
+          ]);
+          console.log('[Recording] Using screen + mic audio');
+        } else {
+          recordingStream = screenStream;
+          console.log('[Recording] Using screen only (no mic)');
+        }
+      } else if (mediaStream) {
+        recordingStream = mediaStream;
+        console.log('[Recording] Using camera stream');
+      }
+      
       // Start video recording if we have a stream
-      if (mediaStream) {
+      if (recordingStream) {
         try {
+          // Try VP9 for better quality, fallback to VP8
           var options = { mimeType: 'video/webm;codecs=vp9,opus' };
+          if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            options.mimeType = 'video/webm;codecs=vp8,opus';
+          }
           if (!MediaRecorder.isTypeSupported(options.mimeType)) {
             options.mimeType = 'video/webm';
           }
           if (!MediaRecorder.isTypeSupported(options.mimeType)) {
             options.mimeType = '';
           }
+          
+          console.log('[Recording] Using mimeType:', options.mimeType || 'default');
 
-          mediaRecorder = new MediaRecorder(mediaStream, options);
+          mediaRecorder = new MediaRecorder(recordingStream, options);
 
           mediaRecorder.ondataavailable = function(event) {
             // CRITICAL: Always accept chunks while mediaRecorder is active
@@ -263,15 +425,16 @@ export function getCameraScript(): string {
           };
 
           mediaRecorder.start(1000);
-          console.log('[Recording] ✅ Video recording started');
-          showStatus('Recording started!', 'success');
+          var modeLabel = isScreenSharing ? 'Screen recording' : 'Video recording';
+          console.log('[Recording] ✅', modeLabel, 'started');
+          showStatus(modeLabel + ' started!', 'success');
           
         } catch (err) {
           console.error('[Recording] MediaRecorder error:', err);
           showStatus('Video recording failed - audio only', 'error');
         }
       } else {
-        console.log('[Recording] Audio-only mode (no camera stream)');
+        console.log('[Recording] Audio-only mode (no video stream)');
         showStatus('Audio playback started!', 'success');
       }
     }
@@ -405,7 +568,7 @@ export function getCameraScript(): string {
       console.log('[Camera] Record button click handler attached');
     }
 
-    // Close button handler - CRITICAL: Stop all audio before closing
+    // Close button handler - CRITICAL: Stop all audio and streams before closing
     var closeBtn = document.getElementById('closeBtn');
     if (closeBtn) {
       closeBtn.addEventListener('click', function() {
@@ -433,7 +596,13 @@ export function getCameraScript(): string {
           ttsAudio = null;
         }
         
-        // Stop media stream
+        // Stop screen share stream
+        if (screenStream) {
+          screenStream.getTracks().forEach(function(track) { track.stop(); });
+          screenStream = null;
+        }
+        
+        // Stop camera stream
         if (mediaStream) {
           mediaStream.getTracks().forEach(function(track) { track.stop(); });
           mediaStream = null;
@@ -456,7 +625,7 @@ export function getCameraScript(): string {
       });
     }
 
-    // Cleanup on window close - stop all audio
+    // Cleanup on window close - stop all audio and streams
     window.addEventListener('beforeunload', function() {
       console.log('[Camera] Window unloading - stopping all audio...');
       
@@ -479,7 +648,12 @@ export function getCameraScript(): string {
         ttsAudio.src = '';
       }
       
-      // Stop media stream
+      // Stop screen share stream
+      if (screenStream) {
+        screenStream.getTracks().forEach(function(track) { track.stop(); });
+      }
+      
+      // Stop camera stream
       if (mediaStream) {
         mediaStream.getTracks().forEach(function(track) { track.stop(); });
       }

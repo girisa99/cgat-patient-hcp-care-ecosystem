@@ -106,13 +106,16 @@ export function getPopoutHTML(config: PopoutConfig): string {
             </div>
           </div>
 
-          <!-- Video Controls Row 1: Camera & Mic -->
+          <!-- Video Controls Row 1: Camera & Mic & Screen Share -->
           <div class="video-controls">
             <button class="control-btn toggle-on" id="cameraToggleBtn">
               📹 Camera: ON
             </button>
             <button class="control-btn toggle-on" id="micToggleBtn">
               🎤 Mic: ON
+            </button>
+            <button class="control-btn toggle-off" id="screenShareBtn">
+              🖥️ Screen: OFF
             </button>
             <button class="control-btn toggle-on" id="teleprompterBtn">
               📜 Teleprompter: ON
