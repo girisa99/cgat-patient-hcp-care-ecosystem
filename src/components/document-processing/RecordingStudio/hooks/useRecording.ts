@@ -134,6 +134,7 @@ export function useRecording(
         recorder.ondataavailable = (event) => {
           if (event.data && event.data.size > 0) {
             chunksRef.current.push(event.data);
+            console.log('[Recording] Chunk received:', event.data.size, 'bytes, total chunks:', chunksRef.current.length);
             setState(prev => ({
               ...prev,
               recordedChunks: [...chunksRef.current],
@@ -155,15 +156,21 @@ export function useRecording(
             console.log('[Recording] Created blob:', blob.size, 'bytes, duration:', duration, 's');
             onRecordingComplete?.(blob, duration);
           } else {
-            console.error('[Recording] No chunks recorded!');
+            console.warn('[Recording] No chunks recorded - recording may have been too short or interrupted');
+            // Try to get final data if available
+            const totalDuration = Math.floor((Date.now() - startTimeRef.current) / 1000);
+            if (totalDuration < 1) {
+              console.warn('[Recording] Recording was less than 1 second');
+            }
           }
           
           // Cleanup audio mixer
           audioMixer.cleanup();
         };
 
-        // Request data every second for reliability
-        recorder.start(1000);
+        // Request data more frequently (every 500ms) for better reliability
+        // This ensures we capture data even for short recordings
+        recorder.start(500);
         startTimeRef.current = Date.now();
         pausedTimeRef.current = 0;
 
@@ -213,7 +220,8 @@ export function useRecording(
       return;
     }
 
-    console.log('[Recording] Stopping, recorder state:', mediaRecorderRef.current.state);
+    const recorder = mediaRecorderRef.current;
+    console.log('[Recording] Stopping, recorder state:', recorder.state, 'chunks so far:', chunksRef.current.length);
 
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -222,24 +230,36 @@ export function useRecording(
 
     setState(prev => ({ ...prev, isRecording: false, isStopped: true }));
 
-    if (mediaRecorderRef.current.state !== 'inactive') {
-      // Request final data before stopping
+    if (recorder.state !== 'inactive') {
+      // Request final data before stopping - this is important!
       try {
-        mediaRecorderRef.current.requestData();
+        recorder.requestData();
+        console.log('[Recording] Requested final data chunk');
       } catch (e) {
-        // Ignore if not supported
+        console.warn('[Recording] requestData not supported:', e);
       }
-      mediaRecorderRef.current.stop();
+      
+      // Small delay to allow the final chunk to be processed
+      setTimeout(() => {
+        if (recorder.state !== 'inactive') {
+          recorder.stop();
+        }
+      }, 100);
     }
 
-    // Cleanup combined stream tracks
-    if (combinedStreamRef.current) {
-      combinedStreamRef.current.getTracks().forEach(track => track.stop());
+    // Cleanup combined stream tracks (but don't stop original camera)
+    if (combinedStreamRef.current && combinedStreamRef.current !== stream) {
+      combinedStreamRef.current.getTracks().forEach(track => {
+        // Only stop tracks that were created for recording, not camera tracks
+        if (!stream?.getTracks().includes(track)) {
+          track.stop();
+        }
+      });
       combinedStreamRef.current = null;
     }
 
-    console.log('[Recording] Stopped');
-  }, []);
+    console.log('[Recording] Stop initiated');
+  }, [stream]);
 
   // Trim the last N seconds from recording
   const trimLastSeconds = useCallback((seconds: number): Blob | null => {
