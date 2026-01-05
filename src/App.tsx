@@ -216,6 +216,34 @@ const AppContent = () => {
                       </Suspense>
                     </ProtectedRoute>
                   } />
+                  <Route path="/genie-spark" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
+                      <Suspense fallback={<PageLoading message="Loading Genie Spark..." />}>
+                        {React.createElement(React.lazy(() => import('@/pages/GenieSpark')))}
+                      </Suspense>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/genie-arc" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
+                      <Suspense fallback={<PageLoading message="Loading Genie Arc..." />}>
+                        {React.createElement(React.lazy(() => import('@/pages/GenieArc')))}
+                      </Suspense>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/genie-mind" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
+                      <Suspense fallback={<PageLoading message="Loading Genie Mind..." />}>
+                        {React.createElement(React.lazy(() => import('@/pages/GenieMind')))}
+                      </Suspense>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/genie-vibe" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
+                      <Suspense fallback={<PageLoading message="Loading Genie Vibe..." />}>
+                        {React.createElement(React.lazy(() => import('@/pages/GenieVibe')))}
+                      </Suspense>
+                    </ProtectedRoute>
+                  } />
                   <Route path="/genie-studio/productions" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
                       <Suspense fallback={<PageLoading message="Loading Production Hub..." />}>
