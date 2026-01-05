@@ -1981,7 +1981,7 @@ export default function GenieStudio() {
               className="flex transition-transform duration-500 ease-out"
               style={{ transform: `translateX(-${currentHeroSlide * 100}%)` }}
             >
-              {/* Slide 1: Genie Studio */}
+              {/* Slide 1: Genie Studio - The Complete Suite */}
               <div className="min-w-full relative h-[480px] md:h-[520px]">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-purple-700 to-pink-800" />
                 <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjEuNSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-50" />
@@ -1997,27 +1997,27 @@ export default function GenieStudio() {
                         Genie <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-300 to-purple-300">Studio</span>
                       </h1>
                       <p className="text-2xl md:text-3xl text-white/90 font-light">
-                        Mind to Media
+                        Mind to Media — Complete Content Creation Suite
                       </p>
                       <p className="text-lg text-white/70 max-w-lg leading-relaxed">
-                        Your complete AI-powered production studio. From idea to published content, orchestrate your entire creative workflow with intelligent automation.
+                        Your all-in-one AI production studio. Orchestrate the entire creative journey from initial concept to published content. Seamlessly integrate Arc (team coordination), Mind (pre-production), Spark (content transformation), Script (writing), TTS (voiceover), and Vibe (recording) into one unified workflow.
                       </p>
                       <div className="flex flex-wrap gap-3 pt-4">
                         <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
+                          <Calendar className="h-4 w-4 text-indigo-300" />
+                          <span className="text-sm text-white">Arc</span>
+                        </div>
+                        <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
                           <Cpu className="h-4 w-4 text-purple-300" />
-                          <span className="text-sm text-white">Genie Mind</span>
+                          <span className="text-sm text-white">Mind</span>
                         </div>
                         <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
                           <Zap className="h-4 w-4 text-amber-300" />
-                          <span className="text-sm text-white">Genie Spark</span>
+                          <span className="text-sm text-white">Spark</span>
                         </div>
                         <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
                           <Video className="h-4 w-4 text-pink-300" />
-                          <span className="text-sm text-white">Genie Vibe</span>
-                        </div>
-                        <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
-                          <Calendar className="h-4 w-4 text-blue-300" />
-                          <span className="text-sm text-white">Genie Arc</span>
+                          <span className="text-sm text-white">Vibe</span>
                         </div>
                       </div>
                     </div>
@@ -2033,66 +2033,7 @@ export default function GenieStudio() {
                 </div>
               </div>
 
-              {/* Slide 2: Genie Spark */}
-              <div className="min-w-full relative h-[480px] md:h-[520px]">
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-900 via-orange-800 to-yellow-900" />
-                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9InNwYXJrcyIgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSIyIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMSkiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjc3BhcmtzKSIvPjwvc3ZnPg==')] opacity-60" />
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(251,191,36,0.3),transparent_60%)]" />
-                <div className="relative h-full max-w-7xl mx-auto px-8 py-12 flex items-center">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center w-full">
-                    <div className="space-y-6">
-                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur border border-white/20">
-                        <Zap className="h-4 w-4 text-amber-300" />
-                        <span className="text-sm text-white font-medium">AI Content Engine</span>
-                      </div>
-                      <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight leading-tight">
-                        Genie <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-300">Spark</span>
-                      </h1>
-                      <p className="text-2xl md:text-3xl text-white/90 font-light">
-                        Ignite Your Ideas
-                      </p>
-                      <p className="text-lg text-white/70 max-w-lg leading-relaxed">
-                        Transform documents, images, audio and URLs into production-ready scripts. AI-powered content pipeline that fuels your creative workflow.
-                      </p>
-                      <div className="flex flex-wrap gap-3 pt-4">
-                        <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
-                          <FileText className="h-4 w-4 text-amber-300" />
-                          <span className="text-sm text-white">Document → Script</span>
-                        </div>
-                        <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
-                          <ImageIcon className="h-4 w-4 text-orange-300" />
-                          <span className="text-sm text-white">Image → Script</span>
-                        </div>
-                        <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
-                          <Mic className="h-4 w-4 text-yellow-300" />
-                          <span className="text-sm text-white">Audio → Script</span>
-                        </div>
-                      </div>
-                      <Button 
-                        size="lg" 
-                        onClick={() => setActiveTab('ai-tools')}
-                        className="mt-4 bg-white text-amber-700 hover:bg-white/90 shadow-xl font-semibold px-8"
-                      >
-                        <Zap className="h-5 w-5 mr-2" />
-                        Open Genie Spark
-                      </Button>
-                    </div>
-                    <div className="flex justify-center lg:justify-end">
-                      <div className="relative">
-                        <div className="absolute -inset-4 bg-gradient-to-r from-amber-500/30 to-orange-500/30 rounded-3xl blur-2xl" />
-                        <div 
-                          className="relative h-64 w-80 md:h-72 md:w-96 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center p-6 shadow-2xl cursor-pointer hover:scale-105 transition-transform"
-                          onClick={() => setActiveTab('ai-tools')}
-                        >
-                          <img src={genieSparkLogo} alt="Genie Spark" className="h-full w-full object-contain drop-shadow-2xl" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Slide 3: Genie Arc */}
+              {/* Slide 2: Genie Arc - Team Coordination */}
               <div className="min-w-full relative h-[480px] md:h-[520px]">
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-800 to-indigo-900" />
                 <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImxpbmVzIiB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxwYXRoIGQ9Ik0gMCAwIEwgNjAgNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2xpbmVzKSIvPjwvc3ZnPg==')] opacity-60" />
@@ -2102,17 +2043,17 @@ export default function GenieStudio() {
                     <div className="space-y-6">
                       <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur border border-white/20">
                         <Calendar className="h-4 w-4 text-indigo-300" />
-                        <span className="text-sm text-white font-medium">Team Coordination</span>
+                        <span className="text-sm text-white font-medium">Team Coordination Hub</span>
                         <Badge className="bg-indigo-400/20 text-indigo-200 border-indigo-300/30 text-xs">Optional</Badge>
                       </div>
                       <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight leading-tight">
                         Genie <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-purple-300">Arc</span>
                       </h1>
                       <p className="text-2xl md:text-3xl text-white/90 font-light">
-                        Production Hub for Teams
+                        Production Hub for Teams — Plan, Coordinate, Execute
                       </p>
                       <p className="text-lg text-white/70 max-w-lg leading-relaxed">
-                        <strong className="text-white/90">Optional:</strong> For team productions with multiple contributors. Schedule shows, coordinate guests, and manage complex workflows. Solo creators can skip this and use Vibe directly.
+                        <strong className="text-white/90">Optional for solo creators.</strong> The Arc is your command center for multi-person productions. Schedule podcasts, webinars, and webcasts. Invite and manage guests with automated email invitations. Track RSVPs, assign roles (host, co-host, panelist), and prepare agendas. Perfect for team-based content like interview shows and panel discussions.
                       </p>
                       <div className="flex flex-wrap gap-3 pt-4">
                         <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
@@ -2121,11 +2062,11 @@ export default function GenieStudio() {
                         </div>
                         <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
                           <Users className="h-4 w-4 text-purple-300" />
-                          <span className="text-sm text-white">Guest Coordination</span>
+                          <span className="text-sm text-white">Guest Management</span>
                         </div>
                         <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
-                          <Layers className="h-4 w-4 text-blue-300" />
-                          <span className="text-sm text-white">Episode Management</span>
+                          <Mail className="h-4 w-4 text-blue-300" />
+                          <span className="text-sm text-white">Auto Invitations</span>
                         </div>
                       </div>
                       <Button 
@@ -2152,7 +2093,7 @@ export default function GenieStudio() {
                 </div>
               </div>
 
-              {/* Slide 3: Genie Mind */}
+              {/* Slide 3: Genie Mind - Pre-Production Command Center */}
               <div className="min-w-full relative h-[480px] md:h-[520px]">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-violet-800 to-purple-900" />
                 <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImhleGFnb24iIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBvbHlnb24gcG9pbnRzPSI0MCwwIDgwLDIwIDgwLDYwIDQwLDgwIDAsMjAgMCwyMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjaGV4YWdvbikiLz48L3N2Zz4=')] opacity-40" />
@@ -2162,26 +2103,26 @@ export default function GenieStudio() {
                     <div className="space-y-6">
                       <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur border border-white/20">
                         <Cpu className="h-4 w-4 text-purple-300" />
-                        <span className="text-sm text-white font-medium">Pre-Production</span>
+                        <span className="text-sm text-white font-medium">Pre-Production Intelligence</span>
                         <Badge className="bg-green-500/20 text-green-300 border-green-400/30 text-xs ml-2">Active</Badge>
                       </div>
                       <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight leading-tight">
                         Genie <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-pink-300">Mind</span>
                       </h1>
                       <p className="text-2xl md:text-3xl text-white/90 font-light">
-                        AI That Understands
+                        AI That Understands — Your Creative Command Center
                       </p>
                       <p className="text-lg text-white/70 max-w-lg leading-relaxed">
-                        Pre-production command center. Create scripts, generate voiceovers, compose music, and prepare all your content assets with AI assistance.
+                        The brain of your production workflow. Write and enhance scripts with AI assistance, generate ultra-realistic voiceovers using ElevenLabs and OpenAI voices, compose custom background music and soundscapes, and organize all your media assets. Mind prepares everything before you hit record.
                       </p>
                       <div className="flex flex-wrap gap-3 pt-4">
                         <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
                           <FileText className="h-4 w-4 text-purple-300" />
-                          <span className="text-sm text-white">Script Writing</span>
+                          <span className="text-sm text-white">AI Script Writing</span>
                         </div>
                         <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
                           <Mic className="h-4 w-4 text-pink-300" />
-                          <span className="text-sm text-white">AI Voiceovers</span>
+                          <span className="text-sm text-white">50+ AI Voices</span>
                         </div>
                         <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
                           <Music className="h-4 w-4 text-violet-300" />
@@ -2201,7 +2142,66 @@ export default function GenieStudio() {
                 </div>
               </div>
 
-              {/* Slide 4: Genie Vibe */}
+              {/* Slide 4: Genie Spark - Content Transformation Engine */}
+              <div className="min-w-full relative h-[480px] md:h-[520px]">
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-900 via-orange-800 to-yellow-900" />
+                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9InNwYXJrcyIgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSIyIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMSkiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjc3BhcmtzKSIvPjwvc3ZnPg==')] opacity-60" />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(251,191,36,0.3),transparent_60%)]" />
+                <div className="relative h-full max-w-7xl mx-auto px-8 py-12 flex items-center">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center w-full">
+                    <div className="space-y-6">
+                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur border border-white/20">
+                        <Zap className="h-4 w-4 text-amber-300" />
+                        <span className="text-sm text-white font-medium">AI Content Transformation Engine</span>
+                      </div>
+                      <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight leading-tight">
+                        Genie <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-300">Spark</span>
+                      </h1>
+                      <p className="text-2xl md:text-3xl text-white/90 font-light">
+                        Ignite Your Ideas — Transform Any Content into Scripts
+                      </p>
+                      <p className="text-lg text-white/70 max-w-lg leading-relaxed">
+                        The magic ignition for your content pipeline. Upload PDFs, Word docs, images, audio recordings, or paste URLs — Spark transforms them into production-ready video or podcast scripts. Uses advanced OCR, speech-to-text, and AI analysis to extract and restructure content. Perfect for repurposing existing materials into new formats.
+                      </p>
+                      <div className="flex flex-wrap gap-3 pt-4">
+                        <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
+                          <FileText className="h-4 w-4 text-amber-300" />
+                          <span className="text-sm text-white">PDF/Doc → Script</span>
+                        </div>
+                        <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
+                          <ImageIcon className="h-4 w-4 text-orange-300" />
+                          <span className="text-sm text-white">Image OCR → Script</span>
+                        </div>
+                        <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
+                          <Mic className="h-4 w-4 text-yellow-300" />
+                          <span className="text-sm text-white">Audio → Transcript</span>
+                        </div>
+                      </div>
+                      <Button 
+                        size="lg" 
+                        onClick={() => setActiveTab('ai-tools')}
+                        className="mt-4 bg-white text-amber-700 hover:bg-white/90 shadow-xl font-semibold px-8"
+                      >
+                        <Zap className="h-5 w-5 mr-2" />
+                        Open Genie Spark
+                      </Button>
+                    </div>
+                    <div className="flex justify-center lg:justify-end">
+                      <div className="relative">
+                        <div className="absolute -inset-4 bg-gradient-to-r from-amber-500/30 to-orange-500/30 rounded-3xl blur-2xl" />
+                        <div 
+                          className="relative h-64 w-80 md:h-72 md:w-96 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center p-6 shadow-2xl cursor-pointer hover:scale-105 transition-transform"
+                          onClick={() => setActiveTab('ai-tools')}
+                        >
+                          <img src={genieSparkLogo} alt="Genie Spark" className="h-full w-full object-contain drop-shadow-2xl" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Slide 5: Genie Vibe - Production Studio */}
               <div className="min-w-full relative h-[480px] md:h-[520px]">
                 <div className="absolute inset-0 bg-gradient-to-br from-pink-900 via-rose-800 to-purple-900" />
                 <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9IndhdmUiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAwIDIwIFEgMTAgMTAgMjAgMjAgVCAyMCAyMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDgpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjd2F2ZSkiLz48L3N2Zz4=')] opacity-50" />
@@ -2211,29 +2211,29 @@ export default function GenieStudio() {
                     <div className="space-y-6">
                       <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur border border-white/20">
                         <Video className="h-4 w-4 text-pink-300" />
-                        <span className="text-sm text-white font-medium">Production Studio</span>
+                        <span className="text-sm text-white font-medium">Professional Recording Studio</span>
                       </div>
                       <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight leading-tight">
                         Genie <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-300 to-rose-300">Vibe</span>
                       </h1>
                       <p className="text-2xl md:text-3xl text-white/90 font-light">
-                        Script to Screen
+                        Script to Screen — Record, Capture, Produce
                       </p>
                       <p className="text-lg text-white/70 max-w-lg leading-relaxed">
-                        Production studio. Record videos, capture screens, sync with teleprompter, add overlays, and produce professional content effortlessly.
+                        Your professional recording studio in the browser. Record video from camera, capture screen, or both simultaneously with picture-in-picture. The smart teleprompter syncs with your script and scrolls at your pace. Add branded overlays, lower thirds, and backgrounds. Export in multiple formats ready for publishing to YouTube, podcasts, or social media.
                       </p>
                       <div className="flex flex-wrap gap-3 pt-4">
                         <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
                           <Video className="h-4 w-4 text-pink-300" />
-                          <span className="text-sm text-white">Video Recording</span>
+                          <span className="text-sm text-white">Camera + Screen</span>
                         </div>
                         <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
                           <Film className="h-4 w-4 text-rose-300" />
-                          <span className="text-sm text-white">Screen Capture</span>
+                          <span className="text-sm text-white">Smart Teleprompter</span>
                         </div>
                         <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
-                          <FileText className="h-4 w-4 text-purple-300" />
-                          <span className="text-sm text-white">Teleprompter</span>
+                          <Layers className="h-4 w-4 text-purple-300" />
+                          <span className="text-sm text-white">Branded Overlays</span>
                         </div>
                       </div>
                       <Button 
@@ -2275,9 +2275,9 @@ export default function GenieStudio() {
               <ChevronRight className="h-6 w-6" />
             </button>
 
-            {/* Slide Indicators */}
+            {/* Slide Indicators - Updated order: Studio → Spark → Arc → Mind → Vibe */}
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 z-10">
-              {['Studio', 'Spark', 'Arc', 'Mind', 'Vibe'].map((name, index) => (
+              {['Studio', 'Arc', 'Mind', 'Spark', 'Vibe'].map((name, index) => (
                 <button
                   key={name}
                   onClick={() => setCurrentHeroSlide(index)}
@@ -2318,17 +2318,21 @@ export default function GenieStudio() {
 
               {/* Quick Actions with Flow Indicator */}
               <div className="space-y-3">
-                {/* Default Workflow Flow */}
+                {/* Default Workflow Flow - Updated: Studio → Arc → Mind → Spark → Script → TTS → Vibe → Publish */}
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/5 rounded-lg border border-primary/10">
                   <span className="text-xs text-muted-foreground">Default flow:</span>
-                  <div className="flex items-center gap-1.5 text-xs">
-                    <span className="font-medium text-purple-600">Mind</span>
+                  <div className="flex items-center gap-1.5 text-xs flex-wrap">
+                    <span className="font-medium text-purple-600">Studio</span>
+                    <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                    <span className="font-medium text-indigo-600">Arc</span>
+                    <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                    <span className="font-medium text-violet-600">Mind</span>
                     <ChevronRight className="h-3 w-3 text-muted-foreground" />
                     <span className="font-medium text-amber-600">Spark</span>
                     <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                    <span className="font-medium text-green-600">Script</span>
+                    <span className="font-medium text-blue-600">Script</span>
                     <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                    <span className="font-medium text-blue-600">TTS</span>
+                    <span className="font-medium text-cyan-600">TTS</span>
                     <ChevronRight className="h-3 w-3 text-muted-foreground" />
                     <span className="font-medium text-pink-600">Vibe</span>
                     <ChevronRight className="h-3 w-3 text-muted-foreground" />

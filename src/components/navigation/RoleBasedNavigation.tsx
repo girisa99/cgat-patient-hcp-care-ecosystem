@@ -238,10 +238,28 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
                 </div>
               ))}
 
-              {/* Genie Mind + Vibe - Media Production */}
+              {/* Genie Spark - Content Creation Suite */}
               {navigationGroups.genieStudio && navigationGroups.genieStudio.length > 0 && navigationGroups.genieStudio.map(tab => (
                 <div key={tab.to} className="nav-item">
-                  {renderNavButton(tab)}
+                  <Link to={tab.to}>
+                    <Button
+                      variant={location.pathname === tab.to ? 'default' : 'ghost'}
+                      size="sm"
+                      className={`flex items-center gap-2 whitespace-nowrap min-w-fit px-3 h-auto py-1.5 ${
+                        location.pathname === tab.to 
+                          ? 'bg-primary text-primary-foreground shadow-sm' 
+                          : 'hover:bg-accent'
+                      }`}
+                    >
+                      <tab.icon className="h-4 w-4 flex-shrink-0" />
+                      <div className="flex flex-col items-start">
+                        <span className="hidden lg:inline text-stable leading-tight">{tab.title}</span>
+                        {tab.subtitle && (
+                          <span className="hidden lg:inline text-[9px] font-normal opacity-70 leading-tight">{tab.subtitle}</span>
+                        )}
+                      </div>
+                    </Button>
+                  </Link>
                 </div>
               ))}
 
