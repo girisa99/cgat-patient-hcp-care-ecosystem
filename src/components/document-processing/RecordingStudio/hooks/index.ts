@@ -5,6 +5,7 @@
 export { useCamera } from './useCamera';
 export { useRecording } from './useRecording';
 export { useRecordingAudioMixer } from './useRecordingAudioMixer';
+export { useRecordingPersistence } from './useRecordingPersistence';
 export { useAudioPlayback } from './useAudioPlayback';
 export { useRecordingLibrary } from './useRecordingLibrary';
 export { useScreenShare } from './useScreenShare';

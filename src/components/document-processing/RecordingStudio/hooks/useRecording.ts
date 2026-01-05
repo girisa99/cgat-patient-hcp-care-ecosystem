@@ -2,13 +2,18 @@
  * Recording Hook - Handles MediaRecorder and recording state
  * Uses AudioMixer for dynamic audio capture during recording.
  * 
- * Key improvement: Audio can be started/stopped/replayed during recording
- * without losing the recording session.
+ * Key improvements:
+ * - Audio can be started/stopped/replayed during recording without losing session
+ * - IndexedDB persistence for long recordings (survives tab/browser issues)
+ * - Stream health monitoring with automatic recovery warnings
+ * - Visibility change handling (tab switching protection)
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { toast } from 'sonner';
 import type { RecordingState } from '../types';
 import { useRecordingAudioMixer } from './useRecordingAudioMixer';
+import { useRecordingPersistence } from './useRecordingPersistence';
 
 interface AudioElements {
   voiceover?: HTMLAudioElement | null;
@@ -20,13 +25,19 @@ interface UseRecordingOptions {
   onRecordingComplete?: (blob: Blob, duration: number) => void;
   countdownSeconds?: number;
   quality?: 'low' | 'medium' | 'high' | 'ultra';
+  enablePersistence?: boolean;
 }
 
 export function useRecording(
   stream: MediaStream | null,
   options: UseRecordingOptions = {}
 ) {
-  const { onRecordingComplete, countdownSeconds = 5, quality = 'high' } = options;
+  const { 
+    onRecordingComplete, 
+    countdownSeconds = 5, 
+    quality = 'high',
+    enablePersistence = true 
+  } = options;
   
   const [state, setState] = useState<RecordingState>({
     isRecording: false,
@@ -37,16 +48,22 @@ export function useRecording(
   });
   
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [hasRecovery, setHasRecovery] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
   const pausedTimeRef = useRef<number>(0);
+  const pauseStartRef = useRef<number>(0);
   const combinedStreamRef = useRef<MediaStream | null>(null);
+  const lastChunkCountRef = useRef<number>(0);
   
   // Use the audio mixer for dynamic audio capture
   const audioMixer = useRecordingAudioMixer();
+  
+  // Recording persistence for long recordings
+  const persistence = useRecordingPersistence();
 
   /**
    * Connect audio element to recording (can be called anytime during recording)
@@ -73,12 +90,63 @@ export function useRecording(
     }, 1000);
   }, [countdownSeconds]);
 
-  const startRecording = useCallback(() => {
+  // Check for recoverable sessions on mount
+  useEffect(() => {
+    const checkForRecovery = async () => {
+      if (!enablePersistence) return;
+      
+      try {
+        const sessions = await persistence.getIncompleteSessions();
+        if (sessions.length > 0) {
+          setHasRecovery(true);
+          const latestSession = sessions[0];
+          toast.info(
+            `Found recoverable recording (${Math.floor(latestSession.duration / 60)}m ${latestSession.duration % 60}s). Check your library.`,
+            { duration: 10000 }
+          );
+          console.log('[Recording] Found recoverable sessions:', sessions.length);
+        }
+      } catch (err) {
+        console.warn('[Recording] Failed to check for recovery:', err);
+      }
+    };
+    
+    checkForRecovery();
+  }, [enablePersistence, persistence]);
+
+  // Handle stream health issues
+  const handleStreamHealthIssue = useCallback(() => {
+    console.warn('[Recording] Stream health issue detected');
+    
+    // Force save current chunks
+    if (enablePersistence && chunksRef.current.length > 0) {
+      persistence.saveChunks(chunksRef.current, true);
+    }
+    
+    // Show recovery notification
+    toast.error(
+      'Recording interrupted. Your progress has been saved and can be recovered.',
+      { duration: 8000 }
+    );
+  }, [enablePersistence, persistence]);
+
+  const startRecording = useCallback(async () => {
     if (!stream || state.isRecording) return;
 
-    startCountdown(() => {
+    startCountdown(async () => {
       try {
         chunksRef.current = [];
+        lastChunkCountRef.current = 0;
+        
+        // Create persistence session for long recordings
+        if (enablePersistence) {
+          try {
+            await persistence.createSession();
+            console.log('[Recording] Persistence session created');
+          } catch (err) {
+            console.warn('[Recording] Persistence init failed, continuing without:', err);
+          }
+        }
         
         // Initialize audio mixer with microphone
         const mixedAudioStream = audioMixer.initialize(stream);
@@ -134,7 +202,13 @@ export function useRecording(
         recorder.ondataavailable = (event) => {
           if (event.data && event.data.size > 0) {
             chunksRef.current.push(event.data);
-            console.log('[Recording] Chunk received:', event.data.size, 'bytes, total chunks:', chunksRef.current.length);
+            const chunkCount = chunksRef.current.length;
+            
+            // Log periodically (every 10 chunks) to avoid console spam
+            if (chunkCount % 10 === 0 || chunkCount === 1) {
+              console.log('[Recording] Chunk received:', event.data.size, 'bytes, total:', chunkCount);
+            }
+            
             setState(prev => ({
               ...prev,
               recordedChunks: [...chunksRef.current],
@@ -144,11 +218,24 @@ export function useRecording(
 
         recorder.onerror = (event: any) => {
           console.error('[Recording] MediaRecorder error:', event.error);
-          // Don't stop recording on minor errors - just log
+          
+          // Save chunks on error
+          if (enablePersistence && chunksRef.current.length > 0) {
+            persistence.saveChunks(chunksRef.current, true);
+            toast.error('Recording error occurred. Progress saved.', { duration: 5000 });
+          }
         };
 
         recorder.onstop = () => {
           console.log('[Recording] MediaRecorder stopped, chunks:', chunksRef.current.length);
+          
+          // Stop health monitoring
+          persistence.stopMonitoring();
+          
+          // Mark session complete
+          if (enablePersistence) {
+            persistence.completeSession();
+          }
           
           // Calculate duration
           const duration = Math.floor((Date.now() - startTimeRef.current - pausedTimeRef.current) / 1000);
@@ -158,24 +245,41 @@ export function useRecording(
             console.log('[Recording] Created blob:', blob.size, 'bytes, duration:', duration, 's');
             onRecordingComplete?.(blob, duration);
           } else {
-            console.warn('[Recording] No chunks recorded - recording may have been too short or interrupted');
-            console.warn('[Recording] Duration was:', duration, 'seconds');
+            console.warn('[Recording] No chunks recorded - attempting recovery from persistence');
             
-            // Even with 0 chunks, still call completion with empty blob so preview can show error
-            // This ensures the UI updates properly
-            const emptyBlob = new Blob([], { type: 'video/webm' });
-            onRecordingComplete?.(emptyBlob, duration);
+            // Try to recover from persistence
+            if (enablePersistence && persistence.sessionInfo?.id) {
+              persistence.recoverSession(persistence.sessionInfo.id).then(recoveredChunks => {
+                if (recoveredChunks.length > 0) {
+                  const blob = new Blob(recoveredChunks, { type: 'video/webm' });
+                  console.log('[Recording] Recovered from persistence:', blob.size, 'bytes');
+                  toast.success('Recording recovered from backup!');
+                  onRecordingComplete?.(blob, duration);
+                } else {
+                  const emptyBlob = new Blob([], { type: 'video/webm' });
+                  onRecordingComplete?.(emptyBlob, duration);
+                }
+              });
+            } else {
+              const emptyBlob = new Blob([], { type: 'video/webm' });
+              onRecordingComplete?.(emptyBlob, duration);
+            }
           }
           
           // Cleanup audio mixer
           audioMixer.cleanup();
         };
 
-        // Request data more frequently (every 500ms) for better reliability
-        // This ensures we capture data even for short recordings
-        recorder.start(500);
+        // Request data frequently (every 1 second) for better persistence
+        recorder.start(1000);
         startTimeRef.current = Date.now();
         pausedTimeRef.current = 0;
+
+        // Start health monitoring and auto-save
+        if (enablePersistence) {
+          persistence.startHealthMonitoring(recordingStream, recorder, handleStreamHealthIssue);
+          persistence.startAutoSave(() => chunksRef.current);
+        }
 
         // Start timer
         timerRef.current = window.setInterval(() => {
@@ -193,13 +297,14 @@ export function useRecording(
           recordedChunks: [],
         });
 
-        console.log('[Recording] Started with dynamic audio mixer');
+        console.log('[Recording] Started with persistence enabled:', enablePersistence);
       } catch (err) {
         console.error('[Recording] Failed to start:', err);
         audioMixer.cleanup();
+        persistence.stopMonitoring();
       }
     });
-  }, [stream, state.isRecording, startCountdown, onRecordingComplete, quality, audioMixer]);
+  }, [stream, state.isRecording, startCountdown, onRecordingComplete, quality, audioMixer, enablePersistence, persistence, handleStreamHealthIssue]);
 
   const pauseRecording = useCallback(() => {
     if (!mediaRecorderRef.current || !state.isRecording) return;
@@ -207,15 +312,28 @@ export function useRecording(
     if (state.isPaused) {
       // Resume
       mediaRecorderRef.current.resume();
+      // Track pause duration
+      if (pauseStartRef.current > 0) {
+        pausedTimeRef.current += Date.now() - pauseStartRef.current;
+        pauseStartRef.current = 0;
+      }
       setState(prev => ({ ...prev, isPaused: false }));
       console.log('[Recording] Resumed');
     } else {
       // Pause
       mediaRecorderRef.current.pause();
+      pauseStartRef.current = Date.now();
+      
+      // Save chunks when pausing (safety save)
+      if (enablePersistence && chunksRef.current.length > 0) {
+        persistence.saveChunks(chunksRef.current, true);
+        console.log('[Recording] Chunks saved on pause');
+      }
+      
       setState(prev => ({ ...prev, isPaused: true }));
       console.log('[Recording] Paused');
     }
-  }, [state.isRecording, state.isPaused]);
+  }, [state.isRecording, state.isPaused, enablePersistence, persistence]);
 
   const stopRecording = useCallback(() => {
     if (!mediaRecorderRef.current) {
@@ -226,9 +344,17 @@ export function useRecording(
     const recorder = mediaRecorderRef.current;
     console.log('[Recording] Stopping, recorder state:', recorder.state, 'chunks so far:', chunksRef.current.length);
 
+    // Stop health monitoring
+    persistence.stopMonitoring();
+
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
+    }
+
+    // Final save before stopping
+    if (enablePersistence && chunksRef.current.length > 0) {
+      persistence.saveChunks(chunksRef.current, true);
     }
 
     setState(prev => ({ ...prev, isRecording: false, isStopped: true }));
@@ -268,7 +394,7 @@ export function useRecording(
     }
 
     console.log('[Recording] Stop initiated');
-  }, [stream]);
+  }, [stream, enablePersistence, persistence]);
 
   // Trim the last N seconds from recording
   const trimLastSeconds = useCallback((seconds: number): Blob | null => {
@@ -318,8 +444,33 @@ export function useRecording(
         clearInterval(timerRef.current);
       }
       audioMixer.cleanup();
+      persistence.stopMonitoring();
     };
-  }, [audioMixer]);
+  }, [audioMixer, persistence]);
+
+  // Recover recording from persistence
+  const recoverRecording = useCallback(async (sessionId: string): Promise<Blob | null> => {
+    try {
+      const chunks = await persistence.recoverSession(sessionId);
+      if (chunks.length > 0) {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        console.log('[Recording] Recovered recording:', blob.size, 'bytes');
+        toast.success('Recording recovered successfully!');
+        return blob;
+      }
+      return null;
+    } catch (err) {
+      console.error('[Recording] Recovery failed:', err);
+      toast.error('Failed to recover recording');
+      return null;
+    }
+  }, [persistence]);
+
+  // Clear recovery data
+  const clearRecoveryData = useCallback(async (sessionId: string) => {
+    await persistence.clearSession(sessionId);
+    setHasRecovery(false);
+  }, [persistence]);
 
   return {
     ...state,
@@ -332,5 +483,12 @@ export function useRecording(
     getCurrentBlob,
     // Expose method to connect audio dynamically during recording
     connectAudio,
+    // Recovery features
+    hasRecovery,
+    recoverRecording,
+    clearRecoveryData,
+    getIncompleteSessions: persistence.getIncompleteSessions,
+    isStreamHealthy: persistence.isStreamHealthy,
+    sessionInfo: persistence.sessionInfo,
   };
 }
