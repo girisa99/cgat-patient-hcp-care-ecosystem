@@ -1,7 +1,7 @@
 /**
  * Genie Spark - Smart Content Pipeline
  * "Ignite Your Ideas" - AI-powered content generation engine
- * Part of the Genie Suite
+ * Part of Genie Studio
  */
 
 import React, { useState, useCallback, useMemo } from 'react';

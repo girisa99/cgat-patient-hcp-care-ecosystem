@@ -61,6 +61,7 @@ import {
   UserPlus,
   X,
   Save,
+  Image as ImageIcon,
   // New icons for extended scheduling
   GraduationCap,
   Phone,
@@ -92,10 +93,12 @@ import genieStudioLogo from '@/assets/logos/genie-studio-banner.png';
 import genieMindLogo from '@/assets/logos/genie-mind-combined.png';
 import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
 import genieArcLogo from '@/assets/logos/genie-arc-combined.png';
+import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
 // Same logos used for all sizes (combined is the finalized version)
 import genieMindProductLogo from '@/assets/logos/genie-mind-combined.png';
 import genieVibeProductLogo from '@/assets/logos/genie-vibe-combined.png';
 import genieArcProductLogo from '@/assets/logos/genie-arc-combined.png';
+import genieSparkProductLogo from '@/assets/logos/genie-spark-combined.png';
 
 // Types for media items
 interface MediaItem {
@@ -2030,7 +2033,66 @@ export default function GenieStudio() {
                 </div>
               </div>
 
-              {/* Slide 2: Genie Arc */}
+              {/* Slide 2: Genie Spark */}
+              <div className="min-w-full relative h-[480px] md:h-[520px]">
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-900 via-orange-800 to-yellow-900" />
+                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9InNwYXJrcyIgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSIyIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMSkiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjc3BhcmtzKSIvPjwvc3ZnPg==')] opacity-60" />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(251,191,36,0.3),transparent_60%)]" />
+                <div className="relative h-full max-w-7xl mx-auto px-8 py-12 flex items-center">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center w-full">
+                    <div className="space-y-6">
+                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur border border-white/20">
+                        <Zap className="h-4 w-4 text-amber-300" />
+                        <span className="text-sm text-white font-medium">AI Content Engine</span>
+                      </div>
+                      <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight leading-tight">
+                        Genie <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-300">Spark</span>
+                      </h1>
+                      <p className="text-2xl md:text-3xl text-white/90 font-light">
+                        Ignite Your Ideas
+                      </p>
+                      <p className="text-lg text-white/70 max-w-lg leading-relaxed">
+                        Transform documents, images, audio and URLs into production-ready scripts. AI-powered content pipeline that fuels your creative workflow.
+                      </p>
+                      <div className="flex flex-wrap gap-3 pt-4">
+                        <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
+                          <FileText className="h-4 w-4 text-amber-300" />
+                          <span className="text-sm text-white">Document → Script</span>
+                        </div>
+                        <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
+                          <ImageIcon className="h-4 w-4 text-orange-300" />
+                          <span className="text-sm text-white">Image → Script</span>
+                        </div>
+                        <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
+                          <Mic className="h-4 w-4 text-yellow-300" />
+                          <span className="text-sm text-white">Audio → Script</span>
+                        </div>
+                      </div>
+                      <Button 
+                        size="lg" 
+                        onClick={() => setActiveTab('ai-tools')}
+                        className="mt-4 bg-white text-amber-700 hover:bg-white/90 shadow-xl font-semibold px-8"
+                      >
+                        <Zap className="h-5 w-5 mr-2" />
+                        Open Genie Spark
+                      </Button>
+                    </div>
+                    <div className="flex justify-center lg:justify-end">
+                      <div className="relative">
+                        <div className="absolute -inset-4 bg-gradient-to-r from-amber-500/30 to-orange-500/30 rounded-3xl blur-2xl" />
+                        <div 
+                          className="relative h-64 w-80 md:h-72 md:w-96 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center p-6 shadow-2xl cursor-pointer hover:scale-105 transition-transform"
+                          onClick={() => setActiveTab('ai-tools')}
+                        >
+                          <img src={genieSparkLogo} alt="Genie Spark" className="h-full w-full object-contain drop-shadow-2xl" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Slide 3: Genie Arc */}
               <div className="min-w-full relative h-[480px] md:h-[520px]">
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-800 to-indigo-900" />
                 <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImxpbmVzIiB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxwYXRoIGQ9Ik0gMCAwIEwgNjAgNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2xpbmVzKSIvPjwvc3ZnPg==')] opacity-60" />
@@ -2201,13 +2263,13 @@ export default function GenieStudio() {
 
             {/* Navigation Arrows */}
             <button
-              onClick={() => setCurrentHeroSlide(prev => (prev === 0 ? 3 : prev - 1))}
+              onClick={() => setCurrentHeroSlide(prev => (prev === 0 ? 4 : prev - 1))}
               className="absolute left-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/30 backdrop-blur border border-white/20 flex items-center justify-center text-white hover:bg-black/50 transition-colors z-10"
             >
               <ChevronLeft className="h-6 w-6" />
             </button>
             <button
-              onClick={() => setCurrentHeroSlide(prev => (prev === 3 ? 0 : prev + 1))}
+              onClick={() => setCurrentHeroSlide(prev => (prev === 4 ? 0 : prev + 1))}
               className="absolute right-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/30 backdrop-blur border border-white/20 flex items-center justify-center text-white hover:bg-black/50 transition-colors z-10"
             >
               <ChevronRight className="h-6 w-6" />
@@ -2215,7 +2277,7 @@ export default function GenieStudio() {
 
             {/* Slide Indicators */}
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 z-10">
-              {['Studio', 'Arc', 'Mind', 'Vibe'].map((name, index) => (
+              {['Studio', 'Spark', 'Arc', 'Mind', 'Vibe'].map((name, index) => (
                 <button
                   key={name}
                   onClick={() => setCurrentHeroSlide(index)}
@@ -2261,6 +2323,8 @@ export default function GenieStudio() {
                   <span className="text-xs text-muted-foreground">Default flow:</span>
                   <div className="flex items-center gap-1.5 text-xs">
                     <span className="font-medium text-purple-600">Mind</span>
+                    <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                    <span className="font-medium text-amber-600">Spark</span>
                     <ChevronRight className="h-3 w-3 text-muted-foreground" />
                     <span className="font-medium text-green-600">Script</span>
                     <ChevronRight className="h-3 w-3 text-muted-foreground" />
