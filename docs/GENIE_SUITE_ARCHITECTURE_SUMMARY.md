@@ -10,12 +10,13 @@
 
 ### System Components
 
-| Component | Purpose | Status |
-|-----------|---------|--------|
-| **Genie Mind** | AI Intelligence Layer (Pre-production) | ✅ Complete |
-| **Genie Vibe** | Creative Layer (Production) | ✅ Complete |
-| **Production Hub (Arc)** | Team Coordination (Optional) | ✅ Complete |
-| **Recording Studio** | Video Capture & Export | ✅ Complete |
+| Component | Tagline | Purpose | Status |
+|-----------|---------|---------|--------|
+| **Genie Mind** | "AI That Understands" | AI Intelligence Layer (Pre-production) | ✅ Complete |
+| **Genie Spark** | "Ignite Your Ideas" | AI Content Generation Engine | ✅ Complete |
+| **Genie Vibe** | "Feel the Flow" | Creative Layer (Production) | ✅ Complete |
+| **Production Hub (Arc)** | "Orchestrate Excellence" | Team Coordination (Optional) | ✅ Complete |
+| **Recording Studio** | — | Video Capture & Export | ✅ Complete |
 
 ---
 
