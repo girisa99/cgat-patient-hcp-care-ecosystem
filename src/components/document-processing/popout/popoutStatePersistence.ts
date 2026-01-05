@@ -477,11 +477,13 @@ export function getStatePersistenceScript(): string {
         
         // Handle interrupted recording recovery
         if (state.isRecording && !state.isStopped) {
-          // Only show recovery if there's actual data to recover
-          var hasMeaningfulRecording = state.recordingDuration > 5 || state.recordingChunksCount > 0;
+          // Only show recovery if there's ACTUAL data to recover
+          // Must have BOTH duration > 5 seconds AND at least 1 chunk
+          var hasMeaningfulRecording = state.recordingDuration > 5 && state.recordingChunksCount > 0;
           
           if (hasMeaningfulRecording) {
             console.log('[Persistence] Recording was in progress with data!');
+            console.log('[Persistence] Duration:', state.recordingDuration, 'Chunks:', state.recordingChunksCount);
             showRecoveryNotification(state);
             
             // Try to reinitialize camera if stream was lost
@@ -494,7 +496,9 @@ export function getStatePersistenceScript(): string {
               }
             }
           } else {
-            console.log('[Persistence] Recording was started but no meaningful data - clearing stale state');
+            console.log('[Persistence] Recording was started but no meaningful data');
+            console.log('[Persistence] Duration:', state.recordingDuration, 'Chunks:', state.recordingChunksCount);
+            console.log('[Persistence] Clearing stale state...');
             clearAllState();
           }
         }
