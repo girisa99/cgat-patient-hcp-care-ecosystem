@@ -235,21 +235,25 @@ export function getCameraScript(): string {
           mediaRecorder = new MediaRecorder(mediaStream, options);
 
           mediaRecorder.ondataavailable = function(event) {
-            if (event.data && event.data.size > 0 && !isStopped) {
+            // CRITICAL: Always accept chunks while mediaRecorder is active
+            // Don't check isStopped here - we need all chunks before processing
+            if (event.data && event.data.size > 0) {
               recordedChunks.push(event.data);
-              console.log('[Recording] Chunk received:', event.data.size, 'bytes');
+              console.log('[Recording] Chunk received:', event.data.size, 'bytes, total:', recordedChunks.length);
             }
           };
 
           mediaRecorder.onstop = function() {
             console.log('[Recording] MediaRecorder stopped, chunks:', recordedChunks.length);
-            // Always process recording if we have chunks
-            if (recordedChunks.length > 0) {
-              processRecording();
-            } else {
-              console.warn('[Recording] No chunks to process');
-              showStatus('No video data captured', 'error');
-            }
+            // Process recording after a small delay to ensure all chunks are captured
+            setTimeout(function() {
+              if (recordedChunks.length > 0) {
+                processRecording();
+              } else {
+                console.warn('[Recording] No chunks to process');
+                showStatus('No video data captured', 'error');
+              }
+            }, 100);
           };
 
           mediaRecorder.onerror = function(event) {
@@ -324,14 +328,19 @@ export function getCameraScript(): string {
         stopAllAudio();
       }
 
-      // Stop MediaRecorder - set isStopped AFTER we've captured current state
-      isStopped = true;
+      // CRITICAL: Stop MediaRecorder FIRST, then set isStopped
+      // This ensures ondataavailable captures all final chunks
       isPaused = false;
       
       if (mediaRecorder && mediaRecorder.state !== 'inactive') {
         console.log('[Recording] Stopping MediaRecorder, state:', mediaRecorder.state);
         mediaRecorder.stop();
+        // Set isStopped AFTER stop() is called
+        setTimeout(function() {
+          isStopped = true;
+        }, 200);
       } else {
+        isStopped = true;
         console.log('[Recording] No active MediaRecorder (audio-only mode)');
         showStatus('Recording stopped', 'success');
       }

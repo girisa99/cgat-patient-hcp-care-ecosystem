@@ -659,6 +659,19 @@ export function getUIScript(): string {
       
       var voicePlaying = false;
       
+      // STEP 0: Initialize teleprompter word tracking BEFORE audio plays
+      // This ensures the cursor is ready when audio starts
+      if (teleprompterEnabled && teleprompter && typeof renderScriptWithWordTracking === 'function') {
+        console.log('[Audio] Pre-initializing teleprompter word tracking...');
+        var selectedId = scriptSelect ? scriptSelect.value : '';
+        var script = scriptsData.find(function(s) { return s.id === selectedId; });
+        if (script) {
+          var content = getScriptContentByVersion(script, currentScriptVersion);
+          renderScriptWithWordTracking(content);
+          console.log('[Audio] Teleprompter words initialized');
+        }
+      }
+      
       // STEP 1: Play voice (voiceover or TTS)
       if (preloadedVoice && preloadedVoice.src) {
         console.log('[Audio] Using preloaded voice');
@@ -668,9 +681,11 @@ export function getUIScript(): string {
         
         // Setup events before playing
         voiceoverAudio.onplay = function() {
-          console.log('[Audio] Voice started');
+          console.log('[Audio] Voice started - triggering teleprompter sync NOW');
           applyDucking(true);
           updateVoiceButton(true);
+          // Start teleprompter sync IMMEDIATELY when audio plays
+          startTeleprompterSyncImmediate(voiceoverAudio);
         };
         voiceoverAudio.onpause = function() {
           applyDucking(false);
@@ -684,15 +699,6 @@ export function getUIScript(): string {
         voiceoverAudio.onerror = function(e) {
           console.error('[Audio] Voice error:', e);
         };
-        
-        // Teleprompter sync when metadata loads
-        if (!voiceoverAudio.duration) {
-          voiceoverAudio.onloadedmetadata = function() {
-            startTeleprompterSync(voiceoverAudio);
-          };
-        } else {
-          startTeleprompterSync(voiceoverAudio);
-        }
         
         voiceoverAudio.play()
           .then(function() { 
@@ -713,10 +719,12 @@ export function getUIScript(): string {
           voiceoverAudio = new Audio(voiceUrl);
           voiceoverAudio.volume = voiceoverVolume ? voiceoverVolume.value / 100 : 1;
           
-          voiceoverAudio.onloadedmetadata = function() {
-            startTeleprompterSync(voiceoverAudio);
+          voiceoverAudio.onplay = function() { 
+            console.log('[Audio] Voice started (direct URL) - triggering teleprompter sync NOW');
+            applyDucking(true); 
+            updateVoiceButton(true); 
+            startTeleprompterSyncImmediate(voiceoverAudio);
           };
-          voiceoverAudio.onplay = function() { applyDucking(true); updateVoiceButton(true); };
           voiceoverAudio.onpause = function() { applyDucking(false); updateVoiceButton(false); };
           voiceoverAudio.onended = function() { applyDucking(false); updateVoiceButton(false); };
           
@@ -801,7 +809,7 @@ export function getUIScript(): string {
       return null;
     }
     
-    // Teleprompter sync helper
+    // Teleprompter sync helper - called when metadata is loaded
     function startTeleprompterSync(audio) {
       if (!audio || !audio.duration) return;
       console.log('[Audio] Starting teleprompter sync, duration:', audio.duration);
@@ -811,6 +819,60 @@ export function getUIScript(): string {
       }
       if (typeof startTeleprompterScrollSync === 'function') {
         startTeleprompterScrollSync(audio.duration);
+      }
+    }
+    
+    // IMMEDIATE teleprompter sync - called when audio actually starts playing
+    // This ensures sync starts RIGHT AWAY, not waiting for metadata
+    function startTeleprompterSyncImmediate(audio) {
+      if (!audio) return;
+      
+      console.log('[Audio] IMMEDIATE teleprompter sync triggered');
+      console.log('[Audio] Audio duration:', audio.duration, 'readyState:', audio.readyState);
+      
+      // If duration is available, start immediately
+      if (audio.duration && !isNaN(audio.duration) && audio.duration > 0) {
+        console.log('[Audio] Duration available, starting sync NOW');
+        if (typeof startWordHighlightingFromAudio === 'function') {
+          startWordHighlightingFromAudio(audio);
+        }
+        if (typeof startTeleprompterScrollSync === 'function') {
+          startTeleprompterScrollSync(audio.duration);
+        }
+        if (typeof showReadingCursor === 'function') {
+          showReadingCursor();
+        }
+      } else {
+        // Poll for duration with short interval - don't wait for loadedmetadata event
+        console.log('[Audio] Duration not ready, polling...');
+        var pollCount = 0;
+        var pollInterval = setInterval(function() {
+          pollCount++;
+          if (audio.duration && !isNaN(audio.duration) && audio.duration > 0) {
+            console.log('[Audio] Duration available after', pollCount * 50, 'ms:', audio.duration);
+            clearInterval(pollInterval);
+            if (typeof startWordHighlightingFromAudio === 'function') {
+              startWordHighlightingFromAudio(audio);
+            }
+            if (typeof startTeleprompterScrollSync === 'function') {
+              startTeleprompterScrollSync(audio.duration);
+            }
+            if (typeof showReadingCursor === 'function') {
+              showReadingCursor();
+            }
+          } else if (pollCount > 100) { // 5 second timeout
+            console.warn('[Audio] Timeout waiting for audio duration');
+            clearInterval(pollInterval);
+            // Fallback: use estimated duration based on script length
+            if (typeof scriptWords !== 'undefined' && scriptWords.length > 0) {
+              var estimatedDuration = scriptWords.length / 2.5; // ~2.5 words per second
+              console.log('[Audio] Using estimated duration:', estimatedDuration, 's');
+              if (typeof startTeleprompterScrollSync === 'function') {
+                startTeleprompterScrollSync(estimatedDuration);
+              }
+            }
+          }
+        }, 50);
       }
     }
     
