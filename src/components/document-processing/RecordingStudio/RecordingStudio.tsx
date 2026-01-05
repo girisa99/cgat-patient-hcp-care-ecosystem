@@ -1525,17 +1525,6 @@ export function RecordingStudio({
                   <Library className="w-4 h-4" />
                   Library ({library.recordings.length})
                 </Button>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleOpenPopout}
-                  className="gap-1 h-8"
-                  title="Open in separate window (for screen recording)"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Pop Out
-                </Button>
               </>
             )}
             
