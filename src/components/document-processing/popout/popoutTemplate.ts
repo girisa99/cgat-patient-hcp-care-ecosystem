@@ -289,13 +289,43 @@ export function getPopoutHTML(config: PopoutConfig): string {
               </div>
             </div>
             
-            <!-- Add Text & TTS -->
+            <!-- AI Suggestions for Script -->
+            <div class="edit-suggestions-section" id="editSuggestionsSection">
+              <div class="edit-section-header">
+                <span>✨ AI Suggestions</span>
+                <button class="edit-small-btn accent" onclick="generateScriptSuggestions()">🔍 Analyze Script</button>
+              </div>
+              <div class="suggestions-list" id="suggestionsList" style="display:none;">
+                <!-- Suggestions will be rendered here -->
+              </div>
+              <div class="suggestions-loading" id="suggestionsLoading" style="display:none;">
+                <div class="loading-spinner"></div>
+                <span>Analyzing script for improvements...</span>
+              </div>
+            </div>
+            
+            <!-- Add Text & TTS with Inline Edit -->
             <div class="edit-add-section">
               <div class="edit-section-header">
                 <span>➕ Insert New Audio</span>
               </div>
               <div class="add-tts-container">
                 <textarea id="addTTSText" placeholder="Type text to insert as TTS audio at current position..." rows="2"></textarea>
+                <div class="add-tts-preview" id="addTTSPreview" style="display:none;">
+                  <div class="tts-preview-header">
+                    <span>📝 AI Enhanced Version</span>
+                  </div>
+                  <div class="tts-original-text" id="ttsOriginalText"></div>
+                  <div class="tts-enhanced-text" id="ttsEnhancedText"></div>
+                  <div class="tts-edit-area" id="ttsEditArea" style="display:none;">
+                    <textarea id="ttsEditTextarea" rows="2"></textarea>
+                  </div>
+                  <div class="tts-preview-actions">
+                    <button class="suggestion-btn accept" onclick="acceptTTSSuggestion()">✓ Accept</button>
+                    <button class="suggestion-btn edit" onclick="editTTSSuggestion()">✏️ Edit</button>
+                    <button class="suggestion-btn dismiss" onclick="dismissTTSSuggestion()">✕ Dismiss</button>
+                  </div>
+                </div>
                 <div class="add-tts-options">
                   <select id="addTTSVoice" class="add-tts-select">
                     <option value="alloy">Alloy (Neutral)</option>
@@ -305,8 +335,36 @@ export function getPopoutHTML(config: PopoutConfig): string {
                     <option value="nova">Nova (Female)</option>
                     <option value="shimmer">Shimmer (Soft)</option>
                   </select>
+                  <button class="edit-small-btn" onclick="enhanceTTSText()">✨ Enhance</button>
                   <button class="edit-action-btn accent" onclick="insertTTSAudio()">🔊 Generate & Insert</button>
                 </div>
+              </div>
+            </div>
+            
+            <!-- Captions Preview -->
+            <div class="edit-captions-section" id="editCaptionsSection">
+              <div class="edit-section-header">
+                <span>📄 Captions</span>
+                <div class="captions-actions">
+                  <button class="edit-small-btn" onclick="generateCaptions()" id="generateCaptionsBtn">🎤 Generate from Audio</button>
+                  <button class="edit-small-btn" onclick="exportCaptionsSRT()" id="exportSRTBtn" style="display:none;">📥 Export SRT</button>
+                </div>
+              </div>
+              <div class="captions-status" id="captionsStatus">
+                <span class="captions-info">Generate captions to preview before publishing</span>
+              </div>
+              <div class="captions-preview" id="captionsPreview" style="display:none;">
+                <div class="captions-timeline" id="captionsTimeline">
+                  <!-- Caption entries will be rendered here -->
+                </div>
+                <div class="captions-edit-controls">
+                  <button class="edit-small-btn" onclick="editCaptionEntry()">✏️ Edit Selected</button>
+                  <button class="edit-small-btn" onclick="adjustCaptionTiming()">⏱️ Adjust Timing</button>
+                </div>
+              </div>
+              <div class="captions-loading" id="captionsLoading" style="display:none;">
+                <div class="loading-spinner"></div>
+                <span>Transcribing audio...</span>
               </div>
             </div>
             

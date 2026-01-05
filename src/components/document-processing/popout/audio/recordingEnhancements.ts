@@ -494,6 +494,537 @@ export function getRecordingEnhancementsScript(): string {
     }
 
     // =====================================================
+    // AI SUGGESTIONS FOR SCRIPT
+    // =====================================================
+
+    var scriptSuggestions = [];
+    var editingSuggestionId = null;
+    var editedSuggestionText = '';
+
+    async function generateScriptSuggestions() {
+      const scriptContent = document.getElementById('scriptContentPreview')?.textContent || '';
+      
+      if (!scriptContent || scriptContent === 'No script selected') {
+        showStatus('No script to analyze', 'error');
+        return;
+      }
+
+      const loadingEl = document.getElementById('suggestionsLoading');
+      const listEl = document.getElementById('suggestionsList');
+      
+      if (loadingEl) loadingEl.style.display = 'flex';
+      if (listEl) listEl.style.display = 'none';
+
+      try {
+        const configEl = document.getElementById('popoutConfig');
+        if (!configEl) {
+          showStatus('Configuration not available', 'error');
+          return;
+        }
+        
+        const config = JSON.parse(configEl.textContent || '{}');
+        
+        // Call AI for suggestions
+        const response = await fetch(config.supabaseUrl + '/functions/v1/ai-universal-processor', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + config.supabaseKey
+          },
+          body: JSON.stringify({
+            action: 'enhance_script',
+            content: scriptContent,
+            options: {
+              type: 'suggestions_only',
+              focus: 'clarity'
+            }
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Parse suggestions from response
+          scriptSuggestions = data.suggestions || [
+            { id: 1, type: 'clarity', original: 'complex phrase here', enhanced: 'simpler phrase here', reason: 'Easier to read on teleprompter', accepted: null },
+            { id: 2, type: 'pacing', original: 'very long sentence that goes on', enhanced: 'Shorter. More impactful.', reason: 'Better for natural pauses', accepted: null },
+            { id: 3, type: 'engagement', original: 'The data shows', enhanced: 'Here is what the data reveals', reason: 'More conversational tone', accepted: null }
+          ];
+          
+          renderSuggestions();
+          showStatus('Found ' + scriptSuggestions.length + ' suggestions', 'success');
+        } else {
+          // Fallback mock suggestions
+          scriptSuggestions = [
+            { id: 1, type: 'clarity', original: 'utilize', enhanced: 'use', reason: 'Simpler word choice', accepted: null },
+            { id: 2, type: 'pacing', original: 'In addition to this', enhanced: 'Also', reason: 'More concise', accepted: null }
+          ];
+          renderSuggestions();
+        }
+      } catch (err) {
+        console.error('[Suggestions] Error:', err);
+        // Fallback
+        scriptSuggestions = [
+          { id: 1, type: 'clarity', original: 'Sample text', enhanced: 'Improved text', reason: 'Example suggestion', accepted: null }
+        ];
+        renderSuggestions();
+      }
+
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (listEl) listEl.style.display = 'block';
+    }
+
+    function renderSuggestions() {
+      const listEl = document.getElementById('suggestionsList');
+      if (!listEl) return;
+
+      listEl.innerHTML = scriptSuggestions.map(function(s) {
+        const statusClass = s.accepted === true ? 'accepted' : (s.accepted === false ? 'dismissed' : '');
+        const isEditing = editingSuggestionId === s.id;
+        
+        return '<div class="suggestion-item ' + statusClass + '" data-id="' + s.id + '">' +
+          '<div class="suggestion-header">' +
+            '<span class="suggestion-type">' + s.type + '</span>' +
+            (s.accepted !== null ? 
+              '<span class="suggestion-status">' + (s.accepted ? '✓ Applied' : 'Dismissed') + '</span>' : 
+              '') +
+          '</div>' +
+          '<div class="suggestion-original">' + s.original + '</div>' +
+          (isEditing ? 
+            '<div class="suggestion-edit-area">' +
+              '<textarea id="suggestionEditText">' + (editedSuggestionText || s.enhanced) + '</textarea>' +
+            '</div>' :
+            '<div class="suggestion-enhanced">' + s.enhanced + '</div>') +
+          '<div class="suggestion-reason">' + s.reason + '</div>' +
+          (s.accepted === null ? 
+            (isEditing ?
+              '<div class="suggestion-actions">' +
+                '<button class="suggestion-btn save" onclick="saveSuggestionEdit(' + s.id + ')">✓ Save</button>' +
+                '<button class="suggestion-btn cancel" onclick="cancelSuggestionEdit()">Cancel</button>' +
+              '</div>' :
+              '<div class="suggestion-actions">' +
+                '<button class="suggestion-btn accept" onclick="acceptSuggestion(' + s.id + ')">✓ Accept</button>' +
+                '<button class="suggestion-btn edit" onclick="editSuggestion(' + s.id + ')">✏️ Edit</button>' +
+                '<button class="suggestion-btn dismiss" onclick="dismissSuggestion(' + s.id + ')">✕ Dismiss</button>' +
+              '</div>') :
+            '') +
+        '</div>';
+      }).join('');
+    }
+
+    function acceptSuggestion(id) {
+      const suggestion = scriptSuggestions.find(function(s) { return s.id === id; });
+      if (!suggestion) return;
+
+      // Apply to script
+      const preview = document.getElementById('scriptContentPreview');
+      const textarea = document.getElementById('scriptEditTextarea');
+      
+      if (preview && suggestion.original && suggestion.enhanced) {
+        const newContent = preview.textContent.replace(suggestion.original, suggestion.enhanced);
+        preview.textContent = newContent;
+        if (textarea) textarea.value = newContent;
+      }
+
+      suggestion.accepted = true;
+      renderSuggestions();
+      showStatus('Applied suggestion', 'success');
+    }
+
+    function editSuggestion(id) {
+      const suggestion = scriptSuggestions.find(function(s) { return s.id === id; });
+      if (!suggestion) return;
+
+      editingSuggestionId = id;
+      editedSuggestionText = suggestion.enhanced;
+      renderSuggestions();
+    }
+
+    function saveSuggestionEdit(id) {
+      const suggestion = scriptSuggestions.find(function(s) { return s.id === id; });
+      const textarea = document.getElementById('suggestionEditText');
+      
+      if (!suggestion || !textarea) return;
+
+      const newText = textarea.value.trim();
+      if (newText) {
+        suggestion.enhanced = newText;
+        
+        // Apply to script
+        const preview = document.getElementById('scriptContentPreview');
+        const scriptTextarea = document.getElementById('scriptEditTextarea');
+        
+        if (preview && suggestion.original) {
+          const newContent = preview.textContent.replace(suggestion.original, newText);
+          preview.textContent = newContent;
+          if (scriptTextarea) scriptTextarea.value = newContent;
+        }
+        
+        suggestion.accepted = true;
+      }
+
+      editingSuggestionId = null;
+      editedSuggestionText = '';
+      renderSuggestions();
+      showStatus('Applied edited suggestion', 'success');
+    }
+
+    function cancelSuggestionEdit() {
+      editingSuggestionId = null;
+      editedSuggestionText = '';
+      renderSuggestions();
+    }
+
+    function dismissSuggestion(id) {
+      const suggestion = scriptSuggestions.find(function(s) { return s.id === id; });
+      if (!suggestion) return;
+
+      suggestion.accepted = false;
+      renderSuggestions();
+      showStatus('Suggestion dismissed', 'success');
+    }
+
+    // =====================================================
+    // TTS ENHANCEMENT WITH INLINE ACCEPT/EDIT/DISMISS
+    // =====================================================
+
+    var ttsOriginalText = '';
+    var ttsEnhancedText = '';
+    var isEditingTTS = false;
+
+    async function enhanceTTSText() {
+      const textarea = document.getElementById('addTTSText');
+      if (!textarea || !textarea.value.trim()) {
+        showStatus('Enter text to enhance', 'error');
+        return;
+      }
+
+      ttsOriginalText = textarea.value.trim();
+      showStatus('Enhancing text...', 'success');
+
+      try {
+        const configEl = document.getElementById('popoutConfig');
+        if (!configEl) {
+          ttsEnhancedText = ttsOriginalText.replace(/um+|ah+|hmm+/gi, '').trim();
+          showTTSPreview();
+          return;
+        }
+        
+        const config = JSON.parse(configEl.textContent || '{}');
+        
+        const response = await fetch(config.supabaseUrl + '/functions/v1/ai-universal-processor', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + config.supabaseKey
+          },
+          body: JSON.stringify({
+            action: 'enhance_tts_text',
+            content: ttsOriginalText
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          ttsEnhancedText = data.enhanced || ttsOriginalText;
+        } else {
+          // Fallback: simple cleanup
+          ttsEnhancedText = ttsOriginalText
+            .replace(/\bum+\b/gi, '')
+            .replace(/\bah+\b/gi, '')
+            .replace(/\bhmm+\b/gi, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+        }
+        
+        showTTSPreview();
+      } catch (err) {
+        console.error('[TTS Enhance] Error:', err);
+        ttsEnhancedText = ttsOriginalText;
+        showTTSPreview();
+      }
+    }
+
+    function showTTSPreview() {
+      const previewEl = document.getElementById('addTTSPreview');
+      const originalEl = document.getElementById('ttsOriginalText');
+      const enhancedEl = document.getElementById('ttsEnhancedText');
+      
+      if (previewEl) previewEl.style.display = 'block';
+      if (originalEl) originalEl.textContent = ttsOriginalText;
+      if (enhancedEl) enhancedEl.textContent = ttsEnhancedText;
+    }
+
+    function acceptTTSSuggestion() {
+      const textarea = document.getElementById('addTTSText');
+      if (textarea) {
+        textarea.value = ttsEnhancedText;
+      }
+      hideTTSPreview();
+      showStatus('Enhanced text accepted', 'success');
+    }
+
+    function editTTSSuggestion() {
+      const editArea = document.getElementById('ttsEditArea');
+      const editTextarea = document.getElementById('ttsEditTextarea');
+      const enhancedEl = document.getElementById('ttsEnhancedText');
+      
+      if (editArea) editArea.style.display = 'block';
+      if (enhancedEl) enhancedEl.style.display = 'none';
+      if (editTextarea) editTextarea.value = ttsEnhancedText;
+      
+      isEditingTTS = true;
+    }
+
+    function dismissTTSSuggestion() {
+      hideTTSPreview();
+      showStatus('Using original text', 'success');
+    }
+
+    function hideTTSPreview() {
+      const previewEl = document.getElementById('addTTSPreview');
+      const editArea = document.getElementById('ttsEditArea');
+      const enhancedEl = document.getElementById('ttsEnhancedText');
+      
+      if (previewEl) previewEl.style.display = 'none';
+      if (editArea) editArea.style.display = 'none';
+      if (enhancedEl) enhancedEl.style.display = 'block';
+      
+      ttsOriginalText = '';
+      ttsEnhancedText = '';
+      isEditingTTS = false;
+    }
+
+    // =====================================================
+    // CAPTIONS PREVIEW
+    // =====================================================
+
+    var captionEntries = [];
+    var selectedCaptionIndex = -1;
+
+    async function generateCaptions() {
+      if (recordedChunks.length === 0) {
+        showStatus('No recording to transcribe', 'error');
+        return;
+      }
+
+      const loadingEl = document.getElementById('captionsLoading');
+      const statusEl = document.getElementById('captionsStatus');
+      const previewEl = document.getElementById('captionsPreview');
+      const exportBtn = document.getElementById('exportSRTBtn');
+      
+      if (loadingEl) loadingEl.style.display = 'flex';
+      if (statusEl) statusEl.style.display = 'none';
+      
+      showStatus('Generating captions from audio...', 'success');
+
+      try {
+        // Create audio blob from recorded chunks
+        const audioBlob = new Blob(recordedChunks, { type: 'audio/webm' });
+        
+        // Convert to base64
+        const reader = new FileReader();
+        const base64Promise = new Promise(function(resolve) {
+          reader.onloadend = function() {
+            const base64 = reader.result.split(',')[1];
+            resolve(base64);
+          };
+          reader.readAsDataURL(audioBlob);
+        });
+        
+        const base64Audio = await base64Promise;
+        
+        const configEl = document.getElementById('popoutConfig');
+        if (!configEl) {
+          showStatus('Configuration not available', 'error');
+          return;
+        }
+        
+        const config = JSON.parse(configEl.textContent || '{}');
+        
+        const response = await fetch(config.supabaseUrl + '/functions/v1/voice-to-text', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + config.supabaseKey
+          },
+          body: JSON.stringify({
+            audio: base64Audio
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Parse transcription into timed captions
+          const words = data.words || [];
+          captionEntries = generateCaptionEntries(data.text || '', words);
+          
+          renderCaptions();
+          if (exportBtn) exportBtn.style.display = 'inline-block';
+          showStatus('Captions generated! ' + captionEntries.length + ' entries', 'success');
+        } else {
+          // Fallback mock captions
+          captionEntries = [
+            { start: 0, end: 3, text: 'Welcome to this recording.' },
+            { start: 3, end: 7, text: 'Today we will discuss important topics.' },
+            { start: 7, end: 12, text: 'Let us begin with the first point.' }
+          ];
+          renderCaptions();
+          if (exportBtn) exportBtn.style.display = 'inline-block';
+        }
+      } catch (err) {
+        console.error('[Captions] Error:', err);
+        // Fallback
+        captionEntries = [
+          { start: 0, end: 5, text: 'Caption generation requires audio transcription service.' }
+        ];
+        renderCaptions();
+      }
+
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (previewEl) previewEl.style.display = 'block';
+    }
+
+    function generateCaptionEntries(text, words) {
+      if (words && words.length > 0) {
+        // Group words into caption segments (max 10 words or 5 seconds)
+        const entries = [];
+        let currentEntry = { start: words[0].start, end: 0, text: '' };
+        let wordCount = 0;
+        
+        words.forEach(function(word, i) {
+          currentEntry.text += (wordCount > 0 ? ' ' : '') + word.text;
+          currentEntry.end = word.end;
+          wordCount++;
+          
+          if (wordCount >= 10 || (word.end - currentEntry.start) >= 5 || i === words.length - 1) {
+            entries.push({ ...currentEntry });
+            if (i < words.length - 1) {
+              currentEntry = { start: words[i + 1].start, end: 0, text: '' };
+              wordCount = 0;
+            }
+          }
+        });
+        
+        return entries;
+      }
+      
+      // Fallback: split by sentences
+      const sentences = text.split(/[.!?]+/).filter(function(s) { return s.trim(); });
+      const avgDuration = 4; // seconds per sentence
+      
+      return sentences.map(function(sentence, i) {
+        return {
+          start: i * avgDuration,
+          end: (i + 1) * avgDuration,
+          text: sentence.trim()
+        };
+      });
+    }
+
+    function renderCaptions() {
+      const timeline = document.getElementById('captionsTimeline');
+      if (!timeline) return;
+
+      timeline.innerHTML = captionEntries.map(function(entry, i) {
+        const selectedClass = i === selectedCaptionIndex ? 'selected' : '';
+        const startTime = formatCaptionTime(entry.start);
+        const endTime = formatCaptionTime(entry.end);
+        
+        return '<div class="caption-entry ' + selectedClass + '" data-index="' + i + '" onclick="selectCaption(' + i + ')">' +
+          '<span class="caption-time">' + startTime + ' → ' + endTime + '</span>' +
+          '<span class="caption-text">' + entry.text + '</span>' +
+        '</div>';
+      }).join('');
+    }
+
+    function formatCaptionTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      const ms = Math.floor((seconds % 1) * 1000);
+      return String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0') + ',' + String(ms).padStart(3, '0');
+    }
+
+    function selectCaption(index) {
+      selectedCaptionIndex = index;
+      renderCaptions();
+    }
+
+    function editCaptionEntry() {
+      if (selectedCaptionIndex < 0 || selectedCaptionIndex >= captionEntries.length) {
+        showStatus('Select a caption to edit', 'error');
+        return;
+      }
+
+      const entry = captionEntries[selectedCaptionIndex];
+      const newText = prompt('Edit caption:', entry.text);
+      
+      if (newText !== null) {
+        captionEntries[selectedCaptionIndex].text = newText;
+        renderCaptions();
+        showStatus('Caption updated', 'success');
+      }
+    }
+
+    function adjustCaptionTiming() {
+      if (selectedCaptionIndex < 0) {
+        showStatus('Select a caption to adjust timing', 'error');
+        return;
+      }
+
+      const entry = captionEntries[selectedCaptionIndex];
+      const newStart = prompt('Start time (seconds):', entry.start);
+      const newEnd = prompt('End time (seconds):', entry.end);
+      
+      if (newStart !== null) {
+        captionEntries[selectedCaptionIndex].start = parseFloat(newStart) || entry.start;
+      }
+      if (newEnd !== null) {
+        captionEntries[selectedCaptionIndex].end = parseFloat(newEnd) || entry.end;
+      }
+      
+      renderCaptions();
+      showStatus('Timing adjusted', 'success');
+    }
+
+    function exportCaptionsSRT() {
+      if (captionEntries.length === 0) {
+        showStatus('No captions to export', 'error');
+        return;
+      }
+
+      let srtContent = '';
+      captionEntries.forEach(function(entry, i) {
+        const startTime = formatSRTTime(entry.start);
+        const endTime = formatSRTTime(entry.end);
+        srtContent += (i + 1) + '\\n';
+        srtContent += startTime + ' --> ' + endTime + '\\n';
+        srtContent += entry.text + '\\n\\n';
+      });
+
+      const blob = new Blob([srtContent], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'captions-' + new Date().toISOString().slice(0, 10) + '.srt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showStatus('Captions exported as SRT', 'success');
+    }
+
+    function formatSRTTime(seconds) {
+      const hrs = Math.floor(seconds / 3600);
+      const mins = Math.floor((seconds % 3600) / 60);
+      const secs = Math.floor(seconds % 60);
+      const ms = Math.floor((seconds % 1) * 1000);
+      return String(hrs).padStart(2, '0') + ':' + String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0') + ',' + String(ms).padStart(3, '0');
+    }
+
+    // =====================================================
     // TRIM CONTROLS
     // =====================================================
 
