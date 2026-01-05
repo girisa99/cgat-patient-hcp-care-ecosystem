@@ -57,6 +57,49 @@ export function getTeleprompterEnhancementsScript(): string {
     // Store audio reference for precise sync
     var syncedAudioElement = null;
     var wordSyncAnimationId = null;
+    
+    // Word timing data - weighted by word length for more accurate sync
+    var wordTimings = [];
+
+    function calculateWordTimings(words, totalDuration) {
+      // Calculate weighted timings based on word length
+      // Longer words take more time to speak than shorter words
+      // Also account for natural pauses after punctuation
+      
+      var totalWeight = 0;
+      var weights = words.map(function(word) {
+        var baseWeight = word.length;
+        
+        // Add weight for punctuation pauses
+        if (/[.!?]$/.test(word)) {
+          baseWeight += 3; // Sentence end pause
+        } else if (/[,;:]$/.test(word)) {
+          baseWeight += 1.5; // Clause pause
+        }
+        
+        // Minimum weight for very short words
+        baseWeight = Math.max(baseWeight, 2);
+        
+        totalWeight += baseWeight;
+        return baseWeight;
+      });
+      
+      // Calculate cumulative timings
+      var timings = [];
+      var currentTime = 0;
+      
+      for (var i = 0; i < words.length; i++) {
+        var wordDuration = (weights[i] / totalWeight) * totalDuration;
+        timings.push({
+          startTime: currentTime,
+          endTime: currentTime + wordDuration,
+          midTime: currentTime + wordDuration / 2
+        });
+        currentTime += wordDuration;
+      }
+      
+      return timings;
+    }
 
     function startWordHighlighting(audioDuration) {
       if (scriptWords.length === 0 || !audioDuration) {
@@ -64,22 +107,45 @@ export function getTeleprompterEnhancementsScript(): string {
         return;
       }
 
-      // Calculate time per word
-      const timePerWord = audioDuration / scriptWords.length;
+      // Calculate weighted word timings
+      wordTimings = calculateWordTimings(scriptWords, audioDuration);
       currentWordIndex = 0;
 
-      console.log('[Teleprompter] Starting word highlight, time per word:', timePerWord.toFixed(2) + 's');
+      var avgTimePerWord = audioDuration / scriptWords.length;
+      console.log('[Teleprompter] Starting word highlight');
+      console.log('[Teleprompter] Avg time per word:', avgTimePerWord.toFixed(3) + 's');
+      console.log('[Teleprompter] Using weighted timing for', scriptWords.length, 'words');
 
-      wordHighlightInterval = setInterval(function() {
-        if (isPaused || isStopped) return;
-
-        highlightWord(currentWordIndex);
-        currentWordIndex++;
-
-        if (currentWordIndex >= scriptWords.length) {
-          stopWordHighlighting();
+      var startTime = performance.now();
+      
+      function updateLoop() {
+        if (isPaused || isStopped) {
+          wordHighlightInterval = requestAnimationFrame(updateLoop);
+          return;
         }
-      }, timePerWord * 1000);
+        
+        var elapsed = (performance.now() - startTime) / 1000;
+        
+        // Find current word based on weighted timing
+        var newWordIndex = wordTimings.findIndex(function(timing) {
+          return elapsed >= timing.startTime && elapsed < timing.endTime;
+        });
+        
+        if (newWordIndex === -1 && elapsed >= wordTimings[wordTimings.length - 1].endTime) {
+          // Past the last word
+          stopWordHighlighting();
+          return;
+        }
+        
+        if (newWordIndex >= 0 && newWordIndex !== currentWordIndex) {
+          currentWordIndex = newWordIndex;
+          highlightWord(currentWordIndex);
+        }
+
+        wordHighlightInterval = requestAnimationFrame(updateLoop);
+      }
+      
+      wordHighlightInterval = requestAnimationFrame(updateLoop);
     }
 
     function startWordHighlightingFromAudio(audioElement) {
@@ -88,10 +154,9 @@ export function getTeleprompterEnhancementsScript(): string {
         return;
       }
 
-      const duration = audioElement.duration;
+      var duration = audioElement.duration;
       if (!duration || isNaN(duration)) {
         console.warn('[Teleprompter] Audio duration not available, waiting...');
-        // Try again when we have duration
         audioElement.addEventListener('durationchange', function onDuration() {
           if (audioElement.duration && !isNaN(audioElement.duration)) {
             audioElement.removeEventListener('durationchange', onDuration);
@@ -101,22 +166,23 @@ export function getTeleprompterEnhancementsScript(): string {
         return;
       }
 
-      console.log('[Teleprompter] Starting PRECISE word sync with audio');
+      console.log('[Teleprompter] Starting WEIGHTED word sync with audio');
       console.log('[Teleprompter] Audio duration:', duration, 'seconds');
       console.log('[Teleprompter] Total words:', scriptWords.length);
-      console.log('[Teleprompter] Time per word:', (duration / scriptWords.length).toFixed(3), 'seconds');
 
+      // Calculate weighted word timings
+      wordTimings = calculateWordTimings(scriptWords, duration);
+      
       syncedAudioElement = audioElement;
-      currentWordIndex = -1; // Reset to force first highlight
+      currentWordIndex = -1;
 
-      // Use audio currentTime for PRECISE sync - word by word
+      // Use audio currentTime with weighted timing for PRECISE sync
       function updateHighlight() {
         if (isPaused || isStopped || !syncedAudioElement) {
           wordSyncAnimationId = null;
           return;
         }
 
-        // Don't continue if audio is paused or ended
         if (syncedAudioElement.paused && !syncedAudioElement.ended) {
           wordSyncAnimationId = requestAnimationFrame(updateHighlight);
           return;
@@ -128,34 +194,40 @@ export function getTeleprompterEnhancementsScript(): string {
           return;
         }
 
-        const currentTime = syncedAudioElement.currentTime;
-        const progress = currentTime / duration;
+        var currentTime = syncedAudioElement.currentTime;
         
-        // Calculate exact word index based on audio position
-        const wordIdx = Math.min(
-          Math.floor(progress * scriptWords.length),
-          scriptWords.length - 1
-        );
+        // Find current word based on weighted timing - more accurate than linear
+        var newWordIndex = -1;
+        for (var i = 0; i < wordTimings.length; i++) {
+          if (currentTime >= wordTimings[i].startTime && currentTime < wordTimings[i].endTime) {
+            newWordIndex = i;
+            break;
+          }
+        }
         
-        // Only update if word changed - prevents unnecessary DOM updates
-        if (wordIdx !== currentWordIndex && wordIdx >= 0) {
-          currentWordIndex = wordIdx;
+        // If past all words, show the last one
+        if (newWordIndex === -1 && currentTime >= wordTimings[wordTimings.length - 1].startTime) {
+          newWordIndex = scriptWords.length - 1;
+        }
+        
+        // Only update if word changed
+        if (newWordIndex !== currentWordIndex && newWordIndex >= 0) {
+          currentWordIndex = newWordIndex;
           highlightWord(currentWordIndex);
           
-          // Log every 10th word for debugging
+          // Debug log every 10 words
           if (currentWordIndex % 10 === 0) {
             console.log('[Teleprompter] Word', currentWordIndex + 1, '/', scriptWords.length, 
-                        'at', currentTime.toFixed(2) + 's');
+                        'at', currentTime.toFixed(2) + 's',
+                        '(expected:', wordTimings[currentWordIndex].startTime.toFixed(2) + 's)');
           }
         }
 
-        // Continue animation loop
         wordSyncAnimationId = requestAnimationFrame(updateHighlight);
       }
 
-      // Start the sync loop
       wordSyncAnimationId = requestAnimationFrame(updateHighlight);
-      console.log('[Teleprompter] Started audio-synced word highlighting');
+      console.log('[Teleprompter] Started WEIGHTED audio-synced word highlighting');
     }
 
     function highlightWord(idx) {
@@ -249,7 +321,7 @@ export function getTeleprompterEnhancementsScript(): string {
     }
 
     // =====================================================
-    // AUTO-SCROLL SYNC
+    // AUTO-SCROLL SYNC - Uses word position for accurate scrolling
     // =====================================================
 
     function startTeleprompterScrollSync(audioDuration) {
@@ -270,15 +342,9 @@ export function getTeleprompterEnhancementsScript(): string {
       // Store reference to the audio element for precise sync
       var audioElement = syncedAudioElement || voiceoverAudio || ttsAudio;
       
-      // Calculate base scroll speed (pixels per second) - SLOWER by default
-      // User can adjust with speed controls
-      var baseScrollSpeed = (totalScroll / audioDuration) * teleprompterScrollSpeed;
-      
       console.log('[Teleprompter] Scroll sync started');
       console.log('[Teleprompter] Total scroll:', totalScroll, 'px');
       console.log('[Teleprompter] Audio duration:', audioDuration, 's');
-      console.log('[Teleprompter] Base speed:', baseScrollSpeed.toFixed(2), 'px/s');
-      console.log('[Teleprompter] Speed multiplier:', teleprompterScrollSpeed);
 
       function scrollStep() {
         if (isStopped) {
@@ -293,16 +359,43 @@ export function getTeleprompterEnhancementsScript(): string {
 
         // Use audio currentTime for PRECISE sync if available
         if (audioElement && !audioElement.paused && !audioElement.ended) {
-          var progress = audioElement.currentTime / audioDuration;
+          var currentTime = audioElement.currentTime;
+          var progress = currentTime / audioDuration;
+          
+          // If we have word timings, use word-based progress for more accurate scroll
+          if (wordTimings && wordTimings.length > 0 && scriptWords.length > 0) {
+            // Find current word index based on time
+            var wordIdx = 0;
+            for (var i = 0; i < wordTimings.length; i++) {
+              if (currentTime >= wordTimings[i].startTime) {
+                wordIdx = i;
+              } else {
+                break;
+              }
+            }
+            
+            // Calculate progress based on word position (more accurate than linear time)
+            // Also factor in position within current word
+            var wordProgress = wordIdx / scriptWords.length;
+            var withinWordProgress = 0;
+            if (wordTimings[wordIdx]) {
+              var wordDuration = wordTimings[wordIdx].endTime - wordTimings[wordIdx].startTime;
+              if (wordDuration > 0) {
+                withinWordProgress = (currentTime - wordTimings[wordIdx].startTime) / wordDuration / scriptWords.length;
+              }
+            }
+            progress = wordProgress + withinWordProgress;
+          }
+          
           var targetScroll = progress * totalScroll;
           
-          // Smooth scroll to target position
+          // Smooth scroll to target position - FASTER interpolation for better sync
           var currentScroll = teleprompter.scrollTop;
           var diff = targetScroll - currentScroll;
           
-          // Smoothly interpolate (ease towards target)
-          if (Math.abs(diff) > 1) {
-            teleprompter.scrollTop = currentScroll + (diff * 0.1);
+          // Use faster easing (0.25 instead of 0.1) for snappier response
+          if (Math.abs(diff) > 2) {
+            teleprompter.scrollTop = currentScroll + (diff * 0.25);
           } else {
             teleprompter.scrollTop = targetScroll;
           }
@@ -320,7 +413,7 @@ export function getTeleprompterEnhancementsScript(): string {
       }
 
       teleprompterScrollInterval = requestAnimationFrame(scrollStep);
-      console.log('[Teleprompter] Started AUDIO-SYNCED scroll');
+      console.log('[Teleprompter] Started WORD-SYNCED scroll');
     }
 
     function stopTeleprompterScrollSync() {
