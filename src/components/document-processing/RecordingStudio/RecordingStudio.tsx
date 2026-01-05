@@ -538,6 +538,8 @@ export function RecordingStudio({
     recordingMode === 'camera' ? camera.stream : (screenShare.screenStream || camera.stream), 
     {
       onRecordingComplete: async (blob, duration) => {
+        console.log('[RecordingStudio] onRecordingComplete called - blob size:', blob.size, 'duration:', duration);
+        
         // Stop all audio playback
         audioPlayback.stopAll();
         
@@ -546,9 +548,18 @@ export function RecordingStudio({
           screenShare.stopScreenShare();
         }
         
-        // Show preview
+        // Check if blob is empty (no data captured)
+        if (blob.size === 0) {
+          console.error('[RecordingStudio] Recording completed but blob is empty!');
+          toast.error('Recording failed - no data captured. Please try again.');
+          return;
+        }
+        
+        // Show preview with the recording
+        console.log('[RecordingStudio] Setting lastRecordingBlob and showing preview');
         setLastRecordingBlob(blob);
         setShowRecordingPreview(true);
+        toast.success(`Recording complete! ${Math.floor(duration / 60)}m ${duration % 60}s captured.`);
       },
       // Recording quality
       quality: recordingQuality,
@@ -997,16 +1008,20 @@ export function RecordingStudio({
     }, countdownMs);
   }, [recording, audioPlayback, voiceovers, music, screenShare, currentScript, ttsGeneration.lastResult, ttsAudioUrl, hasTTSAudio, selectedVoiceoverId, selectedTTSFileId, selectedMusicId]);
 
-  // Pause recording - also pause audio
+  // Pause recording - also pause audio (but keep position for resume)
   const handlePauseRecording = useCallback(() => {
-    recording.pauseRecording();
-    
-    // Pause/resume audio with recording
     if (!recording.isPaused) {
-      // Pausing - stop audio
-      audioPlayback.stopVoiceover();
-      audioPlayback.stopTTS();
+      // Pausing - pause audio (keep position)
+      audioPlayback.pauseVoiceover();
+      audioPlayback.pauseTTS();
+      console.log('[RecordingStudio] Pausing recording and audio');
+    } else {
+      // Resuming - resume audio from where it was paused
+      audioPlayback.resumeVoiceover();
+      audioPlayback.resumeTTS();
+      console.log('[RecordingStudio] Resuming recording and audio');
     }
+    recording.pauseRecording();
   }, [recording, audioPlayback]);
 
   // Stop recording - stop all audio

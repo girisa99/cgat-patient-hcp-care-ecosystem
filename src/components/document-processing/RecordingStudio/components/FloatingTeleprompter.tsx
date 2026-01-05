@@ -224,12 +224,22 @@ export function FloatingTeleprompter({
             }
             renderWords();
 
-            // Auto-scroll
+            // Auto-scroll controls
             const scrollBtn = document.getElementById('scrollBtn');
             const speedSlider = document.getElementById('speedSlider');
             const sizeSlider = document.getElementById('sizeSlider');
+            let syncedWithParent = false; // Track if we're synced with parent
 
             scrollBtn.onclick = function() {
+              // Only enable manual auto-scroll when NOT synced with parent
+              if (syncedWithParent) {
+                // Disable sync mode
+                syncedWithParent = false;
+                scrollBtn.textContent = '▶ Auto-scroll';
+                scrollBtn.classList.remove('active');
+                return;
+              }
+              
               isScrolling = !isScrolling;
               scrollBtn.textContent = isScrolling ? '⏸ Pause' : '▶ Auto-scroll';
               scrollBtn.classList.toggle('active', isScrolling);
@@ -249,11 +259,16 @@ export function FloatingTeleprompter({
             document.getElementById('resetBtn').onclick = function() {
               currentIndex = 0;
               contentEl.scrollTop = 0;
+              syncedWithParent = false;
+              isScrolling = false;
+              clearInterval(scrollInterval);
+              scrollBtn.textContent = '▶ Auto-scroll';
+              scrollBtn.classList.remove('active');
               updateHighlight();
             };
 
             speedSlider.oninput = function() {
-              if (isScrolling) {
+              if (isScrolling && !syncedWithParent) {
                 clearInterval(scrollInterval);
                 scrollInterval = setInterval(() => {
                   if (currentIndex < words.length - 1) {
@@ -293,16 +308,35 @@ export function FloatingTeleprompter({
               progressFill.style.width = ((currentIndex / (words.length - 1)) * 100) + '%';
             }
 
-            // Listen for messages from parent window
+            // Listen for messages from parent window - ONLY source of cursor sync when playing audio
             window.addEventListener('message', function(event) {
               if (event.data.type === 'UPDATE_STATE') {
                 if (event.data.isRecording !== undefined) {
                   recordingBadge.classList.toggle('active', event.data.isRecording);
+                  
+                  // When recording starts, enable sync mode
+                  if (event.data.isRecording) {
+                    syncedWithParent = true;
+                    isScrolling = false;
+                    clearInterval(scrollInterval);
+                    scrollBtn.textContent = '🔗 Synced';
+                    scrollBtn.classList.add('active');
+                  }
                 }
-                if (event.data.wordIndex !== undefined && event.data.wordIndex !== currentIndex) {
-                  currentIndex = event.data.wordIndex;
-                  updateHighlight();
+                
+                // Always accept parent's word index when synced or when parent sends it
+                if (event.data.wordIndex !== undefined) {
+                  if (event.data.wordIndex !== currentIndex) {
+                    currentIndex = event.data.wordIndex;
+                    syncedWithParent = true;
+                    isScrolling = false;
+                    clearInterval(scrollInterval);
+                    scrollBtn.textContent = '🔗 Synced';
+                    scrollBtn.classList.add('active');
+                    updateHighlight();
+                  }
                 }
+                
                 if (event.data.progress !== undefined) {
                   progressFill.style.width = (event.data.progress * 100) + '%';
                 }
