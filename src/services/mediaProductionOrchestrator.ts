@@ -408,13 +408,42 @@ Return a production-ready script in JSON format with scenes, narration, and visu
     script: GeneratedScript,
     mediaResult: any
   ): Promise<PipelineResult['output']> {
+    // Save generated script to genie_scripts table if user is authenticated
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && script) {
+        await supabase
+          .from('genie_scripts')
+          .insert({
+            user_id: user.id,
+            name: script.title || `${config.outputType} Script`,
+            content: script.scenes?.map(s => s.narration).join('\n\n') || '',
+            type: config.outputType === 'podcast' ? 'audio' : 'video',
+            purpose: config.outputType,
+            enhanced_content: JSON.stringify(script),
+            stats: {
+              wordCount: script.metadata?.wordCount || 0,
+              estimatedSpeakingMinutes: Math.ceil((script.totalDuration || 60) / 60),
+              sentenceCount: 0,
+              characterCount: 0,
+              estimatedReadingMinutes: 0,
+              readabilityScore: 'moderate'
+            }
+          });
+        console.log('[MediaOrchestrator] Script saved to database');
+      }
+    } catch (saveError) {
+      console.warn('[MediaOrchestrator] Failed to save script:', saveError);
+      // Non-blocking - continue with output
+    }
+
     return {
       mediaUrl: mediaResult?.videoUrl || mediaResult?.slides?.[0],
       thumbnailUrl: mediaResult?.thumbnailUrl || mediaResult?.slides?.[0],
       duration: script.totalDuration,
       metadata: {
-        scenes: script.scenes.length,
-        wordCount: script.metadata.wordCount,
+        scenes: script.scenes?.length || 0,
+        wordCount: script.metadata?.wordCount || 0,
         outputType: config.outputType,
         inputSource: config.inputSource,
         generatedAt: new Date().toISOString()
