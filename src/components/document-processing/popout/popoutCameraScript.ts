@@ -304,6 +304,12 @@ export function getCameraScript(): string {
       isRecording = true;
       recordingStartTime = Date.now();
       
+      console.log('[Recording] State initialized:', {
+        isRecording: isRecording,
+        recordingStartTime: recordingStartTime,
+        recordedChunks: recordedChunks.length
+      });
+      
       // Update UI
       if (recordBtn) {
         recordBtn.classList.remove('ready');
@@ -331,6 +337,10 @@ export function getCameraScript(): string {
       // Start timer - subtract paused time for accuracy
       recordingTimer = setInterval(function() {
         if (isPaused) return;
+        if (!recordingStartTime) {
+          console.warn('[Recording] Timer: recordingStartTime is null!');
+          return;
+        }
         var now = Date.now();
         var elapsed = Math.floor((now - recordingStartTime - totalPausedTime) / 1000);
         if (recordingTimeEl) {
@@ -397,34 +407,48 @@ export function getCameraScript(): string {
           mediaRecorder = new MediaRecorder(recordingStream, options);
 
           mediaRecorder.ondataavailable = function(event) {
-            // CRITICAL: Always accept chunks while mediaRecorder is active
-            // Don't check isStopped here - we need all chunks before processing
+            console.log('[Recording] ondataavailable fired, data size:', event.data ? event.data.size : 0, 'state:', mediaRecorder.state);
+            // CRITICAL: Always accept chunks - don't check any flags
             if (event.data && event.data.size > 0) {
               recordedChunks.push(event.data);
-              console.log('[Recording] Chunk received:', event.data.size, 'bytes, total:', recordedChunks.length);
+              console.log('[Recording] ✅ Chunk stored:', event.data.size, 'bytes, total chunks:', recordedChunks.length);
+            } else {
+              console.warn('[Recording] Empty data in ondataavailable');
             }
           };
 
           mediaRecorder.onstop = function() {
-            console.log('[Recording] MediaRecorder stopped, chunks:', recordedChunks.length);
+            console.log('[Recording] MediaRecorder onstop fired, chunks:', recordedChunks.length);
             // Process recording after a small delay to ensure all chunks are captured
             setTimeout(function() {
               if (recordedChunks.length > 0) {
                 processRecording();
               } else {
-                console.warn('[Recording] No chunks to process');
-                showStatus('No video data captured', 'error');
+                console.error('[Recording] No chunks to process - this should not happen!');
+                showStatus('No video data captured - please try again', 'error');
               }
-            }, 100);
+            }, 200);
           };
 
           mediaRecorder.onerror = function(event) {
-            console.error('[Recording] Error:', event.error);
-            showStatus('Recording error: ' + event.error?.message, 'error');
+            console.error('[Recording] MediaRecorder error:', event.error);
+            showStatus('Recording error: ' + (event.error?.message || 'Unknown error'), 'error');
             stopRecording();
           };
 
-          mediaRecorder.start(1000);
+          // CRITICAL: Use larger timeslice (500ms) to ensure chunks are captured more reliably
+          // Also request immediate first chunk after start
+          mediaRecorder.start(500);
+          console.log('[Recording] MediaRecorder started with 500ms timeslice, state:', mediaRecorder.state);
+          
+          // Force an immediate data request to ensure first chunk is captured
+          setTimeout(function() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+              console.log('[Recording] Requesting initial data chunk...');
+              mediaRecorder.requestData();
+            }
+          }, 100);
+          
           var modeLabel = isScreenSharing ? 'Screen recording' : 'Video recording';
           console.log('[Recording] ✅', modeLabel, 'started');
           showStatus(modeLabel + ' started!', 'success');
@@ -443,7 +467,13 @@ export function getCameraScript(): string {
     function stopRecording() {
       if (!isRecording) return;
 
-      console.log('[Recording] Stopping, recorder state:', mediaRecorder ? mediaRecorder.state : 'none', 'chunks so far:', recordedChunks.length);
+      console.log('[Recording] ========== STOP RECORDING ==========');
+      console.log('[Recording] Current state:', {
+        recorderState: mediaRecorder ? mediaRecorder.state : 'none',
+        chunksCollected: recordedChunks.length,
+        isPaused: isPaused,
+        totalPausedTime: totalPausedTime
+      });
       
       isRecording = false;
       clearInterval(recordingTimer);
@@ -483,47 +513,81 @@ export function getCameraScript(): string {
         audioControlsBar.style.display = 'none';
       }
 
-      // Stop audio
+      // Stop audio FIRST
+      console.log('[Recording] Stopping all audio...');
       if (typeof stopAudioPlayback === 'function') {
         stopAudioPlayback();
       }
       if (typeof stopAllAudio === 'function') {
         stopAllAudio();
       }
+      
+      // Also directly stop audio elements
+      if (voiceoverAudio) {
+        voiceoverAudio.pause();
+        voiceoverAudio.currentTime = 0;
+      }
+      if (musicAudio) {
+        musicAudio.pause();
+        musicAudio.currentTime = 0;
+      }
+      if (ttsAudio) {
+        ttsAudio.pause();
+        ttsAudio.currentTime = 0;
+      }
 
-      // CRITICAL: If paused, we must RESUME before stopping to get final data
-      // MediaRecorder.stop() on paused state doesn't reliably fire ondataavailable
-      if (mediaRecorder && mediaRecorder.state === 'paused') {
-        console.log('[Recording] Recorder was paused, resuming before stop to capture final data...');
-        mediaRecorder.resume();
-        // Give it a moment to resume, then request data and stop
-        setTimeout(function() {
-          if (mediaRecorder && mediaRecorder.state === 'recording') {
-            console.log('[Recording] Requesting final data chunk...');
-            mediaRecorder.requestData();
-            setTimeout(function() {
+      // CRITICAL: Handle MediaRecorder stop properly
+      if (mediaRecorder) {
+        var recorderState = mediaRecorder.state;
+        console.log('[Recording] MediaRecorder state before stop:', recorderState);
+        
+        if (recorderState === 'paused') {
+          // PAUSED STATE: Must resume, request data, then stop
+          console.log('[Recording] Was paused - resuming to capture final data...');
+          mediaRecorder.resume();
+          
+          setTimeout(function() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+              console.log('[Recording] Requesting final data chunk after resume...');
+              mediaRecorder.requestData();
+              
+              setTimeout(function() {
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                  console.log('[Recording] Stopping MediaRecorder, final chunks:', recordedChunks.length);
+                  mediaRecorder.stop();
+                }
+                isStopped = true;
+              }, 200);
+            } else {
+              console.warn('[Recording] Recorder not in recording state after resume:', mediaRecorder?.state);
               if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                console.log('[Recording] Now stopping MediaRecorder, chunks:', recordedChunks.length);
                 mediaRecorder.stop();
               }
               isStopped = true;
-            }, 100);
-          }
-        }, 50);
-      } else if (mediaRecorder && mediaRecorder.state === 'recording') {
-        // Normal case: recording is active
-        console.log('[Recording] Requesting final data chunk...');
-        mediaRecorder.requestData();
-        setTimeout(function() {
-          if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-            console.log('[Recording] Stopping MediaRecorder, chunks:', recordedChunks.length);
-            mediaRecorder.stop();
-          }
+            }
+          }, 100);
+          
+        } else if (recorderState === 'recording') {
+          // ACTIVE RECORDING: Request final data and stop
+          console.log('[Recording] Was recording - requesting final data chunk...');
+          mediaRecorder.requestData();
+          
+          setTimeout(function() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+              console.log('[Recording] Stopping MediaRecorder, final chunks:', recordedChunks.length);
+              mediaRecorder.stop();
+            }
+            isStopped = true;
+          }, 200);
+          
+        } else {
+          // INACTIVE or other state
+          console.log('[Recording] Recorder already inactive or unknown state');
           isStopped = true;
-        }, 100);
+        }
       } else {
         isStopped = true;
-        console.log('[Recording] No active MediaRecorder (audio-only mode)');
+        console.log('[Recording] No MediaRecorder (audio-only mode)');
         showStatus('Recording stopped', 'success');
       }
       
