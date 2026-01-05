@@ -13,7 +13,7 @@ export interface GeminiImageRequest {
 
 export interface GeminiVideoRequest {
   prompt: string;
-  duration?: number; // in seconds
+  duration?: number; // in seconds (max 30)
   aspectRatio?: '1:1' | '16:9' | '9:16';
   fps?: number;
 }

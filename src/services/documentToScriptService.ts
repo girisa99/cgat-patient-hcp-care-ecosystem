@@ -166,18 +166,42 @@ class DocumentToScriptService {
         return this.parseTextContent(documentContent);
       }
       
-      // If URL provided, fetch and process
+      // If URL provided, fetch and process using AI
       if (documentUrl) {
-        const { data, error } = await supabase.functions.invoke('process-documents', {
+        // Use AI Universal Processor to analyze document from URL
+        const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
           body: {
-            documentUrl,
-            documentType: documentType || this.detectDocumentType(documentUrl),
-            action: 'extract'
+            provider: 'gemini',
+            model: 'gemini-2.0-flash-exp',
+            prompt: `Analyze and extract structured content from this document URL: ${documentUrl}
+            
+Document type: ${documentType || this.detectDocumentType(documentUrl)}
+
+Extract and return a JSON object with:
+- title: The document title
+- sections: Array of content sections with {heading, content, type, level}
+- images: Array of image references if any
+- tables: Array of table data if any
+
+Return ONLY valid JSON.`,
+            systemPrompt: 'You are a document parser. Extract and structure content from documents accurately.',
+            action: 'parse_document',
+            context: { documentUrl, documentType }
           }
         });
         
         if (error) throw new Error(error.message);
-        return data.content as ExtractedContent;
+        
+        // Try to parse AI response as JSON
+        try {
+          const jsonMatch = data.content.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            return JSON.parse(jsonMatch[0]) as ExtractedContent;
+          }
+        } catch {
+          // If JSON parsing fails, treat as text content
+          return this.parseTextContent(data.content);
+        }
       }
       
       return null;

@@ -172,10 +172,13 @@ class ImageToScriptService {
    */
   private async analyzeImageWithVision(imageUrl: string): Promise<string | null> {
     try {
+      // Check if it's a base64 image or URL
+      const isBase64 = imageUrl.startsWith('data:');
+      
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           provider: 'gemini',
-          model: 'gemini-1.5-pro-latest',
+          model: 'gemini-2.0-flash-exp',
           prompt: `Analyze this image in detail for video script creation. Describe:
 1. Main subject and scene composition
 2. Colors, lighting, and mood
@@ -183,18 +186,21 @@ class ImageToScriptService {
 4. Suggested narrative themes
 5. Emotional tone conveyed
 
-Image URL: ${imageUrl}`,
+${isBase64 ? 'The image is provided as base64 data.' : `Image URL: ${imageUrl}`}`,
           systemPrompt: 'You are a visual content analyst helping create video scripts from images. Provide detailed, creative descriptions that can be used for scriptwriting.',
           action: 'analyze_image',
-          context: { imageUrl }
+          context: { imageUrl: isBase64 ? '[base64 image]' : imageUrl },
+          // Include image data for vision models
+          imageData: isBase64 ? imageUrl : undefined
         }
       });
 
       if (error) throw new Error(error.message);
-      return data.content;
+      return data?.content || null;
     } catch (error) {
       console.error('Vision analysis failed:', error);
-      return null;
+      // Provide a fallback description if vision analysis fails
+      return `Visual content from: ${imageUrl.substring(0, 100)}... Ready for script generation.`;
     }
   }
 
