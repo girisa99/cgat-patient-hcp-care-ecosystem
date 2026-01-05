@@ -2406,9 +2406,12 @@ export default function GenieStudio() {
                 <Layers className="h-4 w-4 md:mr-1" />
                 <span className="hidden md:inline">Dashboard</span>
               </TabsTrigger>
-              <TabsTrigger value="ai-tools" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-2">
+              <TabsTrigger value="ai-tools" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-2 h-auto py-1.5">
                 <Zap className="h-4 w-4 md:mr-1" />
-                <span className="hidden md:inline">Genie Spark</span>
+                <div className="hidden md:flex flex-col items-start leading-tight">
+                  <span>Genie Spark</span>
+                  <span className="text-[8px] font-normal opacity-70">Content Creation Suite</span>
+                </div>
               </TabsTrigger>
               <TabsTrigger value="script-editor" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-2">
                 <PenTool className="h-4 w-4 md:mr-1" />
