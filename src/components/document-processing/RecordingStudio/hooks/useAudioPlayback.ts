@@ -98,13 +98,65 @@ export function useAudioPlayback() {
     }, 50); // Update every 50ms for smooth sync
   }, []);
 
-  const stopTimeTracking = useCallback(() => {
+  const stopTimeTracking = useCallback((resetTime = true) => {
     if (timeUpdateIntervalRef.current) {
       clearInterval(timeUpdateIntervalRef.current);
       timeUpdateIntervalRef.current = null;
     }
-    setAudioTimeInfo({ currentTime: 0, duration: 0, isPlaying: false });
+    if (resetTime) {
+      setAudioTimeInfo({ currentTime: 0, duration: 0, isPlaying: false });
+    } else {
+      setAudioTimeInfo(prev => ({ ...prev, isPlaying: false }));
+    }
   }, []);
+
+  // Pause TTS (keep position for resume)
+  const pauseTTS = useCallback(() => {
+    if (ttsRef.current) {
+      ttsRef.current.pause();
+    }
+    setIsPlaying(prev => ({ ...prev, tts: false }));
+    stopTimeTracking(false); // Don't reset time
+    applyDucking(false);
+  }, [stopTimeTracking, applyDucking]);
+
+  // Resume TTS from where it was paused
+  const resumeTTS = useCallback(() => {
+    if (ttsRef.current && ttsRef.current.src) {
+      ttsRef.current.play().then(() => {
+        console.log('[useAudioPlayback] TTS resumed');
+        setIsPlaying(prev => ({ ...prev, tts: true }));
+        startTimeTracking(ttsRef.current!);
+        applyDucking(true);
+      }).catch((err) => {
+        console.error('[useAudioPlayback] TTS resume failed:', err);
+      });
+    }
+  }, [startTimeTracking, applyDucking]);
+
+  // Pause voiceover (keep position for resume)
+  const pauseVoiceover = useCallback(() => {
+    if (voiceoverRef.current) {
+      voiceoverRef.current.pause();
+    }
+    setIsPlaying(prev => ({ ...prev, voiceover: false }));
+    stopTimeTracking(false); // Don't reset time
+    applyDucking(false);
+  }, [stopTimeTracking, applyDucking]);
+
+  // Resume voiceover from where it was paused
+  const resumeVoiceover = useCallback(() => {
+    if (voiceoverRef.current && voiceoverRef.current.src) {
+      voiceoverRef.current.play().then(() => {
+        console.log('[useAudioPlayback] Voiceover resumed');
+        setIsPlaying(prev => ({ ...prev, voiceover: true }));
+        startTimeTracking(voiceoverRef.current!);
+        applyDucking(true);
+      }).catch((err) => {
+        console.error('[useAudioPlayback] Voiceover resume failed:', err);
+      });
+    }
+  }, [startTimeTracking, applyDucking]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -408,10 +460,14 @@ export function useAudioPlayback() {
     setActiveTab,
     playVoiceover,
     stopVoiceover,
+    pauseVoiceover,
+    resumeVoiceover,
     playMusic,
     stopMusic,
     playTTS,
     stopTTS,
+    pauseTTS,
+    resumeTTS,
     stopAll,
     setVoiceoverVolume,
     setMusicVolume,

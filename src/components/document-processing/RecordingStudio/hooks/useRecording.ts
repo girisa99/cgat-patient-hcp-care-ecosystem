@@ -150,18 +150,21 @@ export function useRecording(
         recorder.onstop = () => {
           console.log('[Recording] MediaRecorder stopped, chunks:', chunksRef.current.length);
           
+          // Calculate duration
+          const duration = Math.floor((Date.now() - startTimeRef.current - pausedTimeRef.current) / 1000);
+          
           if (chunksRef.current.length > 0) {
             const blob = new Blob(chunksRef.current, { type: 'video/webm' });
-            const duration = Math.floor((Date.now() - startTimeRef.current - pausedTimeRef.current) / 1000);
             console.log('[Recording] Created blob:', blob.size, 'bytes, duration:', duration, 's');
             onRecordingComplete?.(blob, duration);
           } else {
             console.warn('[Recording] No chunks recorded - recording may have been too short or interrupted');
-            // Try to get final data if available
-            const totalDuration = Math.floor((Date.now() - startTimeRef.current) / 1000);
-            if (totalDuration < 1) {
-              console.warn('[Recording] Recording was less than 1 second');
-            }
+            console.warn('[Recording] Duration was:', duration, 'seconds');
+            
+            // Even with 0 chunks, still call completion with empty blob so preview can show error
+            // This ensures the UI updates properly
+            const emptyBlob = new Blob([], { type: 'video/webm' });
+            onRecordingComplete?.(emptyBlob, duration);
           }
           
           // Cleanup audio mixer
