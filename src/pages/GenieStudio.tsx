@@ -87,6 +87,9 @@ import { DocumentToScriptPanel } from '@/components/genie-studio/DocumentToScrip
 import { ImageToScriptPanel } from '@/components/genie-studio/ImageToScriptPanel';
 import { KnowledgeSearchPanel } from '@/components/genie-studio/KnowledgeSearchPanel';
 import { PipelineOrchestrationPanel } from '@/components/genie-studio/PipelineOrchestrationPanel';
+// P0-9 and P0-10: URL and Audio to Script
+import { UrlToScriptPanel } from '@/components/genie-studio/UrlToScriptPanel';
+import { AudioToScriptPanel } from '@/components/genie-studio/AudioToScriptPanel';
 import { supabase } from '@/integrations/supabase/client';
 
 // Import Genie logos - Using combined versions with taglines (finalized)
@@ -2617,7 +2620,7 @@ export default function GenieStudio() {
 
                 {/* AI Tools Sub-Tabs */}
                 <Tabs defaultValue="doc-to-script" className="w-full">
-                  <TabsList level="child" className="mb-4">
+                  <TabsList level="child" className="mb-4 flex-wrap">
                     <TabsTrigger value="doc-to-script" level="child">
                       <FileText className="h-4 w-4 mr-2" />
                       Document → Script
@@ -2625,6 +2628,14 @@ export default function GenieStudio() {
                     <TabsTrigger value="img-to-script" level="child">
                       <Film className="h-4 w-4 mr-2" />
                       Image → Script
+                    </TabsTrigger>
+                    <TabsTrigger value="url-to-script" level="child">
+                      <Layers className="h-4 w-4 mr-2" />
+                      URL → Script
+                    </TabsTrigger>
+                    <TabsTrigger value="audio-to-script" level="child">
+                      <Volume2 className="h-4 w-4 mr-2" />
+                      Audio → Script
                     </TabsTrigger>
                     <TabsTrigger value="knowledge-search" level="child">
                       <Search className="h-4 w-4 mr-2" />
@@ -2684,6 +2695,60 @@ export default function GenieStudio() {
                           };
                           saveScript(newScript);
                           toast.success(`Script "${script.title}" saved!`);
+                        }
+                      }}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="url-to-script" level="child" className="mt-0">
+                    <UrlToScriptPanel 
+                      onScriptGenerated={(script) => {
+                        if (script) {
+                          const newScript = {
+                            id: `script-${Date.now()}`,
+                            name: script.title || 'URL-based Script',
+                            content: script.scenes.map(s => s.narration).join('\n\n'),
+                            type: 'video' as const,
+                            createdAt: Date.now(),
+                            updatedAt: Date.now(),
+                            stats: {
+                              wordCount: script.metadata.wordCount,
+                              sentenceCount: 0,
+                              characterCount: 0,
+                              estimatedReadingMinutes: Math.ceil(script.totalDuration / 60),
+                              estimatedSpeakingMinutes: Math.ceil(script.totalDuration / 60),
+                              readabilityScore: 'moderate' as const
+                            }
+                          };
+                          saveScript(newScript);
+                          toast.success(`Script "${script.title}" saved from URL!`);
+                        }
+                      }}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="audio-to-script" level="child" className="mt-0">
+                    <AudioToScriptPanel 
+                      onScriptGenerated={(script) => {
+                        if (script) {
+                          const newScript = {
+                            id: `script-${Date.now()}`,
+                            name: script.title || 'Transcribed Script',
+                            content: script.scenes.map(s => s.narration).join('\n\n'),
+                            type: 'audio' as const,
+                            createdAt: Date.now(),
+                            updatedAt: Date.now(),
+                            stats: {
+                              wordCount: script.metadata.wordCount,
+                              sentenceCount: 0,
+                              characterCount: 0,
+                              estimatedReadingMinutes: Math.ceil(script.totalDuration / 60),
+                              estimatedSpeakingMinutes: Math.ceil(script.totalDuration / 60),
+                              readabilityScore: 'moderate' as const
+                            }
+                          };
+                          saveScript(newScript);
+                          toast.success(`Script "${script.title}" transcribed and saved!`);
                         }
                       }}
                     />
