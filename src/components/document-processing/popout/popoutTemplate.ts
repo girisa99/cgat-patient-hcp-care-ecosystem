@@ -81,8 +81,9 @@ export function getPopoutHTML(config: PopoutConfig): string {
             <!-- Recording Indicator -->
             <div class="recording-indicator" id="recordingIndicator">
               <span class="dot"></span>
-              <span>REC</span>
+              <span id="recordingStatus">REC</span>
               <span id="recordingTime">00:00</span>
+              <span id="wordProgress" style="display:none; margin-left:8px; font-size:11px; opacity:0.8;"></span>
             </div>
 
             <!-- Teleprompter -->

@@ -111,6 +111,10 @@ export function generatePopoutHTML(config: PopoutConfig): string {
     var trimHistory = [];
     var logoEnabled = false;
     
+    // Pause time tracking
+    var totalPausedTime = 0;
+    var pauseStartTime = null;
+    
     // Audio references (shared across modules)
     var voiceoverAudio = null;
     var musicAudio = null;
