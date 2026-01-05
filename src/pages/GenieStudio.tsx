@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, useBlocker } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -927,28 +927,7 @@ export default function GenieStudio() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
   
-  // Block navigation when recording is in progress
-  const blocker = useBlocker(
-    ({ currentLocation, nextLocation }) =>
-      isRecordingInProgress && currentLocation.pathname !== nextLocation.pathname
-  );
-  
-  // Handle blocked navigation
-  useEffect(() => {
-    if (blocker.state === 'blocked') {
-      const confirmed = window.confirm(
-        'Recording in progress! Are you sure you want to leave? Your recording will be lost.'
-      );
-      if (confirmed) {
-        setIsRecordingInProgress(false);
-        blocker.proceed();
-      } else {
-        blocker.reset();
-      }
-    }
-  }, [blocker]);
-  
-  // Also prevent browser tab close during recording
+  // Prevent browser tab close during recording
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isRecordingInProgress) {
