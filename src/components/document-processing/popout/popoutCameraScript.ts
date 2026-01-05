@@ -711,9 +711,31 @@ export function getCameraScript(): string {
       }
     });
 
+    // Get initial recording mode from parent studio
+    var initialModeEl = document.getElementById('initialRecordingMode');
+    var initialMode = 'camera';
+    if (initialModeEl) {
+      try {
+        initialMode = JSON.parse(initialModeEl.textContent || '"camera"');
+      } catch (e) {
+        console.log('[Camera] Could not parse initial mode, defaulting to camera');
+      }
+    }
+    console.log('[Camera] Initial recording mode:', initialMode);
+
     // Initialize camera
     console.log('[Camera] Initializing...');
-    initCamera();
+    initCamera().then(function() {
+      // Auto-start screen share if mode requires it
+      if (initialMode === 'screen' || initialMode === 'screen+camera') {
+        console.log('[Camera] Auto-starting screen share for mode:', initialMode);
+        setTimeout(function() {
+          if (!isScreenSharing) {
+            startScreenShare();
+          }
+        }, 1500); // Give camera time to initialize first
+      }
+    });
 
     console.log('[Camera] ✅ Module loaded');
   `;

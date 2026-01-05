@@ -31,6 +31,8 @@ export interface PopoutMusicData {
   url: string;
 }
 
+export type RecordingMode = 'camera' | 'screen' | 'screen+camera';
+
 export interface PopoutConfig {
   scripts: PopoutScriptData[];
   voiceovers: PopoutVoiceoverData[];
@@ -40,6 +42,8 @@ export interface PopoutConfig {
   selectedMusicId: string;
   supabaseUrl: string;
   supabaseKey: string;
+  // Recording mode from main studio
+  initialRecordingMode?: RecordingMode;
   // Production context (optional) - required for saving to project
   productionContext?: {
     showId: string;

@@ -12,6 +12,8 @@ import type {
   PopoutMusicData
 } from './types';
 
+import type { RecordingMode } from './types';
+
 interface OpenPopoutOptions {
   mediaItems: MediaItemForPopout[];
   availableScripts: ScriptItemForPopout[];
@@ -21,6 +23,8 @@ interface OpenPopoutOptions {
   supabaseUrl?: string;
   supabaseKey?: string;
   userAccessToken?: string;
+  // Recording mode from main studio (camera, screen, screen+camera)
+  recordingMode?: RecordingMode;
   productionContext?: {
     showId: string;
     showTitle: string;
@@ -52,6 +56,7 @@ export function openPopoutRecordingStudio(options: OpenPopoutOptions): Window | 
       supabaseUrl = 'https://ithspbabhmdntioslfqe.supabase.co',
       supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0aHNwYmFiaG1kbnRpb3NsZnFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY5MjU5OTMsImV4cCI6MjA2MjUwMTk5M30.yUZZHsz2wIHboVuWWfqXeAH5oHRxzJIz20NWSUmHPhw',
       userAccessToken,
+      recordingMode = 'camera',
       productionContext,
       onSuccess,
       onError,
@@ -143,6 +148,7 @@ export function openPopoutRecordingStudio(options: OpenPopoutOptions): Window | 
       supabaseUrl,
       supabaseKey,
       userAccessToken,
+      initialRecordingMode: recordingMode,
       productionContext,
     };
 

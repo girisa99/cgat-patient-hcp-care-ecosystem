@@ -595,6 +595,7 @@ export function getPopoutHTML(config: PopoutConfig): string {
 
     <!-- Hidden Data -->
     <script id="scriptsData" type="application/json">\${scriptsJson}</script>
+    <script id="initialRecordingMode" type="application/json">"${config.initialRecordingMode || 'camera'}"</script>
   `;
 }
 

@@ -1280,7 +1280,7 @@ export function RecordingStudio({
         content: s.content,
       }));
 
-      // Open the popout window with all context
+      // Open the popout window with all context including recording mode
       const popoutWindow = openPopoutRecordingStudio({
         mediaItems,
         availableScripts,
@@ -1298,6 +1298,7 @@ export function RecordingStudio({
           file_type: 'audio',
         } : null,
         userAccessToken: accessToken,
+        recordingMode: recordingMode, // Pass the current recording mode (camera, screen, screen+camera)
         productionContext: productionContext ? {
           showId: productionContext.showId,
           showTitle: productionContext.showTitle,
