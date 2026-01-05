@@ -1611,6 +1611,7 @@ export function RecordingStudio({
                   isLoading={camera.isLoading || screenShare.isLoading}
                   error={camera.error || screenShare.error}
                   isRecording={recording.isRecording}
+                  isPaused={recording.isPaused}
                   countdown={recording.countdown}
                   formattedDuration={recording.formattedDuration}
                   teleprompter={{

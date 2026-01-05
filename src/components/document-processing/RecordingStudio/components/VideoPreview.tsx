@@ -16,6 +16,7 @@ interface VideoPreviewProps {
   isLoading: boolean;
   error: string | null;
   isRecording: boolean;
+  isPaused?: boolean;
   countdown: number | null;
   formattedDuration: string;
   teleprompter: TeleprompterState & { content: string };
@@ -41,6 +42,7 @@ export function VideoPreview({
   isLoading,
   error,
   isRecording,
+  isPaused = false,
   countdown,
   formattedDuration,
   teleprompter,
@@ -315,11 +317,20 @@ export function VideoPreview({
         </div>
       )}
 
-      {/* Recording Indicator */}
+      {/* Recording Indicator - shows for both recording and paused states */}
       {isRecording && countdown === null && (
         <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/60 backdrop-blur-sm px-4 py-2 rounded-full z-20">
-          <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-          <span className="text-white text-sm font-semibold">REC</span>
+          {isPaused ? (
+            <>
+              <span className="w-3 h-3 bg-yellow-500 rounded-full" />
+              <span className="text-white text-sm font-semibold">PAUSED</span>
+            </>
+          ) : (
+            <>
+              <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+              <span className="text-white text-sm font-semibold">REC</span>
+            </>
+          )}
           <span className="text-white/90 text-sm font-mono">{formattedDuration}</span>
         </div>
       )}
