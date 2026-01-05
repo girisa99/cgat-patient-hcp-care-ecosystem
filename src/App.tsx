@@ -15,6 +15,7 @@ import { TenantProvider } from '@/contexts/TenantContext';
 import { HelmetProvider } from 'react-helmet-async';
 import { GlobalAgentGeneratorProvider } from '@/hooks/useGlobalAgentGenerator';
 import { GlobalAgentGeneratorModal } from '@/components/global/GlobalAgentGeneratorModal';
+import { LazyPages, lazyWithRetry } from '@/utils/lazyWithRetry';
 
 // Import pages that exist
 import Index from '@/pages/Index';
@@ -212,42 +213,42 @@ const AppContent = () => {
                   <Route path="/genie-studio" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
                       <Suspense fallback={<PageLoading message="Loading Genie Studio..." />}>
-                        {React.createElement(React.lazy(() => import('@/pages/GenieStudio')))}
+                        <LazyPages.GenieStudio />
                       </Suspense>
                     </ProtectedRoute>
                   } />
                   <Route path="/genie-spark" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
                       <Suspense fallback={<PageLoading message="Loading Genie Spark..." />}>
-                        {React.createElement(React.lazy(() => import('@/pages/GenieSpark')))}
+                        <LazyPages.GenieSpark />
                       </Suspense>
                     </ProtectedRoute>
                   } />
                   <Route path="/genie-arc" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
                       <Suspense fallback={<PageLoading message="Loading Genie Arc..." />}>
-                        {React.createElement(React.lazy(() => import('@/pages/GenieArc')))}
+                        <LazyPages.GenieArc />
                       </Suspense>
                     </ProtectedRoute>
                   } />
                   <Route path="/genie-mind" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
                       <Suspense fallback={<PageLoading message="Loading Genie Mind..." />}>
-                        {React.createElement(React.lazy(() => import('@/pages/GenieMind')))}
+                        <LazyPages.GenieMind />
                       </Suspense>
                     </ProtectedRoute>
                   } />
                   <Route path="/genie-vibe" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
                       <Suspense fallback={<PageLoading message="Loading Genie Vibe..." />}>
-                        {React.createElement(React.lazy(() => import('@/pages/GenieVibe')))}
+                        <LazyPages.GenieVibe />
                       </Suspense>
                     </ProtectedRoute>
                   } />
                   <Route path="/genie-studio/productions" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
                       <Suspense fallback={<PageLoading message="Loading Production Hub..." />}>
-                        {React.createElement(React.lazy(() => import('@/pages/ProductionHub')))}
+                        <LazyPages.ProductionHub />
                       </Suspense>
                     </ProtectedRoute>
                   } />
