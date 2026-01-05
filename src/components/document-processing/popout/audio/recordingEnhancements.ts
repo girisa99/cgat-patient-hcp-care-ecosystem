@@ -70,28 +70,55 @@ export function getRecordingEnhancementsScript(): string {
     function pauseRecording() {
       if (!isRecording || isPaused) return;
 
-      console.log('[Recording] Pausing...');
+      console.log('[Recording] ========== PAUSE RECORDING ==========');
+      console.log('[Recording] Pausing, chunks so far:', recordedChunks.length);
+      
       isPaused = true;
       pauseStartTime = Date.now();
       
-      // CRITICAL: Request data chunk BEFORE pausing to capture recorded content
-      // MediaRecorder doesn't send chunks while paused, so we must flush first
+      // CRITICAL: Request data chunk BEFORE pausing to capture all recorded content
+      // MediaRecorder doesn't fire ondataavailable while paused
       if (mediaRecorder && mediaRecorder.state === 'recording') {
-        console.log('[Recording] Requesting data chunk before pause, current chunks:', recordedChunks.length);
-        mediaRecorder.requestData(); // Flush current buffer to ondataavailable
+        console.log('[Recording] Requesting data chunk before pause...');
+        mediaRecorder.requestData();
+        
         // Small delay to ensure chunk is processed before pausing
         setTimeout(function() {
           if (mediaRecorder && mediaRecorder.state === 'recording') {
             mediaRecorder.pause();
             console.log('[Recording] MediaRecorder paused, chunks after flush:', recordedChunks.length);
           }
-        }, 50);
+        }, 100);
       }
 
-      // Pause any audio
-      if (voiceoverAudio) voiceoverAudio.pause();
-      if (musicAudio) musicAudio.pause();
-      if (ttsAudio) ttsAudio.pause();
+      // CRITICAL: Pause ALL audio sources - voiceover, TTS, AND music
+      console.log('[Recording] Pausing all audio:', {
+        hasVoiceover: !!voiceoverAudio,
+        hasMusic: !!musicAudio,
+        hasTTS: !!ttsAudio
+      });
+      
+      if (voiceoverAudio) {
+        voiceoverAudio.pause();
+        console.log('[Recording] Voiceover paused at:', voiceoverAudio.currentTime);
+      }
+      if (musicAudio) {
+        musicAudio.pause();
+        console.log('[Recording] Music paused at:', musicAudio.currentTime);
+      }
+      if (ttsAudio) {
+        ttsAudio.pause();
+        console.log('[Recording] TTS paused at:', ttsAudio.currentTime);
+      }
+      
+      // Also pause any audio elements that might be playing outside our references
+      var allAudio = document.querySelectorAll('audio');
+      allAudio.forEach(function(audio) {
+        if (!audio.paused) {
+          audio.pause();
+          console.log('[Recording] Additional audio element paused');
+        }
+      });
 
       // Update UI
       updatePauseUI(true);
@@ -101,12 +128,14 @@ export function getRecordingEnhancementsScript(): string {
     function resumeRecording() {
       if (!isRecording || !isPaused) return;
 
-      console.log('[Recording] Resuming...');
+      console.log('[Recording] ========== RESUME RECORDING ==========');
       
       // Calculate paused duration and add to total
       if (pauseStartTime) {
-        totalPausedTime += Date.now() - pauseStartTime;
+        var pausedDuration = Date.now() - pauseStartTime;
+        totalPausedTime += pausedDuration;
         pauseStartTime = null;
+        console.log('[Recording] Paused for:', pausedDuration, 'ms, total paused:', totalPausedTime, 'ms');
       }
       
       isPaused = false;
@@ -114,12 +143,34 @@ export function getRecordingEnhancementsScript(): string {
       // Resume MediaRecorder if available
       if (mediaRecorder && mediaRecorder.state === 'paused') {
         mediaRecorder.resume();
+        console.log('[Recording] MediaRecorder resumed');
       }
 
-      // Resume audio
-      if (voiceoverAudio && !voiceoverAudio.ended) voiceoverAudio.play();
-      if (musicAudio) musicAudio.play();
-      if (ttsAudio && !ttsAudio.ended) ttsAudio.play();
+      // Resume audio from where it was paused
+      console.log('[Recording] Resuming audio:', {
+        hasVoiceover: !!voiceoverAudio,
+        hasMusic: !!musicAudio,
+        hasTTS: !!ttsAudio
+      });
+      
+      if (voiceoverAudio && !voiceoverAudio.ended) {
+        voiceoverAudio.play().catch(function(e) {
+          console.warn('[Recording] Could not resume voiceover:', e.message);
+        });
+        console.log('[Recording] Voiceover resumed from:', voiceoverAudio.currentTime);
+      }
+      if (musicAudio && !musicAudio.ended) {
+        musicAudio.play().catch(function(e) {
+          console.warn('[Recording] Could not resume music:', e.message);
+        });
+        console.log('[Recording] Music resumed from:', musicAudio.currentTime);
+      }
+      if (ttsAudio && !ttsAudio.ended) {
+        ttsAudio.play().catch(function(e) {
+          console.warn('[Recording] Could not resume TTS:', e.message);
+        });
+        console.log('[Recording] TTS resumed from:', ttsAudio.currentTime);
+      }
 
       // Update UI
       updatePauseUI(false);
