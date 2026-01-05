@@ -443,7 +443,7 @@ export function getCameraScript(): string {
     function stopRecording() {
       if (!isRecording) return;
 
-      console.log('[Recording] Stopping... chunks so far:', recordedChunks.length);
+      console.log('[Recording] Stopping, recorder state:', mediaRecorder ? mediaRecorder.state : 'none', 'chunks so far:', recordedChunks.length);
       
       isRecording = false;
       clearInterval(recordingTimer);
@@ -491,22 +491,43 @@ export function getCameraScript(): string {
         stopAllAudio();
       }
 
-      // CRITICAL: Stop MediaRecorder FIRST, then set isStopped
-      // This ensures ondataavailable captures all final chunks
-      isPaused = false;
-      
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        console.log('[Recording] Stopping MediaRecorder, state:', mediaRecorder.state);
-        mediaRecorder.stop();
-        // Set isStopped AFTER stop() is called
+      // CRITICAL: If paused, we must RESUME before stopping to get final data
+      // MediaRecorder.stop() on paused state doesn't reliably fire ondataavailable
+      if (mediaRecorder && mediaRecorder.state === 'paused') {
+        console.log('[Recording] Recorder was paused, resuming before stop to capture final data...');
+        mediaRecorder.resume();
+        // Give it a moment to resume, then request data and stop
         setTimeout(function() {
+          if (mediaRecorder && mediaRecorder.state === 'recording') {
+            console.log('[Recording] Requesting final data chunk...');
+            mediaRecorder.requestData();
+            setTimeout(function() {
+              if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                console.log('[Recording] Now stopping MediaRecorder, chunks:', recordedChunks.length);
+                mediaRecorder.stop();
+              }
+              isStopped = true;
+            }, 100);
+          }
+        }, 50);
+      } else if (mediaRecorder && mediaRecorder.state === 'recording') {
+        // Normal case: recording is active
+        console.log('[Recording] Requesting final data chunk...');
+        mediaRecorder.requestData();
+        setTimeout(function() {
+          if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            console.log('[Recording] Stopping MediaRecorder, chunks:', recordedChunks.length);
+            mediaRecorder.stop();
+          }
           isStopped = true;
-        }, 200);
+        }, 100);
       } else {
         isStopped = true;
         console.log('[Recording] No active MediaRecorder (audio-only mode)');
         showStatus('Recording stopped', 'success');
       }
+      
+      isPaused = false;
     }
 
     // Process and save recording

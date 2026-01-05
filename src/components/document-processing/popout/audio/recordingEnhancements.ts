@@ -74,9 +74,18 @@ export function getRecordingEnhancementsScript(): string {
       isPaused = true;
       pauseStartTime = Date.now();
       
-      // Pause MediaRecorder if available
+      // CRITICAL: Request data chunk BEFORE pausing to capture recorded content
+      // MediaRecorder doesn't send chunks while paused, so we must flush first
       if (mediaRecorder && mediaRecorder.state === 'recording') {
-        mediaRecorder.pause();
+        console.log('[Recording] Requesting data chunk before pause, current chunks:', recordedChunks.length);
+        mediaRecorder.requestData(); // Flush current buffer to ondataavailable
+        // Small delay to ensure chunk is processed before pausing
+        setTimeout(function() {
+          if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.pause();
+            console.log('[Recording] MediaRecorder paused, chunks after flush:', recordedChunks.length);
+          }
+        }, 50);
       }
 
       // Pause any audio
