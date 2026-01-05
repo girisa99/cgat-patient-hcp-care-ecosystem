@@ -306,9 +306,54 @@ export function useAudioPlayback() {
   }, [stopTimeTracking, applyDucking]);
 
   const stopAll = useCallback(() => {
+    console.log('[AudioPlayback] stopAll called - stopping all audio');
+    
+    // Stop managed audio
     stopVoiceover();
     stopMusic();
     stopTTS();
+    
+    // Also forcefully stop any audio elements that might exist in refs
+    if (voiceoverRef.current) {
+      try {
+        voiceoverRef.current.pause();
+        voiceoverRef.current.currentTime = 0;
+        voiceoverRef.current.src = '';
+        voiceoverRef.current = null;
+      } catch (e) { /* ignore */ }
+    }
+    if (musicRef.current) {
+      try {
+        musicRef.current.pause();
+        musicRef.current.currentTime = 0;
+        musicRef.current.src = '';
+        musicRef.current = null;
+      } catch (e) { /* ignore */ }
+    }
+    if (ttsRef.current) {
+      try {
+        ttsRef.current.pause();
+        ttsRef.current.currentTime = 0;
+        ttsRef.current.src = '';
+        ttsRef.current = null;
+      } catch (e) { /* ignore */ }
+    }
+    
+    // Stop any orphaned audio elements in the document
+    try {
+      const allAudio = document.querySelectorAll('audio');
+      allAudio.forEach((audio) => {
+        if (!audio.paused) {
+          console.log('[AudioPlayback] Stopping orphaned audio:', audio.src?.substring(0, 50));
+          audio.pause();
+          audio.currentTime = 0;
+        }
+      });
+    } catch (e) {
+      console.warn('[AudioPlayback] Error cleaning up orphaned audio:', e);
+    }
+    
+    console.log('[AudioPlayback] All audio stopped');
   }, [stopVoiceover, stopMusic, stopTTS]);
 
   const setVoiceoverVolume = useCallback((volume: number) => {

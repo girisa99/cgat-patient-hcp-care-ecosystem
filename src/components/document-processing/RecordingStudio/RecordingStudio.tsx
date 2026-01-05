@@ -623,6 +623,19 @@ export function RecordingStudio({
     }
   }, [scriptDraft.hasDraft, scriptDraft.draft, selectedScriptId, enhancedScriptContent]);
 
+  // Cleanup all audio when studio closes or unmounts
+  useEffect(() => {
+    if (!isOpen) {
+      // Studio is closing - stop all audio immediately
+      audioPlayback.stopAll();
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      audioPlayback.stopAll();
+    };
+  }, [isOpen, audioPlayback]);
+
   // Handlers
   const handleClose = useCallback(() => {
     camera.stopCamera();
