@@ -1696,6 +1696,26 @@ export function RecordingStudio({
                     }}
                     onToggleAudioMixer={() => setShowAudioMixer(!showAudioMixer)}
                     showAudioMixer={showAudioMixer}
+                    onViewScripts={() => {
+                      // Expand sidebar to show scripts
+                      setIsSidebarCollapsed(false);
+                    }}
+                    onAddScript={() => {
+                      // Expand sidebar and toast to guide user
+                      setIsSidebarCollapsed(false);
+                      toast.info('Use the Script dropdown in the sidebar to select or create scripts');
+                    }}
+                    currentScriptTitle={currentScript?.title}
+                    onPreviewRecording={() => {
+                      // Create a preview from current chunks
+                      if (recording.recordedChunks.length > 0) {
+                        const previewBlob = new Blob(recording.recordedChunks, { type: 'video/webm' });
+                        const url = URL.createObjectURL(previewBlob);
+                        window.open(url, '_blank', 'width=800,height=600');
+                      } else {
+                        toast.info('No recording data to preview yet');
+                      }
+                    }}
                   />
                 </div>
               )}
