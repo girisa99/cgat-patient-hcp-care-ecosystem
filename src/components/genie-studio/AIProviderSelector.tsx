@@ -1,19 +1,18 @@
 /**
- * AI Provider Selector Component
- * Allows user to select AI provider or use auto-select
+ * AI Provider Selector Component - Dropdown Version
+ * Compact dropdown for selecting AI provider with auto-select option
  */
 
 import React from 'react';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { 
   Sparkles, 
   Zap, 
   Brain,
   Cpu,
-  Star,
-  Check
+  Star
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -22,6 +21,7 @@ export type AIProviderType = 'openai' | 'gemini' | 'claude' | 'huggingface' | 'a
 export interface AIProvider {
   id: AIProviderType;
   name: string;
+  shortName: string;
   description: string;
   icon: React.ReactNode;
   bestFor: string[];
@@ -31,38 +31,52 @@ export interface AIProvider {
 
 const AI_PROVIDERS: AIProvider[] = [
   {
+    id: 'auto',
+    name: 'Auto-Select (Recommended)',
+    shortName: 'Auto',
+    description: 'System chooses best AI for your content',
+    icon: <Sparkles className="h-4 w-4" />,
+    bestFor: ['All content types'],
+    speed: 'fast',
+    quality: 'high',
+  },
+  {
     id: 'openai',
     name: 'OpenAI GPT-4o',
+    shortName: 'OpenAI',
     description: 'Powerful reasoning and creativity',
     icon: <Sparkles className="h-4 w-4" />,
-    bestFor: ['Complex scripts', 'Creative writing', 'Detailed analysis'],
+    bestFor: ['Complex scripts', 'Creative writing'],
     speed: 'medium',
     quality: 'high',
   },
   {
     id: 'gemini',
     name: 'Google Gemini',
+    shortName: 'Gemini',
     description: 'Fast multimodal understanding',
     icon: <Zap className="h-4 w-4" />,
-    bestFor: ['Image analysis', 'Fast processing', 'Multimodal content'],
+    bestFor: ['Image analysis', 'Fast processing'],
     speed: 'fast',
     quality: 'high',
   },
   {
     id: 'claude',
     name: 'Anthropic Claude',
+    shortName: 'Claude',
     description: 'Nuanced, thoughtful responses',
     icon: <Brain className="h-4 w-4" />,
-    bestFor: ['Long documents', 'Nuanced content', 'Technical writing'],
+    bestFor: ['Long documents', 'Technical writing'],
     speed: 'medium',
     quality: 'high',
   },
   {
     id: 'huggingface',
     name: 'Hugging Face',
+    shortName: 'HuggingFace',
     description: 'Open models, specialized tasks',
     icon: <Cpu className="h-4 w-4" />,
-    bestFor: ['Speech-to-text', 'Custom models', 'Experimental'],
+    bestFor: ['Speech-to-text', 'Custom models'],
     speed: 'medium',
     quality: 'standard',
   },
@@ -71,171 +85,87 @@ const AI_PROVIDERS: AIProvider[] = [
 interface AIProviderSelectorProps {
   selectedProvider: AIProviderType;
   onProviderChange: (provider: AIProviderType) => void;
-  autoSelect: boolean;
-  onAutoSelectChange: (autoSelect: boolean) => void;
-  contentType?: 'document' | 'image' | 'audio' | 'url' | 'text';
+  contentType?: 'document' | 'image' | 'audio' | 'url' | 'text' | 'full-pipeline';
   className?: string;
-  compact?: boolean;
+  showLabel?: boolean;
 }
 
 export function AIProviderSelector({
   selectedProvider,
   onProviderChange,
-  autoSelect,
-  onAutoSelectChange,
   contentType,
   className,
-  compact = false,
+  showLabel = true,
 }: AIProviderSelectorProps) {
-  // Auto-recommend provider based on content type
+  // Get recommended provider based on content type
   const getRecommendedProvider = (type?: string): AIProviderType => {
     switch (type) {
       case 'image':
-        return 'gemini'; // Best for vision
+        return 'gemini';
       case 'audio':
-        return 'huggingface'; // Best for speech-to-text
+        return 'huggingface';
       case 'document':
-        return 'claude'; // Best for long documents
+        return 'claude';
       case 'url':
-        return 'gemini'; // Fast multimodal
+        return 'gemini';
+      case 'full-pipeline':
+        return 'openai';
       default:
-        return 'openai'; // General purpose
+        return 'openai';
     }
   };
 
   const recommendedProvider = getRecommendedProvider(contentType);
-
-  const handleAutoSelectToggle = (checked: boolean) => {
-    onAutoSelectChange(checked);
-    if (checked) {
-      onProviderChange('auto');
-    } else {
-      onProviderChange(recommendedProvider);
-    }
-  };
-
-  if (compact) {
-    return (
-      <div className={cn("space-y-3", className)}>
-        <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">AI Provider</Label>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Auto-select</span>
-            <Switch
-              checked={autoSelect}
-              onCheckedChange={handleAutoSelectToggle}
-            />
-          </div>
-        </div>
-        
-        {!autoSelect && (
-          <div className="flex flex-wrap gap-2">
-            {AI_PROVIDERS.map((provider) => (
-              <button
-                key={provider.id}
-                onClick={() => onProviderChange(provider.id)}
-                className={cn(
-                  "px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all",
-                  selectedProvider === provider.id
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                )}
-              >
-                {provider.icon}
-                {provider.name.split(' ')[0]}
-                {provider.id === recommendedProvider && (
-                  <Star className="h-3 w-3 fill-current" />
-                )}
-              </button>
-            ))}
-          </div>
-        )}
-        
-        {autoSelect && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Check className="h-4 w-4 text-green-500" />
-            <span>System will choose the best provider for your content</span>
-          </div>
-        )}
-      </div>
-    );
-  }
+  const selectedProviderData = AI_PROVIDERS.find(p => p.id === selectedProvider);
 
   return (
-    <div className={cn("space-y-4", className)}>
-      {/* Auto-select toggle */}
-      <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 border">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <Sparkles className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <Label className="text-sm font-medium cursor-pointer">Smart Auto-Select</Label>
-            <p className="text-xs text-muted-foreground">
-              Let the system choose the best AI for your content
-            </p>
-          </div>
-        </div>
-        <Switch
-          checked={autoSelect}
-          onCheckedChange={handleAutoSelectToggle}
-        />
-      </div>
-
-      {/* Manual provider selection */}
-      {!autoSelect && (
-        <div className="space-y-3">
-          <Label>Select AI Provider</Label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {AI_PROVIDERS.map((provider) => (
-              <button
-                key={provider.id}
-                onClick={() => onProviderChange(provider.id)}
-                className={cn(
-                  "p-4 rounded-lg border text-left transition-all relative",
-                  selectedProvider === provider.id
-                    ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                    : "border-border hover:border-primary/50 hover:bg-secondary/30"
-                )}
-              >
-                {provider.id === recommendedProvider && (
-                  <Badge 
-                    variant="secondary" 
-                    className="absolute top-2 right-2 text-[10px] px-1.5 py-0"
-                  >
-                    <Star className="h-2.5 w-2.5 mr-0.5 fill-current" />
-                    Best for {contentType || 'this'}
-                  </Badge>
-                )}
-                
-                <div className="flex items-center gap-2 mb-2">
-                  <div className={cn(
-                    "h-8 w-8 rounded-lg flex items-center justify-center",
-                    selectedProvider === provider.id 
-                      ? "bg-primary text-primary-foreground" 
-                      : "bg-secondary"
-                  )}>
-                    {provider.icon}
+    <div className={cn("space-y-2", className)}>
+      {showLabel && (
+        <Label className="text-sm font-medium">AI Provider</Label>
+      )}
+      <Select value={selectedProvider} onValueChange={(v) => onProviderChange(v as AIProviderType)}>
+        <SelectTrigger className="w-full">
+          <SelectValue>
+            <div className="flex items-center gap-2">
+              {selectedProviderData?.icon}
+              <span>{selectedProviderData?.name || 'Select Provider'}</span>
+              {selectedProvider === 'auto' && (
+                <Badge variant="secondary" className="text-[10px] ml-1">
+                  <Star className="h-2.5 w-2.5 mr-0.5 fill-current" />
+                  Smart
+                </Badge>
+              )}
+            </div>
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {AI_PROVIDERS.map((provider) => (
+            <SelectItem key={provider.id} value={provider.id}>
+              <div className="flex items-center gap-2 py-1">
+                <div className="h-6 w-6 rounded flex items-center justify-center bg-secondary">
+                  {provider.icon}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{provider.name}</span>
+                    {provider.id === recommendedProvider && provider.id !== 'auto' && (
+                      <Badge variant="outline" className="text-[9px] px-1 py-0">
+                        Best for {contentType}
+                      </Badge>
+                    )}
                   </div>
-                  <span className="font-medium text-sm">{provider.name}</span>
+                  <p className="text-xs text-muted-foreground">{provider.description}</p>
                 </div>
-                
-                <p className="text-xs text-muted-foreground mb-2">
-                  {provider.description}
-                </p>
-                
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-[10px]">
-                    {provider.speed === 'fast' ? '⚡ Fast' : provider.speed === 'medium' ? '🔄 Medium' : '🐢 Slow'}
-                  </Badge>
-                  <Badge variant="outline" className="text-[10px]">
-                    {provider.quality === 'high' ? '✨ High Quality' : provider.quality === 'medium' ? '👍 Good' : '📊 Standard'}
-                  </Badge>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
+              </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      
+      {selectedProvider !== 'auto' && selectedProvider !== recommendedProvider && contentType && (
+        <p className="text-xs text-muted-foreground">
+          💡 Tip: <strong>{AI_PROVIDERS.find(p => p.id === recommendedProvider)?.shortName}</strong> is recommended for {contentType} content
+        </p>
       )}
     </div>
   );

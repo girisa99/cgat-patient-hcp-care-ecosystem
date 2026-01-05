@@ -82,16 +82,9 @@ import { ScriptEditorTab } from '@/components/genie-studio/ScriptEditorTab';
 import { SavedAudioCard } from '@/components/genie-studio/SavedAudioCard';
 import { useGenieMediaLibrary } from '@/components/genie-studio/useGenieMediaLibrary';
 import { useGenieScripts, type GenieScript } from '@/components/genie-studio/useGenieScripts';
-// Phase 1 AI Tools Panels
-import { DocumentToScriptPanel } from '@/components/genie-studio/DocumentToScriptPanel';
-import { ImageToScriptPanel } from '@/components/genie-studio/ImageToScriptPanel';
-import { KnowledgeSearchPanel } from '@/components/genie-studio/KnowledgeSearchPanel';
-import { PipelineOrchestrationPanel } from '@/components/genie-studio/PipelineOrchestrationPanel';
-// P0-9 and P0-10: URL and Audio to Script
-import { UrlToScriptPanel } from '@/components/genie-studio/UrlToScriptPanel';
-import { AudioToScriptPanel } from '@/components/genie-studio/AudioToScriptPanel';
-// Smart Content Pipeline - Unified AI Tools Experience
+// AI Tools - Unified Smart Content Pipeline
 import { SmartContentPipeline } from '@/components/genie-studio/SmartContentPipeline';
+import { KnowledgeSearchPanel } from '@/components/genie-studio/KnowledgeSearchPanel';
 import type { GeneratedContent } from '@/components/genie-studio/PostGenerationActions';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -2621,36 +2614,16 @@ export default function GenieStudio() {
                   </div>
                 </div>
 
-                {/* AI Tools Sub-Tabs */}
+                {/* AI Tools - Simplified to Smart Pipeline + Knowledge Search */}
                 <Tabs defaultValue="smart-pipeline" className="w-full">
-                  <TabsList level="child" className="mb-4 flex-wrap">
+                  <TabsList level="child" className="mb-4">
                     <TabsTrigger value="smart-pipeline" level="child">
                       <Wand2 className="h-4 w-4 mr-2" />
                       Smart Pipeline
                     </TabsTrigger>
-                    <TabsTrigger value="doc-to-script" level="child">
-                      <FileText className="h-4 w-4 mr-2" />
-                      Document → Script
-                    </TabsTrigger>
-                    <TabsTrigger value="img-to-script" level="child">
-                      <Film className="h-4 w-4 mr-2" />
-                      Image → Script
-                    </TabsTrigger>
-                    <TabsTrigger value="url-to-script" level="child">
-                      <Layers className="h-4 w-4 mr-2" />
-                      URL → Script
-                    </TabsTrigger>
-                    <TabsTrigger value="audio-to-script" level="child">
-                      <Volume2 className="h-4 w-4 mr-2" />
-                      Audio → Script
-                    </TabsTrigger>
                     <TabsTrigger value="knowledge-search" level="child">
                       <Search className="h-4 w-4 mr-2" />
                       Knowledge Search
-                    </TabsTrigger>
-                    <TabsTrigger value="pipeline" level="child">
-                      <Zap className="h-4 w-4 mr-2" />
-                      Full Pipeline
                     </TabsTrigger>
                   </TabsList>
 
@@ -2700,139 +2673,12 @@ export default function GenieStudio() {
                     />
                   </TabsContent>
 
-                  <TabsContent value="doc-to-script" level="child" className="mt-0">
-                    <DocumentToScriptPanel 
-                      onScriptGenerated={(script) => {
-                        // Save generated script to scripts list
-                        const newScript = {
-                          id: `script-${Date.now()}`,
-                          name: script.title || 'Generated Script',
-                          content: script.scenes.map(s => s.narration).join('\n\n'),
-                          type: 'video' as const,
-                          createdAt: Date.now(),
-                          updatedAt: Date.now(),
-                          stats: {
-                            wordCount: script.metadata.wordCount,
-                            sentenceCount: 0,
-                            characterCount: 0,
-                            estimatedReadingMinutes: Math.ceil(script.totalDuration / 60),
-                            estimatedSpeakingMinutes: Math.ceil(script.totalDuration / 60),
-                            readabilityScore: 'moderate' as const
-                          }
-                        };
-                        saveScript(newScript);
-                        toast.success(`Script "${script.title}" saved to your scripts!`);
-                      }}
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="img-to-script" level="child" className="mt-0">
-                    <ImageToScriptPanel 
-                      onScriptGenerated={(script) => {
-                        if (script) {
-                          const newScript = {
-                            id: `script-${Date.now()}`,
-                            name: script.title || 'Image-based Script',
-                            content: script.segments.map(s => s.text).join('\n\n'),
-                            type: 'video' as const,
-                            createdAt: Date.now(),
-                            updatedAt: Date.now(),
-                            stats: {
-                              wordCount: script.segments.reduce((acc, s) => acc + s.text.split(/\s+/).length, 0),
-                              sentenceCount: 0,
-                              characterCount: 0,
-                              estimatedReadingMinutes: Math.ceil(script.totalDuration / 60),
-                              estimatedSpeakingMinutes: Math.ceil(script.totalDuration / 60),
-                              readabilityScore: 'moderate' as const
-                            }
-                          };
-                          saveScript(newScript);
-                          toast.success(`Script "${script.title}" saved!`);
-                        }
-                      }}
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="url-to-script" level="child" className="mt-0">
-                    <UrlToScriptPanel 
-                      onScriptGenerated={(script) => {
-                        if (script) {
-                          const newScript = {
-                            id: `script-${Date.now()}`,
-                            name: script.title || 'URL-based Script',
-                            content: script.scenes.map(s => s.narration).join('\n\n'),
-                            type: 'video' as const,
-                            createdAt: Date.now(),
-                            updatedAt: Date.now(),
-                            stats: {
-                              wordCount: script.metadata.wordCount,
-                              sentenceCount: 0,
-                              characterCount: 0,
-                              estimatedReadingMinutes: Math.ceil(script.totalDuration / 60),
-                              estimatedSpeakingMinutes: Math.ceil(script.totalDuration / 60),
-                              readabilityScore: 'moderate' as const
-                            }
-                          };
-                          saveScript(newScript);
-                          toast.success(`Script "${script.title}" saved from URL!`);
-                        }
-                      }}
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="audio-to-script" level="child" className="mt-0">
-                    <AudioToScriptPanel 
-                      onScriptGenerated={(script) => {
-                        if (script) {
-                          const newScript = {
-                            id: `script-${Date.now()}`,
-                            name: script.title || 'Transcribed Script',
-                            content: script.scenes.map(s => s.narration).join('\n\n'),
-                            type: 'audio' as const,
-                            createdAt: Date.now(),
-                            updatedAt: Date.now(),
-                            stats: {
-                              wordCount: script.metadata.wordCount,
-                              sentenceCount: 0,
-                              characterCount: 0,
-                              estimatedReadingMinutes: Math.ceil(script.totalDuration / 60),
-                              estimatedSpeakingMinutes: Math.ceil(script.totalDuration / 60),
-                              readabilityScore: 'moderate' as const
-                            }
-                          };
-                          saveScript(newScript);
-                          toast.success(`Script "${script.title}" transcribed and saved!`);
-                        }
-                      }}
-                    />
-                  </TabsContent>
-
+                  {/* Knowledge Search */}
                   <TabsContent value="knowledge-search" level="child" className="mt-0">
                     <KnowledgeSearchPanel 
                       onResultSelect={(result) => {
-                        // Copy result content to clipboard or use in script
                         navigator.clipboard.writeText(result.content);
                         toast.success('Content copied to clipboard - paste into script editor');
-                      }}
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="pipeline" level="child" className="mt-0">
-                    <PipelineOrchestrationPanel 
-                      onPipelineComplete={(result) => {
-                        if (result.success && result.generatedScript) {
-                          const script = result.generatedScript;
-                          const newScript = {
-                            id: `script-${Date.now()}`,
-                            name: script.title || 'Pipeline Script',
-                            content: script.scenes.map(s => s.narration).join('\n\n'),
-                            type: 'video' as const,
-                            createdAt: Date.now(),
-                            updatedAt: Date.now()
-                          };
-                          saveScript(newScript);
-                          toast.success('Pipeline complete! Script saved.');
-                        }
                       }}
                     />
                   </TabsContent>

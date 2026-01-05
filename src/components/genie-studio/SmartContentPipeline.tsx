@@ -1,6 +1,6 @@
 /**
  * Smart Content Pipeline - Unified AI Tools Experience
- * Single smart upload with file detection, AI provider selection, and post-generation actions
+ * Single dropdown to select content type, smart upload, AI provider dropdown, and post-generation actions
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
@@ -11,7 +11,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { 
@@ -26,11 +25,14 @@ import {
   CheckCircle,
   AlertCircle,
   X,
-  File,
   Play,
   Film,
   BookOpen,
-  Presentation
+  Presentation,
+  Layers,
+  Video,
+  Radio,
+  GraduationCap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -38,12 +40,117 @@ import { useDropzone } from 'react-dropzone';
 import { AIProviderSelector, AIProviderType } from './AIProviderSelector';
 import { PostGenerationActions, GeneratedContent, PostAction } from './PostGenerationActions';
 
-// Content type detection
-type ContentType = 'document' | 'image' | 'audio' | 'url' | 'text';
+// Content type options
+type ContentType = 'document' | 'image' | 'audio' | 'url' | 'full-pipeline';
+
+interface ContentTypeOption {
+  id: ContentType;
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  acceptedFiles: string;
+  outputFormats: { value: string; label: string; icon: React.ReactNode }[];
+  defaultTone: string;
+  defaultDuration: number;
+}
+
+const CONTENT_TYPES: ContentTypeOption[] = [
+  {
+    id: 'document',
+    label: 'Document → Script',
+    description: 'PDF, DOCX, PPTX, TXT, MD',
+    icon: <FileText className="h-4 w-4" />,
+    acceptedFiles: '.pdf,.docx,.pptx,.txt,.md,.html,.rtf',
+    outputFormats: [
+      { value: 'video_script', label: 'Video Script', icon: <Film className="h-4 w-4" /> },
+      { value: 'podcast_script', label: 'Podcast Script', icon: <Mic className="h-4 w-4" /> },
+      { value: 'presentation_script', label: 'Presentation', icon: <Presentation className="h-4 w-4" /> },
+      { value: 'webinar_script', label: 'Webinar Script', icon: <BookOpen className="h-4 w-4" /> },
+      { value: 'tutorial_script', label: 'Tutorial Script', icon: <Play className="h-4 w-4" /> },
+    ],
+    defaultTone: 'professional',
+    defaultDuration: 300,
+  },
+  {
+    id: 'image',
+    label: 'Image → Script',
+    description: 'JPG, PNG, WebP, GIF or generate',
+    icon: <ImageIcon className="h-4 w-4" />,
+    acceptedFiles: '.jpg,.jpeg,.png,.webp,.gif,.svg',
+    outputFormats: [
+      { value: 'narration', label: 'Narration', icon: <Mic className="h-4 w-4" /> },
+      { value: 'documentary', label: 'Documentary', icon: <Film className="h-4 w-4" /> },
+      { value: 'commercial', label: 'Commercial', icon: <Sparkles className="h-4 w-4" /> },
+      { value: 'educational', label: 'Educational', icon: <GraduationCap className="h-4 w-4" /> },
+    ],
+    defaultTone: 'informative',
+    defaultDuration: 60,
+  },
+  {
+    id: 'audio',
+    label: 'Audio → Script',
+    description: 'MP3, WAV, M4A (transcribe)',
+    icon: <Mic className="h-4 w-4" />,
+    acceptedFiles: '.mp3,.wav,.m4a,.ogg,.flac,.aac',
+    outputFormats: [
+      { value: 'transcript', label: 'Clean Transcript', icon: <FileText className="h-4 w-4" /> },
+      { value: 'podcast_script', label: 'Podcast Format', icon: <Radio className="h-4 w-4" /> },
+      { value: 'video_script', label: 'Video Script', icon: <Video className="h-4 w-4" /> },
+    ],
+    defaultTone: 'casual',
+    defaultDuration: 600,
+  },
+  {
+    id: 'url',
+    label: 'URL → Script',
+    description: 'Web pages, articles, online docs',
+    icon: <Link className="h-4 w-4" />,
+    acceptedFiles: '',
+    outputFormats: [
+      { value: 'video_script', label: 'Video Script', icon: <Film className="h-4 w-4" /> },
+      { value: 'podcast_script', label: 'Podcast Script', icon: <Mic className="h-4 w-4" /> },
+      { value: 'summary', label: 'Summary', icon: <FileText className="h-4 w-4" /> },
+    ],
+    defaultTone: 'informative',
+    defaultDuration: 180,
+  },
+  {
+    id: 'full-pipeline',
+    label: 'Full Pipeline',
+    description: 'Multi-source orchestration',
+    icon: <Layers className="h-4 w-4" />,
+    acceptedFiles: '.pdf,.docx,.pptx,.txt,.md,.jpg,.jpeg,.png,.webp,.mp3,.wav',
+    outputFormats: [
+      { value: 'video_script', label: 'Video Script', icon: <Film className="h-4 w-4" /> },
+      { value: 'podcast_script', label: 'Podcast Script', icon: <Mic className="h-4 w-4" /> },
+      { value: 'presentation_script', label: 'Presentation', icon: <Presentation className="h-4 w-4" /> },
+    ],
+    defaultTone: 'professional',
+    defaultDuration: 600,
+  },
+];
+
+const TONE_OPTIONS = [
+  { value: 'professional', label: 'Professional' },
+  { value: 'casual', label: 'Casual' },
+  { value: 'educational', label: 'Educational' },
+  { value: 'inspirational', label: 'Inspirational' },
+  { value: 'dramatic', label: 'Dramatic' },
+  { value: 'informative', label: 'Informative' },
+];
+
+const DURATION_OPTIONS = [
+  { value: 30, label: '30 seconds' },
+  { value: 60, label: '1 minute' },
+  { value: 180, label: '3 minutes' },
+  { value: 300, label: '5 minutes' },
+  { value: 600, label: '10 minutes' },
+  { value: 900, label: '15 minutes' },
+  { value: 1800, label: '30 minutes' },
+];
 
 interface DetectedFile {
   file: File;
-  type: ContentType;
   preview?: string;
 }
 
@@ -54,99 +161,30 @@ interface SmartContentPipelineProps {
   className?: string;
 }
 
-// Output format options
-const OUTPUT_FORMATS = [
-  { value: 'video_script', label: 'Video Script', icon: <Film className="h-4 w-4" /> },
-  { value: 'podcast_script', label: 'Podcast Script', icon: <Mic className="h-4 w-4" /> },
-  { value: 'presentation_script', label: 'Presentation', icon: <Presentation className="h-4 w-4" /> },
-  { value: 'webinar_script', label: 'Webinar Script', icon: <BookOpen className="h-4 w-4" /> },
-  { value: 'tutorial_script', label: 'Tutorial Script', icon: <Play className="h-4 w-4" /> },
-];
-
-const TONE_OPTIONS = [
-  { value: 'professional', label: 'Professional' },
-  { value: 'casual', label: 'Casual' },
-  { value: 'educational', label: 'Educational' },
-  { value: 'inspirational', label: 'Inspirational' },
-  { value: 'dramatic', label: 'Dramatic' },
-];
-
-// File type detection helpers
-const getFileType = (file: File): ContentType => {
-  const mimeType = file.type.toLowerCase();
-  const extension = file.name.split('.').pop()?.toLowerCase() || '';
-  
-  // Image files
-  if (mimeType.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(extension)) {
-    return 'image';
-  }
-  
-  // Audio files
-  if (mimeType.startsWith('audio/') || ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac'].includes(extension)) {
-    return 'audio';
-  }
-  
-  // Document files
-  if (['pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt', 'md', 'html', 'rtf'].includes(extension) ||
-      mimeType.includes('pdf') || mimeType.includes('document') || mimeType.includes('presentation')) {
-    return 'document';
-  }
-  
-  return 'document'; // Default to document
-};
-
-const getContentTypeIcon = (type: ContentType) => {
-  switch (type) {
-    case 'document':
-      return <FileText className="h-5 w-5" />;
-    case 'image':
-      return <ImageIcon className="h-5 w-5" />;
-    case 'audio':
-      return <Mic className="h-5 w-5" />;
-    case 'url':
-      return <Link className="h-5 w-5" />;
-    case 'text':
-      return <FileText className="h-5 w-5" />;
-  }
-};
-
-const getContentTypeLabel = (type: ContentType) => {
-  switch (type) {
-    case 'document':
-      return 'Document';
-    case 'image':
-      return 'Image';
-    case 'audio':
-      return 'Audio';
-    case 'url':
-      return 'URL';
-    case 'text':
-      return 'Text';
-  }
-};
-
 export function SmartContentPipeline({
   onSendToScriptEditor,
   onSendToVibe,
   onSaveToKnowledgeBase,
   className,
 }: SmartContentPipelineProps) {
+  // Content type selection
+  const [contentType, setContentType] = useState<ContentType>('document');
+  const selectedContentType = CONTENT_TYPES.find(ct => ct.id === contentType)!;
+  
   // Input state
-  const [inputMode, setInputMode] = useState<'upload' | 'text' | 'url' | 'generate'>('upload');
-  const [detectedFiles, setDetectedFiles] = useState<DetectedFile[]>([]);
-  const [textContent, setTextContent] = useState('');
+  const [uploadedFiles, setUploadedFiles] = useState<DetectedFile[]>([]);
   const [urlInput, setUrlInput] = useState('');
-  const [imagePrompt, setImagePrompt] = useState('');
+  const [imagePrompt, setImagePrompt] = useState(''); // For image generation
+  const [generateImage, setGenerateImage] = useState(false);
   
   // AI Provider
   const [selectedProvider, setSelectedProvider] = useState<AIProviderType>('auto');
-  const [autoSelectProvider, setAutoSelectProvider] = useState(true);
   
-  // Script options
-  const [outputFormat, setOutputFormat] = useState('video_script');
-  const [tone, setTone] = useState('professional');
+  // Script options - update defaults when content type changes
+  const [outputFormat, setOutputFormat] = useState(selectedContentType.outputFormats[0]?.value || 'video_script');
+  const [tone, setTone] = useState(selectedContentType.defaultTone);
+  const [duration, setDuration] = useState(selectedContentType.defaultDuration);
   const [targetAudience, setTargetAudience] = useState('');
-  const [duration, setDuration] = useState(300);
   
   // Processing state
   const [isProcessing, setIsProcessing] = useState(false);
@@ -155,39 +193,50 @@ export function SmartContentPipeline({
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Determine content type from current state
-  const currentContentType = useMemo<ContentType>(() => {
-    if (inputMode === 'upload' && detectedFiles.length > 0) {
-      return detectedFiles[0].type;
-    }
-    if (inputMode === 'url') return 'url';
-    if (inputMode === 'generate') return 'image';
-    return 'text';
-  }, [inputMode, detectedFiles]);
+  // Update defaults when content type changes
+  const handleContentTypeChange = (newType: ContentType) => {
+    setContentType(newType);
+    const newTypeConfig = CONTENT_TYPES.find(ct => ct.id === newType)!;
+    setOutputFormat(newTypeConfig.outputFormats[0]?.value || 'video_script');
+    setTone(newTypeConfig.defaultTone);
+    setDuration(newTypeConfig.defaultDuration);
+    setUploadedFiles([]);
+    setUrlInput('');
+    setImagePrompt('');
+    setGenerateImage(false);
+    setGeneratedContent(null);
+  };
 
   // File drop handler
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const newFiles: DetectedFile[] = acceptedFiles.map(file => {
-      const type = getFileType(file);
-      const preview = type === 'image' ? URL.createObjectURL(file) : undefined;
-      return { file, type, preview };
+      const isImage = file.type.startsWith('image/');
+      const preview = isImage ? URL.createObjectURL(file) : undefined;
+      return { file, preview };
     });
     
-    setDetectedFiles(prev => [...prev, ...newFiles]);
-    
-    if (newFiles.length > 0) {
-      const types = [...new Set(newFiles.map(f => f.type))];
-      toast.success(`Detected ${newFiles.length} file(s): ${types.map(getContentTypeLabel).join(', ')}`);
-    }
+    setUploadedFiles(prev => [...prev, ...newFiles]);
+    toast.success(`Uploaded ${newFiles.length} file(s)`);
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    multiple: true,
+    accept: selectedContentType.acceptedFiles ? 
+      selectedContentType.acceptedFiles.split(',').reduce((acc, ext) => {
+        const mimeType = ext === '.pdf' ? 'application/pdf' :
+                        ext === '.docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' :
+                        ext === '.pptx' ? 'application/vnd.openxmlformats-officedocument.presentationml.presentation' :
+                        ext.match(/\.(jpg|jpeg|png|gif|webp|svg)/) ? `image/${ext.replace('.', '')}` :
+                        ext.match(/\.(mp3|wav|ogg|m4a|flac|aac)/) ? `audio/${ext.replace('.', '')}` :
+                        `text/${ext.replace('.', '')}`;
+        return { ...acc, [mimeType]: [ext] };
+      }, {} as Record<string, string[]>) : undefined,
+    multiple: contentType === 'full-pipeline',
+    disabled: contentType === 'url',
   });
 
   const removeFile = (index: number) => {
-    setDetectedFiles(prev => {
+    setUploadedFiles(prev => {
       const newFiles = [...prev];
       if (newFiles[index].preview) {
         URL.revokeObjectURL(newFiles[index].preview!);
@@ -198,21 +247,17 @@ export function SmartContentPipeline({
   };
 
   const handleGenerate = async () => {
-    // Validate input
-    if (inputMode === 'upload' && detectedFiles.length === 0) {
-      toast.error('Please upload at least one file');
-      return;
-    }
-    if (inputMode === 'text' && !textContent.trim()) {
-      toast.error('Please enter some text content');
-      return;
-    }
-    if (inputMode === 'url' && !urlInput.trim()) {
+    // Validate input based on content type
+    if (contentType === 'url' && !urlInput.trim()) {
       toast.error('Please enter a URL');
       return;
     }
-    if (inputMode === 'generate' && !imagePrompt.trim()) {
+    if (contentType === 'image' && generateImage && !imagePrompt.trim()) {
       toast.error('Please enter an image prompt');
+      return;
+    }
+    if (contentType !== 'url' && !generateImage && uploadedFiles.length === 0) {
+      toast.error('Please upload a file');
       return;
     }
 
@@ -222,22 +267,20 @@ export function SmartContentPipeline({
     setGeneratedContent(null);
 
     try {
-      // Simulate processing with progress
       const progressInterval = setInterval(() => {
         setProgress(prev => Math.min(prev + 8, 90));
-        const messages = [
-          'Analyzing content...',
-          'Extracting key information...',
-          'Querying knowledge base...',
-          'Generating script...',
-          'Optimizing for ' + outputFormat.replace('_', ' ') + '...',
-          'Applying ' + tone + ' tone...',
-          'Finalizing script...',
-        ];
-        setProgressMessage(messages[Math.floor(Math.random() * messages.length)]);
+        const messages = {
+          'document': ['Extracting document content...', 'Analyzing structure...', 'Generating script...'],
+          'image': ['Analyzing image...', 'Extracting visual details...', 'Creating narrative...'],
+          'audio': ['Transcribing audio...', 'Processing speech...', 'Formatting script...'],
+          'url': ['Crawling URL...', 'Extracting content...', 'Generating script...'],
+          'full-pipeline': ['Processing sources...', 'Orchestrating pipeline...', 'Synthesizing content...'],
+        };
+        const typeMessages = messages[contentType] || messages['document'];
+        setProgressMessage(typeMessages[Math.floor(Math.random() * typeMessages.length)]);
       }, 700);
 
-      // Simulate API call (replace with actual service calls)
+      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 3500));
 
       clearInterval(progressInterval);
@@ -245,41 +288,45 @@ export function SmartContentPipeline({
       setProgressMessage('Complete!');
 
       // Create mock generated content
-      const mockScript = `# Generated Script
+      const sourceName = contentType === 'url' ? urlInput : 
+                        contentType === 'image' && generateImage ? 'Generated Image' :
+                        uploadedFiles[0]?.file.name || 'Content';
+      
+      const mockScript = `# Generated ${outputFormat.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+
+## Source: ${sourceName}
+## Tone: ${tone} | Duration: ${Math.floor(duration / 60)} min | Audience: ${targetAudience || 'General'}
+
+---
 
 ## Introduction
-Welcome to this ${outputFormat.replace('_', ' ')} about ${inputMode === 'upload' ? detectedFiles[0]?.file.name : inputMode === 'text' ? 'your content' : inputMode === 'url' ? urlInput : imagePrompt}.
+Welcome to this ${outputFormat.replace('_', ' ')} created from your ${contentType} content.
 
 ## Main Content
-This is a ${tone} script generated for ${targetAudience || 'general audience'}.
+This is a ${tone} script optimized for ${targetAudience || 'your target audience'}.
 
-The content has been optimized for approximately ${Math.floor(duration / 60)} minutes of presentation time.
+Key insights from the source material:
+- Point 1: Important information extracted
+- Point 2: Supporting details and context
+- Point 3: Actionable takeaways
 
-## Key Points
-- Point 1: Important insight from your content
-- Point 2: Supporting information
-- Point 3: Call to action or conclusion
+## Conclusion
+Thank you for watching. This content was processed using ${selectedProvider === 'auto' ? 'our smart AI selection' : selectedProvider}.
 
-## Closing
-Thank you for your attention. This script was generated using ${autoSelectProvider ? 'auto-selected AI' : selectedProvider} provider.
+---
+Generated by Smart Content Pipeline
 `;
 
       const content: GeneratedContent = {
         script: mockScript,
-        title: inputMode === 'upload' 
-          ? `Script from ${detectedFiles[0]?.file.name}` 
-          : inputMode === 'url' 
-            ? `Script from URL` 
-            : inputMode === 'generate'
-              ? `Script from Generated Image`
-              : `Script from Text Input`,
+        title: `Script from ${sourceName}`,
         type: outputFormat as GeneratedContent['type'],
         duration,
-        sourceType: currentContentType,
+        sourceType: contentType === 'full-pipeline' ? 'document' : contentType,
         metadata: {
           wordCount: mockScript.split(/\s+/).length,
           estimatedDuration: duration,
-          provider: autoSelectProvider ? 'auto' : selectedProvider,
+          provider: selectedProvider,
           timestamp: Date.now(),
         },
       };
@@ -300,7 +347,6 @@ Thank you for your attention. This script was generated using ${autoSelectProvid
 
     switch (action) {
       case 'download':
-        // Create and download file
         const blob = new Blob([generatedContent.script], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -329,8 +375,7 @@ Thank you for your attention. This script was generated using ${autoSelectProvid
   };
 
   const resetPipeline = () => {
-    setDetectedFiles([]);
-    setTextContent('');
+    setUploadedFiles([]);
     setUrlInput('');
     setImagePrompt('');
     setGeneratedContent(null);
@@ -338,7 +383,7 @@ Thank you for your attention. This script was generated using ${autoSelectProvid
     setProgress(0);
   };
 
-  // If we have generated content, show post-generation actions
+  // Show post-generation actions if we have generated content
   if (generatedContent) {
     return (
       <div className={cn("space-y-6", className)}>
@@ -346,12 +391,7 @@ Thank you for your attention. This script was generated using ${autoSelectProvid
           content={generatedContent}
           onAction={handlePostAction}
         />
-        
-        <Button 
-          variant="outline" 
-          onClick={resetPipeline}
-          className="w-full"
-        >
+        <Button variant="outline" onClick={resetPipeline} className="w-full">
           Generate Another Script
         </Button>
       </div>
@@ -361,208 +401,170 @@ Thank you for your attention. This script was generated using ${autoSelectProvid
   return (
     <div className={cn("space-y-6", className)}>
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
             Smart Content Pipeline
           </CardTitle>
           <CardDescription>
-            Upload any content → Select AI → Get production-ready scripts
+            Select content type → Upload → Configure → Generate Script
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Input Mode Selection */}
-          <Tabs value={inputMode} onValueChange={(v) => setInputMode(v as any)}>
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="upload" className="flex items-center gap-2">
-                <Upload className="h-4 w-4" />
-                <span className="hidden sm:inline">Upload</span>
-              </TabsTrigger>
-              <TabsTrigger value="text" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                <span className="hidden sm:inline">Text</span>
-              </TabsTrigger>
-              <TabsTrigger value="url" className="flex items-center gap-2">
-                <Link className="h-4 w-4" />
-                <span className="hidden sm:inline">URL</span>
-              </TabsTrigger>
-              <TabsTrigger value="generate" className="flex items-center gap-2">
-                <ImageIcon className="h-4 w-4" />
-                <span className="hidden sm:inline">Generate</span>
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Upload Tab */}
-            <TabsContent value="upload" className="mt-4 space-y-4">
-              <div
-                {...getRootProps()}
-                className={cn(
-                  "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all",
-                  isDragActive 
-                    ? "border-primary bg-primary/5 scale-[1.02]" 
-                    : "border-border hover:border-primary/50",
-                  detectedFiles.length > 0 && "border-green-500/50"
-                )}
-              >
-                <input {...getInputProps()} />
-                <div className="flex flex-col items-center gap-3">
-                  <div className={cn(
-                    "h-14 w-14 rounded-full flex items-center justify-center",
-                    isDragActive ? "bg-primary/10" : "bg-secondary"
-                  )}>
-                    <Upload className={cn(
-                      "h-7 w-7",
-                      isDragActive ? "text-primary" : "text-muted-foreground"
-                    )} />
+          {/* Step 1: Content Type Selection */}
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold">1. Select Content Type</Label>
+            <Select value={contentType} onValueChange={(v) => handleContentTypeChange(v as ContentType)}>
+              <SelectTrigger className="w-full">
+                <SelectValue>
+                  <div className="flex items-center gap-2">
+                    {selectedContentType.icon}
+                    <span>{selectedContentType.label}</span>
+                    <Badge variant="secondary" className="text-[10px] ml-2">
+                      {selectedContentType.description}
+                    </Badge>
                   </div>
-                  <div>
-                    <p className="font-medium">
-                      {isDragActive ? 'Drop files here' : 'Drop files or click to upload'}
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Supports documents (PDF, DOCX, PPTX), images, and audio files
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Detected Files */}
-              {detectedFiles.length > 0 && (
-                <div className="space-y-2">
-                  <Label>Detected Files ({detectedFiles.length})</Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {detectedFiles.map((df, index) => (
-                      <div 
-                        key={index}
-                        className="flex items-center gap-3 p-3 rounded-lg border bg-secondary/30"
-                      >
-                        {df.preview ? (
-                          <img 
-                            src={df.preview} 
-                            alt={df.file.name}
-                            className="h-10 w-10 rounded object-cover"
-                          />
-                        ) : (
-                          <div className="h-10 w-10 rounded bg-secondary flex items-center justify-center">
-                            {getContentTypeIcon(df.type)}
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{df.file.name}</p>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="text-[10px]">
-                              {getContentTypeLabel(df.type)}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {(df.file.size / 1024).toFixed(1)} KB
-                            </span>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 shrink-0"
-                          onClick={() => removeFile(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {CONTENT_TYPES.map((ct) => (
+                  <SelectItem key={ct.id} value={ct.id}>
+                    <div className="flex items-center gap-3 py-1">
+                      <div className="h-8 w-8 rounded-lg bg-secondary flex items-center justify-center">
+                        {ct.icon}
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </TabsContent>
+                      <div>
+                        <div className="font-medium">{ct.label}</div>
+                        <div className="text-xs text-muted-foreground">{ct.description}</div>
+                      </div>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-            {/* Text Tab */}
-            <TabsContent value="text" className="mt-4 space-y-4">
-              <Textarea
-                placeholder="Paste your content here... (articles, notes, transcripts, etc.)"
-                value={textContent}
-                onChange={(e) => setTextContent(e.target.value)}
-                className="min-h-[200px] font-mono text-sm"
-              />
-              <p className="text-sm text-muted-foreground">
-                {textContent.length} characters • ~{Math.ceil(textContent.split(/\s+/).filter(Boolean).length / 150)} min read
-              </p>
-            </TabsContent>
+          <Separator />
 
-            {/* URL Tab */}
-            <TabsContent value="url" className="mt-4 space-y-4">
+          {/* Step 2: Upload/Input based on content type */}
+          <div className="space-y-3">
+            <Label className="text-sm font-semibold">2. {contentType === 'url' ? 'Enter URL' : contentType === 'image' ? 'Upload or Generate Image' : 'Upload File'}</Label>
+            
+            {/* URL Input */}
+            {contentType === 'url' && (
               <div className="space-y-2">
-                <Label>Enter URL</Label>
                 <Input
                   placeholder="https://example.com/article or document URL"
                   value={urlInput}
                   onChange={(e) => setUrlInput(e.target.value)}
+                  className="w-full"
                 />
-                <p className="text-sm text-muted-foreground">
-                  We'll extract content from web pages, PDF links, or other online documents
+                <p className="text-xs text-muted-foreground">
+                  We'll extract content from web pages, articles, or online documents
                 </p>
               </div>
-            </TabsContent>
+            )}
 
-            {/* Generate Image Tab */}
-            <TabsContent value="generate" className="mt-4 space-y-4">
-              <div className="space-y-2">
-                <Label>Image Prompt</Label>
-                <Textarea
-                  placeholder="Describe the image you want to generate..."
-                  value={imagePrompt}
-                  onChange={(e) => setImagePrompt(e.target.value)}
-                  className="min-h-[100px]"
-                />
-                <p className="text-sm text-muted-foreground">
-                  We'll generate an image and create a script based on it
-                </p>
-              </div>
-            </TabsContent>
-          </Tabs>
-
-          <Separator />
-
-          {/* AI Provider Selection */}
-          <AIProviderSelector
-            selectedProvider={selectedProvider}
-            onProviderChange={setSelectedProvider}
-            autoSelect={autoSelectProvider}
-            onAutoSelectChange={setAutoSelectProvider}
-            contentType={currentContentType}
-          />
-
-          <Separator />
-
-          {/* Output Options */}
-          <div className="space-y-4">
-            <Label className="text-base font-semibold">Output Options</Label>
-            
-            {/* Output Format */}
-            <div className="space-y-2">
-              <Label className="text-sm">Script Type</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                {OUTPUT_FORMATS.map((format) => (
-                  <button
-                    key={format.value}
-                    onClick={() => setOutputFormat(format.value)}
-                    className={cn(
-                      "p-3 rounded-lg border text-center transition-all",
-                      outputFormat === format.value
-                        ? "border-primary bg-primary/10 ring-1 ring-primary/20"
-                        : "border-border hover:border-primary/50"
-                    )}
+            {/* Image: Toggle between upload and generate */}
+            {contentType === 'image' && (
+              <div className="space-y-4">
+                <div className="flex gap-2">
+                  <Button
+                    variant={!generateImage ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setGenerateImage(false)}
                   >
-                    <div className="flex flex-col items-center gap-1">
-                      {format.icon}
-                      <span className="text-xs font-medium">{format.label}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
+                    <Upload className="h-4 w-4 mr-1" />
+                    Upload Image
+                  </Button>
+                  <Button
+                    variant={generateImage ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setGenerateImage(true)}
+                  >
+                    <Sparkles className="h-4 w-4 mr-1" />
+                    Generate Image
+                  </Button>
+                </div>
 
-            {/* Tone and Duration */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>Tone</Label>
+                {generateImage ? (
+                  <Textarea
+                    placeholder="Describe the image you want to generate..."
+                    value={imagePrompt}
+                    onChange={(e) => setImagePrompt(e.target.value)}
+                    className="min-h-[100px]"
+                  />
+                ) : (
+                  <UploadZone 
+                    getRootProps={getRootProps}
+                    getInputProps={getInputProps}
+                    isDragActive={isDragActive}
+                    uploadedFiles={uploadedFiles}
+                    onRemoveFile={removeFile}
+                    acceptedTypes={selectedContentType.description}
+                    isImage
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Document, Audio, Full Pipeline: File Upload */}
+            {(contentType === 'document' || contentType === 'audio' || contentType === 'full-pipeline') && (
+              <UploadZone 
+                getRootProps={getRootProps}
+                getInputProps={getInputProps}
+                isDragActive={isDragActive}
+                uploadedFiles={uploadedFiles}
+                onRemoveFile={removeFile}
+                acceptedTypes={selectedContentType.description}
+                isMultiple={contentType === 'full-pipeline'}
+              />
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Step 3: AI Provider Selection */}
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold">3. AI Provider</Label>
+            <AIProviderSelector
+              selectedProvider={selectedProvider}
+              onProviderChange={setSelectedProvider}
+              contentType={contentType}
+              showLabel={false}
+            />
+          </div>
+
+          <Separator />
+
+          {/* Step 4: Output Options */}
+          <div className="space-y-4">
+            <Label className="text-sm font-semibold">4. Output Options</Label>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* Output Format */}
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Script Type</Label>
+                <Select value={outputFormat} onValueChange={setOutputFormat}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedContentType.outputFormats.map((format) => (
+                      <SelectItem key={format.value} value={format.value}>
+                        <div className="flex items-center gap-2">
+                          {format.icon}
+                          {format.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Tone */}
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Tone</Label>
                 <Select value={tone} onValueChange={setTone}>
                   <SelectTrigger>
                     <SelectValue />
@@ -577,24 +579,26 @@ Thank you for your attention. This script was generated using ${autoSelectProvid
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label>Duration</Label>
+              {/* Duration */}
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Duration</Label>
                 <Select value={duration.toString()} onValueChange={(v) => setDuration(Number(v))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="60">1 minute</SelectItem>
-                    <SelectItem value="180">3 minutes</SelectItem>
-                    <SelectItem value="300">5 minutes</SelectItem>
-                    <SelectItem value="600">10 minutes</SelectItem>
-                    <SelectItem value="900">15 minutes</SelectItem>
+                    {DURATION_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value.toString()}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label>Target Audience</Label>
+              {/* Target Audience */}
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Target Audience</Label>
                 <Input
                   placeholder="e.g., Healthcare pros..."
                   value={targetAudience}
@@ -641,6 +645,103 @@ Thank you for your attention. This script was generated using ${autoSelectProvid
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// Upload Zone Component
+interface UploadZoneProps {
+  getRootProps: () => any;
+  getInputProps: () => any;
+  isDragActive: boolean;
+  uploadedFiles: DetectedFile[];
+  onRemoveFile: (index: number) => void;
+  acceptedTypes: string;
+  isImage?: boolean;
+  isMultiple?: boolean;
+}
+
+function UploadZone({ 
+  getRootProps, 
+  getInputProps, 
+  isDragActive, 
+  uploadedFiles, 
+  onRemoveFile, 
+  acceptedTypes,
+  isImage,
+  isMultiple 
+}: UploadZoneProps) {
+  return (
+    <div className="space-y-3">
+      <div
+        {...getRootProps()}
+        className={cn(
+          "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all",
+          isDragActive 
+            ? "border-primary bg-primary/5 scale-[1.01]" 
+            : "border-border hover:border-primary/50",
+          uploadedFiles.length > 0 && "border-green-500/50 bg-green-50/50 dark:bg-green-950/20"
+        )}
+      >
+        <input {...getInputProps()} />
+        <div className="flex flex-col items-center gap-2">
+          <div className={cn(
+            "h-12 w-12 rounded-full flex items-center justify-center",
+            isDragActive ? "bg-primary/10" : "bg-secondary"
+          )}>
+            <Upload className={cn(
+              "h-6 w-6",
+              isDragActive ? "text-primary" : "text-muted-foreground"
+            )} />
+          </div>
+          <div>
+            <p className="font-medium text-sm">
+              {isDragActive ? 'Drop files here' : 'Drop files or click to upload'}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {acceptedTypes} {isMultiple && '(multiple files allowed)'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Uploaded Files */}
+      {uploadedFiles.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {uploadedFiles.map((df, index) => (
+            <div 
+              key={index}
+              className="flex items-center gap-3 p-2 rounded-lg border bg-secondary/30"
+            >
+              {isImage && df.preview ? (
+                <img 
+                  src={df.preview} 
+                  alt={df.file.name}
+                  className="h-10 w-10 rounded object-cover"
+                />
+              ) : (
+                <div className="h-10 w-10 rounded bg-secondary flex items-center justify-center">
+                  <FileText className="h-5 w-5 text-muted-foreground" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{df.file.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {(df.file.size / 1024).toFixed(1)} KB
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 shrink-0"
+                onClick={() => onRemoveFile(index)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
