@@ -2157,12 +2157,15 @@ export function RecordingStudio({
               name: currentTTSFile.name,
               type: 'tts' as const,
               isPlaying: audioPlayback.isPlaying.tts,
+              isPaused: audioPlayback.isPaused.tts,
               volume: audioPlayback.ttsVolume,
               onPlay: () => {
                 if (currentTTSFile.url) {
                   audioPlayback.playTTS(currentTTSFile.url);
                 }
               },
+              onPause: audioPlayback.pauseTTS,
+              onResume: audioPlayback.resumeTTS,
               onStop: audioPlayback.stopTTS,
               onVolumeChange: audioPlayback.setTTSVolume,
             }] : []),
@@ -2171,12 +2174,15 @@ export function RecordingStudio({
               name: currentVoiceover.name,
               type: 'voiceover' as const,
               isPlaying: audioPlayback.isPlaying.voiceover,
+              isPaused: audioPlayback.isPaused.voiceover,
               volume: audioPlayback.voiceoverVolume,
               onPlay: () => {
                 if (currentVoiceover.url) {
                   audioPlayback.playVoiceover(currentVoiceover.url);
                 }
               },
+              onPause: audioPlayback.pauseVoiceover,
+              onResume: audioPlayback.resumeVoiceover,
               onStop: audioPlayback.stopVoiceover,
               onVolumeChange: audioPlayback.setVoiceoverVolume,
             }] : []),
@@ -2185,12 +2191,15 @@ export function RecordingStudio({
               name: currentMusic.name,
               type: 'music' as const,
               isPlaying: audioPlayback.isPlaying.music,
+              isPaused: audioPlayback.isPaused.music,
               volume: audioPlayback.musicVolume,
               onPlay: () => {
                 if (currentMusic.url) {
                   audioPlayback.playMusic(currentMusic.url);
                 }
               },
+              onPause: audioPlayback.pauseMusic,
+              onResume: audioPlayback.resumeMusic,
               onStop: audioPlayback.stopMusic,
               onVolumeChange: audioPlayback.setMusicVolume,
               loop: audioPlayback.musicLoop,

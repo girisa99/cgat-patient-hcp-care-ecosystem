@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Play, Square, Volume2, VolumeX, Music, Mic, Repeat, AudioLines } from 'lucide-react';
+import { Play, Pause, Square, Volume2, VolumeX, Music, Mic, Repeat, AudioLines } from 'lucide-react';
 import { DraggablePanel } from './DraggablePanel';
 import { cn } from '@/lib/utils';
 
@@ -16,8 +16,11 @@ interface AudioTrack {
   name: string;
   type: 'tts' | 'voiceover' | 'music';
   isPlaying: boolean;
+  isPaused?: boolean;
   volume: number;
   onPlay: () => void;
+  onPause?: () => void;
+  onResume?: () => void;
   onStop: () => void;
   onVolumeChange: (volume: number) => void;
   loop?: boolean;
@@ -109,18 +112,54 @@ export function FloatingAudioMixer({
                           <Repeat className="w-3.5 h-3.5" />
                         </Button>
                       )}
-                      <Button
-                        size="icon"
-                        variant={track.isPlaying ? 'destructive' : 'default'}
-                        className="h-7 w-7"
-                        onClick={track.isPlaying ? track.onStop : track.onPlay}
-                      >
-                        {track.isPlaying ? (
-                          <Square className="w-3.5 h-3.5" />
-                        ) : (
+                      {/* Play button - only when not playing */}
+                      {!track.isPlaying && !track.isPaused && (
+                        <Button
+                          size="icon"
+                          variant="default"
+                          className="h-7 w-7"
+                          onClick={track.onPlay}
+                          title="Play"
+                        >
                           <Play className="w-3.5 h-3.5" />
-                        )}
-                      </Button>
+                        </Button>
+                      )}
+                      {/* Resume button - when paused */}
+                      {track.isPaused && track.onResume && (
+                        <Button
+                          size="icon"
+                          variant="default"
+                          className="h-7 w-7 bg-green-600 hover:bg-green-700"
+                          onClick={track.onResume}
+                          title="Resume"
+                        >
+                          <Play className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                      {/* Pause button - when playing */}
+                      {track.isPlaying && track.onPause && (
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="h-7 w-7"
+                          onClick={track.onPause}
+                          title="Pause"
+                        >
+                          <Pause className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                      {/* Stop button - always available when playing or paused */}
+                      {(track.isPlaying || track.isPaused) && (
+                        <Button
+                          size="icon"
+                          variant="destructive"
+                          className="h-7 w-7"
+                          onClick={track.onStop}
+                          title="Stop"
+                        >
+                          <Square className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                   
