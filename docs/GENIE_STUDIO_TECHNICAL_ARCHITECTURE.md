@@ -1,7 +1,7 @@
 # Genie Mind & Genie Vibe: Technical Architecture
 
-> **Version:** 1.1  
-> **Last Updated:** 2026-01-04  
+> **Version:** 1.3  
+> **Last Updated:** 2026-01-05  
 > **Scope:** P0-P2 Implementation | P3-P4 Roadmap
 > **Suite:** Mind to Media — AI-Powered Production Suite
 
@@ -10,15 +10,16 @@
 ## Table of Contents
 
 1. [System Overview](#system-overview)
-2. [P0 Core Architecture](#p0-core-architecture)
-3. [P1 Essential Architecture](#p1-essential-architecture)
-4. [P2 Important Architecture](#p2-important-architecture)
-5. [P3-P4 Future Roadmap](#p3-p4-future-roadmap)
-6. [Component Diagrams](#component-diagrams)
-7. [Data Flow Diagrams](#data-flow-diagrams)
-8. [API Specifications](#api-specifications)
-9. [Database Schema](#database-schema)
-10. [Integration Points](#integration-points)
+2. [Bidirectional Flow Architecture](#bidirectional-flow-architecture)
+3. [P0 Core Architecture](#p0-core-architecture)
+4. [P1 Essential Architecture](#p1-essential-architecture)
+5. [P2 Important Architecture](#p2-important-architecture)
+6. [P3-P4 Future Roadmap](#p3-p4-future-roadmap)
+7. [Component Diagrams](#component-diagrams)
+8. [Data Flow Diagrams](#data-flow-diagrams)
+9. [API Specifications](#api-specifications)
+10. [Database Schema](#database-schema)
+11. [Integration Points](#integration-points)
 
 ---
 
@@ -41,9 +42,11 @@
 │  │  • AI Enhancement               │      │  • Audio Mixer                      │   │
 │  │  • Template Library             │      │  • Recording Controls               │   │
 │  │  • Media Library                │      │  • Export Engine                    │   │
-│  │  • Genie Arc (Scheduling)       │      │  • Recording Library                │   │
+│  │  • Content Analysis             │      │  • Recording Library                │   │
 │  └─────────────────────────────────┘      └─────────────────────────────────────┘   │
 │                    │                                        │                        │
+│                    ├────────────── BIDIRECTIONAL ───────────┤                        │
+│                    │            Vibe ↔ Mind Flow            │                        │
 │                    └────────────────┬───────────────────────┘                        │
 │                                     │                                                │
 │  ┌──────────────────────────────────▼──────────────────────────────────────────┐    │
@@ -58,6 +61,11 @@
 │  │  │   Web      │  │   Media    │  │  Supabase  │  │   Edge     │             │    │
 │  │  │  Audio API │  │ Recorder   │  │  Storage   │  │ Functions  │             │    │
 │  │  └────────────┘  └────────────┘  └────────────┘  └────────────┘             │    │
+│  └──────────────────────────────────────────────────────────────────────────────┘    │
+│                                                                                      │
+│  ┌──────────────────────────────────────────────────────────────────────────────┐    │
+│  │               PRODUCTION HUB (OPTIONAL - Team Coordination)                   │    │
+│  │  • Pre-production tracking  • Team collaboration  • Approval workflows       │    │
 │  └──────────────────────────────────────────────────────────────────────────────┘    │
 │                                                                                      │
 └─────────────────────────────────────────────────────────────────────────────────────┘
@@ -78,6 +86,77 @@
 | **TTS** | ElevenLabs + OpenAI | Voice Generation |
 | **Storage** | IndexedDB + Supabase | Persistence |
 | **Backend** | Supabase Edge Functions | Server Logic |
+| **Content Analysis** | ContentAnalyzer | Vibe → Mind Bridge |
+
+---
+
+## Bidirectional Flow Architecture
+
+### NEW: Vibe ↔ Mind Integration (Implemented 2026-01-05)
+
+The system now supports bidirectional content flow between Vibe and Mind:
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│                        BIDIRECTIONAL VIBE ↔ MIND FLOW                                │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+
+FLOW 1: Mind → Vibe (Default - Pre-production to Production)
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                     │
+│   [Mind]           [Script]          [TTS]            [Vibe]          [Publish]    │
+│     │                 │                │                 │               │         │
+│     ▼                 ▼                ▼                 ▼               ▼         │
+│  ┌──────┐         ┌──────┐         ┌──────┐         ┌──────┐        ┌──────┐      │
+│  │ AI   │ ──────► │ Edit │ ──────► │Voice │ ──────► │Record│ ─────► │Export│      │
+│  │ Gen  │         │Script│         │ Over │         │ Mix  │        │ MP4  │      │
+│  └──────┘         └──────┘         └──────┘         └──────┘        └──────┘      │
+│                                                                                     │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+
+FLOW 2: Vibe → Mind → Vibe (NEW - Content Analysis Loop)
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                     │
+│   [Vibe Recording/Import]     [Mind Analysis]      [Enhanced Content]    [Vibe]    │
+│           │                         │                     │                │       │
+│           ▼                         ▼                     ▼                ▼       │
+│       ┌──────┐                  ┌──────┐             ┌──────┐          ┌──────┐   │
+│       │PPT/  │ ───────────────► │ AI   │ ──────────► │Script│ ───────► │Record│   │
+│       │PDF/  │   ContentAnalyzer│ Mind │             │ TTS  │          │ Mix  │   │
+│       │Video │                  │      │             │ VO   │          │      │   │
+│       └──────┘                  └──────┘             └──────┘          └──────┘   │
+│                                                                                     │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Key Components for Bidirectional Flow
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `ContentAnalyzer` | `RecordingStudio/components/ContentAnalyzer.tsx` | Dialog for sending Vibe content to Mind |
+| `VibeToMindBridge` | `RecordingStudio/components/VibeToMindBridge.tsx` | Sidebar panel for quick Mind actions |
+| `documentToScriptService` | `src/services/documentToScriptService.ts` | PPT/PDF to Script conversion |
+| `imageToScriptService` | `src/services/imageToScriptService.ts` | Image analysis to Script |
+
+### Original vs Enhanced Script Versioning
+
+```typescript
+interface ScriptData {
+  id: string;
+  name: string;
+  content: string;           // Original content
+  enhancedContent?: string;  // AI-enhanced version
+  cleanContent?: string;     // For TTS (markers stripped)
+  version: 'original' | 'enhanced';
+  stats: ScriptStats;
+}
+
+interface VoiceoverData {
+  audioUrl: string;
+  duration: number;
+  scriptVersion: 'original' | 'enhanced';  // Track which version was used
+}
+```
 
 ---
 

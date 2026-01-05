@@ -1,22 +1,22 @@
 # Genie Studio & Recording Studio: Complete Scenario Map
 
-> **Version:** 1.1  
-> **Last Updated:** 2026-01-04  
-> **Total Scenarios:** 60  
+> **Version:** 1.3  
+> **Last Updated:** 2026-01-05  
+> **Total Scenarios:** 65 (5 new bidirectional scenarios)  
 > **Status:** Documentation Complete with Implementation Status
 
 ---
 
 ## Executive Summary
 
-This document catalogs all identified user journeys and scenarios for the Genie Studio and Recording Studio integration. It covers the complete production pipeline from imagination to final output, including edge cases, error recovery, and advanced AI capabilities.
+This document catalogs all identified user journeys and scenarios for the Genie Studio and Recording Studio integration. It covers the complete production pipeline from imagination to final output, including edge cases, error recovery, bidirectional Vibe ↔ Mind flows, and advanced AI capabilities.
 
 ### Implementation Overview
 
 | Status | Count | Description |
 |--------|-------|-------------|
-| ✅ **Implemented** | 18 | Fully functional in codebase |
-| 🔶 **Partial** | 12 | Core functionality exists, needs enhancement |
+| ✅ **Implemented** | 25 | Fully functional in codebase |
+| 🔶 **Partial** | 10 | Core functionality exists, needs enhancement |
 | ⏳ **Planned** | 30 | Documented, not yet implemented |
 
 ---
@@ -25,7 +25,7 @@ This document catalogs all identified user journeys and scenarios for the Genie 
 
 | Priority | Category | Description | Scenarios | Implementation |
 |----------|----------|-------------|-----------|----------------|
-| **P0 - Core** | MVP Features | Essential flows for launch | 1-4, 7-10 | 75% Complete |
+| **P0 - Core** | MVP Features | Essential flows for launch | 1-4, 7-10, 61-65 | 85% Complete |
 | **P1 - Essential** | Production Needs | Required for production use | 5-6, 11-16, 21-24 | 50% Complete |
 | **P2 - Important** | User Experience | Improves workflow significantly | 17-20, 25-32 | 20% Complete |
 | **P3 - Differentiators** | Competitive Edge | Sets product apart, includes compliance | 33-42, 43-46 | 0% (Roadmap) |
@@ -37,14 +37,16 @@ This document catalogs all identified user journeys and scenarios for the Genie 
 
 ### Implemented Components
 
-#### Genie Studio (`src/pages/GenieStudio.tsx` - 3,909 lines)
-- ✅ Script Editor with AI Enhancement
+#### Genie Studio (`src/pages/GenieStudio.tsx`)
+- ✅ Script Editor with AI Enhancement (Original & Enhanced versions)
 - ✅ Script Templates (Product Demo, Tutorial, Podcast, Webcast, Broadcast)
 - ✅ TTS Generation (ElevenLabs + OpenAI)
 - ✅ Voice Selection (Multiple providers)
 - ✅ Media Library Management
 - ✅ Show/Event Scheduling (Podcast, Webcast, Broadcast)
 - ✅ Participant Management
+- ✅ Workflow Flow Indicator (Mind → Script → TTS → Vibe → Publish)
+- ✅ Production Hub Optional (Arc button for team productions)
 
 #### Recording Studio (`src/components/document-processing/RecordingStudio/`)
 - ✅ Multi-source Video Capture (Camera, Screen, PiP)
@@ -54,9 +56,11 @@ This document catalogs all identified user journeys and scenarios for the Genie 
 - ✅ Recording Library with IndexedDB
 - ✅ Background Blur (ML-based)
 - ✅ FFmpeg-based Video Processing
-- ✅ Script Version Management
+- ✅ Script Version Management (Original/Enhanced)
 - ✅ Keyboard Shortcuts
 - ✅ Export (MP4, WebM, Audio)
+- ✅ **ContentAnalyzer** (NEW - Vibe → Mind bridge)
+- ✅ **VibeToMindBridge** (NEW - Quick Mind actions)
 
 #### Supporting Hooks
 - ✅ `useTTSGeneration` - Text-to-Speech with multiple providers
@@ -68,6 +72,66 @@ This document catalogs all identified user journeys and scenarios for the Genie 
 - ✅ `useBackgroundBlur` - ML background removal
 - ✅ `useScriptVersions` - Version control
 - ✅ `useStudioSound` - Audio playback coordination
+
+#### NEW: Bidirectional Flow Components (2026-01-05)
+- ✅ `ContentAnalyzer.tsx` - Dialog for analyzing recordings/imports with Mind
+- ✅ `VibeToMindBridge.tsx` - Sidebar panel for quick Mind actions
+
+---
+
+## NEW: Category L - Bidirectional Vibe ↔ Mind Flows (Scenarios 61-65)
+
+**Priority: P0 - Core** (Implemented 2026-01-05)
+
+| # | Scenario Name | Input | Process | Output | Priority | Status |
+|---|---------------|-------|---------|--------|----------|--------|
+| 61 | **Recording → Mind → Script** | Screen recording | Analyze with Mind → Generate script → Return to Vibe | Narration script | P0 | ✅ Implemented |
+| 62 | **PPT → Mind → Script → Video** | PowerPoint upload in Vibe | ContentAnalyzer → AI analysis → Script → TTS → Record | Presentation video | P0 | ✅ Implemented |
+| 63 | **PDF → Mind → Script** | PDF document in Vibe | ContentAnalyzer → Extract → Summarize → Script | Document script | P0 | ✅ Implemented |
+| 64 | **URL → Mind → Script** | Web page URL | ContentAnalyzer → Scrape → Analyze → Script | Content script | P0 | ✅ Implemented |
+| 65 | **Image → Mind → Script** | Image(s) in Vibe | ContentAnalyzer → Vision AI → Description → Script | Visual script | P0 | ✅ Implemented |
+
+### Detailed Bidirectional Flow
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                     VIBE ↔ MIND BIDIRECTIONAL FLOW                           │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+User in Recording Studio (Vibe)
+        │
+        ├── Has Recording ──────────┐
+        ├── Has PPT/PDF ────────────┤
+        ├── Has URL ────────────────┼──► [🧠 Analyze with Mind] Button
+        ├── Has Image(s) ───────────┤
+        │                           │
+        │                           ▼
+        │                   ┌───────────────┐
+        │                   │ ContentAnalyzer│
+        │                   │    Dialog      │
+        │                   └───────┬───────┘
+        │                           │
+        │                           ▼
+        │                   ┌───────────────┐
+        │                   │  Genie Mind   │
+        │                   │ AI Analysis   │
+        │                   └───────┬───────┘
+        │                           │
+        │                           ▼
+        │                   ┌───────────────┐
+        │                   │ Generated     │
+        │                   │ Script + TTS  │
+        │                   └───────┬───────┘
+        │                           │
+        ▼                           ▼
+┌───────────────────────────────────────────┐
+│         Return to Vibe with:              │
+│  • AI-generated script                    │
+│  • Original & Enhanced versions           │
+│  • TTS audio (optional)                   │
+│  • Background music (optional)            │
+└───────────────────────────────────────────┘
+```
 
 ---
 

@@ -1,7 +1,7 @@
 # Genie Mind & Genie Vibe: Functional Architecture
 
-> **Version:** 1.1  
-> **Last Updated:** 2026-01-04  
+> **Version:** 1.3  
+> **Last Updated:** 2026-01-05  
 > **Scope:** P0-P2 Implementation | P3-P4 Roadmap
 > **Suite:** Mind to Media — AI-Powered Production Suite
 
@@ -10,13 +10,15 @@
 ## Table of Contents
 
 1. [User Journey Maps](#user-journey-maps)
-2. [P0 Core User Flows](#p0-core-user-flows)
-3. [P1 Essential User Flows](#p1-essential-user-flows)
-4. [P2 Advanced User Flows](#p2-advanced-user-flows)
-5. [P3-P4 Future Flows](#p3-p4-future-flows)
-6. [Feature Matrix](#feature-matrix)
-7. [UI/UX Specifications](#uiux-specifications)
-8. [Persona Workflows](#persona-workflows)
+2. [Bidirectional Flows](#bidirectional-flows)
+3. [P0 Core User Flows](#p0-core-user-flows)
+4. [P1 Essential User Flows](#p1-essential-user-flows)
+5. [P2 Advanced User Flows](#p2-advanced-user-flows)
+6. [P3-P4 Future Flows](#p3-p4-future-flows)
+7. [Feature Matrix](#feature-matrix)
+8. [UI/UX Specifications](#uiux-specifications)
+9. [Persona Workflows](#persona-workflows)
+10. [Production Hub (Optional)](#production-hub-optional)
 
 ---
 
@@ -26,13 +28,13 @@
 
 | Persona | Role | Primary Goal | Key Scenarios |
 |---------|------|--------------|---------------|
-| **Content Creator** | Marketing | Create product videos | 1, 3, 6, 21 |
-| **Educator** | Training | Build tutorials | 2, 7, 8, 17 |
-| **Podcaster** | Entertainment | Produce episodes | 15, 25, 32 |
-| **Enterprise Comms** | Corporate | Internal videos | 6, 43, 44, 46 |
-| **Healthcare Pro** | Clinical | Compliant content | 8, 44, 45, 46 |
+| **Content Creator** | Marketing | Create product videos | 1, 3, 6, 21, 61 |
+| **Educator** | Training | Build tutorials | 2, 7, 8, 17, 62 |
+| **Podcaster** | Entertainment | Produce episodes | 15, 25, 32, 63 |
+| **Enterprise Comms** | Corporate | Internal videos | 6, 43, 44, 46, 64 |
+| **Healthcare Pro** | Clinical | Compliant content | 8, 44, 45, 46, 65 |
 
-### Master User Journey
+### Master User Journey (Updated with Bidirectional Flow)
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
@@ -50,10 +52,118 @@
 │ • Research│   │ • TTS     │   │ • Mix     │   │ • Polish  │   │ • Deliver │
 └───────────┘   └───────────┘   └───────────┘   └───────────┘   └───────────┘
       │               │               │               │               │
+      │               ├───────────────┼───────────────┤               │
+      │               │    VIBE ↔ MIND LOOP           │               │
+      │               │   (Analyze → Enhance → Record)│               │
       │               │               │               │               │
       └───────────────┴───────────────┴───────────────┼───────────────┘
                                                       │
                                               (Iterate as needed)
+```
+
+---
+
+## Bidirectional Flows (NEW - Implemented 2026-01-05)
+
+### Flow: Vibe → Mind → Vibe (Content Analysis Loop)
+
+**User Goal:** Take existing content (recording, PPT, PDF, URL) and generate AI-enhanced scripts
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                     FLOW: VIBE → MIND → VIBE                                 │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+STEP 1: User has content in Vibe (Recording Studio)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  [Recording Studio]                                                         │
+│                                                                             │
+│  Content Available:                                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  📹 Screen Recording     │  📄 Imported PPT/PDF  │  🌐 URL Content   │   │
+│  │  Just recorded a demo    │  Presentation slides   │  Web page info    │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  [🧠 Analyze with Mind]  ← Click to send to Mind for AI analysis           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+STEP 2: ContentAnalyzer Dialog Opens
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  [Genie Mind Logo]                                                   │   │
+│  │  Analyze with Genie Mind                                             │   │
+│  │  ─────────────────────────────────────────────────────────────────   │   │
+│  │                                                                       │   │
+│  │  Content: "Product Demo Recording" (Screen Recording)                │   │
+│  │                                                                       │   │
+│  │  What Mind will do:                                                   │   │
+│  │  • Analyze visual and text content                                   │   │
+│  │  • Generate a narration script                                       │   │
+│  │  • Suggest improvements                                               │   │
+│  │  • Optimize for voiceover                                             │   │
+│  │                                                                       │   │
+│  │  Generate outputs:                                                    │   │
+│  │  [✓ Script] [○ TTS Audio] [○ Background Music]                       │   │
+│  │                                                                       │   │
+│  │  [Cancel]                    [✨ Analyze with Mind →]                 │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+STEP 3: AI Analysis & Script Generation
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Progress: [████████████████████████████░░] 85%                             │
+│                                                                             │
+│  • Extracting content... ✓                                                  │
+│  • Analyzing structure... ✓                                                 │
+│  • Generating script... (in progress)                                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+STEP 4: Script Generated - Return to Vibe
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Generated Script:                                    ~3.5 min              │
+│  ─────────────────────────────────────────────────────────────────────────  │
+│  │                                                                     │   │
+│  │  [AI-generated script based on content analysis...]                 │   │
+│  │                                                                     │   │
+│  ─────────────────────────────────────────────────────────────────────────  │
+│                                                                             │
+│  Keywords: [tutorial] [walkthrough] [guide]                                 │
+│                                                                             │
+│  [Mind] → [Script] → [Vibe]  (Flow Indicator)                               │
+│                                                                             │
+│  [Start Over]                      [✓ Use Script in Vibe]                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Production Hub (Optional - For Team Coordination)
+
+**Purpose:** Pre-production coordination for larger team productions
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                    PRODUCTION HUB (OPTIONAL)                                 │
+│            "For Coordinated Team Productions"                                │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+When to use Production Hub:
+• Multi-person productions requiring coordination
+• Content requiring approval workflows
+• Projects with multiple stakeholders
+• Large-scale content series
+
+Quick Create (Default - No Hub needed):
+• Solo creators
+• Single-session recordings
+• Simple script → record → publish flow
+
+Production Hub Features:
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  • Pre-production Tracking    │  • Team Role Assignment                     │
+│  • Approval Workflows         │  • Status Dashboard                         │
+│  • Asset Coordination         │  • Publication Schedule                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Note: Publishing always happens from Vibe. Production Hub tracks readiness.
 ```
 
 ---
