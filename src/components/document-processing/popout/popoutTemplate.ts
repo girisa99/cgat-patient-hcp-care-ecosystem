@@ -54,7 +54,6 @@ export function getPopoutHTML(config: PopoutConfig): string {
         <div style="display: flex; align-items: center; gap: 12px;">
           <h1>🎬 Genie Vibe</h1>
           <span class="header-tagline">Script to Screen</span>
-          <span class="header-badge">Pop-out Mode</span>
         </div>
         <button class="close-btn" id="closeBtn">✕ Close</button>
       </header>
