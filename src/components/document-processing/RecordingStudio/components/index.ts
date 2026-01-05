@@ -29,3 +29,5 @@ export { VideoEditorIntegration } from './VideoEditorIntegration';
 export { ProductionInfo } from './ProductionInfo';
 export { DraggablePanel } from './DraggablePanel';
 export { FloatingAudioMixer } from './FloatingAudioMixer';
+export { ContentAnalyzer } from './ContentAnalyzer';
+export { VibeToMindBridge } from './VibeToMindBridge';
