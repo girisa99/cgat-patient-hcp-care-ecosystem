@@ -22,13 +22,17 @@ import arcCombined from '@/assets/logos/genie-arc-combined.png';
 // Import Genie Vibe logo (finalized combined)
 import vibeCombined from '@/assets/logos/genie-vibe-combined.png';
 
+// Import Genie Spark logo component (SVG-based)
+import { GenieSparkLogo } from '@/components/genie-studio/GenieSparkLogo';
+
 interface ImageAsset {
   id: string;
   title: string;
   description: string;
   src: string;
   category: 'architecture' | 'comparison' | 'flow' | 'logo';
-  brand?: 'studio' | 'mind' | 'arc' | 'vibe';
+  brand?: 'studio' | 'mind' | 'arc' | 'vibe' | 'spark';
+  isComponent?: boolean;
 }
 
 const imageAssets: ImageAsset[] = [
@@ -65,6 +69,16 @@ const logoAssets: ImageAsset[] = [
     src: studioBanner,
     category: 'logo',
     brand: 'studio',
+  },
+  // Genie Spark - NEW
+  {
+    id: 'spark-combined',
+    title: 'Genie Spark',
+    description: 'Ignite Your Ideas — AI Content Generation Engine (use for presentations, websites, products, icons)',
+    src: '', // SVG component, no src needed
+    category: 'logo',
+    brand: 'spark',
+    isComponent: true,
   },
   // Genie Arc
   {
@@ -206,11 +220,15 @@ export const GenieStudioVisualAssets = () => {
               {logoAssets.map((logo) => (
                 <Card key={logo.id} className="bg-slate-800 border-slate-700 overflow-hidden">
                   <div className="relative aspect-video bg-white flex items-center justify-center p-4">
-                    <img
-                      src={logo.src}
-                      alt={logo.title}
-                      className="max-w-full max-h-full object-contain"
-                    />
+                    {logo.isComponent && logo.brand === 'spark' ? (
+                      <GenieSparkLogo size="xl" variant="horizontal" showTagline={true} />
+                    ) : (
+                      <img
+                        src={logo.src}
+                        alt={logo.title}
+                        className="max-w-full max-h-full object-contain"
+                      />
+                    )}
                   </div>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-4">
@@ -218,14 +236,21 @@ export const GenieStudioVisualAssets = () => {
                         <h4 className="text-white font-medium">{logo.title}</h4>
                         <p className="text-slate-400 text-sm mt-1">{logo.description}</p>
                       </div>
-                      <Button
-                        size="sm"
-                        onClick={() => handleDownloadImage(logo)}
-                        className="gap-1 shrink-0"
-                      >
-                        <Download className="h-3 w-3" />
-                        PNG
-                      </Button>
+                      {!logo.isComponent && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleDownloadImage(logo)}
+                          className="gap-1 shrink-0"
+                        >
+                          <Download className="h-3 w-3" />
+                          PNG
+                        </Button>
+                      )}
+                      {logo.isComponent && (
+                        <span className="text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded">
+                          SVG Component
+                        </span>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
