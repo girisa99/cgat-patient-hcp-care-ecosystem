@@ -160,21 +160,44 @@ export function getPopoutHTML(config: PopoutConfig): string {
             </button>
           </div>
 
-          <!-- Audio Controls Bar (shown during recording) -->
+          <!-- Audio Controls Bar (shown during recording) - Independent control for each audio source -->
           <div class="audio-controls-bar" id="audioControlsBar" style="display:none;">
-            <div class="audio-bar-item">
-              <span class="audio-bar-label">🎙️ Voice</span>
-              <button class="audio-bar-btn" id="voicePlayPauseBtn">▶</button>
-              <button class="audio-bar-btn" id="voiceStopBtn">⏹</button>
-              <input type="range" class="audio-bar-volume" id="voiceBarVolume" min="0" max="100" value="100" title="Voice Volume">
+            <div class="audio-bar-header">
+              <span class="audio-bar-title">🎛️ Audio Mixer</span>
+              <span class="audio-bar-subtitle">Control each audio independently while recording</span>
             </div>
-            <div class="audio-bar-item">
-              <span class="audio-bar-label">🎵 Music</span>
-              <button class="audio-bar-btn" id="musicPlayPauseBtn">▶</button>
-              <button class="audio-bar-btn" id="musicBarStopBtn">⏹</button>
-              <input type="range" class="audio-bar-volume" id="musicBarVolume" min="0" max="100" value="30" title="Music Volume">
-              <label class="duck-label" title="Auto-reduce music when voice plays">
-                <input type="checkbox" id="duckMusicCheckbox" checked> Duck
+            <div class="audio-bar-tracks">
+              <!-- Voice/TTS Track -->
+              <div class="audio-bar-item" id="voiceTrack">
+                <span class="audio-bar-label">🎙️ Voice/TTS</span>
+                <div class="audio-bar-controls">
+                  <button class="audio-bar-btn play-btn" id="voicePlayPauseBtn" title="Play/Pause Voice">▶</button>
+                  <button class="audio-bar-btn stop-btn" id="voiceStopBtn" title="Stop Voice">⏹</button>
+                  <input type="range" class="audio-bar-volume" id="voiceBarVolume" min="0" max="100" value="100" title="Voice Volume">
+                  <span class="volume-label" id="voiceVolumeLabel">100%</span>
+                </div>
+                <span class="audio-status" id="voiceStatus">Ready</span>
+              </div>
+              <!-- Music Track -->
+              <div class="audio-bar-item" id="musicTrack">
+                <span class="audio-bar-label">🎵 Music</span>
+                <div class="audio-bar-controls">
+                  <button class="audio-bar-btn play-btn" id="musicPlayPauseBtn" title="Play/Pause Music">▶</button>
+                  <button class="audio-bar-btn stop-btn" id="musicBarStopBtn" title="Stop Music">⏹</button>
+                  <input type="range" class="audio-bar-volume" id="musicBarVolume" min="0" max="100" value="30" title="Music Volume">
+                  <span class="volume-label" id="musicVolumeLabel">30%</span>
+                </div>
+                <span class="audio-status" id="musicStatus">Ready</span>
+              </div>
+            </div>
+            <div class="audio-bar-options">
+              <label class="duck-label" title="Auto-reduce music volume when voice plays">
+                <input type="checkbox" id="duckMusicCheckbox" checked> 
+                <span>🔉 Auto-duck music when voice plays</span>
+              </label>
+              <label class="loop-label" title="Loop music continuously">
+                <input type="checkbox" id="loopMusicCheckbox" checked>
+                <span>🔁 Loop music</span>
               </label>
             </div>
           </div>
