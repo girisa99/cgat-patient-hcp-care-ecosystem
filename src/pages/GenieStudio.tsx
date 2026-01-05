@@ -4,8 +4,8 @@
  * Part of Genie Studio
  */
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate, useBlocker } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -923,8 +923,44 @@ function useShowEvents() {
 export default function GenieStudio() {
   const navigate = useNavigate();
   const [isStudioOpen, setIsStudioOpen] = useState(false);
+  const [isRecordingInProgress, setIsRecordingInProgress] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
+  
+  // Block navigation when recording is in progress
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      isRecordingInProgress && currentLocation.pathname !== nextLocation.pathname
+  );
+  
+  // Handle blocked navigation
+  useEffect(() => {
+    if (blocker.state === 'blocked') {
+      const confirmed = window.confirm(
+        'Recording in progress! Are you sure you want to leave? Your recording will be lost.'
+      );
+      if (confirmed) {
+        setIsRecordingInProgress(false);
+        blocker.proceed();
+      } else {
+        blocker.reset();
+      }
+    }
+  }, [blocker]);
+  
+  // Also prevent browser tab close during recording
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isRecordingInProgress) {
+        e.preventDefault();
+        e.returnValue = 'Recording in progress! Your recording will be lost if you leave.';
+        return e.returnValue;
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isRecordingInProgress]);
   
   // Script Editor State
   const [scriptContent, setScriptContent] = useState('');
@@ -3705,6 +3741,7 @@ export default function GenieStudio() {
         <RecordingStudio
           isOpen={isStudioOpen}
           onClose={handleStudioClose}
+          onRecordingStateChange={setIsRecordingInProgress}
           scripts={savedScripts.map(s => ({ 
             id: s.id, 
             title: s.name, 

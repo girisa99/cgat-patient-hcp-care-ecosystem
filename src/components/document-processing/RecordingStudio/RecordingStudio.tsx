@@ -92,6 +92,7 @@ export function RecordingStudio({
   onUploadMusic,
   isUploading = false,
   productionContext,
+  onRecordingStateChange,
 }: RecordingStudioProps) {
   // Scripts with local content management
   const [scripts, setScripts] = useState<ScriptData[]>(initialScripts);
@@ -586,19 +587,24 @@ export function RecordingStudio({
   // Note: currentScript, currentVoiceover, currentMusic defined above after hooks
 
   // Auto-focus mode: collapse panels when recording starts
+  // Also notify parent of recording state changes
   useEffect(() => {
     if (recording.isRecording && !recording.isPaused) {
       // Enter focus mode
       setIsFocusMode(true);
       setIsSidebarCollapsed(true);
       setHeaderMinimized(true);
+      // Notify parent that recording started
+      onRecordingStateChange?.(true);
     } else if (!recording.isRecording) {
       // Exit focus mode when recording stops
       setIsFocusMode(false);
       setHeaderMinimized(false);
       // Don't auto-expand sidebar - let user control it
+      // Notify parent that recording stopped
+      onRecordingStateChange?.(false);
     }
-  }, [recording.isRecording, recording.isPaused]);
+  }, [recording.isRecording, recording.isPaused, onRecordingStateChange]);
 
   // Sync enhanced script to draft storage when it changes
   useEffect(() => {
@@ -624,17 +630,16 @@ export function RecordingStudio({
   }, [scriptDraft.hasDraft, scriptDraft.draft, selectedScriptId, enhancedScriptContent]);
 
   // Cleanup all audio when studio closes or unmounts
+  // Use ref to avoid dependency loop with audioPlayback
+  const audioPlaybackRef = useRef(audioPlayback);
+  audioPlaybackRef.current = audioPlayback;
+  
   useEffect(() => {
-    if (!isOpen) {
-      // Studio is closing - stop all audio immediately
-      audioPlayback.stopAll();
-    }
-    
-    // Cleanup on unmount
+    // Only cleanup on close/unmount, not on every render
     return () => {
-      audioPlayback.stopAll();
+      audioPlaybackRef.current.stopAll();
     };
-  }, [isOpen, audioPlayback]);
+  }, []); // Empty deps - only runs on unmount
 
   // Handlers
   const handleClose = useCallback(() => {
@@ -1367,21 +1372,31 @@ export function RecordingStudio({
       <DialogContent 
         className="!max-w-[100vw] !w-screen !h-screen !rounded-none p-0 gap-0 overflow-hidden flex flex-col [&>button]:hidden"
         onPointerDownOutside={(e) => {
-          // Prevent closing when clicking outside during recording
+          // ALWAYS prevent closing when clicking outside during recording
           if (recording.isRecording) {
             e.preventDefault();
+            e.stopPropagation();
           }
         }}
         onEscapeKeyDown={(e) => {
-          // Prevent escape key closing during recording
+          // ALWAYS prevent escape key closing during recording
           if (recording.isRecording) {
             e.preventDefault();
+            e.stopPropagation();
           }
         }}
         onInteractOutside={(e) => {
-          // Prevent any outside interaction from closing during recording
+          // ALWAYS prevent any outside interaction from closing during recording
           if (recording.isRecording) {
             e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
+        onFocusOutside={(e) => {
+          // Prevent focus loss from closing during recording
+          if (recording.isRecording) {
+            e.preventDefault();
+            e.stopPropagation();
           }
         }}
       >

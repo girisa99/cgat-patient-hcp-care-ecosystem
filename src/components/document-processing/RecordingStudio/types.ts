@@ -75,6 +75,8 @@ export interface RecordingStudioProps {
   isUploading?: boolean;
   // Production context when opened from Production Hub
   productionContext?: ProductionContextForStudio;
+  // Callback to notify parent of recording state changes
+  onRecordingStateChange?: (isRecording: boolean) => void;
 }
 
 export interface RecordingState {
