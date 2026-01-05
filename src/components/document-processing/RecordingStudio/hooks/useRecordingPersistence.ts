@@ -245,6 +245,10 @@ export function useRecordingPersistence() {
     }
   }, [initDB]);
 
+  // Use ref for sessionInfo in health check to avoid stale closure
+  const sessionInfoRef = useRef<RecordingSession | null>(null);
+  sessionInfoRef.current = sessionInfo;
+
   // Start health monitoring for a stream
   const startHealthMonitoring = useCallback((
     stream: MediaStream,
@@ -261,13 +265,15 @@ export function useRecordingPersistence() {
 
     healthCheckIntervalRef.current = window.setInterval(() => {
       const now = Date.now();
+      const currentSessionInfo = sessionInfoRef.current;
       
       // Check 1: MediaRecorder state
-      if (mediaRecorder.state === 'inactive' && sessionInfo?.status === 'active') {
+      if (mediaRecorder.state === 'inactive' && currentSessionInfo?.status === 'active') {
         console.warn('[RecordingPersistence] MediaRecorder became inactive unexpectedly');
         setIsStreamHealthy(false);
         toast.error('Recording stopped unexpectedly. Your progress has been saved.', {
-          duration: 5000
+          duration: 5000,
+          id: 'recording-stopped'
         });
         onHealthIssue();
         return;
@@ -280,7 +286,8 @@ export function useRecordingPersistence() {
         console.warn('[RecordingPersistence] All video tracks ended');
         setIsStreamHealthy(false);
         toast.warning('Camera connection lost. Attempting to recover...', {
-          duration: 3000
+          duration: 3000,
+          id: 'camera-lost'
         });
         onHealthIssue();
         return;
@@ -288,7 +295,7 @@ export function useRecordingPersistence() {
 
       // Check 3: No new chunks for too long (silent failure)
       const timeSinceLastChunk = now - lastChunkTimeRef.current;
-      if (timeSinceLastChunk > 30000 && sessionInfo?.status === 'active') {
+      if (timeSinceLastChunk > 30000 && currentSessionInfo?.status === 'active') {
         console.warn('[RecordingPersistence] No new chunks for 30+ seconds');
         // Don't fail yet, but log warning
         toast.warning('Recording may be stalled. Please check your recording.', {
@@ -298,10 +305,11 @@ export function useRecordingPersistence() {
       }
 
       // Check 4: Recording duration limit
-      if (sessionInfo && Date.now() - sessionInfo.startTime > MAX_RECORDING_DURATION_MS) {
+      if (currentSessionInfo && Date.now() - currentSessionInfo.startTime > MAX_RECORDING_DURATION_MS) {
         console.warn('[RecordingPersistence] Recording exceeded max duration');
         toast.warning('Recording reached 1 hour limit. Please save and start a new recording.', {
-          duration: 5000
+          duration: 5000,
+          id: 'recording-duration-limit'
         });
       }
 
@@ -309,7 +317,7 @@ export function useRecordingPersistence() {
     }, HEALTH_CHECK_INTERVAL);
 
     console.log('[RecordingPersistence] Health monitoring started');
-  }, [sessionInfo]);
+  }, []); // Empty deps - uses refs instead
 
   // Start auto-save interval
   const startAutoSave = useCallback((getChunks: () => Blob[]) => {
@@ -333,14 +341,18 @@ export function useRecordingPersistence() {
     console.log('[RecordingPersistence] Auto-save started');
   }, [autoSaveEnabled, saveChunks]);
 
-  // Handle visibility changes (tab switching)
+  // Handle visibility changes (tab switching) - use ref to avoid dependency on sessionInfo
+  const saveChunksRef = useRef(saveChunks);
+  saveChunksRef.current = saveChunks;
+  
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.hidden && sessionInfo?.status === 'active') {
+      const currentSessionInfo = sessionInfoRef.current;
+      if (document.hidden && currentSessionInfo?.status === 'active') {
         console.log('[RecordingPersistence] Tab hidden during recording - saving state');
         // Force save current chunks
         if (chunksToSaveRef.current.length > 0) {
-          saveChunks(chunksToSaveRef.current, true);
+          saveChunksRef.current(chunksToSaveRef.current, true);
         }
         
         toast.info('Recording continues in background. Avoid switching tabs for best quality.', {
@@ -356,7 +368,7 @@ export function useRecordingPersistence() {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [sessionInfo, saveChunks]);
+  }, []); // Empty deps - uses refs
 
   // Cleanup on unmount
   useEffect(() => {
