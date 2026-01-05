@@ -31,6 +31,11 @@ export function useAudioPlayback() {
     music: false,
     tts: false,
   });
+  const [isPaused, setIsPaused] = useState<{ voiceover: boolean; music: boolean; tts: boolean }>({
+    voiceover: false,
+    music: false,
+    tts: false,
+  });
   
   // Music ducking settings
   const [duckingEnabled, setDuckingEnabled] = useState(true);
@@ -116,6 +121,7 @@ export function useAudioPlayback() {
       ttsRef.current.pause();
     }
     setIsPlaying(prev => ({ ...prev, tts: false }));
+    setIsPaused(prev => ({ ...prev, tts: true }));
     stopTimeTracking(false); // Don't reset time
     applyDucking(false);
   }, [stopTimeTracking, applyDucking]);
@@ -126,6 +132,7 @@ export function useAudioPlayback() {
       ttsRef.current.play().then(() => {
         console.log('[useAudioPlayback] TTS resumed');
         setIsPlaying(prev => ({ ...prev, tts: true }));
+        setIsPaused(prev => ({ ...prev, tts: false }));
         startTimeTracking(ttsRef.current!);
         applyDucking(true);
       }).catch((err) => {
@@ -140,6 +147,7 @@ export function useAudioPlayback() {
       voiceoverRef.current.pause();
     }
     setIsPlaying(prev => ({ ...prev, voiceover: false }));
+    setIsPaused(prev => ({ ...prev, voiceover: true }));
     stopTimeTracking(false); // Don't reset time
     applyDucking(false);
   }, [stopTimeTracking, applyDucking]);
@@ -150,6 +158,7 @@ export function useAudioPlayback() {
       voiceoverRef.current.play().then(() => {
         console.log('[useAudioPlayback] Voiceover resumed');
         setIsPlaying(prev => ({ ...prev, voiceover: true }));
+        setIsPaused(prev => ({ ...prev, voiceover: false }));
         startTimeTracking(voiceoverRef.current!);
         applyDucking(true);
       }).catch((err) => {
@@ -217,6 +226,7 @@ export function useAudioPlayback() {
       voiceoverRef.current.currentTime = 0;
     }
     setIsPlaying(prev => ({ ...prev, voiceover: false }));
+    setIsPaused(prev => ({ ...prev, voiceover: false }));
     stopTimeTracking();
     applyDucking(false); // Restore music volume
   }, [stopTimeTracking, applyDucking]);
@@ -266,6 +276,29 @@ export function useAudioPlayback() {
       musicRef.current.currentTime = 0;
     }
     setIsPlaying(prev => ({ ...prev, music: false }));
+    setIsPaused(prev => ({ ...prev, music: false }));
+  }, []);
+
+  // Pause music (keep position for resume)
+  const pauseMusic = useCallback(() => {
+    if (musicRef.current) {
+      musicRef.current.pause();
+    }
+    setIsPlaying(prev => ({ ...prev, music: false }));
+    setIsPaused(prev => ({ ...prev, music: true }));
+  }, []);
+
+  // Resume music from where it was paused
+  const resumeMusic = useCallback(() => {
+    if (musicRef.current && musicRef.current.src) {
+      musicRef.current.play().then(() => {
+        console.log('[useAudioPlayback] Music resumed');
+        setIsPlaying(prev => ({ ...prev, music: true }));
+        setIsPaused(prev => ({ ...prev, music: false }));
+      }).catch((err) => {
+        console.error('[useAudioPlayback] Music resume failed:', err);
+      });
+    }
   }, []);
 
   const playTTS = useCallback((urlOrAudio: string | HTMLAudioElement) => {
@@ -353,6 +386,7 @@ export function useAudioPlayback() {
       ttsRef.current.currentTime = 0;
     }
     setIsPlaying(prev => ({ ...prev, tts: false }));
+    setIsPaused(prev => ({ ...prev, tts: false }));
     stopTimeTracking();
     applyDucking(false); // Restore music volume
   }, [stopTimeTracking, applyDucking]);
@@ -449,6 +483,7 @@ export function useAudioPlayback() {
     ...state,
     activeTab,
     isPlaying,
+    isPaused,
     audioTimeInfo, // Expose for teleprompter sync
     duckingEnabled,
     // Expose audio element refs for recording mix
@@ -464,6 +499,8 @@ export function useAudioPlayback() {
     resumeVoiceover,
     playMusic,
     stopMusic,
+    pauseMusic,
+    resumeMusic,
     playTTS,
     stopTTS,
     pauseTTS,
