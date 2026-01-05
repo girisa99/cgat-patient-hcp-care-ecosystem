@@ -1761,6 +1761,8 @@ export function RecordingStudio({
                         toast.info('No recording data to preview yet');
                       }
                     }}
+                    isStreamHealthy={recording.isStreamHealthy}
+                    sessionInfo={recording.sessionInfo}
                   />
                 </div>
               )}

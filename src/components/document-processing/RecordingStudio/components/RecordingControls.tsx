@@ -1,5 +1,6 @@
 /**
  * Recording Controls Component - Camera, Mic, Record buttons with pause/trim/transcribe/rewind
+ * Includes stream health indicator for long recording sessions
  */
 
 import React from 'react';
@@ -9,7 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Camera, CameraOff, Mic, MicOff, Play, Pause, Square, 
   Type, Sparkles, Image, Scissors, Undo, Subtitles, FileText, Loader2,
-  Volume2, Music, AudioLines, RotateCcw, SkipBack, RefreshCw
+  Volume2, Music, AudioLines, RotateCcw, SkipBack, RefreshCw,
+  AlertCircle, CheckCircle2, Clock, HardDrive
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -20,6 +22,15 @@ interface AudioCombinationStatus {
   ttsName?: string;
   voiceoverName?: string;
   musicName?: string;
+}
+
+interface RecordingSessionInfo {
+  id: string;
+  startTime: number;
+  lastSaveTime: number;
+  duration: number;
+  chunkCount: number;
+  status: 'active' | 'paused' | 'recovered' | 'completed';
 }
 
 interface RecordingControlsProps {
@@ -81,6 +92,10 @@ interface RecordingControlsProps {
   onAddScript?: () => void;
   currentScriptTitle?: string;
   onPreviewRecording?: () => void;
+  
+  // Stream health monitoring
+  isStreamHealthy?: boolean;
+  sessionInfo?: RecordingSessionInfo | null;
 }
 
 export function RecordingControls({
@@ -121,6 +136,8 @@ export function RecordingControls({
   onAddScript,
   currentScriptTitle,
   onPreviewRecording,
+  isStreamHealthy = true,
+  sessionInfo,
 }: RecordingControlsProps) {
   
   // Compute audio combination label
@@ -140,8 +157,51 @@ export function RecordingControls({
 
   const audioLabel = getAudioCombinationLabel();
   
+  // Format time since last save
+  const getTimeSinceLastSave = () => {
+    if (!sessionInfo?.lastSaveTime) return null;
+    const seconds = Math.floor((Date.now() - sessionInfo.lastSaveTime) / 1000);
+    if (seconds < 60) return `${seconds}s ago`;
+    return `${Math.floor(seconds / 60)}m ago`;
+  };
+  
   return (
     <div className="space-y-3">
+      {/* Recording Health & Session Status - Only show during recording */}
+      {isRecording && sessionInfo && (
+        <div className={cn(
+          "flex items-center gap-3 p-2 rounded-lg border",
+          isStreamHealthy 
+            ? "bg-green-500/10 border-green-500/30" 
+            : "bg-red-500/10 border-red-500/30"
+        )}>
+          <div className="flex items-center gap-1.5">
+            {isStreamHealthy ? (
+              <CheckCircle2 className="w-4 h-4 text-green-600" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-red-600 animate-pulse" />
+            )}
+            <span className={cn(
+              "text-xs font-medium",
+              isStreamHealthy ? "text-green-700" : "text-red-700"
+            )}>
+              {isStreamHealthy ? 'Recording Active' : 'Stream Issue Detected'}
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-3 ml-auto text-xs text-muted-foreground">
+            <div className="flex items-center gap-1" title="Chunks saved">
+              <HardDrive className="w-3 h-3" />
+              <span>{sessionInfo.chunkCount} chunks</span>
+            </div>
+            <div className="flex items-center gap-1" title="Last save">
+              <Clock className="w-3 h-3" />
+              <span>{getTimeSinceLastSave()}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Audio Combination Status */}
       {audioCombination && (
         <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg border border-border/50">
