@@ -29,9 +29,11 @@ export function getCameraScript(): string {
     // Format time as MM:SS
     function formatTime(seconds) {
       var mins = Math.floor(seconds / 60);
-      var secs = seconds % 60;
+      var secs = Math.floor(seconds % 60);
       return String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
     }
+    
+    // Note: totalPausedTime and pauseStartTime are declared in shared globals
 
     // ALWAYS enable record button - works with or without camera
     function enableRecordButton(hasCamera) {
@@ -161,6 +163,8 @@ export function getCameraScript(): string {
       isPaused = false;
       recordedChunks = [];
       trimHistory = [];
+      totalPausedTime = 0;
+      pauseStartTime = null;
       
       isRecording = true;
       recordingStartTime = Date.now();
@@ -177,14 +181,37 @@ export function getCameraScript(): string {
         recordingIndicator.classList.add('visible');
       }
       
-      // Start timer
+      // Show pause button
+      var pauseBtn = document.getElementById('pauseBtn');
+      if (pauseBtn) {
+        pauseBtn.style.display = 'inline-block';
+      }
+      
+      // Show audio controls bar
+      var audioControlsBar = document.getElementById('audioControlsBar');
+      if (audioControlsBar) {
+        audioControlsBar.style.display = 'block';
+      }
+      
+      // Start timer - subtract paused time for accuracy
       recordingTimer = setInterval(function() {
         if (isPaused) return;
-        var elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+        var now = Date.now();
+        var elapsed = Math.floor((now - recordingStartTime - totalPausedTime) / 1000);
         if (recordingTimeEl) {
           recordingTimeEl.textContent = formatTime(elapsed);
         }
-      }, 1000);
+        
+        // Update word progress if we have script words
+        if (typeof scriptWords !== 'undefined' && scriptWords.length > 0 && typeof currentWordIndex !== 'undefined') {
+          var wordProgressEl = document.getElementById('wordProgress');
+          if (wordProgressEl) {
+            var progress = scriptWords.length > 0 ? Math.round((currentWordIndex / scriptWords.length) * 100) : 0;
+            wordProgressEl.textContent = 'Word ' + (currentWordIndex + 1) + '/' + scriptWords.length + ' • ' + progress + '%';
+            wordProgressEl.style.display = 'block';
+          }
+        }
+      }, 100); // Update more frequently for smoother timer
       
       // Start audio playback (voiceover, TTS, music)
       console.log('[Recording] Triggering audio playback...');
@@ -215,9 +242,13 @@ export function getCameraScript(): string {
           };
 
           mediaRecorder.onstop = function() {
-            console.log('[Recording] MediaRecorder stopped');
-            if (!isStopped) {
+            console.log('[Recording] MediaRecorder stopped, chunks:', recordedChunks.length);
+            // Always process recording if we have chunks
+            if (recordedChunks.length > 0) {
               processRecording();
+            } else {
+              console.warn('[Recording] No chunks to process');
+              showStatus('No video data captured', 'error');
             }
           };
 
@@ -245,11 +276,15 @@ export function getCameraScript(): string {
     function stopRecording() {
       if (!isRecording) return;
 
-      console.log('[Recording] Stopping...');
+      console.log('[Recording] Stopping... chunks so far:', recordedChunks.length);
       
-      isStopped = true;
       isRecording = false;
       clearInterval(recordingTimer);
+      
+      // If was paused, calculate final pause time
+      if (isPaused && pauseStartTime) {
+        totalPausedTime += Date.now() - pauseStartTime;
+      }
       
       // Update UI
       if (recordBtn) {
@@ -262,6 +297,24 @@ export function getCameraScript(): string {
       if (recordingIndicator) {
         recordingIndicator.classList.remove('visible');
       }
+      
+      // Hide pause button
+      var pauseBtn = document.getElementById('pauseBtn');
+      if (pauseBtn) {
+        pauseBtn.style.display = 'none';
+      }
+      
+      // Hide word progress
+      var wordProgressEl = document.getElementById('wordProgress');
+      if (wordProgressEl) {
+        wordProgressEl.style.display = 'none';
+      }
+      
+      // Hide audio controls bar
+      var audioControlsBar = document.getElementById('audioControlsBar');
+      if (audioControlsBar) {
+        audioControlsBar.style.display = 'none';
+      }
 
       // Stop audio
       if (typeof stopAudioPlayback === 'function') {
@@ -271,11 +324,15 @@ export function getCameraScript(): string {
         stopAllAudio();
       }
 
-      // Stop MediaRecorder
+      // Stop MediaRecorder - set isStopped AFTER we've captured current state
+      isStopped = true;
+      isPaused = false;
+      
       if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        console.log('[Recording] Stopping MediaRecorder, state:', mediaRecorder.state);
         mediaRecorder.stop();
       } else {
-        console.log('[Recording] No video to process (audio-only)');
+        console.log('[Recording] No active MediaRecorder (audio-only mode)');
         showStatus('Recording stopped', 'success');
       }
     }
@@ -292,7 +349,9 @@ export function getCameraScript(): string {
       try {
         var blob = new Blob(recordedChunks, { type: 'video/webm' });
         var recordingName = 'recording-' + new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
-        var duration = recordingStartTime ? Math.floor((Date.now() - recordingStartTime) / 1000) : 0;
+        var duration = recordingStartTime ? Math.floor((Date.now() - recordingStartTime - totalPausedTime) / 1000) : 0;
+        
+        console.log('[Recording] Blob size:', blob.size, 'bytes, duration:', duration, 's');
         
         // Save to library if available
         if (typeof saveRecordingToLibrary === 'function') {
@@ -300,6 +359,7 @@ export function getCameraScript(): string {
             name: recordingName,
             duration: duration
           });
+          console.log('[Recording] Saved to library');
         }
         
         // Download

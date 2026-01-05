@@ -68,13 +68,14 @@ export function getRecordingEnhancementsScript(): string {
     // =====================================================
 
     function pauseRecording() {
-      if (!isRecording || !mediaRecorder || isPaused) return;
+      if (!isRecording || isPaused) return;
 
       console.log('[Recording] Pausing...');
       isPaused = true;
+      pauseStartTime = Date.now();
       
-      // Pause MediaRecorder
-      if (mediaRecorder.state === 'recording') {
+      // Pause MediaRecorder if available
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
         mediaRecorder.pause();
       }
 
@@ -89,13 +90,20 @@ export function getRecordingEnhancementsScript(): string {
     }
 
     function resumeRecording() {
-      if (!isRecording || !mediaRecorder || !isPaused) return;
+      if (!isRecording || !isPaused) return;
 
       console.log('[Recording] Resuming...');
+      
+      // Calculate paused duration and add to total
+      if (pauseStartTime) {
+        totalPausedTime += Date.now() - pauseStartTime;
+        pauseStartTime = null;
+      }
+      
       isPaused = false;
 
-      // Resume MediaRecorder
-      if (mediaRecorder.state === 'paused') {
+      // Resume MediaRecorder if available
+      if (mediaRecorder && mediaRecorder.state === 'paused') {
         mediaRecorder.resume();
       }
 
@@ -120,6 +128,8 @@ export function getRecordingEnhancementsScript(): string {
     function updatePauseUI(paused) {
       const pauseBtn = document.getElementById('pauseBtn');
       const recordingIndicator = document.getElementById('recordingIndicator');
+      const recordingStatus = document.getElementById('recordingStatus');
+      const indicatorDot = recordingIndicator ? recordingIndicator.querySelector('.dot') : null;
 
       if (pauseBtn) {
         if (paused) {
@@ -137,6 +147,15 @@ export function getRecordingEnhancementsScript(): string {
         } else {
           recordingIndicator.classList.remove('paused');
         }
+      }
+      
+      // Update status text and dot color
+      if (recordingStatus) {
+        recordingStatus.textContent = paused ? 'PAUSED' : 'REC';
+      }
+      if (indicatorDot) {
+        indicatorDot.style.backgroundColor = paused ? '#fbbf24' : '#ef4444';
+        indicatorDot.style.animation = paused ? 'none' : 'pulse 1s infinite';
       }
     }
 
@@ -456,15 +475,7 @@ export function getRecordingEnhancementsStyles(): string {
       transform: scale(1.2);
     }
 
-    /* Pause State */
-    .recording-indicator.paused {
-      animation: pauseBlink 1s infinite;
-    }
-
-    @keyframes pauseBlink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
-    }
+    /* Pause State - styles are in main popoutStyles.ts */
 
     /* Pause Button */
     #pauseBtn {

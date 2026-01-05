@@ -247,6 +247,7 @@ export function getPopoutStyles(): string {
       border-radius: 20px;
       font-weight: 600;
       display: none;
+      z-index: 50;
     }
 
     .recording-indicator.visible {
@@ -259,6 +260,20 @@ export function getPopoutStyles(): string {
       background: #fff;
       border-radius: 50%;
       animation: pulse 1s ease-in-out infinite;
+    }
+    
+    .recording-indicator.paused {
+      background: rgba(251, 191, 36, 0.9);
+    }
+    
+    .recording-indicator.paused .dot {
+      animation: none;
+      background: #fff;
+    }
+    
+    #wordProgress {
+      color: rgba(255, 255, 255, 0.85);
+      font-weight: 500;
     }
 
     @keyframes pulse {
@@ -655,15 +670,7 @@ export function getPopoutStyles(): string {
       color: #22c55e;
     }
 
-    /* Recording indicator paused state */
-    .recording-indicator.paused {
-      background: rgba(251, 191, 36, 0.9);
-    }
-
-    .recording-indicator.paused .dot {
-      animation: none;
-      background: #fff;
-    }
+    /* Recording indicator paused state is defined above in recording indicator section */
 
     /* Trim Controls Bar */
     .trim-controls-bar {
