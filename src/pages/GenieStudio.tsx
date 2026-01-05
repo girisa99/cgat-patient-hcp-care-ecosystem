@@ -4,7 +4,7 @@
  * Part of Genie Studio
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -1336,7 +1336,7 @@ export default function GenieStudio() {
   
   // Merge localStorage voiceovers with database voiceovers (DB takes priority)
   // Preserve metadata for proper categorization and teleprompter sync
-  const mergedVoiceovers = [
+  const mergedVoiceovers = useMemo(() => [
     ...dbVoiceovers.map(v => ({
       id: v.id,
       name: v.name,
@@ -1363,10 +1363,10 @@ export default function GenieStudio() {
       !dbVoiceovers.some(dv => dv.id === sv.id) && 
       !dbTtsFiles.some(dv => dv.id === sv.id)
     )
-  ];
+  ], [dbVoiceovers, dbTtsFiles, savedVoiceovers]);
   
   // Merge localStorage music with database instrumental files
-  const mergedMusic = [
+  const mergedMusic = useMemo(() => [
     ...dbMusic.map(m => ({
       id: m.id,
       name: m.name,
@@ -1375,7 +1375,33 @@ export default function GenieStudio() {
       timestamp: Date.now()
     })),
     ...savedMusic.filter(sm => !dbMusic.some(dm => dm.id === sm.id))
-  ];
+  ], [dbMusic, savedMusic]);
+  
+  // Memoize RecordingStudio props to prevent unnecessary re-renders
+  const studioScripts = useMemo(() => savedScripts.map(s => ({ 
+    id: s.id, 
+    title: s.name, 
+    content: s.enhancedContent || s.content,
+    originalContent: s.content,
+    enhancedContent: s.enhancedContent,
+    cleanContent: s.cleanContent,
+    type: s.type
+  })), [savedScripts]);
+  
+  const studioVoiceovers = useMemo(() => mergedVoiceovers.map(v => ({ 
+    id: v.id, 
+    name: v.name, 
+    url: v.url || '',
+    scriptText: (v as any).scriptText || null,
+    scriptType: (v as any).scriptType || null,
+    metadataType: (v as any).metadataType || null
+  })), [mergedVoiceovers]);
+  
+  const studioMusic = useMemo(() => mergedMusic.map(m => ({ 
+    id: m.id, 
+    name: m.name, 
+    url: m.url || '' 
+  })), [mergedMusic]);
   
   // Show events
   const { events, upcomingEvents, addEvent, updateEvent, deleteEvent, addParticipant } = useShowEvents();
@@ -3721,26 +3747,9 @@ export default function GenieStudio() {
           isOpen={isStudioOpen}
           onClose={handleStudioClose}
           onRecordingStateChange={setIsRecordingInProgress}
-          scripts={savedScripts.map(s => ({ 
-            id: s.id, 
-            title: s.name, 
-            content: s.enhancedContent || s.content,
-            // Pass both original and enhanced versions
-            originalContent: s.content,
-            enhancedContent: s.enhancedContent,
-            cleanContent: s.cleanContent,
-            type: s.type
-          }))}
-          voiceovers={mergedVoiceovers.map(v => ({ 
-            id: v.id, 
-            name: v.name, 
-            url: v.url || '',
-            // Pass metadata for teleprompter sync and filtering
-            scriptText: (v as any).scriptText || null,
-            scriptType: (v as any).scriptType || null,
-            metadataType: (v as any).metadataType || null
-          }))}
-          music={mergedMusic.map(m => ({ id: m.id, name: m.name, url: m.url || '' }))}
+          scripts={studioScripts}
+          voiceovers={studioVoiceovers}
+          music={studioMusic}
         />
 
         {/* Publish & Go Live Dialog */}
