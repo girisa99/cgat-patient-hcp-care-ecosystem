@@ -80,9 +80,155 @@ export const EXTERNAL_SYSTEMS_CONFIG: Record<string, ExternalSystemConfig> = {
     ]
   },
 
+  // Optum/Change Healthcare APIs (https://developer.optum.com)
+  optumEligibility: {
+    id: 'optum-eligibility',
+    name: 'Optum Eligibility & Claims',
+    type: 'insurance',
+    apiType: 'rest',
+    baseUrl: 'https://api.optum.com/eligibility',
+    authType: 'oauth2',
+    hipaaCompliant: true,
+    dataMappings: [
+      {
+        sourceField: 'eligibility.subscriber.memberId',
+        targetTable: 'enrollment_insurance_info',
+        targetField: 'primary_policy_number',
+        required: true
+      },
+      {
+        sourceField: 'eligibility.plan.planName',
+        targetTable: 'enrollment_insurance_info',
+        targetField: 'primary_insurance_name',
+        required: true
+      },
+      {
+        sourceField: 'eligibility.coverage.copay',
+        targetTable: 'enrollment_insurance_info',
+        targetField: 'copay_amount',
+        required: false
+      },
+      {
+        sourceField: 'eligibility.coverage.deductible',
+        targetTable: 'enrollment_insurance_info',
+        targetField: 'deductible_amount',
+        required: false
+      }
+    ]
+  },
+
+  optumPharmacy: {
+    id: 'optum-pharmacy',
+    name: 'Optum Pharmacy Solutions',
+    type: 'pharmacy',
+    apiType: 'rest',
+    baseUrl: 'https://api.optum.com/pharmacy',
+    authType: 'oauth2',
+    hipaaCompliant: true,
+    dataMappings: [
+      {
+        sourceField: 'prescription.rxNumber',
+        targetTable: 'prescription_data',
+        targetField: 'rx_number',
+        required: true
+      },
+      {
+        sourceField: 'prescription.drugName',
+        targetTable: 'prescription_data',
+        targetField: 'medication_name',
+        required: true
+      },
+      {
+        sourceField: 'prescription.ndc',
+        targetTable: 'prescription_data',
+        targetField: 'ndc_code',
+        required: true
+      },
+      {
+        sourceField: 'prescription.quantity',
+        targetTable: 'prescription_data',
+        targetField: 'quantity',
+        required: false
+      },
+      {
+        sourceField: 'pricing.patientPay',
+        targetTable: 'prescription_data',
+        targetField: 'patient_cost',
+        required: false
+      }
+    ]
+  },
+
+  optumPayment: {
+    id: 'optum-payment',
+    name: 'Optum Payment & Reimbursement',
+    type: 'insurance',
+    apiType: 'rest',
+    baseUrl: 'https://api.optum.com/payment',
+    authType: 'oauth2',
+    hipaaCompliant: true,
+    dataMappings: [
+      {
+        sourceField: 'claim.claimId',
+        targetTable: 'claims_data',
+        targetField: 'claim_id',
+        required: true
+      },
+      {
+        sourceField: 'payment.amount',
+        targetTable: 'claims_data',
+        targetField: 'payment_amount',
+        required: true
+      },
+      {
+        sourceField: 'payment.status',
+        targetTable: 'claims_data',
+        targetField: 'payment_status',
+        required: true
+      },
+      {
+        sourceField: 'remittance.eraNumber',
+        targetTable: 'claims_data',
+        targetField: 'era_number',
+        required: false
+      }
+    ]
+  },
+
+  optumReal: {
+    id: 'optum-real',
+    name: 'Optum Real-Time Exchange',
+    type: 'insurance',
+    apiType: 'rest',
+    baseUrl: 'https://api.optum.com/real',
+    authType: 'oauth2',
+    hipaaCompliant: true,
+    dataMappings: [
+      {
+        sourceField: 'transaction.transactionId',
+        targetTable: 'realtime_transactions',
+        targetField: 'transaction_id',
+        required: true
+      },
+      {
+        sourceField: 'eligibility.status',
+        targetTable: 'enrollment_insurance_info',
+        targetField: 'verification_status',
+        required: true
+      },
+      {
+        sourceField: 'claim.adjudicationResult',
+        targetTable: 'claims_data',
+        targetField: 'adjudication_status',
+        required: false
+      }
+    ]
+  },
+
+  // Legacy Change Healthcare (now part of Optum)
   changeHealthcare: {
     id: 'change-healthcare',
-    name: 'Change Healthcare',
+    name: 'Change Healthcare (Legacy)',
     type: 'insurance',
     apiType: 'rest',
     baseUrl: 'https://api.changehealthcare.com',
