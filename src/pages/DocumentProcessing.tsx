@@ -971,8 +971,27 @@ export default function DocumentProcessing() {
   const durationOptions = ['7 days', '10 days', '14 days', '21 days', '30 days', '60 days', '90 days'];
 
   // Parse SIG text to auto-populate dose, route, frequency, duration selectors
-  const parseSigToSelectors = useCallback((sigText: string) => {
-    if (!sigText) return;
+  // Returns the parsed values for immediate use (state updates are async)
+  const parseSigToSelectors = useCallback((sigText: string): {
+    dose: string;
+    route: string;
+    frequency: string;
+    duration: string;
+  } => {
+    // Default values
+    const defaults = {
+      dose: '1 tablet',
+      route: 'by mouth (oral)',
+      frequency: 'once daily',
+      duration: '30 days'
+    };
+    
+    if (!sigText) {
+      console.log('[parseSigToSelectors] No SIG text provided, using defaults');
+      return defaults;
+    }
+    
+    console.log('[parseSigToSelectors] Parsing SIG:', sigText);
     
     // Mark that we're extracting to prevent useEffect cascading updates
     isExtractingRef.current = true;
@@ -980,10 +999,10 @@ export default function DocumentProcessing() {
     const lowerSig = sigText.toLowerCase();
     
     // Collect all values first, then update states once
-    let newDose = selectedDose;
-    let newRoute = selectedRoute;
-    let newFrequency = selectedFrequency;
-    let newDuration = selectedDuration;
+    let newDose = defaults.dose;
+    let newRoute = defaults.route;
+    let newFrequency = defaults.frequency;
+    let newDuration = defaults.duration;
     
     // Parse dose amount (e.g., "take 1 tablet", "take 2 capsules", "1 cap", "2 tabs")
     const dosePatterns = [
@@ -1114,6 +1133,8 @@ export default function DocumentProcessing() {
       }
     }
     
+    console.log('[parseSigToSelectors] Parsed values:', { newDose, newRoute, newFrequency, newDuration });
+    
     // Batch all state updates together
     setSelectedDose(newDose);
     setSelectedRoute(newRoute);
@@ -1137,7 +1158,15 @@ export default function DocumentProcessing() {
     setTimeout(() => {
       isExtractingRef.current = false;
     }, 200);
-  }, [doseOptions, durationOptions, frequencyOptions, selectedDose, selectedRoute, selectedFrequency, selectedDuration]);
+    
+    // Return parsed values for immediate use (since state updates are async)
+    return {
+      dose: newDose,
+      route: newRoute,
+      frequency: newFrequency,
+      duration: newDuration
+    };
+  }, [doseOptions, durationOptions, frequencyOptions]);
 
   // Normalize drug name for API lookup - strip strength, dosage form, extras
   const normalizeDrugName = useCallback((rawName: string): { baseName: string; extractedStrength: string } => {
@@ -1961,18 +1990,30 @@ export default function DocumentProcessing() {
         // Data flows to Medication Lookup tab ONLY after "Confirm & Save to History"
         const finalDrugName = resolvedDrugName !== 'Unknown' ? resolvedDrugName : null;
         
+        console.log('[Extraction] Medication data extracted:', {
+          finalDrugName,
+          sigText,
+          hasStrengthField: !!extractedFields['strength']?.value,
+          frequency: extractedFields['frequency']?.value,
+          route: extractedFields['route']?.value,
+          dose: extractedFields['dose']?.value
+        });
+        
         if (finalDrugName) {
           const { baseName, extractedStrength } = normalizeDrugName(finalDrugName);
           const preservedStrength = extractedFields['strength']?.value || extractedStrength || '';
           
           // Store pending data - will be used after confirmation
-          setPendingMedicationData({
+          const pendingData = {
             drugName: finalDrugName,
             sigText: sigText,
             baseName: baseName,
             preservedStrength: preservedStrength,
             extractedFields: extractedFields
-          });
+          };
+          
+          console.log('[Extraction] Setting pendingMedicationData:', pendingData);
+          setPendingMedicationData(pendingData);
           
           toast.info(`Extracted medication: ${finalDrugName}`, {
             description: 'Review and confirm to populate Medication Lookup'
@@ -2369,7 +2410,15 @@ export default function DocumentProcessing() {
       
       // Now process pending medication data and populate Medication Lookup tab
       if (pendingMedicationData && (selectedDocType === 'prescription' || selectedDocType.includes('medication'))) {
-        const { drugName, sigText, baseName, preservedStrength } = pendingMedicationData;
+        const { drugName, sigText, baseName, preservedStrength, extractedFields: pendingExtractedFields } = pendingMedicationData;
+        
+        console.log('[handleVerifyAndSave] Processing pending medication data:', {
+          drugName,
+          sigText,
+          baseName,
+          preservedStrength,
+          hasExtractedFields: !!pendingExtractedFields
+        });
         
         // Set drug search query and SIG instructions
         setDrugSearchQuery(drugName);
@@ -2377,8 +2426,9 @@ export default function DocumentProcessing() {
           setSigInstructions(sigText);
         }
         
-        // Parse SIG to populate selectors
-        parseSigToSelectors(sigText);
+        // Parse SIG to populate selectors - get values immediately
+        const parsedValues = parseSigToSelectors(sigText);
+        console.log('[handleVerifyAndSave] Parsed SIG values:', parsedValues);
         
         // Switch to medication tab
         setActiveTab('medication');
