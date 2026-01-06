@@ -34,8 +34,52 @@ export function LiveExtractionPanel({
 }: LiveExtractionPanelProps) {
   const [currentStage, setCurrentStage] = useState<'ocr' | 'nlp' | 'validation'>('ocr');
   const [visibleFields, setVisibleFields] = useState<string[]>([]);
+  const [animatedProgress, setAnimatedProgress] = useState(0);
+  const [processingMessages, setProcessingMessages] = useState<string[]>([]);
 
   const fields = Object.entries(extractedFields);
+
+  // Simulate processing messages when no fields yet
+  useEffect(() => {
+    if (isProcessing && fields.length === 0) {
+      const messages = [
+        'Initializing document analysis...',
+        'Detecting document structure...',
+        'Running OCR text extraction...',
+        'Identifying key entities...',
+        'Processing with Vision AI...',
+        'Extracting field values...'
+      ];
+      let msgIndex = 0;
+      
+      const msgInterval = setInterval(() => {
+        if (msgIndex < messages.length) {
+          setProcessingMessages(prev => [...prev, messages[msgIndex]]);
+          msgIndex++;
+        }
+      }, 800);
+      
+      return () => clearInterval(msgInterval);
+    } else if (fields.length > 0) {
+      setProcessingMessages([]);
+    }
+  }, [isProcessing, fields.length]);
+
+  // Animate progress bar smoothly
+  useEffect(() => {
+    if (isProcessing) {
+      const targetProgress = fields.length > 0 ? 100 : 60;
+      const interval = setInterval(() => {
+        setAnimatedProgress(prev => {
+          if (prev >= targetProgress) return prev;
+          return prev + 2;
+        });
+      }, 100);
+      return () => clearInterval(interval);
+    } else {
+      setAnimatedProgress(fields.length > 0 ? 100 : 0);
+    }
+  }, [isProcessing, fields.length]);
 
   // Animate fields appearing one by one
   useEffect(() => {
@@ -60,15 +104,26 @@ export function LiveExtractionPanel({
 
   // Update stage based on progress
   useEffect(() => {
-    const progress = (visibleFields.length / Math.max(fields.length, 1)) * 100;
-    if (progress < 40) {
-      setCurrentStage('ocr');
-    } else if (progress < 80) {
-      setCurrentStage('nlp');
+    if (fields.length === 0 && isProcessing) {
+      // Use animated progress for stage when no fields yet
+      if (animatedProgress < 30) {
+        setCurrentStage('ocr');
+      } else if (animatedProgress < 70) {
+        setCurrentStage('nlp');
+      } else {
+        setCurrentStage('validation');
+      }
     } else {
-      setCurrentStage('validation');
+      const progress = (visibleFields.length / Math.max(fields.length, 1)) * 100;
+      if (progress < 40) {
+        setCurrentStage('ocr');
+      } else if (progress < 80) {
+        setCurrentStage('nlp');
+      } else {
+        setCurrentStage('validation');
+      }
     }
-  }, [visibleFields.length, fields.length]);
+  }, [visibleFields.length, fields.length, animatedProgress, isProcessing]);
 
   const getConfidenceColor = (confidence: number) => {
     if (confidence >= 0.9) return 'text-green-600 bg-green-100 dark:bg-green-900/30';
@@ -143,10 +198,34 @@ export function LiveExtractionPanel({
         <div className="space-y-1">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>Fields extracted</span>
-            <span>{visibleFields.length} / {fields.length}</span>
+            <span>{visibleFields.length} / {fields.length > 0 ? fields.length : '...'}</span>
           </div>
-          <Progress value={(visibleFields.length / Math.max(fields.length, 1)) * 100} className="h-2" />
+          <Progress value={fields.length > 0 ? (visibleFields.length / Math.max(fields.length, 1)) * 100 : animatedProgress} className="h-2" />
         </div>
+
+        {/* Processing Messages (when no fields yet) */}
+        {isProcessing && fields.length === 0 && processingMessages.length > 0 && (
+          <div className="space-y-1.5 py-2">
+            {processingMessages.map((msg, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className={cn(
+                  "flex items-center gap-2 text-xs",
+                  idx === processingMessages.length - 1 ? "text-primary font-medium" : "text-muted-foreground"
+                )}
+              >
+                {idx === processingMessages.length - 1 ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <CheckCircle className="h-3 w-3 text-green-500" />
+                )}
+                {msg}
+              </motion.div>
+            ))}
+          </div>
+        )}
 
         {/* Extracted Fields List */}
         <ScrollArea className="h-[200px]">
