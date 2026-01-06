@@ -36,6 +36,9 @@ export type { ModelRoutingInfo as ModelRoutingPanelInfo } from './ModelRoutingPa
 // Smart Document Studio Components
 export * from './studio';
 
+// Agent Execution Types
+export { useAgentExecution } from '@/hooks/useAgentExecution';
+export type { SubAgentSuggestion, AgentExecutionResult, AgentReadyStatus, DocumentContext } from '@/hooks/useAgentExecution';
 export type { AIProvider, PipelineType, ModelUsageInfo } from './AIModelIndicator';
 export { useDocumentProcessing, DOCUMENT_TYPE_FIELDS } from '@/hooks/useDocumentProcessing';
 export type { 

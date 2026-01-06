@@ -1,7 +1,7 @@
 /**
  * Sub-Agent Recommendation Dialog
  * Clean, focused dialog for recommending sub-agents based on document type
- * Includes "Add Custom Agent" and "Execute Now" vs "Build Workflow" toggle
+ * Shows AI-powered agents (ready) vs integration-required agents (need setup)
  */
 
 import React, { useState, useMemo } from 'react';
@@ -18,6 +18,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { 
   Bot, 
   CheckCircle,
@@ -26,13 +32,17 @@ import {
   Plus,
   Zap,
   Hammer,
-  Loader2
+  Loader2,
+  Sparkles,
+  Settings,
+  AlertCircle,
+  Info
 } from 'lucide-react';
 import { DocumentTypeConfig } from '@/config/documentTypes';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { AddCustomAgentDialog, type CustomAgentConfig } from './studio/AddCustomAgentDialog';
-import { useAgentExecution, type SubAgentSuggestion } from '@/hooks/useAgentExecution';
+import { useAgentExecution, type SubAgentSuggestion, type AgentReadyStatus } from '@/hooks/useAgentExecution';
 import { toast } from 'sonner';
 
 interface SubAgentRecommendationDialogProps {
@@ -45,6 +55,11 @@ interface SubAgentRecommendationDialogProps {
 
 export type { SubAgentSuggestion };
 
+// Agent ready status definitions
+// 'ai-powered' = Uses Lovable AI, ready to execute immediately
+// 'ready' = Simple agent, ready to execute  
+// 'needs-config' = Requires external API integration
+
 // Document-type specific sub-agent suggestions - UNIVERSAL for ALL document types
 const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
   'insurance': [
@@ -55,7 +70,9 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
       icon: '🔍',
       useCase: 'insurance-verification',
       triggerCondition: 'After insurance card is processed',
-      architectureType: 'a2a'
+      architectureType: 'a2a',
+      readyStatus: 'needs-config',
+      requiredSetup: ['Payer API credentials (Availity, Change Healthcare)', '270/271 EDI transaction setup', 'Provider NPI registration']
     },
     {
       id: 'eligibility-check',
@@ -64,7 +81,9 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
       icon: '✅',
       useCase: 'eligibility-check',
       triggerCondition: 'When coverage details are extracted',
-      architectureType: 'agentic'
+      architectureType: 'agentic',
+      readyStatus: 'needs-config',
+      requiredSetup: ['Payer eligibility API endpoints', 'Service/CPT code mapping']
     },
     {
       id: 'benefits-verification',
@@ -73,7 +92,9 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
       icon: '💵',
       useCase: 'benefits-verification',
       triggerCondition: 'When benefit details needed',
-      architectureType: 'a2a'
+      architectureType: 'a2a',
+      readyStatus: 'needs-config',
+      requiredSetup: ['Payer benefits API', 'Plan ID mapping']
     },
     {
       id: 'prior-auth',
@@ -82,18 +103,31 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
       icon: '📋',
       useCase: 'prior-authorization',
       triggerCondition: 'When procedure requires pre-approval',
-      architectureType: 'multi-agent'
+      architectureType: 'multi-agent',
+      readyStatus: 'needs-config',
+      requiredSetup: ['CoverMyMeds or SureScripts API', 'Payer PA portal credentials', 'Provider credentialing']
     }
   ],
   'prescription': [
     {
       id: 'drug-interaction',
       name: 'Drug Interaction Checker',
-      description: 'Checks for drug-drug and drug-allergy interactions',
+      description: '🤖 AI-powered drug-drug and drug-allergy interaction analysis',
       icon: '⚠️',
       useCase: 'drug-interaction',
       triggerCondition: 'When medication is identified',
-      architectureType: 'agentic'
+      architectureType: 'agentic',
+      readyStatus: 'ai-powered'
+    },
+    {
+      id: 'clinical-review',
+      name: 'Clinical Review Agent',
+      description: '🤖 AI-powered prescription clinical appropriateness review',
+      icon: '🩺',
+      useCase: 'clinical-review',
+      triggerCondition: 'After medication extraction',
+      architectureType: 'agentic',
+      readyStatus: 'ai-powered'
     },
     {
       id: 'medication-reconciliation',
@@ -102,7 +136,9 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
       icon: '📊',
       useCase: 'medication-reconciliation',
       triggerCondition: 'When patient transitions care',
-      architectureType: 'multi-agent'
+      architectureType: 'multi-agent',
+      readyStatus: 'needs-config',
+      requiredSetup: ['EHR integration (Epic, Cerner)', 'Patient medication history access']
     },
     {
       id: 'pharmacy-finder',
@@ -111,16 +147,9 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
       icon: '🏥',
       useCase: 'pharmacy-finder',
       triggerCondition: 'When medication availability needed',
-      architectureType: 'single'
-    },
-    {
-      id: 'clinical-review',
-      name: 'Clinical Review Agent',
-      description: 'Reviews prescription for clinical appropriateness',
-      icon: '🩺',
-      useCase: 'clinical-review',
-      triggerCondition: 'After medication extraction',
-      architectureType: 'agentic'
+      architectureType: 'single',
+      readyStatus: 'needs-config',
+      requiredSetup: ['GoodRx or pharmacy network API', 'Location services']
     }
   ],
   'patient-onboarding': [
@@ -214,11 +243,12 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
     {
       id: 'radiology-ai',
       name: 'Radiology AI Agent',
-      description: 'AI-powered image analysis for X-ray interpretation',
+      description: '🤖 AI-powered image analysis for X-ray interpretation',
       icon: '🔬',
       useCase: 'radiology-ai',
       triggerCondition: 'When X-ray image uploaded',
-      architectureType: 'agentic'
+      architectureType: 'agentic',
+      readyStatus: 'ai-powered'
     },
     {
       id: 'report-generation',
@@ -227,18 +257,21 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
       icon: '📝',
       useCase: 'radiology-report',
       triggerCondition: 'After AI analysis complete',
-      architectureType: 'single'
+      architectureType: 'single',
+      readyStatus: 'needs-config',
+      requiredSetup: ['PACS integration', 'HL7/FHIR endpoint']
     }
   ],
   'ct-scan': [
     {
       id: 'ct-analysis',
       name: 'CT Analysis Agent',
-      description: 'Deep learning analysis for CT scan interpretation',
+      description: '🤖 AI-powered deep learning analysis for CT scan interpretation',
       icon: '🧠',
       useCase: 'ct-analysis',
       triggerCondition: 'When CT scan uploaded',
-      architectureType: 'agentic'
+      architectureType: 'agentic',
+      readyStatus: 'ai-powered'
     },
     {
       id: 'ct-report',
@@ -247,18 +280,21 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
       icon: '📋',
       useCase: 'ct-report',
       triggerCondition: 'After CT analysis complete',
-      architectureType: 'single'
+      architectureType: 'single',
+      readyStatus: 'needs-config',
+      requiredSetup: ['PACS integration', 'Radiology workflow integration']
     }
   ],
   'mri': [
     {
       id: 'mri-analysis',
       name: 'MRI Analysis Agent',
-      description: 'AI-powered MRI interpretation and segmentation',
+      description: '🤖 AI-powered MRI interpretation and segmentation',
       icon: '🧠',
       useCase: 'mri-analysis',
       triggerCondition: 'When MRI scan uploaded',
-      architectureType: 'agentic'
+      architectureType: 'agentic',
+      readyStatus: 'ai-powered'
     },
     {
       id: 'mri-report',
@@ -267,7 +303,9 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
       icon: '📝',
       useCase: 'mri-report',
       triggerCondition: 'After MRI analysis complete',
-      architectureType: 'single'
+      architectureType: 'single',
+      readyStatus: 'needs-config',
+      requiredSetup: ['PACS integration', 'Report templating system']
     }
   ],
   'ecg': [
@@ -278,7 +316,9 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
       icon: '❤️',
       useCase: 'ecg-interpretation',
       triggerCondition: 'When ECG uploaded',
-      architectureType: 'agentic'
+      architectureType: 'agentic',
+      readyStatus: 'needs-config',
+      requiredSetup: ['ECG device integration', 'Cardiology workflow']
     },
     {
       id: 'cardiac-alert',
@@ -287,27 +327,31 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
       icon: '🚨',
       useCase: 'cardiac-alerting',
       triggerCondition: 'When abnormal rhythms detected',
-      architectureType: 'a2a'
+      architectureType: 'a2a',
+      readyStatus: 'needs-config',
+      requiredSetup: ['Alert notification system', 'On-call provider directory']
     }
   ],
   'lab-results': [
     {
       id: 'critical-value-alert',
       name: 'Critical Value Alert Agent',
-      description: 'Monitors for critical lab values and sends alerts',
+      description: '🤖 AI-powered monitoring for critical lab values and alerts',
       icon: '🚨',
       useCase: 'critical-value-alerting',
       triggerCondition: 'When lab result contains critical values',
-      architectureType: 'a2a'
+      architectureType: 'a2a',
+      readyStatus: 'ai-powered'
     },
     {
       id: 'trend-analysis',
       name: 'Lab Trend Analysis Agent',
-      description: 'Analyzes historical lab trends and patterns',
+      description: '🤖 AI-powered analysis of historical lab trends and patterns',
       icon: '📈',
       useCase: 'lab-trend-analysis',
       triggerCondition: 'When comparing with historical results',
-      architectureType: 'agentic'
+      architectureType: 'agentic',
+      readyStatus: 'ai-powered'
     }
   ],
   // NEW: Missing document types with full sub-agent support
@@ -751,35 +795,116 @@ export default function SubAgentRecommendationDialog({
         {/* Scrollable Agent List */}
         <ScrollArea className="flex-1 min-h-0 max-h-[45vh] pr-2">
           <div className="space-y-2 py-2">
-            {suggestions.map(agent => (
-              <div
-                key={agent.id}
-                className={cn(
-                  "p-3 rounded-lg border cursor-pointer transition-all",
-                  selectedAgents.includes(agent.id)
-                    ? "border-green-500 bg-green-50 dark:bg-green-950/30"
-                    : "border-border hover:border-primary/50 hover:bg-muted/30"
-                )}
-                onClick={() => toggleAgent(agent.id)}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="text-xl">{agent.icon}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium text-sm">{agent.name}</span>
-                      {selectedAgents.includes(agent.id) && (
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">{agent.description}</p>
-                    <div className="mt-1.5 flex items-center gap-2">
-                      {getArchitectureBadge(agent.architectureType)}
-                      <span className="text-[10px] text-amber-600">⚡ {agent.triggerCondition}</span>
+            {/* AI-Powered Agents Section */}
+            {suggestions.filter(a => a.readyStatus === 'ai-powered').length > 0 && (
+              <div className="mb-3">
+                <div className="flex items-center gap-2 mb-2 px-1">
+                  <Sparkles className="h-3.5 w-3.5 text-purple-500" />
+                  <span className="text-xs font-medium text-purple-700 dark:text-purple-300">AI-Powered (Ready to Execute)</span>
+                </div>
+                {suggestions.filter(a => a.readyStatus === 'ai-powered').map(agent => (
+                  <div
+                    key={agent.id}
+                    className={cn(
+                      "p-3 rounded-lg border cursor-pointer transition-all mb-2",
+                      selectedAgents.includes(agent.id)
+                        ? "border-purple-500 bg-purple-50 dark:bg-purple-950/30 ring-1 ring-purple-300"
+                        : "border-purple-200 dark:border-purple-800 hover:border-purple-400 hover:bg-purple-50/50 dark:hover:bg-purple-950/20"
+                    )}
+                    onClick={() => toggleAgent(agent.id)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="text-xl">{agent.icon}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-sm">{agent.name}</span>
+                          <Badge variant="outline" className="text-[9px] bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-700">
+                            <Sparkles className="h-2.5 w-2.5 mr-0.5" /> AI Ready
+                          </Badge>
+                          {selectedAgents.includes(agent.id) && (
+                            <CheckCircle className="h-4 w-4 text-purple-500" />
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">{agent.description}</p>
+                        <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+                          {getArchitectureBadge(agent.architectureType)}
+                          <span className="text-[10px] text-amber-600">⚡ {agent.triggerCondition}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
+            )}
+
+            {/* Integration-Required Agents Section */}
+            {suggestions.filter(a => a.readyStatus === 'needs-config' || !a.readyStatus).length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-2 px-1">
+                  <Settings className="h-3.5 w-3.5 text-amber-500" />
+                  <span className="text-xs font-medium text-amber-700 dark:text-amber-300">Requires Configuration</span>
+                </div>
+                {suggestions.filter(a => a.readyStatus === 'needs-config' || !a.readyStatus).map(agent => (
+                  <TooltipProvider key={agent.id}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div
+                          className={cn(
+                            "p-3 rounded-lg border cursor-pointer transition-all mb-2 relative",
+                            selectedAgents.includes(agent.id)
+                              ? "border-amber-400 bg-amber-50 dark:bg-amber-950/30"
+                              : "border-border hover:border-amber-300 hover:bg-muted/30"
+                          )}
+                          onClick={() => toggleAgent(agent.id)}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="text-xl opacity-75">{agent.icon}</div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-medium text-sm">{agent.name}</span>
+                                <Badge variant="outline" className="text-[9px] bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-900/50 dark:text-amber-300 dark:border-amber-700">
+                                  <Settings className="h-2.5 w-2.5 mr-0.5" /> Setup Needed
+                                </Badge>
+                                {selectedAgents.includes(agent.id) && (
+                                  <CheckCircle className="h-4 w-4 text-amber-500" />
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5">{agent.description}</p>
+                              <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+                                {getArchitectureBadge(agent.architectureType)}
+                                <span className="text-[10px] text-amber-600">⚡ {agent.triggerCondition}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="left" className="max-w-[280px] p-3">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 font-medium text-sm">
+                            <AlertCircle className="h-4 w-4 text-amber-500" />
+                            Configuration Required
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            This agent requires external integrations to function:
+                          </p>
+                          <ul className="text-xs space-y-1">
+                            {(agent.requiredSetup || ['API credentials', 'Endpoint configuration']).map((req, idx) => (
+                              <li key={idx} className="flex items-start gap-1.5">
+                                <span className="text-amber-500 mt-0.5">•</span>
+                                <span>{req}</span>
+                              </li>
+                            ))}
+                          </ul>
+                          <p className="text-[10px] text-muted-foreground italic pt-1">
+                            Click to select anyway - will show requirements on execution
+                          </p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ))}
+              </div>
+            )}
 
             {/* Add Custom Agent Card */}
             <div
@@ -820,10 +945,28 @@ export default function SubAgentRecommendationDialog({
           </div>
 
           {selectedAgents.length > 0 && (
-            <div className="p-2 rounded-lg bg-green-50 dark:bg-green-950/30 text-center">
-              <span className="text-sm text-green-700 dark:text-green-300 font-medium">
-                {selectedAgents.length} agent(s) selected
-              </span>
+            <div className="p-2 rounded-lg bg-green-50 dark:bg-green-950/30">
+              <div className="text-center">
+                <span className="text-sm text-green-700 dark:text-green-300 font-medium">
+                  {selectedAgents.length} agent(s) selected
+                </span>
+              </div>
+              {executeMode === 'execute' && (
+                <div className="flex justify-center gap-3 mt-1 text-[10px]">
+                  {suggestions.filter(s => selectedAgents.includes(s.id) && s.readyStatus === 'ai-powered').length > 0 && (
+                    <span className="flex items-center gap-1 text-purple-600">
+                      <Sparkles className="h-3 w-3" />
+                      {suggestions.filter(s => selectedAgents.includes(s.id) && s.readyStatus === 'ai-powered').length} AI-powered
+                    </span>
+                  )}
+                  {suggestions.filter(s => selectedAgents.includes(s.id) && (s.readyStatus === 'needs-config' || !s.readyStatus)).length > 0 && (
+                    <span className="flex items-center gap-1 text-amber-600">
+                      <Info className="h-3 w-3" />
+                      {suggestions.filter(s => selectedAgents.includes(s.id) && (s.readyStatus === 'needs-config' || !s.readyStatus)).length} need setup
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
