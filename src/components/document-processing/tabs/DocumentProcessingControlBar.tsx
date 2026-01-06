@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import { DocumentTypeConfig, getAllCategories, getCategoryIcon, getCategoryLabel, getDocumentTypesByCategory } from '@/config/documentTypes';
 
-type ProcessingStage = 'idle' | 'uploading' | 'ocr' | 'extraction' | 'mapping' | 'validation' | 'complete' | 'error';
+type ProcessingStage = 'idle' | 'uploading' | 'ocr' | 'extraction' | 'entity_extraction' | 'table_extraction' | 'mapping' | 'validation' | 'complete' | 'error';
 type ProcessingMode = 'standalone' | 'agent';
 
 interface DocumentProcessingControlBarProps {

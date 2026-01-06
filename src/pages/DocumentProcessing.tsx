@@ -125,7 +125,7 @@ import {
 import { ClinicalRecommendationDialog, SettingsDialog, VerificationDialog } from '@/components/document-processing/dialogs';
 
 // Processing stages
-type ProcessingStage = 'idle' | 'uploading' | 'ocr' | 'extraction' | 'mapping' | 'validation' | 'complete' | 'error';
+type ProcessingStage = 'idle' | 'uploading' | 'ocr' | 'extraction' | 'entity_extraction' | 'table_extraction' | 'mapping' | 'validation' | 'complete' | 'error';
 
 // Agent workflow types for document processing
 type AgentWorkflowType = 'none' | 'insurance-verification' | 'prescription-processing' | 'patient-intake' | 'imaging-analysis';
@@ -1805,6 +1805,9 @@ export default function DocumentProcessing() {
       setProcessingResult(prev => prev ? { ...prev, stage: 'ocr', progress: 45 } : null);
       toast.info(enableOCR ? 'Running OCR extraction...' : 'Processing document...');
       
+      // Small delay to allow UI to show OCR stage
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
       // Stage 3: Process document with OCR and extraction
       setProcessingResult(prev => prev ? { ...prev, stage: 'extraction', progress: 50 } : null);
       toast.info('Extracting data from document...');
@@ -1818,7 +1821,43 @@ export default function DocumentProcessing() {
       
       if (processError) throw processError;
       
-      setProcessingResult(prev => prev ? { ...prev, progress: 70 } : null);
+      // Update progress and show entity extraction stage with partial fields
+      setProcessingResult(prev => prev ? { ...prev, stage: 'entity_extraction', progress: 65 } : null);
+      
+      // Feed initial entities to show live extraction progress
+      const earlyMetadata = processResult?.metadata || {};
+      const earlyEntities = earlyMetadata.entities || [];
+      if (earlyEntities.length > 0) {
+        const earlyFields: Record<string, { value: string; confidence: number; source?: string }> = {};
+        earlyEntities.slice(0, Math.ceil(earlyEntities.length / 2)).forEach((entity: any) => {
+          if (entity.value) {
+            const fieldKey = entity.type.toLowerCase().replace(/\s+/g, '_');
+            earlyFields[fieldKey] = {
+              value: entity.value,
+              confidence: entity.confidence || 0.5,
+              source: 'gemini_vision_ai'
+            };
+          }
+        });
+        // Progressively add fields to show live extraction
+        setProcessingResult(prev => prev ? { ...prev, extractedFields: earlyFields, progress: 70 } : null);
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Add remaining fields
+        earlyEntities.slice(Math.ceil(earlyEntities.length / 2)).forEach((entity: any) => {
+          if (entity.value) {
+            const fieldKey = entity.type.toLowerCase().replace(/\s+/g, '_');
+            earlyFields[fieldKey] = {
+              value: entity.value,
+              confidence: entity.confidence || 0.5,
+              source: 'gemini_vision_ai'
+            };
+          }
+        });
+        setProcessingResult(prev => prev ? { ...prev, extractedFields: earlyFields, progress: 75 } : null);
+      } else {
+        setProcessingResult(prev => prev ? { ...prev, progress: 70 } : null);
+      }
       
       // Stage 4: Map to form fields - NO hardcoded target fields, extract only what's visible
       setProcessingResult(prev => prev ? { ...prev, stage: 'mapping', progress: 80 } : null);
