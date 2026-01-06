@@ -1,7 +1,7 @@
 /**
  * Sub-Agent Recommendation Dialog
  * Clean, focused dialog for recommending sub-agents based on document type
- * Separate from the main architecture panel - focuses only on sub-agent workflows
+ * Includes "Add Custom Agent" and "Execute Now" vs "Build Workflow" toggle
  */
 
 import React, { useState, useMemo } from 'react';
@@ -15,32 +15,35 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import { 
   Bot, 
   CheckCircle,
   XCircle,
-  Brain
+  Brain,
+  Plus,
+  Zap,
+  Hammer,
+  Loader2
 } from 'lucide-react';
 import { DocumentTypeConfig } from '@/config/documentTypes';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
+import { AddCustomAgentDialog, type CustomAgentConfig } from './studio/AddCustomAgentDialog';
+import { useAgentExecution, type SubAgentSuggestion } from '@/hooks/useAgentExecution';
+import { toast } from 'sonner';
 
 interface SubAgentRecommendationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   documentType: DocumentTypeConfig;
   extractedData?: Record<string, any>;
+  onAgentExecutionComplete?: (results: any[]) => void;
 }
 
-interface SubAgentSuggestion {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  useCase: string;
-  triggerCondition: string;
-  architectureType: 'a2a' | 'agentic' | 'multi-agent' | 'single';
-}
+export type { SubAgentSuggestion };
 
 // Document-type specific sub-agent suggestions - UNIVERSAL for ALL document types
 const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
@@ -582,20 +585,27 @@ export default function SubAgentRecommendationDialog({
   open,
   onOpenChange,
   documentType,
-  extractedData
+  extractedData,
+  onAgentExecutionComplete
 }: SubAgentRecommendationDialogProps) {
   const navigate = useNavigate();
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
+  const [executeMode, setExecuteMode] = useState<'execute' | 'build'>('execute');
+  const [showAddAgentDialog, setShowAddAgentDialog] = useState(false);
+  const [customAgents, setCustomAgents] = useState<SubAgentSuggestion[]>([]);
+  
+  const { executeAgents, isExecuting, executionProgress, currentAgent } = useAgentExecution();
 
   // Get suggestions for current document type - with fallback for any unknown types
   const suggestions = useMemo(() => {
     const docTypeAgents = DOCUMENT_TYPE_SUBAGENTS[documentType.id];
-    if (docTypeAgents && docTypeAgents.length > 0) {
-      return docTypeAgents;
-    }
-    // Fallback to generic agents for any document type
-    return getGenericSubAgents(documentType.id);
-  }, [documentType.id]);
+    const baseAgents = docTypeAgents && docTypeAgents.length > 0 
+      ? docTypeAgents 
+      : getGenericSubAgents(documentType.id);
+    
+    // Include custom agents
+    return [...baseAgents, ...customAgents];
+  }, [documentType.id, customAgents]);
 
   const toggleAgent = (agentId: string) => {
     setSelectedAgents(prev => 
@@ -605,12 +615,50 @@ export default function SubAgentRecommendationDialog({
     );
   };
 
+  const handleCustomAgentCreated = (agent: CustomAgentConfig) => {
+    const newAgent: SubAgentSuggestion = {
+      id: agent.id,
+      name: agent.name,
+      description: agent.description,
+      icon: '🤖',
+      useCase: agent.documentTypeId,
+      triggerCondition: agent.triggerCondition,
+      architectureType: agent.architectureType
+    };
+    setCustomAgents(prev => [...prev, newAgent]);
+    setSelectedAgents(prev => [...prev, agent.id]);
+  };
+
+  const handleExecuteNow = async () => {
+    const selectedSubAgents = suggestions.filter(s => selectedAgents.includes(s.id));
+    
+    if (selectedSubAgents.length === 0) {
+      toast.error('Please select at least one agent');
+      return;
+    }
+
+    const documentContext = {
+      documentType: documentType.id,
+      extractedFields: extractedData?.processingResult?.extractedFields || extractedData?.extractedFields || {},
+      rawText: extractedData?.processingResult?.rawText || extractedData?.rawText,
+      fileName: extractedData?.processingResult?.fileName || extractedData?.fileName
+    };
+
+    const results = await executeAgents(selectedSubAgents, documentContext);
+    
+    onAgentExecutionComplete?.(results);
+    onOpenChange(false);
+    
+    toast.success(`Executed ${results.length} agent(s)`, {
+      description: `${results.filter(r => r.status === 'completed').length} completed successfully`
+    });
+  };
+
   const handleBuildAgents = () => {
     const selectedSubAgents = suggestions.filter(s => selectedAgents.includes(s.id));
     
     // Auto-generate workflow nodes with BIDIRECTIONAL linking back to document processing
     const generatedNodes = [
-      // Start node - Document Input from Document Processing
       {
         id: 'start-node',
         type: 'enhanced',
@@ -619,126 +667,37 @@ export default function SubAgentRecommendationDialog({
           label: 'Document Input',
           type_key: 'trigger',
           intent: `Receive ${documentType.title} document for processing`,
-          configuration: { 
-            documentType: documentType.id,
-            sourceModule: 'document-processing',
-            bidirectional: true
-          }
+          configuration: { documentType: documentType.id, sourceModule: 'document-processing', bidirectional: true }
         }
       },
-      // Sub-agent nodes
       ...selectedSubAgents.map((agent, idx) => ({
         id: `agent-${agent.id}`,
         type: 'enhanced',
         position: { x: 400 + (idx % 2) * 300, y: 100 + Math.floor(idx / 2) * 180 },
         data: {
           label: agent.name,
-          type_key: agent.architectureType === 'a2a' ? 'a2a-agent' : 
-                    agent.architectureType === 'multi-agent' ? 'agent-team' :
-                    agent.architectureType === 'agentic' ? 'react-loop' : 'ai-agent',
+          type_key: agent.architectureType === 'a2a' ? 'a2a-agent' : agent.architectureType === 'multi-agent' ? 'agent-team' : agent.architectureType === 'agentic' ? 'react-loop' : 'ai-agent',
           intent: agent.triggerCondition,
           icon: agent.icon,
-          configuration: {
-            useCase: agent.useCase,
-            architectureType: agent.architectureType,
-            description: agent.description,
-            linkedDocumentType: documentType.id
-          }
+          configuration: { useCase: agent.useCase, architectureType: agent.architectureType, description: agent.description, linkedDocumentType: documentType.id }
         }
       })),
-      // Return to Document Processing node - BIDIRECTIONAL LINK BACK
-      {
-        id: 'return-doc-node',
-        type: 'enhanced',
-        position: { x: 400 + Math.ceil(selectedSubAgents.length / 2) * 300, y: 100 },
-        data: {
-          label: '↩️ Return to Document Processing',
-          type_key: 'connector',
-          intent: 'Send results back to document processing workflow',
-          configuration: {
-            targetModule: 'document-processing',
-            targetDocumentType: documentType.id,
-            returnPath: '/document-processing',
-            syncFields: true,
-            bidirectional: true
-          }
-        }
-      },
-      // End node
-      {
-        id: 'end-node',
-        type: 'enhanced',
-        position: { x: 400 + Math.ceil(selectedSubAgents.length / 2) * 300 + 200, y: 200 },
-        data: {
-          label: 'Process Complete',
-          type_key: 'output',
-          intent: 'Workflow completion and result output',
-          configuration: {}
-        }
-      }
+      { id: 'return-doc-node', type: 'enhanced', position: { x: 400 + Math.ceil(selectedSubAgents.length / 2) * 300, y: 100 }, data: { label: '↩️ Return to Document Processing', type_key: 'connector', intent: 'Send results back', configuration: { targetModule: 'document-processing', bidirectional: true } } },
+      { id: 'end-node', type: 'enhanced', position: { x: 400 + Math.ceil(selectedSubAgents.length / 2) * 300 + 200, y: 200 }, data: { label: 'Process Complete', type_key: 'output', intent: 'Workflow completion', configuration: {} } }
     ];
 
-    // Generate edges with bidirectional support
     const generatedEdges = [
-      // Connect start to first agent
-      ...(selectedSubAgents.length > 0 ? [{
-        id: 'e-start-first',
-        source: 'start-node',
-        target: `agent-${selectedSubAgents[0].id}`,
-        type: 'smoothstep',
-        animated: true,
-        label: 'Document Data'
-      }] : []),
-      // Connect agents in sequence
-      ...selectedSubAgents.slice(0, -1).map((agent, idx) => ({
-        id: `e-${agent.id}-${selectedSubAgents[idx + 1].id}`,
-        source: `agent-${agent.id}`,
-        target: `agent-${selectedSubAgents[idx + 1].id}`,
-        type: 'smoothstep',
-        animated: true
-      })),
-      // Connect last agent to return node (bidirectional link back)
-      ...(selectedSubAgents.length > 0 ? [{
-        id: 'e-last-return',
-        source: `agent-${selectedSubAgents[selectedSubAgents.length - 1].id}`,
-        target: 'return-doc-node',
-        type: 'smoothstep',
-        animated: true,
-        label: 'Results'
-      }] : []),
-      // Connect return node to end
-      {
-        id: 'e-return-end',
-        source: 'return-doc-node',
-        target: 'end-node',
-        type: 'smoothstep',
-        animated: true
-      }
+      ...(selectedSubAgents.length > 0 ? [{ id: 'e-start-first', source: 'start-node', target: `agent-${selectedSubAgents[0].id}`, type: 'smoothstep', animated: true, label: 'Document Data' }] : []),
+      ...selectedSubAgents.slice(0, -1).map((agent, idx) => ({ id: `e-${agent.id}-${selectedSubAgents[idx + 1].id}`, source: `agent-${agent.id}`, target: `agent-${selectedSubAgents[idx + 1].id}`, type: 'smoothstep', animated: true })),
+      ...(selectedSubAgents.length > 0 ? [{ id: 'e-last-return', source: `agent-${selectedSubAgents[selectedSubAgents.length - 1].id}`, target: 'return-doc-node', type: 'smoothstep', animated: true, label: 'Results' }] : []),
+      { id: 'e-return-end', source: 'return-doc-node', target: 'end-node', type: 'smoothstep', animated: true }
     ];
     
-    // Persist current document processing state to sessionStorage before navigating
-    // This preserves ALL document type states - prescription, insurance, invoice, medical imaging
     if (extractedData) {
-      const stateToPreserve = {
-        // Universal states for ALL document types
+      sessionStorage.setItem('docProcessing_fullState', JSON.stringify({
         processingResult: extractedData.processingResult || null,
         pendingResult: extractedData.pendingResult || null,
-        // Prescription/Medication-specific states
-        searchResults: extractedData.searchResults || null,
-        drugSearchQuery: extractedData.drugSearchQuery || '',
-        sigInstructions: extractedData.sigInstructions || '',
-        selectedNdc: extractedData.selectedNdc || null,
-        parsedSig: extractedData.parsedSig || null,
-        selectedDose: extractedData.selectedDose || '',
-        selectedRoute: extractedData.selectedRoute || '',
-        selectedFrequency: extractedData.selectedFrequency || '',
-        selectedDuration: extractedData.selectedDuration || '',
-        ndcDosageInfo: extractedData.ndcDosageInfo || null,
-        // Medical imaging states
-        medicalImageBase64: extractedData.medicalImageBase64 || '',
-        medicalImageMimeType: extractedData.medicalImageMimeType || '',
-      };
-      sessionStorage.setItem('docProcessing_fullState', JSON.stringify(stateToPreserve));
+      }));
     }
     
     navigate('/agents/canvas', {
@@ -746,25 +705,26 @@ export default function SubAgentRecommendationDialog({
         autoGenerated: true,
         generatedNodes,
         generatedEdges,
-        fromDocumentProcessing: true, // Track source for back navigation
-        documentType: documentType.id, // Track document type for context
+        fromDocumentProcessing: true,
+        documentType: documentType.id,
         prefillContext: {
           name: `${documentType.title} Processing Workflow`,
           useCase: documentType.id,
           description: `Automated workflow for processing ${documentType.title.toLowerCase()} documents`,
-          subAgents: selectedSubAgents.map(agent => ({
-            id: agent.id,
-            name: agent.name,
-            useCase: agent.useCase,
-            triggerCondition: agent.triggerCondition,
-            architectureType: agent.architectureType,
-            icon: agent.icon
-          }))
+          subAgents: selectedSubAgents.map(agent => ({ id: agent.id, name: agent.name, useCase: agent.useCase, triggerCondition: agent.triggerCondition, architectureType: agent.architectureType, icon: agent.icon }))
         }
       }
     });
     
     onOpenChange(false);
+  };
+
+  const handleAction = () => {
+    if (executeMode === 'execute') {
+      handleExecuteNow();
+    } else {
+      handleBuildAgents();
+    }
   };
 
   const handleSkip = () => {
@@ -820,11 +780,45 @@ export default function SubAgentRecommendationDialog({
                 </div>
               </div>
             ))}
+
+            {/* Add Custom Agent Card */}
+            <div
+              className="p-3 rounded-lg border border-dashed border-primary/50 cursor-pointer transition-all hover:bg-primary/5 hover:border-primary"
+              onClick={() => setShowAddAgentDialog(true)}
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-primary/10">
+                  <Plus className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <span className="font-medium text-sm text-primary">Add Custom Agent</span>
+                  <p className="text-xs text-muted-foreground">Create a new agent for this workflow</p>
+                </div>
+              </div>
+            </div>
           </div>
         </ScrollArea>
 
-        {/* Fixed Bottom Section - Always Visible */}
+        {/* Execute Mode Toggle */}
         <div className="flex-shrink-0 pt-3 border-t space-y-3">
+          <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+            <Label className="text-xs text-muted-foreground">Mode:</Label>
+            <RadioGroup value={executeMode} onValueChange={(v) => setExecuteMode(v as 'execute' | 'build')} className="flex gap-3">
+              <div className="flex items-center gap-1.5">
+                <RadioGroupItem value="execute" id="execute" />
+                <Label htmlFor="execute" className="text-xs flex items-center gap-1 cursor-pointer">
+                  <Zap className="h-3 w-3" /> Execute Now
+                </Label>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <RadioGroupItem value="build" id="build" />
+                <Label htmlFor="build" className="text-xs flex items-center gap-1 cursor-pointer">
+                  <Hammer className="h-3 w-3" /> Build Workflow
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+
           {selectedAgents.length > 0 && (
             <div className="p-2 rounded-lg bg-green-50 dark:bg-green-950/30 text-center">
               <span className="text-sm text-green-700 dark:text-green-300 font-medium">
@@ -833,27 +827,30 @@ export default function SubAgentRecommendationDialog({
             </div>
           )}
 
-          {/* Action Buttons - Clear Yes/No */}
           <div className="flex gap-3">
-            <Button 
-              variant="outline"
-              className="flex-1"
-              onClick={handleSkip}
-            >
+            <Button variant="outline" className="flex-1" onClick={handleSkip} disabled={isExecuting}>
               <XCircle className="h-4 w-4 mr-2" />
               No, Skip
             </Button>
-            <Button 
-              className="flex-1"
-              onClick={handleBuildAgents}
-              disabled={selectedAgents.length === 0}
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Yes, Build
+            <Button className="flex-1" onClick={handleAction} disabled={selectedAgents.length === 0 || isExecuting}>
+              {isExecuting ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {currentAgent?.slice(0, 15)}...</>
+              ) : executeMode === 'execute' ? (
+                <><Zap className="h-4 w-4 mr-2" /> Execute</>
+              ) : (
+                <><CheckCircle className="h-4 w-4 mr-2" /> Build</>
+              )}
             </Button>
           </div>
         </div>
       </DialogContent>
+
+      <AddCustomAgentDialog
+        open={showAddAgentDialog}
+        onOpenChange={setShowAddAgentDialog}
+        documentTypeId={documentType.id}
+        onAgentCreated={handleCustomAgentCreated}
+      />
     </Dialog>
   );
 }
