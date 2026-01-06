@@ -204,6 +204,29 @@ export function useRecordingLibrary() {
     }
   }, [initDB]);
 
+  // Get full recording with metadata (for preview with captions etc)
+  const getRecording = useCallback(async (id: number): Promise<LibraryRecording | null> => {
+    try {
+      const db = dbRef.current || await initDB();
+      
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction([STORE_NAME], 'readonly');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.get(id);
+        
+        request.onsuccess = () => {
+          const recording = request.result as LibraryRecording;
+          resolve(recording || null);
+        };
+        
+        request.onerror = () => reject(request.error);
+      });
+    } catch (err) {
+      console.error('[Library] Failed to get recording:', err);
+      return null;
+    }
+  }, [initDB]);
+
   // Initialize on mount
   useEffect(() => {
     loadRecordings();
@@ -218,6 +241,7 @@ export function useRecordingLibrary() {
     deleteRecording,
     downloadRecording,
     getRecordingBlob,
+    getRecording,
     refresh: loadRecordings,
   };
 }

@@ -56,6 +56,11 @@ interface RecordingPreviewProps {
     ttsUrl?: string;
     musicUrl?: string;
   };
+  // Saved captions from library (for re-opening saved recordings)
+  savedCaptions?: {
+    hasCaptions?: boolean;
+    captionsText?: string;
+  };
 }
 
 export interface SaveOptions {
@@ -109,6 +114,7 @@ export function RecordingPreview({
   onUploadVideo,
   recordingName = 'Recording',
   audioMetadata,
+  savedCaptions,
 }: RecordingPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -186,7 +192,7 @@ export function RecordingPreview({
     };
   }, [videoUrl]);
 
-  // Reset state when closed
+  // Reset state when closed, or restore from savedCaptions when opened
   useEffect(() => {
     if (!isOpen) {
       setTranscription(null);
@@ -197,8 +203,17 @@ export function RecordingPreview({
       setActiveTab('preview');
       setAdditionalScript('');
       setGeneratedTTSUrl(null);
+      setCaptionsEnabled(false);
+      setShowCaptionsOnVideo(false);
+    } else if (isOpen && savedCaptions?.hasCaptions && savedCaptions.captionsText) {
+      // Restore saved captions when opening a library recording
+      setCaptionsEnabled(true);
+      setShowCaptionsOnVideo(true);
+      setEditedTranscript(savedCaptions.captionsText);
+      setTranscription(savedCaptions.captionsText);
+      console.log('[RecordingPreview] Restored saved captions');
     }
-  }, [isOpen]);
+  }, [isOpen, savedCaptions]);
 
   const togglePlay = () => {
     const video = videoRef.current;
