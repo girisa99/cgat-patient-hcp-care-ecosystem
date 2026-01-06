@@ -159,6 +159,7 @@ export function RecordingStudio({
   
   // Recording preview
   const [lastRecordingBlob, setLastRecordingBlob] = useState<Blob | null>(null);
+  const [lastRecordingSavedCaptions, setLastRecordingSavedCaptions] = useState<{ hasCaptions?: boolean; captionsText?: string } | undefined>(undefined);
   const [showRecordingPreview, setShowRecordingPreview] = useState(false);
   
   // Trim state
@@ -626,6 +627,79 @@ export function RecordingStudio({
 
   // Note: currentScript, currentVoiceover, currentMusic defined above after hooks
 
+  // Ref to track if we've already started audio for the current recording session
+  const audioStartedForSessionRef = useRef(false);
+  
+  // CRITICAL FIX: Start audio playback when recording ACTUALLY starts
+  // This ensures audio doesn't start during countdown or while waiting for screen share prompt
+  useEffect(() => {
+    // Only trigger audio when recording becomes active (not paused)
+    if (recording.isRecording && !recording.isPaused && !audioStartedForSessionRef.current) {
+      audioStartedForSessionRef.current = true;
+      
+      console.log('[RecordingStudio] Recording actually started - starting audio playback');
+      
+      // Small delay to ensure MediaRecorder is fully initialized
+      setTimeout(() => {
+        // Check if still recording (not cancelled)
+        if (!recording.isRecording || recordingCancelledRef.current) {
+          console.log('[RecordingStudio] Recording stopped before audio could start');
+          return;
+        }
+        
+        // Look up audio files fresh
+        const ttsFileToPlay = voiceovers.find(v => v.id === selectedTTSFileId);
+        const voiceoverToPlay = voiceovers.find(v => v.id === selectedVoiceoverId);
+        const musicToPlay = music.find(m => m.id === selectedMusicId);
+        
+        console.log('[RecordingStudio] === AUDIO PLAYBACK ON RECORDING START ===');
+        console.log('[RecordingStudio] Selection IDs:', {
+          selectedVoiceoverId,
+          selectedTTSFileId,
+          selectedMusicId,
+        });
+        
+        // Play voice audio
+        let voiceAudioPlayed = false;
+        
+        if (ttsFileToPlay?.url) {
+          console.log('[RecordingStudio] ▶️ Playing TTS file:', ttsFileToPlay.name);
+          audioPlayback.playTTS(ttsFileToPlay.url);
+          voiceAudioPlayed = true;
+        } else if (voiceoverToPlay?.url) {
+          console.log('[RecordingStudio] ▶️ Playing voiceover:', voiceoverToPlay.name);
+          audioPlayback.playVoiceover(voiceoverToPlay.url);
+          voiceAudioPlayed = true;
+        } else if (ttsGeneration.lastResult?.audioUrl) {
+          console.log('[RecordingStudio] ▶️ Playing generated TTS audio');
+          audioPlayback.playTTS(ttsGeneration.lastResult.audioUrl);
+          voiceAudioPlayed = true;
+        } else if (ttsAudioUrl) {
+          console.log('[RecordingStudio] ▶️ Playing TTS from state URL');
+          audioPlayback.playTTS(ttsAudioUrl);
+          voiceAudioPlayed = true;
+        }
+        
+        if (!voiceAudioPlayed) {
+          console.log('[RecordingStudio] ⚠️ No voice audio selected - recording without voice track');
+        }
+        
+        // Play music (can play alongside voice)
+        if (musicToPlay?.url) {
+          console.log('[RecordingStudio] ▶️ Playing music:', musicToPlay.name);
+          audioPlayback.playMusic(musicToPlay.url);
+        }
+        
+        // Start teleprompter scrolling
+        setTeleprompter(prev => ({ ...prev, isScrolling: true }));
+        setCurrentWordIndex(0);
+      }, 200);
+    } else if (!recording.isRecording) {
+      // Reset the flag when recording stops
+      audioStartedForSessionRef.current = false;
+    }
+  }, [recording.isRecording, recording.isPaused, voiceovers, music, selectedVoiceoverId, selectedTTSFileId, selectedMusicId, ttsGeneration.lastResult, ttsAudioUrl, audioPlayback]);
+
   // Auto-focus mode: collapse panels when recording starts
   // Also notify parent of recording state changes
   useEffect(() => {
@@ -960,105 +1034,18 @@ export function RecordingStudio({
     
     console.log('[RecordingStudio] Calling recording.startRecording()...');
     
-    // Start recording - useRecordingStream will handle screen share if needed
-    recording.startRecording();
-    
-    // Get the countdown duration (default 5 seconds + small buffer)
-    const countdownMs = 5000 + 500;
-    
-    // Start audio playback after countdown completes - store in ref so we can cancel on stop
     // Clear any existing timeout first
     if (audioPlaybackTimeoutRef.current) {
       clearTimeout(audioPlaybackTimeoutRef.current);
       audioPlaybackTimeoutRef.current = null;
     }
     
-    audioPlaybackTimeoutRef.current = window.setTimeout(() => {
-      // CRITICAL: Check if recording was cancelled during countdown
-      if (recordingCancelledRef.current) {
-        console.log('[RecordingStudio] Recording was cancelled during countdown - NOT playing audio');
-        audioPlaybackTimeoutRef.current = null;
-        return;
-      }
-      
-      // Look up audio files fresh to avoid stale closures
-      const ttsFileToPlay = voiceovers.find(v => v.id === selectedTTSFileId);
-      const voiceoverToPlay = voiceovers.find(v => v.id === selectedVoiceoverId);
-      const musicToPlay = music.find(m => m.id === selectedMusicId);
-      
-      console.log('[RecordingStudio] === AUDIO PLAYBACK AFTER COUNTDOWN ===');
-      console.log('[RecordingStudio] Selection IDs:', {
-        selectedVoiceoverId,
-        selectedTTSFileId,
-        selectedMusicId,
-      });
-      console.log('[RecordingStudio] Resolved audio sources (fresh lookup):', {
-        ttsFileToPlay: ttsFileToPlay ? { 
-          id: ttsFileToPlay.id, 
-          name: ttsFileToPlay.name, 
-          hasUrl: !!ttsFileToPlay.url,
-          urlPreview: ttsFileToPlay.url?.substring(0, 50)
-        } : 'None (not selected)',
-        voiceoverToPlay: voiceoverToPlay ? {
-          id: voiceoverToPlay.id,
-          name: voiceoverToPlay.name,
-          hasUrl: !!voiceoverToPlay.url,
-          urlPreview: voiceoverToPlay.url?.substring(0, 50)
-        } : 'None (not selected)',
-        musicToPlay: musicToPlay ? {
-          id: musicToPlay.id,
-          name: musicToPlay.name,
-          hasUrl: !!musicToPlay.url
-        } : 'None (not selected)',
-        ttsGenerationResult: ttsGeneration.lastResult?.audioUrl ? 'Available' : 'None',
-        ttsAudioUrlState: ttsAudioUrl ? 'Available' : 'None',
-      });
-      
-      // Priority for voice audio:
-      // 1. Selected TTS file from AudioAssetSelector (TTS tab)
-      // 2. Selected voiceover from AudioAssetSelector (Voiceover tab)
-      // 3. Generated TTS audio (from ttsGeneration hook - live TTS)
-      // 4. Local TTS URL state (legacy)
-      let voiceAudioPlayed = false;
-      
-      if (ttsFileToPlay?.url) {
-        console.log('[RecordingStudio] ▶️ Playing TTS file:', ttsFileToPlay.name);
-        audioPlayback.playTTS(ttsFileToPlay.url);
-        voiceAudioPlayed = true;
-      } else if (voiceoverToPlay?.url) {
-        console.log('[RecordingStudio] ▶️ Playing voiceover:', voiceoverToPlay.name);
-        audioPlayback.playVoiceover(voiceoverToPlay.url);
-        voiceAudioPlayed = true;
-      } else if (ttsGeneration.lastResult?.audioUrl) {
-        console.log('[RecordingStudio] ▶️ Playing generated TTS audio');
-        audioPlayback.playTTS(ttsGeneration.lastResult.audioUrl);
-        voiceAudioPlayed = true;
-      } else if (ttsAudioUrl) {
-        console.log('[RecordingStudio] ▶️ Playing TTS from state URL');
-        audioPlayback.playTTS(ttsAudioUrl);
-        voiceAudioPlayed = true;
-      }
-      
-      if (!voiceAudioPlayed) {
-        console.log('[RecordingStudio] ⚠️ No voice audio selected - recording without voice track');
-      }
-      
-      // Play music (can play alongside voice)
-      if (musicToPlay?.url) {
-        console.log('[RecordingStudio] ▶️ Playing music:', musicToPlay.name);
-        audioPlayback.playMusic(musicToPlay.url);
-      }
-      
-      // Start teleprompter scrolling ONLY when audio starts
-      setTeleprompter(prev => ({ ...prev, isScrolling: true }));
-      
-      // Reset word index for teleprompter
-      setCurrentWordIndex(0);
-      
-      // Clear the ref after execution
-      audioPlaybackTimeoutRef.current = null;
-    }, countdownMs);
-  }, [recording, audioPlayback, voiceovers, music, screenShare, currentScript, ttsGeneration.lastResult, ttsAudioUrl, hasTTSAudio, selectedVoiceoverId, selectedTTSFileId, selectedMusicId, camera.stream, recordingStream.isReady]);
+    // Start recording - useRecordingStream will handle screen share if needed
+    recording.startRecording();
+    
+    // Note: Audio playback is now started via useEffect that watches recording.isRecording
+    // This ensures audio only plays AFTER the recording actually starts (post-countdown & post-screenshare)
+  }, [recording, currentScript, camera.stream, screenShare, recordingStream.isReady]);
 
   // Pause recording - also pause ALL audio including music (but keep position for resume)
   const handlePauseRecording = useCallback(() => {
@@ -1305,6 +1292,27 @@ export function RecordingStudio({
     setShowRecordingPreview(false);
     toast.info('Recording discarded');
   }, []);
+
+  // Preview recording from library (opens in RecordingPreview modal)
+  const handlePreviewLibraryRecording = useCallback(async (id: number) => {
+    try {
+      const recording = await library.getRecording(id);
+      if (recording?.blob) {
+        setLastRecordingBlob(recording.blob);
+        setLastRecordingSavedCaptions({
+          hasCaptions: recording.hasCaptions,
+          captionsText: recording.captionsText,
+        });
+        setShowRecordingPreview(true);
+        library.setIsOpen(false); // Close library panel to focus on preview
+      } else {
+        toast.error('Could not load recording for preview');
+      }
+    } catch (err) {
+      console.error('[RecordingStudio] Error previewing library recording:', err);
+      toast.error('Failed to load recording');
+    }
+  }, [library]);
 
   // Open recording in video editor
   const handleOpenInEditor = useCallback(() => {
@@ -2314,7 +2322,7 @@ export function RecordingStudio({
           recordings={library.recordings}
           isOpen={library.isOpen}
           onClose={() => library.setIsOpen(false)}
-          onPlay={library.downloadRecording}
+          onPlay={handlePreviewLibraryRecording}
           onDownload={library.downloadRecording}
           onDelete={library.deleteRecording}
           isLoading={library.isLoading}
@@ -2349,6 +2357,8 @@ export function RecordingStudio({
             ttsUrl: currentTTSFile?.url,
             musicUrl: currentMusic?.url,
           }}
+          // Saved captions from library recordings
+          savedCaptions={lastRecordingSavedCaptions}
           // TTS generation for additional script text
           onGenerateTTS={async (text: string) => {
             try {
