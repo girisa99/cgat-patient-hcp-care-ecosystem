@@ -15,6 +15,7 @@ import {
   Network
 } from 'lucide-react';
 import { useMasterToast } from '@/hooks/useMasterToast';
+import { fetchWithTimeout } from '@/hooks/shared/useFetchWithTimeout';
 
 interface AutoConnectProcessorProps {
   nodes: any[];
@@ -62,7 +63,10 @@ export const AutoConnectProcessor: React.FC<AutoConnectProcessorProps> = ({
 
     setIsProcessing(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-auto-connections`, {
+      const result = await fetchWithTimeout<{
+        suggestions?: ConnectionSuggestion[];
+        templates?: NodeTemplate[];
+      }>(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-auto-connections`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -73,19 +77,20 @@ export const AutoConnectProcessor: React.FC<AutoConnectProcessorProps> = ({
           edges,
           generateTemplates: true,
           intelligentRouting: true
-        })
+        }),
+        timeoutMs: 30000, // 30 second timeout for AI processing
       });
 
-      if (!response.ok) throw new Error('Failed to process connections');
-
-      const result = await response.json();
+      if (result.error) {
+        throw result.error;
+      }
       
-      setSuggestions(result.suggestions || []);
-      setTemplates(result.templates || []);
-      setProcessResult(result);
+      setSuggestions(result.data?.suggestions || []);
+      setTemplates(result.data?.templates || []);
+      setProcessResult(result.data);
       
       // Auto-apply high-confidence connections
-      const autoConnections = result.suggestions
+      const autoConnections = result.data?.suggestions
         ?.filter((s: ConnectionSuggestion) => s.autoApply && s.confidence > 0.8)
         ?.map((s: ConnectionSuggestion) => ({
           id: s.id,

@@ -18,6 +18,7 @@ import {
   TrendingUp,
   Zap
 } from 'lucide-react';
+import { fetchWithTimeout } from '@/hooks/shared/useFetchWithTimeout';
 
 interface ArizeTrace {
   traceId: string;
@@ -76,26 +77,30 @@ export const ArizeTracing: React.FC<ArizeTracingProps> = ({
 
   const initializeArize = async () => {
     try {
-      // Test Arize connection by calling our edge function
-      const response = await fetch('https://ithspbabhmdntioslfqe.supabase.co/functions/v1/arize-tracing', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'initialize',
-          spaceKey,
-          modelId,
-          modelVersion
-        })
-      });
+      // Test Arize connection by calling our edge function with timeout
+      const result = await fetchWithTimeout<{ success?: boolean }>(
+        'https://ithspbabhmdntioslfqe.supabase.co/functions/v1/arize-tracing',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'initialize',
+            spaceKey,
+            modelId,
+            modelVersion
+          }),
+          timeoutMs: 15000, // 15 second timeout
+        }
+      );
 
-      if (response.ok) {
-        console.log('Arize tracing initialized successfully');
-        setIsConnected(true);
-      } else {
-        throw new Error('Failed to initialize Arize connection');
+      if (result.error) {
+        throw result.error;
       }
+
+      console.log('Arize tracing initialized successfully');
+      setIsConnected(true);
     } catch (error) {
       console.error('Failed to initialize Arize:', error);
       setIsConnected(false);
@@ -143,26 +148,25 @@ export const ArizeTracing: React.FC<ArizeTracingProps> = ({
 
     setTraces(prev => [...prev, trace]);
     
-    // Send trace start to Arize via edge function
-    try {
-      await fetch('https://ithspbabhmdntioslfqe.supabase.co/functions/v1/arize-tracing', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'start_trace',
-          traceId,
-          spanId,
-          nodeId,
-          operationName,
-          metadata: trace.metadata,
-          tags: trace.spans[0].tags
-        })
-      });
-    } catch (error) {
+    // Send trace start to Arize via edge function with timeout
+    fetchWithTimeout('https://ithspbabhmdntioslfqe.supabase.co/functions/v1/arize-tracing', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'start_trace',
+        traceId,
+        spanId,
+        nodeId,
+        operationName,
+        metadata: trace.metadata,
+        tags: trace.spans[0].tags
+      }),
+      timeoutMs: 10000,
+    }).catch(error => {
       console.error('Failed to send trace to Arize:', error);
-    }
+    });
     
     if (onTraceEvent) {
       onTraceEvent(trace);
@@ -200,8 +204,8 @@ export const ArizeTracing: React.FC<ArizeTracingProps> = ({
           }))
         };
 
-        // Send trace end to Arize via edge function
-        fetch('https://ithspbabhmdntioslfqe.supabase.co/functions/v1/arize-tracing', {
+        // Send trace end to Arize via edge function with timeout
+        fetchWithTimeout('https://ithspbabhmdntioslfqe.supabase.co/functions/v1/arize-tracing', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -212,7 +216,8 @@ export const ArizeTracing: React.FC<ArizeTracingProps> = ({
             status,
             duration,
             result
-          })
+          }),
+          timeoutMs: 10000,
         }).catch(error => {
           console.error('Failed to send trace completion to Arize:', error);
         });

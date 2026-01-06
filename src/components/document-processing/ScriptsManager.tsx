@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -27,6 +27,7 @@ import {
 import { VideoRecorder } from './VideoRecorder';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from '@/hooks/useMasterToast';
+import { createManagedAudio } from '@/hooks/shared/useAudioElement';
 
 interface GeneratedAudio {
   id: string;
@@ -524,6 +525,17 @@ export const ScriptsManager: React.FC = () => {
     }
   };
 
+  // Track cleanup functions for audio elements
+  const audioCleanupRef = useRef<Record<string, () => void>>({});
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(audioCleanupRef.current).forEach(cleanup => cleanup());
+      audioCleanupRef.current = {};
+    };
+  }, []);
+
   const handlePlayPause = (audio: GeneratedAudio) => {
     if (playingId === audio.id) {
       // Pause current
@@ -535,11 +547,14 @@ export const ScriptsManager: React.FC = () => {
         audioElements[playingId].pause();
       }
 
-      // Create or play audio
+      // Create or play audio with proper cleanup
       let audioEl = audioElements[audio.id];
       if (!audioEl) {
-        audioEl = new Audio(audio.audioUrl);
-        audioEl.onended = () => setPlayingId(null);
+        const { audio: newAudio, cleanup } = createManagedAudio(audio.audioUrl, {
+          onEnded: () => setPlayingId(null),
+        });
+        audioEl = newAudio;
+        audioCleanupRef.current[audio.id] = cleanup;
         setAudioElements(prev => ({ ...prev, [audio.id]: audioEl }));
       }
       

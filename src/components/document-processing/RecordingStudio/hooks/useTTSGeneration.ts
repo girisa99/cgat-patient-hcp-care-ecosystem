@@ -2,8 +2,9 @@
  * TTS Generation Hook - Real integration with ElevenLabs, OpenAI, Google Cloud, Amazon Polly, and Azure TTS
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
+import { createManagedAudio, getAudioDuration as getAudioDurationFromUtil } from '@/hooks/shared/useAudioElement';
 
 export interface TTSOptions {
   provider: 'openai' | 'elevenlabs' | 'google' | 'amazon' | 'azure';
@@ -505,23 +506,40 @@ export function useTTSGeneration() {
     }
   }, [generateOpenAI, generateElevenLabs, generateGoogle, generateAmazon, generateAzure]);
 
-  // Play generated audio
+  // Track cleanup function for current audio
+  const audioCleanupRef = useRef<(() => void) | null>(null);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (audioCleanupRef.current) {
+        audioCleanupRef.current();
+        audioCleanupRef.current = null;
+      }
+    };
+  }, []);
+
+  // Play generated audio with proper cleanup
   const play = useCallback(() => {
     if (!lastResult?.audioUrl) return;
 
-    if (audioRef.current) {
-      audioRef.current.pause();
+    // Cleanup previous audio
+    if (audioCleanupRef.current) {
+      audioCleanupRef.current();
     }
 
-    audioRef.current = new Audio(lastResult.audioUrl);
-    audioRef.current.play();
+    const { audio, cleanup } = createManagedAudio(lastResult.audioUrl);
+    audioRef.current = audio;
+    audioCleanupRef.current = cleanup;
+    audio.play();
   }, [lastResult]);
 
   // Stop playback
   const stop = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+    if (audioCleanupRef.current) {
+      audioCleanupRef.current();
+      audioCleanupRef.current = null;
+      audioRef.current = null;
     }
   }, []);
 
@@ -537,12 +555,19 @@ export function useTTSGeneration() {
     URL.revokeObjectURL(url);
   }, [lastResult]);
 
-  // Get audio element for mixing
+  // Get audio element for mixing - creates with cleanup tracking
   const getAudioElement = useCallback((): HTMLAudioElement | null => {
     if (!lastResult?.audioUrl) return null;
     
     if (!audioRef.current || audioRef.current.src !== lastResult.audioUrl) {
-      audioRef.current = new Audio(lastResult.audioUrl);
+      // Cleanup previous audio
+      if (audioCleanupRef.current) {
+        audioCleanupRef.current();
+      }
+      
+      const { audio, cleanup } = createManagedAudio(lastResult.audioUrl);
+      audioRef.current = audio;
+      audioCleanupRef.current = cleanup;
     }
     
     return audioRef.current;
@@ -576,43 +601,7 @@ function base64ToBlob(base64: string, mimeType: string): Blob {
   return new Blob([byteArray], { type: mimeType });
 }
 
-// Helper: Get audio duration with readyState check to prevent race condition
+// Helper: Get audio duration - use the consolidated utility
 async function getAudioDuration(url: string): Promise<number> {
-  return new Promise((resolve) => {
-    const audio = new Audio(url);
-    
-    const handleMetadata = () => {
-      resolve(audio.duration || 0);
-      cleanup();
-    };
-    
-    const handleError = () => {
-      resolve(0);
-      cleanup();
-    };
-    
-    const cleanup = () => {
-      audio.removeEventListener('loadedmetadata', handleMetadata);
-      audio.removeEventListener('error', handleError);
-    };
-    
-    // Check if already loaded (cached audio)
-    if (audio.readyState >= 1 && audio.duration) {
-      resolve(audio.duration);
-      return;
-    }
-    
-    audio.addEventListener('loadedmetadata', handleMetadata);
-    audio.addEventListener('error', handleError);
-    
-    // Timeout fallback to prevent hanging
-    setTimeout(() => {
-      if (audio.duration) {
-        resolve(audio.duration);
-      } else {
-        resolve(0);
-      }
-      cleanup();
-    }, 10000);
-  });
+  return getAudioDurationFromUtil(url, 10000);
 }
