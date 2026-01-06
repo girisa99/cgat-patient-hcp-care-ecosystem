@@ -121,10 +121,8 @@ export default function InsuranceTab({
       
       toast.success('Insurance details saved to history');
       
-      // Trigger sub-agent recommendation dialog after delay
-      setTimeout(() => {
-        setShowSubAgentDialog(true);
-      }, 500);
+      // NOTE: Agent dialog is now triggered ONLY from handleVerifyAndSave in DocumentProcessing.tsx
+      // after user clicks "Confirm & Save to History" button - NOT from Insurance Tab save
     } catch (err) {
       console.error('Save error:', err);
       toast.error('Failed to save insurance details');
