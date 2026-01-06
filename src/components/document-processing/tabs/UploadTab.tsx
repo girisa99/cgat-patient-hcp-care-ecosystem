@@ -135,27 +135,41 @@ export default function UploadTab({
     }
   };
 
+  // Check if we're ready for a new upload (no processing result or error state)
+  const isReadyForUpload = !processingResult || processingResult.stage === 'idle' || processingResult.stage === 'error';
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Upload Area */}
+      {/* Upload Area - Always visible, more prominent when no result */}
       <div className="lg:col-span-2 space-y-4">
-        <Card>
+        <Card className={isReadyForUpload ? 'ring-2 ring-primary/50 shadow-lg' : ''}>
           <CardContent className="pt-6">
             <div
               {...getRootProps()}
-              className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors ${
-                isDragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'
+              className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-all duration-300 ${
+                isDragActive ? 'border-primary bg-primary/10 scale-[1.02]' : 
+                isReadyForUpload ? 'border-primary/50 hover:border-primary hover:bg-primary/5' :
+                'border-muted-foreground/25 hover:border-primary/50'
               }`}
             >
               <input {...getInputProps()} />
-              <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-lg font-medium">Drop document here or click to upload</p>
+              <Upload className={`h-12 w-12 mx-auto mb-4 transition-colors ${
+                isReadyForUpload ? 'text-primary' : 'text-muted-foreground'
+              }`} />
+              <p className="text-lg font-medium">
+                {isReadyForUpload ? 'Drop your document here to start' : 'Upload another document'}
+              </p>
               <p className="text-sm text-muted-foreground mt-2">
                 Supports PDF, JPG, PNG, TIFF, FAX, HEIC • OCR for handwritten & printed
               </p>
-              <Badge variant="secondary" className="mt-4">
+              <Badge variant={isReadyForUpload ? 'default' : 'secondary'} className="mt-4">
                 {currentConfig.title}
               </Badge>
+              {isReadyForUpload && (
+                <p className="text-xs text-primary mt-3 animate-pulse">
+                  Click or drag to upload a new {currentConfig.title.toLowerCase()}
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
