@@ -1370,61 +1370,64 @@ export default function SubAgentRecommendationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] flex flex-col [&>div]:overflow-visible"  style={{ display: 'flex', flexDirection: 'column' }}>
-        <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="flex items-center gap-2 text-base">
-            <Bot className="h-5 w-5 text-primary" />
-            Would you like to add follow-up agents?
-          </DialogTitle>
-          <DialogDescription className="text-sm">
-            Select agents to automate processing for {documentType.title}
-          </DialogDescription>
-        </DialogHeader>
-
-        {/* API Selection Collapsible Section */}
-        <div className="flex-shrink-0 border rounded-lg overflow-hidden mb-2">
-          <button
-            onClick={() => setShowAPISelection(!showAPISelection)}
-            className="w-full flex items-center justify-between p-3 bg-muted/50 hover:bg-muted transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <Link2 className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">Select API Sources</span>
-              {selectedAPIs.length > 0 && (
-                <Badge variant="secondary" className="text-xs">
-                  {selectedAPIs.length} selected
-                </Badge>
-              )}
-            </div>
-            <ChevronDown className={cn(
-              "h-4 w-4 text-muted-foreground transition-transform",
-              showAPISelection && "rotate-180"
-            )} />
-          </button>
-          {showAPISelection && (
-            <div className="p-3 border-t bg-background max-h-[200px] overflow-y-auto">
-              <APISelectionPanel
-                documentTypeId={documentType.id}
-                selectedAPIs={selectedAPIs}
-                onSelectionChange={setSelectedAPIs}
-                onAPISetupRequested={(apiId) => {
-                  // Find matching agent and trigger setup
-                  const matchingAgent = suggestions.find(a => a.id === apiId || a.id.includes(apiId.replace('optum-', '')));
-                  if (matchingAgent) {
-                    setSetupAgentId(matchingAgent.id);
-                    setSetupAgentName(matchingAgent.name);
-                    setShowSetupWizard(true);
-                  }
-                }}
-                compact
-              />
-            </div>
-          )}
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden p-0">
+        {/* Fixed Header */}
+        <div className="p-6 pb-3 border-b bg-background">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Bot className="h-5 w-5 text-primary" />
+              Would you like to add follow-up agents?
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              Select agents to automate processing for {documentType.title}
+            </DialogDescription>
+          </DialogHeader>
         </div>
 
-        {/* Scrollable Agent List - Using native overflow for reliable scrolling */}
-        <div className="flex-1 min-h-0 overflow-y-auto max-h-[45vh] border rounded-lg">
-          <div className="space-y-2 p-3">
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto max-h-[45vh] p-4">
+          {/* API Selection Collapsible Section */}
+          <div className="border rounded-lg overflow-hidden mb-3">
+            <button
+              onClick={() => setShowAPISelection(!showAPISelection)}
+              className="w-full flex items-center justify-between p-3 bg-muted/50 hover:bg-muted transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Link2 className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">Select API Sources</span>
+                {selectedAPIs.length > 0 && (
+                  <Badge variant="secondary" className="text-xs">
+                    {selectedAPIs.length} selected
+                  </Badge>
+                )}
+              </div>
+              <ChevronDown className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform",
+                showAPISelection && "rotate-180"
+              )} />
+            </button>
+            {showAPISelection && (
+              <div className="p-3 border-t bg-background max-h-[150px] overflow-y-auto">
+                <APISelectionPanel
+                  documentTypeId={documentType.id}
+                  selectedAPIs={selectedAPIs}
+                  onSelectionChange={setSelectedAPIs}
+                  onAPISetupRequested={(apiId) => {
+                    const matchingAgent = suggestions.find(a => a.id === apiId || a.id.includes(apiId.replace('optum-', '')));
+                    if (matchingAgent) {
+                      setSetupAgentId(matchingAgent.id);
+                      setSetupAgentName(matchingAgent.name);
+                      setShowSetupWizard(true);
+                    }
+                  }}
+                  compact
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Agent List */}
+          <div className="space-y-2">
             {/* Ready Agents Section (Universal AI + Real APIs) - Show first and prominently */}
             {suggestions.filter(a => a.readyStatus === 'ai-powered').length > 0 && (
               <div className="mb-4">
@@ -1559,155 +1562,103 @@ export default function SubAgentRecommendationDialog({
           </div>
         </div>
 
-        {/* Cross-Document Data Prompt */}
-        {((needsInsuranceData && !hasInsuranceData) || (needsPrescriptionData && !hasPrescriptionData)) && (
-          <Alert className="mx-0 bg-blue-50 dark:bg-blue-950/30 border-blue-200">
-            <FileText className="h-4 w-4 text-blue-500" />
-            <AlertDescription className="text-sm">
-              <div className="space-y-2">
-                {needsInsuranceData && !hasInsuranceData && (
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4" />
-                      <span>Insurance card data needed for selected agents</span>
-                    </span>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="h-7 text-xs"
-                      onClick={() => navigate('/dashboard/documents', { state: { documentType: 'insurance' } })}
-                    >
-                      <Upload className="h-3 w-3 mr-1" /> Upload Insurance Card
-                    </Button>
-                  </div>
-                )}
-                {needsPrescriptionData && !hasPrescriptionData && (
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      <span>Prescription data needed for selected agents</span>
-                    </span>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="h-7 text-xs"
-                      onClick={() => navigate('/dashboard/documents', { state: { documentType: 'prescription' } })}
-                    >
-                      <Upload className="h-3 w-3 mr-1" /> Upload Prescription
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
+        {/* Fixed Footer */}
+        <div className="p-4 pt-3 border-t bg-background space-y-3">
+          {/* Cross-Document Data Prompt */}
+          {((needsInsuranceData && !hasInsuranceData) || (needsPrescriptionData && !hasPrescriptionData)) && (
+            <Alert className="bg-blue-50 dark:bg-blue-950/30 border-blue-200">
+              <FileText className="h-4 w-4 text-blue-500" />
+              <AlertDescription className="text-sm">
+                <div className="space-y-2">
+                  {needsInsuranceData && !hasInsuranceData && (
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4" />
+                        <span className="text-xs">Insurance data needed</span>
+                      </span>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="h-6 text-xs"
+                        onClick={() => navigate('/dashboard/documents', { state: { documentType: 'insurance' } })}
+                      >
+                        <Upload className="h-3 w-3 mr-1" /> Upload
+                      </Button>
+                    </div>
+                  )}
+                  {needsPrescriptionData && !hasPrescriptionData && (
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        <span className="text-xs">Prescription data needed</span>
+                      </span>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="h-6 text-xs"
+                        onClick={() => navigate('/dashboard/documents', { state: { documentType: 'prescription' } })}
+                      >
+                        <Upload className="h-3 w-3 mr-1" /> Upload
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
 
-        {/* Execute Mode Toggle & Provider Selection */}
-        <div className="flex-shrink-0 pt-3 border-t space-y-3">
-          <div className="flex items-center gap-4 p-2 rounded-lg bg-muted/50 flex-wrap">
-            {/* Mode Selection */}
+          {/* Mode & Provider Selection - Compact */}
+          <div className="flex items-center gap-3 p-2 rounded-lg bg-muted/50 text-xs flex-wrap">
             <div className="flex items-center gap-2">
-              <Label className="text-xs text-muted-foreground">Mode:</Label>
-              <RadioGroup value={executeMode} onValueChange={(v) => setExecuteMode(v as 'execute' | 'build')} className="flex gap-3">
-                <div className="flex items-center gap-1.5">
-                  <RadioGroupItem value="execute" id="execute" />
-                  <Label htmlFor="execute" className="text-xs flex items-center gap-1 cursor-pointer">
-                    <Zap className="h-3 w-3" /> Execute Now
+              <span className="text-muted-foreground">Mode:</span>
+              <RadioGroup value={executeMode} onValueChange={(v) => setExecuteMode(v as 'execute' | 'build')} className="flex gap-2">
+                <div className="flex items-center gap-1">
+                  <RadioGroupItem value="execute" id="exec-mode" className="h-3 w-3" />
+                  <Label htmlFor="exec-mode" className="text-xs cursor-pointer flex items-center gap-0.5">
+                    <Zap className="h-3 w-3" /> Execute
                   </Label>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <RadioGroupItem value="build" id="build" />
-                  <Label htmlFor="build" className="text-xs flex items-center gap-1 cursor-pointer">
-                    <Hammer className="h-3 w-3" /> Build Workflow
+                <div className="flex items-center gap-1">
+                  <RadioGroupItem value="build" id="build-mode" className="h-3 w-3" />
+                  <Label htmlFor="build-mode" className="text-xs cursor-pointer flex items-center gap-0.5">
+                    <Hammer className="h-3 w-3" /> Build
                   </Label>
                 </div>
               </RadioGroup>
             </div>
             
-            {/* AI Provider Selection */}
             {executeMode === 'execute' && (
               <div className="flex items-center gap-2 ml-auto">
-                <Label className="text-xs text-muted-foreground">AI Provider:</Label>
+                <span className="text-muted-foreground">AI:</span>
                 <RadioGroup 
                   value={selectedProvider} 
                   onValueChange={(v) => setSelectedProvider(v as 'auto' | 'claude' | 'gemini' | 'openai')} 
-                  className="flex gap-2"
+                  className="flex gap-1"
                 >
-                  <div className="flex items-center gap-1">
-                    <RadioGroupItem value="auto" id="auto" className="h-3 w-3" />
-                    <Label htmlFor="auto" className="text-[10px] cursor-pointer flex items-center gap-0.5">
-                      <Sparkles className="h-2.5 w-2.5 text-primary" /> Auto
-                    </Label>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <RadioGroupItem value="claude" id="claude" className="h-3 w-3" />
-                    <Label htmlFor="claude" className="text-[10px] cursor-pointer">🤖 Claude</Label>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <RadioGroupItem value="gemini" id="gemini" className="h-3 w-3" />
-                    <Label htmlFor="gemini" className="text-[10px] cursor-pointer">✨ Gemini</Label>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <RadioGroupItem value="openai" id="openai" className="h-3 w-3" />
-                    <Label htmlFor="openai" className="text-[10px] cursor-pointer">🧠 OpenAI</Label>
-                  </div>
+                  {[
+                    { id: 'auto', label: '⚡ Auto' },
+                    { id: 'claude', label: '🤖' },
+                    { id: 'gemini', label: '✨' },
+                    { id: 'openai', label: '🧠' }
+                  ].map(p => (
+                    <div key={p.id} className="flex items-center gap-0.5">
+                      <RadioGroupItem value={p.id} id={`prov-${p.id}`} className="h-3 w-3" />
+                      <Label htmlFor={`prov-${p.id}`} className="text-[10px] cursor-pointer">{p.label}</Label>
+                    </div>
+                  ))}
                 </RadioGroup>
               </div>
             )}
           </div>
 
+          {/* Selected Count */}
           {selectedAgents.length > 0 && (
-            <div className="p-2 rounded-lg bg-green-50 dark:bg-green-950/30">
-              <div className="text-center">
-                <span className="text-sm text-green-700 dark:text-green-300 font-medium">
-                  {selectedAgents.length} agent(s) selected
-                </span>
-              </div>
-              {executeMode === 'execute' && (
-                <div className="flex justify-center gap-3 mt-1 text-[10px]">
-                  {suggestions.filter(s => selectedAgents.includes(s.id) && s.readyStatus === 'ai-powered').length > 0 && (
-                    <span className="flex items-center gap-1 text-green-600">
-                      <Sparkles className="h-3 w-3" />
-                      {suggestions.filter(s => selectedAgents.includes(s.id) && s.readyStatus === 'ai-powered').length} ready
-                    </span>
-                  )}
-                  {suggestions.filter(s => selectedAgents.includes(s.id) && (s.readyStatus === 'needs-config' || !s.readyStatus)).length > 0 && (
-                    <span className="flex items-center gap-1 text-amber-600">
-                      <Info className="h-3 w-3" />
-                      {suggestions.filter(s => selectedAgents.includes(s.id) && (s.readyStatus === 'needs-config' || !s.readyStatus)).length} need setup
-                    </span>
-                  )}
-                </div>
-              )}
+            <div className="text-center text-sm text-green-700 dark:text-green-300 font-medium">
+              {selectedAgents.length} agent(s) selected
             </div>
           )}
 
-          {/* Architecture Types Legend - Collapsible */}
-          <details className="text-xs">
-            <summary className="text-muted-foreground cursor-pointer hover:text-foreground flex items-center gap-1">
-              <Info className="h-3 w-3" />
-              What do the architecture types mean?
-            </summary>
-            <div className="mt-2 p-3 bg-muted/50 rounded-lg space-y-2 text-muted-foreground">
-              <div className="flex items-start gap-2">
-                <Badge variant="outline" className="text-[9px] bg-purple-50 text-purple-700 border-purple-200 shrink-0">Agentic AI</Badge>
-                <span>AI-powered reasoning using Claude, Gemini, or OpenAI with intelligent routing</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <Badge variant="outline" className="text-[9px] bg-blue-50 text-blue-700 border-blue-200 shrink-0">A2A Protocol</Badge>
-                <span>Agent-to-Agent communication for real-time external API calls (e.g., NPI, FDA)</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <Badge variant="outline" className="text-[9px] bg-green-50 text-green-700 border-green-200 shrink-0">Multi-Agent</Badge>
-                <span>Multiple specialized agents coordinating on complex workflows</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <Badge variant="outline" className="text-[9px] bg-gray-50 text-gray-700 border-gray-200 shrink-0">Single Agent</Badge>
-                <span>One focused agent for quick, deterministic tasks</span>
-              </div>
-            </div>
-          </details>
-
+          {/* Action Buttons */}
           <div className="flex gap-3">
             <Button variant="outline" className="flex-1" onClick={handleSkip} disabled={isExecuting}>
               <XCircle className="h-4 w-4 mr-2" />
@@ -1715,9 +1666,9 @@ export default function SubAgentRecommendationDialog({
             </Button>
             <Button className="flex-1" onClick={handleAction} disabled={selectedAgents.length === 0 || isExecuting}>
               {isExecuting ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Running {selectedAgents.length} agent(s)...</>
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Running...</>
               ) : executeMode === 'execute' ? (
-                <><Zap className="h-4 w-4 mr-2" /> Execute {selectedAgents.length > 1 ? 'in Parallel' : ''}</>
+                <><Zap className="h-4 w-4 mr-2" /> Execute</>
               ) : (
                 <><CheckCircle className="h-4 w-4 mr-2" /> Build</>
               )}
