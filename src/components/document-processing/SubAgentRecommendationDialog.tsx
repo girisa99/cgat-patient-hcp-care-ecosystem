@@ -210,6 +210,74 @@ const SHARED_AGENTS: Record<string, SubAgentSuggestion> = {
     readyStatus: 'ai-powered'
   },
   
+  // === OPTUM API AGENTS (Insurance, Billing, Prescription, Copay, Benefits) ===
+  'optum-eligibility': {
+    id: 'optum-eligibility',
+    name: 'Optum Eligibility Agent',
+    description: '✓ Real-time eligibility verification via Optum/Change Healthcare APIs',
+    icon: '🔍',
+    useCase: 'optum-eligibility',
+    triggerCondition: 'When insurance card data extracted',
+    architectureType: 'a2a',
+    readyStatus: 'needs-config',
+    requiredSetup: ['Optum Developer API credentials', 'Provider NPI registration', 'Sandbox access at developer.optum.com']
+  },
+  'optum-benefits': {
+    id: 'optum-benefits',
+    name: 'Optum Benefits & Copay Agent',
+    description: '✓ Real-time copay, deductible, out-of-pocket maximums via Optum APIs',
+    icon: '💵',
+    useCase: 'optum-benefits',
+    triggerCondition: 'When member eligibility confirmed',
+    architectureType: 'a2a',
+    readyStatus: 'needs-config',
+    requiredSetup: ['Optum Eligibility API access', 'Plan benefit mapping', 'Service type codes']
+  },
+  'optum-pharmacy': {
+    id: 'optum-pharmacy',
+    name: 'Optum Pharmacy Agent',
+    description: '✓ Pharmacy benefits, drug coverage, formulary status via Optum Pharmacy Solutions',
+    icon: '💊',
+    useCase: 'optum-pharmacy',
+    triggerCondition: 'When prescription medication identified',
+    architectureType: 'a2a',
+    readyStatus: 'needs-config',
+    requiredSetup: ['Optum Pharmacy Solutions API', 'PBM integration credentials', 'Formulary access']
+  },
+  'optum-claims': {
+    id: 'optum-claims',
+    name: 'Optum Claims Submission Agent',
+    description: '✓ Electronic claims submission and status tracking via Optum',
+    icon: '📤',
+    useCase: 'optum-claims',
+    triggerCondition: 'When invoice/claim ready for submission',
+    architectureType: 'a2a',
+    readyStatus: 'needs-config',
+    requiredSetup: ['Optum Claims API access', '837 EDI configuration', 'Clearinghouse enrollment']
+  },
+  'optum-payment': {
+    id: 'optum-payment',
+    name: 'Optum Payment & ERA Agent',
+    description: '✓ Payment processing, ERA/EOB automation via Optum Payment & Reimbursement',
+    icon: '💰',
+    useCase: 'optum-payment',
+    triggerCondition: 'When payment/remittance received',
+    architectureType: 'a2a',
+    readyStatus: 'needs-config',
+    requiredSetup: ['Optum Payment API access', '835 ERA enrollment', 'Bank account linking']
+  },
+  'optum-real': {
+    id: 'optum-real',
+    name: 'Optum Real-Time Exchange Agent',
+    description: '✓ Real-time eligibility + claims adjudication in single transaction',
+    icon: '⚡',
+    useCase: 'optum-real',
+    triggerCondition: 'When immediate verification needed',
+    architectureType: 'a2a',
+    readyStatus: 'needs-config',
+    requiredSetup: ['Optum Real API access', 'Real-time transaction enrollment', 'Provider credentialing']
+  },
+  
   // === CLINICAL ANALYSIS AGENTS (Lab Results, Imaging, Patient Records) ===
   'critical-value-alert': {
     id: 'critical-value-alert',
