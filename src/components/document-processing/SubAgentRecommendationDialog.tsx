@@ -3,6 +3,7 @@
  * Clean, focused dialog for recommending sub-agents based on document type
  * Shows AI-powered agents (ready) vs integration-required agents (need setup)
  * Includes live execution progress and results confirmation flow
+ * Integrated with AgentSetupWizard for configuring needs-config agents
  */
 
 import React, { useState, useMemo } from 'react';
@@ -19,6 +20,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Tooltip,
   TooltipContent,
@@ -37,7 +39,10 @@ import {
   Sparkles,
   Settings,
   AlertCircle,
-  Info
+  Info,
+  Upload,
+  FileText,
+  CreditCard
 } from 'lucide-react';
 import { DocumentTypeConfig } from '@/config/documentTypes';
 import { cn } from '@/lib/utils';
@@ -47,6 +52,7 @@ import { useAgentExecution, type SubAgentSuggestion, type AgentReadyStatus, type
 import { toast } from 'sonner';
 import { AgentExecutionProgress } from './AgentExecutionProgress';
 import { AgentResultsConfirmation } from './AgentResultsConfirmation';
+import { AgentSetupWizard } from './AgentSetupWizard';
 
 interface SubAgentRecommendationDialogProps {
   open: boolean;
@@ -141,12 +147,12 @@ const SHARED_AGENTS: Record<string, SubAgentSuggestion> = {
   },
   'cost-analysis': {
     id: 'cost-analysis',
-    name: 'Cost-Effectiveness Agent',
-    description: '✓ Compares brand vs generic pricing, insurance coverage, patient assistance programs',
+    name: 'Cost & Pricing Agent',
+    description: '✓ Real-time drug pricing via RxNav + GoodRx public widgets, generic alternatives, patient assistance',
     icon: '💰',
     useCase: 'cost-analysis',
-    triggerCondition: 'When alternatives identified',
-    architectureType: 'single',
+    triggerCondition: 'When medication identified',
+    architectureType: 'agentic',
     readyStatus: 'ai-powered'
   },
   
@@ -835,6 +841,15 @@ export default function SubAgentRecommendationDialog({
   const [customAgents, setCustomAgents] = useState<SubAgentSuggestion[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<'auto' | 'claude' | 'gemini' | 'openai'>('auto');
   
+  // Setup wizard state
+  const [showSetupWizard, setShowSetupWizard] = useState(false);
+  const [setupAgentId, setSetupAgentId] = useState<string>('');
+  const [setupAgentName, setSetupAgentName] = useState<string>('');
+  
+  // Cross-document data prompt state
+  const [showDataPrompt, setShowDataPrompt] = useState(false);
+  const [missingDocumentType, setMissingDocumentType] = useState<'insurance' | 'prescription' | null>(null);
+  
   // Execution state
   const [showExecutionProgress, setShowExecutionProgress] = useState(false);
   const [showResultsConfirmation, setShowResultsConfirmation] = useState(false);
@@ -854,12 +869,61 @@ export default function SubAgentRecommendationDialog({
     return [...baseAgents, ...customAgents];
   }, [documentType.id, customAgents]);
 
+  // Check if cross-document data is needed based on selected agents
+  const needsInsuranceData = useMemo(() => {
+    if (documentType.id === 'insurance') return false;
+    const selectedAgentsList = suggestions.filter(s => selectedAgents.includes(s.id));
+    const insuranceAgentIds = ['insurance-verification', 'benefits-verification', 'prior-auth', 'eligibility-ai'];
+    return selectedAgentsList.some(a => insuranceAgentIds.includes(a.id));
+  }, [selectedAgents, suggestions, documentType.id]);
+
+  const needsPrescriptionData = useMemo(() => {
+    if (documentType.id === 'prescription') return false;
+    const selectedAgentsList = suggestions.filter(s => selectedAgents.includes(s.id));
+    const rxAgentIds = ['ndc-lookup', 'drug-alternatives', 'cost-analysis', 'prior-auth', 'drug-interaction'];
+    return selectedAgentsList.some(a => rxAgentIds.includes(a.id));
+  }, [selectedAgents, suggestions, documentType.id]);
+
+  // Check if we have insurance/prescription data in extracted fields
+  const hasInsuranceData = useMemo(() => {
+    return !!(extractedData?.member_id || extractedData?.insurance_name || extractedData?.payer_id);
+  }, [extractedData]);
+
+  const hasPrescriptionData = useMemo(() => {
+    return !!(extractedData?.medication || extractedData?.medication_name || extractedData?.ndc);
+  }, [extractedData]);
+
   const toggleAgent = (agentId: string) => {
+    const agent = suggestions.find(s => s.id === agentId);
+    
+    // If selecting a needs-config agent, open setup wizard
+    if (agent && agent.readyStatus === 'needs-config' && !selectedAgents.includes(agentId)) {
+      setSetupAgentId(agentId);
+      setSetupAgentName(agent.name);
+      setShowSetupWizard(true);
+    }
+    
     setSelectedAgents(prev => 
       prev.includes(agentId)
         ? prev.filter(id => id !== agentId)
         : [...prev, agentId]
     );
+  };
+
+  const handleSetupComplete = () => {
+    setShowSetupWizard(false);
+    toast.success(`${setupAgentName} configured successfully`);
+  };
+
+  const handleDataCollectionRequest = (method: string, missingFields: string[]) => {
+    if (method === 'navigate_upload') {
+      navigate('/dashboard/documents');
+    } else if (method === 'inline_upload') {
+      toast.info('Upload functionality coming soon', {
+        description: 'For now, please use the document upload section'
+      });
+    }
+    setShowSetupWizard(false);
   };
 
   const handleCustomAgentCreated = (agent: CustomAgentConfig) => {
@@ -1343,6 +1407,49 @@ export default function SubAgentRecommendationDialog({
           </div>
         </div>
 
+        {/* Cross-Document Data Prompt */}
+        {((needsInsuranceData && !hasInsuranceData) || (needsPrescriptionData && !hasPrescriptionData)) && (
+          <Alert className="mx-0 bg-blue-50 dark:bg-blue-950/30 border-blue-200">
+            <FileText className="h-4 w-4 text-blue-500" />
+            <AlertDescription className="text-sm">
+              <div className="space-y-2">
+                {needsInsuranceData && !hasInsuranceData && (
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      <span>Insurance card data needed for selected agents</span>
+                    </span>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="h-7 text-xs"
+                      onClick={() => navigate('/dashboard/documents', { state: { documentType: 'insurance' } })}
+                    >
+                      <Upload className="h-3 w-3 mr-1" /> Upload Insurance Card
+                    </Button>
+                  </div>
+                )}
+                {needsPrescriptionData && !hasPrescriptionData && (
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      <span>Prescription data needed for selected agents</span>
+                    </span>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="h-7 text-xs"
+                      onClick={() => navigate('/dashboard/documents', { state: { documentType: 'prescription' } })}
+                    >
+                      <Upload className="h-3 w-3 mr-1" /> Upload Prescription
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Execute Mode Toggle & Provider Selection */}
         <div className="flex-shrink-0 pt-3 border-t space-y-3">
           <div className="flex items-center gap-4 p-2 rounded-lg bg-muted/50 flex-wrap">
@@ -1495,6 +1602,17 @@ export default function SubAgentRecommendationDialog({
         extractedData={extractedData}
         onAccept={handleAcceptResults}
         onReject={handleRejectResults}
+      />
+
+      {/* Agent Setup Wizard for needs-config agents */}
+      <AgentSetupWizard
+        open={showSetupWizard}
+        onOpenChange={setShowSetupWizard}
+        agentTypeId={setupAgentId}
+        agentName={setupAgentName}
+        extractedData={extractedData}
+        onConfigured={handleSetupComplete}
+        onDataCollectionRequest={handleDataCollectionRequest}
       />
     </Dialog>
   );
