@@ -271,13 +271,22 @@ export function SmartDocumentStudio({
                   {imageUrl ? (
                     <div className="relative rounded-lg overflow-auto bg-muted aspect-[3/4] flex items-center justify-center">
                       <div 
-                        className="transition-transform duration-200 origin-center"
+                        className="transition-transform duration-200 origin-center w-full h-full flex items-center justify-center"
                         style={{ transform: `scale(${zoomLevel})` }}
                       >
                         <img
                           src={imageUrl}
                           alt="Document preview"
                           className="max-w-full max-h-full object-contain"
+                          onError={(e) => {
+                            // Handle broken image gracefully
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            target.parentElement?.insertAdjacentHTML(
+                              'beforeend',
+                              '<div class="flex flex-col items-center justify-center gap-2 text-muted-foreground"><svg class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg><span class="text-xs">Preview unavailable</span></div>'
+                            );
+                          }}
                         />
                         {/* Bounding box overlay for active field */}
                         {activeFieldKey && extractedFields[activeFieldKey]?.boundingBox && (
