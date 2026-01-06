@@ -666,22 +666,22 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
       {/* Right Panel - Analysis & Details */}
       <div className="space-y-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="analysis" className="flex items-center gap-1 text-xs">
-              <Sparkles className="h-3 w-3" />
-              Insights
+          <TabsList className="grid w-full grid-cols-4 h-auto">
+            <TabsTrigger value="analysis" className="flex items-center justify-center gap-1 px-1 py-2 text-[10px] sm:text-xs whitespace-nowrap">
+              <Sparkles className="h-3 w-3 flex-shrink-0" />
+              <span className="hidden sm:inline">Insights</span>
             </TabsTrigger>
-            <TabsTrigger value="report" className="flex items-center gap-1 text-xs">
-              <FileText className="h-3 w-3" />
-              Report
+            <TabsTrigger value="report" className="flex items-center justify-center gap-1 px-1 py-2 text-[10px] sm:text-xs whitespace-nowrap">
+              <FileText className="h-3 w-3 flex-shrink-0" />
+              <span className="hidden sm:inline">Report</span>
             </TabsTrigger>
-            <TabsTrigger value="patient" className="flex items-center gap-1 text-xs">
-              <User className="h-3 w-3" />
-              Patient
+            <TabsTrigger value="patient" className="flex items-center justify-center gap-1 px-1 py-2 text-[10px] sm:text-xs whitespace-nowrap">
+              <User className="h-3 w-3 flex-shrink-0" />
+              <span className="hidden sm:inline">Patient</span>
             </TabsTrigger>
-            <TabsTrigger value="provider" className="flex items-center gap-1 text-xs">
-              <Stethoscope className="h-3 w-3" />
-              Provider
+            <TabsTrigger value="provider" className="flex items-center justify-center gap-1 px-1 py-2 text-[10px] sm:text-xs whitespace-nowrap">
+              <Stethoscope className="h-3 w-3 flex-shrink-0" />
+              <span className="hidden sm:inline">Provider</span>
             </TabsTrigger>
           </TabsList>
           

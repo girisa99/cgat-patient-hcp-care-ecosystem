@@ -148,22 +148,37 @@ export function AutoConfigPanel({
           </div>
         )}
 
-        {/* Document Characteristics Impact */}
+        {/* Document Characteristics Impact - Only show relevant badges */}
         {documentCharacteristics && (
           <div className="flex flex-wrap gap-2 text-xs">
-            {documentCharacteristics.isHandwritten && (
+            {/* Only show handwriting badge for forms that are actually handwritten */}
+            {documentCharacteristics.isHandwritten && documentCharacteristics.isFilledForm && (
               <Badge variant="outline" className="gap-1 bg-amber-50 text-amber-700 dark:bg-amber-900/30">
                 ✏️ Handwriting detected → Enhanced OCR
               </Badge>
             )}
+            {/* DICOM format detection */}
             {documentCharacteristics.format === 'dicom' && (
               <Badge variant="outline" className="gap-1 bg-purple-50 text-purple-700 dark:bg-purple-900/30">
                 🏥 DICOM → Medical imaging pipeline
               </Badge>
             )}
+            {/* Medical image indicator */}
+            {documentConfig.category === 'medical-imaging' && documentCharacteristics.format === 'image' && (
+              <Badge variant="outline" className="gap-1 bg-blue-50 text-blue-700 dark:bg-blue-900/30">
+                🔬 Medical Image → Vision AI Analysis
+              </Badge>
+            )}
+            {/* Low quality warning */}
             {documentCharacteristics.quality === 'low' && (
               <Badge variant="outline" className="gap-1 bg-red-50 text-red-700 dark:bg-red-900/30">
                 ⚠️ Low quality → Enhanced preprocessing
+              </Badge>
+            )}
+            {/* Filled form indicator */}
+            {documentCharacteristics.isFilledForm && !documentCharacteristics.isHandwritten && (
+              <Badge variant="outline" className="gap-1 bg-green-50 text-green-700 dark:bg-green-900/30">
+                📝 Typed Form → Standard OCR
               </Badge>
             )}
           </div>
