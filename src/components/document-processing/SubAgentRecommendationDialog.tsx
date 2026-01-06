@@ -42,7 +42,9 @@ import {
   Info,
   Upload,
   FileText,
-  CreditCard
+  CreditCard,
+  Link2,
+  ChevronDown
 } from 'lucide-react';
 import { DocumentTypeConfig } from '@/config/documentTypes';
 import { cn } from '@/lib/utils';
@@ -53,6 +55,7 @@ import { toast } from 'sonner';
 import { AgentExecutionProgress } from './AgentExecutionProgress';
 import { AgentResultsConfirmation } from './AgentResultsConfirmation';
 import { AgentSetupWizard } from './AgentSetupWizard';
+import { APISelectionPanel } from './APISelectionPanel';
 
 interface SubAgentRecommendationDialogProps {
   open: boolean;
@@ -940,6 +943,8 @@ export default function SubAgentRecommendationDialog({
 }: SubAgentRecommendationDialogProps) {
   const navigate = useNavigate();
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
+  const [selectedAPIs, setSelectedAPIs] = useState<string[]>([]);
+  const [showAPISelection, setShowAPISelection] = useState(false);
   const [executeMode, setExecuteMode] = useState<'execute' | 'build'>('execute');
   const [showAddAgentDialog, setShowAddAgentDialog] = useState(false);
   const [customAgents, setCustomAgents] = useState<SubAgentSuggestion[]>([]);
@@ -1248,7 +1253,8 @@ export default function SubAgentRecommendationDialog({
       rawText: extractedData?.processingResult?.rawText || extractedData?.rawText,
       fileName: extractedData?.processingResult?.fileName || extractedData?.fileName,
       imageBase64: extractedData?.medicalImageBase64,
-      preferredProvider: selectedProvider === 'auto' ? undefined : selectedProvider
+      preferredProvider: selectedProvider === 'auto' ? undefined : selectedProvider,
+      selectedAPIs: selectedAPIs // Pass selected APIs for context
     };
 
     const executedResults = await executeAgents(selectedSubAgents, documentContext);
@@ -1337,7 +1343,8 @@ export default function SubAgentRecommendationDialog({
           name: `${documentType.title} Processing Workflow`,
           useCase: documentType.id,
           description: `Automated workflow for processing ${documentType.title.toLowerCase()} documents`,
-          subAgents: selectedSubAgents.map(agent => ({ id: agent.id, name: agent.name, useCase: agent.useCase, triggerCondition: agent.triggerCondition, architectureType: agent.architectureType, icon: agent.icon }))
+          subAgents: selectedSubAgents.map(agent => ({ id: agent.id, name: agent.name, useCase: agent.useCase, triggerCondition: agent.triggerCondition, architectureType: agent.architectureType, icon: agent.icon })),
+          selectedAPIs: selectedAPIs // Pass selected APIs to canvas
         }
       }
     });
@@ -1374,8 +1381,49 @@ export default function SubAgentRecommendationDialog({
           </DialogDescription>
         </DialogHeader>
 
+        {/* API Selection Collapsible Section */}
+        <div className="flex-shrink-0 border rounded-lg overflow-hidden mb-2">
+          <button
+            onClick={() => setShowAPISelection(!showAPISelection)}
+            className="w-full flex items-center justify-between p-3 bg-muted/50 hover:bg-muted transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Link2 className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">Select API Sources</span>
+              {selectedAPIs.length > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  {selectedAPIs.length} selected
+                </Badge>
+              )}
+            </div>
+            <ChevronDown className={cn(
+              "h-4 w-4 text-muted-foreground transition-transform",
+              showAPISelection && "rotate-180"
+            )} />
+          </button>
+          {showAPISelection && (
+            <div className="p-3 border-t bg-background max-h-[200px] overflow-y-auto">
+              <APISelectionPanel
+                documentTypeId={documentType.id}
+                selectedAPIs={selectedAPIs}
+                onSelectionChange={setSelectedAPIs}
+                onAPISetupRequested={(apiId) => {
+                  // Find matching agent and trigger setup
+                  const matchingAgent = suggestions.find(a => a.id === apiId || a.id.includes(apiId.replace('optum-', '')));
+                  if (matchingAgent) {
+                    setSetupAgentId(matchingAgent.id);
+                    setSetupAgentName(matchingAgent.name);
+                    setShowSetupWizard(true);
+                  }
+                }}
+                compact
+              />
+            </div>
+          )}
+        </div>
+
         {/* Scrollable Agent List - Proper scrolling with visible scrollbar */}
-        <div className="flex-1 min-h-0 overflow-y-auto max-h-[45vh] pr-1" style={{ scrollbarGutter: 'stable' }}>
+        <div className="flex-1 min-h-0 overflow-y-auto max-h-[40vh] pr-1" style={{ scrollbarGutter: 'stable' }}>
           <div className="space-y-2 py-2 pr-2">
             {/* Ready Agents Section (Universal AI + Real APIs) - Show first and prominently */}
             {suggestions.filter(a => a.readyStatus === 'ai-powered').length > 0 && (

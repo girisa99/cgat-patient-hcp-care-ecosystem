@@ -301,6 +301,63 @@ export const CommunicationHubNode: React.FC<NodeProps> = ({ data: rawData, selec
   );
 };
 
+// API Integration Node - For connecting to external APIs (Optum, etc.)
+export const APIIntegrationNode: React.FC<NodeProps> = ({ data: rawData, selected }) => {
+  const data = rawData as NodeData & {
+    apiProvider?: string;
+    apiType?: string;
+    status?: 'ready' | 'linked' | 'needs-setup';
+    isHIPAACompliant?: boolean;
+  };
+  
+  const getStatusColor = () => {
+    switch (data.status) {
+      case 'ready': return 'bg-green-100 text-green-700 border-green-300';
+      case 'linked': return 'bg-blue-100 text-blue-700 border-blue-300';
+      default: return 'bg-amber-100 text-amber-700 border-amber-300';
+    }
+  };
+  
+  return (
+    <div className={`
+      relative bg-card border-2 rounded-lg p-3 min-w-[200px] shadow-sm
+      ${selected ? 'border-teal-500 ring-2 ring-teal-500/20' : 'border-border'}
+      hover:shadow-md transition-shadow
+    `}>
+      <Handle type="target" position={Position.Top} className="!bg-teal-500" />
+      
+      <div className="flex items-center gap-2 mb-2">
+        <div className="p-1.5 rounded-md bg-teal-100 text-teal-700">
+          <Link2 className="h-4 w-4" />
+        </div>
+        <span className="font-medium text-sm">{data.label || 'API Integration'}</span>
+      </div>
+      
+      <div className="flex flex-wrap gap-1 mb-2">
+        <Badge variant="outline" className={`text-xs ${getStatusColor()}`}>
+          {data.status === 'ready' ? '✓ Ready' : data.status === 'linked' ? '🔗 Linked' : '⚙️ Setup'}
+        </Badge>
+        {data.apiProvider && (
+          <Badge variant="secondary" className="text-xs">
+            {data.apiProvider}
+          </Badge>
+        )}
+        {data.isHIPAACompliant && (
+          <Badge variant="outline" className="text-xs bg-green-50 text-green-600">
+            HIPAA
+          </Badge>
+        )}
+      </div>
+      
+      {data.apiType && (
+        <p className="text-xs text-muted-foreground truncate">{data.apiType}</p>
+      )}
+      
+      <Handle type="source" position={Position.Bottom} className="!bg-teal-500" />
+    </div>
+  );
+};
+
 // Export all multi-agent node types for registration
 export const multiAgentNodeTypes = {
   a2a_agent: A2AAgentNode,
@@ -309,7 +366,8 @@ export const multiAgentNodeTypes = {
   swarm_decision: SwarmDecisionNode,
   tool_chain: ToolChainNode,
   task_handoff: TaskHandoffNode,
-  communication_hub: CommunicationHubNode
+  communication_hub: CommunicationHubNode,
+  api_integration: APIIntegrationNode
 };
 
 // Node type definitions for canvas registration
@@ -369,5 +427,13 @@ export const multiAgentNodeDefinitions = [
     category: 'Multi-Agent',
     icon: 'MessageSquare',
     color: '#6366F1'
+  },
+  {
+    type_key: 'api_integration',
+    display_name: 'API Integration',
+    description: 'External API connection (Optum, payers, EHRs)',
+    category: 'Integrations',
+    icon: 'Link2',
+    color: '#14B8A6'
   }
 ];
