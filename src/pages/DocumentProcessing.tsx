@@ -2884,7 +2884,9 @@ export default function DocumentProcessing() {
             // Universal states for ALL document types
             processingResult,
             pendingResult,
-            // Prescription/Medication-specific states
+            // Pending medication data from extraction - critical for agents to have medication info
+            pendingMedicationData,
+            // Prescription/Medication-specific states (populated after save)
             searchResults,
             drugSearchQuery,
             sigInstructions,
@@ -2898,6 +2900,8 @@ export default function DocumentProcessing() {
             // Medical imaging states
             medicalImageBase64,
             medicalImageMimeType,
+            // Flag to know if data has been confirmed
+            isDataConfirmed,
           }}
           onAgentExecutionComplete={handleAgentExecutionComplete}
         />

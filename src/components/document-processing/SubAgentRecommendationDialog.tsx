@@ -767,19 +767,58 @@ const getGenericSubAgents = (documentTypeId: string): SubAgentSuggestion[] => [
   }
 ];
 
-const getArchitectureBadge = (type: string) => {
-  switch (type) {
-    case 'a2a':
-      return <Badge variant="outline" className="text-[10px] bg-blue-50 text-blue-700 border-blue-200">A2A Protocol</Badge>;
-    case 'agentic':
-      return <Badge variant="outline" className="text-[10px] bg-purple-50 text-purple-700 border-purple-200">Agentic AI</Badge>;
-    case 'multi-agent':
-      return <Badge variant="outline" className="text-[10px] bg-green-50 text-green-700 border-green-200">Multi-Agent</Badge>;
-    case 'single':
-      return <Badge variant="outline" className="text-[10px] bg-gray-50 text-gray-700 border-gray-200">Single Agent</Badge>;
-    default:
-      return null;
+// Architecture type explanations for user understanding
+const ARCHITECTURE_EXPLANATIONS: Record<string, { title: string; description: string }> = {
+  'a2a': {
+    title: 'Agent-to-Agent (A2A) Protocol',
+    description: 'Uses Google\'s A2A protocol for secure inter-agent communication. These agents connect to external services and APIs to fetch real-time data (e.g., NPI verification, insurance eligibility).'
+  },
+  'agentic': {
+    title: 'Agentic AI',
+    description: 'AI-powered agents that use reasoning and decision-making. They analyze data using large language models (Claude, Gemini, OpenAI) with intelligent routing and fallback capabilities.'
+  },
+  'multi-agent': {
+    title: 'Multi-Agent Orchestration',
+    description: 'Coordinates multiple specialized agents working together. Each agent handles a specific task, and they share information to complete complex workflows.'
+  },
+  'single': {
+    title: 'Single Agent',
+    description: 'A focused agent that performs one specific task efficiently. Fast execution with deterministic results, ideal for lookups and simple validations.'
   }
+};
+
+const getArchitectureBadge = (type: string) => {
+  const explanation = ARCHITECTURE_EXPLANATIONS[type];
+  const badge = (() => {
+    switch (type) {
+      case 'a2a':
+        return <Badge variant="outline" className="text-[10px] bg-blue-50 text-blue-700 border-blue-200 cursor-help">A2A Protocol</Badge>;
+      case 'agentic':
+        return <Badge variant="outline" className="text-[10px] bg-purple-50 text-purple-700 border-purple-200 cursor-help">Agentic AI</Badge>;
+      case 'multi-agent':
+        return <Badge variant="outline" className="text-[10px] bg-green-50 text-green-700 border-green-200 cursor-help">Multi-Agent</Badge>;
+      case 'single':
+        return <Badge variant="outline" className="text-[10px] bg-gray-50 text-gray-700 border-gray-200 cursor-help">Single Agent</Badge>;
+      default:
+        return null;
+    }
+  })();
+  
+  if (!badge || !explanation) return badge;
+  
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>{badge}</TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs">
+          <div className="space-y-1">
+            <p className="font-semibold text-sm">{explanation.title}</p>
+            <p className="text-xs text-muted-foreground">{explanation.description}</p>
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 };
 
 export default function SubAgentRecommendationDialog({
@@ -854,6 +893,31 @@ export default function SubAgentRecommendationDialog({
     
     // Merge in additional medication-specific data if available
     const enhancedFields = { ...baseExtractedFields };
+    
+    // CRITICAL: Use pendingMedicationData if available (data from extraction before save)
+    // This ensures agents have medication data even before user clicks "Save"
+    if (extractedData?.pendingMedicationData) {
+      const pending = extractedData.pendingMedicationData;
+      if (pending.drugName && !enhancedFields.medication?.value && !enhancedFields.medication_name?.value) {
+        enhancedFields.medication = { value: pending.drugName, confidence: 0.95 };
+        enhancedFields.medication_name = { value: pending.drugName, confidence: 0.95 };
+      }
+      if (pending.sigText && !enhancedFields.sig?.value) {
+        enhancedFields.sig = { value: pending.sigText, confidence: 0.9 };
+      }
+      if (pending.preservedStrength && !enhancedFields.strength?.value) {
+        enhancedFields.strength = { value: pending.preservedStrength, confidence: 0.9 };
+      }
+      // Merge extracted fields from pending data
+      if (pending.extractedFields) {
+        Object.entries(pending.extractedFields).forEach(([key, value]) => {
+          if (!enhancedFields[key]) {
+            enhancedFields[key] = value;
+          }
+        });
+      }
+      console.log('[SubAgentDialog] Using pendingMedicationData:', pending.drugName);
+    }
     
     // Add medication name from drug search query if not in extractedFields
     if (extractedData?.drugSearchQuery && !enhancedFields.medication?.value && !enhancedFields.medication_name?.value) {
@@ -1252,6 +1316,32 @@ export default function SubAgentRecommendationDialog({
             </div>
           )}
 
+          {/* Architecture Types Legend - Collapsible */}
+          <details className="text-xs">
+            <summary className="text-muted-foreground cursor-pointer hover:text-foreground flex items-center gap-1">
+              <Info className="h-3 w-3" />
+              What do the architecture types mean?
+            </summary>
+            <div className="mt-2 p-3 bg-muted/50 rounded-lg space-y-2 text-muted-foreground">
+              <div className="flex items-start gap-2">
+                <Badge variant="outline" className="text-[9px] bg-purple-50 text-purple-700 border-purple-200 shrink-0">Agentic AI</Badge>
+                <span>AI-powered reasoning using Claude, Gemini, or OpenAI with intelligent routing</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Badge variant="outline" className="text-[9px] bg-blue-50 text-blue-700 border-blue-200 shrink-0">A2A Protocol</Badge>
+                <span>Agent-to-Agent communication for real-time external API calls (e.g., NPI, FDA)</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Badge variant="outline" className="text-[9px] bg-green-50 text-green-700 border-green-200 shrink-0">Multi-Agent</Badge>
+                <span>Multiple specialized agents coordinating on complex workflows</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Badge variant="outline" className="text-[9px] bg-gray-50 text-gray-700 border-gray-200 shrink-0">Single Agent</Badge>
+                <span>One focused agent for quick, deterministic tasks</span>
+              </div>
+            </div>
+          </details>
+
           <div className="flex gap-3">
             <Button variant="outline" className="flex-1" onClick={handleSkip} disabled={isExecuting}>
               <XCircle className="h-4 w-4 mr-2" />
@@ -1259,9 +1349,9 @@ export default function SubAgentRecommendationDialog({
             </Button>
             <Button className="flex-1" onClick={handleAction} disabled={selectedAgents.length === 0 || isExecuting}>
               {isExecuting ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {currentAgent?.slice(0, 15)}...</>
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Running {selectedAgents.length} agent(s)...</>
               ) : executeMode === 'execute' ? (
-                <><Zap className="h-4 w-4 mr-2" /> Execute</>
+                <><Zap className="h-4 w-4 mr-2" /> Execute {selectedAgents.length > 1 ? 'in Parallel' : ''}</>
               ) : (
                 <><CheckCircle className="h-4 w-4 mr-2" /> Build</>
               )}
