@@ -13,6 +13,182 @@ export function getRecordingEnhancementsScript(): string {
     // syncAudioSource, syncAnimationFrame are declared in shared globals
     
     var countdownInterval = null;
+    
+    // =====================================================
+    // PAUSE STATE OBJECT - Tracks everything for proper resume
+    // Fixes Issues #1-#5: Position saving, drift correction, sync
+    // =====================================================
+    var pauseState = {
+      voiceoverPosition: 0,
+      musicPosition: 0,
+      ttsPosition: 0,
+      scriptWordIndex: 0,
+      teleprompterScrollPosition: 0,
+      recordedDuration: 0,
+      chunkCountAtPause: 0,
+      wasTTSPlaying: false,
+      wasVoiceoverPlaying: false,
+      wasMusicPlaying: false
+    };
+    
+    function savePauseState() {
+      console.log('[PauseState] Saving pause state...');
+      
+      // Save audio positions
+      if (voiceoverAudio) {
+        pauseState.voiceoverPosition = voiceoverAudio.currentTime;
+        pauseState.wasVoiceoverPlaying = !voiceoverAudio.paused && !voiceoverAudio.ended;
+      }
+      if (musicAudio) {
+        pauseState.musicPosition = musicAudio.currentTime;
+        pauseState.wasMusicPlaying = !musicAudio.paused && !musicAudio.ended;
+      }
+      if (ttsAudio) {
+        pauseState.ttsPosition = ttsAudio.currentTime;
+        pauseState.wasTTSPlaying = !ttsAudio.paused && !ttsAudio.ended;
+      }
+      
+      // Save script/teleprompter state
+      if (typeof currentWordIndex !== 'undefined') {
+        pauseState.scriptWordIndex = currentWordIndex;
+      }
+      
+      // Save teleprompter scroll position
+      var teleprompterEl = document.getElementById('teleprompterContent');
+      if (teleprompterEl) {
+        pauseState.teleprompterScrollPosition = teleprompterEl.scrollTop;
+      }
+      
+      // Save recording duration
+      if (recordingStartTime) {
+        pauseState.recordedDuration = Date.now() - recordingStartTime - totalPausedTime;
+      }
+      
+      // Save chunk count
+      pauseState.chunkCountAtPause = recordedChunks.length;
+      
+      console.log('[PauseState] State saved:', pauseState);
+    }
+    
+    function restorePauseState() {
+      console.log('[PauseState] Restoring pause state...');
+      
+      // Verify and correct audio positions (fix drift)
+      if (voiceoverAudio && pauseState.wasVoiceoverPlaying) {
+        var drift = Math.abs(voiceoverAudio.currentTime - pauseState.voiceoverPosition);
+        if (drift > 0.1) {
+          console.log('[PauseState] Correcting voiceover drift:', drift);
+          voiceoverAudio.currentTime = pauseState.voiceoverPosition;
+        }
+      }
+      
+      if (musicAudio && pauseState.wasMusicPlaying) {
+        var musicDrift = Math.abs(musicAudio.currentTime - pauseState.musicPosition);
+        if (musicDrift > 0.1) {
+          console.log('[PauseState] Correcting music drift:', musicDrift);
+          musicAudio.currentTime = pauseState.musicPosition;
+        }
+      }
+      
+      if (ttsAudio && pauseState.wasTTSPlaying) {
+        var ttsDrift = Math.abs(ttsAudio.currentTime - pauseState.ttsPosition);
+        if (ttsDrift > 0.1) {
+          console.log('[PauseState] Correcting TTS drift:', ttsDrift);
+          ttsAudio.currentTime = pauseState.ttsPosition;
+        }
+      }
+      
+      // Restore teleprompter scroll position
+      var teleprompterEl = document.getElementById('teleprompterContent');
+      if (teleprompterEl && pauseState.teleprompterScrollPosition > 0) {
+        teleprompterEl.scrollTop = pauseState.teleprompterScrollPosition;
+      }
+      
+      // Restore word index if tracking
+      if (typeof currentWordIndex !== 'undefined' && pauseState.scriptWordIndex > 0) {
+        currentWordIndex = pauseState.scriptWordIndex;
+        // Highlight current word if word progress UI exists
+        updateWordHighlight(currentWordIndex);
+      }
+      
+      console.log('[PauseState] State restored');
+    }
+    
+    function updateWordHighlight(wordIndex) {
+      var wordElements = document.querySelectorAll('.teleprompter-word');
+      wordElements.forEach(function(el, idx) {
+        el.classList.remove('current-word', 'spoken-word');
+        if (idx < wordIndex) {
+          el.classList.add('spoken-word');
+        } else if (idx === wordIndex) {
+          el.classList.add('current-word');
+        }
+      });
+    }
+    
+    function adjustAudioPositionsForTrim(trimSeconds) {
+      console.log('[PauseState] Adjusting audio positions for trim:', trimSeconds);
+      
+      // When we trim, we need to rewind audio by the trim amount
+      // Only adjust if we're paused and have saved positions
+      if (pauseState.voiceoverPosition > trimSeconds) {
+        pauseState.voiceoverPosition -= trimSeconds;
+        if (voiceoverAudio) {
+          voiceoverAudio.currentTime = pauseState.voiceoverPosition;
+        }
+        console.log('[PauseState] Voiceover rewound to:', pauseState.voiceoverPosition);
+      } else if (voiceoverAudio) {
+        voiceoverAudio.currentTime = 0;
+        pauseState.voiceoverPosition = 0;
+      }
+      
+      if (pauseState.musicPosition > trimSeconds) {
+        pauseState.musicPosition -= trimSeconds;
+        if (musicAudio) {
+          musicAudio.currentTime = pauseState.musicPosition;
+        }
+        console.log('[PauseState] Music rewound to:', pauseState.musicPosition);
+      } else if (musicAudio) {
+        musicAudio.currentTime = 0;
+        pauseState.musicPosition = 0;
+      }
+      
+      if (pauseState.ttsPosition > trimSeconds) {
+        pauseState.ttsPosition -= trimSeconds;
+        if (ttsAudio) {
+          ttsAudio.currentTime = pauseState.ttsPosition;
+        }
+        console.log('[PauseState] TTS rewound to:', pauseState.ttsPosition);
+      } else if (ttsAudio) {
+        ttsAudio.currentTime = 0;
+        pauseState.ttsPosition = 0;
+      }
+      
+      // Adjust recorded duration
+      pauseState.recordedDuration = Math.max(0, pauseState.recordedDuration - (trimSeconds * 1000));
+    }
+    
+    function restoreAudioPositionsForUndo(trimSeconds) {
+      console.log('[PauseState] Restoring audio positions after undo:', trimSeconds);
+      
+      // When we undo, we need to fast-forward audio by the restored amount
+      pauseState.voiceoverPosition += trimSeconds;
+      pauseState.musicPosition += trimSeconds;
+      pauseState.ttsPosition += trimSeconds;
+      
+      if (voiceoverAudio && voiceoverAudio.duration) {
+        voiceoverAudio.currentTime = Math.min(pauseState.voiceoverPosition, voiceoverAudio.duration);
+      }
+      if (musicAudio && musicAudio.duration) {
+        musicAudio.currentTime = Math.min(pauseState.musicPosition, musicAudio.duration);
+      }
+      if (ttsAudio && ttsAudio.duration) {
+        ttsAudio.currentTime = Math.min(pauseState.ttsPosition, ttsAudio.duration);
+      }
+      
+      // Restore recorded duration
+      pauseState.recordedDuration += trimSeconds * 1000;
+    }
 
     // =====================================================
     // 5-SECOND COUNTDOWN
@@ -73,6 +249,9 @@ export function getRecordingEnhancementsScript(): string {
       console.log('[Recording] ========== PAUSE RECORDING ==========');
       console.log('[Recording] Pausing, chunks so far:', recordedChunks.length);
       
+      // SAVE ALL POSITIONS BEFORE PAUSING (Fix for Issue #1)
+      savePauseState();
+      
       isPaused = true;
       pauseStartTime = Date.now();
       
@@ -119,16 +298,50 @@ export function getRecordingEnhancementsScript(): string {
           console.log('[Recording] Additional audio element paused');
         }
       });
+      
+      // Stop teleprompter auto-scroll
+      if (typeof stopAutoScroll === 'function') {
+        stopAutoScroll();
+      }
 
-      // Update UI
+      // Update UI with detailed pause info (Fix for Issue #6)
       updatePauseUI(true);
       showEditPanel();
+      showPauseDetails();
+    }
+    
+    function showPauseDetails() {
+      // Show detailed pause state info
+      var pauseInfo = document.getElementById('pauseInfoDetails');
+      if (pauseInfo) {
+        var durationSec = Math.floor(pauseState.recordedDuration / 1000);
+        var mins = Math.floor(durationSec / 60);
+        var secs = durationSec % 60;
+        
+        pauseInfo.innerHTML = 
+          '<div class="pause-detail">Duration: ' + mins + ':' + String(secs).padStart(2, '0') + '</div>' +
+          '<div class="pause-detail">Voiceover: ' + pauseState.voiceoverPosition.toFixed(1) + 's</div>' +
+          '<div class="pause-detail">Music: ' + pauseState.musicPosition.toFixed(1) + 's</div>' +
+          '<div class="pause-detail">TTS: ' + pauseState.ttsPosition.toFixed(1) + 's</div>' +
+          '<div class="pause-detail">Chunks: ' + pauseState.chunkCountAtPause + '</div>';
+        pauseInfo.style.display = 'block';
+      }
+    }
+    
+    function hidePauseDetails() {
+      var pauseInfo = document.getElementById('pauseInfoDetails');
+      if (pauseInfo) {
+        pauseInfo.style.display = 'none';
+      }
     }
 
     function resumeRecording() {
       if (!isRecording || !isPaused) return;
 
       console.log('[Recording] ========== RESUME RECORDING ==========');
+      
+      // RESTORE AND VERIFY POSITIONS BEFORE RESUMING (Fix for Issue #2)
+      restorePauseState();
       
       // Calculate paused duration and add to total
       if (pauseStartTime) {
@@ -146,35 +359,44 @@ export function getRecordingEnhancementsScript(): string {
         console.log('[Recording] MediaRecorder resumed');
       }
 
-      // Resume audio from where it was paused
+      // Resume audio only if it was playing before pause
       console.log('[Recording] Resuming audio:', {
         hasVoiceover: !!voiceoverAudio,
         hasMusic: !!musicAudio,
-        hasTTS: !!ttsAudio
+        hasTTS: !!ttsAudio,
+        wasVoiceoverPlaying: pauseState.wasVoiceoverPlaying,
+        wasMusicPlaying: pauseState.wasMusicPlaying,
+        wasTTSPlaying: pauseState.wasTTSPlaying
       });
       
-      if (voiceoverAudio && !voiceoverAudio.ended) {
+      if (voiceoverAudio && !voiceoverAudio.ended && pauseState.wasVoiceoverPlaying) {
         voiceoverAudio.play().catch(function(e) {
           console.warn('[Recording] Could not resume voiceover:', e.message);
         });
         console.log('[Recording] Voiceover resumed from:', voiceoverAudio.currentTime);
       }
-      if (musicAudio && !musicAudio.ended) {
+      if (musicAudio && !musicAudio.ended && pauseState.wasMusicPlaying) {
         musicAudio.play().catch(function(e) {
           console.warn('[Recording] Could not resume music:', e.message);
         });
         console.log('[Recording] Music resumed from:', musicAudio.currentTime);
       }
-      if (ttsAudio && !ttsAudio.ended) {
+      if (ttsAudio && !ttsAudio.ended && pauseState.wasTTSPlaying) {
         ttsAudio.play().catch(function(e) {
           console.warn('[Recording] Could not resume TTS:', e.message);
         });
         console.log('[Recording] TTS resumed from:', ttsAudio.currentTime);
       }
+      
+      // Resume teleprompter auto-scroll if it was running
+      if (typeof startAutoScroll === 'function' && pauseState.teleprompterScrollPosition > 0) {
+        startAutoScroll();
+      }
 
       // Update UI
       updatePauseUI(false);
       hideEditPanel();
+      hidePauseDetails();
     }
 
     function togglePause() {
@@ -1091,19 +1313,32 @@ export function getRecordingEnhancementsScript(): string {
       const chunksToRemove = Math.min(trimAmount, recordedChunks.length - 1);
       
       if (chunksToRemove > 0) {
-        // Save for undo
+        // Save for undo - include audio positions for restoration
         trimHistory.push({
           chunks: recordedChunks.slice(-chunksToRemove),
           count: chunksToRemove,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          // Save audio positions for undo (Fix for Issue #5)
+          savedVoiceoverPosition: pauseState.voiceoverPosition,
+          savedMusicPosition: pauseState.musicPosition,
+          savedTTSPosition: pauseState.ttsPosition,
+          savedDuration: pauseState.recordedDuration
         });
 
         // Remove chunks
         recordedChunks = recordedChunks.slice(0, -chunksToRemove);
         
+        // CRITICAL: Also adjust audio positions (Fix for Issue #5)
+        adjustAudioPositionsForTrim(chunksToRemove);
+        
         console.log('[Recording] Trimmed', chunksToRemove, 'seconds');
         showTrimFeedback('Trimmed ' + chunksToRemove + 's');
         updateTrimUI();
+        
+        // Update pause details display
+        if (isPaused) {
+          showPauseDetails();
+        }
       }
     }
 
@@ -1116,9 +1351,37 @@ export function getRecordingEnhancementsScript(): string {
       const lastTrim = trimHistory.pop();
       recordedChunks = recordedChunks.concat(lastTrim.chunks);
       
-      console.log('[Recording] Undid trim of', lastTrim.count, 'seconds');
+      // CRITICAL: Restore audio positions (Fix for Issue #5)
+      if (lastTrim.savedVoiceoverPosition !== undefined) {
+        pauseState.voiceoverPosition = lastTrim.savedVoiceoverPosition;
+        if (voiceoverAudio) {
+          voiceoverAudio.currentTime = pauseState.voiceoverPosition;
+        }
+      }
+      if (lastTrim.savedMusicPosition !== undefined) {
+        pauseState.musicPosition = lastTrim.savedMusicPosition;
+        if (musicAudio) {
+          musicAudio.currentTime = pauseState.musicPosition;
+        }
+      }
+      if (lastTrim.savedTTSPosition !== undefined) {
+        pauseState.ttsPosition = lastTrim.savedTTSPosition;
+        if (ttsAudio) {
+          ttsAudio.currentTime = pauseState.ttsPosition;
+        }
+      }
+      if (lastTrim.savedDuration !== undefined) {
+        pauseState.recordedDuration = lastTrim.savedDuration;
+      }
+      
+      console.log('[Recording] Undid trim of', lastTrim.count, 'seconds, restored audio positions');
       showTrimFeedback('Restored ' + lastTrim.count + 's');
       updateTrimUI();
+      
+      // Update pause details display
+      if (isPaused) {
+        showPauseDetails();
+      }
     }
 
     function showTrimFeedback(message) {
