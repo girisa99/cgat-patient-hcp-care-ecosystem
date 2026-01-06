@@ -195,8 +195,8 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
             )}
           </div>
 
-          {/* Center: Main Navigation - No scroll, dropdowns consolidate items */}
-          <nav className="flex items-center flex-1 justify-start min-w-0 px-2" aria-label="Primary">
+          {/* Center: Main Navigation - Scrollable when needed */}
+          <nav className="flex items-center flex-1 justify-start min-w-0 px-2 overflow-x-auto" aria-label="Primary">
             <div className="flex items-center gap-1 flex-nowrap">
               {/* Dashboard */}
               <div className="nav-item">
