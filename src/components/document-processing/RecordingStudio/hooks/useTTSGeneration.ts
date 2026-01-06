@@ -576,15 +576,43 @@ function base64ToBlob(base64: string, mimeType: string): Blob {
   return new Blob([byteArray], { type: mimeType });
 }
 
-// Helper: Get audio duration
+// Helper: Get audio duration with readyState check to prevent race condition
 async function getAudioDuration(url: string): Promise<number> {
   return new Promise((resolve) => {
     const audio = new Audio(url);
-    audio.addEventListener('loadedmetadata', () => {
+    
+    const handleMetadata = () => {
       resolve(audio.duration || 0);
-    });
-    audio.addEventListener('error', () => {
+      cleanup();
+    };
+    
+    const handleError = () => {
       resolve(0);
-    });
+      cleanup();
+    };
+    
+    const cleanup = () => {
+      audio.removeEventListener('loadedmetadata', handleMetadata);
+      audio.removeEventListener('error', handleError);
+    };
+    
+    // Check if already loaded (cached audio)
+    if (audio.readyState >= 1 && audio.duration) {
+      resolve(audio.duration);
+      return;
+    }
+    
+    audio.addEventListener('loadedmetadata', handleMetadata);
+    audio.addEventListener('error', handleError);
+    
+    // Timeout fallback to prevent hanging
+    setTimeout(() => {
+      if (audio.duration) {
+        resolve(audio.duration);
+      } else {
+        resolve(0);
+      }
+      cleanup();
+    }, 10000);
   });
 }

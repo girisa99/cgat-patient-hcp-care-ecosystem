@@ -34,6 +34,10 @@ export function getScriptEnhancementScript(supabaseUrl: string, supabaseKey: str
       originalScript = scriptContent;
       updateAnalysisUI('analyzing');
 
+      // Create AbortController with 30s timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(function() { controller.abort(); }, 30000);
+      
       try {
         const response = await fetch(ENHANCE_SUPABASE_URL + '/functions/v1/ai-universal-processor', {
           method: 'POST',
@@ -51,8 +55,10 @@ export function getScriptEnhancementScript(supabaseUrl: string, supabaseKey: str
               addPauseMarkers: true,
               optimizeForSpeaking: true
             }
-          })
+          }),
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           throw new Error('Analysis failed: ' + response.status);
@@ -72,9 +78,15 @@ export function getScriptEnhancementScript(supabaseUrl: string, supabaseKey: str
         return pendingChanges;
 
       } catch (err) {
-        console.error('[Enhancement] Analysis error:', err);
+        clearTimeout(timeoutId);
+        if (err.name === 'AbortError') {
+          console.error('[Enhancement] Request timed out after 30s');
+          updateAnalysisUI('error', 'Request timed out');
+        } else {
+          console.error('[Enhancement] Analysis error:', err);
+          updateAnalysisUI('error', err.message);
+        }
         isAnalyzing = false;
-        updateAnalysisUI('error', err.message);
         return null;
       }
     }
