@@ -801,7 +801,7 @@ export default function SubAgentRecommendationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[85vh] flex flex-col">
+      <DialogContent className="max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Bot className="h-5 w-5 text-primary" />
@@ -812,9 +812,10 @@ export default function SubAgentRecommendationDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Scrollable Agent List */}
-        <ScrollArea className="flex-1 min-h-0 max-h-[45vh] pr-2">
-          <div className="space-y-2 py-2">
+        {/* Scrollable Agent List - Fixed height with proper overflow */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <ScrollArea className="h-full max-h-[50vh]">
+            <div className="space-y-2 py-2 pr-4">
             {/* Ready Agents Section (Universal AI + Real APIs) */}
             {suggestions.filter(a => a.readyStatus === 'ai-powered').length > 0 && (
               <div className="mb-3">
@@ -942,7 +943,8 @@ export default function SubAgentRecommendationDialog({
               </div>
             </div>
           </div>
-        </ScrollArea>
+          </ScrollArea>
+        </div>
 
         {/* Execute Mode Toggle */}
         <div className="flex-shrink-0 pt-3 border-t space-y-3">
