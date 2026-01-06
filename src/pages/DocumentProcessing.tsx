@@ -785,19 +785,35 @@ export default function DocumentProcessing() {
   // Document characteristics derived from processing result
   const smartStudioDocCharacteristics = React.useMemo((): DocumentCharacteristics | null => {
     if (!processingResult) return null;
-    // Auto-detect handwriting ONLY if explicitly detected in the extracted fields
-    // Insurance cards, medical images, and typed documents should NEVER show handwriting
-    const hasHandwrittenFields = Object.values(processingResult.extractedFields || {}).some(
+    
+    const docType = processingResult.documentType || selectedDocType;
+    
+    // Medical images - special handling, no handwriting, specific format detection
+    const medicalImageTypes = ['xray', 'ct-scan', 'mri', 'ecg', 'ultrasound', 'mammogram', 'medical-image'];
+    const isMedicalImage = medicalImageTypes.some(t => docType?.includes(t));
+    
+    // Document types that are NEVER handwritten (images, typed forms, etc.)
+    const neverHandwritten = ['insurance', ...medicalImageTypes, 'order-management', 'treatment-center'];
+    const isNeverHandwrittenType = neverHandwritten.some(t => docType?.includes(t));
+    
+    // Only check for handwriting on forms that could reasonably be handwritten
+    const hasHandwrittenFields = !isNeverHandwrittenType && Object.values(processingResult.extractedFields || {}).some(
       (field: any) => field?.isHandwritten === true
     );
-    // Document types that are NEVER handwritten
-    const neverHandwritten = ['insurance', 'medical-image', 'xray', 'ct-scan', 'mri', 'ecg', 'ultrasound', 'mammogram'];
-    const docType = processingResult.documentType || selectedDocType;
-    const isImageDoc = neverHandwritten.some(t => docType?.includes(t));
-    // Only show handwriting if field-level detection confirmed AND it's an enrollment form
-    const isActuallyHandwritten = !isImageDoc && hasHandwrittenFields && docType === 'enrollment_form';
+    
+    // Only show handwriting if field-level detection confirmed AND it's an enrollment/patient form
+    const isActuallyHandwritten = hasHandwrittenFields && (docType === 'enrollment_form' || docType === 'patient-onboarding');
+    
+    // Determine format - medical images get special treatment
+    let format: 'pdf' | 'image' | 'dicom' = 'image';
+    if (processingResult.fileName?.toLowerCase().endsWith('.pdf')) {
+      format = 'pdf';
+    } else if (processingResult.fileName?.toLowerCase().match(/\.(dcm|dicom)$/i)) {
+      format = 'dicom';
+    }
+    
     return {
-      format: processingResult.fileName?.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image',
+      format,
       pageCount: 1,
       quality: 'high',
       isHandwritten: isActuallyHandwritten,
