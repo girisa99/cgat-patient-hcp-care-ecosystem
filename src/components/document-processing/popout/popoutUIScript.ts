@@ -385,19 +385,26 @@ export function getUIScript(): string {
         voiceoverAudio = new Audio(url);
         voiceoverAudio.volume = voiceoverVolume ? voiceoverVolume.value / 100 : 1;
         
-        // Start word highlighting sync
-        voiceoverAudio.addEventListener('loadedmetadata', function() {
+        // Start word highlighting sync - handle race condition
+        function handleVoiceoverMetadata() {
           if (typeof startWordHighlightingFromAudio === 'function') {
             startWordHighlightingFromAudio(voiceoverAudio);
           }
-          if (typeof startTeleprompterScrollSync === 'function') {
+          if (typeof startTeleprompterScrollSync === 'function' && voiceoverAudio.duration > 0) {
             startTeleprompterScrollSync(voiceoverAudio.duration);
           }
           // Show reading cursor
           if (typeof showReadingCursor === 'function') {
             showReadingCursor();
           }
-        });
+        }
+        
+        // Race condition fix: check if metadata already loaded
+        if (voiceoverAudio.readyState >= 1) {
+          handleVoiceoverMetadata();
+        } else {
+          voiceoverAudio.addEventListener('loadedmetadata', handleVoiceoverMetadata, { once: true });
+        }
         
         voiceoverAudio.play().catch(function(e) {
           console.error('[Voiceover] Play error:', e);
@@ -636,13 +643,21 @@ export function getUIScript(): string {
     }
     
     // Preload TTS when it's generated (set via window._generatedTtsUrl)
-    // Check every 2 seconds for new TTS URL
-    setInterval(function() {
+    // Check every 2 seconds for new TTS URL - store interval for cleanup
+    var ttsCheckInterval = setInterval(function() {
       if (window._generatedTtsUrl && !preloadedVoice && !voiceoverSelect.value) {
         console.log('[Audio] New TTS detected, preloading...');
         preloadAudioAssets();
       }
     }, 2000);
+    
+    // Cleanup TTS check interval on page unload
+    window.addEventListener('unload', function() {
+      if (ttsCheckInterval) {
+        clearInterval(ttsCheckInterval);
+        ttsCheckInterval = null;
+      }
+    }, { once: true });
     
     // Initial preload after a delay
     setTimeout(preloadAudioAssets, 2000);
