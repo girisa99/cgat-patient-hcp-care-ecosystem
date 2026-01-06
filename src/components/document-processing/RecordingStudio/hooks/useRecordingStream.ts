@@ -92,6 +92,26 @@ export function useRecordingStream(options: UseRecordingStreamOptions): UseRecor
     pipConfig = { enabled: true, position: 'bottom-right', size: 'medium' },
   } = options;
 
+  // Store options in refs to prevent stale closures without causing re-renders
+  const modeRef = useRef(mode);
+  const cameraStreamRef = useRef(cameraStream);
+  const screenStreamRef = useRef(screenStream);
+  const startScreenShareRef = useRef(startScreenShare);
+  const isScreenSharingRef = useRef(isScreenSharing);
+  const blurredStreamRef = useRef(blurredStream);
+  const useBlurRef = useRef(useBlur);
+  
+  // Update refs when values change
+  useEffect(() => {
+    modeRef.current = mode;
+    cameraStreamRef.current = cameraStream;
+    screenStreamRef.current = screenStream;
+    startScreenShareRef.current = startScreenShare;
+    isScreenSharingRef.current = isScreenSharing;
+    blurredStreamRef.current = blurredStream;
+    useBlurRef.current = useBlur;
+  }, [mode, cameraStream, screenStream, startScreenShare, isScreenSharing, blurredStream, useBlur]);
+
   const [error, setError] = useState<Error | null>(null);
   
   // Refs for canvas compositing cleanup
