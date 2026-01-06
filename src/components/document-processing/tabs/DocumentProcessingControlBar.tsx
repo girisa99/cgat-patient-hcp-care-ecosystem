@@ -185,16 +185,16 @@ export function DocumentProcessingControlBar({
 
           <div className="flex-1" />
 
-          {/* New Document Button */}
+          {/* New Document Button - Always visible with document type */}
           {onNewDocument && (
             <Button 
-              variant="outline" 
+              variant="default" 
               size="sm" 
               onClick={onNewDocument}
-              className="h-8 text-primary hover:text-primary"
+              className="h-9 gap-2 bg-primary hover:bg-primary/90"
             >
-              <FilePlus2 className="h-4 w-4 mr-2" />
-              New Document
+              <Plus className="h-4 w-4" />
+              <span>New {currentConfig.title}</span>
             </Button>
           )}
 
