@@ -393,28 +393,34 @@ export default function UploadTab({
         )}
       </div>
 
-      {/* Processing Options Sidebar */}
-      <ProcessingOptionsPanel
-        documentConfig={currentConfig}
-        enableOCR={enableOCR}
-        setEnableOCR={setEnableOCR}
-        enableHandwriting={enableHandwriting}
-        setEnableHandwriting={setEnableHandwriting}
-        enableTableExtraction={enableTableExtraction}
-        setEnableTableExtraction={setEnableTableExtraction}
-        enableSignatureDetection={enableSignatureDetection}
-        setEnableSignatureDetection={setEnableSignatureDetection}
-        enableAutoCalculateQty={enableAutoCalculateQty}
-        setEnableAutoCalculateQty={setEnableAutoCalculateQty}
-        enableNdcMatching={enableNdcMatching}
-        setEnableNdcMatching={setEnableNdcMatching}
-        enableClinicalRecommendations={enableClinicalRecommendations}
-        setEnableClinicalRecommendations={setEnableClinicalRecommendations}
-        confidenceThreshold={confidenceThreshold}
-        setConfidenceThreshold={setConfidenceThreshold}
-        ocrProvider={ocrProvider}
-        setOcrProvider={setOcrProvider}
-      />
+      {/* Processing Options Sidebar - Document Configuration */}
+      <div className="space-y-4">
+        <div className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+          <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+          Document Configuration
+        </div>
+        <ProcessingOptionsPanel
+          documentConfig={currentConfig}
+          enableOCR={enableOCR}
+          setEnableOCR={setEnableOCR}
+          enableHandwriting={enableHandwriting}
+          setEnableHandwriting={setEnableHandwriting}
+          enableTableExtraction={enableTableExtraction}
+          setEnableTableExtraction={setEnableTableExtraction}
+          enableSignatureDetection={enableSignatureDetection}
+          setEnableSignatureDetection={setEnableSignatureDetection}
+          enableAutoCalculateQty={enableAutoCalculateQty}
+          setEnableAutoCalculateQty={setEnableAutoCalculateQty}
+          enableNdcMatching={enableNdcMatching}
+          setEnableNdcMatching={setEnableNdcMatching}
+          enableClinicalRecommendations={enableClinicalRecommendations}
+          setEnableClinicalRecommendations={setEnableClinicalRecommendations}
+          confidenceThreshold={confidenceThreshold}
+          setConfidenceThreshold={setConfidenceThreshold}
+          ocrProvider={ocrProvider}
+          setOcrProvider={setOcrProvider}
+        />
+      </div>
     </div>
   );
 }

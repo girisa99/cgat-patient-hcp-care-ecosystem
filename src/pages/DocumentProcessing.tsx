@@ -1093,6 +1093,53 @@ export default function DocumentProcessing() {
     }
   }, [sigInstructions, parseSig]);
 
+  // Sync medications from processingResult to searchResults when loading from history
+  // This ensures MedicationTab shows the extracted medication data even when navigating back
+  useEffect(() => {
+    // Only sync if we have medications in processingResult but no searchResults
+    if (processingResult?.medications && 
+        processingResult.medications.length > 0 && 
+        !searchResults &&
+        (selectedDocType === 'prescription' || selectedDocType === 'order-management')) {
+      const med = processingResult.medications[0];
+      console.log('Syncing medication from processingResult to searchResults:', med);
+      
+      // Populate drug search query if empty
+      if (!drugSearchQuery && med.drugName && med.drugName !== 'Unknown') {
+        setDrugSearchQuery(med.drugName);
+      }
+      
+      // Populate sig instructions if empty
+      if (!sigInstructions && med.sig && med.sig !== 'Take as directed') {
+        setSigInstructions(med.sig);
+        parseSigToSelectors(med.sig);
+      }
+      
+      // Set search results from medication data
+      setSearchResults({
+        drugName: med.drugName,
+        genericName: med.genericName,
+        strength: med.strength,
+        sig: med.sig || 'Take as directed',
+        calculatedQuantity: med.calculatedQuantity,
+        daysSupply: med.daysSupply,
+        dailyDose: med.dailyDose,
+        isControlled: med.isControlled,
+        schedule: med.schedule,
+        ndcOptions: med.ndcOptions || [],
+        clinicalRecommendations: med.clinicalRecommendations || [],
+        alternatives: med.alternatives || []
+      });
+      
+      // Auto-select first NDC if available
+      if (med.ndcOptions && med.ndcOptions.length > 0) {
+        setSelectedNdc(med.ndcOptions[0].code);
+      } else if (med.ndc) {
+        setSelectedNdc(med.ndc);
+      }
+    }
+  }, [processingResult, searchResults, selectedDocType, drugSearchQuery, sigInstructions, parseSigToSelectors]);
+
   // Auto-update fields when NDC changes
   useEffect(() => {
     if (selectedNdc && searchResults) {
@@ -1388,9 +1435,14 @@ export default function DocumentProcessing() {
       // Check if this is a medical imaging document that needs image analysis (not OCR extraction)
       const isMedicalImaging = currentConfig.processingHints?.enableImageAnalysis === true;
       
+      console.log('[runAutoProcessing] Document type:', selectedDocType, 
+        'Category:', currentConfig.category, 
+        'isMedicalImaging:', isMedicalImaging,
+        'enableImageAnalysis:', currentConfig.processingHints?.enableImageAnalysis);
+      
       // Stage 1: Upload
       setProcessingResult(prev => prev ? { ...prev, stage: 'uploading', progress: 10 } : null);
-      toast.info('Uploading document...');
+      toast.info(isMedicalImaging ? 'Uploading medical image for AI analysis...' : 'Uploading document...');
       
       // Convert file to base64 for edge function
       const reader = new FileReader();
@@ -1691,9 +1743,11 @@ export default function DocumentProcessing() {
         
         const calculation = calculateQuantityAndDaySupply(sigText);
         
+        const resolvedDrugName = drugName !== 'Unknown' ? drugName : extractedFields['rx']?.value?.replace(/[()]/g, '')?.trim() || 'Unknown';
+        
         medications = [{
-          drugName: drugName !== 'Unknown' ? drugName : extractedFields['rx']?.value?.replace(/[()]/g, '')?.trim() || 'Unknown',
-          genericName: drugName !== 'Unknown' ? drugName : 'Unknown',
+          drugName: resolvedDrugName,
+          genericName: resolvedDrugName !== 'Unknown' ? resolvedDrugName : 'Unknown',
           strength: extractedFields['strength']?.value || '',
           sig: sigText,
           calculatedQuantity: calculation.totalQuantity,
@@ -1706,7 +1760,7 @@ export default function DocumentProcessing() {
         
         // Auto-populate drug search with extracted medication and trigger search
         // Use the final resolved drugName (which includes fallbacks) instead of just extractedDrugName
-        const finalDrugName = drugName !== 'Unknown' ? drugName : null;
+        const finalDrugName = resolvedDrugName !== 'Unknown' ? resolvedDrugName : null;
         
         if (finalDrugName) {
           setDrugSearchQuery(finalDrugName);
