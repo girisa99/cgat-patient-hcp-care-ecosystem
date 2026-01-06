@@ -318,9 +318,15 @@ const getSharedAgents = (...ids: string[]): SubAgentSuggestion[] =>
 // Document-type specific sub-agent suggestions - composed from shared agents
 const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
   'insurance': [
+    // AI-Powered Agents (Ready to use)
     SHARED_AGENTS['eligibility-ai'],
     SHARED_AGENTS['coverage-summary'],
     SHARED_AGENTS['data-validation'],
+    // Optum API Agents
+    SHARED_AGENTS['optum-eligibility'],
+    SHARED_AGENTS['optum-benefits'],
+    SHARED_AGENTS['optum-real'],
+    // Other Integration Agents
     {
       id: 'insurance-verification',
       name: 'Insurance Verification Agent',
@@ -365,6 +371,9 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
     SHARED_AGENTS['drug-interaction'],
     SHARED_AGENTS['clinical-review'],
     SHARED_AGENTS['cost-analysis'],
+    // Optum Pharmacy Agent for formulary/copay
+    SHARED_AGENTS['optum-pharmacy'],
+    SHARED_AGENTS['optum-benefits'],
     // Integration-required agents
     {
       id: 'medication-reconciliation',
@@ -398,6 +407,9 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
     // Medication agents for patient history
     SHARED_AGENTS['drug-interaction'],
     SHARED_AGENTS['safety-profile'],
+    // Optum for patient eligibility
+    SHARED_AGENTS['optum-eligibility'],
+    SHARED_AGENTS['optum-benefits'],
     // Integration-required agents
     {
       id: 'credentialing',
@@ -454,32 +466,56 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
     }
   ],
   'invoice': [
+    // AI-Powered Agents
+    SHARED_AGENTS['data-validation'],
+    SHARED_AGENTS['medical-summary'],
+    // Optum Billing & Payment Agents
+    SHARED_AGENTS['optum-claims'],
+    SHARED_AGENTS['optum-payment'],
+    SHARED_AGENTS['optum-eligibility'],
+    SHARED_AGENTS['optum-benefits'],
+    // Standard Billing Agents
     {
       id: 'claims-processor',
       name: 'Claims Processing Agent',
-      description: 'Automates claims submission and tracking',
+      description: 'Automates claims submission and tracking via multiple clearinghouses',
       icon: '📄',
       useCase: 'claims-processing',
       triggerCondition: 'When invoice ready for claims',
-      architectureType: 'multi-agent'
+      architectureType: 'multi-agent',
+      readyStatus: 'needs-config',
+      requiredSetup: ['Clearinghouse API (Availity, Trizetto)', '837 EDI setup', 'Provider enrollment']
     },
     {
       id: 'denial-management',
       name: 'Denial Management Agent',
-      description: 'Handles claim denials and appeals',
+      description: '🤖 AI-powered denial analysis and appeal letter generation',
       icon: '🔄',
       useCase: 'denial-management',
       triggerCondition: 'When claim is denied',
-      architectureType: 'agentic'
+      architectureType: 'agentic',
+      readyStatus: 'ai-powered'
     },
     {
       id: 'payment-posting',
       name: 'Payment Posting Agent',
-      description: 'Automates ERA/EOB processing',
+      description: 'Automates ERA/EOB processing and payment reconciliation',
       icon: '💰',
       useCase: 'payment-posting',
       triggerCondition: 'When payment received',
-      architectureType: 'a2a'
+      architectureType: 'a2a',
+      readyStatus: 'needs-config',
+      requiredSetup: ['835 ERA enrollment', 'Bank account linking', 'Practice management integration']
+    },
+    {
+      id: 'patient-responsibility',
+      name: 'Patient Responsibility Agent',
+      description: '🤖 Calculates patient copay, coinsurance, deductible amounts',
+      icon: '💳',
+      useCase: 'patient-responsibility',
+      triggerCondition: 'After eligibility verified',
+      architectureType: 'agentic',
+      readyStatus: 'ai-powered'
     }
   ],
   'xray': [
