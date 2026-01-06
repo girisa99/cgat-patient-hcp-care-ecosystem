@@ -135,3 +135,20 @@ export interface TeleprompterState {
 }
 
 export type AudioTabType = 'voiceover' | 'tts' | 'music';
+
+// Script enhancement and analysis types
+export interface EnhancementChange {
+  type: 'addition' | 'removal' | 'modification';
+  original?: string;
+  enhanced?: string;
+  reason?: string;
+  lineNumber?: number;
+}
+
+export interface AnalysisResult {
+  category: string;
+  issue: string;
+  suggestion: string;
+  severity: 'low' | 'medium' | 'high';
+  lineNumber?: number;
+}

@@ -27,7 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   X, Library, Monitor, Camera, MonitorPlay, 
   FileText, Music, Mic, ChevronLeft, ChevronRight,
-  FolderOpen, Sliders, Keyboard, Settings2,
+  FolderOpen, Sliders, Keyboard,
   Play, Pause, Square, AudioLines, ExternalLink
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -44,7 +44,6 @@ import {
   useRecordingLibrary, 
   useScreenShare, 
   useScriptDraftStorage,
-  useKeyboardShortcuts,
   useMediaProject,
   useStudioSound,
   useTTSGeneration,
@@ -72,7 +71,7 @@ import {
   VibeToMindBridge
 } from './components';
 import type { CameraSetupOptions } from './components';
-import type { RecordingStudioProps, LogoState, TeleprompterState, ScriptData, AudioTabType } from './types';
+import type { RecordingStudioProps, LogoState, TeleprompterState, ScriptData, AudioTabType, EnhancementChange, AnalysisResult } from './types';
 import type { RecordingMode } from './hooks/useScreenShare';
 import type { RecordingQuality } from './components/RecordingQualitySettings';
 import { ProjectAssetBreakdown } from './components/ProjectAssetBreakdown';
@@ -141,9 +140,9 @@ export function RecordingStudio({
   
   // Enhancement state lifted from ScriptPanel to prevent loss on re-render
   const [enhancedScriptContent, setEnhancedScriptContent] = useState<string | null>(null);
-  const [enhancementChangesData, setEnhancementChangesData] = useState<any[]>([]);
+  const [enhancementChangesData, setEnhancementChangesData] = useState<EnhancementChange[]>([]);
   const [showEnhancementChanges, setShowEnhancementChanges] = useState(false);
-  const [analysisResultData, setAnalysisResultData] = useState<any[]>([]);
+  const [analysisResultData, setAnalysisResultData] = useState<AnalysisResult[]>([]);
   const [showAnalysisResult, setShowAnalysisResult] = useState(false);
   
   // Pre-recording dialog state
@@ -536,7 +535,9 @@ export function RecordingStudio({
   }, [recordingMode, camera.stream, screenShare]);
   
   const recording = useRecording(
-    recordingMode === 'camera' ? camera.stream : (screenShare.screenStream || camera.stream), 
+    // Pass a getter function instead of direct stream to prevent stale closure issues
+    // This ensures we always get the fresh stream when recording starts
+    getRecordingStream, 
     {
       onRecordingComplete: async (blob, duration) => {
         console.log('[RecordingStudio] onRecordingComplete called - blob size:', blob.size, 'duration:', duration);

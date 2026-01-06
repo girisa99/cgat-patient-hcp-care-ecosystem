@@ -7,6 +7,7 @@
  * - IndexedDB persistence for long recordings (survives tab/browser issues)
  * - Stream health monitoring with automatic recovery warnings
  * - Visibility change handling (tab switching protection)
+ * - Dynamic stream acquisition via getStream function (prevents stale closures)
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
@@ -15,21 +16,39 @@ import type { RecordingState } from '../types';
 import { useRecordingAudioMixer } from './useRecordingAudioMixer';
 import { useRecordingPersistence } from './useRecordingPersistence';
 
+// Constants for configuration
+const RECORDING_QUALITY = {
+  low: 1_000_000,
+  medium: 2_500_000,
+  high: 5_000_000,
+  ultra: 8_000_000,
+} as const;
+
+const CHUNK_INTERVAL_MS = 1000;
+const STOP_DELAY_MS = 250;
+const RECOVERY_TOAST_DURATION_MS = 10000;
+const ERROR_TOAST_DURATION_MS = 5000;
+const STREAM_ERROR_TOAST_DURATION_MS = 8000;
+
 interface AudioElements {
   voiceover?: HTMLAudioElement | null;
   tts?: HTMLAudioElement | null;
   music?: HTMLAudioElement | null;
 }
 
+type RecordingQualityLevel = 'low' | 'medium' | 'high' | 'ultra';
+
 interface UseRecordingOptions {
   onRecordingComplete?: (blob: Blob, duration: number) => void;
   countdownSeconds?: number;
-  quality?: 'low' | 'medium' | 'high' | 'ultra';
+  quality?: RecordingQualityLevel;
   enablePersistence?: boolean;
 }
 
+// The hook now accepts a getStream function instead of a direct stream reference
+// This prevents stale closure issues when recording mode changes
 export function useRecording(
-  stream: MediaStream | null,
+  getStream: () => Promise<MediaStream | null> | MediaStream | null,
   options: UseRecordingOptions = {}
 ) {
   const { 
@@ -57,6 +76,7 @@ export function useRecording(
   const pausedTimeRef = useRef<number>(0);
   const pauseStartRef = useRef<number>(0);
   const combinedStreamRef = useRef<MediaStream | null>(null);
+  const activeStreamRef = useRef<MediaStream | null>(null);
   const lastChunkCountRef = useRef<number>(0);
   
   // Use the audio mixer for dynamic audio capture
@@ -97,7 +117,7 @@ export function useRecording(
   useEffect(() => {
     const checkForRecovery = async () => {
       if (!enablePersistence) return;
-      if (recoveryToastShownRef.current) return; // Already shown
+      if (recoveryToastShownRef.current) return;
       
       try {
         const sessions = await persistence.getIncompleteSessions();
@@ -105,11 +125,10 @@ export function useRecording(
           setHasRecovery(true);
           const latestSession = sessions[0];
           
-          // Only show toast once per app session
           recoveryToastShownRef.current = true;
           toast.info(
             `Found recoverable recording (${Math.floor(latestSession.duration / 60)}m ${latestSession.duration % 60}s). Check your library.`,
-            { duration: 10000, id: 'recovery-toast' }
+            { duration: RECOVERY_TOAST_DURATION_MS, id: 'recovery-toast' }
           );
           console.log('[Recording] Found recoverable sessions:', sessions.length);
         }
@@ -119,7 +138,6 @@ export function useRecording(
     };
     
     checkForRecovery();
-    // Only run once on mount, not on dependency changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -127,23 +145,39 @@ export function useRecording(
   const handleStreamHealthIssue = useCallback(() => {
     console.warn('[Recording] Stream health issue detected');
     
-    // Force save current chunks
     if (enablePersistence && chunksRef.current.length > 0) {
       persistence.saveChunks(chunksRef.current, true);
     }
     
-    // Show recovery notification
     toast.error(
       'Recording interrupted. Your progress has been saved and can be recovered.',
-      { duration: 8000 }
+      { duration: STREAM_ERROR_TOAST_DURATION_MS }
     );
   }, [enablePersistence, persistence]);
 
   const startRecording = useCallback(async () => {
     console.log('[Recording] startRecording called');
+    
+    if (state.isRecording) {
+      console.warn('[Recording] Recording already in progress');
+      return;
+    }
+    
+    // Get stream dynamically at recording start time
+    // This is the KEY FIX - we get fresh stream when recording starts
+    console.log('[Recording] Getting fresh stream...');
+    let stream: MediaStream | null;
+    try {
+      const result = getStream();
+      stream = result instanceof Promise ? await result : result;
+    } catch (err) {
+      console.error('[Recording] Failed to get stream:', err);
+      toast.error('Failed to access camera/screen. Please try again.');
+      return;
+    }
+    
     console.log('[Recording] Stream check:', {
       hasStream: !!stream,
-      isRecording: state.isRecording,
       videoTracks: stream?.getVideoTracks().length || 0,
       audioTracks: stream?.getAudioTracks().length || 0,
     });
@@ -154,14 +188,11 @@ export function useRecording(
       return;
     }
     
-    if (state.isRecording) {
-      console.warn('[Recording] Recording already in progress');
-      return;
-    }
+    // Store the active stream reference
+    activeStreamRef.current = stream;
     
     // Validate stream has active tracks
     const videoTracks = stream.getVideoTracks();
-    const audioTracks = stream.getAudioTracks();
     
     if (videoTracks.length === 0) {
       console.error('[Recording] Stream has no video tracks');
@@ -179,7 +210,6 @@ export function useRecording(
       return;
     }
     
-    // Check if track is actually enabled
     if (!videoTrack.enabled) {
       console.warn('[Recording] Video track is disabled, enabling...');
       videoTrack.enabled = true;
@@ -187,10 +217,24 @@ export function useRecording(
 
     startCountdown(async () => {
       try {
+        // Double-check stream is still valid after countdown
+        if (!activeStreamRef.current) {
+          console.error('[Recording] Stream became null during countdown');
+          toast.error('Recording cancelled - stream unavailable.');
+          return;
+        }
+        
+        const currentStream = activeStreamRef.current;
+        const currentVideoTrack = currentStream.getVideoTracks()[0];
+        if (!currentVideoTrack || currentVideoTrack.readyState !== 'live') {
+          console.error('[Recording] Video track died during countdown');
+          toast.error('Camera disconnected. Please try again.');
+          return;
+        }
+        
         chunksRef.current = [];
         lastChunkCountRef.current = 0;
         
-        // Create persistence session for long recordings
         if (enablePersistence) {
           try {
             await persistence.createSession();
@@ -201,34 +245,26 @@ export function useRecording(
         }
         
         // Initialize audio mixer with microphone
-        const mixedAudioStream = audioMixer.initialize(stream);
+        const mixedAudioStream = audioMixer.initialize(currentStream);
         
         // Create combined stream with video + mixed audio
-        const videoTracks = stream.getVideoTracks();
+        const videoTracksForRecording = currentStream.getVideoTracks();
         let recordingStream: MediaStream;
         
         if (mixedAudioStream) {
           recordingStream = new MediaStream([
-            ...videoTracks,
+            ...videoTracksForRecording,
             ...mixedAudioStream.getAudioTracks(),
           ]);
           console.log('[Recording] Created stream with dynamic audio mixer');
         } else {
-          // Fallback to original stream
-          recordingStream = stream;
+          recordingStream = currentStream;
           console.log('[Recording] Using original stream (no mixer)');
         }
         
         combinedStreamRef.current = recordingStream;
         
-        // Quality settings for video bitrate
-        const qualitySettings: Record<string, number> = {
-          low: 1000000,
-          medium: 2500000,
-          high: 5000000,
-          ultra: 8000000,
-        };
-        const videoBitsPerSecond = qualitySettings[quality] || qualitySettings.high;
+        const videoBitsPerSecond = RECORDING_QUALITY[quality] || RECORDING_QUALITY.high;
         
         const mimeOptions = { 
           mimeType: 'video/webm;codecs=vp9,opus',
@@ -256,7 +292,6 @@ export function useRecording(
             chunksRef.current.push(event.data);
             const chunkCount = chunksRef.current.length;
             
-            // Log periodically (every 10 chunks) to avoid console spam
             if (chunkCount % 10 === 0 || chunkCount === 1) {
               console.log('[Recording] Chunk received:', event.data.size, 'bytes, total:', chunkCount);
             }
@@ -268,28 +303,25 @@ export function useRecording(
           }
         };
 
-        recorder.onerror = (event: any) => {
-          console.error('[Recording] MediaRecorder error:', event.error);
+        recorder.onerror = (event: Event) => {
+          const errorEvent = event as ErrorEvent;
+          console.error('[Recording] MediaRecorder error:', errorEvent.error);
           
-          // Save chunks on error
           if (enablePersistence && chunksRef.current.length > 0) {
             persistence.saveChunks(chunksRef.current, true);
-            toast.error('Recording error occurred. Progress saved.', { duration: 5000 });
+            toast.error('Recording error occurred. Progress saved.', { duration: ERROR_TOAST_DURATION_MS });
           }
         };
 
         recorder.onstop = () => {
           console.log('[Recording] MediaRecorder stopped, chunks:', chunksRef.current.length);
           
-          // Stop health monitoring
           persistence.stopMonitoring();
           
-          // Mark session complete
           if (enablePersistence) {
             persistence.completeSession();
           }
           
-          // Calculate duration
           const duration = Math.floor((Date.now() - startTimeRef.current - pausedTimeRef.current) / 1000);
           
           if (chunksRef.current.length > 0) {
@@ -299,7 +331,6 @@ export function useRecording(
           } else {
             console.warn('[Recording] No chunks recorded - attempting recovery from persistence');
             
-            // Try to recover from persistence
             if (enablePersistence && persistence.sessionInfo?.id) {
               persistence.recoverSession(persistence.sessionInfo.id).then(recoveredChunks => {
                 if (recoveredChunks.length > 0) {
@@ -318,12 +349,10 @@ export function useRecording(
             }
           }
           
-          // Cleanup audio mixer
           audioMixer.cleanup();
         };
 
-        // IMPORTANT: Set state FIRST before starting recorder and timer
-        // This ensures isRecording is true when the first timer tick happens
+        // Set state FIRST before starting recorder and timer
         setState({
           isRecording: true,
           isPaused: false,
@@ -334,9 +363,8 @@ export function useRecording(
         
         console.log('[Recording] State set to recording=true, starting MediaRecorder...');
         
-        // Request data frequently (every 1 second) for better persistence
         try {
-          recorder.start(1000);
+          recorder.start(CHUNK_INTERVAL_MS);
           console.log('[Recording] MediaRecorder started successfully, state:', recorder.state);
         } catch (startError) {
           console.error('[Recording] MediaRecorder.start() failed:', startError);
@@ -354,18 +382,15 @@ export function useRecording(
         startTimeRef.current = Date.now();
         pausedTimeRef.current = 0;
 
-        // Start health monitoring and auto-save
         if (enablePersistence) {
           persistence.startHealthMonitoring(recordingStream, recorder, handleStreamHealthIssue);
           persistence.startAutoSave(() => chunksRef.current);
         }
 
-        // Start timer AFTER state is set and recorder is started
         timerRef.current = window.setInterval(() => {
           setState(prev => {
             if (prev.isPaused) return prev;
             const newDuration = prev.duration + 1;
-            // Log every 10 seconds to verify timer is running
             if (newDuration % 10 === 0) {
               console.log('[Recording] Timer tick:', newDuration, 's');
             }
@@ -380,15 +405,13 @@ export function useRecording(
         persistence.stopMonitoring();
       }
     });
-  }, [stream, state.isRecording, startCountdown, onRecordingComplete, quality, audioMixer, enablePersistence, persistence, handleStreamHealthIssue]);
+  }, [getStream, state.isRecording, startCountdown, onRecordingComplete, quality, audioMixer, enablePersistence, persistence, handleStreamHealthIssue]);
 
   const pauseRecording = useCallback(() => {
     if (!mediaRecorderRef.current || !state.isRecording) return;
 
     if (state.isPaused) {
-      // Resume
       mediaRecorderRef.current.resume();
-      // Track pause duration
       if (pauseStartRef.current > 0) {
         pausedTimeRef.current += Date.now() - pauseStartRef.current;
         pauseStartRef.current = 0;
@@ -396,11 +419,9 @@ export function useRecording(
       setState(prev => ({ ...prev, isPaused: false }));
       console.log('[Recording] Resumed');
     } else {
-      // Pause
       mediaRecorderRef.current.pause();
       pauseStartRef.current = Date.now();
       
-      // Save chunks when pausing (safety save)
       if (enablePersistence && chunksRef.current.length > 0) {
         persistence.saveChunks(chunksRef.current, true);
         console.log('[Recording] Chunks saved on pause');
@@ -420,7 +441,6 @@ export function useRecording(
     const recorder = mediaRecorderRef.current;
     console.log('[Recording] Stopping, recorder state:', recorder.state, 'chunks so far:', chunksRef.current.length);
 
-    // Stop health monitoring
     persistence.stopMonitoring();
 
     if (timerRef.current) {
@@ -428,7 +448,6 @@ export function useRecording(
       timerRef.current = null;
     }
 
-    // Final save before stopping
     if (enablePersistence && chunksRef.current.length > 0) {
       persistence.saveChunks(chunksRef.current, true);
     }
@@ -436,7 +455,6 @@ export function useRecording(
     setState(prev => ({ ...prev, isRecording: false, isStopped: true }));
 
     if (recorder.state !== 'inactive') {
-      // Request final data before stopping - this is important!
       try {
         recorder.requestData();
         console.log('[Recording] Requested final data chunk');
@@ -444,8 +462,6 @@ export function useRecording(
         console.warn('[Recording] requestData not supported:', e);
       }
       
-      // Longer delay to ensure the final chunk is captured properly
-      // This helps with the "0 chunks recorded" issue
       setTimeout(() => {
         try {
           if (recorder.state !== 'inactive') {
@@ -455,22 +471,33 @@ export function useRecording(
         } catch (e) {
           console.warn('[Recording] Error stopping recorder:', e);
         }
-      }, 250); // Increased from 100ms to 250ms
+      }, STOP_DELAY_MS);
     }
 
     // Cleanup combined stream tracks (but don't stop original camera)
-    if (combinedStreamRef.current && combinedStreamRef.current !== stream) {
+    const currentActiveStream = activeStreamRef.current;
+    if (combinedStreamRef.current && combinedStreamRef.current !== currentActiveStream) {
       combinedStreamRef.current.getTracks().forEach(track => {
-        // Only stop tracks that were created for recording, not camera tracks
-        if (!stream?.getTracks().includes(track)) {
+        if (!currentActiveStream?.getTracks().includes(track)) {
           track.stop();
         }
       });
       combinedStreamRef.current = null;
     }
+    
+    activeStreamRef.current = null;
 
     console.log('[Recording] Stop initiated');
-  }, [stream, enablePersistence, persistence]);
+  }, [enablePersistence, persistence]);
+
+  // Get current recording blob (useful for preview during pause)
+  const getCurrentBlob = useCallback((): Blob | null => {
+    if (chunksRef.current.length === 0) return null;
+    return new Blob(chunksRef.current, { type: 'video/webm' });
+  }, []);
+
+  // Format duration as MM:SS
+  const formattedDuration = `${Math.floor(state.duration / 60).toString().padStart(2, '0')}:${(state.duration % 60).toString().padStart(2, '0')}`;
 
   // Trim the last N seconds from recording
   const trimLastSeconds = useCallback((seconds: number): Blob | null => {
@@ -490,28 +517,35 @@ export function useRecording(
       }
     }
     
-    chunksRef.current = trimmedChunks;
-    setState(prev => ({
-      ...prev,
-      duration: Math.max(0, prev.duration - seconds),
-      recordedChunks: trimmedChunks,
-    }));
+    if (trimmedChunks.length > 0) {
+      chunksRef.current = trimmedChunks;
+      const newDuration = Math.max(0, state.duration - seconds);
+      setState(prev => ({
+        ...prev,
+        duration: newDuration,
+        recordedChunks: trimmedChunks,
+      }));
+      
+      return new Blob(trimmedChunks, { type: 'video/webm' });
+    }
     
-    console.log('[Recording] Trimmed', seconds, 'seconds');
-    return new Blob(trimmedChunks, { type: 'video/webm' });
+    return null;
   }, [state.duration]);
 
-  // Get current recording blob (for transcription during pause)
-  const getCurrentBlob = useCallback((): Blob | null => {
-    if (chunksRef.current.length === 0) return null;
-    return new Blob(chunksRef.current, { type: 'video/webm' });
-  }, []);
+  // Handle tab visibility changes
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && state.isRecording && enablePersistence) {
+        console.log('[Recording] Tab hidden - forcing chunk save');
+        if (chunksRef.current.length > 0) {
+          persistence.saveChunks(chunksRef.current, true);
+        }
+      }
+    };
 
-  const formatDuration = useCallback((seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  }, []);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [state.isRecording, enablePersistence, persistence]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -524,47 +558,49 @@ export function useRecording(
     };
   }, [audioMixer, persistence]);
 
-  // Recover recording from persistence
-  const recoverRecording = useCallback(async (sessionId: string): Promise<Blob | null> => {
+  // Recover a specific session
+  const recoverSession = useCallback(async (sessionId: string): Promise<Blob | null> => {
     try {
       const chunks = await persistence.recoverSession(sessionId);
       if (chunks.length > 0) {
         const blob = new Blob(chunks, { type: 'video/webm' });
-        console.log('[Recording] Recovered recording:', blob.size, 'bytes');
-        toast.success('Recording recovered successfully!');
+        console.log('[Recording] Recovered session:', blob.size, 'bytes');
         return blob;
       }
-      return null;
     } catch (err) {
       console.error('[Recording] Recovery failed:', err);
-      toast.error('Failed to recover recording');
-      return null;
     }
+    return null;
   }, [persistence]);
 
   // Clear recovery data
-  const clearRecoveryData = useCallback(async (sessionId: string) => {
-    await persistence.clearSession(sessionId);
-    setHasRecovery(false);
+  const clearRecovery = useCallback(async () => {
+    try {
+      const sessions = await persistence.getIncompleteSessions();
+      for (const session of sessions) {
+        await persistence.clearSession(session.id);
+      }
+      setHasRecovery(false);
+      console.log('[Recording] Recovery data cleared');
+    } catch (err) {
+      console.error('[Recording] Failed to clear recovery:', err);
+    }
   }, [persistence]);
 
   return {
     ...state,
     countdown,
-    formattedDuration: formatDuration(state.duration),
+    hasRecovery,
+    formattedDuration,
+    isStreamHealthy: persistence.isStreamHealthy,
+    sessionInfo: persistence.sessionInfo,
     startRecording,
     pauseRecording,
     stopRecording,
     trimLastSeconds,
     getCurrentBlob,
-    // Expose method to connect audio dynamically during recording
     connectAudio,
-    // Recovery features
-    hasRecovery,
-    recoverRecording,
-    clearRecoveryData,
-    getIncompleteSessions: persistence.getIncompleteSessions,
-    isStreamHealthy: persistence.isStreamHealthy,
-    sessionInfo: persistence.sessionInfo,
+    recoverSession,
+    clearRecovery,
   };
 }
