@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { createManagedAudio } from '@/hooks/shared/useAudioElement';
 
 interface UniversalVoiceInterfaceProps {
   agentType: 'conversational' | 'structured' | 'traditional_form' | 'fax' | 'pdf';
@@ -44,6 +45,17 @@ export const UniversalVoiceInterface: React.FC<UniversalVoiceInterfaceProps> = (
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
+  const audioCleanupRef = useRef<(() => void) | null>(null);
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      if (audioCleanupRef.current) {
+        audioCleanupRef.current();
+        audioCleanupRef.current = null;
+      }
+    };
+  }, []);
 
   const getAgentCapabilities = () => {
     const capabilities = {
@@ -198,21 +210,27 @@ export const UniversalVoiceInterface: React.FC<UniversalVoiceInterfaceProps> = (
 
       if (error) throw error;
 
-      // Play the audio
+      // Cleanup previous audio
+      if (audioCleanupRef.current) {
+        audioCleanupRef.current();
+      }
+
+      // Play the audio with proper cleanup management
       const audioData = `data:audio/mpeg;base64,${data.audioContent}`;
-      const audio = new Audio(audioData);
+      const { audio, cleanup } = createManagedAudio(audioData, {
+        onEnded: () => {
+          setIsPlaying(false);
+          onStatusChange?.('idle');
+        },
+        onError: () => {
+          setIsPlaying(false);
+          onStatusChange?.('error');
+          toast.error('Failed to play audio');
+        },
+      });
+      
       audioElementRef.current = audio;
-
-      audio.onended = () => {
-        setIsPlaying(false);
-        onStatusChange?.('idle');
-      };
-
-      audio.onerror = () => {
-        setIsPlaying(false);
-        onStatusChange?.('error');
-        toast.error('Failed to play audio');
-      };
+      audioCleanupRef.current = cleanup;
 
       await audio.play();
       toast.success('Playing audio response');
@@ -225,12 +243,13 @@ export const UniversalVoiceInterface: React.FC<UniversalVoiceInterfaceProps> = (
   };
 
   const stopPlaying = () => {
-    if (audioElementRef.current) {
-      audioElementRef.current.pause();
-      audioElementRef.current.currentTime = 0;
-      setIsPlaying(false);
-      onStatusChange?.('idle');
+    if (audioCleanupRef.current) {
+      audioCleanupRef.current();
+      audioCleanupRef.current = null;
+      audioElementRef.current = null;
     }
+    setIsPlaying(false);
+    onStatusChange?.('idle');
   };
 
   const getVoiceForAgent = () => {

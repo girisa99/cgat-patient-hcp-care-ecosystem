@@ -24,6 +24,7 @@ import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { useConversationEngines } from '@/hooks/useConversationEngines';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { playAudioOneShot } from '@/hooks/shared/useAudioElement';
 
 interface Message {
   id: string;
@@ -276,8 +277,10 @@ export const UniversalLLMAssistant: React.FC<UniversalLLMAssistantProps> = ({
       });
 
       if (response.data?.audioContent) {
-        const audio = new Audio(`data:audio/mp3;base64,${response.data.audioContent}`);
-        audio.play();
+        // Use consolidated audio utility with automatic cleanup
+        playAudioOneShot(`data:audio/mp3;base64,${response.data.audioContent}`, {
+          onError: (error) => console.error('Error playing TTS audio:', error)
+        });
       }
     } catch (error) {
       console.error('Error with text-to-speech:', error);

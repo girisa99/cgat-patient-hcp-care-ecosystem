@@ -20,6 +20,7 @@ import { PromptBasedAgentGenerator } from '@/components/agent-builder/PromptBase
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { useJourneyAISuggestions } from '@/hooks/useJourneyAISuggestions';
+import { fetchWithTimeout } from '@/hooks/shared/useFetchWithTimeout';
 
 interface TestResult {
   id: string;
@@ -490,8 +491,10 @@ curl -X POST "${baseUrl}/webhooks/${agentId}" \\
     addTestResult({ status: 'running', message: 'Analyzing workflow for smart connections...' });
     
     try {
-      // Try intelligent auto-connect first
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-auto-connections`, {
+      // Try intelligent auto-connect first with timeout
+      const result = await fetchWithTimeout<{
+        suggestions?: Array<{ id: string; sourceId: string; targetId: string; autoApply: boolean; confidence: number; type: string; reasoning: string }>;
+      }>(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-auto-connections`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -502,12 +505,12 @@ curl -X POST "${baseUrl}/webhooks/${agentId}" \\
           edges: workflowEdges || [],
           generateTemplates: true,
           intelligentRouting: true
-        })
+        }),
+        timeoutMs: 30000, // 30 second timeout
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        const suggestions = result.suggestions || [];
+      if (!result.error && result.data) {
+        const suggestions = result.data.suggestions || [];
         const autoApplied = suggestions.filter((s: any) => s.autoApply && s.confidence > 0.8);
         
         if (autoApplied.length > 0) {
