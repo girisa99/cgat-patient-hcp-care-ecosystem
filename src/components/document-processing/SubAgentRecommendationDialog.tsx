@@ -2,6 +2,7 @@
  * Sub-Agent Recommendation Dialog
  * Clean, focused dialog for recommending sub-agents based on document type
  * Shows AI-powered agents (ready) vs integration-required agents (need setup)
+ * Includes live execution progress and results confirmation flow
  */
 
 import React, { useState, useMemo } from 'react';
@@ -42,15 +43,17 @@ import { DocumentTypeConfig } from '@/config/documentTypes';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { AddCustomAgentDialog, type CustomAgentConfig } from './studio/AddCustomAgentDialog';
-import { useAgentExecution, type SubAgentSuggestion, type AgentReadyStatus } from '@/hooks/useAgentExecution';
+import { useAgentExecution, type SubAgentSuggestion, type AgentReadyStatus, type AgentExecutionResult } from '@/hooks/useAgentExecution';
 import { toast } from 'sonner';
+import { AgentExecutionProgress } from './AgentExecutionProgress';
+import { AgentResultsConfirmation } from './AgentResultsConfirmation';
 
 interface SubAgentRecommendationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   documentType: DocumentTypeConfig;
   extractedData?: Record<string, any>;
-  onAgentExecutionComplete?: (results: any[]) => void;
+  onAgentExecutionComplete?: (results: any[], mergedWithExtraction?: boolean) => void;
 }
 
 export type { SubAgentSuggestion };
@@ -793,7 +796,13 @@ export default function SubAgentRecommendationDialog({
   const [customAgents, setCustomAgents] = useState<SubAgentSuggestion[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<'auto' | 'claude' | 'gemini' | 'openai'>('auto');
   
-  const { executeAgents, isExecuting, executionProgress, currentAgent } = useAgentExecution();
+  // Execution state
+  const [showExecutionProgress, setShowExecutionProgress] = useState(false);
+  const [showResultsConfirmation, setShowResultsConfirmation] = useState(false);
+  const [executionResults, setExecutionResults] = useState<AgentExecutionResult[]>([]);
+  const [executingAgents, setExecutingAgents] = useState<SubAgentSuggestion[]>([]);
+  
+  const { executeAgents, isExecuting, executionProgress, currentAgent, results } = useAgentExecution();
 
   // Get suggestions for current document type - with fallback for any unknown types
   const suggestions = useMemo(() => {
@@ -835,6 +844,10 @@ export default function SubAgentRecommendationDialog({
       toast.error('Please select at least one agent');
       return;
     }
+    
+    // Show live execution progress
+    setExecutingAgents(selectedSubAgents);
+    setShowExecutionProgress(true);
 
     // Build comprehensive extracted fields from all available data sources
     const baseExtractedFields = extractedData?.processingResult?.extractedFields || extractedData?.extractedFields || {};
@@ -899,14 +912,33 @@ export default function SubAgentRecommendationDialog({
       preferredProvider: selectedProvider === 'auto' ? undefined : selectedProvider
     };
 
-    const results = await executeAgents(selectedSubAgents, documentContext);
+    const executedResults = await executeAgents(selectedSubAgents, documentContext);
     
-    onAgentExecutionComplete?.(results);
+    // Store results and show confirmation dialog
+    setExecutionResults(executedResults);
+    setShowExecutionProgress(false);
+    setShowResultsConfirmation(true);
+  };
+
+  const handleAcceptResults = (selectedResults: AgentExecutionResult[], mergeWithExtraction: boolean) => {
+    // Pass results to parent with merge flag
+    onAgentExecutionComplete?.(selectedResults, mergeWithExtraction);
+    
+    // Close dialogs
+    setShowResultsConfirmation(false);
     onOpenChange(false);
     
-    toast.success(`Executed ${results.length} agent(s)`, {
-      description: `${results.filter(r => r.status === 'completed').length} completed successfully`
+    toast.success(`Applied ${selectedResults.length} agent result(s)`, {
+      description: mergeWithExtraction 
+        ? 'Results merged with extracted data' 
+        : 'Results added as new findings'
     });
+  };
+
+  const handleRejectResults = () => {
+    setShowResultsConfirmation(false);
+    setExecutionResults([]);
+    toast.info('Agent results discarded');
   };
 
   const handleBuildAgents = () => {
@@ -1243,6 +1275,29 @@ export default function SubAgentRecommendationDialog({
         onOpenChange={setShowAddAgentDialog}
         documentTypeId={documentType.id}
         onAgentCreated={handleCustomAgentCreated}
+      />
+
+      {/* Live Execution Progress Dialog */}
+      <Dialog open={showExecutionProgress} onOpenChange={setShowExecutionProgress}>
+        <DialogContent className="max-w-lg">
+          <AgentExecutionProgress
+            agents={executingAgents}
+            currentAgent={currentAgent}
+            progress={executionProgress}
+            results={results}
+            isExecuting={isExecuting}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Results Confirmation Dialog */}
+      <AgentResultsConfirmation
+        open={showResultsConfirmation}
+        onOpenChange={setShowResultsConfirmation}
+        results={executionResults}
+        extractedData={extractedData}
+        onAccept={handleAcceptResults}
+        onReject={handleRejectResults}
       />
     </Dialog>
   );
