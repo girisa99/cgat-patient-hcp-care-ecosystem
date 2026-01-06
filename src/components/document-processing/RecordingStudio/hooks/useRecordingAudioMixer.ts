@@ -1,26 +1,29 @@
 /**
  * Recording Audio Mixer Hook
  * Dynamically captures and mixes audio sources during recording.
- * Solves the issue where audio started/stopped during recording would be lost.
+ * 
+ * CRITICAL FIX: Uses captureStream() instead of createMediaElementSource()
+ * because createMediaElementSource can only be called ONCE per audio element
+ * for the lifetime of the element. If the element was ever connected to any
+ * AudioContext, it cannot be connected again.
  * 
  * Key features:
  * - Audio elements can be added/removed while recording
  * - Handles TTS/voiceover/music being played, stopped, and replayed
- * - Maintains persistent connections via WeakMap to prevent double-connections
+ * - Works with audio elements that have already been used
  */
 
 import { useRef, useCallback, useEffect } from 'react';
 
-interface AudioMixerState {
-  isActive: boolean;
-  connectedSources: Set<HTMLAudioElement>;
+interface ConnectedAudioInfo {
+  sourceNode: MediaStreamAudioSourceNode | MediaElementAudioSourceNode;
+  stream: MediaStream;
 }
 
 export function useRecordingAudioMixer() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const destinationRef = useRef<MediaStreamAudioDestinationNode | null>(null);
-  const sourceMapRef = useRef<WeakMap<HTMLAudioElement, MediaElementAudioSourceNode>>(new WeakMap());
-  const connectedElementsRef = useRef<Set<HTMLAudioElement>>(new Set());
+  const connectedAudioRef = useRef<Map<HTMLAudioElement, ConnectedAudioInfo>>(new Map());
   const micSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const isActiveRef = useRef(false);
 
@@ -49,7 +52,7 @@ export function useRecordingAudioMixer() {
       }
       
       isActiveRef.current = true;
-      console.log('[AudioMixer] Initialized');
+      console.log('[AudioMixer] Initialized with captureStream approach');
       
       return destination.stream;
     } catch (err) {
@@ -59,9 +62,8 @@ export function useRecordingAudioMixer() {
   }, []);
 
   /**
-   * Connect an audio element to the mixer
-   * Safe to call multiple times - will only connect once per element
-   * IMPORTANT: Audio elements must not have been used with a different AudioContext
+   * Connect an audio element to the mixer using captureStream()
+   * This approach works even if the audio element was previously used
    */
   const connectAudioElement = useCallback((audio: HTMLAudioElement | null, type: string = 'audio') => {
     if (!audio || !audioContextRef.current || !destinationRef.current || !isActiveRef.current) {
@@ -69,8 +71,8 @@ export function useRecordingAudioMixer() {
       return false;
     }
 
-    // Check if already connected via WeakMap
-    if (sourceMapRef.current.has(audio)) {
+    // Check if already connected
+    if (connectedAudioRef.current.has(audio)) {
       console.log(`[AudioMixer] ${type} already connected`);
       return true;
     }
@@ -81,29 +83,39 @@ export function useRecordingAudioMixer() {
         audioContextRef.current.resume();
       }
 
-      // Create source and connect to mixer destination
-      const source = audioContextRef.current.createMediaElementSource(audio);
+      // Use captureStream() to get the audio stream from the element
+      // This works even if the element was previously used with another context
+      // @ts-ignore - captureStream is not in all TypeScript definitions but is widely supported
+      const capturedStream: MediaStream = audio.captureStream ? audio.captureStream() : audio.mozCaptureStream?.();
+      
+      if (!capturedStream) {
+        console.warn(`[AudioMixer] ⚠️ ${type}: captureStream not supported, falling back to createMediaElementSource`);
+        // Fallback to createMediaElementSource (may fail if element was used before)
+        try {
+          const source = audioContextRef.current.createMediaElementSource(audio);
+          source.connect(destinationRef.current);
+          source.connect(audioContextRef.current.destination);
+          connectedAudioRef.current.set(audio, { sourceNode: source, stream: new MediaStream() });
+          console.log(`[AudioMixer] ✅ ${type} connected via createMediaElementSource fallback`);
+          return true;
+        } catch (fallbackErr: any) {
+          console.error(`[AudioMixer] Fallback also failed for ${type}:`, fallbackErr.message);
+          return false;
+        }
+      }
+
+      // Create a source from the captured stream
+      const source = audioContextRef.current.createMediaStreamSource(capturedStream);
       source.connect(destinationRef.current);
-      // Also connect to speakers so user can hear it
-      source.connect(audioContextRef.current.destination);
+      // Note: No need to connect to speakers - the audio element already plays to speakers
       
-      // Store in WeakMap to track connection
-      sourceMapRef.current.set(audio, source);
-      connectedElementsRef.current.add(audio);
+      connectedAudioRef.current.set(audio, { sourceNode: source, stream: capturedStream });
       
-      console.log(`[AudioMixer] ✅ ${type} connected to mixer successfully`);
+      console.log(`[AudioMixer] ✅ ${type} connected via captureStream successfully`);
       return true;
     } catch (err: any) {
-      // "InvalidStateError" means the audio is already connected to a different context
-      // This can happen if the audio element was previously used
-      if (err.name === 'InvalidStateError') {
-        console.warn(`[AudioMixer] ⚠️ ${type} already has a source in another context - audio may not be captured in recording`);
-        // Still return true as the audio will play (just not captured)
-        return false;
-      } else {
-        console.error(`[AudioMixer] Failed to connect ${type}:`, err);
-        return false;
-      }
+      console.error(`[AudioMixer] Failed to connect ${type}:`, err.message);
+      return false;
     }
   }, []);
 
@@ -113,12 +125,11 @@ export function useRecordingAudioMixer() {
   const disconnectAudioElement = useCallback((audio: HTMLAudioElement | null) => {
     if (!audio) return;
     
-    const source = sourceMapRef.current.get(audio);
-    if (source) {
+    const info = connectedAudioRef.current.get(audio);
+    if (info) {
       try {
-        source.disconnect();
-        sourceMapRef.current.delete(audio);
-        connectedElementsRef.current.delete(audio);
+        info.sourceNode.disconnect();
+        connectedAudioRef.current.delete(audio);
         console.log('[AudioMixer] Audio element disconnected');
       } catch (err) {
         console.error('[AudioMixer] Failed to disconnect:', err);
@@ -140,20 +151,16 @@ export function useRecordingAudioMixer() {
     isActiveRef.current = false;
     
     // Disconnect all sources
-    connectedElementsRef.current.forEach(audio => {
-      const source = sourceMapRef.current.get(audio);
-      if (source) {
-        try {
-          source.disconnect();
-        } catch (e) {
-          // Ignore disconnect errors during cleanup
-        }
+    connectedAudioRef.current.forEach((info) => {
+      try {
+        info.sourceNode.disconnect();
+      } catch (e) {
+        // Ignore disconnect errors during cleanup
       }
     });
     
     // Clear tracking
-    connectedElementsRef.current.clear();
-    sourceMapRef.current = new WeakMap();
+    connectedAudioRef.current.clear();
     
     // Disconnect mic
     if (micSourceRef.current) {
