@@ -403,37 +403,25 @@ export function useRecording(
         };
 
         recorder.onstop = async () => {
-          console.log('[Recording] MediaRecorder stopped, chunks in memory:', chunksRef.current.length);
+          console.log('[Recording] MediaRecorder stopped');
           
-          // CRITICAL: Store session ID IMMEDIATELY - don't rely on persistence.sessionInfo
-          // which may get cleared during async operations
+          // CRITICAL: Get session ID immediately - it was saved before recorder.stop()
           const currentSessionId = persistence.sessionInfo?.id;
-          
-          // CRITICAL: Store a COPY of chunks immediately to prevent race conditions
-          // Deep copy the chunks array before any async operations
-          const finalChunks = [...chunksRef.current];
-          console.log('[Recording] Captured', finalChunks.length, 'chunks at onstop');
+          console.log('[Recording] Session ID for recovery:', currentSessionId);
           
           const duration = Math.floor((Date.now() - startTimeRef.current - pausedTimeRef.current) / 1000);
           let success = false;
           let finalBlob: Blob | null = null;
           
-          // Strategy 1: Try memory chunks first (our captured copy)
-          if (finalChunks.length > 0) {
-            finalBlob = new Blob(finalChunks, { type: 'video/webm' });
-            console.log('[Recording] Created blob from memory:', finalBlob.size, 'bytes, duration:', duration, 's');
-            success = true;
-          }
-          
-          // Strategy 2: If no memory chunks, try IndexedDB recovery
-          if (!success && enablePersistence && currentSessionId) {
-            console.warn('[Recording] No chunks in memory - attempting recovery from IndexedDB');
+          // Strategy 1: ALWAYS try IndexedDB first - it has the most reliable data
+          // (chunks were saved before recorder.stop() was called)
+          if (enablePersistence && currentSessionId) {
             try {
+              console.log('[Recording] Attempting IndexedDB recovery first...');
               const recoveredChunks = await persistence.recoverSession(currentSessionId);
               if (recoveredChunks.length > 0) {
                 finalBlob = new Blob(recoveredChunks, { type: 'video/webm' });
                 console.log('[Recording] Recovered from IndexedDB:', finalBlob.size, 'bytes, chunks:', recoveredChunks.length);
-                toast.success('Recording recovered from backup!');
                 success = true;
               }
             } catch (err) {
@@ -441,12 +429,15 @@ export function useRecording(
             }
           }
           
-          // Strategy 3: Last resort - check if chunksRef has anything now (might have updated async)
+          // Strategy 2: Fallback to memory chunks if IndexedDB failed
           if (!success && chunksRef.current.length > 0) {
-            console.log('[Recording] Late chunk arrival detected:', chunksRef.current.length);
             finalBlob = new Blob(chunksRef.current, { type: 'video/webm' });
+            console.log('[Recording] Created blob from memory:', finalBlob.size, 'bytes, chunks:', chunksRef.current.length);
             success = true;
           }
+          
+          // Stop monitoring AFTER we've recovered the chunks
+          persistence.stopMonitoring();
           
           // Complete the session before calling callback
           if (enablePersistence) {
@@ -576,49 +567,46 @@ export function useRecording(
       timerRef.current = null;
     }
 
-    // CRITICAL: Request any final data before stopping
+    // CRITICAL: Request final data and wait for it to arrive
     if (recorder.state === 'recording') {
       try {
         recorder.requestData();
         console.log('[Recording] Requested final data chunk');
-        // Give a moment for the data to arrive
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Wait longer to ensure ondataavailable fires (500ms is safer)
+        await new Promise(resolve => setTimeout(resolve, 500));
+        console.log('[Recording] After wait, chunks:', chunksRef.current.length);
       } catch (e) {
         console.warn('[Recording] requestData not supported:', e);
       }
     }
 
-    // CRITICAL: Force save ALL chunks before stopping monitoring
-    // Do this BEFORE stopMonitoring() which resets state
-    if (enablePersistence && chunksRef.current.length > 0) {
-      console.log('[Recording] Force saving', chunksRef.current.length, 'chunks before stop...');
-      try {
-        // Force save with override to ensure all chunks are persisted
-        await persistence.saveChunks(chunksRef.current, true);
-        console.log('[Recording] Final chunks saved successfully to IndexedDB');
-      } catch (err) {
-        console.error('[Recording] Failed to save final chunks:', err);
+    // CRITICAL: Force save ALL chunks BEFORE anything else
+    // The onstop handler will use IndexedDB as primary source
+    if (enablePersistence) {
+      const chunkCount = chunksRef.current.length;
+      if (chunkCount > 0) {
+        console.log('[Recording] Force saving', chunkCount, 'chunks to IndexedDB...');
+        try {
+          await persistence.saveChunks(chunksRef.current, true);
+          console.log('[Recording] Final chunks saved to IndexedDB');
+        } catch (err) {
+          console.error('[Recording] Failed to save final chunks:', err);
+        }
+      } else {
+        console.warn('[Recording] No chunks in memory to save!');
       }
-    } else {
-      console.warn('[Recording] No chunks to save! Chunks count:', chunksRef.current.length);
     }
-
-    // Now stop monitoring (this resets some state but chunks are already saved)
-    persistence.stopMonitoring();
 
     setState(prev => ({ ...prev, isRecording: false, isStopped: true }));
 
+    // Stop the recorder - this triggers onstop handler
     if (recorder.state !== 'inactive') {
-      setTimeout(() => {
-        try {
-          if (recorder.state !== 'inactive') {
-            recorder.stop();
-            console.log('[Recording] MediaRecorder.stop() called');
-          }
-        } catch (e) {
-          console.warn('[Recording] Error stopping recorder:', e);
-        }
-      }, STOP_DELAY_MS);
+      try {
+        recorder.stop();
+        console.log('[Recording] MediaRecorder.stop() called');
+      } catch (e) {
+        console.warn('[Recording] Error stopping recorder:', e);
+      }
     }
 
     // Cleanup combined stream tracks (but don't stop original camera)
