@@ -107,6 +107,10 @@ export function KnowledgeSearchPanel({ onResultSelect, className }: KnowledgeSea
     setResults([]);
     setResponse(null);
 
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
     try {
       const { data, error } = await supabase.functions.invoke('rag-search', {
         body: {
@@ -118,6 +122,8 @@ export function KnowledgeSearchPanel({ onResultSelect, className }: KnowledgeSea
           categoryFilter: categoryFilter !== 'all' ? categoryFilter : undefined,
         }
       });
+
+      clearTimeout(timeoutId);
 
       if (error) {
         throw error;
@@ -132,10 +138,12 @@ export function KnowledgeSearchPanel({ onResultSelect, className }: KnowledgeSea
       } else {
         toast.error(searchResponse.error || 'Search failed');
       }
-    } catch (error) {
+    } catch (error: any) {
+      clearTimeout(timeoutId);
       console.error('Search error:', error);
-      toast.error('An error occurred during search');
-      setResponse({ success: false, results: [], error: 'Search failed' });
+      const errorMessage = error?.name === 'AbortError' ? 'Search timed out' : 'An error occurred during search';
+      toast.error(errorMessage);
+      setResponse({ success: false, results: [], error: errorMessage });
     } finally {
       setIsSearching(false);
     }

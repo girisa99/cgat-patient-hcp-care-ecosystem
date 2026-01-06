@@ -980,13 +980,11 @@ export function RecordingStudio({
         voiceAudioPlayed = true;
       } else if (ttsGeneration.lastResult?.audioUrl) {
         console.log('[RecordingStudio] ▶️ Playing generated TTS audio');
-        const ttsAudioElement = new Audio(ttsGeneration.lastResult.audioUrl);
-        audioPlayback.playTTS(ttsAudioElement);
+        audioPlayback.playTTS(ttsGeneration.lastResult.audioUrl);
         voiceAudioPlayed = true;
       } else if (ttsAudioUrl) {
         console.log('[RecordingStudio] ▶️ Playing TTS from state URL');
-        const ttsAudioElement = new Audio(ttsAudioUrl);
-        audioPlayback.playTTS(ttsAudioElement);
+        audioPlayback.playTTS(ttsAudioUrl);
         voiceAudioPlayed = true;
       }
       
@@ -1346,15 +1344,14 @@ export function RecordingStudio({
     }
   }, [ttsAudioUrl, ttsProvider]);
 
-  // Play TTS - create audio element from URL (check both local state and hook result)
+  // Play TTS - use URL directly (hook handles audio element creation with cleanup)
   const handlePlayTTS = useCallback(() => {
     const audioUrl = ttsAudioUrl || ttsGeneration.lastResult?.audioUrl;
     console.log('[RecordingStudio] handlePlayTTS called, audioUrl:', audioUrl ? 'Available' : 'Missing');
     
     if (audioUrl) {
-      const audio = new Audio(audioUrl);
       console.log('[RecordingStudio] Playing TTS audio');
-      audioPlayback.playTTS(audio);
+      audioPlayback.playTTS(audioUrl);
     } else {
       toast.info('No TTS audio available. Generate TTS first.');
     }

@@ -255,38 +255,42 @@ export function useAudioPlayback() {
     applyDucking(false); // Restore music volume
   }, [stopTimeTracking, applyDucking]);
 
-  const playMusic = useCallback((url: string) => {
+const playMusic = useCallback((url: string) => {
     console.log('[useAudioPlayback] playMusic called with URL:', url.substring(0, 60));
     
+    // Cleanup previous music
+    musicCleanupRef.current?.();
     if (musicRef.current) {
       musicRef.current.pause();
     }
     
-    const audio = new Audio(url);
     // Check if voice is currently playing to set initial volume
     const voicePlaying = isPlaying.voiceover || isPlaying.tts;
     const initialVolume = duckingEnabled && voicePlaying 
       ? duckedMusicVolumeRef.current 
       : normalMusicVolumeRef.current;
     
-    audio.volume = initialVolume;
-    audio.loop = state.musicLoop;
-    musicRef.current = audio;
-    
-    audio.onplay = () => {
-      console.log('[useAudioPlayback] Music started playing');
-      setIsPlaying(prev => ({ ...prev, music: true }));
-    };
-    audio.onpause = () => setIsPlaying(prev => ({ ...prev, music: false }));
-    audio.onended = () => {
-      if (!state.musicLoop) {
-        console.log('[useAudioPlayback] Music ended (not looping)');
-        setIsPlaying(prev => ({ ...prev, music: false }));
+    const { audio, cleanup } = createManagedAudio(url, {
+      volume: initialVolume,
+      loop: state.musicLoop,
+      onPlay: () => {
+        console.log('[useAudioPlayback] Music started playing');
+        setIsPlaying(prev => ({ ...prev, music: true }));
+      },
+      onPause: () => setIsPlaying(prev => ({ ...prev, music: false })),
+      onEnded: () => {
+        if (!state.musicLoop) {
+          console.log('[useAudioPlayback] Music ended (not looping)');
+          setIsPlaying(prev => ({ ...prev, music: false }));
+        }
+      },
+      onError: (e) => {
+        console.error('[useAudioPlayback] Music playback error:', e);
       }
-    };
-    audio.onerror = (e) => {
-      console.error('[useAudioPlayback] Music playback error:', e);
-    };
+    });
+    
+    musicRef.current = audio;
+    musicCleanupRef.current = cleanup;
     
     audio.play().catch((err) => {
       console.error('[useAudioPlayback] Music play() failed:', err);

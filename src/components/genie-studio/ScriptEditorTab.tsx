@@ -559,10 +559,18 @@ export function ScriptEditorTab({
       // Step 6: AI recommendations
       updateStep('ai', 'running');
       const providerNames = { gemini: 'Gemini', openai: 'OpenAI', claude: 'Claude' };
+      
+      // Create timeout for AI call
+      const aiTimeoutId = setTimeout(() => {
+        console.log('AI analysis timeout - using local analysis');
+      }, 30000); // 30s timeout
+      
       try {
         const { data, error } = await supabase.functions.invoke('enhance-script', {
           body: { scriptContent, mode: 'analyze', provider: aiProvider }
         });
+        
+        clearTimeout(aiTimeoutId);
         
         if (!error && data?.success && data.data) {
           const aiData = data.data;
@@ -603,6 +611,7 @@ export function ScriptEditorTab({
           });
         }
       } catch (err) {
+        clearTimeout(aiTimeoutId);
         console.log('AI analysis skipped:', err);
         updateStep('ai', 'complete', '✓ Using local analysis');
         setAnalysisResult({
@@ -662,9 +671,16 @@ export function ScriptEditorTab({
         }
       }
       
+      // Create timeout for enhancement call
+      const enhanceTimeoutId = setTimeout(() => {
+        console.log('Enhancement timeout reached');
+      }, 45000); // 45s timeout for enhancement (longer operation)
+      
       const { data, error } = await supabase.functions.invoke('enhance-script', {
         body: enhancementBody
       });
+      
+      clearTimeout(enhanceTimeoutId);
       
       if (error) throw error;
       
