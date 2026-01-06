@@ -50,6 +50,8 @@ export { AgentResultsConfirmation } from './AgentResultsConfirmation';
 
 // Agent Configuration
 export { AgentSetupWizard } from './AgentSetupWizard';
+export { APISelectionPanel, getAPIOptionsForDocType } from './APISelectionPanel';
+export type { APIOption as APIOptionType } from './APISelectionPanel';
 export { useAgentConfiguration, DATA_COLLECTION_METHODS } from '@/hooks/useAgentConfiguration';
 export type { AgentDataRequirements, AgentConfiguration, DataCollectionMethod } from '@/hooks/useAgentConfiguration';
 export type { 
