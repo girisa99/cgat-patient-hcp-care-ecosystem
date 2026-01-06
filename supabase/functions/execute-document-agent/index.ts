@@ -1039,6 +1039,728 @@ function executePriorAuth(context: DocumentContext): AgentFinding {
   };
 }
 
+// ============================================
+// AI-POWERED MEDICATION AGENTS
+// Uses FDA API + Universal AI for comprehensive analysis
+// ============================================
+
+/**
+ * NDC Code Lookup Agent - Uses FDA OpenFDA API
+ */
+async function executeNDCLookup(context: DocumentContext): Promise<AgentFinding> {
+  return await executeDrugLookup(context); // Uses same logic
+}
+
+/**
+ * Drug Alternatives & Generics Agent - AI-powered with FDA data
+ */
+async function executeDrugAlternatives(context: DocumentContext): Promise<AgentFinding> {
+  const fields = context.extractedFields || {};
+  const medication = getMedicationName(fields);
+  const dosage = getDosage(fields);
+
+  if (medication === 'Unknown') {
+    return {
+      summary: 'Drug Alternatives: No medication name found',
+      details: { status: 'no_data', availableFields: Object.keys(fields) },
+      recommendations: ['Verify medication name was extracted correctly'],
+      alerts: [{ level: 'warning', message: 'No medication data for alternatives analysis' }],
+      confidence: 0.2,
+      aiPowered: false,
+      dataSource: 'No data'
+    };
+  }
+
+  // Get FDA data first
+  let fdaData = '';
+  try {
+    const drugResult = await callEdgeFunction('drug-lookup', { drugName: medication, searchType: 'all' });
+    if (drugResult.alternatives?.length > 0) {
+      fdaData = `\nFDA ALTERNATIVES:\n${drugResult.alternatives.map((a: any) => `- ${a.name}: ${a.type}`).join('\n')}`;
+    }
+    if (drugResult.ndc?.[0]) {
+      fdaData += `\nDrug Class: ${(drugResult.ndc[0].pharmClass || []).join(', ')}`;
+    }
+  } catch (e) {
+    console.log('[drug-alternatives] FDA lookup failed, using AI only');
+  }
+
+  const prompt = `Analyze this medication and provide generic equivalents and therapeutic alternatives.
+
+MEDICATION DATA:
+- Drug Name: ${medication}
+- Dosage: ${dosage}
+${fdaData}
+
+Provide alternatives in JSON format:
+{
+  "summary": "Brief summary of available alternatives",
+  "genericEquivalent": {"name": "generic name", "available": true/false, "costSavings": "estimated %"},
+  "therapeuticAlternatives": [
+    {"name": "drug name", "class": "drug class", "reason": "why suitable", "costComparison": "lower/similar/higher"}
+  ],
+  "biosimilars": [{"name": "name", "approved": true/false}],
+  "patientAssistancePrograms": ["list any manufacturer programs"],
+  "recommendations": ["2-3 recommendations"],
+  "alerts": [{"level": "info|warning", "message": "message"}],
+  "confidence": 0.0 to 1.0
+}
+
+Focus on clinically equivalent, cost-effective alternatives. Respond ONLY with JSON.`;
+
+  try {
+    const aiResult = await callUniversalAI('drug-alternatives', prompt);
+    const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        summary: parsed.summary || `Alternatives for ${medication}: ${parsed.therapeuticAlternatives?.length || 0} options found`,
+        details: {
+          medication,
+          genericEquivalent: parsed.genericEquivalent,
+          therapeuticAlternatives: parsed.therapeuticAlternatives || [],
+          biosimilars: parsed.biosimilars || [],
+          patientAssistancePrograms: parsed.patientAssistancePrograms || [],
+          aiAnalysis: true
+        },
+        recommendations: parsed.recommendations || ['Discuss alternatives with prescriber'],
+        alerts: parsed.alerts || [],
+        confidence: parsed.confidence || 0.85,
+        aiPowered: true,
+        provider: aiResult.provider,
+        model: aiResult.model,
+        dataSource: `Universal AI (${aiResult.provider}) + FDA`
+      };
+    }
+    throw new Error('Failed to parse AI response');
+  } catch (error) {
+    console.error('[drug-alternatives] Error:', error);
+    return {
+      summary: `Drug Alternatives: ${medication} - Analysis failed`,
+      details: { medication, error: error instanceof Error ? error.message : 'Unknown error' },
+      recommendations: ['Manual alternatives research recommended'],
+      alerts: [{ level: 'warning', message: 'AI analysis unavailable' }],
+      confidence: 0.3,
+      aiPowered: false,
+      dataSource: 'Fallback'
+    };
+  }
+}
+
+/**
+ * Efficacy Analysis Agent - AI-powered clinical effectiveness analysis
+ */
+async function executeEfficacyAnalysis(context: DocumentContext): Promise<AgentFinding> {
+  const fields = context.extractedFields || {};
+  const medication = getMedicationName(fields);
+  const diagnosis = getFieldValue(fields, 'diagnosis', 'indication', 'icd_code', 'condition') || 'Not specified';
+
+  if (medication === 'Unknown') {
+    return {
+      summary: 'Efficacy Analysis: No medication data',
+      details: { status: 'no_data' },
+      recommendations: ['Verify medication data extracted'],
+      alerts: [{ level: 'warning', message: 'Insufficient data for efficacy analysis' }],
+      confidence: 0.2,
+      aiPowered: false,
+      dataSource: 'No data'
+    };
+  }
+
+  const prompt = `Analyze the efficacy of this medication for the given condition.
+
+MEDICATION: ${medication}
+INDICATION/DIAGNOSIS: ${diagnosis}
+
+Provide efficacy analysis in JSON format:
+{
+  "summary": "Brief efficacy summary",
+  "efficacyRating": "high|moderate|low|variable",
+  "evidenceLevel": "Level A - Strong|Level B - Moderate|Level C - Limited",
+  "onsetOfAction": "time to effect",
+  "typicalDuration": "treatment duration",
+  "successRate": "percentage or range",
+  "clinicalTrialData": {"available": true/false, "summary": "brief summary"},
+  "firstLineTherapy": true/false,
+  "alternativeIfIneffective": ["list alternatives"],
+  "monitoringRequired": ["what to monitor"],
+  "recommendations": ["2-3 recommendations"],
+  "alerts": [{"level": "info|warning", "message": "message"}],
+  "confidence": 0.0 to 1.0
+}
+
+Base analysis on current clinical guidelines and evidence. Respond ONLY with JSON.`;
+
+  try {
+    const aiResult = await callUniversalAI('efficacy-analysis', prompt);
+    const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        summary: parsed.summary || `Efficacy: ${medication} - ${parsed.efficacyRating || 'analyzed'}`,
+        details: {
+          medication,
+          diagnosis,
+          efficacyRating: parsed.efficacyRating,
+          evidenceLevel: parsed.evidenceLevel,
+          onsetOfAction: parsed.onsetOfAction,
+          typicalDuration: parsed.typicalDuration,
+          successRate: parsed.successRate,
+          firstLineTherapy: parsed.firstLineTherapy,
+          clinicalTrialData: parsed.clinicalTrialData,
+          alternativeIfIneffective: parsed.alternativeIfIneffective,
+          monitoringRequired: parsed.monitoringRequired,
+          aiAnalysis: true
+        },
+        recommendations: parsed.recommendations || ['Monitor treatment response'],
+        alerts: parsed.alerts || [],
+        confidence: parsed.confidence || 0.82,
+        aiPowered: true,
+        provider: aiResult.provider,
+        model: aiResult.model,
+        dataSource: `Universal AI (${aiResult.provider})`
+      };
+    }
+    throw new Error('Failed to parse AI response');
+  } catch (error) {
+    console.error('[efficacy-analysis] Error:', error);
+    return {
+      summary: `Efficacy Analysis: ${medication} - Failed`,
+      details: { medication, diagnosis, error: error instanceof Error ? error.message : 'Unknown' },
+      recommendations: ['Manual efficacy review recommended'],
+      alerts: [{ level: 'warning', message: 'AI analysis unavailable' }],
+      confidence: 0.3,
+      aiPowered: false,
+      dataSource: 'Fallback'
+    };
+  }
+}
+
+/**
+ * Safety & Side Effects Agent - AI-powered with FDA warnings
+ */
+async function executeSafetyProfile(context: DocumentContext): Promise<AgentFinding> {
+  const fields = context.extractedFields || {};
+  const medication = getMedicationName(fields);
+  const dosage = getDosage(fields);
+
+  if (medication === 'Unknown') {
+    return {
+      summary: 'Safety Profile: No medication data',
+      details: { status: 'no_data' },
+      recommendations: ['Verify medication extracted'],
+      alerts: [{ level: 'warning', message: 'No medication for safety analysis' }],
+      confidence: 0.2,
+      aiPowered: false,
+      dataSource: 'No data'
+    };
+  }
+
+  // Get FDA safety data
+  let fdaSafetyData = '';
+  try {
+    const drugResult = await callEdgeFunction('drug-lookup', { drugName: medication, searchType: 'all' });
+    const clinicalInfo = drugResult.clinicalInfo || [];
+    if (clinicalInfo.length > 0) {
+      fdaSafetyData = `\nFDA CLINICAL INFO:\n${clinicalInfo.map((c: any) => `- ${c.type}: ${c.description}`).join('\n')}`;
+    }
+    if (drugResult.isControlled) {
+      fdaSafetyData += `\n- CONTROLLED SUBSTANCE: Schedule ${drugResult.schedule}`;
+    }
+  } catch (e) {
+    console.log('[safety-profile] FDA lookup failed');
+  }
+
+  const prompt = `Provide a comprehensive safety profile for this medication.
+
+MEDICATION: ${medication}
+DOSAGE: ${dosage}
+${fdaSafetyData}
+
+Provide safety analysis in JSON format:
+{
+  "summary": "Brief safety summary",
+  "blackBoxWarnings": ["list FDA black box warnings if any"],
+  "commonSideEffects": [{"effect": "name", "frequency": "common/uncommon/rare", "severity": "mild|moderate|severe"}],
+  "seriousSideEffects": [{"effect": "name", "monitoring": "how to monitor"}],
+  "contraindications": ["absolute contraindications"],
+  "precautions": ["use with caution in these conditions"],
+  "pregnancyCategory": "A|B|C|D|X",
+  "renalDosing": "adjustment needed?",
+  "hepaticDosing": "adjustment needed?",
+  "geriatricConsiderations": "special considerations",
+  "recommendations": ["2-3 safety recommendations"],
+  "alerts": [{"level": "info|warning|error", "message": "message"}],
+  "confidence": 0.0 to 1.0
+}
+
+Flag any critical safety concerns. Respond ONLY with JSON.`;
+
+  try {
+    const aiResult = await callUniversalAI('safety-profile', prompt);
+    const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      const hasBlackBox = parsed.blackBoxWarnings?.length > 0;
+      const alerts = parsed.alerts || [];
+      if (hasBlackBox) {
+        alerts.unshift({ level: 'error', message: `Black Box Warning: ${parsed.blackBoxWarnings[0]}` });
+      }
+      
+      return {
+        summary: parsed.summary || `Safety: ${medication} - ${hasBlackBox ? 'Black Box Warning!' : 'Reviewed'}`,
+        details: {
+          medication,
+          dosage,
+          blackBoxWarnings: parsed.blackBoxWarnings || [],
+          commonSideEffects: parsed.commonSideEffects || [],
+          seriousSideEffects: parsed.seriousSideEffects || [],
+          contraindications: parsed.contraindications || [],
+          precautions: parsed.precautions || [],
+          pregnancyCategory: parsed.pregnancyCategory,
+          renalDosing: parsed.renalDosing,
+          hepaticDosing: parsed.hepaticDosing,
+          geriatricConsiderations: parsed.geriatricConsiderations,
+          aiAnalysis: true
+        },
+        recommendations: parsed.recommendations || ['Review safety profile with patient'],
+        alerts,
+        confidence: parsed.confidence || 0.88,
+        aiPowered: true,
+        provider: aiResult.provider,
+        model: aiResult.model,
+        dataSource: `Universal AI (${aiResult.provider}) + FDA`
+      };
+    }
+    throw new Error('Failed to parse AI response');
+  } catch (error) {
+    console.error('[safety-profile] Error:', error);
+    return {
+      summary: `Safety Profile: ${medication} - Failed`,
+      details: { medication, error: error instanceof Error ? error.message : 'Unknown' },
+      recommendations: ['Manual safety review required'],
+      alerts: [{ level: 'warning', message: 'AI analysis unavailable' }],
+      confidence: 0.3,
+      aiPowered: false,
+      dataSource: 'Fallback'
+    };
+  }
+}
+
+/**
+ * Dosage & Form Validation Agent - AI-powered with FDA data
+ */
+async function executeDosageValidation(context: DocumentContext): Promise<AgentFinding> {
+  const fields = context.extractedFields || {};
+  const medication = getMedicationName(fields);
+  const dosage = getDosage(fields);
+  const frequency = getFrequency(fields);
+  const route = getFieldValue(fields, 'route', 'route_of_administration') || 'oral';
+  const patientAge = getFieldValue(fields, 'patient_age', 'age', 'dob') || 'adult';
+
+  if (medication === 'Unknown') {
+    return {
+      summary: 'Dosage Validation: No medication data',
+      details: { status: 'no_data' },
+      recommendations: ['Verify medication extracted'],
+      alerts: [{ level: 'warning', message: 'No medication for dosage validation' }],
+      confidence: 0.2,
+      aiPowered: false,
+      dataSource: 'No data'
+    };
+  }
+
+  const prompt = `Validate the dosage and form for this prescription.
+
+MEDICATION: ${medication}
+DOSAGE/STRENGTH: ${dosage}
+FREQUENCY/SIG: ${frequency}
+ROUTE: ${route}
+PATIENT AGE: ${patientAge}
+
+Provide validation in JSON format:
+{
+  "summary": "Brief validation summary",
+  "dosageAssessment": "appropriate|low|high|needs_review",
+  "standardDoseRange": {"min": "value", "max": "value", "unit": "unit"},
+  "prescribedWithinRange": true/false,
+  "frequencyAssessment": "appropriate|unusual|excessive",
+  "routeAppropriate": true/false,
+  "formAvailable": true/false,
+  "availableForms": ["tablet", "capsule", "liquid", etc],
+  "ageAppropriate": true/false,
+  "weightBasedDosing": "if applicable",
+  "maxDailyDose": "value",
+  "durationAppropriate": true/false,
+  "recommendations": ["2-3 recommendations"],
+  "alerts": [{"level": "info|warning|error", "message": "message"}],
+  "confidence": 0.0 to 1.0
+}
+
+Flag any dosing concerns. Respond ONLY with JSON.`;
+
+  try {
+    const aiResult = await callUniversalAI('dosage-validation', prompt);
+    const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        summary: parsed.summary || `Dosage: ${medication} ${dosage} - ${parsed.dosageAssessment || 'reviewed'}`,
+        details: {
+          medication,
+          dosage,
+          frequency,
+          route,
+          dosageAssessment: parsed.dosageAssessment,
+          standardDoseRange: parsed.standardDoseRange,
+          prescribedWithinRange: parsed.prescribedWithinRange,
+          frequencyAssessment: parsed.frequencyAssessment,
+          routeAppropriate: parsed.routeAppropriate,
+          formAvailable: parsed.formAvailable,
+          availableForms: parsed.availableForms,
+          ageAppropriate: parsed.ageAppropriate,
+          maxDailyDose: parsed.maxDailyDose,
+          aiAnalysis: true
+        },
+        recommendations: parsed.recommendations || ['Verify dosage with prescriber if concerns'],
+        alerts: parsed.alerts || [],
+        confidence: parsed.confidence || 0.85,
+        aiPowered: true,
+        provider: aiResult.provider,
+        model: aiResult.model,
+        dataSource: `Universal AI (${aiResult.provider})`
+      };
+    }
+    throw new Error('Failed to parse AI response');
+  } catch (error) {
+    console.error('[dosage-validation] Error:', error);
+    return {
+      summary: `Dosage Validation: ${medication} - Failed`,
+      details: { medication, dosage, error: error instanceof Error ? error.message : 'Unknown' },
+      recommendations: ['Manual dosage verification required'],
+      alerts: [{ level: 'warning', message: 'AI validation unavailable' }],
+      confidence: 0.3,
+      aiPowered: false,
+      dataSource: 'Fallback'
+    };
+  }
+}
+
+/**
+ * Cost-Effectiveness Agent - AI-powered pricing analysis
+ */
+async function executeCostAnalysis(context: DocumentContext): Promise<AgentFinding> {
+  const fields = context.extractedFields || {};
+  const medication = getMedicationName(fields);
+  const dosage = getDosage(fields);
+
+  if (medication === 'Unknown') {
+    return {
+      summary: 'Cost Analysis: No medication data',
+      details: { status: 'no_data' },
+      recommendations: ['Verify medication extracted'],
+      alerts: [{ level: 'warning', message: 'No medication for cost analysis' }],
+      confidence: 0.2,
+      aiPowered: false,
+      dataSource: 'No data'
+    };
+  }
+
+  const prompt = `Analyze cost-effectiveness and provide savings options.
+
+MEDICATION: ${medication}
+DOSAGE: ${dosage}
+
+Provide cost analysis in JSON format:
+{
+  "summary": "Brief cost summary",
+  "estimatedBrandCost": {"monthly": "$X", "annual": "$X"},
+  "estimatedGenericCost": {"monthly": "$X", "annual": "$X"},
+  "potentialSavings": {"monthly": "$X", "percentage": "X%"},
+  "genericAvailable": true/false,
+  "genericName": "name if different",
+  "therapeuticAlternativeSavings": [{"drug": "name", "savings": "amount/percentage"}],
+  "patientAssistancePrograms": [{"program": "name", "eligibility": "criteria", "benefit": "description"}],
+  "manufacturerCoupons": true/false,
+  "tier": "Tier 1|2|3|4|Specialty",
+  "recommendations": ["2-3 cost-saving recommendations"],
+  "alerts": [{"level": "info|warning", "message": "message"}],
+  "confidence": 0.0 to 1.0
+}
+
+Focus on actionable cost savings. Respond ONLY with JSON.`;
+
+  try {
+    const aiResult = await callUniversalAI('cost-analysis', prompt);
+    const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        summary: parsed.summary || `Cost: ${medication} - ${parsed.genericAvailable ? 'Generic available' : 'Brand only'}`,
+        details: {
+          medication,
+          dosage,
+          estimatedBrandCost: parsed.estimatedBrandCost,
+          estimatedGenericCost: parsed.estimatedGenericCost,
+          potentialSavings: parsed.potentialSavings,
+          genericAvailable: parsed.genericAvailable,
+          genericName: parsed.genericName,
+          therapeuticAlternativeSavings: parsed.therapeuticAlternativeSavings,
+          patientAssistancePrograms: parsed.patientAssistancePrograms,
+          manufacturerCoupons: parsed.manufacturerCoupons,
+          tier: parsed.tier,
+          aiAnalysis: true
+        },
+        recommendations: parsed.recommendations || ['Consider generic if available'],
+        alerts: parsed.alerts || [],
+        confidence: parsed.confidence || 0.75,
+        aiPowered: true,
+        provider: aiResult.provider,
+        model: aiResult.model,
+        dataSource: `Universal AI (${aiResult.provider})`
+      };
+    }
+    throw new Error('Failed to parse AI response');
+  } catch (error) {
+    console.error('[cost-analysis] Error:', error);
+    return {
+      summary: `Cost Analysis: ${medication} - Failed`,
+      details: { medication, error: error instanceof Error ? error.message : 'Unknown' },
+      recommendations: ['Manual cost research recommended'],
+      alerts: [{ level: 'warning', message: 'AI analysis unavailable' }],
+      confidence: 0.3,
+      aiPowered: false,
+      dataSource: 'Fallback'
+    };
+  }
+}
+
+/**
+ * Medical Summary Agent - AI-powered document summarization
+ */
+async function executeMedicalSummary(context: DocumentContext): Promise<AgentFinding> {
+  const fields = context.extractedFields || {};
+  const fieldSummary = Object.entries(fields)
+    .slice(0, 15)
+    .map(([k, v]) => `${k}: ${typeof v === 'object' ? v.value : v}`)
+    .join('\n');
+
+  const prompt = `Generate a comprehensive medical summary from this document.
+
+DOCUMENT TYPE: ${context.documentType}
+EXTRACTED DATA:
+${fieldSummary}
+
+${context.rawText ? `DOCUMENT TEXT: ${context.rawText.slice(0, 800)}` : ''}
+
+Provide summary in JSON format:
+{
+  "summary": "2-3 sentence executive summary",
+  "keyFindings": ["list 3-5 key findings"],
+  "patientInfo": {"name": "", "dob": "", "mrn": ""},
+  "clinicalHighlights": ["important clinical points"],
+  "actionItems": ["required follow-up actions"],
+  "recommendations": ["2-3 recommendations"],
+  "alerts": [{"level": "info|warning|error", "message": "message"}],
+  "confidence": 0.0 to 1.0
+}
+
+Focus on actionable clinical information. Respond ONLY with JSON.`;
+
+  try {
+    const aiResult = await callUniversalAI('medical-summary', prompt);
+    const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        summary: parsed.summary || 'Medical summary generated',
+        details: {
+          documentType: context.documentType,
+          keyFindings: parsed.keyFindings || [],
+          patientInfo: parsed.patientInfo,
+          clinicalHighlights: parsed.clinicalHighlights || [],
+          actionItems: parsed.actionItems || [],
+          aiAnalysis: true
+        },
+        recommendations: parsed.recommendations || ['Review summary with care team'],
+        alerts: parsed.alerts || [],
+        confidence: parsed.confidence || 0.85,
+        aiPowered: true,
+        provider: aiResult.provider,
+        model: aiResult.model,
+        dataSource: `Universal AI (${aiResult.provider})`
+      };
+    }
+    throw new Error('Failed to parse AI response');
+  } catch (error) {
+    console.error('[medical-summary] Error:', error);
+    return {
+      summary: 'Medical Summary: Generation failed',
+      details: { error: error instanceof Error ? error.message : 'Unknown' },
+      recommendations: ['Manual summary creation required'],
+      alerts: [{ level: 'warning', message: 'AI summary unavailable' }],
+      confidence: 0.3,
+      aiPowered: false,
+      dataSource: 'Fallback'
+    };
+  }
+}
+
+/**
+ * Eligibility Analysis Agent - AI-powered insurance analysis
+ */
+async function executeEligibilityAnalysis(context: DocumentContext): Promise<AgentFinding> {
+  const fields = context.extractedFields || {};
+  const fieldSummary = Object.entries(fields)
+    .slice(0, 12)
+    .map(([k, v]) => `${k}: ${typeof v === 'object' ? v.value : v}`)
+    .join('\n');
+
+  const prompt = `Analyze this insurance/eligibility document.
+
+DOCUMENT TYPE: ${context.documentType}
+EXTRACTED DATA:
+${fieldSummary}
+
+Provide eligibility analysis in JSON format:
+{
+  "summary": "Brief eligibility summary",
+  "planType": "HMO|PPO|EPO|POS|Medicare|Medicaid|Commercial",
+  "coverageStatus": "active|inactive|pending",
+  "effectiveDate": "date",
+  "terminationDate": "date or N/A",
+  "memberInfo": {"memberId": "", "groupNumber": "", "subscriberName": ""},
+  "benefitsHighlights": ["key benefits noted"],
+  "limitations": ["coverage limitations"],
+  "priorAuthRequired": true/false,
+  "recommendations": ["2-3 recommendations"],
+  "alerts": [{"level": "info|warning", "message": "message"}],
+  "confidence": 0.0 to 1.0
+}
+
+Respond ONLY with JSON.`;
+
+  try {
+    const aiResult = await callUniversalAI('eligibility-ai', prompt);
+    const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        summary: parsed.summary || 'Eligibility analyzed',
+        details: {
+          planType: parsed.planType,
+          coverageStatus: parsed.coverageStatus,
+          effectiveDate: parsed.effectiveDate,
+          terminationDate: parsed.terminationDate,
+          memberInfo: parsed.memberInfo,
+          benefitsHighlights: parsed.benefitsHighlights || [],
+          limitations: parsed.limitations || [],
+          priorAuthRequired: parsed.priorAuthRequired,
+          aiAnalysis: true
+        },
+        recommendations: parsed.recommendations || ['Verify coverage with payer'],
+        alerts: parsed.alerts || [],
+        confidence: parsed.confidence || 0.8,
+        aiPowered: true,
+        provider: aiResult.provider,
+        model: aiResult.model,
+        dataSource: `Universal AI (${aiResult.provider})`
+      };
+    }
+    throw new Error('Failed to parse AI response');
+  } catch (error) {
+    console.error('[eligibility-ai] Error:', error);
+    return {
+      summary: 'Eligibility Analysis: Failed',
+      details: { error: error instanceof Error ? error.message : 'Unknown' },
+      recommendations: ['Manual eligibility verification required'],
+      alerts: [{ level: 'warning', message: 'AI analysis unavailable' }],
+      confidence: 0.3,
+      aiPowered: false,
+      dataSource: 'Fallback'
+    };
+  }
+}
+
+/**
+ * Data Validation Agent - AI-powered validation
+ */
+async function executeDataValidation(context: DocumentContext): Promise<AgentFinding> {
+  const fields = context.extractedFields || {};
+  const fieldCount = Object.keys(fields).length;
+  const fieldSummary = Object.entries(fields)
+    .slice(0, 15)
+    .map(([k, v]) => `${k}: ${typeof v === 'object' ? v.value : v}`)
+    .join('\n');
+
+  const prompt = `Validate the extracted data from this ${context.documentType} document.
+
+EXTRACTED FIELDS (${fieldCount} total):
+${fieldSummary}
+
+Check for:
+1. Data format correctness (dates, phone numbers, IDs)
+2. Required field completeness
+3. Logical consistency between fields
+4. Potential data entry errors
+
+Provide validation in JSON format:
+{
+  "summary": "Overall validation summary",
+  "overallStatus": "valid|needs_review|invalid",
+  "fieldsValidated": ${fieldCount},
+  "validationIssues": [{"field": "name", "issue": "description", "severity": "low|medium|high"}],
+  "missingRequiredFields": ["list any missing required fields"],
+  "formatIssues": [{"field": "name", "expected": "format", "found": "actual"}],
+  "suggestions": ["correction suggestions"],
+  "recommendations": ["2-3 recommendations"],
+  "alerts": [{"level": "info|warning|error", "message": "message"}],
+  "confidence": 0.0 to 1.0
+}
+
+Respond ONLY with JSON.`;
+
+  try {
+    const aiResult = await callUniversalAI('data-validation', prompt);
+    const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      const issueCount = (parsed.validationIssues?.length || 0) + (parsed.formatIssues?.length || 0);
+      return {
+        summary: parsed.summary || `Validation: ${issueCount} issue(s) found`,
+        details: {
+          overallStatus: parsed.overallStatus,
+          fieldsValidated: fieldCount,
+          validationIssues: parsed.validationIssues || [],
+          missingRequiredFields: parsed.missingRequiredFields || [],
+          formatIssues: parsed.formatIssues || [],
+          suggestions: parsed.suggestions || [],
+          aiAnalysis: true
+        },
+        recommendations: parsed.recommendations || ['Review flagged fields'],
+        alerts: parsed.alerts || [],
+        confidence: parsed.confidence || 0.85,
+        aiPowered: true,
+        provider: aiResult.provider,
+        model: aiResult.model,
+        dataSource: `Universal AI (${aiResult.provider})`
+      };
+    }
+    throw new Error('Failed to parse AI response');
+  } catch (error) {
+    console.error('[data-validation] Error:', error);
+    return {
+      summary: 'Data Validation: Failed',
+      details: { error: error instanceof Error ? error.message : 'Unknown' },
+      recommendations: ['Manual data review required'],
+      alerts: [{ level: 'warning', message: 'AI validation unavailable' }],
+      confidence: 0.3,
+      aiPowered: false,
+      dataSource: 'Fallback'
+    };
+  }
+}
+
 function executeGenericAgent(agentConfig: AgentConfig, context: DocumentContext): AgentFinding {
   return {
     summary: `${agentConfig.name} - Configuration required`,
@@ -1094,6 +1816,31 @@ serve(async (req) => {
         findings = await executeDrugLookup(documentContext);
         break;
 
+      // ===== NEW MEDICATION AGENTS =====
+      case 'ndc-lookup':
+        findings = await executeNDCLookup(documentContext);
+        break;
+      
+      case 'drug-alternatives':
+        findings = await executeDrugAlternatives(documentContext);
+        break;
+      
+      case 'efficacy-analysis':
+        findings = await executeEfficacyAnalysis(documentContext);
+        break;
+      
+      case 'safety-profile':
+        findings = await executeSafetyProfile(documentContext);
+        break;
+      
+      case 'dosage-validation':
+        findings = await executeDosageValidation(documentContext);
+        break;
+      
+      case 'cost-analysis':
+        findings = await executeCostAnalysis(documentContext);
+        break;
+
       // ===== UNIVERSAL AI AGENTS =====
       case 'clinical-review':
         findings = await executeClinicalReviewAI(documentContext);
@@ -1115,6 +1862,20 @@ serve(async (req) => {
       case 'critical-value-alert':
       case 'trend-analysis':
         findings = await executeLabAnalysisAI(documentContext);
+        break;
+      
+      case 'medical-summary':
+        findings = await executeMedicalSummary(documentContext);
+        break;
+      
+      case 'eligibility-ai':
+      case 'coverage-summary':
+        findings = await executeEligibilityAnalysis(documentContext);
+        break;
+      
+      case 'data-validation':
+      case 'identity-verification-ai':
+        findings = await executeDataValidation(documentContext);
         break;
 
       // ===== CONFIGURATION-REQUIRED AGENTS =====
