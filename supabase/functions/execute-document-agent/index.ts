@@ -7,6 +7,8 @@ const corsHeaders = {
 
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const AI_GATEWAY_URL = 'https://ai.gateway.lovable.dev/v1/chat/completions';
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
 
 interface AgentConfig {
   name: string;
@@ -37,28 +39,250 @@ interface AgentFinding {
   confidence: number;
   aiPowered?: boolean;
   model?: string;
+  dataSource?: string;
 }
 
 // ============================================
-// REAL AI-POWERED AGENTS (using Lovable AI)
+// HELPER: Call existing edge functions
+// ============================================
+
+async function callEdgeFunction(functionName: string, body: any): Promise<any> {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error('Supabase configuration missing');
+  }
+  
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/${functionName}`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body)
+  });
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`[${functionName}] API error:`, response.status, errorText);
+    throw new Error(`Edge function error: ${response.status}`);
+  }
+  
+  return response.json();
+}
+
+// ============================================
+// REAL API-POWERED AGENTS
+// ============================================
+
+/**
+ * NPI Verification Agent - Uses NPPES Registry API
+ */
+async function executeNPIVerification(context: DocumentContext): Promise<AgentFinding> {
+  const fields = context.extractedFields || {};
+  const alerts: Array<{ level: 'info' | 'warning' | 'error'; message: string }> = [];
+  
+  const npi = fields.npi?.value || fields.provider_npi?.value || fields.prescriber_npi?.value;
+  const providerName = fields.provider_name?.value || fields.prescriber_name?.value;
+  
+  if (!npi && !providerName) {
+    return {
+      summary: 'NPI Verification: No NPI or provider name found in document',
+      details: { status: 'no_data', npiFound: false },
+      recommendations: ['Manual NPI entry required for verification'],
+      alerts: [{ level: 'warning', message: 'No NPI or provider name extracted from document' }],
+      confidence: 0.3,
+      aiPowered: false,
+      dataSource: 'NPPES Registry'
+    };
+  }
+
+  try {
+    console.log(`[npi-verification] Calling verify-npi for NPI: ${npi}, Name: ${providerName}`);
+    
+    const npiResult = await callEdgeFunction('verify-npi', {
+      npi: npi,
+      providerName: providerName
+    });
+
+    if (npiResult.success && npiResult.data) {
+      const providerData = npiResult.data;
+      return {
+        summary: `NPI Verified: ${providerData.providerName || providerName} (${npi})`,
+        details: {
+          npi: npi,
+          verified: true,
+          providerName: providerData.providerName,
+          providerType: providerData.providerType,
+          credentials: providerData.credentials,
+          specialty: providerData.specialty,
+          address: providerData.address,
+          status: providerData.status || 'Active',
+          enumerationDate: providerData.enumerationDate,
+          lastUpdated: providerData.lastUpdated
+        },
+        recommendations: [
+          'Provider verified in NPPES registry',
+          providerData.status === 'Active' ? 'NPI status is active' : 'Verify NPI status with provider'
+        ],
+        alerts: providerData.status !== 'Active' 
+          ? [{ level: 'warning', message: `NPI status: ${providerData.status}` }]
+          : [{ level: 'info', message: 'Provider verified and active in NPPES' }],
+        confidence: 0.95,
+        aiPowered: false,
+        dataSource: 'NPPES Registry (CMS)'
+      };
+    } else {
+      return {
+        summary: `NPI Verification: Provider not found - ${npi || providerName}`,
+        details: { 
+          npi, 
+          verified: false, 
+          error: npiResult.error || 'Not found in NPPES registry' 
+        },
+        recommendations: ['Verify NPI number is correct', 'Check provider name spelling', 'Contact provider to confirm NPI'],
+        alerts: [{ level: 'error', message: npiResult.error || 'Provider not found in NPPES registry' }],
+        confidence: 0.4,
+        aiPowered: false,
+        dataSource: 'NPPES Registry (CMS)'
+      };
+    }
+  } catch (error) {
+    console.error('[npi-verification] Error:', error);
+    return {
+      summary: 'NPI Verification: API error',
+      details: { npi, verified: false, error: error instanceof Error ? error.message : 'Unknown error' },
+      recommendations: ['Retry verification', 'Check NPPES API availability'],
+      alerts: [{ level: 'error', message: `Verification failed: ${error instanceof Error ? error.message : 'Unknown error'}` }],
+      confidence: 0.2,
+      aiPowered: false,
+      dataSource: 'NPPES Registry (CMS)'
+    };
+  }
+}
+
+/**
+ * Drug Lookup Agent - Uses FDA OpenFDA API + RxNorm
+ */
+async function executeDrugLookup(context: DocumentContext): Promise<AgentFinding> {
+  const fields = context.extractedFields || {};
+  
+  const drugName = fields.medication?.value || fields.drug_name?.value || fields.medication_name?.value;
+  const ndc = fields.ndc?.value || fields.ndc_code?.value;
+  
+  if (!drugName && !ndc) {
+    return {
+      summary: 'Drug Lookup: No medication name or NDC found',
+      details: { status: 'no_data' },
+      recommendations: ['Manual medication entry required'],
+      alerts: [{ level: 'warning', message: 'No medication data extracted from document' }],
+      confidence: 0.3,
+      aiPowered: false,
+      dataSource: 'FDA OpenFDA + RxNorm'
+    };
+  }
+
+  try {
+    console.log(`[drug-lookup] Calling drug-lookup for: ${drugName || ndc}`);
+    
+    const drugResult = await callEdgeFunction('drug-lookup', {
+      drugName: drugName || ndc,
+      searchType: 'all'
+    });
+
+    const ndcInfo = drugResult.ndc?.[0];
+    const rxnormInfo = drugResult.rxnorm?.[0];
+    const clinicalInfo = drugResult.clinicalInfo || [];
+    const alternatives = drugResult.alternatives || [];
+    
+    const alerts: Array<{ level: 'info' | 'warning' | 'error'; message: string }> = [];
+    
+    // Add clinical alerts
+    clinicalInfo.forEach((info: any) => {
+      if (info.severity === 'high') {
+        alerts.push({ level: 'error', message: info.description });
+      } else if (info.severity === 'medium') {
+        alerts.push({ level: 'warning', message: info.description });
+      } else {
+        alerts.push({ level: 'info', message: info.description });
+      }
+    });
+    
+    if (drugResult.isControlled) {
+      alerts.push({ level: 'warning', message: `Controlled substance - Schedule ${drugResult.schedule}` });
+    }
+
+    const hasData = ndcInfo || rxnormInfo;
+    
+    return {
+      summary: hasData 
+        ? `Drug Found: ${ndcInfo?.brandName || ndcInfo?.genericName || rxnormInfo?.name || drugName}`
+        : `Drug Lookup: ${drugName} - No FDA data found`,
+      details: {
+        searchedDrug: drugName,
+        correctedName: drugResult.correctedName,
+        wasCorrected: drugResult.wasCorrected,
+        ndcCode: ndcInfo?.code,
+        genericName: ndcInfo?.genericName,
+        brandName: ndcInfo?.brandName,
+        manufacturer: ndcInfo?.manufacturer,
+        dosageForm: ndcInfo?.dosageForm,
+        route: ndcInfo?.route,
+        strength: ndcInfo?.strength,
+        pharmClass: ndcInfo?.pharmClass,
+        rxcui: rxnormInfo?.rxcui,
+        isControlled: drugResult.isControlled,
+        schedule: drugResult.schedule,
+        interactions: clinicalInfo.filter((c: any) => c.type === 'interaction'),
+        warnings: clinicalInfo.filter((c: any) => c.type === 'warning'),
+        alternatives: alternatives.slice(0, 3)
+      },
+      recommendations: [
+        hasData ? 'Drug verified in FDA database' : 'Manual drug verification recommended',
+        drugResult.wasCorrected ? `Name corrected from "${drugName}" to "${drugResult.correctedName}"` : null,
+        drugResult.isControlled ? 'Verify DEA number and check PDMP' : null,
+        clinicalInfo.length > 0 ? `${clinicalInfo.length} clinical consideration(s) found` : null
+      ].filter(Boolean) as string[],
+      alerts: alerts.length > 0 ? alerts : [{ level: 'info', message: hasData ? 'Drug verified in FDA database' : 'No FDA data available' }],
+      confidence: hasData ? 0.92 : 0.5,
+      aiPowered: false,
+      dataSource: 'FDA OpenFDA + NIH RxNorm'
+    };
+  } catch (error) {
+    console.error('[drug-lookup] Error:', error);
+    return {
+      summary: `Drug Lookup: API error for ${drugName}`,
+      details: { drugName, error: error instanceof Error ? error.message : 'Unknown error' },
+      recommendations: ['Retry drug lookup', 'Check FDA API availability'],
+      alerts: [{ level: 'error', message: `Lookup failed: ${error instanceof Error ? error.message : 'Unknown error'}` }],
+      confidence: 0.2,
+      aiPowered: false,
+      dataSource: 'FDA OpenFDA + NIH RxNorm'
+    };
+  }
+}
+
+// ============================================
+// UNIVERSAL AI POWERED AGENTS
 // ============================================
 
 async function executeClinicalReviewAI(context: DocumentContext): Promise<AgentFinding> {
   const fields = context.extractedFields || {};
   
-  // Build context from extracted fields
   const medication = fields.medication?.value || fields.drug_name?.value || 'Unknown medication';
   const dosage = fields.dosage?.value || fields.strength?.value || 'Not specified';
-  const frequency = fields.frequency?.value || fields.sig?.value || 'Not specified';
+  const frequency = fields.frequency?.value || fields.sig?.value || fields.sig_text?.value || 'Not specified';
+  const sigCode = fields.sig_code?.value || '';
   const patientInfo = fields.patient_name?.value || 'Patient';
   const diagnosis = fields.diagnosis?.value || fields.icd_code?.value || 'Not specified';
+  const route = fields.route?.value || fields.route_of_administration?.value || 'oral';
 
   const prompt = `You are a clinical pharmacist reviewing a prescription. Analyze the following prescription data and provide a clinical assessment.
 
 PRESCRIPTION DATA:
 - Medication: ${medication}
-- Dosage: ${dosage}
-- Frequency: ${frequency}
+- Dosage/Strength: ${dosage}
+- Frequency/SIG: ${frequency}
+- SIG Code: ${sigCode}
+- Route: ${route}
 - Patient: ${patientInfo}
 - Diagnosis/Indication: ${diagnosis}
 - Document Type: ${context.documentType}
@@ -70,6 +294,7 @@ Provide your clinical review in the following JSON format:
   "summary": "Brief 1-sentence clinical assessment",
   "appropriateness": "appropriate" | "needs_review" | "concern",
   "dosageAssessment": "within_range" | "low" | "high" | "needs_verification",
+  "frequencyAssessment": "appropriate" | "unusual" | "concern",
   "interactions": ["List any potential drug interactions or concerns"],
   "recommendations": ["List 2-3 specific clinical recommendations"],
   "alerts": [{"level": "info|warning|error", "message": "alert message"}],
@@ -78,8 +303,8 @@ Provide your clinical review in the following JSON format:
 
 Focus on:
 1. Dosage appropriateness for the indication
-2. Potential drug interactions
-3. Duration of therapy concerns
+2. Frequency and route appropriateness
+3. Potential drug interactions
 4. Patient safety considerations
 
 Respond ONLY with the JSON object, no additional text.`;
@@ -103,15 +328,14 @@ Respond ONLY with the JSON object, no additional text.`;
     if (!response.ok) {
       const errorText = await response.text();
       console.error('[clinical-review-ai] API error:', response.status, errorText);
-      throw new Error(`AI API error: ${response.status}`);
+      throw new Error(`Universal AI API error: ${response.status}`);
     }
 
     const data = await response.json();
     const aiResponse = data.choices?.[0]?.message?.content || '';
     
-    console.log('[clinical-review-ai] Raw response:', aiResponse);
+    console.log('[clinical-review-ai] Raw response:', aiResponse.slice(0, 200));
     
-    // Parse AI response
     const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
@@ -121,8 +345,11 @@ Respond ONLY with the JSON object, no additional text.`;
           medication,
           dosage,
           frequency,
+          sigCode,
+          route,
           appropriateness: parsed.appropriateness || 'needs_review',
           dosageAssessment: parsed.dosageAssessment || 'needs_verification',
+          frequencyAssessment: parsed.frequencyAssessment || 'appropriate',
           interactions: parsed.interactions || [],
           aiAnalysis: true
         },
@@ -130,14 +357,14 @@ Respond ONLY with the JSON object, no additional text.`;
         alerts: parsed.alerts || [],
         confidence: parsed.confidence || 0.85,
         aiPowered: true,
-        model: 'google/gemini-2.5-flash'
+        model: 'Universal AI (Gemini)',
+        dataSource: 'Universal AI Clinical Analysis'
       };
     }
 
     throw new Error('Failed to parse AI response');
   } catch (error) {
     console.error('[clinical-review-ai] Error:', error);
-    // Fallback to rule-based analysis
     return executeClinicalReviewFallback(context);
   }
 }
@@ -147,7 +374,23 @@ async function executeDrugInteractionAI(context: DocumentContext): Promise<Agent
   
   const medication = fields.medication?.value || fields.drug_name?.value || fields.medication_name?.value || 'Unknown';
   const dosage = fields.dosage?.value || fields.strength?.value || 'Not specified';
-  const ndc = fields.ndc?.value || 'Not available';
+  const ndc = fields.ndc?.value || fields.ndc_code?.value || 'Not available';
+
+  // First get FDA data for context
+  let fdaContext = '';
+  try {
+    const drugData = await callEdgeFunction('drug-lookup', { drugName: medication, searchType: 'all' });
+    if (drugData.ndc?.[0]) {
+      fdaContext = `\nFDA DATA:
+- Generic Name: ${drugData.ndc[0].genericName}
+- Brand Name: ${drugData.ndc[0].brandName}
+- Drug Class: ${(drugData.ndc[0].pharmClass || []).join(', ')}
+- Route: ${drugData.ndc[0].route}
+- Known Interactions: ${(drugData.clinicalInfo || []).map((c: any) => c.description).join('; ').slice(0, 300)}`;
+    }
+  } catch (e) {
+    console.log('[drug-interaction-ai] FDA lookup failed, proceeding with AI only');
+  }
 
   const prompt = `You are a pharmacist specialized in drug interactions. Analyze this medication for potential interactions and safety concerns.
 
@@ -156,6 +399,7 @@ MEDICATION DATA:
 - Dosage: ${dosage}
 - NDC Code: ${ndc}
 - Document Type: ${context.documentType}
+${fdaContext}
 
 ${context.rawText ? `Additional context: ${context.rawText.slice(0, 400)}` : ''}
 
@@ -193,13 +437,11 @@ Focus on clinically significant interactions. Respond ONLY with the JSON object.
     });
 
     if (!response.ok) {
-      throw new Error(`AI API error: ${response.status}`);
+      throw new Error(`Universal AI API error: ${response.status}`);
     }
 
     const data = await response.json();
     const aiResponse = data.choices?.[0]?.message?.content || '';
-    
-    console.log('[drug-interaction-ai] Raw response:', aiResponse);
     
     const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
@@ -224,7 +466,8 @@ Focus on clinically significant interactions. Respond ONLY with the JSON object.
         alerts: parsed.alerts || [],
         confidence: parsed.confidence || 0.88,
         aiPowered: true,
-        model: 'google/gemini-2.5-flash'
+        model: 'Universal AI (Gemini)',
+        dataSource: 'Universal AI + FDA OpenFDA'
       };
     }
 
@@ -286,20 +529,17 @@ Focus on actionable findings. If critical findings are present, flag them clearl
     });
 
     if (!response.ok) {
-      throw new Error(`AI API error: ${response.status}`);
+      throw new Error(`Universal AI API error: ${response.status}`);
     }
 
     const data = await response.json();
     const aiResponse = data.choices?.[0]?.message?.content || '';
-    
-    console.log('[radiology-ai] Raw response:', aiResponse);
     
     const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
       const abnormalFindings = (parsed.findings || []).filter((f: any) => f.significance === 'abnormal' || f.significance === 'critical');
       
-      // Generate alerts based on findings
       const alerts = parsed.alerts || [];
       if (parsed.followUp === 'emergent') {
         alerts.push({ level: 'error', message: 'Emergent finding - immediate attention required' });
@@ -323,7 +563,8 @@ Focus on actionable findings. If critical findings are present, flag them clearl
         alerts,
         confidence: parsed.confidence || 0.82,
         aiPowered: true,
-        model: 'google/gemini-2.5-flash'
+        model: 'Universal AI (Gemini)',
+        dataSource: 'Universal AI Radiology Analysis'
       };
     }
 
@@ -337,11 +578,10 @@ Focus on actionable findings. If critical findings are present, flag them clearl
 async function executeLabAnalysisAI(context: DocumentContext): Promise<AgentFinding> {
   const fields = context.extractedFields || {};
   
-  // Build lab values from extracted fields
   const labValues: string[] = [];
   for (const [key, fieldData] of Object.entries(fields)) {
     const value = typeof fieldData === 'object' ? fieldData.value : fieldData;
-    if (value && key.toLowerCase().match(/(glucose|potassium|sodium|creatinine|hemoglobin|hematocrit|wbc|rbc|platelet|bun|alt|ast|bilirubin|albumin|calcium|phosphorus|magnesium)/)) {
+    if (value && key.toLowerCase().match(/(glucose|potassium|sodium|creatinine|hemoglobin|hematocrit|wbc|rbc|platelet|bun|alt|ast|bilirubin|albumin|calcium|phosphorus|magnesium|tsh|t3|t4|inr|ptt|pt|troponin|bnp|lipase|amylase|hba1c|ldl|hdl|triglycerides|cholesterol)/)) {
       labValues.push(`${key}: ${value}`);
     }
   }
@@ -390,7 +630,7 @@ Flag any critical values that require immediate notification. Respond ONLY with 
     });
 
     if (!response.ok) {
-      throw new Error(`AI API error: ${response.status}`);
+      throw new Error(`Universal AI API error: ${response.status}`);
     }
 
     const data = await response.json();
@@ -401,7 +641,6 @@ Flag any critical values that require immediate notification. Respond ONLY with 
       const parsed = JSON.parse(jsonMatch[0]);
       const criticalCount = parsed.criticalValues?.length || 0;
       
-      // Generate critical alerts
       const alerts = parsed.alerts || [];
       if (criticalCount > 0) {
         alerts.push({ level: 'error', message: `${criticalCount} critical value(s) detected - immediate notification required` });
@@ -421,7 +660,8 @@ Flag any critical values that require immediate notification. Respond ONLY with 
         alerts,
         confidence: parsed.confidence || 0.9,
         aiPowered: true,
-        model: 'google/gemini-2.5-flash'
+        model: 'Universal AI (Gemini)',
+        dataSource: 'Universal AI Lab Analysis'
       };
     }
 
@@ -433,7 +673,7 @@ Flag any critical values that require immediate notification. Respond ONLY with 
 }
 
 // ============================================
-// FALLBACK RULE-BASED AGENTS (when AI fails)
+// FALLBACK RULE-BASED AGENTS
 // ============================================
 
 function executeClinicalReviewFallback(context: DocumentContext): AgentFinding {
@@ -457,17 +697,12 @@ function executeClinicalReviewFallback(context: DocumentContext): AgentFinding {
 
   return {
     summary: `Clinical review: ${medication || 'Prescription'} - Rule-based assessment`,
-    details: {
-      medication,
-      dosage,
-      frequency,
-      appropriateness: 'needs_review',
-      fallbackMode: true
-    },
-    recommendations: ['Prescription requires manual clinical review', 'AI analysis unavailable - using rule-based checks'],
+    details: { medication, dosage, frequency, appropriateness: 'needs_review', fallbackMode: true },
+    recommendations: ['AI analysis unavailable - manual clinical review recommended'],
     alerts,
-    confidence: 0.6,
-    aiPowered: false
+    confidence: 0.5,
+    aiPowered: false,
+    dataSource: 'Rule-based fallback'
   };
 }
 
@@ -476,7 +711,6 @@ function executeDrugInteractionFallback(context: DocumentContext): AgentFinding 
   const medication = fields.medication?.value || fields.drug_name?.value || 'Unknown';
   const alerts: Array<{ level: 'info' | 'warning' | 'error'; message: string }> = [];
 
-  // Basic interaction checks
   if (medication?.toLowerCase().includes('warfarin') || medication?.toLowerCase().includes('coumadin')) {
     alerts.push({ level: 'warning', message: 'Warfarin detected - Monitor INR levels closely' });
   }
@@ -488,10 +722,11 @@ function executeDrugInteractionFallback(context: DocumentContext): AgentFinding 
   return {
     summary: `Drug check: ${medication} - Rule-based check`,
     details: { medication, fallbackMode: true, interactionsFound: alerts.length },
-    recommendations: ['Manual drug interaction review recommended', 'AI analysis unavailable'],
+    recommendations: ['AI analysis unavailable - manual review recommended'],
     alerts,
-    confidence: 0.5,
-    aiPowered: false
+    confidence: 0.4,
+    aiPowered: false,
+    dataSource: 'Rule-based fallback'
   };
 }
 
@@ -510,10 +745,11 @@ function executeRadiologyAnalysisFallback(context: DocumentContext): AgentFindin
   return {
     summary: `Radiology analysis: ${context.documentType} - Rule-based assessment`,
     details: { modality: context.documentType, fallbackMode: true, findingsCount: alerts.length },
-    recommendations: ['Manual radiologist review required', 'AI analysis unavailable'],
+    recommendations: ['AI analysis unavailable - radiologist review required'],
     alerts,
-    confidence: 0.5,
-    aiPowered: false
+    confidence: 0.4,
+    aiPowered: false,
+    dataSource: 'Rule-based fallback'
   };
 }
 
@@ -539,15 +775,16 @@ function executeLabAnalysisFallback(context: DocumentContext): AgentFinding {
   return {
     summary: criticalCount > 0 ? `Lab Analysis: ${criticalCount} critical value(s)!` : 'Lab Analysis: Rule-based check',
     details: { criticalValuesFound: criticalCount, fallbackMode: true },
-    recommendations: criticalCount > 0 ? ['Immediate physician notification'] : ['Manual review recommended'],
+    recommendations: criticalCount > 0 ? ['Immediate physician notification'] : ['AI analysis unavailable - manual review recommended'],
     alerts,
-    confidence: 0.55,
-    aiPowered: false
+    confidence: 0.45,
+    aiPowered: false,
+    dataSource: 'Rule-based fallback'
   };
 }
 
 // ============================================
-// NON-AI AGENTS (require external integrations)
+// CONFIGURATION-REQUIRED AGENTS
 // ============================================
 
 function executeInsuranceVerification(context: DocumentContext): AgentFinding {
@@ -562,16 +799,18 @@ function executeInsuranceVerification(context: DocumentContext): AgentFinding {
       memberIdFound: !!memberId,
       groupNumberFound: !!groupNumber,
       payerIdentified: !!payerName,
+      extractedData: { memberId, groupNumber, payerName },
       status: 'pending_integration',
-      requiredSetup: ['Payer API credentials', 'Eligibility endpoint configuration', 'Provider NPI registration']
+      requiredSetup: ['Payer API credentials (Availity, Change Healthcare)', '270/271 EDI transaction setup', 'Provider NPI registration']
     },
     recommendations: [
       'Configure payer API integration to enable real-time verification',
-      'Insurance verification requires: 270/271 EDI transaction setup'
+      'Required: 270/271 EDI eligibility transaction setup'
     ],
     alerts: [{ level: 'info', message: 'Integration required: Payer eligibility APIs not configured' }],
     confidence: 0.3,
-    aiPowered: false
+    aiPowered: false,
+    dataSource: 'Configuration Required'
   };
 }
 
@@ -580,37 +819,16 @@ function executePriorAuth(context: DocumentContext): AgentFinding {
     summary: 'Prior Authorization - Requires payer portal integration',
     details: {
       status: 'pending_integration',
-      requiredSetup: ['Payer portal credentials', 'Prior auth API endpoints', 'Provider credentialing']
+      requiredSetup: ['CoverMyMeds or SureScripts API', 'Payer PA portal credentials', 'Provider credentialing']
     },
     recommendations: [
       'Configure prior authorization portal connections',
-      'Requires: CoverMyMeds, SureScripts, or payer-specific API setup'
+      'Required: CoverMyMeds, SureScripts, or payer-specific PA API setup'
     ],
     alerts: [{ level: 'info', message: 'Integration required: Prior auth APIs not configured' }],
     confidence: 0.2,
-    aiPowered: false
-  };
-}
-
-function executeNPIVerification(context: DocumentContext): AgentFinding {
-  const fields = context.extractedFields || {};
-  const npi = fields.npi?.value || fields.provider_npi?.value;
-
-  return {
-    summary: `NPI Verification: ${npi || 'Not found'} - Requires NPPES API`,
-    details: {
-      npiFound: !!npi,
-      npiValue: npi,
-      status: 'pending_integration',
-      requiredSetup: ['NPPES API integration']
-    },
-    recommendations: [
-      'Configure NPPES registry API integration',
-      'NPI verification available via: https://npiregistry.cms.hhs.gov/api'
-    ],
-    alerts: [{ level: 'info', message: 'Integration available: NPPES API is free to use' }],
-    confidence: 0.4,
-    aiPowered: false
+    aiPowered: false,
+    dataSource: 'Configuration Required'
   };
 }
 
@@ -629,7 +847,8 @@ function executeGenericAgent(agentConfig: AgentConfig, context: DocumentContext)
     ],
     alerts: [{ level: 'info', message: `Agent "${agentConfig.name}" requires additional configuration` }],
     confidence: 0.2,
-    aiPowered: false
+    aiPowered: false,
+    dataSource: 'Configuration Required'
   };
 }
 
@@ -648,13 +867,25 @@ serve(async (req) => {
     console.log(`[execute-document-agent] Executing agent: ${agentId}`);
     console.log(`[execute-document-agent] Document type: ${documentContext.documentType}`);
     console.log(`[execute-document-agent] Fields count: ${Object.keys(documentContext.extractedFields || {}).length}`);
-    console.log(`[execute-document-agent] LOVABLE_API_KEY available: ${!!LOVABLE_API_KEY}`);
+    console.log(`[execute-document-agent] Universal AI available: ${!!LOVABLE_API_KEY}`);
 
     let findings: AgentFinding;
 
-    // Route to AI-powered or integration-required agents
+    // Route to appropriate agent implementation
     switch (agentId) {
-      // ===== AI-POWERED AGENTS (Real execution) =====
+      // ===== REAL API AGENTS (NPPES, FDA) =====
+      case 'npi-verification':
+      case 'npi-registry':
+      case 'credentialing':
+        findings = await executeNPIVerification(documentContext);
+        break;
+
+      case 'drug-lookup':
+      case 'pharmacy-finder':
+        findings = await executeDrugLookup(documentContext);
+        break;
+
+      // ===== UNIVERSAL AI AGENTS =====
       case 'clinical-review':
         findings = await executeClinicalReviewAI(documentContext);
         break;
@@ -677,7 +908,7 @@ serve(async (req) => {
         findings = await executeLabAnalysisAI(documentContext);
         break;
 
-      // ===== INTEGRATION-REQUIRED AGENTS (Show requirements) =====
+      // ===== CONFIGURATION-REQUIRED AGENTS =====
       case 'insurance-verification':
       case 'eligibility-check':
       case 'benefits-verification':
@@ -688,18 +919,12 @@ serve(async (req) => {
         findings = executePriorAuth(documentContext);
         break;
       
-      case 'npi-verification':
-      case 'npi-registry':
-      case 'credentialing':
-        findings = executeNPIVerification(documentContext);
-        break;
-      
-      // ===== DEFAULT (needs configuration) =====
+      // ===== DEFAULT =====
       default:
         findings = executeGenericAgent(agentConfig, documentContext);
     }
 
-    console.log(`[execute-document-agent] Agent ${agentId} completed - AI: ${findings.aiPowered}, confidence: ${findings.confidence}`);
+    console.log(`[execute-document-agent] Agent ${agentId} completed - AI: ${findings.aiPowered}, source: ${findings.dataSource}, confidence: ${findings.confidence}`);
 
     return new Response(
       JSON.stringify({

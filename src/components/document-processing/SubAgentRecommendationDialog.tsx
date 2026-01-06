@@ -112,7 +112,7 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
     {
       id: 'drug-interaction',
       name: 'Drug Interaction Checker',
-      description: '🤖 AI-powered drug-drug and drug-allergy interaction analysis',
+      description: '🤖 Universal AI analysis + FDA drug interaction database',
       icon: '⚠️',
       useCase: 'drug-interaction',
       triggerCondition: 'When medication is identified',
@@ -122,11 +122,21 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
     {
       id: 'clinical-review',
       name: 'Clinical Review Agent',
-      description: '🤖 AI-powered prescription clinical appropriateness review',
+      description: '🤖 Universal AI clinical appropriateness review with SIG code analysis',
       icon: '🩺',
       useCase: 'clinical-review',
       triggerCondition: 'After medication extraction',
       architectureType: 'agentic',
+      readyStatus: 'ai-powered'
+    },
+    {
+      id: 'drug-lookup',
+      name: 'Drug Lookup Agent',
+      description: '✓ NDC lookup via FDA OpenFDA + RxNorm (dosage, strength, side effects)',
+      icon: '💊',
+      useCase: 'drug-lookup',
+      triggerCondition: 'When medication name extracted',
+      architectureType: 'single',
       readyStatus: 'ai-powered'
     },
     {
@@ -156,11 +166,12 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
     {
       id: 'npi-verification',
       name: 'NPI Verification Agent',
-      description: 'Verifies NPI numbers against NPPES database',
+      description: '✓ Real-time NPI verification via NPPES Registry API',
       icon: '✅',
       useCase: 'npi-verification',
       triggerCondition: 'When provider NPI is captured',
-      architectureType: 'a2a'
+      architectureType: 'a2a',
+      readyStatus: 'ai-powered'
     },
     {
       id: 'credentialing',
@@ -169,7 +180,9 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
       icon: '📜',
       useCase: 'credentialing',
       triggerCondition: 'When credentials need verification',
-      architectureType: 'multi-agent'
+      architectureType: 'multi-agent',
+      readyStatus: 'needs-config',
+      requiredSetup: ['State licensing board APIs', 'DEA verification service', 'Hospital privilege systems']
     },
     {
       id: 'identity-verification',
@@ -178,10 +191,22 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
       icon: '🆔',
       useCase: 'identity-verification',
       triggerCondition: 'During new patient registration',
-      architectureType: 'agentic'
+      architectureType: 'agentic',
+      readyStatus: 'needs-config',
+      requiredSetup: ['ID verification API (Jumio, Onfido)', 'Biometric verification service']
     }
   ],
   'treatment-center': [
+    {
+      id: 'npi-registry',
+      name: 'NPI Registry Agent',
+      description: '✓ Real-time facility/provider NPI verification via NPPES',
+      icon: '✅',
+      useCase: 'npi-verification',
+      triggerCondition: 'When NPI captured in documents',
+      architectureType: 'a2a',
+      readyStatus: 'ai-powered'
+    },
     {
       id: 'facility-credentialing',
       name: 'Facility Credentialing Agent',
@@ -189,16 +214,9 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
       icon: '🏢',
       useCase: 'facility-credentialing',
       triggerCondition: 'When facility onboarding initiated',
-      architectureType: 'multi-agent'
-    },
-    {
-      id: 'npi-registry',
-      name: 'NPI Registry Agent',
-      description: 'Verifies facility and provider NPIs',
-      icon: '✅',
-      useCase: 'npi-verification',
-      triggerCondition: 'When NPI captured in documents',
-      architectureType: 'a2a'
+      architectureType: 'multi-agent',
+      readyStatus: 'needs-config',
+      requiredSetup: ['State health department API', 'CMS certification database', 'Accreditation body APIs']
     },
     {
       id: 'compliance-check',
@@ -207,7 +225,9 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
       icon: '📋',
       useCase: 'compliance-verification',
       triggerCondition: 'When compliance docs processed',
-      architectureType: 'agentic'
+      architectureType: 'agentic',
+      readyStatus: 'needs-config',
+      requiredSetup: ['HIPAA compliance checklist', 'State regulations database']
     }
   ],
   'invoice': [
@@ -795,12 +815,12 @@ export default function SubAgentRecommendationDialog({
         {/* Scrollable Agent List */}
         <ScrollArea className="flex-1 min-h-0 max-h-[45vh] pr-2">
           <div className="space-y-2 py-2">
-            {/* AI-Powered Agents Section */}
+            {/* Ready Agents Section (Universal AI + Real APIs) */}
             {suggestions.filter(a => a.readyStatus === 'ai-powered').length > 0 && (
               <div className="mb-3">
                 <div className="flex items-center gap-2 mb-2 px-1">
-                  <Sparkles className="h-3.5 w-3.5 text-purple-500" />
-                  <span className="text-xs font-medium text-purple-700 dark:text-purple-300">AI-Powered (Ready to Execute)</span>
+                  <Sparkles className="h-3.5 w-3.5 text-green-500" />
+                  <span className="text-xs font-medium text-green-700 dark:text-green-300">Ready to Execute (Universal AI + APIs)</span>
                 </div>
                 {suggestions.filter(a => a.readyStatus === 'ai-powered').map(agent => (
                   <div
@@ -808,8 +828,8 @@ export default function SubAgentRecommendationDialog({
                     className={cn(
                       "p-3 rounded-lg border cursor-pointer transition-all mb-2",
                       selectedAgents.includes(agent.id)
-                        ? "border-purple-500 bg-purple-50 dark:bg-purple-950/30 ring-1 ring-purple-300"
-                        : "border-purple-200 dark:border-purple-800 hover:border-purple-400 hover:bg-purple-50/50 dark:hover:bg-purple-950/20"
+                        ? "border-green-500 bg-green-50 dark:bg-green-950/30 ring-1 ring-green-300"
+                        : "border-green-200 dark:border-green-800 hover:border-green-400 hover:bg-green-50/50 dark:hover:bg-green-950/20"
                     )}
                     onClick={() => toggleAgent(agent.id)}
                   >
@@ -818,11 +838,11 @@ export default function SubAgentRecommendationDialog({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium text-sm">{agent.name}</span>
-                          <Badge variant="outline" className="text-[9px] bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-700">
-                            <Sparkles className="h-2.5 w-2.5 mr-0.5" /> AI Ready
+                          <Badge variant="outline" className="text-[9px] bg-green-100 text-green-700 border-green-300 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700">
+                            <Sparkles className="h-2.5 w-2.5 mr-0.5" /> Ready
                           </Badge>
                           {selectedAgents.includes(agent.id) && (
-                            <CheckCircle className="h-4 w-4 text-purple-500" />
+                            <CheckCircle className="h-4 w-4 text-green-500" />
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">{agent.description}</p>
@@ -954,9 +974,9 @@ export default function SubAgentRecommendationDialog({
               {executeMode === 'execute' && (
                 <div className="flex justify-center gap-3 mt-1 text-[10px]">
                   {suggestions.filter(s => selectedAgents.includes(s.id) && s.readyStatus === 'ai-powered').length > 0 && (
-                    <span className="flex items-center gap-1 text-purple-600">
+                    <span className="flex items-center gap-1 text-green-600">
                       <Sparkles className="h-3 w-3" />
-                      {suggestions.filter(s => selectedAgents.includes(s.id) && s.readyStatus === 'ai-powered').length} AI-powered
+                      {suggestions.filter(s => selectedAgents.includes(s.id) && s.readyStatus === 'ai-powered').length} ready
                     </span>
                   )}
                   {suggestions.filter(s => selectedAgents.includes(s.id) && (s.readyStatus === 'needs-config' || !s.readyStatus)).length > 0 && (
