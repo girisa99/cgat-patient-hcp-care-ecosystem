@@ -785,13 +785,21 @@ export default function DocumentProcessing() {
   // Document characteristics derived from processing result
   const smartStudioDocCharacteristics = React.useMemo((): DocumentCharacteristics | null => {
     if (!processingResult) return null;
+    // Auto-detect handwriting from extracted fields or OCR confidence
+    // Insurance cards and typed documents should NOT show handwriting
+    const isImage = !processingResult.fileName?.toLowerCase().endsWith('.pdf');
+    const hasHandwrittenFields = Object.values(processingResult.extractedFields || {}).some(
+      (field: any) => field?.isHandwritten === true
+    );
+    // Only show handwriting if explicitly detected, not based on enableHandwriting setting alone
+    const isActuallyHandwritten = hasHandwrittenFields || (enableHandwriting && processingResult.documentType === 'enrollment_form');
     return {
       format: processingResult.fileName?.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image',
       pageCount: 1,
       quality: 'high',
-      isHandwritten: enableHandwriting,
+      isHandwritten: isActuallyHandwritten,
       isFilledForm: true,
-      isMachineTyped: true,
+      isMachineTyped: !isActuallyHandwritten,
       detectedLanguage: 'English',
       orientation: 'portrait'
     };
@@ -2773,7 +2781,10 @@ export default function DocumentProcessing() {
           {/* Patient Info Tab - Using extracted component */}
           {selectedDocType === 'patient-onboarding' && (
             <TabsContent value="patient-info" className="space-y-4">
-              <PatientInfoTab processingResult={processingResult} />
+              <PatientInfoTab 
+                processingResult={processingResult} 
+                setProcessingHistory={setProcessingHistory}
+              />
             </TabsContent>
           )}
 
@@ -2785,6 +2796,8 @@ export default function DocumentProcessing() {
                 icon={ShoppingCart}
                 processingResult={processingResult}
                 emptyStateMessage="No order document processed"
+                documentType="order"
+                setProcessingHistory={setProcessingHistory}
               />
             </TabsContent>
           )}
@@ -2797,6 +2810,8 @@ export default function DocumentProcessing() {
                 icon={Building2}
                 processingResult={processingResult}
                 emptyStateMessage="No treatment center document processed"
+                documentType="treatment_center"
+                setProcessingHistory={setProcessingHistory}
               />
             </TabsContent>
           )}
@@ -2809,6 +2824,8 @@ export default function DocumentProcessing() {
                 icon={UserCheck}
                 processingResult={processingResult}
                 emptyStateMessage="No customer document processed"
+                documentType="customer"
+                setProcessingHistory={setProcessingHistory}
               />
             </TabsContent>
           )}

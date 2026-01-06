@@ -1735,8 +1735,17 @@ export default function SubAgentRecommendationDialog({
 
       {/* Live Execution Progress Dialog */}
       <Dialog open={showExecutionProgress} onOpenChange={setShowExecutionProgress}>
-        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
-          <ScrollArea className="flex-1 max-h-[75vh]">
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="flex items-center gap-2">
+              <Bot className="h-5 w-5 text-primary" />
+              Agent Execution Progress
+            </DialogTitle>
+            <DialogDescription>
+              {isExecuting ? 'Running agents...' : 'Execution complete'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto max-h-[60vh] pr-2">
             <AgentExecutionProgress
               agents={executingAgents}
               currentAgent={currentAgent}
@@ -1744,7 +1753,7 @@ export default function SubAgentRecommendationDialog({
               results={results}
               isExecuting={isExecuting}
             />
-          </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
 
