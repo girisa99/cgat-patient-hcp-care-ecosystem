@@ -5,10 +5,115 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-const AI_GATEWAY_URL = 'https://ai.gateway.lovable.dev/v1/chat/completions';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
+
+// ============================================
+// UNIVERSAL AI MODEL ROUTING
+// Based on document-processor intelligent routing
+// ============================================
+
+type AIProvider = 'claude' | 'gemini' | 'openai';
+
+interface ModelRoutingConfig {
+  provider: AIProvider;
+  model: string;
+  fallbackProvider: AIProvider;
+  fallbackModel: string;
+  systemPrompt: string;
+}
+
+// Agent-specific model routing (matching document-processor logic)
+const AGENT_MODEL_ROUTING: Record<string, ModelRoutingConfig> = {
+  // Clinical agents → Claude (best for clinical reasoning, medical terminology)
+  'clinical-review': {
+    provider: 'claude',
+    model: 'claude-3-5-haiku-20241022',
+    fallbackProvider: 'gemini',
+    fallbackModel: 'gemini-2.0-flash-exp',
+    systemPrompt: 'You are an expert clinical pharmacist with 20 years of experience. Provide evidence-based clinical assessments.'
+  },
+  'drug-interaction': {
+    provider: 'claude',
+    model: 'claude-3-5-haiku-20241022',
+    fallbackProvider: 'gemini',
+    fallbackModel: 'gemini-2.0-flash-exp',
+    systemPrompt: 'You are an expert pharmacist specialized in drug-drug interactions and medication safety.'
+  },
+  'medication-reconciliation': {
+    provider: 'claude',
+    model: 'claude-3-5-haiku-20241022',
+    fallbackProvider: 'openai',
+    fallbackModel: 'gpt-4o-mini',
+    systemPrompt: 'You are a clinical pharmacist specializing in medication reconciliation and patient safety.'
+  },
+  
+  // Radiology/Imaging agents → Gemini (best for vision, medical imaging)
+  'radiology-ai': {
+    provider: 'gemini',
+    model: 'gemini-2.0-flash-exp',
+    fallbackProvider: 'claude',
+    fallbackModel: 'claude-3-5-haiku-20241022',
+    systemPrompt: 'You are an experienced radiologist assistant. Provide structured, actionable radiology assessments.'
+  },
+  'ct-analysis': {
+    provider: 'gemini',
+    model: 'gemini-1.5-pro',
+    fallbackProvider: 'claude',
+    fallbackModel: 'claude-3-5-haiku-20241022',
+    systemPrompt: 'You are a CT imaging specialist. Analyze CT scan findings with clinical precision.'
+  },
+  'mri-analysis': {
+    provider: 'gemini',
+    model: 'gemini-1.5-pro',
+    fallbackProvider: 'claude',
+    fallbackModel: 'claude-3-5-haiku-20241022',
+    systemPrompt: 'You are an MRI imaging specialist. Analyze MRI findings with attention to soft tissue detail.'
+  },
+  'ultrasound-analysis': {
+    provider: 'gemini',
+    model: 'gemini-2.0-flash-exp',
+    fallbackProvider: 'claude',
+    fallbackModel: 'claude-3-5-haiku-20241022',
+    systemPrompt: 'You are an ultrasound specialist. Provide structured sonographic assessments.'
+  },
+  'mammogram-analysis': {
+    provider: 'gemini',
+    model: 'gemini-1.5-pro',
+    fallbackProvider: 'claude',
+    fallbackModel: 'claude-3-5-haiku-20241022',
+    systemPrompt: 'You are a breast imaging specialist. Analyze mammographic findings using BI-RADS criteria.'
+  },
+  
+  // Lab agents → Claude (clinical interpretation)
+  'critical-value-alert': {
+    provider: 'claude',
+    model: 'claude-3-5-haiku-20241022',
+    fallbackProvider: 'openai',
+    fallbackModel: 'gpt-4o-mini',
+    systemPrompt: 'You are an expert clinical laboratory scientist specializing in result interpretation and critical value identification.'
+  },
+  'trend-analysis': {
+    provider: 'claude',
+    model: 'claude-3-5-haiku-20241022',
+    fallbackProvider: 'openai',
+    fallbackModel: 'gpt-4o-mini',
+    systemPrompt: 'You are a clinical pathologist analyzing laboratory trends and patterns.'
+  },
+  
+  // Default for unknown agents
+  'default': {
+    provider: 'gemini',
+    model: 'gemini-2.0-flash-exp',
+    fallbackProvider: 'claude',
+    fallbackModel: 'claude-3-5-haiku-20241022',
+    systemPrompt: 'You are a healthcare AI assistant. Provide accurate, evidence-based analysis.'
+  }
+};
+
+function getModelRouting(agentId: string): ModelRoutingConfig {
+  return AGENT_MODEL_ROUTING[agentId] || AGENT_MODEL_ROUTING['default'];
+}
 
 interface AgentConfig {
   name: string;
@@ -39,6 +144,7 @@ interface AgentFinding {
   confidence: number;
   aiPowered?: boolean;
   model?: string;
+  provider?: string;
   dataSource?: string;
 }
 
@@ -63,10 +169,77 @@ async function callEdgeFunction(functionName: string, body: any): Promise<any> {
   if (!response.ok) {
     const errorText = await response.text();
     console.error(`[${functionName}] API error:`, response.status, errorText);
-    throw new Error(`Edge function error: ${response.status}`);
+    throw new Error(`Edge function error: ${response.status} - ${errorText}`);
   }
   
   return response.json();
+}
+
+// ============================================
+// UNIVERSAL AI PROCESSOR INTEGRATION
+// Uses ai-universal-processor edge function
+// ============================================
+
+async function callUniversalAI(
+  agentId: string,
+  prompt: string,
+  customSystemPrompt?: string
+): Promise<{ content: string; provider: string; model: string }> {
+  const routing = getModelRouting(agentId);
+  const systemPrompt = customSystemPrompt || routing.systemPrompt;
+  
+  console.log(`[universal-ai] Agent: ${agentId}, Provider: ${routing.provider}, Model: ${routing.model}`);
+  
+  try {
+    // Call ai-universal-processor edge function
+    const result = await callEdgeFunction('ai-universal-processor', {
+      provider: routing.provider,
+      model: routing.model,
+      prompt: prompt,
+      systemPrompt: systemPrompt,
+      temperature: 0.3,
+      maxTokens: 2000,
+      action: 'generate'
+    });
+    
+    if (result.error) {
+      throw new Error(result.error);
+    }
+    
+    return {
+      content: result.content || '',
+      provider: result.provider || routing.provider,
+      model: result.model || routing.model
+    };
+  } catch (primaryError) {
+    console.warn(`[universal-ai] Primary provider failed (${routing.provider}), trying fallback (${routing.fallbackProvider}):`, primaryError);
+    
+    // Try fallback provider
+    try {
+      const fallbackResult = await callEdgeFunction('ai-universal-processor', {
+        provider: routing.fallbackProvider,
+        model: routing.fallbackModel,
+        prompt: prompt,
+        systemPrompt: systemPrompt,
+        temperature: 0.3,
+        maxTokens: 2000,
+        action: 'generate'
+      });
+      
+      if (fallbackResult.error) {
+        throw new Error(fallbackResult.error);
+      }
+      
+      return {
+        content: fallbackResult.content || '',
+        provider: fallbackResult.provider || routing.fallbackProvider,
+        model: fallbackResult.model || routing.fallbackModel
+      };
+    } catch (fallbackError) {
+      console.error(`[universal-ai] Both providers failed:`, fallbackError);
+      throw new Error(`AI analysis failed: ${primaryError instanceof Error ? primaryError.message : 'Unknown error'}`);
+    }
+  }
 }
 
 // ============================================
@@ -78,7 +251,6 @@ async function callEdgeFunction(functionName: string, body: any): Promise<any> {
  */
 async function executeNPIVerification(context: DocumentContext): Promise<AgentFinding> {
   const fields = context.extractedFields || {};
-  const alerts: Array<{ level: 'info' | 'warning' | 'error'; message: string }> = [];
   
   const npi = fields.npi?.value || fields.provider_npi?.value || fields.prescriber_npi?.value;
   const providerName = fields.provider_name?.value || fields.prescriber_name?.value;
@@ -262,6 +434,7 @@ async function executeDrugLookup(context: DocumentContext): Promise<AgentFinding
 
 // ============================================
 // UNIVERSAL AI POWERED AGENTS
+// Uses ai-universal-processor with intelligent routing
 // ============================================
 
 async function executeClinicalReviewAI(context: DocumentContext): Promise<AgentFinding> {
@@ -275,7 +448,7 @@ async function executeClinicalReviewAI(context: DocumentContext): Promise<AgentF
   const diagnosis = fields.diagnosis?.value || fields.icd_code?.value || 'Not specified';
   const route = fields.route?.value || fields.route_of_administration?.value || 'oral';
 
-  const prompt = `You are a clinical pharmacist reviewing a prescription. Analyze the following prescription data and provide a clinical assessment.
+  const prompt = `Analyze the following prescription data and provide a clinical assessment.
 
 PRESCRIPTION DATA:
 - Medication: ${medication}
@@ -310,33 +483,11 @@ Focus on:
 Respond ONLY with the JSON object, no additional text.`;
 
   try {
-    const response = await fetch(AI_GATEWAY_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: 'You are an expert clinical pharmacist with 20 years of experience. Provide evidence-based clinical assessments.' },
-          { role: 'user', content: prompt }
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[clinical-review-ai] API error:', response.status, errorText);
-      throw new Error(`Universal AI API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const aiResponse = data.choices?.[0]?.message?.content || '';
+    const aiResult = await callUniversalAI('clinical-review', prompt);
     
-    console.log('[clinical-review-ai] Raw response:', aiResponse.slice(0, 200));
+    console.log('[clinical-review-ai] Provider:', aiResult.provider, 'Model:', aiResult.model);
     
-    const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+    const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
       return {
@@ -357,8 +508,9 @@ Respond ONLY with the JSON object, no additional text.`;
         alerts: parsed.alerts || [],
         confidence: parsed.confidence || 0.85,
         aiPowered: true,
-        model: 'Universal AI (Gemini)',
-        dataSource: 'Universal AI Clinical Analysis'
+        provider: aiResult.provider,
+        model: aiResult.model,
+        dataSource: `Universal AI (${aiResult.provider.charAt(0).toUpperCase() + aiResult.provider.slice(1)})`
       };
     }
 
@@ -392,7 +544,7 @@ async function executeDrugInteractionAI(context: DocumentContext): Promise<Agent
     console.log('[drug-interaction-ai] FDA lookup failed, proceeding with AI only');
   }
 
-  const prompt = `You are a pharmacist specialized in drug interactions. Analyze this medication for potential interactions and safety concerns.
+  const prompt = `Analyze this medication for potential interactions and safety concerns.
 
 MEDICATION DATA:
 - Drug Name: ${medication}
@@ -421,29 +573,11 @@ Provide your drug interaction analysis in the following JSON format:
 Focus on clinically significant interactions. Respond ONLY with the JSON object.`;
 
   try {
-    const response = await fetch(AI_GATEWAY_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: 'You are an expert pharmacist specialized in drug-drug interactions and medication safety.' },
-          { role: 'user', content: prompt }
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Universal AI API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const aiResponse = data.choices?.[0]?.message?.content || '';
+    const aiResult = await callUniversalAI('drug-interaction', prompt);
     
-    const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+    console.log('[drug-interaction-ai] Provider:', aiResult.provider, 'Model:', aiResult.model);
+    
+    const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
       const interactionCount = (parsed.commonInteractions?.length || 0) + (parsed.foodInteractions?.length || 0);
@@ -466,8 +600,9 @@ Focus on clinically significant interactions. Respond ONLY with the JSON object.
         alerts: parsed.alerts || [],
         confidence: parsed.confidence || 0.88,
         aiPowered: true,
-        model: 'Universal AI (Gemini)',
-        dataSource: 'Universal AI + FDA OpenFDA'
+        provider: aiResult.provider,
+        model: aiResult.model,
+        dataSource: `Universal AI (${aiResult.provider.charAt(0).toUpperCase() + aiResult.provider.slice(1)}) + FDA`
       };
     }
 
@@ -486,7 +621,7 @@ async function executeRadiologyAnalysisAI(context: DocumentContext): Promise<Age
   const findings = fields.findings?.value || fields.impression?.value || '';
   const clinicalHistory = fields.clinical_history?.value || fields.indication?.value || '';
 
-  const prompt = `You are a radiologist assistant. Analyze the following radiology study data and provide a structured assessment.
+  const prompt = `Analyze the following radiology study data and provide a structured assessment.
 
 RADIOLOGY STUDY DATA:
 - Modality: ${modality}
@@ -513,29 +648,11 @@ Provide your radiology analysis in the following JSON format:
 Focus on actionable findings. If critical findings are present, flag them clearly. Respond ONLY with the JSON object.`;
 
   try {
-    const response = await fetch(AI_GATEWAY_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: 'You are an experienced radiologist assistant. Provide structured, actionable radiology assessments.' },
-          { role: 'user', content: prompt }
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Universal AI API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const aiResponse = data.choices?.[0]?.message?.content || '';
+    const aiResult = await callUniversalAI('radiology-ai', prompt);
     
-    const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+    console.log('[radiology-ai] Provider:', aiResult.provider, 'Model:', aiResult.model);
+    
+    const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
       const abnormalFindings = (parsed.findings || []).filter((f: any) => f.significance === 'abnormal' || f.significance === 'critical');
@@ -563,8 +680,9 @@ Focus on actionable findings. If critical findings are present, flag them clearl
         alerts,
         confidence: parsed.confidence || 0.82,
         aiPowered: true,
-        model: 'Universal AI (Gemini)',
-        dataSource: 'Universal AI Radiology Analysis'
+        provider: aiResult.provider,
+        model: aiResult.model,
+        dataSource: `Universal AI (${aiResult.provider.charAt(0).toUpperCase() + aiResult.provider.slice(1)})`
       };
     }
 
@@ -586,7 +704,7 @@ async function executeLabAnalysisAI(context: DocumentContext): Promise<AgentFind
     }
   }
 
-  const prompt = `You are a clinical laboratory scientist. Analyze these lab results and identify any critical values or concerning trends.
+  const prompt = `Analyze these lab results and identify any critical values or concerning trends.
 
 LAB DATA:
 ${labValues.length > 0 ? labValues.join('\n') : 'Lab values extracted from document'}
@@ -614,29 +732,11 @@ Provide your lab analysis in the following JSON format:
 Flag any critical values that require immediate notification. Respond ONLY with the JSON object.`;
 
   try {
-    const response = await fetch(AI_GATEWAY_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: 'You are an expert clinical laboratory scientist specializing in result interpretation and critical value identification.' },
-          { role: 'user', content: prompt }
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Universal AI API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const aiResponse = data.choices?.[0]?.message?.content || '';
+    const aiResult = await callUniversalAI('critical-value-alert', prompt);
     
-    const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+    console.log('[lab-analysis-ai] Provider:', aiResult.provider, 'Model:', aiResult.model);
+    
+    const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
       const criticalCount = parsed.criticalValues?.length || 0;
@@ -660,8 +760,9 @@ Flag any critical values that require immediate notification. Respond ONLY with 
         alerts,
         confidence: parsed.confidence || 0.9,
         aiPowered: true,
-        model: 'Universal AI (Gemini)',
-        dataSource: 'Universal AI Lab Analysis'
+        provider: aiResult.provider,
+        model: aiResult.model,
+        dataSource: `Universal AI (${aiResult.provider.charAt(0).toUpperCase() + aiResult.provider.slice(1)})`
       };
     }
 
@@ -867,7 +968,9 @@ serve(async (req) => {
     console.log(`[execute-document-agent] Executing agent: ${agentId}`);
     console.log(`[execute-document-agent] Document type: ${documentContext.documentType}`);
     console.log(`[execute-document-agent] Fields count: ${Object.keys(documentContext.extractedFields || {}).length}`);
-    console.log(`[execute-document-agent] Universal AI available: ${!!LOVABLE_API_KEY}`);
+    
+    const routing = getModelRouting(agentId);
+    console.log(`[execute-document-agent] Model routing: ${routing.provider}/${routing.model} (fallback: ${routing.fallbackProvider}/${routing.fallbackModel})`);
 
     let findings: AgentFinding;
 
@@ -924,7 +1027,7 @@ serve(async (req) => {
         findings = executeGenericAgent(agentConfig, documentContext);
     }
 
-    console.log(`[execute-document-agent] Agent ${agentId} completed - AI: ${findings.aiPowered}, source: ${findings.dataSource}, confidence: ${findings.confidence}`);
+    console.log(`[execute-document-agent] Agent ${agentId} completed - AI: ${findings.aiPowered}, Provider: ${findings.provider || 'N/A'}, Source: ${findings.dataSource}, Confidence: ${findings.confidence}`);
 
     return new Response(
       JSON.stringify({
