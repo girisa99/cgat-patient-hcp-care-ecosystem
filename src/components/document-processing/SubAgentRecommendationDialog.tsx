@@ -1423,8 +1423,8 @@ export default function SubAgentRecommendationDialog({
         </div>
 
         {/* Scrollable Agent List - Proper scrolling with visible scrollbar */}
-        <div className="flex-1 min-h-0 overflow-y-auto max-h-[40vh] pr-1" style={{ scrollbarGutter: 'stable' }}>
-          <div className="space-y-2 py-2 pr-2">
+        <ScrollArea className="flex-1 min-h-0 max-h-[50vh]">
+          <div className="space-y-2 py-2 pr-3">
             {/* Ready Agents Section (Universal AI + Real APIs) - Show first and prominently */}
             {suggestions.filter(a => a.readyStatus === 'ai-powered').length > 0 && (
               <div className="mb-4">
@@ -1557,7 +1557,7 @@ export default function SubAgentRecommendationDialog({
               </div>
             </div>
           </div>
-        </div>
+        </ScrollArea>
 
         {/* Cross-Document Data Prompt */}
         {((needsInsuranceData && !hasInsuranceData) || (needsPrescriptionData && !hasPrescriptionData)) && (
@@ -1735,14 +1735,16 @@ export default function SubAgentRecommendationDialog({
 
       {/* Live Execution Progress Dialog */}
       <Dialog open={showExecutionProgress} onOpenChange={setShowExecutionProgress}>
-        <DialogContent className="max-w-lg">
-          <AgentExecutionProgress
-            agents={executingAgents}
-            currentAgent={currentAgent}
-            progress={executionProgress}
-            results={results}
-            isExecuting={isExecuting}
-          />
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
+          <ScrollArea className="flex-1 max-h-[75vh]">
+            <AgentExecutionProgress
+              agents={executingAgents}
+              currentAgent={currentAgent}
+              progress={executionProgress}
+              results={results}
+              isExecuting={isExecuting}
+            />
+          </ScrollArea>
         </DialogContent>
       </Dialog>
 
