@@ -128,6 +128,7 @@ interface DocumentContext {
   rawText?: string;
   fileName?: string;
   imageBase64?: string;
+  preferredProvider?: 'claude' | 'gemini' | 'openai';
 }
 
 interface ExecutionRequest {

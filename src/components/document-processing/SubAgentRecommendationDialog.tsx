@@ -657,6 +657,7 @@ export default function SubAgentRecommendationDialog({
   const [executeMode, setExecuteMode] = useState<'execute' | 'build'>('execute');
   const [showAddAgentDialog, setShowAddAgentDialog] = useState(false);
   const [customAgents, setCustomAgents] = useState<SubAgentSuggestion[]>([]);
+  const [selectedProvider, setSelectedProvider] = useState<'auto' | 'claude' | 'gemini' | 'openai'>('auto');
   
   const { executeAgents, isExecuting, executionProgress, currentAgent } = useAgentExecution();
 
@@ -759,7 +760,9 @@ export default function SubAgentRecommendationDialog({
       extractedFields: enhancedFields,
       rawText: extractedData?.processingResult?.rawText || extractedData?.rawText,
       fileName: extractedData?.processingResult?.fileName || extractedData?.fileName,
-      imageBase64: extractedData?.medicalImageBase64
+      imageBase64: extractedData?.medicalImageBase64,
+      // Pass selected provider preference (auto means use intelligent routing)
+      preferredProvider: selectedProvider === 'auto' ? undefined : selectedProvider
     };
 
     const results = await executeAgents(selectedSubAgents, documentContext);
@@ -998,24 +1001,58 @@ export default function SubAgentRecommendationDialog({
           </div>
         </div>
 
-        {/* Execute Mode Toggle */}
+        {/* Execute Mode Toggle & Provider Selection */}
         <div className="flex-shrink-0 pt-3 border-t space-y-3">
-          <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
-            <Label className="text-xs text-muted-foreground">Mode:</Label>
-            <RadioGroup value={executeMode} onValueChange={(v) => setExecuteMode(v as 'execute' | 'build')} className="flex gap-3">
-              <div className="flex items-center gap-1.5">
-                <RadioGroupItem value="execute" id="execute" />
-                <Label htmlFor="execute" className="text-xs flex items-center gap-1 cursor-pointer">
-                  <Zap className="h-3 w-3" /> Execute Now
-                </Label>
+          <div className="flex items-center gap-4 p-2 rounded-lg bg-muted/50 flex-wrap">
+            {/* Mode Selection */}
+            <div className="flex items-center gap-2">
+              <Label className="text-xs text-muted-foreground">Mode:</Label>
+              <RadioGroup value={executeMode} onValueChange={(v) => setExecuteMode(v as 'execute' | 'build')} className="flex gap-3">
+                <div className="flex items-center gap-1.5">
+                  <RadioGroupItem value="execute" id="execute" />
+                  <Label htmlFor="execute" className="text-xs flex items-center gap-1 cursor-pointer">
+                    <Zap className="h-3 w-3" /> Execute Now
+                  </Label>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <RadioGroupItem value="build" id="build" />
+                  <Label htmlFor="build" className="text-xs flex items-center gap-1 cursor-pointer">
+                    <Hammer className="h-3 w-3" /> Build Workflow
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+            
+            {/* AI Provider Selection */}
+            {executeMode === 'execute' && (
+              <div className="flex items-center gap-2 ml-auto">
+                <Label className="text-xs text-muted-foreground">AI Provider:</Label>
+                <RadioGroup 
+                  value={selectedProvider} 
+                  onValueChange={(v) => setSelectedProvider(v as 'auto' | 'claude' | 'gemini' | 'openai')} 
+                  className="flex gap-2"
+                >
+                  <div className="flex items-center gap-1">
+                    <RadioGroupItem value="auto" id="auto" className="h-3 w-3" />
+                    <Label htmlFor="auto" className="text-[10px] cursor-pointer flex items-center gap-0.5">
+                      <Sparkles className="h-2.5 w-2.5 text-primary" /> Auto
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <RadioGroupItem value="claude" id="claude" className="h-3 w-3" />
+                    <Label htmlFor="claude" className="text-[10px] cursor-pointer">🤖 Claude</Label>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <RadioGroupItem value="gemini" id="gemini" className="h-3 w-3" />
+                    <Label htmlFor="gemini" className="text-[10px] cursor-pointer">✨ Gemini</Label>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <RadioGroupItem value="openai" id="openai" className="h-3 w-3" />
+                    <Label htmlFor="openai" className="text-[10px] cursor-pointer">🧠 OpenAI</Label>
+                  </div>
+                </RadioGroup>
               </div>
-              <div className="flex items-center gap-1.5">
-                <RadioGroupItem value="build" id="build" />
-                <Label htmlFor="build" className="text-xs flex items-center gap-1 cursor-pointer">
-                  <Hammer className="h-3 w-3" /> Build Workflow
-                </Label>
-              </div>
-            </RadioGroup>
+            )}
           </div>
 
           {selectedAgents.length > 0 && (

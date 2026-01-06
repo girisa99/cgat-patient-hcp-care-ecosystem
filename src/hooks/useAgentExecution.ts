@@ -45,6 +45,7 @@ export interface DocumentContext {
   rawText?: string;
   imageBase64?: string;
   fileName?: string;
+  preferredProvider?: 'claude' | 'gemini' | 'openai';
 }
 
 interface UseAgentExecutionReturn {
@@ -86,7 +87,8 @@ export function useAgentExecution(): UseAgentExecutionReturn {
             documentType: documentData.documentType,
             extractedFields: documentData.extractedFields,
             rawText: documentData.rawText,
-            fileName: documentData.fileName
+            fileName: documentData.fileName,
+            preferredProvider: documentData.preferredProvider
           }
         }
       });

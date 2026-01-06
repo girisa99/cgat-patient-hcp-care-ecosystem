@@ -31,6 +31,7 @@ export { OCRVisionAIComparisonView } from './OCRVisionAIComparisonView';
 export { RetryWithDifferentModel } from './RetryWithDifferentModel';
 export { ExtractionMetricsSummary } from './ExtractionMetricsSummary';
 export { ModelRoutingPanel } from './ModelRoutingPanel';
+export { AgentFindingsDisplay } from './AgentFindingsDisplay';
 export type { ModelRoutingInfo as ModelRoutingPanelInfo } from './ModelRoutingPanel';
 
 // Smart Document Studio Components
