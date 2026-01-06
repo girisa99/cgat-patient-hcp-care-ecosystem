@@ -26,9 +26,14 @@ export function getAudioAnalyzerScript(): string {
     async function analyzeAudio(audioUrl) {
       console.log('[Analyzer] Analyzing audio:', audioUrl);
       
+      // Create AbortController with 30s timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(function() { controller.abort(); }, 30000);
+      
       try {
         const ctx = initAudioContext();
-        const response = await fetch(audioUrl);
+        const response = await fetch(audioUrl, { signal: controller.signal });
+        clearTimeout(timeoutId);
         const arrayBuffer = await response.arrayBuffer();
         const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
 
@@ -44,7 +49,12 @@ export function getAudioAnalyzerScript(): string {
         return { buffer: audioBuffer, metadata: metadata };
 
       } catch (err) {
-        console.error('[Analyzer] Error analyzing audio:', err);
+        clearTimeout(timeoutId);
+        if (err.name === 'AbortError') {
+          console.error('[Analyzer] Request timed out after 30s');
+        } else {
+          console.error('[Analyzer] Error analyzing audio:', err);
+        }
         return null;
       }
     }

@@ -137,61 +137,89 @@ export function getVoiceProviderSelectionScript(supabaseUrl: string, supabaseKey
     }
 
     async function generateOpenAIAudio(text) {
-      const response = await fetch(VOICE_SUPABASE_URL + '/functions/v1/text-to-speech', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': VOICE_SUPABASE_KEY,
-          'Authorization': 'Bearer ' + VOICE_SUPABASE_KEY
-        },
-        body: JSON.stringify({
-          text: text,
-          voice: selectedVoice,
-          model: 'tts-1'
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('OpenAI TTS failed: ' + response.status);
-      }
-
-      const data = await response.json();
+      // Create AbortController with 30s timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(function() { controller.abort(); }, 30000);
       
-      if (data.audioContent) {
-        const audioUrl = 'data:audio/mpeg;base64,' + data.audioContent;
-        return { url: audioUrl, provider: 'openai', voice: selectedVoice };
-      }
+      try {
+        const response = await fetch(VOICE_SUPABASE_URL + '/functions/v1/text-to-speech', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': VOICE_SUPABASE_KEY,
+            'Authorization': 'Bearer ' + VOICE_SUPABASE_KEY
+          },
+          body: JSON.stringify({
+            text: text,
+            voice: selectedVoice,
+            model: 'tts-1'
+          }),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
 
-      throw new Error('No audio content');
+        if (!response.ok) {
+          throw new Error('OpenAI TTS failed: ' + response.status);
+        }
+
+        const data = await response.json();
+        
+        if (data.audioContent) {
+          const audioUrl = 'data:audio/mpeg;base64,' + data.audioContent;
+          return { url: audioUrl, provider: 'openai', voice: selectedVoice };
+        }
+
+        throw new Error('No audio content');
+      } catch (err) {
+        clearTimeout(timeoutId);
+        if (err.name === 'AbortError') {
+          throw new Error('OpenAI TTS request timed out after 30s');
+        }
+        throw err;
+      }
     }
 
     async function generateElevenLabsAudio(text) {
-      const response = await fetch(VOICE_SUPABASE_URL + '/functions/v1/elevenlabs-voice', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': VOICE_SUPABASE_KEY,
-          'Authorization': 'Bearer ' + VOICE_SUPABASE_KEY
-        },
-        body: JSON.stringify({
-          text: text,
-          voice: selectedVoice,
-          agentType: 'narrator'
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('ElevenLabs TTS failed: ' + response.status);
-      }
-
-      const data = await response.json();
+      // Create AbortController with 30s timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(function() { controller.abort(); }, 30000);
       
-      if (data.audioContent) {
-        const audioUrl = 'data:audio/mpeg;base64,' + data.audioContent;
-        return { url: audioUrl, provider: 'elevenlabs', voice: selectedVoice };
-      }
+      try {
+        const response = await fetch(VOICE_SUPABASE_URL + '/functions/v1/elevenlabs-voice', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': VOICE_SUPABASE_KEY,
+            'Authorization': 'Bearer ' + VOICE_SUPABASE_KEY
+          },
+          body: JSON.stringify({
+            text: text,
+            voice: selectedVoice,
+            agentType: 'narrator'
+          }),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
 
-      throw new Error('No audio content');
+        if (!response.ok) {
+          throw new Error('ElevenLabs TTS failed: ' + response.status);
+        }
+
+        const data = await response.json();
+        
+        if (data.audioContent) {
+          const audioUrl = 'data:audio/mpeg;base64,' + data.audioContent;
+          return { url: audioUrl, provider: 'elevenlabs', voice: selectedVoice };
+        }
+
+        throw new Error('No audio content');
+      } catch (err) {
+        clearTimeout(timeoutId);
+        if (err.name === 'AbortError') {
+          throw new Error('ElevenLabs TTS request timed out after 30s');
+        }
+        throw err;
+      }
     }
 
     // =====================================================
@@ -347,15 +375,24 @@ export function getVoiceProviderSelectionScript(supabaseUrl: string, supabaseKey
 
     let previewAudio = null;
 
+    function cleanupPreviewAudio() {
+      if (previewAudio) {
+        previewAudio.pause();
+        previewAudio.src = '';
+        previewAudio.removeAttribute('src');
+        previewAudio.load(); // Reset the audio element
+        previewAudio = null;
+      }
+    }
+
     function previewGeneratedAudio() {
       if (!generatedAudioUrl) {
         showVoiceProviderToast('Generate audio first', 'warning');
         return;
       }
 
-      if (previewAudio) {
-        previewAudio.pause();
-      }
+      // Cleanup previous audio to prevent memory leak
+      cleanupPreviewAudio();
 
       previewAudio = new Audio(generatedAudioUrl);
       previewAudio.play().catch(function(e) {
@@ -369,6 +406,9 @@ export function getVoiceProviderSelectionScript(supabaseUrl: string, supabaseKey
         previewAudio.currentTime = 0;
       }
     }
+
+    // Cleanup on page unload
+    window.addEventListener('unload', cleanupPreviewAudio);
 
     // =====================================================
     // INITIALIZE VOICE PROVIDER SELECTION

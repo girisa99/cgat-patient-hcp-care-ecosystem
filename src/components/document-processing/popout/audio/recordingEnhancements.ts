@@ -589,6 +589,10 @@ export function getRecordingEnhancementsScript(): string {
         const config = JSON.parse(configEl.textContent || '{}');
         const text = textarea.value.trim();
         
+        // Create AbortController with 30s timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(function() { controller.abort(); }, 30000);
+        
         // Call TTS edge function
         const response = await fetch(config.supabaseUrl + '/functions/v1/text-to-speech', {
           method: 'POST',
@@ -599,8 +603,10 @@ export function getRecordingEnhancementsScript(): string {
           body: JSON.stringify({
             text: text,
             voice: 'alloy'
-          })
+          }),
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
 
         if (response.ok) {
           const data = await response.json();
@@ -609,8 +615,13 @@ export function getRecordingEnhancementsScript(): string {
           showStatus('TTS generation failed', 'error');
         }
       } catch (err) {
-        console.error('[EditPanel] TTS error:', err);
-        showStatus('TTS generation failed: ' + err.message, 'error');
+        if (err.name === 'AbortError') {
+          console.error('[EditPanel] TTS request timed out');
+          showStatus('TTS generation timed out', 'error');
+        } else {
+          console.error('[EditPanel] TTS error:', err);
+          showStatus('TTS generation failed: ' + err.message, 'error');
+        }
       }
     }
 
@@ -740,6 +751,10 @@ export function getRecordingEnhancementsScript(): string {
         
         const config = JSON.parse(configEl.textContent || '{}');
         
+        // Create AbortController with 30s timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(function() { controller.abort(); }, 30000);
+        
         const response = await fetch(config.supabaseUrl + '/functions/v1/text-to-speech', {
           method: 'POST',
           headers: {
@@ -749,8 +764,10 @@ export function getRecordingEnhancementsScript(): string {
           body: JSON.stringify({
             text: text,
             voice: voice
-          })
+          }),
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
 
         if (response.ok) {
           const data = await response.json();
@@ -761,8 +778,13 @@ export function getRecordingEnhancementsScript(): string {
           showStatus('TTS failed: ' + (error.error || 'Unknown error'), 'error');
         }
       } catch (err) {
-        console.error('[EditPanel] Insert TTS error:', err);
-        showStatus('TTS generation failed', 'error');
+        if (err.name === 'AbortError') {
+          console.error('[EditPanel] Insert TTS request timed out');
+          showStatus('TTS generation timed out', 'error');
+        } else {
+          console.error('[EditPanel] Insert TTS error:', err);
+          showStatus('TTS generation failed', 'error');
+        }
       }
     }
 
@@ -797,6 +819,10 @@ export function getRecordingEnhancementsScript(): string {
         
         const config = JSON.parse(configEl.textContent || '{}');
         
+        // Create AbortController with 30s timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(function() { controller.abort(); }, 30000);
+        
         // Call AI for suggestions
         const response = await fetch(config.supabaseUrl + '/functions/v1/ai-universal-processor', {
           method: 'POST',
@@ -811,8 +837,10 @@ export function getRecordingEnhancementsScript(): string {
               type: 'suggestions_only',
               focus: 'clarity'
             }
-          })
+          }),
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
 
         if (response.ok) {
           const data = await response.json();
@@ -835,7 +863,12 @@ export function getRecordingEnhancementsScript(): string {
           renderSuggestions();
         }
       } catch (err) {
-        console.error('[Suggestions] Error:', err);
+        if (err.name === 'AbortError') {
+          console.error('[Suggestions] Request timed out');
+          showStatus('Request timed out', 'error');
+        } else {
+          console.error('[Suggestions] Error:', err);
+        }
         // Fallback
         scriptSuggestions = [
           { id: 1, type: 'clarity', original: 'Sample text', enhanced: 'Improved text', reason: 'Example suggestion', accepted: null }
@@ -985,6 +1018,10 @@ export function getRecordingEnhancementsScript(): string {
         
         const config = JSON.parse(configEl.textContent || '{}');
         
+        // Create AbortController with 30s timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(function() { controller.abort(); }, 30000);
+        
         const response = await fetch(config.supabaseUrl + '/functions/v1/ai-universal-processor', {
           method: 'POST',
           headers: {
@@ -994,8 +1031,10 @@ export function getRecordingEnhancementsScript(): string {
           body: JSON.stringify({
             action: 'enhance_tts_text',
             content: ttsOriginalText
-          })
+          }),
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
 
         if (response.ok) {
           const data = await response.json();
@@ -1012,7 +1051,12 @@ export function getRecordingEnhancementsScript(): string {
         
         showTTSPreview();
       } catch (err) {
-        console.error('[TTS Enhance] Error:', err);
+        if (err.name === 'AbortError') {
+          console.error('[TTS Enhance] Request timed out');
+          showStatus('Enhancement request timed out', 'error');
+        } else {
+          console.error('[TTS Enhance] Error:', err);
+        }
         ttsEnhancedText = ttsOriginalText;
         showTTSPreview();
       }
@@ -1115,6 +1159,10 @@ export function getRecordingEnhancementsScript(): string {
         
         const config = JSON.parse(configEl.textContent || '{}');
         
+        // Create AbortController with 60s timeout (transcription can take longer)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(function() { controller.abort(); }, 60000);
+        
         const response = await fetch(config.supabaseUrl + '/functions/v1/voice-to-text', {
           method: 'POST',
           headers: {
@@ -1123,8 +1171,10 @@ export function getRecordingEnhancementsScript(): string {
           },
           body: JSON.stringify({
             audio: base64Audio
-          })
+          }),
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
 
         if (response.ok) {
           const data = await response.json();
@@ -1147,7 +1197,12 @@ export function getRecordingEnhancementsScript(): string {
           if (exportBtn) exportBtn.style.display = 'inline-block';
         }
       } catch (err) {
-        console.error('[Captions] Error:', err);
+        if (err.name === 'AbortError') {
+          console.error('[Captions] Transcription request timed out');
+          showStatus('Transcription request timed out', 'error');
+        } else {
+          console.error('[Captions] Error:', err);
+        }
         // Fallback
         captionEntries = [
           { start: 0, end: 5, text: 'Caption generation requires audio transcription service.' }
