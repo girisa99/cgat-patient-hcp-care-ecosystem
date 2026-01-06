@@ -18,6 +18,7 @@ interface HistoryTabProps {
   setActiveTab: (tab: string) => void;
   setShowVerificationDialog: (show: boolean) => void;
   setPendingResult: (result: any) => void;
+  setIsDataConfirmed?: (confirmed: boolean) => void;
 }
 
 export default function HistoryTab({
@@ -28,10 +29,16 @@ export default function HistoryTab({
   setSelectedDocType,
   setActiveTab,
   setShowVerificationDialog,
-  setPendingResult
+  setPendingResult,
+  setIsDataConfirmed
 }: HistoryTabProps) {
   const handleViewResult = (result: any) => {
     setProcessingResult(result);
+    
+    // Mark as confirmed since document already exists in database
+    if (setIsDataConfirmed) {
+      setIsDataConfirmed(true);
+    }
     
     // For invoices/billing, switch to RCM analysis tab
     if (result.documentType === 'invoice' || result.documentType === 'billing') {
