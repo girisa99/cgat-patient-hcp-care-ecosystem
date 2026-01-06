@@ -1370,7 +1370,7 @@ export default function SubAgentRecommendationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+      <DialogContent className="max-w-lg max-h-[90vh] flex flex-col [&>div]:overflow-visible"  style={{ display: 'flex', flexDirection: 'column' }}>
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Bot className="h-5 w-5 text-primary" />
@@ -1422,9 +1422,9 @@ export default function SubAgentRecommendationDialog({
           )}
         </div>
 
-        {/* Scrollable Agent List - Proper scrolling with visible scrollbar */}
-        <ScrollArea className="flex-1 min-h-0 max-h-[50vh]">
-          <div className="space-y-2 py-2 pr-3">
+        {/* Scrollable Agent List - Using native overflow for reliable scrolling */}
+        <div className="flex-1 min-h-0 overflow-y-auto max-h-[45vh] border rounded-lg">
+          <div className="space-y-2 p-3">
             {/* Ready Agents Section (Universal AI + Real APIs) - Show first and prominently */}
             {suggestions.filter(a => a.readyStatus === 'ai-powered').length > 0 && (
               <div className="mb-4">
@@ -1557,7 +1557,7 @@ export default function SubAgentRecommendationDialog({
               </div>
             </div>
           </div>
-        </ScrollArea>
+        </div>
 
         {/* Cross-Document Data Prompt */}
         {((needsInsuranceData && !hasInsuranceData) || (needsPrescriptionData && !hasPrescriptionData)) && (
@@ -1735,7 +1735,7 @@ export default function SubAgentRecommendationDialog({
 
       {/* Live Execution Progress Dialog */}
       <Dialog open={showExecutionProgress} onOpenChange={setShowExecutionProgress}>
-        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col" style={{ display: 'flex', flexDirection: 'column' }}>
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Bot className="h-5 w-5 text-primary" />
@@ -1745,7 +1745,7 @@ export default function SubAgentRecommendationDialog({
               {isExecuting ? 'Running agents...' : 'Execution complete'}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto max-h-[60vh] pr-2">
+          <div className="flex-1 min-h-0 overflow-y-auto max-h-[55vh] border rounded-lg p-3">
             <AgentExecutionProgress
               agents={executingAgents}
               currentAgent={currentAgent}
