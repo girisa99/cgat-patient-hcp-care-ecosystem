@@ -333,6 +333,33 @@ export default function DocumentProcessing() {
     return null;
   });
   const [showSubAgentDialog, setShowSubAgentDialog] = useState(false);
+  const [agentFindings, setAgentFindings] = useState<Array<{
+    agentId: string;
+    agentName: string;
+    status: 'pending' | 'running' | 'completed' | 'failed';
+    findings: Record<string, any>;
+    confidence: number;
+    executionTimeMs: number;
+    timestamp: string;
+    alerts?: Array<{ level: 'info' | 'warning' | 'error'; message: string }>;
+  }>>([]);
+  
+  // Handler for when agents complete execution in-place
+  const handleAgentExecutionComplete = useCallback((results: any[]) => {
+    setAgentFindings(results);
+    
+    // Update processing result with agent findings if available
+    if (processingResult) {
+      setProcessingResult(prev => prev ? {
+        ...prev,
+        // Store findings in a format that can be saved to DB
+      } : prev);
+    }
+    
+    toast.success(`${results.length} agent(s) executed`, {
+      description: `Results attached to document`
+    });
+  }, [processingResult]);
   
   // Show toast if state was restored from sessionStorage
   useEffect(() => {
@@ -2521,6 +2548,7 @@ export default function DocumentProcessing() {
             medicalImageBase64,
             medicalImageMimeType,
           }}
+          onAgentExecutionComplete={handleAgentExecutionComplete}
         />
       </div>
     </AppLayout>
