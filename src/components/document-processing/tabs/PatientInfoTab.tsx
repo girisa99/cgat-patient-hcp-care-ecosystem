@@ -1,12 +1,14 @@
 /**
  * PatientInfoTab Component
  * Displays extracted patient demographics and information organized by sections
+ * With save functionality to persist data
  */
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import {
   Users,
   FileText,
@@ -14,8 +16,12 @@ import {
   Stethoscope,
   Shield,
   Pill,
-  PenTool
+  PenTool,
+  Save,
+  CheckCircle
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProcessingResult {
   id: string;
@@ -34,6 +40,7 @@ interface ProcessingResult {
 
 interface PatientInfoTabProps {
   processingResult: ProcessingResult | null;
+  setProcessingHistory?: (updater: (prev: any[]) => any[]) => void;
 }
 
 // Define section patterns for grouping fields
@@ -46,7 +53,9 @@ const SECTION_PATTERNS: { id: string; title: string; icon: React.ReactNode; patt
   { id: 'consent', title: 'Consent & Signatures', icon: <PenTool className="h-4 w-4" />, patterns: [/signature|consent|authorization|date_signed|enrollment_year|pap_|handwritten/i] },
 ];
 
-export default function PatientInfoTab({ processingResult }: PatientInfoTabProps) {
+export default function PatientInfoTab({ processingResult, setProcessingHistory }: PatientInfoTabProps) {
+  const [isSaving, setIsSaving] = React.useState(false);
+  
   // Organize fields by sections
   const organizeFieldsBySections = () => {
     if (!processingResult) return [];
@@ -77,6 +86,59 @@ export default function PatientInfoTab({ processingResult }: PatientInfoTabProps
     }
     
     return sectionData;
+  };
+
+  const handleSave = async () => {
+    if (!processingResult) return;
+    
+    setIsSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Please login to save');
+        setIsSaving(false);
+        return;
+      }
+      
+      // Save to database
+      const { error } = await supabase
+        .from('document_processing_jobs')
+        .upsert({
+          id: processingResult.id,
+          user_id: user.id,
+          document_type: processingResult.documentType || 'patient_info',
+          file_name: processingResult.fileName,
+          file_path: processingResult.imageUrl || processingResult.fileName,
+          status: 'completed',
+          progress: 100,
+          processing_config: {
+            extractedFields: processingResult.extractedFields,
+            tables: processingResult.tables || [],
+            validationResults: processingResult.validationResults,
+            imageUrl: processingResult.imageUrl
+          }
+        });
+      
+      if (error) throw error;
+      
+      // Update local history
+      if (setProcessingHistory) {
+        setProcessingHistory(prev => {
+          const existing = prev.find(p => p.id === processingResult.id);
+          if (existing) {
+            return prev.map(p => p.id === processingResult.id ? processingResult : p);
+          }
+          return [processingResult, ...prev];
+        });
+      }
+      
+      toast.success('Patient information saved to history');
+    } catch (err) {
+      console.error('Save error:', err);
+      toast.error('Failed to save patient information');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Check if we have extracted fields to display
@@ -136,6 +198,25 @@ export default function PatientInfoTab({ processingResult }: PatientInfoTabProps
                 </Card>
               ))}
             </div>
+            
+            {/* Save Button */}
+            <Button 
+              className="w-full mt-4" 
+              onClick={handleSave}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <Save className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Save Patient Information
+                </>
+              )}
+            </Button>
           </div>
         ) : (
           <div className="text-center py-12 text-muted-foreground">

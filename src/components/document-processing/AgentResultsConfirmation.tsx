@@ -153,7 +153,7 @@ export function AgentResultsConfirmation({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Bot className="h-5 w-5 text-primary" />
@@ -203,7 +203,7 @@ export function AgentResultsConfirmation({
         )}
 
         {/* Results List */}
-        <ScrollArea className="flex-1 min-h-0 max-h-[400px] pr-2">
+        <div className="flex-1 overflow-y-auto max-h-[400px] pr-2">
           <div className="space-y-3 py-2">
             {/* Completed Results */}
             {completedResults.map((result) => {
@@ -369,7 +369,7 @@ export function AgentResultsConfirmation({
               </>
             )}
           </div>
-        </ScrollArea>
+        </div>
 
         <DialogFooter className="flex-shrink-0 gap-2">
           <Button variant="outline" onClick={onReject}>
