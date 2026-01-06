@@ -876,6 +876,61 @@ export default function SubAgentRecommendationDialog({
     setSelectedAgents(prev => [...prev, agent.id]);
   };
 
+  // Agent-type specific data requirements mapping
+  const AGENT_DATA_REQUIREMENTS: Record<string, string[]> = {
+    // Medication agents
+    'ndc-lookup': ['medication', 'medication_name', 'ndc', 'strength'],
+    'drug-alternatives': ['medication', 'medication_name', 'strength', 'generic_name'],
+    'efficacy-analysis': ['medication', 'diagnosis', 'condition', 'sig'],
+    'safety-profile': ['medication', 'medication_name', 'dose', 'frequency', 'patient_allergies', 'allergies'],
+    'dosage-validation': ['medication', 'dose', 'route', 'frequency', 'strength', 'sig'],
+    'drug-interaction': ['medication', 'medication_name', 'current_medications', 'allergies'],
+    'clinical-review': ['medication', 'sig', 'dose', 'route', 'frequency', 'duration', 'diagnosis', 'patient_name'],
+    'cost-analysis': ['medication', 'medication_name', 'strength', 'quantity', 'days_supply'],
+    // Insurance agents
+    'eligibility-ai': ['insurance_name', 'member_id', 'group_number', 'plan_type', 'payer_id'],
+    'coverage-summary': ['insurance_name', 'member_id', 'copay', 'deductible', 'oop_max', 'coinsurance'],
+    'insurance-verification': ['insurance_name', 'member_id', 'group_number', 'payer_id', 'patient_name', 'patient_dob'],
+    'benefits-verification': ['insurance_name', 'member_id', 'plan_name', 'copay', 'copay_specialist', 'copay_rx'],
+    'prior-auth': ['insurance_name', 'member_id', 'medication', 'diagnosis', 'prescriber_npi', 'payer_id'],
+    // Patient agents
+    'npi-verification': ['prescriber_npi', 'prescriber_name', 'prescriber_dea'],
+    'identity-verification-ai': ['patient_name', 'patient_dob', 'ssn', 'address'],
+    'data-validation': ['patient_name', 'patient_dob', 'email', 'phone'],
+    // Clinical agents
+    'critical-value-alert': ['test_name', 'result_value', 'reference_range', 'flag'],
+    'trend-analysis': ['test_name', 'result_value', 'collection_date'],
+    'medical-summary': ['patient_name', 'diagnosis', 'medication', 'allergies']
+  };
+
+  // Prepare agent-specific data based on what each agent needs
+  const prepareAgentData = (agentId: string, allFields: Record<string, any>) => {
+    const requiredFields = AGENT_DATA_REQUIREMENTS[agentId] || [];
+    const agentData: Record<string, any> = {};
+    
+    // Always include all available fields, but log which required ones are missing
+    const missingFields: string[] = [];
+    
+    requiredFields.forEach(field => {
+      // Check multiple possible sources for each field
+      const value = allFields[field]?.value || 
+                   allFields[field] ||
+                   allFields[`${field}_name`]?.value ||
+                   allFields[field.replace('_', '')]?.value;
+      if (value) {
+        agentData[field] = { value, confidence: allFields[field]?.confidence || 0.9 };
+      } else {
+        missingFields.push(field);
+      }
+    });
+    
+    if (missingFields.length > 0) {
+      console.warn(`[Agent ${agentId}] Missing recommended fields:`, missingFields);
+    }
+    
+    return { agentData, missingFields, hasMinimumData: missingFields.length < requiredFields.length };
+  };
+
   const handleExecuteNow = async () => {
     const selectedSubAgents = suggestions.filter(s => selectedAgents.includes(s.id));
     
@@ -888,73 +943,76 @@ export default function SubAgentRecommendationDialog({
     setExecutingAgents(selectedSubAgents);
     setShowExecutionProgress(true);
 
-    // Build comprehensive extracted fields from all available data sources
+    // Build comprehensive extracted fields from ALL available data sources
     const baseExtractedFields = extractedData?.processingResult?.extractedFields || extractedData?.extractedFields || {};
     
-    console.log('[SubAgentDialog] Building data for agent execution:', {
-      hasProcessingResult: !!extractedData?.processingResult,
-      hasPendingMedicationData: !!extractedData?.pendingMedicationData,
-      hasDrugSearchQuery: !!extractedData?.drugSearchQuery,
-      hasSearchResults: !!extractedData?.searchResults,
-      hasParsedSig: !!extractedData?.parsedSig,
-      isDataConfirmed: extractedData?.isDataConfirmed,
-      selectedDose: extractedData?.selectedDose,
-      selectedFrequency: extractedData?.selectedFrequency,
-      selectedRoute: extractedData?.selectedRoute,
-      selectedDuration: extractedData?.selectedDuration
+    console.log('[SubAgentDialog] All available data sources:', {
+      processingResult: !!extractedData?.processingResult,
+      pendingMedicationData: extractedData?.pendingMedicationData ? {
+        drugName: extractedData.pendingMedicationData.drugName,
+        sigText: extractedData.pendingMedicationData.sigText,
+        baseName: extractedData.pendingMedicationData.baseName,
+        preservedStrength: extractedData.pendingMedicationData.preservedStrength
+      } : null,
+      drugSearchQuery: extractedData?.drugSearchQuery,
+      selectedValues: {
+        dose: extractedData?.selectedDose,
+        frequency: extractedData?.selectedFrequency,
+        route: extractedData?.selectedRoute,
+        duration: extractedData?.selectedDuration
+      },
+      parsedSig: extractedData?.parsedSig,
+      searchResults: extractedData?.searchResults ? {
+        drugName: extractedData.searchResults.drugName,
+        genericName: extractedData.searchResults.genericName
+      } : null,
+      isDataConfirmed: extractedData?.isDataConfirmed
     });
     
-    // Merge in additional medication-specific data if available
+    // Merge all data sources into enhanced fields
     const enhancedFields = { ...baseExtractedFields };
     
-    // CRITICAL: Use pendingMedicationData if available (data from extraction before save)
-    // This ensures agents have medication data even before user clicks "Save"
+    // 1. PENDING MEDICATION DATA (highest priority for prescriptions)
     if (extractedData?.pendingMedicationData) {
       const pending = extractedData.pendingMedicationData;
-      console.log('[SubAgentDialog] Using pendingMedicationData:', {
-        drugName: pending.drugName,
-        sigText: pending.sigText,
-        baseName: pending.baseName,
-        preservedStrength: pending.preservedStrength,
-        hasExtractedFields: !!pending.extractedFields
-      });
-      
-      if (pending.drugName && !enhancedFields.medication?.value && !enhancedFields.medication_name?.value) {
+      if (pending.drugName) {
         enhancedFields.medication = { value: pending.drugName, confidence: 0.95 };
         enhancedFields.medication_name = { value: pending.drugName, confidence: 0.95 };
       }
-      if (pending.sigText && !enhancedFields.sig?.value) {
+      if (pending.baseName) {
+        enhancedFields.base_name = { value: pending.baseName, confidence: 0.95 };
+      }
+      if (pending.sigText) {
         enhancedFields.sig = { value: pending.sigText, confidence: 0.9 };
       }
-      if (pending.preservedStrength && !enhancedFields.strength?.value) {
+      if (pending.preservedStrength) {
         enhancedFields.strength = { value: pending.preservedStrength, confidence: 0.9 };
       }
-      // Merge extracted fields from pending data
+      // Merge all extracted fields from pending
       if (pending.extractedFields) {
         Object.entries(pending.extractedFields).forEach(([key, value]) => {
-          if (!enhancedFields[key]) {
+          if (!enhancedFields[key] || !enhancedFields[key].value) {
             enhancedFields[key] = value;
           }
         });
       }
     }
     
-    // Add medication name from drug search query if not in extractedFields
-    if (extractedData?.drugSearchQuery && !enhancedFields.medication?.value && !enhancedFields.medication_name?.value) {
-      enhancedFields.medication = { value: extractedData.drugSearchQuery, confidence: 0.95 };
+    // 2. SELECTED SELECTOR VALUES (user's current selections in Medication Lookup)
+    if (extractedData?.selectedDose) {
+      enhancedFields.dose = { value: extractedData.selectedDose, confidence: 0.95 };
+    }
+    if (extractedData?.selectedFrequency) {
+      enhancedFields.frequency = { value: extractedData.selectedFrequency, confidence: 0.95 };
+    }
+    if (extractedData?.selectedRoute) {
+      enhancedFields.route = { value: extractedData.selectedRoute, confidence: 0.95 };
+    }
+    if (extractedData?.selectedDuration) {
+      enhancedFields.duration = { value: extractedData.selectedDuration, confidence: 0.95 };
     }
     
-    // Add SIG from instructions if available
-    if (extractedData?.sigInstructions && !enhancedFields.sig?.value) {
-      enhancedFields.sig = { value: extractedData.sigInstructions, confidence: 0.9 };
-    }
-    
-    // Add NDC if available
-    if (extractedData?.selectedNdc && !enhancedFields.ndc?.value) {
-      enhancedFields.ndc = { value: extractedData.selectedNdc, confidence: 0.95 };
-    }
-    
-    // Add parsed SIG components from parsedSig object
+    // 3. PARSED SIG (from SIG parsing function)
     if (extractedData?.parsedSig) {
       if (extractedData.parsedSig.dose && !enhancedFields.dose?.value) {
         enhancedFields.dose = { value: extractedData.parsedSig.dose, confidence: 0.9 };
@@ -970,30 +1028,13 @@ export default function SubAgentRecommendationDialog({
       }
     }
     
-    // ALSO add from selected selector values (fallback if parsedSig not available)
-    // These are the values the user sees in the Medication Lookup tab
-    if (extractedData?.selectedDose && !enhancedFields.dose?.value) {
-      enhancedFields.dose = { value: extractedData.selectedDose, confidence: 0.95 };
-    }
-    if (extractedData?.selectedFrequency && !enhancedFields.frequency?.value) {
-      enhancedFields.frequency = { value: extractedData.selectedFrequency, confidence: 0.95 };
-    }
-    if (extractedData?.selectedRoute && !enhancedFields.route?.value) {
-      enhancedFields.route = { value: extractedData.selectedRoute, confidence: 0.95 };
-    }
-    if (extractedData?.selectedDuration && !enhancedFields.duration?.value) {
-      enhancedFields.duration = { value: extractedData.selectedDuration, confidence: 0.95 };
+    // 4. DRUG SEARCH QUERY (fallback for medication name)
+    if (extractedData?.drugSearchQuery && !enhancedFields.medication?.value) {
+      enhancedFields.medication = { value: extractedData.drugSearchQuery, confidence: 0.95 };
+      enhancedFields.medication_name = { value: extractedData.drugSearchQuery, confidence: 0.95 };
     }
     
-    // Build a combined SIG from selector values if we have them
-    if (extractedData?.selectedDose && extractedData?.selectedRoute && extractedData?.selectedFrequency) {
-      const combinedSig = `Take ${extractedData.selectedDose} ${extractedData.selectedRoute} ${extractedData.selectedFrequency}${extractedData.selectedDuration ? ` for ${extractedData.selectedDuration}` : ''}`;
-      if (!enhancedFields.sig?.value) {
-        enhancedFields.sig = { value: combinedSig, confidence: 0.9 };
-      }
-    }
-    
-    // Add search results data for medication details
+    // 5. SEARCH RESULTS (from drug search API)
     if (extractedData?.searchResults) {
       if (extractedData.searchResults.drugName && !enhancedFields.medication?.value) {
         enhancedFields.medication = { value: extractedData.searchResults.drugName, confidence: 0.95 };
@@ -1001,21 +1042,36 @@ export default function SubAgentRecommendationDialog({
       if (extractedData.searchResults.genericName) {
         enhancedFields.generic_name = { value: extractedData.searchResults.genericName, confidence: 0.9 };
       }
-      if (extractedData.searchResults.strength) {
+      if (extractedData.searchResults.strength && !enhancedFields.strength?.value) {
         enhancedFields.strength = { value: extractedData.searchResults.strength, confidence: 0.9 };
       }
     }
     
-    console.log('[SubAgentDialog] Enhanced fields for agent execution:', Object.keys(enhancedFields));
-    console.log('[SubAgentDialog] Final data passed to agents:', {
-      medication: enhancedFields.medication?.value || enhancedFields.medication_name?.value,
-      sig: enhancedFields.sig?.value,
-      dose: enhancedFields.dose?.value,
-      frequency: enhancedFields.frequency?.value,
-      route: enhancedFields.route?.value,
-      duration: enhancedFields.duration?.value,
-      strength: enhancedFields.strength?.value,
-      ndc: enhancedFields.ndc?.value
+    // 6. SELECTED NDC
+    if (extractedData?.selectedNdc && !enhancedFields.ndc?.value) {
+      enhancedFields.ndc = { value: extractedData.selectedNdc, confidence: 0.95 };
+    }
+    
+    // 7. SIG INSTRUCTIONS
+    if (extractedData?.sigInstructions && !enhancedFields.sig?.value) {
+      enhancedFields.sig = { value: extractedData.sigInstructions, confidence: 0.9 };
+    }
+    
+    // 8. Build combined SIG if we have selector values but no SIG
+    if (!enhancedFields.sig?.value && enhancedFields.dose?.value && enhancedFields.route?.value && enhancedFields.frequency?.value) {
+      const combinedSig = `Take ${enhancedFields.dose.value} ${enhancedFields.route.value} ${enhancedFields.frequency.value}${enhancedFields.duration?.value ? ` for ${enhancedFields.duration.value}` : ''}`;
+      enhancedFields.sig = { value: combinedSig, confidence: 0.85 };
+    }
+    
+    // Log what each selected agent will receive
+    console.log('[SubAgentDialog] Final enhanced fields:', enhancedFields);
+    selectedSubAgents.forEach(agent => {
+      const { agentData, missingFields, hasMinimumData } = prepareAgentData(agent.id, enhancedFields);
+      console.log(`[Agent: ${agent.name}] Data ready:`, {
+        hasMinimumData,
+        availableFields: Object.keys(agentData),
+        missingFields
+      });
     });
 
     const documentContext = {
@@ -1024,7 +1080,6 @@ export default function SubAgentRecommendationDialog({
       rawText: extractedData?.processingResult?.rawText || extractedData?.rawText,
       fileName: extractedData?.processingResult?.fileName || extractedData?.fileName,
       imageBase64: extractedData?.medicalImageBase64,
-      // Pass selected provider preference (auto means use intelligent routing)
       preferredProvider: selectedProvider === 'auto' ? undefined : selectedProvider
     };
 
