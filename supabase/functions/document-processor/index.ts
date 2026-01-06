@@ -915,6 +915,12 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
   let lineItemsExtracted: any[] = [];
   let tablesExtracted: any[] = [];
   
+  // Pipeline tracking variables - declared at function scope to avoid ReferenceError
+  let pipelineTypeUsed = 'vision_ai_only';
+  let ocrTextExtracted = '';
+  let ocrConfidenceValue = 0;
+  let extractionSuccess = false;
+  
   // Determine file type and process accordingly
   const effectiveMimeType = storedMimeType || mimeType || 'application/octet-stream';
   const isImage = effectiveMimeType.startsWith('image/');
@@ -1067,11 +1073,7 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
         // Stage 1: Google Cloud Vision OCR, Stage 2: Vision AI for structuring
         console.log(`[Extraction] Using hybrid OCR + Vision AI pipeline with primary: ${routingConfig.primaryModel}`);
         
-        let extractionSuccess = false;
         let extracted: any = null;
-        let ocrTextExtracted = '';
-        let ocrConfidenceValue = 0;
-        let pipelineTypeUsed = 'vision_ai_only';
         
         try {
           const hybridResult = await extractWithHybridPipeline(
