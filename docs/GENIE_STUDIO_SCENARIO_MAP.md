@@ -1,8 +1,8 @@
 # Genie Studio & Recording Studio: Complete Scenario Map
 
-> **Version:** 1.3  
-> **Last Updated:** 2026-01-05  
-> **Total Scenarios:** 65 (5 new bidirectional scenarios)  
+> **Version:** 2.0  
+> **Last Updated:** 2026-01-06  
+> **Total Scenarios:** 80 (65 original + 15 commercialization scenarios)  
 > **Status:** Documentation Complete with Implementation Status
 
 ---
@@ -17,7 +17,7 @@ This document catalogs all identified user journeys and scenarios for the Genie 
 |--------|-------|-------------|
 | ✅ **Implemented** | 25 | Fully functional in codebase |
 | 🔶 **Partial** | 10 | Core functionality exists, needs enhancement |
-| ⏳ **Planned** | 30 | Documented, not yet implemented |
+| ⏳ **Planned** | 45 | Documented, not yet implemented (includes 15 commercialization scenarios) |
 
 ---
 
@@ -26,8 +26,11 @@ This document catalogs all identified user journeys and scenarios for the Genie 
 | Priority | Category | Description | Scenarios | Implementation |
 |----------|----------|-------------|-----------|----------------|
 | **P0 - Core** | MVP Features | Essential flows for launch | 1-4, 7-10, 61-65 | 85% Complete |
+| **P0 - Commercialization** | Subscription Infrastructure | Required for monetization | 66-70 | 0% (Roadmap) |
 | **P1 - Essential** | Production Needs | Required for production use | 5-6, 11-16, 21-24 | 50% Complete |
+| **P1 - Access Control** | Authentication & Billing | User management & payments | 71-75 | 0% (Roadmap) |
 | **P2 - Important** | User Experience | Improves workflow significantly | 17-20, 25-32 | 20% Complete |
+| **P2 - Management** | Admin & Analytics | Subscription management | 76-80 | 0% (Roadmap) |
 | **P3 - Differentiators** | Competitive Edge | Sets product apart, includes compliance | 33-42, 43-46 | 0% (Roadmap) |
 | **P4 - Future** | Advanced Features | Long-term roadmap items | 47-60 | 0% (Roadmap) |
 
@@ -439,6 +442,131 @@ Content lifecycle management.
 |---|---------------|---------|----------|----------|
 | 59 | **Script Versioning** | Track changes | Git-like history, diff view, rollback | P4 |
 | 60 | **Project Archive** | Long-term storage | Compress, metadata, retrieval | P4 |
+
+---
+
+## NEW: Category M - Commercialization & Subscription (Scenarios 66-80)
+
+**Added: 2026-01-06** | Critical for product monetization
+
+### Phase 1: Core Infrastructure (Scenarios 66-70)
+
+**Priority: P0 - Commercialization** | **Dependencies: None** | **Timeline: Weeks 1-2**
+
+| # | Scenario Name | Description | Components | Status |
+|---|---------------|-------------|------------|--------|
+| 66 | **Subscription Tier Database** | Create database schema for tiers (Free/Starter/Pro/Enterprise/Beta) | `subscription_tiers`, `user_subscriptions` tables | ⏳ Planned |
+| 67 | **Module Registry Database** | Module definitions and access rules | `subscription_modules`, `subscription_usage` tables | ⏳ Planned |
+| 68 | **useSubscription Hook** | React hook for subscription state management | `src/hooks/useSubscription.ts` | ⏳ Planned |
+| 69 | **useModuleAccess Hook** | Access control per Genie module | `src/hooks/useModuleAccess.ts` | ⏳ Planned |
+| 70 | **Beta User Migration** | Mark existing users as beta tier with full access | Migration script | ⏳ Planned |
+
+#### Module Access Matrix
+
+| Module | Free | Starter | Pro | Enterprise | Beta |
+|--------|------|---------|-----|------------|------|
+| `genie_studio` (basic) | 10/mo | 100/mo | 1000/mo | Unlimited | Unlimited |
+| `genie_spark` | ❌ | ❌ | ✅ | ✅ | ✅ |
+| `document_processing` | ❌ | ✅ | ✅ | ✅ | ✅ |
+| `recording_studio` | ❌ | ✅ | ✅ | ✅ | ✅ |
+| `agent_builder` (Arc) | ❌ | ❌ | ✅ | ✅ | ✅ |
+| `api_services` | ❌ | ❌ | ✅ | ✅ | ✅ |
+| `white_label` | ❌ | ❌ | ❌ | ✅ | ✅ |
+
+---
+
+### Phase 2: Access Control Integration (Scenarios 71-75)
+
+**Priority: P1 - Access Control** | **Dependencies: Phase 1** | **Timeline: Weeks 2-4**
+
+| # | Scenario Name | Description | Components | Status |
+|---|---------------|-------------|------------|--------|
+| 71 | **Route-Level Access Guards** | Protect routes based on subscription tier | React Router integration | ⏳ Planned |
+| 72 | **Module-Level Access Gates** | Component wrappers for locked modules | `ModuleGate` component | ⏳ Planned |
+| 73 | **Upgrade Prompts UI** | "Upgrade to unlock" modals and banners | `UpgradePrompt` component | ⏳ Planned |
+| 74 | **Usage Tracking Integration** | Track API calls per module per user | Usage middleware | ⏳ Planned |
+| 75 | **Genie AI Conversation Limits** | Enforce per-tier conversation limits | Rate limiting | ⏳ Planned |
+
+#### Genie Module Definitions
+
+| Module | ID | Tier Required | Route | Status |
+|--------|-----|---------------|-------|--------|
+| **Arc** | `genie_arc` | Pro+ | `/arc` | 🔶 Partial |
+| **Mind** | `genie_mind` | Starter+ | `/mind` | ✅ Implemented |
+| **Vibe** | `genie_vibe` | Starter+ | `/vibe` | ✅ Implemented |
+| **Spark** | `genie_spark` | Pro+ | `/genie-spark` | 🔶 Needs Extraction |
+| **Prod Hub** | `genie_prod_hub` | Pro+ | `/prod-hub` | ⏳ Planned |
+
+---
+
+### Phase 3: Landing Page & Authentication (Scenarios 76-78)
+
+**Priority: P1 - Access Control** | **Dependencies: Phase 1** | **Timeline: Weeks 3-4**
+
+| # | Scenario Name | Description | Components | Status |
+|---|---------------|-------------|------------|--------|
+| 76 | **Public Landing Page** | Marketing page for unauthenticated users | `/` route redesign | ⏳ Planned |
+| 77 | **Pricing Page** | Tier comparison with feature matrix | `/pricing` route | ⏳ Planned |
+| 78 | **Subscription Selection (Signup)** | Tier choice during registration flow | Signup wizard enhancement | ⏳ Planned |
+
+---
+
+### Phase 4: Payment & Billing (Scenarios 79-80)
+
+**Priority: P2 - Management** | **Dependencies: Phase 2** | **Timeline: Weeks 4-6**
+
+| # | Scenario Name | Description | Components | Status |
+|---|---------------|-------------|------------|--------|
+| 79 | **Stripe Integration** | Payment processing for subscriptions | Checkout, webhooks, billing portal | ⏳ Planned |
+| 80 | **Admin Subscription Dashboard** | Manage subscriptions, view usage analytics | Admin panel enhancement | ⏳ Planned |
+
+---
+
+### Genie Spark Extraction (Part of Scenario 72)
+
+**Current State:** Spark embedded in `SmartContentPipeline.tsx`
+
+**Target Architecture:**
+```
+/genie-studio          → Main Genie Studio (included in Starter)
+/genie-spark           → Genie Spark standalone (Pro+ only)
+├── /genie-spark/spark       → Smart Content Pipeline
+├── /genie-spark/full-pipeline → Multi-source orchestration
+└── /genie-spark/workflows   → Custom workflow builder
+```
+
+**Extraction Tasks:**
+- Create `/genie-spark` route
+- Move `SmartContentPipeline` component
+- Move `FullPipelineWorkflow` component
+- Add Spark-specific subscription gate
+- Implement Spark usage metering
+
+---
+
+### Commercialization Implementation Sequence
+
+```
+Week 1-2: Phase 1 (Scenarios 66-70)
+         ├── Database schema (66-67)
+         ├── Subscription hooks (68-69)
+         └── Beta user migration (70)
+
+Week 2-4: Phase 2 (Scenarios 71-75)
+         ├── Route guards (71)
+         ├── Module gates (72)
+         ├── Upgrade prompts (73)
+         └── Usage tracking (74-75)
+
+Week 3-4: Phase 3 (Scenarios 76-78)
+         ├── Landing page (76)
+         ├── Pricing page (77)
+         └── Signup flow (78)
+
+Week 4-6: Phase 4 (Scenarios 79-80)
+         ├── Stripe integration (79)
+         └── Admin dashboard (80)
+```
 
 ---
 
