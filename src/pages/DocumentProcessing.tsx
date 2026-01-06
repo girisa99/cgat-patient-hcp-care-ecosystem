@@ -2978,6 +2978,7 @@ export default function DocumentProcessing() {
               setActiveTab={setActiveTab}
               setShowVerificationDialog={setShowVerificationDialog}
               setPendingResult={setPendingResult}
+              setIsDataConfirmed={setIsDataConfirmed}
             />
           </TabsContent>
         </Tabs>
