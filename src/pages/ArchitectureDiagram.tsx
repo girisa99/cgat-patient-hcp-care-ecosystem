@@ -46,30 +46,24 @@ const diagramCategories = {
       { id: 'features', label: 'Features', icon: BarChart3 },
     ]
   },
-  pipelines: {
-    label: 'Pipelines',
-    icon: Workflow,
+  documentProcessing: {
+    label: 'Document Processing',
+    icon: FileText,
     diagrams: [
-      { id: 'two-stage', label: 'Two-Stage', icon: GitBranch },
-      { id: 'content-routing', label: 'Content Routing', icon: Layers },
-      { id: 'document', label: 'Document', icon: FileText },
+      { id: 'document', label: 'Architecture', icon: Layers },
+      { id: 'two-stage', label: 'Two-Stage Pipeline', icon: GitBranch },
+      { id: 'content-routing', label: 'Content Routing', icon: Workflow },
       { id: 'medical', label: 'Medical AI', icon: Eye },
-    ]
-  },
-  agents: {
-    label: 'Agents & Workflows',
-    icon: Bot,
-    diagrams: [
-      { id: 'onboarding', label: 'Onboarding', icon: Users },
+      { id: 'onboarding', label: 'Onboarding Pipeline', icon: Users },
       { id: 'sub-agents', label: 'Sub-Agents', icon: Network },
     ]
   },
   genieStudio: {
-    label: 'Genie Mind + Vibe',
+    label: 'Genie Studio',
     icon: Sparkles,
     diagrams: [
       { id: 'genie-full', label: 'Full Architecture', icon: Map },
-      { id: 'genie-architecture', label: 'Architecture', icon: Layers },
+      { id: 'genie-architecture', label: 'Recording Studio', icon: Layers },
       { id: 'genie-technical', label: 'Technical', icon: Server },
       { id: 'genie-functional', label: 'Functional', icon: Users },
       { id: 'genie-scenarios', label: 'Scenarios', icon: Target },
