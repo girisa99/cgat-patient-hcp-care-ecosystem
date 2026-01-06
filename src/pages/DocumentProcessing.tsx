@@ -2286,9 +2286,8 @@ export default function DocumentProcessing() {
         setActiveTab('patient-info');
       }
       
-      setTimeout(() => {
-        setShowSubAgentDialog(true);
-      }, 500);
+      // Show sub-agent dialog after successful save (user has verified fields)
+      setShowSubAgentDialog(true);
     } catch (err) {
       console.error('Save error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
@@ -2580,10 +2579,8 @@ export default function DocumentProcessing() {
                     await loadHistory();
                     toast.success('Medical image analysis saved to history');
                     
-                    // Trigger sub-agent recommendation dialog
-                    setTimeout(() => {
-                      setShowSubAgentDialog(true);
-                    }, 300);
+                    // Show sub-agent dialog after successful save
+                    setShowSubAgentDialog(true);
                   } catch (err) {
                     console.error('Save error:', err);
                     toast.error('Failed to save analysis');

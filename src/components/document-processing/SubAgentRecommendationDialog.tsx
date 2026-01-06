@@ -812,10 +812,9 @@ export default function SubAgentRecommendationDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Scrollable Agent List - Fixed height with proper overflow */}
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <ScrollArea className="h-full max-h-[50vh]">
-            <div className="space-y-2 py-2 pr-4">
+        {/* Scrollable Agent List - Proper scrolling with visible scrollbar */}
+        <div className="flex-1 min-h-0 overflow-y-auto max-h-[45vh] pr-1" style={{ scrollbarGutter: 'stable' }}>
+          <div className="space-y-2 py-2 pr-2">
             {/* Ready Agents Section (Universal AI + Real APIs) */}
             {suggestions.filter(a => a.readyStatus === 'ai-powered').length > 0 && (
               <div className="mb-3">
@@ -943,7 +942,6 @@ export default function SubAgentRecommendationDialog({
               </div>
             </div>
           </div>
-          </ScrollArea>
         </div>
 
         {/* Execute Mode Toggle */}
