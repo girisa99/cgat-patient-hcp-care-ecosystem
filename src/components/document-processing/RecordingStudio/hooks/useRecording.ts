@@ -87,6 +87,13 @@ export function useRecording(
   const lastChunkCountRef = useRef<number>(0);
   const isCancelledRef = useRef(false);
   
+  // CRITICAL: Store getStream in a ref to always get the latest version
+  // This prevents stale closure issues when recording mode changes
+  const getStreamRef = useRef(getStream);
+  useEffect(() => {
+    getStreamRef.current = getStream;
+  }, [getStream]);
+  
   // Use the audio mixer for dynamic audio capture
   const audioMixer = useRecordingAudioMixer();
   
@@ -246,10 +253,11 @@ export function useRecording(
     
     // Get stream dynamically at recording start time
     // This is the KEY FIX - we get fresh stream when recording starts
+    // Using ref to always get the latest getStream function
     console.log('[Recording] Getting fresh stream...');
     let stream: MediaStream | null;
     try {
-      const result = getStream();
+      const result = getStreamRef.current();
       stream = result instanceof Promise ? await result : result;
     } catch (err) {
       console.error('[Recording] Failed to get stream:', err);
@@ -497,7 +505,7 @@ export function useRecording(
         persistence.stopMonitoring();
       }
     });
-  }, [getStream, state.isRecording, startCountdown, onRecordingComplete, quality, audioMixer, enablePersistence, persistence, handleStreamHealthIssue]);
+  }, [state.isRecording, startCountdown, onRecordingComplete, quality, audioMixer, enablePersistence, persistence, handleStreamHealthIssue, maxDuration, onMaxDurationReached]);
 
   const pauseRecording = useCallback(() => {
     if (!mediaRecorderRef.current || !state.isRecording) return;
