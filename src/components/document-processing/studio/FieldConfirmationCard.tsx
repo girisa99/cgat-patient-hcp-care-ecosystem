@@ -1,13 +1,15 @@
 /**
  * Field Confirmation Card
- * Individual field display with confidence badge, inline editing, and verification
+ * Individual field display with confidence badge, inline editing, verification,
+ * and drug name suggestions for medication-related fields
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   CheckCircle, 
   AlertTriangle,
@@ -15,10 +17,23 @@ import {
   Eye,
   Brain,
   Sparkles,
-  RotateCcw
+  RotateCcw,
+  Pill,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 import type { ExtractedField } from './SmartDocumentStudio';
+
+interface DrugSuggestion {
+  name: string;
+  brandName?: string;
+  genericName?: string;
+  strength?: string;
+  dosageForm?: string;
+  manufacturer?: string;
+  ndc?: string;
+}
 
 interface FieldConfirmationCardProps {
   fieldKey: string;
@@ -28,6 +43,14 @@ interface FieldConfirmationCardProps {
   onVerify: () => void;
   onClick: () => void;
 }
+
+// Medication-related field keys that should show drug suggestions
+const MEDICATION_FIELD_KEYS = [
+  'medication', 'medication_name', 'drug', 'drug_name', 'medicine',
+  'brand_name', 'brandname', 'generic_name', 'genericname',
+  'prescription', 'rx_name', 'product_name', 'medication_1',
+  'medication_2', 'medication_3', 'current_medication'
+];
 
 export function FieldConfirmationCard({
   fieldKey,
@@ -39,13 +62,23 @@ export function FieldConfirmationCard({
 }: FieldConfirmationCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(field.value);
+  const [drugSuggestions, setDrugSuggestions] = useState<DrugSuggestion[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const isLowConfidence = field.confidence < 0.7;
   const isMediumConfidence = field.confidence >= 0.7 && field.confidence < 0.9;
   const isHighConfidence = field.confidence >= 0.9;
 
   const needsReview = isLowConfidence && !field.verified;
+  
+  // Check if this is a medication-related field
+  const isMedicationField = MEDICATION_FIELD_KEYS.some(key => 
+    fieldKey.toLowerCase().includes(key.toLowerCase())
+  );
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -54,11 +87,79 @@ export function FieldConfirmationCard({
     }
   }, [isEditing]);
 
+  // Fetch drug suggestions when editing medication fields
+  const fetchDrugSuggestions = useCallback(async (searchTerm: string) => {
+    if (!isMedicationField || searchTerm.length < 2) {
+      setDrugSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    setIsLoadingSuggestions(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('drug-lookup', {
+        body: { 
+          searchTerm,
+          searchType: 'suggestions'
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.suggestions && Array.isArray(data.suggestions)) {
+        setDrugSuggestions(data.suggestions.slice(0, 8));
+        setShowSuggestions(true);
+      } else {
+        setDrugSuggestions([]);
+      }
+    } catch (error) {
+      console.error('Error fetching drug suggestions:', error);
+      setDrugSuggestions([]);
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  }, [isMedicationField]);
+
+  // Debounced suggestion fetch
+  useEffect(() => {
+    if (isEditing && isMedicationField && editValue.length >= 2) {
+      if (suggestionTimeoutRef.current) {
+        clearTimeout(suggestionTimeoutRef.current);
+      }
+      suggestionTimeoutRef.current = setTimeout(() => {
+        fetchDrugSuggestions(editValue);
+      }, 300);
+    } else {
+      setDrugSuggestions([]);
+      setShowSuggestions(false);
+    }
+
+    return () => {
+      if (suggestionTimeoutRef.current) {
+        clearTimeout(suggestionTimeoutRef.current);
+      }
+    };
+  }, [editValue, isEditing, isMedicationField, fetchDrugSuggestions]);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleSave = () => {
     if (editValue !== field.value) {
       onUpdate(editValue);
     }
     setIsEditing(false);
+    setShowSuggestions(false);
+    setDrugSuggestions([]);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -67,6 +168,7 @@ export function FieldConfirmationCard({
     } else if (e.key === 'Escape') {
       setEditValue(field.value);
       setIsEditing(false);
+      setShowSuggestions(false);
     }
   };
 
@@ -75,6 +177,26 @@ export function FieldConfirmationCard({
       setEditValue(field.originalValue);
       onUpdate(field.originalValue);
     }
+  };
+
+  const selectSuggestion = (suggestion: DrugSuggestion) => {
+    // Build the best name from available data
+    let selectedName = suggestion.name;
+    if (suggestion.brandName && suggestion.strength) {
+      selectedName = `${suggestion.brandName} ${suggestion.strength}`;
+    } else if (suggestion.genericName && suggestion.strength) {
+      selectedName = `${suggestion.genericName} ${suggestion.strength}`;
+    } else if (suggestion.brandName) {
+      selectedName = suggestion.brandName;
+    } else if (suggestion.genericName) {
+      selectedName = suggestion.genericName;
+    }
+
+    setEditValue(selectedName);
+    onUpdate(selectedName);
+    setIsEditing(false);
+    setShowSuggestions(false);
+    setDrugSuggestions([]);
   };
 
   const getSourceIcon = () => {
@@ -104,6 +226,7 @@ export function FieldConfirmationCard({
 
   return (
     <div
+      ref={containerRef}
       className={cn(
         "relative p-3 rounded-lg border transition-all cursor-pointer",
         isActive && "ring-2 ring-primary border-primary",
@@ -136,7 +259,7 @@ export function FieldConfirmationCard({
         )}
 
         <div className="flex-1 min-w-0">
-          {/* Field Name + Source */}
+          {/* Field Name + Source + Medication Indicator */}
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-medium text-muted-foreground">
               {formatFieldName(fieldKey)}
@@ -145,20 +268,96 @@ export function FieldConfirmationCard({
               {getSourceIcon()}
               {field.source.toUpperCase()}
             </Badge>
+            {isMedicationField && (
+              <Badge variant="outline" className="text-[10px] gap-1 h-4 bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400">
+                <Pill className="h-2.5 w-2.5" />
+                Drug
+              </Badge>
+            )}
           </div>
 
-          {/* Field Value (Editable) */}
+          {/* Field Value (Editable with Suggestions) */}
           {isEditing ? (
-            <div className="flex items-center gap-2">
-              <Input
-                ref={inputRef}
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                onBlur={handleSave}
-                onKeyDown={handleKeyDown}
-                onClick={(e) => e.stopPropagation()}
-                className="h-8 text-sm"
-              />
+            <div className="relative">
+              <div className="flex items-center gap-2">
+                <Input
+                  ref={inputRef}
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  onBlur={() => {
+                    // Delay to allow suggestion click
+                    setTimeout(() => {
+                      if (!showSuggestions) {
+                        handleSave();
+                      }
+                    }, 150);
+                  }}
+                  onKeyDown={handleKeyDown}
+                  onClick={(e) => e.stopPropagation()}
+                  className="h-8 text-sm"
+                  placeholder={isMedicationField ? "Type to search medications..." : undefined}
+                />
+                {isLoadingSuggestions && (
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground absolute right-2" />
+                )}
+              </div>
+
+              {/* Drug Suggestions Dropdown */}
+              {showSuggestions && drugSuggestions.length > 0 && (
+                <div 
+                  className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <ScrollArea className="max-h-48">
+                    <div className="p-1">
+                      {drugSuggestions.map((suggestion, index) => (
+                        <button
+                          key={`${suggestion.name}-${index}`}
+                          className="w-full text-left px-3 py-2 rounded-sm hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            selectSuggestion(suggestion);
+                          }}
+                        >
+                          <div className="flex items-start gap-2">
+                            <Pill className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-sm truncate">
+                                {suggestion.brandName || suggestion.genericName || suggestion.name}
+                              </div>
+                              <div className="text-xs text-muted-foreground flex flex-wrap gap-1">
+                                {suggestion.genericName && suggestion.brandName && (
+                                  <span>({suggestion.genericName})</span>
+                                )}
+                                {suggestion.strength && (
+                                  <span className="text-blue-600 dark:text-blue-400">
+                                    {suggestion.strength}
+                                  </span>
+                                )}
+                                {suggestion.dosageForm && (
+                                  <span>• {suggestion.dosageForm}</span>
+                                )}
+                              </div>
+                              {suggestion.manufacturer && (
+                                <div className="text-[10px] text-muted-foreground/70 truncate">
+                                  {suggestion.manufacturer}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              )}
+
+              {/* No suggestions found message for medication fields */}
+              {isMedicationField && !isLoadingSuggestions && editValue.length >= 2 && drugSuggestions.length === 0 && showSuggestions && (
+                <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg p-3 text-center text-sm text-muted-foreground">
+                  No matching medications found
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex items-center gap-2 group">
@@ -200,6 +399,14 @@ export function FieldConfirmationCard({
           {field.originalValue && field.value !== field.originalValue && (
             <div className="text-[10px] text-muted-foreground mt-1">
               Original: <span className="line-through">{field.originalValue}</span>
+            </div>
+          )}
+
+          {/* Low confidence hint for medication fields */}
+          {isMedicationField && isLowConfidence && !field.verified && !isEditing && (
+            <div className="text-[10px] text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
+              <Pill className="h-3 w-3" />
+              Click edit for drug name suggestions
             </div>
           )}
         </div>
