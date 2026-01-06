@@ -540,6 +540,9 @@ export function RecordingStudio({
   // Max recording duration (30 minutes default, 0 = unlimited)
   const MAX_RECORDING_DURATION = 30 * 60; // 30 minutes in seconds
   
+  // Ref to hold stopRecording to avoid circular dependency
+  const stopRecordingRef = useRef<(() => void) | null>(null);
+  
   const recording = useRecording(
     // Use the new recordingStream.getRecordingStream which handles:
     // - Background blur integration
@@ -581,10 +584,16 @@ export function RecordingStudio({
       // Max duration limit (auto-stop)
       maxDuration: MAX_RECORDING_DURATION,
       onMaxDurationReached: () => {
-        recording.stopRecording();
+        // Use ref to avoid circular dependency
+        stopRecordingRef.current?.();
       },
     }
   );
+  
+  // Update ref after recording is created
+  useEffect(() => {
+    stopRecordingRef.current = recording.stopRecording;
+  }, [recording.stopRecording]);
 
   // Connect audio elements to recording when they start playing
   // This enables dynamic audio capture - audio can be started/stopped during recording
@@ -928,6 +937,15 @@ export function RecordingStudio({
   
   // Actual recording start logic
   const proceedWithRecording = useCallback(async (mode: RecordingMode) => {
+    console.log('[RecordingStudio] proceedWithRecording called with mode:', mode);
+    console.log('[RecordingStudio] Current state:', {
+      cameraStream: !!camera.stream,
+      cameraStreamTracks: camera.stream?.getTracks().length,
+      isScreenSharing: screenShare.isSharing,
+      screenStream: !!screenShare.screenStream,
+      recordingStreamIsReady: recordingStream.isReady,
+    });
+    
     // Reset cancellation flag
     recordingCancelledRef.current = false;
     
@@ -939,12 +957,15 @@ export function RecordingStudio({
         toast.error('Screen share cancelled');
         return;
       }
+      console.log('[RecordingStudio] Screen share started successfully');
     }
     
     // Open teleprompter automatically when recording starts
     if (currentScript) {
       setTeleprompterOpen(true);
     }
+    
+    console.log('[RecordingStudio] Calling recording.startRecording()...');
     
     // Start recording (countdown handled by useRecording)
     recording.startRecording();
@@ -1044,7 +1065,7 @@ export function RecordingStudio({
       // Clear the ref after execution
       audioPlaybackTimeoutRef.current = null;
     }, countdownMs);
-  }, [recording, audioPlayback, voiceovers, music, screenShare, currentScript, ttsGeneration.lastResult, ttsAudioUrl, hasTTSAudio, selectedVoiceoverId, selectedTTSFileId, selectedMusicId]);
+  }, [recording, audioPlayback, voiceovers, music, screenShare, currentScript, ttsGeneration.lastResult, ttsAudioUrl, hasTTSAudio, selectedVoiceoverId, selectedTTSFileId, selectedMusicId, camera.stream, recordingStream.isReady]);
 
   // Pause recording - also pause ALL audio including music (but keep position for resume)
   const handlePauseRecording = useCallback(() => {
