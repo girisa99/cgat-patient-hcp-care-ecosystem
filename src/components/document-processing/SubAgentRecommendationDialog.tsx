@@ -60,9 +60,190 @@ export type { SubAgentSuggestion };
 // 'ready' = Simple agent, ready to execute  
 // 'needs-config' = Requires external API integration
 
-// Document-type specific sub-agent suggestions - UNIVERSAL for ALL document types
+// ============================================
+// SHARED/REUSABLE AGENTS - Use across multiple document types
+// ============================================
+
+const SHARED_AGENTS: Record<string, SubAgentSuggestion> = {
+  // === MEDICATION & CLINICAL AGENTS (Prescription, Patient Onboarding, Lab Results) ===
+  'ndc-lookup': {
+    id: 'ndc-lookup',
+    name: 'NDC Code Lookup Agent',
+    description: '✓ Real-time NDC lookup via FDA OpenFDA - drug codes, manufacturer, package info',
+    icon: '🔢',
+    useCase: 'ndc-lookup',
+    triggerCondition: 'When drug name is extracted',
+    architectureType: 'single',
+    readyStatus: 'ai-powered'
+  },
+  'drug-alternatives': {
+    id: 'drug-alternatives',
+    name: 'Drug Alternatives & Generics Agent',
+    description: '✓ Finds generic equivalents, therapeutic alternatives with cost comparison',
+    icon: '💊',
+    useCase: 'drug-alternatives',
+    triggerCondition: 'After drug identification',
+    architectureType: 'agentic',
+    readyStatus: 'ai-powered'
+  },
+  'efficacy-analysis': {
+    id: 'efficacy-analysis',
+    name: 'Efficacy Analysis Agent',
+    description: '🤖 AI analysis of drug effectiveness for condition, treatment outcomes, success rates',
+    icon: '📊',
+    useCase: 'efficacy-analysis',
+    triggerCondition: 'When medication + condition identified',
+    architectureType: 'agentic',
+    readyStatus: 'ai-powered'
+  },
+  'safety-profile': {
+    id: 'safety-profile',
+    name: 'Safety & Side Effects Agent',
+    description: '🤖 Comprehensive side effect analysis, warnings, contraindications, black box alerts',
+    icon: '🛡️',
+    useCase: 'safety-profile',
+    triggerCondition: 'When medication identified',
+    architectureType: 'agentic',
+    readyStatus: 'ai-powered'
+  },
+  'dosage-validation': {
+    id: 'dosage-validation',
+    name: 'Dosage & Form Validation Agent',
+    description: '✓ Validates dosage, strength, administration route, form appropriateness',
+    icon: '📐',
+    useCase: 'dosage-validation',
+    triggerCondition: 'When dosage/SIG extracted',
+    architectureType: 'single',
+    readyStatus: 'ai-powered'
+  },
+  'drug-interaction': {
+    id: 'drug-interaction',
+    name: 'Drug Interaction & Compatibility Agent',
+    description: '🤖 Checks medication interactions, food interactions, condition contraindications',
+    icon: '⚠️',
+    useCase: 'drug-interaction',
+    triggerCondition: 'When medication is identified',
+    architectureType: 'agentic',
+    readyStatus: 'ai-powered'
+  },
+  'clinical-review': {
+    id: 'clinical-review',
+    name: 'Clinical Appropriateness Agent',
+    description: '🤖 Overall clinical review: appropriateness, SIG analysis, patient factors',
+    icon: '🩺',
+    useCase: 'clinical-review',
+    triggerCondition: 'After all medication data extracted',
+    architectureType: 'agentic',
+    readyStatus: 'ai-powered'
+  },
+  'cost-analysis': {
+    id: 'cost-analysis',
+    name: 'Cost-Effectiveness Agent',
+    description: '✓ Compares brand vs generic pricing, insurance coverage, patient assistance programs',
+    icon: '💰',
+    useCase: 'cost-analysis',
+    triggerCondition: 'When alternatives identified',
+    architectureType: 'single',
+    readyStatus: 'ai-powered'
+  },
+  
+  // === VERIFICATION AGENTS (Patient Onboarding, Treatment Center, Insurance) ===
+  'npi-verification': {
+    id: 'npi-verification',
+    name: 'NPI Verification Agent',
+    description: '✓ Real-time NPI verification via NPPES Registry API',
+    icon: '✅',
+    useCase: 'npi-verification',
+    triggerCondition: 'When provider NPI is captured',
+    architectureType: 'a2a',
+    readyStatus: 'ai-powered'
+  },
+  'identity-verification-ai': {
+    id: 'identity-verification-ai',
+    name: 'Identity Verification Agent',
+    description: '🤖 AI-powered identity document validation and data extraction',
+    icon: '🆔',
+    useCase: 'identity-verification',
+    triggerCondition: 'When ID document uploaded',
+    architectureType: 'agentic',
+    readyStatus: 'ai-powered'
+  },
+  'data-validation': {
+    id: 'data-validation',
+    name: 'Data Validation Agent',
+    description: '🤖 AI validates extracted data against business rules and patterns',
+    icon: '✓',
+    useCase: 'data-validation',
+    triggerCondition: 'After data extraction',
+    architectureType: 'agentic',
+    readyStatus: 'ai-powered'
+  },
+  
+  // === INSURANCE AGENTS (Insurance, Billing, Prior Auth) ===
+  'eligibility-ai': {
+    id: 'eligibility-ai',
+    name: 'Eligibility Analysis Agent',
+    description: '🤖 AI analysis of coverage details, plan type identification, benefit interpretation',
+    icon: '📋',
+    useCase: 'eligibility-analysis',
+    triggerCondition: 'When insurance info extracted',
+    architectureType: 'agentic',
+    readyStatus: 'ai-powered'
+  },
+  'coverage-summary': {
+    id: 'coverage-summary',
+    name: 'Coverage Summary Agent',
+    description: '🤖 Generates patient-friendly coverage summary from extracted insurance data',
+    icon: '📄',
+    useCase: 'coverage-summary',
+    triggerCondition: 'After insurance data validated',
+    architectureType: 'single',
+    readyStatus: 'ai-powered'
+  },
+  
+  // === CLINICAL ANALYSIS AGENTS (Lab Results, Imaging, Patient Records) ===
+  'critical-value-alert': {
+    id: 'critical-value-alert',
+    name: 'Critical Value Alert Agent',
+    description: '🤖 AI detection of critical lab values requiring immediate attention',
+    icon: '🚨',
+    useCase: 'critical-value-alerting',
+    triggerCondition: 'When lab result contains values outside range',
+    architectureType: 'a2a',
+    readyStatus: 'ai-powered'
+  },
+  'trend-analysis': {
+    id: 'trend-analysis',
+    name: 'Clinical Trend Analysis Agent',
+    description: '🤖 AI analysis of clinical trends and patterns over time',
+    icon: '📈',
+    useCase: 'trend-analysis',
+    triggerCondition: 'When historical data available',
+    architectureType: 'agentic',
+    readyStatus: 'ai-powered'
+  },
+  'medical-summary': {
+    id: 'medical-summary',
+    name: 'Medical Summary Agent',
+    description: '🤖 Generates comprehensive medical summaries from extracted data',
+    icon: '📝',
+    useCase: 'medical-summary',
+    triggerCondition: 'After all data extracted',
+    architectureType: 'agentic',
+    readyStatus: 'ai-powered'
+  }
+};
+
+// Helper to get shared agents by IDs
+const getSharedAgents = (...ids: string[]): SubAgentSuggestion[] => 
+  ids.map(id => SHARED_AGENTS[id]).filter(Boolean);
+
+// Document-type specific sub-agent suggestions - composed from shared agents
 const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
   'insurance': [
+    SHARED_AGENTS['eligibility-ai'],
+    SHARED_AGENTS['coverage-summary'],
+    SHARED_AGENTS['data-validation'],
     {
       id: 'insurance-verification',
       name: 'Insurance Verification Agent',
@@ -73,17 +254,6 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
       architectureType: 'a2a',
       readyStatus: 'needs-config',
       requiredSetup: ['Payer API credentials (Availity, Change Healthcare)', '270/271 EDI transaction setup', 'Provider NPI registration']
-    },
-    {
-      id: 'eligibility-check',
-      name: 'Eligibility Check Agent',
-      description: 'Checks patient eligibility for specific services and procedures',
-      icon: '✅',
-      useCase: 'eligibility-check',
-      triggerCondition: 'When coverage details are extracted',
-      architectureType: 'agentic',
-      readyStatus: 'needs-config',
-      requiredSetup: ['Payer eligibility API endpoints', 'Service/CPT code mapping']
     },
     {
       id: 'benefits-verification',
@@ -109,86 +279,16 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
     }
   ],
   'prescription': [
-    {
-      id: 'ndc-lookup',
-      name: 'NDC Code Lookup Agent',
-      description: '✓ Real-time NDC lookup via FDA OpenFDA - drug codes, manufacturer, package info',
-      icon: '🔢',
-      useCase: 'ndc-lookup',
-      triggerCondition: 'When drug name is extracted',
-      architectureType: 'single',
-      readyStatus: 'ai-powered'
-    },
-    {
-      id: 'drug-alternatives',
-      name: 'Drug Alternatives & Generics Agent',
-      description: '✓ Finds generic equivalents, therapeutic alternatives with cost comparison',
-      icon: '💊',
-      useCase: 'drug-alternatives',
-      triggerCondition: 'After drug identification',
-      architectureType: 'agentic',
-      readyStatus: 'ai-powered'
-    },
-    {
-      id: 'efficacy-analysis',
-      name: 'Efficacy Analysis Agent',
-      description: '🤖 AI analysis of drug effectiveness for condition, treatment outcomes, success rates',
-      icon: '📊',
-      useCase: 'efficacy-analysis',
-      triggerCondition: 'When medication + condition identified',
-      architectureType: 'agentic',
-      readyStatus: 'ai-powered'
-    },
-    {
-      id: 'safety-profile',
-      name: 'Safety & Side Effects Agent',
-      description: '🤖 Comprehensive side effect analysis, warnings, contraindications, black box alerts',
-      icon: '🛡️',
-      useCase: 'safety-profile',
-      triggerCondition: 'When medication identified',
-      architectureType: 'agentic',
-      readyStatus: 'ai-powered'
-    },
-    {
-      id: 'dosage-validation',
-      name: 'Dosage & Form Validation Agent',
-      description: '✓ Validates dosage, strength, administration route, form appropriateness',
-      icon: '📐',
-      useCase: 'dosage-validation',
-      triggerCondition: 'When dosage/SIG extracted',
-      architectureType: 'single',
-      readyStatus: 'ai-powered'
-    },
-    {
-      id: 'drug-interaction',
-      name: 'Drug Interaction & Compatibility Agent',
-      description: '🤖 Checks medication interactions, food interactions, condition contraindications',
-      icon: '⚠️',
-      useCase: 'drug-interaction',
-      triggerCondition: 'When medication is identified',
-      architectureType: 'agentic',
-      readyStatus: 'ai-powered'
-    },
-    {
-      id: 'clinical-review',
-      name: 'Clinical Appropriateness Agent',
-      description: '🤖 Overall clinical review: appropriateness, SIG analysis, patient factors',
-      icon: '🩺',
-      useCase: 'clinical-review',
-      triggerCondition: 'After all medication data extracted',
-      architectureType: 'agentic',
-      readyStatus: 'ai-powered'
-    },
-    {
-      id: 'cost-analysis',
-      name: 'Cost-Effectiveness Agent',
-      description: '✓ Compares brand vs generic pricing, insurance coverage, patient assistance programs',
-      icon: '💰',
-      useCase: 'cost-analysis',
-      triggerCondition: 'When alternatives identified',
-      architectureType: 'single',
-      readyStatus: 'ai-powered'
-    },
+    // All medication agents - fully AI-powered
+    SHARED_AGENTS['ndc-lookup'],
+    SHARED_AGENTS['drug-alternatives'],
+    SHARED_AGENTS['efficacy-analysis'],
+    SHARED_AGENTS['safety-profile'],
+    SHARED_AGENTS['dosage-validation'],
+    SHARED_AGENTS['drug-interaction'],
+    SHARED_AGENTS['clinical-review'],
+    SHARED_AGENTS['cost-analysis'],
+    // Integration-required agents
     {
       id: 'medication-reconciliation',
       name: 'Medication Reconciliation Agent',
@@ -213,16 +313,15 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
     }
   ],
   'patient-onboarding': [
-    {
-      id: 'npi-verification',
-      name: 'NPI Verification Agent',
-      description: '✓ Real-time NPI verification via NPPES Registry API',
-      icon: '✅',
-      useCase: 'npi-verification',
-      triggerCondition: 'When provider NPI is captured',
-      architectureType: 'a2a',
-      readyStatus: 'ai-powered'
-    },
+    // Shared verification agents
+    SHARED_AGENTS['npi-verification'],
+    SHARED_AGENTS['identity-verification-ai'],
+    SHARED_AGENTS['data-validation'],
+    SHARED_AGENTS['medical-summary'],
+    // Medication agents for patient history
+    SHARED_AGENTS['drug-interaction'],
+    SHARED_AGENTS['safety-profile'],
+    // Integration-required agents
     {
       id: 'credentialing',
       name: 'Credentialing Agent',
@@ -235,11 +334,11 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
       requiredSetup: ['State licensing board APIs', 'DEA verification service', 'Hospital privilege systems']
     },
     {
-      id: 'identity-verification',
-      name: 'Identity Verification Agent',
-      description: 'Verifies patient identity via document checks',
-      icon: '🆔',
-      useCase: 'identity-verification',
+      id: 'identity-verification-biometric',
+      name: 'Biometric Identity Verification',
+      description: 'Verifies patient identity via biometric checks',
+      icon: '👤',
+      useCase: 'biometric-verification',
       triggerCondition: 'During new patient registration',
       architectureType: 'agentic',
       readyStatus: 'needs-config',
@@ -247,16 +346,13 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
     }
   ],
   'treatment-center': [
-    {
-      id: 'npi-registry',
-      name: 'NPI Registry Agent',
-      description: '✓ Real-time facility/provider NPI verification via NPPES',
-      icon: '✅',
-      useCase: 'npi-verification',
-      triggerCondition: 'When NPI captured in documents',
-      architectureType: 'a2a',
-      readyStatus: 'ai-powered'
-    },
+    // Shared verification agents
+    SHARED_AGENTS['npi-verification'],
+    SHARED_AGENTS['data-validation'],
+    SHARED_AGENTS['medical-summary'],
+    // Medication agents for treatment protocols
+    SHARED_AGENTS['drug-interaction'],
+    SHARED_AGENTS['clinical-review'],
     {
       id: 'facility-credentialing',
       name: 'Facility Credentialing Agent',
@@ -403,26 +499,14 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
     }
   ],
   'lab-results': [
-    {
-      id: 'critical-value-alert',
-      name: 'Critical Value Alert Agent',
-      description: '🤖 Universal AI (Claude → OpenAI fallback) powered critical lab value detection',
-      icon: '🚨',
-      useCase: 'critical-value-alerting',
-      triggerCondition: 'When lab result contains critical values',
-      architectureType: 'a2a',
-      readyStatus: 'ai-powered'
-    },
-    {
-      id: 'trend-analysis',
-      name: 'Lab Trend Analysis Agent',
-      description: '🤖 Universal AI (Claude → OpenAI fallback) powered lab trends and patterns analysis',
-      icon: '📈',
-      useCase: 'lab-trend-analysis',
-      triggerCondition: 'When comparing with historical results',
-      architectureType: 'agentic',
-      readyStatus: 'ai-powered'
-    }
+    // Shared clinical analysis agents
+    SHARED_AGENTS['critical-value-alert'],
+    SHARED_AGENTS['trend-analysis'],
+    SHARED_AGENTS['medical-summary'],
+    SHARED_AGENTS['clinical-review'],
+    // Medication context for lab interpretation
+    SHARED_AGENTS['drug-interaction'],
+    SHARED_AGENTS['safety-profile']
   ],
   // NEW: Missing document types with full sub-agent support
   'passport': [
