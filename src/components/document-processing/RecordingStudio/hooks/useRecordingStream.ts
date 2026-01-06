@@ -120,14 +120,25 @@ export function useRecordingStream(options: UseRecordingStreamOptions): UseRecor
   const combinedStreamRef = useRef<MediaStream | null>(null);
   const screenVideoRef = useRef<HTMLVideoElement | null>(null);
   const cameraVideoRef = useRef<HTMLVideoElement | null>(null);
+  const pipConfigRef = useRef(pipConfig);
+  
+  // Update pipConfig ref
+  useEffect(() => {
+    pipConfigRef.current = pipConfig;
+  }, [pipConfig]);
 
-  // Get the effective camera stream (blurred or normal)
+  // Get the effective camera stream (blurred or normal) - also stored in ref
   const effectiveCameraStream = useBlur && blurredStream ? blurredStream : cameraStream;
+  const effectiveCameraStreamRef = useRef(effectiveCameraStream);
+  useEffect(() => {
+    effectiveCameraStreamRef.current = effectiveCameraStream;
+  }, [effectiveCameraStream]);
 
   /**
-   * Clean up composite resources
+   * Clean up composite resources - stable reference
    */
-  const cleanup = useCallback(() => {
+  const cleanupRef = useRef<() => void>(() => {});
+  cleanupRef.current = () => {
     // Cancel animation frame
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
@@ -149,25 +160,28 @@ export function useRecordingStream(options: UseRecordingStreamOptions): UseRecor
     
     // Stop combined stream tracks (but not original tracks)
     if (combinedStreamRef.current) {
-      // Only stop canvas-generated tracks, not the original camera/screen tracks
       const canvasTracks = combinedStreamRef.current.getVideoTracks().filter(
         track => track.label.includes('canvas') || !track.label
       );
       canvasTracks.forEach(track => track.stop());
       combinedStreamRef.current = null;
     }
+  };
+  
+  const cleanup = useCallback(() => {
+    cleanupRef.current();
   }, []);
 
   /**
    * Combine screen and camera streams into a single stream with PiP
-   * Uses canvas compositing for proper overlay
+   * Uses canvas compositing for proper overlay - stable function reference
    */
   const combineStreamsWithPip = useCallback((
     screen: MediaStream,
     camera: MediaStream
   ): MediaStream => {
     // Clean up previous composite
-    cleanup();
+    cleanupRef.current();
     
     // Create canvas for compositing
     const canvas = document.createElement('canvas');
@@ -202,13 +216,16 @@ export function useRecordingStream(options: UseRecordingStreamOptions): UseRecor
       canvas.width = screenVideo.videoWidth || 1920;
       canvas.height = screenVideo.videoHeight || 1080;
 
+      // Get current pipConfig from ref
+      const currentPipConfig = pipConfigRef.current;
+      
       // Calculate PiP dimensions and position
-      const pipSize = PIP_SIZES[pipConfig.size];
+      const pipSize = PIP_SIZES[currentPipConfig.size];
       const pipWidth = pipSize.width;
       const pipHeight = pipSize.height;
       
       let pipX: number, pipY: number;
-      switch (pipConfig.position) {
+      switch (currentPipConfig.position) {
         case 'top-left':
           pipX = PIP_MARGIN;
           pipY = PIP_MARGIN;
@@ -235,7 +252,7 @@ export function useRecordingStream(options: UseRecordingStreamOptions): UseRecor
         // Draw screen (full canvas)
         ctx.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
 
-        if (pipConfig.enabled) {
+        if (currentPipConfig.enabled) {
           // Draw camera PiP with rounded corners
           ctx.save();
           
@@ -328,32 +345,47 @@ export function useRecordingStream(options: UseRecordingStreamOptions): UseRecor
     console.log('[useRecordingStream] Created composite stream with PiP');
     
     return combined;
-  }, [pipConfig, cleanup]);
+  }, []); // Empty deps - uses refs for all values
 
   /**
    * Get the recording stream - called at recording start
-   * This ensures we get a fresh stream with proper setup
+   * Uses refs to prevent stale closures - stable function reference
    */
   const getRecordingStream = useCallback(async (): Promise<MediaStream | null> => {
     setError(null);
+    
+    // Read current values from refs
+    const currentMode = modeRef.current;
+    const currentCameraStream = effectiveCameraStreamRef.current;
+    const currentScreenStream = screenStreamRef.current;
+    const currentIsScreenSharing = isScreenSharingRef.current;
+    const currentStartScreenShare = startScreenShareRef.current;
+    const currentUseBlur = useBlurRef.current;
+
+    console.log('[useRecordingStream] getRecordingStream called:', {
+      mode: currentMode,
+      hasCameraStream: !!currentCameraStream,
+      hasScreenStream: !!currentScreenStream,
+      isScreenSharing: currentIsScreenSharing,
+    });
 
     try {
-      switch (mode) {
+      switch (currentMode) {
         case 'camera': {
-          if (!effectiveCameraStream) {
+          if (!currentCameraStream) {
             throw new Error('Camera stream not available');
           }
-          console.log('[useRecordingStream] Using camera stream', useBlur ? '(blurred)' : '(normal)');
-          return effectiveCameraStream;
+          console.log('[useRecordingStream] Using camera stream', currentUseBlur ? '(blurred)' : '(normal)');
+          return currentCameraStream;
         }
 
         case 'screen': {
-          let stream = screenStream;
+          let stream = currentScreenStream;
           
           // Start screen share if not already active
-          if (!stream && !isScreenSharing) {
+          if (!stream && !currentIsScreenSharing) {
             console.log('[useRecordingStream] Starting screen share...');
-            stream = await startScreenShare();
+            stream = await currentStartScreenShare();
           }
           
           if (!stream) {
@@ -365,28 +397,28 @@ export function useRecordingStream(options: UseRecordingStreamOptions): UseRecor
         }
 
         case 'screen+camera': {
-          let screen = screenStream;
+          let screen = currentScreenStream;
           
           // Start screen share if not already active
-          if (!screen && !isScreenSharing) {
+          if (!screen && !currentIsScreenSharing) {
             console.log('[useRecordingStream] Starting screen share for screen+camera...');
-            screen = await startScreenShare();
+            screen = await currentStartScreenShare();
           }
           
           if (!screen) {
             throw new Error('Screen share cancelled or failed');
           }
           
-          if (!effectiveCameraStream) {
+          if (!currentCameraStream) {
             throw new Error('Camera stream not available for screen+camera mode');
           }
           
           console.log('[useRecordingStream] Combining screen and camera streams with PiP');
-          return combineStreamsWithPip(screen, effectiveCameraStream);
+          return combineStreamsWithPip(screen, currentCameraStream);
         }
 
         default:
-          throw new Error(`Unknown recording mode: ${mode}`);
+          throw new Error(`Unknown recording mode: ${currentMode}`);
       }
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Stream acquisition failed');
@@ -394,7 +426,7 @@ export function useRecordingStream(options: UseRecordingStreamOptions): UseRecor
       setError(error);
       return null;
     }
-  }, [mode, effectiveCameraStream, screenStream, isScreenSharing, startScreenShare, combineStreamsWithPip, useBlur]);
+  }, [combineStreamsWithPip]); // Only depends on combineStreamsWithPip which is stable
 
   // Determine if we're ready to record
   const isReady = (() => {
