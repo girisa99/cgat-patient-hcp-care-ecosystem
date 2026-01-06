@@ -10,6 +10,7 @@ import {
   GenieStudioVisualAssets
 } from '@/components/document-processing';
 import { TwoStagePipelineSVGDiagram } from '@/components/document-processing/TwoStagePipelineSVGDiagram';
+import { DocumentConfigurationReferenceDiagram } from '@/components/document-processing/DocumentConfigurationReferenceDiagram';
 import { PatientOnboardingFlowDiagram, SubAgentArchitectureDiagram, BeforeAfterArchitectureDiagram, GenieRecordingStudioArchitectureDiagram, GenieStudioTechnicalArchDiagram, GenieStudioFunctionalArchDiagram, GenieStudioScenarioMapDiagram, GenieStudioFullArchitectureDiagram } from '@/components/diagrams';
 import { Button } from '@/components/ui/button';
 // Tabs imports kept for potential future use but not needed for current category navigation
@@ -51,6 +52,7 @@ const diagramCategories = {
     icon: FileText,
     diagrams: [
       { id: 'document', label: 'Architecture', icon: Layers },
+      { id: 'doc-config', label: 'Configuration', icon: FileText },
       { id: 'two-stage', label: 'Two-Stage Pipeline', icon: GitBranch },
       { id: 'content-routing', label: 'Content Routing', icon: Workflow },
       { id: 'medical', label: 'Medical AI', icon: Eye },
@@ -134,6 +136,8 @@ const ArchitectureDiagram = () => {
         return <TwoStagePipelineSVGDiagram />;
       case 'content-routing':
         return <ContentTypeRoutingDiagram />;
+      case 'doc-config':
+        return <DocumentConfigurationReferenceDiagram />;
       case 'document':
         return <DocumentProcessingArchitectureDiagram />;
       case 'medical':
