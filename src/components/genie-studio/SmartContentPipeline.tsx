@@ -208,7 +208,7 @@ export function SmartContentPipeline({
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const simulationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Cleanup timers on unmount
+  // Cleanup timers and object URLs on unmount
   useEffect(() => {
     return () => {
       if (progressIntervalRef.current) {
@@ -217,8 +217,14 @@ export function SmartContentPipeline({
       if (simulationTimeoutRef.current) {
         clearTimeout(simulationTimeoutRef.current);
       }
+      // Revoke any object URLs to prevent memory leaks
+      uploadedFiles.forEach(file => {
+        if (file.preview) {
+          URL.revokeObjectURL(file.preview);
+        }
+      });
     };
-  }, []);
+  }, [uploadedFiles]);
 
   // Update defaults when content type changes
   const handleContentTypeChange = (newType: ContentType) => {
