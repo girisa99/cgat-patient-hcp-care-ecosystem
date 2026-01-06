@@ -28,9 +28,10 @@ const DB_NAME = 'GenieVibeRecordings';
 const DB_VERSION = 1;
 const STORE_NAME = 'recording_chunks';
 const SESSION_STORE = 'sessions';
-const CHUNK_SAVE_INTERVAL = 5000; // Save chunks every 5 seconds (more frequent for safety)
+const CHUNK_SAVE_INTERVAL = 3000; // Save chunks every 3 seconds for better reliability on long recordings
 const HEALTH_CHECK_INTERVAL = 3000; // Check stream health every 3 seconds
 const MAX_RECORDING_DURATION_MS = 3600000; // 1 hour max (browser limitation)
+const BACKUP_SAVE_THRESHOLD = 50; // Force backup save every 50 chunks (~50 seconds)
 
 export function useRecordingPersistence() {
   const dbRef = useRef<IDBDatabase | null>(null);
@@ -392,15 +393,29 @@ export function useRecordingPersistence() {
     
     // Reset saved chunk index at start of new recording
     savedChunkIndexRef.current = 0;
+    
+    // Track last backup count for periodic forced saves
+    let lastBackupChunkCount = 0;
 
     saveIntervalRef.current = window.setInterval(async () => {
       if (!autoSaveEnabled) return;
       if (!sessionIdRef.current) return;
       
       const chunks = getChunks();
-      if (chunks.length > savedChunkIndexRef.current) {
-        console.log(`[RecordingPersistence] Auto-save check: ${chunks.length} chunks, saved: ${savedChunkIndexRef.current}`);
+      const chunkCount = chunks.length;
+      
+      // Save new chunks incrementally
+      if (chunkCount > savedChunkIndexRef.current) {
+        console.log(`[RecordingPersistence] Auto-save: ${chunkCount} chunks, saved: ${savedChunkIndexRef.current}`);
         await saveChunks(chunks);
+      }
+      
+      // CRITICAL: Force a complete backup save periodically for long recordings
+      // This ensures we don't lose data even if incremental saves fail
+      if (chunkCount - lastBackupChunkCount >= BACKUP_SAVE_THRESHOLD) {
+        console.log(`[RecordingPersistence] Forcing backup save at ${chunkCount} chunks`);
+        await saveChunks(chunks, true); // Force save all
+        lastBackupChunkCount = chunkCount;
       }
     }, CHUNK_SAVE_INTERVAL);
 

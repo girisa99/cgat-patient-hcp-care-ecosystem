@@ -405,51 +405,61 @@ export function useRecording(
         recorder.onstop = async () => {
           console.log('[Recording] MediaRecorder stopped, chunks in memory:', chunksRef.current.length);
           
-          // Store session ID before it gets cleared
+          // CRITICAL: Store session ID IMMEDIATELY - don't rely on persistence.sessionInfo
+          // which may get cleared during async operations
           const currentSessionId = persistence.sessionInfo?.id;
           
-          // Don't call stopMonitoring here - it's already called in stopRecording()
-          // persistence.stopMonitoring(); 
+          // CRITICAL: Store a COPY of chunks immediately to prevent race conditions
+          // Deep copy the chunks array before any async operations
+          const finalChunks = [...chunksRef.current];
+          console.log('[Recording] Captured', finalChunks.length, 'chunks at onstop');
           
+          const duration = Math.floor((Date.now() - startTimeRef.current - pausedTimeRef.current) / 1000);
+          let success = false;
+          let finalBlob: Blob | null = null;
+          
+          // Strategy 1: Try memory chunks first (our captured copy)
+          if (finalChunks.length > 0) {
+            finalBlob = new Blob(finalChunks, { type: 'video/webm' });
+            console.log('[Recording] Created blob from memory:', finalBlob.size, 'bytes, duration:', duration, 's');
+            success = true;
+          }
+          
+          // Strategy 2: If no memory chunks, try IndexedDB recovery
+          if (!success && enablePersistence && currentSessionId) {
+            console.warn('[Recording] No chunks in memory - attempting recovery from IndexedDB');
+            try {
+              const recoveredChunks = await persistence.recoverSession(currentSessionId);
+              if (recoveredChunks.length > 0) {
+                finalBlob = new Blob(recoveredChunks, { type: 'video/webm' });
+                console.log('[Recording] Recovered from IndexedDB:', finalBlob.size, 'bytes, chunks:', recoveredChunks.length);
+                toast.success('Recording recovered from backup!');
+                success = true;
+              }
+            } catch (err) {
+              console.error('[Recording] IndexedDB recovery failed:', err);
+            }
+          }
+          
+          // Strategy 3: Last resort - check if chunksRef has anything now (might have updated async)
+          if (!success && chunksRef.current.length > 0) {
+            console.log('[Recording] Late chunk arrival detected:', chunksRef.current.length);
+            finalBlob = new Blob(chunksRef.current, { type: 'video/webm' });
+            success = true;
+          }
+          
+          // Complete the session before calling callback
           if (enablePersistence) {
             await persistence.completeSession();
           }
           
-          const duration = Math.floor((Date.now() - startTimeRef.current - pausedTimeRef.current) / 1000);
-          let success = false;
-          
-          if (chunksRef.current.length > 0) {
-            const blob = new Blob(chunksRef.current, { type: 'video/webm' });
-            console.log('[Recording] Created blob from memory:', blob.size, 'bytes, duration:', duration, 's');
-            onRecordingComplete?.(blob, duration);
-            success = true;
+          // Call completion callback
+          if (success && finalBlob && finalBlob.size > 0) {
+            onRecordingComplete?.(finalBlob, duration);
           } else {
-            console.warn('[Recording] No chunks in memory - attempting recovery from IndexedDB');
-            
-            if (enablePersistence && currentSessionId) {
-              try {
-                const recoveredChunks = await persistence.recoverSession(currentSessionId);
-                if (recoveredChunks.length > 0) {
-                  const blob = new Blob(recoveredChunks, { type: 'video/webm' });
-                  console.log('[Recording] Recovered from IndexedDB:', blob.size, 'bytes, chunks:', recoveredChunks.length);
-                  toast.success('Recording recovered from backup!');
-                  onRecordingComplete?.(blob, duration);
-                  success = true;
-                } else {
-                  console.error('[Recording] No chunks found in IndexedDB either');
-                  toast.error('Recording failed - no data captured');
-                  onRecordingComplete?.(new Blob([], { type: 'video/webm' }), duration);
-                }
-              } catch (err) {
-                console.error('[Recording] Recovery failed:', err);
-                toast.error('Recording recovery failed');
-                onRecordingComplete?.(new Blob([], { type: 'video/webm' }), duration);
-              }
-            } else {
-              console.error('[Recording] Cannot recover - no session ID');
-              toast.error('Recording failed - no data captured');
-              onRecordingComplete?.(new Blob([], { type: 'video/webm' }), duration);
-            }
+            console.error('[Recording] All recovery strategies failed - no data captured');
+            toast.error('Recording failed - no data captured. Check your camera/screen permissions.');
+            onRecordingComplete?.(new Blob([], { type: 'video/webm' }), duration);
           }
           
           // Reset session state after processing
@@ -566,16 +576,31 @@ export function useRecording(
       timerRef.current = null;
     }
 
+    // CRITICAL: Request any final data before stopping
+    if (recorder.state === 'recording') {
+      try {
+        recorder.requestData();
+        console.log('[Recording] Requested final data chunk');
+        // Give a moment for the data to arrive
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } catch (e) {
+        console.warn('[Recording] requestData not supported:', e);
+      }
+    }
+
     // CRITICAL: Force save ALL chunks before stopping monitoring
     // Do this BEFORE stopMonitoring() which resets state
     if (enablePersistence && chunksRef.current.length > 0) {
       console.log('[Recording] Force saving', chunksRef.current.length, 'chunks before stop...');
       try {
+        // Force save with override to ensure all chunks are persisted
         await persistence.saveChunks(chunksRef.current, true);
-        console.log('[Recording] Final chunks saved successfully');
+        console.log('[Recording] Final chunks saved successfully to IndexedDB');
       } catch (err) {
         console.error('[Recording] Failed to save final chunks:', err);
       }
+    } else {
+      console.warn('[Recording] No chunks to save! Chunks count:', chunksRef.current.length);
     }
 
     // Now stop monitoring (this resets some state but chunks are already saved)
@@ -584,13 +609,6 @@ export function useRecording(
     setState(prev => ({ ...prev, isRecording: false, isStopped: true }));
 
     if (recorder.state !== 'inactive') {
-      try {
-        recorder.requestData();
-        console.log('[Recording] Requested final data chunk');
-      } catch (e) {
-        console.warn('[Recording] requestData not supported:', e);
-      }
-      
       setTimeout(() => {
         try {
           if (recorder.state !== 'inactive') {
