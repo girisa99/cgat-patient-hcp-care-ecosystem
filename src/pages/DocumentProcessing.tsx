@@ -2156,12 +2156,35 @@ export default function DocumentProcessing() {
       return;
     }
     
+    // Check if document has been saved to history first (isDataConfirmed)
+    if (!isDataConfirmed) {
+      toast.error('Please confirm and save the document first', {
+        description: 'Click "Confirm & Save to History" in the Upload tab before saving medication data'
+      });
+      return;
+    }
+    
     setIsSavingMedicationData(true);
     
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
         toast.error('Please login to save');
+        setIsSavingMedicationData(false);
+        return;
+      }
+      
+      // Verify the record exists in database before updating
+      const { data: existingRecord, error: checkError } = await supabase
+        .from('document_processing_jobs')
+        .select('id')
+        .eq('id', processingResult.id)
+        .single();
+      
+      if (checkError || !existingRecord) {
+        toast.error('Document not saved to history yet', {
+          description: 'Please click "Confirm & Save to History" first'
+        });
         setIsSavingMedicationData(false);
         return;
       }
@@ -2231,7 +2254,7 @@ export default function DocumentProcessing() {
     } finally {
       setIsSavingMedicationData(false);
     }
-  }, [processingResult, searchResults, selectedNdc, selectedDose, selectedRoute, selectedFrequency, selectedDuration, calculatedQuantity, drugSearchQuery, agentFindings]);
+  }, [processingResult, searchResults, selectedNdc, selectedDose, selectedRoute, selectedFrequency, selectedDuration, calculatedQuantity, drugSearchQuery, agentFindings, isDataConfirmed]);
 
   // Handle verify and save to history - with proper image storage
   const handleVerifyAndSave = useCallback(async () => {

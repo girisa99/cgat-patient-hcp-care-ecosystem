@@ -197,10 +197,8 @@ export default function VerificationDialog({
         setActiveTab('patient-info');
       }
       
-      // Trigger sub-agent dialog after successful save
-      setTimeout(() => {
-        setShowSubAgentDialog(true);
-      }, 500);
+      // NOTE: Agent dialog is now triggered ONLY from handleVerifyAndSave in DocumentProcessing.tsx
+      // after user clicks "Confirm & Save to History" button - NOT from this verification dialog
     } catch (err) {
       console.error('Failed to save verified document:', err);
       toast.error('Failed to save document', {
