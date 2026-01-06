@@ -906,8 +906,14 @@ export function RecordingStudio({
     await proceedWithRecording(recordingMode);
   }, [recordingMode]);
 
+  // Flag to track if recording was cancelled during countdown
+  const recordingCancelledRef = useRef(false);
+  
   // Actual recording start logic
   const proceedWithRecording = useCallback(async (mode: RecordingMode) => {
+    // Reset cancellation flag
+    recordingCancelledRef.current = false;
+    
     // If screen mode, start screen share first
     if (mode !== 'camera' && !screenShare.isSharing) {
       toast.info('Select your screen to share...');
@@ -933,12 +939,16 @@ export function RecordingStudio({
     // Clear any existing timeout first
     if (audioPlaybackTimeoutRef.current) {
       clearTimeout(audioPlaybackTimeoutRef.current);
+      audioPlaybackTimeoutRef.current = null;
     }
     
     audioPlaybackTimeoutRef.current = window.setTimeout(() => {
-      // Check if recording was stopped during countdown - if so, don't play audio
-      // We need to check the recording.isRecording state at the time this runs
-      // Since we're in a timeout, we use a closure check via the recording ref
+      // CRITICAL: Check if recording was cancelled during countdown
+      if (recordingCancelledRef.current) {
+        console.log('[RecordingStudio] Recording was cancelled during countdown - NOT playing audio');
+        audioPlaybackTimeoutRef.current = null;
+        return;
+      }
       
       // Look up audio files fresh to avoid stale closures
       const ttsFileToPlay = voiceovers.find(v => v.id === selectedTTSFileId);
@@ -1008,7 +1018,7 @@ export function RecordingStudio({
         audioPlayback.playMusic(musicToPlay.url);
       }
       
-      // Start teleprompter scrolling
+      // Start teleprompter scrolling ONLY when audio starts
       setTeleprompter(prev => ({ ...prev, isScrolling: true }));
       
       // Reset word index for teleprompter
@@ -1019,18 +1029,22 @@ export function RecordingStudio({
     }, countdownMs);
   }, [recording, audioPlayback, voiceovers, music, screenShare, currentScript, ttsGeneration.lastResult, ttsAudioUrl, hasTTSAudio, selectedVoiceoverId, selectedTTSFileId, selectedMusicId]);
 
-  // Pause recording - also pause audio (but keep position for resume)
+  // Pause recording - also pause ALL audio including music (but keep position for resume)
   const handlePauseRecording = useCallback(() => {
     if (!recording.isPaused) {
-      // Pausing - pause audio (keep position)
+      // Pausing - pause ALL audio (keep position)
       audioPlayback.pauseVoiceover();
       audioPlayback.pauseTTS();
-      console.log('[RecordingStudio] Pausing recording and audio');
+      audioPlayback.pauseMusic();
+      setTeleprompter(prev => ({ ...prev, isScrolling: false }));
+      console.log('[RecordingStudio] Pausing recording and all audio (including music)');
     } else {
-      // Resuming - resume audio from where it was paused
+      // Resuming - resume ALL audio from where it was paused
       audioPlayback.resumeVoiceover();
       audioPlayback.resumeTTS();
-      console.log('[RecordingStudio] Resuming recording and audio');
+      audioPlayback.resumeMusic();
+      setTeleprompter(prev => ({ ...prev, isScrolling: true }));
+      console.log('[RecordingStudio] Resuming recording and all audio');
     }
     recording.pauseRecording();
   }, [recording, audioPlayback]);
@@ -1038,6 +1052,9 @@ export function RecordingStudio({
   // Stop recording - stop all audio and cancel pending audio playback timeout
   const handleStopRecording = useCallback(() => {
     console.log('[RecordingStudio] handleStopRecording called');
+    
+    // CRITICAL: Set cancellation flag FIRST to prevent audio from playing
+    recordingCancelledRef.current = true;
     
     // Cancel any pending audio playback timeout (important if user stops during countdown)
     if (audioPlaybackTimeoutRef.current) {

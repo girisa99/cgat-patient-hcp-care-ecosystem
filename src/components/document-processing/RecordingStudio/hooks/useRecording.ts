@@ -140,7 +140,13 @@ export function useRecording(
   }, [enablePersistence, persistence]);
 
   const startRecording = useCallback(async () => {
-    console.log('[Recording] startRecording called, stream:', stream ? 'available' : 'null', 'isRecording:', state.isRecording);
+    console.log('[Recording] startRecording called');
+    console.log('[Recording] Stream check:', {
+      hasStream: !!stream,
+      isRecording: state.isRecording,
+      videoTracks: stream?.getVideoTracks().length || 0,
+      audioTracks: stream?.getAudioTracks().length || 0,
+    });
     
     if (!stream) {
       console.error('[Recording] Cannot start recording: stream is null');
@@ -156,7 +162,6 @@ export function useRecording(
     // Validate stream has active tracks
     const videoTracks = stream.getVideoTracks();
     const audioTracks = stream.getAudioTracks();
-    console.log('[Recording] Stream tracks - video:', videoTracks.length, 'audio:', audioTracks.length);
     
     if (videoTracks.length === 0) {
       console.error('[Recording] Stream has no video tracks');
@@ -166,10 +171,18 @@ export function useRecording(
     
     // Check if video track is live
     const videoTrack = videoTracks[0];
+    console.log('[Recording] Video track state:', videoTrack.readyState, 'enabled:', videoTrack.enabled);
+    
     if (videoTrack.readyState !== 'live') {
       console.error('[Recording] Video track is not live, state:', videoTrack.readyState);
       toast.error('Camera stream ended. Please restart camera.');
       return;
+    }
+    
+    // Check if track is actually enabled
+    if (!videoTrack.enabled) {
+      console.warn('[Recording] Video track is disabled, enabling...');
+      videoTrack.enabled = true;
     }
 
     startCountdown(async () => {
@@ -309,8 +322,35 @@ export function useRecording(
           audioMixer.cleanup();
         };
 
+        // IMPORTANT: Set state FIRST before starting recorder and timer
+        // This ensures isRecording is true when the first timer tick happens
+        setState({
+          isRecording: true,
+          isPaused: false,
+          isStopped: false,
+          duration: 0,
+          recordedChunks: [],
+        });
+        
+        console.log('[Recording] State set to recording=true, starting MediaRecorder...');
+        
         // Request data frequently (every 1 second) for better persistence
-        recorder.start(1000);
+        try {
+          recorder.start(1000);
+          console.log('[Recording] MediaRecorder started successfully, state:', recorder.state);
+        } catch (startError) {
+          console.error('[Recording] MediaRecorder.start() failed:', startError);
+          toast.error('Failed to start recording. Please try again.');
+          setState({
+            isRecording: false,
+            isPaused: false,
+            isStopped: false,
+            duration: 0,
+            recordedChunks: [],
+          });
+          return;
+        }
+        
         startTimeRef.current = Date.now();
         pausedTimeRef.current = 0;
 
@@ -320,23 +360,20 @@ export function useRecording(
           persistence.startAutoSave(() => chunksRef.current);
         }
 
-        // Start timer
+        // Start timer AFTER state is set and recorder is started
         timerRef.current = window.setInterval(() => {
           setState(prev => {
             if (prev.isPaused) return prev;
-            return { ...prev, duration: prev.duration + 1 };
+            const newDuration = prev.duration + 1;
+            // Log every 10 seconds to verify timer is running
+            if (newDuration % 10 === 0) {
+              console.log('[Recording] Timer tick:', newDuration, 's');
+            }
+            return { ...prev, duration: newDuration };
           });
         }, 1000);
 
-        setState({
-          isRecording: true,
-          isPaused: false,
-          isStopped: false,
-          duration: 0,
-          recordedChunks: [],
-        });
-
-        console.log('[Recording] Started with persistence enabled:', enablePersistence);
+        console.log('[Recording] Started successfully with persistence enabled:', enablePersistence);
       } catch (err) {
         console.error('[Recording] Failed to start:', err);
         audioMixer.cleanup();
