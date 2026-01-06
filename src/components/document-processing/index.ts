@@ -24,6 +24,9 @@ export { VideoEditor } from './VideoEditor';
 export { GenieStudioScriptGallery } from './GenieStudioScriptGallery';
 export { GenieStudioVisualAssets } from './GenieStudioVisualAssets';
 
+// Document Thumbnail Component
+export { DocumentThumbnail } from './DocumentThumbnail';
+
 // New Improvement Components
 export { ModelUsageAnalyticsDashboard } from './ModelUsageAnalyticsDashboard';
 export { ConfidenceVisualization } from './ConfidenceVisualization';

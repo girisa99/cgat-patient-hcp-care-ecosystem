@@ -1,12 +1,14 @@
 /**
  * VerificationDialog Component
  * Displays side-by-side document comparison for verification before saving
+ * Allows editing of extracted fields before confirming
  */
 
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
@@ -22,7 +24,10 @@ import {
   Table2,
   FileText,
   AlertTriangle,
-  Loader2
+  Loader2,
+  Pencil,
+  Check,
+  ImageOff
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -54,6 +59,41 @@ export default function VerificationDialog({
 }: VerificationDialogProps) {
   
   const [isSaving, setIsSaving] = React.useState(false);
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const [imageError, setImageError] = useState(false);
+  
+  // Handle field edit
+  const handleStartEdit = useCallback((key: string, currentValue: string) => {
+    setEditingField(key);
+    setEditValue(currentValue);
+  }, []);
+  
+  const handleSaveEdit = useCallback((key: string) => {
+    if (!pendingResult) return;
+    
+    const updatedFields = { ...pendingResult.extractedFields };
+    updatedFields[key] = {
+      ...updatedFields[key],
+      value: editValue,
+      verified: true,
+      confidence: 1.0 // User-edited fields have 100% confidence
+    };
+    
+    setPendingResult({
+      ...pendingResult,
+      extractedFields: updatedFields
+    });
+    
+    setEditingField(null);
+    setEditValue('');
+    toast.success(`Updated ${key.replace(/_/g, ' ')}`);
+  }, [pendingResult, editValue, setPendingResult]);
+  
+  const handleCancelEdit = useCallback(() => {
+    setEditingField(null);
+    setEditValue('');
+  }, []);
   
   const handleSave = async () => {
     if (!pendingResult) {
@@ -85,9 +125,9 @@ export default function VerificationDialog({
         tables: JSON.parse(JSON.stringify(pendingResult.tables || [])),
         medications: JSON.parse(JSON.stringify(pendingResult.medications || [])),
         validationResults: pendingResult.validationResults ? JSON.parse(JSON.stringify(pendingResult.validationResults)) : null,
-        // Don't store large base64 data - just reference
+        // Store thumbnail or reference, not full base64
         imageUrl: pendingResult.imageUrl?.startsWith('data:') 
-          ? `[base64:${pendingResult.imageUrl.length} chars]` 
+          ? pendingResult.imageUrl // Keep base64 for now - will be handled by storage
           : pendingResult.imageUrl,
         savedAt: new Date().toISOString(),
         verifiedBy: user.id
@@ -171,16 +211,23 @@ export default function VerificationDialog({
     }
   };
 
+  // Reset image error when dialog opens
+  React.useEffect(() => {
+    if (open) {
+      setImageError(false);
+    }
+  }, [open]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileCheck className="h-5 w-5 text-primary" />
             Verify Extracted Data
           </DialogTitle>
           <DialogDescription>
-            Please review the extracted data and compare it against the original document before saving to history.
+            Review and <strong>edit</strong> extracted fields before saving. Click on any field to update it.
           </DialogDescription>
         </DialogHeader>
         
@@ -197,12 +244,12 @@ export default function VerificationDialog({
                     <Badge variant="secondary" className="text-xs">PDF</Badge>
                   )}
                 </h4>
-                {pendingResult.imageUrl ? (
+                {pendingResult.imageUrl && !imageError ? (
                   pendingResult.imageUrl.startsWith('data:application/pdf') ? (
                     // PDF base64 data URLs don't work in iframes - show download option
                     <div className="bg-muted/30 rounded-lg border p-6">
                       <div className="flex flex-col items-center justify-center text-center space-y-3">
-                        <div className="p-3 bg-red-50 rounded-full">
+                        <div className="p-3 bg-red-50 dark:bg-red-950/30 rounded-full">
                           <FileText className="h-8 w-8 text-red-500" />
                         </div>
                         <p className="font-medium">{pendingResult.fileName}</p>
@@ -233,17 +280,21 @@ export default function VerificationDialog({
                       </div>
                     </div>
                   ) : (
-                    // Image files use img element
+                    // Image files use img element with error handling
                     <img 
                       src={pendingResult.imageUrl} 
                       alt="Original document" 
-                      className="w-full rounded border max-h-[400px] object-contain"
+                      className="w-full rounded border max-h-[400px] object-contain bg-muted/20"
+                      onError={() => setImageError(true)}
                     />
                   )
                 ) : (
-                  <div className="bg-muted rounded p-4 text-center text-muted-foreground">
-                    <FileText className="h-12 w-12 mx-auto mb-2" />
-                    <p className="text-sm">No image preview available</p>
+                  <div className="bg-muted rounded p-6 text-center text-muted-foreground">
+                    <ImageOff className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm font-medium">Image preview unavailable</p>
+                    <p className="text-xs mt-1">
+                      {pendingResult.fileName || 'Document uploaded successfully'}
+                    </p>
                     {pendingResult.rawText && (
                       <pre className="text-left text-xs mt-2 max-h-40 overflow-auto bg-background p-2 rounded">
                         {pendingResult.rawText.slice(0, 500)}...
@@ -253,15 +304,22 @@ export default function VerificationDialog({
                 )}
               </div>
               
-              {/* Extracted Fields */}
+              {/* Extracted Fields - EDITABLE */}
               <div className="border rounded-lg p-4 flex flex-col max-h-[500px]">
                 <h4 className="font-medium mb-2 flex items-center gap-2 flex-shrink-0">
                   <Table2 className="h-4 w-4" />
-                  Extracted Fields ({Object.keys(pendingResult.extractedFields).filter(k => 
-                    pendingResult.extractedFields[k]?.value && 
-                    !k.startsWith('_') && 
-                    !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(k)
-                  ).length})
+                  Extracted Fields
+                  <Badge variant="outline" className="text-xs">
+                    {Object.keys(pendingResult.extractedFields).filter(k => 
+                      pendingResult.extractedFields[k]?.value && 
+                      !k.startsWith('_') && 
+                      !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(k)
+                    ).length} fields
+                  </Badge>
+                  <Badge variant="secondary" className="text-xs ml-auto">
+                    <Pencil className="h-3 w-3 mr-1" />
+                    Click to edit
+                  </Badge>
                 </h4>
                 <ScrollArea className="flex-1 min-h-0 pr-2">
                   <div className="space-y-2 pb-2">
@@ -274,23 +332,70 @@ export default function VerificationDialog({
                       .map(([key, field]: [string, any]) => {
                         const confidence = field?.confidence || 0;
                         const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        const isEditing = editingField === key;
+                        const isLowConfidence = confidence < confidenceThreshold;
                         
                         return (
                           <div 
                             key={key} 
-                            className={`p-2 rounded border ${
-                              confidence >= confidenceThreshold ? 'bg-green-500/10 border-green-500/30' : 'bg-yellow-500/10 border-yellow-500/30'
+                            className={`p-2 rounded border transition-all ${
+                              isEditing 
+                                ? 'bg-primary/10 border-primary ring-2 ring-primary/20' 
+                                : isLowConfidence 
+                                  ? 'bg-yellow-500/10 border-yellow-500/30 hover:border-yellow-500/50 cursor-pointer' 
+                                  : 'bg-green-500/10 border-green-500/30 hover:border-green-500/50 cursor-pointer'
                             }`}
+                            onClick={() => !isEditing && handleStartEdit(key, field?.value || '')}
                           >
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between mb-1">
                               <Label className="text-xs text-muted-foreground flex items-center gap-1">
                                 {label}
+                                {isLowConfidence && (
+                                  <AlertTriangle className="h-3 w-3 text-yellow-500" />
+                                )}
                               </Label>
-                              <Badge variant={confidence >= confidenceThreshold ? 'default' : 'secondary'} className="text-[9px]">
-                                {Math.round(confidence * 100)}%
-                              </Badge>
+                              <div className="flex items-center gap-1">
+                                <Badge variant={confidence >= confidenceThreshold ? 'default' : 'secondary'} className="text-[9px]">
+                                  {Math.round(confidence * 100)}%
+                                </Badge>
+                                {!isEditing && (
+                                  <Pencil className="h-3 w-3 text-muted-foreground" />
+                                )}
+                              </div>
                             </div>
-                            <p className="font-medium text-sm">{field?.value || '—'}</p>
+                            
+                            {isEditing ? (
+                              <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                                <Input
+                                  value={editValue}
+                                  onChange={(e) => setEditValue(e.target.value)}
+                                  className="h-8 text-sm"
+                                  autoFocus
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleSaveEdit(key);
+                                    if (e.key === 'Escape') handleCancelEdit();
+                                  }}
+                                />
+                                <Button 
+                                  size="sm" 
+                                  variant="default" 
+                                  className="h-8 px-2"
+                                  onClick={() => handleSaveEdit(key)}
+                                >
+                                  <Check className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  className="h-8 px-2"
+                                  onClick={handleCancelEdit}
+                                >
+                                  ✕
+                                </Button>
+                              </div>
+                            ) : (
+                              <p className="font-medium text-sm">{field?.value || '—'}</p>
+                            )}
                           </div>
                         );
                       })}
@@ -298,6 +403,16 @@ export default function VerificationDialog({
                 </ScrollArea>
               </div>
             </div>
+            
+            {/* Low confidence warning */}
+            {Object.values(pendingResult.extractedFields).some((f: any) => f?.confidence && f.confidence < confidenceThreshold) && (
+              <Alert className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20">
+                <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                <AlertDescription className="text-yellow-800 dark:text-yellow-200">
+                  Some fields have low confidence scores. Please review and edit them before saving.
+                </AlertDescription>
+              </Alert>
+            )}
             
             {/* Validation Summary */}
             {pendingResult.validationResults && (
