@@ -28,20 +28,22 @@ const DB_NAME = 'GenieVibeRecordings';
 const DB_VERSION = 1;
 const STORE_NAME = 'recording_chunks';
 const SESSION_STORE = 'sessions';
-const CHUNK_SAVE_INTERVAL = 10000; // Save chunks every 10 seconds
+const CHUNK_SAVE_INTERVAL = 5000; // Save chunks every 5 seconds (more frequent for safety)
 const HEALTH_CHECK_INTERVAL = 3000; // Check stream health every 3 seconds
 const MAX_RECORDING_DURATION_MS = 3600000; // 1 hour max (browser limitation)
 
 export function useRecordingPersistence() {
   const dbRef = useRef<IDBDatabase | null>(null);
   const sessionIdRef = useRef<string | null>(null);
-  const chunksToSaveRef = useRef<Blob[]>([]);
+  const savedChunkIndexRef = useRef<number>(0); // Track last saved chunk index
   const saveIntervalRef = useRef<number | null>(null);
   const healthCheckIntervalRef = useRef<number | null>(null);
   const lastChunkTimeRef = useRef<number>(Date.now());
   const visibilityHandlerRef = useRef<(() => void) | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const isSavingRef = useRef<boolean>(false); // Prevent concurrent saves
+  const getChunksFnRef = useRef<(() => Blob[]) | null>(null); // Store getChunks function
   
   const [isStreamHealthy, setIsStreamHealthy] = useState(true);
   const [sessionInfo, setSessionInfo] = useState<RecordingSession | null>(null);
@@ -119,49 +121,109 @@ export function useRecordingPersistence() {
     });
   }, [initDB]);
 
-  // Save chunks to IndexedDB
-  const saveChunks = useCallback(async (chunks: Blob[], force = false) => {
-    if (chunks.length === 0) return;
-    if (!sessionIdRef.current) return;
+  // Save chunks to IndexedDB - with proper error handling and deduplication
+  const saveChunks = useCallback(async (chunks: Blob[], force = false): Promise<boolean> => {
+    if (chunks.length === 0) return true;
+    if (!sessionIdRef.current) {
+      console.warn('[RecordingPersistence] No session ID, cannot save chunks');
+      return false;
+    }
+    
+    // Prevent concurrent saves (unless forced)
+    if (isSavingRef.current && !force) {
+      console.log('[RecordingPersistence] Save already in progress, skipping');
+      return false;
+    }
+
+    isSavingRef.current = true;
+    const startIndex = savedChunkIndexRef.current;
+    const newChunks = chunks.slice(startIndex);
+    
+    if (newChunks.length === 0) {
+      isSavingRef.current = false;
+      return true;
+    }
+
+    console.log(`[RecordingPersistence] Saving chunks ${startIndex} to ${chunks.length - 1} (${newChunks.length} new)`);
 
     try {
       const db = await initDB();
-      const transaction = db.transaction([STORE_NAME, SESSION_STORE], 'readwrite');
-      const chunkStore = transaction.objectStore(STORE_NAME);
-      const sessionStore = transaction.objectStore(SESSION_STORE);
+      
+      return new Promise((resolve) => {
+        const transaction = db.transaction([STORE_NAME, SESSION_STORE], 'readwrite');
+        const chunkStore = transaction.objectStore(STORE_NAME);
+        const sessionStore = transaction.objectStore(SESSION_STORE);
 
-      // Save each chunk
-      let savedCount = 0;
-      for (let i = 0; i < chunks.length; i++) {
-        const chunk = chunks[i];
-        const chunkData = {
-          id: `${sessionIdRef.current}_chunk_${Date.now()}_${i}`,
-          sessionId: sessionIdRef.current,
-          data: chunk,
-          timestamp: Date.now(),
-          size: chunk.size
-        };
-        chunkStore.add(chunkData);
-        savedCount++;
-      }
-
-      // Update session info
-      const sessionRequest = sessionStore.get(sessionIdRef.current);
-      sessionRequest.onsuccess = () => {
-        const session = sessionRequest.result as RecordingSession;
-        if (session) {
-          session.lastSaveTime = Date.now();
-          session.chunkCount += savedCount;
-          session.duration = Math.floor((Date.now() - session.startTime) / 1000);
-          sessionStore.put(session);
-          setSessionInfo(session);
+        let savedCount = 0;
+        const sessionId = sessionIdRef.current!;
+        
+        // Save each new chunk with unique ID based on index
+        for (let i = 0; i < newChunks.length; i++) {
+          const chunk = newChunks[i];
+          const globalIndex = startIndex + i;
+          const chunkData = {
+            id: `${sessionId}_chunk_${globalIndex}`, // Use index for stable ID
+            sessionId: sessionId,
+            data: chunk,
+            timestamp: Date.now(),
+            index: globalIndex,
+            size: chunk.size
+          };
+          
+          // Use put instead of add to handle potential duplicates
+          const request = chunkStore.put(chunkData);
+          request.onsuccess = () => {
+            savedCount++;
+          };
+          request.onerror = (e) => {
+            console.error('[RecordingPersistence] Failed to save chunk:', globalIndex, e);
+          };
         }
-      };
 
-      console.log(`[RecordingPersistence] Saved ${savedCount} chunks to IndexedDB`);
-      lastChunkTimeRef.current = Date.now();
+        transaction.oncomplete = () => {
+          // Only update saved index after successful transaction
+          savedChunkIndexRef.current = chunks.length;
+          lastChunkTimeRef.current = Date.now();
+          isSavingRef.current = false;
+          
+          // Update session info
+          const updateSession = async () => {
+            const tx = db.transaction([SESSION_STORE], 'readwrite');
+            const store = tx.objectStore(SESSION_STORE);
+            const getReq = store.get(sessionId);
+            getReq.onsuccess = () => {
+              const session = getReq.result as RecordingSession;
+              if (session) {
+                session.lastSaveTime = Date.now();
+                session.chunkCount = chunks.length;
+                session.duration = Math.floor((Date.now() - session.startTime) / 1000);
+                store.put(session);
+                setSessionInfo(session);
+              }
+            };
+          };
+          updateSession();
+          
+          console.log(`[RecordingPersistence] Successfully saved ${savedCount} chunks (total: ${chunks.length})`);
+          resolve(true);
+        };
+        
+        transaction.onerror = (e) => {
+          console.error('[RecordingPersistence] Transaction failed:', e);
+          isSavingRef.current = false;
+          resolve(false);
+        };
+        
+        transaction.onabort = (e) => {
+          console.error('[RecordingPersistence] Transaction aborted:', e);
+          isSavingRef.current = false;
+          resolve(false);
+        };
+      });
     } catch (err) {
       console.error('[RecordingPersistence] Failed to save chunks:', err);
+      isSavingRef.current = false;
+      return false;
     }
   }, [initDB]);
 
@@ -324,35 +386,44 @@ export function useRecordingPersistence() {
     if (saveIntervalRef.current) {
       clearInterval(saveIntervalRef.current);
     }
+    
+    // Store getChunks function for visibility handler
+    getChunksFnRef.current = getChunks;
+    
+    // Reset saved chunk index at start of new recording
+    savedChunkIndexRef.current = 0;
 
-    saveIntervalRef.current = window.setInterval(() => {
+    saveIntervalRef.current = window.setInterval(async () => {
       if (!autoSaveEnabled) return;
+      if (!sessionIdRef.current) return;
       
       const chunks = getChunks();
-      if (chunks.length > 0) {
-        const newChunks = chunks.slice(chunksToSaveRef.current.length);
-        if (newChunks.length > 0) {
-          saveChunks(newChunks);
-          chunksToSaveRef.current = chunks;
-        }
+      if (chunks.length > savedChunkIndexRef.current) {
+        console.log(`[RecordingPersistence] Auto-save check: ${chunks.length} chunks, saved: ${savedChunkIndexRef.current}`);
+        await saveChunks(chunks);
       }
     }, CHUNK_SAVE_INTERVAL);
 
-    console.log('[RecordingPersistence] Auto-save started');
+    console.log('[RecordingPersistence] Auto-save started (interval:', CHUNK_SAVE_INTERVAL, 'ms)');
   }, [autoSaveEnabled, saveChunks]);
+
 
   // Handle visibility changes (tab switching) - use ref to avoid dependency on sessionInfo
   const saveChunksRef = useRef(saveChunks);
   saveChunksRef.current = saveChunks;
   
   useEffect(() => {
-    const handleVisibilityChange = () => {
+    const handleVisibilityChange = async () => {
       const currentSessionInfo = sessionInfoRef.current;
       if (document.hidden && currentSessionInfo?.status === 'active') {
         console.log('[RecordingPersistence] Tab hidden during recording - saving state');
-        // Force save current chunks
-        if (chunksToSaveRef.current.length > 0) {
-          saveChunksRef.current(chunksToSaveRef.current, true);
+        // Force save current chunks using getChunks function
+        const getChunks = getChunksFnRef.current;
+        if (getChunks) {
+          const chunks = getChunks();
+          if (chunks.length > 0) {
+            await saveChunksRef.current(chunks, true);
+          }
         }
         
         toast.info('Recording continues in background. Avoid switching tabs for best quality.', {
@@ -382,7 +453,7 @@ export function useRecordingPersistence() {
     };
   }, []);
 
-  // Stop monitoring
+  // Stop monitoring - keeps session info for recovery
   const stopMonitoring = useCallback(() => {
     if (saveIntervalRef.current) {
       clearInterval(saveIntervalRef.current);
@@ -392,22 +463,26 @@ export function useRecordingPersistence() {
       clearInterval(healthCheckIntervalRef.current);
       healthCheckIntervalRef.current = null;
     }
-    sessionIdRef.current = null;
-    chunksToSaveRef.current = [];
-    setSessionInfo(null);
-    console.log('[RecordingPersistence] Monitoring stopped');
+    getChunksFnRef.current = null;
+    // DON'T reset these - they're needed for recovery and final save
+    // sessionIdRef.current = null;  
+    // savedChunkIndexRef.current = 0;
+    // setSessionInfo(null);
+    isSavingRef.current = false;
+    console.log('[RecordingPersistence] Monitoring stopped, session preserved:', sessionIdRef.current);
   }, []);
 
   // Complete session (mark as done)
   const completeSession = useCallback(async () => {
-    if (!sessionIdRef.current) return;
+    const sessionId = sessionIdRef.current;
+    if (!sessionId) return;
 
     try {
       const db = await initDB();
       const transaction = db.transaction([SESSION_STORE], 'readwrite');
       const store = transaction.objectStore(SESSION_STORE);
       
-      const request = store.get(sessionIdRef.current);
+      const request = store.get(sessionId);
       request.onsuccess = () => {
         const session = request.result as RecordingSession;
         if (session) {
@@ -417,11 +492,19 @@ export function useRecordingPersistence() {
         }
       };
 
-      console.log('[RecordingPersistence] Session completed');
+      console.log('[RecordingPersistence] Session completed:', sessionId);
     } catch (err) {
       console.error('[RecordingPersistence] Failed to complete session:', err);
     }
   }, [initDB]);
+
+  // Reset session state (call after successful recording save)
+  const resetSession = useCallback(() => {
+    sessionIdRef.current = null;
+    savedChunkIndexRef.current = 0;
+    setSessionInfo(null);
+    console.log('[RecordingPersistence] Session state reset');
+  }, []);
 
   return {
     // Session management
@@ -430,6 +513,7 @@ export function useRecordingPersistence() {
     clearSession,
     getIncompleteSessions,
     recoverSession,
+    resetSession,
     sessionInfo,
     
     // Health monitoring
