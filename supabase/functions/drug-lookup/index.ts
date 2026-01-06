@@ -190,6 +190,83 @@ serve(async (req) => {
       );
     }
 
+    // Handle suggestions request (autocomplete)
+    if (searchType === 'suggestions') {
+      try {
+        const suggestions: any[] = [];
+        
+        // Get suggestions from RxNorm spelling suggestions
+        const spellingUrl = `https://rxnav.nlm.nih.gov/REST/spellingsuggestions.json?name=${encodeURIComponent(drugName.trim())}`;
+        const spellingResponse = await fetch(spellingUrl);
+        
+        if (spellingResponse.ok) {
+          const spellingData = await spellingResponse.json();
+          const suggestionList = spellingData.suggestionGroup?.suggestionList?.suggestion || [];
+          for (const name of suggestionList.slice(0, 8)) {
+            suggestions.push({ name, source: 'rxnorm' });
+          }
+        }
+        
+        // Also try to get drug details from RxNorm approximateMatch for better results
+        const approxUrl = `https://rxnav.nlm.nih.gov/REST/approximateTerm.json?term=${encodeURIComponent(drugName.trim())}&maxEntries=8`;
+        const approxResponse = await fetch(approxUrl);
+        
+        if (approxResponse.ok) {
+          const approxData = await approxResponse.json();
+          const candidates = approxData.approximateGroup?.candidate || [];
+          for (const candidate of candidates.slice(0, 8)) {
+            if (candidate.name && !suggestions.some(s => s.name.toLowerCase() === candidate.name.toLowerCase())) {
+              suggestions.push({ 
+                name: candidate.name,
+                rxcui: candidate.rxcui,
+                source: 'rxnorm'
+              });
+            }
+          }
+        }
+        
+        // Try FDA for brand names
+        try {
+          const fdaUrl = `https://api.fda.gov/drug/ndc.json?search=brand_name:"${encodeURIComponent(drugName.trim())}"*&limit=5`;
+          const fdaResponse = await fetch(fdaUrl);
+          if (fdaResponse.ok) {
+            const fdaData = await fdaResponse.json();
+            for (const drug of (fdaData.results || []).slice(0, 5)) {
+              const existingByName = suggestions.some(s => 
+                s.name.toLowerCase() === (drug.brand_name || '').toLowerCase() ||
+                s.name.toLowerCase() === (drug.generic_name || '').toLowerCase()
+              );
+              if (!existingByName && drug.brand_name) {
+                suggestions.push({
+                  name: drug.brand_name,
+                  genericName: drug.generic_name,
+                  strength: drug.active_ingredients?.[0]?.strength,
+                  dosageForm: drug.dosage_form,
+                  manufacturer: drug.labeler_name,
+                  source: 'fda'
+                });
+              }
+            }
+          }
+        } catch (fdaError) {
+          console.error('FDA suggestions error:', fdaError);
+        }
+        
+        console.log(`✅ Found ${suggestions.length} drug suggestions for "${drugName}"`);
+        
+        return new Response(
+          JSON.stringify({ suggestions: suggestions.slice(0, 8) }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (suggestionError) {
+        console.error('Suggestion error:', suggestionError);
+        return new Response(
+          JSON.stringify({ suggestions: [] }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     // Correct spelling before lookup
     const { corrected: correctedDrugName, wasCorrected } = correctDrugNameSpelling(drugName.trim());
     const searchName = correctedDrugName;

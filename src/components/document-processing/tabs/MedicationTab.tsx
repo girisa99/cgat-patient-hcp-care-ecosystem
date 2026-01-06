@@ -2,9 +2,10 @@
  * MedicationTab Component
  * Handles drug search, NDC lookup, SIG parsing, and clinical recommendations
  * Data flows: Document Extraction → Auto-populate → User Edit → Save
+ * Enhanced with FDA-powered drug name suggestions
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +22,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Search,
   Package,
   Brain,
@@ -36,10 +42,23 @@ import {
   Save,
   FileText,
   Bot,
-  Edit3
+  Edit3,
+  ChevronDown,
+  ArrowDown,
+  Pill
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AgentFindingsDisplay } from '../AgentFindingsDisplay';
+import { supabase } from '@/integrations/supabase/client';
+
+// Drug suggestion interface for autocomplete
+interface DrugSuggestion {
+  name: string;
+  genericName?: string;
+  strength?: string;
+  dosageForm?: string;
+  manufacturer?: string;
+}
 
 interface ProcessingResult {
   id: string;
@@ -160,6 +179,102 @@ export default function MedicationTab({
   isDataConfirmed = false,
   hasPendingData = false
 }: MedicationTabProps) {
+  // State for drug suggestions autocomplete
+  const [drugSuggestions, setDrugSuggestions] = useState<DrugSuggestion[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestionTimeoutRef, setSuggestionTimeoutRef] = useState<NodeJS.Timeout | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Scroll state
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  
+  // Fetch drug suggestions from FDA/RxNorm as user types
+  const fetchDrugSuggestions = useCallback(async (query: string) => {
+    if (query.length < 2) {
+      setDrugSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    
+    setIsLoadingSuggestions(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('drug-lookup', {
+        body: { drugName: query, searchType: 'suggestions' }
+      });
+      
+      if (!error && data?.suggestions) {
+        setDrugSuggestions(data.suggestions.slice(0, 8));
+        setShowSuggestions(data.suggestions.length > 0);
+      } else {
+        setDrugSuggestions([]);
+      }
+    } catch (err) {
+      console.error('Error fetching drug suggestions:', err);
+      setDrugSuggestions([]);
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  }, []);
+  
+  // Debounced suggestion fetch
+  const handleQueryChange = useCallback((value: string) => {
+    setDrugSearchQuery(value);
+    
+    if (suggestionTimeoutRef) {
+      clearTimeout(suggestionTimeoutRef);
+    }
+    
+    const timeout = setTimeout(() => {
+      fetchDrugSuggestions(value);
+    }, 300);
+    
+    setSuggestionTimeoutRef(timeout);
+  }, [setDrugSearchQuery, fetchDrugSuggestions, suggestionTimeoutRef]);
+  
+  // Select a suggestion
+  const selectSuggestion = useCallback((suggestion: DrugSuggestion) => {
+    const fullName = suggestion.strength 
+      ? `${suggestion.name} ${suggestion.strength}` 
+      : suggestion.name;
+    setDrugSearchQuery(fullName);
+    setShowSuggestions(false);
+    setDrugSuggestions([]);
+    // Trigger search with the selected drug
+    setTimeout(() => handleDrugSearch(), 100);
+  }, [setDrugSearchQuery, handleDrugSearch]);
+  
+  // Handle scroll to bottom
+  const scrollToBottom = useCallback(() => {
+    if (scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTo({ top: scrollContainer.scrollHeight, behavior: 'smooth' });
+      }
+    }
+  }, []);
+  
+  // Check scroll position to show/hide scroll button
+  useEffect(() => {
+    const checkScroll = () => {
+      if (scrollAreaRef.current) {
+        const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+        if (scrollContainer) {
+          const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
+          setShowScrollButton(scrollHeight - scrollTop - clientHeight > 100);
+        }
+      }
+    };
+    
+    const scrollContainer = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', checkScroll);
+      checkScroll();
+      return () => scrollContainer.removeEventListener('scroll', checkScroll);
+    }
+  }, []);
+  
   // Helper to get icon based on recommendation type
   const getRecommendationIcon = (rec: { title?: string; message: string; type: string }) => {
     if (rec.title?.toLowerCase().includes('contraindication') || rec.message.toLowerCase().includes('contraindication'))
@@ -342,7 +457,7 @@ export default function MedicationTab({
       )}
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Drug Search */}
+        {/* Drug Search with Autocomplete */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -355,18 +470,99 @@ export default function MedicationTab({
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Drug Name</Label>
-              <div className="flex gap-2">
-                <Input 
-                  placeholder="e.g., Metformin, Lisinopril, Atorvastatin..." 
-                  value={drugSearchQuery}
-                  onChange={(e) => setDrugSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleDrugSearch()}
-                />
-                <Button onClick={handleDrugSearch} disabled={isSearching}>
-                  {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                </Button>
+              <Label className="flex items-center gap-2">
+                Drug Name
+                {drugSuggestions.length > 0 && (
+                  <Badge variant="outline" className="text-[10px]">
+                    FDA/RxNorm suggestions available
+                  </Badge>
+                )}
+              </Label>
+              <div className="relative">
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Input 
+                      ref={inputRef}
+                      placeholder="e.g., Metformin, Lisinopril, Atorvastatin..." 
+                      value={drugSearchQuery}
+                      onChange={(e) => handleQueryChange(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          setShowSuggestions(false);
+                          handleDrugSearch();
+                        }
+                        if (e.key === 'Escape') {
+                          setShowSuggestions(false);
+                        }
+                      }}
+                      onFocus={() => drugSuggestions.length > 0 && setShowSuggestions(true)}
+                      onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                      className="pr-8"
+                    />
+                    {isLoadingSuggestions && (
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <Button onClick={handleDrugSearch} disabled={isSearching}>
+                    {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                  </Button>
+                </div>
+                
+                {/* Drug Suggestions Dropdown */}
+                {showSuggestions && drugSuggestions.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto">
+                    <div className="p-1">
+                      <p className="px-2 py-1 text-xs text-muted-foreground font-medium flex items-center gap-1">
+                        <Pill className="h-3 w-3" />
+                        Select a medication from FDA/RxNorm
+                      </p>
+                      {drugSuggestions.map((suggestion, index) => (
+                        <button
+                          key={`${suggestion.name}-${index}`}
+                          className="w-full text-left px-3 py-2 hover:bg-muted rounded-sm flex items-start gap-2 transition-colors"
+                          onClick={() => selectSuggestion(suggestion)}
+                          type="button"
+                        >
+                          <Pill className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{suggestion.name}</p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              {suggestion.genericName && suggestion.genericName !== suggestion.name && (
+                                <span>Generic: {suggestion.genericName}</span>
+                              )}
+                              {suggestion.strength && (
+                                <Badge variant="outline" className="text-[10px] h-4">
+                                  {suggestion.strength}
+                                </Badge>
+                              )}
+                              {suggestion.dosageForm && (
+                                <span className="text-muted-foreground/70">{suggestion.dosageForm}</span>
+                              )}
+                            </div>
+                            {suggestion.manufacturer && (
+                              <p className="text-[10px] text-muted-foreground/60 truncate">
+                                Mfg: {suggestion.manufacturer}
+                              </p>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
+              {!drugSearchQuery && processingResult?.extractedFields?.['medication']?.value && (
+                <p className="text-xs text-muted-foreground">
+                  <span className="text-primary cursor-pointer hover:underline" onClick={() => {
+                    setDrugSearchQuery(processingResult.extractedFields['medication'].value);
+                    setTimeout(handleDrugSearch, 100);
+                  }}>
+                    Use extracted: "{processingResult.extractedFields['medication'].value}"
+                  </span>
+                </p>
+              )}
             </div>
 
             {/* Separate Dropdowns for Dose, Route, Frequency, Duration */}
