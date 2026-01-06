@@ -8,6 +8,8 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+export type AgentReadyStatus = 'ready' | 'needs-config' | 'ai-powered';
+
 export interface SubAgentSuggestion {
   id: string;
   name: string;
@@ -16,6 +18,8 @@ export interface SubAgentSuggestion {
   useCase: string;
   triggerCondition: string;
   architectureType: 'a2a' | 'agentic' | 'multi-agent' | 'single';
+  readyStatus?: AgentReadyStatus;
+  requiredSetup?: string[];
 }
 
 export interface AgentExecutionResult {
@@ -27,6 +31,8 @@ export interface AgentExecutionResult {
   executionTimeMs: number;
   timestamp: string;
   alerts?: Array<{ level: 'info' | 'warning' | 'error'; message: string }>;
+  aiPowered?: boolean;
+  model?: string;
 }
 
 export interface DocumentContext {
@@ -93,7 +99,9 @@ export function useAgentExecution(): UseAgentExecutionReturn {
         confidence: data?.findings?.confidence || 0.8,
         executionTimeMs,
         timestamp: new Date().toISOString(),
-        alerts: data?.findings?.alerts || []
+        alerts: data?.findings?.alerts || [],
+        aiPowered: data?.findings?.aiPowered || false,
+        model: data?.findings?.model
       };
 
       return result;
