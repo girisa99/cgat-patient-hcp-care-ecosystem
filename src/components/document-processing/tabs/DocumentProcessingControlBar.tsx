@@ -26,7 +26,8 @@ import {
   Zap, 
   Bot, 
   Settings, 
-  Plus 
+  Plus,
+  FilePlus2
 } from 'lucide-react';
 import { DocumentTypeConfig, getAllCategories, getCategoryIcon, getCategoryLabel, getDocumentTypesByCategory } from '@/config/documentTypes';
 
@@ -44,6 +45,7 @@ interface DocumentProcessingControlBarProps {
   onOpenSubAgentDialog: () => void;
   onOpenSettingsDialog: () => void;
   onOpenCustomTypeDialog: () => void;
+  onNewDocument?: () => void;
 }
 
 export function DocumentProcessingControlBar({
@@ -56,7 +58,8 @@ export function DocumentProcessingControlBar({
   setProcessingMode,
   onOpenSubAgentDialog,
   onOpenSettingsDialog,
-  onOpenCustomTypeDialog
+  onOpenCustomTypeDialog,
+  onNewDocument
 }: DocumentProcessingControlBarProps) {
   return (
     <Card className="bg-gradient-to-r from-muted/30 via-background to-muted/30">
@@ -181,6 +184,19 @@ export function DocumentProcessingControlBar({
           </div>
 
           <div className="flex-1" />
+
+          {/* New Document Button */}
+          {onNewDocument && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onNewDocument}
+              className="h-8 text-primary hover:text-primary"
+            >
+              <FilePlus2 className="h-4 w-4 mr-2" />
+              New Document
+            </Button>
+          )}
 
           {/* Settings Button */}
           <Button variant="outline" size="sm" onClick={onOpenSettingsDialog} className="h-8">
