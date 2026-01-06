@@ -567,9 +567,9 @@ export const ImprovedNodeConfigurationPanel: React.FC<NodeConfigurationPanelProp
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="openai">OpenAI</SelectItem>
-                            <SelectItem value="anthropic">Anthropic</SelectItem>
-                            <SelectItem value="google">Google</SelectItem>
-                            <SelectItem value="lovable">Lovable AI</SelectItem>
+                            <SelectItem value="anthropic">Anthropic Claude</SelectItem>
+                            <SelectItem value="google">Google Gemini</SelectItem>
+                            <SelectItem value="openai">OpenAI</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

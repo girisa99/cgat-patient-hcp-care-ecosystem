@@ -56,7 +56,7 @@ interface SubAgentRecommendationDialogProps {
 export type { SubAgentSuggestion };
 
 // Agent ready status definitions
-// 'ai-powered' = Uses Universal AI (Claude/Gemini/OpenAI), ready to execute immediately
+// 'ai-powered' = Uses Universal AI multi-model routing (Claude/Gemini/OpenAI with intelligent fallback), ready to execute immediately
 // 'ready' = Simple agent, ready to execute  
 // 'needs-config' = Requires external API integration
 
@@ -112,7 +112,7 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
     {
       id: 'drug-interaction',
       name: 'Drug Interaction Checker',
-      description: '🤖 Universal AI (Claude) + FDA drug interaction database',
+      description: '🤖 Universal AI (Claude → OpenAI fallback) + FDA drug interaction database',
       icon: '⚠️',
       useCase: 'drug-interaction',
       triggerCondition: 'When medication is identified',
@@ -122,7 +122,7 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
     {
       id: 'clinical-review',
       name: 'Clinical Review Agent',
-      description: '🤖 Universal AI (Claude) clinical appropriateness + SIG code analysis',
+      description: '🤖 Universal AI (Claude → Gemini fallback) clinical appropriateness + SIG code analysis',
       icon: '🩺',
       useCase: 'clinical-review',
       triggerCondition: 'After medication extraction',
@@ -263,7 +263,7 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
     {
       id: 'radiology-ai',
       name: 'Radiology AI Agent',
-      description: '🤖 Universal AI (Gemini) powered X-ray interpretation',
+      description: '🤖 Universal AI (Gemini → Claude fallback) powered X-ray interpretation',
       icon: '🔬',
       useCase: 'radiology-ai',
       triggerCondition: 'When X-ray image uploaded',
@@ -286,7 +286,7 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
     {
       id: 'ct-analysis',
       name: 'CT Analysis Agent',
-      description: '🤖 Universal AI (Gemini) powered CT scan interpretation',
+      description: '🤖 Universal AI (Gemini → Claude fallback) powered CT scan interpretation',
       icon: '🧠',
       useCase: 'ct-analysis',
       triggerCondition: 'When CT scan uploaded',
@@ -309,7 +309,7 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
     {
       id: 'mri-analysis',
       name: 'MRI Analysis Agent',
-      description: '🤖 Universal AI (Gemini) powered MRI interpretation',
+      description: '🤖 Universal AI (Gemini → Claude fallback) powered MRI interpretation',
       icon: '🧠',
       useCase: 'mri-analysis',
       triggerCondition: 'When MRI scan uploaded',
@@ -356,7 +356,7 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
     {
       id: 'critical-value-alert',
       name: 'Critical Value Alert Agent',
-      description: '🤖 Universal AI (Claude) powered critical lab value detection',
+      description: '🤖 Universal AI (Claude → OpenAI fallback) powered critical lab value detection',
       icon: '🚨',
       useCase: 'critical-value-alerting',
       triggerCondition: 'When lab result contains critical values',
@@ -366,7 +366,7 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
     {
       id: 'trend-analysis',
       name: 'Lab Trend Analysis Agent',
-      description: '🤖 Universal AI (Claude) powered lab trends and patterns analysis',
+      description: '🤖 Universal AI (Claude → OpenAI fallback) powered lab trends and patterns analysis',
       icon: '📈',
       useCase: 'lab-trend-analysis',
       triggerCondition: 'When comparing with historical results',
@@ -820,7 +820,7 @@ export default function SubAgentRecommendationDialog({
               <div className="mb-3">
                 <div className="flex items-center gap-2 mb-2 px-1">
                   <Sparkles className="h-3.5 w-3.5 text-green-500" />
-                  <span className="text-xs font-medium text-green-700 dark:text-green-300">Ready to Execute (Universal AI: Claude/Gemini + APIs)</span>
+                  <span className="text-xs font-medium text-green-700 dark:text-green-300">Ready to Execute (Universal AI: Claude/Gemini/OpenAI + APIs)</span>
                 </div>
                 {suggestions.filter(a => a.readyStatus === 'ai-powered').map(agent => (
                   <div
