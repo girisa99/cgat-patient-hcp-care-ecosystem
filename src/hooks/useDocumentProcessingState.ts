@@ -13,7 +13,7 @@ import {
 } from '@/config/documentTypes';
 
 // Processing stages
-export type ProcessingStage = 'idle' | 'uploading' | 'ocr' | 'extraction' | 'mapping' | 'validation' | 'complete' | 'error';
+export type ProcessingStage = 'idle' | 'uploading' | 'ocr' | 'extraction' | 'entity_extraction' | 'table_extraction' | 'mapping' | 'validation' | 'complete' | 'error';
 
 // Agent workflow types for document processing
 export type AgentWorkflowType = 'none' | 'insurance-verification' | 'prescription-processing' | 'patient-intake' | 'imaging-analysis';
