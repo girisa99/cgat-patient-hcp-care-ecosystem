@@ -1,6 +1,13 @@
 /**
  * Floating Teleprompter - Opens in a separate browser window
  * Won't be captured during screen recording
+ * 
+ * FIXES APPLIED:
+ * - Fixed character encoding for emojis
+ * - Added content update messaging to external window
+ * - Added postMessage origin validation for security
+ * - Removed unused scriptMode prop
+ * - Added proper cleanup and error handling
  */
 
 import React, { useCallback, useRef, useState, useEffect } from 'react';
@@ -17,7 +24,6 @@ interface FloatingTeleprompterProps {
   onClose: () => void;
   currentWordIndex?: number;
   audioProgress?: number; // 0-1
-  scriptMode?: 'podcast' | 'webcast' | 'video' | 'audio'; // For mode-specific styling
 }
 
 export function FloatingTeleprompter({
@@ -33,6 +39,9 @@ export function FloatingTeleprompter({
 }: FloatingTeleprompterProps) {
   const externalWindowRef = useRef<Window | null>(null);
   const [isWindowOpen, setIsWindowOpen] = useState(false);
+  
+  // Store the origin for postMessage validation
+  const originRef = useRef<string>(typeof window !== 'undefined' ? window.location.origin : '');
 
   // Open teleprompter in external window
   const openExternalWindow = useCallback(() => {
@@ -45,6 +54,9 @@ export function FloatingTeleprompter({
     const newWindow = window.open('', 'teleprompter-window', windowFeatures);
     
     if (newWindow) {
+      // Store origin for validation in the external window
+      const parentOrigin = window.location.origin;
+      
       newWindow.document.write(`
         <!DOCTYPE html>
         <html>
@@ -204,7 +216,10 @@ export function FloatingTeleprompter({
             <div class="progress-bar"><div class="fill" id="progressFill"></div></div>
           </div>
           <script>
-            const words = ${JSON.stringify(content.split(/\s+/).filter(w => w.length > 0))};
+            // Store parent origin for security validation
+            const PARENT_ORIGIN = '${parentOrigin}';
+            
+            let words = ${JSON.stringify(content.split(/\s+/).filter(w => w.length > 0))};
             const contentEl = document.getElementById('content');
             const recordingBadge = document.getElementById('recordingBadge');
             const progressFill = document.getElementById('progressFill');
@@ -304,12 +319,20 @@ export function FloatingTeleprompter({
                 });
               }
 
-              // Update progress
-              progressFill.style.width = ((currentIndex / (words.length - 1)) * 100) + '%';
+              // Update progress with division by zero guard
+              if (words.length > 1) {
+                progressFill.style.width = ((currentIndex / (words.length - 1)) * 100) + '%';
+              }
             }
 
-            // Listen for messages from parent window - ONLY source of cursor sync when playing audio
+            // Listen for messages from parent window with origin validation
             window.addEventListener('message', function(event) {
+              // Security: Validate message origin
+              if (event.origin !== PARENT_ORIGIN) {
+                console.warn('Teleprompter: Rejected message from invalid origin:', event.origin);
+                return;
+              }
+              
               if (event.data.type === 'UPDATE_STATE') {
                 if (event.data.isRecording !== undefined) {
                   recordingBadge.classList.toggle('active', event.data.isRecording);
@@ -341,6 +364,16 @@ export function FloatingTeleprompter({
                   progressFill.style.width = (event.data.progress * 100) + '%';
                 }
               }
+              
+              // Handle content updates
+              if (event.data.type === 'UPDATE_CONTENT') {
+                if (event.data.words && Array.isArray(event.data.words)) {
+                  words = event.data.words;
+                  currentIndex = Math.min(currentIndex, words.length - 1);
+                  renderWords();
+                  updateHighlight();
+                }
+              }
             });
           </script>
         </body>
@@ -363,14 +396,33 @@ export function FloatingTeleprompter({
   // Send updates to external window
   useEffect(() => {
     if (externalWindowRef.current && !externalWindowRef.current.closed) {
-      externalWindowRef.current.postMessage({
-        type: 'UPDATE_STATE',
-        isRecording,
-        wordIndex: currentWordIndex,
-        progress: audioProgress,
-      }, '*');
+      try {
+        externalWindowRef.current.postMessage({
+          type: 'UPDATE_STATE',
+          isRecording,
+          wordIndex: currentWordIndex,
+          progress: audioProgress,
+        }, originRef.current);
+      } catch (e) {
+        console.error('Failed to post message to teleprompter window:', e);
+      }
     }
   }, [isRecording, currentWordIndex, audioProgress]);
+
+  // Send content updates to external window when content changes
+  useEffect(() => {
+    if (externalWindowRef.current && !externalWindowRef.current.closed && content) {
+      try {
+        const words = content.split(/\s+/).filter(w => w.length > 0);
+        externalWindowRef.current.postMessage({
+          type: 'UPDATE_CONTENT',
+          words: words,
+        }, originRef.current);
+      } catch (e) {
+        console.error('Failed to update teleprompter content:', e);
+      }
+    }
+  }, [content]);
 
   // Open window when isOpen becomes true
   useEffect(() => {

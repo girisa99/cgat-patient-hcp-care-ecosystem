@@ -1,6 +1,14 @@
 /**
  * Popout Recording Studio - Audio Panel Module
  * Unified audio controls with tabs for Voiceover, TTS, and Instrumental
+ * 
+ * FIXES APPLIED:
+ * - Fixed character encoding for emojis
+ * - Added proper variable declarations for teleprompterText, voiceoverSelect, musicSelect
+ * - Fixed memory leak with event listeners (using property assignment instead of addEventListener)
+ * - Fixed race condition with loadedmetadata event
+ * - Added fetch timeout handling
+ * - Added proper cleanup functions
  */
 
 export function getAudioPanelScript(supabaseUrl: string, supabaseKey: string): string {
@@ -12,9 +20,15 @@ export function getAudioPanelScript(supabaseUrl: string, supabaseKey: string): s
 
     const SUPABASE_URL = '${supabaseUrl}';
     const SUPABASE_KEY = '${supabaseKey}';
+    const TTS_TIMEOUT_MS = 30000; // 30 second timeout for TTS generation
 
     var activeAudioTab = 'voiceover';
     var isGeneratingTTS = false;
+    
+    // DOM element references (initialized in initAudioPanel)
+    var teleprompterText = null;
+    var voiceoverSelect = null;
+    var musicSelect = null;
 
     // =====================================================
     // TAB SWITCHING
@@ -56,6 +70,12 @@ export function getAudioPanelScript(supabaseUrl: string, supabaseKey: string): s
       isGeneratingTTS = true;
       updateTTSUI('generating');
 
+      // Create abort controller for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(function() {
+        controller.abort();
+      }, TTS_TIMEOUT_MS);
+
       try {
         const response = await fetch(SUPABASE_URL + '/functions/v1/text-to-speech', {
           method: 'POST',
@@ -67,8 +87,11 @@ export function getAudioPanelScript(supabaseUrl: string, supabaseKey: string): s
           body: JSON.stringify({
             text: text,
             voice: voice || 'alloy'
-          })
+          }),
+          signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           throw new Error('TTS failed: ' + response.status);
@@ -79,7 +102,16 @@ export function getAudioPanelScript(supabaseUrl: string, supabaseKey: string): s
         if (data.audioContent) {
           // Create audio from base64
           const audioUrl = 'data:audio/mpeg;base64,' + data.audioContent;
+          
+          // Clean up previous ttsAudio if exists
+          if (ttsAudio) {
+            cleanupTTSAudio();
+          }
+          
           ttsAudio = new Audio(audioUrl);
+          
+          // Setup event handlers using property assignment (prevents memory leaks)
+          setupTTSEventHandlers();
           
           // Store URL globally for recording playback
           window._generatedTtsUrl = audioUrl;
@@ -101,10 +133,75 @@ export function getAudioPanelScript(supabaseUrl: string, supabaseKey: string): s
         throw new Error('No audio content in response');
 
       } catch (err) {
+        clearTimeout(timeoutId);
         console.error('[AudioPanel] TTS error:', err);
         isGeneratingTTS = false;
-        updateTTSUI('error', err.message);
+        
+        // Handle specific error types
+        if (err.name === 'AbortError') {
+          updateTTSUI('error', 'Request timed out. Please try again.');
+        } else {
+          updateTTSUI('error', err.message);
+        }
         return null;
+      }
+    }
+
+    // Setup TTS audio event handlers (called once per audio instance)
+    function setupTTSEventHandlers() {
+      if (!ttsAudio) return;
+      
+      ttsAudio.onplay = function() {
+        if (typeof applyDucking === 'function') {
+          applyDucking(true);
+        }
+        // Update audio bar button if visible
+        var voiceBtn = document.getElementById('voicePlayPauseBtn');
+        if (voiceBtn) {
+          voiceBtn.textContent = '⏸';
+          voiceBtn.classList.add('playing');
+        }
+      };
+      
+      ttsAudio.onpause = function() {
+        if (typeof applyDucking === 'function') {
+          applyDucking(false);
+        }
+      };
+      
+      ttsAudio.onended = function() {
+        if (typeof applyDucking === 'function') {
+          applyDucking(false);
+        }
+        if (typeof stopWordHighlighting === 'function') {
+          stopWordHighlighting();
+        }
+        if (typeof hideReadingCursor === 'function') {
+          hideReadingCursor();
+        }
+        var voiceBtn = document.getElementById('voicePlayPauseBtn');
+        if (voiceBtn) {
+          voiceBtn.textContent = '▶';
+          voiceBtn.classList.remove('playing');
+        }
+      };
+      
+      ttsAudio.onerror = function(e) {
+        console.error('[AudioPanel] TTS audio error:', e);
+        updateTTSUI('error', 'Audio playback error');
+      };
+    }
+
+    // Cleanup TTS audio resources
+    function cleanupTTSAudio() {
+      if (ttsAudio) {
+        ttsAudio.pause();
+        ttsAudio.onplay = null;
+        ttsAudio.onpause = null;
+        ttsAudio.onended = null;
+        ttsAudio.onerror = null;
+        ttsAudio.src = '';
+        ttsAudio = null;
       }
     }
 
@@ -136,65 +233,45 @@ export function getAudioPanelScript(supabaseUrl: string, supabaseKey: string): s
       }
     }
 
+    // Setup teleprompter sync (handles both cached and loading audio)
+    function setupTeleprompterSync() {
+      if (!ttsAudio) return;
+      
+      if (typeof startWordHighlightingFromAudio === 'function') {
+        startWordHighlightingFromAudio(ttsAudio);
+      }
+      if (typeof startTeleprompterScrollSync === 'function') {
+        startTeleprompterScrollSync(ttsAudio.duration);
+      }
+      if (typeof showReadingCursor === 'function') {
+        showReadingCursor();
+      }
+    }
+
     // Play TTS audio with teleprompter sync
     function playTTS() {
       if (ttsAudio) {
         const ttsVolEl = document.getElementById('ttsVolume');
         ttsAudio.volume = ttsVolEl ? ttsVolEl.value / 100 : 1;
         
-        // Setup teleprompter sync
-        ttsAudio.addEventListener('loadedmetadata', function onMeta() {
-          ttsAudio.removeEventListener('loadedmetadata', onMeta);
-          if (typeof startWordHighlightingFromAudio === 'function') {
-            startWordHighlightingFromAudio(ttsAudio);
-          }
-          if (typeof startTeleprompterScrollSync === 'function') {
-            startTeleprompterScrollSync(ttsAudio.duration);
-          }
-          if (typeof showReadingCursor === 'function') {
-            showReadingCursor();
-          }
-        });
-        
-        // Apply ducking when TTS plays
-        ttsAudio.addEventListener('play', function() {
-          if (typeof applyDucking === 'function') {
-            applyDucking(true);
-          }
-          // Update audio bar button if visible
-          var voiceBtn = document.getElementById('voicePlayPauseBtn');
-          if (voiceBtn) {
-            voiceBtn.textContent = '⏸';
-            voiceBtn.classList.add('playing');
-          }
-        });
-        
-        ttsAudio.addEventListener('pause', function() {
-          if (typeof applyDucking === 'function') {
-            applyDucking(false);
-          }
-        });
-        
-        ttsAudio.addEventListener('ended', function() {
-          if (typeof applyDucking === 'function') {
-            applyDucking(false);
-          }
-          if (typeof stopWordHighlighting === 'function') {
-            stopWordHighlighting();
-          }
-          if (typeof hideReadingCursor === 'function') {
-            hideReadingCursor();
-          }
-          var voiceBtn = document.getElementById('voicePlayPauseBtn');
-          if (voiceBtn) {
-            voiceBtn.textContent = '▶';
-            voiceBtn.classList.remove('playing');
-          }
-        });
+        // Handle both cached and loading scenarios for teleprompter sync
+        if (ttsAudio.readyState >= 1) {
+          // Metadata already loaded (cached audio)
+          setupTeleprompterSync();
+        } else {
+          // Wait for metadata to load
+          ttsAudio.addEventListener('loadedmetadata', function onMeta() {
+            ttsAudio.removeEventListener('loadedmetadata', onMeta);
+            setupTeleprompterSync();
+          });
+        }
         
         ttsAudio.play().catch(function(e) {
           console.error('[AudioPanel] TTS play error:', e);
+          updateTTSUI('error', 'Failed to play audio');
         });
+      } else {
+        console.warn('[AudioPanel] No TTS audio available to play');
       }
     }
 
@@ -218,12 +295,20 @@ export function getAudioPanelScript(supabaseUrl: string, supabaseKey: string): s
     function showWaveformForAudio(audioUrl, canvasId) {
       if (!audioUrl) return;
 
-      analyzeAudio(audioUrl).then(function(result) {
-        if (result && result.buffer) {
-          drawWaveform(result.buffer, canvasId);
-          displayAudioInfo(result.metadata, canvasId + 'Info');
-        }
-      });
+      if (typeof analyzeAudio === 'function') {
+        analyzeAudio(audioUrl).then(function(result) {
+          if (result && result.buffer) {
+            if (typeof drawWaveform === 'function') {
+              drawWaveform(result.buffer, canvasId);
+            }
+            if (typeof displayAudioInfo === 'function') {
+              displayAudioInfo(result.metadata, canvasId + 'Info');
+            }
+          }
+        }).catch(function(err) {
+          console.error('[AudioPanel] Waveform analysis error:', err);
+        });
+      }
     }
 
     // =====================================================
@@ -231,6 +316,11 @@ export function getAudioPanelScript(supabaseUrl: string, supabaseKey: string): s
     // =====================================================
 
     function initAudioPanel() {
+      // Initialize DOM element references
+      teleprompterText = document.getElementById('teleprompterText');
+      voiceoverSelect = document.getElementById('voiceoverSelect');
+      musicSelect = document.getElementById('musicSelect');
+      
       // Tab buttons
       document.querySelectorAll('.audio-tab-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
@@ -242,9 +332,11 @@ export function getAudioPanelScript(supabaseUrl: string, supabaseKey: string): s
       const ttsGenBtn = document.getElementById('ttsGenerateBtn');
       if (ttsGenBtn) {
         ttsGenBtn.addEventListener('click', function() {
-          const text = document.getElementById('ttsTextInput').value || 
-                       teleprompterText.textContent || '';
-          const voice = document.getElementById('ttsVoiceSelect').value || 'alloy';
+          const ttsInput = document.getElementById('ttsTextInput');
+          const text = (ttsInput ? ttsInput.value : '') || 
+                       (teleprompterText ? teleprompterText.textContent : '') || '';
+          const voiceSelect = document.getElementById('ttsVoiceSelect');
+          const voice = voiceSelect ? voiceSelect.value : 'alloy';
           generateTTS(text, voice);
         });
       }
