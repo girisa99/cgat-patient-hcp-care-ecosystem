@@ -62,6 +62,12 @@ export interface AgentFinding {
   confidence: number;
   executionTimeMs: number;
   alerts?: Array<{ level: 'info' | 'warning' | 'error'; message: string }>;
+  aiPowered?: boolean;
+  model?: string;
+  provider?: string;
+  dataSource?: string;
+  summary?: string;
+  recommendations?: string[];
 }
 
 export interface ModelRoutingInfo {
