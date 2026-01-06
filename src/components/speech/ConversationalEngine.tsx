@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { playAudioOneShot } from '@/hooks/shared/useAudioElement';
 
 interface ConversationMessage {
   id: string;
@@ -242,23 +243,23 @@ export const ConversationalEngine: React.FC<ConversationalEngineProps> = ({
     }
   };
 
-  // Play Audio
+  // Play Audio - Using consolidated utility with proper cleanup
   const playAudio = async (audioUrl: string) => {
     try {
       setIsPlaying(true);
-      const audio = new Audio(audioUrl);
       
-      audio.onended = () => setIsPlaying(false);
-      audio.onerror = () => {
-        setIsPlaying(false);
-        toast({
-          title: "Playback Error",
-          description: "Failed to play audio",
-          variant: "destructive"
-        });
-      };
-      
-      await audio.play();
+      // Use consolidated playAudioOneShot which handles cleanup automatically
+      playAudioOneShot(audioUrl, {
+        onComplete: () => setIsPlaying(false),
+        onError: () => {
+          setIsPlaying(false);
+          toast({
+            title: "Playback Error",
+            description: "Failed to play audio",
+            variant: "destructive"
+          });
+        },
+      });
     } catch (error) {
       console.error('Audio playback error:', error);
       setIsPlaying(false);

@@ -2,11 +2,13 @@
  * Audio Playback Hook - Handles voiceover, music, and TTS playback
  * Provides audio time tracking for teleprompter sync
  * Includes automatic music ducking when voice is playing
+ * Uses consolidated useAudioElement utility for proper cleanup
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import type { AudioState, AudioTabType } from '../types';
+import { createManagedAudio } from '@/hooks/shared/useAudioElement';
 
 interface AudioTimeInfo {
   currentTime: number;
@@ -54,6 +56,20 @@ export function useAudioPlayback() {
   const ttsRef = useRef<HTMLAudioElement | null>(null);
   const timeUpdateIntervalRef = useRef<number | null>(null);
   const duckTransitionRef = useRef<number | null>(null);
+  
+  // Cleanup function refs for managed audio
+  const voiceoverCleanupRef = useRef<(() => void) | null>(null);
+  const musicCleanupRef = useRef<(() => void) | null>(null);
+  const ttsCleanupRef = useRef<(() => void) | null>(null);
+
+  // Cleanup all audio on unmount
+  useEffect(() => {
+    return () => {
+      voiceoverCleanupRef.current?.();
+      musicCleanupRef.current?.();
+      ttsCleanupRef.current?.();
+    };
+  }, []);
 
   // Apply music ducking with smooth transition
   const applyDucking = useCallback((voicePlaying: boolean) => {
@@ -186,33 +202,39 @@ export function useAudioPlayback() {
     if (voiceoverRef.current) voiceoverRef.current.pause();
     if (ttsRef.current) ttsRef.current.pause();
     
-    const audio = new Audio(url);
-    audio.volume = state.voiceoverVolume / 100;
-    voiceoverRef.current = audio;
+    // Cleanup previous voiceover
+    voiceoverCleanupRef.current?.();
     
-    audio.onplay = () => {
-      console.log('[useAudioPlayback] Voiceover started playing');
-      setIsPlaying(prev => ({ ...prev, voiceover: true, tts: false }));
-      startTimeTracking(audio);
-      applyDucking(true); // Duck music when voice starts
-    };
-    audio.onpause = () => {
-      setIsPlaying(prev => ({ ...prev, voiceover: false }));
-      applyDucking(false); // Restore music volume
-    };
-    audio.onended = () => {
-      console.log('[useAudioPlayback] Voiceover ended');
-      setIsPlaying(prev => ({ ...prev, voiceover: false }));
-      stopTimeTracking();
-      applyDucking(false); // Restore music volume
-    };
-    audio.onloadedmetadata = () => {
-      console.log('[useAudioPlayback] Voiceover loaded, duration:', audio.duration);
-      setAudioTimeInfo(prev => ({ ...prev, duration: audio.duration }));
-    };
-    audio.onerror = (e) => {
-      console.error('[useAudioPlayback] Voiceover playback error:', e);
-    };
+    // Use consolidated createManagedAudio with proper readyState handling
+    const { audio, cleanup } = createManagedAudio(url, {
+      volume: state.voiceoverVolume / 100,
+      onPlay: () => {
+        console.log('[useAudioPlayback] Voiceover started playing');
+        setIsPlaying(prev => ({ ...prev, voiceover: true, tts: false }));
+        startTimeTracking(audio);
+        applyDucking(true);
+      },
+      onPause: () => {
+        setIsPlaying(prev => ({ ...prev, voiceover: false }));
+        applyDucking(false);
+      },
+      onEnded: () => {
+        console.log('[useAudioPlayback] Voiceover ended');
+        setIsPlaying(prev => ({ ...prev, voiceover: false }));
+        stopTimeTracking();
+        applyDucking(false);
+      },
+      onLoadedMetadata: (duration) => {
+        console.log('[useAudioPlayback] Voiceover loaded, duration:', duration);
+        setAudioTimeInfo(prev => ({ ...prev, duration }));
+      },
+      onError: (error) => {
+        console.error('[useAudioPlayback] Voiceover playback error:', error);
+      },
+    });
+    
+    voiceoverRef.current = audio;
+    voiceoverCleanupRef.current = cleanup;
     
     audio.play().catch((err) => {
       console.error('[useAudioPlayback] Voiceover play() failed:', err);
@@ -225,6 +247,8 @@ export function useAudioPlayback() {
       voiceoverRef.current.pause();
       voiceoverRef.current.currentTime = 0;
     }
+    voiceoverCleanupRef.current?.();
+    voiceoverCleanupRef.current = null;
     setIsPlaying(prev => ({ ...prev, voiceover: false }));
     setIsPaused(prev => ({ ...prev, voiceover: false }));
     stopTimeTracking();
@@ -304,6 +328,7 @@ export function useAudioPlayback() {
   const playTTS = useCallback((urlOrAudio: string | HTMLAudioElement) => {
     // Support both URL strings and HTMLAudioElement for backward compatibility
     let audio: HTMLAudioElement;
+    let cleanup: (() => void) | null = null;
     
     if (typeof urlOrAudio === 'string') {
       // Validate URL before creating Audio element
@@ -311,9 +336,72 @@ export function useAudioPlayback() {
         console.error('[useAudioPlayback] playTTS: Empty URL provided');
         return;
       }
-      audio = new Audio(urlOrAudio);
+      
+      // Cleanup previous TTS
+      ttsCleanupRef.current?.();
+      
+      // Use consolidated createManagedAudio with proper readyState handling
+      const managed = createManagedAudio(urlOrAudio, {
+        volume: state.ttsVolume / 100,
+        onPlay: () => {
+          console.log('[useAudioPlayback] TTS started playing');
+          setIsPlaying(prev => ({ ...prev, tts: true, voiceover: false }));
+          startTimeTracking(managed.audio);
+          applyDucking(true);
+        },
+        onPause: () => {
+          setIsPlaying(prev => ({ ...prev, tts: false }));
+          applyDucking(false);
+        },
+        onEnded: () => {
+          console.log('[useAudioPlayback] TTS ended');
+          setIsPlaying(prev => ({ ...prev, tts: false }));
+          stopTimeTracking();
+          applyDucking(false);
+        },
+        onLoadedMetadata: (duration) => {
+          console.log('[useAudioPlayback] TTS loaded, duration:', duration);
+          setAudioTimeInfo(prev => ({ ...prev, duration }));
+        },
+        onError: (error) => {
+          console.error('[useAudioPlayback] TTS playback error:', error);
+          setIsPlaying(prev => ({ ...prev, tts: false }));
+          if (error) {
+            if (error.code === 4 || error.code === 2) {
+              toast.error('Audio file not found - this TTS may need to be regenerated in GenieStudio');
+            } else {
+              toast.error('Failed to play audio: ' + (error.message || 'Unknown error'));
+            }
+          }
+        },
+      });
+      
+      audio = managed.audio;
+      cleanup = managed.cleanup;
+      ttsCleanupRef.current = cleanup;
     } else {
       audio = urlOrAudio;
+      // Legacy HTMLAudioElement passed directly - attach handlers manually
+      audio.onplay = () => {
+        console.log('[useAudioPlayback] TTS started playing');
+        setIsPlaying(prev => ({ ...prev, tts: true, voiceover: false }));
+        startTimeTracking(audio);
+        applyDucking(true);
+      };
+      audio.onpause = () => {
+        setIsPlaying(prev => ({ ...prev, tts: false }));
+        applyDucking(false);
+      };
+      audio.onended = () => {
+        console.log('[useAudioPlayback] TTS ended');
+        setIsPlaying(prev => ({ ...prev, tts: false }));
+        stopTimeTracking();
+        applyDucking(false);
+      };
+      audio.onerror = () => {
+        console.error('[useAudioPlayback] TTS playback error');
+        setIsPlaying(prev => ({ ...prev, tts: false }));
+      };
     }
     
     console.log('[useAudioPlayback] playTTS called:', typeof urlOrAudio === 'string' ? 'URL' : 'HTMLAudioElement', 
@@ -321,52 +409,10 @@ export function useAudioPlayback() {
     
     // Stop voiceover and existing TTS to prevent overlap
     if (voiceoverRef.current) voiceoverRef.current.pause();
-    if (ttsRef.current) ttsRef.current.pause();
+    if (ttsRef.current && ttsRef.current !== audio) ttsRef.current.pause();
     
     audio.volume = state.ttsVolume / 100;
     ttsRef.current = audio;
-    
-    audio.onplay = () => {
-      console.log('[useAudioPlayback] TTS started playing');
-      setIsPlaying(prev => ({ ...prev, tts: true, voiceover: false }));
-      startTimeTracking(audio);
-      applyDucking(true); // Duck music when TTS starts
-    };
-    audio.onpause = () => {
-      setIsPlaying(prev => ({ ...prev, tts: false }));
-      applyDucking(false); // Restore music volume
-    };
-    audio.onended = () => {
-      console.log('[useAudioPlayback] TTS ended');
-      setIsPlaying(prev => ({ ...prev, tts: false }));
-      stopTimeTracking();
-      applyDucking(false); // Restore music volume
-    };
-    audio.onloadedmetadata = () => {
-      console.log('[useAudioPlayback] TTS loaded, duration:', audio.duration);
-      setAudioTimeInfo(prev => ({ ...prev, duration: audio.duration }));
-    };
-    audio.onerror = (e) => {
-      console.error('[useAudioPlayback] TTS playback error:', e, 'src:', audio.src?.substring(0, 80));
-      setIsPlaying(prev => ({ ...prev, tts: false }));
-      // Try to get more error details
-      const mediaError = audio.error;
-      if (mediaError) {
-        console.error('[useAudioPlayback] MediaError code:', mediaError.code, 'message:', mediaError.message);
-        // MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED = 4 (usually 404 or invalid format)
-        // MediaError.MEDIA_ERR_NETWORK = 2 (network error)
-        if (mediaError.code === 4 || mediaError.code === 2) {
-          toast.error('Audio file not found - this TTS may need to be regenerated in GenieStudio');
-        } else {
-          toast.error('Failed to play audio: ' + (mediaError.message || 'Unknown error'));
-        }
-      }
-    };
-    
-    // Add canplay event to ensure audio is ready
-    audio.oncanplay = () => {
-      console.log('[useAudioPlayback] TTS can play, attempting playback');
-    };
     
     audio.play().then(() => {
       console.log('[useAudioPlayback] TTS play() promise resolved');
@@ -385,6 +431,8 @@ export function useAudioPlayback() {
       ttsRef.current.pause();
       ttsRef.current.currentTime = 0;
     }
+    ttsCleanupRef.current?.();
+    ttsCleanupRef.current = null;
     setIsPlaying(prev => ({ ...prev, tts: false }));
     setIsPaused(prev => ({ ...prev, tts: false }));
     stopTimeTracking();
