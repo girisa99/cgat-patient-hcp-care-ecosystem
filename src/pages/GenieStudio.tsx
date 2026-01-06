@@ -2352,17 +2352,17 @@ export default function GenieStudio() {
               <ChevronRight className="h-6 w-6" />
             </button>
 
-            {/* Slide Indicators - Matches slide order: Studio → Arc → Mind → Spark → Vibe */}
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 z-10">
+            {/* Slide Indicators - Positioned outside carousel content area */}
+            <div className="absolute -bottom-14 left-1/2 -translate-x-1/2 flex items-center gap-3 z-20">
               {['Studio', 'Arc', 'Mind', 'Spark', 'Vibe'].map((name, index) => (
                 <button
                   key={name}
                   onClick={() => handleCarouselInteraction(index)}
                   className={cn(
-                    "px-4 py-2 rounded-full text-sm font-medium transition-all",
+                    "px-4 py-2 rounded-full text-sm font-medium transition-all shadow-md",
                     currentHeroSlide === index
-                      ? "bg-white text-purple-900 shadow-lg"
-                      : "bg-white/20 text-white hover:bg-white/30"
+                      ? "bg-primary text-primary-foreground shadow-lg"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
                   )}
                 >
                   {name}
@@ -2370,6 +2370,8 @@ export default function GenieStudio() {
               ))}
             </div>
           </div>
+          {/* Spacer for slide indicators */}
+          <div className="h-16" />
         </div>
 
         {/* Genie Mind Metrics Section - Separate from Banners */}
