@@ -32,6 +32,7 @@ import { DocumentTypeConfig } from '@/config/documentTypes';
 import ProcessingOptionsPanel from '@/components/document-processing/ProcessingOptionsPanel';
 import RealTimeExtractionTracker from '@/components/document-processing/RealTimeExtractionTracker';
 import ExtractionMetricsSummary from '@/components/document-processing/ExtractionMetricsSummary';
+import { ModelRoutingPanel } from '@/components/document-processing/ModelRoutingPanel';
 import { expandAbbreviation } from '@/utils/healthcareAbbreviations';
 
 // Helper to count visible fields consistently
@@ -231,6 +232,15 @@ export default function UploadTab({
                       isHandwritten={enableHandwriting}
                     />
                   </>
+                )}
+
+                {/* Model Routing Panel - shows Stage 1 → Stage 2 pipeline details */}
+                {processingResult.stage === 'complete' && processingResult.modelRouting && (
+                  <ModelRoutingPanel
+                    routingInfo={processingResult.modelRouting}
+                    documentType={processingResult.documentType}
+                    variant="detailed"
+                  />
                 )}
 
                 {/* Extracted Fields - Editable */}

@@ -1307,6 +1307,29 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
   // Target fields are used as hints only, not forced into response
   console.log(`Total extracted fields: ${Object.keys(formMapping).length}`, formMapping);
   
+  // Build model routing info for frontend display
+  const documentCategory = getDocumentCategory(documentType || 'unknown');
+  const { config: routingConfigFinal, reason: routingReasonFinal, confidence: routingConfidenceFinal } = selectBestModel(
+    documentType || 'unknown',
+    documentCategory
+  );
+  
+  const modelRoutingInfo = {
+    primaryModel: routingConfigFinal.primaryModel,
+    modelUsed: providerUsed || routingConfigFinal.primaryModel,
+    selectionReason: routingReasonFinal,
+    confidence: routingConfidenceFinal,
+    pipelineType: pipelineTypeUsed || routingConfigFinal.pipelineType,
+    stage1Model: 'google_vision_ocr',
+    stage2Model: providerUsed || routingConfigFinal.primaryModel,
+    fallbacksAttempted: [],
+    fallbackChain: routingConfigFinal.fallbackChain,
+    processingTimeMs: 0,
+    ocrTextLength: ocrTextExtracted?.length || 0,
+    ocrConfidence: ocrConfidenceValue || 0,
+    documentCategory
+  };
+  
   return new Response(
     JSON.stringify({ 
       success: true, 
@@ -1317,7 +1340,9 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
       mappingConfidence: Object.keys(formMapping).length > 0 ? 0.85 : 0,
       documentType: documentType || 'invoice',
       providerUsed,
-      crosswalkResults
+      crosswalkResults,
+      // Include model routing info for Stage 1 → Stage 2 visibility in UI
+      modelRouting: modelRoutingInfo
     }),
     { headers: { "Content-Type": "application/json", ...corsHeaders } }
   );

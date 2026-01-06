@@ -156,6 +156,22 @@ interface ProcessingResult {
   exportStatus?: 'pending' | 'exported' | 'partial';
   exportedAt?: Date;
   exportTargets?: string[];
+  // Model routing info for Stage 1 → Stage 2 pipeline visibility
+  modelRouting?: {
+    primaryModel: 'claude' | 'gemini' | 'openai' | 'google_vision_ocr';
+    modelUsed: 'claude' | 'gemini' | 'openai' | 'google_vision_ocr';
+    selectionReason: 'explicit_config' | 'category_default' | 'content_analysis' | 'fallback';
+    confidence: number;
+    pipelineType: 'single' | 'sequential-hybrid' | 'hybrid_ocr_vision_ai' | 'vision_ai_only' | 'ocr_only' | 'vision_ai_fallback';
+    stage1Model?: 'claude' | 'gemini' | 'openai' | 'google_vision_ocr';
+    stage2Model?: 'claude' | 'gemini' | 'openai';
+    fallbacksAttempted?: ('claude' | 'gemini' | 'openai')[];
+    fallbackChain?: ('claude' | 'gemini' | 'openai')[];
+    processingTimeMs?: number;
+    ocrTextLength?: number;
+    ocrConfidence?: number;
+    documentCategory?: string;
+  };
 }
 
 interface MedicationResult {
@@ -1893,7 +1909,23 @@ export default function DocumentProcessing() {
             extractedFields[k]?.confidence < confidenceThreshold
           ).length
         },
-        processedAt: new Date()
+        processedAt: new Date(),
+        // Include model routing info for Stage 1 → Stage 2 visibility
+        modelRouting: mapResult?.modelRouting ? {
+          primaryModel: mapResult.modelRouting.primaryModel || 'gemini',
+          modelUsed: mapResult.modelRouting.modelUsed || mapResult.modelRouting.primaryModel || 'gemini',
+          selectionReason: mapResult.modelRouting.selectionReason || 'category_default',
+          confidence: mapResult.modelRouting.confidence || 0.8,
+          pipelineType: mapResult.modelRouting.pipelineType || 'hybrid_ocr_vision_ai',
+          stage1Model: mapResult.modelRouting.stage1Model || 'google_vision_ocr',
+          stage2Model: mapResult.modelRouting.stage2Model || mapResult.modelRouting.modelUsed || 'gemini',
+          fallbacksAttempted: mapResult.modelRouting.fallbacksAttempted || [],
+          fallbackChain: mapResult.modelRouting.fallbackChain || ['claude', 'openai', 'gemini'].filter(m => m !== mapResult.modelRouting.primaryModel),
+          processingTimeMs: mapResult.modelRouting.processingTimeMs,
+          ocrTextLength: mapResult.modelRouting.ocrTextLength,
+          ocrConfidence: mapResult.modelRouting.ocrConfidence,
+          documentCategory: mapResult.modelRouting.documentCategory
+        } : undefined
       };
       
       // Show verification dialog before saving to history
