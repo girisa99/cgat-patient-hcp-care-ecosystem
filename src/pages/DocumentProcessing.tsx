@@ -346,6 +346,18 @@ export default function DocumentProcessing() {
     alerts?: Array<{ level: 'info' | 'warning' | 'error'; message: string }>;
   }>>([]);
   
+  // Track if data has been confirmed and saved - controls when medication tab populates
+  const [isDataConfirmed, setIsDataConfirmed] = useState(false);
+  
+  // Store pending medication data until user confirms and saves
+  const [pendingMedicationData, setPendingMedicationData] = useState<{
+    drugName: string;
+    sigText: string;
+    baseName: string;
+    preservedStrength: string;
+    extractedFields: Record<string, { value: string; confidence: number }>;
+  } | null>(null);
+  
   // Handler for when agents complete execution in-place
   const handleAgentExecutionComplete = useCallback((results: any[]) => {
     setAgentFindings(results);
@@ -678,6 +690,10 @@ export default function DocumentProcessing() {
     setProcessingResult(null);
     setPendingResult(null);
     setAgentFindings([]);
+    
+    // Reset confirmation state for new document flow
+    setIsDataConfirmed(false);
+    setPendingMedicationData(null);
     
     // Clear medication tab state
     setDrugSearchQuery('');
@@ -1941,117 +1957,26 @@ export default function DocumentProcessing() {
           clinicalRecommendations: enableClinicalRecommendations ? [] : []
         }];
         
-        // Auto-populate drug search with extracted medication and trigger search
-        // Use the final resolved drugName (which includes fallbacks) instead of just extractedDrugName
+        // Store pending medication data for later - will be processed after user confirms and saves
+        // Data flows to Medication Lookup tab ONLY after "Confirm & Save to History"
         const finalDrugName = resolvedDrugName !== 'Unknown' ? resolvedDrugName : null;
         
         if (finalDrugName) {
-          setDrugSearchQuery(finalDrugName);
-          if (sigText && sigText !== 'Take as directed') {
-            setSigInstructions(sigText);
-          }
-          // Switch to medication tab to show user the extracted data
-          setActiveTab('medication');
-          toast.info(`Extracted medication: ${finalDrugName}`, {
-            description: 'Searching for NDC codes and clinical data...'
-          });
-          
-          // Normalize drug name for better API matching - use finalDrugName not extractedDrugName
           const { baseName, extractedStrength } = normalizeDrugName(finalDrugName);
-          // Preserve strength from OCR extraction
           const preservedStrength = extractedFields['strength']?.value || extractedStrength || '';
           
-          // Auto-trigger drug search immediately (no delay needed)
-          try {
-            const { data, error } = await supabase.functions.invoke('drug-lookup', {
-              body: { drugName: baseName, searchType: 'all' }
-            });
-            
-            if (error) throw error;
-            
-            if (data) {
-              const calculation = calculateQuantityAndDaySupply(sigText || 'Take 1 tablet daily for 30 days');
-              
-              const ndcOptions = (data.ndc || []).map((ndc: any) => ({
-                code: ndc.code,
-                name: `${ndc.brandName || ndc.genericName} ${ndc.strength}`,
-                manufacturer: ndc.manufacturer,
-                dosageForm: ndc.dosageForm,
-                country: 'USA'
-              }));
-              
-              const clinicalRecommendations: { type: 'warning' | 'info' | 'error'; title?: string; message: string }[] = [];
-              
-              if (data.isControlled) {
-                clinicalRecommendations.push({
-                  type: 'warning',
-                  title: 'Controlled Substance',
-                  message: `Schedule ${data.schedule} controlled substance - Verify patient ID and check PDMP`
-                });
-              }
-              
-              if (data.clinicalInfo) {
-                data.clinicalInfo.forEach((info: any) => {
-                  const recType = info.type === 'error' ? 'error' : 
-                                  (info.severity === 'high' ? 'warning' : 'info');
-                  clinicalRecommendations.push({
-                    type: recType as 'warning' | 'info' | 'error',
-                    title: info.title || undefined,
-                    message: info.description
-                  });
-                });
-              }
-              
-              if (clinicalRecommendations.length === 0) {
-                clinicalRecommendations.push({
-                  type: 'info',
-                  title: 'Standard Medication',
-                  message: 'No specific warnings found. Follow standard prescribing guidelines.'
-                });
-              }
-              
-              const primaryNdc = data.ndc?.[0];
-              
-              // IMPORTANT: Use preservedStrength (from OCR) instead of NDC strength
-              const autoSearchResult: MedicationResult = {
-                drugName: primaryNdc?.brandName || data.drugName || finalDrugName,
-                genericName: primaryNdc?.genericName || data.rxnorm?.[0]?.name || finalDrugName,
-                strength: preservedStrength || primaryNdc?.strength || '',
-                sig: sigText || 'Take 1 tablet daily for 30 days',
-                calculatedQuantity: calculation.totalQuantity,
-                daysSupply: calculation.daysSupply,
-                dailyDose: calculation.dailyDose,
-                ndc: primaryNdc?.code,
-                ndcOptions,
-                alternatives: (data.alternatives || []).map((alt: any) => ({
-                  name: alt.name,
-                  ndc: alt.rxcui,
-                  inStock: Math.random() > 0.3,
-                  stockQty: Math.floor(Math.random() * 500)
-                })),
-                clinicalRecommendations,
-                isControlled: data.isControlled,
-                schedule: data.schedule
-              };
-              
-              setSearchResults(autoSearchResult);
-              
-              // CRITICAL: Update medications array with the drug lookup results so they get saved to history
-              medications = [autoSearchResult];
-              
-              // Auto-select first NDC
-              if (ndcOptions.length > 0) {
-                setSelectedNdc(ndcOptions[0].code);
-              }
-              
-              const msg = ndcOptions.length > 0 || (data.rxnorm?.length > 0)
-                ? `Found ${ndcOptions.length} NDC codes + ${data.rxnorm?.length || 0} RxNorm entries`
-                : 'Clinical info loaded (no NDC matches)';
-              toast.success(msg);
-            }
-          } catch (err) {
-            console.error('Auto drug search error:', err);
-          }
+          // Store pending data - will be used after confirmation
+          setPendingMedicationData({
+            drugName: finalDrugName,
+            sigText: sigText,
+            baseName: baseName,
+            preservedStrength: preservedStrength,
+            extractedFields: extractedFields
+          });
+          
+          toast.info(`Extracted medication: ${finalDrugName}`, {
+            description: 'Review and confirm to populate Medication Lookup'
+          });
         }
       }
 
@@ -2416,6 +2341,118 @@ export default function DocumentProcessing() {
       
       toast.success('Saved to history');
       
+      // Mark data as confirmed - this controls when Medication Lookup populates
+      setIsDataConfirmed(true);
+      
+      // Now process pending medication data and populate Medication Lookup tab
+      if (pendingMedicationData && (selectedDocType === 'prescription' || selectedDocType.includes('medication'))) {
+        const { drugName, sigText, baseName, preservedStrength } = pendingMedicationData;
+        
+        // Set drug search query and SIG instructions
+        setDrugSearchQuery(drugName);
+        if (sigText && sigText !== 'Take as directed') {
+          setSigInstructions(sigText);
+        }
+        
+        // Parse SIG to populate selectors
+        parseSigToSelectors(sigText);
+        
+        // Switch to medication tab
+        setActiveTab('medication');
+        
+        toast.info(`Processing medication: ${drugName}`, {
+          description: 'Searching for NDC codes and clinical data...'
+        });
+        
+        // Trigger drug search with verified data
+        try {
+          const { data, error } = await supabase.functions.invoke('drug-lookup', {
+            body: { drugName: baseName, searchType: 'all' }
+          });
+          
+          if (!error && data) {
+            const calculation = calculateQuantityAndDaySupply(sigText || 'Take 1 tablet daily for 30 days');
+            
+            const ndcOptions = (data.ndc || []).map((ndc: any) => ({
+              code: ndc.code,
+              name: `${ndc.brandName || ndc.genericName} ${ndc.strength}`,
+              manufacturer: ndc.manufacturer,
+              dosageForm: ndc.dosageForm,
+              country: 'USA'
+            }));
+            
+            const clinicalRecommendations: { type: 'warning' | 'info' | 'error'; title?: string; message: string }[] = [];
+            
+            if (data.isControlled) {
+              clinicalRecommendations.push({
+                type: 'warning',
+                title: 'Controlled Substance',
+                message: `Schedule ${data.schedule} controlled substance - Verify patient ID and check PDMP`
+              });
+            }
+            
+            if (data.clinicalInfo) {
+              data.clinicalInfo.forEach((info: any) => {
+                const recType = info.type === 'error' ? 'error' : 
+                                (info.severity === 'high' ? 'warning' : 'info');
+                clinicalRecommendations.push({
+                  type: recType as 'warning' | 'info' | 'error',
+                  title: info.title || undefined,
+                  message: info.description
+                });
+              });
+            }
+            
+            if (clinicalRecommendations.length === 0) {
+              clinicalRecommendations.push({
+                type: 'info',
+                title: 'Standard Medication',
+                message: 'No specific warnings found. Follow standard prescribing guidelines.'
+              });
+            }
+            
+            const primaryNdc = data.ndc?.[0];
+            
+            const autoSearchResult: MedicationResult = {
+              drugName: primaryNdc?.brandName || data.drugName || drugName,
+              genericName: primaryNdc?.genericName || data.rxnorm?.[0]?.name || drugName,
+              strength: preservedStrength || primaryNdc?.strength || '',
+              sig: sigText || 'Take 1 tablet daily for 30 days',
+              calculatedQuantity: calculation.totalQuantity,
+              daysSupply: calculation.daysSupply,
+              dailyDose: calculation.dailyDose,
+              ndc: primaryNdc?.code,
+              ndcOptions,
+              alternatives: (data.alternatives || []).map((alt: any) => ({
+                name: alt.name,
+                ndc: alt.rxcui,
+                inStock: Math.random() > 0.3,
+                stockQty: Math.floor(Math.random() * 500)
+              })),
+              clinicalRecommendations,
+              isControlled: data.isControlled,
+              schedule: data.schedule
+            };
+            
+            setSearchResults(autoSearchResult);
+            
+            if (ndcOptions.length > 0) {
+              setSelectedNdc(ndcOptions[0].code);
+            }
+            
+            const msg = ndcOptions.length > 0 || (data.rxnorm?.length > 0)
+              ? `Found ${ndcOptions.length} NDC codes + ${data.rxnorm?.length || 0} RxNorm entries`
+              : 'Clinical info loaded (no NDC matches)';
+            toast.success(msg);
+          }
+        } catch (err) {
+          console.error('Drug search error after confirmation:', err);
+        }
+        
+        // Clear pending medication data
+        setPendingMedicationData(null);
+      }
+      
       if (selectedDocType === 'patient-onboarding') {
         setActiveTab('patient-info');
       }
@@ -2595,6 +2632,8 @@ export default function DocumentProcessing() {
               onSaveMedicationData={handleSaveMedicationData}
               isSaving={isSavingMedicationData}
               hasUnsavedChanges={medicationDataModified}
+              isDataConfirmed={isDataConfirmed}
+              hasPendingData={!!pendingMedicationData}
             />
           </TabsContent>
 
