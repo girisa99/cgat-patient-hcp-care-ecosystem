@@ -47,6 +47,11 @@ export type { AIProvider, PipelineType, ModelUsageInfo } from './AIModelIndicato
 export { useDocumentProcessing, DOCUMENT_TYPE_FIELDS } from '@/hooks/useDocumentProcessing';
 export { AgentExecutionProgress } from './AgentExecutionProgress';
 export { AgentResultsConfirmation } from './AgentResultsConfirmation';
+
+// Agent Configuration
+export { AgentSetupWizard } from './AgentSetupWizard';
+export { useAgentConfiguration, DATA_COLLECTION_METHODS } from '@/hooks/useAgentConfiguration';
+export type { AgentDataRequirements, AgentConfiguration, DataCollectionMethod } from '@/hooks/useAgentConfiguration';
 export type { 
   DocumentJob, 
   DocumentType,
