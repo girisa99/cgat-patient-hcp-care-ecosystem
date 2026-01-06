@@ -45,6 +45,8 @@ export { useAgentExecution } from '@/hooks/useAgentExecution';
 export type { SubAgentSuggestion, AgentExecutionResult, AgentReadyStatus, DocumentContext } from '@/hooks/useAgentExecution';
 export type { AIProvider, PipelineType, ModelUsageInfo } from './AIModelIndicator';
 export { useDocumentProcessing, DOCUMENT_TYPE_FIELDS } from '@/hooks/useDocumentProcessing';
+export { AgentExecutionProgress } from './AgentExecutionProgress';
+export { AgentResultsConfirmation } from './AgentResultsConfirmation';
 export type { 
   DocumentJob, 
   DocumentType,
