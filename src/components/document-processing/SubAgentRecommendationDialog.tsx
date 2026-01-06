@@ -110,9 +110,29 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
   ],
   'prescription': [
     {
+      id: 'ndc-lookup',
+      name: 'NDC Code Lookup Agent',
+      description: '✓ Real-time NDC lookup via FDA OpenFDA API - retrieves drug codes, strength, manufacturer',
+      icon: '🔢',
+      useCase: 'ndc-lookup',
+      triggerCondition: 'When drug name is extracted',
+      architectureType: 'single',
+      readyStatus: 'ai-powered'
+    },
+    {
+      id: 'drug-alternatives',
+      name: 'Drug Alternatives Agent',
+      description: '✓ Finds generic equivalents & therapeutic alternatives via RxNorm + AI analysis',
+      icon: '💊',
+      useCase: 'drug-alternatives',
+      triggerCondition: 'After NDC/drug identification',
+      architectureType: 'agentic',
+      readyStatus: 'ai-powered'
+    },
+    {
       id: 'drug-interaction',
       name: 'Drug Interaction Checker',
-      description: '🤖 Universal AI (Claude → OpenAI fallback) + FDA drug interaction database',
+      description: '🤖 Universal AI + FDA drug interaction database - checks contraindications',
       icon: '⚠️',
       useCase: 'drug-interaction',
       triggerCondition: 'When medication is identified',
@@ -122,7 +142,7 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
     {
       id: 'clinical-review',
       name: 'Clinical Review Agent',
-      description: '🤖 Universal AI (Claude → Gemini fallback) clinical appropriateness + SIG code analysis',
+      description: '🤖 Universal AI clinical appropriateness + SIG code analysis',
       icon: '🩺',
       useCase: 'clinical-review',
       triggerCondition: 'After medication extraction',
@@ -130,12 +150,12 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
       readyStatus: 'ai-powered'
     },
     {
-      id: 'drug-lookup',
-      name: 'Drug Lookup Agent',
-      description: '✓ NDC lookup via FDA OpenFDA + RxNorm (dosage, strength, side effects)',
-      icon: '💊',
-      useCase: 'drug-lookup',
-      triggerCondition: 'When medication name extracted',
+      id: 'dosage-validation',
+      name: 'Dosage Validation Agent',
+      description: '✓ Validates prescribed dosage against FDA guidelines and patient factors',
+      icon: '📐',
+      useCase: 'dosage-validation',
+      triggerCondition: 'When dosage extracted',
       architectureType: 'single',
       readyStatus: 'ai-powered'
     },
@@ -872,12 +892,17 @@ export default function SubAgentRecommendationDialog({
         {/* Scrollable Agent List - Proper scrolling with visible scrollbar */}
         <div className="flex-1 min-h-0 overflow-y-auto max-h-[45vh] pr-1" style={{ scrollbarGutter: 'stable' }}>
           <div className="space-y-2 py-2 pr-2">
-            {/* Ready Agents Section (Universal AI + Real APIs) */}
+            {/* Ready Agents Section (Universal AI + Real APIs) - Show first and prominently */}
             {suggestions.filter(a => a.readyStatus === 'ai-powered').length > 0 && (
-              <div className="mb-3">
-                <div className="flex items-center gap-2 mb-2 px-1">
-                  <Sparkles className="h-3.5 w-3.5 text-green-500" />
-                  <span className="text-xs font-medium text-green-700 dark:text-green-300">Ready to Execute (Universal AI: Claude/Gemini/OpenAI + APIs)</span>
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-3 px-1 py-1.5 bg-green-50 dark:bg-green-950/40 rounded-lg">
+                  <Sparkles className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-semibold text-green-700 dark:text-green-300">
+                    Ready to Execute ({suggestions.filter(a => a.readyStatus === 'ai-powered').length} agents)
+                  </span>
+                  <Badge variant="outline" className="ml-auto text-[9px] bg-green-100 text-green-700 border-green-300">
+                    AI-Powered
+                  </Badge>
                 </div>
                 {suggestions.filter(a => a.readyStatus === 'ai-powered').map(agent => (
                   <div
