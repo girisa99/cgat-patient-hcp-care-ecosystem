@@ -123,6 +123,10 @@ interface MedicationTabProps {
   onSaveMedicationData?: () => Promise<void>;
   isSaving?: boolean;
   hasUnsavedChanges?: boolean;
+  // Track if data has been confirmed in SmartDocumentStudio
+  isDataConfirmed?: boolean;
+  // Pending medication data waiting for confirmation
+  hasPendingData?: boolean;
 }
 
 export default function MedicationTab({
@@ -152,7 +156,9 @@ export default function MedicationTab({
   agentFindings = [],
   onSaveMedicationData,
   isSaving = false,
-  hasUnsavedChanges = false
+  hasUnsavedChanges = false,
+  isDataConfirmed = false,
+  hasPendingData = false
 }: MedicationTabProps) {
   // Helper to get icon based on recommendation type
   const getRecommendationIcon = (rec: { title?: string; message: string; type: string }) => {
@@ -189,6 +195,30 @@ export default function MedicationTab({
 
   return (
     <div className="space-y-4">
+      {/* Pending Confirmation Banner - Show when data extracted but not yet confirmed */}
+      {hasPendingData && !isDataConfirmed && (
+        <Card className="border-amber-300 bg-gradient-to-r from-amber-50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-950/10">
+          <CardContent className="py-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-full bg-amber-100 dark:bg-amber-900/30">
+                <AlertTriangle className="h-5 w-5 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-medium text-amber-800 dark:text-amber-200 mb-1">
+                  Medication Data Pending Confirmation
+                </h4>
+                <p className="text-sm text-amber-700 dark:text-amber-300 mb-2">
+                  Document has been extracted but not yet verified. Data will populate here after you review and confirm in the <strong>Upload & Process</strong> tab.
+                </p>
+                <div className="text-xs text-amber-600 dark:text-amber-400">
+                  <strong>Workflow:</strong> Upload → Review & Edit → Confirm & Save → Data flows here → Agents process
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Data Source Indicator Banner */}
       {(hasExtractedData || searchResults || hasAgentData) && (
         <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-transparent">
