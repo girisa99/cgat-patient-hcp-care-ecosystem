@@ -2151,6 +2151,12 @@ export function RecordingStudio({
                         } else if (fileType.endsWith('.pdf')) {
                           type = 'pdf';
                         }
+                        
+                        // Revoke previous Object URL if exists to prevent memory leak
+                        if (contentToAnalyze?.source?.startsWith('blob:')) {
+                          URL.revokeObjectURL(contentToAnalyze.source);
+                        }
+                        
                         setContentToAnalyze({
                           type,
                           name: file.name,
@@ -2408,7 +2414,11 @@ export function RecordingStudio({
                     mediaRecorder.stop();
                     return;
                   }
-                  ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+                  if (ctx) {
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                  } else {
+                    console.warn('[RecordingStudio] Canvas context is null, skipping frame');
+                  }
                   requestAnimationFrame(drawFrame);
                 };
                 drawFrame();
@@ -2478,6 +2488,10 @@ export function RecordingStudio({
         <ContentAnalyzer
           isOpen={showContentAnalyzer}
           onClose={() => {
+            // Cleanup Object URL to prevent memory leak
+            if (contentToAnalyze?.source?.startsWith('blob:')) {
+              URL.revokeObjectURL(contentToAnalyze.source);
+            }
             setShowContentAnalyzer(false);
             setContentToAnalyze(undefined);
           }}
