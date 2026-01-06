@@ -33,6 +33,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { AgentFindingsDisplay } from '../AgentFindingsDisplay';
 
 interface ProcessingResult {
   id: string;
@@ -223,146 +224,12 @@ export default function MedicationTab({
         </Card>
       )}
 
-      {/* Agent Execution Results - Displays findings from executed agents */}
+      {/* Agent Execution Results - Dynamic component that works for ANY document type */}
       {agentFindings && agentFindings.length > 0 && (
-        <Card className="border-green-500/30 bg-green-50/50 dark:bg-green-950/20">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Brain className="h-5 w-5 text-green-600" />
-              Agent Execution Results
-              <Badge variant="outline" className="ml-2 text-green-600 border-green-500">
-                {agentFindings.filter(f => f.status === 'completed').length}/{agentFindings.length} completed
-              </Badge>
-            </CardTitle>
-            <CardDescription>
-              Results from AI agent analysis of the prescription
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {agentFindings.map((finding) => (
-                <div 
-                  key={finding.agentId}
-                  className={`p-4 rounded-lg border ${
-                    finding.status === 'completed' 
-                      ? 'bg-background border-green-200 dark:border-green-800' 
-                      : finding.status === 'failed'
-                      ? 'bg-destructive/10 border-destructive/30'
-                      : 'bg-muted border-border'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-sm">{finding.agentName}</span>
-                    <Badge 
-                      variant={finding.status === 'completed' ? 'default' : finding.status === 'failed' ? 'destructive' : 'secondary'}
-                      className="text-[10px]"
-                    >
-                      {finding.status}
-                    </Badge>
-                  </div>
-                  
-                  {finding.status === 'completed' && finding.findings && (
-                    <div className="space-y-2">
-                      {/* Drug Interaction Results */}
-                      {finding.findings.interactions && (
-                        <div className="text-xs">
-                          <span className="font-medium text-amber-600">Interactions:</span>
-                          <p className="text-muted-foreground mt-1">
-                            {finding.findings.interactions.length > 0 
-                              ? `${finding.findings.interactions.length} potential interaction(s) found`
-                              : 'No significant interactions detected'}
-                          </p>
-                        </div>
-                      )}
-                      
-                      {/* Clinical Review Results */}
-                      {finding.findings.clinicalAnalysis && (
-                        <div className="text-xs">
-                          <span className="font-medium text-blue-600">Clinical Analysis:</span>
-                          <p className="text-muted-foreground mt-1 line-clamp-2">
-                            {typeof finding.findings.clinicalAnalysis === 'string' 
-                              ? finding.findings.clinicalAnalysis 
-                              : finding.findings.clinicalAnalysis.summary || 'Analysis complete'}
-                          </p>
-                        </div>
-                      )}
-                      
-                      {/* Drug Lookup Results - NDCs */}
-                      {finding.findings.ndcCodes && (
-                        <div className="text-xs">
-                          <span className="font-medium text-purple-600">NDC Codes:</span>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {finding.findings.ndcCodes.slice(0, 3).map((ndc: any, idx: number) => (
-                              <Badge key={idx} variant="outline" className="text-[10px]">
-                                {typeof ndc === 'string' ? ndc : ndc.code || ndc.ndc}
-                              </Badge>
-                            ))}
-                            {finding.findings.ndcCodes.length > 3 && (
-                              <Badge variant="secondary" className="text-[10px]">
-                                +{finding.findings.ndcCodes.length - 3} more
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Side Effects */}
-                      {finding.findings.sideEffects && (
-                        <div className="text-xs">
-                          <span className="font-medium text-orange-600">Side Effects:</span>
-                          <p className="text-muted-foreground mt-1 line-clamp-2">
-                            {Array.isArray(finding.findings.sideEffects) 
-                              ? finding.findings.sideEffects.slice(0, 3).join(', ')
-                              : finding.findings.sideEffects}
-                          </p>
-                        </div>
-                      )}
-                      
-                      {/* Alternatives */}
-                      {finding.findings.alternatives && (
-                        <div className="text-xs">
-                          <span className="font-medium text-green-600">Alternatives:</span>
-                          <p className="text-muted-foreground mt-1">
-                            {Array.isArray(finding.findings.alternatives)
-                              ? `${finding.findings.alternatives.length} alternative(s) available`
-                              : 'Alternatives analyzed'}
-                          </p>
-                        </div>
-                      )}
-                      
-                      {/* Confidence Score */}
-                      <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                        <span className="text-[10px] text-muted-foreground">
-                          {finding.executionTimeMs}ms
-                        </span>
-                        <span className="text-[10px] font-medium">
-                          {(finding.confidence * 100).toFixed(0)}% confidence
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Alerts */}
-                  {finding.alerts && finding.alerts.length > 0 && (
-                    <div className="mt-2 space-y-1">
-                      {finding.alerts.slice(0, 2).map((alert, idx) => (
-                        <Alert key={idx} className={`py-1 px-2 ${
-                          alert.level === 'error' ? 'border-destructive bg-destructive/10' :
-                          alert.level === 'warning' ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/20' :
-                          'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
-                        }`}>
-                          <AlertDescription className="text-[10px]">
-                            {alert.message}
-                          </AlertDescription>
-                        </Alert>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <AgentFindingsDisplay 
+          agentFindings={agentFindings}
+          title="Agent Execution Results"
+        />
       )}
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
