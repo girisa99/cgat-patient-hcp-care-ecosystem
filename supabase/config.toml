@@ -161,3 +161,6 @@ verify_jwt = false
 
 [functions.execute-document-agent]
 verify_jwt = false
+
+[functions.agent-config-manager]
+verify_jwt = false

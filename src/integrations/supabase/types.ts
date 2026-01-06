@@ -699,6 +699,72 @@ export type Database = {
           },
         ]
       }
+      agent_configurations: {
+        Row: {
+          agent_settings: Json | null
+          agent_type_id: string
+          api_base_url: string | null
+          api_version: string | null
+          created_at: string
+          data_source_config: Json | null
+          description: string | null
+          display_name: string
+          environment: string | null
+          id: string
+          is_enabled: boolean | null
+          is_validated: boolean | null
+          last_validated_at: string | null
+          optional_fields: Json | null
+          required_fields: Json | null
+          secret_key_refs: Json | null
+          updated_at: string
+          user_id: string | null
+          validation_result: Json | null
+        }
+        Insert: {
+          agent_settings?: Json | null
+          agent_type_id: string
+          api_base_url?: string | null
+          api_version?: string | null
+          created_at?: string
+          data_source_config?: Json | null
+          description?: string | null
+          display_name: string
+          environment?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          is_validated?: boolean | null
+          last_validated_at?: string | null
+          optional_fields?: Json | null
+          required_fields?: Json | null
+          secret_key_refs?: Json | null
+          updated_at?: string
+          user_id?: string | null
+          validation_result?: Json | null
+        }
+        Update: {
+          agent_settings?: Json | null
+          agent_type_id?: string
+          api_base_url?: string | null
+          api_version?: string | null
+          created_at?: string
+          data_source_config?: Json | null
+          description?: string | null
+          display_name?: string
+          environment?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          is_validated?: boolean | null
+          last_validated_at?: string | null
+          optional_fields?: Json | null
+          required_fields?: Json | null
+          secret_key_refs?: Json | null
+          updated_at?: string
+          user_id?: string | null
+          validation_result?: Json | null
+        }
+        Relationships: []
+      }
       agent_conversation_engines: {
         Row: {
           agent_id: string
@@ -818,6 +884,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      agent_data_requirements: {
+        Row: {
+          agent_type_id: string
+          category: string
+          created_at: string
+          default_settings: Json | null
+          description: string | null
+          display_name: string
+          documentation_url: string | null
+          id: string
+          optional_document_data: Json | null
+          required_api_fields: Json
+          required_document_data: Json
+          setup_instructions: string | null
+          supported_data_methods: Json | null
+          updated_at: string
+        }
+        Insert: {
+          agent_type_id: string
+          category: string
+          created_at?: string
+          default_settings?: Json | null
+          description?: string | null
+          display_name: string
+          documentation_url?: string | null
+          id?: string
+          optional_document_data?: Json | null
+          required_api_fields?: Json
+          required_document_data?: Json
+          setup_instructions?: string | null
+          supported_data_methods?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          agent_type_id?: string
+          category?: string
+          created_at?: string
+          default_settings?: Json | null
+          description?: string | null
+          display_name?: string
+          documentation_url?: string | null
+          id?: string
+          optional_document_data?: Json | null
+          required_api_fields?: Json
+          required_document_data?: Json
+          setup_instructions?: string | null
+          supported_data_methods?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       agent_health_checks: {
         Row: {
