@@ -1,9 +1,10 @@
 /**
  * MedicationTab Component
  * Handles drug search, NDC lookup, SIG parsing, and clinical recommendations
+ * Data flows: Document Extraction → Auto-populate → User Edit → Save
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
 import {
   Select,
   SelectContent,
@@ -30,7 +32,11 @@ import {
   Sparkles,
   Shield,
   Eye,
-  Loader2
+  Loader2,
+  Save,
+  FileText,
+  Bot,
+  Edit3
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AgentFindingsDisplay } from '../AgentFindingsDisplay';
@@ -113,6 +119,10 @@ interface MedicationTabProps {
   durationOptions: string[];
   setSelectedRecommendation: (rec: { title: string; message: string; type: string } | null) => void;
   agentFindings?: AgentFindingResult[];
+  // New props for saving medication data
+  onSaveMedicationData?: () => Promise<void>;
+  isSaving?: boolean;
+  hasUnsavedChanges?: boolean;
 }
 
 export default function MedicationTab({
@@ -139,7 +149,10 @@ export default function MedicationTab({
   frequencyOptions,
   durationOptions,
   setSelectedRecommendation,
-  agentFindings = []
+  agentFindings = [],
+  onSaveMedicationData,
+  isSaving = false,
+  hasUnsavedChanges = false
 }: MedicationTabProps) {
   // Helper to get icon based on recommendation type
   const getRecommendationIcon = (rec: { title?: string; message: string; type: string }) => {
@@ -170,8 +183,74 @@ export default function MedicationTab({
     return 'Clinical Note';
   };
 
+  // Check if data came from extraction
+  const hasExtractedData = processingResult?.medications && processingResult.medications.length > 0;
+  const hasAgentData = agentFindings && agentFindings.length > 0;
+
   return (
     <div className="space-y-4">
+      {/* Data Source Indicator Banner */}
+      {(hasExtractedData || searchResults || hasAgentData) && (
+        <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-transparent">
+          <CardContent className="py-3">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-4 flex-wrap">
+                {hasExtractedData && (
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-blue-600" />
+                    <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-950 border-blue-200">
+                      From Document Extraction
+                    </Badge>
+                  </div>
+                )}
+                {searchResults && (
+                  <div className="flex items-center gap-2">
+                    <Search className="h-4 w-4 text-green-600" />
+                    <Badge variant="outline" className="text-xs bg-green-50 dark:bg-green-950 border-green-200">
+                      Drug Search: {searchResults.drugName}
+                    </Badge>
+                  </div>
+                )}
+                {hasAgentData && (
+                  <div className="flex items-center gap-2">
+                    <Bot className="h-4 w-4 text-purple-600" />
+                    <Badge variant="outline" className="text-xs bg-purple-50 dark:bg-purple-950 border-purple-200">
+                      {agentFindings.length} Agent Result{agentFindings.length > 1 ? 's' : ''}
+                    </Badge>
+                  </div>
+                )}
+              </div>
+              
+              {/* Save Button */}
+              {onSaveMedicationData && (searchResults || hasAgentData) && (
+                <Button 
+                  onClick={onSaveMedicationData} 
+                  disabled={isSaving}
+                  size="sm"
+                  className="gap-2"
+                >
+                  {isSaving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  {isSaving ? 'Saving...' : 'Save Medication Data'}
+                  {hasUnsavedChanges && !isSaving && (
+                    <Badge variant="secondary" className="ml-1 text-xs">Modified</Badge>
+                  )}
+                </Button>
+              )}
+            </div>
+            
+            {/* Info text about editing */}
+            <p className="text-xs text-muted-foreground mt-2">
+              <Edit3 className="h-3 w-3 inline mr-1" />
+              Edit drug search, SIG details, and NDC selection below. Changes are saved when you click "Save Medication Data".
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Prescription Image Preview for Verification */}
       {processingResult?.imageUrl && processingResult.stage === 'complete' && (
         <Card className="border-primary/30 bg-primary/5">

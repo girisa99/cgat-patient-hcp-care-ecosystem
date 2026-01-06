@@ -69,7 +69,10 @@ export function SideBySideEditor({
           <CardTitle className="text-sm flex items-center gap-2">
             <FileCheck className="h-4 w-4" />
             Extracted Fields
-            <Badge variant="secondary" className="ml-2">
+            <Badge variant="outline" className="ml-2 text-xs bg-amber-50 dark:bg-amber-950 border-amber-200">
+              Editable
+            </Badge>
+            <Badge variant="secondary" className="ml-1">
               {fieldStats.total} fields
             </Badge>
           </CardTitle>
