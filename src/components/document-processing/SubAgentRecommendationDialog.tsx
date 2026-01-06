@@ -891,6 +891,19 @@ export default function SubAgentRecommendationDialog({
     // Build comprehensive extracted fields from all available data sources
     const baseExtractedFields = extractedData?.processingResult?.extractedFields || extractedData?.extractedFields || {};
     
+    console.log('[SubAgentDialog] Building data for agent execution:', {
+      hasProcessingResult: !!extractedData?.processingResult,
+      hasPendingMedicationData: !!extractedData?.pendingMedicationData,
+      hasDrugSearchQuery: !!extractedData?.drugSearchQuery,
+      hasSearchResults: !!extractedData?.searchResults,
+      hasParsedSig: !!extractedData?.parsedSig,
+      isDataConfirmed: extractedData?.isDataConfirmed,
+      selectedDose: extractedData?.selectedDose,
+      selectedFrequency: extractedData?.selectedFrequency,
+      selectedRoute: extractedData?.selectedRoute,
+      selectedDuration: extractedData?.selectedDuration
+    });
+    
     // Merge in additional medication-specific data if available
     const enhancedFields = { ...baseExtractedFields };
     
@@ -898,6 +911,14 @@ export default function SubAgentRecommendationDialog({
     // This ensures agents have medication data even before user clicks "Save"
     if (extractedData?.pendingMedicationData) {
       const pending = extractedData.pendingMedicationData;
+      console.log('[SubAgentDialog] Using pendingMedicationData:', {
+        drugName: pending.drugName,
+        sigText: pending.sigText,
+        baseName: pending.baseName,
+        preservedStrength: pending.preservedStrength,
+        hasExtractedFields: !!pending.extractedFields
+      });
+      
       if (pending.drugName && !enhancedFields.medication?.value && !enhancedFields.medication_name?.value) {
         enhancedFields.medication = { value: pending.drugName, confidence: 0.95 };
         enhancedFields.medication_name = { value: pending.drugName, confidence: 0.95 };
@@ -916,7 +937,6 @@ export default function SubAgentRecommendationDialog({
           }
         });
       }
-      console.log('[SubAgentDialog] Using pendingMedicationData:', pending.drugName);
     }
     
     // Add medication name from drug search query if not in extractedFields
@@ -934,7 +954,7 @@ export default function SubAgentRecommendationDialog({
       enhancedFields.ndc = { value: extractedData.selectedNdc, confidence: 0.95 };
     }
     
-    // Add parsed SIG components
+    // Add parsed SIG components from parsedSig object
     if (extractedData?.parsedSig) {
       if (extractedData.parsedSig.dose && !enhancedFields.dose?.value) {
         enhancedFields.dose = { value: extractedData.parsedSig.dose, confidence: 0.9 };
@@ -947,6 +967,29 @@ export default function SubAgentRecommendationDialog({
       }
       if (extractedData.parsedSig.duration && !enhancedFields.duration?.value) {
         enhancedFields.duration = { value: extractedData.parsedSig.duration, confidence: 0.9 };
+      }
+    }
+    
+    // ALSO add from selected selector values (fallback if parsedSig not available)
+    // These are the values the user sees in the Medication Lookup tab
+    if (extractedData?.selectedDose && !enhancedFields.dose?.value) {
+      enhancedFields.dose = { value: extractedData.selectedDose, confidence: 0.95 };
+    }
+    if (extractedData?.selectedFrequency && !enhancedFields.frequency?.value) {
+      enhancedFields.frequency = { value: extractedData.selectedFrequency, confidence: 0.95 };
+    }
+    if (extractedData?.selectedRoute && !enhancedFields.route?.value) {
+      enhancedFields.route = { value: extractedData.selectedRoute, confidence: 0.95 };
+    }
+    if (extractedData?.selectedDuration && !enhancedFields.duration?.value) {
+      enhancedFields.duration = { value: extractedData.selectedDuration, confidence: 0.95 };
+    }
+    
+    // Build a combined SIG from selector values if we have them
+    if (extractedData?.selectedDose && extractedData?.selectedRoute && extractedData?.selectedFrequency) {
+      const combinedSig = `Take ${extractedData.selectedDose} ${extractedData.selectedRoute} ${extractedData.selectedFrequency}${extractedData.selectedDuration ? ` for ${extractedData.selectedDuration}` : ''}`;
+      if (!enhancedFields.sig?.value) {
+        enhancedFields.sig = { value: combinedSig, confidence: 0.9 };
       }
     }
     
@@ -964,7 +1007,16 @@ export default function SubAgentRecommendationDialog({
     }
     
     console.log('[SubAgentDialog] Enhanced fields for agent execution:', Object.keys(enhancedFields));
-    console.log('[SubAgentDialog] Medication:', enhancedFields.medication?.value || enhancedFields.medication_name?.value);
+    console.log('[SubAgentDialog] Final data passed to agents:', {
+      medication: enhancedFields.medication?.value || enhancedFields.medication_name?.value,
+      sig: enhancedFields.sig?.value,
+      dose: enhancedFields.dose?.value,
+      frequency: enhancedFields.frequency?.value,
+      route: enhancedFields.route?.value,
+      duration: enhancedFields.duration?.value,
+      strength: enhancedFields.strength?.value,
+      ndc: enhancedFields.ndc?.value
+    });
 
     const documentContext = {
       documentType: documentType.id,
