@@ -30,6 +30,7 @@ interface GenericDocumentTabProps {
   emptyStateMessage: string;
   documentType?: string;
   setProcessingHistory?: (updater: (prev: any[]) => any[]) => void;
+  onSaveComplete?: () => void;
 }
 
 export function GenericDocumentTab({
@@ -38,7 +39,8 @@ export function GenericDocumentTab({
   processingResult,
   emptyStateMessage,
   documentType,
-  setProcessingHistory
+  setProcessingHistory,
+  onSaveComplete
 }: GenericDocumentTabProps) {
   const [isSaving, setIsSaving] = React.useState(false);
   const excludedKeys = ['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'];
@@ -88,6 +90,11 @@ export function GenericDocumentTab({
       }
       
       toast.success(`${title} saved to history`);
+      
+      // Trigger callback to show agent dialog
+      if (onSaveComplete) {
+        onSaveComplete();
+      }
     } catch (err) {
       console.error('Save error:', err);
       toast.error(`Failed to save ${title.toLowerCase()}`);
@@ -116,7 +123,14 @@ export function GenericDocumentTab({
             {/* Document preview if available */}
             {processingResult?.imageUrl && (
               <div className="flex gap-4 items-start p-4 bg-muted/30 rounded-lg">
-                <img src={processingResult.imageUrl} alt="Document" className="max-h-48 w-auto rounded border" />
+                <img 
+                  src={processingResult.imageUrl} 
+                  alt="Document" 
+                  className="max-h-48 w-auto rounded border"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
               </div>
             )}
             

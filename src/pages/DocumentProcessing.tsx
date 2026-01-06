@@ -785,25 +785,28 @@ export default function DocumentProcessing() {
   // Document characteristics derived from processing result
   const smartStudioDocCharacteristics = React.useMemo((): DocumentCharacteristics | null => {
     if (!processingResult) return null;
-    // Auto-detect handwriting from extracted fields or OCR confidence
-    // Insurance cards and typed documents should NOT show handwriting
-    const isImage = !processingResult.fileName?.toLowerCase().endsWith('.pdf');
+    // Auto-detect handwriting ONLY if explicitly detected in the extracted fields
+    // Insurance cards, medical images, and typed documents should NEVER show handwriting
     const hasHandwrittenFields = Object.values(processingResult.extractedFields || {}).some(
       (field: any) => field?.isHandwritten === true
     );
-    // Only show handwriting if explicitly detected, not based on enableHandwriting setting alone
-    const isActuallyHandwritten = hasHandwrittenFields || (enableHandwriting && processingResult.documentType === 'enrollment_form');
+    // Document types that are NEVER handwritten
+    const neverHandwritten = ['insurance', 'medical-image', 'xray', 'ct-scan', 'mri', 'ecg', 'ultrasound', 'mammogram'];
+    const docType = processingResult.documentType || selectedDocType;
+    const isImageDoc = neverHandwritten.some(t => docType?.includes(t));
+    // Only show handwriting if field-level detection confirmed AND it's an enrollment form
+    const isActuallyHandwritten = !isImageDoc && hasHandwrittenFields && docType === 'enrollment_form';
     return {
       format: processingResult.fileName?.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image',
       pageCount: 1,
       quality: 'high',
       isHandwritten: isActuallyHandwritten,
-      isFilledForm: true,
+      isFilledForm: docType === 'enrollment_form' || docType === 'patient-onboarding',
       isMachineTyped: !isActuallyHandwritten,
       detectedLanguage: 'English',
       orientation: 'portrait'
     };
-  }, [processingResult, enableHandwriting]);
+  }, [processingResult, selectedDocType]);
 
   // Convert agent findings to SmartDocumentStudio format
   const smartStudioAgentFindings = React.useMemo((): AgentFinding[] => {
@@ -2784,6 +2787,8 @@ export default function DocumentProcessing() {
               <PatientInfoTab 
                 processingResult={processingResult} 
                 setProcessingHistory={setProcessingHistory}
+                setProcessingResult={setProcessingResult}
+                onSaveComplete={() => setShowSubAgentDialog(true)}
               />
             </TabsContent>
           )}
@@ -2798,6 +2803,7 @@ export default function DocumentProcessing() {
                 emptyStateMessage="No order document processed"
                 documentType="order"
                 setProcessingHistory={setProcessingHistory}
+                onSaveComplete={() => setShowSubAgentDialog(true)}
               />
             </TabsContent>
           )}
@@ -2812,6 +2818,7 @@ export default function DocumentProcessing() {
                 emptyStateMessage="No treatment center document processed"
                 documentType="treatment_center"
                 setProcessingHistory={setProcessingHistory}
+                onSaveComplete={() => setShowSubAgentDialog(true)}
               />
             </TabsContent>
           )}
@@ -2826,6 +2833,7 @@ export default function DocumentProcessing() {
                 emptyStateMessage="No customer document processed"
                 documentType="customer"
                 setProcessingHistory={setProcessingHistory}
+                onSaveComplete={() => setShowSubAgentDialog(true)}
               />
             </TabsContent>
           )}

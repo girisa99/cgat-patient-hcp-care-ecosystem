@@ -420,22 +420,19 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
   };
 
   const handleSave = () => {
-    if (!patientDetails.patient_name) {
-      toast.error('Please enter patient name before saving');
-      return;
-    }
-
+    // Save even without patient name - the AI analysis data is the important part
     onSaveAnalysis({
       patientDetails,
       providerDetails,
       aiInsights,
+      measurements,
       notes: clinicalNotes,
       reportGenerated: true,
       modelUsed,
       disclaimer
     });
     
-    toast.success('Analysis report saved successfully');
+    toast.success('AI analysis saved successfully');
   };
 
   const getCategoryIcon = (category: string) => {
@@ -1344,10 +1341,10 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
           <Button 
             className="flex-1" 
             onClick={handleSave} 
-            disabled={!patientDetails.patient_name}
+            disabled={!analysisComplete}
           >
             <Save className="mr-2 h-4 w-4" />
-            Save Analysis
+            Save AI Analysis
           </Button>
         </div>
       </div>

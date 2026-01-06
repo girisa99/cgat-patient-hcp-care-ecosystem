@@ -146,7 +146,14 @@ export default function InsuranceTab({
             {/* Document preview */}
             {processingResult.imageUrl && (
               <div className="flex gap-4 items-start p-4 bg-muted/30 rounded-lg">
-                <img src={processingResult.imageUrl} alt="Insurance card" className="max-h-48 w-auto rounded border" />
+                <img 
+                  src={processingResult.imageUrl} 
+                  alt="Insurance card" 
+                  className="max-h-48 w-auto rounded border"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <Eye className="h-4 w-4 text-primary" />

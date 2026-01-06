@@ -8,6 +8,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
   Users,
@@ -18,7 +19,8 @@ import {
   Pill,
   PenTool,
   Save,
-  CheckCircle
+  CheckCircle,
+  Edit2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,6 +43,8 @@ interface ProcessingResult {
 interface PatientInfoTabProps {
   processingResult: ProcessingResult | null;
   setProcessingHistory?: (updater: (prev: any[]) => any[]) => void;
+  setProcessingResult?: React.Dispatch<React.SetStateAction<any>>;
+  onSaveComplete?: () => void;
 }
 
 // Define section patterns for grouping fields
@@ -53,8 +57,27 @@ const SECTION_PATTERNS: { id: string; title: string; icon: React.ReactNode; patt
   { id: 'consent', title: 'Consent & Signatures', icon: <PenTool className="h-4 w-4" />, patterns: [/signature|consent|authorization|date_signed|enrollment_year|pap_|handwritten/i] },
 ];
 
-export default function PatientInfoTab({ processingResult, setProcessingHistory }: PatientInfoTabProps) {
+export default function PatientInfoTab({ processingResult, setProcessingHistory, setProcessingResult, onSaveComplete }: PatientInfoTabProps) {
   const [isSaving, setIsSaving] = React.useState(false);
+  const [isEditing, setIsEditing] = React.useState(false);
+  
+  // Handle field edit
+  const handleFieldEdit = (key: string, newValue: string) => {
+    if (!setProcessingResult) return;
+    setProcessingResult((prev: any) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        extractedFields: {
+          ...prev.extractedFields,
+          [key]: {
+            ...prev.extractedFields[key],
+            value: newValue
+          }
+        }
+      };
+    });
+  };
   
   // Organize fields by sections
   const organizeFieldsBySections = () => {
@@ -133,6 +156,11 @@ export default function PatientInfoTab({ processingResult, setProcessingHistory 
       }
       
       toast.success('Patient information saved to history');
+      
+      // Trigger callback to show agent dialog
+      if (onSaveComplete) {
+        onSaveComplete();
+      }
     } catch (err) {
       console.error('Save error:', err);
       toast.error('Failed to save patient information');
@@ -157,6 +185,17 @@ export default function PatientInfoTab({ processingResult, setProcessingHistory 
               Extracting... {processingResult.progress}%
             </Badge>
           )}
+          {hasExtractedFields && setProcessingResult && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="ml-auto"
+              onClick={() => setIsEditing(!isEditing)}
+            >
+              <Edit2 className="h-4 w-4 mr-1" />
+              {isEditing ? 'Done Editing' : 'Edit'}
+            </Button>
+          )}
         </CardTitle>
         <CardDescription>
           Extracted patient demographics and information
@@ -167,7 +206,14 @@ export default function PatientInfoTab({ processingResult, setProcessingHistory 
           <div className="space-y-6">
             {processingResult?.imageUrl && (
               <div className="flex gap-4 items-start p-4 bg-muted/30 rounded-lg">
-                <img src={processingResult.imageUrl} alt="Document" className="max-h-48 w-auto rounded border" />
+                <img 
+                  src={processingResult.imageUrl} 
+                  alt="Document" 
+                  className="max-h-48 w-auto rounded border"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
               </div>
             )}
             
@@ -189,7 +235,15 @@ export default function PatientInfoTab({ processingResult, setProcessingHistory 
                         return (
                           <div key={key} className="p-3 bg-muted/50 rounded-lg border border-border/50">
                             <Label className="text-xs text-muted-foreground">{label}</Label>
-                            <p className="font-medium text-sm">{field?.value || '—'}</p>
+                            {isEditing && setProcessingResult ? (
+                              <Input
+                                value={field?.value || ''}
+                                onChange={(e) => handleFieldEdit(key, e.target.value)}
+                                className="h-8 text-sm mt-1"
+                              />
+                            ) : (
+                              <p className="font-medium text-sm">{field?.value || '—'}</p>
+                            )}
                           </div>
                         );
                       })}
