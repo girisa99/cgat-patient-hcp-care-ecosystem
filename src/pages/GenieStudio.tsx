@@ -926,6 +926,36 @@ export default function GenieStudio() {
   const [isRecordingInProgress, setIsRecordingInProgress] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
+  const [isCarouselPaused, setIsCarouselPaused] = useState(false);
+  const carouselIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Auto-scroll carousel every 5 seconds
+  useEffect(() => {
+    if (isCarouselPaused) return;
+    
+    carouselIntervalRef.current = setInterval(() => {
+      setCurrentHeroSlide(prev => (prev === 4 ? 0 : prev + 1));
+    }, 5000);
+    
+    return () => {
+      if (carouselIntervalRef.current) {
+        clearInterval(carouselIntervalRef.current);
+      }
+    };
+  }, [isCarouselPaused]);
+  
+  // Pause carousel on user interaction, resume after 10 seconds
+  const handleCarouselInteraction = useCallback((slideIndex?: number) => {
+    setIsCarouselPaused(true);
+    if (slideIndex !== undefined) {
+      setCurrentHeroSlide(slideIndex);
+    }
+    // Resume auto-scroll after 10 seconds of inactivity
+    const resumeTimer = setTimeout(() => {
+      setIsCarouselPaused(false);
+    }, 10000);
+    return () => clearTimeout(resumeTimer);
+  }, []);
   
   // Prevent browser tab close during recording
   useEffect(() => {
@@ -2304,24 +2334,30 @@ export default function GenieStudio() {
 
             {/* Navigation Arrows */}
             <button
-              onClick={() => setCurrentHeroSlide(prev => (prev === 0 ? 4 : prev - 1))}
+              onClick={() => {
+                handleCarouselInteraction();
+                setCurrentHeroSlide(prev => (prev === 0 ? 4 : prev - 1));
+              }}
               className="absolute left-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/30 backdrop-blur border border-white/20 flex items-center justify-center text-white hover:bg-black/50 transition-colors z-10"
             >
               <ChevronLeft className="h-6 w-6" />
             </button>
             <button
-              onClick={() => setCurrentHeroSlide(prev => (prev === 4 ? 0 : prev + 1))}
+              onClick={() => {
+                handleCarouselInteraction();
+                setCurrentHeroSlide(prev => (prev === 4 ? 0 : prev + 1));
+              }}
               className="absolute right-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/30 backdrop-blur border border-white/20 flex items-center justify-center text-white hover:bg-black/50 transition-colors z-10"
             >
               <ChevronRight className="h-6 w-6" />
             </button>
 
-            {/* Slide Indicators - Updated order: Studio → Spark → Arc → Mind → Vibe */}
+            {/* Slide Indicators - Matches slide order: Studio → Arc → Mind → Spark → Vibe */}
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 z-10">
               {['Studio', 'Arc', 'Mind', 'Spark', 'Vibe'].map((name, index) => (
                 <button
                   key={name}
-                  onClick={() => setCurrentHeroSlide(index)}
+                  onClick={() => handleCarouselInteraction(index)}
                   className={cn(
                     "px-4 py-2 rounded-full text-sm font-medium transition-all",
                     currentHeroSlide === index
