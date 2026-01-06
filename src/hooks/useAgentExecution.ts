@@ -141,42 +141,53 @@ export function useAgentExecution(): UseAgentExecutionReturn {
     setExecutionProgress(0);
     setResults([]);
 
-    const executionResults: AgentExecutionResult[] = [];
-
     try {
-      for (let i = 0; i < agents.length; i++) {
-        const agent = agents[i];
-        setCurrentAgent(agent.name);
-        setExecutionProgress(((i) / agents.length) * 100);
+      // Execute ALL agents in parallel for faster execution
+      setCurrentAgent(`Running ${agents.length} agent(s) in parallel...`);
+      
+      toast.info(`Executing ${agents.length} agent(s) in parallel...`, {
+        id: 'parallel-execution',
+        duration: 15000
+      });
 
-        toast.info(`Running ${agent.name}...`, {
-          id: `agent-${agent.id}`,
-          duration: 10000
+      // Create all execution promises
+      const executionPromises = agents.map(agent => 
+        executeAgent(agent, documentData)
+      );
+
+      // Execute all in parallel with Promise.all
+      const executionResults = await Promise.all(executionPromises);
+
+      // Update results
+      setResults(executionResults);
+      setExecutionProgress(100);
+
+      // Show summary toast
+      const successCount = executionResults.filter(r => r.status === 'completed').length;
+      const failedCount = executionResults.filter(r => r.status === 'failed').length;
+      
+      if (failedCount === 0) {
+        toast.success(`All ${successCount} agent(s) completed`, {
+          id: 'parallel-execution',
+          description: executionResults.some(r => r.alerts && r.alerts.length > 0)
+            ? 'Some alerts found - review results'
+            : 'All agents executed successfully'
         });
-
-        const result = await executeAgent(agent, documentData);
-        executionResults.push(result);
-        setResults(prev => [...prev, result]);
-
-        // Update toast based on result
-        if (result.status === 'completed') {
-          toast.success(`${agent.name} completed`, {
-            id: `agent-${agent.id}`,
-            description: result.alerts && result.alerts.length > 0 
-              ? `${result.alerts.length} alert(s) found`
-              : 'No issues found'
-          });
-        } else {
-          toast.error(`${agent.name} failed`, {
-            id: `agent-${agent.id}`,
-            description: result.alerts?.[0]?.message || 'Execution error'
-          });
-        }
-
-        setExecutionProgress(((i + 1) / agents.length) * 100);
+      } else {
+        toast.warning(`${successCount} completed, ${failedCount} failed`, {
+          id: 'parallel-execution',
+          description: 'Review results for details'
+        });
       }
 
       return executionResults;
+    } catch (error) {
+      console.error('Parallel agent execution error:', error);
+      toast.error('Agent execution failed', {
+        id: 'parallel-execution',
+        description: error instanceof Error ? error.message : 'Unknown error'
+      });
+      return [];
     } finally {
       setIsExecuting(false);
       setCurrentAgent(null);
