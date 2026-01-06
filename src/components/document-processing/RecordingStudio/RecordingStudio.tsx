@@ -949,16 +949,9 @@ export function RecordingStudio({
     // Reset cancellation flag
     recordingCancelledRef.current = false;
     
-    // If screen mode, start screen share first
-    if (mode !== 'camera' && !screenShare.isSharing) {
-      toast.info('Select your screen to share...');
-      const stream = await screenShare.startScreenShare();
-      if (!stream) {
-        toast.error('Screen share cancelled');
-        return;
-      }
-      console.log('[RecordingStudio] Screen share started successfully');
-    }
+    // NOTE: Screen share is now handled inside useRecordingStream.getRecordingStream()
+    // This avoids double prompts - the hook will request screen share if needed
+    // when recording.startRecording() calls getStream()
     
     // Open teleprompter automatically when recording starts
     if (currentScript) {
@@ -967,7 +960,7 @@ export function RecordingStudio({
     
     console.log('[RecordingStudio] Calling recording.startRecording()...');
     
-    // Start recording (countdown handled by useRecording)
+    // Start recording - useRecordingStream will handle screen share if needed
     recording.startRecording();
     
     // Get the countdown duration (default 5 seconds + small buffer)
