@@ -99,7 +99,7 @@ export function FieldConfirmationCard({
     try {
       const { data, error } = await supabase.functions.invoke('drug-lookup', {
         body: { 
-          searchTerm,
+          drugName: searchTerm,
           searchType: 'suggestions'
         }
       });
