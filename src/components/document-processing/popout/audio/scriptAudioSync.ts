@@ -22,6 +22,12 @@ export function getScriptAudioSyncScript(): string {
       // Parse script into segments
       const segments = parseScriptIntoSegments(scriptContent);
       
+      // Check if analyzeAudio function exists before calling
+      if (typeof analyzeAudio !== 'function') {
+        console.error('[Sync] analyzeAudio function not available');
+        return null;
+      }
+      
       // Analyze audio for timing
       const audioAnalysis = await analyzeAudio(audioUrl);
       
@@ -51,8 +57,8 @@ export function getScriptAudioSyncScript(): string {
         return result;
       });
 
-      // Adjust timing to match audio duration
-      const scaleFactor = totalDuration / currentTime;
+      // Adjust timing to match audio duration - guard against division by zero
+      const scaleFactor = currentTime > 0 ? totalDuration / currentTime : 1;
       syncedSegments.forEach(function(seg) {
         seg.startTime *= scaleFactor;
         seg.endTime *= scaleFactor;
@@ -96,8 +102,21 @@ export function getScriptAudioSyncScript(): string {
       isSyncing = true;
       syncStartTime = performance.now();
 
+      // Check if initAudioContext function exists
+      if (typeof initAudioContext !== 'function') {
+        console.error('[Sync] initAudioContext function not available');
+        isSyncing = false;
+        return;
+      }
+
       // Start audio
       const ctx = initAudioContext();
+      if (!ctx) {
+        console.error('[Sync] Failed to initialize audio context');
+        isSyncing = false;
+        return;
+      }
+      
       syncAudioSource = ctx.createBufferSource();
       syncAudioSource.buffer = syncData.audioBuffer;
       syncAudioSource.connect(ctx.destination);
@@ -184,18 +203,28 @@ export function getScriptAudioSyncScript(): string {
         .replace(/>/g, '&gt;');
     }
 
-    // Update sync progress bar
+    // Update sync progress bar - guard against division by zero
     function updateSyncProgress(current, total) {
       const progressEl = document.getElementById('syncProgress');
       const timeEl = document.getElementById('syncTime');
 
       if (progressEl) {
-        const percent = (current / total) * 100;
+        const percent = total > 0 ? (current / total) * 100 : 0;
         progressEl.style.width = percent + '%';
       }
 
       if (timeEl) {
-        timeEl.textContent = formatDuration(current) + ' / ' + formatDuration(total);
+        if (typeof formatDuration === 'function') {
+          timeEl.textContent = formatDuration(current) + ' / ' + formatDuration(total);
+        } else {
+          // Fallback formatting
+          const formatTime = function(s) {
+            const m = Math.floor(s / 60);
+            const sec = Math.floor(s % 60);
+            return String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+          };
+          timeEl.textContent = formatTime(current) + ' / ' + formatTime(total);
+        }
       }
     }
 
@@ -217,7 +246,22 @@ export function getScriptAudioSyncScript(): string {
         return;
       }
 
-      exportTimestampedScript(syncData.segments, 'synced-script');
+      // Check if export function exists
+      if (typeof exportTimestampedScript === 'function') {
+        exportTimestampedScript(syncData.segments, 'synced-script');
+      } else {
+        console.warn('[Sync] exportTimestampedScript function not available');
+        // Fallback: download as JSON
+        const blob = new Blob([JSON.stringify(syncData.segments, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'synced-script.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
     }
 
     console.log('[ScriptAudioSync] Module loaded');
