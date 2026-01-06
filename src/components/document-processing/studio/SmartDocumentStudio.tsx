@@ -17,7 +17,10 @@ import {
   ChevronDown, 
   ChevronUp,
   Sparkles,
-  Settings
+  Settings,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -114,6 +117,19 @@ export function SmartDocumentStudio({
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
   const [showAgentFindings, setShowAgentFindings] = useState(true);
   const [activeFieldKey, setActiveFieldKey] = useState<string | null>(null);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  
+  const handleZoomIn = useCallback(() => {
+    setZoomLevel(prev => Math.min(prev + 0.25, 3));
+  }, []);
+  
+  const handleZoomOut = useCallback(() => {
+    setZoomLevel(prev => Math.max(prev - 0.25, 0.5));
+  }, []);
+  
+  const handleZoomReset = useCallback(() => {
+    setZoomLevel(1);
+  }, []);
 
   // Calculate field statistics
   const fieldStats = React.useMemo(() => {
@@ -208,31 +224,74 @@ export function SmartDocumentStudio({
               {/* Document Preview */}
               <Card className="flex-1 overflow-hidden">
                 <CardHeader className="py-3">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    Document Preview
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Document Preview
+                    </CardTitle>
+                    {/* Zoom Controls */}
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={handleZoomOut}
+                        disabled={zoomLevel <= 0.5}
+                        title="Zoom Out"
+                      >
+                        <ZoomOut className="h-4 w-4" />
+                      </Button>
+                      <span className="text-xs text-muted-foreground w-12 text-center">
+                        {Math.round(zoomLevel * 100)}%
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={handleZoomIn}
+                        disabled={zoomLevel >= 3}
+                        title="Zoom In"
+                      >
+                        <ZoomIn className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={handleZoomReset}
+                        disabled={zoomLevel === 1}
+                        title="Reset Zoom"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent className="p-2">
                   {imageUrl ? (
-                    <div className="relative rounded-lg overflow-hidden bg-muted aspect-[3/4] flex items-center justify-center">
-                      <img
-                        src={imageUrl}
-                        alt="Document preview"
-                        className="max-w-full max-h-full object-contain"
-                      />
-                      {/* Bounding box overlay for active field */}
-                      {activeFieldKey && extractedFields[activeFieldKey]?.boundingBox && (
-                        <div
-                          className="absolute border-2 border-primary bg-primary/10 transition-all"
-                          style={{
-                            left: `${extractedFields[activeFieldKey].boundingBox!.x}%`,
-                            top: `${extractedFields[activeFieldKey].boundingBox!.y}%`,
-                            width: `${extractedFields[activeFieldKey].boundingBox!.width}%`,
-                            height: `${extractedFields[activeFieldKey].boundingBox!.height}%`,
-                          }}
+                    <div className="relative rounded-lg overflow-auto bg-muted aspect-[3/4] flex items-center justify-center">
+                      <div 
+                        className="transition-transform duration-200 origin-center"
+                        style={{ transform: `scale(${zoomLevel})` }}
+                      >
+                        <img
+                          src={imageUrl}
+                          alt="Document preview"
+                          className="max-w-full max-h-full object-contain"
                         />
-                      )}
+                        {/* Bounding box overlay for active field */}
+                        {activeFieldKey && extractedFields[activeFieldKey]?.boundingBox && (
+                          <div
+                            className="absolute border-2 border-primary bg-primary/10 transition-all"
+                            style={{
+                              left: `${extractedFields[activeFieldKey].boundingBox!.x}%`,
+                              top: `${extractedFields[activeFieldKey].boundingBox!.y}%`,
+                              width: `${extractedFields[activeFieldKey].boundingBox!.width}%`,
+                              height: `${extractedFields[activeFieldKey].boundingBox!.height}%`,
+                            }}
+                          />
+                        )}
+                      </div>
                     </div>
                   ) : (
                     <div className="aspect-[3/4] bg-muted rounded-lg flex items-center justify-center">
