@@ -31,21 +31,54 @@ export const ContentTypeRoutingDiagram = () => {
     }
   };
 
-  const handleOpenFullSize = () => {
-    const newWindow = window.open('', '_blank');
-    if (newWindow && diagramRef.current) {
-      newWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>Multi-Model Routing System</title>
-            <style>
-              body { margin: 0; padding: 20px; background: #0f172a; display: flex; justify-content: center; }
-            </style>
-          </head>
-          <body>${diagramRef.current.outerHTML}</body>
-        </html>
-      `);
+  const handleOpenFullSize = async () => {
+    if (!diagramRef.current) return;
+    
+    try {
+      // Convert to canvas first for proper styling
+      const canvas = await html2canvas(diagramRef.current, {
+        backgroundColor: '#0f172a',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+      
+      const dataUrl = canvas.toDataURL('image/png', 1.0);
+      
+      const newWindow = window.open('', '_blank');
+      if (newWindow) {
+        newWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Multi-Model Routing System</title>
+              <style>
+                body { 
+                  margin: 0; 
+                  padding: 20px; 
+                  background: #0f172a; 
+                  display: flex; 
+                  justify-content: center;
+                  align-items: flex-start;
+                  min-height: 100vh;
+                }
+                img {
+                  max-width: 100%;
+                  height: auto;
+                  border-radius: 8px;
+                }
+              </style>
+            </head>
+            <body>
+              <img src="${dataUrl}" alt="Multi-Model Routing System" />
+            </body>
+          </html>
+        `);
+        newWindow.document.close();
+      }
+    } catch (error) {
+      console.error('Failed to open full size:', error);
+      toast.error('Failed to open diagram in full size');
     }
   };
 
