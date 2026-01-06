@@ -4,7 +4,7 @@
  * Uses imageToScriptService backend service
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -90,6 +90,22 @@ export function ImageToScriptPanel({ onScriptGenerated, className }: ImageToScri
   const [duration, setDuration] = useState(60);
   const [targetAudience, setTargetAudience] = useState('');
   
+  // Timer ref for cleanup
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Cleanup timer and object URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+      // Revoke any object URLs to prevent memory leaks
+      if (uploadedImageUrl) {
+        URL.revokeObjectURL(uploadedImageUrl);
+      }
+    };
+  }, [uploadedImageUrl]);
+  
   // State
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -137,8 +153,13 @@ export function ImageToScriptPanel({ onScriptGenerated, className }: ImageToScri
     setResult(null);
 
     try {
+      // Clear any existing interval
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+      
       // Simulate progress updates
-      const progressInterval = setInterval(() => {
+      progressIntervalRef.current = setInterval(() => {
         setProgress(prev => Math.min(prev + 10, 90));
         const messages = activeTab === 'generate' 
           ? ['Generating image...', 'Analyzing composition...', 'Creating script...', 'Enhancing content...']
@@ -158,7 +179,10 @@ export function ImageToScriptPanel({ onScriptGenerated, className }: ImageToScri
 
       const generationResult = await imageToScriptService.generateImageAndScript(request);
 
-      clearInterval(progressInterval);
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
       setProgress(100);
       setProgressMessage('Complete!');
       setResult(generationResult);

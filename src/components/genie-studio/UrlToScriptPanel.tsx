@@ -4,7 +4,7 @@
  * Uses urlToScriptService backend service with Universal AI
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -83,6 +83,18 @@ export function UrlToScriptPanel({ onScriptGenerated, className }: UrlToScriptPa
   const [enhanceWithAI, setEnhanceWithAI] = useState(true);
   const [includeImages, setIncludeImages] = useState(true);
   
+  // Timer ref for cleanup
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+    };
+  }, []);
+  
   // State
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -131,8 +143,13 @@ export function UrlToScriptPanel({ onScriptGenerated, className }: UrlToScriptPa
     setResult(null);
 
     try {
+      // Clear any existing interval
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+      
       // Progress simulation
-      const progressInterval = setInterval(() => {
+      progressIntervalRef.current = setInterval(() => {
         setProgress(prev => Math.min(prev + 10, 90));
         const messages = [
           'Crawling URL content...',
@@ -159,7 +176,10 @@ export function UrlToScriptPanel({ onScriptGenerated, className }: UrlToScriptPa
 
       const conversionResult = await urlToScriptService.convertUrlToScript(request);
 
-      clearInterval(progressInterval);
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
       setProgress(100);
       setProgressMessage('Complete!');
       setResult(conversionResult);
