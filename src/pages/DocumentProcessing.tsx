@@ -2213,6 +2213,101 @@ export default function DocumentProcessing() {
     return mockValues[key] || 'Extracted Value';
   };
 
+  // State for medication data saving
+  const [isSavingMedicationData, setIsSavingMedicationData] = useState(false);
+  const [medicationDataModified, setMedicationDataModified] = useState(false);
+
+  // Track medication data changes
+  useEffect(() => {
+    if (searchResults || agentFindings.length > 0) {
+      setMedicationDataModified(true);
+    }
+  }, [searchResults, selectedNdc, selectedDose, selectedRoute, selectedFrequency, selectedDuration, agentFindings]);
+
+  // Handle saving medication data (drug search, NDC, clinical, agent findings) to database
+  const handleSaveMedicationData = useCallback(async () => {
+    if (!processingResult) {
+      toast.error('No document to save medication data for');
+      return;
+    }
+    
+    setIsSavingMedicationData(true);
+    
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        toast.error('Please login to save');
+        setIsSavingMedicationData(false);
+        return;
+      }
+      
+      // Build medication data object with all relevant fields
+      const medicationData = {
+        drugName: searchResults?.drugName || drugSearchQuery,
+        genericName: searchResults?.genericName,
+        strength: searchResults?.strength,
+        sig: `Take ${selectedDose} ${selectedRoute} ${selectedFrequency} for ${selectedDuration}`,
+        calculatedQuantity: calculatedQuantity?.totalQuantity || searchResults?.calculatedQuantity,
+        daysSupply: calculatedQuantity?.daysSupply || searchResults?.daysSupply,
+        dailyDose: calculatedQuantity?.dailyDose || searchResults?.dailyDose,
+        selectedNdc: selectedNdc,
+        ndcOptions: searchResults?.ndcOptions || [],
+        clinicalRecommendations: searchResults?.clinicalRecommendations || [],
+        alternatives: searchResults?.alternatives || [],
+        isControlled: searchResults?.isControlled,
+        schedule: searchResults?.schedule,
+        agentFindings: agentFindings.map(f => ({
+          agentId: f.agentId,
+          agentName: f.agentName,
+          status: f.status,
+          findings: f.findings,
+          confidence: f.confidence,
+          executionTimeMs: f.executionTimeMs,
+          alerts: f.alerts
+        })),
+        savedAt: new Date().toISOString()
+      };
+      
+      // Update the document_processing_jobs record with medication data
+      const { error: updateError } = await supabase
+        .from('document_processing_jobs')
+        .update({
+          processing_config: {
+            ...((processingResult as any).processing_config || {}),
+            medications: [medicationData],
+            medicationLookupData: medicationData,
+            agentFindings: agentFindings.length > 0 ? JSON.stringify(agentFindings) : null
+          },
+          agent_findings: agentFindings.length > 0 ? JSON.stringify(agentFindings) : null,
+          agent_execution_status: agentFindings.length > 0 ? 'completed' : 'none',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', processingResult.id);
+      
+      if (updateError) {
+        throw updateError;
+      }
+      
+      // Update local processing result to reflect saved data
+      setProcessingResult(prev => prev ? {
+        ...prev,
+        medications: [medicationData as any]
+      } : prev);
+      
+      setMedicationDataModified(false);
+      toast.success('Medication data saved', {
+        description: `Saved ${searchResults?.drugName || 'medication'} with ${agentFindings.length} agent findings`
+      });
+    } catch (err) {
+      console.error('Failed to save medication data:', err);
+      toast.error('Failed to save medication data', {
+        description: err instanceof Error ? err.message : 'Unknown error'
+      });
+    } finally {
+      setIsSavingMedicationData(false);
+    }
+  }, [processingResult, searchResults, selectedNdc, selectedDose, selectedRoute, selectedFrequency, selectedDuration, calculatedQuantity, drugSearchQuery, agentFindings]);
+
   // Handle verify and save to history - with proper image storage
   const handleVerifyAndSave = useCallback(async () => {
     if (!processingResult) {
@@ -2497,6 +2592,9 @@ export default function DocumentProcessing() {
               durationOptions={durationOptions}
               setSelectedRecommendation={setSelectedRecommendation}
               agentFindings={agentFindings}
+              onSaveMedicationData={handleSaveMedicationData}
+              isSaving={isSavingMedicationData}
+              hasUnsavedChanges={medicationDataModified}
             />
           </TabsContent>
 
