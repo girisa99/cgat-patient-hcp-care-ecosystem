@@ -1,6 +1,7 @@
 /**
  * Agent Findings Panel
  * Displays agent execution results attached to processed documents
+ * Shows provider/model info for Universal AI powered agents
  */
 
 import React, { useState } from 'react';
@@ -8,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Bot, 
   CheckCircle, 
@@ -21,8 +21,9 @@ import {
   Download,
   Clock,
   Sparkles,
-  AlertCircle,
-  Info
+  Info,
+  Cpu,
+  Database
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { AgentFinding } from './SmartDocumentStudio';
@@ -74,6 +75,24 @@ export function AgentFindingsPanel({
       case 'error': return 'bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800';
       case 'warning': return 'bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800';
       default: return 'bg-blue-50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800';
+    }
+  };
+
+  const getProviderColor = (provider?: string) => {
+    switch (provider?.toLowerCase()) {
+      case 'claude': return 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/50 dark:text-orange-300';
+      case 'gemini': return 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/50 dark:text-blue-300';
+      case 'openai': return 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/50 dark:text-green-300';
+      default: return 'bg-gray-100 text-gray-700 border-gray-300 dark:bg-gray-900/50 dark:text-gray-300';
+    }
+  };
+
+  const formatProviderName = (provider?: string) => {
+    switch (provider?.toLowerCase()) {
+      case 'claude': return 'Claude';
+      case 'gemini': return 'Gemini';
+      case 'openai': return 'OpenAI';
+      default: return provider || 'Unknown';
     }
   };
 
@@ -135,8 +154,28 @@ export function AgentFindingsPanel({
                   {getStatusIcon(finding.status)}
                   
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium text-sm">{finding.agentName}</span>
+                      
+                      {/* AI Powered Badge with Provider */}
+                      {finding.aiPowered && (
+                        <Badge 
+                          variant="outline" 
+                          className={cn("text-[10px]", getProviderColor(finding.provider))}
+                        >
+                          <Cpu className="h-2.5 w-2.5 mr-0.5" />
+                          {formatProviderName(finding.provider)}
+                        </Badge>
+                      )}
+                      
+                      {/* Data Source Badge */}
+                      {finding.dataSource && !finding.aiPowered && (
+                        <Badge variant="outline" className="text-[10px] bg-slate-100 text-slate-700 border-slate-300">
+                          <Database className="h-2.5 w-2.5 mr-0.5" />
+                          API
+                        </Badge>
+                      )}
+                      
                       {finding.alerts && finding.alerts.length > 0 && (
                         <Badge 
                           variant="outline" 
@@ -150,10 +189,16 @@ export function AgentFindingsPanel({
                         </Badge>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                       <span>{Math.round(finding.confidence * 100)}% confidence</span>
                       <span>•</span>
                       <span>{finding.executionTimeMs}ms</span>
+                      {finding.model && (
+                        <>
+                          <span>•</span>
+                          <span className="text-[10px] opacity-75">{finding.model}</span>
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -180,6 +225,21 @@ export function AgentFindingsPanel({
               {/* Expanded Content */}
               <CollapsibleContent>
                 <div className="px-3 pb-3 pt-0 space-y-3 border-t">
+                  {/* Summary */}
+                  {finding.summary && (
+                    <div className="mt-3 p-2 rounded-lg bg-muted/50">
+                      <p className="text-sm font-medium">{finding.summary}</p>
+                    </div>
+                  )}
+
+                  {/* Data Source Info */}
+                  {finding.dataSource && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
+                      <Database className="h-3 w-3" />
+                      <span>Source: {finding.dataSource}</span>
+                    </div>
+                  )}
+
                   {/* Alerts */}
                   {finding.alerts && finding.alerts.length > 0 && (
                     <div className="space-y-2 mt-3">
@@ -198,16 +258,33 @@ export function AgentFindingsPanel({
                     </div>
                   )}
 
+                  {/* Recommendations */}
+                  {finding.recommendations && finding.recommendations.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-xs font-medium text-muted-foreground mb-2">Recommendations:</p>
+                      <ul className="space-y-1">
+                        {finding.recommendations.map((rec, idx) => (
+                          <li key={idx} className="text-xs flex items-start gap-2">
+                            <span className="text-primary mt-0.5">•</span>
+                            <span>{rec}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                   {/* Findings Details */}
                   {Object.keys(finding.findings).length > 0 && (
                     <div className="grid grid-cols-2 gap-2 mt-3">
-                      {Object.entries(finding.findings).slice(0, 6).map(([key, value]) => (
+                      {Object.entries(finding.findings).slice(0, 8).map(([key, value]) => (
                         <div key={key} className="text-xs">
                           <span className="text-muted-foreground">{key.replace(/_/g, ' ')}:</span>
                           <span className="ml-1 font-medium">
                             {typeof value === 'boolean' 
                               ? (value ? '✓ Yes' : '✗ No')
-                              : String(value)}
+                              : typeof value === 'object'
+                              ? JSON.stringify(value).slice(0, 30) + '...'
+                              : String(value).slice(0, 50)}
                           </span>
                         </div>
                       ))}

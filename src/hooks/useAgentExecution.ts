@@ -33,6 +33,10 @@ export interface AgentExecutionResult {
   alerts?: Array<{ level: 'info' | 'warning' | 'error'; message: string }>;
   aiPowered?: boolean;
   model?: string;
+  provider?: string;
+  dataSource?: string;
+  summary?: string;
+  recommendations?: string[];
 }
 
 export interface DocumentContext {
@@ -101,7 +105,11 @@ export function useAgentExecution(): UseAgentExecutionReturn {
         timestamp: new Date().toISOString(),
         alerts: data?.findings?.alerts || [],
         aiPowered: data?.findings?.aiPowered || false,
-        model: data?.findings?.model
+        model: data?.findings?.model,
+        provider: data?.findings?.provider,
+        dataSource: data?.findings?.dataSource,
+        summary: data?.findings?.summary,
+        recommendations: data?.findings?.recommendations
       };
 
       return result;
