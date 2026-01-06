@@ -205,6 +205,7 @@ export function RecordingStudio({
   } | undefined>(undefined);
   
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const audioPlaybackTimeoutRef = useRef<number | null>(null);
 
   // Script draft storage hook
   const scriptDraft = useScriptDraftStorage({ 
@@ -928,8 +929,17 @@ export function RecordingStudio({
     // Get the countdown duration (default 5 seconds + small buffer)
     const countdownMs = 5000 + 500;
     
-    // Start audio playback after countdown completes
-    setTimeout(() => {
+    // Start audio playback after countdown completes - store in ref so we can cancel on stop
+    // Clear any existing timeout first
+    if (audioPlaybackTimeoutRef.current) {
+      clearTimeout(audioPlaybackTimeoutRef.current);
+    }
+    
+    audioPlaybackTimeoutRef.current = window.setTimeout(() => {
+      // Check if recording was stopped during countdown - if so, don't play audio
+      // We need to check the recording.isRecording state at the time this runs
+      // Since we're in a timeout, we use a closure check via the recording ref
+      
       // Look up audio files fresh to avoid stale closures
       const ttsFileToPlay = voiceovers.find(v => v.id === selectedTTSFileId);
       const voiceoverToPlay = voiceovers.find(v => v.id === selectedVoiceoverId);
@@ -1003,6 +1013,9 @@ export function RecordingStudio({
       
       // Reset word index for teleprompter
       setCurrentWordIndex(0);
+      
+      // Clear the ref after execution
+      audioPlaybackTimeoutRef.current = null;
     }, countdownMs);
   }, [recording, audioPlayback, voiceovers, music, screenShare, currentScript, ttsGeneration.lastResult, ttsAudioUrl, hasTTSAudio, selectedVoiceoverId, selectedTTSFileId, selectedMusicId]);
 
@@ -1022,10 +1035,22 @@ export function RecordingStudio({
     recording.pauseRecording();
   }, [recording, audioPlayback]);
 
-  // Stop recording - stop all audio
+  // Stop recording - stop all audio and cancel pending audio playback timeout
   const handleStopRecording = useCallback(() => {
+    console.log('[RecordingStudio] handleStopRecording called');
+    
+    // Cancel any pending audio playback timeout (important if user stops during countdown)
+    if (audioPlaybackTimeoutRef.current) {
+      console.log('[RecordingStudio] Cancelling pending audio playback timeout');
+      clearTimeout(audioPlaybackTimeoutRef.current);
+      audioPlaybackTimeoutRef.current = null;
+    }
+    
     recording.stopRecording();
     audioPlayback.stopAll();
+    
+    // Stop teleprompter scrolling
+    setTeleprompter(prev => ({ ...prev, isScrolling: false }));
     
     if (screenShare.isSharing) {
       screenShare.stopScreenShare();
@@ -1361,19 +1386,29 @@ export function RecordingStudio({
   // MUST be before any early returns to avoid hooks order issues
   const handleDialogOpenChange = useCallback((open: boolean) => {
     if (!open) {
+      // Cancel any pending audio playback timeout
+      if (audioPlaybackTimeoutRef.current) {
+        clearTimeout(audioPlaybackTimeoutRef.current);
+        audioPlaybackTimeoutRef.current = null;
+      }
+      
       // If recording, warn user before closing
       if (recording.isRecording) {
         const confirmed = window.confirm('Recording in progress. Are you sure you want to close? Your recording will be lost.');
         if (confirmed) {
           recording.stopRecording();
+          audioPlayback.stopAll();
           handleClose();
         }
         // Don't close if not confirmed
         return;
       }
+      
+      // Stop all audio on close
+      audioPlayback.stopAll();
       handleClose();
     }
-  }, [recording.isRecording, recording.stopRecording, handleClose]);
+  }, [recording.isRecording, recording.stopRecording, audioPlayback, handleClose]);
 
   // Don't use early return - let Dialog handle open/close state
   // This ensures hooks are always called in the same order

@@ -140,7 +140,37 @@ export function useRecording(
   }, [enablePersistence, persistence]);
 
   const startRecording = useCallback(async () => {
-    if (!stream || state.isRecording) return;
+    console.log('[Recording] startRecording called, stream:', stream ? 'available' : 'null', 'isRecording:', state.isRecording);
+    
+    if (!stream) {
+      console.error('[Recording] Cannot start recording: stream is null');
+      toast.error('Camera not available. Please enable your camera first.');
+      return;
+    }
+    
+    if (state.isRecording) {
+      console.warn('[Recording] Recording already in progress');
+      return;
+    }
+    
+    // Validate stream has active tracks
+    const videoTracks = stream.getVideoTracks();
+    const audioTracks = stream.getAudioTracks();
+    console.log('[Recording] Stream tracks - video:', videoTracks.length, 'audio:', audioTracks.length);
+    
+    if (videoTracks.length === 0) {
+      console.error('[Recording] Stream has no video tracks');
+      toast.error('No video source available. Please check your camera.');
+      return;
+    }
+    
+    // Check if video track is live
+    const videoTrack = videoTracks[0];
+    if (videoTrack.readyState !== 'live') {
+      console.error('[Recording] Video track is not live, state:', videoTrack.readyState);
+      toast.error('Camera stream ended. Please restart camera.');
+      return;
+    }
 
     startCountdown(async () => {
       try {
