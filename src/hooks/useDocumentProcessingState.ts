@@ -54,6 +54,22 @@ export interface ProcessingResult {
   exportStatus?: 'pending' | 'exported' | 'partial';
   exportedAt?: Date;
   exportTargets?: string[];
+  // Model routing info for Stage 1/Stage 2 pipeline visibility
+  modelRouting?: {
+    primaryModel: 'claude' | 'gemini' | 'openai' | 'google_vision_ocr';
+    modelUsed: 'claude' | 'gemini' | 'openai' | 'google_vision_ocr';
+    selectionReason: 'explicit_config' | 'category_default' | 'content_analysis' | 'fallback';
+    confidence: number;
+    pipelineType: 'single' | 'sequential-hybrid' | 'hybrid_ocr_vision_ai' | 'vision_ai_only' | 'ocr_only' | 'vision_ai_fallback';
+    stage1Model?: 'claude' | 'gemini' | 'openai' | 'google_vision_ocr';
+    stage2Model?: 'claude' | 'gemini' | 'openai';
+    fallbacksAttempted?: ('claude' | 'gemini' | 'openai')[];
+    fallbackChain?: ('claude' | 'gemini' | 'openai')[];
+    processingTimeMs?: number;
+    ocrTextLength?: number;
+    ocrConfidence?: number;
+    documentCategory?: string;
+  };
 }
 
 export interface AgentWorkflowConfig {
