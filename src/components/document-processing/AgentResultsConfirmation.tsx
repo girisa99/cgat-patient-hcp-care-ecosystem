@@ -153,58 +153,61 @@ export function AgentResultsConfirmation({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col" style={{ display: 'flex', flexDirection: 'column' }}>
-        <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="flex items-center gap-2">
-            <Bot className="h-5 w-5 text-primary" />
-            Agent Execution Complete
-          </DialogTitle>
-          <DialogDescription>
-            Review results and select which findings to apply to your document
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden p-0">
+        {/* Fixed Header */}
+        <div className="p-6 pb-3 border-b bg-background">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bot className="h-5 w-5 text-primary" />
+              Agent Execution Complete
+            </DialogTitle>
+            <DialogDescription>
+              Review results and select which findings to apply to your document
+            </DialogDescription>
+          </DialogHeader>
 
-        {/* Summary Stats */}
-        <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50 flex-shrink-0">
-          {completedResults.length > 0 && (
-            <div className="flex items-center gap-2 text-green-600">
-              <CheckCircle className="h-4 w-4" />
-              <span className="text-sm font-medium">{completedResults.length} Completed</span>
+          {/* Summary Stats */}
+          <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50 mt-3">
+            {completedResults.length > 0 && (
+              <div className="flex items-center gap-2 text-green-600">
+                <CheckCircle className="h-4 w-4" />
+                <span className="text-sm font-medium">{completedResults.length} Completed</span>
+              </div>
+            )}
+            {failedResults.length > 0 && (
+              <div className="flex items-center gap-2 text-destructive">
+                <XCircle className="h-4 w-4" />
+                <span className="text-sm font-medium">{failedResults.length} Failed</span>
+              </div>
+            )}
+            <div className="ml-auto text-xs text-muted-foreground">
+              {selectedResults.size} selected for application
             </div>
-          )}
-          {failedResults.length > 0 && (
-            <div className="flex items-center gap-2 text-destructive">
-              <XCircle className="h-4 w-4" />
-              <span className="text-sm font-medium">{failedResults.length} Failed</span>
-            </div>
-          )}
-          <div className="ml-auto text-xs text-muted-foreground">
-            {selectedResults.size} selected for application
           </div>
+
+          {/* Merge Option */}
+          {hasExtractionData && (
+            <div className="flex items-start gap-3 p-3 rounded-lg border border-primary/30 bg-primary/5 mt-3">
+              <Checkbox
+                id="merge-extraction"
+                checked={mergeWithExtraction}
+                onCheckedChange={(checked) => setMergeWithExtraction(!!checked)}
+              />
+              <div className="flex-1">
+                <Label htmlFor="merge-extraction" className="text-sm font-medium cursor-pointer">
+                  Merge with extracted data
+                </Label>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Combine agent findings with auto-extracted fields from the document
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Merge Option */}
-        {hasExtractionData && (
-          <div className="flex items-start gap-3 p-3 rounded-lg border border-primary/30 bg-primary/5 flex-shrink-0">
-            <Checkbox
-              id="merge-extraction"
-              checked={mergeWithExtraction}
-              onCheckedChange={(checked) => setMergeWithExtraction(!!checked)}
-            />
-            <div className="flex-1">
-              <Label htmlFor="merge-extraction" className="text-sm font-medium cursor-pointer">
-                Merge with extracted data
-              </Label>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Combine agent findings (NDC, clinical info, alternatives) with auto-extracted fields from the document
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Results List - Using native overflow for reliable scrolling */}
-        <div className="flex-1 min-h-0 overflow-y-auto max-h-[50vh] border rounded-lg">
-          <div className="space-y-3 p-3">
+        {/* Scrollable Results List */}
+        <div className="flex-1 overflow-y-auto max-h-[40vh] p-4">
+          <div className="space-y-3">
             {/* Completed Results */}
             {completedResults.map((result) => {
               const isSelected = selectedResults.has(result.agentId);
@@ -371,7 +374,8 @@ export function AgentResultsConfirmation({
           </div>
         </div>
 
-        <DialogFooter className="flex-shrink-0 gap-2">
+        {/* Fixed Footer */}
+        <div className="p-4 pt-3 border-t bg-background flex gap-3 justify-end">
           <Button variant="outline" onClick={onReject}>
             <XCircle className="h-4 w-4 mr-2" />
             Discard Results
@@ -380,7 +384,7 @@ export function AgentResultsConfirmation({
             <FileCheck className="h-4 w-4 mr-2" />
             Apply {selectedResults.size} Result(s)
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
