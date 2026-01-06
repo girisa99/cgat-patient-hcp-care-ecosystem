@@ -195,7 +195,7 @@ export function useAudioPlayback() {
     };
   }, []);
 
-  const playVoiceover = useCallback((url: string) => {
+  const playVoiceover = useCallback((url: string): HTMLAudioElement | null => {
     console.log('[useAudioPlayback] playVoiceover called with URL:', url.substring(0, 60));
     
     // Stop ALL audio first to prevent overlap
@@ -240,6 +240,8 @@ export function useAudioPlayback() {
       console.error('[useAudioPlayback] Voiceover play() failed:', err);
     });
     setState(prev => ({ ...prev, voiceoverAudio: audio }));
+    
+    return audio; // Return audio element for mixer connection
   }, [state.voiceoverVolume, startTimeTracking, stopTimeTracking, applyDucking]);
 
   const stopVoiceover = useCallback(() => {
@@ -255,7 +257,7 @@ export function useAudioPlayback() {
     applyDucking(false); // Restore music volume
   }, [stopTimeTracking, applyDucking]);
 
-const playMusic = useCallback((url: string) => {
+  const playMusic = useCallback((url: string): HTMLAudioElement | null => {
     console.log('[useAudioPlayback] playMusic called with URL:', url.substring(0, 60));
     
     // Cleanup previous music
@@ -296,6 +298,8 @@ const playMusic = useCallback((url: string) => {
       console.error('[useAudioPlayback] Music play() failed:', err);
     });
     setState(prev => ({ ...prev, musicAudio: audio }));
+    
+    return audio; // Return audio element for mixer connection
   }, [state.musicLoop, isPlaying.voiceover, isPlaying.tts, duckingEnabled]);
 
   const stopMusic = useCallback(() => {
@@ -329,7 +333,7 @@ const playMusic = useCallback((url: string) => {
     }
   }, []);
 
-  const playTTS = useCallback((urlOrAudio: string | HTMLAudioElement) => {
+  const playTTS = useCallback((urlOrAudio: string | HTMLAudioElement): HTMLAudioElement | null => {
     // Support both URL strings and HTMLAudioElement for backward compatibility
     let audio: HTMLAudioElement;
     let cleanup: (() => void) | null = null;
@@ -338,7 +342,7 @@ const playMusic = useCallback((url: string) => {
       // Validate URL before creating Audio element
       if (!urlOrAudio || urlOrAudio.trim() === '') {
         console.error('[useAudioPlayback] playTTS: Empty URL provided');
-        return;
+        return null;
       }
       
       // Cleanup previous TTS
@@ -428,6 +432,8 @@ const playMusic = useCallback((url: string) => {
       }
     });
     setState(prev => ({ ...prev, ttsAudio: audio }));
+    
+    return audio; // Return audio element for mixer connection
   }, [state.ttsVolume, startTimeTracking, stopTimeTracking, applyDucking]);
 
   const stopTTS = useCallback(() => {
