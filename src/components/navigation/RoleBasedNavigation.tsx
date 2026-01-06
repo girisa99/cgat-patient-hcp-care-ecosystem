@@ -72,12 +72,10 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
         agents: availableTabs.filter(tab => ['/agents'].includes(tab.to)),
         management: [],
         systemIntegration: availableTabs.filter(tab => 
-          ['/api-services', '/system-integration', '/testing'].includes(tab.to)
+          ['/api-services', '/system-integration', '/testing', '/architecture', '/healthcare-ai', '/database-performance'].includes(tab.to)
         ),
         reportsCompliance: [],
-        architecture: availableTabs.filter(tab => 
-          ['/architecture', '/healthcare-ai', '/database-performance'].includes(tab.to)
-        ),
+        architecture: [], // Merged into systemIntegration
         specialized: [],
         genieStudio: availableTabs.filter(tab => ['/genie-studio'].includes(tab.to))
       };
@@ -91,10 +89,9 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
 
     // Group remaining tabs dynamically by category
     const managementTabs = ['/users', '/facilities', '/onboarding', '/modules', '/role-management'];
-    const systemTabs = ['/api-services', '/system-integration', '/data-import', '/security', '/testing'];
+    // System Integration now includes Architecture items to reduce nav scrolling
+    const systemTabs = ['/api-services', '/system-integration', '/data-import', '/security', '/testing', '/architecture', '/healthcare-ai', '/database-performance'];
     const reportsTabs = ['/reports', '/governance', '/framework', '/stability', '/active-verification'];
-    // Architecture cluster: architecture diagrams + related technical views
-    const architectureTabs = ['/architecture', '/healthcare-ai', '/database-performance'];
     const specializedTabs = ['/ngrok'];
 
     return {
@@ -105,7 +102,7 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
       management: availableTabs.filter(tab => managementTabs.includes(tab.to)),
       systemIntegration: availableTabs.filter(tab => systemTabs.includes(tab.to)),
       reportsCompliance: availableTabs.filter(tab => reportsTabs.includes(tab.to)),
-      architecture: availableTabs.filter(tab => architectureTabs.includes(tab.to)),
+      architecture: [], // Merged into systemIntegration
       specialized: availableTabs.filter(tab => specializedTabs.includes(tab.to))
     };
   };
@@ -198,9 +195,9 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
             )}
           </div>
 
-          {/* Center: Main Navigation - Scrollable with visible scrollbar on hover */}
+          {/* Center: Main Navigation - No scroll, dropdowns consolidate items */}
           <nav className="flex items-center flex-1 justify-start min-w-0 px-2" aria-label="Primary">
-            <div className="flex items-center gap-1 max-w-full flex-nowrap overflow-x-auto scrollbar-thin scrollbar-thumb-muted hover:scrollbar-thumb-muted-foreground pb-1">
+            <div className="flex items-center gap-1 flex-nowrap">
               {/* Dashboard */}
               <div className="nav-item">
                 <Link to="/">
@@ -313,28 +310,7 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
                 </div>
               )}
 
-              {/* Architecture & Diagrams */}
-              {navigationGroups.architecture && navigationGroups.architecture.length > 0 && (
-                <div className="nav-item">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="flex items-center gap-2 hover:bg-accent whitespace-nowrap min-w-fit px-3"
-                      >
-                        <GitBranch className="h-4 w-4 flex-shrink-0" />
-                        <span className="hidden xl:inline text-stable">Architecture</span>
-                        <span className="hidden lg:inline xl:hidden text-stable">Arch</span>
-                        <ChevronDown className="h-3 w-3 flex-shrink-0" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="center" className="w-56 bg-background border border-border shadow-md z-[9999]">
-                      {navigationGroups.architecture.map(tab => renderNavButton(tab, true))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              )}
+              {/* Architecture merged into System Integration - removed separate dropdown */}
 
               {/* Specialized Tools */}
               {navigationGroups.specialized.length > 0 && (
