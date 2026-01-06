@@ -28,6 +28,7 @@ import { SideBySideEditor } from './SideBySideEditor';
 import { ReviewGateBar } from './ReviewGateBar';
 import { AgentFindingsPanel } from './AgentFindingsPanel';
 import { AutoConfigPanel } from './AutoConfigPanel';
+import { CompactReviewSummary } from './CompactReviewSummary';
 import { DocumentTypeConfig } from '@/config/documentTypes';
 
 export interface DocumentCharacteristics {
@@ -262,6 +263,13 @@ export function SmartDocumentStudio({
               />
             </div>
           </div>
+
+          {/* Compact Review Summary */}
+          <CompactReviewSummary
+            extractedFields={extractedFields}
+            fieldStats={fieldStats}
+            onFieldClick={handleFieldClick}
+          />
 
           {/* Agent Findings Panel (collapsible) */}
           {agentFindings.length > 0 && (

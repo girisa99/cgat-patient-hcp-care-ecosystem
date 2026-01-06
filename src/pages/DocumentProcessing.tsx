@@ -102,6 +102,7 @@ import MedicalImageAnalysis from '@/components/document-processing/MedicalImageA
 import InvoiceRCMAnalysis from '@/components/document-processing/InvoiceRCMAnalysis';
 import SubAgentRecommendationDialog from '@/components/document-processing/SubAgentRecommendationDialog';
 import RealTimeExtractionTracker from '@/components/document-processing/RealTimeExtractionTracker';
+import { SmartDocumentStudio, type ExtractedField, type DocumentCharacteristics, type ModelRoutingInfo, type AgentFinding } from '@/components/document-processing/studio';
 import { ArchitectureRecommendation } from '@/services/agentArchitectureIntelligence';
 
 // Use shared healthcare abbreviation utilities
@@ -314,6 +315,7 @@ export default function DocumentProcessing() {
   });
   const [processingHistory, setProcessingHistory] = useState<ProcessingResult[]>([]);
   const [isAutoProcessing, setIsAutoProcessing] = useState(true);
+  const [useSmartStudio, setUseSmartStudio] = useState(true); // Smart Document Studio mode
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [showVerificationDialog, setShowVerificationDialog] = useState(false);
@@ -360,6 +362,8 @@ export default function DocumentProcessing() {
       description: `Results attached to document`
     });
   }, [processingResult]);
+
+  // NOTE: SmartDocumentStudio conversion functions are defined after processing settings (enableHandwriting, etc.)
   
   // Show toast if state was restored from sessionStorage
   useEffect(() => {
@@ -678,6 +682,103 @@ export default function DocumentProcessing() {
   const [enableClinicalRecommendations, setEnableClinicalRecommendations] = useState(true);
   const [confidenceThreshold, setConfidenceThreshold] = useState(0.85);
   const [ocrProvider, setOcrProvider] = useState<'google' | 'azure' | 'aws'>('google');
+
+  // ============= SmartDocumentStudio Conversion Functions =============
+  // Convert processing result fields to SmartDocumentStudio format
+  const smartStudioExtractedFields = React.useMemo((): Record<string, ExtractedField> => {
+    if (!processingResult?.extractedFields) return {};
+    
+    const fields: Record<string, ExtractedField> = {};
+    Object.entries(processingResult.extractedFields).forEach(([key, field]) => {
+      // Skip internal/meta fields
+      if (key.startsWith('_') || ['line_items', 'tables', 'raw_text'].includes(key)) return;
+      
+      fields[key] = {
+        key,
+        value: typeof field === 'object' && field !== null ? (field.value || '') : String(field),
+        confidence: typeof field === 'object' && field !== null ? (field.confidence || 0.8) : 0.8,
+        verified: typeof field === 'object' && field !== null ? (field.verified || false) : false,
+        source: 'vision_ai' as const,
+        originalValue: typeof field === 'object' && field !== null ? field.value : String(field)
+      };
+    });
+    return fields;
+  }, [processingResult?.extractedFields]);
+
+  // Convert model routing to SmartDocumentStudio format
+  const smartStudioModelRouting = React.useMemo((): ModelRoutingInfo | null => {
+    if (!processingResult?.modelRouting) return null;
+    return {
+      stage1Model: processingResult.modelRouting.stage1Model || processingResult.modelRouting.primaryModel || 'gemini',
+      stage2Model: processingResult.modelRouting.stage2Model || processingResult.modelRouting.modelUsed || 'claude',
+      pipelineType: processingResult.modelRouting.pipelineType || 'single',
+      selectionReason: processingResult.modelRouting.selectionReason || 'auto',
+      confidence: processingResult.modelRouting.confidence || 0.8,
+      processingTimeMs: processingResult.modelRouting.processingTimeMs
+    };
+  }, [processingResult?.modelRouting]);
+
+  // Document characteristics derived from processing result
+  const smartStudioDocCharacteristics = React.useMemo((): DocumentCharacteristics | null => {
+    if (!processingResult) return null;
+    return {
+      format: processingResult.fileName?.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image',
+      pageCount: 1,
+      quality: 'high',
+      isHandwritten: enableHandwriting,
+      isFilledForm: true,
+      isMachineTyped: true,
+      detectedLanguage: 'English',
+      orientation: 'portrait'
+    };
+  }, [processingResult, enableHandwriting]);
+
+  // Convert agent findings to SmartDocumentStudio format
+  const smartStudioAgentFindings = React.useMemo((): AgentFinding[] => {
+    return agentFindings.map(f => ({
+      agentId: f.agentId,
+      agentName: f.agentName,
+      status: f.status,
+      executedAt: f.timestamp,
+      findings: f.findings,
+      confidence: f.confidence,
+      executionTimeMs: f.executionTimeMs,
+      alerts: f.alerts
+    }));
+  }, [agentFindings]);
+
+  // Handlers for SmartDocumentStudio
+  const handleSmartStudioFieldUpdate = useCallback((key: string, value: string) => {
+    setProcessingResult(prev => {
+      if (!prev) return prev;
+      const updatedFields = { ...prev.extractedFields };
+      if (updatedFields[key]) {
+        updatedFields[key] = { ...updatedFields[key], value };
+      } else {
+        updatedFields[key] = { value, confidence: 1, verified: true };
+      }
+      return { ...prev, extractedFields: updatedFields };
+    });
+  }, []);
+
+  const handleSmartStudioFieldVerify = useCallback((key: string) => {
+    setProcessingResult(prev => {
+      if (!prev) return prev;
+      const updatedFields = { ...prev.extractedFields };
+      if (updatedFields[key]) {
+        updatedFields[key] = { ...updatedFields[key], verified: true };
+      }
+      return { ...prev, extractedFields: updatedFields };
+    });
+  }, []);
+
+  // Note: handleSmartStudioFileUpload is defined after onDrop below
+
+  const handleSmartStudioRunAgents = useCallback((_agentIds: string[]) => {
+    // Open sub-agent dialog with pre-selected agents
+    setShowSubAgentDialog(true);
+  }, []);
+  // ============= End SmartDocumentStudio Functions =============
   
   // Get recommended agent workflows for current document type
   const recommendedAgentWorkflows = AGENT_WORKFLOW_CONFIGS.filter(
@@ -2039,6 +2140,11 @@ export default function DocumentProcessing() {
     });
   };
 
+  // SmartDocumentStudio file upload handler (defined after onDrop)
+  const handleSmartStudioFileUpload = useCallback((file: File) => {
+    onDrop([file]);
+  }, [onDrop]);
+
   const generateMockValue = (key: string): string => {
     const mockValues: Record<string, string> = {
       patient_name: 'John Smith',
@@ -2068,7 +2174,7 @@ export default function DocumentProcessing() {
     return mockValues[key] || 'Extracted Value';
   };
 
-  // Handle verify and save to history
+  // Handle verify and save to history - with proper image storage
   const handleVerifyAndSave = useCallback(async () => {
     if (!processingResult) {
       toast.error('No processing result to save');
@@ -2086,6 +2192,48 @@ export default function DocumentProcessing() {
         return;
       }
       
+      // Ensure we have a valid ID
+      const documentId = processingResult.id || crypto.randomUUID();
+      
+      // Upload image to storage if it's base64
+      let imageUrl = processingResult.imageUrl;
+      let thumbnailUrl: string | undefined;
+      
+      if (processingResult.imageUrl?.startsWith('data:')) {
+        toast.loading('Uploading document image...', { id: 'image-upload' });
+        
+        try {
+          // Import storage helpers dynamically to avoid circular dependencies
+          const { uploadDocumentImage, generateThumbnail } = await import('@/utils/storageHelpers');
+          
+          // Generate thumbnail first
+          const thumbnailBase64 = await generateThumbnail(processingResult.imageUrl, 200);
+          
+          // Upload main image
+          const uploadResult = await uploadDocumentImage(
+            processingResult.imageUrl,
+            user.id,
+            documentId,
+            `${processingResult.fileName || 'document'}_${Date.now()}`
+          );
+          
+          if (uploadResult) {
+            imageUrl = uploadResult.imageUrl;
+            thumbnailUrl = uploadResult.thumbnailUrl;
+            toast.success('Document image uploaded', { id: 'image-upload' });
+          } else {
+            // Fallback: store placeholder if upload fails
+            console.warn('Image upload failed, storing placeholder');
+            imageUrl = undefined;
+            toast.warning('Image upload failed', { id: 'image-upload', description: 'Document saved without image' });
+          }
+        } catch (uploadErr) {
+          console.error('Image upload error:', uploadErr);
+          imageUrl = undefined;
+          toast.warning('Image upload failed', { id: 'image-upload' });
+        }
+      }
+      
       // Build processing config with safe serialization
       const processingConfig: Record<string, unknown> = {
         extractedFields: JSON.parse(JSON.stringify(processingResult.extractedFields || {})),
@@ -2093,15 +2241,9 @@ export default function DocumentProcessing() {
         tables: JSON.parse(JSON.stringify(processingResult.tables || [])),
         medications: JSON.parse(JSON.stringify(processingResult.medications || [])),
         validationResults: processingResult.validationResults ? JSON.parse(JSON.stringify(processingResult.validationResults)) : null,
-        // Don't include large base64 imageUrl in config - just reference it
-        imageUrl: processingResult.imageUrl?.startsWith('data:') 
-          ? `[base64:${processingResult.imageUrl.length} chars]` 
-          : processingResult.imageUrl,
+        imageUrl: imageUrl, // Now stores actual URL, not base64
         savedAt: new Date().toISOString()
       };
-      
-      // Ensure we have a valid ID
-      const documentId = processingResult.id || crypto.randomUUID();
       
       const { error: upsertError } = await supabase
         .from('document_processing_jobs')
@@ -2113,7 +2255,11 @@ export default function DocumentProcessing() {
           file_path: processingResult.fileName || 'unknown',
           status: 'completed',
           progress: 100,
-          processing_config: processingConfig as any
+          processing_config: processingConfig as any,
+          image_url: imageUrl,
+          thumbnail_url: thumbnailUrl,
+          agent_findings: agentFindings.length > 0 ? JSON.stringify(agentFindings) : null,
+          agent_execution_status: agentFindings.length > 0 ? 'completed' : 'none'
         });
       
       if (upsertError) {
@@ -2125,7 +2271,7 @@ export default function DocumentProcessing() {
       }
       
       // Update local history
-      const updatedResult = { ...processingResult, id: documentId };
+      const updatedResult = { ...processingResult, id: documentId, imageUrl };
       setProcessingHistory(prev => {
         const existing = prev.find(p => p.id === documentId);
         if (existing) {
@@ -2148,7 +2294,7 @@ export default function DocumentProcessing() {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       toast.error('Failed to save', { description: errorMessage });
     }
-  }, [processingResult, selectedDocType]);
+  }, [processingResult, selectedDocType, agentFindings]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -2226,33 +2372,63 @@ export default function DocumentProcessing() {
             ))}
           </TabsList>
 
-          {/* Upload Tab - Using extracted component */}
+          {/* Upload Tab - Conditionally render SmartDocumentStudio or classic UploadTab */}
           <TabsContent value="upload" className="space-y-4">
-            <UploadTab
-              currentConfig={currentConfig}
-              processingResult={processingResult}
-              setProcessingResult={setProcessingResult}
-              onDrop={onDrop}
-              onVerifyAndSave={handleVerifyAndSave}
-              enableOCR={enableOCR}
-              setEnableOCR={setEnableOCR}
-              enableHandwriting={enableHandwriting}
-              setEnableHandwriting={setEnableHandwriting}
-              enableTableExtraction={enableTableExtraction}
-              setEnableTableExtraction={setEnableTableExtraction}
-              enableSignatureDetection={enableSignatureDetection}
-              setEnableSignatureDetection={setEnableSignatureDetection}
-              enableAutoCalculateQty={enableAutoCalculateQty}
-              setEnableAutoCalculateQty={setEnableAutoCalculateQty}
-              enableNdcMatching={enableNdcMatching}
-              setEnableNdcMatching={setEnableNdcMatching}
-              enableClinicalRecommendations={enableClinicalRecommendations}
-              setEnableClinicalRecommendations={setEnableClinicalRecommendations}
-              confidenceThreshold={confidenceThreshold}
-              setConfidenceThreshold={setConfidenceThreshold}
-              ocrProvider={ocrProvider}
-              setOcrProvider={setOcrProvider}
-            />
+            {/* Smart Studio Mode Toggle */}
+            <div className="flex items-center justify-end gap-2 mb-2">
+              <Label htmlFor="smart-studio-toggle" className="text-sm text-muted-foreground">
+                Smart Studio
+              </Label>
+              <Switch
+                id="smart-studio-toggle"
+                checked={useSmartStudio}
+                onCheckedChange={setUseSmartStudio}
+              />
+            </div>
+
+            {useSmartStudio ? (
+              <SmartDocumentStudio
+                documentConfig={currentConfig}
+                processingResult={processingResult}
+                isProcessing={processingResult?.stage !== 'complete' && processingResult?.stage !== 'error' && processingResult?.stage !== 'idle' && processingResult !== null}
+                onFileUpload={handleSmartStudioFileUpload}
+                onFieldUpdate={handleSmartStudioFieldUpdate}
+                onFieldVerify={handleSmartStudioFieldVerify}
+                onSave={handleVerifyAndSave}
+                onRunAgents={handleSmartStudioRunAgents}
+                extractedFields={smartStudioExtractedFields}
+                documentCharacteristics={smartStudioDocCharacteristics}
+                modelRouting={smartStudioModelRouting}
+                agentFindings={smartStudioAgentFindings}
+                imageUrl={processingResult?.imageUrl}
+              />
+            ) : (
+              <UploadTab
+                currentConfig={currentConfig}
+                processingResult={processingResult}
+                setProcessingResult={setProcessingResult}
+                onDrop={onDrop}
+                onVerifyAndSave={handleVerifyAndSave}
+                enableOCR={enableOCR}
+                setEnableOCR={setEnableOCR}
+                enableHandwriting={enableHandwriting}
+                setEnableHandwriting={setEnableHandwriting}
+                enableTableExtraction={enableTableExtraction}
+                setEnableTableExtraction={setEnableTableExtraction}
+                enableSignatureDetection={enableSignatureDetection}
+                setEnableSignatureDetection={setEnableSignatureDetection}
+                enableAutoCalculateQty={enableAutoCalculateQty}
+                setEnableAutoCalculateQty={setEnableAutoCalculateQty}
+                enableNdcMatching={enableNdcMatching}
+                setEnableNdcMatching={setEnableNdcMatching}
+                enableClinicalRecommendations={enableClinicalRecommendations}
+                setEnableClinicalRecommendations={setEnableClinicalRecommendations}
+                confidenceThreshold={confidenceThreshold}
+                setConfidenceThreshold={setConfidenceThreshold}
+                ocrProvider={ocrProvider}
+                setOcrProvider={setOcrProvider}
+              />
+            )}
           </TabsContent>
 
           {/* Medication Lookup Tab - Using extracted component */}

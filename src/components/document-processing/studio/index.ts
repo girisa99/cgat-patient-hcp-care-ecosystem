@@ -13,6 +13,7 @@ export { ReviewGateBar } from './ReviewGateBar';
 export { AgentFindingsPanel } from './AgentFindingsPanel';
 export { AutoConfigPanel } from './AutoConfigPanel';
 export { AddCustomAgentDialog } from './AddCustomAgentDialog';
+export { CompactReviewSummary } from './CompactReviewSummary';
 
 export type {
   DocumentCharacteristics,
