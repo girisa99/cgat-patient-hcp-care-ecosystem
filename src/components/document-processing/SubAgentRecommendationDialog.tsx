@@ -701,11 +701,65 @@ export default function SubAgentRecommendationDialog({
       return;
     }
 
+    // Build comprehensive extracted fields from all available data sources
+    const baseExtractedFields = extractedData?.processingResult?.extractedFields || extractedData?.extractedFields || {};
+    
+    // Merge in additional medication-specific data if available
+    const enhancedFields = { ...baseExtractedFields };
+    
+    // Add medication name from drug search query if not in extractedFields
+    if (extractedData?.drugSearchQuery && !enhancedFields.medication?.value && !enhancedFields.medication_name?.value) {
+      enhancedFields.medication = { value: extractedData.drugSearchQuery, confidence: 0.95 };
+    }
+    
+    // Add SIG from instructions if available
+    if (extractedData?.sigInstructions && !enhancedFields.sig?.value) {
+      enhancedFields.sig = { value: extractedData.sigInstructions, confidence: 0.9 };
+    }
+    
+    // Add NDC if available
+    if (extractedData?.selectedNdc && !enhancedFields.ndc?.value) {
+      enhancedFields.ndc = { value: extractedData.selectedNdc, confidence: 0.95 };
+    }
+    
+    // Add parsed SIG components
+    if (extractedData?.parsedSig) {
+      if (extractedData.parsedSig.dose && !enhancedFields.dose?.value) {
+        enhancedFields.dose = { value: extractedData.parsedSig.dose, confidence: 0.9 };
+      }
+      if (extractedData.parsedSig.frequency && !enhancedFields.frequency?.value) {
+        enhancedFields.frequency = { value: extractedData.parsedSig.frequency, confidence: 0.9 };
+      }
+      if (extractedData.parsedSig.route && !enhancedFields.route?.value) {
+        enhancedFields.route = { value: extractedData.parsedSig.route, confidence: 0.9 };
+      }
+      if (extractedData.parsedSig.duration && !enhancedFields.duration?.value) {
+        enhancedFields.duration = { value: extractedData.parsedSig.duration, confidence: 0.9 };
+      }
+    }
+    
+    // Add search results data for medication details
+    if (extractedData?.searchResults) {
+      if (extractedData.searchResults.drugName && !enhancedFields.medication?.value) {
+        enhancedFields.medication = { value: extractedData.searchResults.drugName, confidence: 0.95 };
+      }
+      if (extractedData.searchResults.genericName) {
+        enhancedFields.generic_name = { value: extractedData.searchResults.genericName, confidence: 0.9 };
+      }
+      if (extractedData.searchResults.strength) {
+        enhancedFields.strength = { value: extractedData.searchResults.strength, confidence: 0.9 };
+      }
+    }
+    
+    console.log('[SubAgentDialog] Enhanced fields for agent execution:', Object.keys(enhancedFields));
+    console.log('[SubAgentDialog] Medication:', enhancedFields.medication?.value || enhancedFields.medication_name?.value);
+
     const documentContext = {
       documentType: documentType.id,
-      extractedFields: extractedData?.processingResult?.extractedFields || extractedData?.extractedFields || {},
+      extractedFields: enhancedFields,
       rawText: extractedData?.processingResult?.rawText || extractedData?.rawText,
-      fileName: extractedData?.processingResult?.fileName || extractedData?.fileName
+      fileName: extractedData?.processingResult?.fileName || extractedData?.fileName,
+      imageBase64: extractedData?.medicalImageBase64
     };
 
     const results = await executeAgents(selectedSubAgents, documentContext);

@@ -149,6 +149,72 @@ interface AgentFinding {
 }
 
 // ============================================
+// HELPER: Normalize field access across naming conventions
+// ============================================
+
+function getFieldValue(fields: Record<string, any>, ...fieldNames: string[]): string | undefined {
+  for (const name of fieldNames) {
+    // Try direct value (object with .value)
+    if (fields[name]?.value) {
+      return fields[name].value;
+    }
+    // Try direct string value
+    if (typeof fields[name] === 'string' && fields[name]) {
+      return fields[name];
+    }
+    // Try snake_case variations
+    const snakeCase = name.replace(/([A-Z])/g, '_$1').toLowerCase();
+    if (fields[snakeCase]?.value) {
+      return fields[snakeCase].value;
+    }
+    if (typeof fields[snakeCase] === 'string' && fields[snakeCase]) {
+      return fields[snakeCase];
+    }
+    // Try camelCase variations  
+    const camelCase = name.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+    if (fields[camelCase]?.value) {
+      return fields[camelCase].value;
+    }
+    if (typeof fields[camelCase] === 'string' && fields[camelCase]) {
+      return fields[camelCase];
+    }
+  }
+  return undefined;
+}
+
+// Get medication name with comprehensive fallbacks
+function getMedicationName(fields: Record<string, any>): string {
+  return getFieldValue(fields, 
+    'medication', 'medication_name', 'drug_name', 'drug', 
+    'medicine', 'rx', 'prescription', 'med_name',
+    'medicationName', 'drugName', 'medicineName'
+  ) || 'Unknown';
+}
+
+// Get dosage/strength with fallbacks
+function getDosage(fields: Record<string, any>): string {
+  return getFieldValue(fields,
+    'dosage', 'strength', 'dose', 'medication_strength',
+    'dosageStrength', 'medicationStrength'
+  ) || 'Not specified';
+}
+
+// Get frequency/SIG with fallbacks  
+function getFrequency(fields: Record<string, any>): string {
+  return getFieldValue(fields,
+    'frequency', 'sig', 'sig_text', 'directions', 'instructions',
+    'dosage_instructions', 'sigText', 'dosageInstructions'
+  ) || 'Not specified';
+}
+
+// Get NDC with fallbacks
+function getNDC(fields: Record<string, any>): string {
+  return getFieldValue(fields,
+    'ndc', 'ndc_code', 'ndcCode', 'national_drug_code'
+  ) || 'Not available';
+}
+
+// ============================================
 // HELPER: Call existing edge functions
 // ============================================
 
@@ -337,14 +403,24 @@ async function executeNPIVerification(context: DocumentContext): Promise<AgentFi
 async function executeDrugLookup(context: DocumentContext): Promise<AgentFinding> {
   const fields = context.extractedFields || {};
   
-  const drugName = fields.medication?.value || fields.drug_name?.value || fields.medication_name?.value;
-  const ndc = fields.ndc?.value || fields.ndc_code?.value;
+  // Use helper functions for comprehensive field name fallbacks
+  const drugName = getMedicationName(fields);
+  const ndc = getNDC(fields);
   
-  if (!drugName && !ndc) {
+  console.log('[drug-lookup] Extracted drugName:', drugName, 'ndc:', ndc);
+  console.log('[drug-lookup] Available fields:', Object.keys(fields));
+  
+  if (drugName === 'Unknown' && ndc === 'Not available') {
     return {
       summary: 'Drug Lookup: No medication name or NDC found',
-      details: { status: 'no_data' },
-      recommendations: ['Manual medication entry required'],
+      details: { 
+        status: 'no_data',
+        availableFields: Object.keys(fields),
+        fieldsContent: Object.fromEntries(
+          Object.entries(fields).slice(0, 10).map(([k, v]) => [k, typeof v === 'object' ? v.value : v])
+        )
+      },
+      recommendations: ['Manual medication entry required', 'Verify document extraction worked correctly'],
       alerts: [{ level: 'warning', message: 'No medication data extracted from document' }],
       confidence: 0.3,
       aiPowered: false,
@@ -440,13 +516,17 @@ async function executeDrugLookup(context: DocumentContext): Promise<AgentFinding
 async function executeClinicalReviewAI(context: DocumentContext): Promise<AgentFinding> {
   const fields = context.extractedFields || {};
   
-  const medication = fields.medication?.value || fields.drug_name?.value || 'Unknown medication';
-  const dosage = fields.dosage?.value || fields.strength?.value || 'Not specified';
-  const frequency = fields.frequency?.value || fields.sig?.value || fields.sig_text?.value || 'Not specified';
-  const sigCode = fields.sig_code?.value || '';
-  const patientInfo = fields.patient_name?.value || 'Patient';
-  const diagnosis = fields.diagnosis?.value || fields.icd_code?.value || 'Not specified';
-  const route = fields.route?.value || fields.route_of_administration?.value || 'oral';
+  // Use helper functions for comprehensive field name fallbacks
+  const medication = getMedicationName(fields);
+  const dosage = getDosage(fields);
+  const frequency = getFrequency(fields);
+  const sigCode = getFieldValue(fields, 'sig_code', 'sigCode') || '';
+  const patientInfo = getFieldValue(fields, 'patient_name', 'patientName', 'patient') || 'Patient';
+  const diagnosis = getFieldValue(fields, 'diagnosis', 'icd_code', 'indication') || 'Not specified';
+  const route = getFieldValue(fields, 'route', 'route_of_administration', 'routeOfAdministration') || 'oral';
+  
+  console.log('[clinical-review-ai] Extracted medication:', medication, 'dosage:', dosage);
+  console.log('[clinical-review-ai] Available fields:', Object.keys(fields));
 
   const prompt = `Analyze the following prescription data and provide a clinical assessment.
 
@@ -524,9 +604,32 @@ Respond ONLY with the JSON object, no additional text.`;
 async function executeDrugInteractionAI(context: DocumentContext): Promise<AgentFinding> {
   const fields = context.extractedFields || {};
   
-  const medication = fields.medication?.value || fields.drug_name?.value || fields.medication_name?.value || 'Unknown';
-  const dosage = fields.dosage?.value || fields.strength?.value || 'Not specified';
-  const ndc = fields.ndc?.value || fields.ndc_code?.value || 'Not available';
+  // Use helper functions for comprehensive field name fallbacks
+  const medication = getMedicationName(fields);
+  const dosage = getDosage(fields);
+  const ndc = getNDC(fields);
+  
+  console.log('[drug-interaction-ai] Extracted medication:', medication, 'dosage:', dosage, 'ndc:', ndc);
+  console.log('[drug-interaction-ai] Available fields:', Object.keys(fields));
+  
+  // Check if we have valid data
+  if (medication === 'Unknown') {
+    return {
+      summary: 'Insufficient data to perform medication interaction analysis',
+      details: { 
+        medication: 'Unknown', 
+        dosage, 
+        ndc,
+        availableFields: Object.keys(fields),
+        error: 'No medication name found in extracted fields'
+      },
+      recommendations: ['Verify medication name was extracted correctly', 'Check document quality'],
+      alerts: [{ level: 'warning', message: 'Insufficient data to perform medication interaction analysis' }],
+      confidence: 0.1,
+      aiPowered: false,
+      dataSource: 'No data extracted'
+    };
+  }
 
   // First get FDA data for context
   let fdaContext = '';
@@ -781,9 +884,10 @@ function executeClinicalReviewFallback(context: DocumentContext): AgentFinding {
   const fields = context.extractedFields || {};
   const alerts: Array<{ level: 'info' | 'warning' | 'error'; message: string }> = [];
   
-  const medication = fields.medication?.value || fields.drug_name?.value;
-  const dosage = fields.dosage?.value || fields.strength?.value;
-  const frequency = fields.frequency?.value || fields.sig?.value;
+  // Use helper functions
+  const medication = getMedicationName(fields);
+  const dosage = getDosage(fields);
+  const frequency = getFrequency(fields);
 
   if (dosage) {
     const doseValue = parseFloat(dosage);
@@ -809,7 +913,8 @@ function executeClinicalReviewFallback(context: DocumentContext): AgentFinding {
 
 function executeDrugInteractionFallback(context: DocumentContext): AgentFinding {
   const fields = context.extractedFields || {};
-  const medication = fields.medication?.value || fields.drug_name?.value || 'Unknown';
+  // Use helper function
+  const medication = getMedicationName(fields);
   const alerts: Array<{ level: 'info' | 'warning' | 'error'; message: string }> = [];
 
   if (medication?.toLowerCase().includes('warfarin') || medication?.toLowerCase().includes('coumadin')) {
