@@ -4,7 +4,7 @@
  * Part of Genie Studio
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -203,6 +203,22 @@ export function SmartContentPipeline({
   const [progressMessage, setProgressMessage] = useState('');
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // Timer ref for cleanup
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const simulationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+      if (simulationTimeoutRef.current) {
+        clearTimeout(simulationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Update defaults when content type changes
   const handleContentTypeChange = (newType: ContentType) => {
@@ -278,7 +294,12 @@ export function SmartContentPipeline({
     setGeneratedContent(null);
 
     try {
-      const progressInterval = setInterval(() => {
+      // Clear any existing interval
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+      
+      progressIntervalRef.current = setInterval(() => {
         setProgress(prev => Math.min(prev + 8, 90));
         const messages = {
           'document': ['Extracting document content...', 'Analyzing structure...', 'Generating script...'],
@@ -291,10 +312,15 @@ export function SmartContentPipeline({
         setProgressMessage(typeMessages[Math.floor(Math.random() * typeMessages.length)]);
       }, 700);
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 3500));
+      // Simulate API call with tracked timeout
+      await new Promise<void>(resolve => {
+        simulationTimeoutRef.current = setTimeout(resolve, 3500);
+      });
 
-      clearInterval(progressInterval);
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
       setProgress(100);
       setProgressMessage('Complete!');
 

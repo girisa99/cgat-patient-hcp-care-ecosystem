@@ -64,7 +64,7 @@ interface AudioPanelProps {
   selectedVoice: string;
   onVoiceChange: (voice: string) => void;
   onGenerateTTS: () => void;
-  onPlayTTS: () => void;
+  onPlayTTS: (url?: string) => void;
   onPauseTTS?: () => void;
   onResumeTTS?: () => void;
   onStopTTS: () => void;
@@ -532,10 +532,9 @@ export function AudioPanel({
                       className="flex-1 h-7 text-xs"
                       onClick={() => {
                         const file = ttsFiles.find(f => f.id === selectedTTSFileId);
-                        if (file) {
-                          // Set the audio URL and play using the passed-in handler
-                          const audio = new Audio(file.url);
-                          audio.play();
+                        if (file && onPlayTTS) {
+                          // Use the passed-in handler for proper audio lifecycle
+                          onPlayTTS(file.url);
                         }
                       }}
                     >
@@ -664,7 +663,7 @@ export function AudioPanel({
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={isTTSPlaying ? onStopTTS : onPlayTTS}
+                  onClick={() => isTTSPlaying ? onStopTTS() : onPlayTTS()}
                   className="h-8 px-3"
                 >
                   {isTTSPlaying ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}

@@ -4,7 +4,7 @@
  * With smart image generation suggestions based on content
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -157,6 +157,20 @@ export function FullPipelineWorkflow({
 
   // Generated content
   const [generatedScript, setGeneratedScript] = useState('');
+  
+  // Timer refs for cleanup
+  const suggestionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pipelineTimeoutsRef = useRef<NodeJS.Timeout[]>([]);
+  
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (suggestionTimeoutRef.current) {
+        clearTimeout(suggestionTimeoutRef.current);
+      }
+      pipelineTimeoutsRef.current.forEach(t => clearTimeout(t));
+    };
+  }, []);
 
   // File drop for sources
   const onSourceDrop = useCallback((acceptedFiles: File[]) => {
@@ -306,8 +320,10 @@ export function FullPipelineWorkflow({
     setIsProcessing(true);
     setProgressMessage('Analyzing content for image suggestions...');
     
-    // Simulate AI analysis
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Simulate AI analysis with tracked timeout
+    await new Promise<void>(resolve => {
+      suggestionTimeoutRef.current = setTimeout(resolve, 2000);
+    });
     
     const mockSuggestions: ImageSuggestion[] = [
       {
@@ -376,6 +392,10 @@ export function FullPipelineWorkflow({
     setProgressMessage('Starting pipeline...');
 
     try {
+      // Clear any existing pipeline timeouts
+      pipelineTimeoutsRef.current.forEach(t => clearTimeout(t));
+      pipelineTimeoutsRef.current = [];
+      
       // Simulate multi-step processing
       const steps = [
         { message: 'Processing sources...', duration: 1500 },
@@ -388,7 +408,10 @@ export function FullPipelineWorkflow({
       for (let i = 0; i < steps.length; i++) {
         setProgressMessage(steps[i].message);
         setProgress((i + 1) / steps.length * 100);
-        await new Promise(resolve => setTimeout(resolve, steps[i].duration));
+        await new Promise<void>(resolve => {
+          const timeoutId = setTimeout(resolve, steps[i].duration);
+          pipelineTimeoutsRef.current.push(timeoutId);
+        });
       }
 
       // Update media items to "ready"

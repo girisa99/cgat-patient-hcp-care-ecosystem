@@ -18,6 +18,7 @@ export interface AudioElementOptions {
   onLoadedMetadata?: (duration: number) => void;
   onTimeUpdate?: (currentTime: number) => void;
   volume?: number;
+  loop?: boolean;
   metadataTimeoutMs?: number;
 }
 
@@ -48,11 +49,13 @@ export function createManagedAudio(
     onLoadedMetadata,
     onTimeUpdate,
     volume = 1,
+    loop = false,
     metadataTimeoutMs = 10000,
   } = options;
 
-  // Set initial volume
+  // Set initial volume and loop
   audio.volume = Math.max(0, Math.min(1, volume));
+  audio.loop = loop;
 
   // Track if metadata callback was fired
   let metadataFired = false;
