@@ -359,19 +359,28 @@ export default function DocumentProcessing() {
   } | null>(null);
   
   // Handler for when agents complete execution in-place
-  const handleAgentExecutionComplete = useCallback((results: any[]) => {
+  const handleAgentExecutionComplete = useCallback((results: any[], mergeWithExtraction?: boolean) => {
+    console.log('[handleAgentExecutionComplete] Received results:', results.length, 'Merge:', mergeWithExtraction);
+    
+    // Update agent findings state - this triggers MedicationTab to display results
     setAgentFindings(results);
     
-    // Update processing result with agent findings if available
+    // Update processing result to store agent findings for persistence
     if (processingResult) {
-      setProcessingResult(prev => prev ? {
-        ...prev,
-        // Store findings in a format that can be saved to DB
-      } : prev);
+      setProcessingResult(prev => {
+        if (!prev) return prev;
+        
+        return {
+          ...prev,
+          agentFindings: results,
+        };
+      });
     }
     
     toast.success(`${results.length} agent(s) executed`, {
-      description: `Results attached to document`
+      description: mergeWithExtraction 
+        ? 'Results merged with extracted data' 
+        : 'Results attached to document'
     });
   }, [processingResult]);
 
