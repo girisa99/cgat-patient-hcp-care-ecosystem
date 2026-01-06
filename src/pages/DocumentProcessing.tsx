@@ -671,6 +671,45 @@ export default function DocumentProcessing() {
   useEffect(() => {
     setHasShownAutoRecommendation(false);
   }, [selectedDocType]);
+
+  // Handler to reset the document processing state for a fresh upload
+  const handleNewDocument = useCallback(() => {
+    // Clear all processing state
+    setProcessingResult(null);
+    setPendingResult(null);
+    setAgentFindings([]);
+    
+    // Clear medication tab state
+    setDrugSearchQuery('');
+    setSearchResults(null);
+    setSelectedNdc(null);
+    setSelectedDose('1 tablet');
+    setSelectedRoute('Oral');
+    setSelectedFrequency('Once daily');
+    setSelectedDuration('30 days');
+    setSigInstructions('');
+    setParsedSig(null);
+    
+    // Clear session storage
+    sessionStorage.removeItem('docProcessing_currentResult');
+    sessionStorage.removeItem('docProcessing_pendingResult');
+    sessionStorage.removeItem('docProcessing_fullState');
+    sessionStorage.removeItem('docProcessing_drugQuery');
+    sessionStorage.removeItem('docProcessing_sigInstructions');
+    sessionStorage.removeItem('docProcessing_searchResults');
+    sessionStorage.removeItem('docProcessing_selectedNdc');
+    sessionStorage.removeItem('docProcessing_parsedSig');
+    
+    // Reset recommendation flag
+    setHasShownAutoRecommendation(false);
+    
+    // Switch to upload tab
+    setActiveTab('upload');
+    
+    toast.success('Ready for new document', {
+      description: `Upload a new ${currentConfig.title} document`
+    });
+  }, [currentConfig.title]);
   
   // Processing settings (these control actual behavior)
   const [enableOCR, setEnableOCR] = useState(true);
@@ -2348,6 +2387,7 @@ export default function DocumentProcessing() {
           onOpenSubAgentDialog={() => setShowSubAgentDialog(true)}
           onOpenSettingsDialog={() => setShowSettingsDialog(true)}
           onOpenCustomTypeDialog={() => setShowCustomTypeDialog(true)}
+          onNewDocument={handleNewDocument}
         />
 
         {/* Agent Workflow Selection - Using extracted component */}
@@ -2456,6 +2496,7 @@ export default function DocumentProcessing() {
               frequencyOptions={frequencyOptions}
               durationOptions={durationOptions}
               setSelectedRecommendation={setSelectedRecommendation}
+              agentFindings={agentFindings}
             />
           </TabsContent>
 
