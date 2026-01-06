@@ -659,24 +659,44 @@ export function RecordingStudio({
           selectedMusicId,
         });
         
+        // Helper to connect audio after a small delay (allow audio element to be created)
+        const connectAfterDelay = (type: 'tts' | 'voiceover' | 'music', attempts = 0) => {
+          setTimeout(() => {
+            const element = audioPlayback.audioElements?.[type];
+            if (element) {
+              console.log(`[RecordingStudio] Connecting ${type} to mixer`);
+              recording.connectAudio(element, type);
+            } else if (attempts < 10) {
+              // Retry if element not ready yet
+              connectAfterDelay(type, attempts + 1);
+            } else {
+              console.warn(`[RecordingStudio] ${type} audio element not available after retries`);
+            }
+          }, 50);
+        };
+        
         // Play voice audio
         let voiceAudioPlayed = false;
         
         if (ttsFileToPlay?.url) {
           console.log('[RecordingStudio] ▶️ Playing TTS file:', ttsFileToPlay.name);
           audioPlayback.playTTS(ttsFileToPlay.url);
+          connectAfterDelay('tts');
           voiceAudioPlayed = true;
         } else if (voiceoverToPlay?.url) {
           console.log('[RecordingStudio] ▶️ Playing voiceover:', voiceoverToPlay.name);
           audioPlayback.playVoiceover(voiceoverToPlay.url);
+          connectAfterDelay('voiceover');
           voiceAudioPlayed = true;
         } else if (ttsGeneration.lastResult?.audioUrl) {
           console.log('[RecordingStudio] ▶️ Playing generated TTS audio');
           audioPlayback.playTTS(ttsGeneration.lastResult.audioUrl);
+          connectAfterDelay('tts');
           voiceAudioPlayed = true;
         } else if (ttsAudioUrl) {
           console.log('[RecordingStudio] ▶️ Playing TTS from state URL');
           audioPlayback.playTTS(ttsAudioUrl);
+          connectAfterDelay('tts');
           voiceAudioPlayed = true;
         }
         
@@ -688,6 +708,7 @@ export function RecordingStudio({
         if (musicToPlay?.url) {
           console.log('[RecordingStudio] ▶️ Playing music:', musicToPlay.name);
           audioPlayback.playMusic(musicToPlay.url);
+          connectAfterDelay('music');
         }
         
         // Start teleprompter scrolling

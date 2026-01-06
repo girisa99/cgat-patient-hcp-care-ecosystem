@@ -61,16 +61,18 @@ export function useRecordingAudioMixer() {
   /**
    * Connect an audio element to the mixer
    * Safe to call multiple times - will only connect once per element
+   * IMPORTANT: Audio elements must not have been used with a different AudioContext
    */
   const connectAudioElement = useCallback((audio: HTMLAudioElement | null, type: string = 'audio') => {
     if (!audio || !audioContextRef.current || !destinationRef.current || !isActiveRef.current) {
-      return;
+      console.log(`[AudioMixer] Cannot connect ${type}: mixer not active or audio null`);
+      return false;
     }
 
     // Check if already connected via WeakMap
     if (sourceMapRef.current.has(audio)) {
       console.log(`[AudioMixer] ${type} already connected`);
-      return;
+      return true;
     }
 
     try {
@@ -89,14 +91,18 @@ export function useRecordingAudioMixer() {
       sourceMapRef.current.set(audio, source);
       connectedElementsRef.current.add(audio);
       
-      console.log(`[AudioMixer] ${type} connected to mixer`);
+      console.log(`[AudioMixer] ✅ ${type} connected to mixer successfully`);
+      return true;
     } catch (err: any) {
       // "InvalidStateError" means the audio is already connected to a different context
       // This can happen if the audio element was previously used
       if (err.name === 'InvalidStateError') {
-        console.warn(`[AudioMixer] ${type} already has a source in another context - may need fresh Audio element`);
+        console.warn(`[AudioMixer] ⚠️ ${type} already has a source in another context - audio may not be captured in recording`);
+        // Still return true as the audio will play (just not captured)
+        return false;
       } else {
         console.error(`[AudioMixer] Failed to connect ${type}:`, err);
+        return false;
       }
     }
   }, []);
