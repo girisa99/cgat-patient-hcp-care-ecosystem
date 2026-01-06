@@ -40,6 +40,7 @@ import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
 import { 
   useCamera, 
   useRecording, 
+  useRecordingStream,
   useAudioPlayback, 
   useRecordingLibrary, 
   useScreenShare, 
@@ -517,30 +518,40 @@ export function RecordingStudio({
     }
   }, [audioPlayback.audioTimeInfo, scripts, selectedScriptId]);
   
-  // Get combined stream based on mode
-  const getRecordingStream = useCallback(async (): Promise<MediaStream | null> => {
-    if (recordingMode === 'camera') {
-      return camera.stream;
-    } else if (recordingMode === 'screen') {
-      if (!screenShare.isSharing) {
-        await screenShare.startScreenShare();
-      }
-      return screenShare.combineStreams(camera.stream, screenShare.screenStream, 'screen');
-    } else {
-      if (!screenShare.isSharing) {
-        await screenShare.startScreenShare();
-      }
-      return screenShare.combineStreams(camera.stream, screenShare.screenStream, 'screen+camera');
-    }
-  }, [recordingMode, camera.stream, screenShare]);
+  // Use the new useRecordingStream hook for proper stream management
+  // Handles: blur integration, screen+camera PiP compositing, dynamic stream acquisition
+  const recordingStream = useRecordingStream({
+    mode: recordingMode,
+    cameraStream: camera.stream,
+    screenStream: screenShare.screenStream,
+    startScreenShare: screenShare.startScreenShare,
+    isScreenSharing: screenShare.isSharing,
+    // Note: blurredStream integration requires useMLBackgroundBlur to expose the stream
+    // For now, blur is applied at the camera level, not the recording stream level
+    blurredStream: null,
+    useBlur: false, // Blur handled by VideoPreview component
+    pipConfig: {
+      enabled: pipEnabled,
+      position: 'bottom-right',
+      size: 'medium',
+    },
+  });
+  
+  // Max recording duration (30 minutes default, 0 = unlimited)
+  const MAX_RECORDING_DURATION = 30 * 60; // 30 minutes in seconds
   
   const recording = useRecording(
-    // Pass a getter function instead of direct stream to prevent stale closure issues
-    // This ensures we always get the fresh stream when recording starts
-    getRecordingStream, 
+    // Use the new recordingStream.getRecordingStream which handles:
+    // - Background blur integration
+    // - Screen+Camera PiP canvas compositing  
+    // - Dynamic stream acquisition at recording start
+    recordingStream.getRecordingStream, 
     {
       onRecordingComplete: async (blob, duration) => {
         console.log('[RecordingStudio] onRecordingComplete called - blob size:', blob.size, 'duration:', duration);
+        
+        // Clean up recording stream resources
+        recordingStream.cleanup();
         
         // Stop all audio playback
         audioPlayback.stopAll();
@@ -567,6 +578,11 @@ export function RecordingStudio({
       quality: recordingQuality,
       // 5-second countdown (default in hook)
       countdownSeconds: 5,
+      // Max duration limit (auto-stop)
+      maxDuration: MAX_RECORDING_DURATION,
+      onMaxDurationReached: () => {
+        recording.stopRecording();
+      },
     }
   );
 

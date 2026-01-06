@@ -43,6 +43,10 @@ interface UseRecordingOptions {
   countdownSeconds?: number;
   quality?: RecordingQualityLevel;
   enablePersistence?: boolean;
+  /** Maximum recording duration in seconds (0 = unlimited) */
+  maxDuration?: number;
+  /** Callback when max duration is reached */
+  onMaxDurationReached?: () => void;
 }
 
 // The hook now accepts a getStream function instead of a direct stream reference
@@ -55,7 +59,9 @@ export function useRecording(
     onRecordingComplete, 
     countdownSeconds = 5, 
     quality = 'high',
-    enablePersistence = true 
+    enablePersistence = true,
+    maxDuration = 0,
+    onMaxDurationReached,
   } = options;
   
   const [state, setState] = useState<RecordingState>({
@@ -72,12 +78,14 @@ export function useRecording(
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
+  const countdownIntervalRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
   const pausedTimeRef = useRef<number>(0);
   const pauseStartRef = useRef<number>(0);
   const combinedStreamRef = useRef<MediaStream | null>(null);
   const activeStreamRef = useRef<MediaStream | null>(null);
   const lastChunkCountRef = useRef<number>(0);
+  const isCancelledRef = useRef(false);
   
   // Use the audio mixer for dynamic audio capture
   const audioMixer = useRecordingAudioMixer();
@@ -95,13 +103,27 @@ export function useRecording(
   }, [audioMixer]);
 
   const startCountdown = useCallback((onComplete: () => void) => {
+    isCancelledRef.current = false;
     let count = countdownSeconds;
     setCountdown(count);
     
-    const interval = setInterval(() => {
+    countdownIntervalRef.current = window.setInterval(() => {
+      // Check if cancelled
+      if (isCancelledRef.current) {
+        if (countdownIntervalRef.current) {
+          clearInterval(countdownIntervalRef.current);
+          countdownIntervalRef.current = null;
+        }
+        setCountdown(null);
+        return;
+      }
+      
       count--;
       if (count <= 0) {
-        clearInterval(interval);
+        if (countdownIntervalRef.current) {
+          clearInterval(countdownIntervalRef.current);
+          countdownIntervalRef.current = null;
+        }
         setCountdown(null);
         onComplete();
       } else {
@@ -109,6 +131,65 @@ export function useRecording(
       }
     }, 1000);
   }, [countdownSeconds]);
+
+  /**
+   * Cancel recording during countdown (before recording actually starts)
+   */
+  const cancelRecording = useCallback(() => {
+    console.log('[Recording] cancelRecording called');
+    
+    // If in countdown, cancel it
+    if (countdownIntervalRef.current) {
+      isCancelledRef.current = true;
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+      setCountdown(null);
+      console.log('[Recording] Countdown cancelled');
+      toast.info('Recording cancelled');
+      return;
+    }
+    
+    // If recording, stop it without saving
+    if (state.isRecording && mediaRecorderRef.current) {
+      console.log('[Recording] Cancelling active recording');
+      
+      // Clear timer
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      
+      // Stop recorder without triggering onRecordingComplete
+      const recorder = mediaRecorderRef.current;
+      recorder.ondataavailable = null;
+      recorder.onstop = () => {
+        console.log('[Recording] Recording cancelled, no blob created');
+      };
+      
+      if (recorder.state !== 'inactive') {
+        try {
+          recorder.stop();
+        } catch (e) {
+          console.warn('[Recording] Error stopping during cancel:', e);
+        }
+      }
+      
+      // Reset state
+      chunksRef.current = [];
+      setState({
+        isRecording: false,
+        isPaused: false,
+        isStopped: false,
+        duration: 0,
+        recordedChunks: [],
+      });
+      
+      audioMixer.cleanup();
+      persistence.stopMonitoring();
+      
+      toast.info('Recording cancelled');
+    }
+  }, [state.isRecording, audioMixer, persistence]);
 
   // Track if we've already shown recovery toast
   const recoveryToastShownRef = useRef(false);
@@ -394,6 +475,17 @@ export function useRecording(
             if (newDuration % 10 === 0) {
               console.log('[Recording] Timer tick:', newDuration, 's');
             }
+            
+            // Check max duration limit
+            if (maxDuration > 0 && newDuration >= maxDuration) {
+              console.log('[Recording] Max duration reached:', maxDuration, 's');
+              // Use setTimeout to avoid calling stopRecording during setState
+              setTimeout(() => {
+                onMaxDurationReached?.();
+                toast.info(`Maximum recording duration (${Math.floor(maxDuration / 60)}m ${maxDuration % 60}s) reached`);
+              }, 0);
+            }
+            
             return { ...prev, duration: newDuration };
           });
         }, 1000);
@@ -597,6 +689,7 @@ export function useRecording(
     startRecording,
     pauseRecording,
     stopRecording,
+    cancelRecording,
     trimLastSeconds,
     getCurrentBlob,
     connectAudio,

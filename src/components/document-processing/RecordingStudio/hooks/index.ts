@@ -4,6 +4,8 @@
 
 export { useCamera } from './useCamera';
 export { useRecording } from './useRecording';
+export { useRecordingStream } from './useRecordingStream';
+export type { RecordingMode as StreamRecordingMode, PipConfig, PipPosition, PipSize } from './useRecordingStream';
 export { useRecordingAudioMixer } from './useRecordingAudioMixer';
 export { useRecordingPersistence } from './useRecordingPersistence';
 export { useAudioPlayback } from './useAudioPlayback';
