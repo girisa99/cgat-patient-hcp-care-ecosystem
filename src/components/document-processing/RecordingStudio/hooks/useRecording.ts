@@ -402,40 +402,59 @@ export function useRecording(
           }
         };
 
-        recorder.onstop = () => {
-          console.log('[Recording] MediaRecorder stopped, chunks:', chunksRef.current.length);
+        recorder.onstop = async () => {
+          console.log('[Recording] MediaRecorder stopped, chunks in memory:', chunksRef.current.length);
           
-          persistence.stopMonitoring();
+          // Store session ID before it gets cleared
+          const currentSessionId = persistence.sessionInfo?.id;
+          
+          // Don't call stopMonitoring here - it's already called in stopRecording()
+          // persistence.stopMonitoring(); 
           
           if (enablePersistence) {
-            persistence.completeSession();
+            await persistence.completeSession();
           }
           
           const duration = Math.floor((Date.now() - startTimeRef.current - pausedTimeRef.current) / 1000);
+          let success = false;
           
           if (chunksRef.current.length > 0) {
             const blob = new Blob(chunksRef.current, { type: 'video/webm' });
-            console.log('[Recording] Created blob:', blob.size, 'bytes, duration:', duration, 's');
+            console.log('[Recording] Created blob from memory:', blob.size, 'bytes, duration:', duration, 's');
             onRecordingComplete?.(blob, duration);
+            success = true;
           } else {
-            console.warn('[Recording] No chunks recorded - attempting recovery from persistence');
+            console.warn('[Recording] No chunks in memory - attempting recovery from IndexedDB');
             
-            if (enablePersistence && persistence.sessionInfo?.id) {
-              persistence.recoverSession(persistence.sessionInfo.id).then(recoveredChunks => {
+            if (enablePersistence && currentSessionId) {
+              try {
+                const recoveredChunks = await persistence.recoverSession(currentSessionId);
                 if (recoveredChunks.length > 0) {
                   const blob = new Blob(recoveredChunks, { type: 'video/webm' });
-                  console.log('[Recording] Recovered from persistence:', blob.size, 'bytes');
+                  console.log('[Recording] Recovered from IndexedDB:', blob.size, 'bytes, chunks:', recoveredChunks.length);
                   toast.success('Recording recovered from backup!');
                   onRecordingComplete?.(blob, duration);
+                  success = true;
                 } else {
-                  const emptyBlob = new Blob([], { type: 'video/webm' });
-                  onRecordingComplete?.(emptyBlob, duration);
+                  console.error('[Recording] No chunks found in IndexedDB either');
+                  toast.error('Recording failed - no data captured');
+                  onRecordingComplete?.(new Blob([], { type: 'video/webm' }), duration);
                 }
-              });
+              } catch (err) {
+                console.error('[Recording] Recovery failed:', err);
+                toast.error('Recording recovery failed');
+                onRecordingComplete?.(new Blob([], { type: 'video/webm' }), duration);
+              }
             } else {
-              const emptyBlob = new Blob([], { type: 'video/webm' });
-              onRecordingComplete?.(emptyBlob, duration);
+              console.error('[Recording] Cannot recover - no session ID');
+              toast.error('Recording failed - no data captured');
+              onRecordingComplete?.(new Blob([], { type: 'video/webm' }), duration);
             }
+          }
+          
+          // Reset session state after processing
+          if (success && enablePersistence) {
+            persistence.resetSession();
           }
           
           audioMixer.cleanup();
@@ -532,7 +551,7 @@ export function useRecording(
     }
   }, [state.isRecording, state.isPaused, enablePersistence, persistence]);
 
-  const stopRecording = useCallback(() => {
+  const stopRecording = useCallback(async () => {
     if (!mediaRecorderRef.current) {
       console.warn('[Recording] No MediaRecorder to stop');
       return;
@@ -541,16 +560,26 @@ export function useRecording(
     const recorder = mediaRecorderRef.current;
     console.log('[Recording] Stopping, recorder state:', recorder.state, 'chunks so far:', chunksRef.current.length);
 
-    persistence.stopMonitoring();
-
+    // Stop timer first
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
 
+    // CRITICAL: Force save ALL chunks before stopping monitoring
+    // Do this BEFORE stopMonitoring() which resets state
     if (enablePersistence && chunksRef.current.length > 0) {
-      persistence.saveChunks(chunksRef.current, true);
+      console.log('[Recording] Force saving', chunksRef.current.length, 'chunks before stop...');
+      try {
+        await persistence.saveChunks(chunksRef.current, true);
+        console.log('[Recording] Final chunks saved successfully');
+      } catch (err) {
+        console.error('[Recording] Failed to save final chunks:', err);
+      }
     }
+
+    // Now stop monitoring (this resets some state but chunks are already saved)
+    persistence.stopMonitoring();
 
     setState(prev => ({ ...prev, isRecording: false, isStopped: true }));
 
