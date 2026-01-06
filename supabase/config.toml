@@ -158,3 +158,6 @@ verify_jwt = false
 
 [functions.google-tts]
 verify_jwt = false
+
+[functions.execute-document-agent]
+verify_jwt = false

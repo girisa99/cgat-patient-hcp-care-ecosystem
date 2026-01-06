@@ -33,6 +33,9 @@ export { ExtractionMetricsSummary } from './ExtractionMetricsSummary';
 export { ModelRoutingPanel } from './ModelRoutingPanel';
 export type { ModelRoutingInfo as ModelRoutingPanelInfo } from './ModelRoutingPanel';
 
+// Smart Document Studio Components
+export * from './studio';
+
 export type { AIProvider, PipelineType, ModelUsageInfo } from './AIModelIndicator';
 export { useDocumentProcessing, DOCUMENT_TYPE_FIELDS } from '@/hooks/useDocumentProcessing';
 export type { 

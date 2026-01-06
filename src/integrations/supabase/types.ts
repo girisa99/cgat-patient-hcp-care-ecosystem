@@ -4708,6 +4708,8 @@ export type Database = {
       }
       document_processing_jobs: {
         Row: {
+          agent_execution_status: string | null
+          agent_findings: Json | null
           completed_at: string | null
           created_at: string
           current_stage: string | null
@@ -4735,6 +4737,8 @@ export type Database = {
           validation_status: string | null
         }
         Insert: {
+          agent_execution_status?: string | null
+          agent_findings?: Json | null
           completed_at?: string | null
           created_at?: string
           current_stage?: string | null
@@ -4762,6 +4766,8 @@ export type Database = {
           validation_status?: string | null
         }
         Update: {
+          agent_execution_status?: string | null
+          agent_findings?: Json | null
           completed_at?: string | null
           created_at?: string
           current_stage?: string | null
