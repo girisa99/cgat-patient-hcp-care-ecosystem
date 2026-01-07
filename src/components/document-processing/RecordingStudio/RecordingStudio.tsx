@@ -210,6 +210,14 @@ export function RecordingStudio({
   
   // Ref to store proceedWithRecording for use in callbacks defined before it
   const proceedWithRecordingRef = useRef<((mode: RecordingMode) => Promise<void>) | null>(null);
+  
+  // Ref to store pending audio info to play AFTER countdown completes
+  const pendingAudioRef = useRef<{
+    ttsUrl: string | null;
+    ttsName: string;
+    musicUrl: string | null;
+    musicName: string;
+  } | null>(null);
 
   // Script draft storage hook
   const scriptDraft = useScriptDraftStorage({ 
@@ -590,6 +598,37 @@ export function RecordingStudio({
       onMaxDurationReached: () => {
         // Use ref to avoid circular dependency
         stopRecordingRef.current?.();
+      },
+      // CRITICAL: Start audio playback AFTER countdown, when recording ACTUALLY starts
+      onRecordingStarted: () => {
+        console.log('[RecordingStudio] ✅ onRecordingStarted callback - NOW starting audio!');
+        
+        const pendingAudio = pendingAudioRef.current;
+        if (!pendingAudio) {
+          console.log('[RecordingStudio] No pending audio to play');
+          return;
+        }
+        
+        // Start TTS/Voiceover audio
+        if (pendingAudio.ttsUrl) {
+          console.log('[RecordingStudio] ▶️ Starting TTS/Voiceover NOW:', pendingAudio.ttsName);
+          const ttsAudioEl = audioPlayback.playTTS(pendingAudio.ttsUrl);
+          if (ttsAudioEl) {
+            recording.connectAudio(ttsAudioEl, 'tts');
+          }
+        }
+        
+        // Start background music
+        if (pendingAudio.musicUrl) {
+          console.log('[RecordingStudio] ▶️ Starting music NOW:', pendingAudio.musicName);
+          const musicAudioEl = audioPlayback.playMusic(pendingAudio.musicUrl);
+          if (musicAudioEl) {
+            recording.connectAudio(musicAudioEl, 'music');
+          }
+        }
+        
+        // Clear pending audio ref
+        pendingAudioRef.current = null;
       },
     }
   );
@@ -988,54 +1027,29 @@ export function RecordingStudio({
     // Reset cancellation flag
     recordingCancelledRef.current = false;
     
-    // === HYBRID FIX: Pre-connect audio BEFORE countdown starts ===
-    // This ensures audio streams are captured from the beginning
+    // Audio will be started AFTER countdown completes via onRecordingStarted callback
     
-    // 1. Start audio playback NOW (will play during countdown)
+    // NOTE: Audio will be started AFTER countdown completes, not before!
+    // This is handled by the onRecordingActuallyStarted callback
     const ttsFileToPlay = voiceovers.find(v => v.id === selectedTTSFileId);
     const voiceoverToPlay = voiceovers.find(v => v.id === selectedVoiceoverId);
     const musicToPlay = music.find(m => m.id === selectedMusicId);
     
-    console.log('[RecordingStudio] === PRE-CONNECTING AUDIO (HYBRID APPROACH) ===');
-    console.log('[RecordingStudio] Audio to pre-connect:', {
+    console.log('[RecordingStudio] Audio to play after countdown:', {
       hasTTS: !!ttsFileToPlay?.url,
       hasVoiceover: !!voiceoverToPlay?.url,
       hasMusic: !!musicToPlay?.url,
     });
     
-    // 2. Start playing audio (will be captured by mixer)
-    let ttsAudioEl: HTMLAudioElement | null = null;
-    let voiceoverAudioEl: HTMLAudioElement | null = null;
-    let musicAudioEl: HTMLAudioElement | null = null;
+    // Store audio info for starting after countdown
+    pendingAudioRef.current = {
+      ttsUrl: ttsFileToPlay?.url || voiceoverToPlay?.url || ttsGeneration.lastResult?.audioUrl || ttsAudioUrl || null,
+      ttsName: ttsFileToPlay?.name || voiceoverToPlay?.name || 'TTS Audio',
+      musicUrl: musicToPlay?.url || null,
+      musicName: musicToPlay?.name || 'Music',
+    };
     
-    if (ttsFileToPlay?.url) {
-      console.log('[RecordingStudio] ▶️ Starting TTS before countdown:', ttsFileToPlay.name);
-      ttsAudioEl = audioPlayback.playTTS(ttsFileToPlay.url);
-    } else if (voiceoverToPlay?.url) {
-      console.log('[RecordingStudio] ▶️ Starting voiceover before countdown:', voiceoverToPlay.name);
-      voiceoverAudioEl = audioPlayback.playVoiceover(voiceoverToPlay.url);
-    } else if (ttsGeneration.lastResult?.audioUrl) {
-      console.log('[RecordingStudio] ▶️ Starting generated TTS before countdown');
-      ttsAudioEl = audioPlayback.playTTS(ttsGeneration.lastResult.audioUrl);
-    } else if (ttsAudioUrl) {
-      console.log('[RecordingStudio] ▶️ Starting TTS from state before countdown');
-      ttsAudioEl = audioPlayback.playTTS(ttsAudioUrl);
-    }
-    
-    if (musicToPlay?.url) {
-      console.log('[RecordingStudio] ▶️ Starting music before countdown:', musicToPlay.name);
-      musicAudioEl = audioPlayback.playMusic(musicToPlay.url);
-    }
-    
-    // 3. Pre-connect audio elements to the mixer
-    // This sets up captureStream BEFORE MediaRecorder starts
-    recording.preConnectAudio({
-      tts: ttsAudioEl,
-      voiceover: voiceoverAudioEl,
-      music: musicAudioEl,
-    });
-    
-    console.log('[RecordingStudio] ✅ Audio pre-connected, starting countdown...');
+    console.log('[RecordingStudio] Audio will start AFTER countdown completes');
     
     // Open teleprompter automatically when recording starts (if script available)
     const teleprompterContent = currentScript?.content || audioLinkedScriptText;
@@ -1060,8 +1074,7 @@ export function RecordingStudio({
       audioPlaybackTimeoutRef.current = null;
     }
     
-    // Start recording - audio is already playing and pre-connected
-    // The 5-second countdown gives audio time to be fully captured
+    // Start recording - audio will start via onRecordingStarted callback AFTER countdown
     recording.startRecording();
     
   }, [recording, currentScript, audioLinkedScriptText, camera.stream, screenShare, recordingStream.isReady, 
