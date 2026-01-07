@@ -216,6 +216,112 @@ function getNDC(fields: Record<string, any>): string {
 }
 
 // ============================================
+// HELPER: Extract ALL medications from fields
+// Supports multiple formats: medications array, numbered fields, primary field
+// ============================================
+
+interface ExtractedMedication {
+  name: string;
+  strength?: string;
+  sig?: string;
+  ndc?: string;
+  quantity?: string;
+  refills?: string;
+  route?: string;
+  dosageForm?: string;
+  isControlled?: boolean;
+  schedule?: string;
+}
+
+function extractAllMedications(fields: Record<string, any>): ExtractedMedication[] {
+  const medications: ExtractedMedication[] = [];
+  
+  // Method 1: Check for medications array (new multi-drug format from extraction)
+  if (fields.medications && Array.isArray(fields.medications)) {
+    fields.medications.forEach((med: any) => {
+      const medName = med.medication_name || med.name || med.drug_name;
+      if (medName) {
+        medications.push({
+          name: medName,
+          strength: med.strength || med.dosage,
+          sig: med.sig || med.directions || med.sig_text,
+          ndc: med.ndc,
+          quantity: med.quantity,
+          refills: med.refills,
+          route: med.route,
+          dosageForm: med.dosage_form || med.form,
+          isControlled: med.is_controlled,
+          schedule: med.schedule
+        });
+      }
+    });
+  }
+  
+  // Method 2: Check for numbered medications (medication_1_name, medication_2_name, etc.)
+  for (let i = 1; i <= 10; i++) {
+    const medName = getFieldValue(fields, `medication_${i}_name`, `med_${i}_name`, `drug_${i}`, `medication_${i}`);
+    if (medName) {
+      medications.push({
+        name: medName,
+        strength: getFieldValue(fields, `medication_${i}_strength`, `med_${i}_strength`, `strength_${i}`),
+        sig: getFieldValue(fields, `medication_${i}_sig`, `med_${i}_sig`, `sig_${i}`, `directions_${i}`),
+        ndc: getFieldValue(fields, `medication_${i}_ndc`, `med_${i}_ndc`, `ndc_${i}`),
+        quantity: getFieldValue(fields, `medication_${i}_quantity`, `qty_${i}`),
+        refills: getFieldValue(fields, `medication_${i}_refills`, `refills_${i}`),
+        route: getFieldValue(fields, `medication_${i}_route`, `route_${i}`),
+        dosageForm: getFieldValue(fields, `medication_${i}_form`, `form_${i}`)
+      });
+    }
+  }
+  
+  // Method 3: Fallback to primary medication field (single medication)
+  if (medications.length === 0) {
+    const primaryDrug = getMedicationName(fields);
+    if (primaryDrug !== 'Unknown') {
+      medications.push({
+        name: primaryDrug,
+        strength: getDosage(fields),
+        sig: getFrequency(fields),
+        ndc: getNDC(fields),
+        quantity: getFieldValue(fields, 'quantity', 'qty', 'dispense'),
+        refills: getFieldValue(fields, 'refills', 'refill', 'rf'),
+        route: getFieldValue(fields, 'route', 'route_of_administration'),
+        dosageForm: getFieldValue(fields, 'dosage_form', 'form', 'dosageForm'),
+        isControlled: fields.is_controlled?.value === true || fields.is_controlled === true,
+        schedule: getFieldValue(fields, 'schedule', 'dea_schedule')
+      });
+    }
+  }
+  
+  return medications;
+}
+
+// Format medications for prompt text
+function formatMedicationsForPrompt(medications: ExtractedMedication[]): string {
+  if (medications.length === 0) return 'No medications found';
+  
+  if (medications.length === 1) {
+    const med = medications[0];
+    return `- Medication: ${med.name}
+- Strength: ${med.strength || 'Not specified'}
+- Directions (SIG): ${med.sig || 'Not specified'}
+- Route: ${med.route || 'oral'}
+- Quantity: ${med.quantity || 'Not specified'}
+- Refills: ${med.refills || 'Not specified'}`;
+  }
+  
+  return medications.map((med, index) => `
+MEDICATION ${index + 1}:
+- Name: ${med.name}
+- Strength: ${med.strength || 'Not specified'}
+- Directions (SIG): ${med.sig || 'Not specified'}
+- Route: ${med.route || 'oral'}
+- Quantity: ${med.quantity || 'Not specified'}
+- Refills: ${med.refills || 'Not specified'}
+${med.isControlled ? `- CONTROLLED SUBSTANCE: Schedule ${med.schedule || 'Unknown'}` : ''}`).join('\n');
+}
+
+// ============================================
 // HELPER: Call existing edge functions
 // ============================================
 
@@ -663,49 +769,79 @@ async function executeDrugLookup(context: DocumentContext): Promise<AgentFinding
 async function executeClinicalReviewAI(context: DocumentContext): Promise<AgentFinding> {
   const fields = context.extractedFields || {};
   
-  // Use helper functions for comprehensive field name fallbacks
-  const medication = getMedicationName(fields);
-  const dosage = getDosage(fields);
-  const frequency = getFrequency(fields);
-  const sigCode = getFieldValue(fields, 'sig_code', 'sigCode') || '';
+  // Extract ALL medications from the prescription
+  const medications = extractAllMedications(fields);
   const patientInfo = getFieldValue(fields, 'patient_name', 'patientName', 'patient') || 'Patient';
   const diagnosis = getFieldValue(fields, 'diagnosis', 'icd_code', 'indication') || 'Not specified';
-  const route = getFieldValue(fields, 'route', 'route_of_administration', 'routeOfAdministration') || 'oral';
+  const patientWeight = getFieldValue(fields, 'patient_weight', 'weight') || '';
+  const patientAge = getFieldValue(fields, 'patient_age', 'age', 'dob') || '';
+  const allergies = getFieldValue(fields, 'allergies', 'patient_allergies', 'known_allergies') || 'None reported';
   
-  console.log('[clinical-review-ai] Extracted medication:', medication, 'dosage:', dosage);
+  console.log('[clinical-review-ai] Extracted medications:', medications.length, medications.map(m => m.name));
   console.log('[clinical-review-ai] Available fields:', Object.keys(fields));
 
-  const prompt = `Analyze the following prescription data and provide a clinical assessment.
+  if (medications.length === 0) {
+    return {
+      summary: 'Clinical Review: No medications found to analyze',
+      details: { medicationCount: 0, error: 'No medication data extracted' },
+      recommendations: ['Verify document extraction worked correctly'],
+      alerts: [{ level: 'warning', message: 'No medication data available for clinical review' }],
+      confidence: 0.2,
+      aiPowered: false,
+      dataSource: 'No data extracted'
+    };
+  }
 
-PRESCRIPTION DATA:
-- Medication: ${medication}
-- Dosage/Strength: ${dosage}
-- Frequency/SIG: ${frequency}
-- SIG Code: ${sigCode}
-- Route: ${route}
+  const isMultiMed = medications.length > 1;
+  const medicationsText = formatMedicationsForPrompt(medications);
+
+  const prompt = `Analyze the following prescription data and provide a comprehensive clinical assessment.
+
+PATIENT INFORMATION:
 - Patient: ${patientInfo}
+- Age: ${patientAge || 'Not specified'}
+- Weight: ${patientWeight || 'Not specified'}
+- Allergies: ${allergies}
 - Diagnosis/Indication: ${diagnosis}
 - Document Type: ${context.documentType}
+
+PRESCRIPTION DATA (${medications.length} medication${isMultiMed ? 's' : ''}):
+${medicationsText}
 
 ${context.rawText ? `Additional document text: ${context.rawText.slice(0, 500)}` : ''}
 
 Provide your clinical review in the following JSON format:
 {
-  "summary": "Brief 1-sentence clinical assessment",
-  "appropriateness": "appropriate" | "needs_review" | "concern",
-  "dosageAssessment": "within_range" | "low" | "high" | "needs_verification",
-  "frequencyAssessment": "appropriate" | "unusual" | "concern",
-  "interactions": ["List any potential drug interactions or concerns"],
-  "recommendations": ["List 2-3 specific clinical recommendations"],
+  "summary": "Brief 1-sentence clinical assessment covering all medications",
+  "overallAssessment": "appropriate" | "needs_review" | "concern",
+  "medicationReviews": [
+    {
+      "medication": "drug name",
+      "appropriateness": "appropriate" | "needs_review" | "concern",
+      "dosageAssessment": "within_range" | "low" | "high" | "needs_verification",
+      "frequencyAssessment": "appropriate" | "unusual" | "concern",
+      "sigInterpretation": "Plain English translation of the sig",
+      "clinicalNotes": "Any specific clinical considerations"
+    }
+  ],
+  ${isMultiMed ? '"drugDrugInteractions": [{"drugs": ["drug1", "drug2"], "severity": "mild|moderate|severe", "effect": "description"}],' : ''}
+  "therapeuticDuplication": ${isMultiMed ? '["List any therapeutic duplications"]' : '[]'},
+  "allergyConflicts": ["List any potential allergy conflicts"],
+  "controlledSubstanceNotes": "Notes about any controlled substances",
+  "recommendations": ["List 3-5 specific clinical recommendations"],
   "alerts": [{"level": "info|warning|error", "message": "alert message"}],
   "confidence": 0.0 to 1.0
 }
 
-Focus on:
-1. Dosage appropriateness for the indication
-2. Frequency and route appropriateness
-3. Potential drug interactions
-4. Patient safety considerations
+CLINICAL REVIEW FOCUS:
+1. Dosage appropriateness for each medication and indication
+2. Frequency and route appropriateness for each medication
+3. ${isMultiMed ? 'Drug-drug interactions between the prescribed medications' : 'Potential interactions with common medications'}
+4. Therapeutic duplication (same drug class prescribed twice)
+5. Allergy cross-reactivity
+6. Patient safety considerations
+7. Sig interpretation - translate abbreviations to plain English
+8. Controlled substance verification if applicable
 
 Respond ONLY with the JSON object, no additional text.`;
 
@@ -717,22 +853,45 @@ Respond ONLY with the JSON object, no additional text.`;
     const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
+      
+      // Count concerns across all medication reviews
+      const concernCount = (parsed.medicationReviews || []).filter(
+        (r: any) => r.appropriateness === 'concern' || r.dosageAssessment === 'high'
+      ).length;
+      
+      const interactionCount = (parsed.drugDrugInteractions || []).length;
+      const duplicationCount = (parsed.therapeuticDuplication || []).length;
+      
+      // Build alerts
+      const alerts = parsed.alerts || [];
+      if (interactionCount > 0) {
+        const severeInteractions = (parsed.drugDrugInteractions || []).filter((i: any) => i.severity === 'severe');
+        if (severeInteractions.length > 0) {
+          alerts.push({ level: 'error', message: `${severeInteractions.length} SEVERE drug-drug interaction(s) detected!` });
+        }
+      }
+      if (duplicationCount > 0) {
+        alerts.push({ level: 'warning', message: `${duplicationCount} therapeutic duplication(s) found` });
+      }
+      
       return {
-        summary: parsed.summary || `Clinical review: ${medication} - ${parsed.appropriateness || 'Assessment complete'}`,
+        summary: parsed.summary || `Clinical review: ${medications.length} medication(s) - ${parsed.overallAssessment || 'Assessment complete'}`,
         details: {
-          medication,
-          dosage,
-          frequency,
-          sigCode,
-          route,
-          appropriateness: parsed.appropriateness || 'needs_review',
-          dosageAssessment: parsed.dosageAssessment || 'needs_verification',
-          frequencyAssessment: parsed.frequencyAssessment || 'appropriate',
-          interactions: parsed.interactions || [],
+          medicationCount: medications.length,
+          medications: medications.map(m => m.name),
+          medicationReviews: parsed.medicationReviews || [],
+          overallAssessment: parsed.overallAssessment || 'needs_review',
+          drugDrugInteractions: parsed.drugDrugInteractions || [],
+          therapeuticDuplication: parsed.therapeuticDuplication || [],
+          allergyConflicts: parsed.allergyConflicts || [],
+          controlledSubstanceNotes: parsed.controlledSubstanceNotes || '',
+          concernCount,
+          interactionCount,
+          duplicationCount,
           aiAnalysis: true
         },
         recommendations: parsed.recommendations || ['Review prescription with prescriber'],
-        alerts: parsed.alerts || [],
+        alerts,
         confidence: parsed.confidence || 0.85,
         aiPowered: true,
         provider: aiResult.provider,
@@ -751,24 +910,20 @@ Respond ONLY with the JSON object, no additional text.`;
 async function executeDrugInteractionAI(context: DocumentContext): Promise<AgentFinding> {
   const fields = context.extractedFields || {};
   
-  // Use helper functions for comprehensive field name fallbacks
-  const medication = getMedicationName(fields);
-  const dosage = getDosage(fields);
-  const ndc = getNDC(fields);
+  // Extract ALL medications from the prescription
+  const medications = extractAllMedications(fields);
   
-  console.log('[drug-interaction-ai] Extracted medication:', medication, 'dosage:', dosage, 'ndc:', ndc);
+  console.log('[drug-interaction-ai] Extracted medications:', medications.length, medications.map(m => m.name));
   console.log('[drug-interaction-ai] Available fields:', Object.keys(fields));
   
   // Check if we have valid data
-  if (medication === 'Unknown') {
+  if (medications.length === 0) {
     return {
       summary: 'Insufficient data to perform medication interaction analysis',
       details: { 
-        medication: 'Unknown', 
-        dosage, 
-        ndc,
+        medicationCount: 0, 
         availableFields: Object.keys(fields),
-        error: 'No medication name found in extracted fields'
+        error: 'No medication names found in extracted fields'
       },
       recommendations: ['Verify medication name was extracted correctly', 'Check document quality'],
       alerts: [{ level: 'warning', message: 'Insufficient data to perform medication interaction analysis' }],
@@ -778,49 +933,87 @@ async function executeDrugInteractionAI(context: DocumentContext): Promise<Agent
     };
   }
 
-  // First get FDA data for context
-  let fdaContext = '';
-  try {
-    const drugData = await callEdgeFunction('drug-lookup', { drugName: medication, searchType: 'all' });
-    if (drugData.ndc?.[0]) {
-      fdaContext = `\nFDA DATA:
-- Generic Name: ${drugData.ndc[0].genericName}
-- Brand Name: ${drugData.ndc[0].brandName}
-- Drug Class: ${(drugData.ndc[0].pharmClass || []).join(', ')}
-- Route: ${drugData.ndc[0].route}
-- Known Interactions: ${(drugData.clinicalInfo || []).map((c: any) => c.description).join('; ').slice(0, 300)}`;
+  const isMultiMed = medications.length > 1;
+
+  // Get FDA data for ALL medications in parallel
+  const fdaDataPromises = medications.map(async (med) => {
+    try {
+      const drugData = await callEdgeFunction('drug-lookup', { drugName: med.name, searchType: 'all' });
+      return {
+        medication: med.name,
+        genericName: drugData.ndc?.[0]?.genericName,
+        brandName: drugData.ndc?.[0]?.brandName,
+        pharmClass: drugData.ndc?.[0]?.pharmClass || [],
+        route: drugData.ndc?.[0]?.route,
+        isControlled: drugData.isControlled,
+        schedule: drugData.schedule,
+        clinicalInfo: drugData.clinicalInfo || []
+      };
+    } catch (e) {
+      console.log(`[drug-interaction-ai] FDA lookup failed for ${med.name}`);
+      return { medication: med.name, error: true };
     }
-  } catch (e) {
-    console.log('[drug-interaction-ai] FDA lookup failed, proceeding with AI only');
-  }
+  });
 
-  const prompt = `Analyze this medication for potential interactions and safety concerns.
+  const fdaResults = await Promise.all(fdaDataPromises);
+  
+  // Build FDA context for prompt
+  const fdaContext = fdaResults.filter(r => !r.error).map((r, i) => `
+FDA DATA FOR ${r.medication}:
+- Generic Name: ${r.genericName || 'Not found'}
+- Brand Name: ${r.brandName || 'Not found'}
+- Drug Class: ${r.pharmClass.join(', ') || 'Unknown'}
+- Route: ${r.route || 'Not specified'}
+${r.isControlled ? `- CONTROLLED: Schedule ${r.schedule}` : ''}
+- Known Interactions: ${r.clinicalInfo.slice(0, 3).map((c: any) => c.description).join('; ').slice(0, 200)}`
+  ).join('\n');
 
-MEDICATION DATA:
-- Drug Name: ${medication}
-- Dosage: ${dosage}
-- NDC Code: ${ndc}
-- Document Type: ${context.documentType}
+  const medicationsText = formatMedicationsForPrompt(medications);
+
+  const prompt = `Analyze ${isMultiMed ? 'these medications' : 'this medication'} for potential interactions and safety concerns.
+
+PRESCRIPTION MEDICATIONS (${medications.length}):
+${medicationsText}
+
 ${fdaContext}
 
 ${context.rawText ? `Additional context: ${context.rawText.slice(0, 400)}` : ''}
 
 Provide your drug interaction analysis in the following JSON format:
 {
-  "summary": "Brief 1-sentence summary of findings",
-  "drugClass": "Identified drug class (e.g., SSRI, ACE inhibitor, etc.)",
-  "commonInteractions": [
-    {"drug": "drug name", "severity": "mild|moderate|severe", "effect": "description"}
+  "summary": "Brief 1-sentence summary of overall findings",
+  "medicationCount": ${medications.length},
+  "medicationAnalyses": [
+    {
+      "medication": "drug name",
+      "drugClass": "Identified drug class",
+      "isControlled": true/false,
+      "schedule": "II/III/IV/V or null",
+      "commonInteractions": [{"drug": "drug name", "severity": "mild|moderate|severe", "effect": "description"}],
+      "foodInteractions": ["List food interactions"],
+      "contraindications": ["List contraindications"],
+      "precautions": ["List precautions"]
+    }
   ],
-  "foodInteractions": ["List food interactions if any"],
-  "contraindications": ["List absolute contraindications"],
-  "precautions": ["List precautions for use"],
-  "recommendations": ["2-3 specific recommendations"],
+  ${isMultiMed ? `"drugDrugInteractions": [
+    {"drug1": "first drug", "drug2": "second drug", "severity": "mild|moderate|severe", "effect": "description", "mechanism": "brief mechanism", "clinicalSignificance": "high|moderate|low"}
+  ],` : ''}
+  "overallRiskLevel": "low|moderate|high|critical",
+  "recommendations": ["3-5 specific recommendations"],
   "alerts": [{"level": "info|warning|error", "message": "alert message"}],
   "confidence": 0.0 to 1.0
 }
 
-Focus on clinically significant interactions. Respond ONLY with the JSON object.`;
+${isMultiMed ? `CRITICAL: Analyze interactions BETWEEN the ${medications.length} medications prescribed together. This is essential for patient safety.` : ''}
+
+Focus on:
+1. ${isMultiMed ? 'Drug-drug interactions between the prescribed medications' : 'Common drug interactions'}
+2. Drug-food interactions
+3. Contraindications and precautions
+4. Controlled substance considerations
+5. Patient safety concerns
+
+Respond ONLY with the JSON object.`;
 
   try {
     const aiResult = await callUniversalAI('drug-interaction', prompt);
@@ -830,24 +1023,60 @@ Focus on clinically significant interactions. Respond ONLY with the JSON object.
     const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
-      const interactionCount = (parsed.commonInteractions?.length || 0) + (parsed.foodInteractions?.length || 0);
+      
+      // Count all interactions
+      let totalInteractions = 0;
+      (parsed.medicationAnalyses || []).forEach((ma: any) => {
+        totalInteractions += (ma.commonInteractions?.length || 0);
+        totalInteractions += (ma.foodInteractions?.length || 0);
+      });
+      const drugDrugCount = (parsed.drugDrugInteractions || []).length;
+      
+      // Build alerts
+      const alerts = parsed.alerts || [];
+      
+      // Add severe interaction alerts
+      if (isMultiMed && drugDrugCount > 0) {
+        const severeInteractions = (parsed.drugDrugInteractions || []).filter((i: any) => i.severity === 'severe');
+        if (severeInteractions.length > 0) {
+          alerts.unshift({ 
+            level: 'error', 
+            message: `⚠️ ${severeInteractions.length} SEVERE drug-drug interaction(s) detected between prescribed medications!` 
+          });
+        }
+        const moderateInteractions = (parsed.drugDrugInteractions || []).filter((i: any) => i.severity === 'moderate');
+        if (moderateInteractions.length > 0) {
+          alerts.push({ 
+            level: 'warning', 
+            message: `${moderateInteractions.length} moderate drug-drug interaction(s) require monitoring` 
+          });
+        }
+      }
+      
+      // Add controlled substance alerts
+      const controlledMeds = fdaResults.filter(r => r.isControlled);
+      if (controlledMeds.length > 1) {
+        alerts.push({ 
+          level: 'warning', 
+          message: `Multiple controlled substances prescribed: ${controlledMeds.map(c => c.medication).join(', ')}` 
+        });
+      }
       
       return {
-        summary: parsed.summary || `Drug check: ${medication} - ${interactionCount} interaction(s) identified`,
+        summary: parsed.summary || `Drug interaction check: ${medications.length} medication(s) - ${drugDrugCount} interaction(s)`,
         details: {
-          medication,
-          dosage,
-          ndc,
-          drugClass: parsed.drugClass || 'Unknown class',
-          commonInteractions: parsed.commonInteractions || [],
-          foodInteractions: parsed.foodInteractions || [],
-          contraindications: parsed.contraindications || [],
-          precautions: parsed.precautions || [],
-          interactionCount,
+          medicationCount: medications.length,
+          medications: medications.map(m => m.name),
+          medicationAnalyses: parsed.medicationAnalyses || [],
+          drugDrugInteractions: parsed.drugDrugInteractions || [],
+          drugDrugInteractionCount: drugDrugCount,
+          totalInteractionCount: totalInteractions + drugDrugCount,
+          overallRiskLevel: parsed.overallRiskLevel || 'low',
+          controlledSubstanceCount: controlledMeds.length,
           aiAnalysis: true
         },
         recommendations: parsed.recommendations || ['Review with pharmacist before dispensing'],
-        alerts: parsed.alerts || [],
+        alerts,
         confidence: parsed.confidence || 0.88,
         aiPowered: true,
         provider: aiResult.provider,
@@ -1031,25 +1260,41 @@ function executeClinicalReviewFallback(context: DocumentContext): AgentFinding {
   const fields = context.extractedFields || {};
   const alerts: Array<{ level: 'info' | 'warning' | 'error'; message: string }> = [];
   
-  // Use helper functions
-  const medication = getMedicationName(fields);
-  const dosage = getDosage(fields);
-  const frequency = getFrequency(fields);
-
-  if (dosage) {
-    const doseValue = parseFloat(dosage);
-    if (doseValue > 1000) {
-      alerts.push({ level: 'warning', message: 'High dosage detected - verify with prescriber' });
+  // Extract all medications
+  const medications = extractAllMedications(fields);
+  
+  medications.forEach((med, index) => {
+    const prefix = medications.length > 1 ? `[${med.name}] ` : '';
+    
+    if (med.strength) {
+      const doseValue = parseFloat(med.strength);
+      if (doseValue > 1000) {
+        alerts.push({ level: 'warning', message: `${prefix}High dosage detected - verify with prescriber` });
+      }
     }
-  }
 
-  if (frequency?.toLowerCase().includes('prn')) {
-    alerts.push({ level: 'info', message: 'PRN medication - ensure patient instructions are clear' });
+    if (med.sig?.toLowerCase().includes('prn')) {
+      alerts.push({ level: 'info', message: `${prefix}PRN medication - ensure patient instructions are clear` });
+    }
+    
+    if (med.isControlled) {
+      alerts.push({ level: 'warning', message: `${prefix}Controlled substance (Schedule ${med.schedule || 'Unknown'})` });
+    }
+  });
+
+  // Check for potential therapeutic duplication in multi-med prescriptions
+  if (medications.length > 1) {
+    alerts.push({ level: 'info', message: `${medications.length} medications prescribed - verify for interactions` });
   }
 
   return {
-    summary: `Clinical review: ${medication || 'Prescription'} - Rule-based assessment`,
-    details: { medication, dosage, frequency, appropriateness: 'needs_review', fallbackMode: true },
+    summary: `Clinical review: ${medications.length} medication(s) - Rule-based assessment`,
+    details: { 
+      medicationCount: medications.length,
+      medications: medications.map(m => ({ name: m.name, strength: m.strength, sig: m.sig })),
+      appropriateness: 'needs_review', 
+      fallbackMode: true 
+    },
     recommendations: ['AI analysis unavailable - manual clinical review recommended'],
     alerts,
     confidence: 0.5,
@@ -1060,22 +1305,52 @@ function executeClinicalReviewFallback(context: DocumentContext): AgentFinding {
 
 function executeDrugInteractionFallback(context: DocumentContext): AgentFinding {
   const fields = context.extractedFields || {};
-  // Use helper function
-  const medication = getMedicationName(fields);
   const alerts: Array<{ level: 'info' | 'warning' | 'error'; message: string }> = [];
+  
+  // Extract all medications
+  const medications = extractAllMedications(fields);
+  let controlledCount = 0;
 
-  if (medication?.toLowerCase().includes('warfarin') || medication?.toLowerCase().includes('coumadin')) {
-    alerts.push({ level: 'warning', message: 'Warfarin detected - Monitor INR levels closely' });
-  }
+  // Check each medication for known high-alert conditions
+  const highAlertDrugs = ['warfarin', 'coumadin', 'heparin', 'insulin', 'metformin', 'digoxin', 'lithium', 'phenytoin'];
+  
+  medications.forEach((med, index) => {
+    const medNameLower = med.name.toLowerCase();
+    const prefix = medications.length > 1 ? `[${med.name}] ` : '';
+    
+    if (medNameLower.includes('warfarin') || medNameLower.includes('coumadin')) {
+      alerts.push({ level: 'warning', message: `${prefix}Warfarin - Monitor INR closely` });
+    }
+    
+    if (highAlertDrugs.some(drug => medNameLower.includes(drug))) {
+      alerts.push({ level: 'info', message: `${prefix}High-alert medication - requires extra verification` });
+    }
+    
+    if (med.isControlled) {
+      controlledCount++;
+      alerts.push({ level: 'warning', message: `${prefix}Controlled substance - DEA verification required` });
+    }
+  });
 
-  if (fields.schedule?.value || fields.controlled?.value) {
-    alerts.push({ level: 'info', message: 'Controlled substance - DEA verification required' });
+  // Multi-drug specific alerts
+  if (medications.length > 1) {
+    alerts.push({ level: 'warning', message: `${medications.length} medications - manual interaction check required` });
+    
+    if (controlledCount > 1) {
+      alerts.push({ level: 'error', message: `${controlledCount} controlled substances - additional verification required` });
+    }
   }
 
   return {
-    summary: `Drug check: ${medication} - Rule-based check`,
-    details: { medication, fallbackMode: true, interactionsFound: alerts.length },
-    recommendations: ['AI analysis unavailable - manual review recommended'],
+    summary: `Drug interaction check: ${medications.length} medication(s) - Rule-based check`,
+    details: { 
+      medicationCount: medications.length,
+      medications: medications.map(m => m.name),
+      controlledCount,
+      fallbackMode: true, 
+      alertCount: alerts.length 
+    },
+    recommendations: ['AI analysis unavailable - manual pharmacist review required'],
     alerts,
     confidence: 0.4,
     aiPowered: false,
