@@ -116,7 +116,6 @@ import {
   InsuranceTab, 
   UploadTab, 
   MedicationTab,
-  FollowUpTab,
   DocumentProcessingHeader,
   DocumentProcessingControlBar,
   AgentWorkflowSelector,
@@ -286,11 +285,7 @@ export default function DocumentProcessing() {
       });
     }
     
-    // Add Follow-Up tab for supported document types (prescriptions, insurance, patient-onboarding)
-    const followUpDocTypes = ['prescription', 'insurance', 'patient-onboarding', 'xray', 'ct-scan', 'mri', 'lab-result'];
-    if (followUpDocTypes.includes(docType)) {
-      baseTabs.push({ id: 'follow-up', label: 'Follow-Up', icon: <ArrowRight className="h-4 w-4" /> });
-    }
+    // Follow-Up tab removed - now integrated into SubAgentRecommendationDialog as Guided Workflows
     
     // Always add history at the end
     baseTabs.push({ id: 'history', label: 'History', icon: <History className="h-4 w-4" /> });
@@ -3179,19 +3174,7 @@ export default function DocumentProcessing() {
             </TabsContent>
           )}
 
-          {/* Follow-Up Tab - Guided Workflows for prescriptions, insurance, patient onboarding */}
-          <TabsContent value="follow-up" className="space-y-4">
-            <FollowUpTab
-              processingResult={processingResult}
-              selectedDocType={selectedDocType}
-              agentFindings={agentFindings}
-              onWorkflowComplete={(workflowId, results) => {
-                toast.success(`Workflow ${workflowId} completed!`);
-                // Could trigger cross-document workflows here
-                console.log('Workflow completed:', workflowId, results);
-              }}
-            />
-          </TabsContent>
+          {/* Follow-Up Tab removed - Guided Workflows now integrated into SubAgentRecommendationDialog */}
 
           {/* History Tab - Using extracted component */}
           <TabsContent value="history">
