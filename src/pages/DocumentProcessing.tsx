@@ -116,6 +116,7 @@ import {
   InsuranceTab, 
   UploadTab, 
   MedicationTab,
+  FollowUpTab,
   DocumentProcessingHeader,
   DocumentProcessingControlBar,
   AgentWorkflowSelector,
@@ -283,6 +284,12 @@ export default function DocumentProcessing() {
         label: config.specialTab.label, 
         icon: <span className="text-sm">{config.specialTab.icon}</span>
       });
+    }
+    
+    // Add Follow-Up tab for supported document types (prescriptions, insurance, patient-onboarding)
+    const followUpDocTypes = ['prescription', 'insurance', 'patient-onboarding', 'xray', 'ct-scan', 'mri', 'lab-result'];
+    if (followUpDocTypes.includes(docType)) {
+      baseTabs.push({ id: 'follow-up', label: 'Follow-Up', icon: <ArrowRight className="h-4 w-4" /> });
     }
     
     // Always add history at the end
@@ -2882,7 +2889,12 @@ export default function DocumentProcessing() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           {/* Dynamic Tabs based on selected document type */}
-          <TabsList className={`grid w-full ${dynamicTabs.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+          <TabsList className={`grid w-full ${
+            dynamicTabs.length === 2 ? 'grid-cols-2' : 
+            dynamicTabs.length === 3 ? 'grid-cols-3' : 
+            dynamicTabs.length === 4 ? 'grid-cols-4' : 
+            'grid-cols-5'
+          }`}>
             {dynamicTabs.map(tab => (
               <TabsTrigger key={tab.id} value={tab.id} className="flex items-center gap-2">
                 {tab.icon}
@@ -3166,6 +3178,20 @@ export default function DocumentProcessing() {
               />
             </TabsContent>
           )}
+
+          {/* Follow-Up Tab - Guided Workflows for prescriptions, insurance, patient onboarding */}
+          <TabsContent value="follow-up" className="space-y-4">
+            <FollowUpTab
+              processingResult={processingResult}
+              selectedDocType={selectedDocType}
+              agentFindings={agentFindings}
+              onWorkflowComplete={(workflowId, results) => {
+                toast.success(`Workflow ${workflowId} completed!`);
+                // Could trigger cross-document workflows here
+                console.log('Workflow completed:', workflowId, results);
+              }}
+            />
+          </TabsContent>
 
           {/* History Tab - Using extracted component */}
           <TabsContent value="history">
