@@ -11,10 +11,11 @@ import {
 } from '@/components/document-processing';
 import { TwoStagePipelineSVGDiagram } from '@/components/document-processing/TwoStagePipelineSVGDiagram';
 import { DocumentConfigurationReferenceDiagram } from '@/components/document-processing/DocumentConfigurationReferenceDiagram';
+import { DocumentProcessingPresentation } from '@/components/document-processing/DocumentProcessingPresentation';
 import { PatientOnboardingFlowDiagram, SubAgentArchitectureDiagram, BeforeAfterArchitectureDiagram, GenieRecordingStudioArchitectureDiagram, GenieStudioTechnicalArchDiagram, GenieStudioFunctionalArchDiagram, GenieStudioScenarioMapDiagram, GenieStudioFullArchitectureDiagram } from '@/components/diagrams';
 import { Button } from '@/components/ui/button';
 // Tabs imports kept for potential future use but not needed for current category navigation
-import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building, Users, Network, ArrowRightLeft, Download, Workflow, Bot, History, Sparkles, Image, Video, Server, Target, Map } from 'lucide-react';
+import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building, Users, Network, ArrowRightLeft, Download, Workflow, Bot, History, Sparkles, Image, Video, Server, Target, Map, Presentation } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { Badge } from '@/components/ui/badge';
@@ -51,6 +52,7 @@ const diagramCategories = {
     label: 'Document Processing',
     icon: FileText,
     diagrams: [
+      { id: 'doc-presentation', label: 'Presentation', icon: Presentation },
       { id: 'document', label: 'Architecture', icon: Layers },
       { id: 'doc-config', label: 'Configuration', icon: FileText },
       { id: 'two-stage', label: 'Two-Stage Pipeline', icon: GitBranch },
@@ -132,6 +134,8 @@ const ArchitectureDiagram = () => {
         return <ComprehensiveArchitectureDiagram />;
       case 'features':
         return <FeaturesOverviewDiagram />;
+      case 'doc-presentation':
+        return <DocumentProcessingPresentation />;
       case 'two-stage':
         return <TwoStagePipelineSVGDiagram />;
       case 'content-routing':
