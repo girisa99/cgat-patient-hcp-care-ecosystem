@@ -40,6 +40,8 @@ type RecordingQualityLevel = 'low' | 'medium' | 'high' | 'ultra';
 
 interface UseRecordingOptions {
   onRecordingComplete?: (blob: Blob, duration: number) => void;
+  /** Called when recording ACTUALLY starts (after countdown completes) */
+  onRecordingStarted?: () => void;
   countdownSeconds?: number;
   quality?: RecordingQualityLevel;
   enablePersistence?: boolean;
@@ -56,7 +58,8 @@ export function useRecording(
   options: UseRecordingOptions = {}
 ) {
   const { 
-    onRecordingComplete, 
+    onRecordingComplete,
+    onRecordingStarted,
     countdownSeconds = 5, 
     quality = 'high',
     enablePersistence = true,
@@ -578,13 +581,18 @@ export function useRecording(
         }, 1000);
 
         console.log('[Recording] Started successfully with persistence enabled:', enablePersistence);
+        
+        // IMPORTANT: Call onRecordingStarted AFTER MediaRecorder has actually started
+        // This is when audio should begin playing (not during countdown!)
+        console.log('[Recording] ✅ Calling onRecordingStarted callback - audio should start NOW');
+        onRecordingStarted?.();
       } catch (err) {
         console.error('[Recording] Failed to start:', err);
         audioMixer.cleanup();
         persistence.stopMonitoring();
       }
     });
-  }, [state.isRecording, startCountdown, onRecordingComplete, quality, audioMixer, enablePersistence, persistence, handleStreamHealthIssue, maxDuration, onMaxDurationReached]);
+  }, [state.isRecording, startCountdown, onRecordingComplete, onRecordingStarted, quality, audioMixer, enablePersistence, persistence, handleStreamHealthIssue, maxDuration, onMaxDurationReached]);
 
   const pauseRecording = useCallback(() => {
     if (!mediaRecorderRef.current || !state.isRecording) return;
