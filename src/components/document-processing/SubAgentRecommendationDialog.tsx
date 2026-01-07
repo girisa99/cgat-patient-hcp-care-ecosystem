@@ -949,6 +949,8 @@ export default function SubAgentRecommendationDialog({
   const [showAddAgentDialog, setShowAddAgentDialog] = useState(false);
   const [customAgents, setCustomAgents] = useState<SubAgentSuggestion[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<'auto' | 'claude' | 'gemini' | 'openai'>('auto');
+  // Per-agent provider overrides: { agentId: provider }
+  const [agentProviders, setAgentProviders] = useState<Record<string, 'auto' | 'claude' | 'gemini' | 'openai'>>({});
   
   // Setup wizard state
   const [showSetupWizard, setShowSetupWizard] = useState(false);
@@ -1254,7 +1256,9 @@ export default function SubAgentRecommendationDialog({
       fileName: extractedData?.processingResult?.fileName || extractedData?.fileName,
       imageBase64: extractedData?.medicalImageBase64,
       preferredProvider: selectedProvider === 'auto' ? undefined : selectedProvider,
-      selectedAPIs: selectedAPIs // Pass selected APIs for context
+      selectedAPIs: selectedAPIs, // Pass selected APIs for context
+      // Pass per-agent provider overrides
+      agentProviderOverrides: agentProviders
     };
 
     const executedResults = await executeAgents(selectedSubAgents, documentContext);
@@ -1444,14 +1448,16 @@ export default function SubAgentRecommendationDialog({
                   <div
                     key={agent.id}
                     className={cn(
-                      "p-3 rounded-lg border cursor-pointer transition-all mb-2",
+                      "p-3 rounded-lg border transition-all mb-2",
                       selectedAgents.includes(agent.id)
                         ? "border-green-500 bg-green-50 dark:bg-green-950/30 ring-1 ring-green-300"
-                        : "border-green-200 dark:border-green-800 hover:border-green-400 hover:bg-green-50/50 dark:hover:bg-green-950/20"
+                        : "border-green-200 dark:border-green-800 hover:border-green-400 hover:bg-green-50/50 dark:hover:bg-green-950/20 cursor-pointer"
                     )}
-                    onClick={() => toggleAgent(agent.id)}
                   >
-                    <div className="flex items-start gap-3">
+                    <div 
+                      className="flex items-start gap-3 cursor-pointer"
+                      onClick={() => toggleAgent(agent.id)}
+                    >
                       <div className="text-xl">{agent.icon}</div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -1470,6 +1476,40 @@ export default function SubAgentRecommendationDialog({
                         </div>
                       </div>
                     </div>
+                    {/* Per-Agent Provider Selection - Show when selected */}
+                    {selectedAgents.includes(agent.id) && executeMode === 'execute' && (
+                      <div 
+                        className="mt-2 pt-2 border-t border-green-200 dark:border-green-800 flex items-center gap-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <span className="text-[10px] text-muted-foreground">AI Provider:</span>
+                        <div className="flex gap-1">
+                          {[
+                            { id: 'auto', label: '⚡ Auto', title: 'Auto-select best provider' },
+                            { id: 'claude', label: '🤖 Claude', title: 'Claude Sonnet 4' },
+                            { id: 'gemini', label: '✨ Gemini', title: 'Gemini 2.5 Flash' },
+                            { id: 'openai', label: '🧠 GPT-5', title: 'GPT-5' }
+                          ].map(p => (
+                            <button
+                              key={p.id}
+                              title={p.title}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setAgentProviders(prev => ({ ...prev, [agent.id]: p.id as any }));
+                              }}
+                              className={cn(
+                                "px-2 py-0.5 rounded text-[10px] border transition-all",
+                                (agentProviders[agent.id] || 'auto') === p.id
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : "bg-background border-border hover:border-primary/50"
+                              )}
+                            >
+                              {p.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -1629,7 +1669,18 @@ export default function SubAgentRecommendationDialog({
             
             {executeMode === 'execute' && (
               <div className="flex items-center gap-2 ml-auto">
-                <span className="text-muted-foreground">AI:</span>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="text-muted-foreground cursor-help flex items-center gap-1">
+                        <Info className="h-3 w-3" /> Default AI:
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[200px]">
+                      <p className="text-xs">Default provider for all agents. Override per-agent in the agent cards above.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
                 <RadioGroup 
                   value={selectedProvider} 
                   onValueChange={(v) => setSelectedProvider(v as 'auto' | 'claude' | 'gemini' | 'openai')} 
@@ -1651,10 +1702,15 @@ export default function SubAgentRecommendationDialog({
             )}
           </div>
 
-          {/* Selected Count */}
+          {/* Selected Count with Provider Info */}
           {selectedAgents.length > 0 && (
             <div className="text-center text-sm text-green-700 dark:text-green-300 font-medium">
               {selectedAgents.length} agent(s) selected
+              {Object.keys(agentProviders).filter(id => selectedAgents.includes(id) && agentProviders[id] !== 'auto').length > 0 && (
+                <span className="text-xs text-muted-foreground ml-2">
+                  ({Object.keys(agentProviders).filter(id => selectedAgents.includes(id) && agentProviders[id] !== 'auto').length} with custom provider)
+                </span>
+              )}
             </div>
           )}
 

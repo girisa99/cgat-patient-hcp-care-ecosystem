@@ -83,8 +83,8 @@ const MODEL_CONFIG: Record<AIProvider, {
     description: 'Vision analysis, forms, handwriting, medical imaging'
   },
   openai: {
-    name: 'OpenAI',
-    fullName: 'GPT-4o',
+    name: 'GPT-5',
+    fullName: 'GPT-5',
     icon: <Bot className="h-4 w-4" />,
     color: 'text-green-600 dark:text-green-400',
     bgColor: 'bg-green-500/10',
@@ -163,18 +163,25 @@ const PIPELINE_CONFIG: Record<PipelineType, { label: string; description: string
 };
 
 const DOCUMENT_TYPE_ROUTING: Record<string, { stage1: AIProvider; stage2: AIProvider; reason: string }> = {
-  'prescription': { stage1: 'google_vision_ocr', stage2: 'claude', reason: 'Clinical reasoning for drug interactions & NDC codes' },
-  'lab_result': { stage1: 'google_vision_ocr', stage2: 'claude', reason: 'Clinical interpretation of lab values' },
-  'medical_imaging': { stage1: 'gemini', stage2: 'claude', reason: 'Gemini Vision → Claude Clinical Analysis' },
+  'prescription': { stage1: 'google_vision_ocr', stage2: 'claude', reason: 'Claude for clinical reasoning & drug interactions' },
+  'lab-results': { stage1: 'google_vision_ocr', stage2: 'claude', reason: 'Claude for clinical interpretation of lab values' },
+  'lab_result': { stage1: 'google_vision_ocr', stage2: 'claude', reason: 'Claude for clinical interpretation of lab values' },
+  'medical_imaging': { stage1: 'gemini', stage2: 'claude', reason: 'Gemini Vision → Claude for clinical analysis' },
   'xray': { stage1: 'gemini', stage2: 'claude', reason: 'Gemini for imaging, Claude for clinical interpretation' },
+  'ct-scan': { stage1: 'gemini', stage2: 'claude', reason: 'Gemini for imaging, Claude for clinical interpretation' },
   'ct_scan': { stage1: 'gemini', stage2: 'claude', reason: 'Gemini for imaging, Claude for clinical interpretation' },
   'mri': { stage1: 'gemini', stage2: 'claude', reason: 'Gemini for imaging, Claude for clinical interpretation' },
-  'invoice': { stage1: 'google_vision_ocr', stage2: 'openai', reason: 'OpenAI excels at table extraction & calculations' },
-  'receipt': { stage1: 'google_vision_ocr', stage2: 'openai', reason: 'OpenAI for financial data extraction' },
+  'ecg': { stage1: 'gemini', stage2: 'claude', reason: 'Gemini for ECG patterns, Claude for clinical interpretation' },
+  'ultrasound': { stage1: 'gemini', stage2: 'claude', reason: 'Gemini for imaging, Claude for clinical interpretation' },
+  'invoice': { stage1: 'google_vision_ocr', stage2: 'openai', reason: 'GPT-5 excels at table extraction & calculations' },
+  'receipt': { stage1: 'google_vision_ocr', stage2: 'openai', reason: 'GPT-5 for financial data extraction' },
   'insurance': { stage1: 'google_vision_ocr', stage2: 'claude', reason: 'Claude for policy analysis & coverage terms' },
   'insurance_card': { stage1: 'gemini', stage2: 'claude', reason: 'Gemini for ID fields, Claude for validation' },
   'identification': { stage1: 'gemini', stage2: 'gemini', reason: 'Gemini optimized for ID document extraction' },
-  'form': { stage1: 'google_vision_ocr', stage2: 'gemini', reason: 'Gemini for form field detection & handwriting' }
+  'passport': { stage1: 'gemini', stage2: 'gemini', reason: 'Gemini optimized for passport extraction' },
+  'drivers-license': { stage1: 'gemini', stage2: 'gemini', reason: 'Gemini optimized for license extraction' },
+  'form': { stage1: 'google_vision_ocr', stage2: 'gemini', reason: 'Gemini for form field detection & handwriting' },
+  'patient-onboarding': { stage1: 'google_vision_ocr', stage2: 'gemini', reason: 'Gemini for form detection, patient data extraction' }
 };
 
 export const ModelRoutingPanel: React.FC<ModelRoutingPanelProps> = ({
