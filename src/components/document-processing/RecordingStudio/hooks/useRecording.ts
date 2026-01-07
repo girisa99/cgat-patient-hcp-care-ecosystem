@@ -296,26 +296,32 @@ export function useRecording(
     
     // Validate stream has active tracks
     const videoTracks = stream.getVideoTracks();
+    const audioTracks = stream.getAudioTracks();
     
-    if (videoTracks.length === 0) {
-      console.error('[Recording] Stream has no video tracks');
-      toast.error('No video source available. Please check your camera.');
+    // At least one track type is required
+    if (videoTracks.length === 0 && audioTracks.length === 0) {
+      console.error('[Recording] Stream has no tracks at all');
+      toast.error('No media source available. Please check your camera/screen.');
       return;
     }
     
-    // Check if video track is live
-    const videoTrack = videoTracks[0];
-    console.log('[Recording] Video track state:', videoTrack.readyState, 'enabled:', videoTrack.enabled);
-    
-    if (videoTrack.readyState !== 'live') {
-      console.error('[Recording] Video track is not live, state:', videoTrack.readyState);
-      toast.error('Camera stream ended. Please restart camera.');
-      return;
-    }
-    
-    if (!videoTrack.enabled) {
-      console.warn('[Recording] Video track is disabled, enabling...');
-      videoTrack.enabled = true;
+    // Check if video track is live (if we have one)
+    if (videoTracks.length > 0) {
+      const videoTrack = videoTracks[0];
+      console.log('[Recording] Video track state:', videoTrack.readyState, 'enabled:', videoTrack.enabled);
+      
+      if (videoTrack.readyState !== 'live') {
+        console.error('[Recording] Video track is not live, state:', videoTrack.readyState);
+        toast.error('Media stream ended. Please restart camera/screen share.');
+        return;
+      }
+      
+      if (!videoTrack.enabled) {
+        console.warn('[Recording] Video track is disabled, enabling...');
+        videoTrack.enabled = true;
+      }
+    } else {
+      console.log('[Recording] No video tracks, will record audio only');
     }
 
     startCountdown(async () => {
@@ -328,10 +334,20 @@ export function useRecording(
         }
         
         const currentStream = activeStreamRef.current;
-        const currentVideoTrack = currentStream.getVideoTracks()[0];
-        if (!currentVideoTrack || currentVideoTrack.readyState !== 'live') {
-          console.error('[Recording] Video track died during countdown');
-          toast.error('Camera disconnected. Please try again.');
+        const currentVideoTracks = currentStream.getVideoTracks();
+        const currentAudioTracks = currentStream.getAudioTracks();
+        
+        // Check if video track died during countdown (only if we had one)
+        if (currentVideoTracks.length > 0) {
+          const currentVideoTrack = currentVideoTracks[0];
+          if (currentVideoTrack.readyState !== 'live') {
+            console.error('[Recording] Video track died during countdown');
+            toast.error('Media disconnected. Please try again.');
+            return;
+          }
+        } else if (currentAudioTracks.length === 0) {
+          console.error('[Recording] No tracks available for recording');
+          toast.error('No media tracks available. Please try again.');
           return;
         }
         

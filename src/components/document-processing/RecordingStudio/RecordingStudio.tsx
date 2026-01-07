@@ -1027,7 +1027,15 @@ export function RecordingStudio({
     console.log('[RecordingStudio] ✅ Audio pre-connected, starting countdown...');
     
     // Open teleprompter automatically when recording starts (if script available)
+    const teleprompterContent = currentScript?.content || audioLinkedScriptText;
+    console.log('[RecordingStudio] Teleprompter check:', {
+      hasCurrentScript: !!currentScript,
+      hasAudioLinkedScriptText: !!audioLinkedScriptText,
+      contentPreview: teleprompterContent?.substring(0, 50) || 'NO CONTENT',
+    });
+    
     if (currentScript || audioLinkedScriptText) {
+      console.log('[RecordingStudio] Opening teleprompter automatically');
       setTeleprompterOpen(true);
     }
     
@@ -1605,7 +1613,11 @@ export function RecordingStudio({
                 isRecording={recording.isRecording}
                 scrollSpeed={teleprompter.scrollSpeed}
                 isOpen={teleprompterOpen}
-                onClose={() => setTeleprompterOpen(false)}
+                onClose={() => {
+                  setTeleprompterOpen(false);
+                  // Stop audio when teleprompter is closed (user explicitly closes it)
+                  audioPlayback.stopAll();
+                }}
                 currentWordIndex={currentWordIndex}
                 audioProgress={audioDuration > 0 ? audioCurrentTime / audioDuration : 0}
               />
