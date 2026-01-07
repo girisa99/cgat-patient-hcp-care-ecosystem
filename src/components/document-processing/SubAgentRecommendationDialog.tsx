@@ -44,8 +44,10 @@ import {
   FileText,
   CreditCard,
   Link2,
-  ChevronDown
+  ChevronDown,
+  Workflow
 } from 'lucide-react';
+import GuidedWorkflowSection, { type GuidedWorkflow } from './GuidedWorkflowSection';
 import { DocumentTypeConfig } from '@/config/documentTypes';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -945,6 +947,8 @@ export default function SubAgentRecommendationDialog({
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
   const [selectedAPIs, setSelectedAPIs] = useState<string[]>([]);
   const [showAPISelection, setShowAPISelection] = useState(false);
+  const [showGuidedWorkflows, setShowGuidedWorkflows] = useState(true);
+  const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null);
   const [executeMode, setExecuteMode] = useState<'execute' | 'build'>('execute');
   const [showAddAgentDialog, setShowAddAgentDialog] = useState(false);
   const [customAgents, setCustomAgents] = useState<SubAgentSuggestion[]>([]);
@@ -1390,6 +1394,65 @@ export default function SubAgentRecommendationDialog({
 
         {/* Scrollable Content Area */}
         <div className="flex-1 overflow-y-auto max-h-[45vh] p-4">
+          {/* Guided Workflows Section - Show at top for step-by-step multi-agent flows */}
+          <div className="border rounded-lg overflow-hidden mb-3">
+            <button
+              onClick={() => setShowGuidedWorkflows(!showGuidedWorkflows)}
+              className="w-full flex items-center justify-between p-3 bg-primary/5 hover:bg-primary/10 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Workflow className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-primary">Guided Workflows</span>
+                {selectedWorkflowId && (
+                  <Badge variant="default" className="text-xs">
+                    1 selected
+                  </Badge>
+                )}
+              </div>
+              <ChevronDown className={cn(
+                "h-4 w-4 text-primary transition-transform",
+                showGuidedWorkflows && "rotate-180"
+              )} />
+            </button>
+            {showGuidedWorkflows && (
+              <div className="p-3 border-t bg-background">
+                <GuidedWorkflowSection
+                  documentTypeId={documentType.id}
+                  extractedData={extractedData}
+                  selectedWorkflowId={selectedWorkflowId}
+                  onSelectedWorkflowChange={(workflowId) => {
+                    setSelectedWorkflowId(workflowId);
+                  }}
+                  onWorkflowSelect={(workflow, agentIds) => {
+                    // Auto-select agents from the workflow
+                    setSelectedAgents(prev => {
+                      const newAgents = [...prev];
+                      agentIds.forEach(id => {
+                        if (!newAgents.includes(id)) {
+                          newAgents.push(id);
+                        }
+                      });
+                      return newAgents;
+                    });
+                  }}
+                  onExecuteWorkflow={(workflow) => {
+                    // Execute all agents in the workflow
+                    const workflowAgents = workflow.steps
+                      .filter(s => s.agentId)
+                      .map(s => suggestions.find(a => a.id === s.agentId))
+                      .filter(Boolean) as SubAgentSuggestion[];
+                    
+                    if (workflowAgents.length > 0) {
+                      setExecutingAgents(workflowAgents);
+                      setShowExecutionProgress(true);
+                      handleExecuteNow();
+                    }
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
           {/* API Selection Collapsible Section */}
           <div className="border rounded-lg overflow-hidden mb-3">
             <button
@@ -1430,7 +1493,7 @@ export default function SubAgentRecommendationDialog({
             )}
           </div>
 
-          {/* Agent List */}
+          {/* Individual Agents List */}
           <div className="space-y-2">
             {/* Ready Agents Section (Universal AI + Real APIs) - Show first and prominently */}
             {suggestions.filter(a => a.readyStatus === 'ai-powered').length > 0 && (
