@@ -9,7 +9,8 @@ import {
   Clock, Users, Bot, Settings, Database, GitBranch, Eye,
   Upload, FileCheck, Cpu, Send, BrainCircuit, Workflow,
   BarChart3, Building, Shield, Lightbulb, Presentation,
-  ExternalLink
+  ExternalLink, Pill, Activity, Server, Link2, Globe,
+  Stethoscope, ClipboardList, HeartPulse, RefreshCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -51,6 +52,36 @@ const fadeInUp = {
 const staggerContainer = {
   animate: { transition: { staggerChildren: 0.1 } }
 };
+
+// Animated Data Flow Dot Component
+const AnimatedDataDot = ({ delay = 0, color = "primary" }: { delay?: number; color?: string }) => (
+  <motion.div
+    className={`w-2 h-2 rounded-full bg-${color}`}
+    animate={{
+      x: [0, 80, 160],
+      opacity: [0, 1, 0],
+    }}
+    transition={{
+      duration: 2,
+      delay,
+      repeat: Infinity,
+      ease: "linear"
+    }}
+  />
+);
+
+// Pulsing Connection Line
+const PulsingLine = ({ horizontal = true }: { horizontal?: boolean }) => (
+  <div className={cn("relative", horizontal ? "h-1 w-16" : "w-1 h-16")}>
+    <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-primary to-primary/20 rounded-full" />
+    <motion.div
+      className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent rounded-full"
+      animate={{ x: horizontal ? [-20, 40] : undefined, y: horizontal ? undefined : [-20, 40] }}
+      transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+      style={{ opacity: 0.6 }}
+    />
+  </div>
+);
 
 // Slide 1: Problem Statement
 const ProblemStatementSlide = () => (
@@ -236,91 +267,239 @@ const CurrentToolsSlide = () => (
   </motion.div>
 );
 
-// Slide 3: Why Multi-Model Routing
+// Slide 3: Why Multi-Model Routing - ENHANCED with animated flow
 const WhyMultiModelSlide = () => (
-  <motion.div className="space-y-8" variants={staggerContainer} initial="initial" animate="animate">
-    <motion.div {...fadeInUp} className="text-center mb-6">
+  <motion.div className="space-y-6" variants={staggerContainer} initial="initial" animate="animate">
+    <motion.div {...fadeInUp} className="text-center mb-4">
       <div className="inline-flex items-center gap-3 px-4 py-2 bg-purple-100 rounded-full border border-purple-200">
         <BrainCircuit className="w-5 h-5 text-purple-600" />
-        <span className="text-sm font-medium text-purple-700">Intelligent Routing</span>
+        <span className="text-sm font-medium text-purple-700">Intelligent Model Routing</span>
       </div>
     </motion.div>
 
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      {/* Why Different Models */}
-      <motion.div {...fadeInUp} className="space-y-4">
-        <h3 className="text-xl font-semibold text-foreground">Why Different Models Excel at Different Tasks</h3>
-        
-        <div className="space-y-3">
+    {/* Animated Data Flow Diagram */}
+    <motion.div 
+      {...fadeInUp}
+      className="bg-gradient-to-r from-slate-900 via-purple-900 to-slate-900 rounded-xl p-6 border border-purple-500/30 relative overflow-hidden"
+    >
+      <h4 className="text-white font-semibold mb-6 text-center">Real-Time Model Routing Flow</h4>
+      
+      <div className="flex items-center justify-between">
+        {/* Document Input */}
+        <motion.div 
+          className="flex flex-col items-center"
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <div className="w-16 h-16 bg-blue-500/20 border-2 border-blue-400 rounded-xl flex items-center justify-center mb-2">
+            <FileText className="w-8 h-8 text-blue-400" />
+          </div>
+          <span className="text-xs text-blue-300 font-medium">Document</span>
+          <span className="text-xs text-blue-400/70">Any Format</span>
+        </motion.div>
+
+        {/* Animated Connection */}
+        <motion.div 
+          className="flex-1 mx-4 relative h-8 flex items-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+        >
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full h-0.5 bg-gradient-to-r from-blue-500 via-purple-500 to-yellow-500" />
+          </div>
+          {/* Animated dots */}
+          <motion.div
+            className="absolute w-3 h-3 rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/50"
+            animate={{ x: [0, 100, 200] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+          />
+          <motion.div
+            className="absolute w-3 h-3 rounded-full bg-purple-400 shadow-lg shadow-purple-400/50"
+            animate={{ x: [0, 100, 200] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear", delay: 0.6 }}
+          />
+        </motion.div>
+
+        {/* AI Router Brain */}
+        <motion.div 
+          className="flex flex-col items-center"
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.6, type: "spring" }}
+        >
+          <div className="relative">
+            <motion.div
+              className="absolute inset-0 bg-yellow-400/20 rounded-full blur-xl"
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            />
+            <div className="w-20 h-20 bg-gradient-to-br from-yellow-500/30 to-orange-500/30 border-2 border-yellow-400 rounded-full flex items-center justify-center relative z-10">
+              <BrainCircuit className="w-10 h-10 text-yellow-400" />
+            </div>
+          </div>
+          <span className="text-xs text-yellow-300 font-medium mt-2">AI Router</span>
+          <span className="text-xs text-yellow-400/70">Content Analysis</span>
+        </motion.div>
+
+        {/* Branching Connections */}
+        <div className="flex-1 mx-4 relative">
+          <svg className="w-full h-24" viewBox="0 0 100 60">
+            <motion.path
+              d="M 0 30 Q 30 30 50 10"
+              stroke="url(#gradient1)"
+              strokeWidth="2"
+              fill="none"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ delay: 0.8, duration: 0.5 }}
+            />
+            <motion.path
+              d="M 0 30 Q 30 30 50 30"
+              stroke="url(#gradient2)"
+              strokeWidth="2"
+              fill="none"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ delay: 0.9, duration: 0.5 }}
+            />
+            <motion.path
+              d="M 0 30 Q 30 30 50 50"
+              stroke="url(#gradient3)"
+              strokeWidth="2"
+              fill="none"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ delay: 1.0, duration: 0.5 }}
+            />
+            <defs>
+              <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#eab308" />
+                <stop offset="100%" stopColor="#f97316" />
+              </linearGradient>
+              <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#eab308" />
+                <stop offset="100%" stopColor="#22c55e" />
+              </linearGradient>
+              <linearGradient id="gradient3" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#eab308" />
+                <stop offset="100%" stopColor="#3b82f6" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+
+        {/* Model Outputs */}
+        <div className="flex flex-col gap-2">
           {[
-            { model: "Claude 3.5 Sonnet", task: "Complex medical documents", color: "orange", reason: "Superior reasoning & context" },
-            { model: "GPT-4o Vision", task: "Handwritten prescriptions", color: "green", reason: "Best handwriting recognition" },
-            { model: "Gemini 1.5 Flash", task: "Structured forms", color: "blue", reason: "Fast & cost-effective" },
-            { model: "Gemini 2.5 Pro", task: "Medical imaging", color: "indigo", reason: "Multi-modal excellence" },
-          ].map((item, i) => (
+            { name: "Claude", color: "orange", task: "Medical" },
+            { name: "GPT-4o", color: "green", task: "Handwriting" },
+            { name: "Gemini", color: "blue", task: "Tables" },
+          ].map((model, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, x: -20 }}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg bg-${model.color}-500/20 border border-${model.color}-400/50`}
+              initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.15 }}
-              className={`p-4 bg-${item.color}-50 rounded-lg border border-${item.color}-200`}
+              transition={{ delay: 1.2 + i * 0.15 }}
             >
-              <div className="flex items-center justify-between mb-2">
-                <Badge className={`bg-${item.color}-100 text-${item.color}-800`}>{item.model}</Badge>
-                <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm font-medium text-foreground">{item.task}</span>
-              </div>
-              <p className="text-xs text-muted-foreground">{item.reason}</p>
+              <div className={`w-2 h-2 rounded-full bg-${model.color}-400`} />
+              <span className="text-xs text-white font-medium">{model.name}</span>
+              <span className="text-xs text-white/60">→ {model.task}</span>
             </motion.div>
           ))}
         </div>
-      </motion.div>
+      </div>
+    </motion.div>
 
-      {/* Benefits */}
-      <motion.div {...fadeInUp} className="space-y-4">
-        <h3 className="text-xl font-semibold text-foreground">Multi-Model Benefits</h3>
-        
-        <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-6 border border-purple-200">
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              { icon: Target, label: "95%+ Accuracy", desc: "Best model for each task" },
-              { icon: DollarSign, label: "60% Cost Savings", desc: "Optimize model selection" },
-              { icon: Zap, label: "3x Faster", desc: "Parallel processing" },
-              { icon: Shield, label: "Zero Config", desc: "Auto-detection" },
-            ].map((item, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.4 + i * 0.1 }}
-                className="text-center p-4 bg-white rounded-lg shadow-sm"
-              >
-                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <item.icon className="w-5 h-5 text-purple-600" />
-                </div>
-                <div className="font-bold text-foreground">{item.label}</div>
-                <div className="text-xs text-muted-foreground">{item.desc}</div>
-              </motion.div>
+    {/* Detailed Model Examples */}
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
+      {[
+        { 
+          model: "Claude 3.5 Sonnet", 
+          icon: "🟠", 
+          tasks: ["Medical Records", "Complex Forms", "Legal Documents"],
+          strength: "Superior reasoning & context understanding",
+          accuracy: "98%",
+          example: "Patient history with multiple conditions"
+        },
+        { 
+          model: "GPT-4o Vision", 
+          icon: "🟢", 
+          tasks: ["Handwritten Rx", "Signatures", "Annotations"],
+          strength: "Best-in-class handwriting recognition",
+          accuracy: "96%",
+          example: "Doctor's handwritten prescription"
+        },
+        { 
+          model: "Gemini 1.5 Flash", 
+          icon: "🔵", 
+          tasks: ["Lab Results", "Tables", "Structured Data"],
+          strength: "Fast processing, excellent for tabular data",
+          accuracy: "97%",
+          example: "Blood work results with ranges"
+        },
+        { 
+          model: "Gemini 2.5 Pro", 
+          icon: "🟣", 
+          tasks: ["Medical Images", "X-rays", "Scans"],
+          strength: "Multi-modal image analysis",
+          accuracy: "95%",
+          example: "DICOM imaging with annotations"
+        },
+      ].map((item, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 + i * 0.1 }}
+          className="bg-white rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow"
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xl">{item.icon}</span>
+            <div>
+              <h4 className="font-semibold text-sm text-foreground">{item.model}</h4>
+              <Badge variant="secondary" className="text-xs">{item.accuracy} acc</Badge>
+            </div>
+          </div>
+          
+          <div className="space-y-2 mb-3">
+            {item.tasks.map((task, j) => (
+              <div key={j} className="flex items-center gap-1.5 text-xs">
+                <CheckCircle className="w-3 h-3 text-green-500" />
+                <span className="text-muted-foreground">{task}</span>
+              </div>
             ))}
           </div>
-        </div>
-
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="p-4 bg-green-50 border border-green-200 rounded-lg"
-        >
-          <div className="flex items-start gap-3">
-            <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
-            <p className="text-green-800 text-sm">
-              <strong>Smart Routing:</strong> AI analyzes document characteristics and automatically 
-              routes to the optimal model for highest accuracy at lowest cost.
-            </p>
+          
+          <div className="p-2 bg-muted/50 rounded-lg">
+            <p className="text-xs text-muted-foreground italic">"{item.example}"</p>
           </div>
         </motion.div>
-      </motion.div>
+      ))}
     </div>
+
+    {/* Benefits Summary */}
+    <motion.div {...fadeInUp} className="grid grid-cols-4 gap-3">
+      {[
+        { icon: Target, label: "95%+ Accuracy", color: "purple" },
+        { icon: DollarSign, label: "60% Cost Savings", color: "green" },
+        { icon: Zap, label: "3x Faster", color: "yellow" },
+        { icon: Shield, label: "Zero Config", color: "blue" },
+      ].map((item, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 1.2 + i * 0.1 }}
+          className={`text-center p-3 bg-${item.color}-50 rounded-xl border border-${item.color}-200`}
+        >
+          <item.icon className={`w-6 h-6 text-${item.color}-600 mx-auto mb-1`} />
+          <div className="text-sm font-bold text-foreground">{item.label}</div>
+        </motion.div>
+      ))}
+    </motion.div>
   </motion.div>
 );
 
@@ -609,53 +788,179 @@ const SolutionArchitectureSlide = () => (
   </motion.div>
 );
 
-// Slide 7: Demo Screenshots
+// Slide 7: Demo Screenshots - ENHANCED with Prescription Integration
 const DemoSlide = () => (
-  <motion.div className="space-y-8" variants={staggerContainer} initial="initial" animate="animate">
-    <motion.div {...fadeInUp} className="text-center mb-6">
+  <motion.div className="space-y-6" variants={staggerContainer} initial="initial" animate="animate">
+    <motion.div {...fadeInUp} className="text-center mb-4">
       <div className="inline-flex items-center gap-3 px-4 py-2 bg-cyan-100 rounded-full border border-cyan-200">
         <Presentation className="w-5 h-5 text-cyan-600" />
-        <span className="text-sm font-medium text-cyan-700">Live Demo</span>
+        <span className="text-sm font-medium text-cyan-700">Live Demo Showcase</span>
       </div>
     </motion.div>
 
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Demo Cards */}
+    {/* Prescription Processing with Integrations */}
+    <motion.div 
+      {...fadeInUp}
+      className="bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 rounded-xl p-6 border border-purple-500/30"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+            <Pill className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h4 className="font-bold text-white">Prescription Processing Demo</h4>
+            <p className="text-xs text-white/60">Real-time medication extraction with drug database integration</p>
+          </div>
+        </div>
+        <Badge className="bg-green-500/20 text-green-300 border-green-500/30">Live</Badge>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        {/* Extraction Panel */}
+        <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+          <h5 className="text-white font-medium mb-3 text-sm">Extracted Fields</h5>
+          <div className="space-y-2">
+            {[
+              { field: "Patient Name", value: "John Smith", confidence: 98 },
+              { field: "Medication", value: "Metformin", confidence: 96, editable: true },
+              { field: "Dosage", value: "500mg", confidence: 94 },
+              { field: "Frequency", value: "BID", confidence: 92 },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5 + i * 0.1 }}
+                className="flex items-center justify-between p-2 bg-white/5 rounded"
+              >
+                <div>
+                  <span className="text-xs text-white/60">{item.field}</span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm text-white font-medium">{item.value}</span>
+                    {item.editable && (
+                      <RefreshCw className="w-3 h-3 text-blue-400 cursor-pointer hover:text-blue-300" />
+                    )}
+                  </div>
+                </div>
+                <Badge className={`text-xs ${item.confidence > 95 ? 'bg-green-500/20 text-green-300' : 'bg-yellow-500/20 text-yellow-300'}`}>
+                  {item.confidence}%
+                </Badge>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        {/* Drug Database Integration */}
+        <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+          <h5 className="text-white font-medium mb-3 text-sm flex items-center gap-2">
+            <Database className="w-4 h-4 text-blue-400" />
+            Drug Database Lookup
+          </h5>
+          <div className="space-y-2">
+            {[
+              { db: "DrugBank", icon: "💊", status: "Match Found", color: "green" },
+              { db: "RxNorm", icon: "📋", status: "Verified", color: "green" },
+              { db: "NDC", icon: "🏷️", status: "Code: 12345-678", color: "blue" },
+              { db: "Brand Names", icon: "🔤", status: "Glucophage", color: "purple" },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8 + i * 0.1 }}
+                className={`flex items-center gap-2 p-2 bg-${item.color}-500/10 rounded border border-${item.color}-500/20`}
+              >
+                <span className="text-lg">{item.icon}</span>
+                <div className="flex-1">
+                  <span className="text-xs text-white/60">{item.db}</span>
+                  <div className={`text-xs text-${item.color}-300 font-medium`}>{item.status}</div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.3 }}
+            className="mt-3 p-2 bg-amber-500/10 rounded border border-amber-500/20"
+          >
+            <div className="flex items-center gap-2">
+              <Activity className="w-4 h-4 text-amber-400" />
+              <span className="text-xs text-amber-300">Edit medication name to auto-lookup alternatives</span>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Integration Actions */}
+        <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+          <h5 className="text-white font-medium mb-3 text-sm flex items-center gap-2">
+            <Link2 className="w-4 h-4 text-purple-400" />
+            Available Integrations
+          </h5>
+          <div className="space-y-2">
+            {[
+              { name: "Update EHR", icon: Stethoscope, color: "blue", action: "Push to Epic/Cerner" },
+              { name: "Check Interactions", icon: AlertCircle, color: "orange", action: "Drug-drug check" },
+              { name: "Prior Auth", icon: ClipboardList, color: "green", action: "Auto-submit PA" },
+              { name: "e-Prescribe", icon: Send, color: "purple", action: "Send to pharmacy" },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 1.0 + i * 0.1 }}
+                className={`flex items-center gap-2 p-2 bg-${item.color}-500/10 rounded border border-${item.color}-500/20 cursor-pointer hover:bg-${item.color}-500/20 transition-colors`}
+              >
+                <item.icon className={`w-4 h-4 text-${item.color}-400`} />
+                <div className="flex-1">
+                  <span className="text-sm text-white font-medium">{item.name}</span>
+                  <div className="text-xs text-white/40">{item.action}</div>
+                </div>
+                <ArrowRight className="w-3 h-3 text-white/40" />
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+
+    {/* Other Demo Cards */}
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       {[
-        { title: "Prescription Processing", desc: "Handwritten Rx with auto-field detection", icon: FileText, screens: ["Upload", "Classify", "Extract", "Validate"] },
-        { title: "Patient Onboarding", desc: "Multi-document intake automation", icon: Users, screens: ["ID Scan", "Insurance", "Forms", "Complete"] },
-        { title: "Sub-Agent Recommendations", desc: "AI suggests follow-up agents", icon: Bot, screens: ["Analyze", "Recommend", "Configure", "Deploy"] },
-        { title: "External Data Push", desc: "Webhook integration with EHR", icon: Send, screens: ["Extract", "Transform", "Validate", "Push"] },
+        { title: "Patient Onboarding", desc: "Multi-document intake automation", icon: Users, screens: ["ID Scan", "Insurance", "Forms", "Complete"], color: "blue" },
+        { title: "Sub-Agent Popups", desc: "AI recommends follow-up actions", icon: Bot, screens: ["Analyze", "Recommend", "Configure", "Deploy"], color: "purple" },
+        { title: "External Data Push", desc: "Webhook integration with EHR", icon: Send, screens: ["Extract", "Transform", "Validate", "Push"], color: "teal" },
       ].map((demo, i) => (
         <motion.div
           key={i}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.15 }}
-          className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-5 border"
+          transition={{ delay: 0.5 + i * 0.15 }}
+          className={`bg-gradient-to-br from-${demo.color}-50 to-${demo.color}-100/50 rounded-xl p-4 border border-${demo.color}-200`}
         >
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-              <demo.icon className="w-5 h-5 text-primary" />
+          <div className="flex items-center gap-3 mb-3">
+            <div className={`w-8 h-8 bg-${demo.color}-100 rounded-lg flex items-center justify-center`}>
+              <demo.icon className={`w-4 h-4 text-${demo.color}-600`} />
             </div>
             <div>
-              <h4 className="font-semibold text-foreground">{demo.title}</h4>
+              <h4 className="font-semibold text-sm text-foreground">{demo.title}</h4>
               <p className="text-xs text-muted-foreground">{demo.desc}</p>
             </div>
           </div>
           
           {/* Mini flow */}
-          <div className="flex items-center justify-between bg-white rounded-lg p-3 border">
+          <div className="flex items-center justify-between bg-white rounded-lg p-2 border">
             {demo.screens.map((screen, j) => (
               <React.Fragment key={j}>
                 <div className="text-center">
-                  <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-1">
-                    <span className="text-xs font-bold text-primary">{j + 1}</span>
+                  <div className={`w-6 h-6 bg-${demo.color}-100 rounded-full flex items-center justify-center mx-auto mb-1`}>
+                    <span className={`text-xs font-bold text-${demo.color}-600`}>{j + 1}</span>
                   </div>
                   <span className="text-xs text-muted-foreground">{screen}</span>
                 </div>
                 {j < demo.screens.length - 1 && (
-                  <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                  <ArrowRight className="w-3 h-3 text-muted-foreground" />
                 )}
               </React.Fragment>
             ))}
@@ -663,127 +968,300 @@ const DemoSlide = () => (
         </motion.div>
       ))}
     </div>
-
-    <motion.div {...fadeInUp} className="text-center">
-      <Button variant="outline" className="gap-2">
-        <ExternalLink className="w-4 h-4" />
-        View Live Demo
-      </Button>
-    </motion.div>
   </motion.div>
 );
 
-// Slide 8: Sub-Agent Follow-up
+// Slide 8: Sub-Agent Follow-up - ENHANCED with animated flow
 const SubAgentSlide = () => (
-  <motion.div className="space-y-8" variants={staggerContainer} initial="initial" animate="animate">
-    <motion.div {...fadeInUp} className="text-center mb-6">
+  <motion.div className="space-y-6" variants={staggerContainer} initial="initial" animate="animate">
+    <motion.div {...fadeInUp} className="text-center mb-4">
       <div className="inline-flex items-center gap-3 px-4 py-2 bg-violet-100 rounded-full border border-violet-200">
         <Bot className="w-5 h-5 text-violet-600" />
         <span className="text-sm font-medium text-violet-700">Sub-Agent Intelligence</span>
       </div>
     </motion.div>
 
-    {/* Flow */}
-    <motion.div {...fadeInUp} className="bg-gradient-to-r from-violet-50 to-purple-50 rounded-xl p-6 border border-violet-200">
+    {/* Animated Sub-Agent Flow */}
+    <motion.div 
+      {...fadeInUp}
+      className="bg-gradient-to-r from-violet-900 via-purple-900 to-indigo-900 rounded-xl p-6 border border-violet-500/30 relative overflow-hidden"
+    >
+      <h4 className="text-white font-semibold mb-6 text-center">AI-Powered Agent Orchestration</h4>
+      
       <div className="flex items-center justify-between">
         {[
-          { icon: FileCheck, label: "Document Processed", color: "blue" },
-          { icon: Lightbulb, label: "AI Analysis", color: "yellow" },
-          { icon: Bot, label: "Agent Recommendation", color: "violet" },
-          { icon: Workflow, label: "Workflow Canvas", color: "purple" },
-          { icon: Zap, label: "One-Click Deploy", color: "green" },
+          { icon: FileCheck, label: "Document\nProcessed", color: "blue" },
+          { icon: BrainCircuit, label: "AI\nAnalysis", color: "yellow" },
+          { icon: Lightbulb, label: "Agent\nRecommendation", color: "orange" },
+          { icon: Workflow, label: "Workflow\nCanvas", color: "purple" },
+          { icon: Zap, label: "One-Click\nDeploy", color: "green" },
         ].map((step, i) => (
           <React.Fragment key={i}>
             <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
+              initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: i * 0.15 }}
-              className="flex flex-col items-center text-center"
+              transition={{ delay: i * 0.2, type: "spring" }}
+              className="flex flex-col items-center text-center relative"
             >
-              <div className={`w-12 h-12 bg-${step.color}-100 rounded-full flex items-center justify-center mb-2`}>
-                <step.icon className={`w-6 h-6 text-${step.color}-600`} />
+              {/* Pulsing glow for active step */}
+              {i === 2 && (
+                <motion.div
+                  className="absolute inset-0 bg-orange-400/20 rounded-full blur-xl -z-10"
+                  animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.6, 0.3] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+              )}
+              <div className={`w-14 h-14 bg-${step.color}-500/20 border-2 border-${step.color}-400 rounded-xl flex items-center justify-center mb-2`}>
+                <step.icon className={`w-7 h-7 text-${step.color}-400`} />
               </div>
-              <span className="text-xs font-medium text-foreground">{step.label}</span>
+              <span className="text-xs font-medium text-white whitespace-pre-line">{step.label}</span>
             </motion.div>
-            {i < 4 && <ArrowRight className="w-4 h-4 text-muted-foreground" />}
+            {i < 4 && (
+              <motion.div 
+                className="flex-1 mx-2 relative h-6 flex items-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 + i * 0.2 }}
+              >
+                <div className="w-full h-0.5 bg-gradient-to-r from-white/20 to-white/20" />
+                <motion.div
+                  className="absolute w-2 h-2 rounded-full bg-white shadow-lg"
+                  animate={{ x: [0, 40] }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: "linear", delay: i * 0.3 }}
+                />
+              </motion.div>
+            )}
           </React.Fragment>
         ))}
       </div>
     </motion.div>
 
+    {/* Sub-Agent Types */}
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       {[
-        { type: "Verification Agent", desc: "Auto-verify extracted patient data against existing records", trigger: "New patient detected" },
-        { type: "Prior Auth Agent", desc: "Submit prior authorization for medications", trigger: "Rx requires PA" },
-        { type: "Scheduling Agent", desc: "Book follow-up appointment based on document", trigger: "Follow-up required" },
+        { 
+          type: "Verification Agent", 
+          desc: "Auto-verify extracted patient data against existing records",
+          trigger: "New patient detected",
+          actions: ["Cross-reference demographics", "Validate insurance", "Check duplicates"],
+          icon: CheckCircle,
+          color: "green"
+        },
+        { 
+          type: "Prior Authorization Agent", 
+          desc: "Submit prior authorization for medications requiring approval",
+          trigger: "Rx requires PA",
+          actions: ["Check PA requirements", "Gather clinical info", "Submit to payer"],
+          icon: ClipboardList,
+          color: "blue"
+        },
+        { 
+          type: "Scheduling Agent", 
+          desc: "Book follow-up appointments based on extracted requirements",
+          trigger: "Follow-up required",
+          actions: ["Parse follow-up dates", "Check availability", "Send confirmation"],
+          icon: Clock,
+          color: "purple"
+        },
       ].map((agent, i) => (
         <motion.div
           key={i}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 + i * 0.1 }}
-          className="bg-white rounded-xl p-4 border shadow-sm"
+          className={`bg-gradient-to-br from-${agent.color}-50 to-white rounded-xl p-4 border border-${agent.color}-200 shadow-sm`}
         >
-          <div className="flex items-center gap-2 mb-2">
-            <Bot className="w-4 h-4 text-violet-500" />
+          <div className="flex items-center gap-2 mb-3">
+            <div className={`w-8 h-8 bg-${agent.color}-100 rounded-lg flex items-center justify-center`}>
+              <agent.icon className={`w-4 h-4 text-${agent.color}-600`} />
+            </div>
             <h4 className="font-semibold text-sm text-foreground">{agent.type}</h4>
           </div>
+          
           <p className="text-xs text-muted-foreground mb-3">{agent.desc}</p>
-          <Badge variant="outline" className="text-xs">
+          
+          <div className="space-y-1.5 mb-3">
+            {agent.actions.map((action, j) => (
+              <div key={j} className="flex items-center gap-1.5 text-xs">
+                <div className={`w-1.5 h-1.5 rounded-full bg-${agent.color}-400`} />
+                <span className="text-foreground">{action}</span>
+              </div>
+            ))}
+          </div>
+          
+          <Badge variant="outline" className={`text-xs border-${agent.color}-300 text-${agent.color}-700`}>
             Trigger: {agent.trigger}
           </Badge>
         </motion.div>
       ))}
     </div>
+
+    {/* Popup Preview */}
+    <motion.div 
+      {...fadeInUp}
+      className="bg-white rounded-xl p-4 border shadow-lg"
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Bot className="w-5 h-5 text-violet-500" />
+          <span className="font-semibold text-foreground">Agent Recommendation Popup</span>
+        </div>
+        <Badge className="bg-violet-100 text-violet-700">AI Suggested</Badge>
+      </div>
+      
+      <div className="bg-gradient-to-r from-violet-50 to-purple-50 rounded-lg p-4 border border-violet-200">
+        <p className="text-sm text-foreground mb-3">
+          <strong>Based on extracted data:</strong> Prior Authorization is recommended for Ozempic.
+          Would you like to deploy the Prior Auth Agent?
+        </p>
+        <div className="flex gap-2">
+          <Button size="sm" className="gap-1 bg-violet-600 hover:bg-violet-700">
+            <Zap className="w-3 h-3" />
+            Deploy Agent
+          </Button>
+          <Button size="sm" variant="outline">Configure First</Button>
+          <Button size="sm" variant="ghost">Dismiss</Button>
+        </div>
+      </div>
+    </motion.div>
   </motion.div>
 );
 
-// Slide 9: External Data Push
+// Slide 9: External Data Push - ENHANCED with integration details
 const ExternalPushSlide = () => (
-  <motion.div className="space-y-8" variants={staggerContainer} initial="initial" animate="animate">
-    <motion.div {...fadeInUp} className="text-center mb-6">
+  <motion.div className="space-y-6" variants={staggerContainer} initial="initial" animate="animate">
+    <motion.div {...fadeInUp} className="text-center mb-4">
       <div className="inline-flex items-center gap-3 px-4 py-2 bg-teal-100 rounded-full border border-teal-200">
         <Send className="w-5 h-5 text-teal-600" />
-        <span className="text-sm font-medium text-teal-700">Data Integration</span>
+        <span className="text-sm font-medium text-teal-700">External Data Integration</span>
       </div>
     </motion.div>
 
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    {/* Integration Flow Diagram */}
+    <motion.div 
+      {...fadeInUp}
+      className="bg-gradient-to-r from-teal-900 via-cyan-900 to-blue-900 rounded-xl p-6 border border-teal-500/30"
+    >
+      <h4 className="text-white font-semibold mb-6 text-center">Data Flow to External Systems</h4>
+      
+      <div className="flex items-center justify-between">
+        {/* Source */}
+        <motion.div 
+          className="flex flex-col items-center"
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+        >
+          <div className="w-16 h-20 bg-white/10 border-2 border-white/30 rounded-lg flex flex-col items-center justify-center mb-2">
+            <FileCheck className="w-8 h-8 text-white mb-1" />
+            <span className="text-xs text-white/60">Extracted</span>
+          </div>
+        </motion.div>
+
+        {/* Animated Connection */}
+        <motion.div 
+          className="flex-1 mx-4 relative"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full h-0.5 bg-gradient-to-r from-white/30 via-teal-400 to-white/30" />
+          </div>
+          <motion.div
+            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-teal-400 shadow-lg shadow-teal-400/50"
+            animate={{ x: [0, 150] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+          />
+        </motion.div>
+
+        {/* Transform */}
+        <motion.div 
+          className="flex flex-col items-center"
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.4 }}
+        >
+          <div className="w-16 h-16 bg-gradient-to-br from-yellow-500/30 to-orange-500/30 border-2 border-yellow-400 rounded-full flex items-center justify-center mb-2">
+            <RefreshCw className="w-8 h-8 text-yellow-400" />
+          </div>
+          <span className="text-xs text-yellow-300 font-medium">Transform</span>
+        </motion.div>
+
+        {/* Animated Connection */}
+        <motion.div 
+          className="flex-1 mx-4 relative"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full h-0.5 bg-gradient-to-r from-white/30 via-cyan-400 to-white/30" />
+          </div>
+          <motion.div
+            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/50"
+            animate={{ x: [0, 150] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear", delay: 1 }}
+          />
+        </motion.div>
+
+        {/* Destinations */}
+        <div className="flex flex-col gap-2">
+          {[
+            { name: "EHR System", icon: Stethoscope, color: "blue" },
+            { name: "Database", icon: Database, color: "green" },
+            { name: "Webhook", icon: Globe, color: "purple" },
+          ].map((dest, i) => (
+            <motion.div
+              key={i}
+              className={`flex items-center gap-2 px-3 py-1.5 bg-${dest.color}-500/20 border border-${dest.color}-400/50 rounded-lg`}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.7 + i * 0.1 }}
+            >
+              <dest.icon className={`w-4 h-4 text-${dest.color}-400`} />
+              <span className="text-xs text-white font-medium">{dest.name}</span>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Integration Methods */}
-      <motion.div {...fadeInUp} className="space-y-4">
-        <h3 className="text-xl font-semibold text-foreground">Push Methods</h3>
+      <motion.div {...fadeInUp} className="space-y-3">
+        <h3 className="text-lg font-semibold text-foreground">Supported Integrations</h3>
         
         {[
-          { method: "REST API", desc: "Direct API integration with any system", icon: Database },
-          { method: "Webhooks", desc: "Real-time event-driven updates", icon: Zap },
-          { method: "HL7/FHIR", desc: "Healthcare standard protocols", icon: Shield },
-          { method: "SDK", desc: "Embed in your applications", icon: Cpu },
+          { method: "REST API", desc: "Direct API integration with any system", icon: Server, badge: "JSON/XML" },
+          { method: "Webhooks", desc: "Real-time event-driven updates", icon: Zap, badge: "Real-time" },
+          { method: "HL7/FHIR", desc: "Healthcare standard protocols", icon: HeartPulse, badge: "Healthcare" },
+          { method: "SDK", desc: "Embed in your applications", icon: Cpu, badge: "Custom" },
         ].map((item, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="flex items-center gap-4 p-4 bg-teal-50 rounded-lg border border-teal-200"
+            className="flex items-center gap-4 p-3 bg-teal-50 rounded-lg border border-teal-200"
           >
             <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
               <item.icon className="w-5 h-5 text-teal-600" />
             </div>
-            <div>
+            <div className="flex-1">
               <h4 className="font-medium text-foreground">{item.method}</h4>
               <p className="text-xs text-muted-foreground">{item.desc}</p>
             </div>
+            <Badge variant="secondary" className="text-xs">{item.badge}</Badge>
           </motion.div>
         ))}
       </motion.div>
 
       {/* Example Payload */}
-      <motion.div {...fadeInUp} className="space-y-4">
-        <h3 className="text-xl font-semibold text-foreground">Sample Output</h3>
+      <motion.div {...fadeInUp} className="space-y-3">
+        <h3 className="text-lg font-semibold text-foreground">Sample Webhook Payload</h3>
         
-        <div className="bg-gray-900 rounded-xl p-4 text-xs font-mono text-green-400 overflow-auto max-h-64">
-          <pre>{`// Webhook payload to EHR
-{
+        <div className="bg-gray-900 rounded-xl p-4 text-xs font-mono text-green-400 overflow-auto max-h-52">
+          <pre>{`{
   "event": "document_processed",
   "timestamp": "2024-01-07T10:30:00Z",
   "document": {
@@ -793,19 +1271,14 @@ const ExternalPushSlide = () => (
   "patient": {
     "name": "John Smith",
     "dob": "1985-03-15",
-    "mrn": "MRN-12345"
+    "mrn": "MRN123456"
   },
-  "medications": [
-    {
-      "name": "Metformin",
-      "dosage": "500mg",
-      "frequency": "BID"
-    }
-  ],
-  "provider": {
-    "npi": "1234567890",
-    "name": "Dr. Sarah Johnson"
-  }
+  "medications": [{
+    "name": "Metformin",
+    "ndc": "12345-678-90",
+    "dosage": "500mg",
+    "frequency": "BID"
+  }]
 }`}</pre>
         </div>
         
@@ -813,6 +1286,7 @@ const ExternalPushSlide = () => (
           <Badge variant="outline">JSON</Badge>
           <Badge variant="outline">HL7 FHIR</Badge>
           <Badge variant="outline">CSV</Badge>
+          <Badge variant="outline">XML</Badge>
         </div>
       </motion.div>
     </div>
@@ -919,11 +1393,11 @@ const ROISlide = () => (
 const documentProcessingSlides: Slide[] = [
   { id: 1, title: "The Document Processing Challenge", subtitle: "Understanding the problem we're solving", animation: 'fade', content: <ProblemStatementSlide /> },
   { id: 2, title: "Current Tools: 1:1 and Less Intelligent", subtitle: "Why traditional approaches fall short", animation: 'slide', content: <CurrentToolsSlide /> },
-  { id: 3, title: "Why Multi-Model Routing?", subtitle: "The right model for every document", animation: 'zoom', content: <WhyMultiModelSlide /> },
+  { id: 3, title: "Why Multi-Model Routing?", subtitle: "The right model for every document type", animation: 'zoom', content: <WhyMultiModelSlide /> },
   { id: 4, title: "Auto-Detection & Configuration", subtitle: "Zero-config document processing", animation: 'fade', content: <DocumentConfigSlide /> },
   { id: 5, title: "Two-Stage Pipeline Architecture", subtitle: "Vision AI + NLP for optimal extraction", animation: 'slide', content: <TwoStagePipelineSlide /> },
   { id: 6, title: "Complete Solution Architecture", subtitle: "End-to-end document intelligence", animation: 'zoom', content: <SolutionArchitectureSlide /> },
-  { id: 7, title: "Live Demo: Real-World Examples", subtitle: "See the platform in action", animation: 'fade', content: <DemoSlide /> },
+  { id: 7, title: "Live Demo: Prescription & Integrations", subtitle: "Real-world processing with drug database lookup", animation: 'fade', content: <DemoSlide /> },
   { id: 8, title: "Sub-Agent Follow-up Intelligence", subtitle: "AI-recommended workflow automation", animation: 'slide', content: <SubAgentSlide /> },
   { id: 9, title: "External Data Push & Integration", subtitle: "Seamless connection to your systems", animation: 'zoom', content: <ExternalPushSlide /> },
   { id: 10, title: "ROI: Lovable vs Traditional Development", subtitle: "Cost, time, and resource comparison", animation: 'fade', content: <ROISlide /> },
@@ -1037,7 +1511,7 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
         }
         
         // Content placeholder
-        pptSlide.addText('See interactive presentation for detailed content', {
+        pptSlide.addText('See interactive presentation for detailed animated content', {
           x: 0.5, y: 2.5, w: '90%', h: 0.3,
           fontSize: 12, color: '94a3b8', italic: true
         });
@@ -1053,6 +1527,7 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
         { text: '• Multi-model routing for optimal accuracy\n', options: { bullet: false } },
         { text: '• Zero-configuration auto-detection\n', options: { bullet: false } },
         { text: '• Two-stage pipeline architecture\n', options: { bullet: false } },
+        { text: '• Drug database integrations (DrugBank, RxNorm, NDC)\n', options: { bullet: false } },
         { text: '• Sub-agent follow-up intelligence\n', options: { bullet: false } },
         { text: '• 99% cost reduction vs traditional development', options: { bullet: false } },
       ], {
@@ -1135,7 +1610,7 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
       {/* Main Slide Area */}
       <div className={cn(
         "relative overflow-hidden",
-        isFullscreen ? "h-[calc(100vh-130px)]" : "h-[600px]"
+        isFullscreen ? "h-[calc(100vh-130px)]" : "h-[650px]"
       )}>
         <AnimatePresence initial={false} custom={direction} mode="wait">
           <motion.div
@@ -1149,15 +1624,15 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
               x: { type: "spring", stiffness: 300, damping: 30 },
               opacity: { duration: 0.2 }
             }}
-            className="absolute inset-0 p-8 overflow-y-auto"
+            className="absolute inset-0 p-6 overflow-y-auto"
           >
             {/* Slide Header */}
-            <div className="text-center mb-6">
-              <h2 className="text-3xl font-bold text-foreground mb-2">
+            <div className="text-center mb-4">
+              <h2 className="text-2xl font-bold text-foreground mb-1">
                 {currentSlideData.title}
               </h2>
               {currentSlideData.subtitle && (
-                <p className="text-lg text-muted-foreground">
+                <p className="text-base text-muted-foreground">
                   {currentSlideData.subtitle}
                 </p>
               )}
