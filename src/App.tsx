@@ -2,7 +2,7 @@ import React, { Suspense, useEffect } from 'react';
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { MasterAuthProvider } from './hooks/useMasterAuth';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
@@ -426,10 +426,10 @@ const PublicRoutes = () => (
 
 // Main app with routing logic
 const AppRouter = () => {
-  const location = window.location.pathname;
+  const location = useLocation();
   
   // Check if this is a public route - render without auth
-  if (location.startsWith('/public/')) {
+  if (location.pathname.startsWith('/public/')) {
     return (
       <HelmetProvider>
         <PublicRoutes />
