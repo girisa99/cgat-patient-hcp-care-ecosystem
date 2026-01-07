@@ -396,6 +396,72 @@ export default function MedicationTab({
         </Card>
       )}
 
+      {/* Multi-Medication Summary Panel - Shows ALL medications from prescription */}
+      {processingResult?.medications && processingResult.medications.length > 1 && (
+        <Card className="border-blue-300 bg-gradient-to-r from-blue-50 to-blue-100/30 dark:from-blue-950/30 dark:to-blue-900/10">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Pill className="h-5 w-5 text-blue-600" />
+              Multiple Medications Detected ({processingResult.medications.length})
+            </CardTitle>
+            <CardDescription>
+              This prescription contains multiple medications. Agent analysis covers all drugs.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {processingResult.medications.map((med: any, index: number) => {
+                const medName = med.medication_name || med.name || `Medication ${index + 1}`;
+                const strength = med.strength || '';
+                const sig = med.sig || med.directions || '';
+                const quantity = med.quantity || '';
+                
+                return (
+                  <div 
+                    key={index}
+                    className="p-3 bg-background rounded-lg border border-blue-200 dark:border-blue-800 hover:border-primary transition-colors cursor-pointer"
+                    onClick={() => {
+                      setDrugSearchQuery(medName);
+                      toast.info(`Selected ${medName} for lookup`);
+                    }}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs shrink-0">
+                            #{index + 1}
+                          </Badge>
+                          <p className="font-medium text-sm truncate">{medName}</p>
+                        </div>
+                        {strength && (
+                          <Badge variant="secondary" className="mt-1 text-xs">
+                            {strength}
+                          </Badge>
+                        )}
+                        {sig && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                            Sig: {sig}
+                          </p>
+                        )}
+                        {quantity && (
+                          <p className="text-xs text-muted-foreground">
+                            Qty: {quantity}
+                          </p>
+                        )}
+                      </div>
+                      <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              Click any medication to search for NDC codes and clinical information. Agent results below analyze all medications together.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Prescription Image Preview for Verification */}
       {processingResult?.imageUrl && processingResult.stage === 'complete' && (
         <Card className="border-primary/30 bg-primary/5">
@@ -421,14 +487,23 @@ export default function MedicationTab({
                 <div className="flex items-center gap-2">
                   <Badge variant="outline">{processingResult.fileName}</Badge>
                   <Badge className="bg-green-500">Processed</Badge>
+                  {processingResult.medications && processingResult.medications.length > 1 && (
+                    <Badge variant="secondary">
+                      {processingResult.medications.length} Medications
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Compare extracted data with the original document to verify accuracy.
                 </p>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {processingResult.extractedFields['medication']?.value && (
+                  {/* Show primary medication or first from array */}
+                  {(processingResult.medications?.[0]?.medication_name || processingResult.extractedFields['medication']?.value) && (
                     <Badge variant="secondary">
-                      Medication: {processingResult.extractedFields['medication'].value}
+                      Medication: {processingResult.medications?.[0]?.medication_name || processingResult.extractedFields['medication'].value}
+                      {processingResult.medications && processingResult.medications.length > 1 && 
+                        ` (+${processingResult.medications.length - 1} more)`
+                      }
                     </Badge>
                   )}
                   {processingResult.extractedFields['patient_name']?.value && (
