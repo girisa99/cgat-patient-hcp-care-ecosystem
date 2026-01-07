@@ -27,8 +27,8 @@ export const AIModelsPanel: React.FC<AIModelsPanelProps> = ({
 
   const llmModels = [
     {
-      id: 'gpt-4',
-      name: 'GPT-4',
+      id: 'gpt-5',
+      name: 'GPT-5',
       provider: 'OpenAI',
       type: 'LLM',
       status: 'active',
@@ -39,8 +39,8 @@ export const AIModelsPanel: React.FC<AIModelsPanelProps> = ({
       description: 'Most capable model for complex healthcare reasoning'
     },
     {
-      id: 'claude-3-opus',
-      name: 'Claude 3 Opus',
+      id: 'claude-sonnet-4',
+      name: 'Claude Sonnet 4',
       provider: 'Anthropic',
       type: 'LLM',
       status: 'active',
@@ -51,8 +51,8 @@ export const AIModelsPanel: React.FC<AIModelsPanelProps> = ({
       description: 'Excellent for detailed medical documentation and analysis'
     },
     {
-      id: 'gpt-4o-mini',
-      name: 'GPT-4o Mini',
+      id: 'gpt-5-mini',
+      name: 'GPT-5 Mini',
       provider: 'OpenAI',
       type: 'LLM',
       status: 'inactive',
@@ -66,8 +66,8 @@ export const AIModelsPanel: React.FC<AIModelsPanelProps> = ({
 
   const vlmModels = [
     {
-      id: 'gpt-4-vision',
-      name: 'GPT-4 Vision',
+      id: 'gpt-5-vision',
+      name: 'GPT-5 Vision',
       provider: 'OpenAI',
       type: 'VLM',
       status: 'active',
@@ -78,8 +78,8 @@ export const AIModelsPanel: React.FC<AIModelsPanelProps> = ({
       description: 'Advanced vision model for medical imaging and document analysis'
     },
     {
-      id: 'claude-3-vision',
-      name: 'Claude 3 Vision',
+      id: 'claude-4-vision',
+      name: 'Claude 4 Vision',
       provider: 'Anthropic',
       type: 'VLM',
       status: 'active',

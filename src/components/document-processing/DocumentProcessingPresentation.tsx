@@ -787,8 +787,8 @@ const DocumentConfigSlide = () => (
     "tables": 0
   },
   "routing": {
-    "stage1": "gpt-4o-vision",
-    "stage2": "claude-sonnet"
+    "stage1": "gpt-5-vision",
+    "stage2": "claude-sonnet-4"
   },
   "fields": [
     "patient_name", "dob", 
@@ -890,11 +890,11 @@ const TwoStagePipelineSlide = () => (
       <h4 className="font-bold text-foreground mb-4 text-center">Content-Aware Model Selection</h4>
       <div className="grid grid-cols-5 gap-3">
         {[
-          { type: "📊 Tables", stage1: "Gemini Flash", stage2: "Gemini Pro", color: "blue" },
-          { type: "✍️ Handwriting", stage1: "GPT-4o Vision", stage2: "GPT-4o", color: "green" },
+          { type: "📊 Tables", stage1: "Gemini Flash", stage2: "GPT-5", color: "blue" },
+          { type: "✍️ Handwriting", stage1: "GPT-5 Vision", stage2: "GPT-5", color: "green" },
           { type: "🏥 Medical", stage1: "Claude Vision", stage2: "Claude Sonnet", color: "purple" },
           { type: "📋 Forms", stage1: "Gemini Pro", stage2: "Gemini Flash", color: "orange" },
-          { type: "🖼️ Images", stage1: "GPT-4o Vision", stage2: "Gemini Pro", color: "cyan" },
+          { type: "🖼️ Images", stage1: "GPT-5 Vision", stage2: "Gemini Pro", color: "cyan" },
         ].map((item, i) => (
           <motion.div
             key={i}
@@ -1663,9 +1663,9 @@ const documentProcessingSlides: Slide[] = [
     content: <WhyMultiModelSlide />,
     pptContent: {
       bullets: [
-        "Claude 3.5 Sonnet: Medical records, complex forms (98% accuracy)",
-        "GPT-4o Vision: Handwritten prescriptions, signatures (96% accuracy)",
-        "Gemini 1.5 Flash: Lab results, tables, structured data (97% accuracy)",
+        "Claude Sonnet 4: Medical records, complex forms (98% accuracy)",
+        "GPT-5 Vision: Handwritten prescriptions, signatures (96% accuracy)",
+        "Gemini 2.5 Flash: Lab results, tables, structured data (97% accuracy)",
         "Gemini 2.5 Pro: Medical images, X-rays, DICOM (95% accuracy)",
         "AI Router: Intelligent selection based on document content",
         "Auto-Configuration: Zero manual setup required"

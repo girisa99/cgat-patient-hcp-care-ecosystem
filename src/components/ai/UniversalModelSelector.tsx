@@ -58,9 +58,9 @@ export const UniversalModelSelector: React.FC<UniversalModelSelectorProps> = ({
             },
             {
               provider: 'openai',
-              model: 'gpt-4o',
+              model: 'gpt-5',
               category: 'vision',
-              name: 'GPT-4 Vision (Medical Imaging)',
+              name: 'GPT-5 Vision (Medical Imaging)',
               role: 'specialized',
               weight: 0.3
             }

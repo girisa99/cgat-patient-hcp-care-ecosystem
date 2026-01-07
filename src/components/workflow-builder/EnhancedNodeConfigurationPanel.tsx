@@ -622,8 +622,8 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
                               <SelectValue placeholder="Select vision model" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="gpt-4o-vision">GPT-4o Vision</SelectItem>
-                              <SelectItem value="claude-3-vision">Claude 3 Vision</SelectItem>
+                              <SelectItem value="gpt-5-vision">GPT-5 Vision</SelectItem>
+                              <SelectItem value="claude-4-vision">Claude 4 Vision</SelectItem>
                               <SelectItem value="gemini-2.5-vision">Gemini 2.5 Vision</SelectItem>
                               <SelectItem value="llava-1.6">LLaVA 1.6</SelectItem>
                               <SelectItem value="cogvlm-2">CogVLM 2</SelectItem>
