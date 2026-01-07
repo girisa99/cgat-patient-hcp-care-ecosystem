@@ -207,6 +207,9 @@ export function RecordingStudio({
   
   const logoInputRef = useRef<HTMLInputElement>(null);
   const audioPlaybackTimeoutRef = useRef<number | null>(null);
+  
+  // Ref to store proceedWithRecording for use in callbacks defined before it
+  const proceedWithRecordingRef = useRef<((mode: RecordingMode) => Promise<void>) | null>(null);
 
   // Script draft storage hook
   const scriptDraft = useScriptDraftStorage({ 
@@ -924,12 +927,15 @@ export function RecordingStudio({
 
   // Start recording - show camera setup dialog first
   const handleStartRecording = useCallback(async () => {
+    console.log('[RecordingStudio] handleStartRecording called - showing camera setup dialog');
     // Always show camera setup dialog first to let user configure recording mode
     setShowCameraSetupDialog(true);
   }, []);
 
   // Handle camera setup confirmation
   const handleCameraSetupConfirm = useCallback(async (mode: RecordingMode, options: CameraSetupOptions) => {
+    console.log('[RecordingStudio] handleCameraSetupConfirm called with mode:', mode, 'options:', options);
+    
     // Apply selected mode
     setRecordingMode(mode);
     
@@ -946,18 +952,23 @@ export function RecordingStudio({
     
     // If we have an enhanced script, show the script selection dialog
     if (cleanEnhancedScript && currentScript) {
+      console.log('[RecordingStudio] Has enhanced script - showing pre-recording dialog');
       setShowPreRecordingDialog(true);
       return;
     }
     
     // No enhanced script - proceed directly
-    await proceedWithRecording(mode);
+    console.log('[RecordingStudio] No enhanced script - proceeding directly to recording');
+    // Use ref to get the latest version of proceedWithRecording
+    proceedWithRecordingRef.current?.(mode);
   }, [cleanEnhancedScript, currentScript, studioSound]);
 
   // Handle script selection from pre-recording dialog
   const handlePreRecordingScriptSelect = useCallback(async (useEnhanced: boolean) => {
+    console.log('[RecordingStudio] handlePreRecordingScriptSelect called, useEnhanced:', useEnhanced);
     setIsUsingEnhancedScript(useEnhanced);
-    await proceedWithRecording(recordingMode);
+    // Use ref to avoid stale closure
+    proceedWithRecordingRef.current?.(recordingMode);
   }, [recordingMode]);
 
   // Flag to track if recording was cancelled during countdown
@@ -1056,6 +1067,9 @@ export function RecordingStudio({
   }, [recording, currentScript, audioLinkedScriptText, camera.stream, screenShare, recordingStream.isReady, 
       voiceovers, music, selectedVoiceoverId, selectedTTSFileId, selectedMusicId, 
       ttsGeneration.lastResult, ttsAudioUrl, audioPlayback]);
+
+  // Update ref so callbacks defined before proceedWithRecording can access it
+  proceedWithRecordingRef.current = proceedWithRecording;
 
   // Pause recording - also pause ALL audio including music (but keep position for resume)
   const handlePauseRecording = useCallback(() => {
