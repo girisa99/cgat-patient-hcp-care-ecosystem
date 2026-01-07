@@ -262,7 +262,7 @@ export const ComprehensiveArchitectureDiagram: React.FC = () => {
               title="Vision Models"
               icon={<Eye className="h-4 w-4 text-blue-400" />}
               items={[
-                { name: 'GPT-4o Vision' },
+                { name: 'GPT-5 Vision' },
                 { name: 'Claude Vision' },
                 { name: 'Gemini Vision' },
                 { name: 'LLaVA' }

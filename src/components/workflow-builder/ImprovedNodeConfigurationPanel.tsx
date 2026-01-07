@@ -635,9 +635,9 @@ export const ImprovedNodeConfigurationPanel: React.FC<NodeConfigurationPanelProp
                             <SelectValue placeholder="Select vision model" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="gpt-4o-vision">GPT-4o Vision</SelectItem>
-                            <SelectItem value="claude-3-vision">Claude 3 Vision</SelectItem>
-                            <SelectItem value="gemini-vision">Gemini Vision</SelectItem>
+                            <SelectItem value="gpt-5-vision">GPT-5 Vision</SelectItem>
+                            <SelectItem value="claude-4-vision">Claude 4 Vision</SelectItem>
+                            <SelectItem value="gemini-2.5-vision">Gemini 2.5 Vision</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

@@ -134,7 +134,7 @@ export const DocumentConfigurationReferenceDiagram = () => {
 
   const configOptions = [
     { name: 'OCR Provider', options: ['Google Vision', 'Azure CV', 'AWS Textract'], icon: '🔍' },
-    { name: 'AI Model', options: ['Gemini 2.5', 'GPT-4o', 'Claude 3.5'], icon: '🧠' },
+    { name: 'AI Model', options: ['Gemini 2.5', 'GPT-5', 'Claude Sonnet 4'], icon: '🧠' },
     { name: 'Output Format', options: ['JSON', 'FHIR R4', 'HL7', 'CSV'], icon: '📤' },
     { name: 'Validation', options: ['Schema Check', 'Business Rules', 'Cross-Ref'], icon: '✅' },
   ];

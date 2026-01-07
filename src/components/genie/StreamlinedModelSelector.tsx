@@ -28,20 +28,20 @@ interface ModelOption {
 
 const modelOptions: ModelOption[] = [
   // LLM Models
-  { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai', category: 'llm', description: 'Latest GPT-4 Omni model' },
-  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', provider: 'openai', category: 'llm', description: 'Efficient GPT-4 variant' },
-  { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', provider: 'claude', category: 'llm', description: 'Advanced reasoning model' },
-  { id: 'claude-3-haiku', name: 'Claude 3 Haiku', provider: 'claude', category: 'llm', description: 'Fast response model' },
-  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', provider: 'gemini', category: 'llm', description: 'Google\'s flagship model' },
+  { id: 'gpt-5', name: 'GPT-5', provider: 'openai', category: 'llm', description: 'Latest GPT-5 model' },
+  { id: 'gpt-5-mini', name: 'GPT-5 Mini', provider: 'openai', category: 'llm', description: 'Efficient GPT-5 variant' },
+  { id: 'claude-sonnet-4', name: 'Claude Sonnet 4', provider: 'claude', category: 'llm', description: 'Advanced reasoning model' },
+  { id: 'claude-haiku-4', name: 'Claude Haiku 4', provider: 'claude', category: 'llm', description: 'Fast response model' },
+  { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', provider: 'gemini', category: 'llm', description: 'Google\'s flagship model' },
   
   // Vision Models
-  { id: 'gpt-4o-vision', name: 'GPT-4o Vision', provider: 'openai', category: 'vision', description: 'Multimodal capabilities' },
-  { id: 'claude-3-sonnet-vision', name: 'Claude 3 Sonnet Vision', provider: 'claude', category: 'vision', description: 'Image analysis' },
-  { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', provider: 'gemini', category: 'vision', description: 'Fast vision processing' },
+  { id: 'gpt-5-vision', name: 'GPT-5 Vision', provider: 'openai', category: 'vision', description: 'Multimodal capabilities' },
+  { id: 'claude-4-vision', name: 'Claude 4 Vision', provider: 'claude', category: 'vision', description: 'Image analysis' },
+  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'gemini', category: 'vision', description: 'Fast vision processing' },
   
   // Small Models
-  { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', provider: 'openai', category: 'small', description: 'Efficient chat model' },
-  { id: 'claude-3-haiku-fast', name: 'Claude 3 Haiku Fast', provider: 'claude', category: 'small', description: 'Ultra-fast responses' },
+  { id: 'gpt-5-nano', name: 'GPT-5 Nano', provider: 'openai', category: 'small', description: 'Efficient chat model' },
+  { id: 'claude-haiku-fast', name: 'Claude Haiku Fast', provider: 'claude', category: 'small', description: 'Ultra-fast responses' },
 ];
 
 const featureOptions = [
