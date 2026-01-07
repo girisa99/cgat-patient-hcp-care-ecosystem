@@ -2016,118 +2016,192 @@ export default function DocumentProcessing() {
         const rawText = processResult?.extractedTextPreview || '';
         const fullMetadata = processResult?.metadata || {};
         
-        // Extract medication info from OCR text
-        const medicationPatterns = [
-          /(?:Medication|Drug|Rx):\s*([A-Za-z]+(?:\s+\d+\s*mg)?)/i,
-          /(?:Current Medications|Medications):\s*[-•]?\s*([A-Za-z]+)\s+(\d+\s*mg)/i,
-          /([A-Za-z]+)\s+(\d+\s*mg)\s+(?:twice|once|three times|four times)/i
-        ];
+        // Check if AI returned a medications array (multiple medications support)
+        const aiMedications = extractedFields['medications']?.value;
+        let parsedMedications: any[] = [];
         
-        const sigPatterns = [
-          /(?:SIG|Directions|Instructions|Take):\s*(.+?)(?:\n|$)/i,
-          /Take\s+(\d+\s*(?:tablet|capsule|pill)s?\s+.+?)(?:\n|$)/i,
-          /(\d+\s*(?:tablet|capsule)s?\s+(?:twice|once|three times)\s+daily.+?)(?:\n|$)/i
-        ];
-        
-        // Try to extract drug name
-        for (const pattern of medicationPatterns) {
-          const match = rawText.match(pattern);
-          if (match) {
-            extractedDrugName = match[1].trim();
-            break;
+        if (aiMedications) {
+          try {
+            // Try to parse the medications array from the AI response
+            parsedMedications = typeof aiMedications === 'string' ? JSON.parse(aiMedications) : aiMedications;
+            if (Array.isArray(parsedMedications) && parsedMedications.length > 0) {
+              console.log('[Extraction] Found multiple medications from AI:', parsedMedications.length);
+            }
+          } catch (e) {
+            console.log('[Extraction] Could not parse medications array:', e);
           }
         }
         
-        // Try to extract SIG
-        for (const pattern of sigPatterns) {
-          const match = rawText.match(pattern);
-          if (match) {
-            extractedSig = match[1].trim();
-            break;
+        // Also check mapResult for medications array
+        if (parsedMedications.length === 0 && Array.isArray(mapResult?.medications)) {
+          parsedMedications = mapResult.medications;
+        }
+        
+        // If we have multiple medications from AI, process them all
+        if (parsedMedications.length > 0) {
+          console.log('[Extraction] Processing multiple medications:', parsedMedications);
+          medications = parsedMedications.map((med: any, idx: number) => {
+            const medName = med.medication_name || med.drug_name || med.name || '';
+            const sigText = med.sig || med.directions || med.instructions || 'Take as directed';
+            const calculation = calculateQuantityAndDaySupply(sigText);
+            
+            // Also add individual medication fields to extractedFields for display
+            const prefix = parsedMedications.length > 1 ? `medication_${idx + 1}_` : '';
+            if (medName) {
+              extractedFields[`${prefix}medication_name`] = { value: medName, confidence: 0.9 };
+            }
+            if (med.strength) {
+              extractedFields[`${prefix}strength`] = { value: med.strength, confidence: 0.9 };
+            }
+            if (sigText && sigText !== 'Take as directed') {
+              extractedFields[`${prefix}sig`] = { value: sigText, confidence: 0.9 };
+            }
+            if (med.quantity) {
+              extractedFields[`${prefix}quantity`] = { value: String(med.quantity), confidence: 0.9 };
+            }
+            
+            return {
+              drugName: medName,
+              genericName: medName,
+              strength: med.strength || '',
+              sig: sigText,
+              calculatedQuantity: parseInt(med.quantity) || calculation.totalQuantity,
+              daysSupply: parseInt(med.days_supply) || calculation.daysSupply,
+              dailyDose: calculation.dailyDose,
+              ndc: med.ndc || undefined,
+              ndcOptions: [],
+              clinicalRecommendations: enableClinicalRecommendations ? [] : []
+            };
+          });
+          
+          // Set the first medication as the primary extracted drug name
+          if (medications.length > 0) {
+            extractedDrugName = medications[0].drugName;
+            extractedSig = medications[0].sig;
           }
-        }
-        
-        // Check entities for medication info - support multiple field naming conventions
-        const entities = fullMetadata.entities || [];
-        const medicationEntity = entities.find((e: any) => 
-          e.type === 'medication' || 
-          e.type === 'medication_name' || 
-          e.type === 'drug' || 
-          e.type === 'drug_name'
-        );
-        if (medicationEntity && !extractedDrugName) {
-          extractedDrugName = medicationEntity.value;
-        }
-        
-        // Also check extractedFields for medication_name (common extraction field name)
-        if (!extractedDrugName && extractedFields['medication_name']?.value) {
-          extractedDrugName = extractedFields['medication_name'].value;
-        }
-        
-        // Use extracted or fallback values - check multiple field name variants including rx, line_items
-        // Also check for drug name in line_items (common for prescriptions)
-        let drugNameFromLineItems: string | undefined;
-        if (Array.isArray(mapResult?.lineItems) && mapResult.lineItems.length > 0) {
-          const firstItem = mapResult.lineItems[0];
-          if (firstItem?.description) {
-            // Extract drug name from line item description like "Amoxicillin 500mg Cap"
-            drugNameFromLineItems = firstItem.description.split(/\s+\d+\s*mg/i)[0]?.trim();
+          
+          // Add medication count to extracted fields
+          extractedFields['medication_count'] = { value: String(medications.length), confidence: 1.0 };
+          
+          console.log('[Extraction] Created medications array:', medications.length, 'medications');
+        } else {
+          // Fallback: Extract single medication from text patterns and fields
+          const medicationPatterns = [
+            /(?:Medication|Drug|Rx):\s*([A-Za-z]+(?:\s+\d+\s*mg)?)/i,
+            /(?:Current Medications|Medications):\s*[-•]?\s*([A-Za-z]+)\s+(\d+\s*mg)/i,
+            /([A-Za-z]+)\s+(\d+\s*mg)\s+(?:twice|once|three times|four times)/i
+          ];
+          
+          const sigPatterns = [
+            /(?:SIG|Directions|Instructions|Take):\s*(.+?)(?:\n|$)/i,
+            /Take\s+(\d+\s*(?:tablet|capsule|pill)s?\s+.+?)(?:\n|$)/i,
+            /(\d+\s*(?:tablet|capsule)s?\s+(?:twice|once|three times)\s+daily.+?)(?:\n|$)/i
+          ];
+          
+          // Try to extract drug name
+          for (const pattern of medicationPatterns) {
+            const match = rawText.match(pattern);
+            if (match) {
+              extractedDrugName = match[1].trim();
+              break;
+            }
           }
+          
+          // Try to extract SIG
+          for (const pattern of sigPatterns) {
+            const match = rawText.match(pattern);
+            if (match) {
+              extractedSig = match[1].trim();
+              break;
+            }
+          }
+          
+          // Check entities for medication info - support multiple field naming conventions
+          const entities = fullMetadata.entities || [];
+          const medicationEntity = entities.find((e: any) => 
+            e.type === 'medication' || 
+            e.type === 'medication_name' || 
+            e.type === 'drug' || 
+            e.type === 'drug_name'
+          );
+          if (medicationEntity && !extractedDrugName) {
+            extractedDrugName = medicationEntity.value;
+          }
+          
+          // Also check extractedFields for medication_name (common extraction field name)
+          if (!extractedDrugName && extractedFields['medication_name']?.value) {
+            extractedDrugName = extractedFields['medication_name'].value;
+          }
+          
+          // Use extracted or fallback values - check multiple field name variants including rx, line_items
+          // Also check for drug name in line_items (common for prescriptions)
+          let drugNameFromLineItems: string | undefined;
+          if (Array.isArray(mapResult?.lineItems) && mapResult.lineItems.length > 0) {
+            const firstItem = mapResult.lineItems[0];
+            if (firstItem?.description) {
+              // Extract drug name from line item description like "Amoxicillin 500mg Cap"
+              drugNameFromLineItems = firstItem.description.split(/\s+\d+\s*mg/i)[0]?.trim();
+            }
+          }
+          
+          // Extract drug name from various possible field names - keep full name, don't split
+          const drugName = extractedDrugName || 
+                           extractedFields['medication_name']?.value?.trim() || 
+                           extractedFields['medication']?.value?.trim() ||
+                           extractedFields['drug_name']?.value?.trim() ||
+                           extractedFields['drug']?.value?.trim() ||
+                           extractedFields['rx']?.value?.replace(/[()]/g, '')?.trim() ||
+                           extractedFields['prescription']?.value?.trim() ||
+                           extractedFields['medicine']?.value?.trim() ||
+                           extractedFields['med_name']?.value?.trim() ||
+                           drugNameFromLineItems ||
+                           'Unknown';
+          
+          // Debug log to help troubleshoot extraction issues
+          console.log('Prescription extraction - available fields:', Object.keys(extractedFields));
+          console.log('Prescription extraction - looking for medication_name:', extractedFields['medication_name']);
+          console.log('Prescription extraction - resolved drugName:', drugName);
+          
+          const sigText = extractedSig || 
+                          extractedFields['sig']?.value || 
+                          extractedFields['signature']?.value || 
+                          extractedFields['directions']?.value ||
+                          extractedFields['instructions']?.value ||
+                          extractedFields['dosage_instructions']?.value ||
+                          'Take as directed';
+          
+          // Auto-populate dose, route, frequency, duration selectors from SIG
+          parseSigToSelectors(sigText);
+          
+          const calculation = calculateQuantityAndDaySupply(sigText);
+          
+          const resolvedDrugName = drugName !== 'Unknown' ? drugName : extractedFields['rx']?.value?.replace(/[()]/g, '')?.trim() || 'Unknown';
+          
+          medications = [{
+            drugName: resolvedDrugName,
+            genericName: resolvedDrugName !== 'Unknown' ? resolvedDrugName : 'Unknown',
+            strength: extractedFields['strength']?.value || '',
+            sig: sigText,
+            calculatedQuantity: calculation.totalQuantity,
+            daysSupply: calculation.daysSupply,
+            dailyDose: calculation.dailyDose,
+            ndc: enableNdcMatching ? extractedFields['ndc']?.value : undefined,
+            ndcOptions: [],
+            clinicalRecommendations: enableClinicalRecommendations ? [] : []
+          }];
         }
-        
-        // Extract drug name from various possible field names - keep full name, don't split
-        const drugName = extractedDrugName || 
-                         extractedFields['medication_name']?.value?.trim() || 
-                         extractedFields['medication']?.value?.trim() ||
-                         extractedFields['drug_name']?.value?.trim() ||
-                         extractedFields['drug']?.value?.trim() ||
-                         extractedFields['rx']?.value?.replace(/[()]/g, '')?.trim() ||
-                         extractedFields['prescription']?.value?.trim() ||
-                         extractedFields['medicine']?.value?.trim() ||
-                         extractedFields['med_name']?.value?.trim() ||
-                         drugNameFromLineItems ||
-                         'Unknown';
-        
-        // Debug log to help troubleshoot extraction issues
-        console.log('Prescription extraction - available fields:', Object.keys(extractedFields));
-        console.log('Prescription extraction - looking for medication_name:', extractedFields['medication_name']);
-        console.log('Prescription extraction - resolved drugName:', drugName);
-        
-        const sigText = extractedSig || 
-                        extractedFields['sig']?.value || 
-                        extractedFields['signature']?.value || 
-                        extractedFields['directions']?.value ||
-                        extractedFields['instructions']?.value ||
-                        extractedFields['dosage_instructions']?.value ||
-                        'Take as directed';
-        
-        // Auto-populate dose, route, frequency, duration selectors from SIG
-        parseSigToSelectors(sigText);
-        
-        const calculation = calculateQuantityAndDaySupply(sigText);
-        
-        const resolvedDrugName = drugName !== 'Unknown' ? drugName : extractedFields['rx']?.value?.replace(/[()]/g, '')?.trim() || 'Unknown';
-        
-        medications = [{
-          drugName: resolvedDrugName,
-          genericName: resolvedDrugName !== 'Unknown' ? resolvedDrugName : 'Unknown',
-          strength: extractedFields['strength']?.value || '',
-          sig: sigText,
-          calculatedQuantity: calculation.totalQuantity,
-          daysSupply: calculation.daysSupply,
-          dailyDose: calculation.dailyDose,
-          ndc: enableNdcMatching ? extractedFields['ndc']?.value : undefined,
-          ndcOptions: [],
-          clinicalRecommendations: enableClinicalRecommendations ? [] : []
-        }];
         
         // Store pending medication data for later - will be processed after user confirms and saves
         // Data flows to Medication Lookup tab ONLY after "Confirm & Save to History"
-        const finalDrugName = resolvedDrugName !== 'Unknown' ? resolvedDrugName : null;
+        // Use the first medication from the array or extracted values
+        const primaryMed = medications && medications.length > 0 ? medications[0] : null;
+        const finalDrugName = primaryMed?.drugName && primaryMed.drugName !== 'Unknown' ? primaryMed.drugName : null;
+        const finalSigText = primaryMed?.sig || extractedFields['sig']?.value || 'Take as directed';
         
         console.log('[Extraction] Medication data extracted:', {
           finalDrugName,
-          sigText,
+          sigText: finalSigText,
+          medicationCount: medications?.length || 0,
           hasStrengthField: !!extractedFields['strength']?.value,
           frequency: extractedFields['frequency']?.value,
           route: extractedFields['route']?.value,
@@ -2141,7 +2215,7 @@ export default function DocumentProcessing() {
           // Store pending data - will be used after confirmation
           const pendingData = {
             drugName: finalDrugName,
-            sigText: sigText,
+            sigText: finalSigText,
             baseName: baseName,
             preservedStrength: preservedStrength,
             extractedFields: extractedFields
@@ -2150,10 +2224,14 @@ export default function DocumentProcessing() {
           console.log('[Extraction] Setting pendingMedicationData:', pendingData);
           setPendingMedicationData(pendingData);
           
-          toast.info(`Extracted medication: ${finalDrugName}`, {
+          const medicationCount = medications?.length || 1;
+          toast.info(`Extracted ${medicationCount} medication${medicationCount > 1 ? 's' : ''}: ${finalDrugName}${medicationCount > 1 ? ` (+${medicationCount - 1} more)` : ''}`, {
             description: 'Review and confirm to populate Medication Lookup'
           });
         }
+        
+        // Auto-populate dose, route, frequency, duration selectors from primary SIG
+        parseSigToSelectors(finalSigText);
       }
 
       const finalResult: ProcessingResult = {

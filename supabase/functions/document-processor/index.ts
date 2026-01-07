@@ -1357,38 +1357,65 @@ function buildExtractionPrompt(documentType: string, targetFields?: string[]): s
     'prescription': `
 PRESCRIPTION DOCUMENT - CRITICAL EXTRACTION RULES:
 
-**MOST IMPORTANT - MEDICATION NAME:**
+**HANDWRITTEN PRESCRIPTION RECOGNITION:**
+- This may be a HANDWRITTEN prescription - pay extra attention to interpreting handwriting
+- Look for "Rx" symbol or the word "Rx:" as the start of medication list
+- Medications are often written on separate lines after "Rx:"
+- Common abbreviations: tab=tablet, cap=capsule, #=quantity, AD/QD=once daily, BID=twice daily, TID=three times daily
+
+**MOST IMPORTANT - EXTRACT ALL MEDICATIONS:**
+- A prescription may contain MULTIPLE medications - extract ALL of them
+- Return medications as an ARRAY in the field "medications" 
+- Each medication object should have: medication_name, strength, sig, quantity, refills
+- Also extract the first/primary medication into top-level fields for backward compatibility
+
+**FORMAT FOR MULTIPLE MEDICATIONS:**
+{
+  "medications": [
+    {"medication_name": "Drug 1", "strength": "500mg", "sig": "Take 1 tablet daily", "quantity": "30", "refills": "0"},
+    {"medication_name": "Drug 2", "strength": "250mg", "sig": "Take 1 twice daily", "quantity": "60", "refills": "2"}
+  ],
+  "medication_name": "Drug 1",  // First medication for backward compatibility
+  "medication_count": 2
+}
+
+**MEDICATION NAME (CRITICAL - NEVER SKIP):**
 - The medication/drug name is THE MOST CRITICAL field to extract
-- Look for it near labels like "Rx:", "Medication:", "Drug:", "Dispense:", or at the center of the prescription
+- Look for drug names after "Rx:", or in the center of the prescription
+- Common handwritten drugs: Ferrous Sulfate (Fe504, FeSO4), Ascorbic Acid (Vitamin C), Amoxicillin, Metformin
 - Extract the FULL drug name including brand and generic names
-- Store it as "medication_name" - THIS FIELD IS REQUIRED
-- Examples: "Metformin 500mg", "Lisinopril", "Amoxicillin 250mg Capsules"
+- If you see "#30" or "#60" after a drug name, that's the quantity
+- Examples: "Fe504 tab #30" = Ferrous Sulfate 504mg, 30 tablets
 
 **DOSAGE INSTRUCTIONS (SIG):**
-- Look for "Sig:", "Take:", "Directions:", or dosing instructions
+- Look for "Sig:", "S:", "Take:", or dosing instructions on the line after medication
+- Common sigs: A.D./QD=once daily, B.I.D.=twice daily, T.I.D.=three times daily, Q.I.D.=four times daily
+- "Once a day" = once daily, "aa" = before meals, "pc" = after meals
 - Extract as "sig" - include FULL instructions
-- Example: "Take 1 tablet by mouth twice daily with meals for 30 days"
 
 **OTHER REQUIRED FIELDS:**
-- strength: The dosage strength (e.g., "500mg", "10mg/5ml")
-- quantity: Number to dispense (e.g., "30", "60 tablets")
-- refills: Number of refills authorized (e.g., "3", "0")
-- days_supply: How many days the medication should last (e.g., "30", "90")
-- prescriber_name: Doctor/prescriber name (e.g., "Dr. John Smith")
-- prescriber_npi: 10-digit NPI number
+- strength: The dosage strength (e.g., "500mg", "10mg/5ml") - may be part of drug name
+- quantity: Number to dispense - look for "#30", "#60", "Disp: 30", "Qty: 30"
+- refills: Number of refills authorized (e.g., "3", "0", "Ref x 3")
+- days_supply: How many days the medication should last
+- prescriber_name: Doctor/prescriber name - often near signature at bottom
+- prescriber_npi: 10-digit NPI number  
+- prescriber_license: License number (Lic. No.)
+- prescriber_ptr: PTR number (PTR No.)
 - dea_number: DEA number for controlled substances
-- patient_name: Patient's full name
-- patient_dob: Patient's date of birth
-- date_written: Date the prescription was written
+- patient_name: Patient's full name - usually at top
+- patient_address: Patient address
+- patient_age: Patient age
+- patient_sex: Patient sex (M/F)
+- date_written: Date the prescription was written (look for Date: field)
 - pharmacy: Pharmacy name if specified
 - diagnosis: Diagnosis or ICD code if mentioned
-- ndc: NDC code if visible
 
 **CONTROLLED SUBSTANCE INDICATORS:**
 - Look for DEA number, schedule markings (II, III, IV, V), or controlled substance warnings
 - If found, set "is_controlled": true
 
-DO NOT skip the medication_name field - if you see ANY drug name, extract it.
+CRITICAL: Extract ALL medications visible on the prescription. Do NOT skip any drug names.
 `,
     'insurance': `
 INSURANCE DOCUMENT EXTRACTION:
