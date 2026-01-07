@@ -467,6 +467,54 @@ export function RecordingStudio({
   
   // Calculate current word index from audio time with improved sync algorithm
   // Uses weighted timing based on word length and punctuation for better TTS alignment
+  // Works with BOTH legacy audioPlayback AND new preloadedAudio system
+  const calculateWordIndex = useCallback((currentTime: number, duration: number, scriptContent: string): number => {
+    if (!scriptContent || duration <= 0) return 0;
+    
+    const words = scriptContent.split(/\s+/).filter(w => w.length > 0);
+    if (words.length === 0) return 0;
+    
+    // Calculate weighted durations for each word
+    // Longer words take more time, punctuation adds pauses
+    const wordWeights = words.map(word => {
+      let weight = word.length; // Base weight = character count
+      
+      // Add pause weight for punctuation - TTS pauses more at punctuation
+      if (word.match(/[.!?]$/)) weight += 8; // End of sentence pause (longer)
+      else if (word.match(/[,;:]$/)) weight += 4; // Comma pause
+      else if (word.match(/[-–—]$/)) weight += 2; // Dash pause
+      
+      // Minimum weight to prevent too-fast words
+      return Math.max(weight, 3);
+    });
+    
+    const totalWeight = wordWeights.reduce((sum, w) => sum + w, 0);
+    
+    // Find which word we should be at based on elapsed time proportion
+    // Subtract a small offset to keep cursor slightly behind (more natural reading)
+    const timeProgress = Math.max(0, (currentTime / duration) - 0.02); // 2% lag to stay in sync
+    
+    let accumulatedWeight = 0;
+    let targetIndex = 0;
+    
+    for (let i = 0; i < words.length; i++) {
+      const progress = accumulatedWeight / totalWeight;
+      
+      // Find the word where we've reached this time progress
+      if (progress >= timeProgress) {
+        targetIndex = Math.max(0, i - 1); // Go back one word to stay in sync
+        break;
+      }
+      
+      accumulatedWeight += wordWeights[i];
+      targetIndex = i;
+    }
+    
+    // Clamp to valid range
+    return Math.max(0, Math.min(targetIndex, words.length - 1));
+  }, []);
+
+  // Sync word index with LEGACY audioPlayback system
   useEffect(() => {
     if (audioPlayback.audioTimeInfo) {
       setAudioCurrentTime(audioPlayback.audioTimeInfo.currentTime);
@@ -474,58 +522,21 @@ export function RecordingStudio({
       setIsAudioPlaying(audioPlayback.audioTimeInfo.isPlaying);
       
       // Get script content from either selected script OR audioLinkedScriptText
-      const currentScript = scripts.find(s => s.id === selectedScriptId);
-      const scriptContent = currentScript?.content || audioLinkedScriptText;
+      const currentScriptObj = scripts.find(s => s.id === selectedScriptId);
+      const scriptContent = currentScriptObj?.content || audioLinkedScriptText;
       
       if (scriptContent && audioPlayback.audioTimeInfo.duration > 0 && audioPlayback.audioTimeInfo.isPlaying) {
-        const words = scriptContent.split(/\s+/).filter(w => w.length > 0);
-        
-        // Calculate weighted durations for each word
-        // Longer words take more time, punctuation adds pauses
-        const wordWeights = words.map(word => {
-          let weight = word.length; // Base weight = character count
-          
-          // Add pause weight for punctuation - TTS pauses more at punctuation
-          if (word.match(/[.!?]$/)) weight += 8; // End of sentence pause (longer)
-          else if (word.match(/[,;:]$/)) weight += 4; // Comma pause
-          else if (word.match(/[-–—]$/)) weight += 2; // Dash pause
-          
-          // Minimum weight to prevent too-fast words
-          return Math.max(weight, 3);
-        });
-        
-        const totalWeight = wordWeights.reduce((sum, w) => sum + w, 0);
-        const currentTime = audioPlayback.audioTimeInfo.currentTime;
-        const duration = audioPlayback.audioTimeInfo.duration;
-        
-        // Find which word we should be at based on elapsed time proportion
-        // Subtract a small offset to keep cursor slightly behind (more natural reading)
-        const timeProgress = Math.max(0, (currentTime / duration) - 0.02); // 2% lag to stay in sync
-        
-        let accumulatedWeight = 0;
-        let targetIndex = 0;
-        
-        for (let i = 0; i < words.length; i++) {
-          const progress = accumulatedWeight / totalWeight;
-          
-          // Find the word where we've reached this time progress
-          if (progress >= timeProgress) {
-            targetIndex = Math.max(0, i - 1); // Go back one word to stay in sync
-            break;
-          }
-          
-          accumulatedWeight += wordWeights[i];
-          targetIndex = i;
-        }
-        
-        // Clamp to valid range - no lead time, we want to match the audio
-        targetIndex = Math.max(0, Math.min(targetIndex, words.length - 1));
-        
-        setCurrentWordIndex(targetIndex);
+        const newIndex = calculateWordIndex(
+          audioPlayback.audioTimeInfo.currentTime,
+          audioPlayback.audioTimeInfo.duration,
+          scriptContent
+        );
+        setCurrentWordIndex(newIndex);
       }
     }
-  }, [audioPlayback.audioTimeInfo, scripts, selectedScriptId, audioLinkedScriptText]);
-  
+  }, [audioPlayback.audioTimeInfo, scripts, selectedScriptId, audioLinkedScriptText, calculateWordIndex]);
+
+  // NOTE: preloadedAudio word sync is defined after preloadedAudio hook below
   // Use the new useRecordingStream hook for proper stream management
   // Handles: blur integration, screen+camera PiP compositing, dynamic stream acquisition
   const recordingStream = useRecordingStream({
@@ -561,7 +572,27 @@ export function RecordingStudio({
     enableDucking: true,
     duckedVolume: 0.08,
   });
-  
+
+  // Sync word index with NEW preloadedAudio system (must be AFTER preloadedAudio hook)
+  useEffect(() => {
+    if (preloadedAudio.isPlaying && preloadedAudio.duration > 0) {
+      // Get script content from either selected script OR audioLinkedScriptText
+      const currentScriptObj = scripts.find(s => s.id === selectedScriptId);
+      const scriptContent = isUsingEnhancedScript && currentScriptObj?.enhancedContent 
+        ? currentScriptObj.enhancedContent 
+        : (currentScriptObj?.content || audioLinkedScriptText);
+      
+      if (scriptContent) {
+        const newIndex = calculateWordIndex(
+          preloadedAudio.currentTime,
+          preloadedAudio.duration,
+          scriptContent
+        );
+        setCurrentWordIndex(newIndex);
+      }
+    }
+  }, [preloadedAudio.isPlaying, preloadedAudio.currentTime, preloadedAudio.duration, scripts, selectedScriptId, audioLinkedScriptText, isUsingEnhancedScript, calculateWordIndex]);
+
   // Create a combined stream getter that uses preloadedAudio when ready
   // This ensures the recording stream includes both video AND mixed audio
   const getCombinedRecordingStream = useCallback(async (): Promise<MediaStream | null> => {
