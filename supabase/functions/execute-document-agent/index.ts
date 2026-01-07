@@ -400,22 +400,64 @@ async function executeNPIVerification(context: DocumentContext): Promise<AgentFi
 
 /**
  * Drug Lookup Agent - Uses FDA OpenFDA API + RxNorm
+ * ENHANCED: Supports MULTIPLE medications in a single prescription
  */
 async function executeDrugLookup(context: DocumentContext): Promise<AgentFinding> {
   const fields = context.extractedFields || {};
   
-  // Use helper functions for comprehensive field name fallbacks
-  const drugName = getMedicationName(fields);
-  const ndc = getNDC(fields);
+  // Collect ALL medications from the prescription
+  const medications: Array<{ name: string; strength?: string; sig?: string; ndc?: string }> = [];
   
-  console.log('[drug-lookup] Extracted drugName:', drugName, 'ndc:', ndc);
+  // Check for medications array (new multi-drug format)
+  if (fields.medications && Array.isArray(fields.medications)) {
+    fields.medications.forEach((med: any) => {
+      const medName = med.medication_name || med.name || med.drug_name;
+      if (medName) {
+        medications.push({
+          name: medName,
+          strength: med.strength || med.dosage,
+          sig: med.sig || med.directions,
+          ndc: med.ndc
+        });
+      }
+    });
+  }
+  
+  // Check for numbered medications (medication_1_name, medication_2_name, etc.)
+  for (let i = 1; i <= 10; i++) {
+    const medName = getFieldValue(fields, `medication_${i}_name`, `med_${i}_name`, `drug_${i}`);
+    if (medName) {
+      medications.push({
+        name: medName,
+        strength: getFieldValue(fields, `medication_${i}_strength`, `med_${i}_strength`),
+        sig: getFieldValue(fields, `medication_${i}_sig`, `med_${i}_sig`),
+        ndc: getFieldValue(fields, `medication_${i}_ndc`, `med_${i}_ndc`)
+      });
+    }
+  }
+  
+  // Fallback to primary medication field
+  if (medications.length === 0) {
+    const primaryDrug = getMedicationName(fields);
+    if (primaryDrug !== 'Unknown') {
+      medications.push({
+        name: primaryDrug,
+        strength: getDosage(fields),
+        sig: getFrequency(fields),
+        ndc: getNDC(fields)
+      });
+    }
+  }
+  
+  console.log('[drug-lookup] Found medications:', medications.length, medications.map(m => m.name));
   console.log('[drug-lookup] Available fields:', Object.keys(fields));
   
-  if (drugName === 'Unknown' && ndc === 'Not available') {
+  if (medications.length === 0) {
     return {
       summary: 'Drug Lookup: No medication name or NDC found',
       details: { 
         status: 'no_data',
+        medicationCount: 0,
         availableFields: Object.keys(fields),
         fieldsContent: Object.fromEntries(
           Object.entries(fields).slice(0, 10).map(([k, v]) => [k, typeof v === 'object' ? v.value : v])
@@ -430,45 +472,57 @@ async function executeDrugLookup(context: DocumentContext): Promise<AgentFinding
   }
 
   try {
-    console.log(`[drug-lookup] Calling drug-lookup for: ${drugName || ndc}`);
+    // Look up ALL medications in parallel
+    console.log(`[drug-lookup] Looking up ${medications.length} medication(s) in parallel...`);
     
-    const drugResult = await callEdgeFunction('drug-lookup', {
-      drugName: drugName || ndc,
-      searchType: 'all'
-    });
-
-    const ndcInfo = drugResult.ndc?.[0];
-    const rxnormInfo = drugResult.rxnorm?.[0];
-    const clinicalInfo = drugResult.clinicalInfo || [];
-    const alternatives = drugResult.alternatives || [];
-    
-    const alerts: Array<{ level: 'info' | 'warning' | 'error'; message: string }> = [];
-    
-    // Add clinical alerts
-    clinicalInfo.forEach((info: any) => {
-      if (info.severity === 'high') {
-        alerts.push({ level: 'error', message: info.description });
-      } else if (info.severity === 'medium') {
-        alerts.push({ level: 'warning', message: info.description });
-      } else {
-        alerts.push({ level: 'info', message: info.description });
+    const lookupPromises = medications.map(async (med) => {
+      try {
+        const drugResult = await callEdgeFunction('drug-lookup', {
+          drugName: med.name,
+          searchType: 'all'
+        });
+        return { medication: med, result: drugResult, error: null };
+      } catch (error) {
+        console.error(`[drug-lookup] Error looking up ${med.name}:`, error);
+        return { medication: med, result: null, error };
       }
     });
     
-    if (drugResult.isControlled) {
-      alerts.push({ level: 'warning', message: `Controlled substance - Schedule ${drugResult.schedule}` });
-    }
-
-    const hasData = ndcInfo || rxnormInfo;
+    const lookupResults = await Promise.all(lookupPromises);
     
-    return {
-      summary: hasData 
-        ? `Drug Found: ${ndcInfo?.brandName || ndcInfo?.genericName || rxnormInfo?.name || drugName}`
-        : `Drug Lookup: ${drugName} - No FDA data found`,
-      details: {
-        searchedDrug: drugName,
-        correctedName: drugResult.correctedName,
-        wasCorrected: drugResult.wasCorrected,
+    // Aggregate results
+    const allMedications: any[] = [];
+    const allAlerts: Array<{ level: 'info' | 'warning' | 'error'; message: string }> = [];
+    const allRecommendations: string[] = [];
+    let totalConfidence = 0;
+    let verifiedCount = 0;
+    let controlledCount = 0;
+    
+    for (const { medication, result, error } of lookupResults) {
+      if (error || !result) {
+        allMedications.push({
+          searchedDrug: medication.name,
+          strength: medication.strength,
+          sig: medication.sig,
+          verified: false,
+          error: error instanceof Error ? error.message : 'Lookup failed'
+        });
+        allAlerts.push({ level: 'warning', message: `Could not verify: ${medication.name}` });
+        continue;
+      }
+      
+      const ndcInfo = result.ndc?.[0];
+      const rxnormInfo = result.rxnorm?.[0];
+      const clinicalInfo = result.clinicalInfo || [];
+      const hasData = ndcInfo || rxnormInfo;
+      
+      const medDetails: any = {
+        searchedDrug: medication.name,
+        prescribedStrength: medication.strength,
+        prescribedSig: medication.sig,
+        verified: hasData,
+        correctedName: result.correctedName,
+        wasCorrected: result.wasCorrected,
         ndcCode: ndcInfo?.code,
         genericName: ndcInfo?.genericName,
         brandName: ndcInfo?.brandName,
@@ -478,28 +532,120 @@ async function executeDrugLookup(context: DocumentContext): Promise<AgentFinding
         strength: ndcInfo?.strength,
         pharmClass: ndcInfo?.pharmClass,
         rxcui: rxnormInfo?.rxcui,
-        isControlled: drugResult.isControlled,
-        schedule: drugResult.schedule,
-        interactions: clinicalInfo.filter((c: any) => c.type === 'interaction'),
-        warnings: clinicalInfo.filter((c: any) => c.type === 'warning'),
-        alternatives: alternatives.slice(0, 3)
+        isControlled: result.isControlled,
+        schedule: result.schedule,
+        interactionCount: clinicalInfo.length,
+        interactions: clinicalInfo.filter((c: any) => c.type === 'interaction').slice(0, 3),
+        warnings: clinicalInfo.filter((c: any) => c.type === 'warning').slice(0, 3)
+      };
+      
+      allMedications.push(medDetails);
+      
+      if (hasData) {
+        verifiedCount++;
+        totalConfidence += 0.92;
+      } else {
+        totalConfidence += 0.5;
+      }
+      
+      // Add clinical alerts for this medication
+      clinicalInfo.forEach((info: any) => {
+        const prefix = medications.length > 1 ? `[${medication.name}] ` : '';
+        if (info.severity === 'high') {
+          allAlerts.push({ level: 'error', message: prefix + info.description });
+        } else if (info.severity === 'medium') {
+          allAlerts.push({ level: 'warning', message: prefix + info.description });
+        }
+      });
+      
+      if (result.isControlled) {
+        controlledCount++;
+        allAlerts.push({ level: 'warning', message: `${medication.name}: Controlled substance - Schedule ${result.schedule}` });
+      }
+      
+      if (result.wasCorrected) {
+        allRecommendations.push(`${medication.name} corrected to "${result.correctedName}"`);
+      }
+    }
+    
+    // Build summary
+    const summaryParts: string[] = [];
+    if (medications.length > 1) {
+      summaryParts.push(`${medications.length} Medications Analyzed`);
+      summaryParts.push(`${verifiedCount}/${medications.length} verified in FDA database`);
+    } else {
+      const firstMed = allMedications[0];
+      summaryParts.push(firstMed?.verified 
+        ? `Drug Found: ${firstMed.brandName || firstMed.genericName || medications[0].name}`
+        : `Drug Lookup: ${medications[0].name} - No FDA data found`);
+    }
+    if (controlledCount > 0) {
+      summaryParts.push(`${controlledCount} controlled substance(s)`);
+    }
+    
+    // Add standard recommendations
+    if (verifiedCount === medications.length) {
+      allRecommendations.unshift('All medications verified in FDA database');
+    } else if (verifiedCount > 0) {
+      allRecommendations.unshift(`${verifiedCount}/${medications.length} medications verified`);
+    } else {
+      allRecommendations.unshift('Manual verification recommended for all medications');
+    }
+    
+    if (controlledCount > 0) {
+      allRecommendations.push('Verify DEA number and check PDMP for controlled substances');
+    }
+    
+    // Calculate average confidence
+    const avgConfidence = medications.length > 0 ? totalConfidence / medications.length : 0.5;
+    
+    // Add success info alert if no other alerts
+    if (allAlerts.length === 0) {
+      allAlerts.push({ 
+        level: 'info', 
+        message: verifiedCount > 0 
+          ? `${verifiedCount} medication(s) verified in FDA database` 
+          : 'No FDA data available' 
+      });
+    }
+    
+    return {
+      summary: summaryParts.join(' | '),
+      details: {
+        medicationCount: medications.length,
+        verifiedCount,
+        controlledCount,
+        medications: allMedications,
+        // For backward compatibility, include first medication at top level
+        searchedDrug: medications[0]?.name,
+        correctedName: allMedications[0]?.correctedName,
+        wasCorrected: allMedications[0]?.wasCorrected,
+        ndcCode: allMedications[0]?.ndcCode,
+        genericName: allMedications[0]?.genericName,
+        brandName: allMedications[0]?.brandName,
+        manufacturer: allMedications[0]?.manufacturer,
+        dosageForm: allMedications[0]?.dosageForm,
+        route: allMedications[0]?.route,
+        strength: allMedications[0]?.strength,
+        pharmClass: allMedications[0]?.pharmClass,
+        rxcui: allMedications[0]?.rxcui,
+        isControlled: allMedications[0]?.isControlled,
+        schedule: allMedications[0]?.schedule
       },
-      recommendations: [
-        hasData ? 'Drug verified in FDA database' : 'Manual drug verification recommended',
-        drugResult.wasCorrected ? `Name corrected from "${drugName}" to "${drugResult.correctedName}"` : null,
-        drugResult.isControlled ? 'Verify DEA number and check PDMP' : null,
-        clinicalInfo.length > 0 ? `${clinicalInfo.length} clinical consideration(s) found` : null
-      ].filter(Boolean) as string[],
-      alerts: alerts.length > 0 ? alerts : [{ level: 'info', message: hasData ? 'Drug verified in FDA database' : 'No FDA data available' }],
-      confidence: hasData ? 0.92 : 0.5,
+      recommendations: allRecommendations.slice(0, 5),
+      alerts: allAlerts.slice(0, 10),
+      confidence: avgConfidence,
       aiPowered: false,
       dataSource: 'FDA OpenFDA + NIH RxNorm'
     };
   } catch (error) {
     console.error('[drug-lookup] Error:', error);
     return {
-      summary: `Drug Lookup: API error for ${drugName}`,
-      details: { drugName, error: error instanceof Error ? error.message : 'Unknown error' },
+      summary: `Drug Lookup: API error for ${medications.map(m => m.name).join(', ')}`,
+      details: { 
+        medications: medications.map(m => m.name), 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      },
       recommendations: ['Retry drug lookup', 'Check FDA API availability'],
       alerts: [{ level: 'error', message: `Lookup failed: ${error instanceof Error ? error.message : 'Unknown error'}` }],
       confidence: 0.2,
