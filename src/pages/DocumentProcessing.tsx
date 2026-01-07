@@ -94,6 +94,7 @@ import {
   DOCUMENT_TYPE_FIELDS,
   DOCUMENT_TYPE_CONFIGS as BASE_DOCUMENT_TYPE_CONFIGS
 } from '@/config/documentTypes';
+import { getDocumentAIConfig } from '@/config/documentModelRouting';
 import ProcessingOptionsPanel from '@/components/document-processing/ProcessingOptionsPanel';
 import CustomDocumentTypeDialog from '@/components/document-processing/CustomDocumentTypeDialog';
 // AgentArchitectureRecommendationPanel removed - using SubAgentRecommendationDialog instead
@@ -808,15 +809,20 @@ export default function DocumentProcessing() {
   // Convert model routing to SmartDocumentStudio format
   const smartStudioModelRouting = React.useMemo((): ModelRoutingInfo | null => {
     if (!processingResult?.modelRouting) return null;
+    
+    // Get document-type-specific config for correct defaults
+    const docCategory = currentConfig?.category || 'general';
+    const docTypeAIConfig = getDocumentAIConfig(selectedDocType, docCategory);
+    
     return {
-      stage1Model: processingResult.modelRouting.stage1Model || processingResult.modelRouting.primaryModel || 'gemini',
-      stage2Model: processingResult.modelRouting.stage2Model || processingResult.modelRouting.modelUsed || 'claude',
-      pipelineType: processingResult.modelRouting.pipelineType || 'single',
+      stage1Model: processingResult.modelRouting.stage1Model || 'google_vision_ocr',
+      stage2Model: processingResult.modelRouting.stage2Model || processingResult.modelRouting.modelUsed || docTypeAIConfig.stage2Model || docTypeAIConfig.primaryModel,
+      pipelineType: processingResult.modelRouting.pipelineType || docTypeAIConfig.pipelineType || 'single',
       selectionReason: processingResult.modelRouting.selectionReason || 'auto',
       confidence: processingResult.modelRouting.confidence || 0.8,
       processingTimeMs: processingResult.modelRouting.processingTimeMs
     };
-  }, [processingResult?.modelRouting]);
+  }, [processingResult?.modelRouting, selectedDocType, currentConfig]);
 
   // Document characteristics derived from processing result
   const smartStudioDocCharacteristics = React.useMemo((): DocumentCharacteristics | null => {
@@ -2172,22 +2178,26 @@ export default function DocumentProcessing() {
           ).length
         },
         processedAt: new Date(),
-        // Include model routing info for Stage 1 → Stage 2 visibility
-        modelRouting: mapResult?.modelRouting ? {
-          primaryModel: mapResult.modelRouting.primaryModel || 'gemini',
-          modelUsed: mapResult.modelRouting.modelUsed || mapResult.modelRouting.primaryModel || 'gemini',
-          selectionReason: mapResult.modelRouting.selectionReason || 'category_default',
-          confidence: mapResult.modelRouting.confidence || 0.8,
-          pipelineType: mapResult.modelRouting.pipelineType || 'hybrid_ocr_vision_ai',
-          stage1Model: mapResult.modelRouting.stage1Model || 'google_vision_ocr',
-          stage2Model: mapResult.modelRouting.stage2Model || mapResult.modelRouting.modelUsed || 'gemini',
-          fallbacksAttempted: mapResult.modelRouting.fallbacksAttempted || [],
-          fallbackChain: mapResult.modelRouting.fallbackChain || ['claude', 'openai', 'gemini'].filter(m => m !== mapResult.modelRouting.primaryModel),
-          processingTimeMs: mapResult.modelRouting.processingTimeMs,
-          ocrTextLength: mapResult.modelRouting.ocrTextLength,
-          ocrConfidence: mapResult.modelRouting.ocrConfidence,
-          documentCategory: mapResult.modelRouting.documentCategory
-        } : undefined
+        // Use document-type-specific config for defaults instead of hardcoded 'gemini'
+        modelRouting: mapResult?.modelRouting ? (() => {
+          const docCategory = currentConfig?.category || 'general';
+          const docTypeAIConfig = getDocumentAIConfig(selectedDocType, docCategory);
+          return {
+            primaryModel: mapResult.modelRouting.primaryModel || docTypeAIConfig.primaryModel,
+            modelUsed: mapResult.modelRouting.modelUsed || mapResult.modelRouting.primaryModel || docTypeAIConfig.primaryModel,
+            selectionReason: mapResult.modelRouting.selectionReason || 'category_default',
+            confidence: mapResult.modelRouting.confidence || 0.8,
+            pipelineType: mapResult.modelRouting.pipelineType || docTypeAIConfig.pipelineType || 'hybrid_ocr_vision_ai',
+            stage1Model: mapResult.modelRouting.stage1Model || 'google_vision_ocr',
+            stage2Model: mapResult.modelRouting.stage2Model || mapResult.modelRouting.modelUsed || docTypeAIConfig.stage2Model || docTypeAIConfig.primaryModel,
+            fallbacksAttempted: mapResult.modelRouting.fallbacksAttempted || [],
+            fallbackChain: mapResult.modelRouting.fallbackChain || docTypeAIConfig.fallbackChain,
+            processingTimeMs: mapResult.modelRouting.processingTimeMs,
+            ocrTextLength: mapResult.modelRouting.ocrTextLength,
+            ocrConfidence: mapResult.modelRouting.ocrConfidence,
+            documentCategory: mapResult.modelRouting.documentCategory || docCategory
+          };
+        })() : undefined
       };
       
       // Show verification dialog before saving to history
