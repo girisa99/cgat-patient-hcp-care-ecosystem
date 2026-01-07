@@ -1026,8 +1026,8 @@ export function RecordingStudio({
     
     console.log('[RecordingStudio] ✅ Audio pre-connected, starting countdown...');
     
-    // Open teleprompter automatically when recording starts
-    if (currentScript) {
+    // Open teleprompter automatically when recording starts (if script available)
+    if (currentScript || audioLinkedScriptText) {
       setTeleprompterOpen(true);
     }
     
@@ -1045,7 +1045,7 @@ export function RecordingStudio({
     // The 5-second countdown gives audio time to be fully captured
     recording.startRecording();
     
-  }, [recording, currentScript, camera.stream, screenShare, recordingStream.isReady, 
+  }, [recording, currentScript, audioLinkedScriptText, camera.stream, screenShare, recordingStream.isReady, 
       voiceovers, music, selectedVoiceoverId, selectedTTSFileId, selectedMusicId, 
       ttsGeneration.lastResult, ttsAudioUrl, audioPlayback]);
 
