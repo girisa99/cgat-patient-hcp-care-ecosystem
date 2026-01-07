@@ -232,6 +232,9 @@ const AGENT_WORKFLOW_CONFIGS: AgentWorkflowConfig[] = [
 export default function DocumentProcessing() {
   const navigate = useNavigate();
   
+  // CRITICAL: Track active processing to prevent state restoration from overwriting in-progress extraction
+  const isProcessingActiveRef = useRef(false);
+  
   // Initialize from sessionStorage to persist across tab switches and navigation
   const [selectedDocType, setSelectedDocType] = useState<string>(() => {
     const saved = sessionStorage.getItem('docProcessing_selectedDocType');
@@ -301,11 +304,27 @@ export default function DocumentProcessing() {
   const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(() => {
     try {
       const saved = sessionStorage.getItem('docProcessing_currentResult');
+      const activeStage = sessionStorage.getItem('docProcessing_activeStage');
+      
       if (saved) {
         const parsed = JSON.parse(saved);
         // Restore Date objects
         if (parsed.processedAt) parsed.processedAt = new Date(parsed.processedAt);
         if (parsed.exportedAt) parsed.exportedAt = new Date(parsed.exportedAt);
+        
+        // If there was an active processing stage, the page was refreshed during processing
+        // Mark the stage as 'error' to indicate incomplete processing
+        if (activeStage && parsed._isProcessingActive) {
+          console.log('[State Restore] Detected incomplete processing - stage:', activeStage);
+          parsed.stage = 'error';
+          parsed.error = 'Processing was interrupted. Please try uploading the document again.';
+          // Clear the active stage marker
+          sessionStorage.removeItem('docProcessing_activeStage');
+        }
+        
+        // Remove internal processing flag before returning
+        delete parsed._isProcessingActive;
+        
         return parsed;
       }
     } catch (e) {
@@ -402,15 +421,29 @@ export default function DocumentProcessing() {
   }, []);
   
   // Persist processingResult to sessionStorage whenever it changes
+  // CRITICAL: Also persist the processing lock state to help with tab switch recovery
   useEffect(() => {
     if (processingResult) {
       try {
-        sessionStorage.setItem('docProcessing_currentResult', JSON.stringify(processingResult));
+        // Include processing lock state in the persisted data
+        const dataToSave = {
+          ...processingResult,
+          _isProcessingActive: isProcessingActiveRef.current
+        };
+        sessionStorage.setItem('docProcessing_currentResult', JSON.stringify(dataToSave));
+        
+        // Also save the processing stage separately for quick access
+        if (processingResult.stage && processingResult.stage !== 'complete' && processingResult.stage !== 'error') {
+          sessionStorage.setItem('docProcessing_activeStage', processingResult.stage);
+        } else {
+          sessionStorage.removeItem('docProcessing_activeStage');
+        }
       } catch (e) {
         console.warn('Failed to save processing result to sessionStorage:', e);
       }
     } else {
       sessionStorage.removeItem('docProcessing_currentResult');
+      sessionStorage.removeItem('docProcessing_activeStage');
     }
   }, [processingResult]);
   
@@ -695,6 +728,9 @@ export default function DocumentProcessing() {
 
   // Handler to reset the document processing state for a fresh upload
   const handleNewDocument = useCallback(() => {
+    // Release processing lock if somehow still held
+    isProcessingActiveRef.current = false;
+    
     // Clear all processing state
     setProcessingResult(null);
     setPendingResult(null);
@@ -1583,6 +1619,13 @@ export default function DocumentProcessing() {
   // Single consolidated useEffect to restore ALL states from sessionStorage
   // This runs once on mount and restores all document type states in one pass
   useEffect(() => {
+    // CRITICAL: Don't restore state if processing is actively running
+    // This prevents tab switches from overwriting in-progress extraction
+    if (isProcessingActiveRef.current) {
+      console.log('[State Restoration] Skipped - processing is active');
+      return;
+    }
+    
     if (stateRestorationPending) {
       try {
         const parsed = JSON.parse(stateRestorationPending);
@@ -1640,6 +1683,13 @@ export default function DocumentProcessing() {
       setActiveTab('upload');
     }
     
+    // CRITICAL: Don't clear state if processing is actively running
+    // This prevents accidental state loss during tab switches
+    if (isProcessingActiveRef.current) {
+      console.log('[Document Type Change] Skipped state clear - processing is active');
+      return;
+    }
+    
     // Clear extracted data when document type changes to prevent data carryover
     if (prevDocTypeRef.current !== selectedDocType) {
       console.log('DocumentProcessing - Document type changed from', prevDocTypeRef.current, 'to', selectedDocType);
@@ -1695,6 +1745,10 @@ export default function DocumentProcessing() {
   }, [selectedDocType, dynamicTabs, activeTab]);
 
   const runAutoProcessing = async (result: ProcessingResult, file: File) => {
+    // CRITICAL: Set processing lock to prevent state restoration from overwriting in-progress extraction
+    isProcessingActiveRef.current = true;
+    console.log('[runAutoProcessing] Processing lock ACQUIRED');
+    
     try {
       // Check if this is a medical imaging document that needs image analysis (not OCR extraction)
       const isMedicalImaging = currentConfig.processingHints?.enableImageAnalysis === true;
@@ -1707,7 +1761,7 @@ export default function DocumentProcessing() {
       // Stage 1: Upload
       setProcessingResult(prev => prev ? { ...prev, stage: 'uploading', progress: 10 } : null);
       toast.info(isMedicalImaging ? 'Uploading medical image for AI analysis...' : 'Uploading document...');
-      
+
       // Convert file to base64 for edge function
       const reader = new FileReader();
       const base64DataUrlPromise = new Promise<string>((resolve, reject) => {
@@ -2157,6 +2211,10 @@ export default function DocumentProcessing() {
       console.error('Document processing error:', error);
       toast.error('Failed to process document: ' + (error instanceof Error ? error.message : 'Unknown error'));
       setProcessingResult(prev => prev ? { ...prev, stage: 'error', error: String(error) } : null);
+    } finally {
+      // CRITICAL: Release processing lock when done (success or error)
+      isProcessingActiveRef.current = false;
+      console.log('[runAutoProcessing] Processing lock RELEASED');
     }
   };
 
