@@ -560,21 +560,21 @@ const WhyMultiModelSlide = () => (
           </g>
 
           {/* Branching Paths to Models */}
-          <motion.path d="M 475 75 Q 520 50 580 35" fill="none" stroke="#f97316" strokeWidth="2"
+          <motion.path d="M 475 70 Q 520 30 580 15" fill="none" stroke="#f97316" strokeWidth="2"
             initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 0.8, duration: 0.5 }}/>
-          <motion.path d="M 475 90 L 580 90" fill="none" stroke="#22c55e" strokeWidth="2"
+          <motion.path d="M 475 82 Q 520 60 580 55" fill="none" stroke="#22c55e" strokeWidth="2"
             initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 0.9, duration: 0.5 }}/>
-          <motion.path d="M 475 105 Q 520 130 580 145" fill="none" stroke="#3b82f6" strokeWidth="2"
+          <motion.path d="M 475 98 Q 520 120 580 95" fill="none" stroke="#3b82f6" strokeWidth="2"
             initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 1.0, duration: 0.5 }}/>
-          <motion.path d="M 475 115 Q 520 155 580 170" fill="none" stroke="#8b5cf6" strokeWidth="2"
+          <motion.path d="M 475 110 Q 520 150 580 135" fill="none" stroke="#8b5cf6" strokeWidth="2"
             initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 1.1, duration: 0.5 }}/>
 
           {/* Model Nodes */}
           {[
-            { y: 25, name: "Claude", task: "Medical", color: "#f97316", acc: "98%" },
-            { y: 80, name: "GPT-4o", task: "Handwriting", color: "#22c55e", acc: "96%" },
-            { y: 135, name: "Gemini Flash", task: "Tables", color: "#3b82f6", acc: "97%" },
-            { y: 165, name: "Gemini Pro", task: "Images", color: "#8b5cf6", acc: "95%" },
+            { y: 5, name: "Claude", task: "Medical", color: "#f97316", acc: "98%" },
+            { y: 45, name: "GPT-5", task: "Handwriting", color: "#22c55e", acc: "96%" },
+            { y: 85, name: "Gemini Flash", task: "Tables", color: "#3b82f6", acc: "97%" },
+            { y: 125, name: "Gemini Pro", task: "Images", color: "#8b5cf6", acc: "95%" },
           ].map((model, i) => (
             <motion.g key={i}
               initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
@@ -589,9 +589,9 @@ const WhyMultiModelSlide = () => (
 
           {/* Output Node */}
           <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5 }}>
-            <rect x="720" y="70" width="70" height="40" rx="8" fill="#22c55e" fillOpacity="0.3" stroke="#22c55e" strokeWidth="2"/>
-            <text x="755" y="88" fill="white" fontSize="10" textAnchor="middle" fontWeight="bold">Extracted</text>
-            <text x="755" y="102" fill="#86efac" fontSize="9" textAnchor="middle">Data</text>
+            <rect x="720" y="65" width="70" height="40" rx="8" fill="#22c55e" fillOpacity="0.3" stroke="#22c55e" strokeWidth="2"/>
+            <text x="755" y="83" fill="white" fontSize="10" textAnchor="middle" fontWeight="bold">Extracted</text>
+            <text x="755" y="97" fill="#86efac" fontSize="9" textAnchor="middle">Data</text>
           </motion.g>
         </svg>
       </div>
@@ -601,7 +601,7 @@ const WhyMultiModelSlide = () => (
     <div className="grid grid-cols-4 gap-3">
       {[
         { 
-          model: "Claude 3.5 Sonnet", 
+          model: "Claude Sonnet", 
           icon: "🟠", 
           color: "orange",
           tasks: ["Medical Records", "Complex Forms", "Prior Auth"],
@@ -609,7 +609,7 @@ const WhyMultiModelSlide = () => (
           example: "Patient history with multiple conditions"
         },
         { 
-          model: "GPT-4o Vision", 
+          model: "GPT-5 Vision", 
           icon: "🟢", 
           color: "green",
           tasks: ["Handwritten Rx", "Signatures", "Annotations"],
@@ -617,7 +617,7 @@ const WhyMultiModelSlide = () => (
           example: "Doctor's handwritten prescription"
         },
         { 
-          model: "Gemini 1.5 Flash", 
+          model: "Gemini 2.5 Flash", 
           icon: "🔵", 
           color: "blue",
           tasks: ["Lab Results", "Tables", "Structured Data"],
