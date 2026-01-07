@@ -3,6 +3,7 @@
  */
 
 export { VideoPreview } from './VideoPreview';
+export { InlineTeleprompter } from './InlineTeleprompter';
 export { RecordingControls } from './RecordingControls';
 export { AudioPanel } from './AudioPanel';
 export { AudioAssetSelector } from './AudioAssetSelector';
