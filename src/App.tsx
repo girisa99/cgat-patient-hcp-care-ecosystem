@@ -98,8 +98,13 @@ const AppContent = () => {
     <ErrorBoundary>
       <Suspense fallback={<PageLoading message="Loading page..." />}>
           <Routes>
-              {/* Public routes */}
+              {/* Public routes - accessible without authentication */}
               <Route path="/login" element={<Login />} />
+              <Route path="/public/presentation/document-processing" element={
+                <Suspense fallback={<PageLoading message="Loading presentation..." />}>
+                  {React.createElement(React.lazy(() => import('@/pages/PublicDocumentPresentation')))}
+                </Suspense>
+              } />
               
               {/* Protected routes */}
               {isAuthenticated ? (
