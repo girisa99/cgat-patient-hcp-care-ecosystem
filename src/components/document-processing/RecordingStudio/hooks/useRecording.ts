@@ -101,10 +101,24 @@ export function useRecording(
   const persistence = useRecordingPersistence();
 
   /**
+   * Pre-connect audio elements BEFORE recording starts
+   * Call this when user clicks record, before countdown begins
+   * This ensures audio is already captured when MediaRecorder starts
+   */
+  const preConnectAudio = useCallback((audioElements: {
+    tts?: HTMLAudioElement | null;
+    voiceover?: HTMLAudioElement | null;
+    music?: HTMLAudioElement | null;
+  }) => {
+    console.log('[Recording] Pre-connecting audio elements before countdown');
+    return audioMixer.preConnect(audioElements);
+  }, [audioMixer]);
+
+  /**
    * Connect audio element to recording (can be called anytime during recording)
    */
   const connectAudio = useCallback((audio: HTMLAudioElement | null, type: 'tts' | 'voiceover' | 'music') => {
-    if (audioMixer.isActive() && audio) {
+    if (audio) {
       audioMixer.connectAudioElement(audio, type);
     }
   }, [audioMixer]);
@@ -735,6 +749,7 @@ export function useRecording(
     cancelRecording,
     trimLastSeconds,
     getCurrentBlob,
+    preConnectAudio,
     connectAudio,
     recoverSession,
     clearRecovery,

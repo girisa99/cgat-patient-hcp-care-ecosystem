@@ -1,60 +1,165 @@
 /**
- * Recording Audio Mixer Hook
- * Dynamically captures and mixes audio sources during recording.
+ * Recording Audio Mixer Hook - HYBRID APPROACH
+ * Pre-connects and mixes audio sources BEFORE recording starts.
  * 
- * CRITICAL FIX: Uses captureStream() instead of createMediaElementSource()
- * because createMediaElementSource can only be called ONCE per audio element
- * for the lifetime of the element. If the element was ever connected to any
- * AudioContext, it cannot be connected again.
+ * KEY FIX: Audio elements must be connected BEFORE MediaRecorder starts.
+ * This prevents timing issues where captureStream() captures empty audio.
  * 
- * Key features:
- * - Audio elements can be added/removed while recording
- * - Handles TTS/voiceover/music being played, stopped, and replayed
- * - Works with audio elements that have already been used
+ * Flow:
+ * 1. preConnect() - Call when user clicks record (before countdown)
+ * 2. Audio elements start playing during countdown
+ * 3. initialize() - Called when countdown ends, audio already flowing
+ * 4. Recording captures audio that's already playing
  */
 
 import { useRef, useCallback, useEffect } from 'react';
 
-interface ConnectedAudioInfo {
-  sourceNode: MediaStreamAudioSourceNode | MediaElementAudioSourceNode;
-  stream: MediaStream;
+interface PreConnectedAudio {
+  element: HTMLAudioElement;
+  type: string;
+  stream?: MediaStream;
+  sourceNode?: MediaStreamAudioSourceNode;
 }
 
 export function useRecordingAudioMixer() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const destinationRef = useRef<MediaStreamAudioDestinationNode | null>(null);
-  const connectedAudioRef = useRef<Map<HTMLAudioElement, ConnectedAudioInfo>>(new Map());
+  const preConnectedAudioRef = useRef<Map<string, PreConnectedAudio>>(new Map());
   const micSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const isActiveRef = useRef(false);
+  const isPreConnectedRef = useRef(false);
 
   /**
-   * Initialize the audio mixer for recording
-   * Returns the mixed audio stream to be added to the recording
+   * STEP 1: Pre-connect audio elements BEFORE countdown
+   * This sets up the AudioContext and prepares audio elements for capture
+   * Call this when user clicks "Record" button
+   */
+  const preConnect = useCallback((audioElements: {
+    tts?: HTMLAudioElement | null;
+    voiceover?: HTMLAudioElement | null;
+    music?: HTMLAudioElement | null;
+  }) => {
+    console.log('[AudioMixer] Pre-connecting audio elements before countdown...');
+    
+    // Create AudioContext early
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContext();
+    }
+    
+    // Create destination early
+    if (!destinationRef.current && audioContextRef.current) {
+      destinationRef.current = audioContextRef.current.createMediaStreamDestination();
+    }
+    
+    // Resume context if suspended
+    if (audioContextRef.current?.state === 'suspended') {
+      audioContextRef.current.resume();
+    }
+    
+    // Pre-register audio elements (they'll be connected when they start playing)
+    const types = ['tts', 'voiceover', 'music'] as const;
+    types.forEach(type => {
+      const element = audioElements[type];
+      if (element) {
+        preConnectedAudioRef.current.set(type, { element, type });
+        console.log(`[AudioMixer] Pre-registered ${type} element`);
+        
+        // Set up play listener to capture stream when audio starts
+        const handlePlay = () => {
+          console.log(`[AudioMixer] ${type} started playing - capturing stream`);
+          captureAudioElement(element, type);
+        };
+        
+        // Add listener if not already playing
+        if (element.paused) {
+          element.addEventListener('play', handlePlay, { once: true });
+        } else {
+          // Already playing, capture immediately
+          captureAudioElement(element, type);
+        }
+      }
+    });
+    
+    isPreConnectedRef.current = true;
+    console.log('[AudioMixer] Pre-connection complete');
+    
+    return true;
+  }, []);
+
+  /**
+   * Capture audio from a playing element using captureStream
+   */
+  const captureAudioElement = useCallback((audio: HTMLAudioElement, type: string) => {
+    if (!audioContextRef.current || !destinationRef.current) {
+      console.warn(`[AudioMixer] Cannot capture ${type}: context not ready`);
+      return false;
+    }
+    
+    try {
+      // Use captureStream for reliable capture
+      // @ts-ignore - captureStream is not in all TypeScript definitions
+      const stream: MediaStream = audio.captureStream ? audio.captureStream() : audio.mozCaptureStream?.();
+      
+      if (!stream) {
+        console.warn(`[AudioMixer] captureStream not available for ${type}`);
+        return false;
+      }
+      
+      const source = audioContextRef.current.createMediaStreamSource(stream);
+      source.connect(destinationRef.current);
+      
+      // Update pre-connected info
+      const existing = preConnectedAudioRef.current.get(type);
+      if (existing) {
+        existing.stream = stream;
+        existing.sourceNode = source;
+      }
+      
+      console.log(`[AudioMixer] ✅ ${type} captured and connected to mixer`);
+      return true;
+    } catch (err: any) {
+      console.error(`[AudioMixer] Failed to capture ${type}:`, err.message);
+      return false;
+    }
+  }, []);
+
+  /**
+   * STEP 2: Initialize the mixer for recording (called when countdown ends)
+   * By now, audio elements should already be playing and captured
    */
   const initialize = useCallback((micStream?: MediaStream): MediaStream | null => {
     try {
-      // Create AudioContext
-      const audioContext = new AudioContext();
-      audioContextRef.current = audioContext;
+      // Reuse existing context if pre-connected
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioContext();
+      }
       
-      // Create destination for mixed audio
-      const destination = audioContext.createMediaStreamDestination();
-      destinationRef.current = destination;
+      if (!destinationRef.current) {
+        destinationRef.current = audioContextRef.current.createMediaStreamDestination();
+      }
+      
+      // Resume if suspended
+      if (audioContextRef.current.state === 'suspended') {
+        audioContextRef.current.resume();
+      }
       
       // Add microphone if available
       if (micStream && micStream.getAudioTracks().length > 0) {
-        const micSource = audioContext.createMediaStreamSource(
+        const micSource = audioContextRef.current.createMediaStreamSource(
           new MediaStream([micStream.getAudioTracks()[0]])
         );
-        micSource.connect(destination);
+        micSource.connect(destinationRef.current);
         micSourceRef.current = micSource;
         console.log('[AudioMixer] Microphone connected to mixer');
       }
       
       isActiveRef.current = true;
-      console.log('[AudioMixer] Initialized with captureStream approach');
       
-      return destination.stream;
+      const connectedCount = Array.from(preConnectedAudioRef.current.values())
+        .filter(a => a.sourceNode).length;
+      console.log(`[AudioMixer] Initialized - ${connectedCount} audio sources already connected`);
+      
+      return destinationRef.current.stream;
     } catch (err) {
       console.error('[AudioMixer] Failed to initialize:', err);
       return null;
@@ -62,62 +167,37 @@ export function useRecordingAudioMixer() {
   }, []);
 
   /**
-   * Connect an audio element to the mixer using captureStream()
-   * This approach works even if the audio element was previously used
+   * Connect an audio element dynamically during recording
+   * (For audio added after recording started)
    */
   const connectAudioElement = useCallback((audio: HTMLAudioElement | null, type: string = 'audio') => {
-    if (!audio || !audioContextRef.current || !destinationRef.current || !isActiveRef.current) {
-      console.log(`[AudioMixer] Cannot connect ${type}: mixer not active or audio null`);
-      return false;
-    }
-
-    // Check if already connected
-    if (connectedAudioRef.current.has(audio)) {
-      console.log(`[AudioMixer] ${type} already connected`);
+    if (!audio) return false;
+    
+    // If pre-connected, check if already captured
+    const existing = preConnectedAudioRef.current.get(type);
+    if (existing?.sourceNode) {
+      console.log(`[AudioMixer] ${type} already connected via pre-connect`);
       return true;
     }
-
-    try {
-      // Resume context if suspended (browser autoplay policy)
-      if (audioContextRef.current.state === 'suspended') {
-        audioContextRef.current.resume();
+    
+    // If not active yet, just pre-register
+    if (!isActiveRef.current) {
+      preConnectedAudioRef.current.set(type, { element: audio, type });
+      console.log(`[AudioMixer] ${type} pre-registered (mixer not active yet)`);
+      
+      // Set up play listener
+      const handlePlay = () => captureAudioElement(audio, type);
+      if (audio.paused) {
+        audio.addEventListener('play', handlePlay, { once: true });
+      } else {
+        captureAudioElement(audio, type);
       }
-
-      // Use captureStream() to get the audio stream from the element
-      // This works even if the element was previously used with another context
-      // @ts-ignore - captureStream is not in all TypeScript definitions but is widely supported
-      const capturedStream: MediaStream = audio.captureStream ? audio.captureStream() : audio.mozCaptureStream?.();
-      
-      if (!capturedStream) {
-        console.warn(`[AudioMixer] ⚠️ ${type}: captureStream not supported, falling back to createMediaElementSource`);
-        // Fallback to createMediaElementSource (may fail if element was used before)
-        try {
-          const source = audioContextRef.current.createMediaElementSource(audio);
-          source.connect(destinationRef.current);
-          source.connect(audioContextRef.current.destination);
-          connectedAudioRef.current.set(audio, { sourceNode: source, stream: new MediaStream() });
-          console.log(`[AudioMixer] ✅ ${type} connected via createMediaElementSource fallback`);
-          return true;
-        } catch (fallbackErr: any) {
-          console.error(`[AudioMixer] Fallback also failed for ${type}:`, fallbackErr.message);
-          return false;
-        }
-      }
-
-      // Create a source from the captured stream
-      const source = audioContextRef.current.createMediaStreamSource(capturedStream);
-      source.connect(destinationRef.current);
-      // Note: No need to connect to speakers - the audio element already plays to speakers
-      
-      connectedAudioRef.current.set(audio, { sourceNode: source, stream: capturedStream });
-      
-      console.log(`[AudioMixer] ✅ ${type} connected via captureStream successfully`);
       return true;
-    } catch (err: any) {
-      console.error(`[AudioMixer] Failed to connect ${type}:`, err.message);
-      return false;
     }
-  }, []);
+    
+    // Active and needs connection - capture now
+    return captureAudioElement(audio, type);
+  }, [captureAudioElement]);
 
   /**
    * Disconnect an audio element from the mixer
@@ -125,16 +205,18 @@ export function useRecordingAudioMixer() {
   const disconnectAudioElement = useCallback((audio: HTMLAudioElement | null) => {
     if (!audio) return;
     
-    const info = connectedAudioRef.current.get(audio);
-    if (info) {
-      try {
-        info.sourceNode.disconnect();
-        connectedAudioRef.current.delete(audio);
-        console.log('[AudioMixer] Audio element disconnected');
-      } catch (err) {
-        console.error('[AudioMixer] Failed to disconnect:', err);
+    // Find and disconnect by element reference
+    preConnectedAudioRef.current.forEach((info, type) => {
+      if (info.element === audio && info.sourceNode) {
+        try {
+          info.sourceNode.disconnect();
+          preConnectedAudioRef.current.delete(type);
+          console.log(`[AudioMixer] ${type} disconnected`);
+        } catch (err) {
+          console.error('[AudioMixer] Failed to disconnect:', err);
+        }
       }
-    }
+    });
   }, []);
 
   /**
@@ -149,18 +231,18 @@ export function useRecordingAudioMixer() {
    */
   const cleanup = useCallback(() => {
     isActiveRef.current = false;
+    isPreConnectedRef.current = false;
     
     // Disconnect all sources
-    connectedAudioRef.current.forEach((info) => {
+    preConnectedAudioRef.current.forEach((info) => {
       try {
-        info.sourceNode.disconnect();
+        info.sourceNode?.disconnect();
       } catch (e) {
         // Ignore disconnect errors during cleanup
       }
     });
     
-    // Clear tracking
-    connectedAudioRef.current.clear();
+    preConnectedAudioRef.current.clear();
     
     // Disconnect mic
     if (micSourceRef.current) {
@@ -191,6 +273,11 @@ export function useRecordingAudioMixer() {
    * Check if mixer is active
    */
   const isActive = useCallback(() => isActiveRef.current, []);
+  
+  /**
+   * Check if pre-connected
+   */
+  const isPreConnected = useCallback(() => isPreConnectedRef.current, []);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -200,11 +287,13 @@ export function useRecordingAudioMixer() {
   }, [cleanup]);
 
   return {
+    preConnect,
     initialize,
     connectAudioElement,
     disconnectAudioElement,
     getMixedStream,
     cleanup,
     isActive,
+    isPreConnected,
   };
 }
