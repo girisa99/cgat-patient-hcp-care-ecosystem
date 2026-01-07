@@ -556,10 +556,35 @@ export function RecordingStudio({
   // No more connectAudio, pendingAudioRef, or stale closures!
   const preloadedAudio = usePreloadedAudioRecorder({
     micStream: camera.stream,
-    videoStream: recordingStream.isReady ? null : camera.stream, // Will be set dynamically
+    videoStream: recordingStream.previewStream, // Use preview stream for video base
+    getVideoStream: recordingStream.getRecordingStream, // Dynamic getter for screen share, etc
     enableDucking: true,
     duckedVolume: 0.08,
   });
+  
+  // Create a combined stream getter that uses preloadedAudio when ready
+  // This ensures the recording stream includes both video AND mixed audio
+  const getCombinedRecordingStream = useCallback(async (): Promise<MediaStream | null> => {
+    // If preloadedAudio is ready, use its combined stream (video + audio)
+    if (preloadedAudio.state.isReady) {
+      const combined = await preloadedAudio.getRecordingStream();
+      if (combined) {
+        console.log('[RecordingStudio] Using preloadedAudio combined stream:', {
+          videoTracks: combined.getVideoTracks().length,
+          audioTracks: combined.getAudioTracks().length,
+        });
+        return combined;
+      }
+    }
+    
+    // Fall back to recordingStream (video only, with camera mic if available)
+    const baseStream = await recordingStream.getRecordingStream();
+    console.log('[RecordingStudio] Using recordingStream (no preloadedAudio):', {
+      videoTracks: baseStream?.getVideoTracks().length || 0,
+      audioTracks: baseStream?.getAudioTracks().length || 0,
+    });
+    return baseStream;
+  }, [preloadedAudio, recordingStream]);
   
   // Store pending audio config to be prepared when recording starts
   const pendingAudioConfigRef = useRef<{
@@ -570,8 +595,8 @@ export function RecordingStudio({
   } | null>(null);
   
   const recording = useRecording(
-    // Use the recordingStream for video, audio is handled by preloadedAudio
-    recordingStream.getRecordingStream, 
+    // Use combined stream getter that includes preloaded audio
+    getCombinedRecordingStream,
     {
       onRecordingComplete: async (blob, duration) => {
         console.log('[RecordingStudio] onRecordingComplete called - blob size:', blob.size, 'duration:', duration);
@@ -1042,21 +1067,27 @@ export function RecordingStudio({
   const handlePauseRecording = useCallback(() => {
     if (!recording.isPaused) {
       // Pausing - pause ALL audio (keep position)
+      // Use preloadedAudio for new audio-first approach
+      preloadedAudio.pausePlayback();
+      // Also pause legacy audioPlayback just in case
       audioPlayback.pauseVoiceover();
       audioPlayback.pauseTTS();
       audioPlayback.pauseMusic();
       setTeleprompter(prev => ({ ...prev, isScrolling: false }));
-      console.log('[RecordingStudio] Pausing recording and all audio (including music)');
+      console.log('[RecordingStudio] Pausing recording and all audio (preloadedAudio + legacy)');
     } else {
       // Resuming - resume ALL audio from where it was paused
+      // Use preloadedAudio for new audio-first approach
+      preloadedAudio.resumePlayback();
+      // Also resume legacy audioPlayback just in case
       audioPlayback.resumeVoiceover();
       audioPlayback.resumeTTS();
       audioPlayback.resumeMusic();
       setTeleprompter(prev => ({ ...prev, isScrolling: true }));
-      console.log('[RecordingStudio] Resuming recording and all audio');
+      console.log('[RecordingStudio] Resuming recording and all audio (preloadedAudio + legacy)');
     }
     recording.pauseRecording();
-  }, [recording, audioPlayback]);
+  }, [recording, audioPlayback, preloadedAudio]);
 
   // Stop recording - stop all audio and cancel pending audio playback timeout
   const handleStopRecording = useCallback(() => {
