@@ -8,6 +8,7 @@ export { useRecordingStream } from './useRecordingStream';
 export type { RecordingMode as StreamRecordingMode, PipConfig, PipPosition, PipSize } from './useRecordingStream';
 export { useRecordingAudioMixer } from './useRecordingAudioMixer';
 export { useRecordingPersistence } from './useRecordingPersistence';
+export { usePreloadedAudioRecorder } from './usePreloadedAudioRecorder';
 export { useAudioPlayback } from './useAudioPlayback';
 export { useRecordingLibrary } from './useRecordingLibrary';
 export { useScreenShare } from './useScreenShare';
