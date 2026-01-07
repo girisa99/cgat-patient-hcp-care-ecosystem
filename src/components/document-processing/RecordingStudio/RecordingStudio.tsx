@@ -218,7 +218,9 @@ export function RecordingStudio({
     musicUrl: string | null;
     musicName: string;
   } | null>(null);
-
+  
+  // Ref for audioPlayback methods (used in onRecordingStarted callback)
+  const audioPlaybackMethodsRef = useRef<typeof audioPlayback | null>(null);
   // Script draft storage hook
   const scriptDraft = useScriptDraftStorage({ 
     scriptId: selectedScriptId,
@@ -237,6 +239,9 @@ export function RecordingStudio({
   const screenShare = useScreenShare();
   const library = useRecordingLibrary();
   const audioPlayback = useAudioPlayback();
+  
+  // Update audioPlayback ref for use in callbacks
+  audioPlaybackMethodsRef.current = audioPlayback;
   
   // Media project tracking for cost management - linked to production when available
   const mediaProject = useMediaProject({ productionContext });
@@ -480,9 +485,12 @@ export function RecordingStudio({
       setAudioDuration(audioPlayback.audioTimeInfo.duration);
       setIsAudioPlaying(audioPlayback.audioTimeInfo.isPlaying);
       
+      // Get script content from either selected script OR audioLinkedScriptText
       const currentScript = scripts.find(s => s.id === selectedScriptId);
-      if (currentScript && audioPlayback.audioTimeInfo.duration > 0 && audioPlayback.audioTimeInfo.isPlaying) {
-        const words = currentScript.content.split(/\s+/).filter(w => w.length > 0);
+      const scriptContent = currentScript?.content || audioLinkedScriptText;
+      
+      if (scriptContent && audioPlayback.audioTimeInfo.duration > 0 && audioPlayback.audioTimeInfo.isPlaying) {
+        const words = scriptContent.split(/\s+/).filter(w => w.length > 0);
         
         // Calculate weighted durations for each word
         // Longer words take more time, punctuation adds pauses
@@ -528,7 +536,7 @@ export function RecordingStudio({
         setCurrentWordIndex(targetIndex);
       }
     }
-  }, [audioPlayback.audioTimeInfo, scripts, selectedScriptId]);
+  }, [audioPlayback.audioTimeInfo, scripts, selectedScriptId, audioLinkedScriptText]);
   
   // Use the new useRecordingStream hook for proper stream management
   // Handles: blur integration, screen+camera PiP compositing, dynamic stream acquisition
@@ -554,6 +562,9 @@ export function RecordingStudio({
   
   // Ref to hold stopRecording to avoid circular dependency
   const stopRecordingRef = useRef<(() => void) | null>(null);
+  
+  // Ref to hold connectAudio to avoid circular dependency in onRecordingStarted
+  const connectAudioRef = useRef<((audio: HTMLAudioElement | null, type: string) => void) | null>(null);
   
   const recording = useRecording(
     // Use the new recordingStream.getRecordingStream which handles:
@@ -604,26 +615,33 @@ export function RecordingStudio({
         console.log('[RecordingStudio] ✅ onRecordingStarted callback - NOW starting audio!');
         
         const pendingAudio = pendingAudioRef.current;
+        const audioMethods = audioPlaybackMethodsRef.current;
+        
         if (!pendingAudio) {
           console.log('[RecordingStudio] No pending audio to play');
+          return;
+        }
+        
+        if (!audioMethods) {
+          console.error('[RecordingStudio] audioPlaybackMethodsRef not available!');
           return;
         }
         
         // Start TTS/Voiceover audio
         if (pendingAudio.ttsUrl) {
           console.log('[RecordingStudio] ▶️ Starting TTS/Voiceover NOW:', pendingAudio.ttsName);
-          const ttsAudioEl = audioPlayback.playTTS(pendingAudio.ttsUrl);
-          if (ttsAudioEl) {
-            recording.connectAudio(ttsAudioEl, 'tts');
+          const ttsAudioEl = audioMethods.playTTS(pendingAudio.ttsUrl);
+          if (ttsAudioEl && connectAudioRef.current) {
+            connectAudioRef.current(ttsAudioEl, 'tts');
           }
         }
         
         // Start background music
         if (pendingAudio.musicUrl) {
           console.log('[RecordingStudio] ▶️ Starting music NOW:', pendingAudio.musicName);
-          const musicAudioEl = audioPlayback.playMusic(pendingAudio.musicUrl);
-          if (musicAudioEl) {
-            recording.connectAudio(musicAudioEl, 'music');
+          const musicAudioEl = audioMethods.playMusic(pendingAudio.musicUrl);
+          if (musicAudioEl && connectAudioRef.current) {
+            connectAudioRef.current(musicAudioEl, 'music');
           }
         }
         
@@ -633,10 +651,11 @@ export function RecordingStudio({
     }
   );
   
-  // Update ref after recording is created
+  // Update refs after recording is created
   useEffect(() => {
     stopRecordingRef.current = recording.stopRecording;
-  }, [recording.stopRecording]);
+    connectAudioRef.current = recording.connectAudio;
+  }, [recording.stopRecording, recording.connectAudio]);
 
   // Connect audio elements to recording when they start playing
   // This enables dynamic audio capture - audio can be started/stopped during recording
