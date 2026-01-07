@@ -88,8 +88,8 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Import Resend dynamically
-    const { Resend } = await import('npm:resend@2.0.0');
+    // Import Resend from esm.sh (Deno-compatible)
+    const { Resend } = await import('https://esm.sh/resend@4.0.0');
     const resend = new Resend(RESEND_API_KEY);
 
     // Build the email HTML with Genie AI branding
