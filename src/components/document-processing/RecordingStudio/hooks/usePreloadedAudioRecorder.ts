@@ -46,7 +46,7 @@ interface AudioConfig {
 interface UsePreloadedAudioRecorderOptions {
   /** Microphone stream from camera */
   micStream?: MediaStream | null;
-  /** Video stream (camera/screen) */
+  /** Video stream (camera/screen) - can be updated dynamically */
   videoStream?: MediaStream | null;
   /** Audio configuration */
   audioConfig?: AudioConfig;
@@ -54,6 +54,8 @@ interface UsePreloadedAudioRecorderOptions {
   enableDucking?: boolean;
   /** Ducked volume for music (0-1) */
   duckedVolume?: number;
+  /** Function to get video stream dynamically (for screen share, etc) */
+  getVideoStream?: () => Promise<MediaStream | null> | MediaStream | null;
 }
 
 export function usePreloadedAudioRecorder(options: UsePreloadedAudioRecorderOptions = {}) {
@@ -63,7 +65,18 @@ export function usePreloadedAudioRecorder(options: UsePreloadedAudioRecorderOpti
     audioConfig,
     enableDucking = true,
     duckedVolume = 0.08,
+    getVideoStream,
   } = options;
+
+  // Store video stream in ref for dynamic updates
+  const videoStreamRef = useRef<MediaStream | null>(videoStream || null);
+  
+  // Update ref when prop changes
+  useEffect(() => {
+    if (videoStream) {
+      videoStreamRef.current = videoStream;
+    }
+  }, [videoStream]);
 
   const [state, setState] = useState<PreloadedAudioRecorderState>({
     isPreloading: false,
@@ -313,14 +326,26 @@ export function usePreloadedAudioRecorder(options: UsePreloadedAudioRecorderOpti
 
   /**
    * Get the combined recording stream (video + mixed audio)
+   * Supports dynamic video stream via getVideoStream or videoStreamRef
    */
-  const getRecordingStream = useCallback((): MediaStream | null => {
+  const getRecordingStream = useCallback(async (): Promise<MediaStream | null> => {
+    // Get video stream - use dynamic getter if provided, otherwise use ref
+    let currentVideoStream = videoStreamRef.current;
+    
+    if (getVideoStream) {
+      const dynamicStream = getVideoStream();
+      currentVideoStream = dynamicStream instanceof Promise ? await dynamicStream : dynamicStream;
+      if (currentVideoStream) {
+        videoStreamRef.current = currentVideoStream;
+      }
+    }
+    
     if (!destinationRef.current) {
       console.warn('[PreloadedAudio] No audio destination available');
-      return videoStream || null;
+      return currentVideoStream || null;
     }
 
-    const videoTracks = videoStream?.getVideoTracks() || [];
+    const videoTracks = currentVideoStream?.getVideoTracks() || [];
     const audioTracks = destinationRef.current.stream.getAudioTracks();
 
     if (videoTracks.length === 0 && audioTracks.length === 0) {
@@ -338,7 +363,7 @@ export function usePreloadedAudioRecorder(options: UsePreloadedAudioRecorderOpti
     });
 
     return combined;
-  }, [videoStream]);
+  }, [getVideoStream]);
 
   /**
    * Start playback of all preloaded audio
