@@ -1806,14 +1806,24 @@ const documentProcessingSlides: Slide[] = [
 // =============================================================================
 interface DocumentProcessingPresentationProps {
   onExit?: () => void;
+  isPublicView?: boolean;
 }
 
-export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresentationProps> = ({ onExit }) => {
+// Get public presentation URL
+const getPublicPresentationUrl = () => {
+  const baseUrl = window.location.origin;
+  return `${baseUrl}/public/presentation/document-processing`;
+};
+
+export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresentationProps> = ({ onExit, isPublicView = false }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [direction, setDirection] = useState(0);
   const [isAutoplay, setIsAutoplay] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -1990,18 +2000,91 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
   };
 
   const shareToLinkedIn = () => {
+    const publicUrl = getPublicPresentationUrl();
     const text = encodeURIComponent(
       "🚀 Revolutionizing Document Processing with Multi-Model AI!\n\n" +
       "✅ 95%+ accuracy with intelligent model routing\n" +
       "✅ 75x faster than manual processing\n" +
       "✅ 99% cost reduction ($350K → $2,500)\n" +
       "✅ Zero configuration auto-detection\n\n" +
+      "🔗 View the interactive presentation:\n" +
+      publicUrl + "\n\n" +
       "Built with @Lovable AI in just 3 weeks!\n\n" +
       "#AI #DocumentProcessing #Healthcare #Automation #Lovable"
     );
-    const url = encodeURIComponent("https://lovable.dev");
-    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}&summary=${text}`, '_blank');
+    const shareUrl = encodeURIComponent(publicUrl);
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`, '_blank');
     toast.success('Opening LinkedIn share dialog...');
+  };
+
+  const copyShareableLink = async () => {
+    const publicUrl = getPublicPresentationUrl();
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      toast.success('Public presentation link copied to clipboard!');
+    } catch (err) {
+      toast.error('Failed to copy link');
+    }
+  };
+
+  const startVideoRecording = async () => {
+    try {
+      if (!containerRef.current) return;
+      
+      const stream = await (navigator.mediaDevices as any).getDisplayMedia({
+        video: { cursor: 'always' },
+        audio: false
+      });
+      
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'video/webm;codecs=vp9'
+      });
+      
+      mediaRecorderRef.current = mediaRecorder;
+      recordedChunksRef.current = [];
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          recordedChunksRef.current.push(event.data);
+        }
+      };
+      
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'document-processing-presentation.webm';
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success('Video downloaded! Convert to MP4 for LinkedIn upload.');
+        setIsRecording(false);
+        stream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
+      };
+      
+      mediaRecorder.start();
+      setIsRecording(true);
+      toast.info('Recording started! Navigate through slides, then click Stop to save.');
+      
+      // Auto-start autoplay for recording
+      setIsAutoplay(true);
+    } catch (err) {
+      console.error('Recording error:', err);
+      toast.error('Failed to start recording. Please allow screen sharing.');
+    }
+  };
+
+  const stopVideoRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsAutoplay(false);
+    }
+  };
+
+  const openPublicPresentation = () => {
+    const publicUrl = getPublicPresentationUrl();
+    window.open(publicUrl, '_blank');
+    toast.success('Opening public presentation in new tab...');
   };
 
   const currentSlideData = documentProcessingSlides[currentSlide];
@@ -2031,7 +2114,7 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
           </Badge>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button
             variant={isAutoplay ? "default" : "outline"}
             size="sm"
@@ -2050,17 +2133,74 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
             <Maximize2 className="w-4 h-4" />
           </Button>
           
+          {/* Download Options */}
           <Button variant="outline" size="sm" onClick={downloadPPT} className="gap-1">
             <Download className="w-4 h-4" />
             PPT
           </Button>
           
-          <Button variant="outline" size="sm" onClick={shareToLinkedIn} className="gap-1 text-blue-600 border-blue-300 hover:bg-blue-50">
-            <Linkedin className="w-4 h-4" />
-            Share
+          {/* Video Recording */}
+          {!isRecording ? (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={startVideoRecording} 
+              className="gap-1 text-red-600 border-red-300 hover:bg-red-50"
+              title="Record presentation as video"
+            >
+              <MonitorPlay className="w-4 h-4" />
+              Record
+            </Button>
+          ) : (
+            <Button 
+              variant="default" 
+              size="sm" 
+              onClick={stopVideoRecording} 
+              className="gap-1 bg-red-600 hover:bg-red-700 animate-pulse"
+            >
+              <Pause className="w-4 h-4" />
+              Stop Recording
+            </Button>
+          )}
+          
+          {/* Copy Link */}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={copyShareableLink} 
+            className="gap-1"
+            title="Copy public shareable link"
+          >
+            <Link2 className="w-4 h-4" />
+            Copy Link
           </Button>
           
-          {onExit && (
+          {/* Open Public View */}
+          {!isPublicView && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={openPublicPresentation} 
+              className="gap-1 text-purple-600 border-purple-300 hover:bg-purple-50"
+              title="Open public presentation in new tab"
+            >
+              <Globe className="w-4 h-4" />
+              Public
+            </Button>
+          )}
+          
+          {/* LinkedIn Share */}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={shareToLinkedIn} 
+            className="gap-1 text-blue-600 border-blue-300 hover:bg-blue-50"
+          >
+            <Linkedin className="w-4 h-4" />
+            LinkedIn
+          </Button>
+          
+          {onExit && !isPublicView && (
             <Button variant="destructive" size="sm" onClick={onExit}>
               <X className="w-4 h-4" />
             </Button>
