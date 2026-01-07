@@ -60,6 +60,108 @@ const PROVIDER_CONFIG: Record<string, { label: string; color: string; icon: stri
   'default': { label: 'AI', color: 'bg-gray-100 text-gray-700 border-gray-300', icon: '🤖' }
 };
 
+// Check if array contains medication objects
+function isMedicationArray(value: any[]): boolean {
+  return value.length > 0 && value.every(v => 
+    typeof v === 'object' && v !== null && 
+    (v.medication || v.medication_name || v.name || v.drug_name || v.drugName || v.searchedDrug)
+  );
+}
+
+// Check if array contains drug-drug interactions
+function isDrugInteractionArray(value: any[]): boolean {
+  return value.length > 0 && value.every(v => 
+    typeof v === 'object' && v !== null && 
+    (v.drug1 && v.drug2 || v.drugs || v.severity)
+  );
+}
+
+// Render medication array with special formatting
+function renderMedicationArray(medications: any[]): React.ReactNode {
+  return (
+    <div className="space-y-2">
+      {medications.map((med, idx) => {
+        const name = med.medication || med.medication_name || med.name || med.drug_name || med.drugName || med.searchedDrug || `Medication ${idx + 1}`;
+        const strength = med.strength || med.prescribedStrength || '';
+        const verified = med.verified !== undefined ? med.verified : null;
+        const isControlled = med.isControlled || med.is_controlled;
+        const schedule = med.schedule;
+        
+        return (
+          <div key={idx} className="p-2 bg-background rounded border flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant="outline" className="text-[10px] shrink-0">#{idx + 1}</Badge>
+                <span className="font-medium text-sm">{name}</span>
+                {strength && <Badge variant="secondary" className="text-[10px]">{strength}</Badge>}
+                {isControlled && (
+                  <Badge variant="destructive" className="text-[10px]">
+                    C-{schedule || '?'}
+                  </Badge>
+                )}
+              </div>
+              {med.sig && <p className="text-xs text-muted-foreground mt-1">Sig: {med.sig}</p>}
+              {med.genericName && <p className="text-xs text-muted-foreground">Generic: {med.genericName}</p>}
+            </div>
+            {verified !== null && (
+              verified ? (
+                <Badge className="bg-green-500 text-[10px] shrink-0">✓ Verified</Badge>
+              ) : (
+                <Badge variant="secondary" className="text-[10px] shrink-0">Not found</Badge>
+              )
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// Render drug-drug interaction array with severity coloring
+function renderDrugInteractionArray(interactions: any[]): React.ReactNode {
+  const severityColors: Record<string, string> = {
+    severe: 'bg-red-100 border-red-300 text-red-800 dark:bg-red-950 dark:text-red-200',
+    moderate: 'bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-950 dark:text-amber-200',
+    mild: 'bg-blue-100 border-blue-300 text-blue-800 dark:bg-blue-950 dark:text-blue-200'
+  };
+
+  return (
+    <div className="space-y-2">
+      {interactions.map((interaction, idx) => {
+        const drug1 = interaction.drug1 || (interaction.drugs?.[0]) || 'Drug 1';
+        const drug2 = interaction.drug2 || (interaction.drugs?.[1]) || 'Drug 2';
+        const severity = interaction.severity?.toLowerCase() || 'unknown';
+        const effect = interaction.effect || interaction.description || '';
+        const colorClass = severityColors[severity] || 'bg-gray-100 border-gray-300';
+
+        return (
+          <div key={idx} className={cn("p-2 rounded border", colorClass)}>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-1 text-sm font-medium">
+                <span>{drug1}</span>
+                <span className="text-muted-foreground">↔</span>
+                <span>{drug2}</span>
+              </div>
+              <Badge 
+                variant={severity === 'severe' ? 'destructive' : 'secondary'}
+                className="text-[10px]"
+              >
+                {severity.toUpperCase()}
+              </Badge>
+            </div>
+            {effect && <p className="text-xs mt-1">{effect}</p>}
+            {interaction.mechanism && (
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Mechanism: {interaction.mechanism}
+              </p>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // Dynamic value renderer - handles any type of value
 function renderValue(value: any, depth: number = 0): React.ReactNode {
   if (value === null || value === undefined) {
@@ -89,6 +191,16 @@ function renderValue(value: any, depth: number = 0): React.ReactNode {
   if (Array.isArray(value)) {
     if (value.length === 0) {
       return <span className="text-muted-foreground italic">None</span>;
+    }
+    
+    // Special handling for medication arrays
+    if (isMedicationArray(value)) {
+      return renderMedicationArray(value);
+    }
+    
+    // Special handling for drug-drug interaction arrays
+    if (isDrugInteractionArray(value)) {
+      return renderDrugInteractionArray(value);
     }
     
     // For arrays of strings or simple values

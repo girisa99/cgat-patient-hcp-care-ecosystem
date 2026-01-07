@@ -376,6 +376,8 @@ export default function DocumentProcessing() {
     baseName: string;
     preservedStrength: string;
     extractedFields: Record<string, { value: string; confidence: number }>;
+    // Multi-medication support
+    allMedications?: any[];
   } | null>(null);
   
   // Handler for when agents complete execution in-place
@@ -2213,20 +2215,24 @@ export default function DocumentProcessing() {
           const preservedStrength = extractedFields['strength']?.value || extractedStrength || '';
           
           // Store pending data - will be used after confirmation
+          // Store ALL medications for multi-drug prescriptions
           const pendingData = {
             drugName: finalDrugName,
             sigText: finalSigText,
             baseName: baseName,
             preservedStrength: preservedStrength,
-            extractedFields: extractedFields
+            extractedFields: extractedFields,
+            // NEW: Store all medications for multi-drug support
+            allMedications: medications || []
           };
           
           console.log('[Extraction] Setting pendingMedicationData:', pendingData);
           setPendingMedicationData(pendingData);
           
           const medicationCount = medications?.length || 1;
-          toast.info(`Extracted ${medicationCount} medication${medicationCount > 1 ? 's' : ''}: ${finalDrugName}${medicationCount > 1 ? ` (+${medicationCount - 1} more)` : ''}`, {
-            description: 'Review and confirm to populate Medication Lookup'
+          const additionalMeds = medications?.slice(1).map((m: any) => m.drugName || m.medication_name).join(', ');
+          toast.info(`Extracted ${medicationCount} medication${medicationCount > 1 ? 's' : ''}: ${finalDrugName}${medicationCount > 1 ? ` + ${additionalMeds}` : ''}`, {
+            description: `Review and confirm to populate Medication Lookup${medicationCount > 1 ? ' (all medications will be processed)' : ''}`
           });
         }
         
@@ -2631,17 +2637,19 @@ export default function DocumentProcessing() {
       
       // Now process pending medication data and populate Medication Lookup tab
       if (pendingMedicationData && (selectedDocType === 'prescription' || selectedDocType.includes('medication'))) {
-        const { drugName, sigText, baseName, preservedStrength, extractedFields: pendingExtractedFields } = pendingMedicationData;
+        const { drugName, sigText, baseName, preservedStrength, extractedFields: pendingExtractedFields, allMedications } = pendingMedicationData;
         
+        const medicationCount = allMedications?.length || 1;
         console.log('[handleVerifyAndSave] Processing pending medication data:', {
           drugName,
           sigText,
           baseName,
           preservedStrength,
-          hasExtractedFields: !!pendingExtractedFields
+          medicationCount,
+          allMedications: allMedications?.map((m: any) => m.drugName || m.medication_name)
         });
         
-        // Set drug search query and SIG instructions
+        // Set drug search query and SIG instructions for PRIMARY medication
         setDrugSearchQuery(drugName);
         if (sigText && sigText !== 'Take as directed') {
           setSigInstructions(sigText);
@@ -2654,17 +2662,50 @@ export default function DocumentProcessing() {
         // Switch to medication tab
         setActiveTab('medication');
         
-        toast.info(`Processing medication: ${drugName}`, {
-          description: 'Searching for NDC codes and clinical data...'
+        toast.info(`Processing ${medicationCount} medication${medicationCount > 1 ? 's' : ''}: ${drugName}${medicationCount > 1 ? ` (+${medicationCount - 1} more)` : ''}`, {
+          description: medicationCount > 1 
+            ? 'Looking up all medications in parallel...' 
+            : 'Searching for NDC codes and clinical data...'
         });
         
-        // Trigger drug search with verified data
+        // Process ALL medications in parallel
         try {
-          const { data, error } = await supabase.functions.invoke('drug-lookup', {
-            body: { drugName: baseName, searchType: 'all' }
+          const medicationsToProcess = allMedications && allMedications.length > 0 
+            ? allMedications 
+            : [{ drugName: baseName, sig: sigText }];
+          
+          // Parallel lookup for all medications
+          const lookupPromises = medicationsToProcess.map(async (med: any) => {
+            const medName = med.drugName || med.medication_name || med.name;
+            if (!medName || medName === 'Unknown') return null;
+            
+            try {
+              const { baseName: medBaseName } = normalizeDrugName(medName);
+              const { data, error } = await supabase.functions.invoke('drug-lookup', {
+                body: { drugName: medBaseName, searchType: 'all' }
+              });
+              
+              if (error) throw error;
+              return { medication: med, lookupData: data };
+            } catch (err) {
+              console.error(`Drug lookup failed for ${medName}:`, err);
+              return { medication: med, lookupData: null, error: err };
+            }
           });
           
-          if (!error && data) {
+          const lookupResults = await Promise.all(lookupPromises);
+          const successfulLookups = lookupResults.filter(r => r && r.lookupData);
+          
+          console.log('[handleVerifyAndSave] Lookup results:', {
+            total: medicationsToProcess.length,
+            successful: successfulLookups.length,
+            results: successfulLookups.map(r => r?.lookupData?.drugName || 'Unknown')
+          });
+          
+          // Process PRIMARY medication for the search results display
+          const primaryLookup = lookupResults[0];
+          if (primaryLookup?.lookupData) {
+            const data = primaryLookup.lookupData;
             const calculation = calculateQuantityAndDaySupply(sigText || 'Take 1 tablet daily for 30 days');
             
             const ndcOptions = (data.ndc || []).map((ndc: any) => ({
@@ -2676,6 +2717,15 @@ export default function DocumentProcessing() {
             }));
             
             const clinicalRecommendations: { type: 'warning' | 'info' | 'error'; title?: string; message: string }[] = [];
+            
+            // Add multi-medication alert
+            if (medicationCount > 1) {
+              clinicalRecommendations.push({
+                type: 'info',
+                title: 'Multiple Medications',
+                message: `This prescription contains ${medicationCount} medications. Review Agent Results for drug-drug interaction analysis.`
+              });
+            }
             
             if (data.isControlled) {
               clinicalRecommendations.push({
@@ -2734,10 +2784,14 @@ export default function DocumentProcessing() {
               setSelectedNdc(ndcOptions[0].code);
             }
             
-            const msg = ndcOptions.length > 0 || (data.rxnorm?.length > 0)
-              ? `Found ${ndcOptions.length} NDC codes + ${data.rxnorm?.length || 0} RxNorm entries`
-              : 'Clinical info loaded (no NDC matches)';
-            toast.success(msg);
+            const msg = medicationCount > 1
+              ? `Processed ${successfulLookups.length}/${medicationCount} medications. Primary: ${ndcOptions.length} NDC codes found.`
+              : ndcOptions.length > 0 || (data.rxnorm?.length > 0)
+                ? `Found ${ndcOptions.length} NDC codes + ${data.rxnorm?.length || 0} RxNorm entries`
+                : 'Clinical info loaded (no NDC matches)';
+            toast.success(msg, {
+              description: medicationCount > 1 ? 'Click medications in summary panel to lookup individually' : undefined
+            });
           }
         } catch (err) {
           console.error('Drug search error after confirmation:', err);
