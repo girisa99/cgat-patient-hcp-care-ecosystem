@@ -91,7 +91,8 @@ export function useRecordingAudioMixer() {
    */
   const captureAudioElement = useCallback((audio: HTMLAudioElement, type: string) => {
     if (!audioContextRef.current || !destinationRef.current) {
-      console.warn(`[AudioMixer] Cannot capture ${type}: context not ready`);
+      // Silent early return - context will be initialized at recording start
+      console.log(`[AudioMixer] ${type} will be captured when recording starts`);
       return false;
     }
     
