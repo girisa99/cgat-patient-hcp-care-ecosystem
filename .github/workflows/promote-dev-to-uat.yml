@@ -1,0 +1,94 @@
+name: Promote dev to UAT
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    branches: ["dev"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  promote:
+    if: >
+      ${{
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push'
+      }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create or update PR (dev -> uat) and enable auto-merge
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const base = "uat";
+            const headBranch = "dev";
+            const head = `${owner}:${headBranch}`;
+
+            const title = "Promote dev to uat";
+            const body = [
+              "Automated promotion PR created after CI passed on `dev`.",
+              "",
+              "When this PR merges, `uat` will be updated to match `dev` for UAT testing."
+            ].join("\n");
+
+            // Find existing open PR
+            const { data: prs } = await github.rest.pulls.list({
+              owner,
+              repo,
+              state: "open",
+              base,
+              head
+            });
+
+            let pr;
+            if (prs.length > 0) {
+              pr = prs[0];
+              core.info(`Found existing PR #${pr.number}: ${pr.html_url}`);
+            } else {
+              core.info(`Creating PR from ${head} -> ${base}`);
+              const { data: created } = await github.rest.pulls.create({
+                owner,
+                repo,
+                title,
+                head: headBranch,
+                base,
+                body
+              });
+              pr = created;
+              core.info(`Created PR #${pr.number}: ${pr.html_url}`);
+            }
+
+            // Try to enable auto-merge (requires repo setting enabled)
+            try {
+              const prNode = await github.graphql(
+                `
+                  query($owner: String!, $repo: String!, $number: Int!) {
+                    repository(owner: $owner, name: $repo) {
+                      pullRequest(number: $number) { id }
+                    }
+                  }
+                `,
+                { owner, repo, number: pr.number }
+              );
+
+              const pullRequestId = prNode.repository.pullRequest.id;
+              await github.graphql(
+                `
+                  mutation($pullRequestId: ID!, $mergeMethod: PullRequestMergeMethod!) {
+                    enablePullRequestAutoMerge(input: { pullRequestId: $pullRequestId, mergeMethod: $mergeMethod }) {
+                      pullRequest { number }
+                    }
+                  }
+                `,
+                { pullRequestId, mergeMethod: "MERGE" }
+              );
+              core.info(`Enabled auto-merge for PR #${pr.number}`);
+            } catch (e) {
+              core.warning(`Could not enable auto-merge for PR #${pr.number}: ${e.message}`);
+            }
