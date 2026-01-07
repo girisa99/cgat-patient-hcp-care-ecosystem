@@ -426,10 +426,11 @@ export function FloatingTeleprompter({
 
   // Open window when isOpen becomes true
   useEffect(() => {
+    console.log('[FloatingTeleprompter] isOpen changed:', { isOpen, isWindowOpen, hasContent: !!content, contentPreview: content?.substring(0, 50) });
     if (isOpen && !isWindowOpen) {
       openExternalWindow();
     }
-  }, [isOpen, isWindowOpen, openExternalWindow]);
+  }, [isOpen, isWindowOpen, openExternalWindow, content]);
 
   // Cleanup on unmount
   useEffect(() => {
