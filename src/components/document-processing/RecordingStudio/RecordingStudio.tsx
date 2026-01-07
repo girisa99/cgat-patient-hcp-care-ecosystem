@@ -58,7 +58,7 @@ import {
   RecordingControls,
   RecordingLibraryPanel,
   RecordingPreview,
-  DraggableTeleprompter,
+  InlineTeleprompter,
   PreRecordingDialog,
   CameraSetupDialog,
   KeyboardShortcutsHelp,
@@ -1647,32 +1647,17 @@ export function RecordingStudio({
           </div>
           
           <div className="flex items-center gap-2">
-            {/* Teleprompter Button - works with script OR audio-linked script text */}
+            {/* Teleprompter Toggle Button - works with script OR audio-linked script text */}
             {(currentScript || audioLinkedScriptText) && (
-              <DraggableTeleprompter
-                content={
-                  currentScript 
-                    ? (isUsingEnhancedScript && cleanEnhancedScript ? cleanEnhancedScript : currentScript.content)
-                    : audioLinkedScriptText || ''
-                }
-                title={
-                  currentScript 
-                    ? (currentScript.title + (isUsingEnhancedScript ? ' (Enhanced)' : ''))
-                    : (currentTTSFile?.name || currentVoiceover?.name || 'Audio Script')
-                }
-                currentWordIndex={currentWordIndex}
-                totalWords={teleprompterSyncState.totalWords}
-                progress={teleprompterSyncState.progress}
-                isRecording={recording.isRecording}
-                isPaused={recording.isPaused}
-                isOpen={teleprompterOpen}
-                onClose={() => {
-                  setTeleprompterOpen(false);
-                  // Stop audio when teleprompter is closed
-                  preloadedAudio.stopPlayback();
-                }}
-                onOpen={() => setTeleprompterOpen(true)}
-              />
+              <Button
+                size="sm"
+                variant={teleprompterOpen ? 'default' : 'outline'}
+                onClick={() => setTeleprompterOpen(!teleprompterOpen)}
+                className="gap-1 h-8"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                {teleprompterOpen ? 'Hide' : 'Show'} Teleprompter
+              </Button>
             )}
             
             {/* Hide controls in focus mode */}
@@ -2618,6 +2603,27 @@ export function RecordingStudio({
             setTTSText(scriptContent);
             toast.info('TTS text set - generate in Genie Mind for best results');
           }}
+        />
+
+        {/* Inline Teleprompter - Floating overlay inside the app */}
+        <InlineTeleprompter
+          content={
+            currentScript 
+              ? (isUsingEnhancedScript && cleanEnhancedScript ? cleanEnhancedScript : currentScript.content)
+              : audioLinkedScriptText || ''
+          }
+          title={
+            currentScript 
+              ? (currentScript.title + (isUsingEnhancedScript ? ' (Enhanced)' : ''))
+              : (currentTTSFile?.name || currentVoiceover?.name || 'Audio Script')
+          }
+          currentWordIndex={currentWordIndex}
+          totalWords={teleprompterSyncState.totalWords}
+          progress={teleprompterSyncState.progress}
+          isRecording={recording.isRecording}
+          isPaused={recording.isPaused}
+          isVisible={teleprompterOpen}
+          onClose={() => setTeleprompterOpen(false)}
         />
       </DialogContent>
     </Dialog>
