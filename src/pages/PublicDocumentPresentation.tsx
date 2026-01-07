@@ -16,10 +16,13 @@ const PublicDocumentPresentation: React.FC = () => {
         <meta property="og:title" content="AI Document Processing Platform" />
         <meta property="og:description" content="Multi-Model AI achieves 95%+ accuracy with 99% cost reduction. See the future of document processing." />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://genieaiexpermentationhub.tech/og-document-processing.png" />
+        <meta property="og:url" content="https://genieaiexpermentationhub.com/public/presentation/document-processing" />
+        <meta property="og:image" content="https://genieaiexpermentationhub.com/og-document-processing.png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content="AI Document Processing Platform with Multi-Model Routing" />
         <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="https://genieaiexpermentationhub.com/og-document-processing.png" />
         <meta name="twitter:title" content="AI Document Processing Platform" />
         <meta name="twitter:description" content="Multi-Model AI achieves 95%+ accuracy with 99% cost reduction." />
         <link rel="canonical" href={window.location.href} />
