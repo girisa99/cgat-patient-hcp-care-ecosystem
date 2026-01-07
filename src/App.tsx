@@ -74,6 +74,9 @@ const queryClient = new QueryClient({
   },
 });
 
+// Lazy load the public presentation component outside of auth flow
+const PublicDocumentPresentation = React.lazy(() => import('@/pages/PublicDocumentPresentation'));
+
 const AppContent = () => {
   console.log('🎯 AppContent rendering...');
   const { isAuthenticated, isLoading, userRoles } = useMasterAuth();
@@ -100,11 +103,6 @@ const AppContent = () => {
           <Routes>
               {/* Public routes - accessible without authentication */}
               <Route path="/login" element={<Login />} />
-              <Route path="/public/presentation/document-processing" element={
-                <Suspense fallback={<PageLoading message="Loading presentation..." />}>
-                  {React.createElement(React.lazy(() => import('@/pages/PublicDocumentPresentation')))}
-                </Suspense>
-              } />
               
               {/* Protected routes */}
               {isAuthenticated ? (
@@ -415,6 +413,54 @@ const AppContent = () => {
   );
 };
 
+// Public routes wrapper - no auth required
+const PublicRoutes = () => (
+  <Routes>
+    <Route path="/public/presentation/document-processing" element={
+      <Suspense fallback={<PageLoading message="Loading presentation..." />}>
+        <PublicDocumentPresentation />
+      </Suspense>
+    } />
+  </Routes>
+);
+
+// Main app with routing logic
+const AppRouter = () => {
+  const location = window.location.pathname;
+  
+  // Check if this is a public route - render without auth
+  if (location.startsWith('/public/')) {
+    return (
+      <HelmetProvider>
+        <PublicRoutes />
+      </HelmetProvider>
+    );
+  }
+  
+  // Protected routes - require auth
+  return (
+    <MasterAuthProvider>
+      <TenantProvider>
+        <TooltipProvider>
+          <HelmetProvider>
+            <GlobalAgentGeneratorProvider>
+              <Toaster />
+              <AppLayoutWithEnrollment 
+                showUniversalGenie={true}
+                tenantId="default-tenant"
+                userId="current-user"
+              >
+                <AppContent />
+              </AppLayoutWithEnrollment>
+              <GlobalAgentGeneratorModal />
+            </GlobalAgentGeneratorProvider>
+          </HelmetProvider>
+        </TooltipProvider>
+      </TenantProvider>
+    </MasterAuthProvider>
+  );
+};
+
 const App = () => {
   console.log('🚀 App component rendering...');
   
@@ -422,26 +468,7 @@ const App = () => {
     <BrowserRouter>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
-          <MasterAuthProvider>
-            <TenantProvider>
-              <TooltipProvider>
-                <HelmetProvider>
-                  <GlobalAgentGeneratorProvider>
-                    
-                     <Toaster />
-                     <AppLayoutWithEnrollment 
-                       showUniversalGenie={true}
-                       tenantId="default-tenant"
-                       userId="current-user"
-                     >
-                       <AppContent />
-                     </AppLayoutWithEnrollment>
-                    <GlobalAgentGeneratorModal />
-                  </GlobalAgentGeneratorProvider>
-                </HelmetProvider>
-              </TooltipProvider>
-            </TenantProvider>
-          </MasterAuthProvider>
+          <AppRouter />
         </QueryClientProvider>
       </ErrorBoundary>
     </BrowserRouter>
