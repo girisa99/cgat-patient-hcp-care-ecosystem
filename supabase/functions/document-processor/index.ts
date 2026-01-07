@@ -1355,226 +1355,423 @@ function buildExtractionPrompt(documentType: string, targetFields?: string[]): s
   // Document-type-specific extraction hints for ALL document types
   const documentTypeHints: Record<string, string> = {
     'prescription': `
-PRESCRIPTION DOCUMENT - COMPREHENSIVE EXTRACTION GUIDE:
-
 ================================================================================
-SECTION 1: PRESCRIPTION FORMAT RECOGNITION
+COMPREHENSIVE PRESCRIPTION EXTRACTION FRAMEWORK v2.0
 ================================================================================
 
-**COMMON PRESCRIPTION FORMATS TO RECOGNIZE:**
-
-1. **HANDWRITTEN Rx (Most Common)**
-   - Written on a prescription pad with "Rx" symbol
-   - Medication names may be abbreviated or in cursive
-   - Sig often abbreviated (BID, TID, QID, PRN)
-   - Look for doctor's signature at bottom
-
-2. **PRINTED/TYPED Rx**
-   - Clean typed text, often from EMR/EHR systems
-   - Structured format with clear labels
-   - May include barcodes or QR codes
-
-3. **E-PRESCRIPTION (EPCS)**
-   - Electronic format, often PDF from pharmacy system
-   - Contains electronic signature and tracking numbers
-   - May include NCPDP codes
-
-4. **HOSPITAL DISCHARGE Rx**
-   - Multiple medications listed in table format
-   - May include "Discharge Medications" header
-   - Often includes both home meds and new meds
-
-5. **COMPOUNDING Rx**
-   - Custom formulations with multiple ingredients
-   - May say "Compounding Required"
-   - Contains specific mixing instructions
-
-6. **CONTROLLED SUBSTANCE Rx (Schedule II-V)**
-   - DEA number prominently displayed
-   - Schedule indicated (C-II, C-III, C-IV, C-V)
-   - May be on special tamper-resistant paper
-   - Often includes "Do Not Fill After" date
-
-7. **REFILL REQUEST FORMS**
-   - Request for medication refills
-   - References previous Rx numbers
-   - May list multiple meds needing refill
-
-8. **SPECIALTY/PRIOR AUTH Rx**
-   - Contains diagnosis codes (ICD-10)
-   - May include "Prior Authorization Required"
-   - Often has clinical justification notes
-
-================================================================================
-SECTION 2: COMMON ABBREVIATIONS & TERMINOLOGY
+SECTION 1: DOCUMENT CLASSIFICATION & PRE-PROCESSING
 ================================================================================
 
-**DRUG NAME ABBREVIATIONS (CRITICAL):**
-- Fe504, FeSO4, FeS04 = Ferrous Sulfate (iron supplement)
-- ASA = Aspirin
-- HCTZ = Hydrochlorothiazide
-- MgSO4 = Magnesium Sulfate
-- KCl = Potassium Chloride
-- NaCl = Sodium Chloride
-- PCN, PNC = Penicillin
-- TCN = Tetracycline
-- Amox = Amoxicillin
-- Azithro, Z-pack = Azithromycin
-- Augmentin = Amoxicillin-Clavulanate
-- MTX = Methotrexate
-- Pred = Prednisone
-- MOM = Milk of Magnesia
-- Vit C, Asc Acid = Ascorbic Acid (Vitamin C)
-- Vit D, D3 = Cholecalciferol
-- Vit B12 = Cyanocobalamin
-- Folic, FA = Folic Acid
-- OTC meds may be listed by brand name
+**DOCUMENT TYPE DETECTION:**
+Identify which type of prescription this is:
+- handwritten_prescription: Written on a prescription pad with "Rx" symbol
+- printed_prescription: Clean typed text from EMR/EHR systems
+- electronic_prescription: EPCS format with electronic signature
+- hospital_discharge_rx: Multiple medications in table format
+- compound_prescription: Custom formulations with mixing instructions
+- controlled_substance_rx: DEA number prominent, Schedule II-V indicated
+- veterinary_prescription: For animals, includes species
+- dental_prescription: From DDS/DMD
+- optical_prescription: Eye prescriptions (OD/OS/OU)
 
-**DOSAGE FORM ABBREVIATIONS:**
-- tab, tabs = tablet(s)
-- cap, caps = capsule(s)
-- susp = suspension
-- sol, soln = solution
-- inj = injection
-- supp = suppository
-- ung, oint = ointment
-- cr, crm = cream
-- gtt, gtts = drops
-- MDI = metered dose inhaler
-- neb = nebulizer solution
-- SR, XR, ER, LA, CR = extended release
-- IR = immediate release
-- SL = sublingual
-- EC = enteric coated
+**WRITING STYLE DETECTION:**
+- fully_handwritten: All text is handwritten
+- partially_handwritten: Printed form with handwritten entries
+- fully_printed: All computer-generated
+- mixed_cursive_print: Combination of cursive and print handwriting
+- stamped_with_handwritten: Pre-printed with stamp plus handwritten additions
 
-**SIG (DIRECTIONS) ABBREVIATIONS:**
-- QD, OD, q.d., o.d. = once daily
-- BID, b.i.d. = twice daily
-- TID, t.i.d. = three times daily
-- QID, q.i.d. = four times daily
-- Q4H, q4h = every 4 hours
-- Q6H, q6h = every 6 hours
-- Q8H, q8h = every 8 hours
-- Q12H = every 12 hours
-- PRN, prn = as needed
-- AC, a.c. = before meals
-- PC, p.c. = after meals
-- HS, h.s. = at bedtime
-- AM, QAM = in the morning
-- PM, QPM = in the evening/at night
-- C, c = with (food/water)
-- S, s = without
-- PO = by mouth (oral)
-- SQ, SubQ, SC = subcutaneous
-- IM = intramuscular
-- IV = intravenous
-- TOP = topically
-- OU = both eyes
-- OD = right eye
-- OS = left eye
-- AU = both ears
-- AD = right ear
-- AS = left ear
-- NTE = not to exceed
-
-**QUANTITY ABBREVIATIONS:**
-- # = number/quantity (e.g., #30 = 30 tablets)
-- Disp, disp = dispense
-- Qty = quantity
-- RF, Ref = refills
-- NR, NFR = no refills
-- DAW = dispense as written
-- Sub permitted = generic substitution allowed
+**IMAGE QUALITY ASSESSMENT:**
+Note any issues: folds, tears, stains, shadows, glare, fading, low resolution
 
 ================================================================================
-SECTION 3: MULTI-MEDICATION EXTRACTION
+SECTION 2: HANDWRITTEN PRESCRIPTION RECOGNITION (CRITICAL)
 ================================================================================
 
-**CRITICAL: A prescription may contain MULTIPLE medications - extract ALL of them**
+**CHARACTER CONFUSION MATRIX - Use Context to Disambiguate:**
 
-Return medications as an ARRAY in the field "medications":
+LETTERS COMMONLY CONFUSED:
+  a ↔ o ↔ u ↔ e (context: "daily" vs "doily")
+  n ↔ m ↔ r ↔ v ↔ w (context: drug suffix "-min" vs "-rin")
+  i ↔ l ↔ t ↔ f ↔ j (check for dots/crosses)
+  c ↔ e ↔ o (context: "once" vs "onco")
+  h ↔ b ↔ k ↔ li (context: "health" vs "bealth")
+  d ↔ cl ↔ a (context: "daily" vs "claily")
+  g ↔ q ↔ y ↔ 9 (look for tails)
+  s ↔ 5 ↔ S (context determines)
+  z ↔ 2 ↔ Z (context determines)
+
+NUMBERS COMMONLY CONFUSED:
+  0 ↔ 6 ↔ O ↔ o ↔ D (CRITICAL for dosing!)
+  1 ↔ 7 ↔ l ↔ I ↔ | (crossbar on 7?)
+  2 ↔ Z ↔ z (context determines)
+  3 ↔ 8 ↔ B (look at curves)
+  4 ↔ 9 ↔ q (open vs closed top)
+  5 ↔ S ↔ s (context determines)
+
+DECIMAL ISSUES (HIGH RISK - FLAG FOR REVIEW):
+  - Missing leading zero: ".5" → flag as potential "5" misread
+  - Trailing zero: "5.0" → could be misread as "50"
+  - Comma vs period: "1,5" vs "1.5" (European notation)
+  - Faint decimal points mistaken for stray marks
+
+**DRUG NAME RECOGNITION - LASA (Look-Alike Sound-Alike) PAIRS:**
+Common confusions to watch for:
+  Celebrex ↔ Celexa ↔ Cerebyx
+  Hydroxyzine ↔ Hydralazine ↔ Hydroxyurea
+  Clonidine ↔ Clonazepam ↔ Klonopin
+  Metformin ↔ Metronidazole
+  Prednisone ↔ Prednisolone
+  Tramadol ↔ Trazodone
+  Zantac ↔ Xanax ↔ Zyrtec
+  Lasix ↔ Losec ↔ Luvox
+  Lamictal ↔ Lamisil ↔ Labetalol
+  Flomax ↔ Fosamax ↔ Volmax
+  Atenolol ↔ Albuterol
+  Norvasc ↔ Navane
+  Prilosec ↔ Prozac ↔ Plavix
+  Ambien ↔ Abilify
+
+================================================================================
+SECTION 3: COMPREHENSIVE SIG ABBREVIATION MAPPING
+================================================================================
+
+**FREQUENCY ABBREVIATIONS:**
+  QD, qd, q.d., qday, daily, once daily, OD → once per day
+  BID, bid, b.i.d., 2x/day, twice daily → twice per day
+  TID, tid, t.i.d., 3x/day, three times daily → three times per day
+  QID, qid, q.i.d., 4x/day, four times daily → four times per day
+  Q4H, q4h, q4°, q.4.h., every 4 hours → every 4 hours
+  Q6H, q6h, Q6°, every 6 hours → every 6 hours
+  Q8H, q8h, Q8°, every 8 hours → every 8 hours
+  Q12H, q12h, every 12 hours → every 12 hours
+  QOD, qod, q.o.d., every other day → DANGEROUS ABBREVIATION - FLAG
+  QWK, qwk, weekly, once weekly → once per week
+  QMonth, monthly, once monthly → once per month
+  PRN, prn, p.r.n., as needed, when needed → as needed
+
+**TIMING ABBREVIATIONS:**
+  AC, ac, a.c., ante cibum → before meals
+  PC, pc, p.c., post cibum → after meals
+  HS, hs, h.s., hora somni → at bedtime
+  AM, am, a.m., qAM → in the morning
+  PM, pm, p.m., qPM → in the evening
+  STAT, stat → immediately
+  C, c̄ (with bar) → with
+  S, s̄ (with bar) → without
+
+**ROUTE ABBREVIATIONS:**
+  PO, po, p.o., per os, by mouth → oral
+  SL, sl, s.l., sublingual → under tongue
+  PR, pr, p.r., per rectum → rectal
+  PV, pv, per vagina → vaginal
+  TOP, top., topical, apply → topical
+  INH, inh., inhale → inhalation
+  IM, im, i.m. → intramuscular
+  IV, iv, i.v. → intravenous
+  SC, SQ, sq, s.c., subQ, subcut → subcutaneous
+  OU, ou → both eyes
+  OD, od → right eye (CAUTION: can mean once daily)
+  OS, os → left eye
+  AU, au → both ears
+  AD, ad → right ear
+  AS, as → left ear
+  GTTS, gtts, gtt → drops
+  NEB, neb → nebulizer
+
+**QUANTITY/FORM ABBREVIATIONS:**
+  TAB, tab, tabs → tablet(s)
+  CAP, cap, caps → capsule(s)
+  ML, ml, mL → milliliter(s)
+  MG, mg → milligram(s)
+  MCG, mcg, μg → microgram(s) - DANGEROUS: μg looks like mg
+  G, g, gm → gram(s)
+  TSP, tsp → teaspoon (5 mL)
+  TBSP, tbsp → tablespoon (15 mL)
+  CC, cc → cubic centimeter - DANGEROUS: looks like U
+  U, u → units - DANGEROUS: looks like 0 or 4
+  IU, iu → international units - DANGEROUS: looks like IV
+
+================================================================================
+SECTION 4: ISMP DANGEROUS ABBREVIATIONS (CRITICAL - ALWAYS FLAG)
+================================================================================
+
+**CRITICAL SEVERITY - MUST FLAG:**
+  U, u (units) → Mistaken for 0, 4, or cc → CRITICAL
+  IU (international units) → Mistaken for IV → CRITICAL
+  MS, MSO4, MgSO4 → Confused for each other → CRITICAL
+  μg (microgram) → Mistaken for mg (1000x error!) → CRITICAL
+
+**HIGH SEVERITY - FLAG FOR REVIEW:**
+  Q.D., QD, qd → Mistaken for QID → HIGH
+  Q.O.D., QOD → Mistaken for QD or QID → HIGH
+  Trailing zero (1.0 mg) → Mistaken for 10 mg → HIGH
+  No leading zero (.5 mg) → Mistaken for 5 mg → HIGH
+  cc → Mistaken for U (units) → HIGH
+  AS, AD, AU, OS, OD, OU → Ear vs eye confusion → HIGH
+
+**MEDIUM SEVERITY - NOTE:**
+  T.I.W. → Mistaken for TID or twice weekly → MEDIUM
+  SC, SQ → Mistaken for SL or "5Q" → MEDIUM
+  D/C → Discharge vs discontinue confusion → MEDIUM
+  HS → Half-strength vs hora somni → MEDIUM
+
+When any dangerous abbreviation is detected:
+1. Include in extraction as-is
+2. Add translation in plain English
+3. Set dangerous_abbreviation_detected: true
+4. Add to validation_flags array
+
+================================================================================
+SECTION 5: MULTI-MEDICATION PRESCRIPTION HANDLING
+================================================================================
+
+**CRITICAL: A prescription may contain MULTIPLE medications - extract ALL**
+
+Return medications as an ARRAY:
 {
   "medications": [
     {
+      "sequence_number": 1,
+      "raw_text": "Ferrous Sulfate 325mg 1 tab PO daily with food #30 Ref x3",
       "medication_name": "Ferrous Sulfate",
+      "medication_name_type": "generic",
       "strength": "325mg",
-      "sig": "Take 1 tablet daily with food",
-      "quantity": "30",
-      "refills": "3",
-      "ndc": "if visible"
+      "strength_numeric": 325,
+      "strength_unit": "mg",
+      "dosage_form": "tablet",
+      "route": "oral",
+      "sig_raw": "1 tab PO daily with food",
+      "sig_parsed": {
+        "dose_per_administration": "1 tablet",
+        "frequency": "once daily",
+        "timing": "with food",
+        "route": "oral"
+      },
+      "sig_translation": "Take 1 tablet by mouth once daily with food",
+      "quantity": 30,
+      "quantity_unit": "tablets",
+      "refills": 3,
+      "days_supply": 30,
+      "is_controlled": false,
+      "daw_code": 0,
+      "confidence": 0.92,
+      "validation_flags": [],
+      "dangerous_abbreviations": []
     },
     {
+      "sequence_number": 2,
       "medication_name": "Ascorbic Acid",
       "strength": "500mg",
-      "sig": "Take 1 tablet daily",
-      "quantity": "30",
-      "refills": "3"
+      ...
     }
   ],
-  "medication_name": "Ferrous Sulfate",  // First medication for backward compatibility
-  "medication_count": 2
+  "medication_count": 2,
+  "medication_name": "Ferrous Sulfate"  // First med for backward compatibility
 }
 
 **MULTI-MED RECOGNITION PATTERNS:**
 - Multiple lines after "Rx:" symbol
 - Numbered list: 1. Drug A  2. Drug B
-- Table format with columns for Drug, Dose, Directions
+- Table format with columns
 - Separate Rx numbers for each medication
-- Look for "AND" or line breaks between medications
+- "AND" or line breaks between medications
 
 ================================================================================
-SECTION 4: REQUIRED FIELDS TO EXTRACT
+SECTION 6: CONTROLLED SUBSTANCE VALIDATION
+================================================================================
+
+**SCHEDULE II (Strictest - examples: oxycodone, amphetamine, fentanyl):**
+Required elements - flag if missing:
+  ✓ Written prescription (or approved ePrescribe)
+  ✓ Manual signature (not stamped)
+  ✓ DEA number present and valid
+  ✓ Quantity written in words AND numbers
+  ✓ No refills permitted
+  ✓ Valid within 90 days (state-specific)
+
+**SCHEDULE III-IV (examples: Tylenol #3, benzodiazepines):**
+Required elements:
+  ✓ DEA number present
+  ✓ Up to 5 refills permitted
+  ✓ Valid for 6 months
+
+**SCHEDULE V (examples: pregabalin, some cough syrups):**
+Required elements:
+  ✓ DEA number present
+  ✓ Up to 5 refills permitted
+  ✓ Valid for 6 months
+
+**DEA NUMBER VALIDATION:**
+Format: 2 letters + 7 digits
+First letter: A,B,C,D,E,F,G,H,J,K,L,M,P,R,S,T,U,X
+Second letter: Usually first letter of prescriber's last name
+Checksum: (d1+d3+d5) + 2*(d2+d4+d6) mod 10 = d7
+
+**NPI NUMBER VALIDATION:**
+Exactly 10 digits
+Luhn algorithm checksum (with 80840 prefix)
+
+================================================================================
+SECTION 7: DOSE VALIDATION RULES
+================================================================================
+
+**COMMON MAXIMUM DOSES - Flag if exceeded:**
+Acetaminophen: max 4000mg/day (3000mg for liver risk)
+Ibuprofen: max 3200mg/day
+Metformin: max 2550mg/day (2000mg typical max)
+Lisinopril: max 80mg/day
+Amlodipine: max 10mg/day
+Atorvastatin: max 80mg/day
+Omeprazole: max 40mg/day (80mg short-term)
+Gabapentin: max 3600mg/day
+Prednisone: varies by indication, flag if >60mg/day
+
+**PEDIATRIC CONSIDERATIONS:**
+- Extract patient weight if noted
+- Calculate mg/kg dose when possible
+- Flag if dose exceeds pediatric max
+- Note if liquid formulation appropriate for age
+
+**DOSE PLAUSIBILITY CHECK:**
+- If quantity / (dose × frequency) doesn't equal reasonable days supply, flag
+- Example: #30 tablets for "1 tab TID" = 10 days (typical for antibiotic ✓)
+- Example: #30 tablets for "1 tab TID" for maintenance med = suspicious
+
+================================================================================
+SECTION 8: REQUIRED EXTRACTION FIELDS
 ================================================================================
 
 **MEDICATION FIELDS (MOST CRITICAL):**
 - medication_name: Full drug name (generic and/or brand)
+- medication_name_type: "brand" or "generic" or "uncertain"
 - strength: Dosage strength (e.g., "500mg", "10mg/5ml", "0.5%")
-- sig: Full directions for use
-- quantity: Amount to dispense (#30, Qty 30, etc.)
-- refills: Number of refills (0-11, or "NR" for none)
+- strength_numeric: Numeric value only
+- strength_unit: Unit only (mg, mcg, g, mL, %)
+- dosage_form: tablet, capsule, solution, cream, etc.
+- dosage_form_detail: XR, ER, SR, ODT, etc. if applicable
+- route: oral, topical, injection, etc.
+- sig_raw: Directions exactly as written
+- sig_parsed: Structured parse of directions
+- sig_translation: Plain English translation
+- quantity: Amount to dispense
+- quantity_unit: tablets, capsules, mL, etc.
+- quantity_written: Quantity in words (for controlled)
+- refills: Number of refills (0-11)
 - days_supply: Days the medication should last
 - daw_code: Dispense as written code (0-9)
 
 **PRESCRIBER FIELDS:**
-- prescriber_name: Doctor/prescriber full name with credentials
-- prescriber_npi: 10-digit NPI number
-- prescriber_license: State license number (Lic. No., License #)
-- prescriber_ptr: PTR number (common in some regions)
-- dea_number: DEA registration number (for controlled substances)
+- prescriber_name: Full name with credentials (MD, DO, NP, PA)
+- prescriber_npi: 10-digit NPI (validate checksum)
+- prescriber_dea: DEA number (validate format and checksum)
+- prescriber_license: State license number
 - prescriber_phone: Phone number
 - prescriber_fax: Fax number
-- prescriber_address: Office address
-- clinic_name: Clinic or practice name
-- prescriber_specialty: Medical specialty if indicated
+- prescriber_address: Full address
+- clinic_name: Practice/clinic name
+- prescriber_specialty: If indicated
 
 **PATIENT FIELDS:**
-- patient_name: Full patient name
-- patient_dob: Date of birth
-- patient_age: Age (if DOB not available)
-- patient_sex: Sex (M/F)
-- patient_address: Address
-- patient_phone: Phone number
-- patient_allergies: Known allergies if listed
+- patient_name: Full name (first, middle, last)
+- patient_dob: Date of birth (normalized to YYYY-MM-DD)
+- patient_age: Age if DOB not available
+- patient_sex: M/F
+- patient_weight: Weight with unit (for dose calculation)
+- patient_address: Full address
+- patient_allergies: Listed allergies
 
 **PRESCRIPTION METADATA:**
-- date_written: Date Rx was written
-- date_of_service: Date of patient visit
+- date_written: Date Rx was written (normalized to YYYY-MM-DD)
+- date_not_valid_before: If specified
+- date_expires: Calculated based on controlled status
 - rx_number: Prescription number
-- is_controlled: true/false if controlled substance
-- schedule: DEA schedule (II, III, IV, V) if controlled
-- diagnosis: Diagnosis or ICD-10 code
-- prior_auth_number: Prior authorization number if applicable
+- is_controlled: true/false
+- schedule: DEA schedule (II, III, IV, V)
+- diagnosis_code: ICD-10 if present
+- prior_auth_number: If applicable
+
+**VALIDATION RESULTS:**
+- overall_confidence: 0.0-1.0
+- requires_pharmacist_review: true/false
+- validation_flags: Array of issues found
+- dangerous_abbreviations_detected: Array of ISMP abbreviations found
 
 ================================================================================
+SECTION 9: CONFIDENCE SCORING GUIDELINES
+================================================================================
 
-EXTRACTION PRIORITY:
+0.95-1.0: Clear printed text, all fields unambiguous
+0.85-0.95: Legible handwriting, context confirms interpretation
+0.70-0.85: Some ambiguous characters, likely correct interpretation
+0.50-0.70: Multiple possible interpretations, needs review
+0.30-0.50: Difficult to read, low confidence
+0.00-0.30: Mostly illegible, requires human verification
+
+**FLAG FOR PHARMACIST REVIEW IF:**
+- Any critical field < 0.70 confidence
+- Any ISMP dangerous abbreviation detected
+- Controlled substance with missing requirements
+- Dose exceeds known maximum
+- Multiple LASA drug candidates possible
+
+================================================================================
+SECTION 10: SPECIAL PRESCRIPTION TYPES
+================================================================================
+
+**COMPOUND PRESCRIPTIONS:**
+{
+  "is_compound": true,
+  "base_vehicle": "Lipoderm base",
+  "ingredients": [
+    {"name": "Ketamine", "strength": "10%", "quantity": ""},
+    {"name": "Lidocaine", "strength": "5%", "quantity": ""}
+  ],
+  "total_quantity": "60g",
+  "compounding_instructions": "Mix until uniform",
+  "beyond_use_date": "30 days"
+}
+
+**TAPER/DOSE PACK PRESCRIPTIONS:**
+{
+  "is_taper": true,
+  "taper_schedule": [
+    {"days": "1-3", "dose": "40mg", "frequency": "once daily"},
+    {"days": "4-6", "dose": "30mg", "frequency": "once daily"},
+    {"days": "7-9", "dose": "20mg", "frequency": "once daily"}
+  ],
+  "total_quantity_needed": 18
+}
+
+**INSULIN PRESCRIPTIONS:**
+{
+  "insulin_type": "long-acting",
+  "concentration": "U-100",
+  "device": "Solostar pen",
+  "sliding_scale": {
+    "bg_less_than_150": "0 units",
+    "bg_150_200": "2 units",
+    "bg_201_250": "4 units"
+  }
+}
+
+================================================================================
+EXTRACTION PRIORITY ORDER:
 1. ALL medication names (NEVER skip any)
-2. Dosage instructions (SIG) for each medication
-3. Quantities and refills
-4. Prescriber information with NPI
-5. Patient demographics
+2. Dosage/strength for each medication
+3. Sig instructions for each medication
+4. Quantities and refills
+5. Controlled substance indicators
+6. Prescriber DEA/NPI for validation
+7. Patient demographics
+================================================================================
 
-CRITICAL: Extract ALL medications visible. Do NOT skip any drug names.
+CRITICAL RULES:
+- Extract ALL medications visible. Do NOT skip any drug names.
+- Flag ALL dangerous ISMP abbreviations
+- Validate DEA number format if controlled substance
+- Note confidence level for each ambiguous field
+- Include alternatives array for uncertain drug names
 `,
     'insurance': `
 INSURANCE DOCUMENT EXTRACTION:
