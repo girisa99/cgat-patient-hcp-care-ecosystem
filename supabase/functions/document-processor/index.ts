@@ -1355,67 +1355,226 @@ function buildExtractionPrompt(documentType: string, targetFields?: string[]): s
   // Document-type-specific extraction hints for ALL document types
   const documentTypeHints: Record<string, string> = {
     'prescription': `
-PRESCRIPTION DOCUMENT - CRITICAL EXTRACTION RULES:
+PRESCRIPTION DOCUMENT - COMPREHENSIVE EXTRACTION GUIDE:
 
-**HANDWRITTEN PRESCRIPTION RECOGNITION:**
-- This may be a HANDWRITTEN prescription - pay extra attention to interpreting handwriting
-- Look for "Rx" symbol or the word "Rx:" as the start of medication list
-- Medications are often written on separate lines after "Rx:"
-- Common abbreviations: tab=tablet, cap=capsule, #=quantity, AD/QD=once daily, BID=twice daily, TID=three times daily
+================================================================================
+SECTION 1: PRESCRIPTION FORMAT RECOGNITION
+================================================================================
 
-**MOST IMPORTANT - EXTRACT ALL MEDICATIONS:**
-- A prescription may contain MULTIPLE medications - extract ALL of them
-- Return medications as an ARRAY in the field "medications" 
-- Each medication object should have: medication_name, strength, sig, quantity, refills
-- Also extract the first/primary medication into top-level fields for backward compatibility
+**COMMON PRESCRIPTION FORMATS TO RECOGNIZE:**
 
-**FORMAT FOR MULTIPLE MEDICATIONS:**
+1. **HANDWRITTEN Rx (Most Common)**
+   - Written on a prescription pad with "Rx" symbol
+   - Medication names may be abbreviated or in cursive
+   - Sig often abbreviated (BID, TID, QID, PRN)
+   - Look for doctor's signature at bottom
+
+2. **PRINTED/TYPED Rx**
+   - Clean typed text, often from EMR/EHR systems
+   - Structured format with clear labels
+   - May include barcodes or QR codes
+
+3. **E-PRESCRIPTION (EPCS)**
+   - Electronic format, often PDF from pharmacy system
+   - Contains electronic signature and tracking numbers
+   - May include NCPDP codes
+
+4. **HOSPITAL DISCHARGE Rx**
+   - Multiple medications listed in table format
+   - May include "Discharge Medications" header
+   - Often includes both home meds and new meds
+
+5. **COMPOUNDING Rx**
+   - Custom formulations with multiple ingredients
+   - May say "Compounding Required"
+   - Contains specific mixing instructions
+
+6. **CONTROLLED SUBSTANCE Rx (Schedule II-V)**
+   - DEA number prominently displayed
+   - Schedule indicated (C-II, C-III, C-IV, C-V)
+   - May be on special tamper-resistant paper
+   - Often includes "Do Not Fill After" date
+
+7. **REFILL REQUEST FORMS**
+   - Request for medication refills
+   - References previous Rx numbers
+   - May list multiple meds needing refill
+
+8. **SPECIALTY/PRIOR AUTH Rx**
+   - Contains diagnosis codes (ICD-10)
+   - May include "Prior Authorization Required"
+   - Often has clinical justification notes
+
+================================================================================
+SECTION 2: COMMON ABBREVIATIONS & TERMINOLOGY
+================================================================================
+
+**DRUG NAME ABBREVIATIONS (CRITICAL):**
+- Fe504, FeSO4, FeS04 = Ferrous Sulfate (iron supplement)
+- ASA = Aspirin
+- HCTZ = Hydrochlorothiazide
+- MgSO4 = Magnesium Sulfate
+- KCl = Potassium Chloride
+- NaCl = Sodium Chloride
+- PCN, PNC = Penicillin
+- TCN = Tetracycline
+- Amox = Amoxicillin
+- Azithro, Z-pack = Azithromycin
+- Augmentin = Amoxicillin-Clavulanate
+- MTX = Methotrexate
+- Pred = Prednisone
+- MOM = Milk of Magnesia
+- Vit C, Asc Acid = Ascorbic Acid (Vitamin C)
+- Vit D, D3 = Cholecalciferol
+- Vit B12 = Cyanocobalamin
+- Folic, FA = Folic Acid
+- OTC meds may be listed by brand name
+
+**DOSAGE FORM ABBREVIATIONS:**
+- tab, tabs = tablet(s)
+- cap, caps = capsule(s)
+- susp = suspension
+- sol, soln = solution
+- inj = injection
+- supp = suppository
+- ung, oint = ointment
+- cr, crm = cream
+- gtt, gtts = drops
+- MDI = metered dose inhaler
+- neb = nebulizer solution
+- SR, XR, ER, LA, CR = extended release
+- IR = immediate release
+- SL = sublingual
+- EC = enteric coated
+
+**SIG (DIRECTIONS) ABBREVIATIONS:**
+- QD, OD, q.d., o.d. = once daily
+- BID, b.i.d. = twice daily
+- TID, t.i.d. = three times daily
+- QID, q.i.d. = four times daily
+- Q4H, q4h = every 4 hours
+- Q6H, q6h = every 6 hours
+- Q8H, q8h = every 8 hours
+- Q12H = every 12 hours
+- PRN, prn = as needed
+- AC, a.c. = before meals
+- PC, p.c. = after meals
+- HS, h.s. = at bedtime
+- AM, QAM = in the morning
+- PM, QPM = in the evening/at night
+- C, c = with (food/water)
+- S, s = without
+- PO = by mouth (oral)
+- SQ, SubQ, SC = subcutaneous
+- IM = intramuscular
+- IV = intravenous
+- TOP = topically
+- OU = both eyes
+- OD = right eye
+- OS = left eye
+- AU = both ears
+- AD = right ear
+- AS = left ear
+- NTE = not to exceed
+
+**QUANTITY ABBREVIATIONS:**
+- # = number/quantity (e.g., #30 = 30 tablets)
+- Disp, disp = dispense
+- Qty = quantity
+- RF, Ref = refills
+- NR, NFR = no refills
+- DAW = dispense as written
+- Sub permitted = generic substitution allowed
+
+================================================================================
+SECTION 3: MULTI-MEDICATION EXTRACTION
+================================================================================
+
+**CRITICAL: A prescription may contain MULTIPLE medications - extract ALL of them**
+
+Return medications as an ARRAY in the field "medications":
 {
   "medications": [
-    {"medication_name": "Drug 1", "strength": "500mg", "sig": "Take 1 tablet daily", "quantity": "30", "refills": "0"},
-    {"medication_name": "Drug 2", "strength": "250mg", "sig": "Take 1 twice daily", "quantity": "60", "refills": "2"}
+    {
+      "medication_name": "Ferrous Sulfate",
+      "strength": "325mg",
+      "sig": "Take 1 tablet daily with food",
+      "quantity": "30",
+      "refills": "3",
+      "ndc": "if visible"
+    },
+    {
+      "medication_name": "Ascorbic Acid",
+      "strength": "500mg",
+      "sig": "Take 1 tablet daily",
+      "quantity": "30",
+      "refills": "3"
+    }
   ],
-  "medication_name": "Drug 1",  // First medication for backward compatibility
+  "medication_name": "Ferrous Sulfate",  // First medication for backward compatibility
   "medication_count": 2
 }
 
-**MEDICATION NAME (CRITICAL - NEVER SKIP):**
-- The medication/drug name is THE MOST CRITICAL field to extract
-- Look for drug names after "Rx:", or in the center of the prescription
-- Common handwritten drugs: Ferrous Sulfate (Fe504, FeSO4), Ascorbic Acid (Vitamin C), Amoxicillin, Metformin
-- Extract the FULL drug name including brand and generic names
-- If you see "#30" or "#60" after a drug name, that's the quantity
-- Examples: "Fe504 tab #30" = Ferrous Sulfate 504mg, 30 tablets
+**MULTI-MED RECOGNITION PATTERNS:**
+- Multiple lines after "Rx:" symbol
+- Numbered list: 1. Drug A  2. Drug B
+- Table format with columns for Drug, Dose, Directions
+- Separate Rx numbers for each medication
+- Look for "AND" or line breaks between medications
 
-**DOSAGE INSTRUCTIONS (SIG):**
-- Look for "Sig:", "S:", "Take:", or dosing instructions on the line after medication
-- Common sigs: A.D./QD=once daily, B.I.D.=twice daily, T.I.D.=three times daily, Q.I.D.=four times daily
-- "Once a day" = once daily, "aa" = before meals, "pc" = after meals
-- Extract as "sig" - include FULL instructions
+================================================================================
+SECTION 4: REQUIRED FIELDS TO EXTRACT
+================================================================================
 
-**OTHER REQUIRED FIELDS:**
-- strength: The dosage strength (e.g., "500mg", "10mg/5ml") - may be part of drug name
-- quantity: Number to dispense - look for "#30", "#60", "Disp: 30", "Qty: 30"
-- refills: Number of refills authorized (e.g., "3", "0", "Ref x 3")
-- days_supply: How many days the medication should last
-- prescriber_name: Doctor/prescriber name - often near signature at bottom
-- prescriber_npi: 10-digit NPI number  
-- prescriber_license: License number (Lic. No.)
-- prescriber_ptr: PTR number (PTR No.)
-- dea_number: DEA number for controlled substances
-- patient_name: Patient's full name - usually at top
-- patient_address: Patient address
-- patient_age: Patient age
-- patient_sex: Patient sex (M/F)
-- date_written: Date the prescription was written (look for Date: field)
-- pharmacy: Pharmacy name if specified
-- diagnosis: Diagnosis or ICD code if mentioned
+**MEDICATION FIELDS (MOST CRITICAL):**
+- medication_name: Full drug name (generic and/or brand)
+- strength: Dosage strength (e.g., "500mg", "10mg/5ml", "0.5%")
+- sig: Full directions for use
+- quantity: Amount to dispense (#30, Qty 30, etc.)
+- refills: Number of refills (0-11, or "NR" for none)
+- days_supply: Days the medication should last
+- daw_code: Dispense as written code (0-9)
 
-**CONTROLLED SUBSTANCE INDICATORS:**
-- Look for DEA number, schedule markings (II, III, IV, V), or controlled substance warnings
-- If found, set "is_controlled": true
+**PRESCRIBER FIELDS:**
+- prescriber_name: Doctor/prescriber full name with credentials
+- prescriber_npi: 10-digit NPI number
+- prescriber_license: State license number (Lic. No., License #)
+- prescriber_ptr: PTR number (common in some regions)
+- dea_number: DEA registration number (for controlled substances)
+- prescriber_phone: Phone number
+- prescriber_fax: Fax number
+- prescriber_address: Office address
+- clinic_name: Clinic or practice name
+- prescriber_specialty: Medical specialty if indicated
 
-CRITICAL: Extract ALL medications visible on the prescription. Do NOT skip any drug names.
+**PATIENT FIELDS:**
+- patient_name: Full patient name
+- patient_dob: Date of birth
+- patient_age: Age (if DOB not available)
+- patient_sex: Sex (M/F)
+- patient_address: Address
+- patient_phone: Phone number
+- patient_allergies: Known allergies if listed
+
+**PRESCRIPTION METADATA:**
+- date_written: Date Rx was written
+- date_of_service: Date of patient visit
+- rx_number: Prescription number
+- is_controlled: true/false if controlled substance
+- schedule: DEA schedule (II, III, IV, V) if controlled
+- diagnosis: Diagnosis or ICD-10 code
+- prior_auth_number: Prior authorization number if applicable
+
+================================================================================
+
+EXTRACTION PRIORITY:
+1. ALL medication names (NEVER skip any)
+2. Dosage instructions (SIG) for each medication
+3. Quantities and refills
+4. Prescriber information with NPI
+5. Patient demographics
+
+CRITICAL: Extract ALL medications visible. Do NOT skip any drug names.
 `,
     'insurance': `
 INSURANCE DOCUMENT EXTRACTION:
