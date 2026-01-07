@@ -24,3 +24,5 @@ export type { StudioSoundSettings } from './useStudioSound';
 export { useTTSGeneration, OPENAI_VOICES, ELEVENLABS_VOICES } from './useTTSGeneration';
 export type { TTSOptions, TTSResult } from './useTTSGeneration';
 export { useFFmpegTrim } from './useFFmpegTrim';
+export { useTeleprompterSync } from './useTeleprompterSync';
+export { useRecordingSession } from './useRecordingSession';

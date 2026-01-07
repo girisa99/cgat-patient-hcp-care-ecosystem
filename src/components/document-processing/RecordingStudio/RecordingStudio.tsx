@@ -50,14 +50,15 @@ import {
   useTTSGeneration,
   useMLBackgroundBlur,
   useFFmpegTrim,
-  usePreloadedAudioRecorder
+  usePreloadedAudioRecorder,
+  useTeleprompterSync
 } from './hooks';
 import {
   VideoPreview, 
   RecordingControls,
   RecordingLibraryPanel,
   RecordingPreview,
-  FloatingTeleprompter,
+  DraggableTeleprompter,
   PreRecordingDialog,
   CameraSetupDialog,
   KeyboardShortcutsHelp,
@@ -573,25 +574,14 @@ export function RecordingStudio({
     duckedVolume: 0.08,
   });
 
-  // Sync word index with NEW preloadedAudio system (must be AFTER preloadedAudio hook)
-  useEffect(() => {
-    if (preloadedAudio.isPlaying && preloadedAudio.duration > 0) {
-      // Get script content from either selected script OR audioLinkedScriptText
-      const currentScriptObj = scripts.find(s => s.id === selectedScriptId);
-      const scriptContent = isUsingEnhancedScript && currentScriptObj?.enhancedContent 
-        ? currentScriptObj.enhancedContent 
-        : (currentScriptObj?.content || audioLinkedScriptText);
-      
-      if (scriptContent) {
-        const newIndex = calculateWordIndex(
-          preloadedAudio.currentTime,
-          preloadedAudio.duration,
-          scriptContent
-        );
-        setCurrentWordIndex(newIndex);
-      }
+  // Get current script content for teleprompter (moved before recording for memoization)
+  const teleprompterScriptContent = React.useMemo(() => {
+    const currentScriptObj = scripts.find(s => s.id === selectedScriptId);
+    if (isUsingEnhancedScript && currentScriptObj?.enhancedContent) {
+      return currentScriptObj.enhancedContent;
     }
-  }, [preloadedAudio.isPlaying, preloadedAudio.currentTime, preloadedAudio.duration, scripts, selectedScriptId, audioLinkedScriptText, isUsingEnhancedScript, calculateWordIndex]);
+    return currentScriptObj?.content || audioLinkedScriptText || null;
+  }, [scripts, selectedScriptId, isUsingEnhancedScript, audioLinkedScriptText]);
 
   // Create a combined stream getter that uses preloadedAudio when ready
   // This ensures the recording stream includes both video AND mixed audio
@@ -694,6 +684,23 @@ export function RecordingStudio({
       setIsAudioPlaying(false);
     }
   }, [preloadedAudio.isPlaying, preloadedAudio.currentTime, preloadedAudio.duration, recording.isRecording]);
+
+  // Use teleprompter sync hook (after recording is defined)
+  const teleprompterSyncState = useTeleprompterSync({
+    scriptContent: teleprompterScriptContent,
+    audioCurrentTime: preloadedAudio.currentTime,
+    audioDuration: preloadedAudio.duration,
+    isAudioPlaying: preloadedAudio.isPlaying,
+    isRecording: recording.isRecording,
+    isPaused: recording.isPaused,
+  });
+
+  // Sync currentWordIndex from teleprompterSyncState
+  useEffect(() => {
+    if (teleprompterSyncState.currentWordIndex !== currentWordIndex) {
+      setCurrentWordIndex(teleprompterSyncState.currentWordIndex);
+    }
+  }, [teleprompterSyncState.currentWordIndex, currentWordIndex]);
 
   // Note: currentScript, currentVoiceover, currentMusic defined above after hooks
 
@@ -1642,7 +1649,7 @@ export function RecordingStudio({
           <div className="flex items-center gap-2">
             {/* Teleprompter Button - works with script OR audio-linked script text */}
             {(currentScript || audioLinkedScriptText) && (
-              <FloatingTeleprompter
+              <DraggableTeleprompter
                 content={
                   currentScript 
                     ? (isUsingEnhancedScript && cleanEnhancedScript ? cleanEnhancedScript : currentScript.content)
@@ -1653,16 +1660,18 @@ export function RecordingStudio({
                     ? (currentScript.title + (isUsingEnhancedScript ? ' (Enhanced)' : ''))
                     : (currentTTSFile?.name || currentVoiceover?.name || 'Audio Script')
                 }
+                currentWordIndex={currentWordIndex}
+                totalWords={teleprompterSyncState.totalWords}
+                progress={teleprompterSyncState.progress}
                 isRecording={recording.isRecording}
-                scrollSpeed={teleprompter.scrollSpeed}
+                isPaused={recording.isPaused}
                 isOpen={teleprompterOpen}
                 onClose={() => {
                   setTeleprompterOpen(false);
-                  // Stop audio when teleprompter is closed (user explicitly closes it)
-                  audioPlayback.stopAll();
+                  // Stop audio when teleprompter is closed
+                  preloadedAudio.stopPlayback();
                 }}
-                currentWordIndex={currentWordIndex}
-                audioProgress={audioDuration > 0 ? audioCurrentTime / audioDuration : 0}
+                onOpen={() => setTeleprompterOpen(true)}
               />
             )}
             

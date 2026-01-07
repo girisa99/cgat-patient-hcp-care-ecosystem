@@ -12,6 +12,7 @@ export { RecordingPreview } from './RecordingPreview';
 export type { SaveOptions } from './RecordingPreview';
 export { AudioAnalyzer } from './AudioAnalyzer';
 export { FloatingTeleprompter } from './FloatingTeleprompter';
+export { DraggableTeleprompter } from './DraggableTeleprompter';
 export { SidePanel, SectionIcons } from './SidePanel';
 export { PreRecordingDialog } from './PreRecordingDialog';
 export { CameraSetupDialog } from './CameraSetupDialog';
