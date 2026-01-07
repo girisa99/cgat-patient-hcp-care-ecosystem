@@ -1,9 +1,8 @@
 /**
  * Recording Hook - Handles MediaRecorder and recording state
- * Uses AudioMixer for dynamic audio capture during recording.
+ * SIMPLIFIED: Audio is now handled by usePreloadedAudioRecorder (audio-first approach)
  * 
- * Key improvements:
- * - Audio can be started/stopped/replayed during recording without losing session
+ * Key features:
  * - IndexedDB persistence for long recordings (survives tab/browser issues)
  * - Stream health monitoring with automatic recovery warnings
  * - Visibility change handling (tab switching protection)
@@ -13,7 +12,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import type { RecordingState } from '../types';
-import { useRecordingAudioMixer } from './useRecordingAudioMixer';
 import { useRecordingPersistence } from './useRecordingPersistence';
 
 // Constants for configuration
@@ -25,16 +23,9 @@ const RECORDING_QUALITY = {
 } as const;
 
 const CHUNK_INTERVAL_MS = 1000;
-const STOP_DELAY_MS = 250;
 const RECOVERY_TOAST_DURATION_MS = 10000;
 const ERROR_TOAST_DURATION_MS = 5000;
 const STREAM_ERROR_TOAST_DURATION_MS = 8000;
-
-interface AudioElements {
-  voiceover?: HTMLAudioElement | null;
-  tts?: HTMLAudioElement | null;
-  music?: HTMLAudioElement | null;
-}
 
 type RecordingQualityLevel = 'low' | 'medium' | 'high' | 'ultra';
 
@@ -97,34 +88,8 @@ export function useRecording(
     getStreamRef.current = getStream;
   }, [getStream]);
   
-  // Use the audio mixer for dynamic audio capture
-  const audioMixer = useRecordingAudioMixer();
-  
   // Recording persistence for long recordings
   const persistence = useRecordingPersistence();
-
-  /**
-   * Pre-connect audio elements BEFORE recording starts
-   * Call this when user clicks record, before countdown begins
-   * This ensures audio is already captured when MediaRecorder starts
-   */
-  const preConnectAudio = useCallback((audioElements: {
-    tts?: HTMLAudioElement | null;
-    voiceover?: HTMLAudioElement | null;
-    music?: HTMLAudioElement | null;
-  }) => {
-    console.log('[Recording] Pre-connecting audio elements before countdown');
-    return audioMixer.preConnect(audioElements);
-  }, [audioMixer]);
-
-  /**
-   * Connect audio element to recording (can be called anytime during recording)
-   */
-  const connectAudio = useCallback((audio: HTMLAudioElement | null, type: 'tts' | 'voiceover' | 'music') => {
-    if (audio) {
-      audioMixer.connectAudioElement(audio, type);
-    }
-  }, [audioMixer]);
 
   const startCountdown = useCallback((onComplete: () => void) => {
     isCancelledRef.current = false;
@@ -208,12 +173,11 @@ export function useRecording(
         recordedChunks: [],
       });
       
-      audioMixer.cleanup();
       persistence.stopMonitoring();
       
       toast.info('Recording cancelled');
     }
-  }, [state.isRecording, audioMixer, persistence]);
+  }, [state.isRecording, persistence]);
 
   // Track if we've already shown recovery toast
   const recoveryToastShownRef = useRef(false);
@@ -366,24 +330,9 @@ export function useRecording(
           }
         }
         
-        // Initialize audio mixer with microphone
-        const mixedAudioStream = audioMixer.initialize(currentStream);
-        
-        // Create combined stream with video + mixed audio
-        const videoTracksForRecording = currentStream.getVideoTracks();
-        let recordingStream: MediaStream;
-        
-        if (mixedAudioStream) {
-          recordingStream = new MediaStream([
-            ...videoTracksForRecording,
-            ...mixedAudioStream.getAudioTracks(),
-          ]);
-          console.log('[Recording] Created stream with dynamic audio mixer');
-        } else {
-          recordingStream = currentStream;
-          console.log('[Recording] Using original stream (no mixer)');
-        }
-        
+        // SIMPLIFIED: Use the stream directly - audio is handled by usePreloadedAudioRecorder
+        // No more audioMixer.initialize() needed
+        const recordingStream = currentStream;
         combinedStreamRef.current = recordingStream;
         
         const videoBitsPerSecond = RECORDING_QUALITY[quality] || RECORDING_QUALITY.high;
@@ -514,7 +463,7 @@ export function useRecording(
             persistence.resetSession();
           }
           
-          audioMixer.cleanup();
+          // SIMPLIFIED: No audioMixer cleanup needed - handled by usePreloadedAudioRecorder
         };
 
         // Set state FIRST before starting recorder and timer
@@ -588,11 +537,10 @@ export function useRecording(
         onRecordingStarted?.();
       } catch (err) {
         console.error('[Recording] Failed to start:', err);
-        audioMixer.cleanup();
         persistence.stopMonitoring();
       }
     });
-  }, [state.isRecording, startCountdown, onRecordingComplete, onRecordingStarted, quality, audioMixer, enablePersistence, persistence, handleStreamHealthIssue, maxDuration, onMaxDurationReached]);
+  }, [state.isRecording, startCountdown, onRecordingComplete, onRecordingStarted, quality, enablePersistence, persistence, handleStreamHealthIssue, maxDuration, onMaxDurationReached]);
 
   const pauseRecording = useCallback(() => {
     if (!mediaRecorderRef.current || !state.isRecording) return;
@@ -755,10 +703,9 @@ export function useRecording(
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
-      audioMixer.cleanup();
       persistence.stopMonitoring();
     };
-  }, [audioMixer, persistence]);
+  }, [persistence]);
 
   // Recover a specific session
   const recoverSession = useCallback(async (sessionId: string): Promise<Blob | null> => {
@@ -802,8 +749,6 @@ export function useRecording(
     cancelRecording,
     trimLastSeconds,
     getCurrentBlob,
-    preConnectAudio,
-    connectAudio,
     recoverSession,
     clearRecovery,
   };

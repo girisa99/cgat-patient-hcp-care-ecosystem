@@ -6,7 +6,7 @@ export { useCamera } from './useCamera';
 export { useRecording } from './useRecording';
 export { useRecordingStream } from './useRecordingStream';
 export type { RecordingMode as StreamRecordingMode, PipConfig, PipPosition, PipSize } from './useRecordingStream';
-export { useRecordingAudioMixer } from './useRecordingAudioMixer';
+// useRecordingAudioMixer removed - replaced by usePreloadedAudioRecorder
 export { useRecordingPersistence } from './useRecordingPersistence';
 export { usePreloadedAudioRecorder } from './usePreloadedAudioRecorder';
 export { useAudioPlayback } from './useAudioPlayback';
