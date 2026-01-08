@@ -2084,32 +2084,32 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
 
   // Download as PDF - captures exact visual appearance of all slides
   const downloadPDF = async () => {
-    const slideContainer = document.querySelector('[data-slide-content]');
-    if (!slideContainer) {
-      toast.error('Could not find slide content');
-      return;
-    }
-
     toast.info('📄 Generating PDF with all slides...', {
-      description: 'This captures the exact visual appearance'
+      description: 'Please wait while we capture each slide'
     });
 
     try {
       const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'px',
-        format: [1920, 1080]
+        format: [1280, 720]
       });
 
       const originalSlide = currentSlide;
+      const wasAutoplay = isAutoplay;
+      setIsAutoplay(false); // Pause autoplay during capture
 
       for (let i = 0; i < documentProcessingSlides.length; i++) {
         setCurrentSlide(i);
-        // Wait for animation and render
-        await new Promise(resolve => setTimeout(resolve, 300));
+        // Wait longer for animation to complete and content to render
+        await new Promise(resolve => setTimeout(resolve, 800));
 
-        const slideElement = document.querySelector('[data-slide-content]') as HTMLElement;
-        if (!slideElement) continue;
+        // Target the inner slide content, not the animated container
+        const slideElement = document.querySelector('[data-slide-inner]') as HTMLElement;
+        if (!slideElement) {
+          console.warn(`Could not find slide content for slide ${i + 1}`);
+          continue;
+        }
 
         const canvas = await html2canvas(slideElement, {
           scale: 2,
@@ -2117,25 +2117,36 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
           allowTaint: true,
           backgroundColor: '#0f172a',
           logging: false,
-          width: slideElement.offsetWidth,
-          height: slideElement.offsetHeight
+          windowWidth: 1280,
+          windowHeight: 720,
+          onclone: (clonedDoc) => {
+            // Ensure all text is visible in cloned document
+            const clonedElement = clonedDoc.querySelector('[data-slide-inner]') as HTMLElement;
+            if (clonedElement) {
+              clonedElement.style.transform = 'none';
+              clonedElement.style.opacity = '1';
+            }
+          }
         });
 
         const imgData = canvas.toDataURL('image/png');
         
         if (i > 0) {
-          pdf.addPage([1920, 1080], 'landscape');
+          pdf.addPage([1280, 720], 'landscape');
         }
         
-        pdf.addImage(imgData, 'PNG', 0, 0, 1920, 1080);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       }
 
-      // Restore original slide
+      // Restore original state
       setCurrentSlide(originalSlide);
+      if (wasAutoplay) setIsAutoplay(true);
 
       pdf.save('document-processing-presentation.pdf');
       toast.success('✅ PDF downloaded!', {
-        description: `${documentProcessingSlides.length} slides with exact visual formatting`
+        description: `${documentProcessingSlides.length} slides saved`
       });
     } catch (error) {
       console.error('PDF generation error:', error);
@@ -2145,15 +2156,12 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
 
   // Download as PNG images - captures exact visual of current slide or all slides
   const downloadAsImages = async (allSlides: boolean = false) => {
-    const slideContainer = document.querySelector('[data-slide-content]');
-    if (!slideContainer) {
-      toast.error('Could not find slide content');
-      return;
-    }
+    const wasAutoplay = isAutoplay;
+    setIsAutoplay(false); // Pause autoplay during capture
 
     if (allSlides) {
       toast.info('🖼️ Generating images for all slides...', {
-        description: 'This may take a moment'
+        description: 'Please wait while we capture each slide'
       });
 
       try {
@@ -2161,17 +2169,28 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
 
         for (let i = 0; i < documentProcessingSlides.length; i++) {
           setCurrentSlide(i);
-          await new Promise(resolve => setTimeout(resolve, 300));
+          // Wait longer for animation to complete
+          await new Promise(resolve => setTimeout(resolve, 800));
 
-          const slideElement = document.querySelector('[data-slide-content]') as HTMLElement;
-          if (!slideElement) continue;
+          const slideElement = document.querySelector('[data-slide-inner]') as HTMLElement;
+          if (!slideElement) {
+            console.warn(`Could not find slide content for slide ${i + 1}`);
+            continue;
+          }
 
           const canvas = await html2canvas(slideElement, {
             scale: 2,
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#0f172a',
-            logging: false
+            logging: false,
+            onclone: (clonedDoc) => {
+              const clonedElement = clonedDoc.querySelector('[data-slide-inner]') as HTMLElement;
+              if (clonedElement) {
+                clonedElement.style.transform = 'none';
+                clonedElement.style.opacity = '1';
+              }
+            }
           });
 
           const link = document.createElement('a');
@@ -2180,10 +2199,12 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
           link.click();
 
           // Small delay between downloads
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise(resolve => setTimeout(resolve, 200));
         }
 
         setCurrentSlide(originalSlide);
+        if (wasAutoplay) setIsAutoplay(true);
+        
         toast.success('✅ All slides downloaded as PNG!', {
           description: `${documentProcessingSlides.length} images saved`
         });
@@ -2196,9 +2217,13 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
       toast.info('🖼️ Capturing current slide...');
 
       try {
-        const slideElement = document.querySelector('[data-slide-content]') as HTMLElement;
+        // Wait for any ongoing animations
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const slideElement = document.querySelector('[data-slide-inner]') as HTMLElement;
         if (!slideElement) {
           toast.error('Could not find slide content');
+          if (wasAutoplay) setIsAutoplay(true);
           return;
         }
 
@@ -2207,7 +2232,14 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
           useCORS: true,
           allowTaint: true,
           backgroundColor: '#0f172a',
-          logging: false
+          logging: false,
+          onclone: (clonedDoc) => {
+            const clonedElement = clonedDoc.querySelector('[data-slide-inner]') as HTMLElement;
+            if (clonedElement) {
+              clonedElement.style.transform = 'none';
+              clonedElement.style.opacity = '1';
+            }
+          }
         });
 
         const link = document.createElement('a');
@@ -2215,6 +2247,7 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
         link.href = canvas.toDataURL('image/png');
         link.click();
 
+        if (wasAutoplay) setIsAutoplay(true);
         toast.success('✅ Slide saved as PNG!', {
           description: documentProcessingSlides[currentSlide].title
         });
@@ -2517,19 +2550,25 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
             }}
             className="absolute inset-0 p-5 overflow-y-auto"
           >
-            <div className="text-center mb-3">
-              <h2 className="text-xl font-bold text-white mb-1">
-                {currentSlideData.title}
-              </h2>
-              {currentSlideData.subtitle && (
-                <p className="text-sm text-slate-400">
-                  {currentSlideData.subtitle}
-                </p>
-              )}
-            </div>
-            
-            <div className="max-w-6xl mx-auto">
-              {currentSlideData.content}
+            {/* Inner content wrapper for screen capture - this stays static */}
+            <div 
+              data-slide-inner 
+              className="min-h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 rounded-lg"
+            >
+              <div className="text-center mb-3">
+                <h2 className="text-xl font-bold text-white mb-1">
+                  {currentSlideData.title}
+                </h2>
+                {currentSlideData.subtitle && (
+                  <p className="text-sm text-slate-400">
+                    {currentSlideData.subtitle}
+                  </p>
+                )}
+              </div>
+              
+              <div className="max-w-6xl mx-auto">
+                {currentSlideData.content}
+              </div>
             </div>
           </motion.div>
         </AnimatePresence>
