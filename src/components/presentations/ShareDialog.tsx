@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { 
   Linkedin, Twitter, Copy, ExternalLink, 
-  Check, Mail, QrCode, Share2
+  Check, Mail, QrCode, Share2, ClipboardCopy
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -36,10 +36,15 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
   const [copied, setCopied] = useState(false);
   const [postContent, setPostContent] = useState(
     presentation.linkedin_post_template || 
-    `🚀 Check out this presentation: ${presentation.name}\n\n${presentation.description || ''}\n\n#Presentation #AI`
+    `🚀 Check out this presentation: ${presentation.name}\n\n${presentation.description || ''}\n\n#Presentation #AI #Healthcare`
   );
 
-  const publicUrl = `${window.location.origin}/public/presentation/${presentation.slug}`;
+  // Use production URL for sharing
+  const productionDomain = 'https://genieaiexpermentationhub.com';
+  const publicUrl = `${productionDomain}/public/presentation/${presentation.slug}`;
+  
+  // Static share page URL for proper OG tag support
+  const sharePageUrl = `${productionDomain}/share/${presentation.slug}.html`;
 
   const copyLink = async () => {
     try {
@@ -52,18 +57,35 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
     }
   };
 
-  const shareToLinkedIn = () => {
-    // LinkedIn Share Dialog - opens with URL pre-filled
-    // LinkedIn will fetch OG tags from the public URL
-    // Note: For proper OG tag support, the URL needs server-side rendering
-    const shareUrl = encodeURIComponent(publicUrl);
-    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`, '_blank', 'width=600,height=600');
-    trackShare('linkedin');
+  const copyFullPost = async () => {
+    try {
+      const fullPost = `${postContent}\n\n🔗 ${publicUrl}`;
+      await navigator.clipboard.writeText(fullPost);
+      toast.success('Post content + URL copied! Paste it in LinkedIn.');
+    } catch (err) {
+      toast.error('Failed to copy');
+    }
+  };
+
+  const shareToLinkedIn = async () => {
+    // First copy the post content to clipboard
+    const fullPost = `${postContent}\n\n🔗 ${publicUrl}`;
     
-    // Also copy the post content to clipboard so user can paste it
-    navigator.clipboard.writeText(`${postContent}\n\n${publicUrl}`).then(() => {
-      toast.success('LinkedIn opened! Post content copied to clipboard - paste it in LinkedIn.');
-    });
+    try {
+      await navigator.clipboard.writeText(fullPost);
+      toast.success('✅ Post copied to clipboard! Paste it in LinkedIn.', {
+        duration: 5000,
+        description: 'The post content has been copied. Just paste (Ctrl+V) in the LinkedIn composer.'
+      });
+    } catch (err) {
+      console.error('Clipboard error:', err);
+    }
+
+    // Open LinkedIn share dialog with the static share page URL (has proper OG tags)
+    const linkedInShareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(sharePageUrl)}`;
+    window.open(linkedInShareUrl, '_blank', 'width=600,height=600');
+    
+    trackShare('linkedin');
   };
 
   const shareToTwitter = () => {
@@ -122,12 +144,60 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="link" className="w-full">
+        <Tabs defaultValue="linkedin" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="linkedin">LinkedIn</TabsTrigger>
             <TabsTrigger value="link">Link</TabsTrigger>
-            <TabsTrigger value="social">Social</TabsTrigger>
-            <TabsTrigger value="manual">Manual</TabsTrigger>
+            <TabsTrigger value="other">Other</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="linkedin" className="space-y-4">
+            <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+              <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-1">How LinkedIn Sharing Works:</h4>
+              <ol className="text-sm text-blue-700 dark:text-blue-300 list-decimal list-inside space-y-1">
+                <li>Click "Share on LinkedIn" below</li>
+                <li>Your post content is copied to clipboard</li>
+                <li>LinkedIn opens → <strong>Paste (Ctrl+V)</strong> your content</li>
+                <li>LinkedIn will show the preview card with image</li>
+              </ol>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Your LinkedIn Post</Label>
+              <Textarea
+                value={postContent}
+                onChange={(e) => setPostContent(e.target.value)}
+                rows={5}
+                placeholder="Write your post content..."
+                className="resize-none"
+              />
+              <p className="text-xs text-muted-foreground">
+                {postContent.length}/3000 characters
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <Button 
+                onClick={shareToLinkedIn}
+                className="flex-1 gap-2 bg-[#0A66C2] hover:bg-[#004182]"
+              >
+                <Linkedin className="w-4 h-4" />
+                Share on LinkedIn
+              </Button>
+              <Button
+                onClick={copyFullPost}
+                variant="outline"
+                className="gap-2"
+              >
+                <ClipboardCopy className="w-4 h-4" />
+                Copy Post
+              </Button>
+            </div>
+
+            <div className="text-center text-xs text-muted-foreground">
+              The preview image will appear after you paste the link
+            </div>
+          </TabsContent>
 
           <TabsContent value="link" className="space-y-4">
             <div className="space-y-2">
@@ -169,29 +239,8 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
             </Button>
           </TabsContent>
 
-          <TabsContent value="social" className="space-y-4">
-            <div className="space-y-2">
-              <Label>Post Content</Label>
-              <Textarea
-                value={postContent}
-                onChange={(e) => setPostContent(e.target.value)}
-                rows={4}
-                placeholder="Write your post content..."
-              />
-              <p className="text-xs text-muted-foreground">
-                {postContent.length}/3000 characters
-              </p>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <Button 
-                onClick={shareToLinkedIn}
-                className="gap-2 bg-[#0A66C2] hover:bg-[#004182]"
-              >
-                <Linkedin className="w-4 h-4" />
-                LinkedIn
-              </Button>
-              
+          <TabsContent value="other" className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
               <Button 
                 onClick={shareToTwitter}
                 variant="outline"
@@ -211,26 +260,19 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
               </Button>
             </div>
 
-            <p className="text-xs text-muted-foreground text-center">
-              These buttons open share dialogs - no app registration required!
-            </p>
-          </TabsContent>
-
-          <TabsContent value="manual" className="space-y-4">
             <div className="space-y-3">
               <div className="p-4 bg-muted/50 rounded-lg">
                 <h4 className="font-medium mb-2">Manual Sharing Steps:</h4>
                 <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-                  <li>Copy the link above</li>
-                  <li>Go to LinkedIn/Twitter/etc.</li>
-                  <li>Create a new post</li>
-                  <li>Paste your content and link</li>
-                  <li>The OG image will be fetched automatically</li>
+                  <li>Copy the post content below</li>
+                  <li>Go to your preferred social platform</li>
+                  <li>Create a new post and paste</li>
+                  <li>The link preview will load automatically</li>
                 </ol>
               </div>
 
               <div className="space-y-2">
-                <Label>Copy Post Content</Label>
+                <Label>Copy Full Post</Label>
                 <div className="relative">
                   <Textarea
                     value={`${postContent}\n\n🔗 ${publicUrl}`}
@@ -242,10 +284,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                     size="sm"
                     variant="ghost"
                     className="absolute top-2 right-2"
-                    onClick={async () => {
-                      await navigator.clipboard.writeText(`${postContent}\n\n🔗 ${publicUrl}`);
-                      toast.success('Content copied!');
-                    }}
+                    onClick={copyFullPost}
                   >
                     <Copy className="w-4 h-4" />
                   </Button>
