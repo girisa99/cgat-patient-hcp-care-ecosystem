@@ -81,10 +81,12 @@ export const PRESENTATION_SHARE_CONFIGS: Record<string, PresentationShareConfig>
 };
 
 /**
- * Get the full share URL for a presentation (edge function URL)
+ * Get the full share URL for a presentation (static HTML page with OG tags)
+ * This is the URL that should be shared on social media to get proper previews
  */
 export const getShareUrl = (presentationId: string, baseUrl: string = 'https://genieaiexpermentationhub.com'): string => {
-  return `${baseUrl}/api/share/${presentationId}`;
+  // Use static HTML share page which has OG meta tags for social previews
+  return `${baseUrl}/share/${presentationId}.html`;
 };
 
 /**
