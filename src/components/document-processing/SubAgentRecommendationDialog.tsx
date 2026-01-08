@@ -1063,7 +1063,7 @@ export default function SubAgentRecommendationDialog({
     'efficacy-analysis': ['medication', 'diagnosis', 'condition', 'sig'],
     'safety-profile': ['medication', 'medication_name', 'dose', 'frequency', 'patient_allergies', 'allergies'],
     'dosage-validation': ['medication', 'dose', 'route', 'frequency', 'strength', 'sig'],
-    'drug-interaction': ['medication', 'medication_name', 'current_medications', 'allergies'],
+    'drug-interaction': ['medication', 'medication_name', 'current_medications', 'all_medications', 'medication_list', 'allergies'],
     'clinical-review': ['medication', 'sig', 'dose', 'route', 'frequency', 'duration', 'diagnosis', 'patient_name'],
     'cost-analysis': ['medication', 'medication_name', 'strength', 'quantity', 'days_supply'],
     // Insurance agents
@@ -1275,17 +1275,62 @@ export default function SubAgentRecommendationDialog({
       }
     }
     
-    // 6. SELECTED NDC
+    // 6. MULTI-MEDICATION RESULTS (enriched data with NDC codes for ALL medications)
+    // This provides complete medication data for drug-drug interaction analysis
+    if (extractedData?.multiMedicationResults && Object.keys(extractedData.multiMedicationResults).length > 0) {
+      const multiMedResults = extractedData.multiMedicationResults;
+      const multiMedArray = Object.entries(multiMedResults).map(([name, result]: [string, any]) => ({
+        name: result.drugName || name,
+        genericName: result.genericName,
+        strength: result.strength,
+        sig: result.sig,
+        ndc: result.ndc,
+        ndcOptions: result.ndcOptions,
+        isControlled: result.isControlled,
+        schedule: result.schedule,
+        calculatedQuantity: result.calculatedQuantity,
+        daysSupply: result.daysSupply
+      }));
+      
+      console.log('[SubAgentDialog] Multi-medication results available:', multiMedArray.length, 'medications');
+      
+      // Store complete multi-medication data for agents that need drug-drug interactions
+      enhancedFields.all_medications = { value: multiMedArray, confidence: 0.95 };
+      enhancedFields.medication_count = { value: multiMedArray.length, confidence: 1.0 };
+      
+      // Build medication names list for drug interaction checks
+      const medicationNames = multiMedArray.map(m => m.name).filter(Boolean);
+      if (medicationNames.length > 0) {
+        enhancedFields.medication_list = { value: medicationNames.join(', '), confidence: 0.95 };
+        enhancedFields.current_medications = { value: medicationNames.join(', '), confidence: 0.95 };
+      }
+      
+      // Set primary medication from multi-med if not already set
+      if (!enhancedFields.medication?.value && multiMedArray[0]?.name) {
+        enhancedFields.medication = { value: multiMedArray[0].name, confidence: 0.95 };
+        enhancedFields.medication_name = { value: multiMedArray[0].name, confidence: 0.95 };
+      }
+      
+      // Set NDC from selected NDCs if available
+      if (extractedData?.multiSelectedNdcs) {
+        const firstMedName = Object.keys(extractedData.multiSelectedNdcs)[0];
+        if (firstMedName && !enhancedFields.ndc?.value) {
+          enhancedFields.ndc = { value: extractedData.multiSelectedNdcs[firstMedName], confidence: 0.95 };
+        }
+      }
+    }
+    
+    // 7. SELECTED NDC
     if (extractedData?.selectedNdc && !enhancedFields.ndc?.value) {
       enhancedFields.ndc = { value: extractedData.selectedNdc, confidence: 0.95 };
     }
     
-    // 7. SIG INSTRUCTIONS
+    // 8. SIG INSTRUCTIONS
     if (extractedData?.sigInstructions && !enhancedFields.sig?.value) {
       enhancedFields.sig = { value: extractedData.sigInstructions, confidence: 0.9 };
     }
     
-    // 8. Build combined SIG if we have selector values but no SIG
+    // 9. Build combined SIG if we have selector values but no SIG
     if (!enhancedFields.sig?.value && enhancedFields.dose?.value && enhancedFields.route?.value && enhancedFields.frequency?.value) {
       const combinedSig = `Take ${enhancedFields.dose.value} ${enhancedFields.route.value} ${enhancedFields.frequency.value}${enhancedFields.duration?.value ? ` for ${enhancedFields.duration.value}` : ''}`;
       enhancedFields.sig = { value: combinedSig, confidence: 0.85 };

@@ -546,8 +546,9 @@ export default function MedicationTab({
         />
       )}
       
-      {/* Multi-Medication Results Section - When we have multiple medications with lookup results */}
-      {processingResult?.medications && processingResult.medications.length > 1 && Object.keys(multiMedicationResults).length > 0 && (
+      {/* Multi-Medication Results Section - Show when we have multiple medications with lookup results */}
+      {/* Trigger condition: Either processingResult has multiple medications OR multiMedicationResults has multiple entries */}
+      {Object.keys(multiMedicationResults).length > 1 && (
         <Card className="border-primary/30">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">

@@ -3588,6 +3588,9 @@ export default function DocumentProcessing() {
             selectedFrequency,
             selectedDuration,
             ndcDosageInfo,
+            // Multi-medication results - ALL medications from prescription
+            multiMedicationResults,
+            multiSelectedNdcs,
             // Medical imaging states
             medicalImageBase64,
             medicalImageMimeType,
