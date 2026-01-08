@@ -1019,9 +1019,9 @@ export default function SubAgentRecommendationDialog({
       return processingMeds;
     }
     
-    // Fallback: Build from numbered medication fields (medication_1_name, medication_2_name, etc.)
+    // Fallback: Build from numbered medication fields (medication_1_name, medication_1_medication_name, etc.)
     const baseExtractedFields = extractedData?.processingResult?.extractedFields || extractedData?.extractedFields || {};
-    const medicationPattern = /^medication_(\d+)_(\w+)$/;
+    const medicationPattern = /^medication_(\d+)_(.+)$/;
     const medicationsByIndex: Record<string, Record<string, any>> = {};
     
     Object.entries(baseExtractedFields).forEach(([key, field]: [string, any]) => {
@@ -1031,7 +1031,9 @@ export default function SubAgentRecommendationDialog({
         if (!medicationsByIndex[index]) {
           medicationsByIndex[index] = {};
         }
-        medicationsByIndex[index][property] = typeof field === 'object' ? field.value : field;
+        // Normalize property name: medication_name → name, keep others as-is
+        const normalizedProperty = property.replace(/^medication_/, '');
+        medicationsByIndex[index][normalizedProperty] = typeof field === 'object' ? field.value : field;
       }
     });
     

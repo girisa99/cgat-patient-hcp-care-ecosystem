@@ -209,9 +209,9 @@ export default function MedicationTab({
       return processingResult.medications;
     }
     
-    // Fallback: Build from numbered medication fields (medication_1_name, medication_2_name, etc.)
+    // Fallback: Build from numbered medication fields (medication_1_name, medication_1_medication_name, etc.)
     const extractedFields = processingResult?.extractedFields || {};
-    const medicationPattern = /^medication_(\d+)_(\w+)$/;
+    const medicationPattern = /^medication_(\d+)_(.+)$/;
     const medicationsByIndex: Record<string, Record<string, any>> = {};
     
     Object.entries(extractedFields).forEach(([key, field]: [string, any]) => {
@@ -221,7 +221,9 @@ export default function MedicationTab({
         if (!medicationsByIndex[index]) {
           medicationsByIndex[index] = {};
         }
-        medicationsByIndex[index][property] = typeof field === 'object' ? field.value : field;
+        // Normalize property name: medication_name → name, keep others as-is
+        const normalizedProperty = property.replace(/^medication_/, '');
+        medicationsByIndex[index][normalizedProperty] = typeof field === 'object' ? field.value : field;
       }
     });
     
