@@ -1167,13 +1167,22 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
               'confidence', 'detected_document_type', 'document_category', 'medications'
             ]);
             
-            // Skip ALL medication numbered fields - they'll be created from the medications array
+            // Skip ALL medication fields - they'll be created from the medications array
             // Pattern matches all variations:
-            // - medication_1_name, medication_1_medication_name
-            // - medication1_name, medication1_medication_name  
-            // - medication_1name, medication1name
-            // - medication_count (standalone field)
-            const medicationFieldPattern = /^medication[_\s]?\d+|^medication_count$/i;
+            // - medication_1_name, medication_1_medication_name, medication1_name
+            // - medication_count, medication_name, medication_name_type
+            // - strength, strength_numeric, strength_unit, dosage_form, route
+            // - sig_raw, sig_translation, sig_parsed, quantity, refills, days_supply
+            // - is_controlled, ndc, etc.
+            const medicationFieldPattern = /^medication[_\s]?\d+|^medication_count$|^medication_name|^medication_name_type$/i;
+            
+            // Also skip standalone prescription fields that duplicate medication array data
+            const prescriptionDuplicateFields = new Set([
+              'strength', 'strength_numeric', 'strength_unit', 
+              'dosage_form', 'route', 'sig_raw', 'sig_translation', 'sig_parsed',
+              'quantity', 'quantity_unit', 'refills', 'days_supply', 
+              'is_controlled', 'ndc', 'daw', 'substitution_allowed'
+            ]);
             
             if (extracted.fields) {
               for (const [key, value] of Object.entries(extracted.fields)) {
@@ -1187,6 +1196,14 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
                 // This prevents duplicates like "Medication 1 Medication Name" AND "Medication 1 Name"
                 if (medicationFieldPattern.test(key)) {
                   console.log(`[Extraction] Skipping medication field in generic loop (will be handled from array): ${key}`);
+                  continue;
+                }
+                
+                // Skip standalone prescription fields that duplicate medication array data
+                // Only skip if we actually have medications array
+                const hasMedications = extracted.medications || extracted.fields?.medications;
+                if (hasMedications && prescriptionDuplicateFields.has(key)) {
+                  console.log(`[Extraction] Skipping duplicate prescription field (already in medications array): ${key}`);
                   continue;
                 }
                 
