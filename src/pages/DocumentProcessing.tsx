@@ -2659,16 +2659,45 @@ export default function DocumentProcessing() {
         savedAt: new Date().toISOString()
       };
       
+      // First fetch the current processing_config from database
+      const { data: currentRecord, error: fetchError } = await supabase
+        .from('document_processing_jobs')
+        .select('processing_config')
+        .eq('id', processingResult.id)
+        .single();
+      
+      if (fetchError) {
+        console.error('Failed to fetch current record:', fetchError);
+        throw new Error('Could not fetch current document data');
+      }
+      
+      // Parse existing config if it's a string, or use as-is if object
+      let existingConfig: Record<string, any> = {};
+      if (currentRecord?.processing_config) {
+        if (typeof currentRecord.processing_config === 'string') {
+          try {
+            existingConfig = JSON.parse(currentRecord.processing_config);
+          } catch {
+            existingConfig = {};
+          }
+        } else {
+          existingConfig = currentRecord.processing_config as Record<string, any>;
+        }
+      }
+      
+      // Merge with new medication data
+      const updatedConfig = {
+        ...existingConfig,
+        medications: [medicationData],
+        medicationLookupData: medicationData,
+        agentFindings: agentFindings.length > 0 ? agentFindings : null
+      };
+      
       // Update the document_processing_jobs record with medication data
       const { error: updateError } = await supabase
         .from('document_processing_jobs')
         .update({
-          processing_config: {
-            ...((processingResult as any).processing_config || {}),
-            medications: [medicationData],
-            medicationLookupData: medicationData,
-            agentFindings: agentFindings.length > 0 ? JSON.stringify(agentFindings) : null
-          },
+          processing_config: updatedConfig,
           agent_findings: agentFindings.length > 0 ? JSON.stringify(agentFindings) : null,
           agent_execution_status: agentFindings.length > 0 ? 'completed' : 'none',
           updated_at: new Date().toISOString()
@@ -2676,6 +2705,7 @@ export default function DocumentProcessing() {
         .eq('id', processingResult.id);
       
       if (updateError) {
+        console.error('Database update error:', updateError);
         throw updateError;
       }
       
