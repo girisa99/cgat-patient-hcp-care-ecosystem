@@ -53,13 +53,17 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
   };
 
   const shareToLinkedIn = () => {
-    // Use the OG metadata edge function URL for LinkedIn
-    // This ensures LinkedIn's crawler gets proper meta tags
-    const supabaseUrl = 'https://ithspbabhmdntioslfqe.supabase.co';
-    const ogUrl = `${supabaseUrl}/functions/v1/og-metadata?slug=${presentation.slug}`;
-    const shareUrl = encodeURIComponent(ogUrl);
+    // LinkedIn Share Dialog - opens with URL pre-filled
+    // LinkedIn will fetch OG tags from the public URL
+    // Note: For proper OG tag support, the URL needs server-side rendering
+    const shareUrl = encodeURIComponent(publicUrl);
     window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`, '_blank', 'width=600,height=600');
     trackShare('linkedin');
+    
+    // Also copy the post content to clipboard so user can paste it
+    navigator.clipboard.writeText(`${postContent}\n\n${publicUrl}`).then(() => {
+      toast.success('LinkedIn opened! Post content copied to clipboard - paste it in LinkedIn.');
+    });
   };
 
   const shareToTwitter = () => {

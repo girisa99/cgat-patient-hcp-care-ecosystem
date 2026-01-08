@@ -164,3 +164,6 @@ verify_jwt = false
 
 [functions.agent-config-manager]
 verify_jwt = false
+
+[functions.og-metadata]
+verify_jwt = false
