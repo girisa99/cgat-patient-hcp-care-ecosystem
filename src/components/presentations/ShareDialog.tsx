@@ -53,8 +53,11 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
   };
 
   const shareToLinkedIn = () => {
-    // LinkedIn Share Dialog - no app registration needed!
-    const shareUrl = encodeURIComponent(publicUrl);
+    // Use the OG metadata edge function URL for LinkedIn
+    // This ensures LinkedIn's crawler gets proper meta tags
+    const supabaseUrl = 'https://ithspbabhmdntioslfqe.supabase.co';
+    const ogUrl = `${supabaseUrl}/functions/v1/og-metadata?slug=${presentation.slug}`;
+    const shareUrl = encodeURIComponent(ogUrl);
     window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`, '_blank', 'width=600,height=600');
     trackShare('linkedin');
   };
