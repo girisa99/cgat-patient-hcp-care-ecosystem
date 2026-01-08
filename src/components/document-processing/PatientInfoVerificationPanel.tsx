@@ -371,9 +371,6 @@ export const PatientInfoVerificationPanel: React.FC<PatientInfoVerificationPanel
 
   // Get all form mapping fields (excluding internal fields)
   // Preserve original extraction order for form sequence matching
-  // Track which medication fields we've already seen to prevent duplicates
-  const seenMedicationFields = new Set<string>();
-  
   const allFields = formMapping 
     ? Object.entries(formMapping)
         .filter(([key, value]) => {
@@ -388,15 +385,11 @@ export const PatientInfoVerificationPanel: React.FC<PatientInfoVerificationPanel
           const hasValue = typeof value === 'object' && 'value' in value && value.value;
           if (!hasValue) return false;
           
-          // Deduplicate medication fields - normalize to base pattern
-          // e.g., "medication_1_name", "medication_1_medication_name" -> "medication_1_name"
-          const medMatch = key.match(/^medication[_\s]?(\d+)[_\s]?(medication_)?(.+)$/i);
-          if (medMatch) {
-            const normalizedKey = `medication_${medMatch[1]}_${medMatch[3]}`;
-            if (seenMedicationFields.has(normalizedKey)) {
-              return false; // Skip duplicate
-            }
-            seenMedicationFields.add(normalizedKey);
+          // Skip duplicate medication fields - specifically the ones with redundant "medication_" prefix
+          // e.g., skip "medication_1_medication_name" when we have "medication_1_name"
+          // Pattern: medication_X_medication_Y should be skipped
+          if (/^medication[_\s]?\d+[_\s]medication_/i.test(key)) {
+            return false;
           }
           
           return true;
