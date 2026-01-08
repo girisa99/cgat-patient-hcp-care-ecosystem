@@ -1246,9 +1246,9 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
             if (medicationsArray && Array.isArray(medicationsArray)) {
               console.log(`[Extraction] Found medications array with ${medicationsArray.length} items`);
               
-              // Store full medications array for agents
+              // Store full medications array for agents (stringify for React compatibility)
               formMapping['medications'] = {
-                value: medicationsArray,
+                value: JSON.stringify(medicationsArray),
                 confidence: extracted.confidence || 0.85,
                 source: `${providerUsed}_prescription`
               };
@@ -1330,7 +1330,7 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
               if (fieldsArray && Array.isArray(fieldsArray)) {
                 console.log(`[Extraction] Found medications in fields with ${fieldsArray.length} items`);
                 formMapping['medications'] = {
-                  value: fieldsArray,
+                  value: JSON.stringify(fieldsArray),
                   confidence: extracted.confidence || 0.85,
                   source: `${providerUsed}_prescription`
                 };
