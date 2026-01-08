@@ -1411,8 +1411,8 @@ export default function SubAgentRecommendationDialog({
       agentProviderOverrides: agentProviders,
       // Pass per-agent medication selection for multi-medication prescriptions
       agentMedicationSelection: agentMedicationSelection,
-      // Pass all medications for agents that need specific medication context (use computed list)
-      allMedications: computedMedications.length > 0 ? computedMedications : (extractedData?.processingResult?.medications || [])
+      // Pass all medications for agents that need specific medication context
+      allMedications: extractedData?.processingResult?.medications || []
     };
 
     const executedResults = await executeAgents(selectedSubAgents, documentContext);
@@ -1724,10 +1724,10 @@ export default function SubAgentRecommendationDialog({
                           </div>
                         </div>
                         
-                        {/* Per-Agent Medication Selection - Show when multiple medications detected for Rx agents */}
+                        {/* Per-Agent Medication Selection - Show when multiple medications saved for Rx agents */}
                         {(() => {
-                          // Use computedMedications which handles both processingResult.medications and numbered fields
-                          const medications = computedMedications;
+                          // Use processingResult.medications which is populated after save
+                          const medications = extractedData?.processingResult?.medications || [];
                           const isMedicationAgent = ['ndc-lookup', 'drug-alternatives', 'efficacy-analysis', 'safety-profile', 'dosage-validation', 'drug-interaction', 'clinical-review', 'cost-analysis'].includes(agent.id);
                           
                           if (medications.length > 1 && isMedicationAgent) {
