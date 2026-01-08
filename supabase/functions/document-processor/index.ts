@@ -1157,28 +1157,56 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
             // Use the configured stage2Model for source attribution (the NLP model)
             const configuredModel = routingConfig.stage2Model || routingConfig.primaryModel;
             const usedFallback = providerUsed !== configuredModel;
+            
+            // Fields to skip (internal/metadata fields not meant for display)
+            const skipFields = new Set([
+              'overall_confidence', 'requires_pharmacist_review', 'validation_flags',
+              'extraction_notes', 'processing_metadata', 'raw_response', '_metadata',
+              'confidence', 'detected_document_type', 'document_category'
+            ]);
+            
             if (extracted.fields) {
               for (const [key, value] of Object.entries(extracted.fields)) {
-                if (value !== null && value !== undefined && String(value).trim()) {
-                  formMapping[key] = {
-                    value: String(value),
-                    confidence: extracted.confidence || 0.85,
-                    // Track both configured model and actual provider used
-                    source: providerUsed, // Actual provider that succeeded
-                    configuredModel: configuredModel, // What was configured
-                    usedFallback: usedFallback, // Whether fallback was needed
-                    fallbackFrom: usedFallback ? configuredModel : undefined // Original model that failed
-                  };
-                  
-                  // Track ICD and CPT codes for crosswalk
-                  if (key === 'icd_codes' || key === 'icd_code' || key.includes('diagnosis')) {
-                    const codes = String(value).split(/[,;]/).map(c => c.trim()).filter(Boolean);
-                    icdCodesExtracted.push(...codes);
+                // Skip null, undefined, empty values
+                if (value === null || value === undefined) continue;
+                
+                // Skip internal/metadata fields
+                if (skipFields.has(key) || key.startsWith('_')) continue;
+                
+                // Handle different value types
+                let displayValue: string;
+                if (typeof value === 'object') {
+                  // For objects (like sig_parsed), stringify nicely or skip if it's just metadata
+                  if (key.endsWith('_parsed') || key.endsWith('_structured')) {
+                    // These are structured versions - skip them, use the raw/translation version
+                    continue;
                   }
-                  if (key === 'cpt_codes' || key === 'cpt_code' || key === 'procedure_code') {
-                    const codes = String(value).split(/[,;]/).map(c => c.trim()).filter(Boolean);
-                    cptCodesExtracted.push(...codes);
-                  }
+                  displayValue = JSON.stringify(value);
+                } else {
+                  displayValue = String(value);
+                }
+                
+                // Skip empty strings
+                if (!displayValue.trim() || displayValue === '{}' || displayValue === '[]') continue;
+                
+                formMapping[key] = {
+                  value: displayValue,
+                  confidence: extracted.confidence || 0.85,
+                  // Track both configured model and actual provider used
+                  source: providerUsed, // Actual provider that succeeded
+                  configuredModel: configuredModel, // What was configured
+                  usedFallback: usedFallback, // Whether fallback was needed
+                  fallbackFrom: usedFallback ? configuredModel : undefined // Original model that failed
+                };
+                
+                // Track ICD and CPT codes for crosswalk
+                if (key === 'icd_codes' || key === 'icd_code' || key.includes('diagnosis')) {
+                  const codes = displayValue.split(/[,;]/).map(c => c.trim()).filter(Boolean);
+                  icdCodesExtracted.push(...codes);
+                }
+                if (key === 'cpt_codes' || key === 'cpt_code' || key === 'procedure_code') {
+                  const codes = displayValue.split(/[,;]/).map(c => c.trim()).filter(Boolean);
+                  cptCodesExtracted.push(...codes);
                 }
               }
             }
