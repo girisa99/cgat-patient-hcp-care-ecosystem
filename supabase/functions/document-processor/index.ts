@@ -1159,11 +1159,16 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
             const usedFallback = providerUsed !== configuredModel;
             
             // Fields to skip (internal/metadata fields not meant for display)
+            // IMPORTANT: Also skip medication-related numbered fields here - they're handled 
+            // separately from the medications array to avoid duplicates
             const skipFields = new Set([
               'overall_confidence', 'requires_pharmacist_review', 'validation_flags',
               'extraction_notes', 'processing_metadata', 'raw_response', '_metadata',
-              'confidence', 'detected_document_type', 'document_category'
+              'confidence', 'detected_document_type', 'document_category', 'medications'
             ]);
+            
+            // Skip medication numbered fields - they'll be created from the medications array
+            const medicationFieldPattern = /^medication_?\d+_/i;
             
             if (extracted.fields) {
               for (const [key, value] of Object.entries(extracted.fields)) {
@@ -1172,6 +1177,13 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
                 
                 // Skip internal/metadata fields
                 if (skipFields.has(key) || key.startsWith('_')) continue;
+                
+                // Skip medication numbered fields - they're handled from medications array
+                // This prevents duplicates like "Medication 1 Medication Name" AND "Medication 1 Name"
+                if (medicationFieldPattern.test(key)) {
+                  console.log(`[Extraction] Skipping medication field in generic loop (will be handled from array): ${key}`);
+                  continue;
+                }
                 
                 // Handle different value types
                 let displayValue: string;
