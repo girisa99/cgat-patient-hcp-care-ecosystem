@@ -4,7 +4,7 @@
  * confidence-based review gate, and agent findings display
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,7 @@ import { AgentFindingsPanel } from './AgentFindingsPanel';
 import { AutoConfigPanel } from './AutoConfigPanel';
 import { CompactReviewSummary } from './CompactReviewSummary';
 import { DocumentTypeConfig } from '@/config/documentTypes';
+import { cleanMedicationFields } from './utils/medicationFieldFilter';
 
 export interface DocumentCharacteristics {
   format: 'pdf' | 'image' | 'excel' | 'dicom';
@@ -133,9 +134,15 @@ export function SmartDocumentStudio({
     setZoomLevel(1);
   }, []);
 
-  // Calculate field statistics
-  const fieldStats = React.useMemo(() => {
-    const fields = Object.values(extractedFields);
+  // Clean medication fields to remove duplicates before calculating stats
+  const cleanedExtractedFields = useMemo(() => 
+    cleanMedicationFields(extractedFields), 
+    [extractedFields]
+  );
+
+  // Calculate field statistics using cleaned fields
+  const fieldStats = useMemo(() => {
+    const fields = Object.values(cleanedExtractedFields);
     const total = fields.length;
     const highConfidence = fields.filter(f => f.confidence >= 0.9).length;
     const mediumConfidence = fields.filter(f => f.confidence >= 0.7 && f.confidence < 0.9).length;
@@ -144,7 +151,7 @@ export function SmartDocumentStudio({
     const needsReview = fields.filter(f => f.confidence < 0.7 && !f.verified).length;
 
     return { total, highConfidence, mediumConfidence, lowConfidence, verified, needsReview };
-  }, [extractedFields]);
+  }, [cleanedExtractedFields]);
 
   // Check if save is allowed (all low-confidence fields must be verified)
   const canSave = fieldStats.needsReview === 0;
@@ -210,7 +217,7 @@ export function SmartDocumentStudio({
             isProcessing={isProcessing}
           />
           <LiveExtractionPanel
-            extractedFields={extractedFields}
+            extractedFields={cleanedExtractedFields}
             isProcessing={isProcessing}
             modelRouting={modelRouting}
           />
@@ -291,14 +298,14 @@ export function SmartDocumentStudio({
                           }}
                         />
                         {/* Bounding box overlay for active field */}
-                        {activeFieldKey && extractedFields[activeFieldKey]?.boundingBox && (
+                        {activeFieldKey && cleanedExtractedFields[activeFieldKey]?.boundingBox && (
                           <div
                             className="absolute border-2 border-primary bg-primary/10 transition-all"
                             style={{
-                              left: `${extractedFields[activeFieldKey].boundingBox!.x}%`,
-                              top: `${extractedFields[activeFieldKey].boundingBox!.y}%`,
-                              width: `${extractedFields[activeFieldKey].boundingBox!.width}%`,
-                              height: `${extractedFields[activeFieldKey].boundingBox!.height}%`,
+                              left: `${cleanedExtractedFields[activeFieldKey].boundingBox!.x}%`,
+                              top: `${cleanedExtractedFields[activeFieldKey].boundingBox!.y}%`,
+                              width: `${cleanedExtractedFields[activeFieldKey].boundingBox!.width}%`,
+                              height: `${cleanedExtractedFields[activeFieldKey].boundingBox!.height}%`,
                             }}
                           />
                         )}
@@ -324,7 +331,7 @@ export function SmartDocumentStudio({
             {/* Right: Side-by-Side Editor */}
             <div className="col-span-2">
               <SideBySideEditor
-                extractedFields={extractedFields}
+                extractedFields={cleanedExtractedFields}
                 onFieldUpdate={onFieldUpdate}
                 onFieldDelete={onFieldDelete}
                 onFieldVerify={onFieldVerify}
@@ -337,7 +344,7 @@ export function SmartDocumentStudio({
 
           {/* Compact Review Summary */}
           <CompactReviewSummary
-            extractedFields={extractedFields}
+            extractedFields={cleanedExtractedFields}
             fieldStats={fieldStats}
             onFieldClick={handleFieldClick}
           />
@@ -368,7 +375,7 @@ export function SmartDocumentStudio({
             fieldStats={fieldStats}
             canSave={canSave}
             onSave={onSave}
-            extractedFields={extractedFields}
+            extractedFields={cleanedExtractedFields}
           />
         </>
       )}
