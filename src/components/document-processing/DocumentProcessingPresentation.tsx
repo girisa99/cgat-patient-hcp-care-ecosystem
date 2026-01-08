@@ -193,17 +193,17 @@ const IntroSlide = () => (
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
-            <Badge className="bg-red-500/20 text-red-300 border border-red-500/30 mb-2">
-              <AlertCircle className="w-3 h-3 mr-1" /> The Problem I've Been Seeing
+            <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/30 mb-2">
+              <Lightbulb className="w-3 h-3 mr-1" /> A Question Worth Asking
             </Badge>
             <h2 className="text-2xl font-bold text-white leading-tight">
-              "For a long time, I watched healthcare teams
+              "In this world of AI, should we spend 
               <motion.span
-                className="text-red-400"
-                animate={{ opacity: [1, 0.5, 1] }}
+                className="text-amber-400"
+                animate={{ opacity: [1, 0.7, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
-              > struggle </motion.span>
-              with documents..."
+              > heavily on teams </motion.span>
+              to build solutions?"
             </h2>
           </motion.div>
 
@@ -213,9 +213,10 @@ const IntroSlide = () => (
             transition={{ delay: 0.7 }}
             className="text-lg text-indigo-200"
           >
-            Companies paying <span className="text-amber-400 font-bold">heavy money for partners</span> to build basic document tools.
-            <br />
-            But with new AI tools like <span className="text-purple-400 font-bold">Lovable</span>, I knew I could build something better.
+            Or should we consider using tools like <span className="text-purple-400 font-bold">Lovable</span> to manage it 
+            <span className="text-emerald-400 font-bold"> lean</span>, build 
+            <span className="text-cyan-400 font-bold"> quick</span>, and ship 
+            <span className="text-green-400 font-bold"> fast</span>?
           </motion.p>
         </div>
       </div>
@@ -226,26 +227,26 @@ const IntroSlide = () => (
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.8 }}
-      className="bg-gradient-to-r from-purple-600/20 via-indigo-600/20 to-blue-600/20 rounded-xl p-4 border border-purple-500/30"
+      className="bg-gradient-to-r from-slate-800 via-indigo-900 to-slate-800 rounded-xl p-4 border border-indigo-500/50"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-purple-500/30 rounded-lg flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-purple-400" />
+          <div className="w-10 h-10 bg-indigo-500/40 rounded-lg flex items-center justify-center">
+            <Sparkles className="w-5 h-5 text-indigo-300" />
           </div>
           <div>
             <p className="text-white font-semibold text-sm">AI is Democratizing Development</p>
-            <p className="text-purple-300 text-xs">What used to take 6+ months and $300K+ can now be built in weeks</p>
+            <p className="text-indigo-200 text-xs">I built this production-ready platform in less than a week using Lovable</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <div className="text-center px-3 py-1 bg-green-500/20 rounded-lg border border-green-500/30">
-            <p className="text-green-400 font-bold text-lg">&lt; 1 Week</p>
-            <p className="text-green-300 text-xs">Build Time</p>
+          <div className="text-center px-3 py-1 bg-emerald-600/30 rounded-lg border border-emerald-500/50">
+            <p className="text-emerald-300 font-bold text-lg">&lt; 1 Week</p>
+            <p className="text-emerald-200 text-xs">Build Time</p>
           </div>
-          <div className="text-center px-3 py-1 bg-blue-500/20 rounded-lg border border-blue-500/30">
-            <p className="text-blue-400 font-bold text-lg">Production Ready</p>
-            <p className="text-blue-300 text-xs">Built with Lovable</p>
+          <div className="text-center px-3 py-1 bg-purple-600/30 rounded-lg border border-purple-500/50">
+            <p className="text-purple-300 font-bold text-lg">Production Ready</p>
+            <p className="text-purple-200 text-xs">Built with Lovable</p>
           </div>
         </div>
       </div>
@@ -254,22 +255,22 @@ const IntroSlide = () => (
     {/* Journey Preview Cards */}
     <div className="grid grid-cols-4 gap-3">
       {[
-        { step: "1", emoji: "😰", title: "The Challenge", desc: "What I kept seeing", color: "red" },
-        { step: "2", emoji: "🔍", title: "My Learnings", desc: "Experimentation", color: "orange" },
-        { step: "3", emoji: "💡", title: "The Solution", desc: "What I built", color: "blue" },
-        { step: "4", emoji: "🚀", title: "The Result", desc: "Production ready", color: "green" },
+        { step: "1", emoji: "😰", title: "The Challenge", desc: "What I kept seeing", bgColor: "bg-red-700", borderColor: "border-red-500", textColor: "text-red-200" },
+        { step: "2", emoji: "🔍", title: "My Learnings", desc: "Experimentation", bgColor: "bg-orange-700", borderColor: "border-orange-500", textColor: "text-orange-200" },
+        { step: "3", emoji: "💡", title: "The Solution", desc: "What I built", bgColor: "bg-blue-700", borderColor: "border-blue-500", textColor: "text-blue-200" },
+        { step: "4", emoji: "🚀", title: "The Result", desc: "Production ready", bgColor: "bg-emerald-700", borderColor: "border-emerald-500", textColor: "text-emerald-200" },
       ].map((item, i) => (
         <motion.div
           key={i}
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1 + i * 0.1 }}
-          className={`bg-gradient-to-br from-${item.color}-500/10 to-${item.color}-600/5 rounded-xl p-3 border border-${item.color}-500/30 text-center`}
+          className={`${item.bgColor} rounded-xl p-3 border-2 ${item.borderColor} text-center shadow-lg`}
         >
           <div className="text-2xl mb-1">{item.emoji}</div>
-          <div className={`text-xs font-bold text-${item.color}-400 uppercase tracking-wide`}>Step {item.step}</div>
+          <div className={`text-xs font-bold ${item.textColor} uppercase tracking-wide`}>Step {item.step}</div>
           <h4 className="font-bold text-white text-sm mt-1">{item.title}</h4>
-          <p className="text-xs text-slate-400">{item.desc}</p>
+          <p className="text-xs text-white/80">{item.desc}</p>
         </motion.div>
       ))}
     </div>
@@ -391,11 +392,11 @@ const ProblemStatementSlide = () => (
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: 1 }}
-      className="bg-slate-800 rounded-xl p-3 border border-slate-600 text-center"
+      className="bg-slate-800 rounded-xl p-3 border border-indigo-500/40 text-center"
     >
       <p className="text-base font-medium text-white">
-        <strong className="text-red-400">This Is The Crisis:</strong> Companies keep paying heavy money to partners for solutions that don't really work.
-        <span className="text-emerald-400 font-bold"> I knew AI could change this — so I built something myself.</span>
+        <strong className="text-amber-400">The Question:</strong> In this world of AI, should we keep spending heavily on building teams?
+        <span className="text-emerald-400 font-bold"> Or use tools like Lovable to build lean and ship fast? I chose the latter.</span>
       </p>
     </motion.div>
   </motion.div>
@@ -2171,12 +2172,12 @@ const ThankYouContactSlide = () => (
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4 }}
-      className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 rounded-xl p-4 border border-indigo-500/30 max-w-2xl w-full"
+      className="bg-slate-800 rounded-xl p-4 border border-indigo-500/50 max-w-2xl w-full"
     >
       <div className="grid grid-cols-3 gap-3 text-center">
         {[
           { emoji: "🚀", text: "AI is democratizing development" },
-          { emoji: "💡", text: "Build in weeks, not months" },
+          { emoji: "💡", text: "Build lean, ship fast" },
           { emoji: "🎯", text: "Anyone can create magic" },
         ].map((item, i) => (
           <motion.div
@@ -2184,21 +2185,21 @@ const ThankYouContactSlide = () => (
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.5 + i * 0.1 }}
-            className="p-2 bg-slate-900/50 rounded-lg"
+            className="p-2 bg-indigo-900/50 rounded-lg border border-indigo-500/30"
           >
             <div className="text-xl mb-1">{item.emoji}</div>
-            <p className="text-xs text-slate-300">{item.text}</p>
+            <p className="text-xs text-white font-medium">{item.text}</p>
           </motion.div>
         ))}
       </div>
     </motion.div>
 
-    {/* Video & Links Section */}
+    {/* Video, Newsletter & Carousel Section */}
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.6 }}
-      className="grid grid-cols-2 gap-4 max-w-3xl w-full"
+      className="grid grid-cols-3 gap-4 max-w-4xl w-full"
     >
       {/* Watch Demo Video */}
       <a 
@@ -2209,18 +2210,18 @@ const ThankYouContactSlide = () => (
       >
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="bg-gradient-to-br from-red-600/20 via-red-500/10 to-orange-600/20 rounded-xl p-4 border border-red-500/40 h-full cursor-pointer hover:border-red-400/60 transition-colors"
+          className="bg-red-700/40 rounded-xl p-4 border-2 border-red-500/60 h-full cursor-pointer hover:border-red-400 transition-colors"
         >
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-red-500/30 rounded-lg flex items-center justify-center">
-              <Play className="w-5 h-5 text-red-400" />
+            <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center">
+              <Play className="w-5 h-5 text-white" />
             </div>
             <div>
               <h4 className="font-semibold text-white text-sm">Watch the Demo</h4>
-              <p className="text-xs text-red-300">See it in action</p>
+              <p className="text-xs text-red-200">See it in action</p>
             </div>
           </div>
-          <p className="text-xs text-slate-400">Click to watch the video walkthrough</p>
+          <p className="text-xs text-white/80">Click to watch the video walkthrough</p>
         </motion.div>
       </a>
 
@@ -2233,20 +2234,42 @@ const ThankYouContactSlide = () => (
       >
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="bg-gradient-to-br from-blue-600/20 via-blue-500/10 to-cyan-600/20 rounded-xl p-4 border border-blue-500/40 h-full cursor-pointer hover:border-blue-400/60 transition-colors"
+          className="bg-blue-700/40 rounded-xl p-4 border-2 border-blue-500/60 h-full cursor-pointer hover:border-blue-400 transition-colors"
         >
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-blue-500/30 rounded-lg flex items-center justify-center">
-              <Linkedin className="w-5 h-5 text-blue-400" />
+            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+              <Linkedin className="w-5 h-5 text-white" />
             </div>
             <div>
               <h4 className="font-semibold text-white text-sm">Subscribe to Newsletter</h4>
-              <p className="text-xs text-blue-300">Genie AI Hub on LinkedIn</p>
+              <p className="text-xs text-blue-200">Genie AI Hub</p>
             </div>
           </div>
-          <p className="text-xs text-slate-400">Get updates on AI development tips</p>
+          <p className="text-xs text-white/80">Get updates on AI development tips</p>
         </motion.div>
       </a>
+
+      {/* LinkedIn Carousel - Download slides as images for carousel */}
+      <motion.div
+        whileHover={{ scale: 1.02 }}
+        className="bg-emerald-700/40 rounded-xl p-4 border-2 border-emerald-500/60 h-full cursor-pointer hover:border-emerald-400 transition-colors"
+        onClick={() => {
+          // This will be handled by the parent component's downloadAsImages function
+          const downloadAllBtn = document.querySelector('[data-download-all-images]') as HTMLButtonElement;
+          if (downloadAllBtn) downloadAllBtn.click();
+        }}
+      >
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center">
+            <FileImage className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h4 className="font-semibold text-white text-sm">LinkedIn Carousel</h4>
+            <p className="text-xs text-emerald-200">Download as images</p>
+          </div>
+        </div>
+        <p className="text-xs text-white/80">Export slides for LinkedIn carousel post</p>
+      </motion.div>
     </motion.div>
 
     {/* Contact Information */}
@@ -2254,23 +2277,23 @@ const ThankYouContactSlide = () => (
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.8 }}
-      className="bg-gradient-to-br from-purple-600/20 via-indigo-600/20 to-blue-600/20 rounded-xl p-4 border border-purple-500/40 max-w-xl w-full"
+      className="bg-purple-800/40 rounded-xl p-4 border-2 border-purple-500/60 max-w-xl w-full"
     >
       <h3 className="text-sm font-semibold text-white mb-3 text-center">
-        Want to Learn More? Let's Connect!
+        Want to Learn More About the Tool? Let's Connect!
       </h3>
       <div className="flex items-center justify-center gap-3">
         <motion.a
           href="mailto:dasikasaigiridhar@gmail.com"
           whileHover={{ scale: 1.02 }}
-          className="flex items-center gap-2 bg-white/10 rounded-lg px-4 py-2 border border-white/20 hover:border-purple-400/50 transition-colors"
+          className="flex items-center gap-2 bg-purple-900/60 rounded-lg px-4 py-2 border border-purple-400/50 hover:border-purple-300 transition-colors"
         >
-          <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center">
+          <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
             <ExternalLink className="w-4 h-4 text-white" />
           </div>
           <div className="text-left">
-            <p className="text-xs text-slate-300">Email me</p>
-            <p className="text-sm font-bold text-purple-300">dasikasaigiridhar@gmail.com</p>
+            <p className="text-xs text-purple-200">Email me</p>
+            <p className="text-sm font-bold text-white">dasikasaigiridhar@gmail.com</p>
           </div>
         </motion.a>
       </div>
@@ -2281,11 +2304,11 @@ const ThankYouContactSlide = () => (
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: 1 }}
-      className="flex items-center gap-2 text-slate-400"
+      className="flex items-center gap-2 text-white"
     >
-      <span className="text-xs">Built with</span>
+      <span className="text-xs text-slate-300">Built with</span>
       <span className="text-purple-400 font-semibold text-sm">❤️ + Lovable AI</span>
-      <span className="text-xs">in less than a week</span>
+      <span className="text-xs text-slate-300">in less than a week</span>
     </motion.div>
   </motion.div>
 );
@@ -2302,13 +2325,13 @@ const documentProcessingSlides: Slide[] = [
     content: <IntroSlide />,
     pptContent: {
       bullets: [
-        "For a long time, I watched healthcare teams struggle with documents",
-        "Companies paying heavy money to partners for solutions that don't work well",
-        "With new AI tools like Lovable, I knew I could build something better",
-        "This whole thing was built in less than a week — production ready",
-        "AI is democratizing development — this is my story"
+        "In this world of AI, should we spend heavily on building teams?",
+        "Or should we use tools like Lovable to manage it lean and build fast?",
+        "I chose the latter — built this in less than a week",
+        "AI is democratizing development — what's possible is beyond imagination",
+        "This is my story of how I built a production-ready platform"
       ],
-      notes: "Opening slide that sets the narrative tone — how AI tools are enabling individuals to build what used to require entire teams."
+      notes: "Opening slide that poses the key question — in the age of AI, do we need large teams or can individuals build enterprise solutions?"
     }
   },
   { 
@@ -2323,10 +2346,10 @@ const documentProcessingSlides: Slide[] = [
         "$15-50 cost per document processed manually",
         "15-30% error rates in manual extraction",
         "High staff turnover due to repetitive tasks",
-        "Companies keep paying heavy money to partners",
-        "I knew AI could change this — so I built something myself"
+        "The question: Should we keep spending heavily on teams?",
+        "Or use tools like Lovable to build lean and ship fast?"
       ],
-      notes: "Healthcare organizations waste millions annually on manual document processing — I saw this repeatedly and knew there had to be a better way."
+      notes: "Healthcare organizations waste millions annually on manual document processing — I saw this repeatedly and knew there had to be a better way with AI."
     }
   },
   { 
@@ -2554,13 +2577,13 @@ const documentProcessingSlides: Slide[] = [
     pptContent: {
       bullets: [
         "I am amazed at how tools like Lovable bring a big shift in the mindset of development",
-        "What's possible is now beyond imagination",
+        "What's possible is now beyond imagination — build lean, ship fast",
         "Watch the demo: https://lnkd.in/eWxn_gQw",
-        "Subscribe to Genie AI Hub Newsletter: linkedin.com/newsletters/genie-ai-hub",
-        "Contact: dasikasaigiridhar@gmail.com",
-        "Built with ❤️ + Lovable AI in less than a week"
+        "Subscribe to Genie AI Hub Newsletter: linkedin.com/newsletters/genie-ai-hub-7379711554889601024",
+        "Download as LinkedIn carousel: Export slides as images for posting",
+        "Contact: dasikasaigiridhar@gmail.com"
       ],
-      notes: "Thank you for exploring this journey. I am amazed at how tools like Lovable can bring a big shift in the mindset of development. Contact dasikasaigiridhar@gmail.com to learn more."
+      notes: "Thank you! I am amazed at how tools like Lovable can bring a big shift in the mindset of development — what's possible is now beyond imagination. Contact dasikasaigiridhar@gmail.com to learn more about the tool."
     }
   },
 ];
@@ -3148,11 +3171,11 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
                   <span className="text-xs text-muted-foreground">Exact visual capture</span>
                 </div>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => downloadAsImages(true)} className="gap-2">
+              <DropdownMenuItem onClick={() => downloadAsImages(true)} className="gap-2" data-download-all-images>
                 <FileImage className="w-4 h-4 text-blue-500" />
                 <div className="flex flex-col">
-                  <span>All Slides as PNG</span>
-                  <span className="text-xs text-muted-foreground">{documentProcessingSlides.length} images</span>
+                  <span>All Slides as PNG (LinkedIn Carousel)</span>
+                  <span className="text-xs text-muted-foreground">{documentProcessingSlides.length} images for carousel</span>
                 </div>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -3227,7 +3250,19 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
             className="gap-1 text-blue-600 border-blue-300 hover:bg-blue-50"
           >
             <Linkedin className="w-4 h-4" />
-            LinkedIn
+            Share
+          </Button>
+          
+          {/* LinkedIn Carousel Export */}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => downloadAsImages(true)} 
+            className="gap-1 text-emerald-600 border-emerald-300 hover:bg-emerald-50"
+            title="Download all slides as images for LinkedIn carousel"
+          >
+            <FileImage className="w-4 h-4" />
+            Carousel
           </Button>
           
           {onExit && !isPublicView && (
