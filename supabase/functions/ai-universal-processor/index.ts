@@ -100,11 +100,41 @@ serve(async (req) => {
   }
 });
 
+// Normalize OpenAI model names to valid API model IDs
+function normalizeOpenAIModel(model: string): string {
+  const ml = model.toLowerCase();
+  
+  // Vision model mappings - gpt-5-vision doesn't exist, use gpt-4o which has vision
+  if (ml.includes('gpt-5-vision') || ml.includes('gpt5-vision')) {
+    return 'gpt-4o'; // GPT-4o has vision capabilities
+  }
+  // GPT-5 family - use stable dated versions
+  if (ml === 'gpt-5' || ml.includes('gpt-5') && !ml.includes('mini') && !ml.includes('nano')) {
+    return 'gpt-4o'; // Fall back to stable model
+  }
+  if (ml.includes('gpt-5-mini')) {
+    return 'gpt-4o-mini';
+  }
+  if (ml.includes('gpt-5-nano')) {
+    return 'gpt-4o-mini';
+  }
+  // Already valid models
+  if (ml === 'gpt-4o' || ml === 'gpt-4o-mini') {
+    return model;
+  }
+  // Default fallback
+  return 'gpt-4o-mini';
+}
+
 async function callOpenAI(model: string, prompt: string, systemPrompt?: string, temperature?: number, maxTokens?: number) {
   const apiKey = Deno.env.get('OPENAI_API_KEY');
   if (!apiKey) {
     throw new Error('OpenAI API key not configured. Please add OPENAI_API_KEY to your Edge Function secrets.');
   }
+
+  // Normalize model to valid API ID
+  const normalizedModel = normalizeOpenAIModel(model);
+  console.log(`OpenAI model normalization: ${model} -> ${normalizedModel}`);
 
   const messages = [];
   if (systemPrompt) {
@@ -114,21 +144,15 @@ async function callOpenAI(model: string, prompt: string, systemPrompt?: string, 
 
   // Handle different model parameter requirements
   const requestBody: any = {
-    model,
+    model: normalizedModel,
     messages,
   };
 
-  // Newer models (GPT-5, GPT-4.1+, O3, O4) use max_completion_tokens and don't support temperature
-  if (model.includes('gpt-5') || model.includes('gpt-4.1') || model.includes('o3') || model.includes('o4')) {
-    requestBody.max_completion_tokens = maxTokens;
-    // Don't include temperature for newer models
-  } else {
-    // Legacy models use max_tokens and support temperature
-    requestBody.max_tokens = maxTokens;
-    requestBody.temperature = temperature;
-  }
+  // Legacy models (gpt-4o family) use max_tokens and support temperature
+  requestBody.max_tokens = maxTokens;
+  requestBody.temperature = temperature;
 
-  console.log(`Calling OpenAI API with model: ${model}`);
+  console.log(`Calling OpenAI API with model: ${normalizedModel}`);
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
