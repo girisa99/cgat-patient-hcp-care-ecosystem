@@ -112,10 +112,11 @@ const AGENT_MODEL_ROUTING: Record<string, ModelRoutingConfig> = {
 };
 
 // Provider-specific model mappings for when user selects a specific provider
+// NOTE: Use actual API model IDs (not prefixed) - the processor handles routing
 const PROVIDER_MODELS: Record<AIProvider, { primary: string; fallback: string }> = {
-  'openai': { primary: 'openai/gpt-5', fallback: 'openai/gpt-5-mini' },
+  'openai': { primary: 'gpt-4o', fallback: 'gpt-4o-mini' }, // Use stable OpenAI models
   'claude': { primary: 'claude-3-5-haiku-20241022', fallback: 'claude-3-5-sonnet-20241022' },
-  'gemini': { primary: 'google/gemini-2.5-flash', fallback: 'gemini-2.0-flash-exp' }
+  'gemini': { primary: 'gemini-2.0-flash-exp', fallback: 'gemini-1.5-flash' }
 };
 
 function getModelRouting(agentId: string, preferredProvider?: AIProvider): ModelRoutingConfig {
