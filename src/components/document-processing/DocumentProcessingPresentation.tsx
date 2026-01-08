@@ -113,19 +113,168 @@ const AnimatedConnection = ({ delay = 0 }: { delay?: number }) => (
 );
 
 // =============================================================================
+// SLIDE 0: INTRO - Visual Story Opening
+// =============================================================================
+const IntroSlide = () => (
+  <motion.div className="space-y-6" variants={staggerContainer} initial="initial" animate="animate">
+    {/* Hero Section with Character */}
+    <motion.div 
+      {...fadeInUp}
+      className="relative bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 rounded-3xl p-8 overflow-hidden"
+    >
+      {/* Animated Background Pattern */}
+      <motion.div
+        className="absolute inset-0 opacity-20"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+        }}
+        animate={{ backgroundPosition: ['0px 0px', '60px 60px'] }}
+        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+      />
+
+      <div className="relative z-10 flex items-center gap-8">
+        {/* Left: Stressed Character Illustration */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3, type: "spring" }}
+          className="flex-shrink-0"
+        >
+          <div className="w-48 h-48 relative">
+            {/* Desk with papers */}
+            <div className="absolute bottom-0 left-0 right-0 h-16 bg-amber-800/80 rounded-t-lg" />
+            <div className="absolute bottom-12 left-4 right-4 space-y-1">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <motion.div
+                  key={i}
+                  className="h-3 bg-white rounded shadow-sm"
+                  initial={{ x: -100, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.5 + i * 0.1 }}
+                  style={{ marginLeft: `${i * 3}px` }}
+                />
+              ))}
+            </div>
+            {/* Stressed person emoji */}
+            <motion.div
+              className="absolute top-4 left-1/2 -translate-x-1/2 text-7xl"
+              animate={{ rotate: [-5, 5, -5] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              😰
+            </motion.div>
+            {/* Flying papers */}
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                className="absolute w-8 h-10 bg-white rounded shadow-lg"
+                initial={{ x: 80, y: 60, rotate: 0, opacity: 0 }}
+                animate={{ 
+                  x: [80, 120 + i * 20], 
+                  y: [60, 20 - i * 15], 
+                  rotate: [0, 20 + i * 10],
+                  opacity: [0, 1, 0.7]
+                }}
+                transition={{ 
+                  delay: 1 + i * 0.2, 
+                  duration: 2,
+                  repeat: Infinity,
+                  repeatDelay: 3
+                }}
+              />
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Right: Story Text */}
+        <div className="flex-1 space-y-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Badge className="bg-red-500/20 text-red-300 border border-red-500/30 mb-3">
+              <AlertCircle className="w-3 h-3 mr-1" /> The Daily Reality
+            </Badge>
+            <h2 className="text-4xl font-bold text-white leading-tight">
+              "Every day, I watched healthcare teams
+              <motion.span
+                className="text-red-400"
+                animate={{ opacity: [1, 0.5, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              > drown </motion.span>
+              in paperwork..."
+            </h2>
+          </motion.div>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+            className="text-xl text-indigo-200"
+          >
+            Hours spent typing. Errors everywhere. Staff burning out.
+            <br />
+            <span className="text-white font-semibold">I knew AI could fix this.</span>
+          </motion.p>
+        </div>
+      </div>
+    </motion.div>
+
+    {/* Journey Preview Cards */}
+    <div className="grid grid-cols-4 gap-4">
+      {[
+        { step: "1", emoji: "😰", title: "The Problem", desc: "What I saw happening", color: "red" },
+        { step: "2", emoji: "🤔", title: "The Challenge", desc: "Why existing tools failed", color: "orange" },
+        { step: "3", emoji: "💡", title: "My Solution", desc: "AI-powered intelligence", color: "blue" },
+        { step: "4", emoji: "🚀", title: "The Result", desc: "What I built", color: "green" },
+      ].map((item, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 + i * 0.15 }}
+          className={`bg-gradient-to-br from-${item.color}-500/10 to-${item.color}-600/5 rounded-xl p-4 border border-${item.color}-500/30 text-center`}
+        >
+          <div className="text-3xl mb-2">{item.emoji}</div>
+          <div className={`text-xs font-bold text-${item.color}-400 uppercase tracking-wide`}>Step {item.step}</div>
+          <h4 className="font-bold text-white text-sm mt-1">{item.title}</h4>
+          <p className="text-xs text-slate-400 mt-1">{item.desc}</p>
+        </motion.div>
+      ))}
+    </div>
+
+    {/* Bottom CTA */}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 1.4 }}
+      className="text-center"
+    >
+      <motion.div
+        animate={{ y: [0, 8, 0] }}
+        transition={{ duration: 1.5, repeat: Infinity }}
+        className="flex items-center justify-center gap-2 text-indigo-300"
+      >
+        <span className="text-sm">Let me walk you through my journey</span>
+        <ChevronDown className="w-5 h-5" />
+      </motion.div>
+    </motion.div>
+  </motion.div>
+);
+
+// =============================================================================
 // SLIDE 1: PROBLEM STATEMENT - The problem I set out to solve
 // =============================================================================
 const ProblemStatementSlide = () => (
   <motion.div className="space-y-6" variants={staggerContainer} initial="initial" animate="animate">
-    {/* Hero Banner */}
+    {/* Hero Banner - Better contrast */}
     <motion.div 
       {...fadeInUp}
-      className="relative bg-gradient-to-r from-red-900 via-red-800 to-orange-900 rounded-2xl p-8 text-white overflow-hidden"
+      className="relative bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 rounded-2xl p-8 text-white overflow-hidden border border-red-500/30"
     >
       <motion.div
-        className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cpath d=%22M54.627 0l.83.828-1.415 1.415L51.8 0h2.827zM5.373 0l-.83.828L5.958 2.243 8.2 0H5.374zM48.97 0l3.657 3.657-1.414 1.414L46.143 0h2.828zM11.03 0L7.372 3.657 8.787 5.07 13.857 0H11.03zm32.284 0L49.8 6.485 48.384 7.9l-7.9-7.9h2.83zM16.686 0L10.2 6.485 11.616 7.9l7.9-7.9h-2.83zM22.344 0L13.858 8.485 15.272 9.9l9.9-9.9h-2.828zM32 0l-3.486 3.485-1.414-1.414L30.172 0H32z%22 fill=%22%23ffffff%22 fill-opacity=%220.03%22/%3E%3C/svg%3E')] opacity-50"
-        animate={{ backgroundPosition: ['0% 0%', '100% 100%'] }}
-        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+        className="absolute inset-0 bg-gradient-to-r from-red-600/10 via-transparent to-orange-600/10"
       />
       
       <div className="relative z-10 flex items-center justify-between">
@@ -135,9 +284,9 @@ const ProblemStatementSlide = () => (
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <AlertCircle className="w-12 h-12 text-red-300 mb-2" />
-            <h3 className="text-3xl font-bold">The Problem I Set Out to Solve</h3>
-            <p className="text-lg text-red-200">"I saw healthcare teams drowning in paperwork. I knew AI could fix this."</p>
+            <AlertCircle className="w-12 h-12 text-red-400 mb-2" />
+            <h3 className="text-3xl font-bold text-white">The Problem I Set Out to Solve</h3>
+            <p className="text-lg text-slate-300">"I saw healthcare teams drowning in paperwork. I knew AI could fix this."</p>
           </motion.div>
         </div>
         
@@ -155,27 +304,27 @@ const ProblemStatementSlide = () => (
           ].map((stat, i) => (
             <motion.div
               key={i}
-              className="bg-white/10 backdrop-blur rounded-xl p-4 text-center border border-white/20"
+              className="bg-slate-900/80 backdrop-blur rounded-xl p-4 text-center border border-slate-600"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 + i * 0.1 }}
             >
-              <div className="text-3xl font-bold text-white">{stat.value}</div>
-              <div className="text-sm text-red-200">{stat.label}</div>
-              <div className="text-xs text-red-300/70">{stat.sub}</div>
+              <div className="text-3xl font-bold text-red-400">{stat.value}</div>
+              <div className="text-sm text-white font-medium">{stat.label}</div>
+              <div className="text-xs text-slate-400">{stat.sub}</div>
             </motion.div>
           ))}
         </motion.div>
       </div>
     </motion.div>
 
-    {/* Pain Points Flow */}
+    {/* Pain Points Flow - High contrast cards */}
     <div className="grid grid-cols-4 gap-4">
       {[
-        { icon: Clock, title: "Time Drain", desc: "Staff spend hours on repetitive data entry", impact: "Lost productivity", color: "red" },
-        { icon: DollarSign, title: "High Costs", desc: "$15-50 per document for manual processing", impact: "$500K+ annually", color: "orange" },
-        { icon: AlertCircle, title: "Error Prone", desc: "15-30% error rates in manual extraction", impact: "Compliance risk", color: "yellow" },
-        { icon: Users, title: "Staff Burnout", desc: "Repetitive tasks lead to high turnover", impact: "60% more turnover", color: "purple" },
+        { icon: Clock, title: "Time Drain", desc: "Staff spend hours on repetitive data entry", impact: "Lost productivity", bgColor: "bg-red-600", borderColor: "border-red-500" },
+        { icon: DollarSign, title: "High Costs", desc: "$15-50 per document for manual processing", impact: "$500K+ annually", bgColor: "bg-orange-600", borderColor: "border-orange-500" },
+        { icon: AlertCircle, title: "Error Prone", desc: "15-30% error rates in manual extraction", impact: "Compliance risk", bgColor: "bg-amber-600", borderColor: "border-amber-500" },
+        { icon: Users, title: "Staff Burnout", desc: "Repetitive tasks lead to high turnover", impact: "60% more turnover", bgColor: "bg-purple-600", borderColor: "border-purple-500" },
       ].map((pain, i) => (
         <motion.div
           key={i}
@@ -184,13 +333,13 @@ const ProblemStatementSlide = () => (
           transition={{ delay: 0.6 + i * 0.1 }}
           className="relative"
         >
-          <div className={`bg-gradient-to-br from-${pain.color}-50 to-${pain.color}-100/50 rounded-xl p-5 border border-${pain.color}-200 h-full`}>
-            <div className={`w-10 h-10 bg-${pain.color}-100 rounded-lg flex items-center justify-center mb-3`}>
-              <pain.icon className={`w-5 h-5 text-${pain.color}-600`} />
+          <div className={`${pain.bgColor} rounded-xl p-5 h-full text-white shadow-lg border-2 ${pain.borderColor}`}>
+            <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mb-3">
+              <pain.icon className="w-5 h-5 text-white" />
             </div>
-            <h4 className="font-bold text-foreground mb-1">{pain.title}</h4>
-            <p className="text-sm text-muted-foreground mb-3">{pain.desc}</p>
-            <Badge variant="destructive" className="text-xs">{pain.impact}</Badge>
+            <h4 className="font-bold text-white text-lg mb-1">{pain.title}</h4>
+            <p className="text-sm text-white/90 mb-3">{pain.desc}</p>
+            <Badge className="bg-white/20 text-white border-white/30 text-xs font-semibold">{pain.impact}</Badge>
           </div>
           {i < 3 && (
             <motion.div
@@ -198,7 +347,7 @@ const ProblemStatementSlide = () => (
               animate={{ x: [0, 4, 0] }}
               transition={{ duration: 1, repeat: Infinity }}
             >
-              <ArrowRight className="w-4 h-4 text-muted-foreground" />
+              <ArrowRight className="w-4 h-4 text-white" />
             </motion.div>
           )}
         </motion.div>
@@ -210,18 +359,18 @@ const ProblemStatementSlide = () => (
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: 1 }}
-      className="bg-gradient-to-r from-red-100 via-orange-50 to-yellow-100 rounded-xl p-4 border border-red-200 text-center"
+      className="bg-slate-800 rounded-xl p-4 border border-slate-600 text-center"
     >
-      <p className="text-lg font-medium text-red-900">
-        <strong>This Is Why I Built This:</strong> Healthcare organizations lose millions annually while struggling with accuracy and compliance.
-        <span className="text-red-600 font-bold"> I knew there had to be a better way.</span>
+      <p className="text-lg font-medium text-white">
+        <strong className="text-red-400">This Is Why I Built This:</strong> Healthcare organizations lose millions annually while struggling with accuracy and compliance.
+        <span className="text-emerald-400 font-bold"> I knew there had to be a better way.</span>
       </p>
     </motion.div>
   </motion.div>
 );
 
 // =============================================================================
-// SLIDE 2: CURRENT TOOLS - Why existing solutions failed
+// SLIDE 2: CURRENT TOOLS - Why existing solutions failed (High contrast)
 // =============================================================================
 const CurrentToolsSlide = () => (
   <motion.div className="space-y-5" variants={staggerContainer} initial="initial" animate="animate">
@@ -230,7 +379,7 @@ const CurrentToolsSlide = () => (
         <Settings className="w-4 h-4 mr-2 inline" />
         Why I Couldn't Use Existing Tools
       </Badge>
-      <p className="text-sm text-muted-foreground mt-2">"I tried these approaches first — and quickly saw why they fall short."</p>
+      <p className="text-sm text-slate-400 mt-2">"I tried these approaches first — and quickly saw why they fall short."</p>
     </motion.div>
 
     <div className="grid grid-cols-3 gap-4">
@@ -242,7 +391,9 @@ const CurrentToolsSlide = () => (
           problems: ["Template-based extraction", "Single model approach", "High error rates (20%+)", "No context understanding", "Manual configuration"],
           accuracy: "60-70%",
           effort: "High",
-          gradient: "from-red-600 to-red-700"
+          bgColor: "bg-slate-800",
+          iconBg: "bg-red-600",
+          statusBg: "bg-red-500/20 text-red-300"
         },
         {
           title: "Rule-Based Systems",
@@ -251,7 +402,9 @@ const CurrentToolsSlide = () => (
           problems: ["Hard-coded rules", "Breaks with format changes", "Extensive maintenance", "No adaptability", "High implementation cost"],
           accuracy: "70-80%",
           effort: "100+ hrs/month",
-          gradient: "from-orange-600 to-orange-700"
+          bgColor: "bg-slate-800",
+          iconBg: "bg-orange-600",
+          statusBg: "bg-orange-500/20 text-orange-300"
         },
         {
           title: "Single AI Model",
@@ -260,7 +413,9 @@ const CurrentToolsSlide = () => (
           problems: ["One-size-fits-all", "Poor on specialized docs", "No model optimization", "High token costs", "Inconsistent results"],
           accuracy: "75-85%",
           effort: "3-5x cost",
-          gradient: "from-amber-600 to-amber-700"
+          bgColor: "bg-slate-800",
+          iconBg: "bg-amber-600",
+          statusBg: "bg-amber-500/20 text-amber-300"
         }
       ].map((tool, i) => (
         <motion.div
@@ -268,15 +423,15 @@ const CurrentToolsSlide = () => (
           initial={{ opacity: 0, rotateY: -20 }}
           animate={{ opacity: 1, rotateY: 0 }}
           transition={{ delay: i * 0.2, type: "spring" }}
-          className="bg-white rounded-xl p-5 border-2 border-slate-200 shadow-lg hover:shadow-xl transition-shadow"
+          className={`${tool.bgColor} rounded-xl p-5 border border-slate-600 shadow-xl`}
         >
           <div className="flex items-center gap-3 mb-4">
-            <div className={`w-12 h-12 bg-gradient-to-br ${tool.gradient} rounded-xl flex items-center justify-center shadow-md`}>
+            <div className={`w-12 h-12 ${tool.iconBg} rounded-xl flex items-center justify-center shadow-md`}>
               <tool.icon className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h4 className="font-bold text-slate-900 text-lg">{tool.title}</h4>
-              <Badge className="bg-slate-200 text-slate-700 text-xs font-semibold">{tool.status}</Badge>
+              <h4 className="font-bold text-white text-lg">{tool.title}</h4>
+              <Badge className={`${tool.statusBg} text-xs font-semibold border-0`}>{tool.status}</Badge>
             </div>
           </div>
           
@@ -289,20 +444,20 @@ const CurrentToolsSlide = () => (
                 transition={{ delay: 0.3 + j * 0.05 }}
                 className="flex items-center gap-2 text-sm"
               >
-                <X className="w-4 h-4 text-red-600 flex-shrink-0" />
-                <span className="text-slate-700 font-medium">{problem}</span>
+                <X className="w-4 h-4 text-red-400 flex-shrink-0" />
+                <span className="text-slate-200">{problem}</span>
               </motion.div>
             ))}
           </div>
           
           <div className="grid grid-cols-2 gap-2">
-            <div className="p-2 bg-red-100 rounded-lg text-center border border-red-200">
-              <div className="text-xs text-red-700 font-semibold">Accuracy</div>
-              <div className="text-sm font-bold text-red-800">{tool.accuracy}</div>
+            <div className="p-2 bg-red-500/20 rounded-lg text-center border border-red-500/30">
+              <div className="text-xs text-red-300 font-semibold">Accuracy</div>
+              <div className="text-sm font-bold text-white">{tool.accuracy}</div>
             </div>
-            <div className="p-2 bg-orange-100 rounded-lg text-center border border-orange-200">
-              <div className="text-xs text-orange-700 font-semibold">Effort</div>
-              <div className="text-sm font-bold text-orange-800">{tool.effort}</div>
+            <div className="p-2 bg-orange-500/20 rounded-lg text-center border border-orange-500/30">
+              <div className="text-xs text-orange-300 font-semibold">Effort</div>
+              <div className="text-sm font-bold text-white">{tool.effort}</div>
             </div>
           </div>
         </motion.div>
@@ -316,8 +471,8 @@ const CurrentToolsSlide = () => (
       transition={{ delay: 0.8, type: "spring" }}
       className="flex items-center justify-center gap-4 py-3"
     >
-      <div className="flex-1 h-0.5 bg-gradient-to-r from-transparent via-primary to-primary" />
-      <div className="flex flex-col items-center bg-gradient-to-r from-primary to-purple-600 px-6 py-2 rounded-full">
+      <div className="flex-1 h-0.5 bg-gradient-to-r from-transparent via-emerald-500 to-emerald-500" />
+      <div className="flex flex-col items-center bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-2 rounded-full">
         <motion.div
           animate={{ y: [0, 3, 0] }}
           transition={{ duration: 1.5, repeat: Infinity }}
@@ -328,7 +483,7 @@ const CurrentToolsSlide = () => (
           <Sparkles className="w-5 h-5 text-white" />
         </motion.div>
       </div>
-      <div className="flex-1 h-0.5 bg-gradient-to-r from-primary via-primary to-transparent" />
+      <div className="flex-1 h-0.5 bg-gradient-to-r from-emerald-500 via-emerald-500 to-transparent" />
     </motion.div>
 
     {/* Solution Preview */}
@@ -336,13 +491,13 @@ const CurrentToolsSlide = () => (
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 1 }}
-      className="bg-gradient-to-r from-primary via-purple-600 to-indigo-600 rounded-xl p-5 text-center shadow-xl"
+      className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 rounded-xl p-5 text-center shadow-xl"
     >
       <h4 className="text-xl font-bold text-white mb-2 flex items-center justify-center gap-2">
         <BrainCircuit className="w-6 h-6 text-yellow-300" />
         That's When I Had the Idea
       </h4>
-      <p className="text-purple-100 text-base">
+      <p className="text-emerald-100 text-base">
         "What if AI could intelligently route each document to the <strong className="text-yellow-300">best model for that specific task</strong>?"
       </p>
     </motion.div>
@@ -1957,9 +2112,25 @@ const ROISlide = () => (
 // =============================================================================
 const documentProcessingSlides: Slide[] = [
   { 
+    id: 0, 
+    title: "My Journey", 
+    subtitle: "From problem to solution",
+    animation: 'fade', 
+    content: <IntroSlide />,
+    pptContent: {
+      bullets: [
+        "Every day, I watched healthcare teams drown in paperwork",
+        "Hours spent typing. Errors everywhere. Staff burning out.",
+        "I knew AI could fix this.",
+        "This is the story of how I built a solution."
+      ],
+      notes: "Opening slide that sets the narrative tone and introduces the journey from problem identification to solution."
+    }
+  },
+  { 
     id: 1, 
-    title: "The Healthcare Document Crisis", 
-    subtitle: "Why manual processing is killing productivity",
+    title: "The Problem I Set Out to Solve", 
+    subtitle: "What I saw happening in healthcare",
     animation: 'fade', 
     content: <ProblemStatementSlide />,
     pptContent: {
