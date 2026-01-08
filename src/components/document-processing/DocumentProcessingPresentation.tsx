@@ -221,15 +221,16 @@ const ProblemStatementSlide = () => (
 );
 
 // =============================================================================
-// SLIDE 2: CURRENT TOOLS - Enhanced with comparison
+// SLIDE 2: CURRENT TOOLS - Enhanced with better visibility
 // =============================================================================
 const CurrentToolsSlide = () => (
-  <motion.div className="space-y-6" variants={staggerContainer} initial="initial" animate="animate">
-    <motion.div {...fadeInUp} className="text-center mb-4">
-      <Badge variant="outline" className="text-lg px-4 py-1 border-gray-400 text-gray-700">
+  <motion.div className="space-y-5" variants={staggerContainer} initial="initial" animate="animate">
+    <motion.div {...fadeInUp} className="text-center mb-3">
+      <Badge className="text-lg px-4 py-1 bg-gradient-to-r from-slate-700 to-slate-800 text-white">
         <Settings className="w-4 h-4 mr-2 inline" />
         Why Traditional Tools Fail
       </Badge>
+      <p className="text-sm text-muted-foreground mt-2">The industry has tried these approaches — and they fall short</p>
     </motion.div>
 
     <div className="grid grid-cols-3 gap-4">
@@ -241,7 +242,7 @@ const CurrentToolsSlide = () => (
           problems: ["Template-based extraction", "Single model approach", "High error rates (20%+)", "No context understanding", "Manual configuration"],
           accuracy: "60-70%",
           effort: "High",
-          color: "gray"
+          gradient: "from-red-600 to-red-700"
         },
         {
           title: "Rule-Based Systems",
@@ -250,7 +251,7 @@ const CurrentToolsSlide = () => (
           problems: ["Hard-coded rules", "Breaks with format changes", "Extensive maintenance", "No adaptability", "High implementation cost"],
           accuracy: "70-80%",
           effort: "100+ hrs/month",
-          color: "gray"
+          gradient: "from-orange-600 to-orange-700"
         },
         {
           title: "Single AI Model",
@@ -259,7 +260,7 @@ const CurrentToolsSlide = () => (
           problems: ["One-size-fits-all", "Poor on specialized docs", "No model optimization", "High token costs", "Inconsistent results"],
           accuracy: "75-85%",
           effort: "3-5x cost",
-          color: "gray"
+          gradient: "from-amber-600 to-amber-700"
         }
       ].map((tool, i) => (
         <motion.div
@@ -267,15 +268,15 @@ const CurrentToolsSlide = () => (
           initial={{ opacity: 0, rotateY: -20 }}
           animate={{ opacity: 1, rotateY: 0 }}
           transition={{ delay: i * 0.2, type: "spring" }}
-          className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-5 border border-gray-200 hover:shadow-lg transition-shadow"
+          className="bg-white rounded-xl p-5 border-2 border-slate-200 shadow-lg hover:shadow-xl transition-shadow"
         >
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gray-200 rounded-xl flex items-center justify-center">
-              <tool.icon className="w-6 h-6 text-gray-600" />
+            <div className={`w-12 h-12 bg-gradient-to-br ${tool.gradient} rounded-xl flex items-center justify-center shadow-md`}>
+              <tool.icon className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h4 className="font-bold text-foreground">{tool.title}</h4>
-              <Badge variant="outline" className="text-gray-500 text-xs">{tool.status}</Badge>
+              <h4 className="font-bold text-slate-900 text-lg">{tool.title}</h4>
+              <Badge className="bg-slate-200 text-slate-700 text-xs font-semibold">{tool.status}</Badge>
             </div>
           </div>
           
@@ -288,20 +289,20 @@ const CurrentToolsSlide = () => (
                 transition={{ delay: 0.3 + j * 0.05 }}
                 className="flex items-center gap-2 text-sm"
               >
-                <X className="w-4 h-4 text-red-500 flex-shrink-0" />
-                <span className="text-muted-foreground">{problem}</span>
+                <X className="w-4 h-4 text-red-600 flex-shrink-0" />
+                <span className="text-slate-700 font-medium">{problem}</span>
               </motion.div>
             ))}
           </div>
           
           <div className="grid grid-cols-2 gap-2">
-            <div className="p-2 bg-red-50 rounded-lg text-center">
-              <div className="text-xs text-red-600 font-medium">Accuracy</div>
-              <div className="text-sm font-bold text-red-700">{tool.accuracy}</div>
+            <div className="p-2 bg-red-100 rounded-lg text-center border border-red-200">
+              <div className="text-xs text-red-700 font-semibold">Accuracy</div>
+              <div className="text-sm font-bold text-red-800">{tool.accuracy}</div>
             </div>
-            <div className="p-2 bg-orange-50 rounded-lg text-center">
-              <div className="text-xs text-orange-600 font-medium">Effort</div>
-              <div className="text-sm font-bold text-orange-700">{tool.effort}</div>
+            <div className="p-2 bg-orange-100 rounded-lg text-center border border-orange-200">
+              <div className="text-xs text-orange-700 font-semibold">Effort</div>
+              <div className="text-sm font-bold text-orange-800">{tool.effort}</div>
             </div>
           </div>
         </motion.div>
@@ -313,19 +314,21 @@ const CurrentToolsSlide = () => (
       initial={{ opacity: 0, scale: 0.5 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: 0.8, type: "spring" }}
-      className="flex items-center justify-center gap-4 py-4"
+      className="flex items-center justify-center gap-4 py-3"
     >
-      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-gray-300" />
-      <div className="flex flex-col items-center">
+      <div className="flex-1 h-0.5 bg-gradient-to-r from-transparent via-primary to-primary" />
+      <div className="flex flex-col items-center bg-gradient-to-r from-primary to-purple-600 px-6 py-2 rounded-full">
         <motion.div
-          animate={{ y: [0, 5, 0] }}
+          animate={{ y: [0, 3, 0] }}
           transition={{ duration: 1.5, repeat: Infinity }}
+          className="flex items-center gap-2"
         >
-          <ChevronDown className="w-8 h-8 text-primary" />
+          <Sparkles className="w-5 h-5 text-white" />
+          <span className="text-base font-bold text-white">Time for a Revolution</span>
+          <Sparkles className="w-5 h-5 text-white" />
         </motion.div>
-        <span className="text-lg font-bold text-primary">Time for a Revolution</span>
       </div>
-      <div className="flex-1 h-px bg-gradient-to-r from-gray-300 via-gray-300 to-transparent" />
+      <div className="flex-1 h-0.5 bg-gradient-to-r from-primary via-primary to-transparent" />
     </motion.div>
 
     {/* Solution Preview */}
@@ -333,14 +336,14 @@ const CurrentToolsSlide = () => (
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 1 }}
-      className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 rounded-xl p-6 border border-primary/20 text-center"
+      className="bg-gradient-to-r from-primary via-purple-600 to-indigo-600 rounded-xl p-5 text-center shadow-xl"
     >
-      <h4 className="text-xl font-bold text-foreground mb-2 flex items-center justify-center gap-2">
-        <Sparkles className="w-6 h-6 text-primary" />
+      <h4 className="text-xl font-bold text-white mb-2 flex items-center justify-center gap-2">
+        <BrainCircuit className="w-6 h-6 text-yellow-300" />
         What if AI could intelligently route documents to the best model?
       </h4>
-      <p className="text-muted-foreground">
-        Introducing <strong className="text-primary">Multi-Model Intelligent Routing</strong> - where AI decides which AI to use
+      <p className="text-purple-100 text-base">
+        Introducing <strong className="text-yellow-300">Multi-Model Intelligent Routing</strong> — where AI decides which AI to use
       </p>
     </motion.div>
   </motion.div>
@@ -928,116 +931,131 @@ const TwoStagePipelineSlide = () => (
 );
 
 // =============================================================================
-// SLIDE 7: SOLUTION ARCHITECTURE - Complete Visual Overview
+// SLIDE 7: SOLUTION ARCHITECTURE - Clear Visual Journey
 // =============================================================================
 const SolutionArchitectureSlide = () => (
-  <motion.div className="space-y-5" variants={staggerContainer} initial="initial" animate="animate">
+  <motion.div className="space-y-4" variants={staggerContainer} initial="initial" animate="animate">
     <motion.div {...fadeInUp} className="text-center mb-2">
       <Badge className="text-lg px-4 py-1 bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
         <Layers className="w-4 h-4 mr-2 inline" />
-        Complete Solution Architecture
+        How It Works: The Complete Journey
       </Badge>
+      <p className="text-sm text-muted-foreground mt-2">From document upload to actionable data in under 3 seconds</p>
     </motion.div>
 
-    {/* Full Architecture Diagram */}
-    <motion.div
-      {...fadeInUp}
-      className="bg-gradient-to-br from-slate-900 via-indigo-900/80 to-slate-900 rounded-2xl p-6 relative overflow-hidden"
-    >
-      <svg className="w-full h-80" viewBox="0 0 900 300">
-        <defs>
-          <linearGradient id="layerGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#3b82f6"/><stop offset="100%" stopColor="#6366f1"/>
-          </linearGradient>
-          <linearGradient id="layerGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#8b5cf6"/><stop offset="100%" stopColor="#a855f7"/>
-          </linearGradient>
-          <linearGradient id="layerGrad3" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#22c55e"/><stop offset="100%" stopColor="#10b981"/>
-          </linearGradient>
-          <linearGradient id="layerGrad4" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#f59e0b"/><stop offset="100%" stopColor="#f97316"/>
-          </linearGradient>
-        </defs>
-
-        {/* Layer 1: Input */}
-        <motion.g initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <rect x="50" y="20" width="800" height="50" rx="10" fill="url(#layerGrad1)" fillOpacity="0.3" stroke="#3b82f6" strokeWidth="2"/>
-          <text x="90" y="50" fill="white" fontSize="12" fontWeight="bold">INPUT LAYER</text>
-          {["PDF", "Images", "Scans", "Photos", "Fax"].map((item, i) => (
-            <g key={i}>
-              <rect x={220 + i * 120} y="30" width="80" height="30" rx="6" fill="white" fillOpacity="0.1"/>
-              <text x={260 + i * 120} y="50" fill="white" fontSize="10" textAnchor="middle">{item}</text>
-            </g>
-          ))}
-        </motion.g>
-
-        {/* Connecting Lines */}
-        <motion.path d="M 450 70 L 450 90" stroke="white" strokeWidth="2" strokeDasharray="4,4"
-          initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 0.4 }}/>
-
-        {/* Layer 2: Intelligence */}
-        <motion.g initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-          <rect x="50" y="90" width="800" height="50" rx="10" fill="url(#layerGrad2)" fillOpacity="0.3" stroke="#8b5cf6" strokeWidth="2"/>
-          <text x="90" y="120" fill="white" fontSize="12" fontWeight="bold">INTELLIGENCE</text>
-          {["Auto-Config", "Classification", "Routing", "Optimization"].map((item, i) => (
-            <g key={i}>
-              <rect x={220 + i * 150} y="100" width="120" height="30" rx="6" fill="white" fillOpacity="0.1"/>
-              <text x={280 + i * 150} y="120" fill="white" fontSize="10" textAnchor="middle">{item}</text>
-            </g>
-          ))}
-        </motion.g>
-
-        <motion.path d="M 450 140 L 450 160" stroke="white" strokeWidth="2" strokeDasharray="4,4"
-          initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 0.6 }}/>
-
-        {/* Layer 3: Processing */}
-        <motion.g initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
-          <rect x="50" y="160" width="800" height="50" rx="10" fill="url(#layerGrad3)" fillOpacity="0.3" stroke="#22c55e" strokeWidth="2"/>
-          <text x="90" y="190" fill="white" fontSize="12" fontWeight="bold">PROCESSING</text>
-          {["Vision AI", "NLP Extraction", "Validation", "Confidence"].map((item, i) => (
-            <g key={i}>
-              <rect x={220 + i * 150} y="170" width="120" height="30" rx="6" fill="white" fillOpacity="0.1"/>
-              <text x={280 + i * 150} y="190" fill="white" fontSize="10" textAnchor="middle">{item}</text>
-            </g>
-          ))}
-        </motion.g>
-
-        <motion.path d="M 450 210 L 450 230" stroke="white" strokeWidth="2" strokeDasharray="4,4"
-          initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 0.8 }}/>
-
-        {/* Layer 4: Output */}
-        <motion.g initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
-          <rect x="50" y="230" width="800" height="50" rx="10" fill="url(#layerGrad4)" fillOpacity="0.3" stroke="#f59e0b" strokeWidth="2"/>
-          <text x="90" y="260" fill="white" fontSize="12" fontWeight="bold">OUTPUT</text>
-          {["JSON/FHIR", "EHR Systems", "Webhooks", "MCP SDK", "Supabase"].map((item, i) => (
-            <g key={i}>
-              <rect x={220 + i * 110} y="240" width="90" height="30" rx="6" fill="white" fillOpacity="0.1"/>
-              <text x={265 + i * 110} y="260" fill="white" fontSize="10" textAnchor="middle">{item}</text>
-            </g>
-          ))}
-        </motion.g>
-      </svg>
+    {/* Journey Steps - Horizontal Flow */}
+    <motion.div {...fadeInUp} className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 rounded-2xl p-5">
+      <div className="flex items-center justify-between gap-2">
+        {[
+          { step: "1", icon: Upload, title: "Upload", desc: "Any format accepted", color: "blue" },
+          { step: "2", icon: Eye, title: "Detect", desc: "AI identifies document", color: "purple" },
+          { step: "3", icon: BrainCircuit, title: "Route", desc: "Best model selected", color: "violet" },
+          { step: "4", icon: Cpu, title: "Extract", desc: "Vision + NLP processing", color: "green" },
+          { step: "5", icon: CheckCircle, title: "Validate", desc: "Healthcare rules applied", color: "emerald" },
+          { step: "6", icon: Send, title: "Deliver", desc: "Push to any system", color: "orange" },
+        ].map((item, i) => (
+          <React.Fragment key={i}>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 + i * 0.1 }}
+              className="flex flex-col items-center text-center"
+            >
+              <div className={`w-14 h-14 bg-gradient-to-br from-${item.color}-500 to-${item.color}-600 rounded-xl flex items-center justify-center mb-2 shadow-lg relative`}>
+                <item.icon className="w-7 h-7 text-white" />
+                <div className="absolute -top-2 -right-2 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow">
+                  <span className="text-xs font-bold text-slate-800">{item.step}</span>
+                </div>
+              </div>
+              <h5 className="text-white font-bold text-sm">{item.title}</h5>
+              <p className="text-slate-400 text-xs">{item.desc}</p>
+            </motion.div>
+            {i < 5 && (
+              <motion.div 
+                className="flex-shrink-0"
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.4 + i * 0.1 }}
+              >
+                <ArrowRight className="w-5 h-5 text-slate-500" />
+              </motion.div>
+            )}
+          </React.Fragment>
+        ))}
+      </div>
     </motion.div>
+
+    {/* Four Layer Architecture Cards */}
+    <div className="grid grid-cols-4 gap-3">
+      {[
+        { 
+          layer: "Input Layer", 
+          items: ["PDF", "Images", "Scans", "Fax"], 
+          color: "blue",
+          icon: Upload,
+          desc: "Accept any document format"
+        },
+        { 
+          layer: "Intelligence Layer", 
+          items: ["Auto-Config", "Classification", "Routing"], 
+          color: "purple",
+          icon: BrainCircuit,
+          desc: "AI-powered decision making"
+        },
+        { 
+          layer: "Processing Layer", 
+          items: ["Vision AI", "NLP Extraction", "Validation"], 
+          color: "green",
+          icon: Cpu,
+          desc: "Multi-model extraction"
+        },
+        { 
+          layer: "Output Layer", 
+          items: ["JSON/FHIR", "EHR", "Webhooks", "MCP"], 
+          color: "orange",
+          icon: Send,
+          desc: "Deliver to any system"
+        },
+      ].map((layer, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 + i * 0.1 }}
+          className={`bg-gradient-to-br from-${layer.color}-50 to-white rounded-xl p-4 border-2 border-${layer.color}-200 shadow-md`}
+        >
+          <div className={`w-10 h-10 bg-${layer.color}-100 rounded-lg flex items-center justify-center mb-2`}>
+            <layer.icon className={`w-5 h-5 text-${layer.color}-600`} />
+          </div>
+          <h4 className={`font-bold text-${layer.color}-800 text-sm mb-1`}>{layer.layer}</h4>
+          <p className="text-xs text-slate-600 mb-2">{layer.desc}</p>
+          <div className="flex flex-wrap gap-1">
+            {layer.items.map((item, j) => (
+              <Badge key={j} variant="outline" className={`text-xs border-${layer.color}-300 text-${layer.color}-700`}>{item}</Badge>
+            ))}
+          </div>
+        </motion.div>
+      ))}
+    </div>
 
     {/* Key Metrics */}
-    <motion.div {...fadeInUp} className="grid grid-cols-4 gap-4">
+    <motion.div {...fadeInUp} className="grid grid-cols-4 gap-3">
       {[
-        { icon: Zap, label: "Processing Time", value: "<3 sec", color: "blue" },
-        { icon: Shield, label: "HIPAA Compliant", value: "100%", color: "green" },
-        { icon: Target, label: "Accuracy Rate", value: "95%+", color: "purple" },
-        { icon: DollarSign, label: "Cost per Doc", value: "$0.05", color: "orange" },
+        { icon: Zap, label: "Processing Time", value: "<3 sec", color: "blue", bg: "bg-blue-600" },
+        { icon: Shield, label: "HIPAA Compliant", value: "100%", color: "green", bg: "bg-green-600" },
+        { icon: Target, label: "Accuracy Rate", value: "95%+", color: "purple", bg: "bg-purple-600" },
+        { icon: DollarSign, label: "Cost per Doc", value: "$0.05", color: "orange", bg: "bg-orange-600" },
       ].map((item, i) => (
         <motion.div
           key={i}
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 1 + i * 0.1 }}
-          className={`text-center p-4 bg-${item.color}-50 rounded-xl border border-${item.color}-200`}
+          transition={{ delay: 0.8 + i * 0.1 }}
+          className={`text-center p-3 ${item.bg} rounded-xl shadow-lg`}
         >
-          <item.icon className={`w-8 h-8 text-${item.color}-500 mx-auto mb-2`} />
-          <div className={`text-2xl font-bold text-${item.color}-600`}>{item.value}</div>
-          <div className="text-sm text-muted-foreground">{item.label}</div>
+          <item.icon className="w-6 h-6 text-white mx-auto mb-1" />
+          <div className="text-2xl font-bold text-white">{item.value}</div>
+          <div className="text-xs text-white/80">{item.label}</div>
         </motion.div>
       ))}
     </motion.div>
@@ -1045,151 +1063,461 @@ const SolutionArchitectureSlide = () => (
 );
 
 // =============================================================================
-// SLIDE 8: LIVE DEMO - Animated Document Processing Flow
+// SLIDE 8: WHAT WE'VE BUILT - Current Implementation Features
 // =============================================================================
-const LiveDemoSlide = () => {
-  const [demoStep, setDemoStep] = useState(0);
-  
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setDemoStep((prev) => (prev + 1) % 6);
-    }, 3000);
-    return () => clearInterval(timer);
-  }, []);
+const CurrentImplementationSlide = () => (
+  <motion.div className="space-y-4" variants={staggerContainer} initial="initial" animate="animate">
+    <motion.div {...fadeInUp} className="text-center mb-2">
+      <Badge className="text-lg px-4 py-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white">
+        <Rocket className="w-4 h-4 mr-2 inline" />
+        What We've Built: Current Implementation
+      </Badge>
+      <p className="text-sm text-muted-foreground mt-2">Production-ready features powering real document workflows</p>
+    </motion.div>
 
-  return (
-    <motion.div className="space-y-5" variants={staggerContainer} initial="initial" animate="animate">
-      <motion.div {...fadeInUp} className="text-center mb-2">
-        <Badge className="text-lg px-4 py-1 bg-gradient-to-r from-cyan-500 to-blue-500 text-white">
-          <MonitorPlay className="w-4 h-4 mr-2 inline" />
-          Live Processing Demo
-        </Badge>
-      </motion.div>
-
-      {/* Demo Flow */}
+    {/* Implementation Highlights Grid */}
+    <div className="grid grid-cols-3 gap-4">
+      {/* Core Processing */}
       <motion.div
-        {...fadeInUp}
-        className="bg-gradient-to-br from-slate-900 via-cyan-900/50 to-slate-900 rounded-2xl p-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border-2 border-blue-200"
       >
-        {/* Progress Steps */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+            <Cpu className="w-5 h-5 text-white" />
+          </div>
+          <h4 className="font-bold text-blue-900">Multi-Model Processing</h4>
+        </div>
+        <div className="space-y-2">
           {[
-            { icon: Upload, label: "Upload" },
-            { icon: Eye, label: "Detect" },
-            { icon: Cpu, label: "Extract" },
-            { icon: PenTool, label: "Edit" },
-            { icon: Link2, label: "Integrate" },
-            { icon: Send, label: "Push" },
-          ].map((step, i) => (
-            <React.Fragment key={i}>
-              <motion.div
-                className={cn("flex flex-col items-center transition-all", i <= demoStep ? "opacity-100" : "opacity-40")}
-                animate={i === demoStep ? { scale: [1, 1.1, 1] } : {}}
-                transition={{ duration: 0.5 }}
-              >
-                <div className={cn(
-                  "w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-colors",
-                  i < demoStep ? "bg-green-500" : i === demoStep ? "bg-cyan-500" : "bg-gray-600"
-                )}>
-                  {i < demoStep ? <Check className="w-6 h-6 text-white" /> : <step.icon className="w-6 h-6 text-white" />}
-                </div>
-                <span className="text-xs text-white font-medium">{step.label}</span>
-              </motion.div>
-              {i < 5 && <div className={cn("flex-1 h-1 mx-2 rounded", i < demoStep ? "bg-green-500" : "bg-gray-700")} />}
-            </React.Fragment>
+            "Claude Sonnet 4 for medical context",
+            "GPT-4o Vision for handwriting",
+            "Gemini 2.5 Flash for tables",
+            "Auto model selection",
+            "Fallback routing"
+          ].map((item, i) => (
+            <div key={i} className="flex items-center gap-2 text-sm">
+              <CheckCircle className="w-4 h-4 text-blue-600 flex-shrink-0" />
+              <span className="text-slate-700">{item}</span>
+            </div>
           ))}
         </div>
+        <Badge className="mt-3 bg-blue-600 text-white">✓ Live</Badge>
+      </motion.div>
 
-        {/* Demo Content Area */}
-        <div className="grid grid-cols-3 gap-4">
-          {/* Document Preview */}
-          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-            <h5 className="text-white font-medium mb-3 text-sm flex items-center gap-2">
-              <FileText className="w-4 h-4" /> Prescription Document
-            </h5>
-            <div className="bg-white/10 rounded-lg p-4 space-y-2">
-              <div className="h-3 bg-gray-400/30 rounded w-3/4" />
-              <div className="h-3 bg-gray-400/30 rounded w-1/2" />
-              <div className="h-3 bg-gray-400/30 rounded w-5/6" />
-              <div className="h-3 bg-blue-400/50 rounded w-2/3" />
-              <div className="h-3 bg-green-400/50 rounded w-4/5" />
-            </div>
-            <Badge className="mt-3 bg-cyan-500/20 text-cyan-300 border-cyan-500/30">Type: Prescription</Badge>
+      {/* Document Types */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-4 border-2 border-purple-200"
+      >
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
+            <FileText className="w-5 h-5 text-white" />
           </div>
-
-          {/* Extracted Fields */}
-          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-            <h5 className="text-white font-medium mb-3 text-sm flex items-center gap-2">
-              <Database className="w-4 h-4" /> Extracted Fields
-            </h5>
-            <div className="space-y-2">
-              {[
-                { field: "Patient", value: "John Smith", conf: 98 },
-                { field: "Medication", value: "Metformin", conf: 96, editable: true },
-                { field: "Dosage", value: "500mg", conf: 94 },
-                { field: "Frequency", value: "BID", conf: 92 },
-                { field: "Provider NPI", value: "1234567890", conf: 99 },
-              ].map((item, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5 + i * 0.1 }}
-                  className="flex items-center gap-2 p-2 bg-white/5 rounded"
-                >
-                  <div className="flex-1">
-                    <span className="text-xs text-gray-400">{item.field}</span>
-                    <div className="text-sm text-white font-medium flex items-center gap-1">
-                      {item.value}
-                      {item.editable && <PenTool className="w-3 h-3 text-cyan-400" />}
-                    </div>
-                  </div>
-                  <Badge className="bg-green-500/20 text-green-300 text-xs">{item.conf}%</Badge>
-                </motion.div>
-              ))}
+          <h4 className="font-bold text-purple-900">Document Types</h4>
+        </div>
+        <div className="space-y-2">
+          {[
+            "Prescriptions & Rx forms",
+            "Insurance cards",
+            "Lab results & reports",
+            "Medical records",
+            "Prior authorizations",
+            "Claims & EOBs"
+          ].map((item, i) => (
+            <div key={i} className="flex items-center gap-2 text-sm">
+              <CheckCircle className="w-4 h-4 text-purple-600 flex-shrink-0" />
+              <span className="text-slate-700">{item}</span>
             </div>
+          ))}
+        </div>
+        <Badge className="mt-3 bg-purple-600 text-white">12+ Types</Badge>
+      </motion.div>
+
+      {/* Integrations */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border-2 border-green-200"
+      >
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
+            <Link2 className="w-5 h-5 text-white" />
           </div>
-
-          {/* Integrations */}
-          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-            <h5 className="text-white font-medium mb-3 text-sm flex items-center gap-2">
-              <Link2 className="w-4 h-4" /> Drug Integrations
-            </h5>
-            <div className="space-y-2">
-              {[
-                { name: "RxNorm", status: "Connected", icon: Pill },
-                { name: "DrugBank", status: "Active", icon: Database },
-                { name: "NDC Lookup", status: "Verified", icon: CheckCircle },
-                { name: "FDA Database", status: "Live", icon: Shield },
-              ].map((item, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.7 + i * 0.1 }}
-                  className="flex items-center gap-2 p-2 bg-green-500/10 rounded border border-green-500/20"
-                >
-                  <item.icon className="w-4 h-4 text-green-400" />
-                  <span className="text-sm text-white flex-1">{item.name}</span>
-                  <Badge variant="outline" className="text-green-400 border-green-400/30 text-xs">{item.status}</Badge>
-                </motion.div>
-              ))}
+          <h4 className="font-bold text-green-900">Live Integrations</h4>
+        </div>
+        <div className="space-y-2">
+          {[
+            "DrugBank API (drug lookup)",
+            "RxNorm (medication codes)",
+            "NDC Database",
+            "FDA Drug Database",
+            "Supabase (storage)"
+          ].map((item, i) => (
+            <div key={i} className="flex items-center gap-2 text-sm">
+              <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+              <span className="text-slate-700">{item}</span>
             </div>
-            
-            <div className="mt-4 p-3 bg-cyan-500/10 rounded-lg border border-cyan-500/20">
-              <div className="text-xs text-cyan-300 mb-2">Push to:</div>
-              <div className="flex flex-wrap gap-2">
-                {["Epic EHR", "Supabase", "Salesforce", "HubSpot"].map((target, i) => (
-                  <Badge key={i} variant="outline" className="text-cyan-400 border-cyan-400/30 text-xs">{target}</Badge>
-                ))}
+          ))}
+        </div>
+        <Badge className="mt-3 bg-green-600 text-white">5 APIs</Badge>
+      </motion.div>
+    </div>
+
+    {/* Key Features Row */}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.5 }}
+      className="grid grid-cols-4 gap-3"
+    >
+      {[
+        { icon: Eye, title: "Auto-Detection", desc: "Zero config document classification", color: "cyan" },
+        { icon: PenTool, title: "Inline Editing", desc: "Edit extracted fields with drug lookup", color: "violet" },
+        { icon: Shield, title: "Validation", desc: "Healthcare-specific field validation", color: "emerald" },
+        { icon: Database, title: "Export", desc: "JSON, FHIR, CSV output formats", color: "orange" },
+      ].map((item, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.6 + i * 0.1 }}
+          className={`bg-${item.color}-50 border border-${item.color}-200 rounded-xl p-3 text-center`}
+        >
+          <item.icon className={`w-8 h-8 text-${item.color}-600 mx-auto mb-2`} />
+          <h5 className={`font-bold text-${item.color}-800 text-sm`}>{item.title}</h5>
+          <p className="text-xs text-slate-600">{item.desc}</p>
+        </motion.div>
+      ))}
+    </motion.div>
+
+    {/* Results Banner */}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.8 }}
+      className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl p-4"
+    >
+      <div className="grid grid-cols-4 gap-4 text-center text-white">
+        {[
+          { value: "95%+", label: "Extraction Accuracy" },
+          { value: "<3s", label: "Processing Time" },
+          { value: "12+", label: "Document Types" },
+          { value: "5", label: "Drug Databases" },
+        ].map((stat, i) => (
+          <div key={i}>
+            <div className="text-2xl font-bold">{stat.value}</div>
+            <div className="text-sm text-emerald-100">{stat.label}</div>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  </motion.div>
+);
+
+// =============================================================================
+// SLIDE 9: GUIDED AGENT WORKFLOWS - NEW
+// =============================================================================
+const GuidedAgentWorkflowsSlide = () => (
+  <motion.div className="space-y-4" variants={staggerContainer} initial="initial" animate="animate">
+    <motion.div {...fadeInUp} className="text-center mb-2">
+      <Badge className="text-lg px-4 py-1 bg-gradient-to-r from-violet-500 to-purple-500 text-white">
+        <Workflow className="w-4 h-4 mr-2 inline" />
+        Guided Agent Workflows
+      </Badge>
+      <p className="text-sm text-muted-foreground mt-2">Pre-built workflows that turn extracted data into automated actions</p>
+    </motion.div>
+
+    {/* Workflow Cards */}
+    <div className="grid grid-cols-3 gap-4">
+      {[
+        {
+          title: "Insurance Card Verification",
+          icon: Shield,
+          steps: ["Extract card data", "Validate coverage", "Check eligibility", "Update patient record"],
+          trigger: "Insurance card upload",
+          result: "Verified coverage with eligibility status",
+          color: "blue",
+          status: "Ready"
+        },
+        {
+          title: "Patient Onboarding",
+          icon: Users,
+          steps: ["Extract demographics", "Validate required fields", "Check existing records", "Create patient profile"],
+          trigger: "New patient forms",
+          result: "Complete patient profile in EHR",
+          color: "green",
+          status: "Ready"
+        },
+        {
+          title: "Prescription Processing",
+          icon: Pill,
+          steps: ["Extract Rx details", "Drug interaction check", "Validate provider", "Queue for pharmacy"],
+          trigger: "Prescription document",
+          result: "Validated Rx ready for fulfillment",
+          color: "purple",
+          status: "Ready"
+        },
+      ].map((workflow, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 + i * 0.1 }}
+          className={`bg-gradient-to-br from-${workflow.color}-50 to-white rounded-xl p-4 border-2 border-${workflow.color}-200 shadow-lg`}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className={`w-10 h-10 bg-${workflow.color}-600 rounded-lg flex items-center justify-center`}>
+                <workflow.icon className="w-5 h-5 text-white" />
               </div>
+              <h4 className={`font-bold text-${workflow.color}-900 text-sm`}>{workflow.title}</h4>
             </div>
+            <Badge className={`bg-${workflow.color}-600 text-white text-xs`}>{workflow.status}</Badge>
+          </div>
+          
+          <div className="space-y-1.5 mb-3">
+            {workflow.steps.map((step, j) => (
+              <div key={j} className="flex items-center gap-2">
+                <div className={`w-5 h-5 bg-${workflow.color}-100 rounded-full flex items-center justify-center`}>
+                  <span className={`text-xs font-bold text-${workflow.color}-700`}>{j + 1}</span>
+                </div>
+                <span className="text-xs text-slate-700">{step}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className={`p-2 bg-${workflow.color}-100 rounded-lg`}>
+            <div className="flex items-center gap-1 text-xs text-slate-600 mb-1">
+              <Zap className="w-3 h-3" /> Trigger: {workflow.trigger}
+            </div>
+            <div className="flex items-center gap-1 text-xs font-medium text-slate-700">
+              <CheckCircle className="w-3 h-3 text-green-600" /> {workflow.result}
+            </div>
+          </div>
+        </motion.div>
+      ))}
+    </div>
+
+    {/* Additional Workflows Row */}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.5 }}
+      className="grid grid-cols-2 gap-4"
+    >
+      {[
+        {
+          title: "Prior Authorization",
+          icon: ClipboardList,
+          description: "Auto-generate prior auth requests from clinical docs",
+          steps: ["Extract clinical data", "Match to payer requirements", "Generate PA form", "Submit to payer"],
+          color: "orange"
+        },
+        {
+          title: "Lab Results Processing",
+          icon: Activity,
+          description: "Parse lab reports and flag abnormal values",
+          steps: ["Extract lab values", "Apply reference ranges", "Flag abnormals", "Route to provider"],
+          color: "cyan"
+        },
+      ].map((workflow, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, x: i === 0 ? -20 : 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.6 + i * 0.1 }}
+          className={`bg-gradient-to-r from-${workflow.color}-50 to-white rounded-xl p-4 border border-${workflow.color}-200 flex gap-4`}
+        >
+          <div className={`w-12 h-12 bg-${workflow.color}-600 rounded-xl flex items-center justify-center flex-shrink-0`}>
+            <workflow.icon className="w-6 h-6 text-white" />
+          </div>
+          <div className="flex-1">
+            <h4 className={`font-bold text-${workflow.color}-900 mb-1`}>{workflow.title}</h4>
+            <p className="text-xs text-slate-600 mb-2">{workflow.description}</p>
+            <div className="flex flex-wrap gap-1">
+              {workflow.steps.map((step, j) => (
+                <Badge key={j} variant="outline" className={`text-xs border-${workflow.color}-300 text-${workflow.color}-700`}>
+                  {j + 1}. {step}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      ))}
+    </motion.div>
+
+    {/* Launch Options */}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.8 }}
+      className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-xl p-4 flex items-center justify-between"
+    >
+      <div className="flex items-center gap-3">
+        <Bot className="w-8 h-8 text-violet-400" />
+        <div>
+          <h4 className="font-bold text-white">Execute workflows automatically or with human oversight</h4>
+          <p className="text-sm text-slate-400">Agents can run autonomously or pause for approval at key steps</p>
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <Badge className="bg-violet-600 text-white">Auto Mode</Badge>
+        <Badge className="bg-blue-600 text-white">Review Mode</Badge>
+        <Badge className="bg-green-600 text-white">Hybrid</Badge>
+      </div>
+    </motion.div>
+  </motion.div>
+);
+
+// =============================================================================
+// SLIDE 10: CONFIGURATION & SETUP - NEW
+// =============================================================================
+const ConfigurationRequiredSlide = () => (
+  <motion.div className="space-y-4" variants={staggerContainer} initial="initial" animate="animate">
+    <motion.div {...fadeInUp} className="text-center mb-2">
+      <Badge className="text-lg px-4 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white">
+        <Wrench className="w-4 h-4 mr-2 inline" />
+        Configuration & Requirements
+      </Badge>
+      <p className="text-sm text-muted-foreground mt-2">What you need to get started — and what's included out of the box</p>
+    </motion.div>
+
+    <div className="grid grid-cols-2 gap-5">
+      {/* Included - No Config Needed */}
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.2 }}
+        className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-5 border-2 border-green-300"
+      >
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center">
+            <CheckCircle className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h4 className="font-bold text-green-900 text-lg">Included Out of the Box</h4>
+            <p className="text-sm text-green-700">Zero configuration required</p>
           </div>
         </div>
+        
+        <div className="space-y-2">
+          {[
+            { item: "Multi-model AI routing", desc: "Claude, GPT-4o, Gemini auto-selected" },
+            { item: "Document classification", desc: "12+ healthcare document types" },
+            { item: "Field extraction", desc: "Intelligent data parsing" },
+            { item: "Drug database lookups", desc: "DrugBank, RxNorm, NDC, FDA" },
+            { item: "Validation rules", desc: "Healthcare-specific field validation" },
+            { item: "Export formats", desc: "JSON, FHIR R4, CSV" },
+            { item: "Confidence scoring", desc: "Per-field accuracy metrics" },
+          ].map((feature, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 + i * 0.05 }}
+              className="flex items-start gap-2 p-2 bg-white rounded-lg"
+            >
+              <Check className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <span className="text-sm font-medium text-slate-900">{feature.item}</span>
+                <p className="text-xs text-slate-600">{feature.desc}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </motion.div>
+
+      {/* Configuration Options */}
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.3 }}
+        className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-5 border-2 border-amber-300"
+      >
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-12 h-12 bg-amber-600 rounded-xl flex items-center justify-center">
+            <Settings className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h4 className="font-bold text-amber-900 text-lg">Optional Configuration</h4>
+            <p className="text-sm text-amber-700">Customize for your workflow</p>
+          </div>
+        </div>
+        
+        <div className="space-y-2">
+          {[
+            { item: "EHR Integration", desc: "Epic, Cerner, Allscripts endpoints", type: "API Keys" },
+            { item: "Custom Document Types", desc: "Add organization-specific forms", type: "Template" },
+            { item: "Workflow Rules", desc: "Define routing and approval logic", type: "Config" },
+            { item: "MCP SDK Setup", desc: "Salesforce, HubSpot connections", type: "Auth" },
+            { item: "Webhook Endpoints", desc: "n8n, Zapier, custom destinations", type: "URL" },
+            { item: "Custom Validation", desc: "Organization-specific rules", type: "Rules" },
+          ].map((config, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 + i * 0.05 }}
+              className="flex items-start gap-2 p-2 bg-white rounded-lg"
+            >
+              <Wrench className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-slate-900">{config.item}</span>
+                  <Badge variant="outline" className="text-xs border-amber-400 text-amber-700">{config.type}</Badge>
+                </div>
+                <p className="text-xs text-slate-600">{config.desc}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+    </div>
+
+    {/* Quick Start Guide */}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.6 }}
+      className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-xl p-4"
+    >
+      <h4 className="font-bold text-white mb-3 flex items-center gap-2">
+        <Rocket className="w-5 h-5 text-cyan-400" />
+        Quick Start: 3 Steps to Production
+      </h4>
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { step: "1", title: "Upload Document", desc: "Drop any healthcare document", time: "5 sec" },
+          { step: "2", title: "Review Extraction", desc: "Verify AI-extracted fields", time: "30 sec" },
+          { step: "3", title: "Export or Push", desc: "Send to your systems", time: "5 sec" },
+        ].map((item, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.7 + i * 0.1 }}
+            className="bg-white/5 rounded-lg p-3 border border-white/10"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 bg-cyan-600 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold">{item.step}</span>
+              </div>
+              <Badge className="bg-green-600/20 text-green-300 text-xs">{item.time}</Badge>
+            </div>
+            <h5 className="font-bold text-white text-sm">{item.title}</h5>
+            <p className="text-xs text-slate-400">{item.desc}</p>
+          </motion.div>
+        ))}
+      </div>
     </motion.div>
-  );
-};
+  </motion.div>
+);
 
 // =============================================================================
 // SLIDE 9: SUB-AGENTS - Ready Agents and Canvas
@@ -1740,24 +2068,60 @@ const documentProcessingSlides: Slide[] = [
   },
   { 
     id: 8, 
-    title: "Live Processing Demo", 
-    subtitle: "Document upload to data extraction in action",
+    title: "What We've Built", 
+    subtitle: "Current implementation features in production",
     animation: 'fade', 
-    content: <LiveDemoSlide />,
+    content: <CurrentImplementationSlide />,
     pptContent: {
       bullets: [
-        "Step 1: Upload prescription document",
-        "Step 2: AI auto-detects document type",
-        "Step 3: Multi-model extraction with 96%+ confidence",
-        "Step 4: Edit fields with drug database integration",
-        "Step 5: Integration with RxNorm, DrugBank, NDC, FDA",
-        "Step 6: Push to EHR, Supabase, Salesforce, HubSpot"
+        "Multi-model AI: Claude Sonnet 4, GPT-4o Vision, Gemini 2.5 Flash",
+        "12+ document types: Prescriptions, insurance cards, lab results, medical records",
+        "Live integrations: DrugBank, RxNorm, NDC, FDA databases",
+        "Auto-detection with zero configuration",
+        "Inline editing with drug lookup",
+        "Export: JSON, FHIR R4, CSV formats"
       ],
-      notes: "Live demonstration of the complete document processing workflow from upload to external system integration."
+      notes: "Production-ready features powering real document workflows with 95%+ accuracy."
     }
   },
   { 
     id: 9, 
+    title: "Guided Agent Workflows", 
+    subtitle: "Pre-built workflows that automate document actions",
+    animation: 'slide', 
+    content: <GuidedAgentWorkflowsSlide />,
+    pptContent: {
+      bullets: [
+        "Insurance Card Verification: Extract, validate coverage, check eligibility",
+        "Patient Onboarding: Demographics extraction to EHR profile creation",
+        "Prescription Processing: Rx extraction with drug interaction checks",
+        "Prior Authorization: Auto-generate PA requests from clinical docs",
+        "Lab Results Processing: Parse reports, flag abnormal values",
+        "Execute automatically or with human oversight"
+      ],
+      notes: "Pre-built workflows turn extracted data into automated actions with configurable approval steps."
+    }
+  },
+  { 
+    id: 10, 
+    title: "Configuration & Requirements", 
+    subtitle: "What's included and what you can customize",
+    animation: 'zoom', 
+    content: <ConfigurationRequiredSlide />,
+    pptContent: {
+      bullets: [
+        "Included: Multi-model routing, document classification, field extraction",
+        "Included: Drug database lookups, validation rules, export formats",
+        "Optional: EHR integration (Epic, Cerner, Allscripts)",
+        "Optional: Custom document types and workflow rules",
+        "Optional: MCP SDK for Salesforce, HubSpot connections",
+        "Quick Start: 3 steps to production in under 1 minute"
+      ],
+      notes: "Zero configuration required for core features. Optional integrations for custom workflows."
+    }
+  },
+  { 
+    id: 11, 
     title: "Sub-Agent Intelligence", 
     subtitle: "Ready agents and canvas orchestration",
     animation: 'slide', 
@@ -1771,7 +2135,7 @@ const documentProcessingSlides: Slide[] = [
         "Agent types: Single Agent, Agentic AI, A2A, Clinical, Multi-Agent",
         "Launch on Canvas or Execute Now options"
       ],
-      notes: "Pre-built agents can be deployed immediately or configured for specific workflows, with support for various agent architectures."
+      notes: "Pre-built agents can be deployed immediately or configured for specific workflows."
     }
   },
   { 
