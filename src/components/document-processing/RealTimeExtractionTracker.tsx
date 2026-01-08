@@ -27,6 +27,39 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// Helper to determine if a medication field should be hidden to avoid duplicates
+const shouldHideDuplicateMedicationField = (key: string, extractedFields: Record<string, any>): boolean => {
+  const lowerKey = key.toLowerCase();
+  const numberedMatch = lowerKey.match(/^medication_(\d+)_(.+)$/);
+  
+  const hasNonNumberedMeds = ['medication_name', 'name', 'quantity', 'sig', 'strength', 'form', 'route', 'refills']
+    .some(field => {
+      const fullKey = field === 'name' ? 'medication_name' : field;
+      return extractedFields[fullKey]?.value || extractedFields[`medication_${field}`]?.value;
+    });
+  
+  const numberedMedCount = new Set(
+    Object.keys(extractedFields)
+      .filter(k => /^medication_\d+_/.test(k.toLowerCase()))
+      .map(k => k.toLowerCase().match(/^medication_(\d+)_/)?.[1])
+      .filter(Boolean)
+  ).size;
+  
+  if (numberedMatch) {
+    if (numberedMedCount <= 1 && hasNonNumberedMeds) {
+      return true;
+    }
+  } else {
+    const isMedicationField = /^(medication_)?(name|quantity|sig|strength|form|route|refills|ndc)$/i.test(lowerKey) ||
+                              lowerKey === 'medication_name';
+    if (isMedicationField && numberedMedCount > 1) {
+      return true;
+    }
+  }
+  
+  return false;
+};
+
 export interface ExtractionStage {
   id: string;
   name: string;
@@ -207,9 +240,11 @@ export const RealTimeExtractionTracker: React.FC<RealTimeExtractionTrackerProps>
   const ocrConfidenceStr = extractedFields['_ocr_confidence']?.value || '';
   const pipelineType = extractedFields['_pipeline_type']?.value || 'vision_ai_only';
   
-  // Filter out internal fields for counting
+  // Filter out internal fields and duplicate medication fields for counting
   const visibleFields = Object.entries(extractedFields).filter(([key]) => 
-    !key.startsWith('_') && !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key)
+    !key.startsWith('_') && 
+    !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text'].includes(key) &&
+    !shouldHideDuplicateMedicationField(key, extractedFields)
   );
   
   const totalFieldsCount = visibleFields.length;

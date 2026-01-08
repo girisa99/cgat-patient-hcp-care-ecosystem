@@ -39,8 +39,52 @@ import { expandAbbreviation } from '@/utils/healthcareAbbreviations';
 const countVisibleFields = (extractedFields: Record<string, any>): number => {
   const EXCLUDED = ['line_items', 'tables', 'raw_text', 'detected_document_type', 'document_category', '_pipeline_type', '_ocr_text_length', '_ocr_confidence'];
   return Object.entries(extractedFields).filter(([key, field]) => 
-    field?.value && !key.startsWith('_') && !EXCLUDED.includes(key)
+    field?.value && !key.startsWith('_') && !EXCLUDED.includes(key) && !shouldHideDuplicateMedicationField(key, extractedFields)
   ).length;
+};
+
+// Helper to determine if a medication field should be hidden to avoid duplicates
+// For single medications: hide numbered fields (medication_1_name) when non-numbered exist (medication_name)
+// For multiple medications: hide non-numbered fields when numbered fields exist
+const shouldHideDuplicateMedicationField = (key: string, extractedFields: Record<string, any>): boolean => {
+  const lowerKey = key.toLowerCase();
+  
+  // Check if this is a numbered medication field (medication_1_name, medication_2_quantity, etc.)
+  const numberedMatch = lowerKey.match(/^medication_(\d+)_(.+)$/);
+  
+  // Check if non-numbered medication fields exist
+  const hasNonNumberedMeds = ['medication_name', 'name', 'quantity', 'sig', 'strength', 'form', 'route', 'refills']
+    .some(field => {
+      const fullKey = field === 'name' ? 'medication_name' : field;
+      return extractedFields[fullKey]?.value || extractedFields[`medication_${field}`]?.value;
+    });
+  
+  // Check how many numbered medications exist
+  const numberedMedCount = new Set(
+    Object.keys(extractedFields)
+      .filter(k => /^medication_\d+_/.test(k.toLowerCase()))
+      .map(k => k.toLowerCase().match(/^medication_(\d+)_/)?.[1])
+      .filter(Boolean)
+  ).size;
+  
+  if (numberedMatch) {
+    // This is a numbered field (medication_1_name, etc.)
+    // Hide it if there's only 1 medication AND non-numbered fields exist
+    if (numberedMedCount <= 1 && hasNonNumberedMeds) {
+      return true;
+    }
+  } else {
+    // This is a non-numbered medication field (medication_name, quantity, etc.)
+    const isMedicationField = /^(medication_)?(name|quantity|sig|strength|form|route|refills|ndc)$/i.test(lowerKey) ||
+                              lowerKey === 'medication_name';
+    
+    // Hide non-numbered medication fields if there are multiple numbered medications
+    if (isMedicationField && numberedMedCount > 1) {
+      return true;
+    }
+  }
+  
+  return false;
 };
 
 interface UploadTabProps {
@@ -272,7 +316,8 @@ export default function UploadTab({
                             .filter(([key, field]) => 
                               field?.value && 
                               !key.startsWith('_') && 
-                              !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text', '_pipeline_type', '_ocr_text_length', '_ocr_confidence'].includes(key)
+                              !['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text', '_pipeline_type', '_ocr_text_length', '_ocr_confidence'].includes(key) &&
+                              !shouldHideDuplicateMedicationField(key, processingResult.extractedFields)
                             )
                             .map(([key, field]) => {
                               const label = expandAbbreviation(key.replace(/_/g, ' '));

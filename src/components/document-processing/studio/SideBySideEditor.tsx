@@ -18,6 +18,50 @@ import { cn } from '@/lib/utils';
 import { FieldConfirmationCard } from './FieldConfirmationCard';
 import type { ExtractedField } from './SmartDocumentStudio';
 
+// Helper to determine if a medication field should be hidden to avoid duplicates
+// For single medications: hide numbered fields (medication_1_name) when non-numbered exist (medication_name)
+// For multiple medications: hide non-numbered fields when numbered fields exist
+const shouldHideDuplicateMedicationField = (key: string, extractedFields: Record<string, any>): boolean => {
+  const lowerKey = key.toLowerCase();
+  
+  // Check if this is a numbered medication field (medication_1_name, medication_2_quantity, etc.)
+  const numberedMatch = lowerKey.match(/^medication_(\d+)_(.+)$/);
+  
+  // Check if non-numbered medication fields exist
+  const hasNonNumberedMeds = ['medication_name', 'name', 'quantity', 'sig', 'strength', 'form', 'route', 'refills']
+    .some(field => {
+      const fullKey = field === 'name' ? 'medication_name' : field;
+      return extractedFields[fullKey]?.value || extractedFields[`medication_${field}`]?.value;
+    });
+  
+  // Check how many numbered medications exist
+  const numberedMedCount = new Set(
+    Object.keys(extractedFields)
+      .filter(k => /^medication_\d+_/.test(k.toLowerCase()))
+      .map(k => k.toLowerCase().match(/^medication_(\d+)_/)?.[1])
+      .filter(Boolean)
+  ).size;
+  
+  if (numberedMatch) {
+    // This is a numbered field (medication_1_name, etc.)
+    // Hide it if there's only 1 medication AND non-numbered fields exist
+    if (numberedMedCount <= 1 && hasNonNumberedMeds) {
+      return true;
+    }
+  } else {
+    // This is a non-numbered medication field (medication_name, quantity, etc.)
+    const isMedicationField = /^(medication_)?(name|quantity|sig|strength|form|route|refills|ndc)$/i.test(lowerKey) ||
+                              lowerKey === 'medication_name';
+    
+    // Hide non-numbered medication fields if there are multiple numbered medications
+    if (isMedicationField && numberedMedCount > 1) {
+      return true;
+    }
+  }
+  
+  return false;
+};
+
 interface FieldStats {
   total: number;
   highConfidence: number;
@@ -46,7 +90,12 @@ export function SideBySideEditor({
   activeFieldKey,
   fieldStats
 }: SideBySideEditorProps) {
-  const fields = Object.entries(extractedFields);
+  // Filter out duplicate medication fields before processing
+  const filteredFields = Object.entries(extractedFields).filter(
+    ([key]) => !shouldHideDuplicateMedicationField(key, extractedFields)
+  );
+  
+  const fields = filteredFields;
 
   // Sort fields: low confidence first, then by key
   const sortedFields = [...fields].sort((a, b) => {
