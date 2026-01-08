@@ -874,24 +874,25 @@ async function handleExtractMetadata(supabase: any, request: ProcessingRequest) 
 }
 
 async function handleMapToForm(supabase: any, request: ProcessingRequest) {
-  const { documentId, processingConfig, documentType, provider: requestedProvider, fileBase64, mimeType } = request;
+  const { documentId, processingConfig, documentType: requestDocumentType, provider: requestedProvider, fileBase64, mimeType } = request;
   
-  // Get document record to access file URL and metadata
+  // Get document record to access file URL, metadata, and auto-detected document type
   let fileUrl = '';
   let filePath = '';
   let storedMimeType = mimeType || '';
+  let documentType = requestDocumentType; // Start with request value, will be overridden by DB if available
   
   // Normalize OCR provider name (frontend may send 'google', we use 'gemini')
   let rawProvider = requestedProvider || processingConfig?.ocrProvider || 'gemini';
   if (rawProvider === 'google') rawProvider = 'gemini';
   let configuredProvider = rawProvider;
   
-  console.log(`handleMapToForm called with documentId: ${documentId}, provider: ${configuredProvider}`);
+  console.log(`handleMapToForm called with documentId: ${documentId}, provider: ${configuredProvider}, requestDocumentType: ${requestDocumentType}`);
   
   if (documentId) {
     const { data: doc, error: docError } = await supabase
       .from('document_processing_jobs')
-      .select('processing_config, file_path, mime_type')
+      .select('processing_config, file_path, mime_type, document_type')
       .eq('id', documentId)
       .single();
     
@@ -913,7 +914,19 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
       const storedProvider = doc.processing_config.ocrProvider;
       configuredProvider = storedProvider === 'google' ? 'gemini' : storedProvider;
     }
+    // Use auto-detected document type from DB if not provided in request
+    if (!documentType && doc?.document_type) {
+      documentType = doc.document_type;
+      console.log(`Using auto-detected document type from DB: ${documentType}`);
+    }
+    // Also check processing_config for detected type from upload stage
+    if (!documentType && doc?.processing_config?.autoDetectionResult?.detected_type) {
+      documentType = doc.processing_config.autoDetectionResult.detected_type;
+      console.log(`Using detected type from autoDetectionResult: ${documentType}`);
+    }
   }
+  
+  console.log(`Final document type for routing: ${documentType}`);
   
   // Build form mapping based on document type
   const formMapping: Record<string, { value: string; confidence: number; source: string }> = {};
@@ -3657,21 +3670,26 @@ Use the OCR text above as a reference to validate and enhance your visual extrac
   };
 }
 
-// ============= DOCUMENT CATEGORY HELPER =============
 function getDocumentCategory(documentType: string): string {
   const categoryMap: Record<string, string> = {
-    // Healthcare
+    // Healthcare - include all naming variants
     'prescription': 'healthcare',
+    'prescription_form': 'healthcare',
+    'rx': 'healthcare',
     'insurance': 'healthcare',
     'lab-results': 'healthcare',
     'lab_result': 'healthcare',
+    'lab_results': 'healthcare',
     'patient-onboarding': 'healthcare',
+    'patient_onboarding': 'healthcare',
     'medical_record': 'healthcare',
     'insurance_card': 'healthcare',
+    'enrollment_form': 'healthcare',
     
     // Medical Imaging
     'medical_imaging': 'medical-imaging',
     'xray': 'medical-imaging',
+    'x-ray': 'medical-imaging',
     'ct-scan': 'medical-imaging',
     'ct_scan': 'medical-imaging',
     'mri': 'medical-imaging',
@@ -3686,7 +3704,9 @@ function getDocumentCategory(documentType: string): string {
     // Identity
     'passport': 'identity',
     'drivers-license': 'identity',
+    'drivers_license': 'identity',
     'identification': 'identity',
+    'id_card': 'identity',
     
     // Business
     'contract': 'business',
