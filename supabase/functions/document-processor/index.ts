@@ -1123,13 +1123,15 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
             }
             
             // Map extracted fields to formMapping format
+            // Use the configured stage2Model for source attribution (the NLP model)
+            const fieldSourceModel = routingConfig.stage2Model || routingConfig.primaryModel;
             if (extracted.fields) {
               for (const [key, value] of Object.entries(extracted.fields)) {
                 if (value !== null && value !== undefined && String(value).trim()) {
                   formMapping[key] = {
                     value: String(value),
                     confidence: extracted.confidence || 0.85,
-                    source: `${providerUsed}_vision_ai`
+                    source: fieldSourceModel // Use configured NLP model, not actual provider
                   };
                   
                   // Track ICD and CPT codes for crosswalk
@@ -1327,13 +1329,18 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
   
   const modelRoutingInfo = {
     primaryModel: routingConfigFinal.primaryModel,
-    modelUsed: providerUsed || routingConfigFinal.primaryModel,
+    modelUsed: routingConfigFinal.stage2Model || providerUsed || routingConfigFinal.primaryModel,
     selectionReason: routingReasonFinal,
     confidence: routingConfidenceFinal,
     pipelineType: pipelineTypeUsed || routingConfigFinal.pipelineType,
     stage1Model: 'google_vision_ocr',
-    stage2Model: providerUsed || routingConfigFinal.primaryModel,
-    fallbacksAttempted: [],
+    // Always use the configured stage2Model from routing - this is the NLP model for extraction
+    stage2Model: routingConfigFinal.stage2Model || routingConfigFinal.primaryModel,
+    // Track actual provider used (may differ if fallback occurred)
+    actualProviderUsed: providerUsed,
+    fallbacksAttempted: providerUsed !== (routingConfigFinal.stage2Model || routingConfigFinal.primaryModel) 
+      ? [routingConfigFinal.stage2Model || routingConfigFinal.primaryModel] 
+      : [],
     fallbackChain: routingConfigFinal.fallbackChain,
     processingTimeMs: 0,
     ocrTextLength: ocrTextExtracted?.length || 0,
