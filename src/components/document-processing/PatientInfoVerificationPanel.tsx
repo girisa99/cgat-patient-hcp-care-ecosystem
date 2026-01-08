@@ -376,7 +376,8 @@ export const PatientInfoVerificationPanel: React.FC<PatientInfoVerificationPanel
         .filter(([key, value]) => {
           // Skip internal fields and special keys
           if (key.startsWith('_')) return false;
-          if (['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text', 'medications'].includes(key)) return false;
+          const lowerKey = key.toLowerCase();
+          if (['line_items', 'tables', 'detected_document_type', 'document_category', 'raw_text', 'medications', 'medication_count'].includes(lowerKey)) return false;
           
           // Check if value has the expected structure
           if (!value) return false;
