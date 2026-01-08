@@ -167,3 +167,6 @@ verify_jwt = false
 
 [functions.og-metadata]
 verify_jwt = false
+
+[functions.share-presentation]
+verify_jwt = false
