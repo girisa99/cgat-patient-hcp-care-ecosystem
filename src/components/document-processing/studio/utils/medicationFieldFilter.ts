@@ -75,32 +75,53 @@ export function filterDuplicateMedicationFields<T extends Record<string, any>>(
 /**
  * Remove truly duplicate medication fields with different naming conventions
  * e.g., medication_1_medication_name vs medication_1_name (keep the shorter one)
+ * Also normalizes medication_X_medication_Y to medication_X_Y
  */
 export function deduplicateMedicationFields<T extends Record<string, any>>(
   extractedFields: T
 ): T {
-  const result: Record<string, any> = { ...extractedFields };
-  const keysToRemove: string[] = [];
+  const result: Record<string, any> = {};
+  const processedKeys = new Set<string>();
   
-  Object.keys(result).forEach(key => {
+  // First pass: normalize all keys and identify redundant patterns
+  const normalizedEntries: Array<{ originalKey: string; normalizedKey: string; value: any }> = [];
+  
+  Object.entries(extractedFields).forEach(([key, value]) => {
     const lowerKey = key.toLowerCase();
     
     // Check for medication_N_medication_X pattern (redundant 'medication' word)
-    const redundantMatch = lowerKey.match(/^medication_(\d+)_medication_(.+)$/);
+    const redundantMatch = lowerKey.match(/^medication_(\d+)_medication_(.+)$/i);
     if (redundantMatch) {
-      const simpleKey = `medication_${redundantMatch[1]}_${redundantMatch[2]}`;
-      // If the simple version exists, remove the redundant one
-      if (result[simpleKey] !== undefined) {
-        keysToRemove.push(key);
-      } else {
-        // Rename to simple format
-        result[simpleKey] = result[key];
-        keysToRemove.push(key);
-      }
+      // Normalize to medication_N_X format
+      const normalizedKey = `medication_${redundantMatch[1]}_${redundantMatch[2]}`;
+      normalizedEntries.push({ originalKey: key, normalizedKey, value });
+    } else {
+      normalizedEntries.push({ originalKey: key, normalizedKey: lowerKey, value });
     }
   });
   
-  keysToRemove.forEach(key => delete result[key]);
+  // Second pass: keep only one entry per normalized key (prefer shorter original key)
+  const keyGroups = new Map<string, Array<{ originalKey: string; value: any }>>();
+  
+  normalizedEntries.forEach(({ originalKey, normalizedKey, value }) => {
+    if (!keyGroups.has(normalizedKey)) {
+      keyGroups.set(normalizedKey, []);
+    }
+    keyGroups.get(normalizedKey)!.push({ originalKey, value });
+  });
+  
+  keyGroups.forEach((entries, normalizedKey) => {
+    if (entries.length === 1) {
+      // Only one entry - use normalized key if it's a medication field
+      const { originalKey, value } = entries[0];
+      const isMedicationField = /^medication_\d+_/i.test(originalKey);
+      result[isMedicationField ? normalizedKey : originalKey] = value;
+    } else {
+      // Multiple entries - pick the shortest original key's value, use normalized key
+      const sorted = entries.sort((a, b) => a.originalKey.length - b.originalKey.length);
+      result[normalizedKey] = sorted[0].value;
+    }
+  });
   
   return result as T;
 }
