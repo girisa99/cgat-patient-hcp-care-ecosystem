@@ -1167,8 +1167,10 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
               'confidence', 'detected_document_type', 'document_category', 'medications'
             ]);
             
-            // Skip medication numbered fields - they'll be created from the medications array
-            const medicationFieldPattern = /^medication_?\d+_/i;
+            // Skip ALL medication numbered fields - they'll be created from the medications array
+            // Pattern matches: medication_1_name, medication1_name, medication_1_medication_name, 
+            // medication1_medication_name, etc.
+            const medicationFieldPattern = /^medication[_\s]?\d+[_\s]/i;
             
             if (extracted.fields) {
               for (const [key, value] of Object.entries(extracted.fields)) {
