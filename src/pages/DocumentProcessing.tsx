@@ -99,7 +99,7 @@ import ProcessingOptionsPanel from '@/components/document-processing/ProcessingO
 import CustomDocumentTypeDialog from '@/components/document-processing/CustomDocumentTypeDialog';
 // AgentArchitectureRecommendationPanel removed - using SubAgentRecommendationDialog instead
 import ProcessingHistoryWithExport from '@/components/document-processing/ProcessingHistoryWithExport';
-import MedicalImageAnalysis from '@/components/document-processing/MedicalImageAnalysis';
+import { MedicalImageAnalysis, MedicalImageAnalysisState, getDefaultMedicalImageAnalysisState } from '@/components/document-processing/MedicalImageAnalysis';
 import InvoiceRCMAnalysis from '@/components/document-processing/InvoiceRCMAnalysis';
 import SubAgentRecommendationDialog from '@/components/document-processing/SubAgentRecommendationDialog';
 import RealTimeExtractionTracker from '@/components/document-processing/RealTimeExtractionTracker';
@@ -756,6 +756,11 @@ export default function DocumentProcessing() {
     setSigInstructions('');
     setParsedSig(null);
     
+    // Clear medical image analysis state
+    setMedicalImageAnalysisState(getDefaultMedicalImageAnalysisState());
+    setMedicalImageBase64('');
+    setMedicalImageMimeType('');
+    
     // Clear session storage
     sessionStorage.removeItem('docProcessing_currentResult');
     sessionStorage.removeItem('docProcessing_pendingResult');
@@ -765,6 +770,9 @@ export default function DocumentProcessing() {
     sessionStorage.removeItem('docProcessing_searchResults');
     sessionStorage.removeItem('docProcessing_selectedNdc');
     sessionStorage.removeItem('docProcessing_parsedSig');
+    sessionStorage.removeItem('docProcessing_medicalImageBase64');
+    sessionStorage.removeItem('docProcessing_medicalImageMimeType');
+    sessionStorage.removeItem('docProcessing_medicalImageAnalysisState');
     
     // Reset recommendation flag
     setHasShownAutoRecommendation(false);
@@ -1776,6 +1784,19 @@ export default function DocumentProcessing() {
     sessionStorage.getItem('docProcessing_medicalImageMimeType') || ''
   );
   
+  // Medical image analysis state - persisted across tab switches
+  const [medicalImageAnalysisState, setMedicalImageAnalysisState] = useState<MedicalImageAnalysisState>(() => {
+    try {
+      const saved = sessionStorage.getItem('docProcessing_medicalImageAnalysisState');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.warn('Failed to restore medical image analysis state:', e);
+    }
+    return getDefaultMedicalImageAnalysisState();
+  });
+  
   // Persist medical imaging base64 to sessionStorage
   useEffect(() => {
     if (medicalImageBase64) {
@@ -1794,6 +1815,17 @@ export default function DocumentProcessing() {
     if (medicalImageMimeType) sessionStorage.setItem('docProcessing_medicalImageMimeType', medicalImageMimeType);
     else sessionStorage.removeItem('docProcessing_medicalImageMimeType');
   }, [medicalImageMimeType]);
+  
+  // Persist medical image analysis state to sessionStorage
+  useEffect(() => {
+    if (medicalImageAnalysisState.analysisComplete || medicalImageAnalysisState.aiInsights.length > 0) {
+      try {
+        sessionStorage.setItem('docProcessing_medicalImageAnalysisState', JSON.stringify(medicalImageAnalysisState));
+      } catch (e) {
+        console.warn('Failed to save medical image analysis state:', e);
+      }
+    }
+  }, [medicalImageAnalysisState]);
   
   // Single consolidated useEffect to restore ALL states from sessionStorage
   // This runs once on mount and restores all document type states in one pass
@@ -3541,6 +3573,9 @@ export default function DocumentProcessing() {
                 imageBase64={medicalImageBase64}
                 imageMimeType={medicalImageMimeType}
                 documentType={selectedDocType}
+                persistedState={medicalImageAnalysisState}
+                onStateChange={setMedicalImageAnalysisState}
+                agentFindings={agentFindings}
                 onSaveAnalysis={async (data) => {
                   // Save analysis to database AND local history
                   try {

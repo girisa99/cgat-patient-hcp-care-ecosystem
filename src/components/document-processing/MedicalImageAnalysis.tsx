@@ -56,12 +56,102 @@ import {
   medicalVisionAIService 
 } from '@/services/medicalVisionAIService';
 
+// Persisted state interface for parent to manage
+export interface MedicalImageAnalysisState {
+  aiInsights: AIInsight[];
+  measurements: Measurement[];
+  panelAnalysis: PanelAnalysis[];
+  detailedReport: DetailedReport;
+  abnormalitySummary: AbnormalitySummary | null;
+  modelApproachDetails: ModelApproachDetails | null;
+  autoDetection: AutoDetection | null;
+  obstructions: Obstruction[];
+  clinicalNotesData: ClinicalNotesData | null;
+  observations: Observation[];
+  providerConsultation: any;
+  cnnAnalysis: any;
+  modelsUsedList: string[];
+  analysisComplete: boolean;
+  modelUsed: string;
+  modelApproach: string;
+  disclaimer: string;
+  rawAnalysis: string;
+  hasAbnormalities: boolean;
+  patientDetails: {
+    patient_name: string;
+    patient_dob: string;
+    patient_id: string;
+    referring_physician: string;
+    study_date: string;
+  };
+  providerDetails: {
+    provider_name: string;
+    provider_npi: string;
+    facility_name: string;
+    facility_address: string;
+    report_date: string;
+  };
+  clinicalNotes: string;
+}
+
+// Helper to create default state
+export const getDefaultMedicalImageAnalysisState = (): MedicalImageAnalysisState => ({
+  aiInsights: [],
+  measurements: [],
+  panelAnalysis: [],
+  detailedReport: {},
+  abnormalitySummary: null,
+  modelApproachDetails: null,
+  autoDetection: null,
+  obstructions: [],
+  clinicalNotesData: null,
+  observations: [],
+  providerConsultation: null,
+  cnnAnalysis: null,
+  modelsUsedList: [],
+  analysisComplete: false,
+  modelUsed: '',
+  modelApproach: '',
+  disclaimer: '',
+  rawAnalysis: '',
+  hasAbnormalities: false,
+  patientDetails: {
+    patient_name: '',
+    patient_dob: '',
+    patient_id: '',
+    referring_physician: '',
+    study_date: new Date().toISOString().split('T')[0]
+  },
+  providerDetails: {
+    provider_name: '',
+    provider_npi: '',
+    facility_name: '',
+    facility_address: '',
+    report_date: new Date().toISOString().split('T')[0]
+  },
+  clinicalNotes: ''
+});
+
 interface MedicalImageAnalysisProps {
   imageUrl: string;
   imageBase64?: string;
   imageMimeType?: string;
   documentType: string;
   onSaveAnalysis: (data: AnalysisResult) => void;
+  // Persisted state from parent (for tab switching)
+  persistedState?: MedicalImageAnalysisState;
+  onStateChange?: (state: MedicalImageAnalysisState) => void;
+  // Agent findings to merge with analysis
+  agentFindings?: Array<{
+    agentId: string;
+    agentName: string;
+    status: 'pending' | 'running' | 'completed' | 'failed';
+    findings: Record<string, any>;
+    confidence: number;
+    executionTimeMs: number;
+    timestamp: string;
+    alerts?: Array<{ level: 'info' | 'warning' | 'error'; message: string }>;
+  }>;
 }
 
 interface AnalysisResult {
@@ -198,32 +288,37 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
   imageBase64,
   imageMimeType,
   documentType,
-  onSaveAnalysis
+  onSaveAnalysis,
+  persistedState,
+  onStateChange,
+  agentFindings
 }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [aiInsights, setAiInsights] = useState<AIInsight[]>([]);
-  const [measurements, setMeasurements] = useState<Measurement[]>([]);
-  const [panelAnalysis, setPanelAnalysis] = useState<PanelAnalysis[]>([]);
-  const [detailedReport, setDetailedReport] = useState<DetailedReport>({});
-  const [abnormalitySummary, setAbnormalitySummary] = useState<AbnormalitySummary | null>(null);
-  const [modelApproachDetails, setModelApproachDetails] = useState<ModelApproachDetails | null>(null);
-  const [autoDetection, setAutoDetection] = useState<AutoDetection | null>(null);
-  const [obstructions, setObstructions] = useState<Obstruction[]>([]);
-  const [clinicalNotesData, setClinicalNotesData] = useState<ClinicalNotesData | null>(null);
-  const [observations, setObservations] = useState<Observation[]>([]);
-  const [providerConsultation, setProviderConsultation] = useState<any>(null);
-  const [cnnAnalysis, setCnnAnalysis] = useState<any>(null);
-  const [modelsUsedList, setModelsUsedList] = useState<string[]>([]);
-  const [analysisComplete, setAnalysisComplete] = useState(false);
+  
+  // Initialize state from persisted state if available
+  const [aiInsights, setAiInsights] = useState<AIInsight[]>(persistedState?.aiInsights || []);
+  const [measurements, setMeasurements] = useState<Measurement[]>(persistedState?.measurements || []);
+  const [panelAnalysis, setPanelAnalysis] = useState<PanelAnalysis[]>(persistedState?.panelAnalysis || []);
+  const [detailedReport, setDetailedReport] = useState<DetailedReport>(persistedState?.detailedReport || {});
+  const [abnormalitySummary, setAbnormalitySummary] = useState<AbnormalitySummary | null>(persistedState?.abnormalitySummary || null);
+  const [modelApproachDetails, setModelApproachDetails] = useState<ModelApproachDetails | null>(persistedState?.modelApproachDetails || null);
+  const [autoDetection, setAutoDetection] = useState<AutoDetection | null>(persistedState?.autoDetection || null);
+  const [obstructions, setObstructions] = useState<Obstruction[]>(persistedState?.obstructions || []);
+  const [clinicalNotesData, setClinicalNotesData] = useState<ClinicalNotesData | null>(persistedState?.clinicalNotesData || null);
+  const [observations, setObservations] = useState<Observation[]>(persistedState?.observations || []);
+  const [providerConsultation, setProviderConsultation] = useState<any>(persistedState?.providerConsultation || null);
+  const [cnnAnalysis, setCnnAnalysis] = useState<any>(persistedState?.cnnAnalysis || null);
+  const [modelsUsedList, setModelsUsedList] = useState<string[]>(persistedState?.modelsUsedList || []);
+  const [analysisComplete, setAnalysisComplete] = useState(persistedState?.analysisComplete || false);
   const [zoom, setZoom] = useState(100);
   const [rotation, setRotation] = useState(0);
-  const [modelUsed, setModelUsed] = useState<string>('');
-  const [modelApproach, setModelApproach] = useState<string>('');
-  const [disclaimer, setDisclaimer] = useState<string>('');
-  const [rawAnalysis, setRawAnalysis] = useState<string>('');
+  const [modelUsed, setModelUsed] = useState<string>(persistedState?.modelUsed || '');
+  const [modelApproach, setModelApproach] = useState<string>(persistedState?.modelApproach || '');
+  const [disclaimer, setDisclaimer] = useState<string>(persistedState?.disclaimer || '');
+  const [rawAnalysis, setRawAnalysis] = useState<string>(persistedState?.rawAnalysis || '');
   const [activeTab, setActiveTab] = useState('analysis');
   const [showProviderSettings, setShowProviderSettings] = useState(false);
-  const [hasAbnormalities, setHasAbnormalities] = useState(false);
+  const [hasAbnormalities, setHasAbnormalities] = useState(persistedState?.hasAbnormalities || false);
   const [expandedPanels, setExpandedPanels] = useState<Set<string>>(new Set(['model-info', 'auto-detection', 'cnn-models']));
   
   // Multi-provider state
@@ -235,7 +330,7 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
   const [analysisType, setAnalysisType] = useState<'screening' | 'diagnostic' | 'comprehensive'>('comprehensive');
   
   // Patient details form state
-  const [patientDetails, setPatientDetails] = useState({
+  const [patientDetails, setPatientDetails] = useState(persistedState?.patientDetails || {
     patient_name: '',
     patient_dob: '',
     patient_id: '',
@@ -244,7 +339,7 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
   });
 
   // Provider details form state
-  const [providerDetails, setProviderDetails] = useState({
+  const [providerDetails, setProviderDetails] = useState(persistedState?.providerDetails || {
     provider_name: '',
     provider_npi: '',
     facility_name: '',
@@ -252,7 +347,125 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
     report_date: new Date().toISOString().split('T')[0]
   });
   
-  const [clinicalNotes, setClinicalNotes] = useState('');
+  const [clinicalNotes, setClinicalNotes] = useState(persistedState?.clinicalNotes || '');
+
+  // Notify parent of state changes for persistence
+  React.useEffect(() => {
+    if (onStateChange) {
+      onStateChange({
+        aiInsights,
+        measurements,
+        panelAnalysis,
+        detailedReport,
+        abnormalitySummary,
+        modelApproachDetails,
+        autoDetection,
+        obstructions,
+        clinicalNotesData,
+        observations,
+        providerConsultation,
+        cnnAnalysis,
+        modelsUsedList,
+        analysisComplete,
+        modelUsed,
+        modelApproach,
+        disclaimer,
+        rawAnalysis,
+        hasAbnormalities,
+        patientDetails,
+        providerDetails,
+        clinicalNotes
+      });
+    }
+  }, [aiInsights, measurements, panelAnalysis, detailedReport, abnormalitySummary, 
+      modelApproachDetails, autoDetection, obstructions, clinicalNotesData, observations,
+      providerConsultation, cnnAnalysis, modelsUsedList, analysisComplete, modelUsed,
+      modelApproach, disclaimer, rawAnalysis, hasAbnormalities, patientDetails,
+      providerDetails, clinicalNotes]);
+
+  // Merge agent findings into AI insights when they change
+  React.useEffect(() => {
+    if (agentFindings && agentFindings.length > 0) {
+      const completedAgents = agentFindings.filter(f => f.status === 'completed');
+      
+      if (completedAgents.length > 0) {
+        console.log('[MedicalImageAnalysis] Merging agent findings:', completedAgents.length);
+        
+        // Convert agent findings to AI insights format
+        const agentInsights: AIInsight[] = [];
+        
+        completedAgents.forEach(agent => {
+          const findings = agent.findings || {};
+          
+          // Handle different agent finding structures
+          if (findings.insights && Array.isArray(findings.insights)) {
+            findings.insights.forEach((insight: any) => {
+              agentInsights.push({
+                category: insight.category || 'finding',
+                description: `[${agent.agentName}] ${insight.description || insight.text || JSON.stringify(insight)}`,
+                confidence: insight.confidence || agent.confidence || 0.8,
+                region: insight.region,
+                clinicalSignificance: insight.clinicalSignificance || insight.significance,
+                status: insight.status,
+                detailedExplanation: insight.explanation || insight.details,
+                followUpRecommendation: insight.recommendation
+              });
+            });
+          }
+          
+          // Handle findings object with specific keys
+          if (findings.abnormalities && Array.isArray(findings.abnormalities)) {
+            findings.abnormalities.forEach((abnormality: any) => {
+              agentInsights.push({
+                category: 'abnormality',
+                description: `[${agent.agentName}] ${abnormality.description || abnormality}`,
+                confidence: abnormality.confidence || agent.confidence || 0.8,
+                clinicalSignificance: abnormality.severity || 'medium',
+                status: 'abnormal'
+              });
+            });
+          }
+          
+          // Generic key-value findings
+          Object.entries(findings).forEach(([key, value]) => {
+            if (!['insights', 'abnormalities', 'measurements'].includes(key) && value) {
+              const valueStr = typeof value === 'string' ? value : JSON.stringify(value);
+              if (valueStr && valueStr.length > 0 && valueStr !== '{}' && valueStr !== '[]') {
+                agentInsights.push({
+                  category: 'observation',
+                  description: `[${agent.agentName}] ${key}: ${valueStr}`,
+                  confidence: agent.confidence || 0.8
+                });
+              }
+            }
+          });
+        });
+        
+        // Merge with existing insights, avoiding duplicates
+        if (agentInsights.length > 0) {
+          setAiInsights(prev => {
+            const existingDescriptions = new Set(prev.map(i => i.description));
+            const newInsights = agentInsights.filter(i => !existingDescriptions.has(i.description));
+            return [...prev, ...newInsights];
+          });
+          
+          // Update abnormalities flag
+          const hasNewAbnormalities = agentInsights.some(i => 
+            i.category === 'abnormality' || 
+            i.clinicalSignificance === 'high' || 
+            i.clinicalSignificance === 'critical'
+          );
+          if (hasNewAbnormalities) {
+            setHasAbnormalities(true);
+          }
+          
+          toast.success(`${agentInsights.length} findings added from agents`, {
+            description: `From ${completedAgents.map(a => a.agentName).join(', ')}`
+          });
+        }
+      }
+    }
+  }, [agentFindings]);
 
   const togglePanel = (panelId: string) => {
     setExpandedPanels(prev => {
