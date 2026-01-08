@@ -147,6 +147,11 @@ export const navItems = [
   },
   // ARCHITECTURE & DIAGRAMS SECTION
   {
+    title: "Presentations",
+    url: "/presentations",
+    icon: Layers,
+  },
+  {
     title: "Architecture",
     url: "/architecture",
     icon: GitBranch,

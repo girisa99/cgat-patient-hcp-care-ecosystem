@@ -378,6 +378,13 @@ const AppContent = () => {
                       <PresentationPage />
                     </ProtectedRoute>
                   } />
+                  <Route path="/presentations" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'healthcareProvider', 'demoUser']}>
+                      <Suspense fallback={<PageLoading message="Loading presentations..." />}>
+                        {React.createElement(React.lazy(() => import('@/pages/Presentations')))}
+                      </Suspense>
+                    </ProtectedRoute>
+                  } />
                   <Route path="/treatment-centers" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'demoUser']}>
                       <OnboardingDashboard />
@@ -413,12 +420,20 @@ const AppContent = () => {
   );
 };
 
+// Lazy load public presentation page
+const PublicPresentationPage = React.lazy(() => import('@/pages/PublicPresentationPage'));
+
 // Public routes wrapper - no auth required
 const PublicRoutes = () => (
   <Routes>
     <Route path="/public/presentation/document-processing" element={
       <Suspense fallback={<PageLoading message="Loading presentation..." />}>
         <PublicDocumentPresentation />
+      </Suspense>
+    } />
+    <Route path="/public/presentation/:slug" element={
+      <Suspense fallback={<PageLoading message="Loading presentation..." />}>
+        <PublicPresentationPage />
       </Suspense>
     } />
   </Routes>
