@@ -182,15 +182,30 @@ async function callClaude(model: string, prompt: string, systemPrompt?: string, 
     throw new Error('Claude API key not configured. Please add ANTHROPIC_API_KEY (or CLAUDE_API_KEY) to your Edge Function secrets.');
   }
 
-  // Normalize a few common aliases/old IDs to known-good models
+  // Normalize Claude model names to valid API model IDs
   const normalizeModel = (m: string): string => {
     const ml = m.toLowerCase();
-    if (ml.includes('haiku-fast')) return 'claude-3-5-haiku-20241022';
-    if (ml === 'claude-3-5-sonnet' || ml === 'claude-3-5-sonnet-latest' || (ml.includes('sonnet') && !ml.match(/20\d{2}/))) {
-      // Prefer a widely available stable model if the exact Sonnet ID isn't available
+    
+    // Claude 4 models - use latest stable versions
+    if (ml.includes('claude-4-vision') || ml.includes('claude-sonnet-4') || ml.includes('claude-4')) {
+      return 'claude-sonnet-4-20250514'; // Latest Claude 4 Sonnet
+    }
+    if (ml.includes('claude-opus-4')) {
+      return 'claude-opus-4-5-20251101';
+    }
+    // Claude 3.5/3.7 models
+    if (ml.includes('haiku-fast') || ml.includes('haiku')) {
       return 'claude-3-5-haiku-20241022';
     }
-    return m;
+    if (ml === 'claude-3-5-sonnet' || ml === 'claude-3-5-sonnet-latest' || (ml.includes('sonnet') && !ml.match(/20\d{2}/))) {
+      return 'claude-sonnet-4-20250514'; // Upgrade to Claude 4
+    }
+    // Already has dated version
+    if (ml.match(/claude-.*-20\d{6}/)) {
+      return m;
+    }
+    // Default fallback
+    return 'claude-3-5-haiku-20241022';
   };
 
   let targetModel = normalizeModel(model);
