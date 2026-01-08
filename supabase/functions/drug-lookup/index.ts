@@ -183,7 +183,36 @@ serve(async (req) => {
     const { drugName, searchType = 'all' } = await req.json();
     console.log(`🔍 Drug lookup request: ${drugName}, type: ${searchType}`);
 
-    if (!drugName || drugName.trim().length < 2) {
+    // Clean drug name - remove dots from abbreviations like "A.D." -> "AD"
+    const cleanedDrugName = (drugName || '').trim().replace(/\./g, '').replace(/\s+/g, ' ').trim();
+    
+    // For suggestions (autocomplete), allow minimum 1 character
+    // For full search, require at least 2 characters
+    const minLength = searchType === 'suggestions' ? 1 : 2;
+    
+    // Skip invalid searches (empty, too short, or clearly not a drug name)
+    const invalidSearchTerms = [
+      'unknown abbreviation',
+      'requires clarification',
+      'not found',
+      'n/a',
+      'none',
+      'null',
+      'undefined'
+    ];
+    
+    const isInvalidTerm = invalidSearchTerms.some(term => 
+      cleanedDrugName.toLowerCase().includes(term)
+    );
+    
+    if (!cleanedDrugName || cleanedDrugName.length < minLength || isInvalidTerm) {
+      // For suggestions, return empty array instead of error for better UX
+      if (searchType === 'suggestions') {
+        return new Response(
+          JSON.stringify({ suggestions: [] }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       return new Response(
         JSON.stringify({ error: "Drug name must be at least 2 characters" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -196,7 +225,7 @@ serve(async (req) => {
         const suggestions: any[] = [];
         
         // Get suggestions from RxNorm spelling suggestions
-        const spellingUrl = `https://rxnav.nlm.nih.gov/REST/spellingsuggestions.json?name=${encodeURIComponent(drugName.trim())}`;
+        const spellingUrl = `https://rxnav.nlm.nih.gov/REST/spellingsuggestions.json?name=${encodeURIComponent(cleanedDrugName)}`;
         const spellingResponse = await fetch(spellingUrl);
         
         if (spellingResponse.ok) {
@@ -208,7 +237,7 @@ serve(async (req) => {
         }
         
         // Also try to get drug details from RxNorm approximateMatch for better results
-        const approxUrl = `https://rxnav.nlm.nih.gov/REST/approximateTerm.json?term=${encodeURIComponent(drugName.trim())}&maxEntries=8`;
+        const approxUrl = `https://rxnav.nlm.nih.gov/REST/approximateTerm.json?term=${encodeURIComponent(cleanedDrugName)}&maxEntries=8`;
         const approxResponse = await fetch(approxUrl);
         
         if (approxResponse.ok) {
@@ -227,7 +256,7 @@ serve(async (req) => {
         
         // Try FDA for brand names
         try {
-          const fdaUrl = `https://api.fda.gov/drug/ndc.json?search=brand_name:"${encodeURIComponent(drugName.trim())}"*&limit=5`;
+          const fdaUrl = `https://api.fda.gov/drug/ndc.json?search=brand_name:"${encodeURIComponent(cleanedDrugName)}"*&limit=5`;
           const fdaResponse = await fetch(fdaUrl);
           if (fdaResponse.ok) {
             const fdaData = await fdaResponse.json();
