@@ -113,7 +113,7 @@ const AnimatedConnection = ({ delay = 0 }: { delay?: number }) => (
 );
 
 // =============================================================================
-// SLIDE 1: PROBLEM STATEMENT - Enhanced with visual storytelling
+// SLIDE 1: PROBLEM STATEMENT - The problem I set out to solve
 // =============================================================================
 const ProblemStatementSlide = () => (
   <motion.div className="space-y-6" variants={staggerContainer} initial="initial" animate="animate">
@@ -136,8 +136,8 @@ const ProblemStatementSlide = () => (
             transition={{ delay: 0.2 }}
           >
             <AlertCircle className="w-12 h-12 text-red-300 mb-2" />
-            <h3 className="text-3xl font-bold">The Healthcare Document Crisis</h3>
-            <p className="text-lg text-red-200">Manual processing is killing productivity</p>
+            <h3 className="text-3xl font-bold">The Problem I Set Out to Solve</h3>
+            <p className="text-lg text-red-200">"I saw healthcare teams drowning in paperwork. I knew AI could fix this."</p>
           </motion.div>
         </div>
         
@@ -213,24 +213,24 @@ const ProblemStatementSlide = () => (
       className="bg-gradient-to-r from-red-100 via-orange-50 to-yellow-100 rounded-xl p-4 border border-red-200 text-center"
     >
       <p className="text-lg font-medium text-red-900">
-        <strong>The Reality:</strong> Healthcare organizations lose millions annually while struggling with accuracy and compliance.
-        <span className="text-red-600 font-bold"> There has to be a better way.</span>
+        <strong>This Is Why I Built This:</strong> Healthcare organizations lose millions annually while struggling with accuracy and compliance.
+        <span className="text-red-600 font-bold"> I knew there had to be a better way.</span>
       </p>
     </motion.div>
   </motion.div>
 );
 
 // =============================================================================
-// SLIDE 2: CURRENT TOOLS - Enhanced with better visibility
+// SLIDE 2: CURRENT TOOLS - Why existing solutions failed
 // =============================================================================
 const CurrentToolsSlide = () => (
   <motion.div className="space-y-5" variants={staggerContainer} initial="initial" animate="animate">
     <motion.div {...fadeInUp} className="text-center mb-3">
       <Badge className="text-lg px-4 py-1 bg-gradient-to-r from-slate-700 to-slate-800 text-white">
         <Settings className="w-4 h-4 mr-2 inline" />
-        Why Traditional Tools Fail
+        Why I Couldn't Use Existing Tools
       </Badge>
-      <p className="text-sm text-muted-foreground mt-2">The industry has tried these approaches — and they fall short</p>
+      <p className="text-sm text-muted-foreground mt-2">"I tried these approaches first — and quickly saw why they fall short."</p>
     </motion.div>
 
     <div className="grid grid-cols-3 gap-4">
@@ -340,25 +340,26 @@ const CurrentToolsSlide = () => (
     >
       <h4 className="text-xl font-bold text-white mb-2 flex items-center justify-center gap-2">
         <BrainCircuit className="w-6 h-6 text-yellow-300" />
-        What if AI could intelligently route documents to the best model?
+        That's When I Had the Idea
       </h4>
       <p className="text-purple-100 text-base">
-        Introducing <strong className="text-yellow-300">Multi-Model Intelligent Routing</strong> — where AI decides which AI to use
+        "What if AI could intelligently route each document to the <strong className="text-yellow-300">best model for that specific task</strong>?"
       </p>
     </motion.div>
   </motion.div>
 );
 
 // =============================================================================
-// SLIDE 3: AI TRANSFORMATION - How AI Benefits the Process
+// SLIDE 3: AI TRANSFORMATION - How I Used AI to Transform the Process
 // =============================================================================
 const AITransformationSlide = () => (
   <motion.div className="space-y-6" variants={staggerContainer} initial="initial" animate="animate">
     <motion.div {...fadeInUp} className="text-center mb-4">
       <Badge className="text-lg px-4 py-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white">
         <Sparkles className="w-4 h-4 mr-2 inline" />
-        The AI-Powered Transformation
+        The AI Transformation I Designed
       </Badge>
+      <p className="text-sm text-muted-foreground mt-2">"I reimagined the entire workflow from scratch."</p>
     </motion.div>
 
     {/* Before vs After Visual */}
@@ -479,15 +480,16 @@ const AITransformationSlide = () => (
 );
 
 // =============================================================================
-// SLIDE 4: MULTI-MODEL ROUTING - Fully Animated with Details
+// SLIDE 4: MULTI-MODEL ROUTING - The Core Innovation I Built
 // =============================================================================
 const WhyMultiModelSlide = () => (
   <motion.div className="space-y-5" variants={staggerContainer} initial="initial" animate="animate">
     <motion.div {...fadeInUp} className="text-center mb-2">
       <Badge className="text-lg px-4 py-1 bg-gradient-to-r from-purple-500 to-indigo-500 text-white">
         <BrainCircuit className="w-4 h-4 mr-2 inline" />
-        Intelligent Multi-Model Routing
+        The Core Innovation: Intelligent Routing
       </Badge>
+      <p className="text-sm text-muted-foreground mt-1">"I taught the system to pick the right AI for each job automatically."</p>
     </motion.div>
 
     {/* Full Animated Architecture */}
@@ -678,15 +680,16 @@ const WhyMultiModelSlide = () => (
 );
 
 // =============================================================================
-// SLIDE 5: DOCUMENT CONFIGURATION - Animated Auto-Detection Flow
+// SLIDE 5: DOCUMENT CONFIGURATION - Zero Config Magic
 // =============================================================================
 const DocumentConfigSlide = () => (
   <motion.div className="space-y-5" variants={staggerContainer} initial="initial" animate="animate">
     <motion.div {...fadeInUp} className="text-center mb-2">
       <Badge className="text-lg px-4 py-1 bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
         <Settings className="w-4 h-4 mr-2 inline" />
-        Zero Configuration Auto-Detection
+        Zero-Config Auto-Detection I Developed
       </Badge>
+      <p className="text-sm text-muted-foreground mt-1">"Upload any document. The system figures out everything else."</p>
     </motion.div>
 
     {/* Animated Pipeline */}
@@ -817,15 +820,16 @@ const DocumentConfigSlide = () => (
 );
 
 // =============================================================================
-// SLIDE 6: TWO-STAGE PIPELINE - Enhanced Animation
+// SLIDE 6: TWO-STAGE PIPELINE - My Processing Architecture
 // =============================================================================
 const TwoStagePipelineSlide = () => (
   <motion.div className="space-y-5" variants={staggerContainer} initial="initial" animate="animate">
     <motion.div {...fadeInUp} className="text-center mb-2">
       <Badge className="text-lg px-4 py-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white">
         <GitBranch className="w-4 h-4 mr-2 inline" />
-        Two-Stage Pipeline Architecture
+        The Two-Stage Pipeline I Architected
       </Badge>
+      <p className="text-sm text-muted-foreground mt-1">"Vision first, then intelligence. Each stage optimized for its job."</p>
     </motion.div>
 
     {/* Full Pipeline Visualization */}
@@ -1063,16 +1067,18 @@ const SolutionArchitectureSlide = () => (
 );
 
 // =============================================================================
-// SLIDE 8: WHAT WE'VE BUILT - Current Implementation Features
+// SLIDE 8: WHAT I BUILT - Current Implementation Features
 // =============================================================================
 const CurrentImplementationSlide = () => (
   <motion.div className="space-y-4" variants={staggerContainer} initial="initial" animate="animate">
     <motion.div {...fadeInUp} className="text-center mb-2">
       <Badge className="text-lg px-4 py-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white">
         <Rocket className="w-4 h-4 mr-2 inline" />
-        What We've Built: Current Implementation
+        What I Built: Production-Ready Platform
       </Badge>
-      <p className="text-sm text-muted-foreground mt-2">Production-ready features powering real document workflows</p>
+      <p className="text-sm text-muted-foreground mt-2">
+        "I didn't just prototype — I built a complete, working system that's processing real healthcare documents today."
+      </p>
     </motion.div>
 
     {/* Implementation Highlights Grid */}
@@ -1221,16 +1227,18 @@ const CurrentImplementationSlide = () => (
 );
 
 // =============================================================================
-// SLIDE 9: GUIDED AGENT WORKFLOWS - NEW
+// SLIDE 10: GUIDED AGENT WORKFLOWS - Storytelling
 // =============================================================================
 const GuidedAgentWorkflowsSlide = () => (
   <motion.div className="space-y-4" variants={staggerContainer} initial="initial" animate="animate">
     <motion.div {...fadeInUp} className="text-center mb-2">
       <Badge className="text-lg px-4 py-1 bg-gradient-to-r from-violet-500 to-purple-500 text-white">
         <Workflow className="w-4 h-4 mr-2 inline" />
-        Guided Agent Workflows
+        Guided Agent Workflows I Created
       </Badge>
-      <p className="text-sm text-muted-foreground mt-2">Pre-built workflows that turn extracted data into automated actions</p>
+      <p className="text-sm text-muted-foreground mt-2">
+        "Extraction is just step one. I built intelligent agents that take action on what they find."
+      </p>
     </motion.div>
 
     {/* Workflow Cards */}
@@ -1376,16 +1384,18 @@ const GuidedAgentWorkflowsSlide = () => (
 );
 
 // =============================================================================
-// SLIDE 10: CONFIGURATION & SETUP - NEW
+// SLIDE 9: CONFIGURATION & SETUP - Before workflows
 // =============================================================================
 const ConfigurationRequiredSlide = () => (
   <motion.div className="space-y-4" variants={staggerContainer} initial="initial" animate="animate">
     <motion.div {...fadeInUp} className="text-center mb-2">
       <Badge className="text-lg px-4 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white">
         <Wrench className="w-4 h-4 mr-2 inline" />
-        Configuration & Requirements
+        How I Made It Easy to Deploy
       </Badge>
-      <p className="text-sm text-muted-foreground mt-2">What you need to get started — and what's included out of the box</p>
+      <p className="text-sm text-muted-foreground mt-2">
+        "I designed this so you can start processing documents in under a minute — no complex setup, no configuration headaches."
+      </p>
     </motion.div>
 
     <div className="grid grid-cols-2 gap-5">
@@ -1520,15 +1530,18 @@ const ConfigurationRequiredSlide = () => (
 );
 
 // =============================================================================
-// SLIDE 9: SUB-AGENTS - Ready Agents and Canvas
+// SLIDE 11: SUB-AGENTS - Ready Agents and Canvas (after Guided Workflows)
 // =============================================================================
 const SubAgentSlide = () => (
   <motion.div className="space-y-5" variants={staggerContainer} initial="initial" animate="animate">
     <motion.div {...fadeInUp} className="text-center mb-2">
       <Badge className="text-lg px-4 py-1 bg-gradient-to-r from-violet-500 to-purple-500 text-white">
         <Bot className="w-4 h-4 mr-2 inline" />
-        Sub-Agent Intelligence & Ready Agents
+        Sub-Agents I Built for Specialized Tasks
       </Badge>
+      <p className="text-sm text-muted-foreground mt-2">
+        "Each agent is a specialist. Together on the canvas, they become a powerful orchestrated team."
+      </p>
     </motion.div>
 
     {/* Agent Orchestration Flow */}
@@ -1774,15 +1787,18 @@ const ExternalPushSlide = () => (
 );
 
 // =============================================================================
-// SLIDE 11: ROI - Lovable vs Traditional (Team Comparison)
+// SLIDE 13: ROI - How I Built This So Fast
 // =============================================================================
 const ROISlide = () => (
   <motion.div className="space-y-5" variants={staggerContainer} initial="initial" animate="animate">
     <motion.div {...fadeInUp} className="text-center mb-2">
       <Badge className="text-lg px-4 py-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white">
         <BarChart3 className="w-4 h-4 mr-2 inline" />
-        Lovable vs Traditional Development
+        How I Built This So Fast
       </Badge>
+      <p className="text-sm text-muted-foreground mt-2">
+        "What would take a traditional team 6-9 months, I built in weeks. Here's the proof."
+      </p>
     </motion.div>
 
     <div className="grid grid-cols-2 gap-6">
@@ -1854,18 +1870,18 @@ const ROISlide = () => (
         <div className="flex items-center justify-between mb-4">
           <h4 className="text-lg font-bold text-green-700 flex items-center gap-2">
             <Crown className="w-5 h-5 text-yellow-500" />
-            Lovable AI Development
+            How I Did It
           </h4>
           <Badge className="bg-green-500 text-white">99% Savings</Badge>
         </div>
         
         <div className="space-y-2 mb-4">
-          <h5 className="font-semibold text-foreground text-sm">Resources Used:</h5>
+          <h5 className="font-semibold text-foreground text-sm">What I Used:</h5>
           {[
-            { item: "Lovable AI Platform", detail: "Full-stack development", cost: "$200/mo" },
+            { item: "Lovable AI Platform", detail: "My development partner", cost: "$200/mo" },
             { item: "AI Processing Credits", detail: "Document processing", cost: "$500" },
             { item: "Supabase Backend", detail: "Database & auth", cost: "$25/mo" },
-            { item: "Domain Expert", detail: "Part-time guidance", cost: "10 hrs" },
+            { item: "My Domain Knowledge", detail: "Healthcare expertise", cost: "My time" },
           ].map((resource, i) => (
             <motion.div
               key={i}
@@ -1885,7 +1901,7 @@ const ROISlide = () => (
         
         <div className="grid grid-cols-2 gap-3">
           <div className="p-3 bg-green-100 rounded-lg text-center">
-            <div className="text-2xl font-bold text-green-700">1 Person</div>
+            <div className="text-2xl font-bold text-green-700">Just Me</div>
             <div className="text-xs text-green-600">Team Size</div>
           </div>
           <div className="p-3 bg-green-100 rounded-lg text-center">
@@ -2068,8 +2084,8 @@ const documentProcessingSlides: Slide[] = [
   },
   { 
     id: 8, 
-    title: "What We've Built", 
-    subtitle: "Current implementation features in production",
+    title: "What I Built", 
+    subtitle: "A complete production-ready platform",
     animation: 'fade', 
     content: <CurrentImplementationSlide />,
     pptContent: {
@@ -2081,31 +2097,13 @@ const documentProcessingSlides: Slide[] = [
         "Inline editing with drug lookup",
         "Export: JSON, FHIR R4, CSV formats"
       ],
-      notes: "Production-ready features powering real document workflows with 95%+ accuracy."
+      notes: "I built this complete system that's processing real healthcare documents today with 95%+ accuracy."
     }
   },
   { 
     id: 9, 
-    title: "Guided Agent Workflows", 
-    subtitle: "Pre-built workflows that automate document actions",
-    animation: 'slide', 
-    content: <GuidedAgentWorkflowsSlide />,
-    pptContent: {
-      bullets: [
-        "Insurance Card Verification: Extract, validate coverage, check eligibility",
-        "Patient Onboarding: Demographics extraction to EHR profile creation",
-        "Prescription Processing: Rx extraction with drug interaction checks",
-        "Prior Authorization: Auto-generate PA requests from clinical docs",
-        "Lab Results Processing: Parse reports, flag abnormal values",
-        "Execute automatically or with human oversight"
-      ],
-      notes: "Pre-built workflows turn extracted data into automated actions with configurable approval steps."
-    }
-  },
-  { 
-    id: 10, 
-    title: "Configuration & Requirements", 
-    subtitle: "What's included and what you can customize",
+    title: "How I Made It Easy to Deploy", 
+    subtitle: "Zero configuration, instant results",
     animation: 'zoom', 
     content: <ConfigurationRequiredSlide />,
     pptContent: {
@@ -2117,13 +2115,31 @@ const documentProcessingSlides: Slide[] = [
         "Optional: MCP SDK for Salesforce, HubSpot connections",
         "Quick Start: 3 steps to production in under 1 minute"
       ],
-      notes: "Zero configuration required for core features. Optional integrations for custom workflows."
+      notes: "I designed this for simplicity — start processing in under a minute with no configuration headaches."
+    }
+  },
+  { 
+    id: 10, 
+    title: "Guided Agent Workflows I Created", 
+    subtitle: "From extraction to automated action",
+    animation: 'slide', 
+    content: <GuidedAgentWorkflowsSlide />,
+    pptContent: {
+      bullets: [
+        "Insurance Card Verification: Extract, validate coverage, check eligibility",
+        "Patient Onboarding: Demographics extraction to EHR profile creation",
+        "Prescription Processing: Rx extraction with drug interaction checks",
+        "Prior Authorization: Auto-generate PA requests from clinical docs",
+        "Lab Results Processing: Parse reports, flag abnormal values",
+        "Execute automatically or with human oversight"
+      ],
+      notes: "Extraction is just step one. I built intelligent agents that take action on what they find."
     }
   },
   { 
     id: 11, 
-    title: "Sub-Agent Intelligence", 
-    subtitle: "Ready agents and canvas orchestration",
+    title: "Sub-Agents I Built for Specialized Tasks", 
+    subtitle: "Specialist agents working together",
     animation: 'slide', 
     content: <SubAgentSlide />,
     pptContent: {
@@ -2135,11 +2151,11 @@ const documentProcessingSlides: Slide[] = [
         "Agent types: Single Agent, Agentic AI, A2A, Clinical, Multi-Agent",
         "Launch on Canvas or Execute Now options"
       ],
-      notes: "Pre-built agents can be deployed immediately or configured for specific workflows."
+      notes: "Each agent is a specialist. Together on the canvas, they become a powerful orchestrated team."
     }
   },
   { 
-    id: 10, 
+    id: 12, 
     title: "External Data Push & Integrations", 
     subtitle: "MCP SDK, REST API, FHIR, and more",
     animation: 'zoom', 
@@ -2157,21 +2173,21 @@ const documentProcessingSlides: Slide[] = [
     }
   },
   { 
-    id: 11, 
-    title: "Lovable vs Traditional Development", 
-    subtitle: "Cost, time, and resource comparison",
+    id: 13, 
+    title: "How I Built This So Fast", 
+    subtitle: "Lovable vs Traditional Development",
     animation: 'fade', 
     content: <ROISlide />,
     pptContent: {
       bullets: [
         "Traditional: 10-person team (BA, Architect, 4 Devs, 2 Server, 2 QA)",
         "Traditional: 6-9 months timeline, $350K+ cost, high risk",
-        "Lovable: 1 person + AI platform",
-        "Lovable: 2-4 weeks timeline, $2,500 total cost, low risk",
+        "How I did it: 1 person + Lovable AI platform",
+        "My timeline: 2-4 weeks, $2,500 total cost, low risk",
         "ROI: 99% cost savings, 95% time savings, 90% team reduction",
-        "50x faster time to value"
+        "50x faster time to value — proof that AI-assisted development works"
       ],
-      notes: "Lovable AI dramatically reduces development costs and timeline while maintaining high quality and reducing project risk."
+      notes: "This is how I built a complete enterprise platform in weeks instead of months — Lovable AI made it possible."
     }
   },
 ];
