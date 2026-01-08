@@ -20,39 +20,7 @@ import {
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ExtractedField, ModelRoutingInfo } from './SmartDocumentStudio';
-
-// Helper to determine if a medication field should be hidden to avoid duplicates
-const shouldHideDuplicateMedicationField = (key: string, extractedFields: Record<string, any>): boolean => {
-  const lowerKey = key.toLowerCase();
-  const numberedMatch = lowerKey.match(/^medication_(\d+)_(.+)$/);
-  
-  const hasNonNumberedMeds = ['medication_name', 'name', 'quantity', 'sig', 'strength', 'form', 'route', 'refills']
-    .some(field => {
-      const fullKey = field === 'name' ? 'medication_name' : field;
-      return extractedFields[fullKey]?.value || extractedFields[`medication_${field}`]?.value;
-    });
-  
-  const numberedMedCount = new Set(
-    Object.keys(extractedFields)
-      .filter(k => /^medication_\d+_/.test(k.toLowerCase()))
-      .map(k => k.toLowerCase().match(/^medication_(\d+)_/)?.[1])
-      .filter(Boolean)
-  ).size;
-  
-  if (numberedMatch) {
-    if (numberedMedCount <= 1 && hasNonNumberedMeds) {
-      return true;
-    }
-  } else {
-    const isMedicationField = /^(medication_)?(name|quantity|sig|strength|form|route|refills|ndc)$/i.test(lowerKey) ||
-                              lowerKey === 'medication_name';
-    if (isMedicationField && numberedMedCount > 1) {
-      return true;
-    }
-  }
-  
-  return false;
-};
+import { cleanMedicationFields } from './utils/medicationFieldFilter';
 
 interface LiveExtractionPanelProps {
   extractedFields: Record<string, ExtractedField>;
@@ -70,10 +38,9 @@ export function LiveExtractionPanel({
   const [animatedProgress, setAnimatedProgress] = useState(0);
   const [processingMessages, setProcessingMessages] = useState<string[]>([]);
 
-  // Filter out duplicate medication fields
-  const fields = Object.entries(extractedFields).filter(
-    ([key]) => !shouldHideDuplicateMedicationField(key, extractedFields)
-  );
+  // Filter out duplicate medication fields using shared utility
+  const cleanedFields = cleanMedicationFields(extractedFields);
+  const fields = Object.entries(cleanedFields);
 
   // Simulate processing messages when no fields yet
   useEffect(() => {
