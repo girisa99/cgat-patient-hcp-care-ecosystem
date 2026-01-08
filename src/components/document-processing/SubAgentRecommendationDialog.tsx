@@ -955,6 +955,8 @@ export default function SubAgentRecommendationDialog({
   const [selectedProvider, setSelectedProvider] = useState<'auto' | 'claude' | 'gemini' | 'openai'>('auto');
   // Per-agent provider overrides: { agentId: provider }
   const [agentProviders, setAgentProviders] = useState<Record<string, 'auto' | 'claude' | 'gemini' | 'openai'>>({});
+  // Per-agent medication selection: { agentId: medicationIndex } - used when multiple medications detected
+  const [agentMedicationSelection, setAgentMedicationSelection] = useState<Record<string, number | 'all'>>({});
   
   // Setup wizard state
   const [showSetupWizard, setShowSetupWizard] = useState(false);
@@ -1356,7 +1358,11 @@ export default function SubAgentRecommendationDialog({
       preferredProvider: selectedProvider === 'auto' ? undefined : selectedProvider,
       selectedAPIs: selectedAPIs, // Pass selected APIs for context
       // Pass per-agent provider overrides
-      agentProviderOverrides: agentProviders
+      agentProviderOverrides: agentProviders,
+      // Pass per-agent medication selection for multi-medication prescriptions
+      agentMedicationSelection: agentMedicationSelection,
+      // Pass all medications for agents that need specific medication context
+      allMedications: extractedData?.processingResult?.medications || []
     };
 
     const executedResults = await executeAgents(selectedSubAgents, documentContext);
@@ -1636,35 +1642,91 @@ export default function SubAgentRecommendationDialog({
                     {/* Per-Agent Provider Selection - Show when selected */}
                     {selectedAgents.includes(agent.id) && executeMode === 'execute' && (
                       <div 
-                        className="mt-2 pt-2 border-t border-green-200 dark:border-green-800 flex items-center gap-2"
+                        className="mt-2 pt-2 border-t border-green-200 dark:border-green-800 space-y-2"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <span className="text-[10px] text-muted-foreground">AI Provider:</span>
-                        <div className="flex gap-1">
-                          {[
-                            { id: 'auto', label: '⚡ Auto', title: 'Auto-select best provider' },
-                            { id: 'claude', label: '🤖 Claude', title: 'Claude Sonnet 4' },
-                            { id: 'gemini', label: '✨ Gemini', title: 'Gemini 2.5 Flash' },
-                            { id: 'openai', label: '🧠 GPT-5', title: 'GPT-5' }
-                          ].map(p => (
-                            <button
-                              key={p.id}
-                              title={p.title}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setAgentProviders(prev => ({ ...prev, [agent.id]: p.id as any }));
-                              }}
-                              className={cn(
-                                "px-2 py-0.5 rounded text-[10px] border transition-all",
-                                (agentProviders[agent.id] || 'auto') === p.id
-                                  ? "bg-primary text-primary-foreground border-primary"
-                                  : "bg-background border-border hover:border-primary/50"
-                              )}
-                            >
-                              {p.label}
-                            </button>
-                          ))}
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-muted-foreground">AI Provider:</span>
+                          <div className="flex gap-1">
+                            {[
+                              { id: 'auto', label: '⚡ Auto', title: 'Auto-select best provider' },
+                              { id: 'claude', label: '🤖 Claude', title: 'Claude Sonnet 4' },
+                              { id: 'gemini', label: '✨ Gemini', title: 'Gemini 2.5 Flash' },
+                              { id: 'openai', label: '🧠 GPT-5', title: 'GPT-5' }
+                            ].map(p => (
+                              <button
+                                key={p.id}
+                                title={p.title}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setAgentProviders(prev => ({ ...prev, [agent.id]: p.id as any }));
+                                }}
+                                className={cn(
+                                  "px-2 py-0.5 rounded text-[10px] border transition-all",
+                                  (agentProviders[agent.id] || 'auto') === p.id
+                                    ? "bg-primary text-primary-foreground border-primary"
+                                    : "bg-background border-border hover:border-primary/50"
+                                )}
+                              >
+                                {p.label}
+                              </button>
+                            ))}
+                          </div>
                         </div>
+                        
+                        {/* Per-Agent Medication Selection - Show when multiple medications detected for Rx agents */}
+                        {(() => {
+                          const medications = extractedData?.processingResult?.medications || [];
+                          const isMedicationAgent = ['ndc-lookup', 'drug-alternatives', 'efficacy-analysis', 'safety-profile', 'dosage-validation', 'drug-interaction', 'clinical-review', 'cost-analysis'].includes(agent.id);
+                          
+                          if (medications.length > 1 && isMedicationAgent) {
+                            return (
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-muted-foreground">Medication:</span>
+                                <div className="flex gap-1 flex-wrap">
+                                  <button
+                                    title="Run for all medications"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setAgentMedicationSelection(prev => ({ ...prev, [agent.id]: 'all' }));
+                                    }}
+                                    className={cn(
+                                      "px-2 py-0.5 rounded text-[10px] border transition-all",
+                                      (agentMedicationSelection[agent.id] === 'all' || agentMedicationSelection[agent.id] === undefined)
+                                        ? "bg-blue-600 text-white border-blue-600"
+                                        : "bg-background border-border hover:border-blue-400"
+                                    )}
+                                  >
+                                    All ({medications.length})
+                                  </button>
+                                  {medications.map((med: any, idx: number) => {
+                                    const medName = med.medication_name || med.name || `Med ${idx + 1}`;
+                                    const displayName = medName.length > 12 ? medName.substring(0, 12) + '...' : medName;
+                                    return (
+                                      <button
+                                        key={idx}
+                                        title={medName}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setAgentMedicationSelection(prev => ({ ...prev, [agent.id]: idx }));
+                                        }}
+                                        className={cn(
+                                          "px-2 py-0.5 rounded text-[10px] border transition-all",
+                                          agentMedicationSelection[agent.id] === idx
+                                            ? "bg-primary text-primary-foreground border-primary"
+                                            : "bg-background border-border hover:border-primary/50"
+                                        )}
+                                      >
+                                        #{idx + 1} {displayName}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                     )}
                   </div>
