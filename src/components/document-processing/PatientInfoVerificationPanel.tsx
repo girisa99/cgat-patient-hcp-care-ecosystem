@@ -292,9 +292,47 @@ const getConfidenceColor = (confidence: number): string => {
   return 'text-red-600 bg-red-500/10';
 };
 
-// Get source badge
-const getSourceBadge = (source: string) => {
-  const isVisionAI = source === 'vision_ai' || source === 'gemini_vision_ai' || source === 'nlp' || source === 'NLP';
+// Get source badge with specific model info
+const getSourceBadge = (source: string, modelUsed?: string) => {
+  const sourceLower = (source || '').toLowerCase();
+  const modelLower = (modelUsed || '').toLowerCase();
+  
+  // Determine the display based on source and model
+  if (sourceLower === 'ocr' || sourceLower === 'google_vision_ocr') {
+    return (
+      <Badge variant="outline" className="text-[9px] h-4 border-blue-500 bg-blue-500/10 text-blue-600">
+        👁️ OCR
+      </Badge>
+    );
+  }
+  
+  // Check for specific AI models
+  if (modelLower.includes('claude') || sourceLower.includes('claude')) {
+    return (
+      <Badge variant="outline" className="text-[9px] h-4 border-orange-500 bg-orange-500/10 text-orange-600">
+        🟠 Claude NLP
+      </Badge>
+    );
+  }
+  
+  if (modelLower.includes('gemini') || sourceLower.includes('gemini')) {
+    return (
+      <Badge variant="outline" className="text-[9px] h-4 border-blue-500 bg-blue-500/10 text-blue-600">
+        🔵 Gemini
+      </Badge>
+    );
+  }
+  
+  if (modelLower.includes('openai') || modelLower.includes('gpt') || sourceLower.includes('openai')) {
+    return (
+      <Badge variant="outline" className="text-[9px] h-4 border-green-500 bg-green-500/10 text-green-600">
+        🟢 GPT
+      </Badge>
+    );
+  }
+  
+  // Default for vision_ai or nlp without specific model
+  const isVisionAI = sourceLower === 'vision_ai' || sourceLower === 'nlp' || sourceLower === 'gemini_vision_ai';
   return (
     <Badge 
       variant="outline" 
@@ -303,7 +341,7 @@ const getSourceBadge = (source: string) => {
         isVisionAI ? "border-purple-500 bg-purple-500/10 text-purple-600" : "border-blue-500 bg-blue-500/10 text-blue-600"
       )}
     >
-      {isVisionAI ? '🤖 Vision AI' : '📷 OCR'}
+      {isVisionAI ? '✨ NLP' : '📷 OCR'}
     </Badge>
   );
 };

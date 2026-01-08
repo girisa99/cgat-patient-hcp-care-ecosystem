@@ -793,22 +793,31 @@ export default function DocumentProcessing() {
   const smartStudioExtractedFields = React.useMemo((): Record<string, ExtractedField> => {
     if (!processingResult?.extractedFields) return {};
     
+    // Determine the NLP model used from routing
+    const stage2Model = processingResult.modelRouting?.stage2Model || processingResult.modelRouting?.modelUsed || 'nlp';
+    
     const fields: Record<string, ExtractedField> = {};
     Object.entries(processingResult.extractedFields).forEach(([key, field]) => {
       // Skip internal/meta fields
       if (key.startsWith('_') || ['line_items', 'tables', 'raw_text'].includes(key)) return;
       
+      // Determine source based on field metadata or model routing
+      const fieldObj = field as Record<string, any>;
+      const fieldSource = typeof fieldObj === 'object' && fieldObj !== null && fieldObj.source 
+        ? fieldObj.source 
+        : stage2Model; // Use the actual NLP model that processed the document
+      
       fields[key] = {
         key,
-        value: typeof field === 'object' && field !== null ? (field.value || '') : String(field),
-        confidence: typeof field === 'object' && field !== null ? (field.confidence || 0.8) : 0.8,
-        verified: typeof field === 'object' && field !== null ? (field.verified || false) : false,
-        source: 'vision_ai' as const,
-        originalValue: typeof field === 'object' && field !== null ? field.value : String(field)
+        value: typeof field === 'object' && field !== null ? ((field as any).value || '') : String(field),
+        confidence: typeof field === 'object' && field !== null ? ((field as any).confidence || 0.8) : 0.8,
+        verified: typeof field === 'object' && field !== null ? ((field as any).verified || false) : false,
+        source: fieldSource as 'ocr' | 'vision_ai' | 'nlp',
+        originalValue: typeof field === 'object' && field !== null ? (field as any).value : String(field)
       };
     });
     return fields;
-  }, [processingResult?.extractedFields]);
+  }, [processingResult?.extractedFields, processingResult?.modelRouting]);
 
   // Convert model routing to SmartDocumentStudio format
   const smartStudioModelRouting = React.useMemo((): ModelRoutingInfo | null => {
