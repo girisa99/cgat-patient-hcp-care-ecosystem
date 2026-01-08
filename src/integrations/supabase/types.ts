@@ -9271,6 +9271,39 @@ export type Database = {
         }
         Relationships: []
       }
+      linkedin_oauth_tokens: {
+        Row: {
+          access_token: string
+          created_at: string
+          expires_at: string
+          id: string
+          refresh_token: string | null
+          scope: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          refresh_token?: string | null
+          scope?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          refresh_token?: string | null
+          scope?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       manufacturers: {
         Row: {
           contact_info: Json | null
@@ -12086,6 +12119,140 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      presentation_shares: {
+        Row: {
+          id: string
+          metadata: Json | null
+          platform: string
+          post_content: string | null
+          post_id: string | null
+          presentation_id: string | null
+          share_url: string | null
+          shared_at: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          metadata?: Json | null
+          platform: string
+          post_content?: string | null
+          post_id?: string | null
+          presentation_id?: string | null
+          share_url?: string | null
+          shared_at?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          metadata?: Json | null
+          platform?: string
+          post_content?: string | null
+          post_id?: string | null
+          presentation_id?: string | null
+          share_url?: string | null
+          shared_at?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presentation_shares_presentation_id_fkey"
+            columns: ["presentation_id"]
+            isOneToOne: false
+            referencedRelation: "presentations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      presentations: {
+        Row: {
+          branding: Json | null
+          category: string | null
+          configuration: Json | null
+          created_at: string
+          description: string | null
+          download_count: number | null
+          id: string
+          is_featured: boolean | null
+          is_public: boolean | null
+          linkedin_post_template: string | null
+          meta_description: string | null
+          meta_title: string | null
+          name: string
+          og_image_url: string | null
+          presentation_type: string | null
+          published_at: string | null
+          share_count: number | null
+          slides_data: Json | null
+          slug: string
+          status: string | null
+          tags: string[] | null
+          thumbnail_url: string | null
+          twitter_post_template: string | null
+          updated_at: string
+          user_id: string | null
+          view_count: number | null
+        }
+        Insert: {
+          branding?: Json | null
+          category?: string | null
+          configuration?: Json | null
+          created_at?: string
+          description?: string | null
+          download_count?: number | null
+          id?: string
+          is_featured?: boolean | null
+          is_public?: boolean | null
+          linkedin_post_template?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          name: string
+          og_image_url?: string | null
+          presentation_type?: string | null
+          published_at?: string | null
+          share_count?: number | null
+          slides_data?: Json | null
+          slug: string
+          status?: string | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          twitter_post_template?: string | null
+          updated_at?: string
+          user_id?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          branding?: Json | null
+          category?: string | null
+          configuration?: Json | null
+          created_at?: string
+          description?: string | null
+          download_count?: number | null
+          id?: string
+          is_featured?: boolean | null
+          is_public?: boolean | null
+          linkedin_post_template?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          name?: string
+          og_image_url?: string | null
+          presentation_type?: string | null
+          published_at?: string | null
+          share_count?: number | null
+          slides_data?: Json | null
+          slug?: string
+          status?: string | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          twitter_post_template?: string | null
+          updated_at?: string
+          user_id?: string | null
+          view_count?: number | null
+        }
+        Relationships: []
       }
       products: {
         Row: {
