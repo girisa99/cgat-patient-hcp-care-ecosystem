@@ -1010,6 +1010,54 @@ export default function SubAgentRecommendationDialog({
     return !!(extractedData?.medication || extractedData?.medication_name || extractedData?.ndc);
   }, [extractedData]);
 
+  // CRITICAL: Compute medications list from all sources for the UI
+  // This ensures multi-medication selectors show even when processingResult.medications isn't populated
+  const computedMedications = useMemo(() => {
+    // First try processingResult.medications array
+    const processingMeds = extractedData?.processingResult?.medications;
+    if (Array.isArray(processingMeds) && processingMeds.length > 0) {
+      return processingMeds;
+    }
+    
+    // Fallback: Build from numbered medication fields (medication_1_name, medication_2_name, etc.)
+    const baseExtractedFields = extractedData?.processingResult?.extractedFields || extractedData?.extractedFields || {};
+    const medicationPattern = /^medication_(\d+)_(\w+)$/;
+    const medicationsByIndex: Record<string, Record<string, any>> = {};
+    
+    Object.entries(baseExtractedFields).forEach(([key, field]: [string, any]) => {
+      const match = key.match(medicationPattern);
+      if (match) {
+        const [, index, property] = match;
+        if (!medicationsByIndex[index]) {
+          medicationsByIndex[index] = {};
+        }
+        medicationsByIndex[index][property] = typeof field === 'object' ? field.value : field;
+      }
+    });
+    
+    // Build medications array from indexed data
+    const indices = Object.keys(medicationsByIndex).sort((a, b) => parseInt(a) - parseInt(b));
+    if (indices.length > 0) {
+      const meds = indices.map(index => {
+        const med = medicationsByIndex[index];
+        return {
+          medication_name: med.name || med.medication_name || '',
+          name: med.name || med.medication_name || '',
+          strength: med.strength || '',
+          sig: med.sig || med.directions || '',
+          quantity: med.quantity || ''
+        };
+      }).filter(med => med.medication_name || med.name);
+      
+      if (meds.length > 0) {
+        console.log('[SubAgentDialog] Computed medications from numbered fields:', meds.length);
+        return meds;
+      }
+    }
+    
+    return [];
+  }, [extractedData]);
+
   const toggleAgent = (agentId: string) => {
     const agent = suggestions.find(s => s.id === agentId);
     
@@ -1361,8 +1409,8 @@ export default function SubAgentRecommendationDialog({
       agentProviderOverrides: agentProviders,
       // Pass per-agent medication selection for multi-medication prescriptions
       agentMedicationSelection: agentMedicationSelection,
-      // Pass all medications for agents that need specific medication context
-      allMedications: extractedData?.processingResult?.medications || []
+      // Pass all medications for agents that need specific medication context (use computed list)
+      allMedications: computedMedications.length > 0 ? computedMedications : (extractedData?.processingResult?.medications || [])
     };
 
     const executedResults = await executeAgents(selectedSubAgents, documentContext);
@@ -1676,7 +1724,8 @@ export default function SubAgentRecommendationDialog({
                         
                         {/* Per-Agent Medication Selection - Show when multiple medications detected for Rx agents */}
                         {(() => {
-                          const medications = extractedData?.processingResult?.medications || [];
+                          // Use computedMedications which handles both processingResult.medications and numbered fields
+                          const medications = computedMedications;
                           const isMedicationAgent = ['ndc-lookup', 'drug-alternatives', 'efficacy-analysis', 'safety-profile', 'dosage-validation', 'drug-interaction', 'clinical-review', 'cost-analysis'].includes(agent.id);
                           
                           if (medications.length > 1 && isMedicationAgent) {
