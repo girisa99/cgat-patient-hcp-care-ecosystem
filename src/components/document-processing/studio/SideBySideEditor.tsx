@@ -65,7 +65,7 @@ export function SideBySideEditor({
     : 0;
 
   return (
-    <Card className="h-full flex flex-col">
+    <Card className="h-full flex flex-col min-h-[500px]">
       <CardHeader className="py-3 flex-shrink-0">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm flex items-center gap-2">
