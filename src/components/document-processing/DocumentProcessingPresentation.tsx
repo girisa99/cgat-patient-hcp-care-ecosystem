@@ -2931,6 +2931,84 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
     }
   };
 
+  // Download as LinkedIn Carousel PDF - optimized for LinkedIn document posts
+  const downloadLinkedInCarouselPDF = async () => {
+    toast.info('📄 Creating LinkedIn Carousel PDF...', {
+      description: 'Optimized for LinkedIn document posts'
+    });
+    
+    const wasAutoplay = isAutoplay;
+    setIsAutoplay(false);
+    
+    try {
+      // LinkedIn recommends 1080x1080 or 1080x1350 for best carousel display
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: [1080, 1080]
+      });
+
+      const originalSlide = currentSlide;
+
+      for (let i = 0; i < documentProcessingSlides.length; i++) {
+        setCurrentSlide(i);
+        await new Promise(resolve => setTimeout(resolve, 600));
+
+        const slideElement = document.querySelector('[data-slide-inner]') as HTMLElement;
+        if (!slideElement) continue;
+
+        const canvas = await html2canvas(slideElement, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#0f172a',
+          logging: false,
+          width: 1080,
+          height: 1080,
+          onclone: (clonedDoc) => {
+            const clonedElement = clonedDoc.querySelector('[data-slide-inner]') as HTMLElement;
+            if (clonedElement) {
+              clonedElement.style.transform = 'none';
+              clonedElement.style.opacity = '1';
+              clonedElement.style.width = '1080px';
+              clonedElement.style.height = '1080px';
+            }
+          }
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        
+        if (i > 0) {
+          pdf.addPage([1080, 1080], 'portrait');
+        }
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, 1080, 1080);
+      }
+
+      setCurrentSlide(originalSlide);
+      if (wasAutoplay) setIsAutoplay(true);
+
+      pdf.save('linkedin-carousel-presentation.pdf');
+      
+      toast.success('✅ LinkedIn Carousel PDF ready!', {
+        description: 'Upload this PDF to LinkedIn → Create Post → Document',
+        duration: 8000
+      });
+      
+      // Show instructions
+      setTimeout(() => {
+        toast.info('📱 How to post on LinkedIn:', {
+          description: '1. Create new post → 2. Click Document icon → 3. Upload the PDF → 4. Add your caption!',
+          duration: 12000
+        });
+      }, 1000);
+      
+    } catch (error) {
+      console.error('LinkedIn carousel PDF error:', error);
+      toast.error('Failed to generate carousel PDF');
+    }
+  };
+
   // Download as PNG images - captures exact visual of current slide or all slides
   const downloadAsImages = async (allSlides: boolean = false) => {
     const wasAutoplay = isAutoplay;
@@ -3216,18 +3294,6 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
             </Button>
           )}
           
-          {/* Copy Link */}
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={copyShareableLink} 
-            className="gap-1"
-            title="Copy public shareable link"
-          >
-            <Link2 className="w-4 h-4" />
-            Copy Link
-          </Button>
-          
           {/* Open Public View */}
           {!isPublicView && (
             <Button 
@@ -3242,28 +3308,57 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
             </Button>
           )}
           
-          {/* LinkedIn Share */}
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={shareToLinkedIn} 
-            className="gap-1 text-blue-600 border-blue-300 hover:bg-blue-50"
-          >
-            <Linkedin className="w-4 h-4" />
-            Share
-          </Button>
-          
-          {/* LinkedIn Carousel Export */}
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => downloadAsImages(true)} 
-            className="gap-1 text-emerald-600 border-emerald-300 hover:bg-emerald-50"
-            title="Download all slides as images for LinkedIn carousel"
-          >
-            <FileImage className="w-4 h-4" />
-            Carousel
-          </Button>
+          {/* LinkedIn Carousel Dropdown - Primary action for LinkedIn sharing */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-1 text-blue-600 border-blue-300 hover:bg-blue-50"
+              >
+                <Linkedin className="w-4 h-4" />
+                LinkedIn
+                <ChevronDown className="w-3 h-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-72">
+              <DropdownMenuLabel className="text-xs text-blue-600 font-semibold">
+                📱 Post as LinkedIn Carousel (Recommended)
+              </DropdownMenuLabel>
+              <DropdownMenuItem onClick={downloadLinkedInCarouselPDF} className="gap-2">
+                <FileText className="w-4 h-4 text-blue-600" />
+                <div className="flex flex-col">
+                  <span className="font-medium">Download Carousel PDF</span>
+                  <span className="text-xs text-muted-foreground">Upload to LinkedIn → Create Post → Document</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => downloadAsImages(true)} className="gap-2">
+                <FileImage className="w-4 h-4 text-emerald-600" />
+                <div className="flex flex-col">
+                  <span>Download as PNG Images</span>
+                  <span className="text-xs text-muted-foreground">{documentProcessingSlides.length} separate images</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-xs text-muted-foreground">
+                Share as Link (shows preview)
+              </DropdownMenuLabel>
+              <DropdownMenuItem onClick={shareToLinkedIn} className="gap-2">
+                <Share2 className="w-4 h-4 text-blue-500" />
+                <div className="flex flex-col">
+                  <span>Share Link to LinkedIn</span>
+                  <span className="text-xs text-muted-foreground">Posts URL with preview image</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={copyShareableLink} className="gap-2">
+                <Link2 className="w-4 h-4 text-slate-500" />
+                <div className="flex flex-col">
+                  <span>Copy Shareable Link</span>
+                  <span className="text-xs text-muted-foreground">Copy presentation URL</span>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           
           {onExit && !isPublicView && (
             <Button variant="destructive" size="sm" onClick={onExit}>
