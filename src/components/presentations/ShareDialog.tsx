@@ -7,8 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { 
-  Linkedin, Twitter, Copy, ExternalLink, Download, 
-  Check, Mail, Link2, QrCode, Share2, MessageCircle
+  Linkedin, Twitter, Copy, ExternalLink, 
+  Check, Mail, QrCode, Share2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -34,14 +34,12 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
   presentation
 }) => {
   const [copied, setCopied] = useState(false);
-  const [linkedinConnected, setLinkedinConnected] = useState(false);
   const [postContent, setPostContent] = useState(
     presentation.linkedin_post_template || 
     `🚀 Check out this presentation: ${presentation.name}\n\n${presentation.description || ''}\n\n#Presentation #AI`
   );
 
   const publicUrl = `${window.location.origin}/public/presentation/${presentation.slug}`;
-  const ogImageUrl = presentation.og_image_url || `${window.location.origin}/og-presentation.png`;
 
   const copyLink = async () => {
     try {
@@ -55,10 +53,9 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
   };
 
   const shareToLinkedIn = () => {
+    // LinkedIn Share Dialog - no app registration needed!
     const shareUrl = encodeURIComponent(publicUrl);
     window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`, '_blank', 'width=600,height=600');
-    
-    // Track share
     trackShare('linkedin');
   };
 
@@ -66,7 +63,6 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
     const text = encodeURIComponent(`${presentation.name}\n\n${postContent.slice(0, 200)}`);
     const url = encodeURIComponent(publicUrl);
     window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank', 'width=600,height=400');
-    
     trackShare('twitter');
   };
 
@@ -74,7 +70,6 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
     const subject = encodeURIComponent(`Check out: ${presentation.name}`);
     const body = encodeURIComponent(`${postContent}\n\nView presentation: ${publicUrl}`);
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
-    
     trackShare('email');
   };
 
@@ -102,59 +97,11 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
           await supabase
             .from('presentations')
             .update({ share_count: (currentPres.share_count || 0) + 1 })
-            .eq('id', presentation.id)
-            .then(() => {
-              // Success
-            });
+            .eq('id', presentation.id);
         }
       }
     } catch (error) {
       console.error('Failed to track share:', error);
-    }
-  };
-
-  const initiateLinkedInOAuth = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('linkedin-oauth', {
-        body: { action: 'authorize' }
-      });
-
-      if (error) throw error;
-      
-      if (data?.authUrl) {
-        window.open(data.authUrl, 'linkedin-auth', 'width=600,height=700');
-        toast.info('Complete LinkedIn authorization in the popup window');
-      }
-    } catch (error) {
-      console.error('LinkedIn OAuth error:', error);
-      toast.error('Failed to connect LinkedIn');
-    }
-  };
-
-  const postToLinkedIn = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('linkedin-oauth', {
-        body: { 
-          action: 'post',
-          content: postContent,
-          url: publicUrl,
-          imageUrl: ogImageUrl
-        }
-      });
-
-      if (error) throw error;
-      
-      if (data?.success) {
-        toast.success('Posted to LinkedIn!');
-        trackShare('linkedin-api');
-        onOpenChange(false);
-      } else if (data?.needsAuth) {
-        initiateLinkedInOAuth();
-      }
-    } catch (error) {
-      console.error('LinkedIn post error:', error);
-      toast.error('Failed to post to LinkedIn. Try using the share dialog instead.');
-      shareToLinkedIn();
     }
   };
 
@@ -229,13 +176,13 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <Button 
                 onClick={shareToLinkedIn}
                 className="gap-2 bg-[#0A66C2] hover:bg-[#004182]"
               >
                 <Linkedin className="w-4 h-4" />
-                LinkedIn Share
+                LinkedIn
               </Button>
               
               <Button 
@@ -255,19 +202,10 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                 <Mail className="w-4 h-4" />
                 Email
               </Button>
-              
-              <Button 
-                onClick={postToLinkedIn}
-                variant="outline"
-                className="gap-2 border-[#0A66C2] text-[#0A66C2] hover:bg-[#0A66C2]/10"
-              >
-                <MessageCircle className="w-4 h-4" />
-                Post via API
-              </Button>
             </div>
 
             <p className="text-xs text-muted-foreground text-center">
-              "LinkedIn Share" opens a dialog. "Post via API" requires LinkedIn authorization.
+              These buttons open share dialogs - no app registration required!
             </p>
           </TabsContent>
 
