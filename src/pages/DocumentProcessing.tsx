@@ -2885,6 +2885,55 @@ export default function DocumentProcessing() {
             toast.success(msg, {
               description: medicationCount > 1 ? 'Click medications in summary panel to lookup individually' : undefined
             });
+            
+            // Store ALL medications in multiMedicationResults for multi-drug prescriptions
+            if (medicationCount > 1 && successfulLookups.length > 0) {
+              const newMultiMedResults: Record<string, MedicationResult> = {};
+              
+              successfulLookups.forEach((lookup: any) => {
+                if (lookup?.lookupData) {
+                  const medData = lookup.lookupData;
+                  const medInfo = lookup.medication;
+                  const medName = medInfo?.drugName || medInfo?.medication_name || medData.drugName || 'Unknown';
+                  const medSig = medInfo?.sig || 'Take as directed';
+                  const medCalc = calculateQuantityAndDaySupply(medSig);
+                  
+                  const medNdcOptions = (medData.ndc || []).map((ndc: any) => ({
+                    code: ndc.code,
+                    name: `${ndc.brandName || ndc.genericName} ${ndc.strength}`,
+                    manufacturer: ndc.manufacturer,
+                    dosageForm: ndc.dosageForm,
+                    country: 'USA'
+                  }));
+                  
+                  const primaryNdc = medData.ndc?.[0];
+                  
+                  newMultiMedResults[medName] = {
+                    drugName: primaryNdc?.brandName || medData.drugName || medName,
+                    genericName: primaryNdc?.genericName || medName,
+                    strength: primaryNdc?.strength || medInfo?.strength || '',
+                    sig: medSig,
+                    calculatedQuantity: medCalc.totalQuantity,
+                    daysSupply: medCalc.daysSupply,
+                    dailyDose: medCalc.dailyDose,
+                    ndc: primaryNdc?.code,
+                    ndcOptions: medNdcOptions,
+                    alternatives: (medData.alternatives || []).map((alt: any) => ({
+                      name: alt.name,
+                      ndc: alt.rxcui,
+                      inStock: Math.random() > 0.3,
+                      stockQty: Math.floor(Math.random() * 500)
+                    })),
+                    clinicalRecommendations: [],
+                    isControlled: medData.isControlled,
+                    schedule: medData.schedule
+                  };
+                }
+              });
+              
+              console.log('[handleVerifyAndSave] Storing multi-medication results:', Object.keys(newMultiMedResults));
+              setMultiMedicationResults(prev => ({ ...prev, ...newMultiMedResults }));
+            }
           }
         } catch (err) {
           console.error('Drug search error after confirmation:', err);
@@ -2902,44 +2951,87 @@ export default function DocumentProcessing() {
           return typeof fieldValue === 'string' ? fieldValue.trim() : undefined;
         };
         
-        // Check multiple possible field names including numbered medication fields
-        const drugName = getFieldValue('medication_name') ||
+        // Collect ALL medications from numbered fields (medication_1, medication_2, etc.)
+        const medicationsFromFields: Array<{ name: string; sig: string; strength?: string }> = [];
+        
+        // Check for numbered medications (medication_1_name, medication_2_name, etc.)
+        for (let i = 1; i <= 10; i++) {
+          const medName = getFieldValue(`medication_${i}_name`) ||
+                          getFieldValue(`medication_${i}_medication_name`) ||
+                          getFieldValue(`medication_${i}`);
+          if (medName) {
+            medicationsFromFields.push({
+              name: medName,
+              sig: getFieldValue(`medication_${i}_sig`) || 'Take as directed',
+              strength: getFieldValue(`medication_${i}_strength`)
+            });
+          }
+        }
+        
+        // Also check non-numbered medication fields
+        const primaryDrugName = getFieldValue('medication_name') ||
                         getFieldValue('medication') ||
                         getFieldValue('drug_name') ||
-                        getFieldValue('medication_1_name') ||
-                        getFieldValue('medication_1_medication_name') ||
                         getFieldValue('rx')?.replace(/[()]/g, '') ||
                         getFieldValue('medicine') ||
                         null;
         
-        const sigText = getFieldValue('sig') ||
+        const primarySigText = getFieldValue('sig') ||
                        getFieldValue('directions') ||
                        getFieldValue('instructions') ||
-                       getFieldValue('medication_1_sig') ||
                        'Take as directed';
         
-        if (drugName) {
-          console.log('[handleVerifyAndSave] FALLBACK: Extracting medication from processingResult:', { drugName, sigText });
+        // If no numbered medications found, use primary
+        if (medicationsFromFields.length === 0 && primaryDrugName) {
+          medicationsFromFields.push({
+            name: primaryDrugName,
+            sig: primarySigText,
+            strength: getFieldValue('strength')
+          });
+        }
+        
+        console.log('[handleVerifyAndSave] FALLBACK: Found medications from fields:', medicationsFromFields);
+        
+        if (medicationsFromFields.length > 0) {
+          const firstMed = medicationsFromFields[0];
           
-          setDrugSearchQuery(drugName);
-          if (sigText && sigText !== 'Take as directed') {
-            setSigInstructions(sigText);
+          setDrugSearchQuery(firstMed.name);
+          if (firstMed.sig && firstMed.sig !== 'Take as directed') {
+            setSigInstructions(firstMed.sig);
           }
           
           setActiveTab('medication');
-          toast.info(`Processing medication: ${drugName}`, {
+          toast.info(`Processing ${medicationsFromFields.length} medication(s): ${firstMed.name}${medicationsFromFields.length > 1 ? ` (+${medicationsFromFields.length - 1} more)` : ''}`, {
             description: 'Searching for NDC codes and clinical data...'
           });
           
-          // Trigger drug lookup
+          // Process ALL medications in parallel
           try {
-            const { baseName } = normalizeDrugName(drugName);
-            const { data, error } = await supabase.functions.invoke('drug-lookup', {
-              body: { drugName: baseName, searchType: 'all' }
+            const lookupPromises = medicationsFromFields.map(async (med) => {
+              if (!med.name || med.name === 'Unknown') return null;
+              
+              try {
+                const { baseName } = normalizeDrugName(med.name);
+                const { data, error } = await supabase.functions.invoke('drug-lookup', {
+                  body: { drugName: baseName, searchType: 'all' }
+                });
+                
+                if (error) throw error;
+                return { medication: med, lookupData: data };
+              } catch (err) {
+                console.error(`Drug lookup failed for ${med.name}:`, err);
+                return { medication: med, lookupData: null, error: err };
+              }
             });
             
-            if (!error && data) {
-              const calculation = calculateQuantityAndDaySupply(sigText);
+            const lookupResults = await Promise.all(lookupPromises);
+            const successfulLookups = lookupResults.filter(r => r && r.lookupData);
+            
+            // Set primary medication result
+            const primaryLookup = lookupResults[0];
+            if (primaryLookup?.lookupData) {
+              const data = primaryLookup.lookupData;
+              const calculation = calculateQuantityAndDaySupply(firstMed.sig);
               const ndcOptions = (data.ndc || []).map((ndc: any) => ({
                 code: ndc.code,
                 name: `${ndc.brandName || ndc.genericName} ${ndc.strength}`,
@@ -2951,10 +3043,10 @@ export default function DocumentProcessing() {
               const primaryNdc = data.ndc?.[0];
               
               setSearchResults({
-                drugName: primaryNdc?.brandName || data.drugName || drugName,
-                genericName: primaryNdc?.genericName || drugName,
-                strength: primaryNdc?.strength || fields['strength']?.value || fields['medication_1_strength']?.value || '',
-                sig: sigText,
+                drugName: primaryNdc?.brandName || data.drugName || firstMed.name,
+                genericName: primaryNdc?.genericName || firstMed.name,
+                strength: primaryNdc?.strength || firstMed.strength || '',
+                sig: firstMed.sig,
                 calculatedQuantity: calculation.totalQuantity,
                 daysSupply: calculation.daysSupply,
                 dailyDose: calculation.dailyDose,
@@ -2965,12 +3057,60 @@ export default function DocumentProcessing() {
                   ndc: alt.rxcui,
                   savings: alt.savings
                 })),
-                clinicalRecommendations: [],
+                clinicalRecommendations: medicationsFromFields.length > 1 ? [{
+                  type: 'info' as const,
+                  title: 'Multiple Medications',
+                  message: `This prescription contains ${medicationsFromFields.length} medications. Check Agent Results for interactions.`
+                }] : [],
                 isControlled: data.isControlled,
                 schedule: data.schedule
               });
               
-              toast.success(`Found ${ndcOptions.length} NDC codes for ${drugName}`);
+              toast.success(`Found ${ndcOptions.length} NDC codes for ${firstMed.name}${successfulLookups.length > 1 ? ` (+${successfulLookups.length - 1} more medications processed)` : ''}`);
+            }
+            
+            // Store ALL medications in multiMedicationResults
+            if (successfulLookups.length > 0) {
+              const newMultiMedResults: Record<string, MedicationResult> = {};
+              
+              successfulLookups.forEach((lookup: any) => {
+                if (lookup?.lookupData) {
+                  const medData = lookup.lookupData;
+                  const medInfo = lookup.medication;
+                  const medName = medInfo?.name || medData.drugName || 'Unknown';
+                  const medSig = medInfo?.sig || 'Take as directed';
+                  const medCalc = calculateQuantityAndDaySupply(medSig);
+                  
+                  const medNdcOptions = (medData.ndc || []).map((ndc: any) => ({
+                    code: ndc.code,
+                    name: `${ndc.brandName || ndc.genericName} ${ndc.strength}`,
+                    manufacturer: ndc.manufacturer,
+                    dosageForm: ndc.dosageForm,
+                    country: 'USA'
+                  }));
+                  
+                  const primaryNdc = medData.ndc?.[0];
+                  
+                  newMultiMedResults[medName] = {
+                    drugName: primaryNdc?.brandName || medData.drugName || medName,
+                    genericName: primaryNdc?.genericName || medName,
+                    strength: primaryNdc?.strength || medInfo?.strength || '',
+                    sig: medSig,
+                    calculatedQuantity: medCalc.totalQuantity,
+                    daysSupply: medCalc.daysSupply,
+                    dailyDose: medCalc.dailyDose,
+                    ndc: primaryNdc?.code,
+                    ndcOptions: medNdcOptions,
+                    alternatives: [],
+                    clinicalRecommendations: [],
+                    isControlled: medData.isControlled,
+                    schedule: medData.schedule
+                  };
+                }
+              });
+              
+              console.log('[handleVerifyAndSave] FALLBACK: Storing multi-medication results:', Object.keys(newMultiMedResults));
+              setMultiMedicationResults(prev => ({ ...prev, ...newMultiMedResults }));
             }
           } catch (err) {
             console.error('[handleVerifyAndSave] Drug lookup error:', err);

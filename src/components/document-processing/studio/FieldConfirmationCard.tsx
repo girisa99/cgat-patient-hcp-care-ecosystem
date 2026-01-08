@@ -46,13 +46,51 @@ interface FieldConfirmationCardProps {
   onClick: () => void;
 }
 
-// Medication-related field keys that should show drug suggestions
-const MEDICATION_FIELD_KEYS = [
-  'medication', 'medication_name', 'drug', 'drug_name', 'medicine',
-  'brand_name', 'brandname', 'generic_name', 'genericname',
-  'prescription', 'rx_name', 'product_name', 'medication_1',
-  'medication_2', 'medication_3', 'current_medication'
+// Medication NAME field keys that should show drug suggestions
+// IMPORTANT: Be specific - exclude SIG, strength, NDC, etc. fields
+const MEDICATION_NAME_FIELD_KEYS = [
+  'medication_name', 'drug_name', 'medicine_name', 'rx_name', 'product_name',
+  'brand_name', 'brandname', 'generic_name', 'genericname'
 ];
+
+// Patterns for numbered medication name fields (medication_1_name, medication_2_name, etc.)
+// But NOT medication_1_sig, medication_1_strength, medication_1_ndc, etc.
+const isMedicationNameField = (fieldKey: string): boolean => {
+  const lowerKey = fieldKey.toLowerCase();
+  
+  // Exclude non-name medication fields
+  if (lowerKey.includes('sig') || 
+      lowerKey.includes('strength') || 
+      lowerKey.includes('ndc') ||
+      lowerKey.includes('dose') ||
+      lowerKey.includes('frequency') ||
+      lowerKey.includes('route') ||
+      lowerKey.includes('quantity') ||
+      lowerKey.includes('refill') ||
+      lowerKey.includes('directions') ||
+      lowerKey.includes('instructions')) {
+    return false;
+  }
+  
+  // Check exact matches first
+  if (MEDICATION_NAME_FIELD_KEYS.includes(lowerKey)) {
+    return true;
+  }
+  
+  // Check for numbered medication name patterns: medication_1_name, medication_1_medication_name, medication_1
+  // But only if it ends with name or is just the medication number (medication_1, medication_2)
+  const numberedMedPattern = /^medication_\d+(_name|_medication_name)?$/;
+  if (numberedMedPattern.test(lowerKey)) {
+    return true;
+  }
+  
+  // Check if field key ends with common medication name suffixes
+  if (lowerKey === 'medication' || lowerKey === 'drug' || lowerKey === 'medicine' || lowerKey === 'rx') {
+    return true;
+  }
+  
+  return false;
+};
 
 export function FieldConfirmationCard({
   fieldKey,
@@ -78,10 +116,8 @@ export function FieldConfirmationCard({
 
   const needsReview = isLowConfidence && !field.verified;
   
-  // Check if this is a medication-related field
-  const isMedicationField = MEDICATION_FIELD_KEYS.some(key => 
-    fieldKey.toLowerCase().includes(key.toLowerCase())
-  );
+  // Check if this is a medication NAME field (should show drug suggestions)
+  const isMedicationField = isMedicationNameField(fieldKey);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
