@@ -292,10 +292,11 @@ const getConfidenceColor = (confidence: number): string => {
   return 'text-red-600 bg-red-500/10';
 };
 
-// Get source badge with specific model info
-const getSourceBadge = (source: string, modelUsed?: string) => {
+// Get source badge with specific model info and fallback indication
+const getSourceBadge = (source: string, modelUsed?: string, usedFallback?: boolean, fallbackFrom?: string) => {
   const sourceLower = (source || '').toLowerCase();
   const modelLower = (modelUsed || '').toLowerCase();
+  const fallbackLabel = usedFallback && fallbackFrom ? ` (↩ ${fallbackFrom})` : '';
   
   // Determine the display based on source and model
   if (sourceLower === 'ocr' || sourceLower === 'google_vision_ocr') {
@@ -309,24 +310,24 @@ const getSourceBadge = (source: string, modelUsed?: string) => {
   // Check for specific AI models
   if (modelLower.includes('claude') || sourceLower.includes('claude')) {
     return (
-      <Badge variant="outline" className="text-[9px] h-4 border-orange-500 bg-orange-500/10 text-orange-600">
-        🟠 Claude NLP
+      <Badge variant="outline" className={`text-[9px] h-4 border-orange-500 bg-orange-500/10 text-orange-600 ${usedFallback ? 'ring-1 ring-yellow-400' : ''}`}>
+        🟠 CLAUDE{fallbackLabel}
       </Badge>
     );
   }
   
   if (modelLower.includes('gemini') || sourceLower.includes('gemini')) {
     return (
-      <Badge variant="outline" className="text-[9px] h-4 border-blue-500 bg-blue-500/10 text-blue-600">
-        🔵 Gemini
+      <Badge variant="outline" className={`text-[9px] h-4 border-blue-500 bg-blue-500/10 text-blue-600 ${usedFallback ? 'ring-1 ring-yellow-400' : ''}`}>
+        🔵 GEMINI{fallbackLabel}
       </Badge>
     );
   }
   
   if (modelLower.includes('openai') || modelLower.includes('gpt') || sourceLower.includes('openai')) {
     return (
-      <Badge variant="outline" className="text-[9px] h-4 border-green-500 bg-green-500/10 text-green-600">
-        🟢 GPT
+      <Badge variant="outline" className={`text-[9px] h-4 border-green-500 bg-green-500/10 text-green-600 ${usedFallback ? 'ring-1 ring-yellow-400' : ''}`}>
+        🟢 GPT{fallbackLabel}
       </Badge>
     );
   }
@@ -338,10 +339,11 @@ const getSourceBadge = (source: string, modelUsed?: string) => {
       variant="outline" 
       className={cn(
         "text-[9px] h-4",
-        isVisionAI ? "border-purple-500 bg-purple-500/10 text-purple-600" : "border-blue-500 bg-blue-500/10 text-blue-600"
+        isVisionAI ? "border-purple-500 bg-purple-500/10 text-purple-600" : "border-blue-500 bg-blue-500/10 text-blue-600",
+        usedFallback ? 'ring-1 ring-yellow-400' : ''
       )}
     >
-      {isVisionAI ? '✨ NLP' : '📷 OCR'}
+      {isVisionAI ? '✨ NLP' : '📷 OCR'}{fallbackLabel}
     </Badge>
   );
 };
@@ -770,7 +772,7 @@ export const PatientInfoVerificationPanel: React.FC<PatientInfoVerificationPanel
                         </div>
                         <p className="font-medium text-sm break-words">{field.value}</p>
                         <div className="flex items-center gap-2 mt-2">
-                          {getSourceBadge(field.source)}
+                          {getSourceBadge(field.source, undefined, (field as any).usedFallback, (field as any).fallbackFrom)}
                           <Badge 
                             variant="secondary" 
                             className={cn("text-[9px]", getConfidenceColor(field.confidence))}
@@ -810,7 +812,7 @@ export const PatientInfoVerificationPanel: React.FC<PatientInfoVerificationPanel
                       </label>
                       <p className="font-medium text-sm break-words">{field.value}</p>
                       <div className="flex items-center gap-2 mt-2">
-                        {getSourceBadge(field.source)}
+                        {getSourceBadge(field.source, undefined, (field as any).usedFallback, (field as any).fallbackFrom)}
                         <Badge 
                           variant="secondary" 
                           className={cn("text-[9px]", getConfidenceColor(field.confidence))}
