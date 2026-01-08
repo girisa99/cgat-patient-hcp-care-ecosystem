@@ -2699,8 +2699,7 @@ export default function DocumentProcessing() {
         .update({
           processing_config: updatedConfig,
           agent_findings: agentFindings.length > 0 ? JSON.stringify(agentFindings) : null,
-          agent_execution_status: agentFindings.length > 0 ? 'completed' : 'none',
-          updated_at: new Date().toISOString()
+          agent_execution_status: agentFindings.length > 0 ? 'completed' : 'none'
         })
         .eq('id', processingResult.id);
       
