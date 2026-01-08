@@ -30,6 +30,7 @@ interface FieldStats {
 interface SideBySideEditorProps {
   extractedFields: Record<string, ExtractedField>;
   onFieldUpdate: (key: string, value: string) => void;
+  onFieldDelete?: (key: string) => void;
   onFieldVerify: (key: string) => void;
   onFieldClick: (key: string) => void;
   activeFieldKey: string | null;
@@ -39,6 +40,7 @@ interface SideBySideEditorProps {
 export function SideBySideEditor({
   extractedFields,
   onFieldUpdate,
+  onFieldDelete,
   onFieldVerify,
   onFieldClick,
   activeFieldKey,
@@ -137,6 +139,7 @@ export function SideBySideEditor({
                 field={field}
                 isActive={activeFieldKey === key}
                 onUpdate={(value) => onFieldUpdate(key, value)}
+                onDelete={onFieldDelete ? () => onFieldDelete(key) : undefined}
                 onVerify={() => onFieldVerify(key)}
                 onClick={() => onFieldClick(key)}
               />
