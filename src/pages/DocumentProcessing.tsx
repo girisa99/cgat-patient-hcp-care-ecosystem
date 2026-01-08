@@ -905,6 +905,88 @@ export default function DocumentProcessing() {
       }
       return { ...prev, extractedFields: updatedFields };
     });
+    
+    // Also update pendingMedicationData if this is a medication-related field
+    // This ensures edits in Studio flow to Medication Lookup tab
+    const isMedicationField = key.includes('medication') || 
+                              key.includes('drug') || 
+                              key.includes('sig') || 
+                              key.includes('strength') ||
+                              key.includes('ndc') ||
+                              key.includes('rx');
+    
+    if (isMedicationField) {
+      setPendingMedicationData(prev => {
+        if (!prev) return prev;
+        
+        // Update extractedFields in pendingMedicationData
+        const updatedExtractedFields = { ...prev.extractedFields };
+        updatedExtractedFields[key] = { value, confidence: 1 };
+        
+        // Update allMedications array if this is a numbered medication field
+        const medMatch = key.match(/^medication_(\d+)_(.+)$/);
+        if (medMatch && prev.allMedications) {
+          const medIndex = parseInt(medMatch[1], 10) - 1;
+          const fieldName = medMatch[2];
+          
+          const updatedMedications = [...prev.allMedications];
+          if (updatedMedications[medIndex]) {
+            // Map field names to medication object properties
+            const propMap: Record<string, string> = {
+              'name': 'drugName',
+              'medication_name': 'drugName',
+              'sig': 'sig',
+              'strength': 'strength',
+              'ndc': 'ndc'
+            };
+            const propName = propMap[fieldName] || fieldName;
+            updatedMedications[medIndex] = {
+              ...updatedMedications[medIndex],
+              [propName]: value
+            };
+          }
+          
+          return {
+            ...prev,
+            extractedFields: updatedExtractedFields,
+            allMedications: updatedMedications,
+            // Update primary drugName/sigText if editing medication_1
+            ...(medIndex === 0 && fieldName === 'name' ? { drugName: value, baseName: value.split(' ')[0] } : {}),
+            ...(medIndex === 0 && fieldName === 'sig' ? { sigText: value } : {}),
+            ...(medIndex === 0 && fieldName === 'strength' ? { preservedStrength: value } : {})
+          };
+        }
+        
+        // Handle non-numbered medication fields (primary medication)
+        if (key === 'medication_name' || key === 'medication' || key === 'drug_name') {
+          return {
+            ...prev,
+            drugName: value,
+            baseName: value.split(' ')[0],
+            extractedFields: updatedExtractedFields
+          };
+        }
+        if (key === 'sig' || key === 'directions') {
+          return {
+            ...prev,
+            sigText: value,
+            extractedFields: updatedExtractedFields
+          };
+        }
+        if (key === 'strength') {
+          return {
+            ...prev,
+            preservedStrength: value,
+            extractedFields: updatedExtractedFields
+          };
+        }
+        
+        return {
+          ...prev,
+          extractedFields: updatedExtractedFields
+        };
+      });
+    }
   }, []);
 
   const handleSmartStudioFieldVerify = useCallback((key: string) => {
