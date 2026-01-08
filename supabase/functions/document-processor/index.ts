@@ -204,20 +204,27 @@ const MODEL_CAPABILITIES: Record<AIProvider, ModelCapability> = {
 
 // Document type to model mapping (per routing strategy doc)
 const DOCUMENT_TYPE_ROUTING: Record<string, ModelRoutingConfig> = {
-  'prescription': { primaryModel: 'claude', fallbackChain: ['gemini', 'openai'], pipelineType: 'single', timeoutMs: 30000, minConfidence: 0.8, maxRetries: 2 },
-  'insurance': { primaryModel: 'claude', fallbackChain: ['gemini', 'openai'], pipelineType: 'single', timeoutMs: 30000, minConfidence: 0.75, maxRetries: 2 },
-  'lab-results': { primaryModel: 'claude', fallbackChain: ['gemini', 'openai'], pipelineType: 'single', timeoutMs: 30000, minConfidence: 0.75, maxRetries: 2 },
-  'patient-onboarding': { primaryModel: 'gemini', fallbackChain: ['claude', 'openai'], pipelineType: 'single', timeoutMs: 25000, minConfidence: 0.7, maxRetries: 2 },
+  // Healthcare - Claude for clinical reasoning with OCR → Claude hybrid pipeline
+  'prescription': { primaryModel: 'claude', fallbackChain: ['gemini', 'openai'], pipelineType: 'sequential-hybrid', stage2Model: 'claude', timeoutMs: 30000, minConfidence: 0.8, maxRetries: 2 },
+  'insurance': { primaryModel: 'claude', fallbackChain: ['gemini', 'openai'], pipelineType: 'sequential-hybrid', stage2Model: 'claude', timeoutMs: 30000, minConfidence: 0.75, maxRetries: 2 },
+  'lab-results': { primaryModel: 'claude', fallbackChain: ['gemini', 'openai'], pipelineType: 'sequential-hybrid', stage2Model: 'claude', timeoutMs: 30000, minConfidence: 0.75, maxRetries: 2 },
+  'lab_result': { primaryModel: 'claude', fallbackChain: ['gemini', 'openai'], pipelineType: 'sequential-hybrid', stage2Model: 'claude', timeoutMs: 30000, minConfidence: 0.75, maxRetries: 2 },
+  'patient-onboarding': { primaryModel: 'gemini', fallbackChain: ['claude', 'openai'], pipelineType: 'sequential-hybrid', stage2Model: 'gemini', timeoutMs: 25000, minConfidence: 0.7, maxRetries: 2 },
+  // Medical Imaging - Gemini Vision → Claude Clinical
   'medical_imaging': { primaryModel: 'gemini', fallbackChain: ['claude'], pipelineType: 'sequential-hybrid', stage2Model: 'claude', timeoutMs: 45000, minConfidence: 0.6, maxRetries: 2 },
   'xray': { primaryModel: 'gemini', fallbackChain: ['claude'], pipelineType: 'sequential-hybrid', stage2Model: 'claude', timeoutMs: 45000, minConfidence: 0.6, maxRetries: 2 },
   'ct-scan': { primaryModel: 'gemini', fallbackChain: ['claude'], pipelineType: 'sequential-hybrid', stage2Model: 'claude', timeoutMs: 45000, minConfidence: 0.6, maxRetries: 2 },
   'mri': { primaryModel: 'gemini', fallbackChain: ['claude'], pipelineType: 'sequential-hybrid', stage2Model: 'claude', timeoutMs: 45000, minConfidence: 0.6, maxRetries: 2 },
   'ecg': { primaryModel: 'gemini', fallbackChain: ['claude'], pipelineType: 'sequential-hybrid', stage2Model: 'claude', timeoutMs: 40000, minConfidence: 0.6, maxRetries: 2 },
   'ultrasound': { primaryModel: 'gemini', fallbackChain: ['claude'], pipelineType: 'sequential-hybrid', stage2Model: 'claude', timeoutMs: 45000, minConfidence: 0.6, maxRetries: 2 },
-  'invoice': { primaryModel: 'openai', fallbackChain: ['claude', 'gemini'], pipelineType: 'single', timeoutMs: 30000, minConfidence: 0.8, maxRetries: 2 },
-  'receipt': { primaryModel: 'openai', fallbackChain: ['gemini', 'claude'], pipelineType: 'single', timeoutMs: 25000, minConfidence: 0.7, maxRetries: 2 },
-  'passport': { primaryModel: 'gemini', fallbackChain: ['claude', 'openai'], pipelineType: 'single', timeoutMs: 25000, minConfidence: 0.8, maxRetries: 2 },
-  'drivers-license': { primaryModel: 'gemini', fallbackChain: ['claude', 'openai'], pipelineType: 'single', timeoutMs: 25000, minConfidence: 0.8, maxRetries: 2 }
+  // Financial - OpenAI for tables/calculations
+  'invoice': { primaryModel: 'openai', fallbackChain: ['claude', 'gemini'], pipelineType: 'sequential-hybrid', stage2Model: 'openai', timeoutMs: 30000, minConfidence: 0.8, maxRetries: 2 },
+  'receipt': { primaryModel: 'openai', fallbackChain: ['gemini', 'claude'], pipelineType: 'sequential-hybrid', stage2Model: 'openai', timeoutMs: 25000, minConfidence: 0.7, maxRetries: 2 },
+  // Identity - Gemini for vision/OCR
+  'passport': { primaryModel: 'gemini', fallbackChain: ['claude', 'openai'], pipelineType: 'sequential-hybrid', stage2Model: 'gemini', timeoutMs: 25000, minConfidence: 0.8, maxRetries: 2 },
+  'drivers-license': { primaryModel: 'gemini', fallbackChain: ['claude', 'openai'], pipelineType: 'sequential-hybrid', stage2Model: 'gemini', timeoutMs: 25000, minConfidence: 0.8, maxRetries: 2 },
+  // Prescription form variant
+  'prescription_form': { primaryModel: 'claude', fallbackChain: ['gemini', 'openai'], pipelineType: 'sequential-hybrid', stage2Model: 'claude', timeoutMs: 30000, minConfidence: 0.8, maxRetries: 2 }
 };
 
 // Category defaults
@@ -605,14 +612,16 @@ async function handleUploadWithAutoDetect(supabase: any, request: ProcessingRequ
             const category = getDocumentCategory(detectedDocumentType);
             const routingConfig = selectBestModel(detectedDocumentType, category);
             
+            // Always use sequential-hybrid with Google Vision OCR as stage 1
+            // Stage 2 uses the appropriate clinical model based on document type
             modelRoutingInfo = {
               primaryModel: routingConfig.config.primaryModel,
-              modelUsed: routingConfig.config.primaryModel,
+              modelUsed: routingConfig.config.stage2Model || routingConfig.config.primaryModel,
               selectionReason: routingConfig.reason as any,
               confidence: routingConfig.confidence,
-              pipelineType: routingConfig.config.pipelineType,
-              stage1Model: routingConfig.config.pipelineType === 'sequential-hybrid' ? 'gemini' : undefined,
-              stage2Model: routingConfig.config.stage2Model,
+              pipelineType: 'sequential-hybrid',
+              stage1Model: 'google_vision_ocr',
+              stage2Model: routingConfig.config.stage2Model || routingConfig.config.primaryModel,
               fallbacksAttempted: []
             };
             

@@ -155,11 +155,21 @@ export const CATEGORY_MODEL_DEFAULTS: Record<string, DocumentAIConfig> = {
 // Specific model assignments per document type (from strategy doc)
 
 export const DOCUMENT_TYPE_AI_CONFIGS: Record<string, DocumentAIConfig> = {
-  // Healthcare - Claude for clinical reasoning
+  // Healthcare - Claude for clinical reasoning (OCR → Claude hybrid)
   'prescription': {
     primaryModel: 'claude',
     fallbackChain: ['gemini', 'openai'],
-    pipelineType: 'single',
+    pipelineType: 'sequential-hybrid',
+    stage2Model: 'claude',
+    timeoutMs: 30000,
+    minConfidence: 0.8,
+    maxRetries: 2
+  },
+  'prescription_form': {
+    primaryModel: 'claude',
+    fallbackChain: ['gemini', 'openai'],
+    pipelineType: 'sequential-hybrid',
+    stage2Model: 'claude',
     timeoutMs: 30000,
     minConfidence: 0.8,
     maxRetries: 2
@@ -167,7 +177,8 @@ export const DOCUMENT_TYPE_AI_CONFIGS: Record<string, DocumentAIConfig> = {
   'insurance': {
     primaryModel: 'claude',
     fallbackChain: ['gemini', 'openai'],
-    pipelineType: 'single',
+    pipelineType: 'sequential-hybrid',
+    stage2Model: 'claude',
     timeoutMs: 30000,
     minConfidence: 0.75,
     maxRetries: 2
@@ -175,7 +186,17 @@ export const DOCUMENT_TYPE_AI_CONFIGS: Record<string, DocumentAIConfig> = {
   'lab-results': {
     primaryModel: 'claude',
     fallbackChain: ['gemini', 'openai'],
-    pipelineType: 'single',
+    pipelineType: 'sequential-hybrid',
+    stage2Model: 'claude',
+    timeoutMs: 30000,
+    minConfidence: 0.75,
+    maxRetries: 2
+  },
+  'lab_result': {
+    primaryModel: 'claude',
+    fallbackChain: ['gemini', 'openai'],
+    pipelineType: 'sequential-hybrid',
+    stage2Model: 'claude',
     timeoutMs: 30000,
     minConfidence: 0.75,
     maxRetries: 2
@@ -183,7 +204,8 @@ export const DOCUMENT_TYPE_AI_CONFIGS: Record<string, DocumentAIConfig> = {
   'patient-onboarding': {
     primaryModel: 'gemini',
     fallbackChain: ['claude', 'openai'],
-    pipelineType: 'single',
+    pipelineType: 'sequential-hybrid',
+    stage2Model: 'gemini',
     timeoutMs: 25000,
     minConfidence: 0.7,
     maxRetries: 2
