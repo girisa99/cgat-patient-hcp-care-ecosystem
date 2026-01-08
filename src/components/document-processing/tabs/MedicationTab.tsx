@@ -411,67 +411,129 @@ export default function MedicationTab({
         </Card>
       )}
 
-      {/* Multi-Medication Summary Panel - Shows ALL medications from prescription */}
+      {/* Multi-Medication Selector - Shows dropdown when multiple medications detected */}
       {processingResult?.medications && processingResult.medications.length > 1 && (
         <Card className="border-blue-300 bg-gradient-to-r from-blue-50 to-blue-100/30 dark:from-blue-950/30 dark:to-blue-900/10">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Pill className="h-5 w-5 text-blue-600" />
-              Multiple Medications Detected ({processingResult.medications.length})
-            </CardTitle>
-            <CardDescription>
-              This prescription contains multiple medications. Agent analysis covers all drugs.
-            </CardDescription>
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Pill className="h-5 w-5 text-blue-600" />
+                  Multiple Medications Detected ({processingResult.medications.length})
+                </CardTitle>
+                <CardDescription>
+                  Select a medication to view drug search, NDC codes, and clinical info.
+                </CardDescription>
+              </div>
+              
+              {/* Prominent Medication Dropdown Selector */}
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-medium whitespace-nowrap">Active Medication:</Label>
+                <Select 
+                  value={String(activeMedicationIndex)} 
+                  onValueChange={(val) => {
+                    const index = parseInt(val);
+                    setActiveMedicationIndex(index);
+                    const med = processingResult.medications?.[index];
+                    if (med) {
+                      const medName = med.medication_name || med.name || `Medication ${index + 1}`;
+                      setDrugSearchQuery(medName);
+                      toast.info(`Switched to ${medName}`, { description: 'Tab data refreshed for this medication' });
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-[280px] bg-background border-blue-300">
+                    <SelectValue placeholder="Select medication" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    {processingResult.medications.map((med: any, index: number) => {
+                      const medName = med.medication_name || med.name || `Medication ${index + 1}`;
+                      const strength = med.strength || '';
+                      return (
+                        <SelectItem key={index} value={String(index)}>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs shrink-0">#{index + 1}</Badge>
+                            <span className="truncate">{medName}</span>
+                            {strength && <Badge variant="secondary" className="text-xs ml-1">{strength}</Badge>}
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {/* Quick Medication Pills - Click to switch */}
+            <div className="flex flex-wrap gap-2 mb-3">
               {processingResult.medications.map((med: any, index: number) => {
                 const medName = med.medication_name || med.name || `Medication ${index + 1}`;
-                const strength = med.strength || '';
-                const sig = med.sig || med.directions || '';
-                const quantity = med.quantity || '';
-                
+                const isActive = index === activeMedicationIndex;
                 return (
-                  <div 
+                  <button
                     key={index}
-                    className="p-3 bg-background rounded-lg border border-blue-200 dark:border-blue-800 hover:border-primary transition-colors cursor-pointer"
                     onClick={() => {
+                      setActiveMedicationIndex(index);
                       setDrugSearchQuery(medName);
-                      toast.info(`Selected ${medName} for lookup`);
+                      toast.info(`Switched to ${medName}`);
                     }}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                      isActive 
+                        ? 'bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2' 
+                        : 'bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground'
+                    }`}
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-xs shrink-0">
-                            #{index + 1}
-                          </Badge>
-                          <p className="font-medium text-sm truncate">{medName}</p>
-                        </div>
-                        {strength && (
-                          <Badge variant="secondary" className="mt-1 text-xs">
-                            {strength}
-                          </Badge>
-                        )}
-                        {sig && (
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                            Sig: {sig}
-                          </p>
-                        )}
-                        {quantity && (
-                          <p className="text-xs text-muted-foreground">
-                            Qty: {quantity}
-                          </p>
-                        )}
-                      </div>
-                      <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-                    </div>
-                  </div>
+                    #{index + 1} {medName.length > 20 ? medName.substring(0, 20) + '...' : medName}
+                  </button>
                 );
               })}
             </div>
+            
+            {/* Active Medication Details Preview */}
+            {(() => {
+              const activeMed = processingResult.medications[activeMedicationIndex];
+              if (!activeMed) return null;
+              const medName = activeMed.medication_name || activeMed.name || `Medication ${activeMedicationIndex + 1}`;
+              const strength = activeMed.strength || '';
+              const sig = activeMed.sig || activeMed.directions || '';
+              const quantity = activeMed.quantity || '';
+              
+              return (
+                <div className="p-3 bg-background rounded-lg border border-primary/30">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-primary text-primary-foreground text-xs">
+                          Active: #{activeMedicationIndex + 1}
+                        </Badge>
+                        <p className="font-semibold">{medName}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {strength && <Badge variant="secondary">{strength}</Badge>}
+                        {quantity && <Badge variant="outline">Qty: {quantity}</Badge>}
+                      </div>
+                      {sig && (
+                        <p className="text-sm text-muted-foreground mt-2">
+                          <strong>Sig:</strong> {sig}
+                        </p>
+                      )}
+                    </div>
+                    <Button 
+                      size="sm" 
+                      onClick={() => handleDrugSearch()}
+                      disabled={isSearching}
+                    >
+                      {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                      <span className="ml-1">Search</span>
+                    </Button>
+                  </div>
+                </div>
+              );
+            })()}
+            
             <p className="text-xs text-muted-foreground mt-3">
-              Click any medication to search for NDC codes and clinical information. Agent results below analyze all medications together.
+              💡 Select a medication above to populate drug search, NDC lookup, and clinical recommendations. Save each medication's data independently.
             </p>
           </CardContent>
         </Card>

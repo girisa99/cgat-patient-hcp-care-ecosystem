@@ -46,6 +46,14 @@ export interface DocumentContext {
   imageBase64?: string;
   fileName?: string;
   preferredProvider?: 'claude' | 'gemini' | 'openai';
+  // Per-agent provider overrides
+  agentProviderOverrides?: Record<string, 'auto' | 'claude' | 'gemini' | 'openai'>;
+  // Per-agent medication selection for multi-medication prescriptions
+  agentMedicationSelection?: Record<string, number | 'all'>;
+  // All medications from prescription
+  allMedications?: any[];
+  // Selected APIs
+  selectedAPIs?: string[];
 }
 
 interface UseAgentExecutionReturn {
@@ -73,6 +81,22 @@ export function useAgentExecution(): UseAgentExecutionReturn {
     try {
       setCurrentAgent(agent.name);
       
+      // Determine effective provider for this agent
+      const effectiveProvider = documentData.agentProviderOverrides?.[agent.id] || documentData.preferredProvider;
+      
+      // Get medication selection for this agent (if applicable)
+      const medicationSelection = documentData.agentMedicationSelection?.[agent.id];
+      const selectedMedication = medicationSelection !== undefined && medicationSelection !== 'all' && documentData.allMedications
+        ? documentData.allMedications[medicationSelection]
+        : null;
+      
+      // Build medication context for the agent
+      const medicationContext = {
+        selection: medicationSelection ?? 'all',
+        selectedMedication: selectedMedication,
+        allMedications: documentData.allMedications || []
+      };
+      
       // Call the edge function
       const { data, error } = await supabase.functions.invoke('execute-document-agent', {
         body: {
@@ -88,7 +112,9 @@ export function useAgentExecution(): UseAgentExecutionReturn {
             extractedFields: documentData.extractedFields,
             rawText: documentData.rawText,
             fileName: documentData.fileName,
-            preferredProvider: documentData.preferredProvider
+            preferredProvider: effectiveProvider === 'auto' ? undefined : effectiveProvider,
+            medicationContext: medicationContext,
+            selectedAPIs: documentData.selectedAPIs
           }
         }
       });
