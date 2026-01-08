@@ -918,6 +918,17 @@ export default function DocumentProcessing() {
     });
   }, []);
 
+  // Handler for deleting fields in SmartDocumentStudio
+  const handleSmartStudioFieldDelete = useCallback((key: string) => {
+    setProcessingResult(prev => {
+      if (!prev) return prev;
+      const updatedFields = { ...prev.extractedFields };
+      delete updatedFields[key];
+      return { ...prev, extractedFields: updatedFields };
+    });
+    toast.success(`Field "${key.replace(/_/g, ' ')}" deleted`);
+  }, []);
+
   // Note: handleSmartStudioFileUpload is defined after onDrop below
 
   const handleSmartStudioRunAgents = useCallback((_agentIds: string[]) => {
@@ -2882,23 +2893,29 @@ export default function DocumentProcessing() {
         // Clear pending medication data
         setPendingMedicationData(null);
       } else if ((selectedDocType === 'prescription' || selectedDocType.includes('medication')) && processingResult?.extractedFields) {
-        // FALLBACK: If pendingMedicationData was null but we have extractedFields, try to extract drug name directly
+        // FALLBACK: If pendingMedicationData was null, use extractedFields (which may contain user edits)
         const fields = processingResult.extractedFields;
         
+        // Helper to get field value safely
+        const getFieldValue = (key: string): string | undefined => {
+          const fieldValue = fields[key]?.value;
+          return typeof fieldValue === 'string' ? fieldValue.trim() : undefined;
+        };
+        
         // Check multiple possible field names including numbered medication fields
-        const drugName = fields['medication_name']?.value?.trim() ||
-                        fields['medication']?.value?.trim() ||
-                        fields['drug_name']?.value?.trim() ||
-                        fields['medication_1_name']?.value?.trim() ||
-                        fields['medication_1_medication_name']?.value?.trim() ||
-                        fields['rx']?.value?.replace(/[()]/g, '')?.trim() ||
-                        fields['medicine']?.value?.trim() ||
+        const drugName = getFieldValue('medication_name') ||
+                        getFieldValue('medication') ||
+                        getFieldValue('drug_name') ||
+                        getFieldValue('medication_1_name') ||
+                        getFieldValue('medication_1_medication_name') ||
+                        getFieldValue('rx')?.replace(/[()]/g, '') ||
+                        getFieldValue('medicine') ||
                         null;
         
-        const sigText = fields['sig']?.value ||
-                       fields['directions']?.value ||
-                       fields['instructions']?.value ||
-                       fields['medication_1_sig']?.value ||
+        const sigText = getFieldValue('sig') ||
+                       getFieldValue('directions') ||
+                       getFieldValue('instructions') ||
+                       getFieldValue('medication_1_sig') ||
                        'Take as directed';
         
         if (drugName) {
@@ -3077,6 +3094,7 @@ export default function DocumentProcessing() {
                 isProcessing={processingResult?.stage !== 'complete' && processingResult?.stage !== 'error' && processingResult?.stage !== 'idle' && processingResult !== null}
                 onFileUpload={handleSmartStudioFileUpload}
                 onFieldUpdate={handleSmartStudioFieldUpdate}
+                onFieldDelete={handleSmartStudioFieldDelete}
                 onFieldVerify={handleSmartStudioFieldVerify}
                 onSave={handleVerifyAndSave}
                 onRunAgents={handleSmartStudioRunAgents}

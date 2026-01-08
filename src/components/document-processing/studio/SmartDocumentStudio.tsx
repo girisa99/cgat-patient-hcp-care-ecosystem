@@ -326,6 +326,7 @@ export function SmartDocumentStudio({
               <SideBySideEditor
                 extractedFields={extractedFields}
                 onFieldUpdate={onFieldUpdate}
+                onFieldDelete={onFieldDelete}
                 onFieldVerify={onFieldVerify}
                 onFieldClick={handleFieldClick}
                 activeFieldKey={activeFieldKey}
