@@ -940,6 +940,20 @@ export default function DocumentProcessing() {
       return saved ? JSON.parse(saved) : null;
     } catch { return null; }
   });
+  // Multi-medication results - keyed by medication name
+  const [multiMedicationResults, setMultiMedicationResults] = useState<Record<string, MedicationResult>>(() => {
+    try {
+      const saved = sessionStorage.getItem('docProcessing_multiMedicationResults');
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
+  });
+  // Multi-medication NDC selections - keyed by medication name
+  const [multiSelectedNdcs, setMultiSelectedNdcs] = useState<Record<string, string>>(() => {
+    try {
+      const saved = sessionStorage.getItem('docProcessing_multiSelectedNdcs');
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
+  });
   const [isSearching, setIsSearching] = useState(false);
   const [selectedNdc, setSelectedNdc] = useState<string | null>(() => sessionStorage.getItem('docProcessing_selectedNdc'));
   const [parsedSig, setParsedSig] = useState<any>(() => {
@@ -1414,14 +1428,17 @@ export default function DocumentProcessing() {
 
   // Sync medications from processingResult to searchResults when loading from history
   // This ensures MedicationTab shows the extracted medication data even when navigating back
+  // ENHANCED: Now supports ALL medications in a prescription for multi-medication results
   useEffect(() => {
     // Only sync if we have medications in processingResult but no searchResults
     if (processingResult?.medications && 
         processingResult.medications.length > 0 && 
         !searchResults &&
         (selectedDocType === 'prescription' || selectedDocType === 'order-management')) {
+      
+      // Sync first medication to primary search results
       const med = processingResult.medications[0];
-      console.log('Syncing medication from processingResult to searchResults:', med);
+      console.log('Syncing medications from processingResult - total:', processingResult.medications.length);
       
       // Populate drug search query if empty
       if (!drugSearchQuery && med.drugName && med.drugName !== 'Unknown') {
@@ -1434,7 +1451,7 @@ export default function DocumentProcessing() {
         parseSigToSelectors(med.sig);
       }
       
-      // Set search results from medication data
+      // Set search results from first medication data
       setSearchResults({
         drugName: med.drugName,
         genericName: med.genericName,
@@ -1455,6 +1472,43 @@ export default function DocumentProcessing() {
         setSelectedNdc(med.ndcOptions[0].code);
       } else if (med.ndc) {
         setSelectedNdc(med.ndc);
+      }
+      
+      // ENHANCED: Populate multiMedicationResults for ALL medications
+      if (processingResult.medications.length > 1) {
+        const multiResults: Record<string, MedicationResult> = {};
+        const multiNdcs: Record<string, string> = {};
+        
+        processingResult.medications.forEach((medication: any) => {
+          const medName = medication.drugName || medication.medication_name || medication.name;
+          if (medName && medName !== 'Unknown') {
+            multiResults[medName] = {
+              drugName: medication.drugName || medName,
+              genericName: medication.genericName,
+              strength: medication.strength,
+              sig: medication.sig || 'Take as directed',
+              calculatedQuantity: medication.calculatedQuantity || 0,
+              daysSupply: medication.daysSupply || 0,
+              dailyDose: medication.dailyDose || 0,
+              isControlled: medication.isControlled,
+              schedule: medication.schedule,
+              ndcOptions: medication.ndcOptions || [],
+              clinicalRecommendations: medication.clinicalRecommendations || [],
+              alternatives: medication.alternatives || []
+            };
+            
+            // Auto-select first NDC for each medication
+            if (medication.ndcOptions && medication.ndcOptions.length > 0) {
+              multiNdcs[medName] = medication.ndcOptions[0].code;
+            } else if (medication.ndc) {
+              multiNdcs[medName] = medication.ndc;
+            }
+          }
+        });
+        
+        console.log('Setting multiMedicationResults:', Object.keys(multiResults).length, 'medications');
+        setMultiMedicationResults(multiResults);
+        setMultiSelectedNdcs(multiNdcs);
       }
     }
   }, [processingResult, searchResults, selectedDocType, drugSearchQuery, sigInstructions, parseSigToSelectors]);
@@ -1557,6 +1611,14 @@ export default function DocumentProcessing() {
     return () => clearTimeout(timeoutId);
   }, [selectedDose, selectedRoute, selectedFrequency, selectedDuration, frequencyOptions]);
 
+  // Handler for setting multi-selected NDC per medication
+  const handleSetMultiSelectedNdc = useCallback((medName: string, ndc: string) => {
+    setMultiSelectedNdcs(prev => ({
+      ...prev,
+      [medName]: ndc
+    }));
+  }, []);
+
   // Document upload and auto-processing
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
@@ -1577,12 +1639,17 @@ export default function DocumentProcessing() {
       setSelectedFrequency('once daily');
       setSelectedDuration('30 days');
       setNdcDosageInfo(null);
+      // Reset multi-medication state
+      setMultiMedicationResults({});
+      setMultiSelectedNdcs({});
       // Also clear sessionStorage to prevent stale data on page reload
       sessionStorage.removeItem('docProcessing_drugQuery');
       sessionStorage.removeItem('docProcessing_sigInstructions');
       sessionStorage.removeItem('docProcessing_searchResults');
       sessionStorage.removeItem('docProcessing_selectedNdc');
       sessionStorage.removeItem('docProcessing_parsedSig');
+      sessionStorage.removeItem('docProcessing_multiMedicationResults');
+      sessionStorage.removeItem('docProcessing_multiSelectedNdcs');
     }
     
     // Create object URL for image preview
@@ -2975,8 +3042,11 @@ export default function DocumentProcessing() {
               handleDrugSearch={handleDrugSearch}
               isSearching={isSearching}
               searchResults={searchResults}
+              multiMedicationResults={multiMedicationResults}
               selectedNdc={selectedNdc || ''}
               setSelectedNdc={setSelectedNdc}
+              multiSelectedNdcs={multiSelectedNdcs}
+              setMultiSelectedNdc={handleSetMultiSelectedNdc}
               selectedDose={selectedDose}
               setSelectedDose={setSelectedDose}
               selectedRoute={selectedRoute}

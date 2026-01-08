@@ -256,10 +256,27 @@ function extractAllMedications(fields: Record<string, any>): ExtractedMedication
   };
   
   // Method 1: Check for medications array (new multi-drug format from extraction)
-  // Handle both direct array and wrapped {value: [...], confidence} format
-  const medicationsArray = Array.isArray(fields.medications) 
-    ? fields.medications 
-    : (Array.isArray(fields.medications?.value) ? fields.medications.value : null);
+  // Handle direct array, wrapped {value: [...], confidence} format, AND JSON string
+  let medicationsArray: any[] | null = null;
+  
+  if (Array.isArray(fields.medications)) {
+    medicationsArray = fields.medications;
+  } else if (fields.medications?.value) {
+    // Check if value is array or JSON string
+    if (Array.isArray(fields.medications.value)) {
+      medicationsArray = fields.medications.value;
+    } else if (typeof fields.medications.value === 'string') {
+      try {
+        const parsed = JSON.parse(fields.medications.value);
+        if (Array.isArray(parsed)) {
+          medicationsArray = parsed;
+          console.log('[extractAllMedications] Parsed medications from JSON string');
+        }
+      } catch (e) {
+        console.log('[extractAllMedications] Failed to parse medications JSON string:', e);
+      }
+    }
+  }
     
   if (medicationsArray) {
     console.log('[extractAllMedications] Processing medications array with', medicationsArray.length, 'items');
@@ -542,10 +559,26 @@ async function executeDrugLookup(context: DocumentContext): Promise<AgentFinding
   const medications: Array<{ name: string; strength?: string; sig?: string; ndc?: string }> = [];
   
   // Check for medications array (new multi-drug format)
-  // Handle both direct array and wrapped {value: [...], confidence} format
-  const medicationsArray = Array.isArray(fields.medications) 
-    ? fields.medications 
-    : (Array.isArray(fields.medications?.value) ? fields.medications.value : null);
+  // Handle direct array, wrapped {value: [...], confidence} format, AND JSON string
+  let medicationsArray: any[] | null = null;
+  
+  if (Array.isArray(fields.medications)) {
+    medicationsArray = fields.medications;
+  } else if (fields.medications?.value) {
+    if (Array.isArray(fields.medications.value)) {
+      medicationsArray = fields.medications.value;
+    } else if (typeof fields.medications.value === 'string') {
+      try {
+        const parsed = JSON.parse(fields.medications.value);
+        if (Array.isArray(parsed)) {
+          medicationsArray = parsed;
+          console.log('[drug-lookup] Parsed medications from JSON string');
+        }
+      } catch (e) {
+        console.log('[drug-lookup] Failed to parse medications JSON string:', e);
+      }
+    }
+  }
     
   if (medicationsArray) {
     console.log('[drug-lookup] Processing medications array with', medicationsArray.length, 'items');
