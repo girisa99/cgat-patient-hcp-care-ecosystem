@@ -23,6 +23,7 @@ import { toast } from 'sonner';
 import pptxgen from 'pptxgenjs';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { usePresentationShare } from '@/hooks/usePresentationShare';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -2258,50 +2259,13 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
     }
   };
 
-  const shareToLinkedIn = async () => {
-    const publicUrl = getPublicPresentationUrl();
-    const sharePageUrl = getSharePageUrl();
-    
-    const linkedInPost = 
-      "🚀 Revolutionizing Document Processing with Multi-Model AI!\n\n" +
-      "✅ 95%+ accuracy with intelligent model routing\n" +
-      "✅ 75x faster than manual processing\n" +
-      "✅ 99% cost reduction ($350K → $2,500)\n" +
-      "✅ Zero configuration auto-detection\n\n" +
-      "🔗 View the interactive presentation:\n" +
-      publicUrl + "\n\n" +
-      "Built with @Lovable AI in just 3 weeks!\n\n" +
-      "#AI #DocumentProcessing #Healthcare #Automation #Lovable";
-
-    // Step 1: Copy post content to clipboard
-    try {
-      await navigator.clipboard.writeText(linkedInPost);
-      toast.success('✅ LinkedIn post copied to clipboard!', {
-        description: 'Paste (Ctrl+V) in the LinkedIn composer that opens.',
-        duration: 6000
-      });
-    } catch (err) {
-      console.error('Clipboard error:', err);
-      toast.error('Failed to copy to clipboard');
-    }
-
-    // Step 2: Open LinkedIn share dialog with static share page (has OG tags)
-    const linkedInShareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(sharePageUrl)}`;
-    window.open(linkedInShareUrl, '_blank', 'width=600,height=600');
-  };
-
-  const copyShareableLink = async () => {
-    const publicUrl = getPublicPresentationUrl();
-    try {
-      await navigator.clipboard.writeText(publicUrl);
-      toast.success('✅ Public link copied!', {
-        description: publicUrl,
-        duration: 4000
-      });
-    } catch (err) {
-      toast.error('Failed to copy link');
-    }
-  };
+  // Use standardized presentation share hook
+  const { 
+    shareToLinkedIn, 
+    copyLink: copyShareableLink, 
+    openPresentation: openPublicPresentation,
+    getShareUrls 
+  } = usePresentationShare({ presentationId: 'document-processing' });
 
   const startVideoRecording = async () => {
     try {
@@ -2357,13 +2321,6 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
     }
   };
 
-  const openPublicPresentation = () => {
-    const publicUrl = getPublicPresentationUrl();
-    window.open(publicUrl, '_blank');
-    toast.success('Opening public presentation...', {
-      description: 'View the shareable presentation'
-    });
-  };
 
   const currentSlideData = documentProcessingSlides[currentSlide];
 
