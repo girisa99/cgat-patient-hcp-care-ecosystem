@@ -1274,20 +1274,22 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
             
             // ============================================
             // CRITICAL: Handle medications array for prescriptions
-            // This is what the agents need for drug lookup!
+            // STRATEGY: Normalize everything to medications array format
+            // NEVER emit standalone medication fields - only the array items
             // ============================================
             const medicationsArray = extracted.medications || extracted.fields?.medications;
-            if (medicationsArray && Array.isArray(medicationsArray)) {
-              console.log(`[Extraction] Found medications array with ${medicationsArray.length} items`);
+            if (medicationsArray && Array.isArray(medicationsArray) && medicationsArray.length > 0) {
+              console.log(`[Extraction] Found medications array with ${medicationsArray.length} items - normalizing to clean format`);
               
-              // Store full medications array for agents (stringify for React compatibility)
-              formMapping['medications'] = {
-                value: JSON.stringify(medicationsArray),
-                confidence: extracted.confidence || 0.85,
+              // Store medication count for reference
+              formMapping['medication_count'] = {
+                value: String(medicationsArray.length),
+                confidence: 0.95,
                 source: `${providerUsed}_prescription`
               };
               
-              // Also create numbered fields for backward compatibility
+              // Create ONLY numbered fields from the medications array
+              // This is the single source of truth for medication data
               medicationsArray.forEach((med: any, index: number) => {
                 const idx = index + 1;
                 const medName = med.medication_name || med.name || med.drug_name;
