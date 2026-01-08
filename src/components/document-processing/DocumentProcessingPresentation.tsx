@@ -2143,10 +2143,10 @@ const ROISlide = () => (
 // SLIDE 14: THANK YOU & CONTACT - Learn More
 // =============================================================================
 const ThankYouContactSlide = () => (
-  <motion.div className="space-y-6 flex flex-col items-center justify-center h-full" variants={staggerContainer} initial="initial" animate="animate">
-    {/* Thank You Header */}
+  <motion.div className="space-y-4 flex flex-col items-center justify-center" variants={staggerContainer} initial="initial" animate="animate">
+    {/* Thank You Header with Amazement Message */}
     <motion.div
-      initial={{ opacity: 0, y: -30 }}
+      initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2, type: "spring" }}
       className="text-center"
@@ -2154,77 +2154,125 @@ const ThankYouContactSlide = () => (
       <motion.div
         animate={{ scale: [1, 1.1, 1] }}
         transition={{ duration: 2, repeat: Infinity }}
-        className="text-6xl mb-4"
+        className="text-5xl mb-3"
       >
         🙏
       </motion.div>
-      <h2 className="text-4xl font-bold text-white mb-2">Thank You!</h2>
-      <p className="text-xl text-indigo-300">For taking the time to explore my journey</p>
+      <h2 className="text-3xl font-bold text-white mb-2">Thank You!</h2>
+      <p className="text-base text-indigo-200 max-w-2xl">
+        I am <span className="text-purple-400 font-bold">amazed</span> at how tools like <span className="text-purple-400 font-bold">Lovable</span> can bring a 
+        <span className="text-amber-400 font-bold"> big shift in the mindset</span> of development — 
+        what's possible is now <span className="text-emerald-400 font-bold">beyond imagination</span>.
+      </p>
     </motion.div>
 
-    {/* Key Takeaways */}
+    {/* Key Takeaways - Compact */}
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4 }}
-      className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 rounded-2xl p-6 border border-indigo-500/30 max-w-2xl w-full"
+      className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 rounded-xl p-4 border border-indigo-500/30 max-w-2xl w-full"
     >
-      <h3 className="text-lg font-semibold text-white mb-4 text-center flex items-center justify-center gap-2">
-        <Sparkles className="w-5 h-5 text-purple-400" />
-        What I Hope You Take Away
-      </h3>
-      <div className="grid grid-cols-3 gap-4 text-center">
+      <div className="grid grid-cols-3 gap-3 text-center">
         {[
           { emoji: "🚀", text: "AI is democratizing development" },
-          { emoji: "💡", text: "Complex solutions in weeks, not months" },
-          { emoji: "🎯", text: "Anyone can build production-ready apps" },
+          { emoji: "💡", text: "Build in weeks, not months" },
+          { emoji: "🎯", text: "Anyone can create magic" },
         ].map((item, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.5 + i * 0.1 }}
-            className="p-3 bg-slate-900/50 rounded-xl"
+            className="p-2 bg-slate-900/50 rounded-lg"
           >
-            <div className="text-2xl mb-2">{item.emoji}</div>
-            <p className="text-sm text-slate-300">{item.text}</p>
+            <div className="text-xl mb-1">{item.emoji}</div>
+            <p className="text-xs text-slate-300">{item.text}</p>
           </motion.div>
         ))}
       </div>
+    </motion.div>
+
+    {/* Video & Links Section */}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.6 }}
+      className="grid grid-cols-2 gap-4 max-w-3xl w-full"
+    >
+      {/* Watch Demo Video */}
+      <a 
+        href="https://lnkd.in/eWxn_gQw" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="block"
+      >
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          className="bg-gradient-to-br from-red-600/20 via-red-500/10 to-orange-600/20 rounded-xl p-4 border border-red-500/40 h-full cursor-pointer hover:border-red-400/60 transition-colors"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-red-500/30 rounded-lg flex items-center justify-center">
+              <Play className="w-5 h-5 text-red-400" />
+            </div>
+            <div>
+              <h4 className="font-semibold text-white text-sm">Watch the Demo</h4>
+              <p className="text-xs text-red-300">See it in action</p>
+            </div>
+          </div>
+          <p className="text-xs text-slate-400">Click to watch the video walkthrough</p>
+        </motion.div>
+      </a>
+
+      {/* Newsletter Subscription */}
+      <a 
+        href="https://www.linkedin.com/newsletters/genie-ai-hub-7379711554889601024/" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="block"
+      >
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          className="bg-gradient-to-br from-blue-600/20 via-blue-500/10 to-cyan-600/20 rounded-xl p-4 border border-blue-500/40 h-full cursor-pointer hover:border-blue-400/60 transition-colors"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-blue-500/30 rounded-lg flex items-center justify-center">
+              <Linkedin className="w-5 h-5 text-blue-400" />
+            </div>
+            <div>
+              <h4 className="font-semibold text-white text-sm">Subscribe to Newsletter</h4>
+              <p className="text-xs text-blue-300">Genie AI Hub on LinkedIn</p>
+            </div>
+          </div>
+          <p className="text-xs text-slate-400">Get updates on AI development tips</p>
+        </motion.div>
+      </a>
     </motion.div>
 
     {/* Contact Information */}
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.7 }}
-      className="bg-gradient-to-br from-purple-600/20 via-indigo-600/20 to-blue-600/20 rounded-2xl p-6 border border-purple-500/40 max-w-lg w-full"
+      transition={{ delay: 0.8 }}
+      className="bg-gradient-to-br from-purple-600/20 via-indigo-600/20 to-blue-600/20 rounded-xl p-4 border border-purple-500/40 max-w-xl w-full"
     >
-      <h3 className="text-lg font-semibold text-white mb-4 text-center">
-        Want to Learn More About This Tool?
+      <h3 className="text-sm font-semibold text-white mb-3 text-center">
+        Want to Learn More? Let's Connect!
       </h3>
-      <div className="flex flex-col items-center gap-3">
-        <motion.div
-          animate={{ scale: [1, 1.02, 1] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="flex items-center gap-3 bg-white/10 rounded-xl px-6 py-3 border border-white/20"
+      <div className="flex items-center justify-center gap-3">
+        <motion.a
+          href="mailto:dasikasaigiridhar@gmail.com"
+          whileHover={{ scale: 1.02 }}
+          className="flex items-center gap-2 bg-white/10 rounded-lg px-4 py-2 border border-white/20 hover:border-purple-400/50 transition-colors"
         >
-          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center">
-            <ExternalLink className="w-5 h-5 text-white" />
+          <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center">
+            <ExternalLink className="w-4 h-4 text-white" />
           </div>
-          <div>
-            <p className="text-sm text-slate-300">Please reach out to me at:</p>
-            <a 
-              href="mailto:dasikasaigiridhar@gmail.com" 
-              className="text-lg font-bold text-purple-300 hover:text-purple-200 transition-colors"
-            >
-              dasikasaigiridhar@gmail.com
-            </a>
+          <div className="text-left">
+            <p className="text-xs text-slate-300">Email me</p>
+            <p className="text-sm font-bold text-purple-300">dasikasaigiridhar@gmail.com</p>
           </div>
-        </motion.div>
-        <p className="text-sm text-slate-400 text-center">
-          Happy to discuss AI development, healthcare solutions, or how Lovable can help your projects!
-        </p>
+        </motion.a>
       </div>
     </motion.div>
 
@@ -2235,9 +2283,9 @@ const ThankYouContactSlide = () => (
       transition={{ delay: 1 }}
       className="flex items-center gap-2 text-slate-400"
     >
-      <span className="text-sm">Built with</span>
-      <span className="text-purple-400 font-semibold">❤️ + Lovable AI</span>
-      <span className="text-sm">in less than a week</span>
+      <span className="text-xs">Built with</span>
+      <span className="text-purple-400 font-semibold text-sm">❤️ + Lovable AI</span>
+      <span className="text-xs">in less than a week</span>
     </motion.div>
   </motion.div>
 );
@@ -2500,18 +2548,19 @@ const documentProcessingSlides: Slide[] = [
   { 
     id: 14, 
     title: "Thank You!", 
-    subtitle: "Let's Connect",
+    subtitle: "Let's Connect & Stay Updated",
     animation: 'fade', 
     content: <ThankYouContactSlide />,
     pptContent: {
       bullets: [
-        "AI is democratizing development",
-        "Complex solutions in weeks, not months",
-        "Anyone can build production-ready apps",
-        "Want to learn more? Contact: dasikasaigiridhar@gmail.com",
+        "I am amazed at how tools like Lovable bring a big shift in the mindset of development",
+        "What's possible is now beyond imagination",
+        "Watch the demo: https://lnkd.in/eWxn_gQw",
+        "Subscribe to Genie AI Hub Newsletter: linkedin.com/newsletters/genie-ai-hub",
+        "Contact: dasikasaigiridhar@gmail.com",
         "Built with ❤️ + Lovable AI in less than a week"
       ],
-      notes: "Thank you for exploring this journey. Contact dasikasaigiridhar@gmail.com to learn more about this tool and AI development."
+      notes: "Thank you for exploring this journey. I am amazed at how tools like Lovable can bring a big shift in the mindset of development. Contact dasikasaigiridhar@gmail.com to learn more."
     }
   },
 ];
