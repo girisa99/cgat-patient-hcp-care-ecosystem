@@ -1124,14 +1124,19 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
             
             // Map extracted fields to formMapping format
             // Use the configured stage2Model for source attribution (the NLP model)
-            const fieldSourceModel = routingConfig.stage2Model || routingConfig.primaryModel;
+            const configuredModel = routingConfig.stage2Model || routingConfig.primaryModel;
+            const usedFallback = providerUsed !== configuredModel;
             if (extracted.fields) {
               for (const [key, value] of Object.entries(extracted.fields)) {
                 if (value !== null && value !== undefined && String(value).trim()) {
                   formMapping[key] = {
                     value: String(value),
                     confidence: extracted.confidence || 0.85,
-                    source: fieldSourceModel // Use configured NLP model, not actual provider
+                    // Track both configured model and actual provider used
+                    source: providerUsed, // Actual provider that succeeded
+                    configuredModel: configuredModel, // What was configured
+                    usedFallback: usedFallback, // Whether fallback was needed
+                    fallbackFrom: usedFallback ? configuredModel : undefined // Original model that failed
                   };
                   
                   // Track ICD and CPT codes for crosswalk
