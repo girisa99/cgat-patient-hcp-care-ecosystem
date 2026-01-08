@@ -235,6 +235,25 @@ interface ExtractedMedication {
 
 function extractAllMedications(fields: Record<string, any>): ExtractedMedication[] {
   const medications: ExtractedMedication[] = [];
+  const seenMedNames = new Set<string>(); // Track seen medication names to avoid duplicates
+  
+  // Helper to normalize medication name for comparison
+  const normalizeMedName = (name: string): string => name.toLowerCase().trim().replace(/\s+/g, ' ');
+  
+  // Helper to check if medication already exists
+  const isDuplicate = (name: string): boolean => seenMedNames.has(normalizeMedName(name));
+  
+  // Helper to add medication if not duplicate
+  const addMedication = (med: ExtractedMedication): boolean => {
+    const normalizedName = normalizeMedName(med.name);
+    if (seenMedNames.has(normalizedName)) {
+      console.log('[extractAllMedications] Skipping duplicate medication:', med.name);
+      return false;
+    }
+    seenMedNames.add(normalizedName);
+    medications.push(med);
+    return true;
+  };
   
   // Method 1: Check for medications array (new multi-drug format from extraction)
   // Handle both direct array and wrapped {value: [...], confidence} format
@@ -247,7 +266,7 @@ function extractAllMedications(fields: Record<string, any>): ExtractedMedication
     medicationsArray.forEach((med: any) => {
       const medName = med.medication_name || med.name || med.drug_name;
       if (medName) {
-        medications.push({
+        addMedication({
           name: medName,
           strength: med.strength || med.dosage || med.form,
           sig: med.sig || med.directions || med.sig_text,
@@ -264,10 +283,11 @@ function extractAllMedications(fields: Record<string, any>): ExtractedMedication
   }
   
   // Method 2: Check for numbered medications (medication_1_name, medication_2_name, etc.)
+  // Only add if not already found in Method 1
   for (let i = 1; i <= 10; i++) {
     const medName = getFieldValue(fields, `medication_${i}_name`, `med_${i}_name`, `drug_${i}`, `medication_${i}`);
-    if (medName) {
-      medications.push({
+    if (medName && !isDuplicate(medName)) {
+      addMedication({
         name: medName,
         strength: getFieldValue(fields, `medication_${i}_strength`, `med_${i}_strength`, `strength_${i}`),
         sig: getFieldValue(fields, `medication_${i}_sig`, `med_${i}_sig`, `sig_${i}`, `directions_${i}`),
@@ -284,7 +304,7 @@ function extractAllMedications(fields: Record<string, any>): ExtractedMedication
   if (medications.length === 0) {
     const primaryDrug = getMedicationName(fields);
     if (primaryDrug !== 'Unknown') {
-      medications.push({
+      addMedication({
         name: primaryDrug,
         strength: getDosage(fields),
         sig: getFrequency(fields),
@@ -299,6 +319,7 @@ function extractAllMedications(fields: Record<string, any>): ExtractedMedication
     }
   }
   
+  console.log('[extractAllMedications] Final unique medications:', medications.length, medications.map(m => m.name));
   return medications;
 }
 
