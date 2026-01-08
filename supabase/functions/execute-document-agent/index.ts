@@ -111,8 +111,35 @@ const AGENT_MODEL_ROUTING: Record<string, ModelRoutingConfig> = {
   }
 };
 
-function getModelRouting(agentId: string): ModelRoutingConfig {
-  return AGENT_MODEL_ROUTING[agentId] || AGENT_MODEL_ROUTING['default'];
+// Provider-specific model mappings for when user selects a specific provider
+const PROVIDER_MODELS: Record<AIProvider, { primary: string; fallback: string }> = {
+  'openai': { primary: 'openai/gpt-5', fallback: 'openai/gpt-5-mini' },
+  'claude': { primary: 'claude-3-5-haiku-20241022', fallback: 'claude-3-5-sonnet-20241022' },
+  'gemini': { primary: 'google/gemini-2.5-flash', fallback: 'gemini-2.0-flash-exp' }
+};
+
+function getModelRouting(agentId: string, preferredProvider?: AIProvider): ModelRoutingConfig {
+  const baseRouting = AGENT_MODEL_ROUTING[agentId] || AGENT_MODEL_ROUTING['default'];
+  
+  // If user specified a provider, override the default routing
+  if (preferredProvider && PROVIDER_MODELS[preferredProvider]) {
+    const providerModels = PROVIDER_MODELS[preferredProvider];
+    console.log(`[getModelRouting] Using user-selected provider: ${preferredProvider} with model ${providerModels.primary}`);
+    return {
+      ...baseRouting,
+      provider: preferredProvider,
+      model: providerModels.primary,
+      // Keep the fallback from a different provider for resilience
+      fallbackProvider: baseRouting.fallbackProvider !== preferredProvider 
+        ? baseRouting.fallbackProvider 
+        : (preferredProvider === 'claude' ? 'gemini' : 'claude'),
+      fallbackModel: baseRouting.fallbackProvider !== preferredProvider
+        ? baseRouting.fallbackModel
+        : (preferredProvider === 'claude' ? 'gemini-2.0-flash-exp' : 'claude-3-5-haiku-20241022')
+    };
+  }
+  
+  return baseRouting;
 }
 
 interface AgentConfig {
@@ -400,12 +427,13 @@ async function callEdgeFunction(functionName: string, body: any): Promise<any> {
 async function callUniversalAI(
   agentId: string,
   prompt: string,
-  customSystemPrompt?: string
+  customSystemPrompt?: string,
+  preferredProvider?: AIProvider
 ): Promise<{ content: string; provider: string; model: string }> {
-  const routing = getModelRouting(agentId);
+  const routing = getModelRouting(agentId, preferredProvider);
   const systemPrompt = customSystemPrompt || routing.systemPrompt;
   
-  console.log(`[universal-ai] Agent: ${agentId}, Provider: ${routing.provider}, Model: ${routing.model}`);
+  console.log(`[universal-ai] Agent: ${agentId}, Provider: ${routing.provider}, Model: ${routing.model}, UserPreferred: ${preferredProvider || 'auto'}`);
   
   try {
     // Call ai-universal-processor edge function
@@ -912,7 +940,7 @@ CLINICAL REVIEW FOCUS:
 Respond ONLY with the JSON object, no additional text.`;
 
   try {
-    const aiResult = await callUniversalAI('clinical-review', prompt);
+    const aiResult = await callUniversalAI('clinical-review', prompt, undefined, context.preferredProvider);
     
     console.log('[clinical-review-ai] Provider:', aiResult.provider, 'Model:', aiResult.model);
     
@@ -1082,7 +1110,7 @@ Focus on:
 Respond ONLY with the JSON object.`;
 
   try {
-    const aiResult = await callUniversalAI('drug-interaction', prompt);
+    const aiResult = await callUniversalAI('drug-interaction', prompt, undefined, context.preferredProvider);
     
     console.log('[drug-interaction-ai] Provider:', aiResult.provider, 'Model:', aiResult.model);
     
@@ -1193,7 +1221,7 @@ Provide your radiology analysis in the following JSON format:
 Focus on actionable findings. If critical findings are present, flag them clearly. Respond ONLY with the JSON object.`;
 
   try {
-    const aiResult = await callUniversalAI('radiology-ai', prompt);
+    const aiResult = await callUniversalAI('radiology-ai', prompt, undefined, context.preferredProvider);
     
     console.log('[radiology-ai] Provider:', aiResult.provider, 'Model:', aiResult.model);
     
@@ -1277,7 +1305,7 @@ Provide your lab analysis in the following JSON format:
 Flag any critical values that require immediate notification. Respond ONLY with the JSON object.`;
 
   try {
-    const aiResult = await callUniversalAI('critical-value-alert', prompt);
+    const aiResult = await callUniversalAI('critical-value-alert', prompt, undefined, context.preferredProvider);
     
     console.log('[lab-analysis-ai] Provider:', aiResult.provider, 'Model:', aiResult.model);
     
@@ -1596,7 +1624,7 @@ Provide alternatives in JSON format:
 Focus on clinically equivalent, cost-effective alternatives. Respond ONLY with JSON.`;
 
   try {
-    const aiResult = await callUniversalAI('drug-alternatives', prompt);
+    const aiResult = await callUniversalAI('drug-alternatives', prompt, undefined, context.preferredProvider);
     const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
@@ -1679,7 +1707,7 @@ Provide efficacy analysis in JSON format:
 Base analysis on current clinical guidelines and evidence. Respond ONLY with JSON.`;
 
   try {
-    const aiResult = await callUniversalAI('efficacy-analysis', prompt);
+    const aiResult = await callUniversalAI('efficacy-analysis', prompt, undefined, context.preferredProvider);
     const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
@@ -1784,7 +1812,7 @@ Provide safety analysis in JSON format:
 Flag any critical safety concerns. Respond ONLY with JSON.`;
 
   try {
-    const aiResult = await callUniversalAI('safety-profile', prompt);
+    const aiResult = await callUniversalAI('safety-profile', prompt, undefined, context.preferredProvider);
     const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
@@ -1887,7 +1915,7 @@ Provide validation in JSON format:
 Flag any dosing concerns. Respond ONLY with JSON.`;
 
   try {
-    const aiResult = await callUniversalAI('dosage-validation', prompt);
+    const aiResult = await callUniversalAI('dosage-validation', prompt, undefined, context.preferredProvider);
     const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
@@ -1978,7 +2006,7 @@ Provide cost analysis in JSON format:
 Focus on actionable cost savings. Respond ONLY with JSON.`;
 
   try {
-    const aiResult = await callUniversalAI('cost-analysis', prompt);
+    const aiResult = await callUniversalAI('cost-analysis', prompt, undefined, context.preferredProvider);
     const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
@@ -2055,7 +2083,7 @@ Provide summary in JSON format:
 Focus on actionable clinical information. Respond ONLY with JSON.`;
 
   try {
-    const aiResult = await callUniversalAI('medical-summary', prompt);
+    const aiResult = await callUniversalAI('medical-summary', prompt, undefined, context.preferredProvider);
     const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
@@ -2128,7 +2156,7 @@ Provide eligibility analysis in JSON format:
 Respond ONLY with JSON.`;
 
   try {
-    const aiResult = await callUniversalAI('eligibility-ai', prompt);
+    const aiResult = await callUniversalAI('eligibility-ai', prompt, undefined, context.preferredProvider);
     const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
@@ -2208,7 +2236,7 @@ Provide validation in JSON format:
 Respond ONLY with JSON.`;
 
   try {
-    const aiResult = await callUniversalAI('data-validation', prompt);
+    const aiResult = await callUniversalAI('data-validation', prompt, undefined, context.preferredProvider);
     const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
