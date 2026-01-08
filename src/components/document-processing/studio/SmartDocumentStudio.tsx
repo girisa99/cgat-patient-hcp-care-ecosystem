@@ -89,6 +89,7 @@ interface SmartDocumentStudioProps {
   isProcessing: boolean;
   onFileUpload: (file: File) => void;
   onFieldUpdate: (key: string, value: string) => void;
+  onFieldDelete?: (key: string) => void;
   onFieldVerify: (key: string) => void;
   onSave: () => void;
   onRunAgents: (agentIds: string[]) => void;
@@ -105,6 +106,7 @@ export function SmartDocumentStudio({
   isProcessing,
   onFileUpload,
   onFieldUpdate,
+  onFieldDelete,
   onFieldVerify,
   onSave,
   onRunAgents,

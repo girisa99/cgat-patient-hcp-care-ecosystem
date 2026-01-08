@@ -105,6 +105,7 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
     cancelJob,
     clearAllDocumentState,
     updateFieldValue,
+    deleteField,
     verifyField,
     flagForReview,
     exportResults,
@@ -777,6 +778,21 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
                 <PatientInfoVerificationPanel 
                   job={activeJob}
                   formMapping={formMapping}
+                  onFieldEdit={(key, newValue) => {
+                    if (activeJob?.id) {
+                      updateFieldValue(activeJob.id, key, newValue);
+                    }
+                  }}
+                  onFieldDelete={(key) => {
+                    if (activeJob?.id) {
+                      deleteField(activeJob.id, key);
+                    }
+                  }}
+                  onFieldVerify={(key) => {
+                    if (activeJob?.id) {
+                      verifyField(activeJob.id, key);
+                    }
+                  }}
                 />
               ) : (
                 <div className="text-center py-8 text-muted-foreground">

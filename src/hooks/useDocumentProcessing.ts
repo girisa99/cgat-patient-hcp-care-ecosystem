@@ -280,6 +280,7 @@ export interface UseDocumentProcessingReturn {
   
   // Verification & Editing
   updateFieldValue: (documentId: string, fieldName: string, newValue: string) => Promise<boolean>;
+  deleteField: (documentId: string, fieldName: string) => Promise<boolean>;
   verifyField: (documentId: string, fieldName: string) => Promise<boolean>;
   flagForReview: (documentId: string, reason: string) => Promise<boolean>;
   
@@ -892,6 +893,54 @@ export function useDocumentProcessing(): UseDocumentProcessingReturn {
     }
   }, [formMapping]);
 
+  // Delete field - removes a field from formMapping and database
+  const deleteField = useCallback(async (
+    documentId: string, 
+    fieldName: string
+  ): Promise<boolean> => {
+    try {
+      const { data: doc, error: fetchError } = await (supabase as any)
+        .from('document_processing_jobs')
+        .select('extracted_metadata')
+        .eq('id', documentId)
+        .single();
+
+      if (fetchError || !doc) throw new Error('Document not found');
+
+      const metadata = doc.extracted_metadata || {};
+      const formFields = metadata.formFields || [];
+      
+      // Remove the field from formFields array
+      const updatedFields = formFields.filter((f: FormFieldExtraction) => 
+        f.fieldName !== fieldName
+      );
+
+      const { error: updateError } = await (supabase as any)
+        .from('document_processing_jobs')
+        .update({ 
+          extracted_metadata: { ...metadata, formFields: updatedFields }
+        })
+        .eq('id', documentId);
+
+      if (updateError) throw updateError;
+
+      // Update form mapping - remove the field
+      if (formMapping && formMapping[fieldName]) {
+        const newFormMapping = { ...formMapping };
+        delete newFormMapping[fieldName];
+        setFormMapping(newFormMapping);
+      }
+
+      await loadJobs();
+      toast.success(`Field "${fieldName}" deleted`);
+      return true;
+    } catch (e) {
+      console.error('Delete field error:', e);
+      toast.error(`Failed to delete field: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      return false;
+    }
+  }, [formMapping]);
+
   // Flag for manual review
   const flagForReview = useCallback(async (
     documentId: string, 
@@ -981,6 +1030,7 @@ export function useDocumentProcessing(): UseDocumentProcessingReturn {
     clearJobs,
     clearAllDocumentState,
     updateFieldValue,
+    deleteField,
     verifyField,
     flagForReview,
     exportResults,

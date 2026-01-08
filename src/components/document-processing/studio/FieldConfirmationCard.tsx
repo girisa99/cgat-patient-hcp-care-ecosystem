@@ -19,7 +19,8 @@ import {
   Sparkles,
   RotateCcw,
   Pill,
-  Loader2
+  Loader2,
+  Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -40,6 +41,7 @@ interface FieldConfirmationCardProps {
   field: ExtractedField;
   isActive: boolean;
   onUpdate: (value: string) => void;
+  onDelete?: () => void;
   onVerify: () => void;
   onClick: () => void;
 }
@@ -57,6 +59,7 @@ export function FieldConfirmationCard({
   field,
   isActive,
   onUpdate,
+  onDelete,
   onVerify,
   onClick
 }: FieldConfirmationCardProps) {
@@ -390,6 +393,20 @@ export function FieldConfirmationCard({
                   title="Reset to original"
                 >
                   <RotateCcw className="h-3 w-3" />
+                </Button>
+              )}
+              {onDelete && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
+                  title="Delete field"
+                >
+                  <Trash2 className="h-3 w-3" />
                 </Button>
               )}
             </div>
