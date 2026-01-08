@@ -1151,6 +1151,55 @@ export default function SubAgentRecommendationDialog({
     // Merge all data sources into enhanced fields
     const enhancedFields = { ...baseExtractedFields };
     
+    // 0. COLLECT ALL NUMBERED MEDICATIONS (medication_1_name, medication_2_name, etc.)
+    // This is CRITICAL for prescriptions with multiple drugs
+    const allMedications: Array<{name: string; quantity?: string; sig?: string; form?: string; strength?: string}> = [];
+    
+    // Scan all base extracted fields for numbered medication patterns
+    const medicationPattern = /^medication_(\d+)_(\w+)$/;
+    const medicationsByIndex: Record<string, Record<string, any>> = {};
+    
+    Object.entries(baseExtractedFields).forEach(([key, field]: [string, any]) => {
+      const match = key.match(medicationPattern);
+      if (match) {
+        const [, index, property] = match;
+        if (!medicationsByIndex[index]) {
+          medicationsByIndex[index] = {};
+        }
+        medicationsByIndex[index][property] = typeof field === 'object' ? field.value : field;
+      }
+    });
+    
+    // Build medications array from indexed data
+    Object.keys(medicationsByIndex).sort((a, b) => parseInt(a) - parseInt(b)).forEach(index => {
+      const med = medicationsByIndex[index];
+      if (med.name) {
+        allMedications.push({
+          name: med.name,
+          quantity: med.quantity,
+          sig: med.sig,
+          form: med.form,
+          strength: med.strength
+        });
+      }
+    });
+    
+    console.log('[SubAgentDialog] Found numbered medications:', allMedications);
+    
+    // Store medications array in enhanced fields for agents
+    if (allMedications.length > 0) {
+      enhancedFields.medications = { value: allMedications, confidence: 0.95 };
+      // Also set first medication as primary if no other medication field exists
+      if (!enhancedFields.medication?.value && !enhancedFields.medication_name?.value) {
+        enhancedFields.medication = { value: allMedications[0].name, confidence: 0.95 };
+        enhancedFields.medication_name = { value: allMedications[0].name, confidence: 0.95 };
+      }
+      // If we have sigs in the medications, use the first one as primary
+      if (!enhancedFields.sig?.value && allMedications[0]?.sig) {
+        enhancedFields.sig = { value: allMedications[0].sig, confidence: 0.9 };
+      }
+    }
+    
     // 1. PENDING MEDICATION DATA (highest priority for prescriptions)
     if (extractedData?.pendingMedicationData) {
       const pending = extractedData.pendingMedicationData;

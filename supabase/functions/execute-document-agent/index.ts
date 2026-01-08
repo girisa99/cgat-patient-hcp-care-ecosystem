@@ -237,13 +237,19 @@ function extractAllMedications(fields: Record<string, any>): ExtractedMedication
   const medications: ExtractedMedication[] = [];
   
   // Method 1: Check for medications array (new multi-drug format from extraction)
-  if (fields.medications && Array.isArray(fields.medications)) {
-    fields.medications.forEach((med: any) => {
+  // Handle both direct array and wrapped {value: [...], confidence} format
+  const medicationsArray = Array.isArray(fields.medications) 
+    ? fields.medications 
+    : (Array.isArray(fields.medications?.value) ? fields.medications.value : null);
+    
+  if (medicationsArray) {
+    console.log('[extractAllMedications] Processing medications array with', medicationsArray.length, 'items');
+    medicationsArray.forEach((med: any) => {
       const medName = med.medication_name || med.name || med.drug_name;
       if (medName) {
         medications.push({
           name: medName,
-          strength: med.strength || med.dosage,
+          strength: med.strength || med.dosage || med.form,
           sig: med.sig || med.directions || med.sig_text,
           ndc: med.ndc,
           quantity: med.quantity,
@@ -515,13 +521,19 @@ async function executeDrugLookup(context: DocumentContext): Promise<AgentFinding
   const medications: Array<{ name: string; strength?: string; sig?: string; ndc?: string }> = [];
   
   // Check for medications array (new multi-drug format)
-  if (fields.medications && Array.isArray(fields.medications)) {
-    fields.medications.forEach((med: any) => {
+  // Handle both direct array and wrapped {value: [...], confidence} format
+  const medicationsArray = Array.isArray(fields.medications) 
+    ? fields.medications 
+    : (Array.isArray(fields.medications?.value) ? fields.medications.value : null);
+    
+  if (medicationsArray) {
+    console.log('[drug-lookup] Processing medications array with', medicationsArray.length, 'items');
+    medicationsArray.forEach((med: any) => {
       const medName = med.medication_name || med.name || med.drug_name;
       if (medName) {
         medications.push({
           name: medName,
-          strength: med.strength || med.dosage,
+          strength: med.strength || med.dosage || med.form,
           sig: med.sig || med.directions,
           ndc: med.ndc
         });
@@ -532,10 +544,10 @@ async function executeDrugLookup(context: DocumentContext): Promise<AgentFinding
   // Check for numbered medications (medication_1_name, medication_2_name, etc.)
   for (let i = 1; i <= 10; i++) {
     const medName = getFieldValue(fields, `medication_${i}_name`, `med_${i}_name`, `drug_${i}`);
-    if (medName) {
+    if (medName && !medications.find(m => m.name === medName)) { // Avoid duplicates
       medications.push({
         name: medName,
-        strength: getFieldValue(fields, `medication_${i}_strength`, `med_${i}_strength`),
+        strength: getFieldValue(fields, `medication_${i}_strength`, `medication_${i}_form`, `med_${i}_strength`),
         sig: getFieldValue(fields, `medication_${i}_sig`, `med_${i}_sig`),
         ndc: getFieldValue(fields, `medication_${i}_ndc`, `med_${i}_ndc`)
       });
