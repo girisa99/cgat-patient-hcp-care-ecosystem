@@ -1238,6 +1238,123 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
               };
             }
             
+            // ============================================
+            // CRITICAL: Handle medications array for prescriptions
+            // This is what the agents need for drug lookup!
+            // ============================================
+            const medicationsArray = extracted.medications || extracted.fields?.medications;
+            if (medicationsArray && Array.isArray(medicationsArray)) {
+              console.log(`[Extraction] Found medications array with ${medicationsArray.length} items`);
+              
+              // Store full medications array for agents
+              formMapping['medications'] = {
+                value: medicationsArray,
+                confidence: extracted.confidence || 0.85,
+                source: `${providerUsed}_prescription`
+              };
+              
+              // Also create numbered fields for backward compatibility
+              medicationsArray.forEach((med: any, index: number) => {
+                const idx = index + 1;
+                const medName = med.medication_name || med.name || med.drug_name;
+                
+                if (medName) {
+                  formMapping[`medication_${idx}_name`] = {
+                    value: medName,
+                    confidence: med.confidence || 0.85,
+                    source: `${providerUsed}_prescription`
+                  };
+                }
+                if (med.strength) {
+                  formMapping[`medication_${idx}_strength`] = {
+                    value: med.strength,
+                    confidence: med.confidence || 0.85,
+                    source: `${providerUsed}_prescription`
+                  };
+                }
+                if (med.dosage_form || med.form) {
+                  formMapping[`medication_${idx}_form`] = {
+                    value: med.dosage_form || med.form,
+                    confidence: med.confidence || 0.85,
+                    source: `${providerUsed}_prescription`
+                  };
+                }
+                if (med.quantity) {
+                  formMapping[`medication_${idx}_quantity`] = {
+                    value: String(med.quantity),
+                    confidence: med.confidence || 0.85,
+                    source: `${providerUsed}_prescription`
+                  };
+                }
+                if (med.sig_translation || med.sig_raw || med.sig) {
+                  formMapping[`medication_${idx}_sig`] = {
+                    value: med.sig_translation || med.sig_raw || med.sig,
+                    confidence: med.confidence || 0.85,
+                    source: `${providerUsed}_prescription`
+                  };
+                }
+                if (med.refills !== undefined) {
+                  formMapping[`medication_${idx}_refills`] = {
+                    value: String(med.refills),
+                    confidence: med.confidence || 0.85,
+                    source: `${providerUsed}_prescription`
+                  };
+                }
+                if (med.route) {
+                  formMapping[`medication_${idx}_route`] = {
+                    value: med.route,
+                    confidence: med.confidence || 0.85,
+                    source: `${providerUsed}_prescription`
+                  };
+                }
+                if (med.ndc) {
+                  formMapping[`medication_${idx}_ndc`] = {
+                    value: med.ndc,
+                    confidence: med.confidence || 0.85,
+                    source: `${providerUsed}_prescription`
+                  };
+                }
+                if (med.is_controlled) {
+                  formMapping[`medication_${idx}_controlled`] = {
+                    value: 'true',
+                    confidence: med.confidence || 0.85,
+                    source: `${providerUsed}_prescription`
+                  };
+                }
+              });
+              
+              console.log(`[Extraction] Created ${medicationsArray.length} medication entries with numbered fields`);
+            } else if (extracted.fields) {
+              // Check if medications is inside fields
+              const fieldsArray = extracted.fields.medications;
+              if (fieldsArray && Array.isArray(fieldsArray)) {
+                console.log(`[Extraction] Found medications in fields with ${fieldsArray.length} items`);
+                formMapping['medications'] = {
+                  value: fieldsArray,
+                  confidence: extracted.confidence || 0.85,
+                  source: `${providerUsed}_prescription`
+                };
+                
+                // Create numbered fields
+                fieldsArray.forEach((med: any, index: number) => {
+                  const idx = index + 1;
+                  const medName = med.medication_name || med.name || med.drug_name;
+                  if (medName) {
+                    formMapping[`medication_${idx}_name`] = { value: medName, confidence: 0.85, source: `${providerUsed}_prescription` };
+                  }
+                  if (med.strength) {
+                    formMapping[`medication_${idx}_strength`] = { value: med.strength, confidence: 0.85, source: `${providerUsed}_prescription` };
+                  }
+                  if (med.sig_translation || med.sig_raw || med.sig) {
+                    formMapping[`medication_${idx}_sig`] = { value: med.sig_translation || med.sig_raw || med.sig, confidence: 0.85, source: `${providerUsed}_prescription` };
+                  }
+                  if (med.quantity) {
+                    formMapping[`medication_${idx}_quantity`] = { value: String(med.quantity), confidence: 0.85, source: `${providerUsed}_prescription` };
+                  }
+                });
+              }
+            }
+            
             // Add summary info
             if (extracted.summary) {
               for (const [key, value] of Object.entries(extracted.summary)) {
