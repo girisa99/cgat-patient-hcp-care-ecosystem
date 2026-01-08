@@ -389,15 +389,46 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
       const completedAgents = agentFindings.filter(f => f.status === 'completed');
       
       if (completedAgents.length > 0) {
-        console.log('[MedicalImageAnalysis] Merging agent findings:', completedAgents.length);
+        console.log('[MedicalImageAnalysis] Merging agent findings:', completedAgents.length, completedAgents);
         
         // Convert agent findings to AI insights format
         const agentInsights: AIInsight[] = [];
         
         completedAgents.forEach(agent => {
           const findings = agent.findings || {};
+          console.log('[MedicalImageAnalysis] Processing agent:', agent.agentName, 'Findings:', findings);
           
-          // Handle different agent finding structures
+          // Handle radiology-ai agent structure: findings.details.findings array
+          // Agent returns: { summary, details: { findings: [...], differentials, ... }, recommendations, ... }
+          const details = findings.details || findings;
+          
+          // Handle findings array from radiology agents (details.findings)
+          const findingsArray = details.findings || findings.findings;
+          if (findingsArray && Array.isArray(findingsArray)) {
+            console.log('[MedicalImageAnalysis] Processing findings array:', findingsArray.length);
+            findingsArray.forEach((finding: any) => {
+              // Radiology agent returns: {finding, location, significance}
+              const description = finding.finding || finding.description || finding.text;
+              if (description) {
+                const significance = finding.significance || 'normal';
+                agentInsights.push({
+                  category: significance === 'abnormal' || significance === 'critical' ? 'abnormality' : 
+                           significance === 'incidental' ? 'observation' : 'finding',
+                  description: `[${agent.agentName}] ${description}`,
+                  confidence: finding.confidence || agent.confidence || 0.8,
+                  region: finding.location || finding.region,
+                  clinicalSignificance: significance === 'critical' ? 'critical' : 
+                                       significance === 'abnormal' ? 'high' : 
+                                       significance === 'incidental' ? 'low' : undefined,
+                  status: significance === 'normal' ? 'normal' : 
+                         significance === 'abnormal' || significance === 'critical' ? 'abnormal' : undefined,
+                  anatomicalLocation: finding.location ? { region: finding.location } : undefined
+                });
+              }
+            });
+          }
+          
+          // Handle insights array (other agent types)
           if (findings.insights && Array.isArray(findings.insights)) {
             findings.insights.forEach((insight: any) => {
               agentInsights.push({
@@ -413,7 +444,7 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
             });
           }
           
-          // Handle findings object with specific keys
+          // Handle abnormalities array
           if (findings.abnormalities && Array.isArray(findings.abnormalities)) {
             findings.abnormalities.forEach((abnormality: any) => {
               agentInsights.push({
@@ -426,26 +457,60 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
             });
           }
           
-          // Generic key-value findings
-          Object.entries(findings).forEach(([key, value]) => {
-            if (!['insights', 'abnormalities', 'measurements'].includes(key) && value) {
-              const valueStr = typeof value === 'string' ? value : JSON.stringify(value);
-              if (valueStr && valueStr.length > 0 && valueStr !== '{}' && valueStr !== '[]') {
-                agentInsights.push({
-                  category: 'observation',
-                  description: `[${agent.agentName}] ${key}: ${valueStr}`,
-                  confidence: agent.confidence || 0.8
-                });
-              }
-            }
-          });
+          // Handle differentials from radiology
+          const differentials = details.differentials || findings.differentials;
+          if (differentials && Array.isArray(differentials) && differentials.length > 0) {
+            agentInsights.push({
+              category: 'recommendation',
+              description: `[${agent.agentName}] Differential diagnoses: ${differentials.join(', ')}`,
+              confidence: agent.confidence || 0.8,
+              clinicalSignificance: 'medium'
+            });
+          }
+          
+          // Handle summary as an observation if present
+          const summary = findings.summary;
+          if (summary && typeof summary === 'string') {
+            agentInsights.push({
+              category: 'observation',
+              description: `[${agent.agentName}] Summary: ${summary}`,
+              confidence: agent.confidence || 0.85
+            });
+          }
+          
+          // Handle recommendations
+          const recommendations = findings.recommendations;
+          if (recommendations && Array.isArray(recommendations)) {
+            recommendations.forEach((rec: string) => {
+              agentInsights.push({
+                category: 'recommendation',
+                description: `[${agent.agentName}] ${rec}`,
+                confidence: agent.confidence || 0.8,
+                followUpRecommendation: rec
+              });
+            });
+          }
+          
+          // Handle followUp status
+          const followUp = details.followUp || findings.followUp;
+          if (followUp && followUp !== 'none' && followUp !== 'routine') {
+            agentInsights.push({
+              category: 'concern',
+              description: `[${agent.agentName}] Follow-up: ${followUp}`,
+              confidence: agent.confidence || 0.9,
+              clinicalSignificance: followUp === 'emergent' ? 'critical' : followUp === 'urgent' ? 'high' : 'medium'
+            });
+          }
         });
+        
+        console.log('[MedicalImageAnalysis] Total insights generated:', agentInsights.length);
         
         // Merge with existing insights, avoiding duplicates
         if (agentInsights.length > 0) {
           setAiInsights(prev => {
             const existingDescriptions = new Set(prev.map(i => i.description));
             const newInsights = agentInsights.filter(i => !existingDescriptions.has(i.description));
+            console.log('[MedicalImageAnalysis] New unique insights:', newInsights.length);
             return [...prev, ...newInsights];
           });
           
@@ -461,6 +526,11 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
           
           toast.success(`${agentInsights.length} findings added from agents`, {
             description: `From ${completedAgents.map(a => a.agentName).join(', ')}`
+          });
+        } else {
+          console.warn('[MedicalImageAnalysis] No insights could be extracted from agent findings');
+          toast.info('Agent completed but no structured findings to display', {
+            description: 'Check console for raw agent output'
           });
         }
       }

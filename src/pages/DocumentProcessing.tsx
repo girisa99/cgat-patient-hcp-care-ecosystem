@@ -357,6 +357,7 @@ export default function DocumentProcessing() {
     return null;
   });
   const [showSubAgentDialog, setShowSubAgentDialog] = useState(false);
+  // Initialize agentFindings from sessionStorage if available
   const [agentFindings, setAgentFindings] = useState<Array<{
     agentId: string;
     agentName: string;
@@ -366,7 +367,19 @@ export default function DocumentProcessing() {
     executionTimeMs: number;
     timestamp: string;
     alerts?: Array<{ level: 'info' | 'warning' | 'error'; message: string }>;
-  }>>([]);
+  }>>(() => {
+    try {
+      const saved = sessionStorage.getItem('docProcessing_agentFindings');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        console.log('[State Restore] Restored agentFindings from sessionStorage:', parsed.length);
+        return parsed;
+      }
+    } catch (e) {
+      console.warn('Failed to restore agent findings from sessionStorage:', e);
+    }
+    return [];
+  });
   
   // Track if data has been confirmed and saved - controls when medication tab populates
   const [isDataConfirmed, setIsDataConfirmed] = useState(false);
@@ -464,6 +477,19 @@ export default function DocumentProcessing() {
       sessionStorage.removeItem('docProcessing_pendingResult');
     }
   }, [pendingResult]);
+  
+  // Persist agentFindings to sessionStorage whenever it changes
+  useEffect(() => {
+    if (agentFindings && agentFindings.length > 0) {
+      try {
+        sessionStorage.setItem('docProcessing_agentFindings', JSON.stringify(agentFindings));
+      } catch (e) {
+        console.warn('Failed to save agent findings to sessionStorage:', e);
+      }
+    } else {
+      sessionStorage.removeItem('docProcessing_agentFindings');
+    }
+  }, [agentFindings]);
   
   // Load processing history from database
   const loadHistory = useCallback(async () => {
@@ -761,6 +787,9 @@ export default function DocumentProcessing() {
     setMedicalImageBase64('');
     setMedicalImageMimeType('');
     
+    // Clear agent findings
+    setAgentFindings([]);
+    
     // Clear session storage
     sessionStorage.removeItem('docProcessing_currentResult');
     sessionStorage.removeItem('docProcessing_pendingResult');
@@ -773,6 +802,7 @@ export default function DocumentProcessing() {
     sessionStorage.removeItem('docProcessing_medicalImageBase64');
     sessionStorage.removeItem('docProcessing_medicalImageMimeType');
     sessionStorage.removeItem('docProcessing_medicalImageAnalysisState');
+    sessionStorage.removeItem('docProcessing_agentFindings');
     
     // Reset recommendation flag
     setHasShownAutoRecommendation(false);
