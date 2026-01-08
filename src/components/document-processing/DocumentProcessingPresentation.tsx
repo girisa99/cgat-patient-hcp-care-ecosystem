@@ -1809,10 +1809,15 @@ interface DocumentProcessingPresentationProps {
   isPublicView?: boolean;
 }
 
-// Get public presentation URL
+// Get public presentation URL - use production domain for sharing
 const getPublicPresentationUrl = () => {
-  const baseUrl = window.location.origin;
-  return `${baseUrl}/public/presentation/document-processing`;
+  // Use production domain for social sharing
+  return 'https://genieaiexpermentationhub.com/public/presentation/document-processing';
+};
+
+// Get static share page URL (has proper OG meta tags for LinkedIn)
+const getSharePageUrl = () => {
+  return 'https://genieaiexpermentationhub.com/share/document-processing.html';
 };
 
 export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresentationProps> = ({ onExit, isPublicView = false }) => {
@@ -1999,9 +2004,11 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
     }
   };
 
-  const shareToLinkedIn = () => {
+  const shareToLinkedIn = async () => {
     const publicUrl = getPublicPresentationUrl();
-    const text = encodeURIComponent(
+    const sharePageUrl = getSharePageUrl();
+    
+    const linkedInPost = 
       "🚀 Revolutionizing Document Processing with Multi-Model AI!\n\n" +
       "✅ 95%+ accuracy with intelligent model routing\n" +
       "✅ 75x faster than manual processing\n" +
@@ -2010,11 +2017,23 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
       "🔗 View the interactive presentation:\n" +
       publicUrl + "\n\n" +
       "Built with @Lovable AI in just 3 weeks!\n\n" +
-      "#AI #DocumentProcessing #Healthcare #Automation #Lovable"
-    );
-    const shareUrl = encodeURIComponent(publicUrl);
-    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`, '_blank');
-    toast.success('Opening LinkedIn share dialog...');
+      "#AI #DocumentProcessing #Healthcare #Automation #Lovable";
+
+    // Step 1: Copy post content to clipboard
+    try {
+      await navigator.clipboard.writeText(linkedInPost);
+      toast.success('✅ LinkedIn post copied to clipboard!', {
+        description: 'Paste (Ctrl+V) in the LinkedIn composer that opens.',
+        duration: 6000
+      });
+    } catch (err) {
+      console.error('Clipboard error:', err);
+      toast.error('Failed to copy to clipboard');
+    }
+
+    // Step 2: Open LinkedIn share dialog with static share page (has OG tags)
+    const linkedInShareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(sharePageUrl)}`;
+    window.open(linkedInShareUrl, '_blank', 'width=600,height=600');
   };
 
   const copyShareableLink = async () => {
