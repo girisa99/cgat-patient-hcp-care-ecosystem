@@ -1168,9 +1168,12 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
             ]);
             
             // Skip ALL medication numbered fields - they'll be created from the medications array
-            // Pattern matches: medication_1_name, medication1_name, medication_1_medication_name, 
-            // medication1_medication_name, etc.
-            const medicationFieldPattern = /^medication[_\s]?\d+[_\s]/i;
+            // Pattern matches all variations:
+            // - medication_1_name, medication_1_medication_name
+            // - medication1_name, medication1_medication_name  
+            // - medication_1name, medication1name
+            // - medication_count (standalone field)
+            const medicationFieldPattern = /^medication[_\s]?\d+|^medication_count$/i;
             
             if (extracted.fields) {
               for (const [key, value] of Object.entries(extracted.fields)) {
