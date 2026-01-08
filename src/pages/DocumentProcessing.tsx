@@ -2225,11 +2225,14 @@ export default function DocumentProcessing() {
           }
           
           // Extract drug name from various possible field names - keep full name, don't split
+          // CRITICAL: Check numbered medication fields (medication_1_name) from backend normalization
           const drugName = extractedDrugName || 
                            extractedFields['medication_name']?.value?.trim() || 
                            extractedFields['medication']?.value?.trim() ||
                            extractedFields['drug_name']?.value?.trim() ||
                            extractedFields['drug']?.value?.trim() ||
+                           extractedFields['medication_1_name']?.value?.trim() ||  // Numbered field from backend
+                           extractedFields['medication_1_medication_name']?.value?.trim() ||  // Alternative numbered format
                            extractedFields['rx']?.value?.replace(/[()]/g, '')?.trim() ||
                            extractedFields['prescription']?.value?.trim() ||
                            extractedFields['medicine']?.value?.trim() ||
@@ -2244,6 +2247,7 @@ export default function DocumentProcessing() {
           
           const sigText = extractedSig || 
                           extractedFields['sig']?.value || 
+                          extractedFields['medication_1_sig']?.value ||  // Numbered SIG field
                           extractedFields['signature']?.value || 
                           extractedFields['directions']?.value ||
                           extractedFields['instructions']?.value ||
@@ -2260,12 +2264,12 @@ export default function DocumentProcessing() {
           medications = [{
             drugName: resolvedDrugName,
             genericName: resolvedDrugName !== 'Unknown' ? resolvedDrugName : 'Unknown',
-            strength: extractedFields['strength']?.value || '',
+            strength: extractedFields['strength']?.value || extractedFields['medication_1_strength']?.value || '',
             sig: sigText,
             calculatedQuantity: calculation.totalQuantity,
             daysSupply: calculation.daysSupply,
             dailyDose: calculation.dailyDose,
-            ndc: enableNdcMatching ? extractedFields['ndc']?.value : undefined,
+            ndc: enableNdcMatching ? (extractedFields['ndc']?.value || extractedFields['medication_1_ndc']?.value) : undefined,
             ndcOptions: [],
             clinicalRecommendations: enableClinicalRecommendations ? [] : []
           }];
@@ -2877,6 +2881,84 @@ export default function DocumentProcessing() {
         
         // Clear pending medication data
         setPendingMedicationData(null);
+      } else if ((selectedDocType === 'prescription' || selectedDocType.includes('medication')) && processingResult?.extractedFields) {
+        // FALLBACK: If pendingMedicationData was null but we have extractedFields, try to extract drug name directly
+        const fields = processingResult.extractedFields;
+        
+        // Check multiple possible field names including numbered medication fields
+        const drugName = fields['medication_name']?.value?.trim() ||
+                        fields['medication']?.value?.trim() ||
+                        fields['drug_name']?.value?.trim() ||
+                        fields['medication_1_name']?.value?.trim() ||
+                        fields['medication_1_medication_name']?.value?.trim() ||
+                        fields['rx']?.value?.replace(/[()]/g, '')?.trim() ||
+                        fields['medicine']?.value?.trim() ||
+                        null;
+        
+        const sigText = fields['sig']?.value ||
+                       fields['directions']?.value ||
+                       fields['instructions']?.value ||
+                       fields['medication_1_sig']?.value ||
+                       'Take as directed';
+        
+        if (drugName) {
+          console.log('[handleVerifyAndSave] FALLBACK: Extracting medication from processingResult:', { drugName, sigText });
+          
+          setDrugSearchQuery(drugName);
+          if (sigText && sigText !== 'Take as directed') {
+            setSigInstructions(sigText);
+          }
+          
+          setActiveTab('medication');
+          toast.info(`Processing medication: ${drugName}`, {
+            description: 'Searching for NDC codes and clinical data...'
+          });
+          
+          // Trigger drug lookup
+          try {
+            const { baseName } = normalizeDrugName(drugName);
+            const { data, error } = await supabase.functions.invoke('drug-lookup', {
+              body: { drugName: baseName, searchType: 'all' }
+            });
+            
+            if (!error && data) {
+              const calculation = calculateQuantityAndDaySupply(sigText);
+              const ndcOptions = (data.ndc || []).map((ndc: any) => ({
+                code: ndc.code,
+                name: `${ndc.brandName || ndc.genericName} ${ndc.strength}`,
+                manufacturer: ndc.manufacturer,
+                dosageForm: ndc.dosageForm,
+                country: 'USA'
+              }));
+              
+              const primaryNdc = data.ndc?.[0];
+              
+              setSearchResults({
+                drugName: primaryNdc?.brandName || data.drugName || drugName,
+                genericName: primaryNdc?.genericName || drugName,
+                strength: primaryNdc?.strength || fields['strength']?.value || fields['medication_1_strength']?.value || '',
+                sig: sigText,
+                calculatedQuantity: calculation.totalQuantity,
+                daysSupply: calculation.daysSupply,
+                dailyDose: calculation.dailyDose,
+                ndc: primaryNdc?.code,
+                ndcOptions,
+                alternatives: (data.alternatives || []).map((alt: any) => ({
+                  name: alt.name,
+                  ndc: alt.rxcui,
+                  savings: alt.savings
+                })),
+                clinicalRecommendations: [],
+                isControlled: data.isControlled,
+                schedule: data.schedule
+              });
+              
+              toast.success(`Found ${ndcOptions.length} NDC codes for ${drugName}`);
+            }
+          } catch (err) {
+            console.error('[handleVerifyAndSave] Drug lookup error:', err);
+          }
+        }
       }
       
       if (selectedDocType === 'patient-onboarding') {
