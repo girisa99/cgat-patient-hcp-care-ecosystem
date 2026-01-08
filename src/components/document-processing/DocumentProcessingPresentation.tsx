@@ -1883,68 +1883,108 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
 
   const downloadPPT = async () => {
     try {
-      toast.info('Generating PowerPoint with full content...');
+      toast.info('Generating PowerPoint with full content...', {
+        description: 'This may take a few seconds'
+      });
       
       const pptx = new pptxgen();
       pptx.title = 'Document Processing Platform - Multi-Model AI';
-      pptx.author = 'Lovable AI';
+      pptx.author = 'Genie AI / Lovable';
       pptx.subject = 'Intelligent Document Processing with Multi-Model Routing';
-      pptx.company = 'Lovable';
+      pptx.company = 'Genie AI';
       
-      // Title slide
+      // Define consistent colors
+      const colors = {
+        primary: '8b5cf6',
+        secondary: '3b82f6',
+        dark: '1e293b',
+        muted: '64748b',
+        light: '94a3b8',
+        success: '22c55e',
+        warning: 'f59e0b',
+        danger: 'ef4444'
+      };
+      
+      // Title slide with gradient background
       const titleSlide = pptx.addSlide();
+      titleSlide.addShape('rect', {
+        x: 0, y: 0, w: '100%', h: '100%',
+        fill: { type: 'solid', color: '0f172a' }
+      });
       titleSlide.addText('Document Processing Platform', { 
-        x: 0.5, y: 2, w: '90%', h: 1,
-        fontSize: 44, bold: true, color: '1e293b',
+        x: 0.5, y: 1.8, w: '90%', h: 1,
+        fontSize: 44, bold: true, color: 'ffffff',
         align: 'center', fontFace: 'Arial'
       });
       titleSlide.addText('Multi-Model AI for Intelligent Document Extraction', {
-        x: 0.5, y: 3.2, w: '90%', h: 0.5,
-        fontSize: 22, color: '64748b',
+        x: 0.5, y: 3, w: '90%', h: 0.5,
+        fontSize: 22, color: 'a78bfa',
         align: 'center', fontFace: 'Arial'
       });
-      titleSlide.addText('Powered by Lovable AI', {
-        x: 0.5, y: 4.5, w: '90%', h: 0.3,
+      titleSlide.addText('95%+ Accuracy • 75x Faster • 99% Cost Reduction', {
+        x: 0.5, y: 3.7, w: '90%', h: 0.4,
+        fontSize: 16, color: '22c55e',
+        align: 'center', fontFace: 'Arial', bold: true
+      });
+      titleSlide.addText('Powered by Genie AI & Lovable', {
+        x: 0.5, y: 4.8, w: '90%', h: 0.3,
         fontSize: 14, color: '8b5cf6',
         align: 'center', fontFace: 'Arial', italic: true
       });
       
-      // Content slides with full bullet points
+      // Content slides with enhanced formatting
       documentProcessingSlides.forEach((slide, index) => {
         const pptSlide = pptx.addSlide();
         
-        // Slide number
-        pptSlide.addText(`${index + 1} / ${documentProcessingSlides.length}`, {
-          x: 8.5, y: 0.2, w: 1.5, h: 0.3,
-          fontSize: 10, color: '94a3b8', align: 'right'
+        // Header background
+        pptSlide.addShape('rect', {
+          x: 0, y: 0, w: '100%', h: 1.3,
+          fill: { type: 'solid', color: 'f8fafc' }
+        });
+        
+        // Slide number badge
+        pptSlide.addShape('rect', {
+          x: 8.8, y: 0.15, w: 0.8, h: 0.35,
+          fill: { type: 'solid', color: colors.primary }
+        });
+        pptSlide.addText(`${index + 1}/${documentProcessingSlides.length}`, {
+          x: 8.8, y: 0.15, w: 0.8, h: 0.35,
+          fontSize: 10, color: 'ffffff', align: 'center', valign: 'middle'
         });
         
         // Title
         pptSlide.addText(slide.title, {
-          x: 0.5, y: 0.4, w: '90%', h: 0.8,
-          fontSize: 32, bold: true, color: '1e293b',
+          x: 0.5, y: 0.25, w: '80%', h: 0.6,
+          fontSize: 28, bold: true, color: colors.dark,
           fontFace: 'Arial'
         });
         
         // Subtitle
         if (slide.subtitle) {
           pptSlide.addText(slide.subtitle, {
-            x: 0.5, y: 1.2, w: '90%', h: 0.4,
-            fontSize: 18, color: '64748b',
+            x: 0.5, y: 0.85, w: '80%', h: 0.35,
+            fontSize: 14, color: colors.muted,
             fontFace: 'Arial'
           });
         }
         
-        // Content bullets
+        // Content bullets with enhanced styling
         if (slide.pptContent?.bullets) {
-          const bulletText = slide.pptContent.bullets.map(bullet => ({
-            text: `• ${bullet}\n`,
-            options: { fontSize: 16, color: '334155' }
-          }));
-          
-          pptSlide.addText(bulletText, {
-            x: 0.5, y: 1.8, w: '90%', h: 4,
-            fontFace: 'Arial', valign: 'top'
+          slide.pptContent.bullets.forEach((bullet, bulletIndex) => {
+            const isSubItem = bullet.startsWith('-');
+            const cleanBullet = isSubItem ? bullet.substring(2) : bullet;
+            const yPos = 1.6 + (bulletIndex * 0.55);
+            const xPos = isSubItem ? 0.9 : 0.5;
+            const bulletColor = isSubItem ? colors.muted : colors.dark;
+            const bulletIcon = isSubItem ? '  →' : '•';
+            
+            pptSlide.addText(`${bulletIcon}  ${cleanBullet}`, {
+              x: xPos, y: yPos, w: '85%', h: 0.5,
+              fontSize: isSubItem ? 14 : 16, 
+              color: bulletColor,
+              fontFace: 'Arial',
+              valign: 'top'
+            });
           });
         }
         
@@ -1952,52 +1992,80 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
         if (slide.pptContent?.notes) {
           pptSlide.addNotes(slide.pptContent.notes);
         }
+        
+        // Footer
+        pptSlide.addText('genieaiexpermentationhub.com', {
+          x: 0.5, y: 5.2, w: 3, h: 0.25,
+          fontSize: 9, color: colors.light, fontFace: 'Arial'
+        });
       });
       
-      // Summary slide
+      // Summary slide with enhanced styling
       const summarySlide = pptx.addSlide();
+      summarySlide.addShape('rect', {
+        x: 0, y: 0, w: '100%', h: 1.2,
+        fill: { type: 'solid', color: '0f172a' }
+      });
       summarySlide.addText('Key Takeaways', {
-        x: 0.5, y: 0.4, w: '90%', h: 0.8,
-        fontSize: 36, bold: true, color: '1e293b',
+        x: 0.5, y: 0.35, w: '90%', h: 0.6,
+        fontSize: 32, bold: true, color: 'ffffff',
         fontFace: 'Arial'
       });
       
       const summaryBullets = [
-        { text: '• Multi-model routing achieves 95%+ accuracy', options: { bullet: false, fontSize: 18, color: '334155' } },
-        { text: '• Zero-configuration auto-detection for any document', options: { bullet: false, fontSize: 18, color: '334155' } },
-        { text: '• Two-stage pipeline: Vision AI + NLP processing', options: { bullet: false, fontSize: 18, color: '334155' } },
-        { text: '• Drug integrations: DrugBank, RxNorm, NDC, FDA', options: { bullet: false, fontSize: 18, color: '334155' } },
-        { text: '• Ready agents for Prior Auth, EHR, Drug Checks', options: { bullet: false, fontSize: 18, color: '334155' } },
-        { text: '• MCP SDK for Salesforce, HubSpot integration', options: { bullet: false, fontSize: 18, color: '334155' } },
-        { text: '• 99% cost reduction: $350K → $2,500', options: { bullet: false, fontSize: 18, color: '22c55e', bold: true } },
-        { text: '• 95% time reduction: 9 months → 3 weeks', options: { bullet: false, fontSize: 18, color: '22c55e', bold: true } },
+        { text: '✓  Multi-model routing achieves 95%+ accuracy\n', options: { fontSize: 16, color: colors.dark } },
+        { text: '✓  Zero-configuration auto-detection for any document\n', options: { fontSize: 16, color: colors.dark } },
+        { text: '✓  Two-stage pipeline: Vision AI + NLP processing\n', options: { fontSize: 16, color: colors.dark } },
+        { text: '✓  Drug integrations: DrugBank, RxNorm, NDC, FDA\n', options: { fontSize: 16, color: colors.dark } },
+        { text: '✓  Ready agents for Prior Auth, EHR, Drug Checks\n', options: { fontSize: 16, color: colors.dark } },
+        { text: '✓  MCP SDK for Salesforce, HubSpot integration\n', options: { fontSize: 16, color: colors.dark } },
+        { text: '\n', options: { fontSize: 8 } },
+        { text: '★  99% cost reduction: $350K → $2,500\n', options: { fontSize: 18, color: colors.success, bold: true } },
+        { text: '★  95% time reduction: 9 months → 3 weeks\n', options: { fontSize: 18, color: colors.success, bold: true } },
       ];
       
       summarySlide.addText(summaryBullets, {
-        x: 0.5, y: 1.5, w: '90%', h: 4,
+        x: 0.5, y: 1.5, w: '90%', h: 3.5,
         fontFace: 'Arial', valign: 'top'
       });
       
-      // Contact/CTA slide
+      // Contact/CTA slide with dark background
       const ctaSlide = pptx.addSlide();
-      ctaSlide.addText('Ready to Transform Your Document Processing?', {
-        x: 0.5, y: 2, w: '90%', h: 1,
-        fontSize: 36, bold: true, color: '1e293b',
+      ctaSlide.addShape('rect', {
+        x: 0, y: 0, w: '100%', h: '100%',
+        fill: { type: 'solid', color: '0f172a' }
+      });
+      ctaSlide.addText('Ready to Transform Your', {
+        x: 0.5, y: 1.5, w: '90%', h: 0.6,
+        fontSize: 32, color: 'ffffff',
         align: 'center', fontFace: 'Arial'
       });
-      ctaSlide.addText('Get started with Lovable AI today', {
+      ctaSlide.addText('Document Processing?', {
+        x: 0.5, y: 2.1, w: '90%', h: 0.8,
+        fontSize: 40, bold: true, color: 'a78bfa',
+        align: 'center', fontFace: 'Arial'
+      });
+      ctaSlide.addText('Experience the power of Multi-Model AI', {
         x: 0.5, y: 3.2, w: '90%', h: 0.5,
-        fontSize: 24, color: '8b5cf6',
+        fontSize: 18, color: '94a3b8',
         align: 'center', fontFace: 'Arial'
       });
-      ctaSlide.addText('lovable.dev', {
+      ctaSlide.addText('🌐 genieaiexpermentationhub.com', {
         x: 0.5, y: 4, w: '90%', h: 0.4,
-        fontSize: 20, color: '3b82f6',
-        align: 'center', fontFace: 'Arial', hyperlink: { url: 'https://lovable.dev' }
+        fontSize: 18, color: '3b82f6',
+        align: 'center', fontFace: 'Arial', 
+        hyperlink: { url: 'https://genieaiexpermentationhub.com' }
+      });
+      ctaSlide.addText('Built with Lovable AI', {
+        x: 0.5, y: 4.7, w: '90%', h: 0.3,
+        fontSize: 12, color: '64748b',
+        align: 'center', fontFace: 'Arial', italic: true
       });
       
       await pptx.writeFile({ fileName: 'document-processing-platform.pptx' });
-      toast.success('PowerPoint downloaded with full content!');
+      toast.success('✅ PowerPoint downloaded!', {
+        description: `${documentProcessingSlides.length + 3} slides with full content`
+      });
     } catch (error) {
       console.error('PPT generation error:', error);
       toast.error('Failed to generate PowerPoint');
@@ -2040,7 +2108,10 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
     const publicUrl = getPublicPresentationUrl();
     try {
       await navigator.clipboard.writeText(publicUrl);
-      toast.success('Public presentation link copied to clipboard!');
+      toast.success('✅ Public link copied!', {
+        description: publicUrl,
+        duration: 4000
+      });
     } catch (err) {
       toast.error('Failed to copy link');
     }
@@ -2103,7 +2174,9 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
   const openPublicPresentation = () => {
     const publicUrl = getPublicPresentationUrl();
     window.open(publicUrl, '_blank');
-    toast.success('Opening public presentation in new tab...');
+    toast.success('Opening public presentation...', {
+      description: 'View the shareable presentation'
+    });
   };
 
   const currentSlideData = documentProcessingSlides[currentSlide];
