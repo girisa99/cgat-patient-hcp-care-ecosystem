@@ -386,10 +386,21 @@ export const PatientInfoVerificationPanel: React.FC<PatientInfoVerificationPanel
           const hasValue = typeof value === 'object' && 'value' in value && value.value;
           if (!hasValue) return false;
           
-          // Skip duplicate medication fields - specifically the ones with redundant "medication_" prefix
-          // e.g., skip "medication_1_medication_name" when we have "medication_1_name"
-          // Pattern: medication_X_medication_Y should be skipped
-          if (/^medication[_\s]?\d+[_\s]medication_/i.test(key)) {
+          // Skip ALL medication indexed fields (e.g., medication_1_name, medication_1_quantity, etc.)
+          // These are already shown in the Medications section from the medications array
+          if (/^medication[_\s]?\d+/i.test(key)) {
+            return false;
+          }
+          
+          // Skip standalone medication/prescription fields that duplicate the medications array data
+          const duplicateMedicationFields = [
+            'medication_name', 'medication_name_type', 'medication_count',
+            'strength', 'strength_numeric', 'strength_unit',
+            'dosage_form', 'route', 'sig', 'sig_raw', 'sig_translation', 'sig_parsed',
+            'quantity', 'quantity_unit', 'refills', 'days_supply',
+            'is_controlled', 'ndc', 'daw', 'substitution_allowed'
+          ];
+          if (duplicateMedicationFields.includes(lowerKey)) {
             return false;
           }
           
