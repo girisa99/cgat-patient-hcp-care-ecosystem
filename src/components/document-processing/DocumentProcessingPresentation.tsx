@@ -15,12 +15,22 @@ import {
   Rocket, Palette, MonitorPlay, PenTool, TestTube,
   MousePointerClick, ArrowDown, CircleDot, Boxes,
   Network, Hammer, Factory, Package, FileCode,
-  ChevronDown, Check, Star, Crown, Wrench
+  ChevronDown, Check, Star, Crown, Wrench, Image, FileImage
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import pptxgen from 'pptxgenjs';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu';
 
 interface Slide {
   id: number;
@@ -2072,6 +2082,149 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
     }
   };
 
+  // Download as PDF - captures exact visual appearance of all slides
+  const downloadPDF = async () => {
+    const slideContainer = document.querySelector('[data-slide-content]');
+    if (!slideContainer) {
+      toast.error('Could not find slide content');
+      return;
+    }
+
+    toast.info('📄 Generating PDF with all slides...', {
+      description: 'This captures the exact visual appearance'
+    });
+
+    try {
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'px',
+        format: [1920, 1080]
+      });
+
+      const originalSlide = currentSlide;
+
+      for (let i = 0; i < documentProcessingSlides.length; i++) {
+        setCurrentSlide(i);
+        // Wait for animation and render
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        const slideElement = document.querySelector('[data-slide-content]') as HTMLElement;
+        if (!slideElement) continue;
+
+        const canvas = await html2canvas(slideElement, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#0f172a',
+          logging: false,
+          width: slideElement.offsetWidth,
+          height: slideElement.offsetHeight
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        
+        if (i > 0) {
+          pdf.addPage([1920, 1080], 'landscape');
+        }
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, 1920, 1080);
+      }
+
+      // Restore original slide
+      setCurrentSlide(originalSlide);
+
+      pdf.save('document-processing-presentation.pdf');
+      toast.success('✅ PDF downloaded!', {
+        description: `${documentProcessingSlides.length} slides with exact visual formatting`
+      });
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast.error('Failed to generate PDF');
+    }
+  };
+
+  // Download as PNG images - captures exact visual of current slide or all slides
+  const downloadAsImages = async (allSlides: boolean = false) => {
+    const slideContainer = document.querySelector('[data-slide-content]');
+    if (!slideContainer) {
+      toast.error('Could not find slide content');
+      return;
+    }
+
+    if (allSlides) {
+      toast.info('🖼️ Generating images for all slides...', {
+        description: 'This may take a moment'
+      });
+
+      try {
+        const originalSlide = currentSlide;
+
+        for (let i = 0; i < documentProcessingSlides.length; i++) {
+          setCurrentSlide(i);
+          await new Promise(resolve => setTimeout(resolve, 300));
+
+          const slideElement = document.querySelector('[data-slide-content]') as HTMLElement;
+          if (!slideElement) continue;
+
+          const canvas = await html2canvas(slideElement, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#0f172a',
+            logging: false
+          });
+
+          const link = document.createElement('a');
+          link.download = `slide-${String(i + 1).padStart(2, '0')}-${documentProcessingSlides[i].title.toLowerCase().replace(/\s+/g, '-').substring(0, 30)}.png`;
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+
+          // Small delay between downloads
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+        setCurrentSlide(originalSlide);
+        toast.success('✅ All slides downloaded as PNG!', {
+          description: `${documentProcessingSlides.length} images saved`
+        });
+      } catch (error) {
+        console.error('Image generation error:', error);
+        toast.error('Failed to generate images');
+      }
+    } else {
+      // Download current slide only
+      toast.info('🖼️ Capturing current slide...');
+
+      try {
+        const slideElement = document.querySelector('[data-slide-content]') as HTMLElement;
+        if (!slideElement) {
+          toast.error('Could not find slide content');
+          return;
+        }
+
+        const canvas = await html2canvas(slideElement, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#0f172a',
+          logging: false
+        });
+
+        const link = document.createElement('a');
+        link.download = `slide-${String(currentSlide + 1).padStart(2, '0')}-${documentProcessingSlides[currentSlide].title.toLowerCase().replace(/\s+/g, '-').substring(0, 30)}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+
+        toast.success('✅ Slide saved as PNG!', {
+          description: documentProcessingSlides[currentSlide].title
+        });
+      } catch (error) {
+        console.error('Image generation error:', error);
+        toast.error('Failed to capture slide');
+      }
+    }
+  };
+
   const shareToLinkedIn = async () => {
     const publicUrl = getPublicPresentationUrl();
     const sharePageUrl = getSharePageUrl();
@@ -2225,11 +2378,53 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
             <Maximize2 className="w-4 h-4" />
           </Button>
           
-          {/* Download Options */}
-          <Button variant="outline" size="sm" onClick={downloadPPT} className="gap-1">
-            <Download className="w-4 h-4" />
-            PPT
-          </Button>
+          {/* Download Options Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1">
+                <Download className="w-4 h-4" />
+                Download
+                <ChevronDown className="w-3 h-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel className="text-xs text-muted-foreground">
+                Best for visual fidelity
+              </DropdownMenuLabel>
+              <DropdownMenuItem onClick={downloadPDF} className="gap-2">
+                <FileText className="w-4 h-4 text-red-500" />
+                <div className="flex flex-col">
+                  <span>Download as PDF</span>
+                  <span className="text-xs text-muted-foreground">All slides, exact formatting</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => downloadAsImages(false)} className="gap-2">
+                <Image className="w-4 h-4 text-green-500" />
+                <div className="flex flex-col">
+                  <span>Current Slide as PNG</span>
+                  <span className="text-xs text-muted-foreground">Exact visual capture</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => downloadAsImages(true)} className="gap-2">
+                <FileImage className="w-4 h-4 text-blue-500" />
+                <div className="flex flex-col">
+                  <span>All Slides as PNG</span>
+                  <span className="text-xs text-muted-foreground">{documentProcessingSlides.length} images</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-xs text-muted-foreground">
+                Editable format
+              </DropdownMenuLabel>
+              <DropdownMenuItem onClick={downloadPPT} className="gap-2">
+                <Presentation className="w-4 h-4 text-orange-500" />
+                <div className="flex flex-col">
+                  <span>Download as PPT</span>
+                  <span className="text-xs text-muted-foreground">Editable PowerPoint</span>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           
           {/* Video Recording */}
           {!isRecording ? (
@@ -2301,10 +2496,13 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
       </div>
 
       {/* Main Slide Area */}
-      <div className={cn(
-        "relative overflow-hidden",
-        isFullscreen ? "h-[calc(100vh-120px)]" : "h-[620px]"
-      )}>
+      <div 
+        data-slide-content
+        className={cn(
+          "relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900",
+          isFullscreen ? "h-[calc(100vh-120px)]" : "h-[620px]"
+        )}
+      >
         <AnimatePresence initial={false} custom={direction} mode="wait">
           <motion.div
             key={currentSlide}
@@ -2320,11 +2518,11 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
             className="absolute inset-0 p-5 overflow-y-auto"
           >
             <div className="text-center mb-3">
-              <h2 className="text-xl font-bold text-foreground mb-1">
+              <h2 className="text-xl font-bold text-white mb-1">
                 {currentSlideData.title}
               </h2>
               {currentSlideData.subtitle && (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-slate-400">
                   {currentSlideData.subtitle}
                 </p>
               )}
