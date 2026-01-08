@@ -97,13 +97,14 @@ export const MODEL_CAPABILITIES: Record<AIProvider, ModelCapability> = {
 };
 
 // ============= CATEGORY DEFAULTS =============
-// Default model for each document category
+// Default model for each document category - All use sequential-hybrid (OCR → NLP)
 
 export const CATEGORY_MODEL_DEFAULTS: Record<string, DocumentAIConfig> = {
   'healthcare': {
     primaryModel: 'claude',
     fallbackChain: ['gemini', 'openai'],
-    pipelineType: 'single',
+    pipelineType: 'sequential-hybrid',
+    stage2Model: 'claude', // OCR → Claude Clinical
     timeoutMs: 30000,
     minConfidence: 0.7,
     maxRetries: 2
@@ -120,7 +121,8 @@ export const CATEGORY_MODEL_DEFAULTS: Record<string, DocumentAIConfig> = {
   'financial': {
     primaryModel: 'openai',
     fallbackChain: ['claude', 'gemini'],
-    pipelineType: 'single',
+    pipelineType: 'sequential-hybrid',
+    stage2Model: 'openai', // OCR → OpenAI for tables
     timeoutMs: 30000,
     minConfidence: 0.75,
     maxRetries: 2
@@ -128,7 +130,8 @@ export const CATEGORY_MODEL_DEFAULTS: Record<string, DocumentAIConfig> = {
   'identity': {
     primaryModel: 'gemini',
     fallbackChain: ['claude', 'openai'],
-    pipelineType: 'single',
+    pipelineType: 'sequential-hybrid',
+    stage2Model: 'gemini', // OCR → Gemini Vision
     timeoutMs: 25000,
     minConfidence: 0.7,
     maxRetries: 2
@@ -136,7 +139,8 @@ export const CATEGORY_MODEL_DEFAULTS: Record<string, DocumentAIConfig> = {
   'business': {
     primaryModel: 'openai',
     fallbackChain: ['claude', 'gemini'],
-    pipelineType: 'single',
+    pipelineType: 'sequential-hybrid',
+    stage2Model: 'openai', // OCR → OpenAI
     timeoutMs: 30000,
     minConfidence: 0.7,
     maxRetries: 2
@@ -144,7 +148,8 @@ export const CATEGORY_MODEL_DEFAULTS: Record<string, DocumentAIConfig> = {
   'general': {
     primaryModel: 'gemini',
     fallbackChain: ['claude', 'openai'],
-    pipelineType: 'single',
+    pipelineType: 'sequential-hybrid',
+    stage2Model: 'gemini', // OCR → Gemini
     timeoutMs: 25000,
     minConfidence: 0.6,
     maxRetries: 2
@@ -267,11 +272,12 @@ export const DOCUMENT_TYPE_AI_CONFIGS: Record<string, DocumentAIConfig> = {
     maxRetries: 2
   },
 
-  // Financial - OpenAI for tables/calculations
+  // Financial - OpenAI for tables/calculations (OCR → OpenAI hybrid)
   'invoice': {
     primaryModel: 'openai',
     fallbackChain: ['claude', 'gemini'],
-    pipelineType: 'single',
+    pipelineType: 'sequential-hybrid',
+    stage2Model: 'openai',
     timeoutMs: 30000,
     minConfidence: 0.8,
     maxRetries: 2
@@ -279,17 +285,19 @@ export const DOCUMENT_TYPE_AI_CONFIGS: Record<string, DocumentAIConfig> = {
   'receipt': {
     primaryModel: 'openai',
     fallbackChain: ['gemini', 'claude'],
-    pipelineType: 'single',
+    pipelineType: 'sequential-hybrid',
+    stage2Model: 'openai',
     timeoutMs: 25000,
     minConfidence: 0.7,
     maxRetries: 2
   },
 
-  // Identity - Gemini for vision/OCR
+  // Identity - Gemini for vision/OCR (OCR → Gemini hybrid)
   'passport': {
     primaryModel: 'gemini',
     fallbackChain: ['claude', 'openai'],
-    pipelineType: 'single',
+    pipelineType: 'sequential-hybrid',
+    stage2Model: 'gemini',
     timeoutMs: 25000,
     minConfidence: 0.8,
     maxRetries: 2
@@ -297,7 +305,8 @@ export const DOCUMENT_TYPE_AI_CONFIGS: Record<string, DocumentAIConfig> = {
   'drivers-license': {
     primaryModel: 'gemini',
     fallbackChain: ['claude', 'openai'],
-    pipelineType: 'single',
+    pipelineType: 'sequential-hybrid',
+    stage2Model: 'gemini',
     timeoutMs: 25000,
     minConfidence: 0.8,
     maxRetries: 2
