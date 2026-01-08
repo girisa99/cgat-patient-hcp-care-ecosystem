@@ -2210,6 +2210,45 @@ export default function DocumentProcessing() {
           parsedMedications = mapResult.medications;
         }
         
+        // CRITICAL: Also check for numbered medication fields (medication_1_name, medication_2_name, etc.)
+        // This handles the case where AI returns individual numbered fields instead of an array
+        if (parsedMedications.length === 0) {
+          const medicationPattern = /^medication_(\d+)_(\w+)$/;
+          const medicationsByIndex: Record<string, Record<string, any>> = {};
+          
+          // Scan all extracted fields for numbered medication patterns
+          Object.entries(extractedFields).forEach(([key, field]: [string, any]) => {
+            const match = key.match(medicationPattern);
+            if (match) {
+              const [, index, property] = match;
+              if (!medicationsByIndex[index]) {
+                medicationsByIndex[index] = {};
+              }
+              medicationsByIndex[index][property] = typeof field === 'object' ? field.value : field;
+            }
+          });
+          
+          // Build medications array from indexed data
+          const indices = Object.keys(medicationsByIndex).sort((a, b) => parseInt(a) - parseInt(b));
+          if (indices.length > 0) {
+            parsedMedications = indices.map(index => {
+              const med = medicationsByIndex[index];
+              return {
+                medication_name: med.name || med.medication_name || '',
+                strength: med.strength || '',
+                sig: med.sig || med.directions || '',
+                quantity: med.quantity || '',
+                days_supply: med.days_supply || med.duration || '',
+                ndc: med.ndc || ''
+              };
+            }).filter(med => med.medication_name); // Only include if we have a name
+            
+            if (parsedMedications.length > 0) {
+              console.log('[Extraction] Built medications array from numbered fields:', parsedMedications.length, parsedMedications);
+            }
+          }
+        }
+        
         // If we have multiple medications from AI, process them all
         if (parsedMedications.length > 0) {
           console.log('[Extraction] Processing multiple medications:', parsedMedications);

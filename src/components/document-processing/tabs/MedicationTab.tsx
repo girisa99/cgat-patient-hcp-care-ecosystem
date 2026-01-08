@@ -201,6 +201,53 @@ export default function MedicationTab({
   const [suggestionTimeoutRef, setSuggestionTimeoutRef] = useState<NodeJS.Timeout | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   
+  // CRITICAL: Compute medications list from all sources for UI display
+  // This ensures multi-medication selectors show even when processingResult.medications isn't populated
+  const computedMedications = React.useMemo(() => {
+    // First try processingResult.medications array
+    if (Array.isArray(processingResult?.medications) && processingResult.medications.length > 0) {
+      return processingResult.medications;
+    }
+    
+    // Fallback: Build from numbered medication fields (medication_1_name, medication_2_name, etc.)
+    const extractedFields = processingResult?.extractedFields || {};
+    const medicationPattern = /^medication_(\d+)_(\w+)$/;
+    const medicationsByIndex: Record<string, Record<string, any>> = {};
+    
+    Object.entries(extractedFields).forEach(([key, field]: [string, any]) => {
+      const match = key.match(medicationPattern);
+      if (match) {
+        const [, index, property] = match;
+        if (!medicationsByIndex[index]) {
+          medicationsByIndex[index] = {};
+        }
+        medicationsByIndex[index][property] = typeof field === 'object' ? field.value : field;
+      }
+    });
+    
+    // Build medications array from indexed data
+    const indices = Object.keys(medicationsByIndex).sort((a, b) => parseInt(a) - parseInt(b));
+    if (indices.length > 0) {
+      const meds = indices.map(index => {
+        const med = medicationsByIndex[index];
+        return {
+          medication_name: med.name || med.medication_name || '',
+          name: med.name || med.medication_name || '',
+          strength: med.strength || '',
+          sig: med.sig || med.directions || '',
+          quantity: med.quantity || ''
+        };
+      }).filter(med => med.medication_name || med.name);
+      
+      if (meds.length > 0) {
+        console.log('[MedicationTab] Computed medications from numbered fields:', meds.length);
+        return meds;
+      }
+    }
+    
+    return [];
+  }, [processingResult]);
+  
   // Scroll state
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -319,8 +366,8 @@ export default function MedicationTab({
     return 'Clinical Note';
   };
 
-  // Check if data came from extraction
-  const hasExtractedData = processingResult?.medications && processingResult.medications.length > 0;
+  // Check if data came from extraction - use computedMedications for accurate detection
+  const hasExtractedData = computedMedications.length > 0;
   const hasAgentData = agentFindings && agentFindings.length > 0;
 
   return (
@@ -412,14 +459,14 @@ export default function MedicationTab({
       )}
 
       {/* Multi-Medication Selector - Shows dropdown when multiple medications detected */}
-      {processingResult?.medications && processingResult.medications.length > 1 && (
+      {computedMedications.length > 1 && (
         <Card className="border-blue-300 bg-gradient-to-r from-blue-50 to-blue-100/30 dark:from-blue-950/30 dark:to-blue-900/10">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Pill className="h-5 w-5 text-blue-600" />
-                  Multiple Medications Detected ({processingResult.medications.length})
+                  Multiple Medications Detected ({computedMedications.length})
                 </CardTitle>
                 <CardDescription>
                   Select a medication to view drug search, NDC codes, and clinical info.
@@ -434,7 +481,7 @@ export default function MedicationTab({
                   onValueChange={(val) => {
                     const index = parseInt(val);
                     setActiveMedicationIndex(index);
-                    const med = processingResult.medications?.[index];
+                    const med = computedMedications[index];
                     if (med) {
                       const medName = med.medication_name || med.name || `Medication ${index + 1}`;
                       setDrugSearchQuery(medName);
@@ -446,7 +493,7 @@ export default function MedicationTab({
                     <SelectValue placeholder="Select medication" />
                   </SelectTrigger>
                   <SelectContent className="bg-background z-50">
-                    {processingResult.medications.map((med: any, index: number) => {
+                    {computedMedications.map((med: any, index: number) => {
                       const medName = med.medication_name || med.name || `Medication ${index + 1}`;
                       const strength = med.strength || '';
                       return (
@@ -467,7 +514,7 @@ export default function MedicationTab({
           <CardContent>
             {/* Quick Medication Pills - Click to switch */}
             <div className="flex flex-wrap gap-2 mb-3">
-              {processingResult.medications.map((med: any, index: number) => {
+              {computedMedications.map((med: any, index: number) => {
                 const medName = med.medication_name || med.name || `Medication ${index + 1}`;
                 const isActive = index === activeMedicationIndex;
                 return (
@@ -492,7 +539,7 @@ export default function MedicationTab({
             
             {/* Active Medication Details Preview */}
             {(() => {
-              const activeMed = processingResult.medications[activeMedicationIndex];
+              const activeMed = computedMedications[activeMedicationIndex];
               if (!activeMed) return null;
               const medName = activeMed.medication_name || activeMed.name || `Medication ${activeMedicationIndex + 1}`;
               const strength = activeMed.strength || '';
@@ -564,9 +611,9 @@ export default function MedicationTab({
                 <div className="flex items-center gap-2">
                   <Badge variant="outline">{processingResult.fileName}</Badge>
                   <Badge className="bg-green-500">Processed</Badge>
-                  {processingResult.medications && processingResult.medications.length > 1 && (
+                  {computedMedications.length > 1 && (
                     <Badge variant="secondary">
-                      {processingResult.medications.length} Medications
+                      {computedMedications.length} Medications
                     </Badge>
                   )}
                 </div>
@@ -575,11 +622,11 @@ export default function MedicationTab({
                 </p>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {/* Show primary medication or first from array */}
-                  {(processingResult.medications?.[0]?.medication_name || processingResult.extractedFields['medication']?.value) && (
+                  {(computedMedications[0]?.medication_name || computedMedications[0]?.name || processingResult.extractedFields['medication']?.value) && (
                     <Badge variant="secondary">
-                      Medication: {processingResult.medications?.[0]?.medication_name || processingResult.extractedFields['medication'].value}
-                      {processingResult.medications && processingResult.medications.length > 1 && 
-                        ` (+${processingResult.medications.length - 1} more)`
+                      Medication: {computedMedications[0]?.medication_name || computedMedications[0]?.name || processingResult.extractedFields['medication'].value}
+                      {computedMedications.length > 1 && 
+                        ` (+${computedMedications.length - 1} more)`
                       }
                     </Badge>
                   )}
@@ -902,7 +949,7 @@ export default function MedicationTab({
       )}
       
       {/* Single Medication Grid Layout - Original layout when single medication or no multi-results */}
-      {(!processingResult?.medications || processingResult.medications.length <= 1 || Object.keys(multiMedicationResults).length === 0) && (
+      {(computedMedications.length <= 1 || Object.keys(multiMedicationResults).length === 0) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Drug Search with Autocomplete */}
           <Card>
