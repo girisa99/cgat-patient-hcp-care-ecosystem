@@ -44,6 +44,7 @@ import {
   OutputFormat,
   GeneratedScript
 } from '@/services/documentToScriptService';
+import { ContentSafetyBanner } from './ContentSafetyBanner';
 
 interface DocumentToScriptPanelProps {
   onScriptGenerated?: (script: GeneratedScript) => void;
@@ -251,6 +252,9 @@ export function DocumentToScriptPanel({ onScriptGenerated, className }: Document
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Content Safety Notice */}
+          <ContentSafetyBanner variant="minimal" />
+
           {/* Input Method Tabs */}
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
             <TabsList className="grid w-full grid-cols-3">

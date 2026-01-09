@@ -44,6 +44,8 @@ import {
   ImageProvider,
   ScriptStyle
 } from '@/services/imageToScriptService';
+import { ContentSafetyBanner, InlineContentNotice } from './ContentSafetyBanner';
+import { moderateImagePrompt } from './ContentModerationService';
 
 interface ImageToScriptPanelProps {
   onScriptGenerated?: (script: ImageToScriptResult['script']) => void;
@@ -232,6 +234,9 @@ export function ImageToScriptPanel({ onScriptGenerated, className }: ImageToScri
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Content Safety Notice */}
+          <ContentSafetyBanner variant="compact" />
+
           {/* Input Method Tabs */}
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
             <TabsList className="grid w-full grid-cols-3">
