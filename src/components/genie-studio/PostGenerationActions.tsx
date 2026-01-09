@@ -26,13 +26,24 @@ export interface GeneratedContent {
   title?: string;
   type: 'video_script' | 'podcast_script' | 'presentation_script' | 'webinar_script' | 'tutorial_script' | 'narration';
   duration?: number;
-  sourceType: 'document' | 'image' | 'audio' | 'url' | 'text';
+  sourceType: 'document' | 'image' | 'audio' | 'video' | 'url' | 'text' | 'full-pipeline';
+  slides?: SlideVoiceover[];
   metadata?: {
     wordCount?: number;
     estimatedDuration?: number;
     provider?: string;
     timestamp?: number;
   };
+}
+
+interface SlideVoiceover {
+  slideNumber: number;
+  title?: string;
+  narration: string;
+  visualNotes?: string;
+  duration: number;
+  wordCount: number;
+  audioUrl?: string;
 }
 
 export type PostAction = 'download' | 'script-editor' | 'vibe' | 'knowledge-base';
