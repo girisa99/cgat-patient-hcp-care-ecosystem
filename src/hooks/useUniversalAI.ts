@@ -41,7 +41,7 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
       healthcare: ['medical-imaging-vision', 'radiology-ai-vision', 'pathology-vision-pro']
     },
     image: {
-      lovable: ['gemini-nano-banana', 'gemini-3-pro-image'],
+      gemini: ['gemini-nano-banana', 'gemini-3-pro-image', 'google/gemini-2.5-flash-image-preview', 'google/gemini-3-pro-image-preview'],
       openai: ['dall-e-3', 'dall-e-2'],
       stability: ['stable-diffusion-xl', 'stable-diffusion-3'],
       huggingface: ['flux-schnell', 'flux-dev']
@@ -73,16 +73,9 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
     {
       id: 'gemini',
       name: 'Google Gemini',
-      models: [...modelCategories.llm.gemini, ...modelCategories.small.gemini, ...modelCategories.vision.gemini],
-      capabilities: ['text', 'vision', 'multimodal'],
-      description: 'Google Gemini models - LLM, Small, and Vision variants'
-    },
-    {
-      id: 'lovable',
-      name: 'Universal AI (Lovable)',
-      models: [...modelCategories.image.lovable, 'google/gemini-2.5-flash', 'google/gemini-2.5-pro'],
-      capabilities: ['text', 'image-generation', 'multimodal'],
-      description: 'Universal AI connector - Nano Banana image gen, Gemini text models via Lovable AI Gateway'
+      models: [...modelCategories.llm.gemini, ...modelCategories.small.gemini, ...modelCategories.vision.gemini, ...modelCategories.image.gemini],
+      capabilities: ['text', 'vision', 'multimodal', 'image-generation'],
+      description: 'Google Gemini models - LLM, Small, Vision, and Image generation (Nano Banana, Flash)'
     },
     {
       id: 'stability',
@@ -118,7 +111,6 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
       case 'openai': return 'gpt-4o-mini';
       case 'claude': return 'claude-3-5-haiku-20241022';
       case 'gemini': return 'gemini-2.0-flash-exp';
-      case 'lovable': return 'google/gemini-2.5-flash';
       case 'stability': return 'stable-diffusion-xl';
       case 'huggingface': return 'flux-schnell';
       default: return 'gpt-4o-mini';
