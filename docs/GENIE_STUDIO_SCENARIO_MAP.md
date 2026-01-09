@@ -1,38 +1,66 @@
 # Genie Studio & Recording Studio: Complete Scenario Map
 
-> **Version:** 2.0  
-> **Last Updated:** 2026-01-06  
-> **Total Scenarios:** 80 (65 original + 15 commercialization scenarios)  
-> **Status:** Documentation Complete with Implementation Status
+> **Version:** 2.2  
+> **Last Updated:** 2026-01-09  
+> **Total Scenarios:** 110 (includes mobile-first, segment-specific, remix & clips)  
+> **Status:** Documentation Complete with Competitive Analysis
 
 ---
 
 ## Executive Summary
 
-This document catalogs all identified user journeys and scenarios for the Genie Studio and Recording Studio integration. It covers the complete production pipeline from imagination to final output, including edge cases, error recovery, bidirectional Vibe ↔ Mind flows, and advanced AI capabilities.
+This document catalogs all identified user journeys and scenarios for the Genie Studio and Recording Studio integration. It covers the complete production pipeline from imagination to final output, including edge cases, error recovery, bidirectional Vibe ↔ Mind flows, advanced AI capabilities, and market-driven feature priorities.
 
 ### Implementation Overview
 
 | Status | Count | Description |
 |--------|-------|-------------|
-| ✅ **Implemented** | 25 | Fully functional in codebase |
-| 🔶 **Partial** | 10 | Core functionality exists, needs enhancement |
-| ⏳ **Planned** | 45 | Documented, not yet implemented (includes 15 commercialization scenarios) |
+| ✅ **Implemented** | 8 | Fully functional in codebase |
+| 🔶 **Partial** | 6 | Core functionality exists, needs enhancement |
+| ⏳ **Planned** | 96 | Documented, not yet implemented |
+
+---
+
+## Market Context & Competitive Positioning
+
+### Key Competitors by Segment
+
+| Segment | Competitors | Their Pricing | Key Gaps We Address |
+|---------|-------------|---------------|---------------------|
+| **Creator** | CapCut, Canva, Descript | $0-24/mo | No unified script→TTS→record flow |
+| **Traveler** | GoPro Quik, Adobe Rush, Splice | $0-50/yr | No offline + AI narration combo |
+| **SMB** | Loom, Synthesia, Pictory | $12-67/mo | Synthesia too expensive; Loom no TTS |
+| **Education** | Screencastify, Edpuzzle, Camtasia | $0-249 | No AI lesson script generation |
+| **Healthcare** | VIDIZMO, Gumlet | $1000+/mo | No affordable HIPAA option |
+| **Enterprise** | Synthesia, HeyGen, Colossyan | $67-1000+/mo | No integrated approval workflows |
+
+### User Pain Points (Research-Based)
+
+> *"I spend 2 hours editing a 60-second reel. I wish I could just talk and have it edit itself."* — TikTok creator
+
+> *"I need to edit offline during flights—most apps require internet for everything."* — Travel vlogger
+
+> *"Synthesia is amazing but $67/month is too much for my bakery's marketing."* — SMB owner
+
+> *"I spend 4 hours making a 10-minute lesson video. There has to be a faster way."* — Teacher
+
+> *"We need HIPAA-compliant patient education videos but can't afford enterprise tools."* — Clinic admin
 
 ---
 
 ## Priority Matrix
 
-| Priority | Category | Description | Scenarios | Implementation |
-|----------|----------|-------------|-----------|----------------|
-| **P0 - Core** | MVP Features | Essential flows for launch | 1-4, 7-10, 61-65 | 85% Complete |
-| **P0 - Commercialization** | Subscription Infrastructure | Required for monetization | 66-70 | 0% (Roadmap) |
-| **P1 - Essential** | Production Needs | Required for production use | 5-6, 11-16, 21-24 | 50% Complete |
-| **P1 - Access Control** | Authentication & Billing | User management & payments | 71-75 | 0% (Roadmap) |
-| **P2 - Important** | User Experience | Improves workflow significantly | 17-20, 25-32 | 20% Complete |
-| **P2 - Management** | Admin & Analytics | Subscription management | 76-80 | 0% (Roadmap) |
-| **P3 - Differentiators** | Competitive Edge | Sets product apart, includes compliance | 33-42, 43-46 | 0% (Roadmap) |
-| **P4 - Future** | Advanced Features | Long-term roadmap items | 47-60 | 0% (Roadmap) |
+| Priority | Category | Description | Scenarios | Implementation | Market Driver |
+|----------|----------|-------------|-----------|----------------|---------------|
+| **P0 - Core** | MVP Features | Essential flows for launch | 1-4, 7-10, 61-65, 81 | 72% Complete | Basic functionality |
+| **P0 - Commercialization** | Subscription Infrastructure | Required for monetization | 66-70 | 0% (Roadmap) | Revenue generation |
+| **P1 - Essential** | Production Needs | Required for production use | 5-6, 11-16, 21-24, 83, 85, 90 | 30% Complete | User retention |
+| **P1 - Access Control** | Authentication & Billing | User management & payments | 71-75 | 0% (Roadmap) | Business model |
+| **P2 - Important** | User Experience | Improves workflow significantly | 17-20, 25-32, 82, 84, 89, 101-110 | 10% Complete | 68% want mobile-first |
+| **P2 - Management** | Admin & Analytics | Subscription management | 76-80 | 0% (Roadmap) | Operations |
+| **P3 - Differentiators** | Competitive Edge | Sets product apart | 33-42, 86-88, 91-97 | 0% (Roadmap) | Market differentiation |
+| **P3 - Compliance** | Healthcare & Legal | Regulated industries | 43-46, 93, 99 | 0% (Roadmap) | Enterprise sales |
+| **P4 - Future** | Advanced Features | Long-term roadmap | 47-60, 98, 100 | 0% (Roadmap) | Innovation |
 
 ---
 

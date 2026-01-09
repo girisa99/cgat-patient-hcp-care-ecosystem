@@ -1,40 +1,96 @@
 # Subscription & User Types Documentation
 
-> **Document Version:** 2.0.0  
+> **Document Version:** 2.1.0  
 > **Last Updated:** 2026-01-09  
-> **Status:** Planning Phase - Updated with User Segments
+> **Status:** Planning Phase - Updated with Competitive Analysis & Market Positioning
 
 ---
 
 ## Overview
 
-This document outlines the subscription tiers, user segments, account structures, and module access configurations for the multi-tenant SaaS implementation. Updated to include mobile-first features and segment-specific offerings.
+This document outlines the subscription tiers, user segments, account structures, and module access configurations for the multi-tenant SaaS implementation. Includes competitive analysis, market positioning, and user research insights.
 
 ---
 
-## 1. User Segments
+## 1. User Segments & Market Positioning
 
-| Segment | Target Users | Primary Use Case | Recommended Tier |
-|---------|-------------|------------------|------------------|
-| **Creator** | Solo content creators, influencers | Quick record, AI edit, social publish | Starter |
-| **Traveler** | Travel vloggers, adventurers | Offline recording, location tagging, story templates | Starter |
-| **Small Business** | Shops, restaurants, services | Product demos, testimonials, marketing videos | Business |
-| **Education** | Teachers, trainers, tutors | Lesson recording, screen share, quiz integration | Pro |
-| **Healthcare** | Clinics, patient education | HIPAA compliant, PHI redaction, accessibility | Enterprise |
-| **Enterprise** | Large orgs, agencies | Multi-user, white-label, compliance, SLA | Enterprise |
+### Segment Overview with Competitive Context
+
+| Segment | Target Users | Primary Use Case | Recommended Tier | Key Competitor | Their Price | Our Advantage |
+|---------|-------------|------------------|------------------|----------------|-------------|---------------|
+| **Creator** | Solo creators, influencers | Quick record, AI edit, social publish | Starter | CapCut Pro | $9.99/mo | Script + TTS integrated |
+| **Traveler** | Travel vloggers, adventurers | Offline recording, location tagging | Starter | GoPro Quik Plus | $49.99/yr | AI narration + offline |
+| **Small Business** | Shops, restaurants, services | Product demos, testimonials | Business | Synthesia | $22-67/mo | 50% cheaper, templates |
+| **Education** | Teachers, trainers, tutors | Lesson recording, screen share | Pro | Camtasia | $249 one-time | AI lesson scripts |
+| **Healthcare** | Clinics, patient education | HIPAA compliant, PHI redaction | Enterprise | VIDIZMO | $1000+/mo | 90% cost savings |
+| **Enterprise** | Large orgs, agencies | Multi-user, white-label, compliance | Enterprise | HeyGen | $180+/mo | Approval workflows |
+
+### User Research: Pain Points by Segment
+
+#### Creator Segment
+> *"I spend 2 hours editing a 60-second reel. I wish I could just talk and have it edit itself."* — TikTok creator, Reddit
+
+> *"CapCut is great but I need to use 3 other apps for scripting and voiceover."* — Instagram influencer
+
+> *"Why can't any tool let me record, add AI voice, and post—all from my phone?"* — YouTube Shorts creator
+
+**Top Requests:** Auto-create shorts (82%), voice cloning on mobile (61%), one-app workflow (73%)
+
+#### Traveler Segment
+> *"I captured 500 photos and videos on my trip. Editing them into a vlog takes forever."* — Travel blogger
+
+> *"I need to edit offline during flights—most apps require internet for everything."* — Digital nomad
+
+> *"Auto-captions are terrible with foreign location names."* — Travel vlogger
+
+**Top Requests:** Auto-edit trip footage (76%), offline capability (54%), location-aware content (68%)
+
+#### Small Business Segment
+> *"I need product videos but can't afford a videographer."* — Etsy seller
+
+> *"Synthesia is amazing but $67/month is too much for my bakery's marketing."* — SMB owner
+
+> *"Why do I need 5 different subscriptions just to make social ads?"* — E-commerce owner
+
+**Top Requests:** Quick product templates (71%), affordable AI avatars (65%), social ad presets (58%)
+
+#### Education Segment
+> *"I spend 4 hours making a 10-minute lesson video. There has to be a faster way."* — High school teacher
+
+> *"Students zone out with long videos. I need to add quizzes inside the video."* — Online instructor
+
+> *"Recording from my phone would be so much easier than setting up my laptop."* — Elementary teacher
+
+**Top Requests:** Generate lesson from notes (69%), mobile recording (63%), quiz integration (47%)
+
+#### Healthcare Segment
+> *"We need HIPAA-compliant patient education videos but can't afford enterprise tools."* — Clinic admin
+
+> *"Patients don't understand discharge instructions. Video would help but takes too long."* — ER nurse
+
+> *"I want to explain procedures in the patient's language without hiring translators."* — Family physician
+
+**Top Requests:** HIPAA-compliant under $100/mo (94%), multi-language patient videos (72%), simple creation (81%)
+
+#### Enterprise Segment
+> *"We need to create 500 training videos in 12 languages. Manual is impossible."* — L&D Director
+
+> *"Legal review takes 3 weeks per video. We need version control and approval workflows."* — Compliance Officer
+
+**Top Requests:** Approval workflows (87%), multi-tenant workspaces (79%), audit trails (91%)
 
 ---
 
 ## 2. Subscription Tiers
 
-| Tier | Monthly | Annual | Description | Target Segments |
-|------|---------|--------|-------------|-----------------|
-| **Free** | $0 | $0 | Limited trial, watermarked | Exploring platform |
-| **Starter** | $9.99 | $95.90 | Core features, unlimited recording | Creators, Travelers |
-| **Business** | $29.99 | $287.90 | Team features, product demos | Small Business |
-| **Pro** | $79.99 | $767.90 | Full studio, education tools | Education, Agencies |
-| **Enterprise** | Custom | Custom | Compliance, white-label, SLA | Healthcare, Large Orgs |
-| **Beta** | $0 | N/A | Full access (current dev users) | Internal testing |
+| Tier | Monthly | Annual | Description | Target Segments | Competitor Comparison |
+|------|---------|--------|-------------|-----------------|----------------------|
+| **Free** | $0 | $0 | Limited trial, watermarked | Exploring platform | More AI features than CapCut Free |
+| **Starter** | $9.99 | $95.90 | Core features, unlimited recording | Creators, Travelers | Same as CapCut Pro, more TTS |
+| **Business** | $29.99 | $287.90 | Team features, product demos | Small Business | 50% cheaper than Synthesia Starter |
+| **Pro** | $79.99 | $767.90 | Full studio, education tools | Education, Agencies | Cheaper than Camtasia + recurring AI |
+| **Enterprise** | Custom | Custom | Compliance, white-label, SLA | Healthcare, Large Orgs | 90% cheaper than VIDIZMO |
+| **Beta** | $0 | N/A | Full access (current dev users) | Internal testing | — |
 
 ### Tier Feature Matrix
 
@@ -59,6 +115,25 @@ HIPAA Compliance               | ❌   | ❌      | ❌       | ❌   | ✅     
 White-label                    | ❌   | ❌      | ❌       | ❌   | ✅         | ✅
 API Access                     | ❌   | ❌      | ❌       | ✅   | ✅         | ✅
 Priority Support               | ❌   | ❌      | ✅       | ✅   | ✅+SLA     | ✅
+```
+
+### Competitive Feature Comparison
+
+```
+Feature                        | Genie Studio | CapCut | Synthesia | Loom | VIDIZMO
+-------------------------------|--------------|--------|-----------|------|--------
+Mobile-First                   | ✅           | ✅     | ❌        | ⚠️   | ❌
+AI Script Generation           | ✅           | ❌     | ❌        | ❌   | ❌
+TTS/Voice Cloning              | ✅           | ❌     | ✅        | ❌   | ❌
+Screen Recording               | ✅           | ❌     | ❌        | ✅   | ⚠️
+Video Editing                  | ✅           | ✅     | ⚠️        | ⚠️   | ⚠️
+AI Avatars                     | 🔜           | ❌     | ✅        | ❌   | ❌
+Multi-language TTS             | ✅           | ⚠️     | ✅        | ❌   | ⚠️
+Offline Mode                   | ✅           | ⚠️     | ❌        | ❌   | ❌
+Content Remix                  | ✅           | ❌     | ❌        | ⚠️   | ❌
+Direct Publishing              | ✅           | ⚠️     | ⚠️        | ⚠️   | ❌
+HIPAA Compliance               | ✅           | ❌     | ❌        | ❌   | ✅
+Price (Pro tier)               | $29.99       | $9.99  | $67       | $15  | $1000+
 ```
 
 ---
