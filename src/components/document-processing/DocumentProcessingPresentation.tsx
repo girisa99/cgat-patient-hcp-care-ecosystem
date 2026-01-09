@@ -2934,55 +2934,113 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
   // Download as LinkedIn Carousel PDF - optimized for LinkedIn document posts
   const downloadLinkedInCarouselPDF = async () => {
     toast.info('📄 Creating LinkedIn Carousel PDF...', {
-      description: 'Optimized for LinkedIn document posts'
+      description: 'Capturing all slides with full content. Please wait...'
     });
     
     const wasAutoplay = isAutoplay;
     setIsAutoplay(false);
     
     try {
-      // LinkedIn recommends 1080x1080 or 1080x1350 for best carousel display
+      // LinkedIn recommends 1080x1080 for carousel display
+      const slideWidth = 1080;
+      const slideHeight = 1080;
+      
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'px',
-        format: [1080, 1080]
+        format: [slideWidth, slideHeight]
       });
 
       const originalSlide = currentSlide;
 
       for (let i = 0; i < documentProcessingSlides.length; i++) {
         setCurrentSlide(i);
-        await new Promise(resolve => setTimeout(resolve, 600));
+        // Wait longer for animations and content to fully render
+        await new Promise(resolve => setTimeout(resolve, 1200));
 
         const slideElement = document.querySelector('[data-slide-inner]') as HTMLElement;
-        if (!slideElement) continue;
+        if (!slideElement) {
+          console.warn(`Could not find slide element for slide ${i + 1}`);
+          continue;
+        }
 
+        // Get the actual rendered size
+        const rect = slideElement.getBoundingClientRect();
+        
         const canvas = await html2canvas(slideElement, {
-          scale: 2,
+          scale: 3, // Higher scale for better quality
           useCORS: true,
           allowTaint: true,
           backgroundColor: '#0f172a',
           logging: false,
-          width: 1080,
-          height: 1080,
+          windowWidth: rect.width,
+          windowHeight: rect.height,
+          scrollX: 0,
+          scrollY: 0,
           onclone: (clonedDoc) => {
             const clonedElement = clonedDoc.querySelector('[data-slide-inner]') as HTMLElement;
             if (clonedElement) {
+              // Remove any transforms that might hide content
               clonedElement.style.transform = 'none';
               clonedElement.style.opacity = '1';
-              clonedElement.style.width = '1080px';
-              clonedElement.style.height = '1080px';
+              clonedElement.style.overflow = 'visible';
+              // Force all child elements to be visible
+              const allChildren = clonedElement.querySelectorAll('*');
+              allChildren.forEach((child) => {
+                const el = child as HTMLElement;
+                if (el.style) {
+                  el.style.opacity = '1';
+                  el.style.transform = 'none';
+                }
+              });
             }
           }
         });
 
-        const imgData = canvas.toDataURL('image/png');
+        // Create a square canvas for LinkedIn carousel format
+        const squareCanvas = document.createElement('canvas');
+        squareCanvas.width = slideWidth;
+        squareCanvas.height = slideHeight;
+        const ctx = squareCanvas.getContext('2d');
+        
+        if (ctx) {
+          // Fill with background color
+          ctx.fillStyle = '#0f172a';
+          ctx.fillRect(0, 0, slideWidth, slideHeight);
+          
+          // Calculate scaling to fit content while maintaining aspect ratio
+          const scale = Math.min(
+            slideWidth / canvas.width,
+            slideHeight / canvas.height
+          ) * 0.95; // 95% to add padding
+          
+          const scaledWidth = canvas.width * scale;
+          const scaledHeight = canvas.height * scale;
+          const offsetX = (slideWidth - scaledWidth) / 2;
+          const offsetY = (slideHeight - scaledHeight) / 2;
+          
+          // Draw the slide content centered
+          ctx.drawImage(canvas, offsetX, offsetY, scaledWidth, scaledHeight);
+          
+          // Add slide number watermark
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+          ctx.font = 'bold 24px Inter, sans-serif';
+          ctx.textAlign = 'right';
+          ctx.fillText(`${i + 1}/${documentProcessingSlides.length}`, slideWidth - 30, slideHeight - 30);
+        }
+
+        const imgData = squareCanvas.toDataURL('image/png', 1.0);
         
         if (i > 0) {
-          pdf.addPage([1080, 1080], 'portrait');
+          pdf.addPage([slideWidth, slideHeight], 'portrait');
         }
         
-        pdf.addImage(imgData, 'PNG', 0, 0, 1080, 1080);
+        pdf.addImage(imgData, 'PNG', 0, 0, slideWidth, slideHeight);
+        
+        // Update progress toast
+        if (i % 3 === 0) {
+          toast.info(`📄 Processing slide ${i + 1}/${documentProcessingSlides.length}...`);
+        }
       }
 
       setCurrentSlide(originalSlide);
@@ -2991,7 +3049,7 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
       pdf.save('linkedin-carousel-presentation.pdf');
       
       toast.success('✅ LinkedIn Carousel PDF ready!', {
-        description: 'Upload this PDF to LinkedIn → Create Post → Document',
+        description: `All ${documentProcessingSlides.length} slides captured. Upload to LinkedIn → Create Post → Document`,
         duration: 8000
       });
       
@@ -3005,7 +3063,7 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
       
     } catch (error) {
       console.error('LinkedIn carousel PDF error:', error);
-      toast.error('Failed to generate carousel PDF');
+      toast.error('Failed to generate carousel PDF. Please try again.');
     }
   };
 
