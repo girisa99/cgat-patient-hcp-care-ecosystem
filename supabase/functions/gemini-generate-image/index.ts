@@ -28,6 +28,19 @@ function moderatePrompt(prompt: string): { isAllowed: boolean; reason?: string }
   return { isAllowed: true };
 }
 
+// Image generation models available through Universal AI connector
+const IMAGE_MODELS = {
+  // Lovable AI Gateway models (via Universal AI connector)
+  'gemini-nano-banana': 'google/gemini-2.5-flash-image-preview',
+  'gemini-3-pro-image': 'google/gemini-3-pro-image-preview',
+  // OpenAI models
+  'dall-e-3': 'dall-e-3',
+  'dall-e-2': 'dall-e-2',
+  // Stability AI models
+  'stable-diffusion-xl': 'stable-diffusion-xl-1024-v1-0',
+  'stable-diffusion-3': 'sd3-large',
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -35,14 +48,17 @@ serve(async (req) => {
 
   try {
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    const GOOGLE_API_KEY = Deno.env.get('GOOGLE_API_KEY');
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    const STABILITY_API_KEY = Deno.env.get('STABILITY_API_KEY');
     
-    if (!LOVABLE_API_KEY && !GOOGLE_API_KEY) {
-      throw new Error('No API key configured for image generation');
-    }
-
     const body = await req.json();
-    const { prompt, aspectRatio = '1:1', style = 'photographic' } = body;
+    const { 
+      prompt, 
+      aspectRatio = '1:1', 
+      style = 'photographic',
+      model = 'gemini-nano-banana',  // Default to nano banana
+      provider = 'lovable'  // Default provider
+    } = body;
 
     if (!prompt) {
       return new Response(JSON.stringify({ error: 'Prompt is required' }), 
@@ -61,17 +77,31 @@ serve(async (req) => {
       }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    console.log('[gemini-generate-image] Generating image:', { prompt: prompt.substring(0, 50), aspectRatio, style });
+    console.log('[gemini-generate-image] Generating image:', { 
+      prompt: prompt.substring(0, 50), 
+      aspectRatio, 
+      style,
+      model,
+      provider 
+    });
     const startTime = Date.now();
 
     // Enhanced prompt for safety
     const safePrompt = `Create a ${style} style image: ${prompt}. ${aspectRatio} aspect ratio. Professional, high quality. Safe for all audiences.`;
 
     let imageUrl: string;
+    let usedModel = model;
+    let usedProvider = provider;
 
-    // Try Lovable AI Gateway first (Nano banana model)
-    if (LOVABLE_API_KEY) {
-      console.log('[gemini-generate-image] Using Lovable AI Gateway');
+    // Route to appropriate provider based on model selection
+    if (provider === 'lovable' || model.includes('gemini') || model.includes('nano-banana')) {
+      // Use Lovable AI Gateway (Universal AI connector pattern)
+      if (!LOVABLE_API_KEY) {
+        throw new Error('LOVABLE_API_KEY not configured for image generation');
+      }
+      
+      const gatewayModel = IMAGE_MODELS[model as keyof typeof IMAGE_MODELS] || 'google/gemini-2.5-flash-image-preview';
+      console.log('[gemini-generate-image] Using Lovable AI Gateway with model:', gatewayModel);
       
       const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
@@ -80,7 +110,7 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.5-flash-image-preview',
+          model: gatewayModel,
           messages: [{ role: 'user', content: safePrompt }],
           modalities: ['image', 'text']
         }),
@@ -115,35 +145,127 @@ serve(async (req) => {
       }
       
       imageUrl = generatedImage;
+      usedModel = gatewayModel;
+      usedProvider = 'lovable-ai-gateway';
     } 
-    // Fallback to direct Google API
-    else if (GOOGLE_API_KEY) {
-      console.log('[gemini-generate-image] Using direct Google API');
+    else if (provider === 'openai' || model.includes('dall-e')) {
+      // Use OpenAI DALL-E
+      if (!OPENAI_API_KEY) {
+        throw new Error('OPENAI_API_KEY not configured for image generation');
+      }
       
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:generateImage?key=${GOOGLE_API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt: safePrompt,
-            config: { 
-              aspectRatio, 
-              safetyFilterLevel: 'BLOCK_MOST',
-              personGeneration: 'DONT_ALLOW'
-            }
-          }),
-        }
-      );
+      const dalleModel = model.includes('dall-e-2') ? 'dall-e-2' : 'dall-e-3';
+      console.log('[gemini-generate-image] Using OpenAI DALL-E:', dalleModel);
+      
+      const response = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: dalleModel,
+          prompt: safePrompt,
+          n: 1,
+          size: aspectRatio === '16:9' ? '1792x1024' : aspectRatio === '9:16' ? '1024x1792' : '1024x1024',
+          quality: 'hd',
+          style: style === 'photographic' ? 'natural' : 'vivid'
+        }),
+      });
 
-      const data = await response.json();
-      if (!response.ok || !data.generatedImages?.length) {
-        throw new Error(data.error?.message || 'No images generated');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[gemini-generate-image] OpenAI error:', response.status, errorText);
+        throw new Error(`OpenAI error: ${response.status}`);
       }
 
-      imageUrl = `data:image/png;base64,${data.generatedImages[0].imageBytes}`;
-    } else {
-      throw new Error('No API key available');
+      const data = await response.json();
+      imageUrl = data.data?.[0]?.url;
+      
+      if (!imageUrl) {
+        throw new Error('No image generated from OpenAI');
+      }
+      
+      usedModel = dalleModel;
+      usedProvider = 'openai';
+    }
+    else if (provider === 'stability' || model.includes('stable-diffusion')) {
+      // Use Stability AI
+      if (!STABILITY_API_KEY) {
+        throw new Error('STABILITY_API_KEY not configured for image generation');
+      }
+      
+      console.log('[gemini-generate-image] Using Stability AI');
+      
+      const response = await fetch('https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${STABILITY_API_KEY}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          text_prompts: [{ text: safePrompt, weight: 1 }],
+          cfg_scale: 7,
+          height: aspectRatio === '16:9' ? 576 : 1024,
+          width: aspectRatio === '16:9' ? 1024 : aspectRatio === '9:16' ? 576 : 1024,
+          samples: 1,
+          steps: 30,
+          style_preset: style === 'photographic' ? 'photographic' : 'digital-art'
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[gemini-generate-image] Stability AI error:', response.status, errorText);
+        throw new Error(`Stability AI error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const base64Image = data.artifacts?.[0]?.base64;
+      
+      if (!base64Image) {
+        throw new Error('No image generated from Stability AI');
+      }
+      
+      imageUrl = `data:image/png;base64,${base64Image}`;
+      usedModel = 'stable-diffusion-xl';
+      usedProvider = 'stability-ai';
+    }
+    else {
+      // Fallback to Lovable AI Gateway with nano banana
+      if (!LOVABLE_API_KEY) {
+        throw new Error('No API key configured for image generation');
+      }
+      
+      console.log('[gemini-generate-image] Fallback to Lovable AI Gateway');
+      
+      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash-image-preview',
+          messages: [{ role: 'user', content: safePrompt }],
+          modalities: ['image', 'text']
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Image generation failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+      
+      if (!imageUrl) {
+        throw new Error('No image generated');
+      }
+      
+      usedModel = 'google/gemini-2.5-flash-image-preview';
+      usedProvider = 'lovable-ai-gateway';
     }
 
     const processingTime = Date.now() - startTime;
@@ -160,9 +282,11 @@ serve(async (req) => {
         prompt: prompt.substring(0, 100), 
         aspectRatio, 
         style, 
-        model: 'gemini-image',
+        model: usedModel,
+        provider: usedProvider,
         timestamp: new Date().toISOString(),
-        contentPolicy: 'Applied'
+        contentPolicy: 'Applied',
+        availableModels: Object.keys(IMAGE_MODELS)
       }
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 

@@ -40,6 +40,12 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
       gemini: ['gemini-1.5-pro-latest', 'gemini-2.0-flash-exp'],
       healthcare: ['medical-imaging-vision', 'radiology-ai-vision', 'pathology-vision-pro']
     },
+    image: {
+      lovable: ['gemini-nano-banana', 'gemini-3-pro-image'],
+      openai: ['dall-e-3', 'dall-e-2'],
+      stability: ['stable-diffusion-xl', 'stable-diffusion-3'],
+      huggingface: ['flux-schnell', 'flux-dev']
+    },
     mcp: {
       healthcare: ['healthcare-ai-mcp-server', 'biomcp-biotech-pharma-server', 'adk-healthcare-agent-server', 'healthcare-database-mcp-server'],
       biotech: ['genomics-mcp-server', 'clinical-trials-mcp', 'regulatory-compliance-mcp', 'adverse-events-mcp'],
