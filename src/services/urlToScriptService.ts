@@ -10,7 +10,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export type ContentExtractionMode = 'full' | 'summary' | 'key_points' | 'quotes';
-export type ScriptOutputFormat = 'video_script' | 'podcast_script' | 'presentation_script' | 'tutorial_script';
+export type ScriptOutputFormat = 'video_script' | 'podcast_script' | 'presentation_script' | 'tutorial_script' | 'audio_script';
 
 export interface UrlToScriptRequest {
   // URL source
@@ -216,28 +216,39 @@ Provide a comprehensive summary suitable for script writing.`,
     try {
       const formatInstructions = this.getFormatInstructions(request.outputFormat);
       const targetDuration = request.duration || 120;
+      // Calculate words needed: ~150 words per minute for spoken script
+      const wordsPerMinute = 150;
+      const targetWordCount = Math.ceil((targetDuration / 60) * wordsPerMinute);
+      // More scenes for longer videos, minimum 3
       const sceneCount = Math.max(3, Math.ceil(targetDuration / 30));
+      // Calculate token limit based on duration (longer videos need more tokens)
+      const maxTokensNeeded = Math.min(16000, Math.max(4000, targetWordCount * 3));
       
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           provider: request.aiProvider || 'gemini',
           model: 'gemini-2.0-flash-exp',
-          prompt: `Convert this web content into a ${request.outputFormat.replace('_', ' ')}:
+          prompt: `Convert this web content into a COMPLETE, FULL-LENGTH ${request.outputFormat.replace('_', ' ')}:
 
 SOURCE URL: ${crawledContent.url}
 TITLE: ${crawledContent.title}
 
 CONTENT:
-${combinedContent.slice(0, 8000)}
+${combinedContent.slice(0, 12000)}
 
-REQUIREMENTS:
-- Target duration: ${targetDuration} seconds
+CRITICAL REQUIREMENTS:
+- Target duration: ${targetDuration} seconds (${Math.round(targetDuration / 60)} minutes)
+- Target word count: APPROXIMATELY ${targetWordCount} WORDS (this is critical!)
 - Number of scenes: ${sceneCount}
 - Tone: ${request.tone || 'professional'}
 - Target audience: ${request.targetAudience || 'general'}
+- IMPORTANT: Write COMPLETE, FULL narration text for each scene, NOT just outlines or summaries
+- Each scene's narration should be substantial enough to speak for its duration
 - Include source attribution and quotes where relevant
 
 ${formatInstructions}
+
+IMPORTANT: For a ${Math.round(targetDuration / 60)}-minute script, each scene should have 50-100+ words of narration. Do NOT write brief outlines - write the ACTUAL SCRIPT that will be spoken.
 
 Return ONLY valid JSON in this exact format:
 {
@@ -250,21 +261,21 @@ Return ONLY valid JSON in this exact format:
       "id": "scene-1",
       "sceneNumber": 1,
       "duration": 30,
-      "narration": "The spoken script text",
+      "narration": "Write the FULL spoken script text here - this should be 50-100+ words that will be read aloud",
       "visualDirection": "What should be shown on screen",
       "sourceQuote": "Original quote from source if applicable",
       "bRollSuggestions": ["relevant footage suggestion"]
     }
   ],
   "metadata": {
-    "wordCount": 500,
+    "wordCount": ${targetWordCount},
     "generatedAt": "${new Date().toISOString()}"
   }
 }`,
-          systemPrompt: 'You are a professional scriptwriter who creates engaging content from web sources. Always cite sources and maintain accuracy. Return valid JSON only.',
+          systemPrompt: 'You are a professional scriptwriter who creates COMPLETE, FULL-LENGTH scripts from web sources. NEVER write outlines or summaries - write the actual spoken script with full narration. For a 10-minute video, produce approximately 1500 words of narration across all scenes. Always cite sources and maintain accuracy. Return valid JSON only.',
           action: 'generate_script',
           temperature: 0.7,
-          maxTokens: 4000
+          maxTokens: maxTokensNeeded
         }
       });
 
@@ -299,35 +310,49 @@ Return ONLY valid JSON in this exact format:
     const instructions: Record<ScriptOutputFormat, string> = {
       video_script: `
 FORMAT: Video Script
-- Write engaging narration with natural pacing
+- Write COMPLETE, FULL narration with natural pacing (not outlines!)
 - Include visual directions for each scene
 - Reference source images or suggest B-roll
 - Keep sentences concise for video format
-- Include source attribution`,
+- Include source attribution
+- Each scene should have 50-100+ words of actual spoken script`,
       
       podcast_script: `
 FORMAT: Podcast Script  
-- Write conversational, audio-first content
+- Write COMPLETE conversational, audio-first content (not outlines!)
 - Include segment breaks
 - Add discussion points and questions
 - Focus on storytelling from the source
-- Cite sources naturally in speech`,
+- Cite sources naturally in speech
+- Each scene should have 50-100+ words of actual spoken script`,
       
       presentation_script: `
 FORMAT: Presentation Script
-- Structure as slides with talking points
+- Structure as slides with FULL talking points (not outlines!)
 - Include key statistics and quotes
 - Add speaker notes with timing
 - Suggest charts/visuals from data
-- Include source citations`,
+- Include source citations
+- Each scene should have complete speaker notes`,
       
       tutorial_script: `
 FORMAT: Tutorial Script
-- Break into clear, sequential steps
-- Extract how-to information
+- Break into clear, sequential steps with FULL explanations
+- Extract how-to information in detail
 - Add practical tips
 - Include troubleshooting notes
-- Reference source for details`
+- Reference source for details
+- Each step should have complete spoken instructions`,
+      
+      audio_script: `
+FORMAT: Audio Script (Voice-Over Only)
+- Write COMPLETE, FULL narration optimized for audio playback
+- No visual cues or directions needed
+- Focus on clear, spoken-word pacing
+- Include natural pauses and transitions
+- Each scene should have 50-100+ words of actual spoken script
+- Write as if reading for a podcast or audiobook
+- Cite sources naturally in the narration`
     };
     
     return instructions[format];

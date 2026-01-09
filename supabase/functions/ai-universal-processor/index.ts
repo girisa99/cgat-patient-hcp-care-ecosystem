@@ -31,7 +31,7 @@ serve(async (req) => {
   }
 
   try {
-    const { provider, model, prompt, systemPrompt, temperature = 0.7, maxTokens = 1000, action } = await req.json() as AIRequest;
+    const { provider, model, prompt, systemPrompt, temperature = 0.7, maxTokens = 4000, action } = await req.json() as AIRequest;
 
     console.log(`Processing AI request - Provider: ${provider}, Model: ${model}, Action: ${action}`);
 
