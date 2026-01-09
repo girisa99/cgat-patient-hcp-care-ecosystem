@@ -61,6 +61,7 @@ import { audioToScriptService, ScriptOutputFormat as AudioScriptFormat } from '@
 import { videoToScriptService, SlideVoiceover } from '@/services/videoToScriptService';
 import { PresentationScriptView } from './PresentationScriptView';
 import { VideoContentAnalyzer, VideoAnalysisResult, VideoScriptOptions, DetectedContentType } from './VideoContentAnalyzer';
+import { URLContentAnalyzer, URLAnalysisResult, URLScriptOptions, DetectedURLContentType } from './URLContentAnalyzer';
 import { SlideScript } from './SlideScriptCard';
 
 // Content type options
@@ -270,6 +271,9 @@ export function SmartContentPipeline({
   // Video analysis state
   const [showVideoAnalyzer, setShowVideoAnalyzer] = useState(false);
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
+  
+  // URL analysis state
+  const [showURLAnalyzer, setShowURLAnalyzer] = useState(false);
   
   // Timer ref for cleanup
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -823,6 +827,7 @@ export function SmartContentPipeline({
     setError(null);
     setProgress(0);
     setShowVideoAnalyzer(false);
+    setShowURLAnalyzer(false);
     if (videoPreviewUrl) {
       URL.revokeObjectURL(videoPreviewUrl);
       setVideoPreviewUrl(null);
@@ -924,6 +929,109 @@ export function SmartContentPipeline({
       console.error('Video processing error:', err);
       setError(err instanceof Error ? err.message : 'Processing failed');
       toast.error(err instanceof Error ? err.message : 'Video processing failed');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Handle URL analysis complete
+  const handleURLAnalysisComplete = async (
+    analysisResult: URLAnalysisResult,
+    selectedFormat: string,
+    options: URLScriptOptions
+  ) => {
+    setShowURLAnalyzer(false);
+    
+    if (!urlInput.trim()) {
+      toast.error('No URL provided');
+      return;
+    }
+
+    setIsProcessing(true);
+    setProgress(0);
+    setError(null);
+
+    try {
+      const progressInterval = setInterval(() => {
+        setProgress(prev => Math.min(prev + 5, 90));
+        setProgressMessage('Processing URL content and generating script...');
+      }, 1000);
+
+      // Map AI provider selection to service format
+      const aiProvider = selectedProvider === 'auto' ? 'gemini' : 
+                        selectedProvider === 'claude' ? 'claude' : 
+                        selectedProvider as 'openai' | 'claude' | 'gemini';
+      
+      const result = await urlToScriptService.convertUrlToScript({
+        url: urlInput,
+        outputFormat: selectedFormat as UrlScriptFormat,
+        duration: duration,
+        tone: tone as 'professional' | 'casual' | 'educational' | 'inspirational' | 'dramatic',
+        targetAudience: targetAudience || undefined,
+        aiProvider: aiProvider as 'openai' | 'claude' | 'gemini',
+        enhanceWithAI: options.enhanceWithAI,
+        useKnowledgeBase: enableKnowledgeSearch,
+      });
+
+      clearInterval(progressInterval);
+
+      if (!result.success || !result.script) {
+        throw new Error(result.error || 'Failed to generate script from URL');
+      }
+
+      setProgress(100);
+      setProgressMessage('Complete!');
+
+      // Format script based on detected type and options
+      let scriptText = result.script.scenes.map(scene => {
+        let sceneContent = `## Scene ${scene.sceneNumber}\n\n${scene.narration}\n`;
+        if (options.addVisualCues && scene.visualDirection) {
+          sceneContent += `\n**Visual Direction:** ${scene.visualDirection}\n`;
+        }
+        if (options.addVisualCues && scene.bRollSuggestions?.length) {
+          sceneContent += `**B-Roll:** ${scene.bRollSuggestions.join(', ')}\n`;
+        }
+        return sceneContent;
+      }).join('\n---\n\n');
+
+      // Add key points if enabled
+      if (options.extractKeyPoints && analysisResult.keyTopics.length > 0) {
+        scriptText = `## Key Points\n\n${analysisResult.keyTopics.map(t => `- ${t}`).join('\n')}\n\n---\n\n` + scriptText;
+      }
+
+      // Add call to action if enabled
+      if (options.includeCallToAction) {
+        scriptText += `\n---\n\n## Call to Action\n\n[Insert your call to action here based on the ${analysisResult.detectedType} content]\n`;
+      }
+
+      const fullScript = `# ${result.script.title}\n\n**Source:** ${result.script.sourceUrl}\n**Content Type:** ${analysisResult.detectedType.replace('_', ' ')}\n**Format:** ${selectedFormat.replace('_', ' ')}\n**Duration:** ${Math.floor(result.script.totalDuration / 60)} minutes\n**Words:** ${result.script.metadata.wordCount}\n\n---\n\n${scriptText}`;
+
+      const content: GeneratedContent = {
+        script: fullScript,
+        title: result.script.title,
+        type: selectedFormat as GeneratedContent['type'],
+        duration: result.script.totalDuration,
+        sourceType: 'url',
+        metadata: {
+          wordCount: result.script.metadata.wordCount,
+          estimatedDuration: result.script.totalDuration,
+          provider: aiProvider,
+          timestamp: Date.now(),
+        },
+      };
+
+      setGeneratedContent(content);
+      await saveDraft(content);
+      toast.success('Script generated successfully!');
+
+      // Auto-generate TTS if requested
+      if (options.generateTTS) {
+        toast.info('TTS generation will be available in the script view');
+      }
+    } catch (err) {
+      console.error('URL processing error:', err);
+      setError(err instanceof Error ? err.message : 'Processing failed');
+      toast.error(err instanceof Error ? err.message : 'URL processing failed');
     } finally {
       setIsProcessing(false);
     }
@@ -1042,6 +1150,58 @@ export function SmartContentPipeline({
               URL.revokeObjectURL(videoPreviewUrl);
               setVideoPreviewUrl(null);
             }
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Show URL Content Analyzer for URL type with smart analysis
+  if (contentType === 'url' && showURLAnalyzer && urlInput.trim()) {
+    return (
+      <div className={cn("space-y-6", className)}>
+        {/* Content Type Selector */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Content Type</Label>
+              <Select value={contentType} onValueChange={(v) => handleContentTypeChange(v as ContentType)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue>
+                    <div className="flex items-center gap-2">
+                      {selectedContentType.icon}
+                      <span>{selectedContentType.label}</span>
+                      <Badge variant="secondary" className="text-[10px] ml-2">
+                        {selectedContentType.description}
+                      </Badge>
+                    </div>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {CONTENT_TYPES.map((ct) => (
+                    <SelectItem key={ct.id} value={ct.id}>
+                      <div className="flex items-center gap-3 py-1">
+                        <div className="h-8 w-8 rounded-lg bg-secondary flex items-center justify-center">
+                          {ct.icon}
+                        </div>
+                        <div>
+                          <div className="font-medium">{ct.label}</div>
+                          <div className="text-xs text-muted-foreground">{ct.description}</div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        <URLContentAnalyzer
+          url={urlInput}
+          onAnalysisComplete={handleURLAnalysisComplete}
+          onCancel={() => {
+            setShowURLAnalyzer(false);
           }}
         />
       </div>
@@ -1284,15 +1444,32 @@ export function SmartContentPipeline({
             
             {/* URL Input */}
             {contentType === 'url' && (
-              <div className="space-y-2">
-                <Input
-                  placeholder="https://example.com/article or document URL"
-                  value={urlInput}
-                  onChange={(e) => setUrlInput(e.target.value)}
-                  className="w-full"
-                />
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="https://example.com/article or document URL"
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      if (!urlInput.trim()) {
+                        toast.error('Please enter a URL first');
+                        return;
+                      }
+                      setShowURLAnalyzer(true);
+                    }}
+                    disabled={!urlInput.trim()}
+                    className="gap-2"
+                  >
+                    <Search className="h-4 w-4" />
+                    Smart Analyze
+                  </Button>
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  We'll extract content from web pages, articles, or online documents
+                  Click "Smart Analyze" to detect content type and get optimized script options, or use "Generate Script" for quick generation
                 </p>
               </div>
             )}
