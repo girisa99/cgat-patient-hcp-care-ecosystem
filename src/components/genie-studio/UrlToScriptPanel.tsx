@@ -52,6 +52,7 @@ const OUTPUT_FORMATS: { value: ScriptOutputFormat; label: string; description: s
   { value: 'podcast_script', label: 'Podcast Script', description: 'For audio podcasts' },
   { value: 'presentation_script', label: 'Presentation', description: 'For slide decks' },
   { value: 'tutorial_script', label: 'Tutorial', description: 'For how-to content' },
+  { value: 'webinar_script', label: 'Webinar', description: 'For live webinars' },
 ];
 
 const TONE_OPTIONS = [
@@ -287,7 +288,7 @@ export function UrlToScriptPanel({ onScriptGenerated, className }: UrlToScriptPa
           {/* Output Format */}
           <div className="space-y-2">
             <Label>Output Format</Label>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
               {OUTPUT_FORMATS.map((format) => (
                 <button
                   key={format.value}

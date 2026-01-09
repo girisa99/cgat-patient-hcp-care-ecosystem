@@ -10,7 +10,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export type ContentExtractionMode = 'full' | 'summary' | 'key_points' | 'quotes';
-export type ScriptOutputFormat = 'video_script' | 'podcast_script' | 'presentation_script' | 'tutorial_script' | 'audio_script';
+export type ScriptOutputFormat = 'video_script' | 'podcast_script' | 'presentation_script' | 'tutorial_script' | 'audio_script' | 'webinar_script';
 
 export interface UrlToScriptRequest {
   // URL source
@@ -352,7 +352,18 @@ FORMAT: Audio Script (Voice-Over Only)
 - Include natural pauses and transitions
 - Each scene should have 50-100+ words of actual spoken script
 - Write as if reading for a podcast or audiobook
-- Cite sources naturally in the narration`
+- Cite sources naturally in the narration`,
+      
+      webinar_script: `
+FORMAT: Webinar Script
+- Write COMPLETE, FULL presenter script for live webinar delivery
+- Include clear segment breaks with timing markers
+- Add interaction points: polls, Q&A prompts, chat engagement
+- Write conversational but professional tone
+- Include slide transition cues
+- Add speaker notes for handling audience questions
+- Each segment should have 50-100+ words of spoken content
+- Include opening hook and strong closing call-to-action`
     };
     
     return instructions[format];
