@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { genieScriptService } from '@/services/genieScriptService';
 import { 
   ScriptSegment, 
   SegmentedScriptData, 
@@ -115,7 +115,7 @@ export function SegmentedScriptEditor({
     toast.success('Segment updated');
   }, []);
 
-  // AI Enhancement for single segment
+  // AI Enhancement for single segment using genieScriptService
   const handleEnhanceSegment = useCallback(async (
     segmentId: string, 
     enhancementType: AIEnhancementType,
@@ -130,37 +130,14 @@ export function SegmentedScriptEditor({
     ));
 
     try {
-      const enhancementPrompts: Record<AIEnhancementType, string> = {
-        rewrite: 'Rewrite this text to improve clarity, flow, and engagement while maintaining the same meaning and length.',
-        expand: 'Expand this text with more detail, examples, and supporting information. Make it approximately 50% longer.',
-        summarize: 'Summarize this text to be more concise while keeping the key points. Reduce length by about 30%.',
-        polish: 'Polish this text for professional quality. Improve word choice, eliminate filler words, and enhance impact.',
-        transitions: 'Add a smooth transition at the beginning and/or end to connect with adjacent content.',
-        brand_voice: 'Rewrite in a professional, trustworthy brand voice suitable for healthcare or enterprise content.',
-      };
+      // Use the genieScriptService for real AI enhancement
+      const enhancedNarration = await genieScriptService.enhanceSegment(
+        segment,
+        enhancementType,
+        customInstructions
+      );
 
-      const prompt = `${enhancementPrompts[enhancementType]}
-
-${customInstructions ? `Additional instructions: ${customInstructions}\n` : ''}
-Original text:
-${segment.narration}
-
-Return ONLY the enhanced text, no explanations or formatting.`;
-
-      const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
-        body: {
-          provider: 'gemini',
-          model: 'gemini-2.0-flash-exp',
-          prompt,
-          systemPrompt: 'You are a professional script editor. Enhance text while maintaining natural spoken quality for voiceover.',
-          action: 'enhance_segment',
-        },
-      });
-
-      if (error) throw new Error(error.message);
-
-      const enhancedNarration = data.content.trim();
-      const wordCount = enhancedNarration.split(/\s+/).filter((w: string) => w).length;
+      const wordCount = enhancedNarration.trim().split(/\s+/).filter((w: string) => w).length;
       const duration = Math.ceil(wordCount / 2.5);
 
       setSegments(prev => prev.map(s => {
@@ -212,7 +189,7 @@ Return ONLY the enhanced text, no explanations or formatting.`;
     toast.success('Reverted to original');
   }, []);
 
-  // Generate TTS for single segment
+  // Generate TTS for single segment using genieScriptService
   const handleGenerateTTS = useCallback(async (segmentId: string) => {
     const segment = segments.find(s => s.id === segmentId);
     if (!segment) return;
@@ -222,29 +199,11 @@ Return ONLY the enhanced text, no explanations or formatting.`;
     ));
 
     try {
-      const functionName = ttsOptions.provider === 'elevenlabs' 
-        ? 'elevenlabs-tts' 
-        : 'text-to-speech';
-
-      const body: Record<string, unknown> = {
-        text: segment.narration,
-        voice: ttsOptions.voice,
-        speed: ttsOptions.speed,
-      };
-
-      if (ttsOptions.provider === 'elevenlabs') {
-        body.stability = ttsOptions.stability;
-        body.similarityBoost = ttsOptions.similarityBoost;
-      }
-
-      const { data, error } = await supabase.functions.invoke(functionName, {
-        body,
-      });
-
-      if (error) throw new Error(error.message);
+      // Use the genieScriptService for real TTS generation
+      const result = await genieScriptService.generateTTS(segment.narration, ttsOptions);
 
       // Create audio URL from base64
-      const audioUrl = `data:audio/mpeg;base64,${data.audioContent}`;
+      const audioUrl = `data:audio/mpeg;base64,${result.audioContent}`;
 
       setSegments(prev => prev.map(s => {
         if (s.id === segmentId) {

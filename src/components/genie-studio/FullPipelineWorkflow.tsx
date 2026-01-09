@@ -51,6 +51,7 @@ import { toast } from 'sonner';
 import { useDropzone } from 'react-dropzone';
 import { ImageModelSelector, ImageModelType } from './ImageModelSelector';
 import { AIProviderSelector, AIProviderType } from './AIProviderSelector';
+import { genieScriptService } from '@/services/genieScriptService';
 
 // Pipeline phases
 type PipelinePhase = 'sources' | 'media' | 'script' | 'review';
@@ -325,51 +326,41 @@ export function FullPipelineWorkflow({
     });
   };
 
-  // Generate smart image suggestions
+  // Generate smart image suggestions using real AI
   const generateSuggestions = async () => {
+    if (sources.length === 0) {
+      toast.error('Please add at least one source first');
+      return;
+    }
+
     setIsProcessing(true);
     setProgressMessage('Analyzing content for image suggestions...');
     
-    // Simulate AI analysis with tracked timeout
-    await new Promise<void>(resolve => {
-      suggestionTimeoutRef.current = setTimeout(resolve, 2000);
-    });
-    
-    const mockSuggestions: ImageSuggestion[] = [
-      {
-        id: crypto.randomUUID(),
-        section: 'Introduction',
-        description: 'Hero image to capture attention',
-        prompt: 'Professional medical laboratory with advanced equipment, clean modern aesthetic, soft lighting',
-        priority: 'high',
-      },
-      {
-        id: crypto.randomUUID(),
-        section: 'Main Content',
-        description: 'Diagram showing process flow',
-        prompt: 'Infographic style diagram showing step-by-step medical process, blue and white color scheme',
-        priority: 'medium',
-      },
-      {
-        id: crypto.randomUUID(),
-        section: 'Case Study',
-        description: 'Patient journey visualization',
-        prompt: 'Abstract representation of healthcare patient journey, warm hopeful colors, professional style',
-        priority: 'medium',
-      },
-      {
-        id: crypto.randomUUID(),
-        section: 'Conclusion',
-        description: 'Call to action visual',
-        prompt: 'Inspirational healthcare scene with diverse medical professionals, teamwork theme',
-        priority: 'high',
-      },
-    ];
-    
-    setImageSuggestions(mockSuggestions);
-    setShowSuggestions(true);
-    setIsProcessing(false);
-    toast.success('Generated 4 image suggestions');
+    try {
+      // Build content from sources for AI analysis
+      const sourceContent = sources.map(s => {
+        if (s.content) return s.content;
+        if (s.url) return `URL: ${s.url}`;
+        return s.name;
+      }).join('\n\n');
+      
+      const sourceNames = sources.map(s => s.name);
+      
+      // Use real AI to generate suggestions
+      const suggestions = await genieScriptService.generateImageSuggestions(
+        sourceContent,
+        sourceNames
+      );
+      
+      setImageSuggestions(suggestions);
+      setShowSuggestions(true);
+      toast.success(`Generated ${suggestions.length} image suggestions`);
+    } catch (error) {
+      console.error('Failed to generate suggestions:', error);
+      toast.error('Failed to generate image suggestions. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   // Accept suggestion
@@ -390,7 +381,7 @@ export function FullPipelineWorkflow({
     toast.success(`Added image for ${suggestion.section}`);
   };
 
-  // Generate script
+  // Generate script using real AI
   const handleGenerateScript = async () => {
     if (sources.length === 0) {
       toast.error('Please add at least one source');
@@ -406,76 +397,56 @@ export function FullPipelineWorkflow({
       pipelineTimeoutsRef.current.forEach(t => clearTimeout(t));
       pipelineTimeoutsRef.current = [];
       
-      // Simulate multi-step processing
-      const steps = [
-        { message: 'Processing sources...', duration: 1500 },
-        { message: 'Analyzing content...', duration: 1500 },
-        { message: 'Generating images...', duration: 2000 },
-        { message: 'Creating script...', duration: 2000 },
-        { message: 'Finalizing...', duration: 1000 },
-      ];
-
-      for (let i = 0; i < steps.length; i++) {
-        setProgressMessage(steps[i].message);
-        setProgress((i + 1) / steps.length * 100);
-        await new Promise<void>(resolve => {
-          const timeoutId = setTimeout(resolve, steps[i].duration);
-          pipelineTimeoutsRef.current.push(timeoutId);
-        });
-      }
-
+      // Step 1: Process sources
+      setProgressMessage('Processing sources...');
+      setProgress(20);
+      
+      // Build source data for AI
+      const sourceData = sources.map(s => ({
+        type: s.type,
+        name: s.name,
+        content: s.content,
+        url: s.url
+      }));
+      
+      // Step 2: Generate script with real AI
+      setProgressMessage('Generating script with AI...');
+      setProgress(40);
+      
+      const providerMap: Record<AIProviderType, 'gemini' | 'openai' | 'claude'> = {
+        'auto': 'gemini',
+        'gemini': 'gemini',
+        'openai': 'openai',
+        'claude': 'claude',
+        'huggingface': 'gemini' // Fallback to gemini for huggingface
+      };
+      
+      const result = await genieScriptService.generateScriptFromSources(
+        sourceData,
+        {
+          outputFormat,
+          tone,
+          duration,
+          targetAudience,
+          provider: providerMap[selectedProvider] || 'gemini'
+        }
+      );
+      
+      setProgress(70);
+      setProgressMessage('Processing media...');
+      
       // Update media items to "ready"
       setMediaItems(prev => prev.map(m => ({ ...m, status: 'ready' as const })));
-
-      // Generate mock script with segments
+      
+      // Step 3: Format the output
+      setProgressMessage('Finalizing...');
+      setProgress(90);
+      
+      const segments = result.segments;
       const sourcesList = sources.map(s => s.name).join(', ');
       const mediaList = mediaItems.map(m => m.name).join(', ');
       
-      // Create segments for structured output
-      const segments: PipelineSegment[] = [
-        {
-          segmentNumber: 1,
-          title: 'Introduction',
-          narration: `Welcome to this comprehensive ${outputFormat.replace('_', ' ')} created from multiple sources. We'll be exploring key insights from ${sourcesList}.`,
-          visualNotes: mediaItems[0]?.name ? `Opening shot with ${mediaItems[0].name}` : 'Title card with branding',
-          duration: 30,
-          wordCount: 25,
-        },
-        {
-          segmentNumber: 2,
-          title: 'Overview',
-          narration: `Based on the content from ${sources[0]?.name || 'your sources'}, we begin with an overview of the main concepts. This foundation will help us understand the deeper insights to come.`,
-          visualNotes: mediaItems[1]?.name ? `Insert: ${mediaItems[1].name}` : 'Key points visualization',
-          duration: 45,
-          wordCount: 35,
-        },
-        {
-          segmentNumber: 3,
-          title: 'Deep Dive',
-          narration: 'Exploring the key concepts in detail, we uncover the underlying principles that drive results. Each element builds upon the previous, creating a comprehensive understanding.',
-          visualNotes: 'Detailed diagrams or demonstrations',
-          duration: 60,
-          wordCount: 30,
-        },
-        {
-          segmentNumber: 4,
-          title: 'Practical Applications',
-          narration: 'How do these insights apply in real-world scenarios? Let\'s examine practical examples that demonstrate the value of what we\'ve learned.',
-          visualNotes: mediaItems[2]?.name ? `Insert: ${mediaItems[2].name}` : 'Case study visuals',
-          duration: 45,
-          wordCount: 28,
-        },
-        {
-          segmentNumber: 5,
-          title: 'Conclusion',
-          narration: 'In summary, we\'ve covered the key takeaways: first, the foundational concepts; second, practical applications; and third, your next steps for implementation.',
-          visualNotes: 'Closing graphic with call to action',
-          duration: 30,
-          wordCount: 30,
-        },
-      ];
-      
-      const mockScript = `# Generated Video Script
+      const formattedScript = `# Generated Video Script
 
 ## Pipeline Summary
 - **Sources**: ${sources.length} items (${sourcesList})
@@ -499,16 +470,16 @@ ${seg.narration}
 ${enableKnowledgeSearch ? '*Enhanced with Knowledge Base content*' : ''}
 `;
 
-      setGeneratedScript(mockScript);
+      setGeneratedScript(formattedScript);
       // Store segments for passing to parent
       (window as any).__pipelineSegments = segments;
 
-      setGeneratedScript(mockScript);
+      setProgress(100);
       setCurrentPhase('review');
       toast.success('Script generated successfully!');
     } catch (err) {
       console.error('Pipeline error:', err);
-      toast.error('Pipeline failed. Please try again.');
+      toast.error(err instanceof Error ? err.message : 'Pipeline failed. Please try again.');
     } finally {
       setIsProcessing(false);
       setProgress(0);
