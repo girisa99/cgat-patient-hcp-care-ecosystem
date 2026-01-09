@@ -150,13 +150,14 @@ const TONE_OPTIONS = [
 ];
 
 const DURATION_OPTIONS = [
-  { value: 30, label: '30 seconds' },
-  { value: 60, label: '1 minute' },
-  { value: 180, label: '3 minutes' },
-  { value: 300, label: '5 minutes' },
-  { value: 600, label: '10 minutes' },
-  { value: 900, label: '15 minutes' },
-  { value: 1800, label: '30 minutes' },
+  { value: 30, label: '30 sec (~75 words)' },
+  { value: 60, label: '1 min (~150 words)' },
+  { value: 120, label: '2 min (~300 words)' },
+  { value: 180, label: '3 min (~450 words)' },
+  { value: 300, label: '5 min (~750 words)' },
+  { value: 600, label: '10 min (~1500 words)' },
+  { value: 900, label: '15 min (~2250 words)' },
+  { value: 1800, label: '30 min (~4500 words)' },
 ];
 
 interface DetectedFile {
