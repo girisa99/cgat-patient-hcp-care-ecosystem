@@ -42,7 +42,8 @@ import {
   Database,
   Save,
   RotateCcw,
-  Clock
+  Clock,
+  ChevronLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -63,6 +64,13 @@ import { PresentationScriptView } from './PresentationScriptView';
 import { VideoContentAnalyzer, VideoAnalysisResult, VideoScriptOptions, DetectedContentType } from './VideoContentAnalyzer';
 import { URLContentAnalyzer, URLAnalysisResult, URLScriptOptions, DetectedURLContentType } from './URLContentAnalyzer';
 import { SlideScript } from './SlideScriptCard';
+import { 
+  SegmentedScriptEditor, 
+  SegmentedScriptData, 
+  ScriptSegment,
+  SourceType as SegmentSourceType,
+  MediaContentType 
+} from './segmented-editor';
 
 // Content type options
 type ContentType = 'document' | 'image' | 'audio' | 'video' | 'url' | 'full-pipeline';
@@ -266,6 +274,8 @@ export function SmartContentPipeline({
   const [progressMessage, setProgressMessage] = useState('');
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
   const [generatedSlides, setGeneratedSlides] = useState<SlideScript[] | null>(null);
+  const [segmentedScriptData, setSegmentedScriptData] = useState<SegmentedScriptData | null>(null);
+  const [showSegmentedEditor, setShowSegmentedEditor] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   // Video analysis state
@@ -823,6 +833,8 @@ export function SmartContentPipeline({
     setImagePrompt('');
     setGeneratedContent(null);
     setGeneratedSlides(null);
+    setSegmentedScriptData(null);
+    setShowSegmentedEditor(false);
     setSelectedDraft(null);
     setError(null);
     setProgress(0);
@@ -832,6 +844,91 @@ export function SmartContentPipeline({
       URL.revokeObjectURL(videoPreviewUrl);
       setVideoPreviewUrl(null);
     }
+  };
+
+  // Convert slides/scenes to SegmentedScriptData
+  const createSegmentedData = (
+    content: GeneratedContent, 
+    slides?: SlideScript[],
+    detectedType?: string,
+    scriptFormat?: string
+  ): SegmentedScriptData | null => {
+    if (!slides || slides.length === 0) return null;
+
+    const segments: ScriptSegment[] = slides.map((slide, index) => ({
+      id: `segment-${index + 1}`,
+      segmentNumber: slide.slideNumber,
+      type: scriptFormat?.includes('slide') ? 'slide' : 
+            scriptFormat?.includes('chapter') ? 'chapter' : 'scene',
+      title: slide.title,
+      narration: slide.narration,
+      visualNotes: slide.visualNotes,
+      duration: slide.duration,
+      wordCount: slide.wordCount,
+    }));
+
+    const sourceType: SegmentSourceType = content.sourceType as SegmentSourceType;
+    const mediaType: MediaContentType = detectedType as MediaContentType || 'general';
+
+    return {
+      id: `script-${Date.now()}`,
+      title: content.title || 'Untitled Script',
+      sourceType,
+      mediaContentType: mediaType,
+      segments,
+      totalDuration: content.duration || segments.reduce((sum, s) => sum + s.duration, 0),
+      totalWordCount: content.metadata?.wordCount || segments.reduce((sum, s) => sum + s.wordCount, 0),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      sourceUrl: content.sourceType === 'url' ? urlInput : undefined,
+      sourceFilename: uploadedFiles[0]?.file?.name,
+      detectedType,
+      scriptFormat,
+    };
+  };
+
+  // Handle opening segmented editor
+  const handleOpenSegmentedEditor = () => {
+    if (generatedContent && generatedSlides) {
+      const segData = createSegmentedData(
+        generatedContent, 
+        generatedSlides,
+        generatedContent.type,
+        outputFormat
+      );
+      if (segData) {
+        setSegmentedScriptData(segData);
+        setShowSegmentedEditor(true);
+      }
+    }
+  };
+
+  // Handle segmented script update
+  const handleSegmentedScriptUpdate = (data: SegmentedScriptData) => {
+    setSegmentedScriptData(data);
+  };
+
+  // Handle segmented script save
+  const handleSegmentedScriptSave = async (data: SegmentedScriptData) => {
+    // Convert back to GeneratedContent for saving
+    const script = data.segments.map(s => 
+      `## ${s.type.charAt(0).toUpperCase() + s.type.slice(1)} ${s.segmentNumber}${s.title ? `: ${s.title}` : ''}\n\n${s.narration}${s.visualNotes ? `\n\n**Visual:** ${s.visualNotes}` : ''}`
+    ).join('\n\n---\n\n');
+
+    const updatedContent: GeneratedContent = {
+      ...generatedContent!,
+      script: `# ${data.title}\n\n${script}`,
+      title: data.title,
+      duration: data.totalDuration,
+      metadata: {
+        ...generatedContent?.metadata,
+        wordCount: data.totalWordCount,
+      },
+    };
+
+    setGeneratedContent(updatedContent);
+    await saveDraft(updatedContent);
+    toast.success('Script saved');
   };
 
   // Handle video analysis complete
@@ -1038,13 +1135,35 @@ export function SmartContentPipeline({
   };
 
   // Handle Full Pipeline completion
-  const handlePipelineComplete = async (result: { script: string; title: string }) => {
+  const handlePipelineComplete = async (result: { 
+    script: string; 
+    title: string;
+    segments?: Array<{
+      segmentNumber: number;
+      title: string;
+      narration: string;
+      visualNotes?: string;
+      duration: number;
+      wordCount: number;
+    }>;
+  }) => {
+    // Convert pipeline segments to SlideScript format for consistency
+    const slides: SlideScript[] | undefined = result.segments?.map(seg => ({
+      slideNumber: seg.segmentNumber,
+      title: seg.title,
+      narration: seg.narration,
+      visualNotes: seg.visualNotes,
+      duration: seg.duration,
+      wordCount: seg.wordCount,
+    }));
+
     const content: GeneratedContent = {
       script: result.script,
       title: result.title,
       type: 'video_script',
       duration: duration,
-      sourceType: 'document',
+      sourceType: 'full-pipeline',
+      slides,
       metadata: {
         wordCount: result.script.split(/\s+/).length,
         estimatedDuration: duration,
@@ -1052,13 +1171,59 @@ export function SmartContentPipeline({
         timestamp: Date.now(),
       },
     };
+    
+    if (slides && slides.length > 0) {
+      setGeneratedSlides(slides);
+    }
+    
     setGeneratedContent(content);
     // Auto-save to drafts
     await saveDraft(content);
   };
 
+  // Show Segmented Script Editor if enabled
+  if (showSegmentedEditor && segmentedScriptData) {
+    return (
+      <div className={cn("space-y-6", className)}>
+        {/* Back button */}
+        <div className="flex items-center justify-between">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => setShowSegmentedEditor(false)}
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Back to Overview
+          </Button>
+          <Badge variant="outline" className="text-xs">
+            <Clock className="h-3 w-3 mr-1" />
+            {isDraftSaving ? 'Saving...' : 'Auto-saved'}
+          </Badge>
+        </div>
+
+        <SegmentedScriptEditor
+          scriptData={segmentedScriptData}
+          onScriptUpdate={handleSegmentedScriptUpdate}
+          onSave={handleSegmentedScriptSave}
+          onExport={(format) => {
+            const blob = new Blob([generatedContent?.script || ''], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${segmentedScriptData.title.replace(/[^a-z0-9]/gi, '_')}.${format}`;
+            a.click();
+            URL.revokeObjectURL(url);
+            toast.success('Script exported');
+          }}
+        />
+      </div>
+    );
+  }
+
   // Show post-generation actions if we have generated content
   if (generatedContent) {
+    const hasSegments = generatedSlides && generatedSlides.length > 0;
+    
     return (
       <div className={cn("space-y-6", className)}>
         {/* Session indicator */}
@@ -1073,6 +1238,31 @@ export function SmartContentPipeline({
               {isDraftSaving ? 'Saving...' : 'Saved'}
             </Badge>
           </div>
+        )}
+
+        {/* Segmented Editor Option - Show when slides are available */}
+        {hasSegments && (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Layers className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-sm">Segmented Script Available</h4>
+                    <p className="text-xs text-muted-foreground">
+                      {generatedSlides!.length} segments detected • Edit individually with TTS & AI
+                    </p>
+                  </div>
+                </div>
+                <Button size="sm" onClick={handleOpenSegmentedEditor}>
+                  <Wand2 className="h-4 w-4 mr-1" />
+                  Open Segment Editor
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         )}
         
         <PostGenerationActions
