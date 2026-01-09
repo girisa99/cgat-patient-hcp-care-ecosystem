@@ -1,8 +1,10 @@
 # Genie Mind & Genie Vibe - Phase Implementation Roadmap
 
-> **Last Updated:** 2026-01-05
-> **Status:** Active Implementation - Phase 1.5 Complete, Phase 2 In Progress
-> **Version:** 1.4
+> **Last Updated:** 2026-01-09
+> **Status:** Active Implementation - Phase 1.5 Complete, Phases 2-5 Planned
+> **Version:** 1.5
+> **Total Features:** 37 (10 Complete, 27 Planned)
+> **Market-Driven:** Includes competitive analysis and user research priorities
 
 ---
 
@@ -244,19 +246,75 @@ FLOW 2 (NEW):     Vibe → Mind → Script → TTS → Vibe → Publish
 
 ---
 
+### Phase 4: Mobile-First & Segment Features (NEW)
+
+| # | Feature | Primary Module | Segment Target | Market Driver | Status |
+|---|---------|---------------|----------------|---------------|--------|
+| 16 | **One-Tap Mobile Record** | **Genie Vibe** | All | 68% want mobile-first | 📋 Planned |
+| 17 | **Offline Recording** | **Genie Vibe** | Traveler | 54% need offline | 📋 Planned |
+| 18 | **Quick Templates (Social)** | **Genie Vibe** | Creator | One-app workflow | 📋 Planned |
+| 19 | **Voice-First Editing** | **Genie Vibe** | Creator | 47% want voice commands | 📋 Planned |
+| 20 | **Product Demo Mode** | **Genie Vibe** | SMB | 71% want quick templates | 📋 Planned |
+| 21 | **Lesson Builder** | **Genie Vibe** | Education | 69% want AI lesson scripts | 📋 Planned |
+| 22 | **Patient Education** | **Genie Vibe** | Healthcare | HIPAA under $100/mo (94%) | 📋 Planned |
+| 23 | **Multi-Clip Timeline** | **Genie Vibe** | All | Content remix gap | 📋 Planned |
+| 24 | **Highlight Reel Generator** | **Genie Mind** | Creator | Auto-shorts (82%) | 📋 Planned |
+
+### Phase 5: Commercialization & Compliance
+
+| # | Feature | Primary Module | Market Driver | Status |
+|---|---------|---------------|---------------|--------|
+| 25 | **Subscription Infrastructure** | **Backend** | Revenue model | 📋 Planned |
+| 26 | **Stripe Integration** | **Backend** | Payments | 📋 Planned |
+| 27 | **Landing Page & Pricing** | **Frontend** | Conversion | 📋 Planned |
+| 28 | **HIPAA Compliance** | **Backend** | Healthcare segment (94% want) | 📋 Planned |
+| 29 | **Approval Workflows** | **Backend** | Enterprise segment (87% want) | 📋 Planned |
+| 30 | **White-Label** | **Frontend** | Enterprise revenue | 📋 Planned |
+
+---
+
 ## Implementation Status Summary
 
-| Phase | Total | Complete | In Progress | Planned |
-|-------|-------|----------|-------------|---------|
-| Phase 1 (P0 Partials + NLP + Frontend) | 5 | 5 | 0 | 0 |
-| Phase 1.5 (Vibe ↔ Mind Integration) | 5 | 5 | 0 | 0 |
-| Phase 2 (High Impact P0) | 4 | 0 | 0 | 4 |
-| Phase 3 (P1 Essentials) | 8 | 0 | 0 | 8 |
-| **Total** | **22** | **10** | **0** | **12** |
+| Phase | Total | Complete | In Progress | Planned | Market Priority |
+|-------|-------|----------|-------------|---------|-----------------|
+| Phase 1 (P0 Partials + NLP + Frontend) | 5 | 5 | 0 | 0 | Core MVP |
+| Phase 1.5 (Vibe ↔ Mind Integration) | 5 | 5 | 0 | 0 | Differentiation |
+| Phase 2 (High Impact P0) | 4 | 0 | 0 | 4 | External integrations |
+| Phase 3 (P1 Essentials) | 8 | 0 | 0 | 8 | Production quality |
+| **Phase 4 (Mobile-First & Segments)** | **9** | **0** | **0** | **9** | **68% mobile demand** |
+| **Phase 5 (Commercialization)** | **6** | **0** | **0** | **6** | **Revenue** |
+| **Total** | **37** | **10** | **0** | **27** | |
 
 **Phase 1 Completion:** 100% ✅ (Backend + Frontend)
 **Phase 1.5 Completion:** 100% ✅ (Vibe ↔ Mind Bidirectional Flow)
-**Overall Progress:** 45%
+**Overall Progress:** 27%
+
+---
+
+## Market-Driven Priority Alignment
+
+### Why This Order?
+
+| Phase | Key User Research | Competitive Gap |
+|-------|-------------------|-----------------|
+| Phase 1-1.5 | Foundation for all features | Basic functionality |
+| Phase 2 | External content import demand | No competitor has unified import |
+| Phase 3 | Voice cloning top request (61%) | Synthesia only; expensive |
+| **Phase 4** | **68% want mobile-first** | **CapCut only; no AI script** |
+| **Phase 5** | **Healthcare 94% want HIPAA** | **VIDIZMO $1000+; we can do <$100** |
+
+### Competitive Advantage Timeline
+
+```
+NOW (Phase 1-1.5): Unified Mind → Vibe bidirectional flow
+     ↓ No competitor has this
+Q1 2026 (Phase 2-3): Voice cloning + external imports
+     ↓ Synthesia competitor but 50% cheaper
+Q2 2026 (Phase 4): Mobile-first + segment templates
+     ↓ CapCut competitor but with AI scripts + TTS
+Q3 2026 (Phase 5): HIPAA + Enterprise features
+     ↓ VIDIZMO competitor at 10% of the price
+```
 
 ---
 

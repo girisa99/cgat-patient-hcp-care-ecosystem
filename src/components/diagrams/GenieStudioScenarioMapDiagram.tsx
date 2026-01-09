@@ -57,65 +57,66 @@ const scenarios: Record<string, Scenario[]> = {
     { id: 6, name: 'Script Enhancement with AI', category: 'Enhancement', status: 'implemented', description: 'Improve existing script with AI assistance' },
     { id: 7, name: 'Basic Video Export', category: 'Export', status: 'implemented', description: 'Export recording as video file' },
     { id: 8, name: 'Project Save/Load', category: 'Management', status: 'implemented', description: 'Persist and retrieve projects' },
-    { id: 9, name: 'Voice Selection', category: 'TTS', status: 'implemented', description: 'Choose from available TTS voices' },
-    { id: 10, name: 'Script Preview', category: 'Review', status: 'implemented', description: 'Preview script with TTS before recording' },
+    { id: 61, name: 'Recording → Mind → Script', category: 'Vibe↔Mind', status: 'implemented', description: 'Bidirectional: Analyze recording with Mind' },
+    { id: 62, name: 'PPT → Mind → Script', category: 'Vibe↔Mind', status: 'implemented', description: 'Bidirectional: Convert PPT via Mind AI' },
   ],
   p1: [
     { id: 11, name: 'Screen + Camera PiP Recording', category: 'Recording', status: 'partial', description: 'Picture-in-picture screen recording' },
     { id: 12, name: 'Multi-track Audio Mixing', category: 'Audio', status: 'implemented', description: 'Layer multiple audio tracks' },
     { id: 13, name: 'Background Music Integration', category: 'Audio', status: 'implemented', description: 'Add background music to recordings' },
-    { id: 14, name: 'Audio Ducking', category: 'Audio', status: 'partial', description: 'Auto-lower music during speech' },
-    { id: 15, name: 'Teleprompter Speed Control', category: 'Recording', status: 'implemented', description: 'Adjustable scroll speed' },
-    { id: 16, name: 'Recording Countdown', category: 'Recording', status: 'implemented', description: 'Countdown before recording starts' },
-    { id: 17, name: 'Pause/Resume Recording', category: 'Recording', status: 'implemented', description: 'Pause and continue recording' },
-    { id: 18, name: 'Knowledge Base RAG', category: 'AI', status: 'partial', description: 'Generate scripts from knowledge base' },
-    { id: 19, name: 'Multi-format Export', category: 'Export', status: 'partial', description: 'Export in MP4, WebM, MP3 formats' },
-    { id: 20, name: 'Project Templates', category: 'Templates', status: 'partial', description: 'Start from pre-built templates' },
+    { id: 81, name: 'One-Tap Mobile Record', category: 'Mobile-First', status: 'planned', description: '68% want mobile-first editing' },
+    { id: 83, name: 'Quick Templates (Social)', category: 'Mobile-First', status: 'planned', description: 'TikTok, Reels, Shorts presets' },
+    { id: 85, name: 'Social Integration', category: 'Mobile-First', status: 'planned', description: 'One-click multi-platform publish' },
+    { id: 90, name: 'Quick Clips Generator', category: 'Remix', status: 'planned', description: 'Auto-create shorts (82% creators want this)' },
+    { id: 101, name: 'Multi-Clip Timeline', category: 'Remix', status: 'planned', description: 'Drag-drop clip assembly' },
+    { id: 107, name: 'Template-Based Assembly', category: 'Remix', status: 'planned', description: 'Pre-built remix templates' },
+    { id: 108, name: 'Highlight Reel Generator', category: 'Remix', status: 'planned', description: 'AI identifies best moments' },
   ],
   p2: [
     { id: 21, name: 'Collaborative Script Editing', category: 'Collaboration', status: 'planned', description: 'Real-time multi-user editing' },
-    { id: 22, name: 'Script Version History', category: 'Versioning', status: 'planned', description: 'Track and revert script changes' },
-    { id: 23, name: 'Recording Analytics', category: 'Analytics', status: 'partial', description: 'Track recording metrics and quality' },
-    { id: 24, name: 'Batch TTS Generation', category: 'Automation', status: 'planned', description: 'Generate multiple TTS tracks at once' },
-    { id: 25, name: 'Video Timeline Editor', category: 'Editing', status: 'planned', description: 'Non-linear video editing interface' },
-    { id: 26, name: 'Segment Re-recording', category: 'Editing', status: 'planned', description: 'Re-record specific segments only' },
-    { id: 27, name: 'Quality Review Workflow', category: 'Review', status: 'planned', description: 'Formal review and approval process' },
-    { id: 28, name: 'Performance Dashboard', category: 'Analytics', status: 'partial', description: 'View content performance metrics' },
-    { id: 29, name: 'API/Webhook Integration', category: 'Integration', status: 'planned', description: 'External system integration' },
-    { id: 30, name: 'Custom Voice Profiles', category: 'TTS', status: 'planned', description: 'Save and reuse TTS configurations' },
+    { id: 82, name: 'Offline Recording', category: 'Mobile-First', status: 'planned', description: '54% need offline capability' },
+    { id: 84, name: 'Voice-First Editing', category: 'Mobile-First', status: 'planned', description: '47% want voice commands' },
+    { id: 89, name: 'Location Story Mode', category: 'Traveler', status: 'planned', description: 'Geo-tagged travel content' },
+    { id: 91, name: 'Traveler Kit', category: 'Segment', status: 'planned', description: 'Auto-edit trip footage (76% want this)' },
+    { id: 102, name: 'AI Auto-Arrange', category: 'Remix', status: 'planned', description: 'AI sequences clips intelligently' },
+    { id: 103, name: 'Smart Transitions', category: 'Remix', status: 'planned', description: 'Context-aware transition effects' },
+    { id: 104, name: 'Music Sync Assembly', category: 'Remix', status: 'planned', description: 'Beat-matched clip cutting' },
+    { id: 105, name: 'Remix Public Content', category: 'Remix', status: 'planned', description: 'Remix with attribution' },
+    { id: 109, name: 'Before/After Split Screen', category: 'Remix', status: 'planned', description: 'Side-by-side comparison' },
   ],
   p3: [
-    { id: 31, name: 'Multi-language Script Translation', category: 'Localization', status: 'planned', description: 'Translate scripts to multiple languages' },
-    { id: 32, name: 'Voice Cloning', category: 'TTS', status: 'planned', description: 'Clone custom voices for TTS' },
-    { id: 33, name: 'Branching Video Scenarios', category: 'Advanced', status: 'planned', description: 'Interactive branching videos' },
-    { id: 34, name: 'A/B Testing Scripts', category: 'Optimization', status: 'planned', description: 'Test different script versions' },
+    { id: 32, name: 'Voice Cloning', category: 'TTS', status: 'planned', description: 'Clone custom voices (61% want this)' },
     { id: 35, name: 'Accessibility Compliance', category: 'Compliance', status: 'planned', description: 'Auto-generate captions, transcripts' },
-    { id: 36, name: 'HIPAA-Compliant Recordings', category: 'Compliance', status: 'planned', description: 'Healthcare-compliant video storage' },
-    { id: 37, name: 'Legal Review Gate', category: 'Compliance', status: 'planned', description: 'Legal approval workflow' },
-    { id: 38, name: 'Regulatory Audit Trail', category: 'Compliance', status: 'planned', description: 'Complete audit logging' },
-    { id: 39, name: 'YouTube Direct Upload', category: 'Distribution', status: 'planned', description: 'Publish directly to YouTube' },
-    { id: 40, name: 'LMS Integration', category: 'Distribution', status: 'planned', description: 'Integrate with learning systems' },
+    { id: 36, name: 'HIPAA-Compliant Recordings', category: 'Healthcare', status: 'planned', description: '94% want HIPAA under $100/mo' },
+    { id: 86, name: 'Product Demo Mode', category: 'SMB', status: 'planned', description: '71% want quick product templates' },
+    { id: 87, name: 'Testimonial Collector', category: 'SMB', status: 'planned', description: 'Customer video testimonials' },
+    { id: 88, name: 'Lesson Builder', category: 'Education', status: 'planned', description: '69% want AI lesson scripts' },
+    { id: 92, name: 'Product Scanner', category: 'SMB', status: 'planned', description: 'Scan product → auto-demo video' },
+    { id: 93, name: 'Patient Education', category: 'Healthcare', status: 'planned', description: 'Multi-language patient videos' },
+    { id: 94, name: 'Training Module Builder', category: 'Education', status: 'planned', description: 'Corporate training creator' },
+    { id: 95, name: 'Multi-Language Quick Dub', category: 'Localization', status: 'planned', description: 'One-click 50+ language dubbing' },
   ],
   p4: [
     { id: 41, name: 'AI Avatar Presenter', category: 'AI Advanced', status: 'planned', description: 'AI-generated video presenter' },
     { id: 42, name: 'Real-time Translation Dubbing', category: 'Localization', status: 'planned', description: 'Live translation with lip-sync' },
-    { id: 43, name: 'Sentiment Analysis Review', category: 'AI', status: 'planned', description: 'Analyze script emotional tone' },
-    { id: 44, name: 'Auto-generated B-roll', category: 'AI', status: 'planned', description: 'AI suggests relevant imagery' },
-    { id: 45, name: 'Interactive Video Elements', category: 'Advanced', status: 'planned', description: 'Quizzes, CTAs in video' },
-    { id: 46, name: 'Mobile Recording App', category: 'Platform', status: 'planned', description: 'Record from mobile devices' },
-    { id: 47, name: 'Offline Mode', category: 'Platform', status: 'planned', description: 'Work without internet' },
+    { id: 46, name: 'Mobile Recording App', category: 'Platform', status: 'planned', description: 'Native mobile app' },
     { id: 48, name: 'White-label Solution', category: 'Enterprise', status: 'planned', description: 'Custom branded solution' },
     { id: 49, name: 'Multi-tenant Workspaces', category: 'Enterprise', status: 'planned', description: 'Organization isolation' },
-    { id: 50, name: 'Advanced Analytics AI', category: 'Analytics', status: 'planned', description: 'AI-powered insights' },
+    { id: 96, name: 'Influencer Analytics', category: 'Creator', status: 'planned', description: 'Content performance insights' },
+    { id: 97, name: 'Franchise Templates', category: 'Enterprise', status: 'planned', description: 'Brand-locked templates' },
+    { id: 98, name: 'Team Review Mobile', category: 'Enterprise', status: 'planned', description: 'Mobile approval workflows' },
+    { id: 99, name: 'Offline Compliance', category: 'Healthcare', status: 'planned', description: 'Offline HIPAA-compliant mode' },
+    { id: 110, name: 'Clip Library Sharing', category: 'Collaboration', status: 'planned', description: 'Team clip asset library' },
   ],
 };
 
+// Market-driven priority configuration
 const priorityConfig = {
-  p0: { label: 'P0 - Core', icon: Zap, description: 'Essential MVP features', color: colors.p0 },
-  p1: { label: 'P1 - Enhanced', icon: Layers, description: 'Important enhancements', color: colors.p1 },
-  p2: { label: 'P2 - Advanced', icon: TrendingUp, description: 'Advanced capabilities', color: colors.p2 },
-  p3: { label: 'P3 - Differentiator', icon: Target, description: 'Competitive features', color: colors.p3 },
-  p4: { label: 'P4 - Future', icon: Shield, description: 'Future roadmap', color: colors.p4 },
+  p0: { label: 'P0 - Core', icon: Zap, description: 'Essential MVP features', color: colors.p0, marketDriver: 'Foundation' },
+  p1: { label: 'P1 - Mobile & Remix', icon: Layers, description: 'Mobile-first + clip assembly', color: colors.p1, marketDriver: '68% want mobile' },
+  p2: { label: 'P2 - Advanced', icon: TrendingUp, description: 'Offline + AI features', color: colors.p2, marketDriver: '54% need offline' },
+  p3: { label: 'P3 - Segment', icon: Target, description: 'Segment-specific features', color: colors.p3, marketDriver: 'SMB, Edu, Healthcare' },
+  p4: { label: 'P4 - Enterprise', icon: Shield, description: 'Enterprise & compliance', color: colors.p4, marketDriver: 'White-label, HIPAA' },
 };
 
 export const GenieStudioScenarioMapDiagram = () => {
@@ -237,8 +238,8 @@ export const GenieStudioScenarioMapDiagram = () => {
             <div className="flex items-center gap-3">
               <Target className="h-8 w-8 text-muted-foreground" />
               <div>
-                <CardTitle className="text-2xl text-foreground">Scenario Priority Map</CardTitle>
-                <p className="text-muted-foreground text-sm">60 Scenarios across P0-P4 priorities</p>
+              <CardTitle className="text-2xl text-foreground">Scenario Priority Map</CardTitle>
+                <p className="text-muted-foreground text-sm">110 Scenarios | Mobile-First + Segments + Remix | Market-Driven Priorities</p>
               </div>
             </div>
             <div className="flex gap-2">

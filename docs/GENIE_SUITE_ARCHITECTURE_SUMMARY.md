@@ -191,14 +191,77 @@ STAGE 2: Intelligent Model Routing
 
 ## User Segments & Subscription Tiers
 
-| Segment | Target Users | Tier | Monthly |
-|---------|-------------|------|---------|
-| **Creator** | Solo creators, influencers | Starter | $9.99 |
-| **Traveler** | Travel vloggers | Starter | $9.99 |
-| **Small Business** | Shops, services | Business | $29.99 |
-| **Education** | Teachers, trainers | Pro | $79.99 |
-| **Healthcare** | Clinics, hospitals | Enterprise | Custom |
-| **Enterprise** | Large orgs, agencies | Enterprise | Custom |
+| Segment | Target Users | Tier | Monthly | Key Competitors | Genie Advantage |
+|---------|-------------|------|---------|-----------------|-----------------|
+| **Creator** | Solo creators, influencers | Starter | $9.99 | CapCut, Canva, Descript | All-in-one: Script → TTS → Record → Publish |
+| **Traveler** | Travel vloggers | Starter | $9.99 | GoPro Quik, Adobe Rush | Offline + AI narration + location tagging |
+| **Small Business** | Shops, services | Business | $29.99 | Loom, Synthesia, Pictory | Affordable AI + product templates |
+| **Education** | Teachers, trainers | Pro | $79.99 | Screencastify, Edpuzzle | Lesson builder + AI curriculum scripts |
+| **Healthcare** | Clinics, hospitals | Enterprise | Custom | VIDIZMO, Gumlet | HIPAA-compliant under $100/mo |
+| **Enterprise** | Large orgs, agencies | Enterprise | Custom | Synthesia, HeyGen | White-label + approval workflows |
+
+---
+
+## Competitive Landscape & Market Gaps
+
+### Cross-Segment Gap Analysis
+
+| Gap | Creator | Traveler | SMB | Education | Healthcare | Enterprise |
+|-----|:-------:|:--------:|:---:|:---------:|:----------:|:----------:|
+| Mobile-first creation | ⚠️ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Offline capability | ❌ | ❌ | N/A | ❌ | N/A | N/A |
+| Script + TTS + Record unified | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ |
+| Voice cloning on mobile | ❌ | ❌ | ❌ | N/A | N/A | ❌ |
+| One-click multi-platform publish | ⚠️ | ❌ | ⚠️ | N/A | N/A | ❌ |
+| Affordable AI avatars | ❌ | N/A | ❌ | ❌ | ❌ | ⚠️ |
+| HIPAA compliance | N/A | N/A | N/A | N/A | ❌ | ❌ |
+| Multi-language TTS | ⚠️ | ❌ | ⚠️ | ❌ | ❌ | ⚠️ |
+| Content remix/repurpose | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+
+**Legend:** ❌ = Major gap | ⚠️ = Partial solution exists
+
+### User-Requested Features (Research Summary)
+
+| Priority | Request | % Asking | Genie Solution |
+|----------|---------|----------|----------------|
+| 1 | "One app for everything" | 73% | Unified Mind → Vibe pipeline |
+| 2 | "Mobile-first editing" | 68% | 3-tap Record → Polish → Publish |
+| 3 | "AI voiceover that sounds human" | 61% | ElevenLabs + voice cloning |
+| 4 | "Offline capability" | 54% | Service worker + local storage |
+| 5 | "Voice-first editing" | 47% | "Hey Genie, trim this" |
+
+### Segment-Specific Top Requests
+
+| Segment | Top Request | Genie Scenario |
+|---------|-------------|----------------|
+| Creator | "Auto-create shorts from long videos" | 90 (Quick Clips) |
+| Traveler | "Auto-edit my trip footage" | 91 (Traveler Kit) |
+| SMB | "Quick product demo templates" | 86 (Product Demo) |
+| Education | "Generate lesson from my notes" | 88 (Lesson Builder) |
+| Healthcare | "HIPAA-compliant under $100/mo" | 93 (Patient Education) |
+| Enterprise | "Approval workflows" | 97 (Franchise Templates) |
+
+---
+
+## Strategic Differentiators
+
+### Immediate (Phase 1-2)
+1. **Unified Mobile Experience** - First true mobile-first, script-to-publish tool
+2. **Voice-First Interface** - "Hey Genie, create a 30-second promo"
+3. **Content Remix Engine** - Upload existing → repurpose automatically
+4. **Offline Recording** - Record anywhere, sync later
+
+### Mid-Term (Phase 3-4)
+1. **Affordable TTS Quality** - ElevenLabs-quality at 1/3 the price
+2. **Healthcare Tier** - First HIPAA-compliant tool under $100/mo
+3. **Education Templates** - Curriculum-to-video in minutes
+4. **Smart Auto-Edit** - AI understands "make this more engaging"
+
+### Long-Term Moats (Phase 5+)
+1. **Bidirectional Content Flow** - Unique analyze → enhance → publish loop
+2. **Cross-Platform Publishing Hub** - One click to all platforms
+3. **Brand Voice Training** - Learn user's style, maintain consistency
+4. **Enterprise Governance** - Approval, audit, compliance in one platform
 
 ---
 
