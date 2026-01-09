@@ -1372,7 +1372,7 @@ const CurrentImplementationSlide = () => (
     >
       {[
         { icon: Eye, title: "Auto-Detection", desc: "Zero config document classification", color: "cyan" },
-        { icon: PenTool, title: "Inline Editing", desc: "Edit extracted fields with drug lookup", color: "violet" },
+        { icon: PenTool, title: "Inline Editing", desc: "Extracted text is editable with real-time drug lookup", color: "violet" },
         { icon: Shield, title: "Validation", desc: "Healthcare-specific field validation", color: "emerald" },
         { icon: Database, title: "Export", desc: "JSON, FHIR, CSV output formats", color: "orange" },
       ].map((item, i) => (
@@ -2623,7 +2623,7 @@ export const DocumentProcessingPresentation: React.FC<DocumentProcessingPresenta
       interval = setInterval(() => {
         setDirection(1);
         setCurrentSlide((prev) => (prev + 1) % documentProcessingSlides.length);
-      }, 12000);
+      }, 18000);
     }
     return () => clearInterval(interval);
   }, [isAutoplay]);
