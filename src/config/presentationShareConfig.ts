@@ -39,7 +39,7 @@ export const PRESENTATION_SHARE_CONFIGS: Record<string, PresentationShareConfig>
     title: 'AI Document Processing Platform | Genie AI',
     description: 'Revolutionize your document processing with multi-model AI. 95%+ accuracy, 75x faster processing, 99% cost reduction.',
     ogImage: 'og-document-processing.png',
-    presentationPath: '/public/presentation/document-processing',
+    presentationPath: '/presentation/document-processing',
     media: {
       type: 'image',
       url: 'og-document-processing.png',
