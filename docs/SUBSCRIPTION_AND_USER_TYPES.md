@@ -1,42 +1,64 @@
 # Subscription & User Types Documentation
 
-> **Document Version:** 1.0.0  
-> **Last Updated:** 2026-01-05  
-> **Status:** Planning Phase - Not Yet Implemented
+> **Document Version:** 2.0.0  
+> **Last Updated:** 2026-01-09  
+> **Status:** Planning Phase - Updated with User Segments
 
 ---
 
 ## Overview
 
-This document outlines the subscription tiers, user types, account structures, and module access configurations for the multi-tenant SaaS implementation.
+This document outlines the subscription tiers, user segments, account structures, and module access configurations for the multi-tenant SaaS implementation. Updated to include mobile-first features and segment-specific offerings.
 
 ---
 
-## 1. Subscription Tiers
+## 1. User Segments
 
-| Tier | Description | Target Users | Pricing Model |
-|------|-------------|--------------|---------------|
-| **Free** | Limited features, trial period | Individuals exploring the platform | $0/month |
-| **Starter** | Core modules, limited usage | Small practices, solo practitioners | $29-49/month |
-| **Professional** | Full modules, higher limits | Medium practices, teams | $99-199/month |
-| **Enterprise** | All features, custom limits, SLA | Large organizations, hospitals | Custom pricing |
-| **Beta** | Full access, no billing | Current dev users, testers | N/A (internal) |
+| Segment | Target Users | Primary Use Case | Recommended Tier |
+|---------|-------------|------------------|------------------|
+| **Creator** | Solo content creators, influencers | Quick record, AI edit, social publish | Starter |
+| **Traveler** | Travel vloggers, adventurers | Offline recording, location tagging, story templates | Starter |
+| **Small Business** | Shops, restaurants, services | Product demos, testimonials, marketing videos | Business |
+| **Education** | Teachers, trainers, tutors | Lesson recording, screen share, quiz integration | Pro |
+| **Healthcare** | Clinics, patient education | HIPAA compliant, PHI redaction, accessibility | Enterprise |
+| **Enterprise** | Large orgs, agencies | Multi-user, white-label, compliance, SLA | Enterprise |
+
+---
+
+## 2. Subscription Tiers
+
+| Tier | Monthly | Annual | Description | Target Segments |
+|------|---------|--------|-------------|-----------------|
+| **Free** | $0 | $0 | Limited trial, watermarked | Exploring platform |
+| **Starter** | $9.99 | $95.90 | Core features, unlimited recording | Creators, Travelers |
+| **Business** | $29.99 | $287.90 | Team features, product demos | Small Business |
+| **Pro** | $79.99 | $767.90 | Full studio, education tools | Education, Agencies |
+| **Enterprise** | Custom | Custom | Compliance, white-label, SLA | Healthcare, Large Orgs |
+| **Beta** | $0 | N/A | Full access (current dev users) | Internal testing |
 
 ### Tier Feature Matrix
 
 ```
-Feature                    | Free | Starter | Pro  | Enterprise | Beta
----------------------------|------|---------|------|------------|------
-Genie AI Conversations     | 10   | 100     | 1000 | Unlimited  | Unlimited
-Document Processing        | ❌   | ✅      | ✅   | ✅         | ✅
-Recording Studio           | ❌   | ✅      | ✅   | ✅         | ✅
-Genie Spark               | ❌   | ❌      | ✅   | ✅         | ✅
-Multi-Agent Builder       | ❌   | ❌      | ✅   | ✅         | ✅
-API Access                | ❌   | ❌      | ✅   | ✅         | ✅
-Custom Integrations       | ❌   | ❌      | ❌   | ✅         | ✅
-White-labeling            | ❌   | ❌      | ❌   | ✅         | ✅
-Priority Support          | ❌   | ❌      | ✅   | ✅         | ✅
-SLA Guarantee             | ❌   | ❌      | ❌   | ✅         | ✅
+Feature                        | Free | Starter | Business | Pro  | Enterprise | Beta
+-------------------------------|------|---------|----------|------|------------|------
+Recording (videos/month)       | 3    | Unlimited| Unlimited| Unlimited | Unlimited | Unlimited
+Watermark                      | Yes  | No      | No       | No   | No         | No
+AI Script Generation           | 5    | 100     | 500      | 2000 | Unlimited  | Unlimited
+TTS Voice Options              | 2    | 10      | 20       | All  | All+Clone  | Unlimited
+Quick Templates                | 3    | 20      | 50       | All  | All+Custom | Unlimited
+Social Publishing              | ❌   | ✅      | ✅       | ✅   | ✅         | ✅
+Offline Recording              | ❌   | ✅      | ✅       | ✅   | ✅         | ✅
+Multi-Clip Timeline            | ❌   | ✅      | ✅       | ✅   | ✅         | ✅
+Remix & Assembly               | ❌   | Basic   | Full     | Full | Full       | Unlimited
+Product Demo Mode              | ❌   | ❌      | ✅       | ✅   | ✅         | ✅
+Testimonial Collector          | ❌   | ❌      | ✅       | ✅   | ✅         | ✅
+Lesson Builder                 | ❌   | ❌      | ❌       | ✅   | ✅         | ✅
+Training Modules               | ❌   | ❌      | ❌       | ✅   | ✅         | ✅
+Team Members                   | 1    | 1       | 3        | 10   | Unlimited  | Unlimited
+HIPAA Compliance               | ❌   | ❌      | ❌       | ❌   | ✅         | ✅
+White-label                    | ❌   | ❌      | ❌       | ❌   | ✅         | ✅
+API Access                     | ❌   | ❌      | ❌       | ✅   | ✅         | ✅
+Priority Support               | ❌   | ❌      | ✅       | ✅   | ✅+SLA     | ✅
 ```
 
 ---

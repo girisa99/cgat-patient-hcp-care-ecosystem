@@ -678,33 +678,243 @@ Week 4-6: Phase 4 (Scenarios 79-80)
 
 ---
 
+## NEW: Category N - Mobile-First Experience (Scenarios 81-90)
+
+**Added: 2026-01-09** | **Priority: P0-P2** | Critical for mobile users
+
+### Mobile Recording Flow
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│                    MOBILE RECORDING FLOW                        │
+│                  "Record → Polish → Publish"                    │
+└────────────────────────────────────────────────────────────────┘
+
+Step 1: RECORD (One-tap)
+├── Camera recording (selfie/rear)
+├── Screen recording
+├── Voice-only recording
+└── Import existing media
+
+Step 2: POLISH (AI-assisted)
+├── Auto-transcription
+├── AI enhancement (captions, cuts)
+├── Voice/music overlay
+└── Template application
+
+Step 3: PUBLISH (Multi-platform)
+├── Export to device
+├── Share to social platforms
+├── Schedule for later
+└── Save to library
+```
+
+| # | Scenario Name | Segment | Description | Priority | Status |
+|---|---------------|---------|-------------|----------|--------|
+| 81 | **One-Tap Record** | All | Single button to start camera/screen/voice recording | P0 | ⏳ Planned |
+| 82 | **Offline Recording** | Traveler | Record without internet, auto-sync when connected | P1 | ⏳ Planned |
+| 83 | **Quick Templates** | Creator | Pre-built templates for TikTok, Reels, Shorts, Stories | P1 | ⏳ Planned |
+| 84 | **Voice-First Editing** | All | Voice commands: "Add music", "Remove noise", "Trim end" | P2 | ⏳ Planned |
+| 85 | **Social Integration** | Creator | Direct publish to YouTube, TikTok, Instagram, LinkedIn | P1 | ⏳ Planned |
+| 86 | **Product Demo Mode** | SMB | Guided product showcase with callouts and annotations | P1 | ⏳ Planned |
+| 87 | **Testimonial Collector** | SMB | Customer review capture with digital release forms | P2 | ⏳ Planned |
+| 88 | **Lesson Builder** | Education | Screen + camera + annotations + quiz integration | P1 | ⏳ Planned |
+| 89 | **Location Story** | Traveler | GPS tagging + auto-map overlay + travel templates | P2 | ⏳ Planned |
+| 90 | **Quick Clips** | Creator | AI-generate 15s, 30s, 60s cuts from longer videos | P1 | ⏳ Planned |
+
+---
+
+## NEW: Category O - Segment-Specific Features (Scenarios 91-100)
+
+**Added: 2026-01-09** | User segment specialization
+
+### User Segment Matrix
+
+| Segment | Target Users | Key Features | Recommended Tier |
+|---------|-------------|--------------|------------------|
+| **Creator** | Solo content creators, influencers | Quick record, AI edit, social publish | Starter ($9.99) |
+| **Traveler** | Travel vloggers, adventurers | Offline recording, location tagging, story templates | Starter ($9.99) |
+| **Small Business** | Shops, restaurants, services | Product demos, testimonials, marketing videos | Business ($29.99) |
+| **Education** | Teachers, trainers, tutors | Lesson recording, screen share, quiz integration | Pro ($79.99) |
+| **Healthcare** | Clinics, patient education | HIPAA compliant, PHI redaction, accessibility | Enterprise |
+| **Enterprise** | Large orgs, agencies | Multi-user, white-label, compliance, SLA | Enterprise |
+
+| # | Scenario Name | Segment | Description | Priority | Status |
+|---|---------------|---------|-------------|----------|--------|
+| 91 | **Traveler Kit** | Traveler | Preset filters, travel music library, map overlays | P2 | ⏳ Planned |
+| 92 | **Menu/Product Scanner** | SMB | Scan menu/product → Auto-generate promo video | P2 | ⏳ Planned |
+| 93 | **Patient Education Templates** | Healthcare | HIPAA templates, consent workflow, accessibility | P3 | ⏳ Planned |
+| 94 | **Training Module Builder** | Education | Quiz + video + certificate generation | P2 | ⏳ Planned |
+| 95 | **Multi-Language Quick Dub** | All | One-tap translate + voice dub in 50+ languages | P2 | ⏳ Planned |
+| 96 | **Influencer Analytics** | Creator | Track engagement across social platforms | P3 | ⏳ Planned |
+| 97 | **Franchise Templates** | SMB | Branded templates locked for franchise consistency | Enterprise | ⏳ Planned |
+| 98 | **Team Review Mobile** | Enterprise | Mobile approval workflow with push notifications | P2 | ⏳ Planned |
+| 99 | **Offline Compliance Mode** | Healthcare | Record with PHI flags, review when online | P3 | ⏳ Planned |
+| 100 | **Story Series** | Creator | Multi-part stories with auto-linking & episode UI | P2 | ⏳ Planned |
+
+---
+
+## NEW: Category P - Remix & Clip Assembly (Scenarios 101-110)
+
+**Added: 2026-01-09** | **Priority: P1-P2** | Creative editing & sharing
+
+### Remix & Assembly Flow
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│                    REMIX & CLIP ASSEMBLY                        │
+└────────────────────────────────────────────────────────────────┘
+
+SOURCE CLIPS                    ASSEMBLY                    OUTPUT
+┌──────────┐                ┌─────────────┐              ┌──────────┐
+│ Clip 1   │───┐            │  Timeline   │              │ Combined │
+├──────────┤   │            │  Editor     │              │  Video   │
+│ Clip 2   │───┼────────────►  Drag/Drop  ├─────────────►├──────────┤
+├──────────┤   │            │  Trim/Split │              │ Remixed  │
+│ Clip 3   │───┘            │  Transitions│              │ Content  │
+└──────────┘                └─────────────┘              └──────────┘
+      │                            │
+      ▼                            ▼
+┌──────────────────────────────────────────────────────────────────┐
+│ AI FEATURES: Auto-arrange, Smart transitions, Music sync,       │
+│              Scene detection, Highlight extraction               │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+| # | Scenario Name | Description | Priority | Status |
+|---|---------------|-------------|----------|--------|
+| 101 | **Multi-Clip Timeline** | Drag & drop multiple clips onto visual timeline | P1 | ⏳ Planned |
+| 102 | **AI Auto-Arrange** | AI analyzes clips and suggests optimal sequence | P2 | ⏳ Planned |
+| 103 | **Smart Transitions** | AI-suggested transitions (fade, slide, zoom) between clips | P2 | ⏳ Planned |
+| 104 | **Music Sync Assembly** | Auto-align clip cuts to music beats | P2 | ⏳ Planned |
+| 105 | **Remix Public Content** | Take shared/public content, remix with attribution | P2 | ⏳ Planned |
+| 106 | **Collaborative Remix** | Multiple users contribute clips to shared project | P2 | ⏳ Planned |
+| 107 | **Template-Based Assembly** | Pre-built assembly templates (Intro → Content → CTA → Outro) | P1 | ⏳ Planned |
+| 108 | **Highlight Reel Generator** | AI extracts best moments from multiple clips | P1 | ⏳ Planned |
+| 109 | **Before/After Split Screen** | Side-by-side or sequential before/after videos | P2 | ⏳ Planned |
+| 110 | **Clip Library Sharing** | Share clips across team/workspace for reuse | P2 | ⏳ Planned |
+
+---
+
+## Complete Implementation Status Summary
+
+### By Category
+
+| Category | Scenarios | Implemented | Partial | Planned | % Complete |
+|----------|-----------|-------------|---------|---------|------------|
+| A: Imagination → Production | 1-10 | 3 | 5 | 2 | 55% |
+| B: Upload → Production | 11-16 | 0 | 0 | 6 | 0% |
+| C: Video → Script → Enhance | 17-20 | 0 | 0 | 4 | 0% |
+| D: Record → Refine Loops | 21-24 | 0 | 0 | 4 | 0% |
+| E: Hybrid Cross-Studio | 25-32 | 0 | 0 | 8 | 0% |
+| F: Generation & Automation | 33-42 | 0 | 0 | 10 | 0% |
+| G: Compliance & Legal | 43-46 | 0 | 0 | 4 | 0% |
+| H: Recovery & Error | 47-50 | 0 | 0 | 4 | 0% |
+| I: Multi-Language | 51-54 | 0 | 0 | 4 | 0% |
+| J: Collaboration | 55-58 | 0 | 0 | 4 | 0% |
+| K: Versioning & Archival | 59-60 | 0 | 1 | 1 | 25% |
+| L: Vibe ↔ Mind Bidirectional | 61-65 | 5 | 0 | 0 | **100%** |
+| M: Commercialization | 66-80 | 0 | 0 | 15 | 0% |
+| **N: Mobile-First** | 81-90 | 0 | 0 | 10 | 0% |
+| **O: Segment-Specific** | 91-100 | 0 | 0 | 10 | 0% |
+| **P: Remix & Clip Assembly** | 101-110 | 0 | 0 | 10 | 0% |
+| **TOTAL** | **110** | **8** | **6** | **96** | **13%** |
+
+### By Priority
+
+| Priority | Count | Implemented | Partial | Planned | Focus |
+|----------|-------|-------------|---------|---------|-------|
+| **P0 - Core** | 18 | 8 | 5 | 5 | MVP Launch |
+| **P0 - Commercialization** | 5 | 0 | 0 | 5 | Monetization |
+| **P1 - Essential** | 28 | 0 | 1 | 27 | Production Ready |
+| **P2 - Important** | 35 | 0 | 0 | 35 | UX Polish |
+| **P3 - Differentiators** | 14 | 0 | 0 | 14 | Competitive Edge |
+| **P4 - Future** | 10 | 0 | 0 | 10 | Long-term |
+
+### By User Segment
+
+| Segment | Key Scenarios | Tier | Status |
+|---------|---------------|------|--------|
+| **All Users** | 1-10, 81, 84 | Free/Starter | 55% Core |
+| **Creator** | 83, 85, 90, 96, 100 | Starter | 0% |
+| **Traveler** | 82, 89, 91 | Starter | 0% |
+| **Small Business** | 86, 87, 92, 97 | Business | 0% |
+| **Education** | 88, 94 | Pro | 0% |
+| **Healthcare** | 43-46, 93, 99 | Enterprise | 0% |
+| **Enterprise** | 55-58, 97, 98, 110 | Enterprise | 0% |
+
+---
+
+## Subscription Tier Alignment
+
+### Tier Feature Access
+
+```
+Feature                        | Free | Starter | Business | Pro  | Enterprise
+-------------------------------|------|---------|----------|------|------------
+Recording (videos/month)       | 3    | Unlimited| Unlimited| Unlimited | Unlimited
+Watermark                      | Yes  | No      | No       | No   | No
+AI Script Generation           | 5    | 100     | 500      | 2000 | Unlimited
+TTS Voice Options              | 2    | 10      | 20       | All  | All + Clone
+Social Publishing              | ❌   | ✅      | ✅       | ✅   | ✅
+Quick Templates                | 3    | 20      | 50       | All  | All + Custom
+Offline Recording              | ❌   | ✅      | ✅       | ✅   | ✅
+Product Demo Mode              | ❌   | ❌      | ✅       | ✅   | ✅
+Multi-Clip Timeline            | ❌   | ✅      | ✅       | ✅   | ✅
+Remix & Assembly               | ❌   | Basic   | Full     | Full | Full
+Team Members                   | 1    | 1       | 3        | 10   | Unlimited
+Lesson Builder                 | ❌   | ❌      | ❌       | ✅   | ✅
+HIPAA Compliance               | ❌   | ❌      | ❌       | ❌   | ✅
+White-label                    | ❌   | ❌      | ❌       | ❌   | ✅
+API Access                     | ❌   | ❌      | ❌       | ✅   | ✅
+Priority Support               | ❌   | ❌      | ✅       | ✅   | ✅ + SLA
+```
+
+### Pricing Model
+
+| Tier | Monthly | Annual (20% off) | Target Segment |
+|------|---------|------------------|----------------|
+| **Free** | $0 | $0 | Trial users |
+| **Starter** | $9.99 | $95.90 | Creators, Travelers |
+| **Business** | $29.99 | $287.90 | SMB, Freelancers |
+| **Pro** | $79.99 | $767.90 | Agencies, Education |
+| **Enterprise** | Custom | Custom | Healthcare, Large Orgs |
+
+---
+
 ## Implementation Roadmap
 
-### Phase 1: P0 Core (Weeks 1-4)
-- Scenarios 1-4, 7-10
-- Basic script generation
-- Simple recording workflow
-- Essential export formats
+### Phase 1: P0 Core (Weeks 1-4) - MOSTLY COMPLETE
+- ✅ Scenarios 1-4, 7-10 (55% done)
+- ✅ Scenarios 61-65 Vibe ↔ Mind (100% done)
+- ⏳ Basic mobile recording (Scenario 81)
+- ⏳ Essential export formats
 
 ### Phase 2: P1 Essential (Weeks 5-8)
 - Scenarios 5-6, 11-16, 21-24
 - Voice cloning integration
-- Upload and transform workflows
-- Recording refinement loops
+- **Scenarios 83, 85, 90** - Quick templates, social, quick clips
+- **Scenarios 86, 88** - Product demo, lesson builder
+- **Scenarios 101, 107, 108** - Timeline, templates, highlight reel
 
 ### Phase 3: P2 Important (Weeks 9-12)
 - Scenarios 17-20, 25-32
-- Video to script reverse engineering
-- Cross-studio workflows
-- Version comparison tools
+- **Scenarios 82, 84, 89** - Offline, voice editing, location
+- **Scenarios 91-95, 100** - Segment features
+- **Scenarios 102-106, 109-110** - Advanced remix
 
 ### Phase 4: P3 Differentiators (Weeks 13-18)
-- Scenarios 33-46
-- Bulk generation
-- **Compliance & Legal (43-46)**
+- Scenarios 33-46 (Compliance & Legal)
+- **Scenarios 93, 96, 99** - Healthcare, analytics
 - Advanced automation
 
-### Phase 5: P4 Future (Weeks 19+)
+### Phase 5: Commercialization (Weeks 4-8 parallel)
+- Scenarios 66-80
+- Subscription infrastructure
+- Landing page & pricing
+- Stripe integration
+
+### Phase 6: P4 Future (Weeks 19+)
 - Scenarios 47-60
 - Recovery systems
 - Multi-language support
@@ -717,20 +927,31 @@ Week 4-6: Phase 4 (Scenarios 79-80)
 ### Required Services
 | Service | Purpose | Scenarios |
 |---------|---------|-----------|
-| Lovable AI | Script generation, analysis | All AI scenarios |
-| ElevenLabs | TTS, voice cloning | 1-10, 23, 52 |
-| FFmpeg.wasm | Video processing | All video output |
+| Universal AI | Script generation, analysis, routing | All AI scenarios |
+| ElevenLabs/OpenAI | TTS, voice cloning | 1-10, 23, 52, 95 |
+| FFmpeg.wasm | Video processing, assembly | All video output, 101-110 |
 | Whisper | Transcription | 10, 17-20, 46 |
 | MediaRecorder API | Recording | All recording scenarios |
 | Web Audio API | Audio mixing | All audio scenarios |
+| Capacitor | Mobile native features | 81-90 (mobile) |
+| Service Workers | Offline support | 82, 99 |
+| Geolocation API | Location features | 89 |
 
-### Database Tables
-- `genie_projects` - Project management
-- `genie_scripts` - Script storage and versions
-- `genie_recordings` - Recording metadata
-- `genie_assets` - Generated and uploaded assets
-- `genie_compliance_logs` - Compliance audit trail
-- `genie_reviews` - Legal review workflow
+### Database Tables (Existing + Needed)
+| Table | Status | Purpose |
+|-------|--------|---------|
+| `genie_projects` | ✅ Exists | Project management |
+| `genie_scripts` | ✅ Exists | Script storage and versions |
+| `genie_recordings` | ✅ Exists | Recording metadata |
+| `genie_assets` | ✅ Exists | Generated and uploaded assets |
+| `subscription_tiers` | ⏳ Needed | Tier definitions |
+| `user_subscriptions` | ⏳ Needed | User subscription state |
+| `subscription_modules` | ⏳ Needed | Module access rules |
+| `subscription_usage` | ⏳ Needed | Usage tracking |
+| `genie_clips` | ⏳ Needed | Clip library for remix |
+| `genie_timelines` | ⏳ Needed | Multi-clip timeline projects |
+| `genie_compliance_logs` | ⏳ Needed | Compliance audit trail |
+| `genie_reviews` | ⏳ Needed | Legal review workflow |
 
 ---
 
@@ -742,8 +963,12 @@ Week 4-6: Phase 4 (Scenarios 79-80)
 | TTS Generation Quality | > 4.5/5 rating | User feedback |
 | Recording Success Rate | > 95% | Completed vs started |
 | Export Success Rate | > 99% | Successful exports |
+| Mobile Recording Time | < 3 taps to record | UX testing |
+| Clip Assembly Time | < 2 min for 5 clips | User testing |
 | Compliance Detection | > 98% accuracy | Audit validation |
 | User Satisfaction | > 4.0/5 | NPS surveys |
+| Conversion Rate | > 5% Free → Paid | Analytics |
+| Churn Rate | < 5% monthly | Subscription data |
 
 ---
 
@@ -753,24 +978,47 @@ Week 4-6: Phase 4 (Scenarios 79-80)
 - **Text Input:** 1, 3, 4, 6
 - **Image Generation:** 2, 4
 - **File Upload:** 7, 8, 11-16
-- **URL:** 9
-- **Recording:** 21-24
+- **URL:** 9, 64
+- **Recording:** 21-24, 61, 81-82
 - **Existing Video:** 17-20
+- **Multiple Clips:** 101-110
 
 ### By Output Type
-- **Video:** 1-2, 4-20, 33-40
-- **Script:** 3, 17, 51
+- **Video:** 1-2, 4-20, 33-40, 101-110
+- **Script:** 3, 17, 51, 61-65
 - **Audio:** 10, 15
-- **Multiple Formats:** 20, 39
+- **Multiple Formats:** 20, 39, 83, 90
 
 ### By AI Capability
-- **Script Generation:** 1, 2, 4, 7-9
+- **Script Generation:** 1, 2, 4, 7-9, 61-65
 - **Image Generation:** 2, 4, 37
-- **TTS:** 1, 2, 4-6, 23, 52
+- **TTS:** 1, 2, 4-6, 23, 52, 95
 - **Transcription:** 10, 17-20
-- **Translation:** 19, 51-53
-- **Analysis:** 41, 44-46
+- **Translation:** 19, 51-53, 95
+- **Analysis:** 41, 44-46, 102
+- **Assembly/Remix:** 101-110
+
+### By User Segment
+- **Creator:** 1-10, 83, 85, 90, 96, 100, 101-110
+- **Traveler:** 82, 89, 91
+- **SMB:** 86, 87, 92, 97
+- **Education:** 88, 94
+- **Healthcare:** 43-46, 93, 99
+- **Enterprise:** 55-58, 97, 98, 110
+
+---
+
+## Changelog
+
+| Date | Version | Changes |
+|------|---------|---------|
+| 2026-01-06 | 2.0 | Added Category L (Vibe ↔ Mind) and M (Commercialization) |
+| 2026-01-09 | 2.1 | Added Category N (Mobile-First), O (Segment-Specific), P (Remix & Clip Assembly) |
+| 2026-01-09 | 2.1 | Expanded from 80 to 110 scenarios |
+| 2026-01-09 | 2.1 | Added subscription tier alignment and pricing model |
+| 2026-01-09 | 2.1 | Updated implementation status summary |
 
 ---
 
 *Document maintained by Genie Studio Development Team*
+*Total Scenarios: 110 | Implemented: 8 | Partial: 6 | Planned: 96*
