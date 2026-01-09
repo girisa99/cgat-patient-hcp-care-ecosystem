@@ -426,12 +426,22 @@ const PublicPresentationPage = React.lazy(() => import('@/pages/PublicPresentati
 // Public routes wrapper - no auth required
 const PublicRoutes = () => (
   <Routes>
-    <Route path="/public/presentation/document-processing" element={
+    {/* Main public presentation route */}
+    <Route path="/presentation/document-processing" element={
       <Suspense fallback={<PageLoading message="Loading presentation..." />}>
         <PublicDocumentPresentation />
       </Suspense>
     } />
+    {/* Legacy route - redirect to new path */}
+    <Route path="/public/presentation/document-processing" element={
+      <Navigate to="/presentation/document-processing" replace />
+    } />
     <Route path="/public/presentation/:slug" element={
+      <Suspense fallback={<PageLoading message="Loading presentation..." />}>
+        <PublicPresentationPage />
+      </Suspense>
+    } />
+    <Route path="/presentation/:slug" element={
       <Suspense fallback={<PageLoading message="Loading presentation..." />}>
         <PublicPresentationPage />
       </Suspense>
@@ -444,7 +454,7 @@ const AppRouter = () => {
   const location = useLocation();
   
   // Check if this is a public route - render without auth
-  if (location.pathname.startsWith('/public/')) {
+  if (location.pathname.startsWith('/public/') || location.pathname.startsWith('/presentation/')) {
     return (
       <HelmetProvider>
         <PublicRoutes />
