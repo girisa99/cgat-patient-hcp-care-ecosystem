@@ -1714,8 +1714,8 @@ export function SmartContentPipeline({
               </div>
             )}
 
-            {/* Document, Audio: File Upload */}
-            {(contentType === 'document' || contentType === 'audio') && (
+            {/* Document, Audio, Video: File Upload */}
+            {(contentType === 'document' || contentType === 'audio' || contentType === 'video') && (
               <UploadZone 
                 getRootProps={getRootProps}
                 getInputProps={getInputProps}
