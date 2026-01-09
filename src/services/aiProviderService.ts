@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 // Universal AI provider types - supports all integrated AI services
-export type UniversalAIProviderType = 'openai' | 'claude' | 'gemini' | 'lovable' | 'stability' | 'huggingface';
+export type UniversalAIProviderType = 'openai' | 'claude' | 'gemini' | 'stability' | 'huggingface';
 
 export interface AIProvider {
   id: UniversalAIProviderType;
