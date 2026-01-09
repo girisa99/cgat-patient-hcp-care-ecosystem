@@ -1,7 +1,10 @@
 import { supabase } from '@/integrations/supabase/client';
 
+// Universal AI provider types - supports all integrated AI services
+export type UniversalAIProviderType = 'openai' | 'claude' | 'gemini' | 'lovable' | 'stability' | 'huggingface';
+
 export interface AIProvider {
-  id: 'openai' | 'claude' | 'gemini';
+  id: UniversalAIProviderType;
   name: string;
   models: string[];
   capabilities: string[];
@@ -10,13 +13,17 @@ export interface AIProvider {
 }
 
 export interface AIRequest {
-  provider: 'openai' | 'claude' | 'gemini';
+  provider: UniversalAIProviderType;
   model?: string;
   prompt: string;
   systemPrompt?: string;
   temperature?: number;
   maxTokens?: number;
   context?: any;
+  // Image generation parameters
+  imageGeneration?: boolean;
+  aspectRatio?: string;
+  style?: string;
 }
 
 export interface AIResponse {

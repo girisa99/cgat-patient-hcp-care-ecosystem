@@ -7,14 +7,37 @@ const corsHeaders = {
 };
 
 interface AIRequest {
-  provider: 'openai' | 'claude' | 'gemini';
+  provider: 'openai' | 'claude' | 'gemini' | 'lovable';
   model: string;
   prompt: string;
   systemPrompt?: string;
   temperature?: number;
   maxTokens?: number;
   action?: string;
+  // Image generation parameters
+  imageGeneration?: boolean;
+  aspectRatio?: string;
+  style?: string;
 }
+
+// Universal AI supported models registry
+const UNIVERSAL_AI_REGISTRY = {
+  llm: {
+    openai: ['gpt-5-2025-08-07', 'gpt-4.1-2025-04-14', 'o3-2025-04-16', 'o4-mini-2025-04-16', 'gpt-4o', 'gpt-4o-mini'],
+    claude: ['claude-opus-4-1-20250805', 'claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022'],
+    gemini: ['gemini-2.0-flash-exp', 'gemini-pro', 'gemini-1.5-pro', 'gemini-2.0-flash']
+  },
+  image: {
+    lovable: ['google/gemini-2.5-flash-image-preview', 'google/gemini-3-pro-image-preview'],
+    openai: ['dall-e-3', 'dall-e-2'],
+    stability: ['stable-diffusion-xl', 'stable-diffusion-3']
+  },
+  vision: {
+    openai: ['gpt-4o', 'o4-mini-2025-04-16'],
+    claude: ['claude-3-5-sonnet-20241022'],
+    gemini: ['gemini-1.5-pro-latest', 'gemini-2.0-flash-exp']
+  }
+};
 
 interface AIResponse {
   content: string;
@@ -31,9 +54,9 @@ serve(async (req) => {
   }
 
   try {
-    const { provider, model, prompt, systemPrompt, temperature = 0.7, maxTokens = 4000, action } = await req.json() as AIRequest;
+    const { provider, model, prompt, systemPrompt, temperature = 0.7, maxTokens = 4000, action, imageGeneration, aspectRatio, style } = await req.json() as AIRequest;
 
-    console.log(`Processing AI request - Provider: ${provider}, Model: ${model}, Action: ${action}`);
+    console.log(`[UniversalAI] Processing request - Provider: ${provider}, Model: ${model}, Action: ${action}, ImageGen: ${imageGeneration}`);
 
     // Lightweight actions that don't require full params
     if (action === 'health_check' || action === 'ping') {
@@ -44,6 +67,18 @@ serve(async (req) => {
         healthy: true, 
         success: true,
         provider: provider || 'system', 
+        registry: UNIVERSAL_AI_REGISTRY,
+        timestamp: new Date().toISOString() 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Return registry info
+    if (action === 'list_models') {
+      return new Response(JSON.stringify({ 
+        success: true,
+        registry: UNIVERSAL_AI_REGISTRY,
         timestamp: new Date().toISOString() 
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -51,23 +86,29 @@ serve(async (req) => {
     }
 
     // Validate required parameters for generation requests
-    if (!provider || !model || !prompt) {
-      throw new Error('Missing required parameters: provider, model, or prompt');
+    if (!provider || !prompt) {
+      throw new Error('Missing required parameters: provider or prompt');
     }
 
     let response;
+    
+    // Route to appropriate handler based on provider
     switch (provider) {
       case 'openai':
-        response = await callOpenAI(model, prompt, systemPrompt, temperature, maxTokens);
+        response = await callOpenAI(model || 'gpt-4o-mini', prompt, systemPrompt, temperature, maxTokens);
         break;
       case 'claude':
-        response = await callClaude(model, prompt, systemPrompt, temperature, maxTokens);
+        response = await callClaude(model || 'claude-3-5-haiku-20241022', prompt, systemPrompt, temperature, maxTokens);
         break;
       case 'gemini':
-        response = await callGemini(model, prompt, systemPrompt, temperature, maxTokens);
+        response = await callGemini(model || 'gemini-2.0-flash', prompt, systemPrompt, temperature, maxTokens);
+        break;
+      case 'lovable':
+        // Route through Lovable AI Gateway (for image generation or text)
+        response = await callLovableAI(model || 'google/gemini-2.5-flash', prompt, systemPrompt, imageGeneration, aspectRatio, style);
         break;
       default:
-        throw new Error(`Unsupported provider: ${provider}`);
+        throw new Error(`Unsupported provider: ${provider}. Available: openai, claude, gemini, lovable`);
     }
 
     const aiResponse: AIResponse = {
@@ -375,5 +416,102 @@ async function callGemini(model: string, prompt: string, systemPrompt?: string, 
   return {
     content: data.candidates[0].content.parts[0].text,
     usage: data.usageMetadata
+  };
+}
+
+/**
+ * Call Lovable AI Gateway (Universal AI connector for Gemini models)
+ * Supports both text generation and image generation (nano banana)
+ */
+async function callLovableAI(
+  model: string, 
+  prompt: string, 
+  systemPrompt?: string, 
+  imageGeneration?: boolean,
+  aspectRatio?: string,
+  style?: string
+) {
+  const apiKey = Deno.env.get('LOVABLE_API_KEY');
+  if (!apiKey) {
+    throw new Error('LOVABLE_API_KEY not configured. This is auto-provisioned in Lovable Cloud projects.');
+  }
+
+  // Determine if this is an image generation model
+  const isImageModel = imageGeneration || 
+    model.includes('image') || 
+    model.includes('nano-banana') ||
+    model === 'google/gemini-2.5-flash-image-preview' ||
+    model === 'google/gemini-3-pro-image-preview';
+
+  // Normalize model name
+  let targetModel = model;
+  if (model === 'gemini-nano-banana' || model === 'nano-banana') {
+    targetModel = 'google/gemini-2.5-flash-image-preview';
+  } else if (!model.startsWith('google/') && !model.startsWith('openai/')) {
+    // Default to flash for text generation
+    targetModel = 'google/gemini-2.5-flash';
+  }
+
+  console.log(`[UniversalAI-Lovable] Calling Lovable AI Gateway: model=${targetModel}, isImage=${isImageModel}`);
+
+  const fullPrompt = systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt;
+  
+  // For image generation, add safety guidance
+  const finalPrompt = isImageModel && style
+    ? `Create a ${style} style image: ${fullPrompt}. ${aspectRatio || '1:1'} aspect ratio. Professional, high quality. Safe for all audiences.`
+    : fullPrompt;
+
+  const requestBody: any = {
+    model: targetModel,
+    messages: [{ role: 'user', content: finalPrompt }],
+  };
+
+  // Add modalities for image generation
+  if (isImageModel) {
+    requestBody.modalities = ['image', 'text'];
+  }
+
+  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`[UniversalAI-Lovable] Error (${response.status}):`, errorText);
+    
+    if (response.status === 429) {
+      throw new Error('Rate limit exceeded. Please try again later or upgrade your plan.');
+    }
+    if (response.status === 402) {
+      throw new Error('API credits exhausted. Please add funds to your Lovable workspace.');
+    }
+    
+    throw new Error(`Lovable AI Gateway error: ${response.status} - ${errorText}`);
+  }
+
+  const data = await response.json();
+
+  // Handle image response
+  if (isImageModel) {
+    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    const textContent = data.choices?.[0]?.message?.content || '';
+    
+    return {
+      content: imageUrl || textContent,
+      imageUrl: imageUrl,
+      isImage: !!imageUrl,
+      usage: data.usage
+    };
+  }
+
+  // Handle text response
+  return {
+    content: data.choices?.[0]?.message?.content || '',
+    usage: data.usage
   };
 }
