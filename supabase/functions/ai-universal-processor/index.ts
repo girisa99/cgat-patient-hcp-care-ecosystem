@@ -262,28 +262,25 @@ async function callClaude(model: string, prompt: string, systemPrompt?: string, 
   };
 }
 
-// Normalize Gemini model names to valid API model IDs
+// Normalize Gemini model names to valid API model IDs (updated for 2025+)
 function normalizeGeminiModel(model: string): string {
   const ml = model.toLowerCase();
   
-  // Map experimental/invalid models to stable versions
-  if (ml.includes('gemini-2.0-flash-exp') || ml.includes('gemini-2.0-flash')) {
-    return 'gemini-1.5-flash'; // Fall back to stable 1.5 Flash
+  // Map to currently available Gemini models - gemini-2.0-flash is stable now
+  if (ml.includes('gemini-2.5') || ml.includes('gemini-2.0') || ml.includes('gemini-2')) {
+    return 'gemini-2.0-flash';
   }
-  if (ml.includes('gemini-2.0-pro') || ml.includes('gemini-2.0')) {
-    return 'gemini-1.5-pro'; // Fall back to stable 1.5 Pro
+  if (ml.includes('gemini-1.5-flash') || ml.includes('flash')) {
+    return 'gemini-2.0-flash'; // 1.5 deprecated, use 2.0
   }
-  if (ml.includes('gemini-1.5-flash')) {
-    return 'gemini-1.5-flash';
-  }
-  if (ml.includes('gemini-1.5-pro')) {
-    return 'gemini-1.5-pro';
+  if (ml.includes('gemini-1.5-pro') || ml.includes('pro')) {
+    return 'gemini-2.0-flash';
   }
   if (ml.includes('gemini-pro')) {
-    return 'gemini-1.5-pro';
+    return 'gemini-2.0-flash';
   }
-  // Default fallback to stable model
-  return 'gemini-1.5-flash';
+  // Default to stable model
+  return 'gemini-2.0-flash';
 }
 
 async function callGemini(model: string, prompt: string, systemPrompt?: string, temperature?: number, maxTokens?: number) {
@@ -314,13 +311,17 @@ async function callGemini(model: string, prompt: string, systemPrompt?: string, 
     }),
   });
 
-  // If model not found, retry with fallback
+  // If model not found, retry with fallback models
   if (!response.ok && response.status === 404) {
     const errText = await response.text();
     console.error(`Gemini API error (first attempt ${response.status}):`, errText);
-    if (normalizedModel !== 'gemini-1.5-flash') {
-      console.log('Retrying Gemini call with fallback model: gemini-1.5-flash');
-      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    
+    // Try fallback models in order
+    const fallbackModels = ['gemini-1.5-flash-latest', 'gemini-pro'];
+    
+    for (const fallbackModel of fallbackModels) {
+      console.log(`Retrying Gemini call with fallback model: ${fallbackModel}`);
+      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${fallbackModel}:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -328,16 +329,37 @@ async function callGemini(model: string, prompt: string, systemPrompt?: string, 
         body: JSON.stringify({
           contents: [{ parts: [{ text: fullPrompt }] }],
           generationConfig: {
-            temperature,
-            maxOutputTokens: maxTokens
+            temperature: temperature ?? 0.7,
+            maxOutputTokens: maxTokens ?? 4096
           }
         }),
       });
+      
+      if (response.ok) {
+        console.log(`Fallback model ${fallbackModel} succeeded`);
+        break;
+      }
+      
+      // Read error but continue to next fallback - clone to avoid body consumed
+      if (!response.ok) {
+        try {
+          const fallbackErr = await response.clone().text();
+          console.error(`Fallback model ${fallbackModel} failed (${response.status}):`, fallbackErr);
+        } catch (e) {
+          console.error(`Fallback model ${fallbackModel} failed (${response.status})`);
+        }
+      }
     }
   }
 
   if (!response.ok) {
-    const errorData = await response.text();
+    // Clone response before reading to avoid double consumption error
+    let errorData: string;
+    try {
+      errorData = await response.clone().text();
+    } catch {
+      errorData = 'Unable to read error response';
+    }
     console.error(`Gemini API error (${response.status}):`, errorData);
     throw new Error(`Gemini API error: ${response.status} - ${errorData}`);
   }
