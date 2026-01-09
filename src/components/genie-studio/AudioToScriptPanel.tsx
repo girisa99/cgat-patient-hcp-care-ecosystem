@@ -43,6 +43,7 @@ import {
   ScriptOutputFormat,
   TranscriptionProvider
 } from '@/services/audioToScriptService';
+import { ContentSafetyBanner } from './ContentSafetyBanner';
 
 interface AudioToScriptPanelProps {
   onScriptGenerated?: (script: AudioToScriptResult['script']) => void;
@@ -291,6 +292,9 @@ export function AudioToScriptPanel({ onScriptGenerated, className }: AudioToScri
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Content Safety Notice */}
+          <ContentSafetyBanner variant="minimal" />
+
           {/* Input Method Tabs */}
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
             <TabsList className="grid w-full grid-cols-3">

@@ -56,6 +56,9 @@ import { GenieSparkDraftsPanel } from './GenieSparkDraftsPanel';
 import { useGenieSparkSession, type GenieSparkDraft } from './useGenieSparkSession';
 import { ContentSafetyBanner, InlineContentNotice, UploadSafetyNotice } from './ContentSafetyBanner';
 import { moderateTextContent, moderateFileUpload, moderateImagePrompt } from './ContentModerationService';
+import { useTermsAcceptance } from './TermsAcceptanceModal';
+import { useContentViolationWarning } from './ContentViolationWarning';
+import { recordViolation, isUserRestricted } from '@/services/contentViolationTracker';
 import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
 import { urlToScriptService, ScriptOutputFormat as UrlScriptFormat } from '@/services/urlToScriptService';
 import { documentToScriptService, OutputFormat as DocOutputFormat } from '@/services/documentToScriptService';
@@ -232,6 +235,10 @@ export function SmartContentPipeline({
     exportDraft,
     isSaving: isDraftSaving,
   } = useGenieSparkSession();
+
+  // Terms acceptance and violation warning hooks
+  const { hasAccepted: termsAccepted, checkAndPrompt: checkTerms, TermsModal } = useTermsAcceptance();
+  const { showWarning, WarningDialog } = useContentViolationWarning();
 
   // Active view tab (generate vs drafts)
   const [activeTab, setActiveTab] = useState<'generate' | 'drafts'>('generate');
@@ -1480,6 +1487,12 @@ export function SmartContentPipeline({
 
   return (
     <div className={cn("space-y-6", className)}>
+      {/* Terms Acceptance Modal */}
+      {TermsModal}
+      
+      {/* Violation Warning Dialog */}
+      {WarningDialog}
+
       {/* Session persistence indicator */}
       {hasActiveSession && (
         <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 border">
