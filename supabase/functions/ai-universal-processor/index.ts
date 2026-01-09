@@ -262,17 +262,45 @@ async function callClaude(model: string, prompt: string, systemPrompt?: string, 
   };
 }
 
+// Normalize Gemini model names to valid API model IDs
+function normalizeGeminiModel(model: string): string {
+  const ml = model.toLowerCase();
+  
+  // Map experimental/invalid models to stable versions
+  if (ml.includes('gemini-2.0-flash-exp') || ml.includes('gemini-2.0-flash')) {
+    return 'gemini-1.5-flash'; // Fall back to stable 1.5 Flash
+  }
+  if (ml.includes('gemini-2.0-pro') || ml.includes('gemini-2.0')) {
+    return 'gemini-1.5-pro'; // Fall back to stable 1.5 Pro
+  }
+  if (ml.includes('gemini-1.5-flash')) {
+    return 'gemini-1.5-flash';
+  }
+  if (ml.includes('gemini-1.5-pro')) {
+    return 'gemini-1.5-pro';
+  }
+  if (ml.includes('gemini-pro')) {
+    return 'gemini-1.5-pro';
+  }
+  // Default fallback to stable model
+  return 'gemini-1.5-flash';
+}
+
 async function callGemini(model: string, prompt: string, systemPrompt?: string, temperature?: number, maxTokens?: number) {
   const apiKey = Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GEMINI_API_KEY');
   if (!apiKey) {
     throw new Error('Gemini API key not configured. Please add GOOGLE_API_KEY (or GEMINI_API_KEY) to your Edge Function secrets.');
   }
 
+  // Normalize model to valid API ID
+  const normalizedModel = normalizeGeminiModel(model);
+  console.log(`Gemini model normalization: ${model} -> ${normalizedModel}`);
+
   const fullPrompt = systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt;
 
-  console.log(`Calling Gemini API with model: ${model}`);
+  console.log(`Calling Gemini API with model: ${normalizedModel}`);
 
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+  let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${normalizedModel}:generateContent?key=${apiKey}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -286,6 +314,28 @@ async function callGemini(model: string, prompt: string, systemPrompt?: string, 
     }),
   });
 
+  // If model not found, retry with fallback
+  if (!response.ok && response.status === 404) {
+    const errText = await response.text();
+    console.error(`Gemini API error (first attempt ${response.status}):`, errText);
+    if (normalizedModel !== 'gemini-1.5-flash') {
+      console.log('Retrying Gemini call with fallback model: gemini-1.5-flash');
+      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: fullPrompt }] }],
+          generationConfig: {
+            temperature,
+            maxOutputTokens: maxTokens
+          }
+        }),
+      });
+    }
+  }
+
   if (!response.ok) {
     const errorData = await response.text();
     console.error(`Gemini API error (${response.status}):`, errorData);
@@ -293,6 +343,13 @@ async function callGemini(model: string, prompt: string, systemPrompt?: string, 
   }
 
   const data = await response.json();
+  
+  // Handle empty response
+  if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
+    console.error('Gemini returned empty response:', JSON.stringify(data));
+    throw new Error('Gemini returned empty response - content may have been filtered');
+  }
+  
   return {
     content: data.candidates[0].content.parts[0].text,
     usage: data.usageMetadata
