@@ -58,9 +58,11 @@ import { urlToScriptService, ScriptOutputFormat as UrlScriptFormat } from '@/ser
 import { documentToScriptService, OutputFormat as DocOutputFormat } from '@/services/documentToScriptService';
 import { imageToScriptService, ScriptStyle } from '@/services/imageToScriptService';
 import { audioToScriptService, ScriptOutputFormat as AudioScriptFormat } from '@/services/audioToScriptService';
+import { videoToScriptService, SlideVoiceover } from '@/services/videoToScriptService';
+import { PresentationScriptView } from './PresentationScriptView';
 
 // Content type options
-type ContentType = 'document' | 'image' | 'audio' | 'url' | 'full-pipeline';
+type ContentType = 'document' | 'image' | 'audio' | 'video' | 'url' | 'full-pipeline';
 
 interface ContentTypeOption {
   id: ContentType;
@@ -118,6 +120,21 @@ const CONTENT_TYPES: ContentTypeOption[] = [
     ],
     defaultTone: 'casual',
     defaultDuration: 600,
+  },
+  {
+    id: 'video',
+    label: 'Video → Script',
+    description: 'MP4, MOV, WebM (extract & transcribe)',
+    icon: <Video className="h-4 w-4" />,
+    acceptedFiles: '.mp4,.mov,.webm,.avi,.mkv',
+    outputFormats: [
+      { value: 'video_script', label: 'Video Script', icon: <Film className="h-4 w-4" /> },
+      { value: 'presentation_script', label: 'Slide-by-Slide', icon: <Presentation className="h-4 w-4" /> },
+      { value: 'podcast_script', label: 'Podcast Script', icon: <Radio className="h-4 w-4" /> },
+      { value: 'tutorial_script', label: 'Tutorial Script', icon: <GraduationCap className="h-4 w-4" /> },
+    ],
+    defaultTone: 'professional',
+    defaultDuration: 300,
   },
   {
     id: 'url',
@@ -591,6 +608,66 @@ export function SmartContentPipeline({
             wordCount: result.script.metadata.wordCount,
             estimatedDuration: result.script.totalDuration,
             provider: result.metadata?.aiProvider || 'gemini',
+            timestamp: Date.now(),
+          },
+        };
+      }
+      // Use video service for VIDEO content type
+      else if (contentType === 'video' && uploadedFiles.length > 0) {
+        const file = uploadedFiles[0].file;
+        
+        const generateSlideBySlide = outputFormat === 'presentation_script';
+        
+        const result = await videoToScriptService.convertVideoToScript({
+          videoFile: file,
+          outputFormat: outputFormat as 'video_script' | 'podcast_script' | 'presentation_script' | 'tutorial_script',
+          generateSlideBySlide,
+          enhanceWithAI: true,
+          removeFillerWords: true,
+          tone: tone as 'professional' | 'casual' | 'educational' | 'inspirational' | 'dramatic',
+          targetAudience: targetAudience || undefined,
+        });
+
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+        }
+
+        if (!result.success || !result.script) {
+          throw new Error(result.error || 'Failed to generate script from video');
+        }
+
+        setProgress(100);
+        setProgressMessage('Complete!');
+
+        // Convert scenes to text format
+        const scriptText = result.script.scenes.map(scene => 
+          `## Scene ${scene.sceneNumber}\n\n${scene.narration}\n\n${scene.visualDirection ? `**Visual Direction:** ${scene.visualDirection}\n` : ''}`
+        ).join('\n---\n\n');
+
+        const fullScript = `# ${result.script.title}\n\n**Source:** ${file.name}\n**Format:** ${result.script.format.replace('_', ' ')}\n**Duration:** ${Math.floor(result.script.totalDuration / 60)} minutes\n**Words:** ${result.script.metadata.wordCount}\n\n---\n\n${scriptText}`;
+
+        // Convert slides to SlideScript format if available
+        const slides = result.slides?.map(slide => ({
+          slideNumber: slide.slideNumber,
+          title: slide.title,
+          narration: slide.narration,
+          visualNotes: slide.visualNotes,
+          duration: slide.duration,
+          wordCount: slide.wordCount,
+        }));
+
+        content = {
+          script: fullScript,
+          title: result.script.title,
+          type: outputFormat as GeneratedContent['type'],
+          duration: result.script.totalDuration,
+          sourceType: 'video',
+          slides,
+          metadata: {
+            wordCount: result.script.metadata.wordCount,
+            estimatedDuration: result.script.totalDuration,
+            provider: 'gemini',
             timestamp: Date.now(),
           },
         };
