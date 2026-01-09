@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { AIProvider, AIRequest, AIResponse } from '@/services/aiProviderService';
+import { AIProvider, AIRequest, AIResponse, UniversalAIProviderType } from '@/services/aiProviderService';
 import { useMasterToast } from '@/hooks/useMasterToast';
 
 export interface UniversalAIState {
@@ -12,7 +12,7 @@ export interface UniversalAIState {
 }
 
 export interface UseUniversalAIOptions {
-  defaultProvider?: 'openai' | 'claude' | 'gemini';
+  defaultProvider?: UniversalAIProviderType;
   autoLoadProviders?: boolean;
 }
 
@@ -54,14 +54,14 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
     }
   };
 
-  // Default providers with categorized models
+  // Default providers with categorized models (Universal AI pattern)
   const defaultProviders: AIProvider[] = [
     {
       id: 'openai',
       name: 'OpenAI',
-      models: [...modelCategories.llm.openai, ...modelCategories.small.openai, ...modelCategories.vision.openai],
-      capabilities: ['text', 'vision', 'reasoning'],
-      description: 'OpenAI GPT models - LLM, Small, and Vision variants'
+      models: [...modelCategories.llm.openai, ...modelCategories.small.openai, ...modelCategories.vision.openai, ...modelCategories.image.openai],
+      capabilities: ['text', 'vision', 'reasoning', 'image-generation'],
+      description: 'OpenAI GPT models - LLM, Small, Vision, and DALL-E image generation'
     },
     {
       id: 'claude',
@@ -76,6 +76,20 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
       models: [...modelCategories.llm.gemini, ...modelCategories.small.gemini, ...modelCategories.vision.gemini],
       capabilities: ['text', 'vision', 'multimodal'],
       description: 'Google Gemini models - LLM, Small, and Vision variants'
+    },
+    {
+      id: 'lovable',
+      name: 'Universal AI (Lovable)',
+      models: [...modelCategories.image.lovable, 'google/gemini-2.5-flash', 'google/gemini-2.5-pro'],
+      capabilities: ['text', 'image-generation', 'multimodal'],
+      description: 'Universal AI connector - Nano Banana image gen, Gemini text models via Lovable AI Gateway'
+    },
+    {
+      id: 'stability',
+      name: 'Stability AI',
+      models: modelCategories.image.stability,
+      capabilities: ['image-generation'],
+      description: 'Stability AI - Stable Diffusion image generation models'
     }
   ];
 
@@ -98,12 +112,15 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
     }
   }, []);
 
-  // Helper: default model per provider
-  const getDefaultModel = (provider: 'openai' | 'claude' | 'gemini') => {
+  // Helper: default model per provider (Universal AI pattern)
+  const getDefaultModel = (provider: UniversalAIProviderType): string => {
     switch (provider) {
       case 'openai': return 'gpt-4o-mini';
       case 'claude': return 'claude-3-5-haiku-20241022';
       case 'gemini': return 'gemini-2.0-flash-exp';
+      case 'lovable': return 'google/gemini-2.5-flash';
+      case 'stability': return 'stable-diffusion-xl';
+      case 'huggingface': return 'flux-schnell';
       default: return 'gpt-4o-mini';
     }
   };
@@ -158,7 +175,7 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
   // Generate agent workflow
   const generateAgent = useCallback(async (
     prompt: string, 
-    provider: 'openai' | 'claude' | 'gemini' = defaultProvider
+    provider: UniversalAIProviderType = defaultProvider
   ) => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
@@ -184,7 +201,7 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
   const testNode = useCallback(async (
     nodeData: any,
     inputData: any,
-    provider: 'openai' | 'claude' | 'gemini' = defaultProvider
+    provider: UniversalAIProviderType = defaultProvider
   ): Promise<any> => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
@@ -242,7 +259,7 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
   const analyzeWorkflow = useCallback(async (
     nodes: any[],
     edges: any[],
-    provider: 'openai' | 'claude' | 'gemini' = defaultProvider
+    provider: UniversalAIProviderType = defaultProvider
   ) => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
@@ -295,7 +312,7 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
   // Chat with AI (general purpose)
   const chat = useCallback(async (
     message: string,
-    provider: 'openai' | 'claude' | 'gemini' = defaultProvider,
+    provider: UniversalAIProviderType = defaultProvider,
     systemPrompt?: string
   ): Promise<string | null> => {
     const response = await generateResponse({
@@ -330,7 +347,7 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
   }, []);
 
   // Check if provider is available
-  const isProviderAvailable = useCallback((providerId: 'openai' | 'claude' | 'gemini') => {
+  const isProviderAvailable = useCallback((providerId: UniversalAIProviderType) => {
     return state.availableProviders.some(p => p.id === providerId);
   }, [state.availableProviders]);
 

@@ -6,8 +6,11 @@
 import { supabase } from '@/integrations/supabase/client';
 import { featureIntegrationEngine, ProcessingRequest } from './featureIntegrationEngine';
 
+// Re-export type from central location
+import { UniversalAIProviderType } from './aiProviderService';
+
 export interface AIProvider {
-  id: 'openai' | 'claude' | 'gemini';
+  id: UniversalAIProviderType;
   name: string;
   priority: number;
   available: boolean;
@@ -18,7 +21,7 @@ export interface AIProvider {
 
 export interface EnhancedAIRequest {
   prompt: string;
-  provider?: 'openai' | 'claude' | 'gemini';
+  provider?: UniversalAIProviderType;
   model?: string;
   systemPrompt?: string;
   temperature?: number;
