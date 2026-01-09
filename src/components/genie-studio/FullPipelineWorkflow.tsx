@@ -52,6 +52,8 @@ import { useDropzone } from 'react-dropzone';
 import { ImageModelSelector, ImageModelType } from './ImageModelSelector';
 import { AIProviderSelector, AIProviderType } from './AIProviderSelector';
 import { genieScriptService } from '@/services/genieScriptService';
+import { ContentSafetyBanner, InlineContentNotice } from './ContentSafetyBanner';
+import { moderateTextContent, moderateFileUpload, moderateImagePrompt } from './ContentModerationService';
 
 // Pipeline phases
 type PipelinePhase = 'sources' | 'media' | 'script' | 'review';
@@ -957,6 +959,9 @@ ${enableKnowledgeSearch ? '*Enhanced with Knowledge Base content*' : ''}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Content Safety Notice */}
+            <ContentSafetyBanner variant="compact" />
+
             {/* AI Provider */}
             <AIProviderSelector
               selectedProvider={selectedProvider}

@@ -54,6 +54,8 @@ import { PostGenerationActions, GeneratedContent, PostAction } from './PostGener
 import { FullPipelineWorkflow } from './FullPipelineWorkflow';
 import { GenieSparkDraftsPanel } from './GenieSparkDraftsPanel';
 import { useGenieSparkSession, type GenieSparkDraft } from './useGenieSparkSession';
+import { ContentSafetyBanner, InlineContentNotice, UploadSafetyNotice } from './ContentSafetyBanner';
+import { moderateTextContent, moderateFileUpload, moderateImagePrompt } from './ContentModerationService';
 import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
 import { urlToScriptService, ScriptOutputFormat as UrlScriptFormat } from '@/services/urlToScriptService';
 import { documentToScriptService, OutputFormat as DocOutputFormat } from '@/services/documentToScriptService';
@@ -1593,6 +1595,8 @@ export function SmartContentPipeline({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+          {/* Content Safety Notice */}
+          <ContentSafetyBanner variant="compact" />
           {/* Step 1: Content Type Selection */}
           <div className="space-y-2">
             <Label className="text-sm font-semibold">1. Select Content Type</Label>

@@ -6,6 +6,30 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Content moderation - blocked patterns for adult/inappropriate content
+const BLOCKED_PATTERNS = [
+  /\b(nsfw|xxx|porn|explicit|adult\s*content|nude|naked|sex(ual)?|erotic)\b/i,
+  /\b(gore|violent|murder|brutal|blood|weapon)\b/i,
+  /\b(hate|racist|discriminat|harass)\b/i,
+  /\b(child|minor|kid|underage)\s*(nude|naked|sex)/i,
+  /\b(deep\s*fake|fake\s*celebrity)\b/i,
+];
+
+function moderatePrompt(prompt: string): { isAllowed: boolean; reason?: string } {
+  const lowerPrompt = prompt.toLowerCase();
+  
+  for (const pattern of BLOCKED_PATTERNS) {
+    if (pattern.test(lowerPrompt)) {
+      return { 
+        isAllowed: false, 
+        reason: 'Content policy violation: Prompt contains prohibited content. Adult, violent, or inappropriate content is not allowed.' 
+      };
+    }
+  }
+  
+  return { isAllowed: true };
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -19,6 +43,24 @@ serve(async (req) => {
     if (!prompt) {
       return new Response(
         JSON.stringify({ error: 'Prompt is required' }), 
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Content moderation check
+    const moderationResult = moderatePrompt(prompt);
+    if (!moderationResult.isAllowed) {
+      console.log('🚫 Content blocked:', moderationResult.reason);
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: moderationResult.reason,
+          blocked: true,
+          contentPolicy: true
+        }), 
         { 
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -45,12 +87,15 @@ serve(async (req) => {
       success: true,
       videoUrl,
       processingTime,
+      contentModerated: true,
+      disclaimer: 'This is AI-generated video content. Please verify before use. Adult content is prohibited.',
       metadata: {
         prompt,
         provider,
         model,
         duration,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        contentPolicy: 'Applied'
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -79,6 +124,9 @@ async function generateWithReplicate(prompt: string, model: string): Promise<str
   // Get version ID for the model
   const versionId = getReplicateVersion(model);
   
+  // Add safety guidance to prompt
+  const safePrompt = `${prompt}. Safe for all audiences, no explicit content.`;
+  
   console.log('📡 Creating Replicate prediction for model:', model);
 
   // Create prediction
@@ -91,7 +139,7 @@ async function generateWithReplicate(prompt: string, model: string): Promise<str
     body: JSON.stringify({
       version: versionId,
       input: {
-        prompt: prompt,
+        prompt: safePrompt,
       },
     }),
   });
@@ -143,7 +191,7 @@ async function generateWithReplicate(prompt: string, model: string): Promise<str
 
 function getReplicateVersion(model: string): string {
   const versions: Record<string, string> = {
-    'minimax/video-01': 'a]bafe05d52e3f2fb91bbcd8baee6cf7848e85b29c949e3aae1d7e1b3ebc',
+    'minimax/video-01': 'abafe05d52e3f2fb91bbcd8baee6cf7848e85b29c949e3aae1d7e1b3ebc',
     'stability-ai/stable-video-diffusion': 'db7c0cf87879d76a3b0379f8c5f04dce8c29f69fcb7ec8bfe09e0c2e7d6fc1f5',
     'anotherjesse/zeroscope-v2-xl': 'a87c2b1a5cc55cfe9a25b739ac72f4febc0ce85b1f4a65ff5c9b6f0f1a9b2e9c',
   };
