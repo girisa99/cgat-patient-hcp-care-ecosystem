@@ -2,6 +2,8 @@
  * Genie Spark - Smart Content Pipeline
  * "Ignite Your Ideas" - AI-powered content generation engine
  * Part of Genie Studio
+ * 
+ * Features session persistence, drafts management, and enhanced save/download
  */
 
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
@@ -15,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Upload, 
   FileText, 
@@ -36,7 +39,10 @@ import {
   Radio,
   GraduationCap,
   Search,
-  Database
+  Database,
+  Save,
+  RotateCcw,
+  Clock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -45,6 +51,8 @@ import { AIProviderSelector, AIProviderType } from './AIProviderSelector';
 import { ImageModelSelector, ImageModelType } from './ImageModelSelector';
 import { PostGenerationActions, GeneratedContent, PostAction } from './PostGenerationActions';
 import { FullPipelineWorkflow } from './FullPipelineWorkflow';
+import { GenieSparkDraftsPanel } from './GenieSparkDraftsPanel';
+import { useGenieSparkSession, type GenieSparkDraft } from './useGenieSparkSession';
 import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
 import { urlToScriptService, ScriptOutputFormat as UrlScriptFormat } from '@/services/urlToScriptService';
 import { documentToScriptService, OutputFormat as DocOutputFormat } from '@/services/documentToScriptService';
@@ -182,28 +190,55 @@ export function SmartContentPipeline({
   onSaveToKnowledgeBase,
   className,
 }: SmartContentPipelineProps) {
-  // Content type selection
-  const [contentType, setContentType] = useState<ContentType>('document');
+  // Session persistence hook
+  const {
+    sessionState,
+    saveSession,
+    clearSession,
+    hasActiveSession,
+    drafts,
+    saveDraft,
+    deleteDraft,
+    exportDraft,
+    isSaving: isDraftSaving,
+  } = useGenieSparkSession();
+
+  // Active view tab (generate vs drafts)
+  const [activeTab, setActiveTab] = useState<'generate' | 'drafts'>('generate');
+  const [selectedDraft, setSelectedDraft] = useState<GenieSparkDraft | null>(null);
+
+  // Content type selection - restore from session
+  const [contentType, setContentType] = useState<ContentType>(
+    (sessionState?.contentType as ContentType) || 'document'
+  );
   const selectedContentType = CONTENT_TYPES.find(ct => ct.id === contentType)!;
   
-  // Input state
+  // Input state - restore from session
   const [uploadedFiles, setUploadedFiles] = useState<DetectedFile[]>([]);
-  const [urlInput, setUrlInput] = useState('');
-  const [imagePrompt, setImagePrompt] = useState(''); // For image generation
-  const [generateImage, setGenerateImage] = useState(false);
+  const [urlInput, setUrlInput] = useState(sessionState?.urlInput || '');
+  const [imagePrompt, setImagePrompt] = useState(sessionState?.imagePrompt || '');
+  const [generateImage, setGenerateImage] = useState(sessionState?.generateImage || false);
   
-  // AI Provider
-  const [selectedProvider, setSelectedProvider] = useState<AIProviderType>('auto');
-  const [selectedImageModel, setSelectedImageModel] = useState<ImageModelType>('auto');
+  // AI Provider - restore from session
+  const [selectedProvider, setSelectedProvider] = useState<AIProviderType>(
+    (sessionState?.selectedProvider as AIProviderType) || 'auto'
+  );
+  const [selectedImageModel, setSelectedImageModel] = useState<ImageModelType>(
+    (sessionState?.selectedImageModel as ImageModelType) || 'auto'
+  );
   
   // Knowledge Search enhancement
-  const [enableKnowledgeSearch, setEnableKnowledgeSearch] = useState(false);
+  const [enableKnowledgeSearch, setEnableKnowledgeSearch] = useState(
+    sessionState?.enableKnowledgeSearch || false
+  );
   
-  // Script options - update defaults when content type changes
-  const [outputFormat, setOutputFormat] = useState(selectedContentType.outputFormats[0]?.value || 'video_script');
-  const [tone, setTone] = useState(selectedContentType.defaultTone);
-  const [duration, setDuration] = useState(selectedContentType.defaultDuration);
-  const [targetAudience, setTargetAudience] = useState('');
+  // Script options - restore from session or use defaults
+  const [outputFormat, setOutputFormat] = useState(
+    sessionState?.outputFormat || selectedContentType.outputFormats[0]?.value || 'video_script'
+  );
+  const [tone, setTone] = useState(sessionState?.tone || selectedContentType.defaultTone);
+  const [duration, setDuration] = useState(sessionState?.duration || selectedContentType.defaultDuration);
+  const [targetAudience, setTargetAudience] = useState(sessionState?.targetAudience || '');
   
   // Processing state
   const [isProcessing, setIsProcessing] = useState(false);
@@ -215,6 +250,25 @@ export function SmartContentPipeline({
   // Timer ref for cleanup
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const simulationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Auto-save session state on changes
+  useEffect(() => {
+    saveSession({
+      contentType,
+      urlInput,
+      imagePrompt,
+      generateImage,
+      selectedProvider,
+      selectedImageModel,
+      enableKnowledgeSearch,
+      outputFormat,
+      tone,
+      duration,
+      targetAudience,
+      uploadedFileNames: uploadedFiles.map(f => f.file.name),
+    });
+  }, [contentType, urlInput, imagePrompt, generateImage, selectedProvider, selectedImageModel, 
+      enableKnowledgeSearch, outputFormat, tone, duration, targetAudience, uploadedFiles, saveSession]);
   
   // Cleanup timers and object URLs on unmount
   useEffect(() => {
@@ -246,6 +300,7 @@ export function SmartContentPipeline({
     setImagePrompt('');
     setGenerateImage(false);
     setGeneratedContent(null);
+    setSelectedDraft(null);
   };
 
   // File drop handler
@@ -598,7 +653,7 @@ export function SmartContentPipeline({
     }
   };
 
-  const handlePostAction = (action: PostAction) => {
+  const handlePostAction = async (action: PostAction) => {
     if (!generatedContent) return;
 
     switch (action) {
@@ -614,11 +669,15 @@ export function SmartContentPipeline({
         break;
         
       case 'script-editor':
+        // Save as draft before sending
+        await saveDraft(generatedContent);
         onSendToScriptEditor?.(generatedContent);
         toast.success('Sent to Script Editor');
         break;
         
       case 'vibe':
+        // Save as draft before sending
+        await saveDraft(generatedContent);
         onSendToVibe?.(generatedContent);
         toast.success('Sent to Vibe Recording');
         break;
@@ -630,17 +689,50 @@ export function SmartContentPipeline({
     }
   };
 
+  // Save generated content as draft
+  const handleSaveToDrafts = async () => {
+    if (!generatedContent) return;
+    await saveDraft(generatedContent);
+  };
+
+  // Handle draft selection
+  const handleSelectDraft = (draft: GenieSparkDraft) => {
+    setSelectedDraft(draft);
+    setActiveTab('drafts');
+  };
+
+  // Convert draft to GeneratedContent for actions
+  const draftToContent = (draft: GenieSparkDraft): GeneratedContent => ({
+    script: draft.content,
+    title: draft.title,
+    type: draft.type,
+    duration: draft.duration,
+    sourceType: draft.sourceType,
+    metadata: draft.metadata,
+  });
+
+  // Send draft to script editor
+  const handleDraftToEditor = (draft: GenieSparkDraft) => {
+    onSendToScriptEditor?.(draftToContent(draft));
+  };
+
+  // Send draft to vibe
+  const handleDraftToVibe = (draft: GenieSparkDraft) => {
+    onSendToVibe?.(draftToContent(draft));
+  };
+
   const resetPipeline = () => {
     setUploadedFiles([]);
     setUrlInput('');
     setImagePrompt('');
     setGeneratedContent(null);
+    setSelectedDraft(null);
     setError(null);
     setProgress(0);
   };
 
   // Handle Full Pipeline completion
-  const handlePipelineComplete = (result: { script: string; title: string }) => {
+  const handlePipelineComplete = async (result: { script: string; title: string }) => {
     const content: GeneratedContent = {
       script: result.script,
       title: result.title,
@@ -655,19 +747,47 @@ export function SmartContentPipeline({
       },
     };
     setGeneratedContent(content);
+    // Auto-save to drafts
+    await saveDraft(content);
   };
 
   // Show post-generation actions if we have generated content
   if (generatedContent) {
     return (
       <div className={cn("space-y-6", className)}>
+        {/* Session indicator */}
+        {hasActiveSession && (
+          <div className="flex items-center justify-between p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+            <div className="flex items-center gap-2 text-sm text-amber-600">
+              <CheckCircle className="h-4 w-4" />
+              <span>Script generated and auto-saved to drafts</span>
+            </div>
+            <Badge variant="outline" className="text-xs">
+              <Clock className="h-3 w-3 mr-1" />
+              {isDraftSaving ? 'Saving...' : 'Saved'}
+            </Badge>
+          </div>
+        )}
+        
         <PostGenerationActions
           content={generatedContent}
           onAction={handlePostAction}
         />
-        <Button variant="outline" onClick={resetPipeline} className="w-full">
-          Generate Another Script
-        </Button>
+        
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={resetPipeline} className="flex-1">
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Generate Another Script
+          </Button>
+          <Button 
+            variant="secondary" 
+            onClick={() => setActiveTab('drafts')}
+            className="flex-1"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            View All Drafts ({drafts.length})
+          </Button>
+        </div>
       </div>
     );
   }
@@ -723,21 +843,121 @@ export function SmartContentPipeline({
 
   return (
     <div className={cn("space-y-6", className)}>
-      <Card className="border-amber-500/20 bg-gradient-to-br from-background via-background to-amber-500/5">
-        <CardHeader className="pb-4">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <img src={genieSparkLogo} alt="Genie Spark" className="h-12 w-auto" />
-            </div>
-            <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 border-amber-500/20">
-              AI Engine
-            </Badge>
+      {/* Session persistence indicator */}
+      {hasActiveSession && (
+        <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 border">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Clock className="h-4 w-4" />
+            <span>Session auto-saved • Your progress is preserved</span>
           </div>
-          <CardDescription className="mt-2">
-            Select content type → Upload → Configure → Generate Script
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => {
+              clearSession();
+              resetPipeline();
+              toast.success('Session cleared');
+            }}
+          >
+            <RotateCcw className="h-4 w-4 mr-1" />
+            Reset
+          </Button>
+        </div>
+      )}
+
+      {/* Tabs for Generate vs Drafts */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'generate' | 'drafts')}>
+        <TabsList className="w-full grid grid-cols-2">
+          <TabsTrigger value="generate" className="gap-2">
+            <Wand2 className="h-4 w-4" />
+            Generate New
+          </TabsTrigger>
+          <TabsTrigger value="drafts" className="gap-2">
+            <FileText className="h-4 w-4" />
+            Drafts ({drafts.length})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="drafts" className="mt-4">
+          <GenieSparkDraftsPanel
+            drafts={drafts}
+            onSelectDraft={handleSelectDraft}
+            onDeleteDraft={deleteDraft}
+            onExportDraft={exportDraft}
+            onSendToEditor={handleDraftToEditor}
+            onSendToVibe={handleDraftToVibe}
+            selectedDraftId={selectedDraft?.id}
+          />
+          
+          {/* Selected Draft Preview */}
+          {selectedDraft && (
+            <Card className="mt-4 border-primary/30">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">{selectedDraft.title}</CardTitle>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setSelectedDraft(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <CardDescription>
+                  {selectedDraft.metadata?.wordCount || 0} words • 
+                  ~{Math.ceil((selectedDraft.duration || 0) / 60)} min
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="max-h-[300px] overflow-y-auto p-4 rounded-lg bg-muted/50 border">
+                  <pre className="whitespace-pre-wrap text-sm font-mono">
+                    {selectedDraft.content}
+                  </pre>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => handleDraftToEditor(selectedDraft)} 
+                    className="flex-1"
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Open in Script Editor
+                  </Button>
+                  <Button 
+                    variant="secondary"
+                    onClick={() => handleDraftToVibe(selectedDraft)}
+                    className="flex-1"
+                  >
+                    <Mic className="h-4 w-4 mr-2" />
+                    Send to Vibe
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => exportDraft(selectedDraft.id)}
+                  >
+                    <Save className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="generate" className="mt-4">
+          <Card className="border-amber-500/20 bg-gradient-to-br from-background via-background to-amber-500/5">
+            <CardHeader className="pb-4">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <img src={genieSparkLogo} alt="Genie Spark" className="h-12 w-auto" />
+                </div>
+                <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 border-amber-500/20">
+                  AI Engine
+                </Badge>
+              </div>
+              <CardDescription className="mt-2">
+                Select content type → Upload → Configure → Generate Script
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
           {/* Step 1: Content Type Selection */}
           <div className="space-y-2">
             <Label className="text-sm font-semibold">1. Select Content Type</Label>
@@ -1000,7 +1220,9 @@ export function SmartContentPipeline({
             </div>
           )}
         </CardContent>
-      </Card>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
