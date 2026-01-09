@@ -115,8 +115,11 @@ const CONTENT_TYPES: ContentTypeOption[] = [
     acceptedFiles: '',
     outputFormats: [
       { value: 'video_script', label: 'Video Script', icon: <Film className="h-4 w-4" /> },
-      { value: 'podcast_script', label: 'Podcast Script', icon: <Mic className="h-4 w-4" /> },
-      { value: 'summary', label: 'Summary', icon: <FileText className="h-4 w-4" /> },
+      { value: 'audio_script', label: 'Audio Script', icon: <Mic className="h-4 w-4" /> },
+      { value: 'podcast_script', label: 'Podcast Script', icon: <Radio className="h-4 w-4" /> },
+      { value: 'presentation_script', label: 'Presentation', icon: <Presentation className="h-4 w-4" /> },
+      { value: 'tutorial_script', label: 'Tutorial', icon: <GraduationCap className="h-4 w-4" /> },
+      { value: 'webinar_script', label: 'Webinar', icon: <BookOpen className="h-4 w-4" /> },
     ],
     defaultTone: 'informative',
     defaultDuration: 180,
