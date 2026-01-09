@@ -60,6 +60,8 @@ import { imageToScriptService, ScriptStyle } from '@/services/imageToScriptServi
 import { audioToScriptService, ScriptOutputFormat as AudioScriptFormat } from '@/services/audioToScriptService';
 import { videoToScriptService, SlideVoiceover } from '@/services/videoToScriptService';
 import { PresentationScriptView } from './PresentationScriptView';
+import { VideoContentAnalyzer, VideoAnalysisResult, VideoScriptOptions, DetectedContentType } from './VideoContentAnalyzer';
+import { SlideScript } from './SlideScriptCard';
 
 // Content type options
 type ContentType = 'document' | 'image' | 'audio' | 'video' | 'url' | 'full-pipeline';
@@ -262,7 +264,12 @@ export function SmartContentPipeline({
   const [progress, setProgress] = useState(0);
   const [progressMessage, setProgressMessage] = useState('');
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
+  const [generatedSlides, setGeneratedSlides] = useState<SlideScript[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // Video analysis state
+  const [showVideoAnalyzer, setShowVideoAnalyzer] = useState(false);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
   
   // Timer ref for cleanup
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -324,13 +331,21 @@ export function SmartContentPipeline({
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const newFiles: DetectedFile[] = acceptedFiles.map(file => {
       const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
       const preview = isImage ? URL.createObjectURL(file) : undefined;
       return { file, preview };
     });
     
     setUploadedFiles(prev => [...prev, ...newFiles]);
     toast.success(`Uploaded ${newFiles.length} file(s)`);
-  }, []);
+    
+    // If video content type and a video file uploaded, show analyzer
+    if (contentType === 'video' && newFiles.length > 0 && newFiles[0].file.type.startsWith('video/')) {
+      const videoUrl = URL.createObjectURL(newFiles[0].file);
+      setVideoPreviewUrl(videoUrl);
+      setShowVideoAnalyzer(true);
+    }
+  }, [contentType]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -803,9 +818,115 @@ export function SmartContentPipeline({
     setUrlInput('');
     setImagePrompt('');
     setGeneratedContent(null);
+    setGeneratedSlides(null);
     setSelectedDraft(null);
     setError(null);
     setProgress(0);
+    setShowVideoAnalyzer(false);
+    if (videoPreviewUrl) {
+      URL.revokeObjectURL(videoPreviewUrl);
+      setVideoPreviewUrl(null);
+    }
+  };
+
+  // Handle video analysis complete
+  const handleVideoAnalysisComplete = async (
+    analysisResult: VideoAnalysisResult,
+    selectedFormat: string,
+    options: VideoScriptOptions
+  ) => {
+    setShowVideoAnalyzer(false);
+    
+    if (uploadedFiles.length === 0) {
+      toast.error('No video file found');
+      return;
+    }
+
+    setIsProcessing(true);
+    setProgress(0);
+    setError(null);
+
+    try {
+      const progressInterval = setInterval(() => {
+        setProgress(prev => Math.min(prev + 5, 90));
+        setProgressMessage('Processing video and generating script...');
+      }, 1000);
+
+      const file = uploadedFiles[0].file;
+      const generateSlideBySlide = selectedFormat === 'slide_by_slide' || options.generateSlideBySlide;
+
+      const result = await videoToScriptService.convertVideoToScript({
+        videoFile: file,
+        outputFormat: selectedFormat === 'slide_by_slide' ? 'presentation_script' : 
+                      selectedFormat === 'podcast_style' ? 'podcast_script' :
+                      selectedFormat === 'chapter_based' ? 'tutorial_script' : 'video_script',
+        generateSlideBySlide,
+        enhanceWithAI: options.enhanceWithAI,
+        removeFillerWords: options.removeFillerWords,
+        tone: tone as 'professional' | 'casual' | 'educational' | 'inspirational' | 'dramatic',
+        targetAudience: targetAudience || undefined,
+      });
+
+      clearInterval(progressInterval);
+
+      if (!result.success || !result.script) {
+        throw new Error(result.error || 'Failed to generate script from video');
+      }
+
+      setProgress(100);
+      setProgressMessage('Complete!');
+
+      // Format script based on detected type
+      const scriptText = result.script.scenes.map(scene => 
+        `## Scene ${scene.sceneNumber}\n\n${scene.narration}\n\n${scene.visualDirection ? `**Visual Direction:** ${scene.visualDirection}\n` : ''}`
+      ).join('\n---\n\n');
+
+      const fullScript = `# ${result.script.title}\n\n**Source:** ${file.name}\n**Detected Type:** ${analysisResult.detectedType}\n**Format:** ${result.script.format.replace('_', ' ')}\n**Duration:** ${Math.floor(result.script.totalDuration / 60)} minutes\n**Words:** ${result.script.metadata.wordCount}\n\n---\n\n${scriptText}`;
+
+      // Convert slides if available
+      const slides = result.slides?.map(slide => ({
+        slideNumber: slide.slideNumber,
+        title: slide.title,
+        narration: slide.narration,
+        visualNotes: slide.visualNotes,
+        duration: slide.duration,
+        wordCount: slide.wordCount,
+      }));
+
+      if (slides && slides.length > 0) {
+        setGeneratedSlides(slides);
+      }
+
+      const content: GeneratedContent = {
+        script: fullScript,
+        title: result.script.title,
+        type: result.script.format as GeneratedContent['type'],
+        duration: result.script.totalDuration,
+        sourceType: 'video',
+        slides,
+        metadata: {
+          wordCount: result.script.metadata.wordCount,
+          estimatedDuration: result.script.totalDuration,
+          provider: 'gemini',
+          timestamp: Date.now(),
+        },
+      };
+
+      setGeneratedContent(content);
+      await saveDraft(content);
+      toast.success('Script generated successfully!');
+
+      // Auto-generate TTS if requested
+      if (options.generateTTS) {
+        toast.info('TTS generation will be available in the script view');
+      }
+    } catch (err) {
+      console.error('Video processing error:', err);
+      setError(err instanceof Error ? err.message : 'Processing failed');
+      toast.error(err instanceof Error ? err.message : 'Video processing failed');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   // Handle Full Pipeline completion
@@ -863,6 +984,93 @@ export function SmartContentPipeline({
           >
             <FileText className="h-4 w-4 mr-2" />
             View All Drafts ({drafts.length})
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show Video Content Analyzer for video type with uploaded file
+  if (contentType === 'video' && showVideoAnalyzer && uploadedFiles.length > 0) {
+    return (
+      <div className={cn("space-y-6", className)}>
+        {/* Content Type Selector */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Content Type</Label>
+              <Select value={contentType} onValueChange={(v) => handleContentTypeChange(v as ContentType)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue>
+                    <div className="flex items-center gap-2">
+                      {selectedContentType.icon}
+                      <span>{selectedContentType.label}</span>
+                      <Badge variant="secondary" className="text-[10px] ml-2">
+                        {selectedContentType.description}
+                      </Badge>
+                    </div>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {CONTENT_TYPES.map((ct) => (
+                    <SelectItem key={ct.id} value={ct.id}>
+                      <div className="flex items-center gap-3 py-1">
+                        <div className="h-8 w-8 rounded-lg bg-secondary flex items-center justify-center">
+                          {ct.icon}
+                        </div>
+                        <div>
+                          <div className="font-medium">{ct.label}</div>
+                          <div className="text-xs text-muted-foreground">{ct.description}</div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        <VideoContentAnalyzer
+          videoFile={uploadedFiles[0].file}
+          videoPreviewUrl={videoPreviewUrl || undefined}
+          onAnalysisComplete={handleVideoAnalysisComplete}
+          onCancel={() => {
+            setShowVideoAnalyzer(false);
+            setUploadedFiles([]);
+            if (videoPreviewUrl) {
+              URL.revokeObjectURL(videoPreviewUrl);
+              setVideoPreviewUrl(null);
+            }
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Show Presentation Script View if we have generated slides
+  if (generatedContent && generatedSlides && generatedSlides.length > 0) {
+    return (
+      <div className={cn("space-y-6", className)}>
+        <PresentationScriptView
+          title={generatedContent.title || 'Generated Presentation Script'}
+          slides={generatedSlides}
+          sourceType={generatedContent.sourceType === 'video' ? 'video' : 'pptx'}
+          onSlidesUpdate={(updatedSlides) => setGeneratedSlides(updatedSlides)}
+        />
+        
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={resetPipeline} className="flex-1">
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Generate Another Script
+          </Button>
+          <Button 
+            variant="secondary"
+            onClick={() => onSendToScriptEditor?.(generatedContent)}
+            className="flex-1"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Send to Script Editor
           </Button>
         </div>
       </div>
