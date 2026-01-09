@@ -46,6 +46,7 @@ import { ImageModelSelector, ImageModelType } from './ImageModelSelector';
 import { PostGenerationActions, GeneratedContent, PostAction } from './PostGenerationActions';
 import { FullPipelineWorkflow } from './FullPipelineWorkflow';
 import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
+import { urlToScriptService, ScriptOutputFormat } from '@/services/urlToScriptService';
 
 // Content type options
 type ContentType = 'document' | 'image' | 'audio' | 'url' | 'full-pipeline';
@@ -310,36 +311,88 @@ export function SmartContentPipeline({
       }
       
       progressIntervalRef.current = setInterval(() => {
-        setProgress(prev => Math.min(prev + 8, 90));
+        setProgress(prev => Math.min(prev + 5, 90));
         const messages = {
           'document': ['Extracting document content...', 'Analyzing structure...', 'Generating script...'],
           'image': ['Analyzing image...', 'Extracting visual details...', 'Creating narrative...'],
           'audio': ['Transcribing audio...', 'Processing speech...', 'Formatting script...'],
-          'url': ['Crawling URL...', 'Extracting content...', 'Generating script...'],
+          'url': ['Crawling URL content...', 'Extracting key information...', 'Generating full script...', 'Enhancing with AI...'],
           'full-pipeline': ['Processing sources...', 'Orchestrating pipeline...', 'Synthesizing content...'],
         };
         const typeMessages = messages[contentType] || messages['document'];
         setProgressMessage(typeMessages[Math.floor(Math.random() * typeMessages.length)]);
-      }, 700);
+      }, 1000);
 
-      // Simulate API call with tracked timeout
-      await new Promise<void>(resolve => {
-        simulationTimeoutRef.current = setTimeout(resolve, 3500);
-      });
+      let content: GeneratedContent;
 
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
-      }
-      setProgress(100);
-      setProgressMessage('Complete!');
+      // Use real service for URL content type
+      if (contentType === 'url') {
+        // Map AI provider selection to service format
+        const aiProvider = selectedProvider === 'auto' ? 'gemini' : 
+                          selectedProvider === 'claude' ? 'claude' : 
+                          selectedProvider as 'openai' | 'claude' | 'gemini';
+        
+        const result = await urlToScriptService.convertUrlToScript({
+          url: urlInput,
+          outputFormat: outputFormat as ScriptOutputFormat,
+          duration: duration,
+          tone: tone as 'professional' | 'casual' | 'educational' | 'inspirational' | 'dramatic',
+          targetAudience: targetAudience || undefined,
+          aiProvider: aiProvider as 'openai' | 'claude' | 'gemini',
+          enhanceWithAI: true,
+          useKnowledgeBase: enableKnowledgeSearch,
+        });
 
-      // Create mock generated content
-      const sourceName = contentType === 'url' ? urlInput : 
-                        contentType === 'image' && generateImage ? 'Generated Image' :
-                        uploadedFiles[0]?.file.name || 'Content';
-      
-      const mockScript = `# Generated ${outputFormat.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+        }
+
+        if (!result.success || !result.script) {
+          throw new Error(result.error || 'Failed to generate script from URL');
+        }
+
+        setProgress(100);
+        setProgressMessage('Complete!');
+
+        // Convert script scenes to text format
+        const scriptText = result.script.scenes.map(scene => 
+          `## Scene ${scene.sceneNumber}\n\n${scene.narration}\n\n${scene.visualDirection ? `**Visual Direction:** ${scene.visualDirection}\n` : ''}${scene.bRollSuggestions?.length ? `**B-Roll:** ${scene.bRollSuggestions.join(', ')}\n` : ''}`
+        ).join('\n---\n\n');
+
+        const fullScript = `# ${result.script.title}\n\n**Source:** ${result.script.sourceUrl}\n**Format:** ${result.script.format.replace('_', ' ')}\n**Duration:** ${Math.floor(result.script.totalDuration / 60)} minutes\n**Words:** ${result.script.metadata.wordCount}\n\n---\n\n${scriptText}`;
+
+        content = {
+          script: fullScript,
+          title: result.script.title,
+          type: outputFormat as GeneratedContent['type'],
+          duration: result.script.totalDuration,
+          sourceType: 'url',
+          metadata: {
+            wordCount: result.script.metadata.wordCount,
+            estimatedDuration: result.script.totalDuration,
+            provider: aiProvider,
+            timestamp: Date.now(),
+          },
+        };
+      } else {
+        // Simulate API call for other content types
+        await new Promise<void>(resolve => {
+          simulationTimeoutRef.current = setTimeout(resolve, 3500);
+        });
+
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+        }
+        setProgress(100);
+        setProgressMessage('Complete!');
+
+        // Create mock generated content for non-URL types
+        const sourceName = contentType === 'image' && generateImage ? 'Generated Image' :
+                          uploadedFiles[0]?.file.name || 'Content';
+        
+        const mockScript = `# Generated ${outputFormat.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
 
 ## Source: ${sourceName}
 ## Tone: ${tone} | Duration: ${Math.floor(duration / 60)} min | Audience: ${targetAudience || 'General'}
@@ -364,27 +417,32 @@ Thank you for watching. This content was processed using ${selectedProvider === 
 Generated by Smart Content Pipeline
 `;
 
-      const content: GeneratedContent = {
-        script: mockScript,
-        title: `Script from ${sourceName}`,
-        type: outputFormat as GeneratedContent['type'],
-        duration,
-        sourceType: contentType === 'full-pipeline' ? 'document' : contentType,
-        metadata: {
-          wordCount: mockScript.split(/\s+/).length,
-          estimatedDuration: duration,
-          provider: selectedProvider,
-          timestamp: Date.now(),
-        },
-      };
+        content = {
+          script: mockScript,
+          title: `Script from ${sourceName}`,
+          type: outputFormat as GeneratedContent['type'],
+          duration,
+          sourceType: contentType === 'full-pipeline' ? 'document' : contentType,
+          metadata: {
+            wordCount: mockScript.split(/\s+/).length,
+            estimatedDuration: duration,
+            provider: selectedProvider,
+            timestamp: Date.now(),
+          },
+        };
+      }
 
       setGeneratedContent(content);
       toast.success('Script generated successfully!');
     } catch (err) {
       console.error('Generation error:', err);
-      setError('An error occurred during generation');
-      toast.error('Generation failed. Please try again.');
+      setError(err instanceof Error ? err.message : 'An error occurred during generation');
+      toast.error(err instanceof Error ? err.message : 'Generation failed. Please try again.');
     } finally {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
       setIsProcessing(false);
     }
   };
