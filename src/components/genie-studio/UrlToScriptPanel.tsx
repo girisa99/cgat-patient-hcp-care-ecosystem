@@ -48,6 +48,7 @@ interface UrlToScriptPanelProps {
 
 const OUTPUT_FORMATS: { value: ScriptOutputFormat; label: string; description: string }[] = [
   { value: 'video_script', label: 'Video Script', description: 'For video productions' },
+  { value: 'audio_script', label: 'Audio Script', description: 'Voice-over only' },
   { value: 'podcast_script', label: 'Podcast Script', description: 'For audio podcasts' },
   { value: 'presentation_script', label: 'Presentation', description: 'For slide decks' },
   { value: 'tutorial_script', label: 'Tutorial', description: 'For how-to content' },
@@ -286,7 +287,7 @@ export function UrlToScriptPanel({ onScriptGenerated, className }: UrlToScriptPa
           {/* Output Format */}
           <div className="space-y-2">
             <Label>Output Format</Label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {OUTPUT_FORMATS.map((format) => (
                 <button
                   key={format.value}
@@ -342,11 +343,12 @@ export function UrlToScriptPanel({ onScriptGenerated, className }: UrlToScriptPa
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="60">1 min</SelectItem>
-                  <SelectItem value="120">2 min</SelectItem>
-                  <SelectItem value="180">3 min</SelectItem>
-                  <SelectItem value="300">5 min</SelectItem>
-                  <SelectItem value="600">10 min</SelectItem>
+                  <SelectItem value="60">1 min (~150 words)</SelectItem>
+                  <SelectItem value="120">2 min (~300 words)</SelectItem>
+                  <SelectItem value="180">3 min (~450 words)</SelectItem>
+                  <SelectItem value="300">5 min (~750 words)</SelectItem>
+                  <SelectItem value="600">10 min (~1500 words)</SelectItem>
+                  <SelectItem value="900">15 min (~2250 words)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
