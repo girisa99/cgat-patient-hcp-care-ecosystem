@@ -542,7 +542,11 @@ export const GenieStudioUnifiedHub: React.FC = () => {
           {categories.map(cat => {
             const Icon = cat.icon;
             return (
-              <TabsTrigger key={cat.id} value={cat.id} className="gap-2 data-[state=active]:bg-background">
+              <TabsTrigger 
+                key={cat.id} 
+                value={cat.id} 
+                className="gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground"
+              >
                 <Icon className="h-4 w-4" />
                 <span className="hidden md:inline">{cat.label}</span>
               </TabsTrigger>
