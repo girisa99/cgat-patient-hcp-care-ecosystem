@@ -29,7 +29,7 @@ const colors = {
   hub: { bg: '#7c3aed', text: '#ffffff' },
 };
 
-// Product Suite Integration
+// Product Suite Integration with Agent & API connections
 const genieSuiteProducts = [
   {
     id: 'spark',
@@ -39,7 +39,9 @@ const genieSuiteProducts = [
     description: 'Quick Ideas & Brainstorming',
     status: 'planned',
     phase: 'P2',
-    features: ['Idea capture', 'Quick prompts', 'Template starter']
+    features: ['Idea capture', 'Quick prompts', 'Template starter'],
+    agents: ['idea_generator_agent', 'template_matcher_agent'],
+    apis: ['ai-universal-processor']
   },
   {
     id: 'arc',
@@ -49,7 +51,9 @@ const genieSuiteProducts = [
     description: 'Team Collaboration Hub',
     status: 'partial',
     phase: 'P1',
-    features: ['Team workspace', 'Review & approval', 'Asset sharing', 'Version control']
+    features: ['Team workspace', 'Review & approval', 'Asset sharing', 'Version control'],
+    agents: ['collaboration_agent', 'approval_workflow_agent'],
+    apis: ['collaboration-sync', 'asset-manager']
   },
   {
     id: 'hub',
@@ -59,7 +63,9 @@ const genieSuiteProducts = [
     description: 'Enterprise Production Center',
     status: 'partial',
     phase: 'P1',
-    features: ['Multi-show management', 'Broadcast scheduling', 'Team assignments']
+    features: ['Multi-show management', 'Broadcast scheduling', 'Team assignments', 'Pipeline automation'],
+    agents: ['production_orchestrator_agent', 'scheduling_agent', 'resource_allocation_agent'],
+    apis: ['shows-api', 'calendar-sync', 'team-management']
   }
 ];
 
@@ -175,39 +181,63 @@ const phaseRoadmap = [
   }
 ];
 
-// Cross-functional scenarios
+// Cross-functional scenarios with agent & API mappings
 const crossFunctionalMatrix = {
   universal: {
     name: 'Universal (All Products)',
-    scenarios: [1, 2, 3, 4, 5, 6, 7, 8, 61, 62, 63, 64, 65],
-    features: ['Script Creation', 'TTS Generation', 'Recording', 'Export', 'Vibe↔Mind']
+    scenarios: [1, 2, 3, 4, 5, 6, 7, 8, 61, 62, 63, 64, 65, 111, 112, 126, 127],
+    features: ['Script Creation', 'TTS Generation', 'Recording', 'Export', 'Vibe↔Mind'],
+    agents: ['script_generator_agent', 'tts_orchestrator_agent', 'content_analyzer_agent'],
+    apis: ['ai-universal-processor', 'tts-generate', 'process-documents']
   },
   mobileCrossover: {
     name: 'Mobile-First',
     marketData: '68% want mobile-first',
     segments: ['Creator', 'Traveler', 'SMB', 'Healthcare', 'Education'],
     scenarios: [81, 82, 83, 84, 85],
-    products: ['Mind', 'Vibe', 'Spark']
+    products: ['Mind', 'Vibe', 'Spark'],
+    agents: ['mobile_sync_agent', 'offline_cache_agent'],
+    apis: ['mobile-sync', 'offline-storage']
   },
   remixCrossover: {
     name: 'Remix & Clips',
     marketData: '82% creators want quick clips',
     segments: ['Creator', 'SMB', 'Education'],
     scenarios: [90, 101, 102, 103, 104, 105, 107, 108, 109, 110],
-    products: ['Vibe', 'Arc']
+    products: ['Vibe', 'Arc'],
+    agents: ['remix_engine_agent', 'clip_generator_agent'],
+    apis: ['media-processor', 'clip-assembly']
   },
   offlineCrossover: {
     name: 'Offline Mode',
     marketData: '54% need offline',
     segments: ['Traveler', 'Healthcare', 'Enterprise'],
     scenarios: [82, 89, 99],
-    products: ['Vibe', 'Mind (cached)']
+    products: ['Vibe', 'Mind (cached)'],
+    agents: ['offline_sync_agent'],
+    apis: ['offline-storage', 'sync-queue']
   },
   complianceCrossover: {
     name: 'Compliance & Legal',
     segments: ['Healthcare', 'Enterprise', 'Finance'],
     scenarios: [36, 43, 44, 45, 46, 93, 99],
-    products: ['Vibe', 'Arc', 'Hub']
+    products: ['Vibe', 'Arc', 'Hub'],
+    agents: ['hipaa_compliance_agent', 'audit_trail_agent'],
+    apis: ['hipaa-audit', 'compliance-check']
+  },
+  agentAutomation: {
+    name: 'Agent & Automation',
+    scenarios: [111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125],
+    products: ['Mind', 'Vibe', 'Hub'],
+    agents: ['orchestrator_agent', 'quality_control_agent', 'analytics_agent', 'export_agent'],
+    apis: ['agent-registry', 'workflow-engine', 'automation-rules']
+  },
+  apiIntegration: {
+    name: 'API & Data Integration',
+    scenarios: [126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140],
+    products: ['All Suite'],
+    agents: ['data_sync_agent', 'webhook_handler_agent'],
+    apis: ['ElevenLabs', 'OpenAI', 'Google Cloud', 'Azure', 'AWS S3', 'Stripe', 'Supabase']
   }
 };
 

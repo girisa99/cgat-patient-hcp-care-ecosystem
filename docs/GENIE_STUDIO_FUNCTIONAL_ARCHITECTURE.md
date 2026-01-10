@@ -163,6 +163,25 @@ Production Hub Features:
 │  • Asset Coordination         │  • Publication Schedule                     │
 └─────────────────────────────────────────────────────────────────────────────┘
 
+Agent & Automation Integration:
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  AGENTS:                                                                     │
+│  • production_orchestrator_agent - Coordinates multi-stage workflows        │
+│  • scheduling_agent - Calendar sync and deadline management                 │
+│  • resource_allocation_agent - Team and asset assignment                    │
+│  • approval_workflow_agent - Automated approval routing                     │
+│                                                                              │
+│  APIs (Internal):                                                            │
+│  • shows-api - Show/episode management                                      │
+│  • calendar-sync - External calendar integration                            │
+│  • team-management - User roles and permissions                             │
+│                                                                              │
+│  APIs (External):                                                            │
+│  • Google Calendar API - Meeting scheduling                                 │
+│  • Slack/Teams API - Team notifications                                     │
+│  • Zapier/n8n - Workflow automation webhooks                                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
 Note: Publishing always happens from Vibe. Production Hub tracks readiness.
 ```
 
