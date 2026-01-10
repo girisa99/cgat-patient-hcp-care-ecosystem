@@ -27,6 +27,7 @@ import {
   Film,
   Shield
 } from 'lucide-react';
+import { SegmentJourneyInfographic } from './SegmentJourneyInfographic';
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
 
@@ -717,9 +718,9 @@ export const GenieVisualAssetsGalleryDiagram = () => {
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div>
                     <h3 className="text-lg font-semibold" style={{ color: colors.text }}>🎯 Segment Journey Infographics</h3>
-                    <p className="text-sm" style={{ color: colors.textMuted }}>Explore each segment's creative workflow from Record → Voice → Language → Generate → Edit → Publish!</p>
+                    <p className="text-sm" style={{ color: colors.textMuted }}>Visual winding-path journey showing each step with P0-P5 mapping, technical details & cross-functional links!</p>
                   </div>
-                  <Badge style={{ backgroundColor: colors.creator.bg, color: '#fff' }}>6 Segments • 48 Workflow Steps</Badge>
+                  <Badge style={{ backgroundColor: colors.creator.bg, color: '#fff' }}>6 Segments • 72 Journey Stages</Badge>
                 </div>
                 
                 {/* Segment Selector */}
@@ -738,6 +739,12 @@ export const GenieVisualAssetsGalleryDiagram = () => {
                     </Button>
                   ))}
                 </div>
+
+                {/* New Winding Journey Infographic Component */}
+                <SegmentJourneyInfographic 
+                  selectedSegment={selectedSegment} 
+                  onSelectSegment={setSelectedSegment}
+                />
 
                 {/* Selected Segment Journey - Enhanced Creative Infographic */}
                 {selectedSegment && segmentJourneys[selectedSegment as keyof typeof segmentJourneys] && (() => {
