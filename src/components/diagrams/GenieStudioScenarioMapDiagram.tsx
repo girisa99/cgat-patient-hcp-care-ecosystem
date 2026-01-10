@@ -135,6 +135,90 @@ const priorityConfig = {
   p5: { label: 'P5 - Future', icon: Film, description: 'Advanced features', color: colors.p5, marketDriver: 'Innovation', count: 10 },
 };
 
+// Cross-Functional Categories - scenarios that span multiple products/segments
+const crossFunctionalCategories = {
+  universal: {
+    name: 'Universal Features',
+    description: 'Core features used by all products and segments',
+    color: { bg: '#10b981', light: '#d1fae5' },
+    icon: '🌍',
+    marketData: 'Foundation for all',
+    products: ['Mind', 'Vibe'],
+    segments: ['All 6 Segments'],
+    scenarios: [1, 2, 3, 4, 5, 6, 7, 8, 61, 62, 63, 64, 65],
+    features: ['Script Creation', 'TTS Generation', 'Recording', 'Export', 'Vibe↔Mind Bridge']
+  },
+  mobilefirst: {
+    name: 'Mobile-First',
+    description: 'Mobile-optimized experiences (68% demand)',
+    color: { bg: '#f97316', light: '#fed7aa' },
+    icon: '📱',
+    marketData: '68% want mobile-first editing',
+    products: ['Mind', 'Vibe', 'Spark'],
+    segments: ['Creator', 'Traveler', 'SMB', 'Healthcare', 'Education'],
+    scenarios: [81, 82, 83, 84, 85],
+    features: ['One-Tap Record', 'Offline Mode', 'Quick Templates', 'Voice-First', 'Social Integration']
+  },
+  remixclips: {
+    name: 'Remix & Clips',
+    description: 'Content remixing and clip assembly (82% creators want)',
+    color: { bg: '#06b6d4', light: '#a5f3fc' },
+    icon: '🎬',
+    marketData: '82% creators want quick clips',
+    products: ['Vibe', 'Arc'],
+    segments: ['Creator', 'SMB', 'Education'],
+    scenarios: [90, 101, 102, 103, 104, 105, 107, 108, 109, 110],
+    features: ['Quick Clips Generator', 'Multi-Clip Timeline', 'AI Auto-Arrange', 'Smart Transitions', 'Music Sync', 'Highlights Reel']
+  },
+  offline: {
+    name: 'Offline Mode',
+    description: 'Work without internet connection (54% need)',
+    color: { bg: '#6366f1', light: '#e0e7ff' },
+    icon: '📴',
+    marketData: '54% need offline capability',
+    products: ['Vibe', 'Mind (cached)'],
+    segments: ['Traveler', 'Healthcare', 'Enterprise'],
+    scenarios: [82, 89, 99],
+    features: ['Offline Recording', 'Location Story Mode', 'Offline Compliance Mode']
+  },
+  compliance: {
+    name: 'Compliance & Legal',
+    description: 'Regulated industry requirements (94% want HIPAA <$100)',
+    color: { bg: '#8b5cf6', light: '#ede9fe' },
+    icon: '🏥',
+    marketData: '94% want HIPAA under $100/mo',
+    products: ['Vibe', 'Arc', 'Hub'],
+    segments: ['Healthcare', 'Enterprise', 'Finance'],
+    scenarios: [36, 43, 44, 45, 46, 93, 99],
+    features: ['HIPAA Recording', 'Legal Review Gate', 'Compliance Check', 'PHI Redaction', 'Accessibility', 'Audit Trail']
+  },
+  collaboration: {
+    name: 'Team Collaboration',
+    description: 'Multi-user and team workflows',
+    color: { bg: '#3b82f6', light: '#dbeafe' },
+    icon: '👥',
+    marketData: 'Enterprise essential',
+    products: ['Arc', 'Hub', 'Mind'],
+    segments: ['Enterprise', 'SMB', 'Education'],
+    scenarios: [21, 30, 31, 32, 58, 59, 110],
+    features: ['Collaborative Editing', 'Asset Library Sync', 'Project Duplication', 'Version Control', 'Approval Workflows', 'Clip Library Sharing']
+  },
+  segmentspecific: {
+    name: 'Segment-Specific',
+    description: 'Tailored features for each market segment',
+    color: { bg: '#ec4899', light: '#fce7f3' },
+    icon: '🎯',
+    marketData: '6 vertical markets',
+    products: ['All Suite'],
+    segments: ['Creator', 'Traveler', 'SMB', 'Education', 'Healthcare', 'Enterprise'],
+    scenarios: [86, 87, 88, 89, 91, 92, 93, 94, 95, 96, 97, 98],
+    features: ['Product Demo Mode', 'Testimonial Collector', 'Lesson Builder', 'Traveler Kit', 'Patient Education', 'Training Module Builder']
+  }
+};
+
+// Get all scenarios flat for cross-functional lookup
+const allScenarios = Object.values(scenarios).flat();
+
 export const GenieStudioScenarioMapDiagram = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const diagramRef = useRef<HTMLDivElement>(null);
@@ -277,8 +361,9 @@ export const GenieStudioScenarioMapDiagram = () => {
       </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-7 w-full">
+        <TabsList className="grid grid-cols-8 w-full">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="crossfunctional">Cross-Functional</TabsTrigger>
           <TabsTrigger value="p0">P0 Core</TabsTrigger>
           <TabsTrigger value="p1">P1 Mobile</TabsTrigger>
           <TabsTrigger value="p2">P2 Advanced</TabsTrigger>
@@ -397,7 +482,177 @@ export const GenieStudioScenarioMapDiagram = () => {
               </div>
             </TabsContent>
 
-            {/* Priority Tabs */}
+            {/* Cross-Functional Categories Tab */}
+            <TabsContent value="crossfunctional" className="space-y-4 mt-0">
+              {/* Summary Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {Object.entries(crossFunctionalCategories).map(([key, category]) => (
+                  <Card 
+                    key={key}
+                    className="border-2"
+                    style={{ borderColor: category.color.bg, backgroundColor: category.color.light }}
+                  >
+                    <CardContent className="pt-4 pb-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xl">{category.icon}</span>
+                        <span className="font-semibold text-sm" style={{ color: category.color.bg }}>{category.name}</span>
+                      </div>
+                      <p className="text-xs mb-2" style={{ color: colors.text }}>{category.description}</p>
+                      <div className="text-xs space-y-1" style={{ color: colors.textMuted }}>
+                        <p><strong>{category.scenarios.length}</strong> scenarios</p>
+                        <p>Products: {category.products.join(', ')}</p>
+                      </div>
+                      {category.marketData && (
+                        <p className="text-xs mt-2 font-medium" style={{ color: category.color.bg }}>📊 {category.marketData}</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Detailed Cross-Functional Breakdown */}
+              <div className="space-y-4">
+                {Object.entries(crossFunctionalCategories).map(([key, category]) => (
+                  <Card key={key} className="border-2" style={{ borderColor: category.color.bg }}>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">{category.icon}</span>
+                          <div>
+                            <CardTitle style={{ color: category.color.bg }}>{category.name}</CardTitle>
+                            <p className="text-sm" style={{ color: colors.textMuted }}>{category.description}</p>
+                          </div>
+                        </div>
+                        {category.marketData && (
+                          <Badge style={{ backgroundColor: category.color.bg, color: '#fff' }}>
+                            {category.marketData}
+                          </Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {/* Products & Segments */}
+                      <div className="grid grid-cols-2 gap-4 mb-4 p-3 rounded-lg" style={{ backgroundColor: category.color.light }}>
+                        <div>
+                          <p className="text-xs font-semibold mb-1" style={{ color: category.color.bg }}>Products</p>
+                          <div className="flex flex-wrap gap-1">
+                            {category.products.map((product) => (
+                              <Badge key={product} variant="outline" className="text-xs" style={{ borderColor: category.color.bg, color: category.color.bg }}>
+                                {product}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold mb-1" style={{ color: category.color.bg }}>Segments</p>
+                          <div className="flex flex-wrap gap-1">
+                            {category.segments.map((segment) => (
+                              <Badge key={segment} variant="outline" className="text-xs">
+                                {segment}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Features */}
+                      <div className="mb-4">
+                        <p className="text-xs font-semibold mb-2" style={{ color: colors.text }}>Key Features</p>
+                        <div className="flex flex-wrap gap-2">
+                          {category.features.map((feature) => (
+                            <span 
+                              key={feature} 
+                              className="text-xs px-2 py-1 rounded-full"
+                              style={{ backgroundColor: category.color.light, color: category.color.bg, border: `1px solid ${category.color.bg}` }}
+                            >
+                              {feature}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Scenarios List */}
+                      <div>
+                        <p className="text-xs font-semibold mb-2" style={{ color: colors.text }}>
+                          Scenarios ({category.scenarios.length})
+                        </p>
+                        <div className="grid gap-2">
+                          {category.scenarios.map((scenarioId) => {
+                            const scenario = allScenarios.find(s => s.id === scenarioId);
+                            if (!scenario) return null;
+                            return (
+                              <div 
+                                key={scenarioId}
+                                className="flex items-center justify-between p-2 rounded border"
+                                style={{ borderColor: colors.border, backgroundColor: colors.cardBg }}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span 
+                                    className="text-xs font-mono px-2 py-0.5 rounded" 
+                                    style={{ backgroundColor: category.color.light, color: category.color.bg }}
+                                  >
+                                    #{scenario.id}
+                                  </span>
+                                  <span className="text-sm" style={{ color: colors.text }}>{scenario.name}</span>
+                                  <Badge variant="outline" className="text-xs">{scenario.category}</Badge>
+                                </div>
+                                {getStatusBadge(scenario.status)}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Cross-Functional Matrix Summary */}
+              <Card className="border-2" style={{ borderColor: colors.p0.bg }}>
+                <CardHeader className="pb-2">
+                  <CardTitle style={{ color: colors.p0.bg }}>📊 Cross-Functional Matrix Summary</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b" style={{ borderColor: colors.border }}>
+                          <th className="text-left p-2" style={{ color: colors.text }}>Category</th>
+                          <th className="text-center p-2" style={{ color: colors.text }}>Scenarios</th>
+                          <th className="text-center p-2" style={{ color: colors.text }}>Products</th>
+                          <th className="text-center p-2" style={{ color: colors.text }}>Segments</th>
+                          <th className="text-center p-2" style={{ color: colors.text }}>Market Driver</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(crossFunctionalCategories).map(([key, category]) => (
+                          <tr key={key} className="border-b" style={{ borderColor: colors.border }}>
+                            <td className="p-2">
+                              <div className="flex items-center gap-2">
+                                <span>{category.icon}</span>
+                                <span style={{ color: category.color.bg, fontWeight: 'bold' }}>{category.name}</span>
+                              </div>
+                            </td>
+                            <td className="text-center p-2" style={{ color: colors.text }}>{category.scenarios.length}</td>
+                            <td className="text-center p-2" style={{ color: colors.textMuted }}>{category.products.length}</td>
+                            <td className="text-center p-2" style={{ color: colors.textMuted }}>{category.segments.length}</td>
+                            <td className="text-center p-2">
+                              {category.marketData ? (
+                                <Badge style={{ backgroundColor: category.color.light, color: category.color.bg }} className="text-xs">
+                                  {category.marketData.split(' ')[0]}
+                                </Badge>
+                              ) : (
+                                <span style={{ color: colors.textMuted }}>—</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
             {Object.entries(priorityConfig).map(([key, config]) => (
               <TabsContent key={key} value={key} className="space-y-4 mt-0">
                 <Card className="border-2" style={{ borderColor: config.color.bg }}>
