@@ -7,3 +7,4 @@ export { GenieStudioTechnicalArchDiagram } from './GenieStudioTechnicalArchDiagr
 export { GenieStudioFunctionalArchDiagram } from './GenieStudioFunctionalArchDiagram';
 export { GenieStudioScenarioMapDiagram } from './GenieStudioScenarioMapDiagram';
 export { GenieStudioFullArchitectureDiagram } from './GenieStudioFullArchitectureDiagram';
+export { GenieVisualAssetsGalleryDiagram } from './GenieVisualAssetsGalleryDiagram';
