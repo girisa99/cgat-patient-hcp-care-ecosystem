@@ -10,3 +10,4 @@ export { GenieStudioFullArchitectureDiagram } from './GenieStudioFullArchitectur
 export { GenieVisualAssetsGalleryDiagram } from './GenieVisualAssetsGalleryDiagram';
 export { MarketAnalysisDashboard } from './MarketAnalysisDashboard';
 export { GenieMarketAnalysisDiagram } from './GenieMarketAnalysisDiagram';
+export { GenieStudioUnifiedHub } from './GenieStudioUnifiedHub';
