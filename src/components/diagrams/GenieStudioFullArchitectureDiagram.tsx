@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, ExternalLink, CheckCircle2, Clock, Calendar, Layers, FileImage, FileCode } from 'lucide-react';
+import { Download, ExternalLink, CheckCircle2, Clock, Calendar, Layers, FileImage, FileCode, Smartphone, Users, Package, Globe, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Enterprise color palette - consistent across all diagrams
@@ -17,6 +17,14 @@ const colors = {
   domain: { bg: '#ec4899', text: '#ffffff', light: '#fce7f3' },
   infrastructure: { bg: '#64748b', text: '#ffffff', light: '#f1f5f9' },
   
+  // Segment colors
+  creator: { bg: '#8b5cf6', text: '#ffffff', light: '#ede9fe' },
+  traveler: { bg: '#0ea5e9', text: '#ffffff', light: '#e0f2fe' },
+  smb: { bg: '#f59e0b', text: '#ffffff', light: '#fef3c7' },
+  education: { bg: '#10b981', text: '#ffffff', light: '#d1fae5' },
+  healthcare: { bg: '#ec4899', text: '#ffffff', light: '#fce7f3' },
+  enterprise: { bg: '#64748b', text: '#ffffff', light: '#f1f5f9' },
+  
   // Neutral
   border: '#e2e8f0',
   background: '#ffffff',
@@ -29,6 +37,7 @@ interface PhaseData {
   name: string;
   status: 'completed' | 'in-progress' | 'planned';
   completion: number;
+  marketDriver: string;
   features: {
     name: string;
     status: 'completed' | 'in-progress' | 'planned';
@@ -42,6 +51,7 @@ const phases: PhaseData[] = [
     name: 'Foundation',
     status: 'completed',
     completion: 100,
+    marketDriver: 'Core MVP',
     features: [
       { name: 'Script Repository UI', status: 'completed', layer: 'presentation' },
       { name: 'Template CRUD Service', status: 'completed', layer: 'application' },
@@ -54,6 +64,7 @@ const phases: PhaseData[] = [
     name: 'Recording Core',
     status: 'completed',
     completion: 100,
+    marketDriver: 'Basic Recording',
     features: [
       { name: 'Genie Vibe UI', status: 'completed', layer: 'presentation' },
       { name: 'Multi-Track Recorder', status: 'completed', layer: 'application' },
@@ -63,47 +74,72 @@ const phases: PhaseData[] = [
   },
   {
     id: 'P2',
-    name: 'AI Integration',
-    status: 'in-progress',
-    completion: 60,
+    name: 'AI + Vibe↔Mind',
+    status: 'completed',
+    completion: 100,
+    marketDriver: 'Bidirectional AI',
     features: [
-      { name: 'AI Assistant Panel', status: 'completed', layer: 'presentation' },
+      { name: 'ContentAnalyzer', status: 'completed', layer: 'presentation' },
       { name: 'Script Generation', status: 'completed', layer: 'application' },
-      { name: 'NLP Processing', status: 'in-progress', layer: 'domain' },
-      { name: 'OpenAI/Claude APIs', status: 'in-progress', layer: 'infrastructure' },
+      { name: 'NLP Processing', status: 'completed', layer: 'domain' },
+      { name: 'OpenAI/Claude APIs', status: 'completed', layer: 'infrastructure' },
     ]
   },
   {
     id: 'P3',
-    name: 'Collaboration',
+    name: 'Mobile-First',
     status: 'planned',
-    completion: 15,
+    completion: 0,
+    marketDriver: '68% want mobile',
     features: [
-      { name: 'Review Dashboard', status: 'planned', layer: 'presentation' },
-      { name: 'Workflow Engine', status: 'in-progress', layer: 'application' },
-      { name: 'Approval Domain', status: 'planned', layer: 'domain' },
-      { name: 'Real-time Sync', status: 'planned', layer: 'infrastructure' },
+      { name: 'One-Tap Record', status: 'planned', layer: 'presentation' },
+      { name: 'Offline Mode', status: 'planned', layer: 'application' },
+      { name: 'Voice Commands', status: 'planned', layer: 'domain' },
+      { name: 'PWA/Native', status: 'planned', layer: 'infrastructure' },
     ]
   },
   {
     id: 'P4',
-    name: 'Analytics',
+    name: 'Segment-Specific',
     status: 'planned',
     completion: 0,
+    marketDriver: 'SMB/Edu/Healthcare',
     features: [
-      { name: 'Analytics Dashboard', status: 'planned', layer: 'presentation' },
-      { name: 'Metrics Service', status: 'planned', layer: 'application' },
-      { name: 'Usage Tracking', status: 'planned', layer: 'domain' },
-      { name: 'Data Warehouse', status: 'planned', layer: 'infrastructure' },
+      { name: 'Product Demo Mode', status: 'planned', layer: 'presentation' },
+      { name: 'Lesson Builder', status: 'planned', layer: 'application' },
+      { name: 'Patient Education', status: 'planned', layer: 'domain' },
+      { name: 'HIPAA Compliance', status: 'planned', layer: 'infrastructure' },
+    ]
+  },
+  {
+    id: 'P5',
+    name: 'Enterprise',
+    status: 'planned',
+    completion: 0,
+    marketDriver: 'White-label',
+    features: [
+      { name: 'White-label UI', status: 'planned', layer: 'presentation' },
+      { name: 'Multi-tenant', status: 'planned', layer: 'application' },
+      { name: 'Approval Workflows', status: 'planned', layer: 'domain' },
+      { name: 'SSO/SAML', status: 'planned', layer: 'infrastructure' },
     ]
   },
 ];
 
 const layers = [
-  { id: 'presentation', name: 'Presentation Layer', description: 'UI Components & User Experience' },
-  { id: 'application', name: 'Application Layer', description: 'Services & Business Logic' },
+  { id: 'presentation', name: 'Presentation Layer', description: 'UI Components & UX' },
+  { id: 'application', name: 'Application Layer', description: 'Services & Logic' },
   { id: 'domain', name: 'Domain Layer', description: 'Core Models & Rules' },
-  { id: 'infrastructure', name: 'Infrastructure Layer', description: 'External Services & Storage' },
+  { id: 'infrastructure', name: 'Infrastructure Layer', description: 'External Services' },
+];
+
+const segments = [
+  { id: 'creator', name: 'Creator', icon: Users, competitors: 'CapCut, Canva', gap: 'No unified script→TTS→record' },
+  { id: 'traveler', name: 'Traveler', icon: Globe, competitors: 'GoPro Quik, Adobe Rush', gap: 'No offline + AI narration' },
+  { id: 'smb', name: 'SMB', icon: Package, competitors: 'Loom, Synthesia', gap: 'Synthesia $67/mo too expensive' },
+  { id: 'education', name: 'Education', icon: Users, competitors: 'Screencastify, Camtasia', gap: 'No AI lesson scripts' },
+  { id: 'healthcare', name: 'Healthcare', icon: Shield, competitors: 'VIDIZMO, Gumlet', gap: 'No affordable HIPAA' },
+  { id: 'enterprise', name: 'Enterprise', icon: Layers, competitors: 'Synthesia, HeyGen', gap: 'No integrated workflows' },
 ];
 
 export const GenieStudioFullArchitectureDiagram: React.FC = () => {
@@ -132,18 +168,15 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
   };
 
   const handleDownloadSVG = () => {
-    if (!diagramRef.current) return;
-    
-    // Create SVG from the diagram content
     const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
-  <rect width="1200" height="800" fill="#ffffff"/>
-  <text x="600" y="35" text-anchor="middle" fill="${colors.text}" font-size="24" font-weight="bold">Genie Mind + Genie Vibe — Complete Architecture &amp; Roadmap</text>
-  <text x="600" y="58" text-anchor="middle" fill="${colors.textMuted}" font-size="12">"From Mind to Media" | AI That Understands → Script to Screen</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+  <rect width="1400" height="900" fill="#ffffff"/>
+  <text x="700" y="35" text-anchor="middle" fill="${colors.text}" font-size="24" font-weight="bold">Genie Mind + Genie Vibe — Complete Architecture (110 Scenarios)</text>
+  <text x="700" y="58" text-anchor="middle" fill="${colors.textMuted}" font-size="12">"From Mind to Media" | 6 Market Segments | 8 Implemented, 6 Partial, 96 Planned</text>
   
   <!-- Legend -->
   <g transform="translate(50, 70)">
-    <rect width="500" height="60" rx="8" fill="#f8fafc" stroke="${colors.border}"/>
+    <rect width="600" height="60" rx="8" fill="#f8fafc" stroke="${colors.border}"/>
     <text x="20" y="25" fill="${colors.text}" font-size="12" font-weight="bold">Status:</text>
     <rect x="80" y="12" width="16" height="16" rx="2" fill="${colors.completed.bg}"/>
     <text x="102" y="25" fill="${colors.textMuted}" font-size="11">Completed</text>
@@ -152,30 +185,18 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
     <rect x="270" y="12" width="16" height="16" rx="2" fill="${colors.planned.bg}"/>
     <text x="292" y="25" fill="${colors.textMuted}" font-size="11">Planned</text>
     
-    <text x="20" y="48" fill="${colors.text}" font-size="12" font-weight="bold">Layers:</text>
-    <rect x="80" y="35" width="16" height="16" rx="2" fill="${colors.presentation.bg}"/>
-    <text x="102" y="48" fill="${colors.textMuted}" font-size="11">Presentation</text>
-    <rect x="180" y="35" width="16" height="16" rx="2" fill="${colors.application.bg}"/>
-    <text x="202" y="48" fill="${colors.textMuted}" font-size="11">Application</text>
-    <rect x="280" y="35" width="16" height="16" rx="2" fill="${colors.domain.bg}"/>
-    <text x="302" y="48" fill="${colors.textMuted}" font-size="11">Domain</text>
-    <rect x="360" y="35" width="16" height="16" rx="2" fill="${colors.infrastructure.bg}"/>
-    <text x="382" y="48" fill="${colors.textMuted}" font-size="11">Infrastructure</text>
+    <text x="20" y="48" fill="${colors.text}" font-size="12" font-weight="bold">Segments:</text>
+    <rect x="100" y="35" width="12" height="12" rx="2" fill="${colors.creator.bg}"/>
+    <text x="118" y="46" fill="${colors.textMuted}" font-size="10">Creator</text>
+    <rect x="175" y="35" width="12" height="12" rx="2" fill="${colors.smb.bg}"/>
+    <text x="193" y="46" fill="${colors.textMuted}" font-size="10">SMB</text>
+    <rect x="225" y="35" width="12" height="12" rx="2" fill="${colors.education.bg}"/>
+    <text x="243" y="46" fill="${colors.textMuted}" font-size="10">Education</text>
+    <rect x="310" y="35" width="12" height="12" rx="2" fill="${colors.healthcare.bg}"/>
+    <text x="328" y="46" fill="${colors.textMuted}" font-size="10">Healthcare</text>
+    <rect x="400" y="35" width="12" height="12" rx="2" fill="${colors.enterprise.bg}"/>
+    <text x="418" y="46" fill="${colors.textMuted}" font-size="10">Enterprise</text>
   </g>
-  
-  <!-- Phases -->
-  ${phases.map((phase, i) => `
-    <g transform="translate(${50 + i * 220}, 160)">
-      <rect width="200" height="280" rx="8" fill="${getStatusColor(phase.status).light}" stroke="${getStatusColor(phase.status).bg}" stroke-width="2"/>
-      <text x="100" y="30" text-anchor="middle" fill="${getStatusColor(phase.status).bg}" font-size="16" font-weight="bold">${phase.id}: ${phase.name}</text>
-      <text x="100" y="50" text-anchor="middle" fill="${colors.textMuted}" font-size="12">${phase.completion}% Complete</text>
-      ${phase.features.map((f, j) => `
-        <rect x="10" y="${70 + j * 50}" width="180" height="40" rx="4" fill="${getStatusColor(f.status).light}" stroke="${getStatusColor(f.status).bg}"/>
-        <circle cx="25" cy="${90 + j * 50}" r="6" fill="${getLayerColor(f.layer).bg}"/>
-        <text x="40" y="${94 + j * 50}" fill="${colors.text}" font-size="10">${f.name}</text>
-      `).join('')}
-    </g>
-  `).join('')}
 </svg>`;
     
     const blob = new Blob([svgContent], { type: 'image/svg+xml' });
@@ -214,30 +235,21 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
         <div>
           <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
             <Layers className="h-5 w-5" />
-            Genie Mind + Genie Vibe — Complete Architecture & Roadmap
+            Genie Mind + Genie Vibe — Complete Architecture (110 Scenarios)
           </CardTitle>
           <p className="text-sm text-muted-foreground mt-1">
-            "From Mind to Media" — Full technical and functional architecture with implementation status
+            6 Market Segments • 6 Phases • Competitive Gaps Addressed
           </p>
         </div>
         <div className="flex gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.open('/docs/GENIE_STUDIO_TECHNICAL_ARCHITECTURE.md', '_blank')}
+            onClick={() => window.open('/docs/GENIE_PHASE_IMPLEMENTATION_ROADMAP.md', '_blank')}
             className="flex items-center gap-1"
           >
             <ExternalLink className="h-4 w-4" />
-            Technical Docs
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => window.open('/docs/GENIE_STUDIO_FUNCTIONAL_ARCHITECTURE.md', '_blank')}
-            className="flex items-center gap-1"
-          >
-            <ExternalLink className="h-4 w-4" />
-            Functional Docs
+            Roadmap
           </Button>
           <Button
             variant="outline"
@@ -260,10 +272,10 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
         </div>
       </CardHeader>
       <CardContent>
-        <div ref={diagramRef} className="p-6 bg-white rounded-lg">
+        <div ref={diagramRef} className="p-6 bg-white rounded-lg space-y-6">
           {/* Legend Section */}
-          <div className="mb-6 p-4 rounded-lg border" style={{ borderColor: colors.border, backgroundColor: '#f8fafc' }}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-4 rounded-lg border" style={{ borderColor: colors.border, backgroundColor: '#f8fafc' }}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Status Legend */}
               <div>
                 <h4 className="text-sm font-semibold mb-2" style={{ color: colors.text }}>Implementation Status</h4>
@@ -305,29 +317,65 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Stats */}
+              <div>
+                <h4 className="text-sm font-semibold mb-2" style={{ color: colors.text }}>Scenario Stats</h4>
+                <div className="flex flex-wrap gap-3">
+                  <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: colors.completed.light, color: colors.completed.bg }}>8 Implemented</span>
+                  <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: colors.inProgress.light, color: colors.inProgress.bg }}>6 Partial</span>
+                  <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: colors.planned.light, color: colors.planned.bg }}>96 Planned</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Market Segments */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3" style={{ color: colors.text }}>Target Market Segments & Competitive Gaps</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              {segments.map((segment) => {
+                const Icon = segment.icon;
+                const segmentColor = colors[segment.id as keyof typeof colors] as typeof colors.creator;
+                return (
+                  <div 
+                    key={segment.id}
+                    className="p-3 rounded-lg border-2"
+                    style={{ 
+                      backgroundColor: segmentColor.light,
+                      borderColor: segmentColor.bg 
+                    }}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <Icon className="h-4 w-4" style={{ color: segmentColor.bg }} />
+                      <span className="font-semibold text-sm" style={{ color: segmentColor.bg }}>{segment.name}</span>
+                    </div>
+                    <p className="text-xs mb-1" style={{ color: colors.textMuted }}>vs {segment.competitors}</p>
+                    <p className="text-xs font-medium" style={{ color: colors.text }}>Gap: {segment.gap}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
           {/* Phase Timeline */}
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-4" style={{ color: colors.text }}>Implementation Roadmap</h3>
+          <div>
+            <h3 className="text-lg font-semibold mb-4" style={{ color: colors.text }}>Implementation Roadmap (6 Phases)</h3>
             <div className="flex items-center gap-2 overflow-x-auto pb-2">
               {phases.map((phase, index) => (
                 <React.Fragment key={phase.id}>
                   <div 
-                    className="flex-shrink-0 px-4 py-2 rounded-lg text-center min-w-[100px]"
+                    className="flex-shrink-0 px-4 py-2 rounded-lg text-center min-w-[120px]"
                     style={{ 
                       backgroundColor: getStatusColor(phase.status).light,
                       borderLeft: `4px solid ${getStatusColor(phase.status).bg}`
                     }}
                   >
                     <div className="text-sm font-bold" style={{ color: getStatusColor(phase.status).bg }}>
-                      {phase.id}
+                      {phase.id}: {phase.name}
                     </div>
-                    <div className="text-xs" style={{ color: colors.text }}>{phase.name}</div>
-                    <div className="text-xs font-medium mt-1" style={{ color: getStatusColor(phase.status).bg }}>
-                      {phase.completion}%
-                    </div>
+                    <div className="text-xs" style={{ color: colors.text }}>{phase.completion}%</div>
+                    <div className="text-xs mt-1" style={{ color: colors.textMuted }}>{phase.marketDriver}</div>
                   </div>
                   {index < phases.length - 1 && (
                     <div className="flex-shrink-0 w-8 h-0.5" style={{ backgroundColor: colors.border }} />
@@ -339,7 +387,7 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
 
           {/* Architecture Grid */}
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse" style={{ minWidth: '800px' }}>
+            <table className="w-full border-collapse" style={{ minWidth: '1000px' }}>
               <thead>
                 <tr>
                   <th 
@@ -351,16 +399,16 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
                   {phases.map((phase) => (
                     <th 
                       key={phase.id}
-                      className="p-3 text-center text-sm font-semibold border"
+                      className="p-2 text-center text-sm font-semibold border"
                       style={{ 
                         borderColor: colors.border, 
                         backgroundColor: getStatusColor(phase.status).light,
                         color: colors.text
                       }}
                     >
-                      <div className="flex items-center justify-center gap-2">
+                      <div className="flex items-center justify-center gap-1">
                         {getStatusIcon(phase.status)}
-                        <span>{phase.id}: {phase.name}</span>
+                        <span>{phase.id}</span>
                       </div>
                     </th>
                   ))}
@@ -385,12 +433,12 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
                     </td>
                     {phases.map((phase) => {
                       const feature = phase.features.find(f => f.layer === layer.id);
-                      if (!feature) return <td key={phase.id} className="p-3 border" style={{ borderColor: colors.border }} />;
+                      if (!feature) return <td key={phase.id} className="p-2 border" style={{ borderColor: colors.border }} />;
                       
                       return (
                         <td 
                           key={phase.id}
-                          className="p-3 border text-center"
+                          className="p-2 border text-center"
                           style={{ borderColor: colors.border }}
                         >
                           <div 
@@ -398,13 +446,8 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
                             style={{ 
                               backgroundColor: getStatusColor(feature.status).light,
                               color: getStatusColor(feature.status).bg,
-                              border: `1px solid ${getStatusColor(feature.status).bg}40`
                             }}
                           >
-                            <div 
-                              className="w-2 h-2 rounded-full"
-                              style={{ backgroundColor: getLayerColor(feature.layer).bg }}
-                            />
                             {feature.name}
                           </div>
                         </td>
@@ -416,63 +459,29 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
             </table>
           </div>
 
-          {/* Summary Stats */}
-          <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-4 rounded-lg border" style={{ borderColor: colors.border, backgroundColor: colors.completed.light }}>
-              <div className="text-2xl font-bold" style={{ color: colors.completed.bg }}>18</div>
-              <div className="text-xs" style={{ color: colors.textMuted }}>Features Completed</div>
-            </div>
-            <div className="p-4 rounded-lg border" style={{ borderColor: colors.border, backgroundColor: colors.inProgress.light }}>
-              <div className="text-2xl font-bold" style={{ color: colors.inProgress.bg }}>6</div>
-              <div className="text-xs" style={{ color: colors.textMuted }}>In Progress</div>
-            </div>
-            <div className="p-4 rounded-lg border" style={{ borderColor: colors.border, backgroundColor: colors.planned.light }}>
-              <div className="text-2xl font-bold" style={{ color: colors.planned.bg }}>36</div>
-              <div className="text-xs" style={{ color: colors.textMuted }}>Planned Features</div>
-            </div>
-            <div className="p-4 rounded-lg border" style={{ borderColor: colors.border, backgroundColor: '#f8fafc' }}>
-              <div className="text-2xl font-bold" style={{ color: colors.text }}>40%</div>
-              <div className="text-xs" style={{ color: colors.textMuted }}>Overall Progress</div>
+          {/* Bidirectional Flow */}
+          <div className="p-4 rounded-lg border-2" style={{ borderColor: colors.completed.bg, backgroundColor: colors.completed.light }}>
+            <h4 className="font-semibold mb-2" style={{ color: colors.completed.bg }}>✅ Bidirectional Vibe ↔ Mind Flow (Implemented)</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="font-medium" style={{ color: colors.text }}>Flow 1 (Default):</p>
+                <p style={{ color: colors.textMuted }}>Mind → Script → TTS → Vibe → Publish</p>
+              </div>
+              <div>
+                <p className="font-medium" style={{ color: colors.text }}>Flow 2 (NEW):</p>
+                <p style={{ color: colors.textMuted }}>Vibe → ContentAnalyzer → Mind → Script → TTS → Vibe → Publish</p>
+              </div>
             </div>
           </div>
 
-          {/* Documentation Links */}
-          <div className="mt-6 p-4 rounded-lg border" style={{ borderColor: colors.border, backgroundColor: '#f8fafc' }}>
-            <h4 className="text-sm font-semibold mb-2" style={{ color: colors.text }}>Related Documentation</h4>
-            <div className="flex flex-wrap gap-2">
-              <a 
-                href="/docs/GENIE_STUDIO_TECHNICAL_ARCHITECTURE.md" 
-                target="_blank"
-                className="text-xs px-2 py-1 rounded"
-                style={{ backgroundColor: colors.presentation.light, color: colors.presentation.bg }}
-              >
-                Technical Architecture →
-              </a>
-              <a 
-                href="/docs/GENIE_STUDIO_FUNCTIONAL_ARCHITECTURE.md" 
-                target="_blank"
-                className="text-xs px-2 py-1 rounded"
-                style={{ backgroundColor: colors.application.light, color: colors.application.bg }}
-              >
-                Functional Architecture →
-              </a>
-              <a 
-                href="/docs/GENIE_STUDIO_SCENARIO_MAP.md" 
-                target="_blank"
-                className="text-xs px-2 py-1 rounded"
-                style={{ backgroundColor: colors.domain.light, color: colors.domain.bg }}
-              >
-                Scenario Map →
-              </a>
-              <a 
-                href="/docs/GENIE_UNIVERSAL_SERVICE_ARCHITECTURE.md" 
-                target="_blank"
-                className="text-xs px-2 py-1 rounded"
-                style={{ backgroundColor: colors.infrastructure.light, color: colors.infrastructure.bg }}
-              >
-                Service Architecture →
-              </a>
-            </div>
+          {/* User Quote */}
+          <div className="p-4 rounded-lg border" style={{ borderColor: colors.border, backgroundColor: '#fef3c7' }}>
+            <p className="text-sm italic" style={{ color: colors.text }}>
+              "I spend 2 hours editing a 60-second reel. I wish I could just talk and have it edit itself." — TikTok Creator
+            </p>
+            <p className="text-xs mt-2" style={{ color: colors.textMuted }}>
+              This is why we're building mobile-first voice commands (Phase 3-4)
+            </p>
           </div>
         </div>
       </CardContent>
