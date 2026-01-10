@@ -12,7 +12,7 @@ import {
 import { TwoStagePipelineSVGDiagram } from '@/components/document-processing/TwoStagePipelineSVGDiagram';
 import { DocumentConfigurationReferenceDiagram } from '@/components/document-processing/DocumentConfigurationReferenceDiagram';
 import { DocumentProcessingPresentation } from '@/components/document-processing/DocumentProcessingPresentation';
-import { PatientOnboardingFlowDiagram, SubAgentArchitectureDiagram, BeforeAfterArchitectureDiagram, GenieRecordingStudioArchitectureDiagram, GenieStudioTechnicalArchDiagram, GenieStudioFunctionalArchDiagram, GenieStudioScenarioMapDiagram, GenieStudioFullArchitectureDiagram } from '@/components/diagrams';
+import { PatientOnboardingFlowDiagram, SubAgentArchitectureDiagram, BeforeAfterArchitectureDiagram, GenieRecordingStudioArchitectureDiagram, GenieStudioTechnicalArchDiagram, GenieStudioFunctionalArchDiagram, GenieStudioScenarioMapDiagram, GenieStudioFullArchitectureDiagram, GenieVisualAssetsGalleryDiagram } from '@/components/diagrams';
 import { Button } from '@/components/ui/button';
 // Tabs imports kept for potential future use but not needed for current category navigation
 import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building, Users, Network, ArrowRightLeft, Download, Workflow, Bot, History, Sparkles, Image, Video, Server, Target, Map, Presentation } from 'lucide-react';
@@ -159,7 +159,7 @@ const ArchitectureDiagram = () => {
       case 'genie-scenarios':
         return <GenieStudioScenarioMapDiagram />;
       case 'genie-assets':
-        return <GenieStudioVisualAssets />;
+        return <GenieVisualAssetsGalleryDiagram />;
       case 'genie-gallery':
         return <GenieStudioScriptGallery />;
       default:
