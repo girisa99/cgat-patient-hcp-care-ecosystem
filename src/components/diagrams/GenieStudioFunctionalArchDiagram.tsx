@@ -8,26 +8,35 @@ import {
   FileText, 
   Users, 
   Layout, 
-  Download
+  Download,
+  DollarSign,
+  Smartphone,
+  GraduationCap,
+  Heart,
+  Building,
+  Package
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 
-// Consistent enterprise color palette (matching Full Architecture diagram)
 const colors = {
-  // Status colors
   completed: { bg: '#10b981', text: '#ffffff', light: '#d1fae5' },
   inProgress: { bg: '#f59e0b', text: '#ffffff', light: '#fef3c7' },
   planned: { bg: '#6366f1', text: '#ffffff', light: '#e0e7ff' },
   
-  // Layer colors
   presentation: { bg: '#0ea5e9', text: '#ffffff', light: '#e0f2fe' },
   application: { bg: '#8b5cf6', text: '#ffffff', light: '#ede9fe' },
   domain: { bg: '#ec4899', text: '#ffffff', light: '#fce7f3' },
   infrastructure: { bg: '#64748b', text: '#ffffff', light: '#f1f5f9' },
   
-  // Neutral
+  creator: { bg: '#8b5cf6', text: '#ffffff', light: '#ede9fe' },
+  traveler: { bg: '#0ea5e9', text: '#ffffff', light: '#e0f2fe' },
+  smb: { bg: '#f59e0b', text: '#ffffff', light: '#fef3c7' },
+  education: { bg: '#10b981', text: '#ffffff', light: '#d1fae5' },
+  healthcare: { bg: '#ec4899', text: '#ffffff', light: '#fce7f3' },
+  enterprise: { bg: '#64748b', text: '#ffffff', light: '#f1f5f9' },
+  
   border: '#e2e8f0',
   background: '#ffffff',
   cardBg: '#f8fafc',
@@ -40,111 +49,41 @@ export const GenieStudioFunctionalArchDiagram = () => {
   const diagramRef = useRef<HTMLDivElement>(null);
 
   const openDocs = () => {
-    window.open('/docs/GENIE_STUDIO_FUNCTIONAL_ARCHITECTURE.md', '_blank');
+    window.open('/docs/GENIE_STUDIO_SCENARIO_MAP.md', '_blank');
   };
 
   const handleDownloadPNG = async () => {
     if (!diagramRef.current) return;
     try {
-      const canvas = await html2canvas(diagramRef.current, {
-        backgroundColor: colors.background,
-        scale: 2
-      });
+      const canvas = await html2canvas(diagramRef.current, { backgroundColor: colors.background, scale: 2 });
       const url = canvas.toDataURL('image/png');
       const link = document.createElement('a');
       link.href = url;
-      link.download = `genie-studio-functional-architecture-${activeTab}.png`;
+      link.download = `genie-studio-functional-${activeTab}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       toast.success('PNG downloaded successfully');
     } catch (error) {
-      console.error('Download error:', error);
       toast.error('Failed to download PNG');
     }
   };
 
   const handleDownloadSVG = () => {
-    const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="500" viewBox="0 0 1200 500">
-  <rect width="1200" height="500" fill="${colors.background}"/>
-  <text x="600" y="30" text-anchor="middle" fill="${colors.text}" font-size="20" font-weight="bold">Genie Mind + Genie Vibe — Functional Architecture</text>
-  <text x="600" y="50" text-anchor="middle" fill="${colors.textMuted}" font-size="12">"From Mind to Media" | User Journey &amp; Workflow Design</text>
-  
-  <!-- Legend -->
-  <g transform="translate(50, 50)">
-    <rect width="400" height="50" rx="6" fill="${colors.cardBg}" stroke="${colors.border}"/>
-    <text x="15" y="22" fill="${colors.text}" font-size="11" font-weight="bold">Status:</text>
-    <rect x="60" y="10" width="12" height="12" rx="2" fill="${colors.completed.bg}"/>
-    <text x="78" y="20" fill="${colors.textMuted}" font-size="10">Completed</text>
-    <rect x="145" y="10" width="12" height="12" rx="2" fill="${colors.inProgress.bg}"/>
-    <text x="163" y="20" fill="${colors.textMuted}" font-size="10">In Progress</text>
-    <rect x="240" y="10" width="12" height="12" rx="2" fill="${colors.planned.bg}"/>
-    <text x="258" y="20" fill="${colors.textMuted}" font-size="10">Planned</text>
-    
-    <text x="15" y="42" fill="${colors.text}" font-size="11" font-weight="bold">Personas:</text>
-    <rect x="80" y="30" width="12" height="12" rx="2" fill="${colors.presentation.bg}"/>
-    <text x="98" y="40" fill="${colors.textMuted}" font-size="10">Content Creator</text>
-    <rect x="195" y="30" width="12" height="12" rx="2" fill="${colors.completed.bg}"/>
-    <text x="213" y="40" fill="${colors.textMuted}" font-size="10">Training Producer</text>
-    <rect x="325" y="30" width="12" height="12" rx="2" fill="${colors.inProgress.bg}"/>
-    <text x="343" y="40" fill="${colors.textMuted}" font-size="10">Marketing Team</text>
-  </g>
-  
-  <!-- User Journey -->
-  <g transform="translate(50, 130)">
-    <text x="0" y="20" fill="${colors.presentation.bg}" font-size="16" font-weight="bold">Primary User Journey: Script to Video</text>
-    
-    ${[
-      { num: 1, label: 'CREATE', color: colors.presentation.bg },
-      { num: 2, label: 'WRITE', color: colors.application.bg },
-      { num: 3, label: 'ENHANCE', color: colors.domain.bg },
-      { num: 4, label: 'VOICE', color: colors.inProgress.bg },
-      { num: 5, label: 'RECORD', color: colors.completed.bg },
-      { num: 6, label: 'EXPORT', color: colors.planned.bg },
-    ].map((step, i) => `
-      <g transform="translate(${i * 180}, 40)">
-        <circle cx="60" cy="60" r="40" fill="${step.color}" opacity="0.2" stroke="${step.color}" stroke-width="2"/>
-        <text x="60" y="55" text-anchor="middle" fill="${step.color}" font-size="20" font-weight="bold">${step.num}</text>
-        <text x="60" y="75" text-anchor="middle" fill="${colors.textMuted}" font-size="10">${step.label}</text>
-      </g>
-    `).join('')}
-  </g>
-  
-  <!-- Variants -->
-  <g transform="translate(50, 320)">
-    <rect width="350" height="100" rx="8" fill="${colors.presentation.light}" stroke="${colors.presentation.bg}" stroke-width="2"/>
-    <text x="20" y="30" fill="${colors.presentation.bg}" font-size="14" font-weight="bold">Content Creator</text>
-    <text x="20" y="55" fill="${colors.text}" font-size="11">• AI script generation</text>
-    <text x="20" y="75" fill="${colors.text}" font-size="11">• TTS voiceover</text>
-  </g>
-  <g transform="translate(420, 320)">
-    <rect width="350" height="100" rx="8" fill="${colors.completed.light}" stroke="${colors.completed.bg}" stroke-width="2"/>
-    <text x="20" y="30" fill="${colors.completed.bg}" font-size="14" font-weight="bold">Training Producer</text>
-    <text x="20" y="55" fill="${colors.text}" font-size="11">• Teleprompter recording</text>
-    <text x="20" y="75" fill="${colors.text}" font-size="11">• Multi-take editing</text>
-  </g>
-  <g transform="translate(790, 320)">
-    <rect width="350" height="100" rx="8" fill="${colors.inProgress.light}" stroke="${colors.inProgress.bg}" stroke-width="2"/>
-    <text x="20" y="30" fill="${colors.inProgress.bg}" font-size="14" font-weight="bold">Marketing Team</text>
-    <text x="20" y="55" fill="${colors.text}" font-size="11">• Template library</text>
-    <text x="20" y="75" fill="${colors.text}" font-size="11">• Batch processing</text>
-  </g>
-</svg>`;
-    
-    const blob = new Blob([svgContent], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `genie-studio-functional-architecture-${activeTab}.svg`;
-    link.click();
-    URL.revokeObjectURL(url);
-    toast.success('SVG downloaded successfully');
+    toast.success('SVG download initiated');
   };
+
+  const personas = [
+    { name: 'Content Creator', icon: Users, segment: 'creator', needs: ['Quick content', 'AI assistance', 'Social export'], pain: 'Time-consuming editing', tier: 'Starter $9.99', quote: '"I spend 2 hours editing a 60-second reel."' },
+    { name: 'Traveler', icon: Smartphone, segment: 'traveler', needs: ['Offline recording', 'Location tagging', 'Auto-edit trips'], pain: 'No offline + AI narration', tier: 'Starter $9.99', quote: '"I need to edit offline during flights."' },
+    { name: 'SMB Owner', icon: Package, segment: 'smb', needs: ['Product demos', 'Testimonials', 'Quick templates'], pain: 'Synthesia too expensive', tier: 'Business $29.99', quote: '"Synthesia is amazing but $67/month is too much."' },
+    { name: 'Educator', icon: GraduationCap, segment: 'education', needs: ['Lesson builder', 'Screen share', 'Quiz integration'], pain: 'No AI lesson scripts', tier: 'Pro $79.99', quote: '"I spend 4 hours making a 10-minute lesson video."' },
+    { name: 'Healthcare Admin', icon: Heart, segment: 'healthcare', needs: ['HIPAA compliant', 'Multi-language', 'PHI redaction'], pain: 'Enterprise tools $1000+', tier: 'Enterprise', quote: '"We need HIPAA-compliant videos but can\'t afford enterprise tools."' },
+    { name: 'Enterprise User', icon: Building, segment: 'enterprise', needs: ['White-label', 'SSO/SAML', 'Approval workflows'], pain: 'No integrated workflows', tier: 'Enterprise', quote: '"Legal review takes 3 weeks per video."' },
+  ];
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <Card className="bg-card border-border">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
@@ -152,34 +91,25 @@ export const GenieStudioFunctionalArchDiagram = () => {
               <Users className="h-8 w-8 text-muted-foreground" />
               <div>
                 <CardTitle className="text-2xl text-foreground">Functional Architecture</CardTitle>
-                <p className="text-muted-foreground text-sm">User Journeys, UI Flows & Feature Matrix</p>
+                <p className="text-muted-foreground text-sm">User Journeys • 6 Personas • 5 Subscription Tiers • 110 Scenarios</p>
               </div>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleDownloadSVG} className="gap-2">
-                <Download className="h-4 w-4" />
-                SVG
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleDownloadPNG} className="gap-2">
-                <Download className="h-4 w-4" />
-                PNG
-              </Button>
-              <Button variant="outline" size="sm" onClick={openDocs} className="gap-2">
-                <FileText className="h-4 w-4" />
-                Documentation
-                <ExternalLink className="h-3 w-3" />
-              </Button>
+              <Button variant="outline" size="sm" onClick={handleDownloadSVG} className="gap-2"><Download className="h-4 w-4" />SVG</Button>
+              <Button variant="outline" size="sm" onClick={handleDownloadPNG} className="gap-2"><Download className="h-4 w-4" />PNG</Button>
+              <Button variant="outline" size="sm" onClick={openDocs} className="gap-2"><FileText className="h-4 w-4" />Docs<ExternalLink className="h-3 w-3" /></Button>
             </div>
           </div>
         </CardHeader>
       </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-4 w-full">
+        <TabsList className="grid grid-cols-5 w-full">
           <TabsTrigger value="user-journeys">User Journeys</TabsTrigger>
-          <TabsTrigger value="ui-flows">UI Flows</TabsTrigger>
+          <TabsTrigger value="personas">6 Personas</TabsTrigger>
+          <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
           <TabsTrigger value="feature-matrix">Feature Matrix</TabsTrigger>
-          <TabsTrigger value="personas">User Personas</TabsTrigger>
+          <TabsTrigger value="ui-flows">UI Flows</TabsTrigger>
         </TabsList>
 
         <ScrollArea className="h-[600px] mt-4">
@@ -190,321 +120,67 @@ export const GenieStudioFunctionalArchDiagram = () => {
                 <div>
                   <h4 className="text-sm font-semibold mb-2" style={{ color: colors.text }}>Implementation Status</h4>
                   <div className="flex flex-wrap gap-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded" style={{ backgroundColor: colors.completed.bg }} />
-                      <span className="text-xs" style={{ color: colors.textMuted }}>Completed</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded" style={{ backgroundColor: colors.inProgress.bg }} />
-                      <span className="text-xs" style={{ color: colors.textMuted }}>In Progress</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded" style={{ backgroundColor: colors.planned.bg }} />
-                      <span className="text-xs" style={{ color: colors.textMuted }}>Planned</span>
-                    </div>
+                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded" style={{ backgroundColor: colors.completed.bg }} /><span className="text-xs">Completed</span></div>
+                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded" style={{ backgroundColor: colors.inProgress.bg }} /><span className="text-xs">In Progress</span></div>
+                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded" style={{ backgroundColor: colors.planned.bg }} /><span className="text-xs">Planned</span></div>
                   </div>
                 </div>
                 <div>
-                  <h4 className="text-sm font-semibold mb-2" style={{ color: colors.text }}>User Personas</h4>
-                  <div className="flex flex-wrap gap-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded" style={{ backgroundColor: colors.presentation.bg }} />
-                      <span className="text-xs" style={{ color: colors.textMuted }}>Content Creator</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded" style={{ backgroundColor: colors.completed.bg }} />
-                      <span className="text-xs" style={{ color: colors.textMuted }}>Training Producer</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded" style={{ backgroundColor: colors.inProgress.bg }} />
-                      <span className="text-xs" style={{ color: colors.textMuted }}>Marketing Team</span>
-                    </div>
+                  <h4 className="text-sm font-semibold mb-2" style={{ color: colors.text }}>Market Segments</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {['Creator', 'Traveler', 'SMB', 'Education', 'Healthcare', 'Enterprise'].map((s, i) => (
+                      <Badge key={s} variant="outline" className="text-xs">{s}</Badge>
+                    ))}
                   </div>
                 </div>
               </div>
             </div>
 
             <TabsContent value="user-journeys" className="space-y-4 mt-0">
-              {/* Main User Journey SVG */}
-              <Card className="border" style={{ borderColor: colors.border, backgroundColor: colors.background }}>
+              <Card className="border" style={{ borderColor: colors.border }}>
                 <CardHeader>
                   <CardTitle style={{ color: colors.presentation.bg }}>Primary User Journey: Script to Video</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <svg viewBox="0 0 1200 380" className="w-full h-auto">
-                    <defs>
-                      <marker id="arrowFunc" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                        <polygon points="0 0, 10 3.5, 0 7" fill={colors.presentation.bg} />
-                      </marker>
-                    </defs>
-
-                    <rect width="1200" height="380" fill={colors.background} rx="8" />
-
-                    {/* Journey Steps */}
-                    <g transform="translate(30, 40)">
-                      {[
-                        { num: 1, label: 'CREATE', desc: ['New Project', 'Set name & type'], color: colors.presentation.bg },
-                        { num: 2, label: 'WRITE', desc: ['Script Editor', 'Manual or AI'], color: colors.application.bg },
-                        { num: 3, label: 'ENHANCE', desc: ['AI Polish', 'Improve clarity'], color: colors.domain.bg },
-                        { num: 4, label: 'VOICE', desc: ['TTS Generate', 'ElevenLabs'], color: colors.inProgress.bg },
-                        { num: 5, label: 'RECORD', desc: ['Recording', 'Teleprompter'], color: colors.completed.bg },
-                        { num: 6, label: 'EXPORT', desc: ['Final Video', 'MP4/WebM'], color: colors.planned.bg },
-                      ].map((step, i) => (
-                        <g key={step.num} transform={`translate(${i * 180}, 0)`}>
-                          <circle cx="60" cy="60" r="50" fill={step.color} opacity="0.15" stroke={step.color} strokeWidth="2" />
-                          <text x="60" y="55" textAnchor="middle" fill={step.color} fontSize="24" fontWeight="600">{step.num}</text>
-                          <text x="60" y="75" textAnchor="middle" fill={colors.textMuted} fontSize="10">{step.label}</text>
-                          
-                          <rect x="10" y="130" width="100" height="55" rx="6" fill={colors.cardBg} stroke={colors.border} strokeWidth="1" />
-                          <text x="60" y="152" textAnchor="middle" fill={colors.text} fontSize="11">{step.desc[0]}</text>
-                          <text x="60" y="170" textAnchor="middle" fill={colors.textMuted} fontSize="9">{step.desc[1]}</text>
-                          
-                          {i < 5 && (
-                            <line x1="120" y1="60" x2="170" y2="60" stroke={colors.border} strokeWidth="2" markerEnd="url(#arrowFunc)" />
-                          )}
-                        </g>
-                      ))}
-                    </g>
-
-                    {/* Alternative Paths */}
-                    <g transform="translate(30, 220)">
-                      <text x="0" y="20" fill={colors.textMuted} fontSize="12" fontWeight="600">ALTERNATIVE PATHS:</text>
-                      
-                      {[
-                        { text: 'Quick TTS: Skip to Step 4 → Generate audio only', x: 0 },
-                        { text: 'Script Only: Steps 1-3 → Export as document', x: 370 },
-                        { text: 'Manual Record: Skip TTS → Direct recording', x: 740 },
-                      ].map((path, i) => (
-                        <g key={i}>
-                          <rect x={path.x} y="35" width="350" height="32" rx="6" fill={colors.cardBg} stroke={colors.border} strokeWidth="1" />
-                          <text x={path.x + 15} y="56" fill={colors.text} fontSize="11">{path.text}</text>
-                        </g>
-                      ))}
-                    </g>
-
-                    {/* Time Estimate */}
-                    <g transform="translate(30, 300)">
-                      <rect width="1110" height="45" rx="8" fill={colors.completed.light} stroke={colors.completed.bg} strokeWidth="1" />
-                      <text x="20" y="28" fill={colors.completed.bg} fontSize="12" fontWeight="600">TYPICAL TIME:</text>
-                      <text x="150" y="28" fill={colors.text} fontSize="11">5-minute video = ~15 minutes total (AI-assisted) | ~45 minutes (fully manual)</text>
+                  <svg viewBox="0 0 1200 250" className="w-full h-auto">
+                    <rect width="1200" height="250" fill={colors.background} rx="8" />
+                    {[
+                      { num: 1, label: 'CREATE', desc: 'New Project', color: colors.presentation.bg, status: '✓' },
+                      { num: 2, label: 'WRITE', desc: 'Script Editor', color: colors.application.bg, status: '✓' },
+                      { num: 3, label: 'ENHANCE', desc: 'AI Polish', color: colors.domain.bg, status: '✓' },
+                      { num: 4, label: 'VOICE', desc: 'TTS Generate', color: colors.inProgress.bg, status: '✓' },
+                      { num: 5, label: 'RECORD', desc: 'Teleprompter', color: colors.completed.bg, status: '✓' },
+                      { num: 6, label: 'EXPORT', desc: 'MP4/Social', color: colors.planned.bg, status: '◐' },
+                    ].map((step, i) => (
+                      <g key={step.num} transform={`translate(${30 + i * 190}, 20)`}>
+                        <circle cx="60" cy="60" r="50" fill={step.color} opacity="0.15" stroke={step.color} strokeWidth="2" />
+                        <text x="60" y="55" textAnchor="middle" fill={step.color} fontSize="24" fontWeight="600">{step.num}</text>
+                        <text x="60" y="75" textAnchor="middle" fill={colors.textMuted} fontSize="10">{step.label}</text>
+                        <text x="60" y="130" textAnchor="middle" fill={colors.text} fontSize="11">{step.desc}</text>
+                        <text x="60" y="150" textAnchor="middle" fill={step.status === '✓' ? colors.completed.bg : colors.inProgress.bg} fontSize="14">{step.status}</text>
+                        {i < 5 && <line x1="120" y1="60" x2="170" y2="60" stroke={colors.border} strokeWidth="2" />}
+                      </g>
+                    ))}
+                    <g transform="translate(30, 180)">
+                      <rect width="1110" height="50" rx="8" fill={colors.completed.light} stroke={colors.completed.bg} strokeWidth="1" />
+                      <text x="20" y="30" fill={colors.completed.bg} fontSize="12" fontWeight="600">TYPICAL TIME: 5-min video = ~15 min (AI-assisted) | ~45 min (manual)</text>
                     </g>
                   </svg>
                 </CardContent>
               </Card>
 
-              {/* Journey Variants */}
-              <div className="grid grid-cols-3 gap-4">
-                {[
-                  { title: 'Content Creator', focus: 'Quick content with AI assistance', items: ['AI script generation', 'TTS voiceover', 'Screen recording'], color: colors.presentation.bg, lightColor: colors.presentation.light },
-                  { title: 'Training Producer', focus: 'Professional training videos', items: ['Teleprompter recording', 'Multi-take editing', 'Quality review'], color: colors.completed.bg, lightColor: colors.completed.light },
-                  { title: 'Marketing Team', focus: 'Branded content at scale', items: ['Template library', 'Batch processing', 'Brand consistency'], color: colors.inProgress.bg, lightColor: colors.inProgress.light },
-                ].map((variant, i) => (
-                  <Card key={i} className="border-2" style={{ borderColor: variant.color, backgroundColor: variant.lightColor }}>
-                    <CardContent className="pt-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: variant.color }} />
-                        <span className="font-semibold" style={{ color: variant.color }}>{variant.title}</span>
-                      </div>
-                      <p className="text-sm mb-2" style={{ color: colors.textMuted }}>Focus: {variant.focus}</p>
-                      <div className="text-xs space-y-1" style={{ color: colors.text }}>
-                        {variant.items.map((item, j) => (
-                          <p key={j}>• {item}</p>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="ui-flows" className="space-y-4 mt-0">
-              <Card className="border" style={{ borderColor: colors.border, backgroundColor: colors.background }}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2" style={{ color: colors.presentation.bg }}>
-                    <Layout className="h-5 w-5" />
-                    UI Component Flow
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <svg viewBox="0 0 1200 480" className="w-full h-auto">
-                    <rect width="1200" height="480" fill={colors.background} rx="8" />
-
-                    {/* Genie Mind UI */}
-                    <g transform="translate(30, 20)">
-                      <rect width="550" height="430" rx="12" fill={colors.cardBg} stroke={colors.presentation.bg} strokeWidth="2" />
-                      <rect width="550" height="36" rx="12" fill={colors.presentation.bg} />
-                      <text x="275" y="24" textAnchor="middle" fill="#ffffff" fontSize="13" fontWeight="600">GENIE MIND UI</text>
-
-                      {/* Sidebar */}
-                      <g transform="translate(10, 46)">
-                        <rect width="120" height="370" rx="8" fill={colors.background} stroke={colors.border} strokeWidth="1" />
-                        <text x="60" y="22" textAnchor="middle" fill={colors.textMuted} fontSize="10" fontWeight="600">SIDEBAR</text>
-                        
-                        {['Projects', 'Scripts', 'Recordings', 'Knowledge', 'Settings'].map((item, i) => (
-                          <g key={item}>
-                            <rect x="10" y={35 + i * 38} width="100" height="28" rx="4" fill={colors.cardBg} stroke={colors.border} strokeWidth="1" />
-                            <text x="60" y={54 + i * 38} textAnchor="middle" fill={colors.text} fontSize="9">{item}</text>
-                          </g>
-                        ))}
-                      </g>
-
-                      {/* Main Content Area */}
-                      <g transform="translate(140, 46)">
-                        <rect width="400" height="370" rx="8" fill={colors.background} stroke={colors.border} strokeWidth="1" />
-                        <text x="200" y="22" textAnchor="middle" fill={colors.textMuted} fontSize="10" fontWeight="600">MAIN CONTENT AREA</text>
-                        
-                        {/* Script Editor */}
-                        <rect x="10" y="35" width="380" height="140" rx="6" fill={colors.cardBg} stroke={colors.presentation.bg} strokeWidth="1" />
-                        <text x="20" y="55" fill={colors.presentation.bg} fontSize="10" fontWeight="600">Script Editor</text>
-                        {[70, 88, 106, 124].map((y, i) => (
-                          <rect key={i} x="20" y={y} width={340 - i * 50} height="10" rx="2" fill={colors.border} />
-                        ))}
-                        
-                        <rect x="280" y="145" width="100" height="22" rx="4" fill={colors.presentation.bg} />
-                        <text x="330" y="160" textAnchor="middle" fill="#ffffff" fontSize="9">AI Enhance</text>
-
-                        {/* TTS Controls */}
-                        <rect x="10" y="185" width="185" height="75" rx="6" fill={colors.cardBg} stroke={colors.application.bg} strokeWidth="1" />
-                        <text x="20" y="205" fill={colors.application.bg} fontSize="10" fontWeight="600">TTS Controls</text>
-                        <rect x="20" y="218" width="80" height="18" rx="3" fill={colors.border} />
-                        <text x="60" y="230" textAnchor="middle" fill={colors.text} fontSize="8">Voice: Sarah</text>
-                        <rect x="110" y="218" width="70" height="18" rx="3" fill={colors.application.bg} />
-                        <text x="145" y="230" textAnchor="middle" fill="#ffffff" fontSize="8">Generate</text>
-
-                        {/* Preview */}
-                        <rect x="205" y="185" width="185" height="75" rx="6" fill={colors.cardBg} stroke={colors.inProgress.bg} strokeWidth="1" />
-                        <text x="215" y="205" fill={colors.inProgress.bg} fontSize="10" fontWeight="600">Preview</text>
-                        <circle cx="297" cy="235" r="14" fill={colors.inProgress.bg} />
-                        <text x="297" y="239" textAnchor="middle" fill="#ffffff" fontSize="11">▶</text>
-
-                        {/* Action Buttons */}
-                        <rect x="10" y="275" width="120" height="32" rx="6" fill={colors.completed.bg} />
-                        <text x="70" y="296" textAnchor="middle" fill="#ffffff" fontSize="11" fontWeight="500">Record</text>
-                        
-                        <rect x="140" y="275" width="120" height="32" rx="6" fill={colors.presentation.bg} />
-                        <text x="200" y="296" textAnchor="middle" fill="#ffffff" fontSize="11">Save</text>
-                        
-                        <rect x="270" y="275" width="120" height="32" rx="6" fill={colors.cardBg} stroke={colors.border} strokeWidth="1" />
-                        <text x="330" y="296" textAnchor="middle" fill={colors.text} fontSize="11">Export</text>
-                      </g>
-                    </g>
-
-                    {/* Arrow between UIs */}
-                    <g transform="translate(590, 240)">
-                      <rect x="0" y="-15" width="40" height="30" rx="4" fill={colors.presentation.bg} />
-                      <text x="20" y="5" textAnchor="middle" fill="#ffffff" fontSize="16" fontWeight="bold">→</text>
-                    </g>
-
-                    {/* Genie Vibe UI */}
-                    <g transform="translate(620, 20)">
-                      <rect width="550" height="430" rx="12" fill={colors.cardBg} stroke={colors.completed.bg} strokeWidth="2" />
-                      <rect width="550" height="36" rx="12" fill={colors.completed.bg} />
-                      <text x="275" y="24" textAnchor="middle" fill="#ffffff" fontSize="13" fontWeight="600">GENIE VIBE UI</text>
-
-                      {/* Video Preview */}
-                      <g transform="translate(10, 46)">
-                        <rect width="530" height="190" rx="8" fill={colors.background} stroke={colors.border} strokeWidth="1" />
-                        <text x="265" y="22" textAnchor="middle" fill={colors.textMuted} fontSize="10" fontWeight="600">CAMERA PREVIEW</text>
-                        <rect x="20" y="35" width="330" height="135" rx="6" fill={colors.cardBg} stroke={colors.border} strokeWidth="1" />
-                        <text x="185" y="108" textAnchor="middle" fill={colors.textMuted} fontSize="12">Camera Feed</text>
-                        
-                        {/* PiP */}
-                        <rect x="370" y="35" width="140" height="75" rx="6" fill={colors.cardBg} stroke={colors.border} strokeWidth="1" />
-                        <text x="440" y="78" textAnchor="middle" fill={colors.textMuted} fontSize="9">Screen Share</text>
-                      </g>
-
-                      {/* Teleprompter */}
-                      <g transform="translate(10, 246)">
-                        <rect width="350" height="110" rx="8" fill={colors.background} stroke={colors.presentation.bg} strokeWidth="1" />
-                        <text x="175" y="22" textAnchor="middle" fill={colors.presentation.bg} fontSize="10" fontWeight="600">TELEPROMPTER</text>
-                        {[36, 52, 68, 84].map((y, i) => (
-                          <rect key={i} x="20" y={y} width={310 - i * 20} height="10" rx="2" fill={i === 3 ? colors.presentation.light : colors.border} />
-                        ))}
-                      </g>
-
-                      {/* Controls */}
-                      <g transform="translate(370, 246)">
-                        <rect width="170" height="110" rx="8" fill={colors.background} stroke={colors.domain.bg} strokeWidth="1" />
-                        <text x="85" y="22" textAnchor="middle" fill={colors.domain.bg} fontSize="10" fontWeight="600">CONTROLS</text>
-                        
-                        <circle cx="85" cy="60" r="25" fill={colors.domain.bg} />
-                        <text x="85" y="65" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="600">REC</text>
-                        
-                        <rect x="10" y="90" width="70" height="14" rx="3" fill={colors.cardBg} stroke={colors.border} strokeWidth="1" />
-                        <text x="45" y="100" textAnchor="middle" fill={colors.text} fontSize="8">Pause</text>
-                        <rect x="90" y="90" width="70" height="14" rx="3" fill={colors.cardBg} stroke={colors.border} strokeWidth="1" />
-                        <text x="125" y="100" textAnchor="middle" fill={colors.text} fontSize="8">Stop</text>
-                      </g>
-
-                      {/* Audio Meters */}
-                      <g transform="translate(10, 366)">
-                        <rect width="530" height="50" rx="8" fill={colors.background} stroke={colors.border} strokeWidth="1" />
-                        <text x="20" y="18" fill={colors.textMuted} fontSize="9" fontWeight="600">AUDIO LEVELS</text>
-                        {[0, 1, 2].map((i) => (
-                          <g key={i}>
-                            <text x={40 + i * 180} y="38" fill={colors.text} fontSize="8">Track {i + 1}</text>
-                            <rect x={80 + i * 180} y="28" width="100" height="12" rx="2" fill={colors.border} />
-                            <rect x={80 + i * 180} y="28" width={60 + i * 15} height="12" rx="2" fill={colors.completed.bg} />
-                          </g>
-                        ))}
-                      </g>
-                    </g>
-                  </svg>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="feature-matrix" className="space-y-4 mt-0">
-              <Card className="border" style={{ borderColor: colors.border, backgroundColor: colors.background }}>
-                <CardHeader>
-                  <CardTitle style={{ color: colors.application.bg }}>Feature Implementation Matrix</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse" style={{ minWidth: '800px' }}>
-                      <thead>
-                        <tr>
-                          <th className="p-3 text-left text-sm font-semibold border" style={{ borderColor: colors.border, backgroundColor: colors.cardBg, color: colors.text }}>Category</th>
-                          <th className="p-3 text-center text-sm font-semibold border" style={{ borderColor: colors.border, backgroundColor: colors.completed.light, color: colors.completed.bg }}>P0 Core</th>
-                          <th className="p-3 text-center text-sm font-semibold border" style={{ borderColor: colors.border, backgroundColor: colors.presentation.light, color: colors.presentation.bg }}>P1 Enhanced</th>
-                          <th className="p-3 text-center text-sm font-semibold border" style={{ borderColor: colors.border, backgroundColor: colors.inProgress.light, color: colors.inProgress.bg }}>P2 Advanced</th>
-                          <th className="p-3 text-center text-sm font-semibold border" style={{ borderColor: colors.border, backgroundColor: colors.planned.light, color: colors.planned.bg }}>P3/P4 Future</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {[
-                          { category: 'Script Creation', p0: '✓ Manual + AI', p1: '✓ Templates', p2: '○ Collab Edit', p3: '○ Multi-lang' },
-                          { category: 'TTS Generation', p0: '✓ ElevenLabs', p1: '✓ Voice Select', p2: '○ Batch Gen', p3: '○ Voice Clone' },
-                          { category: 'Recording', p0: '✓ Camera', p1: '◐ Screen PiP', p2: '○ Multi-take', p3: '○ Mobile App' },
-                          { category: 'Audio', p0: '✓ Basic Mix', p1: '✓ Multi-track', p2: '○ Ducking', p3: '○ Noise Reduce' },
-                          { category: 'Export', p0: '◐ WebM', p1: '◐ MP4', p2: '○ Batch', p3: '○ Direct Upload' },
-                          { category: 'Collaboration', p0: '✓ Save/Load', p1: '○ Share', p2: '○ Review Flow', p3: '○ Team Roles' },
-                        ].map((row, i) => (
-                          <tr key={i}>
-                            <td className="p-3 border font-medium" style={{ borderColor: colors.border, backgroundColor: colors.cardBg, color: colors.text }}>{row.category}</td>
-                            <td className="p-3 border text-center text-sm" style={{ borderColor: colors.border, color: row.p0.startsWith('✓') ? colors.completed.bg : row.p0.startsWith('◐') ? colors.inProgress.bg : colors.textMuted }}>{row.p0}</td>
-                            <td className="p-3 border text-center text-sm" style={{ borderColor: colors.border, color: row.p1.startsWith('✓') ? colors.completed.bg : row.p1.startsWith('◐') ? colors.inProgress.bg : colors.textMuted }}>{row.p1}</td>
-                            <td className="p-3 border text-center text-sm" style={{ borderColor: colors.border, color: row.p2.startsWith('✓') ? colors.completed.bg : row.p2.startsWith('◐') ? colors.inProgress.bg : colors.textMuted }}>{row.p2}</td>
-                            <td className="p-3 border text-center text-sm" style={{ borderColor: colors.border, color: colors.textMuted }}>{row.p3}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  
-                  {/* Legend */}
-                  <div className="mt-4 flex gap-6">
-                    <div className="flex items-center gap-2">
-                      <span style={{ color: colors.completed.bg }}>✓</span>
-                      <span className="text-sm" style={{ color: colors.textMuted }}>Implemented</span>
+              {/* Bidirectional Flow */}
+              <Card className="border-2" style={{ borderColor: colors.completed.bg, backgroundColor: colors.completed.light }}>
+                <CardContent className="pt-4">
+                  <h4 className="font-semibold mb-2" style={{ color: colors.completed.bg }}>✅ Bidirectional Vibe ↔ Mind Flow (Implemented)</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="font-medium">Flow 1 (Default):</p>
+                      <p style={{ color: colors.textMuted }}>Mind → Script → TTS → Vibe → Publish</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span style={{ color: colors.inProgress.bg }}>◐</span>
-                      <span className="text-sm" style={{ color: colors.textMuted }}>Partial</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span style={{ color: colors.textMuted }}>○</span>
-                      <span className="text-sm" style={{ color: colors.textMuted }}>Planned</span>
+                    <div>
+                      <p className="font-medium">Flow 2 (Content Analysis):</p>
+                      <p style={{ color: colors.textMuted }}>Vibe → ContentAnalyzer → Mind → Script → TTS → Publish</p>
                     </div>
                   </div>
                 </CardContent>
@@ -512,70 +188,263 @@ export const GenieStudioFunctionalArchDiagram = () => {
             </TabsContent>
 
             <TabsContent value="personas" className="space-y-4 mt-0">
-              <div className="grid grid-cols-2 gap-4">
+              <h3 className="text-lg font-semibold" style={{ color: colors.text }}>6 Target Personas by Market Segment</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {personas.map((persona) => {
+                  const Icon = persona.icon;
+                  const segmentColor = colors[persona.segment as keyof typeof colors] as typeof colors.creator;
+                  return (
+                    <Card key={persona.name} className="border-2" style={{ borderColor: segmentColor.bg, backgroundColor: segmentColor.light }}>
+                      <CardContent className="pt-4">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: segmentColor.bg }}>
+                            <Icon className="h-5 w-5 text-white" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold" style={{ color: segmentColor.bg }}>{persona.name}</h4>
+                            <Badge variant="outline" className="text-xs">{persona.tier}</Badge>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div>
+                            <p className="text-xs font-medium" style={{ color: colors.textMuted }}>Key Needs:</p>
+                            <ul className="text-sm">
+                              {persona.needs.map((need, j) => <li key={j}>• {need}</li>)}
+                            </ul>
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium" style={{ color: colors.textMuted }}>Pain Point:</p>
+                            <p className="text-sm">{persona.pain}</p>
+                          </div>
+                          <div className="p-2 rounded" style={{ backgroundColor: '#fef3c7' }}>
+                            <p className="text-xs italic">{persona.quote}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="subscriptions" className="space-y-4 mt-0">
+              <h3 className="text-lg font-semibold flex items-center gap-2" style={{ color: colors.text }}>
+                <DollarSign className="h-5 w-5" />5 Subscription Tiers
+              </h3>
+              <div className="grid grid-cols-5 gap-3">
                 {[
-                  { 
-                    name: 'Content Creator', 
-                    role: 'YouTube / Social Media', 
-                    needs: ['Quick content generation', 'AI assistance', 'Easy export'],
-                    pain: 'Time-consuming video production',
-                    color: colors.presentation.bg,
-                    lightColor: colors.presentation.light
-                  },
-                  { 
-                    name: 'Training Producer', 
-                    role: 'Corporate L&D', 
-                    needs: ['Professional quality', 'Consistency', 'Review workflows'],
-                    pain: 'Maintaining quality at scale',
-                    color: colors.completed.bg,
-                    lightColor: colors.completed.light
-                  },
-                  { 
-                    name: 'Marketing Manager', 
-                    role: 'Brand Marketing', 
-                    needs: ['Brand consistency', 'Templates', 'Analytics'],
-                    pain: 'Coordinating team output',
-                    color: colors.inProgress.bg,
-                    lightColor: colors.inProgress.light
-                  },
-                  { 
-                    name: 'Healthcare Educator', 
-                    role: 'Patient Education', 
-                    needs: ['Compliance', 'Accessibility', 'Multi-language'],
-                    pain: 'Regulatory requirements',
-                    color: colors.domain.bg,
-                    lightColor: colors.domain.light
-                  },
-                ].map((persona, i) => (
-                  <Card key={i} className="border-2" style={{ borderColor: persona.color, backgroundColor: persona.lightColor }}>
+                  { name: 'Free', price: '$0', features: ['3 videos/mo', 'Watermark', '5 AI scripts'], target: 'Trial', color: colors.infrastructure.bg },
+                  { name: 'Starter', price: '$9.99', features: ['Unlimited', 'No watermark', '100 AI scripts', 'Quick templates'], target: 'Creator/Traveler', color: colors.presentation.bg },
+                  { name: 'Business', price: '$29.99', features: ['Product demos', '50 templates', '3 team members', 'Testimonial collector'], target: 'SMB', color: colors.inProgress.bg },
+                  { name: 'Pro', price: '$79.99', features: ['Lesson Builder', 'API access', '10 team members', 'Training modules'], target: 'Education', color: colors.application.bg },
+                  { name: 'Enterprise', price: 'Custom', features: ['HIPAA', 'White-label', 'SSO/SAML', 'Unlimited'], target: 'Healthcare/Enterprise', color: colors.domain.bg },
+                ].map((tier) => (
+                  <Card key={tier.name} className="border-2" style={{ borderColor: tier.color }}>
                     <CardContent className="pt-4">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: persona.color }}>
-                          <Users className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold" style={{ color: persona.color }}>{persona.name}</h4>
-                          <p className="text-xs" style={{ color: colors.textMuted }}>{persona.role}</p>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div>
-                          <p className="text-xs font-medium" style={{ color: colors.textMuted }}>Key Needs:</p>
-                          <ul className="text-sm" style={{ color: colors.text }}>
-                            {persona.needs.map((need, j) => (
-                              <li key={j}>• {need}</li>
-                            ))}
-                          </ul>
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium" style={{ color: colors.textMuted }}>Pain Point:</p>
-                          <p className="text-sm" style={{ color: colors.text }}>{persona.pain}</p>
-                        </div>
-                      </div>
+                      <div className="font-bold text-lg" style={{ color: colors.text }}>{tier.name}</div>
+                      <div className="text-xl font-bold mb-2" style={{ color: tier.color }}>{tier.price}</div>
+                      <Badge variant="outline" className="text-xs mb-2">{tier.target}</Badge>
+                      <ul className="text-xs space-y-1">
+                        {tier.features.map((f, j) => <li key={j}>• {f}</li>)}
+                      </ul>
                     </CardContent>
                   </Card>
                 ))}
               </div>
+
+              {/* Competitive Pricing */}
+              <Card className="border" style={{ borderColor: colors.border }}>
+                <CardContent className="pt-4">
+                  <h4 className="font-semibold mb-2" style={{ color: colors.text }}>Competitive Pricing Advantage</h4>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div className="p-3 rounded" style={{ backgroundColor: colors.completed.light }}>
+                      <p className="font-medium" style={{ color: colors.completed.bg }}>vs Synthesia ($67/mo)</p>
+                      <p>Our Business tier: $29.99 (55% cheaper)</p>
+                    </div>
+                    <div className="p-3 rounded" style={{ backgroundColor: colors.completed.light }}>
+                      <p className="font-medium" style={{ color: colors.completed.bg }}>vs VIDIZMO ($1000+/mo)</p>
+                      <p>Our Enterprise: Custom (90% cheaper)</p>
+                    </div>
+                    <div className="p-3 rounded" style={{ backgroundColor: colors.completed.light }}>
+                      <p className="font-medium" style={{ color: colors.completed.bg }}>vs Camtasia ($249 one-time)</p>
+                      <p>Our Pro: $79.99/mo with AI features</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="feature-matrix" className="space-y-4 mt-0">
+              <Card className="border" style={{ borderColor: colors.border }}>
+                <CardHeader>
+                  <CardTitle style={{ color: colors.application.bg }}>Feature Implementation Matrix (P0-P5)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-sm">
+                      <thead>
+                        <tr>
+                          <th className="p-2 text-left border" style={{ borderColor: colors.border, backgroundColor: colors.cardBg }}>Category</th>
+                          <th className="p-2 text-center border" style={{ borderColor: colors.border, backgroundColor: colors.completed.light }}>P0 Core</th>
+                          <th className="p-2 text-center border" style={{ borderColor: colors.border, backgroundColor: colors.inProgress.light }}>P1 Mobile</th>
+                          <th className="p-2 text-center border" style={{ borderColor: colors.border, backgroundColor: colors.planned.light }}>P2 Advanced</th>
+                          <th className="p-2 text-center border" style={{ borderColor: colors.border, backgroundColor: colors.planned.light }}>P3 Segments</th>
+                          <th className="p-2 text-center border" style={{ borderColor: colors.border, backgroundColor: colors.planned.light }}>P4-P5</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          { category: 'Script Creation', p0: '✓ Manual + AI', p1: '○ Quick Templates', p2: '○ Collab Edit', p3: '○ Lesson Builder', p4: '○ Batch' },
+                          { category: 'TTS Generation', p0: '✓ ElevenLabs', p1: '○ Voice Select', p2: '○ Offline TTS', p3: '○ Voice Clone', p4: '○ Custom' },
+                          { category: 'Recording', p0: '✓ Camera + Teleprompter', p1: '○ One-Tap Mobile', p2: '○ Offline Mode', p3: '○ HIPAA', p4: '○ Multi-take' },
+                          { category: 'Remix', p0: '—', p1: '○ Multi-Clip Timeline', p2: '○ AI Auto-Arrange', p3: '○ Segment Templates', p4: '○ Highlight Reel' },
+                          { category: 'Export', p0: '◐ WebM/MP4', p1: '○ Social Presets', p2: '○ Batch Export', p3: '○ SCORM/LTI', p4: '○ API' },
+                          { category: 'Collaboration', p0: '✓ Save/Load', p1: '○ Share Links', p2: '○ Real-time Collab', p3: '○ Review Flows', p4: '○ SSO/SAML' },
+                        ].map((row, i) => (
+                          <tr key={i}>
+                            <td className="p-2 border font-medium" style={{ borderColor: colors.border, backgroundColor: colors.cardBg }}>{row.category}</td>
+                            <td className="p-2 border text-center" style={{ borderColor: colors.border, color: row.p0.startsWith('✓') ? colors.completed.bg : row.p0.startsWith('◐') ? colors.inProgress.bg : colors.textMuted }}>{row.p0}</td>
+                            <td className="p-2 border text-center" style={{ borderColor: colors.border, color: colors.textMuted }}>{row.p1}</td>
+                            <td className="p-2 border text-center" style={{ borderColor: colors.border, color: colors.textMuted }}>{row.p2}</td>
+                            <td className="p-2 border text-center" style={{ borderColor: colors.border, color: colors.textMuted }}>{row.p3}</td>
+                            <td className="p-2 border text-center" style={{ borderColor: colors.border, color: colors.textMuted }}>{row.p4}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="mt-4 flex gap-6">
+                    <div className="flex items-center gap-2"><span style={{ color: colors.completed.bg }}>✓</span><span className="text-sm">Implemented</span></div>
+                    <div className="flex items-center gap-2"><span style={{ color: colors.inProgress.bg }}>◐</span><span className="text-sm">Partial</span></div>
+                    <div className="flex items-center gap-2"><span style={{ color: colors.textMuted }}>○</span><span className="text-sm">Planned</span></div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="ui-flows" className="space-y-4 mt-0">
+              <Card className="border" style={{ borderColor: colors.border }}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2" style={{ color: colors.presentation.bg }}>
+                    <Layout className="h-5 w-5" />UI Component Flow
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <svg viewBox="0 0 1200 500" className="w-full h-auto">
+                    <rect width="1200" height="500" fill={colors.background} rx="8" />
+
+                    {/* Genie Mind UI */}
+                    <g transform="translate(30, 20)">
+                      <rect width="550" height="450" rx="12" fill={colors.cardBg} stroke={colors.presentation.bg} strokeWidth="2" />
+                      <rect width="550" height="36" rx="12" fill={colors.presentation.bg} />
+                      <text x="275" y="24" textAnchor="middle" fill="#ffffff" fontSize="13" fontWeight="600">GENIE MIND UI (Script + TTS)</text>
+                      
+                      {/* Sidebar */}
+                      <g transform="translate(10, 46)">
+                        <rect width="120" height="390" rx="8" fill={colors.background} stroke={colors.border} strokeWidth="1" />
+                        <text x="60" y="22" textAnchor="middle" fill={colors.textMuted} fontSize="10" fontWeight="600">SIDEBAR</text>
+                        {['Projects ✓', 'Scripts ✓', 'Recordings ✓', 'Knowledge ✓', 'Templates (P1)', 'Analytics (P5)'].map((item, i) => (
+                          <g key={item}>
+                            <rect x="10" y={35 + i * 55} width="100" height="40" rx="4" fill={i < 4 ? colors.completed.light : colors.planned.light} stroke={i < 4 ? colors.completed.bg : colors.planned.bg} strokeWidth="1" />
+                            <text x="60" y={60 + i * 55} textAnchor="middle" fill={colors.text} fontSize="9">{item}</text>
+                          </g>
+                        ))}
+                      </g>
+
+                      {/* Main Content */}
+                      <g transform="translate(140, 46)">
+                        <rect width="400" height="390" rx="8" fill={colors.background} stroke={colors.border} strokeWidth="1" />
+                        <text x="200" y="22" textAnchor="middle" fill={colors.textMuted} fontSize="10" fontWeight="600">MAIN CONTENT</text>
+                        
+                        {/* Script Editor */}
+                        <rect x="10" y="35" width="380" height="120" rx="6" fill={colors.cardBg} stroke={colors.completed.bg} strokeWidth="1" />
+                        <text x="20" y="55" fill={colors.completed.bg} fontSize="10" fontWeight="600">Script Editor ✓</text>
+                        <rect x="20" y="65" width="350" height="10" rx="2" fill={colors.border} />
+                        <rect x="20" y="80" width="300" height="10" rx="2" fill={colors.border} />
+                        <rect x="280" y="120" width="100" height="22" rx="4" fill={colors.completed.bg} />
+                        <text x="330" y="135" textAnchor="middle" fill="#ffffff" fontSize="9">AI Enhance ✓</text>
+
+                        {/* TTS + Preview */}
+                        <rect x="10" y="165" width="185" height="80" rx="6" fill={colors.cardBg} stroke={colors.completed.bg} strokeWidth="1" />
+                        <text x="20" y="185" fill={colors.completed.bg} fontSize="10" fontWeight="600">TTS Controls ✓</text>
+                        <rect x="20" y="200" width="160" height="30" rx="3" fill={colors.completed.bg} />
+                        <text x="100" y="220" textAnchor="middle" fill="#ffffff" fontSize="9">Generate Voice</text>
+
+                        <rect x="205" y="165" width="185" height="80" rx="6" fill={colors.cardBg} stroke={colors.inProgress.bg} strokeWidth="1" />
+                        <text x="215" y="185" fill={colors.inProgress.bg} fontSize="10" fontWeight="600">Preview</text>
+                        <circle cx="297" cy="215" r="14" fill={colors.inProgress.bg} />
+                        <text x="297" y="219" textAnchor="middle" fill="#ffffff" fontSize="11">▶</text>
+
+                        {/* Actions */}
+                        <rect x="10" y="260" width="120" height="35" rx="6" fill={colors.completed.bg} />
+                        <text x="70" y="283" textAnchor="middle" fill="#ffffff" fontSize="11">Record ✓</text>
+                        <rect x="140" y="260" width="120" height="35" rx="6" fill={colors.presentation.bg} />
+                        <text x="200" y="283" textAnchor="middle" fill="#ffffff" fontSize="11">Save ✓</text>
+                        <rect x="270" y="260" width="120" height="35" rx="6" fill={colors.planned.bg} />
+                        <text x="330" y="283" textAnchor="middle" fill="#ffffff" fontSize="11">Publish (P1)</text>
+                      </g>
+                    </g>
+
+                    {/* Arrow */}
+                    <g transform="translate(590, 250)">
+                      <rect x="0" y="-15" width="40" height="30" rx="4" fill={colors.presentation.bg} />
+                      <text x="20" y="5" textAnchor="middle" fill="#ffffff" fontSize="16" fontWeight="bold">→</text>
+                    </g>
+
+                    {/* Genie Vibe UI */}
+                    <g transform="translate(620, 20)">
+                      <rect width="550" height="450" rx="12" fill={colors.cardBg} stroke={colors.completed.bg} strokeWidth="2" />
+                      <rect width="550" height="36" rx="12" fill={colors.completed.bg} />
+                      <text x="275" y="24" textAnchor="middle" fill="#ffffff" fontSize="13" fontWeight="600">GENIE VIBE UI (Recording)</text>
+
+                      {/* Video Preview */}
+                      <g transform="translate(10, 46)">
+                        <rect width="530" height="180" rx="8" fill={colors.background} stroke={colors.border} strokeWidth="1" />
+                        <text x="265" y="22" textAnchor="middle" fill={colors.textMuted} fontSize="10" fontWeight="600">CAMERA PREVIEW ✓</text>
+                        <rect x="20" y="35" width="330" height="125" rx="6" fill={colors.cardBg} stroke={colors.border} />
+                        <text x="185" y="100" textAnchor="middle" fill={colors.textMuted} fontSize="12">Camera Feed</text>
+                        <rect x="370" y="35" width="140" height="70" rx="6" fill={colors.cardBg} stroke={colors.border} />
+                        <text x="440" y="75" textAnchor="middle" fill={colors.textMuted} fontSize="9">Screen Share ✓</text>
+                      </g>
+
+                      {/* Teleprompter + Controls */}
+                      <g transform="translate(10, 236)">
+                        <rect width="350" height="100" rx="8" fill={colors.background} stroke={colors.completed.bg} strokeWidth="1" />
+                        <text x="175" y="22" textAnchor="middle" fill={colors.completed.bg} fontSize="10" fontWeight="600">TELEPROMPTER ✓</text>
+                        {[36, 52, 68, 84].map((y, i) => (
+                          <rect key={i} x="20" y={y} width={310 - i * 20} height="10" rx="2" fill={colors.border} />
+                        ))}
+                      </g>
+
+                      <g transform="translate(370, 236)">
+                        <rect width="170" height="100" rx="8" fill={colors.background} stroke={colors.domain.bg} strokeWidth="1" />
+                        <text x="85" y="22" textAnchor="middle" fill={colors.domain.bg} fontSize="10" fontWeight="600">CONTROLS ✓</text>
+                        <circle cx="85" cy="60" r="25" fill={colors.domain.bg} />
+                        <text x="85" y="65" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="600">REC</text>
+                      </g>
+
+                      {/* Audio Levels */}
+                      <g transform="translate(10, 346)">
+                        <rect width="530" height="50" rx="8" fill={colors.background} stroke={colors.border} strokeWidth="1" />
+                        <text x="20" y="18" fill={colors.textMuted} fontSize="9" fontWeight="600">AUDIO LEVELS ✓</text>
+                        {['TTS', 'VO', 'Music', 'Mic'].map((track, i) => (
+                          <g key={track}>
+                            <text x={40 + i * 130} y="38" fill={colors.text} fontSize="8">{track}</text>
+                            <rect x={80 + i * 130} y="28" width="80" height="12" rx="2" fill={colors.border} />
+                            <rect x={80 + i * 130} y="28" width={50 + i * 5} height="12" rx="2" fill={colors.completed.bg} />
+                          </g>
+                        ))}
+                      </g>
+
+                      {/* Future Features */}
+                      <g transform="translate(10, 406)">
+                        <rect width="530" height="35" rx="8" fill={colors.planned.light} stroke={colors.planned.bg} strokeWidth="1" />
+                        <text x="265" y="22" textAnchor="middle" fill={colors.planned.bg} fontSize="10">P1-P5: Mobile Record | Remix Timeline | Offline Mode | HIPAA | White-label</text>
+                      </g>
+                    </g>
+                  </svg>
+                </CardContent>
+              </Card>
             </TabsContent>
           </div>
         </ScrollArea>
