@@ -404,7 +404,7 @@ export const GenieRecordingStudioArchitectureDiagram = () => {
         <text x="150" y="50" textAnchor="middle" fill="#10b981" fontSize="11">✓ Unified Script→TTS→Record</text>
         <text x="400" y="50" textAnchor="middle" fill="#3b82f6" fontSize="11">✓ Bidirectional Vibe↔Mind</text>
         <text x="650" y="50" textAnchor="middle" fill="#f59e0b" fontSize="11">○ Mobile-First (Phase 3)</text>
-        <text x="900" y="50" textAnchor="middle" fill="#ec4899" fontSize="11">○ HIPAA <$100/mo (Phase 4)</text>
+        <text x="900" y="50" textAnchor="middle" fill="#ec4899" fontSize="11">○ HIPAA &lt;$100/mo (Phase 4)</text>
         <text x="1150" y="50" textAnchor="middle" fill="#8b5cf6" fontSize="11">○ Multi-Language Dub (Phase 5)</text>
         <text x="1400" y="50" textAnchor="middle" fill="#6366f1" fontSize="11">○ AI Remix (Phase 5)</text>
         
