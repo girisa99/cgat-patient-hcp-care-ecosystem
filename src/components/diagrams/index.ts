@@ -8,3 +8,4 @@ export { GenieStudioFunctionalArchDiagram } from './GenieStudioFunctionalArchDia
 export { GenieStudioScenarioMapDiagram } from './GenieStudioScenarioMapDiagram';
 export { GenieStudioFullArchitectureDiagram } from './GenieStudioFullArchitectureDiagram';
 export { GenieVisualAssetsGalleryDiagram } from './GenieVisualAssetsGalleryDiagram';
+export { MarketAnalysisDashboard } from './MarketAnalysisDashboard';
