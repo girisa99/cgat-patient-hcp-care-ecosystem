@@ -246,14 +246,220 @@ const subscriptionTiers = [
   }
 ];
 
-// Phase Priority with Market Data
+// Phase Priority with Market Data - Complete P0-P5
 const phaseData = [
-  { id: 'P0', name: 'Core MVP', color: colors.p0, scenarios: 13, icon: Zap, status: 'complete', market: 'Foundation' },
-  { id: 'P1', name: 'Mobile & Remix', color: colors.p1, scenarios: 10, icon: Smartphone, status: 'partial', market: '68% mobile demand' },
-  { id: 'P2', name: 'Advanced', color: colors.p2, scenarios: 10, icon: TrendingUp, status: 'planned', market: '54% offline need' },
-  { id: 'P3', name: 'Segments', color: colors.p3, scenarios: 10, icon: Target, status: 'planned', market: '6 vertical markets' },
-  { id: 'P4', name: 'Enterprise', color: colors.p4, scenarios: 10, icon: Shield, status: 'planned', market: 'White-label sales' },
-  { id: 'P5', name: 'Future', color: colors.p5, scenarios: 10, icon: Film, status: 'planned', market: 'Innovation' }
+  { 
+    id: 'P0', 
+    name: 'Core MVP', 
+    color: colors.p0, 
+    scenarios: 13, 
+    icon: Zap, 
+    status: 'complete', 
+    market: 'Foundation',
+    features: ['Script + TTS', 'Recording Studio', 'Teleprompter', 'Export MP4/WebM', 'Vibe↔Mind Bridge'],
+    timeline: 'Weeks 1-4',
+    keyMetric: '72% Complete'
+  },
+  { 
+    id: 'P1', 
+    name: 'Mobile & Remix', 
+    color: colors.p1, 
+    scenarios: 10, 
+    icon: Smartphone, 
+    status: 'partial', 
+    market: '68% mobile demand',
+    features: ['One-Tap Recording', 'Quick Clips', 'Clip Assembly', 'Mobile Preview', 'Social Sharing'],
+    timeline: 'Weeks 5-8',
+    keyMetric: '30% Complete'
+  },
+  { 
+    id: 'P2', 
+    name: 'Advanced', 
+    color: colors.p2, 
+    scenarios: 10, 
+    icon: TrendingUp, 
+    status: 'planned', 
+    market: '54% offline need',
+    features: ['Offline Mode', 'AI Voice Edit', 'Smart Captions', 'AI Arrange', 'Collaboration'],
+    timeline: 'Weeks 9-12',
+    keyMetric: '10% Complete'
+  },
+  { 
+    id: 'P3', 
+    name: 'Segments', 
+    color: colors.p3, 
+    scenarios: 10, 
+    icon: Target, 
+    status: 'planned', 
+    market: '6 vertical markets',
+    features: ['Product Demo Kit', 'Lesson Builder', 'Patient Ed Kit', 'Voice Clone', 'Auto-Edit Kit'],
+    timeline: 'Weeks 13-16',
+    keyMetric: 'Roadmap'
+  },
+  { 
+    id: 'P4', 
+    name: 'Enterprise', 
+    color: colors.p4, 
+    scenarios: 10, 
+    icon: Shield, 
+    status: 'planned', 
+    market: 'White-label sales',
+    features: ['HIPAA Mode', 'White-Label', 'Multi-Tenant', 'Approval Workflows', 'SSO/SAML'],
+    timeline: 'Weeks 17-20',
+    keyMetric: 'Enterprise Sales'
+  },
+  { 
+    id: 'P5', 
+    name: 'Future', 
+    color: colors.p5, 
+    scenarios: 10, 
+    icon: Film, 
+    status: 'planned', 
+    market: 'Innovation',
+    features: ['API Access', 'Batch Processing', 'AI Director', 'B-Roll Library', 'Analytics Pro'],
+    timeline: 'Weeks 21+',
+    keyMetric: 'Innovation'
+  }
+];
+
+// Language Prioritization Data
+const languagePriority = [
+  { 
+    tier: 'Tier 1 (P1)', 
+    languages: [
+      { code: 'en', name: 'English', icon: '🇺🇸', speakers: '1.5B', priority: 'P0 - Core' },
+      { code: 'hi', name: 'Hindi', icon: '🇮🇳', speakers: '600M', priority: 'P1 - High' },
+      { code: 'es', name: 'Spanish', icon: '🇪🇸', speakers: '560M', priority: 'P1 - High' },
+      { code: 'zh', name: 'Mandarin', icon: '🇨🇳', speakers: '1.1B', priority: 'P1 - High' }
+    ],
+    color: colors.p1,
+    marketNote: 'Covers 60% of global internet users'
+  },
+  { 
+    tier: 'Tier 2 (P2)', 
+    languages: [
+      { code: 'fr', name: 'French', icon: '🇫🇷', speakers: '310M', priority: 'P2 - Medium' },
+      { code: 'ja', name: 'Japanese', icon: '🇯🇵', speakers: '125M', priority: 'P2 - Medium' },
+      { code: 'te', name: 'Telugu', icon: '🇮🇳', speakers: '96M', priority: 'P2 - Medium' },
+      { code: 'mr', name: 'Marathi', icon: '🇮🇳', speakers: '95M', priority: 'P2 - Medium' }
+    ],
+    color: colors.p2,
+    marketNote: 'High-value regional markets'
+  },
+  { 
+    tier: 'Tier 3 (P3)', 
+    languages: [
+      { code: 'kn', name: 'Kannada', icon: '🇮🇳', speakers: '59M', priority: 'P3 - Regional' },
+      { code: 'pt', name: 'Portuguese', icon: '🇧🇷', speakers: '260M', priority: 'P3 - Regional' },
+      { code: 'de', name: 'German', icon: '🇩🇪', speakers: '135M', priority: 'P3 - Regional' },
+      { code: 'ar', name: 'Arabic', icon: '🇸🇦', speakers: '420M', priority: 'P3 - Regional' }
+    ],
+    color: colors.p3,
+    marketNote: 'Regional expansion'
+  }
+];
+
+// Complete Cross-Functional Matrix
+const crossFunctionalMatrix = [
+  {
+    category: '🌍 Universal Features',
+    emoji: '🌍',
+    products: ['Mind', 'Vibe', 'Arc', 'Spark'],
+    segments: ['All 6 Segments'],
+    features: ['Script + TTS', 'Recording', 'Export', 'Templates'],
+    subscriptions: ['Free', 'Starter', 'Business', 'Pro', 'Enterprise'],
+    marketData: 'Foundation - 100% coverage',
+    priority: 'P0',
+    color: colors.p0
+  },
+  {
+    category: '📱 Mobile-First',
+    emoji: '📱',
+    products: ['Mind', 'Vibe', 'Spark'],
+    segments: ['Creator', 'Traveler', 'SMB'],
+    features: ['One-Tap Record', 'Quick Clips', 'Mobile Preview', 'Social Share'],
+    subscriptions: ['Starter', 'Business'],
+    marketData: '68% mobile demand - Research shows creators want phone-first',
+    priority: 'P1',
+    color: colors.p1
+  },
+  {
+    category: '🎬 Remix & Clips',
+    emoji: '🎬',
+    products: ['Vibe', 'Arc', 'Spark'],
+    segments: ['Creator', 'SMB', 'Education'],
+    features: ['Clip Assembly', 'Remix Engine', 'Auto-Highlights', 'Timestamp Markers'],
+    subscriptions: ['Starter', 'Business', 'Pro'],
+    marketData: '82% want clips - Short-form content dominance',
+    priority: 'P1',
+    color: colors.p1
+  },
+  {
+    category: '📴 Offline Mode',
+    emoji: '📴',
+    products: ['Vibe', 'Mind (cached)'],
+    segments: ['Traveler', 'Healthcare', 'Education'],
+    features: ['IndexedDB Storage', 'Sync on Connect', 'Offline Recording', 'Local AI'],
+    subscriptions: ['Starter', 'Pro', 'Enterprise'],
+    marketData: '54% need offline - Travel & field work',
+    priority: 'P2',
+    color: colors.p2
+  },
+  {
+    category: '🌐 Multi-Language',
+    emoji: '🌐',
+    products: ['Mind', 'Vibe', 'Arc'],
+    segments: ['Traveler', 'SMB', 'Education', 'Enterprise'],
+    features: ['12 Languages', 'Auto-Translate', 'Regional TTS', 'Caption Localization'],
+    subscriptions: ['Business', 'Pro', 'Enterprise'],
+    marketData: 'India + LATAM + APAC = 3B users',
+    priority: 'P2',
+    color: colors.p2
+  },
+  {
+    category: '🎓 Education Kit',
+    emoji: '🎓',
+    products: ['Mind', 'Vibe', 'Arc'],
+    segments: ['Education'],
+    features: ['Lesson Builder', 'Quiz Integration', 'Student Analytics', 'LMS Export'],
+    subscriptions: ['Pro'],
+    marketData: '69% want AI scripts - Teachers save 4+ hours/video',
+    priority: 'P3',
+    color: colors.p3
+  },
+  {
+    category: '🏥 Healthcare Kit',
+    emoji: '🏥',
+    products: ['Vibe', 'Arc', 'Hub'],
+    segments: ['Healthcare'],
+    features: ['Patient Ed Templates', 'HIPAA Mode', 'PHI Redaction', 'Audit Trail'],
+    subscriptions: ['Enterprise'],
+    marketData: '94% want HIPAA <$100/mo - Massive gap!',
+    priority: 'P3',
+    color: colors.p3
+  },
+  {
+    category: '🏢 Enterprise Compliance',
+    emoji: '🏢',
+    products: ['Vibe', 'Arc', 'Hub'],
+    segments: ['Healthcare', 'Enterprise'],
+    features: ['Approval Workflows', 'Legal Review Gate', 'SOC2', 'SSO/SAML'],
+    subscriptions: ['Enterprise'],
+    marketData: 'White-label demand high - $10K+ deals',
+    priority: 'P4',
+    color: colors.p4
+  },
+  {
+    category: '🔌 API & Integration',
+    emoji: '🔌',
+    products: ['All Products'],
+    segments: ['SMB', 'Education', 'Enterprise'],
+    features: ['REST API', 'Webhooks', 'Zapier', 'Custom Integrations'],
+    subscriptions: ['Pro', 'Enterprise'],
+    marketData: 'Developer ecosystem - Multiplier effect',
+    priority: 'P5',
+    color: colors.p5
+  }
 ];
 
 export const GenieVisualAssetsGalleryDiagram = () => {
@@ -325,11 +531,12 @@ export const GenieVisualAssetsGalleryDiagram = () => {
           <div ref={scrollRef} className="overflow-x-auto scrollbar-hide">
             <TabsList className="diagram-tabs-list inline-flex w-max min-w-full justify-start">
               <TabsTrigger value="overview" className="diagram-tab-trigger">📊 Overview</TabsTrigger>
-              <TabsTrigger value="segments" className="diagram-tab-trigger">🎯 6 Segments</TabsTrigger>
-              <TabsTrigger value="technical" className="diagram-tab-trigger">⚙️ Technical Flows</TabsTrigger>
-              <TabsTrigger value="subscriptions" className="diagram-tab-trigger">💳 Subscriptions</TabsTrigger>
-              <TabsTrigger value="roadmap" className="diagram-tab-trigger">🗺️ Roadmap</TabsTrigger>
-              <TabsTrigger value="crossover" className="diagram-tab-trigger">🔗 Cross-Functional</TabsTrigger>
+              <TabsTrigger value="segments" className="diagram-tab-trigger">🎯 Segments</TabsTrigger>
+              <TabsTrigger value="roadmap" className="diagram-tab-trigger">🗺️ P0-P5 Roadmap</TabsTrigger>
+              <TabsTrigger value="crossover" className="diagram-tab-trigger">🔗 Matrix</TabsTrigger>
+              <TabsTrigger value="languages" className="diagram-tab-trigger">🌐 Languages</TabsTrigger>
+              <TabsTrigger value="technical" className="diagram-tab-trigger">⚙️ Technical</TabsTrigger>
+              <TabsTrigger value="subscriptions" className="diagram-tab-trigger">💳 Tiers</TabsTrigger>
             </TabsList>
           </div>
 
@@ -567,96 +774,349 @@ export const GenieVisualAssetsGalleryDiagram = () => {
                 </div>
               </TabsContent>
 
-              {/* Roadmap Tab */}
+              {/* Roadmap Tab - Enhanced P0-P5 */}
               <TabsContent value="roadmap" className="space-y-6 mt-0">
-                <h3 className="text-lg font-semibold" style={{ color: colors.text }}>🗺️ Phase Roadmap Visualization</h3>
-                
-                {/* Timeline View */}
-                <div className="relative overflow-x-auto">
-                  <div className="flex gap-4 min-w-[800px] pb-4">
-                    {phaseData.map((phase, idx) => (
-                      <div key={phase.id} className="flex-1 min-w-[120px]">
-                        <div 
-                          className="h-4 rounded-full mb-3"
-                          style={{ backgroundColor: phase.color.bg }}
-                        />
-                        <Card className="border-2" style={{ borderColor: phase.color.bg, backgroundColor: phase.color.light }}>
-                          <CardContent className="p-3">
-                            <div className="text-center">
-                              <phase.icon className="h-8 w-8 mx-auto mb-2" style={{ color: phase.color.bg }} />
-                              <p className="font-bold" style={{ color: phase.color.bg }}>{phase.id}</p>
-                              <p className="text-xs font-medium" style={{ color: colors.text }}>{phase.name}</p>
-                              <p className="text-xs mt-2" style={{ color: colors.textMuted }}>{phase.scenarios} scenarios</p>
-                              <p className="text-xs mt-1" style={{ color: colors.textMuted }}>{phase.market}</p>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    ))}
-                  </div>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <h3 className="text-lg font-semibold" style={{ color: colors.text }}>🗺️ P0 → P5 Phase Roadmap</h3>
+                  <Badge style={{ backgroundColor: colors.completed.bg, color: '#fff' }}>63 Scenarios Mapped</Badge>
                 </div>
+                
+                {/* Humor Banner */}
+                <div className="p-3 rounded-lg border-2 border-dashed" style={{ borderColor: colors.p2.bg, backgroundColor: colors.p2.light }}>
+                  <p className="text-center text-sm" style={{ color: colors.text }}>
+                    🚀 "Rome wasn't built in a day, but they weren't using Agile sprints either!" 
+                    <span className="text-xs block mt-1" style={{ color: colors.textMuted }}>— Project Manager, probably</span>
+                  </p>
+                </div>
+                
+                {/* Phase Cards - Detailed View */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {phaseData.map((phase) => {
+                    const Icon = phase.icon;
+                    return (
+                      <Card 
+                        key={phase.id}
+                        className="border-2 hover:shadow-lg transition-all"
+                        style={{ borderColor: phase.color.bg }}
+                      >
+                        <CardHeader className="pb-2" style={{ backgroundColor: phase.color.light }}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Icon className="h-6 w-6" style={{ color: phase.color.bg }} />
+                              <div>
+                                <CardTitle className="text-lg" style={{ color: phase.color.bg }}>{phase.id}</CardTitle>
+                                <p className="text-xs font-medium" style={{ color: colors.text }}>{phase.name}</p>
+                              </div>
+                            </div>
+                            <Badge 
+                              style={{ 
+                                backgroundColor: phase.status === 'complete' ? colors.completed.bg : 
+                                                phase.status === 'partial' ? colors.inProgress.bg : colors.planned.bg,
+                                color: '#fff'
+                              }}
+                            >
+                              {phase.keyMetric}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-3">
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-xs">
+                              <span style={{ color: colors.textMuted }}>Timeline:</span>
+                              <span className="font-medium" style={{ color: colors.text }}>{phase.timeline}</span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                              <span style={{ color: colors.textMuted }}>Scenarios:</span>
+                              <span className="font-medium" style={{ color: colors.text }}>{phase.scenarios}</span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                              <span style={{ color: colors.textMuted }}>Market:</span>
+                              <span className="font-medium" style={{ color: colors.text }}>{phase.market}</span>
+                            </div>
+                            <hr className="my-2" style={{ borderColor: colors.border }} />
+                            <div>
+                              <p className="text-xs font-medium mb-1" style={{ color: colors.text }}>Key Features:</p>
+                              <div className="flex flex-wrap gap-1">
+                                {phase.features.map((f, i) => (
+                                  <Badge key={i} variant="outline" className="text-xs" style={{ borderColor: phase.color.bg, color: phase.color.bg }}>
+                                    {f}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+
+                {/* Timeline Visualization */}
+                <Card className="border" style={{ borderColor: colors.border }}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      📅 Development Timeline
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="relative overflow-x-auto">
+                      <div className="flex gap-1 min-w-[600px]">
+                        {phaseData.map((phase, idx) => (
+                          <div key={phase.id} className="flex-1 text-center">
+                            <div 
+                              className="h-8 rounded flex items-center justify-center text-xs font-bold text-white"
+                              style={{ backgroundColor: phase.color.bg }}
+                            >
+                              {phase.id}
+                            </div>
+                            <p className="text-xs mt-1" style={{ color: colors.textMuted }}>{phase.timeline}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
 
-              {/* Cross-Functional Tab */}
+              {/* Cross-Functional Tab - Complete Matrix */}
               <TabsContent value="crossover" className="space-y-6 mt-0">
-                <h3 className="text-lg font-semibold" style={{ color: colors.text }}>🔗 Cross-Functional Feature Matrix</h3>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <h3 className="text-lg font-semibold" style={{ color: colors.text }}>🔗 Cross-Functional Feature Matrix</h3>
+                  <Badge style={{ backgroundColor: colors.p1.bg, color: '#fff' }}>9 Categories • All Products</Badge>
+                </div>
                 <p className="text-sm" style={{ color: colors.textMuted }}>
-                  Features that span multiple products and segments, maximizing code reuse and ROI.
+                  Complete mapping of categories → products → segments → subscriptions → market data
                 </p>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse text-sm" style={{ minWidth: '700px' }}>
-                    <thead>
-                      <tr>
-                        <th className="p-3 text-left border" style={{ backgroundColor: colors.cardBg, borderColor: colors.border }}>Category</th>
-                        <th className="p-3 text-center border" style={{ backgroundColor: colors.cardBg, borderColor: colors.border }}>Products</th>
-                        <th className="p-3 text-center border" style={{ backgroundColor: colors.cardBg, borderColor: colors.border }}>Segments</th>
-                        <th className="p-3 text-center border" style={{ backgroundColor: colors.cardBg, borderColor: colors.border }}>Market Data</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td className="p-3 border font-medium" style={{ backgroundColor: colors.completed.light, borderColor: colors.border }}>
-                          🌍 Universal Features
-                        </td>
-                        <td className="p-3 border text-center" style={{ borderColor: colors.border }}>Mind, Vibe</td>
-                        <td className="p-3 border text-center" style={{ borderColor: colors.border }}>All 6</td>
-                        <td className="p-3 border text-center" style={{ borderColor: colors.border }}>Foundation</td>
-                      </tr>
-                      <tr>
-                        <td className="p-3 border font-medium" style={{ backgroundColor: colors.p1.light, borderColor: colors.border }}>
-                          📱 Mobile-First
-                        </td>
-                        <td className="p-3 border text-center" style={{ borderColor: colors.border }}>Mind, Vibe, Spark</td>
-                        <td className="p-3 border text-center" style={{ borderColor: colors.border }}>Creator, Traveler, SMB</td>
-                        <td className="p-3 border text-center" style={{ borderColor: colors.border }}>68% demand</td>
-                      </tr>
-                      <tr>
-                        <td className="p-3 border font-medium" style={{ backgroundColor: colors.p2.light, borderColor: colors.border }}>
-                          🎬 Remix & Clips
-                        </td>
-                        <td className="p-3 border text-center" style={{ borderColor: colors.border }}>Vibe, Arc</td>
-                        <td className="p-3 border text-center" style={{ borderColor: colors.border }}>Creator, SMB, Education</td>
-                        <td className="p-3 border text-center" style={{ borderColor: colors.border }}>82% want clips</td>
-                      </tr>
-                      <tr>
-                        <td className="p-3 border font-medium" style={{ backgroundColor: colors.p3.light, borderColor: colors.border }}>
-                          📴 Offline Mode
-                        </td>
-                        <td className="p-3 border text-center" style={{ borderColor: colors.border }}>Vibe, Mind (cached)</td>
-                        <td className="p-3 border text-center" style={{ borderColor: colors.border }}>Traveler, Healthcare</td>
-                        <td className="p-3 border text-center" style={{ borderColor: colors.border }}>54% need</td>
-                      </tr>
-                      <tr>
-                        <td className="p-3 border font-medium" style={{ backgroundColor: colors.p4.light, borderColor: colors.border }}>
-                          🏥 Compliance
-                        </td>
-                        <td className="p-3 border text-center" style={{ borderColor: colors.border }}>Vibe, Arc, Hub</td>
-                        <td className="p-3 border text-center" style={{ borderColor: colors.border }}>Healthcare, Enterprise</td>
-                        <td className="p-3 border text-center" style={{ borderColor: colors.border }}>94% HIPAA &lt;$100</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                {/* Matrix Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {crossFunctionalMatrix.map((item, idx) => (
+                    <Card 
+                      key={idx}
+                      className="border-2 hover:shadow-lg transition-all"
+                      style={{ borderColor: item.color.bg }}
+                    >
+                      <CardHeader className="pb-2" style={{ backgroundColor: item.color.light }}>
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-sm flex items-center gap-2" style={{ color: item.color.bg }}>
+                            <span className="text-xl">{item.emoji}</span>
+                            {item.category.replace(item.emoji + ' ', '')}
+                          </CardTitle>
+                          <Badge style={{ backgroundColor: item.color.bg, color: '#fff' }}>{item.priority}</Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-3 space-y-2">
+                        <div>
+                          <p className="text-xs font-medium" style={{ color: colors.textMuted }}>Products:</p>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {item.products.map((p, i) => (
+                              <Badge key={i} variant="outline" className="text-xs">{p}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium" style={{ color: colors.textMuted }}>Segments:</p>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {item.segments.map((s, i) => (
+                              <Badge key={i} variant="secondary" className="text-xs">{s}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium" style={{ color: colors.textMuted }}>Features:</p>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {item.features.slice(0, 3).map((f, i) => (
+                              <Badge key={i} className="text-xs" style={{ backgroundColor: item.color.light, color: item.color.bg, border: `1px solid ${item.color.bg}` }}>
+                                {f}
+                              </Badge>
+                            ))}
+                            {item.features.length > 3 && (
+                              <Badge variant="outline" className="text-xs">+{item.features.length - 3}</Badge>
+                            )}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium" style={{ color: colors.textMuted }}>Subscriptions:</p>
+                          <p className="text-xs" style={{ color: colors.text }}>{item.subscriptions.join(', ')}</p>
+                        </div>
+                        <hr style={{ borderColor: colors.border }} />
+                        <div className="p-2 rounded" style={{ backgroundColor: item.color.light }}>
+                          <p className="text-xs font-medium" style={{ color: item.color.bg }}>📊 {item.marketData}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                {/* Summary Table */}
+                <Card className="border" style={{ borderColor: colors.border }}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">📋 Quick Reference Matrix</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse text-xs" style={{ minWidth: '800px' }}>
+                        <thead>
+                          <tr>
+                            <th className="p-2 text-left border" style={{ backgroundColor: colors.cardBg, borderColor: colors.border }}>Category</th>
+                            <th className="p-2 text-center border" style={{ backgroundColor: colors.cardBg, borderColor: colors.border }}>Priority</th>
+                            <th className="p-2 text-center border" style={{ backgroundColor: colors.cardBg, borderColor: colors.border }}>Products</th>
+                            <th className="p-2 text-center border" style={{ backgroundColor: colors.cardBg, borderColor: colors.border }}>Segments</th>
+                            <th className="p-2 text-center border" style={{ backgroundColor: colors.cardBg, borderColor: colors.border }}>Tiers</th>
+                            <th className="p-2 text-center border" style={{ backgroundColor: colors.cardBg, borderColor: colors.border }}>Market</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {crossFunctionalMatrix.map((item, idx) => (
+                            <tr key={idx}>
+                              <td className="p-2 border font-medium" style={{ backgroundColor: item.color.light, borderColor: colors.border }}>
+                                {item.category}
+                              </td>
+                              <td className="p-2 border text-center" style={{ borderColor: colors.border }}>
+                                <Badge style={{ backgroundColor: item.color.bg, color: '#fff' }}>{item.priority}</Badge>
+                              </td>
+                              <td className="p-2 border text-center" style={{ borderColor: colors.border }}>{item.products.join(', ')}</td>
+                              <td className="p-2 border text-center" style={{ borderColor: colors.border }}>{item.segments.join(', ')}</td>
+                              <td className="p-2 border text-center" style={{ borderColor: colors.border }}>{item.subscriptions.length}</td>
+                              <td className="p-2 border text-center" style={{ borderColor: colors.border }}>{item.marketData.split(' - ')[0]}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Languages Tab - NEW */}
+              <TabsContent value="languages" className="space-y-6 mt-0">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <h3 className="text-lg font-semibold" style={{ color: colors.text }}>🌐 Language Prioritization Roadmap</h3>
+                  <Badge style={{ backgroundColor: colors.p1.bg, color: '#fff' }}>12 Languages Planned</Badge>
+                </div>
+
+                {/* Humor Banner */}
+                <div className="p-3 rounded-lg border-2 border-dashed" style={{ borderColor: colors.p3.bg, backgroundColor: colors.p3.light }}>
+                  <p className="text-center text-sm" style={{ color: colors.text }}>
+                    🗣️ "The only language barrier should be not knowing what 'fleek' means!" 
+                    <span className="text-xs block mt-1" style={{ color: colors.textMuted }}>— Multilingual Creator, 2024</span>
+                  </p>
+                </div>
+
+                {/* Language Tiers */}
+                <div className="space-y-6">
+                  {languagePriority.map((tier, tierIdx) => (
+                    <Card key={tierIdx} className="border-2" style={{ borderColor: tier.color.bg }}>
+                      <CardHeader className="pb-2" style={{ backgroundColor: tier.color.light }}>
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-lg" style={{ color: tier.color.bg }}>{tier.tier}</CardTitle>
+                          <p className="text-xs" style={{ color: colors.textMuted }}>{tier.marketNote}</p>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-4">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          {tier.languages.map((lang, langIdx) => (
+                            <div 
+                              key={langIdx}
+                              className="p-3 rounded-lg border text-center hover:shadow-md transition-all"
+                              style={{ borderColor: tier.color.bg, backgroundColor: colors.cardBg }}
+                            >
+                              <span className="text-3xl">{lang.icon}</span>
+                              <p className="font-bold text-sm mt-2" style={{ color: colors.text }}>{lang.name}</p>
+                              <p className="text-xs" style={{ color: colors.textMuted }}>{lang.code.toUpperCase()}</p>
+                              <Badge className="mt-2 text-xs" style={{ backgroundColor: tier.color.light, color: tier.color.bg, border: `1px solid ${tier.color.bg}` }}>
+                                {lang.speakers}
+                              </Badge>
+                              <p className="text-xs mt-1" style={{ color: tier.color.bg }}>{lang.priority}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                {/* Language Feature Matrix */}
+                <Card className="border" style={{ borderColor: colors.border }}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      📋 Language Feature Support Matrix
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse text-xs" style={{ minWidth: '600px' }}>
+                        <thead>
+                          <tr>
+                            <th className="p-2 text-left border" style={{ backgroundColor: colors.cardBg, borderColor: colors.border }}>Feature</th>
+                            <th className="p-2 text-center border" style={{ backgroundColor: colors.p1.light, borderColor: colors.border }}>Tier 1</th>
+                            <th className="p-2 text-center border" style={{ backgroundColor: colors.p2.light, borderColor: colors.border }}>Tier 2</th>
+                            <th className="p-2 text-center border" style={{ backgroundColor: colors.p3.light, borderColor: colors.border }}>Tier 3</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td className="p-2 border" style={{ borderColor: colors.border }}>🎙️ TTS (Text-to-Speech)</td>
+                            <td className="p-2 border text-center" style={{ borderColor: colors.border }}>✅ P1</td>
+                            <td className="p-2 border text-center" style={{ borderColor: colors.border }}>✅ P2</td>
+                            <td className="p-2 border text-center" style={{ borderColor: colors.border }}>⏳ P3</td>
+                          </tr>
+                          <tr>
+                            <td className="p-2 border" style={{ borderColor: colors.border }}>📝 UI Translation</td>
+                            <td className="p-2 border text-center" style={{ borderColor: colors.border }}>✅ P1</td>
+                            <td className="p-2 border text-center" style={{ borderColor: colors.border }}>✅ P2</td>
+                            <td className="p-2 border text-center" style={{ borderColor: colors.border }}>⏳ P3</td>
+                          </tr>
+                          <tr>
+                            <td className="p-2 border" style={{ borderColor: colors.border }}>📺 Auto-Captions</td>
+                            <td className="p-2 border text-center" style={{ borderColor: colors.border }}>✅ P1</td>
+                            <td className="p-2 border text-center" style={{ borderColor: colors.border }}>✅ P2</td>
+                            <td className="p-2 border text-center" style={{ borderColor: colors.border }}>⏳ P3</td>
+                          </tr>
+                          <tr>
+                            <td className="p-2 border" style={{ borderColor: colors.border }}>🔄 Script Translation</td>
+                            <td className="p-2 border text-center" style={{ borderColor: colors.border }}>✅ P2</td>
+                            <td className="p-2 border text-center" style={{ borderColor: colors.border }}>⏳ P3</td>
+                            <td className="p-2 border text-center" style={{ borderColor: colors.border }}>⏳ P4</td>
+                          </tr>
+                          <tr>
+                            <td className="p-2 border" style={{ borderColor: colors.border }}>🗣️ Voice Clone</td>
+                            <td className="p-2 border text-center" style={{ borderColor: colors.border }}>⏳ P3</td>
+                            <td className="p-2 border text-center" style={{ borderColor: colors.border }}>⏳ P4</td>
+                            <td className="p-2 border text-center" style={{ borderColor: colors.border }}>⏳ P5</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Regional Market Info */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card className="border" style={{ borderColor: colors.p1.bg }}>
+                    <CardContent className="p-4 text-center">
+                      <span className="text-3xl">🇮🇳</span>
+                      <p className="font-bold mt-2" style={{ color: colors.text }}>India Market</p>
+                      <p className="text-xs" style={{ color: colors.textMuted }}>Hindi, Telugu, Marathi, Kannada</p>
+                      <Badge className="mt-2" style={{ backgroundColor: colors.p1.bg, color: '#fff' }}>1.4B population</Badge>
+                    </CardContent>
+                  </Card>
+                  <Card className="border" style={{ borderColor: colors.p2.bg }}>
+                    <CardContent className="p-4 text-center">
+                      <span className="text-3xl">🌏</span>
+                      <p className="font-bold mt-2" style={{ color: colors.text }}>APAC Market</p>
+                      <p className="text-xs" style={{ color: colors.textMuted }}>Mandarin, Japanese</p>
+                      <Badge className="mt-2" style={{ backgroundColor: colors.p2.bg, color: '#fff' }}>1.5B speakers</Badge>
+                    </CardContent>
+                  </Card>
+                  <Card className="border" style={{ borderColor: colors.p3.bg }}>
+                    <CardContent className="p-4 text-center">
+                      <span className="text-3xl">🌍</span>
+                      <p className="font-bold mt-2" style={{ color: colors.text }}>Global Market</p>
+                      <p className="text-xs" style={{ color: colors.textMuted }}>Spanish, French, Portuguese</p>
+                      <Badge className="mt-2" style={{ backgroundColor: colors.p3.bg, color: '#fff' }}>1.1B speakers</Badge>
+                    </CardContent>
+                  </Card>
                 </div>
               </TabsContent>
             </div>
