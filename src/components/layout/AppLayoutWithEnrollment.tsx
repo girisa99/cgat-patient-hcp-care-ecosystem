@@ -5,14 +5,16 @@
  */
 import React, { Suspense } from 'react';
 import { GlobalConversationalEnrollmentProvider } from '@/hooks/useGlobalConversationalEnrollment';
-// Lazy load heavy global components to prevent startup failures
-const GlobalConversationalEnrollmentModalLazy = React.lazy(() =>
+import { lazyWithRetry } from '@/utils/lazyWithRetry';
+import { usePageAwareEnrollment } from '@/hooks/usePageAwareEnrollment';
+
+// Lazy load heavy global components with retry to prevent startup failures
+const GlobalConversationalEnrollmentModalLazy = lazyWithRetry(() =>
   import('@/components/global/GlobalConversationalEnrollmentModal').then(m => ({ default: m.GlobalConversationalEnrollmentModal }))
 );
-const UniversalConversationGenieLazy = React.lazy(() =>
+const UniversalConversationGenieLazy = lazyWithRetry(() =>
   import('@/components/enrollment-genie/UniversalConversationGenie').then(m => ({ default: m.UniversalConversationGenie }))
 );
-import { usePageAwareEnrollment } from '@/hooks/usePageAwareEnrollment';
 
 interface AppLayoutWithEnrollmentProps {
   children: React.ReactNode;
