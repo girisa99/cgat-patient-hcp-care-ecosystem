@@ -16,7 +16,9 @@ import {
   AlertCircle,
   Smartphone,
   Shield,
-  Globe
+  Globe,
+  Maximize2,
+  X
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
@@ -42,6 +44,7 @@ const colors = {
 
 export const GenieStudioTechnicalArchDiagram = () => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const diagramRef = useRef<HTMLDivElement>(null);
 
   const openDocs = () => {
@@ -90,6 +93,9 @@ export const GenieStudioTechnicalArchDiagram = () => {
               </Button>
               <Button variant="outline" size="sm" onClick={openDocs} className="gap-2">
                 <FileText className="h-4 w-4" />Docs<ExternalLink className="h-3 w-3" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setIsFullscreen(true)} className="gap-2">
+                <Maximize2 className="h-4 w-4" />Expand
               </Button>
             </div>
           </div>
@@ -438,6 +444,28 @@ export const GenieStudioTechnicalArchDiagram = () => {
           </div>
         </ScrollArea>
       </Tabs>
+
+      {/* Fullscreen Modal */}
+      {isFullscreen && (
+        <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm">
+          <div className="absolute top-4 right-4 z-10 flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleDownloadSVG} className="gap-2">
+              <Download className="h-4 w-4" />SVG
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleDownloadPNG} className="gap-2">
+              <Download className="h-4 w-4" />PNG
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setIsFullscreen(false)} className="gap-2">
+              <X className="h-4 w-4" />Close
+            </Button>
+          </div>
+          <ScrollArea className="h-screen w-screen p-8">
+            <div ref={diagramRef} className="bg-card p-6 rounded-lg">
+              <h2 className="text-2xl font-bold mb-4">Technical Architecture (140 Scenarios)</h2>
+            </div>
+          </ScrollArea>
+        </div>
+      )}
     </div>
   );
 };
