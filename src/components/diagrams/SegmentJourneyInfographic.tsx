@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { JourneyStageIllustration } from './journey/JourneyStageIllustration';
 
 // Segment colors with HSL for theming
 const segmentColors = {
@@ -1058,13 +1060,50 @@ export const SegmentJourneyInfographic: React.FC<SegmentJourneyInfographicProps>
             <Badge variant="outline" className="text-xs">12 Stages</Badge>
           </h3>
           
-          {/* Journey Path - Winding Road Style */}
+          {/* Journey Path - Visual Infographic Style */}
           <div className="relative">
             {/* Background scenery gradient */}
             <div 
               className="absolute inset-0 rounded-xl opacity-10"
               style={{ background: colorScheme.gradient }}
             />
+            
+            {/* SVG Path connecting all stages */}
+            <svg 
+              className="absolute inset-0 w-full h-full pointer-events-none"
+              style={{ minHeight: segment.stages.length * 180 }}
+            >
+              <defs>
+                <linearGradient id="path-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor={colorScheme.bg} stopOpacity="0.6" />
+                  <stop offset="100%" stopColor={colorScheme.bg} stopOpacity="0.2" />
+                </linearGradient>
+              </defs>
+              {segment.stages.map((_, index) => {
+                if (index === segment.stages.length - 1) return null;
+                const isLeft = index % 2 === 0;
+                const nextIsLeft = (index + 1) % 2 === 0;
+                const startX = isLeft ? 70 : 230;
+                const endX = nextIsLeft ? 70 : 230;
+                const startY = index * 180 + 100;
+                const endY = (index + 1) * 180 + 60;
+                const midY = (startY + endY) / 2;
+                
+                return (
+                  <motion.path
+                    key={index}
+                    d={`M ${startX} ${startY} C ${startX} ${midY}, ${endX} ${midY}, ${endX} ${endY}`}
+                    fill="none"
+                    stroke="url(#path-gradient)"
+                    strokeWidth="4"
+                    strokeDasharray="8,4"
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={{ pathLength: 1, opacity: 1 }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                  />
+                );
+              })}
+            </svg>
             
             {/* Winding path container */}
             <div className="relative py-4">
@@ -1073,109 +1112,217 @@ export const SegmentJourneyInfographic: React.FC<SegmentJourneyInfographicProps>
                 const phaseColor = phaseColors[stage.phase as keyof typeof phaseColors];
                 
                 return (
-                  <div 
+                  <motion.div 
                     key={stage.id}
-                    className={`relative flex items-center gap-4 mb-6 ${isLeft ? '' : 'flex-row-reverse'}`}
+                    className={`relative flex items-start gap-6 mb-8 ${isLeft ? '' : 'flex-row-reverse'}`}
                     onMouseEnter={() => setHoveredStage(stage.id)}
                     onMouseLeave={() => setHoveredStage(null)}
+                    initial={{ opacity: 0, x: isLeft ? -50 : 50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: index * 0.08 }}
                   >
-                    {/* Connecting path line */}
-                    {index < segment.stages.length - 1 && (
+                    {/* Stage Visual Illustration */}
+                    <div className="relative z-10 flex-shrink-0">
+                      {/* Illustrated Scene Card */}
                       <div 
-                        className={`absolute h-16 w-1 ${isLeft ? 'left-[39px]' : 'right-[39px]'} top-full`}
+                        className={`
+                          relative overflow-hidden rounded-2xl shadow-xl transition-all duration-300
+                          ${hoveredStage === stage.id ? 'scale-105 shadow-2xl' : ''}
+                        `}
                         style={{ 
-                          background: `linear-gradient(to bottom, ${phaseColor}, ${
-                            phaseColors[segment.stages[index + 1].phase as keyof typeof phaseColors]
-                          })`,
-                          opacity: 0.4,
+                          border: `4px solid ${phaseColor}`,
+                          boxShadow: hoveredStage === stage.id 
+                            ? `0 20px 40px ${phaseColor}40, 0 0 0 4px ${phaseColor}20`
+                            : undefined,
                         }}
-                      />
-                    )}
-                    
-                    {/* Stage Node - Large Icon */}
-                    <div 
-                      className={`
-                        relative z-10 w-20 h-20 rounded-full flex items-center justify-center text-3xl
-                        shadow-lg transition-all duration-300 cursor-pointer flex-shrink-0
-                        ${hoveredStage === stage.id ? 'scale-110 shadow-xl' : ''}
-                        ${stage.isPublish ? 'animate-pulse' : ''}
-                      `}
-                      style={{ 
-                        background: stage.isPublish 
-                          ? `linear-gradient(135deg, ${colorScheme.bg}, gold)` 
-                          : colorScheme.light,
-                        border: `3px solid ${phaseColor}`,
-                      }}
-                    >
-                      {stage.icon}
-                      {/* Phase indicator */}
-                      <div 
-                        className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center text-white shadow"
-                        style={{ backgroundColor: phaseColor }}
                       >
-                        {stage.phase.replace('P', '')}
+                        {/* SVG Illustration */}
+                        <JourneyStageIllustration
+                          stageType={stage.name}
+                          segmentType={selectedSegment || 'creator'}
+                          isActive={hoveredStage === stage.id}
+                          size="lg"
+                        />
+                        
+                        {/* Stage number badge */}
+                        <div 
+                          className="absolute top-2 left-2 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-lg"
+                          style={{ 
+                            background: `linear-gradient(135deg, ${colorScheme.bg}, ${phaseColor})`,
+                          }}
+                        >
+                          {index + 1}
+                        </div>
+                        
+                        {/* Phase indicator */}
+                        <div 
+                          className="absolute bottom-2 right-2 px-2 py-1 rounded-full text-xs font-bold text-white shadow"
+                          style={{ backgroundColor: phaseColor }}
+                        >
+                          {stage.phase}
+                        </div>
+                        
+                        {/* Emoji overlay */}
+                        <div 
+                          className="absolute top-2 right-2 text-2xl drop-shadow-lg"
+                          style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
+                        >
+                          {stage.icon}
+                        </div>
                       </div>
+                      
+                      {/* Connecting arrow for non-last items */}
+                      {index < segment.stages.length - 1 && (
+                        <motion.div 
+                          className={`absolute ${isLeft ? '-right-6' : '-left-6'} bottom-0 transform translate-y-full`}
+                          animate={{ y: [0, 10, 0] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        >
+                          <svg width="24" height="60" viewBox="0 0 24 60">
+                            <path
+                              d={isLeft 
+                                ? "M12 0 L12 40 L20 40 L12 55 L4 40 L12 40"
+                                : "M12 0 L12 40 L4 40 L12 55 L20 40 L12 40"
+                              }
+                              fill={phaseColor}
+                              opacity="0.6"
+                            />
+                          </svg>
+                        </motion.div>
+                      )}
                     </div>
                     
                     {/* Stage Details Card */}
-                    <div 
+                    <motion.div 
                       className={`
-                        flex-1 p-4 rounded-xl border-2 transition-all duration-300
-                        ${hoveredStage === stage.id ? 'shadow-lg scale-[1.02]' : 'shadow-sm'}
+                        flex-1 p-5 rounded-2xl border-2 transition-all duration-300 relative overflow-hidden
+                        ${hoveredStage === stage.id ? 'shadow-xl' : 'shadow-md'}
                         ${isLeft ? '' : 'text-right'}
                       `}
                       style={{ 
                         backgroundColor: hoveredStage === stage.id ? colorScheme.light : 'hsl(var(--card))',
                         borderColor: hoveredStage === stage.id ? colorScheme.bg : 'hsl(var(--border))',
                       }}
+                      whileHover={{ scale: 1.01 }}
                     >
+                      {/* Background pattern */}
+                      {hoveredStage === stage.id && (
+                        <div 
+                          className="absolute inset-0 opacity-5"
+                          style={{
+                            backgroundImage: `radial-gradient(${colorScheme.bg} 1px, transparent 1px)`,
+                            backgroundSize: '20px 20px',
+                          }}
+                        />
+                      )}
+                      
                       {/* Stage header */}
-                      <div className={`flex items-center gap-2 mb-2 ${isLeft ? '' : 'flex-row-reverse'}`}>
-                        <span className="font-bold text-foreground">{stage.name}</span>
+                      <div className={`flex items-center gap-3 mb-3 ${isLeft ? '' : 'flex-row-reverse'}`}>
+                        <h4 className="text-lg font-bold text-foreground">{stage.name}</h4>
                         <Badge 
                           variant="outline" 
-                          className="text-xs"
-                          style={{ borderColor: phaseColor, color: phaseColor }}
+                          className="text-xs font-semibold"
+                          style={{ borderColor: phaseColor, color: phaseColor, borderWidth: 2 }}
                         >
                           {stage.phase}
                         </Badge>
-                        <span className="text-xs text-muted-foreground">| {stage.emotion}</span>
+                        <Badge variant="secondary" className="text-xs">
+                          😊 {stage.emotion}
+                        </Badge>
                       </div>
                       
-                      {/* Scene description */}
-                      <p className="text-sm text-muted-foreground mb-2 italic">{stage.scene}</p>
+                      {/* Visual scene description */}
+                      <div 
+                        className={`flex items-center gap-2 mb-3 p-2 rounded-lg ${isLeft ? '' : 'flex-row-reverse'}`}
+                        style={{ backgroundColor: `${colorScheme.bg}15` }}
+                      >
+                        <span className="text-xl">{stage.icon}</span>
+                        <p className="text-sm text-foreground font-medium italic">{stage.scene}</p>
+                      </div>
                       
-                      {/* Humor/Description */}
-                      <p className="text-sm text-foreground mb-3">💬 "{stage.description}"</p>
+                      {/* Humor/Description in speech bubble */}
+                      <div 
+                        className={`relative p-3 rounded-xl mb-4 ${isLeft ? 'mr-4' : 'ml-4'}`}
+                        style={{ 
+                          backgroundColor: 'hsl(var(--muted))',
+                          border: `1px solid ${colorScheme.bg}30`,
+                        }}
+                      >
+                        <p className="text-sm text-foreground">"{stage.description}"</p>
+                        {/* Speech bubble arrow */}
+                        <div 
+                          className={`absolute top-1/2 ${isLeft ? '-left-2' : '-right-2'} transform -translate-y-1/2`}
+                          style={{
+                            width: 0,
+                            height: 0,
+                            borderTop: '8px solid transparent',
+                            borderBottom: '8px solid transparent',
+                            [isLeft ? 'borderRight' : 'borderLeft']: '8px solid hsl(var(--muted))',
+                          }}
+                        />
+                      </div>
                       
-                      {/* Actions */}
-                      <div className={`flex flex-wrap gap-1 mb-2 ${isLeft ? '' : 'justify-end'}`}>
+                      {/* Actions as visual chips */}
+                      <div className={`flex flex-wrap gap-2 mb-4 ${isLeft ? '' : 'justify-end'}`}>
                         {stage.actions.map((action, idx) => (
-                          <Badge 
-                            key={idx} 
-                            variant="secondary" 
-                            className="text-xs"
-                            style={{ 
-                              backgroundColor: stage.isPublish ? colorScheme.light : undefined,
-                              borderColor: stage.isPublish ? colorScheme.bg : undefined,
-                            }}
+                          <motion.div
+                            key={idx}
+                            whileHover={{ scale: 1.05, y: -2 }}
+                            className="cursor-default"
                           >
-                            {action}
-                          </Badge>
+                            <Badge 
+                              className="text-xs px-3 py-1.5 font-medium shadow-sm"
+                              style={{ 
+                                backgroundColor: stage.isPublish ? colorScheme.bg : `${colorScheme.bg}20`,
+                                color: stage.isPublish ? 'white' : colorScheme.bg,
+                                border: `1px solid ${colorScheme.bg}40`,
+                              }}
+                            >
+                              {action}
+                            </Badge>
+                          </motion.div>
                         ))}
                       </div>
                       
                       {/* Technical & Cross-Function footer */}
-                      <div className={`flex flex-wrap gap-2 text-xs mt-2 pt-2 border-t border-border/50 ${isLeft ? '' : 'justify-end'}`}>
-                        <span className="text-muted-foreground">
-                          ⚙️ {stage.technical}
-                        </span>
-                        <span className="text-muted-foreground">
-                          🔗 {stage.crossFunction}
-                        </span>
+                      <div 
+                        className={`flex flex-wrap gap-3 text-xs pt-3 border-t ${isLeft ? '' : 'justify-end'}`}
+                        style={{ borderColor: `${colorScheme.bg}20` }}
+                      >
+                        <div 
+                          className="flex items-center gap-1.5 px-2 py-1 rounded-full"
+                          style={{ backgroundColor: `${phaseColor}15` }}
+                        >
+                          <span>⚙️</span>
+                          <span className="font-medium" style={{ color: phaseColor }}>{stage.technical}</span>
+                        </div>
+                        <div 
+                          className="flex items-center gap-1.5 px-2 py-1 rounded-full"
+                          style={{ backgroundColor: `${colorScheme.bg}10` }}
+                        >
+                          <span>🔗</span>
+                          <span className="text-muted-foreground font-medium">{stage.crossFunction}</span>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                      
+                      {/* Publish celebration effect */}
+                      {stage.isPublish && (
+                        <motion.div 
+                          className="absolute inset-0 pointer-events-none"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: [0, 0.3, 0] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        >
+                          <div 
+                            className="absolute inset-0"
+                            style={{
+                              background: `radial-gradient(circle at center, ${colorScheme.bg}30 0%, transparent 70%)`,
+                            }}
+                          />
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  </motion.div>
                 );
               })}
             </div>
