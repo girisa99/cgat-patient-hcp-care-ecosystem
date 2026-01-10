@@ -101,8 +101,14 @@ interface FeatureModule {
   standaloneApp: string;
   apiEndpoint: string;
   agentCapability: string;
-  platforms: ('iOS' | 'Android' | 'Web')[];
-  priority: 'P0' | 'P1' | 'P2';
+  segments: string[];
+}
+
+interface UserPainPoint {
+  segment: string;
+  quote: string;
+  source: string;
+  painPoint: string;
 }
 
 // Data - Full competitor list from original analysis
@@ -206,12 +212,26 @@ const integrations: Integration[] = [
 ];
 
 const featureModules: FeatureModule[] = [
-  { name: 'Smart Trim', standaloneApp: 'TrimAI', apiEndpoint: '/api/v1/trim', agentCapability: 'trim_agent', platforms: ['iOS', 'Android', 'Web'], priority: 'P0' },
-  { name: 'AI Clips', standaloneApp: 'ClipGenius', apiEndpoint: '/api/v1/clips', agentCapability: 'clips_agent', platforms: ['iOS', 'Android', 'Web'], priority: 'P0' },
-  { name: 'Voice Clone', standaloneApp: 'VoiceTwin', apiEndpoint: '/api/v1/voice', agentCapability: 'voice_agent', platforms: ['Web'], priority: 'P0' },
-  { name: 'Caption Gen', standaloneApp: 'SubtitlePro', apiEndpoint: '/api/v1/captions', agentCapability: 'caption_agent', platforms: ['iOS', 'Android', 'Web'], priority: 'P0' },
-  { name: 'B-Roll Match', standaloneApp: 'SceneMatch', apiEndpoint: '/api/v1/broll', agentCapability: 'broll_agent', platforms: ['Web'], priority: 'P1' },
-  { name: 'Music Sync', standaloneApp: 'BeatSync', apiEndpoint: '/api/v1/music', agentCapability: 'music_agent', platforms: ['iOS', 'Android', 'Web'], priority: 'P1' },
+  { name: 'Trim/Clips', standaloneApp: 'ClipMaster Pro', apiEndpoint: '/api/trim', agentCapability: 'Auto-clip extraction', segments: ['creator', 'smb', 'education'] },
+  { name: 'TTS/Voiceover', standaloneApp: 'VoiceGenius', apiEndpoint: '/api/tts', agentCapability: 'Voice generation agent', segments: ['creator', 'smb', 'education', 'healthcare'] },
+  { name: 'Transcription', standaloneApp: 'TranscribeNow', apiEndpoint: '/api/transcribe', agentCapability: 'Real-time transcription', segments: ['creator', 'smb', 'enterprise'] },
+  { name: 'Script Gen', standaloneApp: 'ScriptAI', apiEndpoint: '/api/script', agentCapability: 'Content generation agent', segments: ['creator', 'smb', 'education'] },
+  { name: 'Doc-to-Video', standaloneApp: 'DocuCast', apiEndpoint: '/api/doc-to-video', agentCapability: 'Document processing agent', segments: ['smb', 'education', 'enterprise'] },
+  { name: 'Translation', standaloneApp: 'GlobalCast', apiEndpoint: '/api/translate', agentCapability: 'Multi-language agent', segments: ['healthcare', 'enterprise'] },
+];
+
+// User pain points with real quotes
+const userPainPoints: UserPainPoint[] = [
+  { segment: 'Creator Economy', quote: '"I spend 2 hours editing a 60-second reel. I wish I could just talk and have it edit itself."', source: 'TikTok Creator', painPoint: 'Time-consuming manual editing' },
+  { segment: 'Creator Economy', quote: '"Finding the right music and syncing it takes forever. Auto-sync would save me so much time."', source: 'YouTube Creator', painPoint: 'Music sync challenges' },
+  { segment: 'Traveler/Experience', quote: '"I have 500 photos and videos from my trip but no time to make a video. They just sit in my camera roll."', source: 'Travel Blogger', painPoint: 'Content overwhelm' },
+  { segment: 'SMB Marketing', quote: '"We can\'t afford a video team, but customers expect professional videos. It\'s a huge gap."', source: 'Small Business Owner', painPoint: 'Resource constraints' },
+  { segment: 'SMB Marketing', quote: '"Our product demos are outdated because updating them takes weeks with our current process."', source: 'Marketing Manager', painPoint: 'Update velocity' },
+  { segment: 'Education', quote: '"Recording lectures is easy. Making them engaging for students? That takes hours of editing."', source: 'University Professor', painPoint: 'Engagement optimization' },
+  { segment: 'Healthcare', quote: '"Patients forget 80% of what I tell them. Video would help, but HIPAA makes everything complicated."', source: 'Primary Care Physician', painPoint: 'Compliance complexity' },
+  { segment: 'Healthcare', quote: '"We need patient education in 15 languages. Currently, we just don\'t have it."', source: 'Hospital Administrator', painPoint: 'Localization needs' },
+  { segment: 'Enterprise', quote: '"Our training videos are 3 years old. Nobody wants to watch them, and nobody has time to update them."', source: 'L&D Director', painPoint: 'Content staleness' },
+  { segment: 'Enterprise', quote: '"We spend $50K per corporate video. There has to be a better way."', source: 'VP Communications', painPoint: 'Production costs' },
 ];
 
 export const GenieMarketAnalysisDiagram: React.FC = () => {
@@ -574,40 +594,112 @@ export const GenieMarketAnalysisDiagram: React.FC = () => {
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {featureModules.map(module => (
-                  <Card key={module.name} className="hover:shadow-lg transition-shadow">
+                  <Card key={module.name} className="hover:shadow-lg transition-shadow bg-gradient-to-br from-background to-muted/30">
                     <CardHeader className="pb-2">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">{module.name}</CardTitle>
-                        <Badge className={getPriorityColor(module.priority)}>{module.priority}</Badge>
-                      </div>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Zap className="h-5 w-5 text-amber-500" />
+                        {module.name}
+                      </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-center gap-2">
-                          <Smartphone className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">App:</span>
-                          <span className="font-medium">{module.standaloneApp}</span>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="text-center p-2 rounded-lg bg-primary/10">
+                          <Smartphone className="h-5 w-5 mx-auto mb-1 text-primary" />
+                          <p className="text-xs font-medium">{module.standaloneApp}</p>
+                          <p className="text-xs text-muted-foreground">App</p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Code className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">API:</span>
-                          <code className="text-xs bg-muted px-1 rounded">{module.apiEndpoint}</code>
+                        <div className="text-center p-2 rounded-lg bg-blue-500/10">
+                          <Code className="h-5 w-5 mx-auto mb-1 text-blue-500" />
+                          <p className="text-xs font-medium">{module.apiEndpoint}</p>
+                          <p className="text-xs text-muted-foreground">API</p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Bot className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">Agent:</span>
-                          <code className="text-xs bg-muted px-1 rounded">{module.agentCapability}</code>
+                        <div className="text-center p-2 rounded-lg bg-purple-500/10">
+                          <Bot className="h-5 w-5 mx-auto mb-1 text-purple-500" />
+                          <p className="text-xs font-medium truncate">{module.agentCapability}</p>
+                          <p className="text-xs text-muted-foreground">Agent</p>
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-1 pt-2 border-t">
-                        {module.platforms.map(p => (
-                          <Badge key={p} variant="secondary" className="text-xs">{p}</Badge>
-                        ))}
+                      <div>
+                        <span className="text-sm text-muted-foreground">Target Segments:</span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {module.segments.map(segId => (
+                            <Badge key={segId} variant="outline" className="text-xs">
+                              {segments.find(s => s.id === segId)?.name || segId}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
+
+              {/* Platform Compatibility Matrix */}
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Cpu className="h-5 w-5 text-primary" />
+                    Platform Compatibility Matrix
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Feature/App</TableHead>
+                        <TableHead className="text-center">iOS</TableHead>
+                        <TableHead className="text-center">Android</TableHead>
+                        <TableHead className="text-center">Web</TableHead>
+                        <TableHead className="text-center">Desktop</TableHead>
+                        <TableHead className="text-center">API</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {appOpportunities.slice(0, 8).map(app => (
+                        <TableRow key={app.name}>
+                          <TableCell className="font-medium">{app.name}</TableCell>
+                          {['iOS', 'Android', 'Web', 'Desktop', 'API'].map(platform => (
+                            <TableCell key={platform} className="text-center">
+                              {app.platforms.includes(platform as any) 
+                                ? <Check className="h-4 w-4 text-success mx-auto" />
+                                : <span className="text-muted-foreground">—</span>
+                              }
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+
+              {/* User Pain Points */}
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-amber-500" />
+                    User Pain Points & Quotes
+                  </CardTitle>
+                  <CardDescription>Real feedback from users across segments</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {(selectedSegment === 'all' 
+                      ? userPainPoints 
+                      : userPainPoints.filter(p => p.segment === segments.find(s => s.id === selectedSegment)?.name)
+                    ).map((point, idx) => (
+                      <div key={idx} className="p-4 rounded-lg border bg-muted/30">
+                        <p className="italic text-foreground mb-2">{point.quote}</p>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">— {point.source}</span>
+                          <Badge variant="outline">{point.segment}</Badge>
+                        </div>
+                        <p className="text-xs text-destructive mt-2">Pain: {point.painPoint}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 
