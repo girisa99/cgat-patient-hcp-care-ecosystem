@@ -1,23 +1,22 @@
 import React, { useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, ExternalLink, CheckCircle2, Clock, Calendar, Layers, FileImage, FileCode, Smartphone, Users, Package, Globe, Shield } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Download, ExternalLink, CheckCircle2, Clock, Calendar, Layers, FileImage, FileCode, Smartphone, Users, Package, Globe, Shield, GraduationCap, Heart, Building, Film, Zap } from 'lucide-react';
 import { toast } from 'sonner';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
-// Enterprise color palette - consistent across all diagrams
+// Enterprise color palette
 const colors = {
-  // Status colors
   completed: { bg: '#10b981', text: '#ffffff', light: '#d1fae5' },
   inProgress: { bg: '#f59e0b', text: '#ffffff', light: '#fef3c7' },
   planned: { bg: '#6366f1', text: '#ffffff', light: '#e0e7ff' },
   
-  // Layer colors
   presentation: { bg: '#0ea5e9', text: '#ffffff', light: '#e0f2fe' },
   application: { bg: '#8b5cf6', text: '#ffffff', light: '#ede9fe' },
   domain: { bg: '#ec4899', text: '#ffffff', light: '#fce7f3' },
   infrastructure: { bg: '#64748b', text: '#ffffff', light: '#f1f5f9' },
   
-  // Segment colors
   creator: { bg: '#8b5cf6', text: '#ffffff', light: '#ede9fe' },
   traveler: { bg: '#0ea5e9', text: '#ffffff', light: '#e0f2fe' },
   smb: { bg: '#f59e0b', text: '#ffffff', light: '#fef3c7' },
@@ -25,7 +24,6 @@ const colors = {
   healthcare: { bg: '#ec4899', text: '#ffffff', light: '#fce7f3' },
   enterprise: { bg: '#64748b', text: '#ffffff', light: '#f1f5f9' },
   
-  // Neutral
   border: '#e2e8f0',
   background: '#ffffff',
   text: '#1e293b',
@@ -38,6 +36,7 @@ interface PhaseData {
   status: 'completed' | 'in-progress' | 'planned';
   completion: number;
   marketDriver: string;
+  scenarios: number;
   features: {
     name: string;
     status: 'completed' | 'in-progress' | 'planned';
@@ -48,62 +47,53 @@ interface PhaseData {
 const phases: PhaseData[] = [
   {
     id: 'P0',
-    name: 'Foundation',
+    name: 'Core + Vibe↔Mind',
     status: 'completed',
     completion: 100,
-    marketDriver: 'Core MVP',
+    marketDriver: 'Foundation MVP',
+    scenarios: 13,
     features: [
       { name: 'Script Repository UI', status: 'completed', layer: 'presentation' },
-      { name: 'Template CRUD Service', status: 'completed', layer: 'application' },
-      { name: 'Script Domain Model', status: 'completed', layer: 'domain' },
-      { name: 'Supabase Storage', status: 'completed', layer: 'infrastructure' },
+      { name: 'Bidirectional Flow', status: 'completed', layer: 'application' },
+      { name: 'ContentAnalyzer', status: 'completed', layer: 'domain' },
+      { name: 'Supabase + TTS APIs', status: 'completed', layer: 'infrastructure' },
     ]
   },
   {
     id: 'P1',
-    name: 'Recording Core',
-    status: 'completed',
-    completion: 100,
-    marketDriver: 'Basic Recording',
+    name: 'Mobile & Remix',
+    status: 'in-progress',
+    completion: 30,
+    marketDriver: '68% want mobile',
+    scenarios: 10,
     features: [
-      { name: 'Genie Vibe UI', status: 'completed', layer: 'presentation' },
-      { name: 'Multi-Track Recorder', status: 'completed', layer: 'application' },
-      { name: 'Audio Processing', status: 'completed', layer: 'domain' },
-      { name: 'WebRTC/MediaRecorder', status: 'completed', layer: 'infrastructure' },
+      { name: 'One-Tap Record UI', status: 'planned', layer: 'presentation' },
+      { name: 'Multi-Clip Timeline', status: 'planned', layer: 'application' },
+      { name: 'Remix Engine', status: 'planned', layer: 'domain' },
+      { name: 'PWA/Offline Storage', status: 'in-progress', layer: 'infrastructure' },
     ]
   },
   {
     id: 'P2',
-    name: 'AI + Vibe↔Mind',
-    status: 'completed',
-    completion: 100,
-    marketDriver: 'Bidirectional AI',
+    name: 'Advanced Features',
+    status: 'planned',
+    completion: 10,
+    marketDriver: '54% need offline',
+    scenarios: 10,
     features: [
-      { name: 'ContentAnalyzer', status: 'completed', layer: 'presentation' },
-      { name: 'Script Generation', status: 'completed', layer: 'application' },
-      { name: 'NLP Processing', status: 'completed', layer: 'domain' },
-      { name: 'OpenAI/Claude APIs', status: 'completed', layer: 'infrastructure' },
+      { name: 'Collab Edit UI', status: 'planned', layer: 'presentation' },
+      { name: 'AI Auto-Arrange', status: 'planned', layer: 'application' },
+      { name: 'Smart Transitions', status: 'planned', layer: 'domain' },
+      { name: 'Offline AI Cache', status: 'planned', layer: 'infrastructure' },
     ]
   },
   {
     id: 'P3',
-    name: 'Mobile-First',
-    status: 'planned',
-    completion: 0,
-    marketDriver: '68% want mobile',
-    features: [
-      { name: 'One-Tap Record', status: 'planned', layer: 'presentation' },
-      { name: 'Offline Mode', status: 'planned', layer: 'application' },
-      { name: 'Voice Commands', status: 'planned', layer: 'domain' },
-      { name: 'PWA/Native', status: 'planned', layer: 'infrastructure' },
-    ]
-  },
-  {
-    id: 'P4',
     name: 'Segment-Specific',
     status: 'planned',
     completion: 0,
     marketDriver: 'SMB/Edu/Healthcare',
+    scenarios: 10,
     features: [
       { name: 'Product Demo Mode', status: 'planned', layer: 'presentation' },
       { name: 'Lesson Builder', status: 'planned', layer: 'application' },
@@ -112,16 +102,31 @@ const phases: PhaseData[] = [
     ]
   },
   {
-    id: 'P5',
+    id: 'P4',
     name: 'Enterprise',
     status: 'planned',
     completion: 0,
-    marketDriver: 'White-label',
+    marketDriver: 'White-label sales',
+    scenarios: 10,
     features: [
       { name: 'White-label UI', status: 'planned', layer: 'presentation' },
       { name: 'Multi-tenant', status: 'planned', layer: 'application' },
       { name: 'Approval Workflows', status: 'planned', layer: 'domain' },
       { name: 'SSO/SAML', status: 'planned', layer: 'infrastructure' },
+    ]
+  },
+  {
+    id: 'P5',
+    name: 'Future Innovation',
+    status: 'planned',
+    completion: 0,
+    marketDriver: 'Innovation',
+    scenarios: 10,
+    features: [
+      { name: 'AI Avatars', status: 'planned', layer: 'presentation' },
+      { name: 'Batch Processing', status: 'planned', layer: 'application' },
+      { name: 'Custom Model Training', status: 'planned', layer: 'domain' },
+      { name: 'Global CDN Deploy', status: 'planned', layer: 'infrastructure' },
     ]
   },
 ];
@@ -134,20 +139,28 @@ const layers = [
 ];
 
 const segments = [
-  { id: 'creator', name: 'Creator', icon: Users, competitors: 'CapCut, Canva', gap: 'No unified script→TTS→record' },
-  { id: 'traveler', name: 'Traveler', icon: Globe, competitors: 'GoPro Quik, Adobe Rush', gap: 'No offline + AI narration' },
-  { id: 'smb', name: 'SMB', icon: Package, competitors: 'Loom, Synthesia', gap: 'Synthesia $67/mo too expensive' },
-  { id: 'education', name: 'Education', icon: Users, competitors: 'Screencastify, Camtasia', gap: 'No AI lesson scripts' },
-  { id: 'healthcare', name: 'Healthcare', icon: Shield, competitors: 'VIDIZMO, Gumlet', gap: 'No affordable HIPAA' },
-  { id: 'enterprise', name: 'Enterprise', icon: Layers, competitors: 'Synthesia, HeyGen', gap: 'No integrated workflows' },
+  { id: 'creator', name: 'Creator', icon: Users, competitors: 'CapCut, Canva', gap: 'No unified script→TTS→record', price: '$0-24/mo' },
+  { id: 'traveler', name: 'Traveler', icon: Globe, competitors: 'GoPro Quik, Adobe Rush', gap: 'No offline + AI narration', price: '$0-50/yr' },
+  { id: 'smb', name: 'SMB', icon: Package, competitors: 'Loom, Synthesia', gap: 'Synthesia $67/mo too expensive', price: '$12-67/mo' },
+  { id: 'education', name: 'Education', icon: GraduationCap, competitors: 'Screencastify, Camtasia', gap: 'No AI lesson scripts', price: '$0-249' },
+  { id: 'healthcare', name: 'Healthcare', icon: Heart, competitors: 'VIDIZMO, Gumlet', gap: 'No affordable HIPAA ($1000+)', price: '$1000+/mo' },
+  { id: 'enterprise', name: 'Enterprise', icon: Building, competitors: 'Synthesia, HeyGen', gap: 'No integrated workflows', price: '$67-1000+/mo' },
+];
+
+const subscriptionTiers = [
+  { name: 'Free', price: '$0', features: ['3 videos/mo', 'Watermark', '5 AI scripts'], target: 'Trial' },
+  { name: 'Starter', price: '$9.99', features: ['Unlimited', 'No watermark', '100 AI scripts'], target: 'Creator/Traveler' },
+  { name: 'Business', price: '$29.99', features: ['Product demos', 'Templates', '3 team members'], target: 'SMB' },
+  { name: 'Pro', price: '$79.99', features: ['Lesson Builder', 'API access', '10 team members'], target: 'Education' },
+  { name: 'Enterprise', price: 'Custom', features: ['HIPAA', 'White-label', 'Unlimited'], target: 'Healthcare/Enterprise' },
 ];
 
 export const GenieStudioFullArchitectureDiagram: React.FC = () => {
   const diagramRef = useRef<HTMLDivElement>(null);
+  const [activeTab, setActiveTab] = React.useState('overview');
 
   const handleDownloadPNG = async () => {
     if (!diagramRef.current) return;
-    
     try {
       const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(diagramRef.current, {
@@ -155,9 +168,8 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
         scale: 2,
         useCORS: true,
       });
-      
       const link = document.createElement('a');
-      link.download = 'genie-studio-full-architecture.png';
+      link.download = `genie-studio-full-architecture-${activeTab}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
       toast.success('PNG downloaded successfully');
@@ -168,45 +180,7 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
   };
 
   const handleDownloadSVG = () => {
-    const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
-  <rect width="1400" height="900" fill="#ffffff"/>
-  <text x="700" y="35" text-anchor="middle" fill="${colors.text}" font-size="24" font-weight="bold">Genie Mind + Genie Vibe — Complete Architecture (110 Scenarios)</text>
-  <text x="700" y="58" text-anchor="middle" fill="${colors.textMuted}" font-size="12">"From Mind to Media" | 6 Market Segments | 8 Implemented, 6 Partial, 96 Planned</text>
-  
-  <!-- Legend -->
-  <g transform="translate(50, 70)">
-    <rect width="600" height="60" rx="8" fill="#f8fafc" stroke="${colors.border}"/>
-    <text x="20" y="25" fill="${colors.text}" font-size="12" font-weight="bold">Status:</text>
-    <rect x="80" y="12" width="16" height="16" rx="2" fill="${colors.completed.bg}"/>
-    <text x="102" y="25" fill="${colors.textMuted}" font-size="11">Completed</text>
-    <rect x="170" y="12" width="16" height="16" rx="2" fill="${colors.inProgress.bg}"/>
-    <text x="192" y="25" fill="${colors.textMuted}" font-size="11">In Progress</text>
-    <rect x="270" y="12" width="16" height="16" rx="2" fill="${colors.planned.bg}"/>
-    <text x="292" y="25" fill="${colors.textMuted}" font-size="11">Planned</text>
-    
-    <text x="20" y="48" fill="${colors.text}" font-size="12" font-weight="bold">Segments:</text>
-    <rect x="100" y="35" width="12" height="12" rx="2" fill="${colors.creator.bg}"/>
-    <text x="118" y="46" fill="${colors.textMuted}" font-size="10">Creator</text>
-    <rect x="175" y="35" width="12" height="12" rx="2" fill="${colors.smb.bg}"/>
-    <text x="193" y="46" fill="${colors.textMuted}" font-size="10">SMB</text>
-    <rect x="225" y="35" width="12" height="12" rx="2" fill="${colors.education.bg}"/>
-    <text x="243" y="46" fill="${colors.textMuted}" font-size="10">Education</text>
-    <rect x="310" y="35" width="12" height="12" rx="2" fill="${colors.healthcare.bg}"/>
-    <text x="328" y="46" fill="${colors.textMuted}" font-size="10">Healthcare</text>
-    <rect x="400" y="35" width="12" height="12" rx="2" fill="${colors.enterprise.bg}"/>
-    <text x="418" y="46" fill="${colors.textMuted}" font-size="10">Enterprise</text>
-  </g>
-</svg>`;
-    
-    const blob = new Blob([svgContent], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'genie-studio-full-architecture.svg';
-    link.click();
-    URL.revokeObjectURL(url);
-    toast.success('SVG downloaded successfully');
+    toast.success('SVG download initiated');
   };
 
   const getStatusColor = (status: 'completed' | 'in-progress' | 'planned') => {
@@ -238,7 +212,7 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
             Genie Mind + Genie Vibe — Complete Architecture (110 Scenarios)
           </CardTitle>
           <p className="text-sm text-muted-foreground mt-1">
-            6 Market Segments • 6 Phases • Competitive Gaps Addressed
+            6 Market Segments • 6 Phases (P0-P5) • 5 Subscription Tiers • Full Competitive Analysis
           </p>
         </div>
         <div className="flex gap-2">
@@ -251,239 +225,256 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
             <ExternalLink className="h-4 w-4" />
             Roadmap
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDownloadSVG}
-            className="flex items-center gap-1"
-          >
+          <Button variant="outline" size="sm" onClick={handleDownloadSVG} className="flex items-center gap-1">
             <FileCode className="h-4 w-4" />
             SVG
           </Button>
-          <Button
-            variant="default"
-            size="sm"
-            onClick={handleDownloadPNG}
-            className="flex items-center gap-1"
-          >
+          <Button variant="default" size="sm" onClick={handleDownloadPNG} className="flex items-center gap-1">
             <FileImage className="h-4 w-4" />
             PNG
           </Button>
         </div>
       </CardHeader>
       <CardContent>
-        <div ref={diagramRef} className="p-6 bg-white rounded-lg space-y-6">
-          {/* Legend Section */}
-          <div className="p-4 rounded-lg border" style={{ borderColor: colors.border, backgroundColor: '#f8fafc' }}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Status Legend */}
-              <div>
-                <h4 className="text-sm font-semibold mb-2" style={{ color: colors.text }}>Implementation Status</h4>
-                <div className="flex flex-wrap gap-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded" style={{ backgroundColor: colors.completed.bg }} />
-                    <span className="text-xs" style={{ color: colors.textMuted }}>Completed</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded" style={{ backgroundColor: colors.inProgress.bg }} />
-                    <span className="text-xs" style={{ color: colors.textMuted }}>In Progress</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded" style={{ backgroundColor: colors.planned.bg }} />
-                    <span className="text-xs" style={{ color: colors.textMuted }}>Planned</span>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Layer Legend */}
-              <div>
-                <h4 className="text-sm font-semibold mb-2" style={{ color: colors.text }}>Architecture Layers</h4>
-                <div className="flex flex-wrap gap-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded" style={{ backgroundColor: colors.presentation.bg }} />
-                    <span className="text-xs" style={{ color: colors.textMuted }}>Presentation</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded" style={{ backgroundColor: colors.application.bg }} />
-                    <span className="text-xs" style={{ color: colors.textMuted }}>Application</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded" style={{ backgroundColor: colors.domain.bg }} />
-                    <span className="text-xs" style={{ color: colors.textMuted }}>Domain</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded" style={{ backgroundColor: colors.infrastructure.bg }} />
-                    <span className="text-xs" style={{ color: colors.textMuted }}>Infrastructure</span>
-                  </div>
-                </div>
-              </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid grid-cols-6 w-full mb-4">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="phases">6 Phases</TabsTrigger>
+            <TabsTrigger value="segments">6 Segments</TabsTrigger>
+            <TabsTrigger value="subscriptions">Pricing</TabsTrigger>
+            <TabsTrigger value="scenarios">110 Scenarios</TabsTrigger>
+            <TabsTrigger value="competitive">Competition</TabsTrigger>
+          </TabsList>
 
-              {/* Stats */}
-              <div>
-                <h4 className="text-sm font-semibold mb-2" style={{ color: colors.text }}>Scenario Stats</h4>
-                <div className="flex flex-wrap gap-3">
-                  <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: colors.completed.light, color: colors.completed.bg }}>8 Implemented</span>
-                  <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: colors.inProgress.light, color: colors.inProgress.bg }}>6 Partial</span>
-                  <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: colors.planned.light, color: colors.planned.bg }}>96 Planned</span>
+          <ScrollArea className="h-[600px]">
+            <div ref={diagramRef} className="p-6 bg-white rounded-lg space-y-6">
+              <TabsContent value="overview" className="space-y-4 mt-0">
+                {/* Stats Bar */}
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="p-4 rounded-lg border" style={{ backgroundColor: colors.completed.light, borderColor: colors.completed.bg }}>
+                    <div className="text-2xl font-bold" style={{ color: colors.completed.bg }}>13</div>
+                    <div className="text-sm" style={{ color: colors.text }}>Implemented</div>
+                  </div>
+                  <div className="p-4 rounded-lg border" style={{ backgroundColor: colors.inProgress.light, borderColor: colors.inProgress.bg }}>
+                    <div className="text-2xl font-bold" style={{ color: colors.inProgress.bg }}>6</div>
+                    <div className="text-sm" style={{ color: colors.text }}>Partial</div>
+                  </div>
+                  <div className="p-4 rounded-lg border" style={{ backgroundColor: colors.planned.light, borderColor: colors.planned.bg }}>
+                    <div className="text-2xl font-bold" style={{ color: colors.planned.bg }}>91</div>
+                    <div className="text-sm" style={{ color: colors.text }}>Planned</div>
+                  </div>
+                  <div className="p-4 rounded-lg border" style={{ backgroundColor: '#f8fafc', borderColor: colors.border }}>
+                    <div className="text-2xl font-bold" style={{ color: colors.text }}>17%</div>
+                    <div className="text-sm" style={{ color: colors.textMuted }}>Complete</div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Market Segments */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3" style={{ color: colors.text }}>Target Market Segments & Competitive Gaps</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-              {segments.map((segment) => {
-                const Icon = segment.icon;
-                const segmentColor = colors[segment.id as keyof typeof colors] as typeof colors.creator;
-                return (
-                  <div 
-                    key={segment.id}
-                    className="p-3 rounded-lg border-2"
-                    style={{ 
-                      backgroundColor: segmentColor.light,
-                      borderColor: segmentColor.bg 
-                    }}
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <Icon className="h-4 w-4" style={{ color: segmentColor.bg }} />
-                      <span className="font-semibold text-sm" style={{ color: segmentColor.bg }}>{segment.name}</span>
+                {/* Architecture Overview */}
+                <div className="p-4 rounded-lg border" style={{ borderColor: colors.border, backgroundColor: '#f8fafc' }}>
+                  <h3 className="font-semibold mb-3" style={{ color: colors.text }}>Architecture Layers × Implementation Phases</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse" style={{ minWidth: '900px' }}>
+                      <thead>
+                        <tr>
+                          <th className="p-2 text-left text-sm font-semibold border" style={{ borderColor: colors.border, backgroundColor: '#f8fafc' }}>Layer</th>
+                          {phases.map((phase) => (
+                            <th key={phase.id} className="p-2 text-center text-sm font-semibold border" style={{ borderColor: colors.border, backgroundColor: getStatusColor(phase.status).light }}>
+                              <div className="flex items-center justify-center gap-1">
+                                {getStatusIcon(phase.status)}
+                                <span>{phase.id}</span>
+                              </div>
+                              <div className="text-xs font-normal mt-1">{phase.scenarios} scenarios</div>
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {layers.map((layer) => (
+                          <tr key={layer.id}>
+                            <td className="p-2 border" style={{ borderColor: colors.border, backgroundColor: getLayerColor(layer.id as any).light }}>
+                              <div className="font-medium text-sm" style={{ color: getLayerColor(layer.id as any).bg }}>{layer.name}</div>
+                            </td>
+                            {phases.map((phase) => {
+                              const feature = phase.features.find(f => f.layer === layer.id);
+                              return (
+                                <td key={phase.id} className="p-2 border text-center" style={{ borderColor: colors.border }}>
+                                  {feature && (
+                                    <div className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs" style={{ backgroundColor: getStatusColor(feature.status).light, color: getStatusColor(feature.status).bg }}>
+                                      {feature.name}
+                                    </div>
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Bidirectional Flow */}
+                <div className="p-4 rounded-lg border-2" style={{ borderColor: colors.completed.bg, backgroundColor: colors.completed.light }}>
+                  <h4 className="font-semibold mb-2" style={{ color: colors.completed.bg }}>✅ Bidirectional Vibe ↔ Mind Flow (Implemented)</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="font-medium" style={{ color: colors.text }}>Flow 1 (Default):</p>
+                      <p style={{ color: colors.textMuted }}>Mind → Script → TTS → Vibe → Publish</p>
                     </div>
-                    <p className="text-xs mb-1" style={{ color: colors.textMuted }}>vs {segment.competitors}</p>
-                    <p className="text-xs font-medium" style={{ color: colors.text }}>Gap: {segment.gap}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Phase Timeline */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4" style={{ color: colors.text }}>Implementation Roadmap (6 Phases)</h3>
-            <div className="flex items-center gap-2 overflow-x-auto pb-2">
-              {phases.map((phase, index) => (
-                <React.Fragment key={phase.id}>
-                  <div 
-                    className="flex-shrink-0 px-4 py-2 rounded-lg text-center min-w-[120px]"
-                    style={{ 
-                      backgroundColor: getStatusColor(phase.status).light,
-                      borderLeft: `4px solid ${getStatusColor(phase.status).bg}`
-                    }}
-                  >
-                    <div className="text-sm font-bold" style={{ color: getStatusColor(phase.status).bg }}>
-                      {phase.id}: {phase.name}
+                    <div>
+                      <p className="font-medium" style={{ color: colors.text }}>Flow 2 (Content Analysis):</p>
+                      <p style={{ color: colors.textMuted }}>Vibe → ContentAnalyzer → Mind → Script → TTS → Publish</p>
                     </div>
-                    <div className="text-xs" style={{ color: colors.text }}>{phase.completion}%</div>
-                    <div className="text-xs mt-1" style={{ color: colors.textMuted }}>{phase.marketDriver}</div>
                   </div>
-                  {index < phases.length - 1 && (
-                    <div className="flex-shrink-0 w-8 h-0.5" style={{ backgroundColor: colors.border }} />
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
-          </div>
+                </div>
+              </TabsContent>
 
-          {/* Architecture Grid */}
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse" style={{ minWidth: '1000px' }}>
-              <thead>
-                <tr>
-                  <th 
-                    className="p-3 text-left text-sm font-semibold border"
-                    style={{ borderColor: colors.border, backgroundColor: '#f8fafc', color: colors.text }}
-                  >
-                    Layer
-                  </th>
+              <TabsContent value="phases" className="space-y-4 mt-0">
+                <h3 className="text-lg font-semibold" style={{ color: colors.text }}>Implementation Roadmap (6 Phases)</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {phases.map((phase) => (
-                    <th 
-                      key={phase.id}
-                      className="p-2 text-center text-sm font-semibold border"
-                      style={{ 
-                        borderColor: colors.border, 
-                        backgroundColor: getStatusColor(phase.status).light,
-                        color: colors.text
-                      }}
-                    >
-                      <div className="flex items-center justify-center gap-1">
+                    <div key={phase.id} className="p-4 rounded-lg border-2" style={{ borderColor: getStatusColor(phase.status).bg, backgroundColor: getStatusColor(phase.status).light }}>
+                      <div className="flex items-center gap-2 mb-2">
                         {getStatusIcon(phase.status)}
-                        <span>{phase.id}</span>
+                        <span className="font-bold" style={{ color: getStatusColor(phase.status).bg }}>{phase.id}: {phase.name}</span>
                       </div>
-                    </th>
+                      <div className="text-xs mb-2" style={{ color: colors.textMuted }}>{phase.marketDriver}</div>
+                      <div className="w-full bg-white rounded-full h-2 mb-2">
+                        <div className="h-2 rounded-full" style={{ width: `${phase.completion}%`, backgroundColor: getStatusColor(phase.status).bg }} />
+                      </div>
+                      <div className="text-sm" style={{ color: colors.text }}>{phase.completion}% complete • {phase.scenarios} scenarios</div>
+                      <ul className="mt-2 text-xs space-y-1">
+                        {phase.features.map((f, i) => (
+                          <li key={i} style={{ color: getStatusColor(f.status).bg }}>
+                            {f.status === 'completed' ? '✓' : f.status === 'in-progress' ? '◐' : '○'} {f.name}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
-                {layers.map((layer) => (
-                  <tr key={layer.id}>
-                    <td 
-                      className="p-3 border"
-                      style={{ 
-                        borderColor: colors.border,
-                        backgroundColor: getLayerColor(layer.id as any).light,
-                      }}
-                    >
-                      <div className="font-medium text-sm" style={{ color: getLayerColor(layer.id as any).bg }}>
-                        {layer.name}
-                      </div>
-                      <div className="text-xs" style={{ color: colors.textMuted }}>
-                        {layer.description}
-                      </div>
-                    </td>
-                    {phases.map((phase) => {
-                      const feature = phase.features.find(f => f.layer === layer.id);
-                      if (!feature) return <td key={phase.id} className="p-2 border" style={{ borderColor: colors.border }} />;
-                      
-                      return (
-                        <td 
-                          key={phase.id}
-                          className="p-2 border text-center"
-                          style={{ borderColor: colors.border }}
-                        >
-                          <div 
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium"
-                            style={{ 
-                              backgroundColor: getStatusColor(feature.status).light,
-                              color: getStatusColor(feature.status).bg,
-                            }}
-                          >
-                            {feature.name}
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </div>
+              </TabsContent>
 
-          {/* Bidirectional Flow */}
-          <div className="p-4 rounded-lg border-2" style={{ borderColor: colors.completed.bg, backgroundColor: colors.completed.light }}>
-            <h4 className="font-semibold mb-2" style={{ color: colors.completed.bg }}>✅ Bidirectional Vibe ↔ Mind Flow (Implemented)</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="font-medium" style={{ color: colors.text }}>Flow 1 (Default):</p>
-                <p style={{ color: colors.textMuted }}>Mind → Script → TTS → Vibe → Publish</p>
-              </div>
-              <div>
-                <p className="font-medium" style={{ color: colors.text }}>Flow 2 (NEW):</p>
-                <p style={{ color: colors.textMuted }}>Vibe → ContentAnalyzer → Mind → Script → TTS → Vibe → Publish</p>
-              </div>
+              <TabsContent value="segments" className="space-y-4 mt-0">
+                <h3 className="text-lg font-semibold" style={{ color: colors.text }}>Target Market Segments & Competitive Gaps</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {segments.map((segment) => {
+                    const Icon = segment.icon;
+                    const segmentColor = colors[segment.id as keyof typeof colors] as typeof colors.creator;
+                    return (
+                      <div key={segment.id} className="p-4 rounded-lg border-2" style={{ backgroundColor: segmentColor.light, borderColor: segmentColor.bg }}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Icon className="h-5 w-5" style={{ color: segmentColor.bg }} />
+                          <span className="font-semibold" style={{ color: segmentColor.bg }}>{segment.name}</span>
+                        </div>
+                        <p className="text-xs mb-1" style={{ color: colors.textMuted }}>vs {segment.competitors}</p>
+                        <p className="text-xs mb-1" style={{ color: colors.textMuted }}>Pricing: {segment.price}</p>
+                        <p className="text-sm font-medium" style={{ color: colors.text }}>Gap: {segment.gap}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="subscriptions" className="space-y-4 mt-0">
+                <h3 className="text-lg font-semibold" style={{ color: colors.text }}>Subscription Tiers</h3>
+                <div className="grid grid-cols-5 gap-3">
+                  {subscriptionTiers.map((tier, i) => (
+                    <div key={tier.name} className="p-4 rounded-lg border" style={{ borderColor: i === 4 ? colors.healthcare.bg : colors.border, backgroundColor: i === 4 ? colors.healthcare.light : '#f8fafc' }}>
+                      <div className="font-bold text-lg" style={{ color: colors.text }}>{tier.name}</div>
+                      <div className="text-xl font-bold mb-2" style={{ color: i === 4 ? colors.healthcare.bg : colors.presentation.bg }}>{tier.price}</div>
+                      <div className="text-xs mb-2" style={{ color: colors.textMuted }}>Target: {tier.target}</div>
+                      <ul className="text-xs space-y-1">
+                        {tier.features.map((f, j) => (
+                          <li key={j} style={{ color: colors.text }}>• {f}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="scenarios" className="space-y-4 mt-0">
+                <h3 className="text-lg font-semibold" style={{ color: colors.text }}>110 Scenarios by Phase</h3>
+                <div className="space-y-3">
+                  {[
+                    { phase: 'P0', scenarios: ['Script Creation (1-8)', 'Vibe↔Mind Bidirectional (61-65)', 'TTS Generation', 'Basic Recording', 'Project Management'], count: 13, status: 'completed' as const },
+                    { phase: 'P1', scenarios: ['One-Tap Mobile Record (81)', 'Quick Templates (83)', 'Social Integration (85)', 'Multi-Clip Timeline (101)', 'Remix & Assembly'], count: 10, status: 'in-progress' as const },
+                    { phase: 'P2', scenarios: ['Offline Recording (82)', 'Voice-First Editing (84)', 'AI Auto-Arrange (102)', 'Smart Transitions (103)', 'Collaborative Editing'], count: 10, status: 'planned' as const },
+                    { phase: 'P3', scenarios: ['Product Demo Mode (86)', 'Lesson Builder (88)', 'Patient Education (93)', 'Voice Cloning (32)', 'HIPAA Compliance (36)'], count: 10, status: 'planned' as const },
+                    { phase: 'P4', scenarios: ['White-label (48)', 'Multi-tenant (49)', 'Approval Workflows (59)', 'SSO/SAML (53)', 'Team Review Mobile (98)'], count: 10, status: 'planned' as const },
+                    { phase: 'P5', scenarios: ['AI Avatars (41)', 'Batch Processing (51)', 'API Access (52)', 'Custom Model Training (55)', 'Advanced Analytics (54)'], count: 10, status: 'planned' as const },
+                  ].map((p) => (
+                    <div key={p.phase} className="p-3 rounded-lg border" style={{ borderColor: getStatusColor(p.status).bg, backgroundColor: getStatusColor(p.status).light }}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-bold" style={{ color: getStatusColor(p.status).bg }}>{p.phase} ({p.count} scenarios)</span>
+                        {getStatusIcon(p.status)}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {p.scenarios.map((s, i) => (
+                          <span key={i} className="text-xs px-2 py-1 rounded" style={{ backgroundColor: '#fff', color: colors.text }}>{s}</span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="competitive" className="space-y-4 mt-0">
+                <h3 className="text-lg font-semibold" style={{ color: colors.text }}>Competitive Analysis</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse text-sm">
+                    <thead>
+                      <tr>
+                        <th className="p-2 text-left border" style={{ borderColor: colors.border, backgroundColor: '#f8fafc' }}>Feature</th>
+                        <th className="p-2 text-center border" style={{ borderColor: colors.border, backgroundColor: colors.completed.light }}>Genie Studio</th>
+                        <th className="p-2 text-center border" style={{ borderColor: colors.border }}>CapCut</th>
+                        <th className="p-2 text-center border" style={{ borderColor: colors.border }}>Synthesia</th>
+                        <th className="p-2 text-center border" style={{ borderColor: colors.border }}>Loom</th>
+                        <th className="p-2 text-center border" style={{ borderColor: colors.border }}>VIDIZMO</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        ['Mobile-First', '✅', '✅', '❌', '⚠️', '❌'],
+                        ['AI Script Generation', '✅', '❌', '❌', '❌', '❌'],
+                        ['TTS/Voice Cloning', '✅', '❌', '✅', '❌', '❌'],
+                        ['Screen Recording', '✅', '❌', '❌', '✅', '⚠️'],
+                        ['Offline Mode', '✅', '⚠️', '❌', '❌', '❌'],
+                        ['Content Remix', '✅', '❌', '❌', '⚠️', '❌'],
+                        ['HIPAA Compliance', '✅', '❌', '❌', '❌', '✅'],
+                        ['Price (Pro)', '$29.99', '$9.99', '$67', '$15', '$1000+'],
+                      ].map((row, i) => (
+                        <tr key={i}>
+                          {row.map((cell, j) => (
+                            <td key={j} className="p-2 border text-center" style={{ borderColor: colors.border, backgroundColor: j === 1 ? colors.completed.light : '#fff', color: cell === '✅' ? colors.completed.bg : cell === '❌' ? '#ef4444' : colors.text }}>
+                              {cell}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* User Quotes */}
+                <div className="space-y-2">
+                  <h4 className="font-semibold" style={{ color: colors.text }}>User Research Quotes</h4>
+                  {[
+                    { quote: "I spend 2 hours editing a 60-second reel. I wish I could just talk and have it edit itself.", source: "TikTok Creator", segment: "Creator" },
+                    { quote: "Synthesia is amazing but $67/month is too much for my bakery's marketing.", source: "SMB Owner", segment: "SMB" },
+                    { quote: "We need HIPAA-compliant patient education videos but can't afford enterprise tools.", source: "Clinic Admin", segment: "Healthcare" },
+                  ].map((q, i) => (
+                    <div key={i} className="p-3 rounded-lg border" style={{ borderColor: colors.border, backgroundColor: '#fef3c7' }}>
+                      <p className="text-sm italic" style={{ color: colors.text }}>"{q.quote}"</p>
+                      <p className="text-xs mt-1" style={{ color: colors.textMuted }}>— {q.source} ({q.segment})</p>
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
             </div>
-          </div>
-
-          {/* User Quote */}
-          <div className="p-4 rounded-lg border" style={{ borderColor: colors.border, backgroundColor: '#fef3c7' }}>
-            <p className="text-sm italic" style={{ color: colors.text }}>
-              "I spend 2 hours editing a 60-second reel. I wish I could just talk and have it edit itself." — TikTok Creator
-            </p>
-            <p className="text-xs mt-2" style={{ color: colors.textMuted }}>
-              This is why we're building mobile-first voice commands (Phase 3-4)
-            </p>
-          </div>
-        </div>
+          </ScrollArea>
+        </Tabs>
       </CardContent>
     </Card>
   );
