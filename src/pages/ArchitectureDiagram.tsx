@@ -12,7 +12,7 @@ import {
 import { TwoStagePipelineSVGDiagram } from '@/components/document-processing/TwoStagePipelineSVGDiagram';
 import { DocumentConfigurationReferenceDiagram } from '@/components/document-processing/DocumentConfigurationReferenceDiagram';
 import { DocumentProcessingPresentation } from '@/components/document-processing/DocumentProcessingPresentation';
-import { PatientOnboardingFlowDiagram, SubAgentArchitectureDiagram, BeforeAfterArchitectureDiagram, GenieRecordingStudioArchitectureDiagram, GenieStudioTechnicalArchDiagram, GenieStudioFunctionalArchDiagram, GenieStudioScenarioMapDiagram, GenieStudioFullArchitectureDiagram, GenieVisualAssetsGalleryDiagram, GenieMarketAnalysisDiagram } from '@/components/diagrams';
+import { PatientOnboardingFlowDiagram, SubAgentArchitectureDiagram, BeforeAfterArchitectureDiagram, GenieStudioUnifiedHub } from '@/components/diagrams';
 import { Button } from '@/components/ui/button';
 // Tabs imports kept for potential future use but not needed for current category navigation
 import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building, Users, Network, ArrowRightLeft, Download, Workflow, Bot, History, Sparkles, Image, Video, Server, Target, Map, Presentation } from 'lucide-react';
@@ -66,14 +66,7 @@ const diagramCategories = {
     label: 'Genie Studio',
     icon: Sparkles,
     diagrams: [
-      { id: 'genie-full', label: 'Full Architecture', icon: Map },
-      { id: 'genie-architecture', label: 'Recording Studio', icon: Layers },
-      { id: 'genie-technical', label: 'Technical', icon: Server },
-      { id: 'genie-functional', label: 'Functional', icon: Users },
-      { id: 'genie-scenarios', label: 'Scenarios', icon: Target },
-      { id: 'genie-market', label: 'Market Analysis', icon: BarChart3 },
-      { id: 'genie-assets', label: 'Visual Assets', icon: Image },
-      { id: 'genie-gallery', label: 'Full Gallery', icon: Video },
+      { id: 'genie-hub', label: 'Unified Hub', icon: Map },
     ]
   }
 };
@@ -149,22 +142,8 @@ const ArchitectureDiagram = () => {
         return <MedicalImagingAIPipelineDiagram />;
       case 'onboarding':
         return <PatientOnboardingFlowDiagram />;
-      case 'genie-full':
-        return <GenieStudioFullArchitectureDiagram />;
-      case 'genie-architecture':
-        return <GenieRecordingStudioArchitectureDiagram />;
-      case 'genie-technical':
-        return <GenieStudioTechnicalArchDiagram />;
-      case 'genie-functional':
-        return <GenieStudioFunctionalArchDiagram />;
-      case 'genie-scenarios':
-        return <GenieStudioScenarioMapDiagram />;
-      case 'genie-market':
-        return <GenieMarketAnalysisDiagram />;
-      case 'genie-assets':
-        return <GenieVisualAssetsGalleryDiagram />;
-      case 'genie-gallery':
-        return <GenieStudioScriptGallery />;
+      case 'genie-hub':
+        return <GenieStudioUnifiedHub />;
       default:
         return <SolutionArchitectureDiagram />;
     }
