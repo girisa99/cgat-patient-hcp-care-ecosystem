@@ -30,31 +30,31 @@ import {
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
 
-// Consistent enterprise color palette (matching scenarios)
+// Enterprise color palette with semantic naming for consistency across light/dark modes
 const colors = {
-  completed: { bg: '#10b981', text: '#ffffff', light: '#d1fae5' },
-  inProgress: { bg: '#f59e0b', text: '#ffffff', light: '#fef3c7' },
-  planned: { bg: '#6366f1', text: '#ffffff', light: '#e0e7ff' },
+  completed: { bg: 'hsl(160, 84%, 39%)', text: '#ffffff', light: 'hsl(150, 80%, 94%)' },
+  inProgress: { bg: 'hsl(38, 92%, 50%)', text: '#ffffff', light: 'hsl(48, 96%, 94%)' },
+  planned: { bg: 'hsl(239, 84%, 67%)', text: '#ffffff', light: 'hsl(224, 76%, 94%)' },
   
-  p0: { bg: '#10b981', text: '#ffffff', light: '#d1fae5' },
-  p1: { bg: '#0ea5e9', text: '#ffffff', light: '#e0f2fe' },
-  p2: { bg: '#f59e0b', text: '#ffffff', light: '#fef3c7' },
-  p3: { bg: '#ec4899', text: '#ffffff', light: '#fce7f3' },
-  p4: { bg: '#8b5cf6', text: '#ffffff', light: '#ede9fe' },
-  p5: { bg: '#64748b', text: '#ffffff', light: '#f1f5f9' },
+  p0: { bg: 'hsl(160, 84%, 39%)', text: '#ffffff', light: 'hsl(150, 80%, 94%)' },
+  p1: { bg: 'hsl(199, 89%, 48%)', text: '#ffffff', light: 'hsl(201, 94%, 94%)' },
+  p2: { bg: 'hsl(38, 92%, 50%)', text: '#ffffff', light: 'hsl(48, 96%, 94%)' },
+  p3: { bg: 'hsl(330, 81%, 60%)', text: '#ffffff', light: 'hsl(326, 78%, 95%)' },
+  p4: { bg: 'hsl(258, 90%, 66%)', text: '#ffffff', light: 'hsl(250, 91%, 95%)' },
+  p5: { bg: 'hsl(215, 16%, 47%)', text: '#ffffff', light: 'hsl(210, 40%, 96%)' },
   
-  creator: { bg: '#8b5cf6', text: '#ffffff', light: '#ede9fe', icon: '🎨' },
-  traveler: { bg: '#0ea5e9', text: '#ffffff', light: '#e0f2fe', icon: '✈️' },
-  smb: { bg: '#f59e0b', text: '#ffffff', light: '#fef3c7', icon: '🏪' },
-  education: { bg: '#10b981', text: '#ffffff', light: '#d1fae5', icon: '📚' },
-  healthcare: { bg: '#ec4899', text: '#ffffff', light: '#fce7f3', icon: '🏥' },
-  enterprise: { bg: '#64748b', text: '#ffffff', light: '#f1f5f9', icon: '🏢' },
+  creator: { bg: 'hsl(258, 90%, 66%)', text: '#ffffff', light: 'hsl(250, 91%, 95%)', icon: '🎨' },
+  traveler: { bg: 'hsl(199, 89%, 48%)', text: '#ffffff', light: 'hsl(201, 94%, 94%)', icon: '✈️' },
+  smb: { bg: 'hsl(38, 92%, 50%)', text: '#ffffff', light: 'hsl(48, 96%, 94%)', icon: '🏪' },
+  education: { bg: 'hsl(160, 84%, 39%)', text: '#ffffff', light: 'hsl(150, 80%, 94%)', icon: '📚' },
+  healthcare: { bg: 'hsl(330, 81%, 60%)', text: '#ffffff', light: 'hsl(326, 78%, 95%)', icon: '🏥' },
+  enterprise: { bg: 'hsl(215, 16%, 47%)', text: '#ffffff', light: 'hsl(210, 40%, 96%)', icon: '🏢' },
   
-  border: '#e2e8f0',
-  background: '#ffffff',
-  cardBg: '#f8fafc',
-  text: '#1e293b',
-  textMuted: '#64748b',
+  border: 'hsl(var(--border))',
+  background: 'hsl(var(--background))',
+  cardBg: 'hsl(var(--card))',
+  text: 'hsl(var(--foreground))',
+  textMuted: 'hsl(var(--muted-foreground))',
 };
 
 // Segment Journey Data with humor

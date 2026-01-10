@@ -22,21 +22,22 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 
+// Enterprise color palette with HSL for theme consistency
 const colors = {
-  completed: { bg: '#10b981', text: '#ffffff', light: '#d1fae5' },
-  inProgress: { bg: '#f59e0b', text: '#ffffff', light: '#fef3c7' },
-  planned: { bg: '#6366f1', text: '#ffffff', light: '#e0e7ff' },
+  completed: { bg: 'hsl(160, 84%, 39%)', text: '#ffffff', light: 'hsl(150, 80%, 94%)' },
+  inProgress: { bg: 'hsl(38, 92%, 50%)', text: '#ffffff', light: 'hsl(48, 96%, 94%)' },
+  planned: { bg: 'hsl(239, 84%, 67%)', text: '#ffffff', light: 'hsl(224, 76%, 94%)' },
   
-  presentation: { bg: '#0ea5e9', text: '#ffffff', light: '#e0f2fe' },
-  application: { bg: '#8b5cf6', text: '#ffffff', light: '#ede9fe' },
-  domain: { bg: '#ec4899', text: '#ffffff', light: '#fce7f3' },
-  infrastructure: { bg: '#64748b', text: '#ffffff', light: '#f1f5f9' },
+  presentation: { bg: 'hsl(199, 89%, 48%)', text: '#ffffff', light: 'hsl(201, 94%, 94%)' },
+  application: { bg: 'hsl(258, 90%, 66%)', text: '#ffffff', light: 'hsl(250, 91%, 95%)' },
+  domain: { bg: 'hsl(330, 81%, 60%)', text: '#ffffff', light: 'hsl(326, 78%, 95%)' },
+  infrastructure: { bg: 'hsl(215, 16%, 47%)', text: '#ffffff', light: 'hsl(210, 40%, 96%)' },
   
-  border: '#e2e8f0',
-  background: '#ffffff',
-  cardBg: '#f8fafc',
-  text: '#1e293b',
-  textMuted: '#64748b',
+  border: 'hsl(var(--border))',
+  background: 'hsl(var(--background))',
+  cardBg: 'hsl(var(--card))',
+  text: 'hsl(var(--foreground))',
+  textMuted: 'hsl(var(--muted-foreground))',
 };
 
 export const GenieStudioTechnicalArchDiagram = () => {
