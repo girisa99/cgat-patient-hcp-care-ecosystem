@@ -464,4 +464,272 @@ OUTPUT: Structured Data (JSON Schema, Field Mapping, Analytics)
 
 ---
 
+## Agent Integration Matrix
+
+### Agent → Module Mapping
+
+| Agent ID | Agent Name | Connected Modules | Primary Purpose | Phase |
+|----------|------------|-------------------|-----------------|-------|
+| `script_generator_agent` | Script Generator | Genie Mind, Genie Vibe | AI script generation from various inputs | P0 ✅ |
+| `content_analyzer_agent` | Content Analyzer | Genie Mind | Document/media content analysis | P0 ✅ |
+| `tts_orchestrator_agent` | TTS Orchestrator | Genie Vibe | Multi-provider TTS coordination | P0 ✅ |
+| `voice_clone_agent` | Voice Clone | Genie Vibe | Voice cloning and synthesis | P1 |
+| `video_assembly_agent` | Video Assembly | Genie Vibe, Recording Studio | Multi-clip assembly automation | P1 |
+| `compliance_monitor_agent` | Compliance Monitor | All Modules | HIPAA/GDPR compliance scanning | P3 |
+| `workflow_orchestrator_agent` | Workflow Orchestrator | Arc (Production Hub) | Multi-step workflow automation | P2 |
+| `social_publisher_agent` | Social Publisher | Genie Vibe | Multi-platform social publishing | P1 |
+| `translation_agent` | Translation | Genie Mind, Genie Vibe | Multi-language translation & dubbing | P2 |
+| `analytics_agent` | Analytics | All Modules | Usage tracking and insights | P2 |
+| `subscription_agent` | Subscription Manager | Backend | Billing, tier management, limits | P0 |
+| `approval_workflow_agent` | Approval Workflow | Arc | Legal/compliance approval chains | P3 |
+
+### Agent Automation Opportunities
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                     AUTOMATION OPPORTUNITY MATRIX                             │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+PHASE 0 (IMPLEMENTED) ✅
+├── Script Generation Automation
+│   ├── Document → Script (content_analyzer_agent → script_generator_agent)
+│   ├── Image → Script (content_analyzer_agent → script_generator_agent)
+│   └── URL → Script (content_analyzer_agent → script_generator_agent)
+│
+├── TTS Automation
+│   ├── Script → Voice (tts_orchestrator_agent)
+│   └── Multi-provider failover (automatic)
+
+PHASE 1 (PLANNED)
+├── Voice Clone Automation
+│   ├── Voice sample → Clone model (voice_clone_agent)
+│   └── Clone → TTS generation (voice_clone_agent → tts_orchestrator_agent)
+│
+├── Video Assembly Automation
+│   ├── Multi-clip timeline (video_assembly_agent)
+│   ├── AI auto-arrange (video_assembly_agent)
+│   └── Smart transitions (video_assembly_agent)
+│
+├── Social Publishing Automation
+│   ├── Platform-specific cuts (social_publisher_agent)
+│   ├── Scheduled publishing (social_publisher_agent)
+│   └── Cross-platform analytics (analytics_agent)
+
+PHASE 2 (PLANNED)
+├── Workflow Automation
+│   ├── Multi-step pipelines (workflow_orchestrator_agent)
+│   ├── Conditional branching (workflow_orchestrator_agent)
+│   └── Error recovery (workflow_orchestrator_agent)
+│
+├── Translation Automation
+│   ├── Script translation (translation_agent)
+│   ├── Voice dubbing (translation_agent → voice_clone_agent)
+│   └── Subtitle generation (translation_agent)
+
+PHASE 3 (PLANNED)
+├── Compliance Automation
+│   ├── HIPAA PHI detection (compliance_monitor_agent)
+│   ├── Auto-redaction (compliance_monitor_agent)
+│   └── Audit logging (compliance_monitor_agent)
+│
+├── Approval Workflow Automation
+│   ├── Legal review routing (approval_workflow_agent)
+│   ├── Multi-reviewer chains (approval_workflow_agent)
+│   └── SLA tracking (approval_workflow_agent)
+```
+
+---
+
+## API Integration Matrix
+
+### Internal APIs (Edge Functions)
+
+| API Name | Endpoint | Purpose | Connected Agents | Phase |
+|----------|----------|---------|------------------|-------|
+| `ai-universal-processor` | `/ai-universal-processor` | Universal AI processing | All AI agents | P0 ✅ |
+| `ai-image-generator` | `/ai-image-generator` | Multi-provider image gen | content_analyzer_agent | P0 ✅ |
+| `gemini-generate-image` | `/gemini-generate-image` | Gemini image generation | content_analyzer_agent | P0 ✅ |
+| `gemini-generate-video` | `/gemini-generate-video` | Gemini video generation | video_assembly_agent | P1 |
+| `process-documents` | `/process-documents` | Document processing | content_analyzer_agent | P0 ✅ |
+| `rag-search` | `/rag-search` | Knowledge base search | script_generator_agent | P0 ✅ |
+| `rag-knowledge-processor` | `/rag-knowledge-processor` | Knowledge processing | content_analyzer_agent | P0 ✅ |
+| `check-ai-provider` | `/check-ai-provider` | Provider availability | All AI agents | P0 ✅ |
+| `voice-clone-processor` | `/voice-clone-processor` | Voice cloning | voice_clone_agent | P1 |
+| `social-publish` | `/social-publish` | Social media publishing | social_publisher_agent | P1 |
+| `compliance-scanner` | `/compliance-scanner` | HIPAA/GDPR scanning | compliance_monitor_agent | P3 |
+| `stripe-webhook` | `/stripe-webhook` | Stripe payment webhooks | subscription_agent | P0 |
+| `subscription-manager` | `/subscription-manager` | Subscription operations | subscription_agent | P0 |
+
+### External APIs
+
+| API Provider | Purpose | Data Format | Integration Type | Phase |
+|--------------|---------|-------------|------------------|-------|
+| **ElevenLabs** | TTS, Voice Cloning | JSON | REST API | P0 ✅ |
+| **OpenAI** | GPT-4, TTS, DALL-E | JSON | REST API | P0 ✅ |
+| **Anthropic** | Claude AI | JSON | REST API | P0 ✅ |
+| **Google Gemini** | Vision, Video, TTS | JSON | REST API | P0 ✅ |
+| **Stripe** | Payments, Subscriptions | JSON | REST API + Webhooks | P0 |
+| **YouTube** | Video Publishing | JSON | OAuth2 + REST API | P1 |
+| **TikTok** | Video Publishing | JSON | OAuth2 + REST API | P1 |
+| **Instagram** | Video Publishing | JSON | OAuth2 + Graph API | P1 |
+| **LinkedIn** | Video Publishing | JSON | OAuth2 + REST API | P1 |
+| **Figma** | Design Import | JSON | OAuth2 + REST API | P2 |
+| **Miro** | Whiteboard Import | JSON | OAuth2 + REST API | P2 |
+| **Canva** | Design Import | JSON | OAuth2 + REST API | P2 |
+
+### Data Transfer Methods
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                     DATA TRANSFER PROTOCOLS                                   │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+JSON (Primary)
+├── Internal Edge Functions → All modules
+├── AI Provider APIs → Agent processors
+├── Supabase Database → Frontend hooks
+└── Webhook payloads (Stripe, Social platforms)
+
+CSV (Batch Operations)
+├── Bulk video generation (Scenario 33)
+├── Analytics export
+├── User subscription reports
+└── Compliance audit logs
+
+MCP SDK (Agent Communication)
+├── Agent → Agent messaging
+├── Workflow orchestration
+├── Tool calling between agents
+└── Cross-module data sharing
+
+Streaming (Real-time)
+├── TTS audio streaming
+├── AI response streaming
+├── Video preview streaming
+└── Recording live preview
+
+Binary (Media)
+├── Video files (MP4, WebM)
+├── Audio files (MP3, WAV)
+├── Image files (PNG, JPG, WebP)
+└── Document files (PDF, DOCX, PPTX)
+```
+
+---
+
+## Authentication & SaaS Features (Scenarios 66-80)
+
+### Authentication Flow Matrix
+
+| Flow | Scenario | Provider | Phase | Status |
+|------|----------|----------|-------|--------|
+| **Email/Password** | 66-70 | Supabase Auth | P0 | ⏳ Planned |
+| **Magic Link** | 66-70 | Supabase Auth | P0 | ⏳ Planned |
+| **Google OAuth** | 66-70 | Supabase + Google | P0 | ⏳ Planned |
+| **Microsoft OAuth** | 66-70 | Supabase + Microsoft | P1 | ⏳ Planned |
+| **SSO/SAML** | 76-80 | Supabase + Enterprise IdP | P3 | ⏳ Planned |
+| **API Key Auth** | 71-75 | Custom + Supabase | P2 | ⏳ Planned |
+
+### Subscription Infrastructure
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                     SUBSCRIPTION FLOW ARCHITECTURE                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+User Registration
+        │
+        ▼
+┌───────────────┐     ┌───────────────┐     ┌───────────────┐
+│  Supabase     │────►│  Stripe       │────►│  subscription │
+│  Auth Signup  │     │  Customer     │     │  _agent       │
+└───────────────┘     └───────────────┘     └───────────────┘
+        │                     │                     │
+        ▼                     ▼                     ▼
+┌───────────────┐     ┌───────────────┐     ┌───────────────┐
+│  profiles     │     │  Stripe       │     │  user_        │
+│  table        │     │  Subscription │     │  subscriptions│
+└───────────────┘     └───────────────┘     └───────────────┘
+                              │
+                              ▼
+                      ┌───────────────┐
+                      │  stripe-      │
+                      │  webhook      │
+                      └───────────────┘
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        ▼                     ▼                     ▼
+┌───────────────┐     ┌───────────────┐     ┌───────────────┐
+│  Payment      │     │  Subscription │     │  Access       │
+│  Success      │     │  Activated    │     │  Granted      │
+└───────────────┘     └───────────────┘     └───────────────┘
+```
+
+### Access Control Matrix
+
+| Module | Free | Starter | Business | Pro | Enterprise | Agent Required |
+|--------|------|---------|----------|-----|------------|----------------|
+| Genie Studio | 10/mo | 100/mo | 500/mo | 2000/mo | Unlimited | subscription_agent |
+| Genie Spark | ❌ | ❌ | ❌ | ✅ | ✅ | subscription_agent |
+| Recording Studio | ❌ | ✅ | ✅ | ✅ | ✅ | subscription_agent |
+| Voice Cloning | ❌ | ❌ | ❌ | ✅ | ✅ | voice_clone_agent |
+| Social Publishing | ❌ | ✅ | ✅ | ✅ | ✅ | social_publisher_agent |
+| HIPAA Mode | ❌ | ❌ | ❌ | ❌ | ✅ | compliance_monitor_agent |
+| White Label | ❌ | ❌ | ❌ | ❌ | ✅ | N/A |
+| API Access | ❌ | ❌ | ❌ | ✅ | ✅ | N/A |
+
+---
+
+## Complete Phase Implementation with Agents
+
+### P0 - Core (Weeks 1-4) ✅ MOSTLY COMPLETE
+
+| Feature | Agent | API | Automation | Status |
+|---------|-------|-----|------------|--------|
+| AI Script Generation | script_generator_agent | ai-universal-processor | Document → Script | ✅ |
+| Content Analysis | content_analyzer_agent | ai-universal-processor | PPT/PDF/URL → Script | ✅ |
+| TTS Generation | tts_orchestrator_agent | ElevenLabs, OpenAI | Script → Voice | ✅ |
+| Bidirectional Vibe ↔ Mind | content_analyzer_agent | ai-universal-processor | Vibe → Mind → Vibe | ✅ |
+| **Subscription Infrastructure** | subscription_agent | Stripe, stripe-webhook | Tier enforcement | ⏳ |
+| **Authentication** | N/A | Supabase Auth, OAuth | Login/Signup | ⏳ |
+
+### P1 - Essential (Weeks 5-8)
+
+| Feature | Agent | API | Automation | Status |
+|---------|-------|-----|------------|--------|
+| Voice Cloning | voice_clone_agent | ElevenLabs Clone API | Sample → Clone | ⏳ |
+| Video Assembly | video_assembly_agent | FFmpeg, gemini-generate-video | Multi-clip → Final | ⏳ |
+| Social Publishing | social_publisher_agent | YouTube, TikTok, Instagram | Schedule → Publish | ⏳ |
+| Quick Templates | video_assembly_agent | N/A | Template → Video | ⏳ |
+| Highlight Reel | video_assembly_agent | ai-universal-processor | Long → Shorts | ⏳ |
+
+### P2 - Important (Weeks 9-12)
+
+| Feature | Agent | API | Automation | Status |
+|---------|-------|-----|------------|--------|
+| Figma Import | content_analyzer_agent | Figma API | Figma → Script → Video | ⏳ |
+| Miro Import | content_analyzer_agent | Miro API | Whiteboard → Presentation | ⏳ |
+| Translation | translation_agent | ai-universal-processor | Script A → Script B | ⏳ |
+| Voice Dubbing | translation_agent + voice_clone_agent | ElevenLabs | Translate + Clone | ⏳ |
+| Workflow Orchestration | workflow_orchestrator_agent | MCP SDK | Multi-step pipelines | ⏳ |
+
+### P3 - Compliance (Weeks 13-18)
+
+| Feature | Agent | API | Automation | Status |
+|---------|-------|-----|------------|--------|
+| HIPAA Compliance | compliance_monitor_agent | compliance-scanner | PHI detection | ⏳ |
+| Auto-Redaction | compliance_monitor_agent | compliance-scanner | Blur/beep PHI | ⏳ |
+| Legal Review | approval_workflow_agent | N/A | Review → Approve | ⏳ |
+| Audit Logging | compliance_monitor_agent | Supabase | Action → Log | ⏳ |
+
+### P4-P5 - Future (Weeks 19+)
+
+| Feature | Agent | API | Automation | Status |
+|---------|-------|-----|------------|--------|
+| AI Avatars | avatar_generation_agent | HeyGen/D-ID | Script → Avatar Video | ⏳ |
+| Real-time Collaboration | collaboration_agent | Supabase Realtime | Multi-user editing | ⏳ |
+| Advanced Analytics | analytics_agent | Custom | Performance insights | ⏳ |
+
+---
+
 *This document follows the governance protocol from `docs/IMPLEMENTATION_GOVERNANCE.md`*

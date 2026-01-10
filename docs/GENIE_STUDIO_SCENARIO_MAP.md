@@ -1048,5 +1048,207 @@ Priority Support               | ❌   | ❌      | ✅       | ✅   | ✅ + SL
 
 ---
 
+## NEW: Category Q - Agent & Automation Integration (Scenarios 111-125)
+
+**Added: 2026-01-10** | **Priority: Cross-cutting** | Agent and automation mapping
+
+### Agent Assignment Matrix
+
+| # | Scenario | Primary Agent | Secondary Agent(s) | Automation Type |
+|---|----------|---------------|-------------------|-----------------|
+| 111 | **Script Generation Orchestration** | script_generator_agent | content_analyzer_agent | Full pipeline |
+| 112 | **TTS Multi-Provider Failover** | tts_orchestrator_agent | None | Auto-failover |
+| 113 | **Voice Clone Training** | voice_clone_agent | None | Sample → Model |
+| 114 | **Video Assembly Pipeline** | video_assembly_agent | script_generator_agent | Clips → Final |
+| 115 | **Social Multi-Platform Publish** | social_publisher_agent | analytics_agent | Schedule → Publish |
+| 116 | **Compliance Auto-Scan** | compliance_monitor_agent | None | Content → Report |
+| 117 | **PHI Auto-Redaction** | compliance_monitor_agent | None | Detect → Redact |
+| 118 | **Approval Workflow Chain** | approval_workflow_agent | None | Submit → Review → Approve |
+| 119 | **Translation Pipeline** | translation_agent | voice_clone_agent | Script → Dub |
+| 120 | **Subscription Enforcement** | subscription_agent | None | Tier → Access |
+| 121 | **Usage Metering** | subscription_agent | analytics_agent | Action → Count |
+| 122 | **Workflow Orchestration** | workflow_orchestrator_agent | All agents | Multi-step |
+| 123 | **Analytics Collection** | analytics_agent | None | Action → Insight |
+| 124 | **Error Recovery** | workflow_orchestrator_agent | None | Failure → Retry |
+| 125 | **Cross-Agent Communication** | All agents | MCP SDK | Agent → Agent |
+
+### Automation Opportunity Map
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                     AUTOMATION OPPORTUNITIES BY SCENARIO                      │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+CONTENT CREATION AUTOMATION
+├── Scenarios 1-10: Imagination → Production
+│   ├── Agent: script_generator_agent + content_analyzer_agent
+│   ├── Automation: Document/Image/URL → Script → TTS → Video
+│   └── Data Flow: JSON (input) → JSON (AI) → Binary (output)
+│
+├── Scenarios 61-65: Vibe ↔ Mind
+│   ├── Agent: content_analyzer_agent
+│   ├── Automation: Vibe content → Mind analysis → Enhanced script
+│   └── Data Flow: Binary/URL → JSON → JSON
+
+VIDEO ASSEMBLY AUTOMATION
+├── Scenarios 101-110: Remix & Clip Assembly
+│   ├── Agent: video_assembly_agent
+│   ├── Automation: Multi-clip → AI arrange → Smart transitions → Export
+│   └── Data Flow: Binary (clips) → JSON (config) → Binary (output)
+
+PUBLISHING AUTOMATION
+├── Scenarios 85, 42: Social Publishing
+│   ├── Agent: social_publisher_agent
+│   ├── Automation: Video → Platform cuts → Schedule → Publish
+│   └── Data Flow: Binary → JSON (API) → Webhook confirmation
+
+COMPLIANCE AUTOMATION
+├── Scenarios 43-46: Compliance & Legal
+│   ├── Agent: compliance_monitor_agent + approval_workflow_agent
+│   ├── Automation: Content → Scan → Flag → Redact/Approve
+│   └── Data Flow: Binary/Text → JSON (analysis) → JSON (report)
+
+SUBSCRIPTION AUTOMATION
+├── Scenarios 66-80: Commercialization
+│   ├── Agent: subscription_agent
+│   ├── Automation: Signup → Tier → Access → Meter → Bill
+│   └── Data Flow: JSON (Stripe) → Webhook → Database
+```
+
+---
+
+## NEW: Category R - API & Data Integration (Scenarios 126-140)
+
+**Added: 2026-01-10** | **Priority: Cross-cutting** | API and data transfer mapping
+
+### Internal API Integration
+
+| # | Scenario | API Endpoint | Method | Data Format | Agent |
+|---|----------|--------------|--------|-------------|-------|
+| 126 | **Universal AI Processing** | `/ai-universal-processor` | POST | JSON | All AI agents |
+| 127 | **Document Processing** | `/process-documents` | POST | Multipart + JSON | content_analyzer_agent |
+| 128 | **Knowledge Search** | `/rag-search` | POST | JSON | script_generator_agent |
+| 129 | **Image Generation** | `/ai-image-generator` | POST | JSON → Binary | content_analyzer_agent |
+| 130 | **Video Generation** | `/gemini-generate-video` | POST | JSON → Binary | video_assembly_agent |
+| 131 | **Compliance Scan** | `/compliance-scanner` | POST | JSON | compliance_monitor_agent |
+| 132 | **Stripe Webhook** | `/stripe-webhook` | POST | JSON | subscription_agent |
+| 133 | **Social Publish** | `/social-publish` | POST | JSON + Binary | social_publisher_agent |
+| 134 | **Voice Clone** | `/voice-clone-processor` | POST | Binary + JSON | voice_clone_agent |
+| 135 | **Subscription Check** | `/subscription-manager` | GET/POST | JSON | subscription_agent |
+
+### External API Integration
+
+| # | Scenario | External API | Auth Type | Data Format | Phase |
+|---|----------|--------------|-----------|-------------|-------|
+| 136 | **OpenAI Integration** | OpenAI API | Bearer Token | JSON | P0 ✅ |
+| 137 | **Anthropic Integration** | Claude API | API Key | JSON | P0 ✅ |
+| 138 | **ElevenLabs Integration** | ElevenLabs API | API Key | JSON + Binary | P0 ✅ |
+| 139 | **Stripe Integration** | Stripe API | Secret Key | JSON | P0 |
+| 140 | **YouTube Publish** | YouTube Data API | OAuth2 | JSON + Binary | P1 |
+
+### Data Transfer Protocol Matrix
+
+| Scenario Range | Primary Format | Secondary Format | Transfer Method |
+|----------------|----------------|------------------|-----------------|
+| 1-10 (Creation) | JSON | Binary (media) | REST API |
+| 33 (Bulk Gen) | CSV | JSON | Batch processing |
+| 43-46 (Compliance) | JSON | CSV (audit logs) | REST + Export |
+| 61-65 (Vibe↔Mind) | JSON | Binary (media) | Internal API |
+| 66-80 (Subscription) | JSON | N/A | REST + Webhooks |
+| 101-110 (Remix) | Binary | JSON (metadata) | REST + Streaming |
+| 111-125 (Agents) | JSON | MCP Protocol | Agent messaging |
+
+---
+
+## Authentication Scenarios (Integrated with 66-80)
+
+### Authentication Flow Mapping
+
+| Scenario | Auth Type | Provider | Flow | Status |
+|----------|-----------|----------|------|--------|
+| 66 | Email/Password | Supabase Auth | Signup → Verify → Login | ⏳ Planned |
+| 66 | Magic Link | Supabase Auth | Email → Click → Login | ⏳ Planned |
+| 66 | Google OAuth | Supabase + Google | Redirect → Consent → Token | ⏳ Planned |
+| 66 | Microsoft OAuth | Supabase + Microsoft | Redirect → Consent → Token | ⏳ Planned |
+| 78 | SSO/SAML | Enterprise IdP | SAML Flow → Token | ⏳ Planned |
+| 74 | API Key | Custom | Generate → Store → Validate | ⏳ Planned |
+
+### SaaS Feature Integration
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                     SAAS FEATURE INTEGRATION MATRIX                           │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+AUTHENTICATION (Scenarios 66-70)
+├── Email/Password signup → profiles table → user_subscriptions
+├── OAuth signup → profiles table → user_subscriptions
+├── Magic link → email verification → session
+└── SSO/SAML → enterprise identity → user_subscriptions
+
+SUBSCRIPTION (Scenarios 66-70)
+├── Tier selection → Stripe checkout → subscription activation
+├── Usage tracking → subscription_usage → limit enforcement
+├── Upgrade/downgrade → Stripe portal → access update
+└── Cancellation → Stripe webhook → access revocation
+
+ACCESS CONTROL (Scenarios 71-75)
+├── Route guards → useModuleAccess → tier check
+├── Feature gates → ModuleGate component → upgrade prompt
+├── Usage limits → subscription_agent → limit exceeded modal
+└── API rate limiting → Edge function → rate limit headers
+
+BILLING (Scenarios 79-80)
+├── Stripe customer → payment method → subscription
+├── Invoice generation → Stripe → email notification
+├── Payment failure → grace period → access suspension
+└── Refund processing → Stripe → credit adjustment
+```
+
+---
+
+## Updated Implementation Status Summary
+
+### Total Scenarios: 140
+
+| Category | Scenarios | Implemented | Partial | Planned |
+|----------|-----------|-------------|---------|---------|
+| A-K (Original) | 1-60 | 3 | 5 | 52 |
+| L: Vibe ↔ Mind | 61-65 | 5 | 0 | 0 |
+| M: Commercialization | 66-80 | 0 | 0 | 15 |
+| N: Mobile-First | 81-90 | 0 | 0 | 10 |
+| O: Segment-Specific | 91-100 | 0 | 0 | 10 |
+| P: Remix & Clips | 101-110 | 0 | 0 | 10 |
+| **Q: Agent Integration** | 111-125 | 0 | 2 | 13 |
+| **R: API Integration** | 126-140 | 5 | 0 | 10 |
+| **TOTAL** | **140** | **13** | **7** | **120** |
+
+### By Priority with Agent/API Coverage
+
+| Priority | Scenarios | Has Agent | Has API | Has Automation |
+|----------|-----------|-----------|---------|----------------|
+| P0 | 1-10, 61-70, 81, 111-115 | 100% | 100% | 80% |
+| P1 | 11-16, 83-90, 116-120 | 80% | 90% | 70% |
+| P2 | 17-32, 91-100, 121-125 | 60% | 80% | 50% |
+| P3 | 33-46, 126-135 | 90% | 100% | 80% |
+| P4 | 47-60, 136-140 | 40% | 60% | 30% |
+
+---
+
+## Changelog
+
+| Date | Version | Changes |
+|------|---------|---------|
+| 2026-01-06 | 2.0 | Added Category L (Vibe ↔ Mind) and M (Commercialization) |
+| 2026-01-09 | 2.1 | Added Category N (Mobile-First), O (Segment-Specific), P (Remix & Clip Assembly) |
+| 2026-01-09 | 2.1 | Expanded from 80 to 110 scenarios |
+| 2026-01-10 | 2.2 | Added Category Q (Agent Integration) - Scenarios 111-125 |
+| 2026-01-10 | 2.2 | Added Category R (API & Data Integration) - Scenarios 126-140 |
+| 2026-01-10 | 2.2 | Added Authentication/SaaS integration mapping |
+| 2026-01-10 | 2.2 | Added automation opportunity matrix |
+| 2026-01-10 | 2.2 | Expanded from 110 to 140 scenarios |
+
+---
+
 *Document maintained by Genie Studio Development Team*
-*Total Scenarios: 110 | Implemented: 8 | Partial: 6 | Planned: 96*
+*Total Scenarios: 140 | Implemented: 13 | Partial: 7 | Planned: 120*
