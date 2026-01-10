@@ -6,10 +6,12 @@ import React, { Suspense } from 'react';
 import RoleBasedNavigation from '@/components/navigation/RoleBasedNavigation';
 import '@/styles/navigation.css';
 import { GlobalConversationalEnrollmentProvider } from '@/hooks/useGlobalConversationalEnrollment';
-const GlobalConversationalEnrollmentModalLazy = React.lazy(() =>
+import { lazyWithRetry } from '@/utils/lazyWithRetry';
+
+const GlobalConversationalEnrollmentModalLazy = lazyWithRetry(() =>
   import('@/components/global/GlobalConversationalEnrollmentModal').then(m => ({ default: m.GlobalConversationalEnrollmentModal }))
 );
-const UniversalConversationGenieLazy = React.lazy(() =>
+const UniversalConversationGenieLazy = lazyWithRetry(() =>
   import('@/components/enrollment-genie/UniversalConversationGenie').then(m => ({ default: m.UniversalConversationGenie }))
 );
 
