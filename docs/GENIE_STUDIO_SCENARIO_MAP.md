@@ -1,23 +1,23 @@
 # Genie Studio & Recording Studio: Complete Scenario Map
 
-> **Version:** 2.2  
-> **Last Updated:** 2026-01-09  
-> **Total Scenarios:** 110 (includes mobile-first, segment-specific, remix & clips)  
-> **Status:** Documentation Complete with Competitive Analysis
+> **Version:** 2.3  
+> **Last Updated:** 2026-01-10  
+> **Total Scenarios:** 140 (includes mobile-first, segment-specific, remix & clips, agents & APIs)  
+> **Status:** Documentation Complete with Agent/API/Automation Mapping
 
 ---
 
 ## Executive Summary
 
-This document catalogs all identified user journeys and scenarios for the Genie Studio and Recording Studio integration. It covers the complete production pipeline from imagination to final output, including edge cases, error recovery, bidirectional Vibe ↔ Mind flows, advanced AI capabilities, and market-driven feature priorities.
+This document catalogs all identified user journeys and scenarios for the Genie Studio and Recording Studio integration. It covers the complete production pipeline from imagination to final output, including edge cases, error recovery, bidirectional Vibe ↔ Mind flows, advanced AI capabilities, market-driven feature priorities, agent assignments, API integrations, and automation opportunities.
 
 ### Implementation Overview
 
 | Status | Count | Description |
 |--------|-------|-------------|
-| ✅ **Implemented** | 8 | Fully functional in codebase |
-| 🔶 **Partial** | 6 | Core functionality exists, needs enhancement |
-| ⏳ **Planned** | 96 | Documented, not yet implemented |
+| ✅ **Implemented** | 13 | Fully functional in codebase |
+| 🔶 **Partial** | 7 | Core functionality exists, needs enhancement |
+| ⏳ **Planned** | 120 | Documented, not yet implemented |
 
 ---
 
@@ -50,17 +50,17 @@ This document catalogs all identified user journeys and scenarios for the Genie 
 
 ## Priority Matrix
 
-| Priority | Category | Description | Scenarios | Implementation | Market Driver |
-|----------|----------|-------------|-----------|----------------|---------------|
-| **P0 - Core** | MVP Features | Essential flows for launch | 1-4, 7-10, 61-65, 81 | 72% Complete | Basic functionality |
-| **P0 - Commercialization** | Subscription Infrastructure | Required for monetization | 66-70 | 0% (Roadmap) | Revenue generation |
-| **P1 - Essential** | Production Needs | Required for production use | 5-6, 11-16, 21-24, 83, 85, 90 | 30% Complete | User retention |
-| **P1 - Access Control** | Authentication & Billing | User management & payments | 71-75 | 0% (Roadmap) | Business model |
-| **P2 - Important** | User Experience | Improves workflow significantly | 17-20, 25-32, 82, 84, 89, 101-110 | 10% Complete | 68% want mobile-first |
-| **P2 - Management** | Admin & Analytics | Subscription management | 76-80 | 0% (Roadmap) | Operations |
-| **P3 - Differentiators** | Competitive Edge | Sets product apart | 33-42, 86-88, 91-97 | 0% (Roadmap) | Market differentiation |
-| **P3 - Compliance** | Healthcare & Legal | Regulated industries | 43-46, 93, 99 | 0% (Roadmap) | Enterprise sales |
-| **P4 - Future** | Advanced Features | Long-term roadmap | 47-60, 98, 100 | 0% (Roadmap) | Innovation |
+| Priority | Category | Description | Scenarios | Implementation | Market Driver | Agent Coverage |
+|----------|----------|-------------|-----------|----------------|---------------|----------------|
+| **P0 - Core** | MVP Features | Essential flows for launch | 1-4, 7-10, 61-65, 81, 111-115 | 72% Complete | Basic functionality | 100% |
+| **P0 - Commercialization** | Subscription Infrastructure | Required for monetization | 66-70, 126-130 | 0% (Roadmap) | Revenue generation | 100% |
+| **P1 - Essential** | Production Needs | Required for production use | 5-6, 11-16, 21-24, 83, 85, 90, 116-120 | 30% Complete | User retention | 80% |
+| **P1 - Access Control** | Authentication & Billing | User management & payments | 71-75, 131-135 | 0% (Roadmap) | Business model | 90% |
+| **P2 - Important** | User Experience | Improves workflow significantly | 17-20, 25-32, 82, 84, 89, 101-110, 121-125 | 10% Complete | 68% want mobile-first | 60% |
+| **P2 - Management** | Admin & Analytics | Subscription management | 76-80 | 0% (Roadmap) | Operations | 80% |
+| **P3 - Differentiators** | Competitive Edge | Sets product apart | 33-42, 86-88, 91-97, 136-140 | 0% (Roadmap) | Market differentiation | 90% |
+| **P3 - Compliance** | Healthcare & Legal | Regulated industries | 43-46, 93, 99 | 0% (Roadmap) | Enterprise sales | 100% |
+| **P4 - Future** | Advanced Features | Long-term roadmap | 47-60, 98, 100 | 0% (Roadmap) | Innovation | 40% |
 
 ---
 

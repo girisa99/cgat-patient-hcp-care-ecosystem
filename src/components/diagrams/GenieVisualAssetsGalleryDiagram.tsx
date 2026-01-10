@@ -353,63 +353,73 @@ const subscriptionTiers = [
 const phaseData = [
   { 
     id: 'P0', 
-    name: 'Core MVP', 
+    name: 'Core + Agents', 
     color: colors.p0, 
-    scenarios: 13, 
+    scenarios: 18, 
     icon: Zap, 
     status: 'complete', 
     market: 'Foundation',
-    features: ['Script + TTS', 'Recording Studio', 'Teleprompter', 'Export MP4/WebM', 'Vibe↔Mind Bridge'],
+    features: ['Script + TTS', 'Recording Studio', 'Teleprompter', 'Export', 'Vibe↔Mind Bridge', 'AI Agents'],
     timeline: 'Weeks 1-4',
-    keyMetric: '72% Complete'
+    keyMetric: '72% Complete',
+    agents: ['script_generator_agent', 'tts_orchestrator_agent', 'content_analyzer_agent'],
+    apis: ['ai-universal-processor', 'process-documents', 'rag-search']
   },
   { 
     id: 'P1', 
     name: 'Mobile & Remix', 
     color: colors.p1, 
-    scenarios: 10, 
+    scenarios: 15, 
     icon: Smartphone, 
     status: 'partial', 
     market: '68% mobile demand',
     features: ['One-Tap Recording', 'Quick Clips', 'Clip Assembly', 'Mobile Preview', 'Social Sharing'],
     timeline: 'Weeks 5-8',
-    keyMetric: '30% Complete'
+    keyMetric: '30% Complete',
+    agents: ['video_assembly_agent', 'social_publisher_agent'],
+    apis: ['social-publish', 'voice-clone-processor']
   },
   { 
     id: 'P2', 
     name: 'Advanced', 
     color: colors.p2, 
-    scenarios: 10, 
+    scenarios: 15, 
     icon: TrendingUp, 
     status: 'planned', 
     market: '54% offline need',
     features: ['Offline Mode', 'AI Voice Edit', 'Smart Captions', 'AI Arrange', 'Collaboration'],
     timeline: 'Weeks 9-12',
-    keyMetric: '10% Complete'
+    keyMetric: '10% Complete',
+    agents: ['workflow_orchestrator_agent', 'translation_agent'],
+    apis: ['Figma API', 'Miro API', 'Canva API']
   },
   { 
     id: 'P3', 
-    name: 'Segments', 
+    name: 'Segments + APIs', 
     color: colors.p3, 
-    scenarios: 10, 
+    scenarios: 15, 
     icon: Target, 
     status: 'planned', 
     market: '6 vertical markets',
     features: ['Product Demo Kit', 'Lesson Builder', 'Patient Ed Kit', 'Voice Clone', 'Auto-Edit Kit'],
     timeline: 'Weeks 13-16',
-    keyMetric: 'Roadmap'
+    keyMetric: 'Roadmap',
+    agents: ['voice_clone_agent', 'compliance_monitor_agent'],
+    apis: ['ElevenLabs Clone', 'compliance-scanner']
   },
   { 
     id: 'P4', 
     name: 'Enterprise', 
     color: colors.p4, 
-    scenarios: 10, 
+    scenarios: 12, 
     icon: Shield, 
     status: 'planned', 
     market: 'White-label sales',
     features: ['HIPAA Mode', 'White-Label', 'Multi-Tenant', 'Approval Workflows', 'SSO/SAML'],
     timeline: 'Weeks 17-20',
-    keyMetric: 'Enterprise Sales'
+    keyMetric: 'Enterprise Sales',
+    agents: ['approval_workflow_agent', 'analytics_agent'],
+    apis: ['SSO/SAML', 'Stripe Billing']
   },
   { 
     id: 'P5', 
@@ -421,7 +431,9 @@ const phaseData = [
     market: 'Innovation',
     features: ['API Access', 'Batch Processing', 'AI Director', 'B-Roll Library', 'Analytics Pro'],
     timeline: 'Weeks 21+',
-    keyMetric: 'Innovation'
+    keyMetric: 'Innovation',
+    agents: ['avatar_generation_agent', 'collaboration_agent'],
+    apis: ['HeyGen/D-ID', 'Supabase Realtime']
   }
 ];
 
