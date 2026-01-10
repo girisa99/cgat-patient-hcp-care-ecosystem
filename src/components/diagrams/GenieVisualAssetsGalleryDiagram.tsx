@@ -57,13 +57,29 @@ const colors = {
   textMuted: 'hsl(var(--muted-foreground))',
 };
 
-// Segment Journey Data with humor
+// Creative Segment Journey Data with visual storytelling
 const segmentJourneys = {
   creator: {
     name: 'Creator',
     icon: '🎨',
     color: colors.creator,
     tagline: '"I just want to go viral, is that too much to ask?" 🚀',
+    character: {
+      scene: '🧑‍🎤 flying through a galaxy of content ideas',
+      emoji: '🚀✨🎬',
+      action: 'Surfing on a viral wave',
+      vibe: 'chaotic energy but make it aesthetic'
+    },
+    workflow: [
+      { step: 1, action: 'Record', emoji: '🎤', desc: 'Speak your truth (or just rant)', visual: 'Person talking to phone' },
+      { step: 2, action: 'Voice', emoji: '🗣️', desc: 'Pick your vibe - sassy or soothing', visual: 'AI voices spinning' },
+      { step: 3, action: 'Language', emoji: '🌍', desc: 'Go global or stay local', visual: 'Flags dancing' },
+      { step: 4, action: 'Generate', emoji: '⚡', desc: 'AI does the heavy lifting', visual: 'Magic sparkles' },
+      { step: 5, action: 'Edit', emoji: '✂️', desc: 'Chop, slice, make it nice', visual: 'Scissors cutting' },
+      { step: 6, action: 'Re-record', emoji: '🔄', desc: 'Oops, let me try that again', visual: 'Retry loop' },
+      { step: 7, action: 'Script', emoji: '📝', desc: 'Attach the genius script', visual: 'Floating text' },
+      { step: 8, action: 'Publish', emoji: '📲', desc: 'IG/YT/FB/TikTok - everywhere!', visual: 'Rockets launching' }
+    ],
     journey: [
       { phase: 'P0', feature: 'Script + TTS', humor: 'Finally, no more typing!' },
       { phase: 'P1', feature: 'Quick Clips', humor: 'TikTok here I come!' },
@@ -72,6 +88,7 @@ const segmentJourneys = {
       { phase: 'P4', feature: 'Analytics', humor: 'Obsessing over views = ✓' },
       { phase: 'P5', feature: 'API Access', humor: 'I\'m basically a developer now' }
     ],
+    publishTo: ['📸 Instagram', '🎬 YouTube', '📘 Facebook', '🎵 TikTok', '🐦 Twitter'],
     subscription: 'Starter ($9.99/mo)',
     marketData: '68% want mobile-first'
   },
@@ -80,6 +97,22 @@ const segmentJourneys = {
     icon: '✈️',
     color: colors.traveler,
     tagline: '"Lost luggage? No problem. Lost footage? PANIC!" 😱',
+    character: {
+      scene: '🧳 adventurer soaring above exotic locations',
+      emoji: '🌴📷☁️',
+      action: 'Capturing moments from the clouds',
+      vibe: 'wanderlust but make it content'
+    },
+    workflow: [
+      { step: 1, action: 'Record', emoji: '📹', desc: 'Capture the sunset (again)', visual: 'Camera in paradise' },
+      { step: 2, action: 'Voice', emoji: '🎙️', desc: 'Add narration mid-flight', visual: 'Voice waves' },
+      { step: 3, action: 'Language', emoji: '🗣️', desc: 'Hola! Bonjour! Ciao!', visual: 'Language bubbles' },
+      { step: 4, action: 'Generate', emoji: '🪄', desc: 'AI makes magic happen', visual: 'Sparkle effect' },
+      { step: 5, action: 'Edit', emoji: '🎞️', desc: 'Trim the boring bits', visual: 'Film strip' },
+      { step: 6, action: 'Offline', emoji: '📴', desc: 'No WiFi? No problem!', visual: 'Airplane mode' },
+      { step: 7, action: 'Script', emoji: '📜', desc: 'Travel diary mode ON', visual: 'Scroll unrolling' },
+      { step: 8, action: 'Publish', emoji: '🌐', desc: 'Share from the beach!', visual: 'Beach + upload' }
+    ],
     journey: [
       { phase: 'P0', feature: 'Recording', humor: 'Sunset #847 incoming' },
       { phase: 'P1', feature: 'One-Tap Record', humor: 'Phone ready, always' },
@@ -88,6 +121,7 @@ const segmentJourneys = {
       { phase: 'P4', feature: 'Multi-Language', humor: 'Hola! Bonjour! Ciao!' },
       { phase: 'P5', feature: 'B-Roll Library', humor: 'Stock sunsets backup' }
     ],
+    publishTo: ['🎬 YouTube Vlogs', '📸 Instagram Reels', '🐦 Twitter', '📍 TripAdvisor'],
     subscription: 'Starter ($9.99/mo)',
     marketData: '54% need offline'
   },
@@ -96,6 +130,22 @@ const segmentJourneys = {
     icon: '🏪',
     color: colors.smb,
     tagline: '"Synthesia costs WHAT?! $67/mo?!" 💸',
+    character: {
+      scene: '👔 entrepreneur riding a rocket of growth',
+      emoji: '📈💰🎯',
+      action: 'Building an empire one video at a time',
+      vibe: 'hustle culture but affordable'
+    },
+    workflow: [
+      { step: 1, action: 'Record', emoji: '🎥', desc: 'Product demo time!', visual: 'Product spotlight' },
+      { step: 2, action: 'Voice', emoji: '🗣️', desc: 'Professional narration', visual: 'Mic and script' },
+      { step: 3, action: 'Language', emoji: '🌎', desc: 'Reach global customers', visual: 'World map' },
+      { step: 4, action: 'Template', emoji: '📋', desc: 'One-click branding', visual: 'Template picker' },
+      { step: 5, action: 'Edit', emoji: '✂️', desc: 'Quick polish', visual: 'Polish sparkle' },
+      { step: 6, action: 'Team', emoji: '👥', desc: 'Collaborate with team', visual: 'Team avatars' },
+      { step: 7, action: 'Brand', emoji: '🏷️', desc: 'Add logo & colors', visual: 'Branding kit' },
+      { step: 8, action: 'Publish', emoji: '📣', desc: 'Launch to the world!', visual: 'Megaphone' }
+    ],
     journey: [
       { phase: 'P0', feature: 'Script AI', humor: 'Marketing copy? Done!' },
       { phase: 'P1', feature: 'Templates', humor: 'One-click product video' },
@@ -104,6 +154,7 @@ const segmentJourneys = {
       { phase: 'P4', feature: 'White-Label', humor: 'My brand, everywhere' },
       { phase: 'P5', feature: 'Batch Process', humor: '100 videos in 1 hour' }
     ],
+    publishTo: ['📘 Facebook Ads', '📸 Instagram', '🛒 Shopify', '📧 Email', '🌐 Website'],
     subscription: 'Business ($29.99/mo)',
     marketData: '71% want quick templates'
   },
@@ -112,6 +163,22 @@ const segmentJourneys = {
     icon: '📚',
     color: colors.education,
     tagline: '"If I say \'pop quiz\' one more time..." 🎓',
+    character: {
+      scene: '👩‍🏫 teacher flying on a book through knowledge clouds',
+      emoji: '📖🎓💡',
+      action: 'Spreading wisdom at lightning speed',
+      vibe: 'edutainment supreme'
+    },
+    workflow: [
+      { step: 1, action: 'Record', emoji: '🎬', desc: 'Lecture capture', visual: 'Screen + face' },
+      { step: 2, action: 'Voice', emoji: '🎤', desc: 'Clear explanation voice', visual: 'Audio wave' },
+      { step: 3, action: 'Language', emoji: '🌐', desc: 'Multi-lingual lessons', visual: 'Translation' },
+      { step: 4, action: 'Quiz', emoji: '❓', desc: 'Add interactive quizzes', visual: 'Quiz bubbles' },
+      { step: 5, action: 'Edit', emoji: '📝', desc: 'Structure the lesson', visual: 'Outline' },
+      { step: 6, action: 'Caption', emoji: '💬', desc: 'Auto-captions for all', visual: 'CC icon' },
+      { step: 7, action: 'LMS', emoji: '📚', desc: 'Export to Moodle/Canvas', visual: 'LMS icons' },
+      { step: 8, action: 'Publish', emoji: '🎯', desc: 'Assign to students', visual: 'Student desk' }
+    ],
     journey: [
       { phase: 'P0', feature: 'Script + TTS', humor: 'Lecture on autopilot' },
       { phase: 'P1', feature: 'PiP Recording', humor: 'Face + slides = engage' },
@@ -120,6 +187,7 @@ const segmentJourneys = {
       { phase: 'P4', feature: 'Team Reviews', humor: 'Peer approval queue' },
       { phase: 'P5', feature: 'Analytics', humor: 'Did they watch it?' }
     ],
+    publishTo: ['📚 LMS (Moodle)', '🎬 YouTube Edu', '📱 App', '📧 Email', '🌐 Portal'],
     subscription: 'Pro ($79.99/mo)',
     marketData: '69% want AI lesson scripts'
   },
@@ -128,6 +196,22 @@ const segmentJourneys = {
     icon: '🏥',
     color: colors.healthcare,
     tagline: '"$1000/mo for HIPAA? My budget just flatlined!" 💉',
+    character: {
+      scene: '👨‍⚕️ doctor on a healing cloud of care',
+      emoji: '💊🩺❤️',
+      action: 'Delivering care through video',
+      vibe: 'professional but compassionate'
+    },
+    workflow: [
+      { step: 1, action: 'Record', emoji: '📹', desc: 'Patient education video', visual: 'Medical setting' },
+      { step: 2, action: 'Voice', emoji: '🗣️', desc: 'Calm, clear explanation', visual: 'Soothing voice' },
+      { step: 3, action: 'Language', emoji: '🌍', desc: 'Multi-language care', visual: 'Translation' },
+      { step: 4, action: 'HIPAA', emoji: '🔒', desc: 'PHI redaction auto', visual: 'Lock + shield' },
+      { step: 5, action: 'Caption', emoji: '💬', desc: 'Accessibility first', visual: 'CC accessible' },
+      { step: 6, action: 'Review', emoji: '✅', desc: 'Medical review approval', visual: 'Checkmark' },
+      { step: 7, action: 'Audit', emoji: '📋', desc: 'Full audit trail', visual: 'Document trail' },
+      { step: 8, action: 'Publish', emoji: '🏥', desc: 'Secure patient portal', visual: 'Portal icon' }
+    ],
     journey: [
       { phase: 'P0', feature: 'Secure Record', humor: 'Patient consent ✓' },
       { phase: 'P1', feature: 'Audio Mixer', humor: 'Clear instructions' },
@@ -136,6 +220,7 @@ const segmentJourneys = {
       { phase: 'P4', feature: 'HIPAA Mode', humor: '94% want this <$100!' },
       { phase: 'P5', feature: 'Audit Trail', humor: 'Compliance = peace' }
     ],
+    publishTo: ['🏥 Patient Portal', '📧 Secure Email', '📱 MyChart', '🌐 Internal'],
     subscription: 'Enterprise (Custom)',
     marketData: '94% want HIPAA under $100/mo'
   },
@@ -144,6 +229,22 @@ const segmentJourneys = {
     icon: '🏢',
     color: colors.enterprise,
     tagline: '"Legal wants to review? That\'s 3 weeks..." ⏳',
+    character: {
+      scene: '👔 executive commanding a fleet of content ships',
+      emoji: '🏛️📊🌐',
+      action: 'Orchestrating global communications',
+      vibe: 'corporate but efficient'
+    },
+    workflow: [
+      { step: 1, action: 'Record', emoji: '🎥', desc: 'Executive message', visual: 'Boardroom' },
+      { step: 2, action: 'Voice', emoji: '🗣️', desc: 'Consistent brand voice', visual: 'Brand mic' },
+      { step: 3, action: 'Language', emoji: '🌐', desc: 'Global office reach', visual: 'Global offices' },
+      { step: 4, action: 'Approve', emoji: '✅', desc: 'Legal & compliance', visual: 'Approval stamp' },
+      { step: 5, action: 'Edit', emoji: '✂️', desc: 'Brand compliance edit', visual: 'Brand guide' },
+      { step: 6, action: 'Version', emoji: '📁', desc: 'Version control', visual: 'Git-like tree' },
+      { step: 7, action: 'SSO', emoji: '🔐', desc: 'Secure access', visual: 'SSO login' },
+      { step: 8, action: 'Publish', emoji: '📡', desc: 'Multi-channel deploy', visual: 'Broadcast' }
+    ],
     journey: [
       { phase: 'P0', feature: 'Project Mgmt', humor: 'Version control!' },
       { phase: 'P1', feature: 'Arc Hub', humor: 'Team workspace' },
@@ -152,6 +253,7 @@ const segmentJourneys = {
       { phase: 'P4', feature: 'Multi-Tenant', humor: 'Department isolation' },
       { phase: 'P5', feature: 'SSO/SAML', humor: 'IT approved!' }
     ],
+    publishTo: ['📧 Internal Comms', '🌐 Intranet', '📺 Digital Signage', '📱 Teams/Slack'],
     subscription: 'Enterprise (Custom)',
     marketData: 'White-label demand high'
   }
@@ -610,10 +712,15 @@ export const GenieVisualAssetsGalleryDiagram = () => {
                 </div>
               </TabsContent>
 
-              {/* Segments Tab - Journey Infographics */}
+              {/* Segments Tab - Creative Journey Infographics */}
               <TabsContent value="segments" className="space-y-6 mt-0">
-                <h3 className="text-lg font-semibold" style={{ color: colors.text }}>🎯 Segment Journey Infographics</h3>
-                <p className="text-sm" style={{ color: colors.textMuted }}>Click a segment to see their feature journey with a touch of humor!</p>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <h3 className="text-lg font-semibold" style={{ color: colors.text }}>🎯 Segment Journey Infographics</h3>
+                    <p className="text-sm" style={{ color: colors.textMuted }}>Explore each segment's creative workflow from Record → Voice → Language → Generate → Edit → Publish!</p>
+                  </div>
+                  <Badge style={{ backgroundColor: colors.creator.bg, color: '#fff' }}>6 Segments • 48 Workflow Steps</Badge>
+                </div>
                 
                 {/* Segment Selector */}
                 <div className="flex flex-wrap gap-2">
@@ -623,75 +730,263 @@ export const GenieVisualAssetsGalleryDiagram = () => {
                       variant={selectedSegment === key ? "default" : "outline"}
                       size="sm"
                       onClick={() => setSelectedSegment(key)}
-                      className="gap-2"
+                      className="gap-2 transition-all hover:scale-105"
                       style={selectedSegment === key ? { backgroundColor: segment.color.bg } : {}}
                     >
-                      <span>{segment.icon}</span>
+                      <span className="text-lg">{segment.icon}</span>
                       {segment.name}
                     </Button>
                   ))}
                 </div>
 
-                {/* Selected Segment Journey */}
-                {selectedSegment && segmentJourneys[selectedSegment as keyof typeof segmentJourneys] && (
-                  <Card className="border-2" style={{ borderColor: segmentJourneys[selectedSegment as keyof typeof segmentJourneys].color.bg }}>
-                    <CardHeader className="pb-2" style={{ backgroundColor: segmentJourneys[selectedSegment as keyof typeof segmentJourneys].color.light }}>
-                      <div className="flex items-center justify-between flex-wrap gap-2">
-                        <div className="flex items-center gap-3">
-                          <span className="text-4xl">{segmentJourneys[selectedSegment as keyof typeof segmentJourneys].icon}</span>
-                          <div>
-                            <CardTitle className="text-xl" style={{ color: segmentJourneys[selectedSegment as keyof typeof segmentJourneys].color.bg }}>
-                              {segmentJourneys[selectedSegment as keyof typeof segmentJourneys].name} Journey
-                            </CardTitle>
-                            <p className="text-sm italic" style={{ color: colors.textMuted }}>
-                              {segmentJourneys[selectedSegment as keyof typeof segmentJourneys].tagline}
+                {/* Selected Segment Journey - Enhanced Creative Infographic */}
+                {selectedSegment && segmentJourneys[selectedSegment as keyof typeof segmentJourneys] && (() => {
+                  const segment = segmentJourneys[selectedSegment as keyof typeof segmentJourneys];
+                  return (
+                    <div className="space-y-4">
+                      {/* Hero Character Scene */}
+                      <Card className="border-2 overflow-hidden" style={{ borderColor: segment.color.bg }}>
+                        <div 
+                          className="p-6 relative"
+                          style={{ 
+                            background: `linear-gradient(135deg, ${segment.color.light} 0%, ${segment.color.bg}20 100%)`,
+                          }}
+                        >
+                          <div className="flex items-center justify-between flex-wrap gap-4">
+                            <div className="flex items-center gap-4">
+                              <div 
+                                className="w-20 h-20 rounded-full flex items-center justify-center text-4xl shadow-lg animate-bounce"
+                                style={{ backgroundColor: segment.color.bg }}
+                              >
+                                {segment.icon}
+                              </div>
+                              <div>
+                                <h3 className="text-2xl font-bold" style={{ color: segment.color.bg }}>
+                                  {segment.name} Journey
+                                </h3>
+                                <p className="text-base italic" style={{ color: colors.textMuted }}>
+                                  {segment.tagline}
+                                </p>
+                                <p className="text-sm mt-2" style={{ color: colors.text }}>
+                                  {segment.character.scene}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-4xl mb-2">{segment.character.emoji}</div>
+                              <Badge style={{ backgroundColor: segment.color.bg, color: '#fff' }} className="text-sm">
+                                {segment.subscription}
+                              </Badge>
+                              <p className="text-xs mt-1" style={{ color: colors.textMuted }}>{segment.marketData}</p>
+                            </div>
+                          </div>
+                          
+                          {/* Fun Action Quote */}
+                          <div className="mt-4 p-3 rounded-lg border-2 border-dashed" style={{ borderColor: segment.color.bg, backgroundColor: 'rgba(255,255,255,0.5)' }}>
+                            <p className="text-center text-sm font-medium" style={{ color: segment.color.bg }}>
+                              🎬 {segment.character.action} • <span className="italic">"{segment.character.vibe}"</span>
                             </p>
                           </div>
                         </div>
-                        <div>
-                          <Badge style={{ backgroundColor: segmentJourneys[selectedSegment as keyof typeof segmentJourneys].color.bg, color: '#fff' }}>
-                            {segmentJourneys[selectedSegment as keyof typeof segmentJourneys].subscription}
-                          </Badge>
-                          <p className="text-xs mt-1 text-right" style={{ color: colors.textMuted }}>
-                            {segmentJourneys[selectedSegment as keyof typeof segmentJourneys].marketData}
-                          </p>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-4">
-                      {/* Journey Timeline */}
-                      <div className="relative">
-                        <div className="absolute left-4 top-0 bottom-0 w-1 rounded-full" style={{ backgroundColor: segmentJourneys[selectedSegment as keyof typeof segmentJourneys].color.bg }} />
-                        <div className="space-y-4">
-                          {segmentJourneys[selectedSegment as keyof typeof segmentJourneys].journey.map((step, idx) => (
-                            <div key={idx} className="flex items-start gap-4 ml-0">
+                      </Card>
+
+                      {/* Creative Workflow Pipeline - Visual Infographic */}
+                      <Card className="border-2" style={{ borderColor: segment.color.bg }}>
+                        <CardHeader className="pb-3" style={{ backgroundColor: segment.color.light }}>
+                          <CardTitle className="text-lg flex items-center gap-2" style={{ color: segment.color.bg }}>
+                            🚀 Complete Workflow Pipeline
+                            <span className="text-sm font-normal italic">— From idea to publication!</span>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-4">
+                          <div className="relative">
+                            {/* Workflow Steps as Visual Pipeline */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+                              {segment.workflow.map((step, idx) => (
+                                <div 
+                                  key={idx}
+                                  className="relative group"
+                                >
+                                  <div 
+                                    className="flex flex-col items-center p-3 rounded-xl border-2 transition-all hover:scale-105 hover:shadow-lg cursor-pointer"
+                                    style={{ 
+                                      borderColor: segment.color.bg,
+                                      backgroundColor: idx % 2 === 0 ? segment.color.light : 'rgba(255,255,255,0.8)'
+                                    }}
+                                  >
+                                    <div 
+                                      className="w-12 h-12 rounded-full flex items-center justify-center text-2xl mb-2 shadow-md"
+                                      style={{ backgroundColor: segment.color.bg }}
+                                    >
+                                      {step.emoji}
+                                    </div>
+                                    <span 
+                                      className="text-xs font-bold text-center"
+                                      style={{ color: segment.color.bg }}
+                                    >
+                                      {step.step}. {step.action}
+                                    </span>
+                                    <span className="text-xs text-center mt-1" style={{ color: colors.textMuted }}>
+                                      {step.desc}
+                                    </span>
+                                  </div>
+                                  {/* Arrow between steps */}
+                                  {idx < segment.workflow.length - 1 && (
+                                    <div 
+                                      className="hidden lg:block absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2 text-2xl z-10"
+                                      style={{ color: segment.color.bg }}
+                                    >
+                                      →
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                            
+                            {/* Mobile arrow indicator */}
+                            <div className="lg:hidden flex justify-center mt-3 gap-1">
+                              {segment.workflow.map((_, idx) => (
+                                <div 
+                                  key={idx}
+                                  className="w-2 h-2 rounded-full"
+                                  style={{ backgroundColor: segment.color.bg, opacity: 0.6 }}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Publish Destinations - Social Media */}
+                      <Card className="border-2" style={{ borderColor: segment.color.bg }}>
+                        <CardHeader className="pb-2" style={{ backgroundColor: segment.color.light }}>
+                          <CardTitle className="text-base flex items-center gap-2" style={{ color: segment.color.bg }}>
+                            📲 Publish Destinations
+                            <span className="text-sm font-normal">— Share everywhere!</span>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-3">
+                          <div className="flex flex-wrap gap-2">
+                            {segment.publishTo.map((platform, idx) => (
                               <div 
-                                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold z-10"
+                                key={idx}
+                                className="flex items-center gap-2 px-4 py-2 rounded-full border-2 hover:scale-105 transition-all cursor-pointer"
                                 style={{ 
-                                  backgroundColor: phaseData.find(p => p.id === step.phase)?.color.bg || colors.planned.bg,
-                                  color: '#fff'
+                                  borderColor: segment.color.bg,
+                                  backgroundColor: segment.color.light
                                 }}
                               >
-                                {step.phase}
+                                <span className="text-lg">{platform}</span>
                               </div>
-                              <div className="flex-1 p-3 rounded-lg border" style={{ backgroundColor: colors.cardBg, borderColor: colors.border }}>
-                                <div className="flex justify-between items-start">
-                                  <span className="font-semibold text-sm" style={{ color: colors.text }}>{step.feature}</span>
-                                  <Badge variant="outline" className="text-xs">{step.phase}</Badge>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Phase Timeline */}
+                      <Card className="border-2" style={{ borderColor: segment.color.bg }}>
+                        <CardHeader className="pb-2" style={{ backgroundColor: segment.color.light }}>
+                          <CardTitle className="text-base flex items-center gap-2" style={{ color: segment.color.bg }}>
+                            📅 Feature Roadmap (P0 → P5)
+                            <span className="text-sm font-normal">— What's coming for you!</span>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-4">
+                          <div className="relative">
+                            <div className="absolute left-4 top-0 bottom-0 w-1 rounded-full" style={{ backgroundColor: segment.color.bg }} />
+                            <div className="space-y-3">
+                              {segment.journey.map((step, idx) => (
+                                <div key={idx} className="flex items-start gap-4 ml-0">
+                                  <div 
+                                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold z-10 shadow-md"
+                                    style={{ 
+                                      backgroundColor: phaseData.find(p => p.id === step.phase)?.color.bg || colors.planned.bg,
+                                      color: '#fff'
+                                    }}
+                                  >
+                                    {step.phase}
+                                  </div>
+                                  <div 
+                                    className="flex-1 p-3 rounded-lg border-2 hover:shadow-md transition-all"
+                                    style={{ backgroundColor: colors.cardBg, borderColor: colors.border }}
+                                  >
+                                    <div className="flex justify-between items-start flex-wrap gap-2">
+                                      <span className="font-semibold text-sm" style={{ color: colors.text }}>{step.feature}</span>
+                                      <Badge 
+                                        variant="outline" 
+                                        className="text-xs"
+                                        style={{ borderColor: segment.color.bg, color: segment.color.bg }}
+                                      >
+                                        {step.phase}
+                                      </Badge>
+                                    </div>
+                                    <p className="text-xs italic mt-1" style={{ color: colors.textMuted }}>💬 "{step.humor}"</p>
+                                  </div>
                                 </div>
-                                <p className="text-xs italic mt-1" style={{ color: colors.textMuted }}>💬 "{step.humor}"</p>
-                              </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  );
+                })()}
 
                 {!selectedSegment && (
-                  <div className="text-center p-8 rounded-lg border-2 border-dashed" style={{ borderColor: colors.border }}>
-                    <p className="text-lg" style={{ color: colors.textMuted }}>👆 Select a segment above to view their journey!</p>
+                  <div className="space-y-6">
+                    {/* Overview of all segments with visual preview */}
+                    <div className="text-center p-6 rounded-lg border-2 border-dashed" style={{ borderColor: colors.inProgress.bg, backgroundColor: colors.inProgress.light }}>
+                      <p className="text-xl mb-2" style={{ color: colors.text }}>👆 Select a segment above to explore their creative journey!</p>
+                      <p className="text-sm" style={{ color: colors.textMuted }}>Each segment has a unique workflow: Record → Voice → Language → Generate → Edit → Publish</p>
+                    </div>
+                    
+                    {/* Mini preview cards for all segments */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {Object.entries(segmentJourneys).map(([key, segment]) => (
+                        <Card 
+                          key={key}
+                          className="border-2 cursor-pointer hover:shadow-lg transition-all hover:scale-102"
+                          style={{ borderColor: segment.color.bg }}
+                          onClick={() => setSelectedSegment(key)}
+                        >
+                          <div className="p-4" style={{ backgroundColor: segment.color.light }}>
+                            <div className="flex items-center gap-3 mb-3">
+                              <span className="text-3xl">{segment.icon}</span>
+                              <div>
+                                <h4 className="font-bold" style={{ color: segment.color.bg }}>{segment.name}</h4>
+                                <p className="text-xs italic" style={{ color: colors.textMuted }}>{segment.character.action}</p>
+                              </div>
+                            </div>
+                            
+                            {/* Mini workflow preview */}
+                            <div className="flex flex-wrap gap-1 mb-3">
+                              {segment.workflow.slice(0, 4).map((step, idx) => (
+                                <span key={idx} className="text-lg">{step.emoji}</span>
+                              ))}
+                              <span className="text-sm" style={{ color: colors.textMuted }}>+{segment.workflow.length - 4} more</span>
+                            </div>
+                            
+                            {/* Publish icons */}
+                            <div className="flex flex-wrap gap-1 text-xs">
+                              {segment.publishTo.slice(0, 3).map((p, idx) => (
+                                <Badge key={idx} variant="outline" className="text-xs" style={{ borderColor: segment.color.bg }}>
+                                  {p}
+                                </Badge>
+                              ))}
+                            </div>
+                            
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="w-full mt-3"
+                              style={{ color: segment.color.bg }}
+                            >
+                              Explore Journey →
+                            </Button>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
                   </div>
                 )}
               </TabsContent>
