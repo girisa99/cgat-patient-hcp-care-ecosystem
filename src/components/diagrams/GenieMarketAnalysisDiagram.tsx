@@ -105,47 +105,104 @@ interface FeatureModule {
   priority: 'P0' | 'P1' | 'P2';
 }
 
-// Data
+// Data - Full competitor list from original analysis
 const segments: Segment[] = [
-  { id: 'creator', name: 'Creator Economy', icon: Users, marketSize: '$104B', growthRate: '+22%', competitionLevel: 'Very High', entryBarrier: 'Medium', genieFit: 5, priority: 'P0', color: 'hsl(var(--primary))' },
-  { id: 'traveler', name: 'Traveler/Experience', icon: Plane, marketSize: '$1.1T', growthRate: '+15%', competitionLevel: 'Medium', entryBarrier: 'Low', genieFit: 5, priority: 'P0', color: 'hsl(220, 70%, 50%)' },
-  { id: 'smb', name: 'SMB Marketing', icon: Briefcase, marketSize: '$45B', growthRate: '+18%', competitionLevel: 'High', entryBarrier: 'Medium', genieFit: 4, priority: 'P1', color: 'hsl(150, 70%, 40%)' },
-  { id: 'education', name: 'Education', icon: GraduationCap, marketSize: '$7.3T', growthRate: '+12%', competitionLevel: 'Medium', entryBarrier: 'High', genieFit: 4, priority: 'P1', color: 'hsl(45, 90%, 50%)' },
-  { id: 'healthcare', name: 'Healthcare', icon: Heart, marketSize: '$8.3T', growthRate: '+8%', competitionLevel: 'Low', entryBarrier: 'Very High', genieFit: 5, priority: 'P2', color: 'hsl(350, 70%, 50%)' },
-  { id: 'enterprise', name: 'Enterprise', icon: Building, marketSize: '$500B', growthRate: '+10%', competitionLevel: 'High', entryBarrier: 'Very High', genieFit: 3, priority: 'P2', color: 'hsl(270, 60%, 50%)' },
+  { id: 'creator', name: 'Creator Economy', icon: Users, marketSize: '$50B+', growthRate: '+20%', competitionLevel: 'Very High', entryBarrier: 'Medium', genieFit: 5, priority: 'P0', color: 'hsl(var(--primary))' },
+  { id: 'traveler', name: 'Traveler/Experience', icon: Plane, marketSize: '$8B+', growthRate: '+15%', competitionLevel: 'Medium', entryBarrier: 'Low', genieFit: 4, priority: 'P1', color: 'hsl(220, 70%, 50%)' },
+  { id: 'smb', name: 'SMB Marketing', icon: Briefcase, marketSize: '$15B+', growthRate: '+25%', competitionLevel: 'High', entryBarrier: 'Medium', genieFit: 5, priority: 'P0', color: 'hsl(150, 70%, 40%)' },
+  { id: 'education', name: 'Education', icon: GraduationCap, marketSize: '$12B+', growthRate: '+18%', competitionLevel: 'Medium', entryBarrier: 'High', genieFit: 4, priority: 'P1', color: 'hsl(45, 90%, 50%)' },
+  { id: 'healthcare', name: 'Healthcare', icon: Heart, marketSize: '$25B+', growthRate: '+22%', competitionLevel: 'Low', entryBarrier: 'Very High', genieFit: 5, priority: 'P0', color: 'hsl(350, 70%, 50%)' },
+  { id: 'enterprise', name: 'Enterprise', icon: Building, marketSize: '$40B+', growthRate: '+15%', competitionLevel: 'High', entryBarrier: 'High', genieFit: 4, priority: 'P1', color: 'hsl(270, 60%, 50%)' },
 ];
 
 const competitors: Competitor[] = [
-  { name: 'CapCut', segment: 'Creator Economy', type: 'Direct', strengths: ['Free tier', 'TikTok integration', 'Mobile-first'], weaknesses: ['Limited AI', 'No voice cloning', 'Basic analytics'], pricing: 'Free / $7.99/mo', threat: 'High' },
-  { name: 'Descript', segment: 'Creator Economy', type: 'Direct', strengths: ['Text-based editing', 'Overdub', 'Collaboration'], weaknesses: ['Expensive', 'Learning curve', 'Desktop only'], pricing: '$12-24/mo', threat: 'High' },
+  // Creator Economy (6 competitors)
+  { name: 'Descript', segment: 'Creator Economy', type: 'Direct', strengths: ['Transcription-first editing', 'Overdub voice cloning', 'Collaboration'], weaknesses: ['Expensive', 'Complex for beginners', 'Desktop only'], pricing: '$12-24/mo', threat: 'High' },
+  { name: 'Riverside.fm', segment: 'Creator Economy', type: 'Direct', strengths: ['Studio-quality remote recording', 'Separate tracks'], weaknesses: ['Limited post-production', 'No AI editing'], pricing: '$15-24/mo', threat: 'Medium' },
+  { name: 'Kapwing', segment: 'Creator Economy', type: 'Direct', strengths: ['Easy-to-use', 'Collaborative', 'Web-based'], weaknesses: ['Basic features', 'Watermarks on free'], pricing: '$16-24/mo', threat: 'Medium' },
+  { name: 'CapCut', segment: 'Creator Economy', type: 'Direct', strengths: ['Free tier', 'TikTok integration', 'Mobile-first'], weaknesses: ['Limited AI', 'No voice cloning', 'Basic analytics'], pricing: 'Free/$8/mo', threat: 'High' },
+  { name: 'ElevenLabs', segment: 'Creator Economy', type: 'Feature', strengths: ['Best-in-class voice cloning', 'Multiple voices'], weaknesses: ['No editing workflow', 'Standalone only'], pricing: '$5-99/mo', threat: 'Low' },
+  { name: 'Opus Clip', segment: 'Creator Economy', type: 'Feature', strengths: ['AI clip generation', 'Viral scoring'], weaknesses: ['No production suite', 'Limited customization'], pricing: '$15-39/mo', threat: 'Medium' },
+  { name: 'Clipchamp', segment: 'Creator Economy', type: 'Platform', strengths: ['Microsoft integration', 'Free tier', 'Web-based'], weaknesses: ['Basic features', 'No AI', 'Limited export'], pricing: 'Free/$11.99/mo', threat: 'Medium' },
+  // Traveler/Experience (2 competitors)
+  { name: 'InShot', segment: 'Traveler/Experience', type: 'Direct', strengths: ['Mobile-native', 'Social templates', 'Easy filters'], weaknesses: ['Ads', 'Limited pro features', 'No desktop'], pricing: 'Free/$3.99/mo', threat: 'Medium' },
+  { name: 'GoPro Quik', segment: 'Traveler/Experience', type: 'Direct', strengths: ['Action cam integration', 'Auto-edit'], weaknesses: ['GoPro-centric', 'Limited features'], pricing: 'Free/$9.99/yr', threat: 'Low' },
+  // SMB Marketing (4 competitors)
+  { name: 'Loom', segment: 'SMB Marketing', type: 'Direct', strengths: ['Screen recording', 'Quick sharing', 'Analytics'], weaknesses: ['Limited editing', 'No AI features'], pricing: '$12.50/mo', threat: 'High' },
+  { name: 'Synthesia', segment: 'SMB Marketing', type: 'Direct', strengths: ['AI avatars', 'Multi-language'], weaknesses: ['Expensive', 'Robotic feel'], pricing: '$22-67/mo', threat: 'High' },
+  { name: 'Pictory', segment: 'SMB Marketing', type: 'Direct', strengths: ['Blog-to-video', 'AI summary'], weaknesses: ['Template-bound', 'Limited customization'], pricing: '$19-39/mo', threat: 'Medium' },
+  { name: 'InVideo', segment: 'SMB Marketing', type: 'Direct', strengths: ['Templates', 'Stock library', '5000+ templates'], weaknesses: ['Quality ceiling', 'Learning curve'], pricing: '$15-30/mo', threat: 'Medium' },
   { name: 'Canva Video', segment: 'SMB Marketing', type: 'Feature', strengths: ['Brand kits', 'Templates', 'Team features'], weaknesses: ['Basic editing', 'No AI narration', 'Limited effects'], pricing: '$12.99/mo', threat: 'Medium' },
-  { name: 'Synthesia', segment: 'Enterprise', type: 'Direct', strengths: ['AI avatars', 'Multi-language', 'Enterprise ready'], weaknesses: ['Very expensive', 'Limited customization', 'Robotic feel'], pricing: '$22-67/mo', threat: 'Medium' },
-  { name: 'Loom', segment: 'Enterprise', type: 'Feature', strengths: ['Screen recording', 'Easy sharing', 'Analytics'], weaknesses: ['No AI editing', 'Basic features', 'No mobile app'], pricing: '$12.50/mo', threat: 'Low' },
+  // Education (3 competitors)
+  { name: 'Loom Education', segment: 'Education', type: 'Direct', strengths: ['Free for edu', 'Simple', 'Async learning'], weaknesses: ['No production tools', 'Basic features'], pricing: 'Free', threat: 'Low' },
+  { name: 'Panopto', segment: 'Education', type: 'Platform', strengths: ['LMS integration', 'Lecture capture'], weaknesses: ['Enterprise pricing', 'Complex'], pricing: 'Custom', threat: 'High' },
+  { name: 'Edpuzzle', segment: 'Education', type: 'Feature', strengths: ['Interactive videos', 'Student tracking'], weaknesses: ['Limited creation', 'K-12 focus'], pricing: 'Free/$8/mo', threat: 'Medium' },
   { name: 'WeVideo', segment: 'Education', type: 'Direct', strengths: ['LTI integration', 'Student accounts', 'Chromebook support'], weaknesses: ['Dated UI', 'Limited AI', 'Slow rendering'], pricing: '$4.99-15.99/mo', threat: 'Medium' },
-  { name: 'Clipchamp', segment: 'Creator Economy', type: 'Platform', strengths: ['Microsoft integration', 'Free tier', 'Web-based'], weaknesses: ['Basic features', 'No AI', 'Limited export'], pricing: 'Free / $11.99/mo', threat: 'Medium' },
-  { name: 'InShot', segment: 'Traveler/Experience', type: 'Direct', strengths: ['Mobile-native', 'Social templates', 'Easy filters'], weaknesses: ['Ads', 'Limited pro features', 'No desktop'], pricing: 'Free / $3.99/mo', threat: 'Medium' },
+  // Healthcare (2 competitors)
+  { name: 'Healthwise', segment: 'Healthcare', type: 'Direct', strengths: ['Clinical content library', 'Evidence-based'], weaknesses: ['No customization', 'Expensive'], pricing: 'Custom', threat: 'Medium' },
+  { name: 'Emmi Solutions', segment: 'Healthcare', type: 'Direct', strengths: ['Patient engagement', 'Multi-language'], weaknesses: ['Expensive', 'Limited personalization'], pricing: 'Custom', threat: 'Medium' },
+  // Enterprise (4 competitors)
+  { name: 'Brightcove', segment: 'Enterprise', type: 'Platform', strengths: ['Scalable', 'Reliable', 'Enterprise-grade'], weaknesses: ['No creation tools', 'Expensive'], pricing: 'Custom', threat: 'Medium' },
+  { name: 'Kaltura', segment: 'Enterprise', type: 'Platform', strengths: ['Feature-rich', 'Open source option'], weaknesses: ['Overwhelming', 'Complex setup'], pricing: 'Custom', threat: 'High' },
+  { name: 'Microsoft Stream', segment: 'Enterprise', type: 'Platform', strengths: ['M365 integration', 'Free with license'], weaknesses: ['Basic features', 'No AI creation'], pricing: 'Bundled', threat: 'Medium' },
+  { name: 'Synthesia Enterprise', segment: 'Enterprise', type: 'Direct', strengths: ['AI avatars', 'Multi-language', 'Enterprise ready'], weaknesses: ['Very expensive', 'Limited customization', 'Robotic feel'], pricing: 'Custom', threat: 'Medium' },
 ];
 
 const appOpportunities: AppOpportunity[] = [
-  { name: 'TripClip', description: 'Auto-edit travel videos with location tagging', platforms: ['iOS', 'Android'], segment: 'Traveler/Experience', priority: 'P0', complexity: 'Medium', marketGap: 'No AI travel video editor exists' },
-  { name: 'QuickPromo', description: '60-second marketing video generator', platforms: ['Web', 'iOS', 'Android'], segment: 'SMB Marketing', priority: 'P0', complexity: 'Low', marketGap: 'SMBs lack quick video tools' },
-  { name: 'EduClip', description: 'Lecture-to-microlearning converter', platforms: ['Web', 'API'], segment: 'Education', priority: 'P1', complexity: 'High', marketGap: 'No automated lecture segmentation' },
-  { name: 'HealthNarrate', description: 'HIPAA-compliant patient education videos', platforms: ['Web', 'API'], segment: 'Healthcare', priority: 'P2', complexity: 'High', marketGap: 'No compliant AI video for healthcare' },
+  // Creator Economy
+  { name: 'ScriptGenius', description: 'AI script generation from prompts', platforms: ['iOS', 'Android', 'Web', 'API'], segment: 'Creator Economy', priority: 'P0', complexity: 'Medium', marketGap: 'No mobile-first script writing' },
+  { name: 'VoiceOver Pro', description: 'TTS with voice selection & cloning', platforms: ['iOS', 'Android', 'Web', 'API'], segment: 'Creator Economy', priority: 'P0', complexity: 'Low', marketGap: 'Quick voiceover on mobile' },
+  { name: 'ClipMaster', description: 'Auto-trim to highlights', platforms: ['iOS', 'Android', 'Web', 'Desktop', 'API'], segment: 'Creator Economy', priority: 'P0', complexity: 'Medium', marketGap: 'Social-first editing' },
+  { name: 'TranscribeNow', description: 'Real-time transcription', platforms: ['iOS', 'Android', 'API'], segment: 'Creator Economy', priority: 'P1', complexity: 'Low', marketGap: 'Accurate mobile transcription' },
   { name: 'ReelGenius', description: 'AI-powered social reel creator', platforms: ['iOS', 'Android', 'Web'], segment: 'Creator Economy', priority: 'P0', complexity: 'Medium', marketGap: 'Creators want one-tap reels' },
+  // Traveler/Experience
+  { name: 'TripClip', description: 'Auto-edit travel videos with location tagging', platforms: ['iOS', 'Android'], segment: 'Traveler/Experience', priority: 'P0', complexity: 'Medium', marketGap: 'No AI travel video editor exists' },
+  { name: 'TravelMontage', description: 'Auto-edit trip highlights with maps', platforms: ['iOS', 'Android'], segment: 'Traveler/Experience', priority: 'P1', complexity: 'High', marketGap: 'Story-first editing' },
+  // SMB Marketing
+  { name: 'QuickPromo', description: '60-second marketing video generator', platforms: ['Web', 'iOS', 'Android'], segment: 'SMB Marketing', priority: 'P0', complexity: 'Low', marketGap: 'SMBs lack quick video tools' },
+  { name: 'DemoMaker', description: 'Product demo automation', platforms: ['Web', 'Desktop'], segment: 'SMB Marketing', priority: 'P0', complexity: 'Medium', marketGap: 'Self-service demo creation' },
+  { name: 'TrainingForge', description: 'SOP → Video converter', platforms: ['Web', 'API'], segment: 'SMB Marketing', priority: 'P1', complexity: 'High', marketGap: 'Document-first video' },
+  // Education
+  { name: 'EduClip', description: 'Lecture-to-microlearning converter', platforms: ['Web', 'API'], segment: 'Education', priority: 'P1', complexity: 'High', marketGap: 'No automated lecture segmentation' },
+  { name: 'LectureGenius', description: 'Curriculum → video course', platforms: ['Web'], segment: 'Education', priority: 'P1', complexity: 'High', marketGap: 'Automated course creation' },
+  // Healthcare
+  { name: 'HealthNarrate', description: 'HIPAA-compliant patient education videos', platforms: ['Web', 'API'], segment: 'Healthcare', priority: 'P0', complexity: 'High', marketGap: 'No compliant AI video for healthcare' },
+  { name: 'PatientEducator', description: 'Condition-specific video library', platforms: ['iOS', 'Android', 'Web'], segment: 'Healthcare', priority: 'P0', complexity: 'High', marketGap: 'Personalized patient content' },
+  // Enterprise
   { name: 'TrainBot', description: 'Corporate training video automation', platforms: ['Web', 'Desktop', 'API'], segment: 'Enterprise', priority: 'P1', complexity: 'High', marketGap: 'Training videos take too long' },
+  { name: 'PolicyCaster', description: 'Compliance doc → video', platforms: ['Web', 'API'], segment: 'Enterprise', priority: 'P1', complexity: 'Medium', marketGap: 'Policy automation' },
+  { name: 'GlobalVoice', description: 'Multi-language automation', platforms: ['Web', 'API'], segment: 'Enterprise', priority: 'P1', complexity: 'Medium', marketGap: 'Localization at scale' },
 ];
 
 const integrations: Integration[] = [
+  // Creator Economy
+  { partner: 'YouTube', type: 'API', segment: 'Creator Economy', value: 'Direct publish, analytics sync, Shorts', priority: 'P0' },
+  { partner: 'Spotify/Anchor', type: 'API', segment: 'Creator Economy', value: 'Podcast distribution', priority: 'P0' },
   { partner: 'TikTok', type: 'API', segment: 'Creator Economy', value: 'Direct publishing, trending audio', priority: 'P0' },
   { partner: 'Instagram', type: 'API', segment: 'Creator Economy', value: 'Reel publishing, insights sync', priority: 'P0' },
-  { partner: 'YouTube', type: 'API', segment: 'Creator Economy', value: 'Shorts publishing, analytics', priority: 'P0' },
+  { partner: 'Canva', type: 'Plugin', segment: 'Creator Economy', value: 'Design-to-video pipeline', priority: 'P0' },
+  { partner: 'Notion', type: 'API', segment: 'Creator Economy', value: 'Script storage/collaboration', priority: 'P0' },
+  // Traveler/Experience
+  { partner: 'Expedia', type: 'Partnership', segment: 'Traveler/Experience', value: 'Trip memory videos', priority: 'P1' },
+  { partner: 'Google Maps', type: 'API', segment: 'Traveler/Experience', value: 'Location tagging, route visualization', priority: 'P1' },
+  // SMB Marketing
+  { partner: 'HubSpot', type: 'API', segment: 'SMB Marketing', value: 'CRM-triggered video personalization', priority: 'P0' },
+  { partner: 'Salesforce', type: 'API', segment: 'SMB Marketing', value: 'Sales enablement', priority: 'P1' },
+  { partner: 'Shopify', type: 'Plugin', segment: 'SMB Marketing', value: 'Product video generation', priority: 'P0' },
+  { partner: 'Zapier', type: 'API', segment: 'SMB Marketing', value: 'Multi-app workflows', priority: 'P0' },
+  // Education
   { partner: 'Canvas LMS', type: 'LTI', segment: 'Education', value: 'Grade passback, assignments', priority: 'P1' },
   { partner: 'Blackboard', type: 'LTI', segment: 'Education', value: 'LMS integration', priority: 'P1' },
-  { partner: 'Salesforce', type: 'API', segment: 'Enterprise', value: 'CRM video assets', priority: 'P2' },
-  { partner: 'HubSpot', type: 'API', segment: 'SMB Marketing', value: 'Marketing automation', priority: 'P1' },
-  { partner: 'Shopify', type: 'Plugin', segment: 'SMB Marketing', value: 'Product video generation', priority: 'P0' },
-  { partner: 'Epic/Cerner', type: 'Partnership', segment: 'Healthcare', value: 'EHR integration', priority: 'P2' },
-  { partner: 'Expedia', type: 'Partnership', segment: 'Traveler/Experience', value: 'Trip memory videos', priority: 'P1' },
+  { partner: 'Google Classroom', type: 'API', segment: 'Education', value: 'K-12 distribution', priority: 'P1' },
+  // Healthcare
+  { partner: 'Epic', type: 'API', segment: 'Healthcare', value: 'EHR embedding via FHIR', priority: 'P0' },
+  { partner: 'Cerner', type: 'API', segment: 'Healthcare', value: 'EHR embedding via FHIR', priority: 'P1' },
+  { partner: 'Zoom Healthcare', type: 'API', segment: 'Healthcare', value: 'Telehealth + content', priority: 'P1' },
+  // Enterprise
+  { partner: 'Microsoft 365', type: 'API', segment: 'Enterprise', value: 'Teams/SharePoint embedding', priority: 'P0' },
+  { partner: 'Workday', type: 'API', segment: 'Enterprise', value: 'HR/training integration', priority: 'P1' },
+  { partner: 'Okta/Azure AD', type: 'SSO', segment: 'Enterprise', value: 'Enterprise authentication', priority: 'P0' },
+  { partner: 'n8n', type: 'API', segment: 'Enterprise', value: 'Self-hosted workflows', priority: 'P1' },
 ];
 
 const featureModules: FeatureModule[] = [
