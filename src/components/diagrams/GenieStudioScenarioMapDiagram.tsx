@@ -15,11 +15,13 @@ import {
   Smartphone,
   Film,
   Maximize2,
-  X
+  X,
+  BarChart3
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
+import { MarketAnalysisDashboard } from './MarketAnalysisDashboard';
 
 // Enterprise color palette with HSL for theme consistency
 const colors = {
@@ -372,9 +374,13 @@ export const GenieStudioScenarioMapDiagram = () => {
       </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-8 w-full">
+        <TabsList className="grid grid-cols-9 w-full">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="crossfunctional">Cross-Functional</TabsTrigger>
+          <TabsTrigger value="market-research" className="flex items-center gap-1">
+            <BarChart3 className="h-3 w-3" />
+            Market Research
+          </TabsTrigger>
           <TabsTrigger value="p0">P0 Core</TabsTrigger>
           <TabsTrigger value="p1">P1 Mobile</TabsTrigger>
           <TabsTrigger value="p2">P2 Advanced</TabsTrigger>
@@ -491,6 +497,11 @@ export const GenieStudioScenarioMapDiagram = () => {
                   "I spend 2 hours editing a 60-second reel. I wish I could just talk and have it edit itself." — TikTok Creator
                 </p>
               </div>
+            </TabsContent>
+
+            {/* Market Research Tab - Comprehensive Market Analysis */}
+            <TabsContent value="market-research" className="mt-0">
+              <MarketAnalysisDashboard />
             </TabsContent>
 
             {/* Cross-Functional Categories Tab */}
@@ -728,9 +739,13 @@ export const GenieStudioScenarioMapDiagram = () => {
             <div ref={diagramRef} className="bg-card p-6 rounded-lg">
               <h2 className="text-2xl font-bold mb-4">140 Scenario Priority Map (with Agents & APIs)</h2>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid grid-cols-8 w-full mb-4">
+                <TabsList className="grid grid-cols-9 w-full mb-4">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="crossfunctional">Cross-Functional</TabsTrigger>
+                  <TabsTrigger value="market-research" className="flex items-center gap-1">
+                    <BarChart3 className="h-3 w-3" />
+                    Market
+                  </TabsTrigger>
                   <TabsTrigger value="p0">P0 Core</TabsTrigger>
                   <TabsTrigger value="p1">P1 Mobile</TabsTrigger>
                   <TabsTrigger value="p2">P2 Advanced</TabsTrigger>
