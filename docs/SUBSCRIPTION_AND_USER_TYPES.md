@@ -484,6 +484,121 @@ USING (
 
 ---
 
+## 10. Agent & Automation Integration
+
+### Agent Mapping for Subscription Features
+
+| Feature | Primary Agent | Secondary Agent | Automation Level |
+|---------|---------------|-----------------|------------------|
+| User Signup | N/A (Supabase Auth) | subscription_agent | Triggered |
+| Tier Selection | subscription_agent | N/A | Manual |
+| Payment Processing | subscription_agent | N/A | Webhook-driven |
+| Access Enforcement | subscription_agent | N/A | Automatic |
+| Usage Metering | subscription_agent | analytics_agent | Automatic |
+| Upgrade Prompts | subscription_agent | N/A | Triggered |
+| Billing Notifications | subscription_agent | N/A | Scheduled |
+| Churn Prevention | analytics_agent | subscription_agent | Predictive |
+
+### API Integration for Subscription
+
+| API | Purpose | Data Format | Agent |
+|-----|---------|-------------|-------|
+| Supabase Auth | Authentication | JSON | N/A (native) |
+| Stripe API | Payments | JSON | subscription_agent |
+| stripe-webhook | Payment events | JSON | subscription_agent |
+| subscription-manager | Tier operations | JSON | subscription_agent |
+
+### Automation Opportunities
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                     SUBSCRIPTION AUTOMATION MATRIX                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+SIGNUP AUTOMATION (P0)
+├── Email signup → Supabase Auth → profiles table → Free tier assigned
+├── OAuth signup → Supabase Auth → profiles table → Free tier assigned
+├── Magic link → email verification → session creation
+└── SSO/SAML → enterprise IdP → user mapping → tier assignment
+
+PAYMENT AUTOMATION (P0)
+├── Tier selection → Stripe Checkout → subscription creation
+├── Payment success → stripe-webhook → tier activation
+├── Payment failure → grace period → access limitation
+├── Card expiry → notification → retry logic
+└── Refund → Stripe → credit adjustment
+
+ACCESS AUTOMATION (P1)
+├── Route access → useModuleAccess hook → tier check
+├── Feature access → ModuleGate component → upgrade prompt
+├── Usage limit → subscription_agent → limit modal
+├── API rate limit → Edge function → 429 response
+└── Session expiry → token refresh → re-authentication
+
+ANALYTICS AUTOMATION (P2)
+├── Action tracking → analytics_agent → usage_logs
+├── Feature usage → aggregation → tier recommendations
+├── Churn signals → analytics_agent → retention campaigns
+├── Upgrade triggers → behavior analysis → targeted prompts
+└── Revenue metrics → Stripe → dashboard reporting
+```
+
+### Data Transfer for Subscription
+
+| Flow | Data Format | Transfer Method |
+|------|-------------|-----------------|
+| Signup → Database | JSON | Supabase Client |
+| Checkout → Stripe | JSON | REST API |
+| Webhook → Database | JSON | Edge Function |
+| Usage → Analytics | JSON | Supabase Client |
+| Reports → Export | CSV | Edge Function |
+
+---
+
+## 11. Module-Agent Assignment
+
+### Which Agents Power Which Modules
+
+| Module | Primary Agent | Automation Features |
+|--------|---------------|---------------------|
+| Genie Studio | script_generator_agent, tts_orchestrator_agent | Script → TTS |
+| Genie Spark | content_analyzer_agent, workflow_orchestrator_agent | Multi-step pipelines |
+| Recording Studio | video_assembly_agent | Clip assembly |
+| Document Processing | content_analyzer_agent | Document → Script |
+| Agent Builder (Arc) | workflow_orchestrator_agent | Custom workflows |
+| API Services | N/A | API access |
+| White Label | N/A | Branding config |
+| Analytics | analytics_agent | Usage insights |
+| Patient Intake | compliance_monitor_agent | HIPAA compliance |
+
+### Tier-Based Agent Access
+
+| Agent | Free | Starter | Business | Pro | Enterprise |
+|-------|------|---------|----------|-----|------------|
+| script_generator_agent | 5/mo | 100/mo | 500/mo | 2000/mo | Unlimited |
+| content_analyzer_agent | ❌ | ✅ | ✅ | ✅ | ✅ |
+| tts_orchestrator_agent | 2 voices | 10 voices | 20 voices | All | All + Clone |
+| video_assembly_agent | ❌ | Basic | Full | Full | Full |
+| voice_clone_agent | ❌ | ❌ | ❌ | ✅ | ✅ |
+| social_publisher_agent | ❌ | ✅ | ✅ | ✅ | ✅ |
+| compliance_monitor_agent | ❌ | ❌ | ❌ | ❌ | ✅ |
+| workflow_orchestrator_agent | ❌ | ❌ | ❌ | ✅ | ✅ |
+| analytics_agent | Basic | Standard | Standard | Advanced | Custom |
+
+---
+
+## Document Changelog
+
+| Date | Version | Changes |
+|------|---------|---------|
+| 2026-01-05 | 1.0.0 | Initial documentation |
+| 2026-01-09 | 2.0.0 | Added competitive analysis and segment pricing |
+| 2026-01-10 | 2.1.0 | Added agent & automation integration mapping |
+| 2026-01-10 | 2.1.0 | Added module-agent assignment matrix |
+| 2026-01-10 | 2.1.0 | Added data transfer protocols |
+
+---
+
 **Next Steps:**
 1. Review and approve schema
 2. Create migration for current users
