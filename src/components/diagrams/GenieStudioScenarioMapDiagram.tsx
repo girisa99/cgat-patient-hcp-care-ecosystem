@@ -374,19 +374,19 @@ export const GenieStudioScenarioMapDiagram = () => {
       </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-9 w-full">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="crossfunctional">Cross-Functional</TabsTrigger>
-          <TabsTrigger value="market-research" className="flex items-center gap-1">
+        <TabsList className="flex flex-wrap gap-1 p-2 h-auto bg-muted/50 rounded-lg">
+          <TabsTrigger value="overview" className="text-xs px-3 py-1.5 whitespace-nowrap">Overview</TabsTrigger>
+          <TabsTrigger value="crossfunctional" className="text-xs px-3 py-1.5 whitespace-nowrap">Cross-Functional</TabsTrigger>
+          <TabsTrigger value="market-research" className="flex items-center gap-1 text-xs px-3 py-1.5 whitespace-nowrap">
             <BarChart3 className="h-3 w-3" />
             Market Research
           </TabsTrigger>
-          <TabsTrigger value="p0">P0 Core</TabsTrigger>
-          <TabsTrigger value="p1">P1 Mobile</TabsTrigger>
-          <TabsTrigger value="p2">P2 Advanced</TabsTrigger>
-          <TabsTrigger value="p3">P3 Segments</TabsTrigger>
-          <TabsTrigger value="p4">P4 Enterprise</TabsTrigger>
-          <TabsTrigger value="p5">P5 Future</TabsTrigger>
+          <TabsTrigger value="p0" className="text-xs px-3 py-1.5 whitespace-nowrap">P0 Core</TabsTrigger>
+          <TabsTrigger value="p1" className="text-xs px-3 py-1.5 whitespace-nowrap">P1 Mobile</TabsTrigger>
+          <TabsTrigger value="p2" className="text-xs px-3 py-1.5 whitespace-nowrap">P2 Advanced</TabsTrigger>
+          <TabsTrigger value="p3" className="text-xs px-3 py-1.5 whitespace-nowrap">P3 Segments</TabsTrigger>
+          <TabsTrigger value="p4" className="text-xs px-3 py-1.5 whitespace-nowrap">P4 Enterprise</TabsTrigger>
+          <TabsTrigger value="p5" className="text-xs px-3 py-1.5 whitespace-nowrap">P5 Future</TabsTrigger>
         </TabsList>
 
         <ScrollArea className="h-[600px] mt-4">
@@ -739,19 +739,19 @@ export const GenieStudioScenarioMapDiagram = () => {
             <div ref={diagramRef} className="bg-card p-6 rounded-lg">
               <h2 className="text-2xl font-bold mb-4">140 Scenario Priority Map (with Agents & APIs)</h2>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid grid-cols-9 w-full mb-4">
-                  <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="crossfunctional">Cross-Functional</TabsTrigger>
-                  <TabsTrigger value="market-research" className="flex items-center gap-1">
+                <TabsList className="flex flex-wrap gap-1 p-2 h-auto bg-muted/50 rounded-lg mb-4">
+                  <TabsTrigger value="overview" className="text-xs px-3 py-1.5 whitespace-nowrap">Overview</TabsTrigger>
+                  <TabsTrigger value="crossfunctional" className="text-xs px-3 py-1.5 whitespace-nowrap">Cross-Functional</TabsTrigger>
+                  <TabsTrigger value="market-research" className="flex items-center gap-1 text-xs px-3 py-1.5 whitespace-nowrap">
                     <BarChart3 className="h-3 w-3" />
-                    Market
+                    Market Research
                   </TabsTrigger>
-                  <TabsTrigger value="p0">P0 Core</TabsTrigger>
-                  <TabsTrigger value="p1">P1 Mobile</TabsTrigger>
-                  <TabsTrigger value="p2">P2 Advanced</TabsTrigger>
-                  <TabsTrigger value="p3">P3 Segments</TabsTrigger>
-                  <TabsTrigger value="p4">P4 Enterprise</TabsTrigger>
-                  <TabsTrigger value="p5">P5 Future</TabsTrigger>
+                  <TabsTrigger value="p0" className="text-xs px-3 py-1.5 whitespace-nowrap">P0 Core</TabsTrigger>
+                  <TabsTrigger value="p1" className="text-xs px-3 py-1.5 whitespace-nowrap">P1 Mobile</TabsTrigger>
+                  <TabsTrigger value="p2" className="text-xs px-3 py-1.5 whitespace-nowrap">P2 Advanced</TabsTrigger>
+                  <TabsTrigger value="p3" className="text-xs px-3 py-1.5 whitespace-nowrap">P3 Segments</TabsTrigger>
+                  <TabsTrigger value="p4" className="text-xs px-3 py-1.5 whitespace-nowrap">P4 Enterprise</TabsTrigger>
+                  <TabsTrigger value="p5" className="text-xs px-3 py-1.5 whitespace-nowrap">P5 Future</TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
