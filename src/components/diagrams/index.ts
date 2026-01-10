@@ -4,9 +4,9 @@ export { TwoStagePipelineFlowDiagram } from './TwoStagePipelineFlowDiagram';
 export { SubAgentArchitectureDiagram } from './SubAgentArchitectureDiagram';
 export { BeforeAfterArchitectureDiagram } from './BeforeAfterArchitectureDiagram';
 
-// Genie Studio - Unified Hub (consolidated from 8 separate diagrams)
+// Genie Studio - Unified Hub (consolidated view)
 export { GenieStudioUnifiedHub } from './GenieStudioUnifiedHub';
 
-// Legacy exports kept for backwards compatibility if needed elsewhere
+// Genie Studio - Individual diagrams (accessible via tabs)
 export { GenieRecordingStudioArchitectureDiagram } from './GenieRecordingStudioArchitectureDiagram';
 export { MarketAnalysisDashboard } from './MarketAnalysisDashboard';

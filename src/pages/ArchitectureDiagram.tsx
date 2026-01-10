@@ -12,7 +12,7 @@ import {
 import { TwoStagePipelineSVGDiagram } from '@/components/document-processing/TwoStagePipelineSVGDiagram';
 import { DocumentConfigurationReferenceDiagram } from '@/components/document-processing/DocumentConfigurationReferenceDiagram';
 import { DocumentProcessingPresentation } from '@/components/document-processing/DocumentProcessingPresentation';
-import { PatientOnboardingFlowDiagram, SubAgentArchitectureDiagram, BeforeAfterArchitectureDiagram, GenieStudioUnifiedHub } from '@/components/diagrams';
+import { PatientOnboardingFlowDiagram, SubAgentArchitectureDiagram, BeforeAfterArchitectureDiagram, GenieStudioUnifiedHub, GenieRecordingStudioArchitectureDiagram, MarketAnalysisDashboard } from '@/components/diagrams';
 import { Button } from '@/components/ui/button';
 // Tabs imports kept for potential future use but not needed for current category navigation
 import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building, Users, Network, ArrowRightLeft, Download, Workflow, Bot, History, Sparkles, Image, Video, Server, Target, Map, Presentation } from 'lucide-react';
@@ -67,6 +67,10 @@ const diagramCategories = {
     icon: Sparkles,
     diagrams: [
       { id: 'genie-hub', label: 'Unified Hub', icon: Map },
+      { id: 'genie-scripts', label: 'Script Gallery', icon: FileText },
+      { id: 'genie-assets', label: 'Visual Assets', icon: Image },
+      { id: 'genie-recording', label: 'Recording Studio', icon: Video },
+      { id: 'genie-market', label: 'Market Analysis', icon: Target },
     ]
   }
 };
@@ -142,8 +146,18 @@ const ArchitectureDiagram = () => {
         return <MedicalImagingAIPipelineDiagram />;
       case 'onboarding':
         return <PatientOnboardingFlowDiagram />;
+      case 'sub-agents':
+        return <SubAgentArchitectureDiagram />;
       case 'genie-hub':
         return <GenieStudioUnifiedHub />;
+      case 'genie-scripts':
+        return <GenieStudioScriptGallery />;
+      case 'genie-assets':
+        return <GenieStudioVisualAssets />;
+      case 'genie-recording':
+        return <GenieRecordingStudioArchitectureDiagram />;
+      case 'genie-market':
+        return <MarketAnalysisDashboard />;
       default:
         return <SolutionArchitectureDiagram />;
     }
