@@ -92,7 +92,7 @@ export const GenieStudioFunctionalArchDiagram = () => {
               <Users className="h-8 w-8 text-muted-foreground" />
               <div>
                 <CardTitle className="text-2xl text-foreground">Functional Architecture</CardTitle>
-                <p className="text-muted-foreground text-sm">User Journeys • 6 Personas • 5 Subscription Tiers • 110 Scenarios</p>
+                <p className="text-muted-foreground text-sm">User Journeys • 6 Personas • 5 Subscription Tiers • 140 Scenarios • 12 Agents</p>
               </div>
             </div>
             <div className="flex gap-2">

@@ -78,7 +78,7 @@ export const GenieStudioTechnicalArchDiagram = () => {
               <Server className="h-8 w-8 text-muted-foreground" />
               <div>
                 <CardTitle className="text-2xl text-foreground">Technical Architecture</CardTitle>
-                <p className="text-muted-foreground text-sm">Genie Mind + Genie Vibe — 6 Phases • 110 Scenarios • Full Tech Stack</p>
+                <p className="text-muted-foreground text-sm">Genie Mind + Genie Vibe — 6 Phases • 140 Scenarios • 12 Agents • 15 APIs</p>
               </div>
             </div>
             <div className="flex gap-2">

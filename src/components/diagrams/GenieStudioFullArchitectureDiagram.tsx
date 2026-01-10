@@ -209,10 +209,10 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
         <div>
           <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
             <Layers className="h-5 w-5" />
-            Genie Mind + Genie Vibe — Complete Architecture (110 Scenarios)
+            Genie Mind + Genie Vibe — Complete Architecture (140 Scenarios)
           </CardTitle>
           <p className="text-sm text-muted-foreground mt-1">
-            6 Market Segments • 6 Phases (P0-P5) • 5 Subscription Tiers • Full Competitive Analysis
+            6 Market Segments • 6 Phases (P0-P5) • 5 Subscription Tiers • 12 Agents • 15 APIs • Full Automation Matrix
           </p>
         </div>
         <div className="flex gap-2">
@@ -237,12 +237,13 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-6 w-full mb-4">
+          <TabsList className="grid grid-cols-7 w-full mb-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="phases">6 Phases</TabsTrigger>
             <TabsTrigger value="segments">6 Segments</TabsTrigger>
+            <TabsTrigger value="agents">Agents</TabsTrigger>
             <TabsTrigger value="subscriptions">Pricing</TabsTrigger>
-            <TabsTrigger value="scenarios">110 Scenarios</TabsTrigger>
+            <TabsTrigger value="scenarios">140 Scenarios</TabsTrigger>
             <TabsTrigger value="competitive">Competition</TabsTrigger>
           </TabsList>
 
@@ -250,22 +251,26 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
             <div ref={diagramRef} className="p-6 bg-white rounded-lg space-y-6">
               <TabsContent value="overview" className="space-y-4 mt-0">
                 {/* Stats Bar */}
-                <div className="grid grid-cols-4 gap-4">
+                <div className="grid grid-cols-5 gap-4">
                   <div className="p-4 rounded-lg border" style={{ backgroundColor: colors.completed.light, borderColor: colors.completed.bg }}>
                     <div className="text-2xl font-bold" style={{ color: colors.completed.bg }}>13</div>
                     <div className="text-sm" style={{ color: colors.text }}>Implemented</div>
                   </div>
                   <div className="p-4 rounded-lg border" style={{ backgroundColor: colors.inProgress.light, borderColor: colors.inProgress.bg }}>
-                    <div className="text-2xl font-bold" style={{ color: colors.inProgress.bg }}>6</div>
+                    <div className="text-2xl font-bold" style={{ color: colors.inProgress.bg }}>7</div>
                     <div className="text-sm" style={{ color: colors.text }}>Partial</div>
                   </div>
                   <div className="p-4 rounded-lg border" style={{ backgroundColor: colors.planned.light, borderColor: colors.planned.bg }}>
-                    <div className="text-2xl font-bold" style={{ color: colors.planned.bg }}>91</div>
+                    <div className="text-2xl font-bold" style={{ color: colors.planned.bg }}>120</div>
                     <div className="text-sm" style={{ color: colors.text }}>Planned</div>
                   </div>
                   <div className="p-4 rounded-lg border" style={{ backgroundColor: '#f8fafc', borderColor: colors.border }}>
-                    <div className="text-2xl font-bold" style={{ color: colors.text }}>17%</div>
+                    <div className="text-2xl font-bold" style={{ color: colors.text }}>14%</div>
                     <div className="text-sm" style={{ color: colors.textMuted }}>Complete</div>
+                  </div>
+                  <div className="p-4 rounded-lg border" style={{ backgroundColor: '#fdf4ff', borderColor: '#a855f7' }}>
+                    <div className="text-2xl font-bold" style={{ color: '#a855f7' }}>12</div>
+                    <div className="text-sm" style={{ color: colors.textMuted }}>AI Agents</div>
                   </div>
                 </div>
 

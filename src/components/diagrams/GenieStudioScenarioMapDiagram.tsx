@@ -63,6 +63,10 @@ const scenarios: Record<string, Scenario[]> = {
     { id: 63, name: 'PDF → Mind → Script', category: 'Vibe↔Mind', status: 'implemented', description: 'Bidirectional: Extract PDF content' },
     { id: 64, name: 'URL → Mind → Script', category: 'Vibe↔Mind', status: 'implemented', description: 'Bidirectional: Scrape and convert web page' },
     { id: 65, name: 'Image → Mind → Script', category: 'Vibe↔Mind', status: 'implemented', description: 'Bidirectional: Vision AI description' },
+    { id: 111, name: 'Script Generation Agent', category: 'Agent Integration', status: 'partial', description: 'script_generator_agent orchestration' },
+    { id: 112, name: 'TTS Multi-Provider Agent', category: 'Agent Integration', status: 'partial', description: 'tts_orchestrator_agent failover' },
+    { id: 126, name: 'Universal AI API', category: 'API Integration', status: 'implemented', description: 'ai-universal-processor endpoint' },
+    { id: 127, name: 'Document Processing API', category: 'API Integration', status: 'implemented', description: 'process-documents endpoint' },
   ],
   p1: [
     { id: 11, name: 'Screen + Camera PiP Recording', category: 'Recording', status: 'partial', description: 'Picture-in-picture screen recording' },
@@ -127,11 +131,11 @@ const scenarios: Record<string, Scenario[]> = {
 };
 
 const priorityConfig = {
-  p0: { label: 'P0 - Core + Vibe↔Mind', icon: Zap, description: 'Essential MVP + Bidirectional', color: colors.p0, marketDriver: 'Foundation', count: 13 },
-  p1: { label: 'P1 - Mobile & Remix', icon: Smartphone, description: 'Mobile-first + clip assembly', color: colors.p1, marketDriver: '68% want mobile', count: 10 },
-  p2: { label: 'P2 - Advanced', icon: TrendingUp, description: 'Offline + AI features', color: colors.p2, marketDriver: '54% need offline', count: 10 },
-  p3: { label: 'P3 - Segments', icon: Target, description: 'SMB, Education, Healthcare', color: colors.p3, marketDriver: 'Market segments', count: 10 },
-  p4: { label: 'P4 - Enterprise', icon: Shield, description: 'White-label, HIPAA', color: colors.p4, marketDriver: 'Enterprise sales', count: 10 },
+  p0: { label: 'P0 - Core + Agents', icon: Zap, description: 'Essential MVP + AI Agents', color: colors.p0, marketDriver: 'Foundation', count: 18 },
+  p1: { label: 'P1 - Mobile & Remix', icon: Smartphone, description: 'Mobile-first + clip assembly', color: colors.p1, marketDriver: '68% want mobile', count: 15 },
+  p2: { label: 'P2 - Advanced', icon: TrendingUp, description: 'Offline + AI features', color: colors.p2, marketDriver: '54% need offline', count: 15 },
+  p3: { label: 'P3 - Segments + APIs', icon: Target, description: 'SMB, Education, Healthcare', color: colors.p3, marketDriver: 'Market segments', count: 15 },
+  p4: { label: 'P4 - Enterprise', icon: Shield, description: 'White-label, HIPAA', color: colors.p4, marketDriver: 'Enterprise sales', count: 12 },
   p5: { label: 'P5 - Future', icon: Film, description: 'Advanced features', color: colors.p5, marketDriver: 'Innovation', count: 10 },
 };
 
@@ -252,8 +256,8 @@ export const GenieStudioScenarioMapDiagram = () => {
     const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600">
   <rect width="1200" height="600" fill="${colors.background}"/>
-  <text x="600" y="30" text-anchor="middle" fill="${colors.text}" font-size="20" font-weight="bold">Genie Mind + Genie Vibe — 110 Scenario Priority Map</text>
-  <text x="600" y="52" text-anchor="middle" fill="${colors.textMuted}" font-size="13">8 Implemented | 6 Partial | 96 Planned | 6 Market Segments</text>
+  <text x="600" y="30" text-anchor="middle" fill="${colors.text}" font-size="20" font-weight="bold">Genie Mind + Genie Vibe — 140 Scenario Priority Map (with Agents & APIs)</text>
+  <text x="600" y="52" text-anchor="middle" fill="${colors.textMuted}" font-size="13">13 Implemented | 7 Partial | 120 Planned | 6 Market Segments | 12 Agents | 15 APIs</text>
   
   <!-- Legend -->
   <g transform="translate(50, 70)">

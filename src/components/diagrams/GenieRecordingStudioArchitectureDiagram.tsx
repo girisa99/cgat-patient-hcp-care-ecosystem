@@ -320,22 +320,24 @@ export const GenieRecordingStudioArchitectureDiagram = () => {
         Genie Suite: Mind + Vibe + Spark + Arc + Hub Architecture
       </text>
       <text x="800" y="65" textAnchor="middle" fill="#94a3b8" fontSize="13">
-        Complete Production Pipeline • 110 Scenarios • 6 Phases (P0-P5) • 6 Market Segments • Cross-Functional Features
+        Complete Production Pipeline • 140 Scenarios • 6 Phases (P0-P5) • 12 Agents • 15 APIs • Full Automation
       </text>
 
       {/* Stats Bar */}
-      <g transform="translate(200, 80)">
-        <rect x="0" y="0" width="1200" height="40" rx="8" fill="#1e293b" stroke="#334155" strokeWidth="1" />
+      <g transform="translate(100, 80)">
+        <rect x="0" y="0" width="1400" height="40" rx="8" fill="#1e293b" stroke="#334155" strokeWidth="1" />
         <text x="50" y="25" fill="#10b981" fontSize="12" fontWeight="bold">✓ 13 Implemented</text>
-        <text x="200" y="25" fill="#f59e0b" fontSize="12" fontWeight="bold">◐ 6 Partial</text>
-        <text x="330" y="25" fill="#6366f1" fontSize="12" fontWeight="bold">○ 91 Planned</text>
-        <text x="480" y="25" fill="#94a3b8" fontSize="11">|</text>
-        <text x="520" y="25" fill="#f97316" fontSize="11">68% Mobile</text>
-        <text x="630" y="25" fill="#0ea5e9" fontSize="11">54% Offline</text>
-        <text x="740" y="25" fill="#ec4899" fontSize="11">82% Clips</text>
-        <text x="850" y="25" fill="#10b981" fontSize="11">94% HIPAA &lt;$100</text>
-        <text x="1000" y="25" fill="#8b5cf6" fontSize="11">6 Segments</text>
-        <text x="1120" y="25" fill="#64748b" fontSize="11">5 Products</text>
+        <text x="200" y="25" fill="#f59e0b" fontSize="12" fontWeight="bold">◐ 7 Partial</text>
+        <text x="330" y="25" fill="#6366f1" fontSize="12" fontWeight="bold">○ 120 Planned</text>
+        <text x="480" y="25" fill="#a855f7" fontSize="12" fontWeight="bold">🤖 12 Agents</text>
+        <text x="610" y="25" fill="#06b6d4" fontSize="12" fontWeight="bold">🔌 15 APIs</text>
+        <text x="750" y="25" fill="#94a3b8" fontSize="11">|</text>
+        <text x="790" y="25" fill="#f97316" fontSize="11">68% Mobile</text>
+        <text x="900" y="25" fill="#0ea5e9" fontSize="11">54% Offline</text>
+        <text x="1010" y="25" fill="#ec4899" fontSize="11">82% Clips</text>
+        <text x="1120" y="25" fill="#10b981" fontSize="11">94% HIPAA</text>
+        <text x="1230" y="25" fill="#8b5cf6" fontSize="11">6 Segments</text>
+        <text x="1340" y="25" fill="#64748b" fontSize="11">5 Products</text>
       </g>
 
       {/* GENIE SPARK (Top Left) */}
