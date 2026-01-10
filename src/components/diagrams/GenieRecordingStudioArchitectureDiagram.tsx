@@ -651,7 +651,7 @@ export const GenieRecordingStudioArchitectureDiagram = () => {
         <text x="540" y="30" textAnchor="middle" fill="#8b5cf6" fontSize="11" fontWeight="bold">P4: 0%</text>
         <text x="660" y="30" textAnchor="middle" fill="#64748b" fontSize="11" fontWeight="bold">P5: 0%</text>
         <text x="780" y="30" fill="#94a3b8" fontSize="9">|</text>
-        <text x="920" y="30" textAnchor="middle" fill="#fff" fontSize="11">Total: 110 Scenarios • 5 Products • 6 Segments • 6 Phases</text>
+        <text x="920" y="30" textAnchor="middle" fill="#fff" fontSize="11">Total: 140 Scenarios • 5 Products • 6 Segments • 6 Phases • 12 Agents • 27 APIs</text>
         <text x="1200" y="30" textAnchor="middle" fill="#94a3b8" fontSize="10">Overall: ~25% Complete</text>
         <text x="1420" y="30" textAnchor="middle" fill="#94a3b8" fontSize="10">Target: 8 weeks P0-P2</text>
       </g>
@@ -669,7 +669,7 @@ export const GenieRecordingStudioArchitectureDiagram = () => {
               <div>
                 <CardTitle className="text-2xl text-foreground">Genie Suite Architecture</CardTitle>
                 <p className="text-muted-foreground text-sm">
-                  Mind + Vibe + Spark + Arc + Hub | 110 Scenarios | 6 Phases | 6 Segments
+                  Mind + Vibe + Spark + Arc + Hub | 140 Scenarios | 6 Phases | 6 Segments | 12 Agents | 27 APIs
                 </p>
               </div>
             </div>

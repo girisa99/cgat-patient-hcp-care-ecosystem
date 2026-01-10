@@ -400,7 +400,7 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
               </TabsContent>
 
               <TabsContent value="scenarios" className="space-y-4 mt-0">
-                <h3 className="text-lg font-semibold" style={{ color: colors.text }}>110 Scenarios by Phase</h3>
+                <h3 className="text-lg font-semibold" style={{ color: colors.text }}>140 Scenarios by Phase (with Agents & APIs)</h3>
                 <div className="space-y-3">
                   {[
                     { phase: 'P0', scenarios: ['Script Creation (1-8)', 'Vibe↔Mind Bidirectional (61-65)', 'TTS Generation', 'Basic Recording', 'Project Management'], count: 13, status: 'completed' as const },

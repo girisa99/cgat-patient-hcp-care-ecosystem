@@ -148,8 +148,8 @@ export const GenieStudioTechnicalArchDiagram = () => {
                       </marker>
                     </defs>
                     <rect width="1200" height="600" fill={colors.background} rx="12" />
-                    <text x="600" y="35" textAnchor="middle" fill={colors.text} fontSize="20" fontWeight="600">Genie Mind + Genie Vibe Technical Architecture (110 Scenarios)</text>
-                    <text x="600" y="55" textAnchor="middle" fill={colors.textMuted} fontSize="12">P0 Complete (13) | P1 In Progress (10) | P2-P5 Planned (87)</text>
+                    <text x="600" y="35" textAnchor="middle" fill={colors.text} fontSize="20" fontWeight="600">Genie Mind + Genie Vibe Technical Architecture (140 Scenarios)</text>
+                    <text x="600" y="55" textAnchor="middle" fill={colors.textMuted} fontSize="12">P0 Complete (18) | P1 In Progress (15) | P2-P5 Planned (107) | 12 Agents | 27 APIs</text>
 
                     {/* Frontend Layer */}
                     <g transform="translate(50, 75)">

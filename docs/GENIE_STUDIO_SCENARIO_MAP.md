@@ -846,7 +846,9 @@ SOURCE CLIPS                    ASSEMBLY                    OUTPUT
 | **N: Mobile-First** | 81-90 | 0 | 0 | 10 | 0% |
 | **O: Segment-Specific** | 91-100 | 0 | 0 | 10 | 0% |
 | **P: Remix & Clip Assembly** | 101-110 | 0 | 0 | 10 | 0% |
-| **TOTAL** | **110** | **8** | **6** | **96** | **13%** |
+| **Q: Agent & Automation** | 111-125 | 0 | 2 | 13 | 13% |
+| **R: API & Data Integration** | 126-140 | 0 | 2 | 13 | 13% |
+| **TOTAL** | **140** | **8** | **10** | **122** | **13%** |
 
 ### By Priority
 
