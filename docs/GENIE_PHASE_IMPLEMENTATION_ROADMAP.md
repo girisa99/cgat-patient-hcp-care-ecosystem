@@ -61,7 +61,19 @@
 ┌─────────────────────────────────────────────────────────────────────────┐
 │              PRODUCTION HUB (OPTIONAL - Team Coordination)               │
 │  • Pre-production tracking  • Team collaboration  • Approval workflows   │
+│  • Agents: production_orchestrator_agent, scheduling_agent              │
+│  • APIs: shows-api, calendar-sync, team-management                      │
 │  Note: Publishing always happens from Vibe                               │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      AGENT & AUTOMATION LAYER                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│  12 Agents: script_generator, tts_orchestrator, content_analyzer,       │
+│             remix_engine, collaboration, production_orchestrator,       │
+│             scheduling, hipaa_compliance, analytics, export, webhook    │
+│  27 APIs: Internal (15) + External (12)                                 │
+│  140 Scenarios across P0-P5 phases                                      │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
