@@ -1,8 +1,8 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Download, ExternalLink, CheckCircle2, Clock, Calendar, Layers, FileImage, FileCode, Smartphone, Users, Package, Globe, Shield, GraduationCap, Heart, Building, Film, Zap } from 'lucide-react';
+import { Download, ExternalLink, CheckCircle2, Clock, Calendar, Layers, FileImage, FileCode, Smartphone, Users, Package, Globe, Shield, GraduationCap, Heart, Building, Film, Zap, Maximize2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -158,6 +158,7 @@ const subscriptionTiers = [
 export const GenieStudioFullArchitectureDiagram: React.FC = () => {
   const diagramRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = React.useState('overview');
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const handleDownloadPNG = async () => {
     if (!diagramRef.current) return;
@@ -204,6 +205,7 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
   };
 
   return (
+    <>
     <Card className="w-full border border-border bg-card">
       <CardHeader className="flex flex-row items-center justify-between pb-4">
         <div>
@@ -229,9 +231,13 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
             <FileCode className="h-4 w-4" />
             SVG
           </Button>
-          <Button variant="default" size="sm" onClick={handleDownloadPNG} className="flex items-center gap-1">
+          <Button variant="outline" size="sm" onClick={handleDownloadPNG} className="flex items-center gap-1">
             <FileImage className="h-4 w-4" />
             PNG
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setIsFullscreen(true)} className="flex items-center gap-1">
+            <Maximize2 className="h-4 w-4" />
+            Expand
           </Button>
         </div>
       </CardHeader>
@@ -482,5 +488,41 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
         </Tabs>
       </CardContent>
     </Card>
+
+    {/* Fullscreen Modal */}
+    {isFullscreen && (
+      <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm">
+        <div className="absolute top-4 right-4 z-10 flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleDownloadSVG} className="gap-2">
+            <FileCode className="h-4 w-4" />
+            SVG
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleDownloadPNG} className="gap-2">
+            <FileImage className="h-4 w-4" />
+            PNG
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setIsFullscreen(false)} className="gap-2">
+            <X className="h-4 w-4" />
+            Close
+          </Button>
+        </div>
+        <ScrollArea className="h-screen w-screen p-8">
+          <div ref={diagramRef} className="bg-card p-6 rounded-lg">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid grid-cols-7 w-full mb-4">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="segments">Segments</TabsTrigger>
+                <TabsTrigger value="phases">Phases</TabsTrigger>
+                <TabsTrigger value="scenarios">Scenarios</TabsTrigger>
+                <TabsTrigger value="agents">Agents</TabsTrigger>
+                <TabsTrigger value="tiers">Tiers</TabsTrigger>
+                <TabsTrigger value="layers">Layers</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </ScrollArea>
+      </div>
+    )}
+  </>
   );
 };

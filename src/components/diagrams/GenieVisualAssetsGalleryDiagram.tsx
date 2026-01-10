@@ -25,7 +25,9 @@ import {
   Zap,
   Target,
   Film,
-  Shield
+  Shield,
+  Maximize2,
+  X
 } from 'lucide-react';
 import { SegmentJourneyInfographic } from './SegmentJourneyInfographic';
 import html2canvas from 'html2canvas';
@@ -580,6 +582,7 @@ const crossFunctionalMatrix = [
 export const GenieVisualAssetsGalleryDiagram = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedSegment, setSelectedSegment] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const diagramRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -625,6 +628,10 @@ export const GenieVisualAssetsGalleryDiagram = () => {
               <Button variant="outline" size="sm" onClick={handleDownloadPNG} className="gap-2">
                 <Download className="h-4 w-4" />
                 PNG
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setIsFullscreen(true)} className="gap-2">
+                <Maximize2 className="h-4 w-4" />
+                Expand
               </Button>
             </div>
           </div>
@@ -1196,6 +1203,25 @@ export const GenieVisualAssetsGalleryDiagram = () => {
           <ChevronRight className="h-5 w-5" />
         </Button>
       </div>
+
+      {/* Fullscreen Modal */}
+      {isFullscreen && (
+        <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm">
+          <div className="absolute top-4 right-4 z-10 flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleDownloadPNG} className="gap-2">
+              <Download className="h-4 w-4" />PNG
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setIsFullscreen(false)} className="gap-2">
+              <X className="h-4 w-4" />Close
+            </Button>
+          </div>
+          <ScrollArea className="h-screen w-screen p-8">
+            <div ref={diagramRef} className="bg-card p-6 rounded-lg">
+              <h2 className="text-2xl font-bold mb-4">Visual Assets Gallery - 140 Scenarios</h2>
+            </div>
+          </ScrollArea>
+        </div>
+      )}
     </div>
   );
 };
