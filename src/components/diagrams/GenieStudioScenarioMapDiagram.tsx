@@ -135,8 +135,8 @@ const priorityConfig = {
   p1: { label: 'P1 - Mobile & Remix', icon: Smartphone, description: 'Mobile-first + clip assembly', color: colors.p1, marketDriver: '68% want mobile', count: 15 },
   p2: { label: 'P2 - Advanced', icon: TrendingUp, description: 'Offline + AI features', color: colors.p2, marketDriver: '54% need offline', count: 15 },
   p3: { label: 'P3 - Segments + APIs', icon: Target, description: 'SMB, Education, Healthcare', color: colors.p3, marketDriver: 'Market segments', count: 15 },
-  p4: { label: 'P4 - Enterprise', icon: Shield, description: 'White-label, HIPAA', color: colors.p4, marketDriver: 'Enterprise sales', count: 12 },
-  p5: { label: 'P5 - Future', icon: Film, description: 'Advanced features', color: colors.p5, marketDriver: 'Innovation', count: 10 },
+  p4: { label: 'P4 - Enterprise', icon: Shield, description: 'White-label, HIPAA', color: colors.p4, marketDriver: 'Enterprise sales', count: 15 },
+  p5: { label: 'P5 - Future + Auth', icon: Film, description: 'Advanced features + SSO/SAML', color: colors.p5, marketDriver: 'Innovation', count: 15 },
 };
 
 // Cross-Functional Categories - scenarios that span multiple products/segments
@@ -339,9 +339,9 @@ export const GenieStudioScenarioMapDiagram = () => {
             <div className="flex items-center gap-3">
               <Target className="h-8 w-8 text-muted-foreground" />
               <div>
-                <CardTitle className="text-2xl text-foreground">110 Scenario Priority Map</CardTitle>
+                <CardTitle className="text-2xl text-foreground">140 Scenario Priority Map (with Agents & APIs)</CardTitle>
                 <p className="text-muted-foreground text-sm">
-                  {totalStats.implemented} Implemented | {totalStats.partial} Partial | {totalStats.planned} Planned | {totalStats.percent}% Complete
+                  {totalStats.implemented} Implemented | {totalStats.partial} Partial | {totalStats.planned} Planned | 12 Agents | 27 APIs | {totalStats.percent}% Complete
                 </p>
               </div>
             </div>
@@ -382,7 +382,7 @@ export const GenieStudioScenarioMapDiagram = () => {
             <div className="mb-4 p-3 rounded-lg border" style={{ borderColor: colors.border, backgroundColor: colors.cardBg }}>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <h4 className="text-sm font-semibold mb-2" style={{ color: colors.text }}>Implementation Status (110 Total)</h4>
+                  <h4 className="text-sm font-semibold mb-2" style={{ color: colors.text }}>Implementation Status (140 Total)</h4>
                   <div className="flex flex-wrap gap-3">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded" style={{ backgroundColor: colors.completed.bg }} />
