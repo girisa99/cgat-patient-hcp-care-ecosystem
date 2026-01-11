@@ -3,6 +3,7 @@ export { PricingCard } from './PricingCard';
 export { PricingSection } from './PricingSection';
 export { SubscriptionStatus } from './SubscriptionStatus';
 export { CheckoutButton } from './CheckoutButton';
+export { CreditPurchaseSection } from './CreditPurchaseSection';
 export { ManageSubscriptionButton } from './ManageSubscriptionButton';
 export { ProductShowcase } from './ProductShowcase';
 export { ProductsOverview } from './ProductsOverview';

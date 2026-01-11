@@ -587,6 +587,43 @@ ANALYTICS AUTOMATION (P2)
 
 ---
 
+## 12. AI Credits System (NEW)
+
+### Credit Pricing (One-Time Purchases)
+
+| Package | Credits | Bonus | Price | Credits/$ |
+|---------|---------|-------|-------|-----------|
+| Credit Pack 50 | 50 | 0 | $4.99 | 10 |
+| Credit Pack 150 | 150 | +15 | $12.99 | 13 |
+| Credit Pack 500 | 500 | +75 | $39.99 | 14 |
+| Creator Bundle | 1000 | +200 | $69.99 | 17 |
+| Studio Bundle | 2500 | +600 | $149.99 | 21 |
+
+### Credits Included Per Tier (Monthly)
+
+| Tier | Monthly Credits | Rollover |
+|------|-----------------|----------|
+| Free | 10 (one-time) | No |
+| Starter | 100 | No |
+| Business | 500 | No |
+| Pro | 2,000 | No |
+| Enterprise | Unlimited | N/A |
+
+### Feature Credit Costs
+
+| Feature | Credits/Unit | Unit |
+|---------|--------------|------|
+| Script Generation | 5 | request |
+| TTS Standard | 2 | minute |
+| TTS Premium | 4 | minute |
+| Voice Clone | 25 | request |
+| Music Generation | 10 | request |
+| AI Edit Basic | 3 | request |
+| AI Edit Advanced | 8 | request |
+| Caption Generation | 2 | minute |
+
+---
+
 ## Document Changelog
 
 | Date | Version | Changes |
@@ -594,13 +631,12 @@ ANALYTICS AUTOMATION (P2)
 | 2026-01-05 | 1.0.0 | Initial documentation |
 | 2026-01-09 | 2.0.0 | Added competitive analysis and segment pricing |
 | 2026-01-10 | 2.1.0 | Added agent & automation integration mapping |
-| 2026-01-10 | 2.1.0 | Added module-agent assignment matrix |
-| 2026-01-10 | 2.1.0 | Added data transfer protocols |
+| 2026-01-11 | 3.0.0 | **Added AI Credits System with tiered pricing** |
 
 ---
 
-**Next Steps:**
-1. Review and approve schema
-2. Create migration for current users
-3. Implement hooks and access control
-4. Build landing page
+**Implementation Complete:**
+- ✅ Database tables: `ai_credit_packages`, `user_ai_credits`, `ai_credit_transactions`, `ai_feature_costs`
+- ✅ Edge functions: `get-ai-credits`, `use-ai-credits`, `purchase-credits`
+- ✅ Hooks: `useAICredits`, updated `useSubscription`
+- ✅ Components: `CreditPurchaseSection`
