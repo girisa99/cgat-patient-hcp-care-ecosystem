@@ -63,6 +63,7 @@ const EnrollmentDemo = React.lazy(() =>
     default: module.EnrollmentDemoPage 
   }))
 );
+const SubscriptionPage = React.lazy(() => import('@/pages/SubscriptionPage'));
 import { getDefaultRouteForRoles, normalizeRoles } from '@/utils/roles';
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -403,6 +404,13 @@ const AppContent = () => {
                             default: m.PageSpecificEnrollmentDemo 
                           }))
                         ))}
+                      </Suspense>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/subscription" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'demoUser', 'onboardingTeam', 'healthcareProvider']}>
+                      <Suspense fallback={<PageLoading message="Loading subscription..." />}>
+                        <SubscriptionPage />
                       </Suspense>
                     </ProtectedRoute>
                   } />
