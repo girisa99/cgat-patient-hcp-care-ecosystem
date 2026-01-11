@@ -285,6 +285,34 @@ FLOW 2 (NEW):     Vibe → Mind → Script → TTS → Vibe → Publish
 
 ---
 
+### Phase 6: Authentication & Security Enhancements (NEW - 2026-01-11)
+
+| # | Feature | Primary Module | Requirement | Status |
+|---|---------|---------------|-------------|--------|
+| 31 | **Google OAuth Integration** | **Supabase Auth** | Enable Google sign-in in Supabase dashboard | ⏳ Pending Config |
+| 32 | **Genie Studio Dedicated Auth** | **Frontend** | Separate branded login page for Genie Studio | ✅ Complete |
+| 33 | **Subscription-Segment Connectivity** | **Frontend** | Connect user segments to pricing tiers | ✅ Complete |
+| 34 | **Email Confirmation Flow** | **Supabase Auth** | Post-signup email confirmation | 📋 Planned |
+
+#### 31. Google OAuth Integration - PENDING CONFIGURATION
+
+**Status:** Code complete, requires Supabase dashboard configuration
+
+**Steps to Enable:**
+1. Go to [Google Cloud Console](https://console.cloud.google.com)
+2. Create OAuth 2.0 credentials (Web application)
+3. Add authorized redirect URL: `https://ithspbabhmdntioslfqe.supabase.co/auth/v1/callback`
+4. Configure in Supabase Dashboard:
+   - Authentication > Providers > Google
+   - Add Client ID and Client Secret
+5. Set Site URL and Redirect URLs in Authentication > URL Configuration
+
+**Code Location:**
+- `src/components/auth/MasterAuthTabs.tsx` - Google OAuth button
+- `src/pages/GenieStudioAuth.tsx` - Genie Studio auth page with Google OAuth
+
+---
+
 ## Implementation Status Summary
 
 | Phase | Total | Complete | In Progress | Planned | Market Priority |
@@ -295,11 +323,13 @@ FLOW 2 (NEW):     Vibe → Mind → Script → TTS → Vibe → Publish
 | Phase 3 (P1 Essentials) | 8 | 0 | 0 | 8 | Production quality |
 | **Phase 4 (Mobile-First & Segments)** | **9** | **0** | **0** | **9** | **68% mobile demand** |
 | **Phase 5 (Commercialization)** | **6** | **0** | **0** | **6** | **Revenue** |
-| **Total** | **37** | **10** | **0** | **27** | |
+| **Phase 6 (Auth & Security)** | **4** | **2** | **1** | **1** | **User onboarding** |
+| **Total** | **41** | **12** | **1** | **28** | |
 
 **Phase 1 Completion:** 100% ✅ (Backend + Frontend)
 **Phase 1.5 Completion:** 100% ✅ (Vibe ↔ Mind Bidirectional Flow)
-**Overall Progress:** 27%
+**Phase 6 Auth:** 50% ✅ (Google OAuth pending Supabase config)
+**Overall Progress:** 29%
 
 ---
 
