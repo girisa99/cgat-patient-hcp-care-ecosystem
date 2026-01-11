@@ -5,12 +5,11 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Wand2, 
   Scissors, 
@@ -271,53 +270,71 @@ export const QuickClipsGenerator: React.FC<QuickClipsGeneratorProps> = ({
   };
 
   return (
-    <Card className={cn("w-full", className)}>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Scissors className="h-5 w-5 text-primary" />
-            Quick Clips
-          </CardTitle>
-          <Badge variant="outline" className="flex items-center gap-1">
-            <Sparkles className="h-3 w-3" />
-            AI-Powered
-          </Badge>
+    <div className={cn("w-full space-y-3", className)}>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Scissors className="h-4 w-4 text-primary" />
+          <span className="font-medium text-sm">Quick Clips</span>
         </div>
-      </CardHeader>
+        <Badge variant="outline" className="text-[10px] flex items-center gap-1">
+          <Sparkles className="h-2.5 w-2.5" />
+          AI
+        </Badge>
+      </div>
 
-      <CardContent className="p-3">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 mb-3 h-auto p-1">
-            <TabsTrigger value="analyze" className="text-xs px-2 py-1.5 flex items-center gap-1">
-              <Wand2 className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate">Analyze</span>
-            </TabsTrigger>
-            <TabsTrigger value="suggestions" disabled={suggestions.length === 0} className="text-xs px-2 py-1.5 flex items-center gap-1">
-              <Scissors className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate">Clips</span>
-            </TabsTrigger>
-            <TabsTrigger value="clips" disabled={generatedClips.length === 0} className="text-xs px-2 py-1.5 flex items-center gap-1">
-              <Film className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate">Ready</span>
-            </TabsTrigger>
-          </TabsList>
+      {/* Tab Navigation - Full width, no overlap */}
+      <div className="grid grid-cols-3 gap-1 p-1 bg-muted rounded-lg">
+        <Button
+          variant={activeTab === 'analyze' ? 'default' : 'ghost'}
+          size="sm"
+          className="h-8 text-xs"
+          onClick={() => setActiveTab('analyze')}
+        >
+          <Wand2 className="h-3 w-3 mr-1" />
+          Analyze
+        </Button>
+        <Button
+          variant={activeTab === 'suggestions' ? 'default' : 'ghost'}
+          size="sm"
+          className="h-8 text-xs"
+          onClick={() => setActiveTab('suggestions')}
+          disabled={suggestions.length === 0}
+        >
+          <Scissors className="h-3 w-3 mr-1" />
+          Clips
+        </Button>
+        <Button
+          variant={activeTab === 'clips' ? 'default' : 'ghost'}
+          size="sm"
+          className="h-8 text-xs"
+          onClick={() => setActiveTab('clips')}
+          disabled={generatedClips.length === 0}
+        >
+          <Film className="h-3 w-3 mr-1" />
+          Ready
+        </Button>
+      </div>
 
-          {/* Analyze Tab */}
-          <TabsContent value="analyze" className="space-y-4">
+      {/* Content Area */}
+      <div className="min-h-[280px]">
+        {/* Analyze Tab */}
+        {activeTab === 'analyze' && (
+          <div className="space-y-3">
             {/* Platform Selection */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Target Platform</label>
-              <div className="flex flex-wrap gap-2">
+              <label className="text-xs font-medium">Target Platform</label>
+              <div className="flex flex-wrap gap-1.5">
                 {PLATFORM_PRESETS.map(platform => (
                   <Button
                     key={platform.id}
                     variant={selectedPlatform === platform.id ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setSelectedPlatform(platform.id)}
-                    className="flex items-center gap-1"
+                    className="h-7 text-xs px-2"
                   >
-                    <platform.icon className="h-4 w-4" />
-                    {platform.name}
+                    <platform.icon className="h-3 w-3 mr-1" />
+                    {platform.name.split(' ')[0]}
                   </Button>
                 ))}
               </div>
@@ -325,12 +342,12 @@ export const QuickClipsGenerator: React.FC<QuickClipsGeneratorProps> = ({
 
             {/* Source Info */}
             {sourceUrl && (
-              <div className="p-3 bg-muted rounded-lg space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Source Duration</span>
+              <div className="p-2 bg-muted rounded-lg text-xs space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Duration</span>
                   <span className="font-medium">{formatTime(sourceDuration)}</span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Platform</span>
                   <span className="font-medium flex items-center gap-1">
                     {getPlatformIcon(selectedPlatform)}
@@ -343,65 +360,68 @@ export const QuickClipsGenerator: React.FC<QuickClipsGeneratorProps> = ({
             {/* Analysis Progress */}
             {isAnalyzing && (
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-xs">
                   <span>Analyzing content...</span>
                   <span>{analysisProgress}%</span>
                 </div>
-                <Progress value={analysisProgress} />
+                <Progress value={analysisProgress} className="h-1.5" />
               </div>
             )}
 
             {/* Analyze Button */}
             <Button 
               className="w-full" 
+              size="sm"
               onClick={analyzeContent}
               disabled={isAnalyzing || !sourceUrl}
             >
               {isAnalyzing ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                   Analyzing...
                 </>
               ) : (
                 <>
-                  <Wand2 className="h-4 w-4 mr-2" />
+                  <Wand2 className="h-3 w-3 mr-1" />
                   Find Best Clips
                 </>
               )}
             </Button>
 
             {!sourceUrl && (
-              <p className="text-sm text-muted-foreground text-center">
-                Record or upload content to analyze
+              <p className="text-xs text-muted-foreground text-center py-4">
+                Record or upload content first to analyze
               </p>
             )}
-          </TabsContent>
+          </div>
+        )}
 
-          {/* Suggestions Tab */}
-          <TabsContent value="suggestions" className="space-y-4">
+        {/* Suggestions Tab */}
+        {activeTab === 'suggestions' && (
+          <div className="space-y-3">
             {/* Selection Controls */}
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">
-                {selectedClips.size} of {suggestions.length} selected
+              <span className="text-xs text-muted-foreground">
+                {selectedClips.size}/{suggestions.length} selected
               </span>
-              <div className="flex gap-2">
-                <Button variant="ghost" size="sm" onClick={selectAll}>
-                  Select All
+              <div className="flex gap-1">
+                <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={selectAll}>
+                  All
                 </Button>
-                <Button variant="ghost" size="sm" onClick={deselectAll}>
+                <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={deselectAll}>
                   Clear
                 </Button>
               </div>
             </div>
 
             {/* Suggestions List */}
-            <ScrollArea className="h-[300px] pr-4">
-              <div className="space-y-3">
+            <ScrollArea className="h-[220px]">
+              <div className="space-y-2 pr-2">
                 {suggestions.map(suggestion => (
                   <div
                     key={suggestion.id}
                     className={cn(
-                      "p-3 border rounded-lg cursor-pointer transition-all",
+                      "p-2 border rounded-lg cursor-pointer transition-all",
                       selectedClips.has(suggestion.id) 
                         ? "border-primary bg-primary/5" 
                         : "hover:border-muted-foreground/50"
@@ -409,41 +429,27 @@ export const QuickClipsGenerator: React.FC<QuickClipsGeneratorProps> = ({
                     onClick={() => toggleClipSelection(suggestion.id)}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{suggestion.title}</span>
-                          <Badge className={cn("text-xs", getTypeColor(suggestion.type))}>
+                      <div className="flex-1 space-y-0.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-medium text-sm">{suggestion.title}</span>
+                          <Badge className={cn("text-[10px] px-1.5", getTypeColor(suggestion.type))}>
                             {suggestion.type}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          {suggestion.description}
-                        </p>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {formatTime(suggestion.startTime)} - {formatTime(suggestion.endTime)}
+                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                          <span className="flex items-center gap-0.5">
+                            <Clock className="h-2.5 w-2.5" />
+                            {formatTime(suggestion.startTime)}-{formatTime(suggestion.endTime)}
                           </span>
                           <span>{suggestion.duration}s</span>
-                          <span className="flex items-center gap-1">
-                            {getPlatformIcon(suggestion.platform)}
-                            {suggestion.platform}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {suggestion.tags.slice(0, 3).map(tag => (
-                            <Badge key={tag} variant="outline" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-2">
-                        <Badge variant="secondary">
+                      <div className="flex items-center gap-1">
+                        <Badge variant="secondary" className="text-[10px]">
                           {Math.round(suggestion.confidence * 100)}%
                         </Badge>
                         {selectedClips.has(suggestion.id) && (
-                          <Check className="h-5 w-5 text-primary" />
+                          <Check className="h-4 w-4 text-primary" />
                         )}
                       </div>
                     </div>
@@ -455,23 +461,26 @@ export const QuickClipsGenerator: React.FC<QuickClipsGeneratorProps> = ({
             {/* Generate Button */}
             <Button 
               className="w-full" 
+              size="sm"
               onClick={generateSelectedClips}
               disabled={selectedClips.size === 0}
             >
-              <Scissors className="h-4 w-4 mr-2" />
+              <Scissors className="h-3 w-3 mr-1" />
               Generate {selectedClips.size} Clip{selectedClips.size !== 1 ? 's' : ''}
             </Button>
-          </TabsContent>
+          </div>
+        )}
 
-          {/* Generated Clips Tab */}
-          <TabsContent value="clips" className="space-y-4">
-            <ScrollArea className="h-[350px] pr-4">
-              <div className="space-y-3">
+        {/* Generated Clips Tab */}
+        {activeTab === 'clips' && (
+          <div className="space-y-3">
+            <ScrollArea className="h-[250px]">
+              <div className="space-y-2 pr-2">
                 {generatedClips.map(clip => (
                   <Card key={clip.id} className="overflow-hidden">
                     <div className="flex">
                       {/* Thumbnail */}
-                      <div className="w-32 h-20 bg-muted flex items-center justify-center relative">
+                      <div className="w-20 h-14 bg-muted flex items-center justify-center relative flex-shrink-0">
                         {clip.status === 'ready' && clip.thumbnailUrl ? (
                           <img 
                             src={clip.thumbnailUrl} 
@@ -479,51 +488,49 @@ export const QuickClipsGenerator: React.FC<QuickClipsGeneratorProps> = ({
                             className="w-full h-full object-cover"
                           />
                         ) : clip.status === 'processing' ? (
-                          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                         ) : (
-                          <Video className="h-6 w-6 text-muted-foreground" />
+                          <Video className="h-4 w-4 text-muted-foreground" />
                         )}
                         {clip.status === 'ready' && (
                           <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                            <Play className="h-6 w-6 text-white" />
+                            <Play className="h-4 w-4 text-white" />
                           </div>
                         )}
                       </div>
 
                       {/* Info */}
-                      <div className="flex-1 p-3 space-y-1">
+                      <div className="flex-1 p-2 space-y-1">
                         <div className="flex items-center justify-between">
-                          <span className="font-medium text-sm">{clip.suggestion.title}</span>
+                          <span className="font-medium text-xs">{clip.suggestion.title}</span>
                           <Badge 
                             variant={
                               clip.status === 'ready' ? 'default' : 
                               clip.status === 'processing' ? 'secondary' : 
                               'outline'
                             }
+                            className="text-[10px]"
                           >
                             {clip.status}
                           </Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          {clip.suggestion.duration}s • {clip.suggestion.platform}
-                        </p>
                         
                         {clip.status === 'ready' && (
-                          <div className="flex gap-2 mt-2">
-                            <Button size="sm" variant="outline" className="h-7 text-xs">
-                              <Download className="h-3 w-3 mr-1" />
-                              Download
+                          <div className="flex gap-1">
+                            <Button size="sm" variant="outline" className="h-6 text-[10px] px-2">
+                              <Download className="h-2.5 w-2.5 mr-0.5" />
+                              Save
                             </Button>
                             <Button 
                               size="sm" 
                               variant="outline" 
-                              className="h-7 text-xs"
+                              className="h-6 text-[10px] px-2"
                               onClick={() => shareContent({ 
                                 title: clip.suggestion.title,
                                 url: clip.outputUrl 
                               })}
                             >
-                              <Share2 className="h-3 w-3 mr-1" />
+                              <Share2 className="h-2.5 w-2.5 mr-0.5" />
                               Share
                             </Button>
                           </div>
@@ -538,6 +545,7 @@ export const QuickClipsGenerator: React.FC<QuickClipsGeneratorProps> = ({
             {generatedClips.length > 0 && (
               <Button 
                 variant="outline" 
+                size="sm"
                 className="w-full"
                 onClick={() => {
                   setGeneratedClips([]);
@@ -545,14 +553,14 @@ export const QuickClipsGenerator: React.FC<QuickClipsGeneratorProps> = ({
                   setActiveTab('suggestions');
                 }}
               >
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Generate More Clips
+                <RotateCcw className="h-3 w-3 mr-1" />
+                Generate More
               </Button>
             )}
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 
