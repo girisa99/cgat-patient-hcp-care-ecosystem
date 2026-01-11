@@ -35,7 +35,7 @@ export const ProductShowcase = ({
 
   if (variant === 'compact') {
     return (
-      <div className={cn("flex flex-wrap gap-2", className)}>
+      <div className={cn("grid grid-cols-1 gap-1.5", className)}>
         {allProducts.map((productKey) => {
           const product = GENIE_PRODUCTS[productKey];
           const isIncluded = includedProducts.includes(productKey);
@@ -44,27 +44,30 @@ export const ProductShowcase = ({
             <div
               key={productKey}
               className={cn(
-                "flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-all",
+                "flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
                 isIncluded 
                   ? `${product.bgColor} ${product.borderColor} border` 
-                  : "bg-muted/30 text-muted-foreground/50 border border-transparent"
+                  : "bg-transparent text-muted-foreground/40"
               )}
             >
               <img 
                 src={productLogos[productKey]} 
                 alt={product.name}
                 className={cn(
-                  "h-4 w-4 object-contain",
+                  "h-4 w-4 object-contain shrink-0",
                   !isIncluded && "opacity-30 grayscale"
                 )}
               />
-              <span className={cn(!isIncluded && "line-through")}>
+              <span className={cn(
+                "flex-1 truncate",
+                !isIncluded && "line-through"
+              )}>
                 {product.name.replace('Genie ', '')}
               </span>
               {isIncluded ? (
-                <Check className="h-3 w-3 text-green-500" />
+                <Check className="h-3.5 w-3.5 text-green-500 shrink-0" />
               ) : (
-                <X className="h-3 w-3 text-muted-foreground/50" />
+                <X className="h-3.5 w-3.5 text-muted-foreground/30 shrink-0" />
               )}
             </div>
           );

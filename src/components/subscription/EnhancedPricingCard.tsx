@@ -110,50 +110,50 @@ export const EnhancedPricingCard = ({ tier, isCurrentPlan, onSelect, isLoading }
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 space-y-4 pt-4">
+      <CardContent className="flex-1 space-y-4 pt-4 pb-2">
         {/* Products Included */}
         <div className="space-y-2">
-          <h4 className="text-sm font-medium text-muted-foreground">Products Included:</h4>
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Products Included:</h4>
           <ProductShowcase 
             includedProducts={config.products as GenieProduct[]} 
             variant="compact"
           />
         </div>
 
-        {/* Limits */}
-        <div className="grid grid-cols-2 gap-2">
-          <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/30">
-            <Cpu className="h-4 w-4 text-muted-foreground shrink-0" />
+        {/* Limits - Compact 2x2 Grid */}
+        <div className="grid grid-cols-2 gap-1.5">
+          <div className="flex items-center gap-1.5 p-2 rounded-md bg-muted/30">
+            <Cpu className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             <div className="text-xs min-w-0">
-              <div className="font-medium truncate">
-                {config.limits.agents === -1 ? 'Unlimited' : config.limits.agents}
-              </div>
-              <div className="text-muted-foreground">Agents</div>
+              <span className="font-semibold">
+                {config.limits.agents === -1 ? 'Unli...' : config.limits.agents}
+              </span>
+              <span className="text-muted-foreground ml-1">Agents</span>
             </div>
           </div>
-          <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/30">
-            <Database className="h-4 w-4 text-muted-foreground shrink-0" />
+          <div className="flex items-center gap-1.5 p-2 rounded-md bg-muted/30">
+            <Database className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             <div className="text-xs min-w-0">
-              <div className="font-medium truncate">
-                {config.limits.apiCalls === -1 ? 'Unlimited' : config.limits.apiCalls.toLocaleString()}
-              </div>
-              <div className="text-muted-foreground">API/mo</div>
+              <span className="font-semibold">
+                {config.limits.apiCalls === -1 ? 'Unli...' : config.limits.apiCalls >= 1000 ? `${config.limits.apiCalls/1000}K` : config.limits.apiCalls}
+              </span>
+              <span className="text-muted-foreground ml-1">API/mo</span>
             </div>
           </div>
-          <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/30">
-            <HardDrive className="h-4 w-4 text-muted-foreground shrink-0" />
+          <div className="flex items-center gap-1.5 p-2 rounded-md bg-muted/30">
+            <HardDrive className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             <div className="text-xs min-w-0">
-              <div className="font-medium truncate">{config.limits.storage}</div>
-              <div className="text-muted-foreground">Storage</div>
+              <span className="font-semibold truncate">{config.limits.storage}</span>
+              <span className="text-muted-foreground ml-1">Storage</span>
             </div>
           </div>
-          <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/30">
-            <Users className="h-4 w-4 text-muted-foreground shrink-0" />
+          <div className="flex items-center gap-1.5 p-2 rounded-md bg-muted/30">
+            <Users className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             <div className="text-xs min-w-0">
-              <div className="font-medium truncate">
-                {config.limits.teamMembers === -1 ? 'Unlimited' : config.limits.teamMembers}
-              </div>
-              <div className="text-muted-foreground">Team</div>
+              <span className="font-semibold">
+                {config.limits.teamMembers === -1 ? 'Unli...' : config.limits.teamMembers}
+              </span>
+              <span className="text-muted-foreground ml-1">Team</span>
             </div>
           </div>
         </div>
@@ -176,19 +176,19 @@ export const EnhancedPricingCard = ({ tier, isCurrentPlan, onSelect, isLoading }
           </div>
         )}
 
-        {/* Features List */}
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium text-muted-foreground">Features:</h4>
-          <ul className="space-y-1.5 max-h-32 overflow-y-auto">
-            {config.features.slice(0, 6).map((feature, index) => (
-              <li key={index} className="flex items-start gap-2">
-                <Check className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
-                <span className="text-xs text-muted-foreground">{feature}</span>
+        {/* Features List - Fixed height, no scrolling */}
+        <div className="space-y-1.5">
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Features:</h4>
+          <ul className="space-y-1">
+            {config.features.slice(0, 5).map((feature, index) => (
+              <li key={index} className="flex items-start gap-1.5">
+                <Check className="h-3.5 w-3.5 text-green-500 shrink-0 mt-0.5" />
+                <span className="text-xs text-muted-foreground leading-tight line-clamp-1">{feature}</span>
               </li>
             ))}
-            {config.features.length > 6 && (
-              <li className="text-xs text-muted-foreground/60 pl-6">
-                +{config.features.length - 6} more features...
+            {config.features.length > 5 && (
+              <li className="text-xs text-primary/70 pl-5 cursor-pointer hover:text-primary">
+                +{config.features.length - 5} more features...
               </li>
             )}
           </ul>
