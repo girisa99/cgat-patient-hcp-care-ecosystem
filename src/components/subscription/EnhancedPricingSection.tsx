@@ -207,7 +207,7 @@ export const EnhancedPricingSection = () => {
   );
 };
 
-// Comparison Table Component
+// Comparison Table Component - Enhanced with segment-specific and compliance info
 const ComparisonTable = () => {
   const tiers = ['free', 'starter', 'business', 'pro'] as const;
   
@@ -218,29 +218,54 @@ const ComparisonTable = () => {
         { name: 'AI Agents', free: '1', starter: '5', business: '25', pro: 'Unlimited' },
         { name: 'API Calls/month', free: '100', starter: '1,000', business: '10,000', pro: 'Unlimited' },
         { name: 'Storage', free: '500 MB', starter: '5 GB', business: '50 GB', pro: '500 GB' },
-        { name: 'Team Members', free: '1', starter: '1', business: '5', pro: 'Unlimited' },
+        { name: 'Team Members', free: '1', starter: '1', business: '3', pro: '10' },
       ]
     },
     {
-      name: 'Products',
+      name: 'Genie Products',
       features: [
         { name: 'Genie Studio', free: 'Basic', starter: 'Core', business: 'Full', pro: 'Enterprise' },
-        { name: 'Genie Spark', free: '5 protos', starter: '20 protos', business: '100 protos', pro: 'Unlimited' },
-        { name: 'Genie Vibe', free: '—', starter: '—', business: '✓', pro: '✓ + Voice Clone' },
-        { name: 'Genie Arc', free: '—', starter: '—', business: '—', pro: '✓' },
-        { name: 'Genie Mind', free: '—', starter: '—', business: '10K docs', pro: 'Unlimited' },
-        { name: 'Production Hub', free: '—', starter: '—', business: '—', pro: '✓' },
+        { name: 'Genie Spark (Scripts)', free: '5', starter: '100', business: '500', pro: 'Unlimited' },
+        { name: 'Genie Vibe (Recording)', free: '—', starter: '5 hrs', business: '25 hrs', pro: 'Unlimited' },
+        { name: 'Genie Mind (RAG)', free: '—', starter: '1K docs', business: '10K docs', pro: 'Unlimited' },
+        { name: 'Production Hub', free: '—', starter: '—', business: '5 shows', pro: 'Unlimited' },
+        { name: 'Genie Arc (Collaboration)', free: '—', starter: '—', business: '—', pro: '✓' },
       ]
     },
     {
-      name: 'Features',
+      name: 'AI Capabilities',
       features: [
-        { name: 'RAG Documents', free: '—', starter: '1,000', business: '10,000', pro: 'Unlimited' },
+        { name: 'AI Voice Generation', free: '—', starter: 'Basic TTS', business: 'Premium', pro: 'Voice Clone' },
+        { name: 'Multi-Model AI', free: '—', starter: '—', business: '✓', pro: '✓' },
+        { name: 'Custom Embeddings', free: '—', starter: '—', business: '—', pro: '✓' },
+        { name: 'Knowledge Graphs', free: '—', starter: '—', business: '—', pro: '✓' },
+      ]
+    },
+    {
+      name: 'Business Features',
+      features: [
+        { name: 'Watermark-Free', free: '—', starter: '✓', business: '✓', pro: '✓' },
         { name: 'Custom Branding', free: '—', starter: '—', business: '✓', pro: '✓' },
         { name: 'White Label', free: '—', starter: '—', business: '—', pro: '✓' },
-        { name: 'Watermarks', free: 'Yes', starter: 'No', business: 'No', pro: 'No' },
+        { name: 'Approval Workflows', free: '—', starter: '—', business: '—', pro: '✓' },
         { name: 'SSO & SAML', free: '—', starter: '—', business: '—', pro: '✓' },
-        { name: 'Support', free: 'Community', starter: 'Email', business: 'Priority', pro: '24/7 Dedicated' },
+      ]
+    },
+    {
+      name: 'Compliance & Security',
+      features: [
+        { name: 'HIPAA Compliance', free: '—', starter: '—', business: '—', pro: '✓' },
+        { name: 'SOC 2 Type II', free: '✓', starter: '✓', business: '✓', pro: '✓' },
+        { name: 'Data Encryption', free: '✓', starter: '✓', business: '✓', pro: '✓' },
+        { name: 'Audit Logs', free: '—', starter: '—', business: '✓', pro: '✓' },
+      ]
+    },
+    {
+      name: 'Support',
+      features: [
+        { name: 'Support Level', free: 'Community', starter: 'Email (48h)', business: 'Priority (24h)', pro: '24/7 Dedicated' },
+        { name: 'Onboarding', free: 'Self-serve', starter: 'Docs', business: 'Guided', pro: 'White-glove' },
+        { name: 'Account Manager', free: '—', starter: '—', business: '—', pro: '✓' },
       ]
     }
   ];
@@ -248,7 +273,7 @@ const ComparisonTable = () => {
   const renderCell = (value: string) => {
     if (value === '✓') return <Check className="h-4 w-4 text-green-500 mx-auto" />;
     if (value === '—') return <X className="h-4 w-4 text-muted-foreground/30 mx-auto" />;
-    return <span className="text-sm">{value}</span>;
+    return <span className="text-xs">{value}</span>;
   };
 
   return (
@@ -256,15 +281,15 @@ const ComparisonTable = () => {
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="border-b border-border bg-muted/50">
-            <th className="text-left py-4 px-4 font-semibold text-foreground w-1/5">Feature</th>
+            <th className="text-left py-3 px-3 font-semibold text-foreground w-1/5 text-xs">Feature</th>
             {tiers.map((tier) => (
               <th key={tier} className={cn(
-                "text-center py-4 px-3 font-semibold",
-                tier === 'business' && "bg-blue-500/10"
+                "text-center py-3 px-2 font-semibold",
+                tier === 'business' && "bg-primary/10"
               )}>
-                <div className="space-y-1">
-                  <div className="text-foreground">{SUBSCRIPTION_TIERS[tier].name}</div>
-                  <div className="text-xs font-normal text-muted-foreground">
+                <div className="space-y-0.5">
+                  <div className="text-xs text-foreground">{SUBSCRIPTION_TIERS[tier].name}</div>
+                  <div className="text-[10px] font-normal text-muted-foreground">
                     {SUBSCRIPTION_TIERS[tier].price === 0 
                       ? 'Free' 
                       : `$${SUBSCRIPTION_TIERS[tier].price}/mo`}
@@ -275,20 +300,20 @@ const ComparisonTable = () => {
           </tr>
         </thead>
         <tbody>
-          {featureGroups.map((group, groupIdx) => (
+          {featureGroups.map((group) => (
             <React.Fragment key={group.name}>
               <tr className="bg-muted/30">
-                <td colSpan={5} className="py-2 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <td colSpan={5} className="py-2 px-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                   {group.name}
                 </td>
               </tr>
               {group.features.map((feature, idx) => (
                 <tr key={idx} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
-                  <td className="py-3 px-4 text-foreground">{feature.name}</td>
-                  <td className="text-center py-3 px-3 text-foreground">{renderCell(feature.free)}</td>
-                  <td className="text-center py-3 px-3 text-foreground">{renderCell(feature.starter)}</td>
-                  <td className={cn("text-center py-3 px-3 text-foreground", "bg-blue-500/5")}>{renderCell(feature.business)}</td>
-                  <td className="text-center py-3 px-3 text-foreground">{renderCell(feature.pro)}</td>
+                  <td className="py-2 px-3 text-xs text-foreground">{feature.name}</td>
+                  <td className="text-center py-2 px-2 text-foreground">{renderCell(feature.free)}</td>
+                  <td className="text-center py-2 px-2 text-foreground">{renderCell(feature.starter)}</td>
+                  <td className={cn("text-center py-2 px-2 text-foreground", "bg-primary/5")}>{renderCell(feature.business)}</td>
+                  <td className="text-center py-2 px-2 text-foreground">{renderCell(feature.pro)}</td>
                 </tr>
               ))}
             </React.Fragment>
@@ -299,54 +324,124 @@ const ComparisonTable = () => {
   );
 };
 
-// FAQ Component
+// FAQ Component - Comprehensive FAQs aligned with investor dashboard
 const FAQ = () => {
-  const faqs = [
+  const faqCategories = [
     {
-      q: "What's included in the free trial?",
-      a: "The 14-day free trial includes Genie Studio Basic and Genie Spark with 5 prototypes. You can build 1 agent, make 100 API calls, and explore the platform. Exports will have watermarks during the trial."
+      category: 'Getting Started',
+      faqs: [
+        {
+          q: "What's included in the free trial?",
+          a: "14-day trial with Genie Studio Basic and Genie Spark (5 prototypes). Build 1 agent, 100 API calls, explore all features. Exports have watermarks during trial."
+        },
+        {
+          q: "Do I need a credit card for the free trial?",
+          a: "No! Start your free trial without any payment info. We only ask for payment when you upgrade to a paid plan."
+        },
+        {
+          q: "What happens when my trial ends?",
+          a: "Continue using the free tier with limitations, or upgrade to unlock all features. Your work is preserved either way."
+        }
+      ]
     },
     {
-      q: "Can I upgrade or downgrade my plan?",
-      a: "Yes! You can upgrade or downgrade your plan at any time. When upgrading, you'll be prorated for the remaining time. When downgrading, changes take effect at the start of your next billing cycle."
+      category: 'Products & Features',
+      faqs: [
+        {
+          q: "What's the difference between Genie products?",
+          a: "Genie Mind = AI knowledge & document processing. Genie Spark = rapid script generation. Genie Vibe = recording studio with AI voices. Genie Studio = unified workflow. Production Hub = team collaboration."
+        },
+        {
+          q: "Which plan includes Genie Vibe recording?",
+          a: "Genie Vibe is available on Business ($29.99/mo) and Pro ($79.99/mo) plans. Business includes 25 hours/month, Pro includes unlimited recording with voice cloning."
+        },
+        {
+          q: "Can I use AI voice generation?",
+          a: "Yes! Genie Vibe includes ElevenLabs integration. Starter gets basic TTS, Business gets premium AI voices, Pro includes voice cloning capabilities."
+        },
+        {
+          q: "What is Genie Mind's RAG capability?",
+          a: "RAG (Retrieval-Augmented Generation) lets your AI agents search and reference your documents. Starter: 1,000 docs, Business: 10,000 docs, Pro: Unlimited."
+        }
+      ]
     },
     {
-      q: "What payment methods do you accept?",
-      a: "We accept all major credit cards (Visa, MasterCard, American Express) through our secure Stripe payment system. Enterprise customers can also pay via invoice."
+      category: 'For Your Industry',
+      faqs: [
+        {
+          q: "Is Genie HIPAA compliant for healthcare?",
+          a: "Yes! Pro and Enterprise plans include HIPAA compliance, BAA agreements, and healthcare-specific templates. We're the only AI video platform under $100/mo with full HIPAA compliance."
+        },
+        {
+          q: "Can educators use Genie for training content?",
+          a: "Absolutely! Our Pro plan includes curriculum-aligned templates, LMS integration, and unlimited lesson creation. Popular with K-12, corporate training, and higher ed."
+        },
+        {
+          q: "Do you support enterprise deployments?",
+          a: "Yes! Enterprise includes white-label options, SSO/SAML, approval workflows, custom SLAs, and dedicated support. Contact sales for custom pricing."
+        }
+      ]
     },
     {
-      q: "Do I need a credit card for the free trial?",
-      a: "No! Start your free trial without any payment information. We'll only ask for payment details when you decide to upgrade to a paid plan."
+      category: 'Pricing & Billing',
+      faqs: [
+        {
+          q: "Can I upgrade or downgrade my plan?",
+          a: "Yes! Upgrade anytime (prorated). Downgrade takes effect at your next billing cycle. No penalties or hidden fees."
+        },
+        {
+          q: "What payment methods do you accept?",
+          a: "All major credit cards via Stripe. Enterprise customers can pay via invoice with NET-30 terms."
+        },
+        {
+          q: "Can I cancel anytime?",
+          a: "Yes, cancel with no penalties. Access continues until billing period ends. You can always downgrade to free tier."
+        },
+        {
+          q: "Do you offer annual billing discounts?",
+          a: "Yes! Annual billing saves 20%. Starter: $95.90/year, Business: $287.90/year, Pro: $767.90/year."
+        }
+      ]
     },
     {
-      q: "What happens when my trial ends?",
-      a: "When your trial ends, you can continue using the free tier with limitations, or upgrade to a paid plan to unlock all features. Your data and work are preserved either way."
-    },
-    {
-      q: "Can I cancel anytime?",
-      a: "Yes, you can cancel your subscription at any time with no penalties. Your access continues until the end of your billing period, and you can downgrade to the free tier."
-    },
-    {
-      q: "Is my data secure?",
-      a: "Absolutely. We're HIPAA compliant and use enterprise-grade encryption for all data at rest and in transit. Your data is never shared with third parties."
-    },
-    {
-      q: "What's the difference between Genie Studio and Genie Spark?",
-      a: "Genie Studio is the full visual agent builder for complex workflows. Genie Spark is for rapid prototyping - describe what you need in plain English and get a working agent in seconds."
+      category: 'Security & Support',
+      faqs: [
+        {
+          q: "Is my data secure?",
+          a: "Absolutely. Enterprise-grade encryption (AES-256), SOC 2 Type II compliant, HIPAA ready. Your data is never shared with third parties or used for AI training."
+        },
+        {
+          q: "What support is included?",
+          a: "Free: Community. Starter: Email (48h). Business: Priority (24h). Pro: 24/7 dedicated support with account manager."
+        },
+        {
+          q: "Do you offer onboarding help?",
+          a: "Business and Pro plans include guided onboarding. Pro customers get a dedicated success manager and custom training sessions."
+        }
+      ]
     }
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {faqs.map((faq, idx) => (
-        <Card key={idx} className="border-border bg-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium text-foreground">{faq.q}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">{faq.a}</p>
-          </CardContent>
-        </Card>
+    <div className="space-y-6">
+      {faqCategories.map((category, catIdx) => (
+        <div key={catIdx} className="space-y-3">
+          <h4 className="text-sm font-semibold text-primary uppercase tracking-wider">
+            {category.category}
+          </h4>
+          <div className="grid gap-3 md:grid-cols-2">
+            {category.faqs.map((faq, idx) => (
+              <Card key={idx} className="border-border bg-card hover:bg-muted/30 transition-colors">
+                <CardHeader className="pb-2 pt-4">
+                  <CardTitle className="text-sm font-medium text-foreground leading-tight">{faq.q}</CardTitle>
+                </CardHeader>
+                <CardContent className="pb-4">
+                  <p className="text-xs text-muted-foreground leading-relaxed">{faq.a}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
       ))}
     </div>
   );
