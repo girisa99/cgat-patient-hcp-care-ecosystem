@@ -35,7 +35,11 @@ import {
   Smartphone,
   Monitor,
   Camera,
-  ScreenShare
+  ScreenShare,
+  Scissors,
+  Sparkles,
+  Film,
+  Layers
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -45,6 +49,9 @@ import { useGenieMediaLibrary } from '@/components/genie-studio/useGenieMediaLib
 import { SavedAudioCard } from '@/components/genie-studio/SavedAudioCard';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileRecordingView } from '@/components/document-processing/RecordingStudio/components/MobileRecordingView';
+import { QuickClipsGenerator, MultiClipTimeline, ScriptStitcher } from '@/components/mobile';
+import type { TimelineClip } from '@/components/mobile/MultiClipTimeline';
+import type { StitchedResult } from '@/components/mobile/ScriptStitcher';
 import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
 
 const GenieVibe: React.FC = () => {
@@ -82,19 +89,34 @@ const GenieVibe: React.FC = () => {
   // Combine voiceovers and TTS for display
   const allAudio = [...voiceovers, ...ttsFiles];
 
-  // Scripts formatted for mobile view
+  // Timeline state for desktop
+  const [timelineClips, setTimelineClips] = useState<TimelineClip[]>([]);
+  const [recordings, setRecordings] = useState<Array<{ id: string; url: string; type: string; duration: number }>>([]);
+
+  // Scripts formatted for components
   const scriptsForMobile = savedScripts.map(s => ({
     id: s.id,
     title: s.name,
     content: s.enhancedContent || s.content || ''
   }));
 
-  // Music formatted for mobile view
+  // Music formatted for components
   const musicForMobile = instrumentalMusic.map(m => ({
     id: m.id,
     name: m.name,
     url: m.url
   }));
+
+  // Handle stitch completion
+  const handleStitchComplete = (result: StitchedResult) => {
+    toast.success(`Stitched ${result.segments.length} scripts (${Math.round(result.totalDuration)}s total)`);
+    setActiveTab('timeline');
+  };
+
+  // Handle clips change
+  const handleClipsChange = (clips: TimelineClip[]) => {
+    setTimelineClips(clips);
+  };
 
   const handleGenerateTTS = async () => {
     if (!voiceText.trim()) {
@@ -224,7 +246,19 @@ const GenieVibe: React.FC = () => {
             <TabsList className="bg-muted/50 border border-border/50 flex-wrap h-auto gap-1 p-1">
               <TabsTrigger value="video" className="gap-2">
                 <Video className="h-4 w-4" />
-                Video Recording
+                Record
+              </TabsTrigger>
+              <TabsTrigger value="clips" className="gap-2">
+                <Sparkles className="h-4 w-4" />
+                Quick Clips
+              </TabsTrigger>
+              <TabsTrigger value="stitch" className="gap-2">
+                <Scissors className="h-4 w-4" />
+                Stitch
+              </TabsTrigger>
+              <TabsTrigger value="timeline" className="gap-2">
+                <Layers className="h-4 w-4" />
+                Timeline
               </TabsTrigger>
               <TabsTrigger value="tts" className="gap-2">
                 <Mic className="h-4 w-4" />
@@ -315,6 +349,47 @@ const GenieVibe: React.FC = () => {
                       </Button>
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Quick Clips Tab */}
+            <TabsContent value="clips" className="space-y-6">
+              <Card className="border-border/50 bg-card/80 backdrop-blur">
+                <CardContent className="p-6">
+                  <QuickClipsGenerator 
+                    onClipGenerated={(clip) => {
+                      toast.success(`Generated clip: ${clip.suggestion.title}`);
+                    }}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Script Stitch Tab */}
+            <TabsContent value="stitch" className="space-y-6">
+              <Card className="border-border/50 bg-card/80 backdrop-blur">
+                <CardContent className="p-6">
+                  <ScriptStitcher
+                    availableScripts={scriptsForMobile}
+                    availableMusic={musicForMobile}
+                    onExport={handleStitchComplete}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Timeline Tab */}
+            <TabsContent value="timeline" className="space-y-6">
+              <Card className="border-border/50 bg-card/80 backdrop-blur">
+                <CardContent className="p-6">
+                  <MultiClipTimeline
+                    clips={timelineClips}
+                    onClipsChange={handleClipsChange}
+                    onExport={(format) => {
+                      toast.info(`Exporting ${timelineClips.length} clips as ${format}...`);
+                    }}
+                  />
                 </CardContent>
               </Card>
             </TabsContent>
