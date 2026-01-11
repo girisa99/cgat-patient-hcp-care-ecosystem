@@ -317,7 +317,7 @@ const GenieVibe: React.FC = () => {
               {/* View Mode Toggle */}
               <div className="flex items-center border rounded-lg p-1">
                 <Button
-                  variant={viewMode === 'desktop' ? 'secondary' : 'ghost'}
+                  variant={!showMobileView ? 'secondary' : 'ghost'}
                   size="sm"
                   className="h-8 gap-1.5"
                   onClick={() => setViewMode('desktop')}
@@ -326,7 +326,7 @@ const GenieVibe: React.FC = () => {
                   <span className="hidden md:inline">Desktop</span>
                 </Button>
                 <Button
-                  variant={viewMode === 'mobile' ? 'secondary' : 'ghost'}
+                  variant={showMobileView ? 'secondary' : 'ghost'}
                   size="sm"
                   className="h-8 gap-1.5"
                   onClick={() => setViewMode('mobile')}
