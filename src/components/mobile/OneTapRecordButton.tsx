@@ -422,15 +422,15 @@ export const OneTapRecordButton: React.FC<OneTapRecordButtonProps> = ({
   return (
     <Card className={cn("p-4", className)}>
       <CardContent className="p-0 space-y-4">
-        {/* Mode Selection */}
-        <div className="flex justify-center gap-2">
+        {/* Mode Selection - Including Screen option */}
+        <div className="flex flex-wrap justify-center gap-2">
           <Button
             variant={recordingMode === 'video' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setRecordingMode('video')}
             disabled={recordingState !== 'idle'}
           >
-            <Video className="h-4 w-4 mr-1" /> Video
+            <Video className="h-4 w-4 mr-1" /> Camera
           </Button>
           <Button
             variant={recordingMode === 'audio' ? 'default' : 'outline'}
@@ -449,6 +449,13 @@ export const OneTapRecordButton: React.FC<OneTapRecordButtonProps> = ({
             <Camera className="h-4 w-4 mr-1" /> Photo
           </Button>
         </div>
+        
+        {/* Help text */}
+        <p className="text-xs text-center text-muted-foreground">
+          {recordingMode === 'video' && "Record video using your camera"}
+          {recordingMode === 'audio' && "Record audio using your microphone"}
+          {recordingMode === 'photo' && "Take a photo using your camera"}
+        </p>
 
         {/* Recording Status */}
         {recordingState !== 'idle' && (
@@ -457,25 +464,30 @@ export const OneTapRecordButton: React.FC<OneTapRecordButtonProps> = ({
               {formatDuration(duration)}
             </Badge>
             <Progress value={(duration / maxDuration) * 100} className="w-full" />
+            <p className="text-xs text-muted-foreground">
+              {recordingState === 'recording' && 'Recording in progress...'}
+              {recordingState === 'paused' && 'Recording paused'}
+              {recordingState === 'processing' && 'Processing recording...'}
+            </p>
           </div>
         )}
 
         {/* Main Controls */}
         <div className="flex justify-center items-center gap-4">
           {recordingState !== 'idle' && (
-            <Button variant="outline" size="icon" onClick={cancelRecording}>
+            <Button variant="outline" size="icon" onClick={cancelRecording} title="Cancel">
               <X className="h-5 w-5" />
             </Button>
           )}
           
           {recordingState === 'recording' && (
-            <Button variant="outline" size="icon" onClick={pauseRecording}>
+            <Button variant="outline" size="icon" onClick={pauseRecording} title="Pause">
               <Pause className="h-5 w-5" />
             </Button>
           )}
           
           {recordingState === 'paused' && (
-            <Button variant="outline" size="icon" onClick={resumeRecording}>
+            <Button variant="outline" size="icon" onClick={resumeRecording} title="Resume">
               <Play className="h-5 w-5" />
             </Button>
           )}
@@ -483,7 +495,7 @@ export const OneTapRecordButton: React.FC<OneTapRecordButtonProps> = ({
           <Button
             size="lg"
             className={cn(
-              "h-20 w-20 rounded-full transition-all",
+              "h-20 w-20 rounded-full transition-all shadow-lg",
               getRecordButtonColor()
             )}
             onClick={handleOneTapRecord}
@@ -497,14 +509,14 @@ export const OneTapRecordButton: React.FC<OneTapRecordButtonProps> = ({
               <div className="flex flex-col items-center">
                 {getModeIcon()}
                 <span className="text-xs mt-1">
-                  {recordingMode === 'photo' ? 'Tap' : 'Record'}
+                  {recordingMode === 'photo' ? 'Capture' : 'Record'}
                 </span>
               </div>
             )}
           </Button>
 
           {recordingState === 'recording' && (
-            <Button variant="default" size="icon" onClick={stopRecording}>
+            <Button variant="default" size="icon" onClick={stopRecording} title="Stop & Save">
               <Check className="h-5 w-5" />
             </Button>
           )}
@@ -518,7 +530,7 @@ export const OneTapRecordButton: React.FC<OneTapRecordButtonProps> = ({
           </span>
           <span className="flex items-center gap-1">
             {isOnline ? <Check className="h-3 w-3 text-green-500" /> : <X className="h-3 w-3 text-yellow-500" />}
-            {isOnline ? 'Online' : 'Offline'}
+            {isOnline ? 'Online' : 'Offline (saved locally)'}
           </span>
           {capacitorState.isNative && (
             <Badge variant="outline" className="text-xs">
