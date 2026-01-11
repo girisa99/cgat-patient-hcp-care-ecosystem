@@ -1,10 +1,10 @@
 /**
  * Biometric Authentication Hook
  * Provides FaceID/TouchID/Fingerprint authentication for native apps
+ * Uses dynamic imports to prevent module resolution errors in web builds
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { Capacitor } from '@capacitor/core';
 
 export interface BiometricState {
   isAvailable: boolean;
@@ -25,6 +25,19 @@ const webAuthnAvailable = () => {
   return !!(window.PublicKeyCredential && navigator.credentials);
 };
 
+// Helper to safely check if Capacitor is available
+const getCapacitorInfo = async (): Promise<{ isNative: boolean; platform: 'web' | 'ios' | 'android' }> => {
+  try {
+    const { Capacitor } = await import('@capacitor/core');
+    return {
+      isNative: Capacitor.isNativePlatform(),
+      platform: Capacitor.getPlatform() as 'web' | 'ios' | 'android',
+    };
+  } catch {
+    return { isNative: false, platform: 'web' };
+  }
+};
+
 export const useBiometricAuth = (): UseBiometricAuthReturn => {
   const [state, setState] = useState<BiometricState>({
     isAvailable: false,
@@ -34,10 +47,20 @@ export const useBiometricAuth = (): UseBiometricAuthReturn => {
     error: null,
   });
 
-  const isNative = Capacitor.isNativePlatform();
-  const platform = Capacitor.getPlatform();
+  const [platformInfo, setPlatformInfo] = useState<{ isNative: boolean; platform: string }>({
+    isNative: false,
+    platform: 'web',
+  });
+
+  useEffect(() => {
+    getCapacitorInfo().then(info => {
+      setPlatformInfo(info);
+    });
+  }, []);
 
   const checkAvailability = useCallback(async () => {
+    const { isNative, platform } = await getCapacitorInfo();
+    
     if (isNative) {
       // For native apps, we'd use a biometric plugin like @capacitor-community/biometric-auth
       // For now, we check platform capabilities
@@ -60,7 +83,7 @@ export const useBiometricAuth = (): UseBiometricAuthReturn => {
         isEnrolled: available,
       }));
     }
-  }, [isNative, platform]);
+  }, []);
 
   useEffect(() => {
     checkAvailability();
@@ -70,7 +93,7 @@ export const useBiometricAuth = (): UseBiometricAuthReturn => {
     setState(prev => ({ ...prev, error: null }));
 
     try {
-      if (isNative) {
+      if (platformInfo.isNative) {
         // Native biometric authentication would use @capacitor-community/biometric-auth
         // For demonstration, we simulate success
         console.log('📱 Biometric auth requested:', reason);
@@ -128,7 +151,7 @@ export const useBiometricAuth = (): UseBiometricAuthReturn => {
       setState(prev => ({ ...prev, error: errorMessage, isAuthenticated: false }));
       return false;
     }
-  }, [isNative]);
+  }, [platformInfo.isNative]);
 
   return {
     state,

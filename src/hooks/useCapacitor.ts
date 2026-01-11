@@ -5,7 +5,6 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { Capacitor } from '@capacitor/core';
 
 export interface CapacitorState {
   isNative: boolean;
@@ -64,17 +63,34 @@ export interface UseCapacitorReturn {
   exitApp: () => void;
 }
 
+// Helper to safely check if Capacitor is available
+const getCapacitorInfo = async (): Promise<{ isNative: boolean; platform: 'web' | 'ios' | 'android' }> => {
+  try {
+    const { Capacitor } = await import('@capacitor/core');
+    return {
+      isNative: Capacitor.isNativePlatform(),
+      platform: Capacitor.getPlatform() as 'web' | 'ios' | 'android',
+    };
+  } catch {
+    return { isNative: false, platform: 'web' };
+  }
+};
+
 export const useCapacitor = (): UseCapacitorReturn => {
   const [state, setState] = useState<CapacitorState>({
-    isNative: Capacitor.isNativePlatform(),
-    platform: Capacitor.getPlatform() as 'web' | 'ios' | 'android',
+    isNative: false,
+    platform: 'web',
     isReady: false,
   });
 
   useEffect(() => {
     const initCapacitor = async () => {
-      if (state.isNative) {
-        console.log('📱 Initializing Capacitor on', state.platform);
+      const { isNative, platform } = await getCapacitorInfo();
+      
+      setState(prev => ({ ...prev, isNative, platform }));
+      
+      if (isNative) {
+        console.log('📱 Initializing Capacitor on', platform);
         
         // Setup status bar for native apps
         try {
@@ -90,7 +106,7 @@ export const useCapacitor = (): UseCapacitorReturn => {
     };
 
     initCapacitor();
-  }, [state.isNative, state.platform]);
+  }, []);
 
   // Camera functions
   const takePhoto = useCallback(async (): Promise<string | null> => {
