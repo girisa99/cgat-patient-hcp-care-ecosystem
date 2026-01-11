@@ -3,7 +3,7 @@ import { GENIE_PRODUCTS, GenieProduct } from '@/hooks/useSubscription';
 import { cn } from '@/lib/utils';
 import { Check, X } from 'lucide-react';
 
-// Import logos
+// Import combined logos from assets for consistent branding
 import genieStudioLogo from '@/assets/logos/genie-studio-combined.png';
 import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
 import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
@@ -11,6 +11,7 @@ import genieArcLogo from '@/assets/logos/genie-arc-combined.png';
 import genieMindLogo from '@/assets/logos/genie-mind-combined.png';
 import genieProductionLogo from '@/assets/logos/genie-studio-product.png';
 
+// Consistent logo mapping across all subscription components
 const productLogos: Record<GenieProduct, string> = {
   studio: genieStudioLogo,
   spark: genieSparkLogo,
@@ -19,6 +20,9 @@ const productLogos: Record<GenieProduct, string> = {
   mind: genieMindLogo,
   productionHub: genieProductionLogo
 };
+
+// Display order: Spark, Vibe, Studio (center), Arc, Mind, Production Hub
+const productDisplayOrder: GenieProduct[] = ['spark', 'vibe', 'studio', 'arc', 'mind', 'productionHub'];
 
 interface ProductShowcaseProps {
   includedProducts: readonly GenieProduct[];
@@ -31,7 +35,7 @@ export const ProductShowcase = ({
   variant = 'compact',
   className 
 }: ProductShowcaseProps) => {
-  const allProducts = Object.keys(GENIE_PRODUCTS) as GenieProduct[];
+  const allProducts = productDisplayOrder;
 
   if (variant === 'compact') {
     return (
@@ -39,6 +43,7 @@ export const ProductShowcase = ({
         {allProducts.map((productKey) => {
           const product = GENIE_PRODUCTS[productKey];
           const isIncluded = includedProducts.includes(productKey);
+          const isStudio = productKey === 'studio';
           
           return (
             <div
@@ -47,7 +52,8 @@ export const ProductShowcase = ({
                 "flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
                 isIncluded 
                   ? `${product.bgColor} ${product.borderColor} border` 
-                  : "bg-transparent text-muted-foreground/40"
+                  : "bg-transparent text-muted-foreground/40",
+                isStudio && isIncluded && "ring-1 ring-blue-500/30"
               )}
             >
               <img 
@@ -81,6 +87,7 @@ export const ProductShowcase = ({
       {allProducts.map((productKey) => {
         const product = GENIE_PRODUCTS[productKey];
         const isIncluded = includedProducts.includes(productKey);
+        const isStudio = productKey === 'studio';
         
         return (
           <div
@@ -89,7 +96,8 @@ export const ProductShowcase = ({
               "relative p-4 rounded-xl border transition-all",
               isIncluded 
                 ? `${product.bgColor} ${product.borderColor} shadow-sm` 
-                : "bg-muted/20 border-muted/30 opacity-50"
+                : "bg-muted/20 border-muted/30 opacity-50",
+              isStudio && isIncluded && "ring-2 ring-blue-500/30 shadow-md"
             )}
           >
             <div className="flex items-start gap-3">

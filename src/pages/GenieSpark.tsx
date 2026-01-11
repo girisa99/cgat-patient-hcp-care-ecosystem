@@ -10,11 +10,12 @@ import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Zap, PenTool, Mic } from 'lucide-react';
+import { Zap, PenTool, Mic } from 'lucide-react';
 import { SmartContentPipeline } from '@/components/genie-studio/SmartContentPipeline';
 import { useGenieScripts, type GenieScript } from '@/components/genie-studio/useGenieScripts';
 import { toast } from 'sonner';
 import type { GeneratedContent } from '@/components/genie-studio/PostGenerationActions';
+import { BackToSubscription } from '@/components/subscription/BackToSubscription';
 import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
 
 const GenieSpark: React.FC = () => {
@@ -71,15 +72,10 @@ const GenieSpark: React.FC = () => {
           <div className="relative max-w-7xl mx-auto px-6 py-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-6">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate('/genie-studio')}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Studio
-                </Button>
+                <BackToSubscription 
+                  fallbackPath="/genie-studio" 
+                  fallbackLabel="Back to Studio" 
+                />
                 
                 <div className="flex items-center gap-4">
                   <div className="h-16 w-16 rounded-2xl bg-white/90 backdrop-blur border border-orange-200/50 flex items-center justify-center shadow-lg overflow-hidden p-2">
