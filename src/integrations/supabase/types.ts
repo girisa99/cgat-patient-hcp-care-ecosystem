@@ -16369,6 +16369,126 @@ export type Database = {
           },
         ]
       }
+      user_segments: {
+        Row: {
+          created_at: string
+          custom_branding_enabled: boolean | null
+          education_lessons_enabled: boolean | null
+          has_arc_access: boolean | null
+          has_mind_access: boolean | null
+          has_production_hub_access: boolean | null
+          has_spark_access: boolean | null
+          has_studio_access: boolean | null
+          has_vibe_access: boolean | null
+          hipaa_compliance_enabled: boolean | null
+          id: string
+          industry: string | null
+          last_feature_check_at: string | null
+          max_agents: number | null
+          max_api_calls_monthly: number | null
+          max_rag_documents: number | null
+          max_storage_mb: number | null
+          max_team_members: number | null
+          offline_mode_enabled: boolean | null
+          onboarding_completed: boolean | null
+          onboarding_completed_at: string | null
+          one_tap_mobile_enabled: boolean | null
+          organization_name: string | null
+          organization_size: string | null
+          quick_clips_enabled: boolean | null
+          remix_engine_enabled: boolean | null
+          segment_type: string | null
+          subscription_ends_at: string | null
+          subscription_started_at: string | null
+          subscription_status: string | null
+          subscription_tier: string | null
+          trial_ends_at: string | null
+          trial_started_at: string | null
+          updated_at: string
+          user_id: string
+          watermarks_enabled: boolean | null
+          white_label_enabled: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          custom_branding_enabled?: boolean | null
+          education_lessons_enabled?: boolean | null
+          has_arc_access?: boolean | null
+          has_mind_access?: boolean | null
+          has_production_hub_access?: boolean | null
+          has_spark_access?: boolean | null
+          has_studio_access?: boolean | null
+          has_vibe_access?: boolean | null
+          hipaa_compliance_enabled?: boolean | null
+          id?: string
+          industry?: string | null
+          last_feature_check_at?: string | null
+          max_agents?: number | null
+          max_api_calls_monthly?: number | null
+          max_rag_documents?: number | null
+          max_storage_mb?: number | null
+          max_team_members?: number | null
+          offline_mode_enabled?: boolean | null
+          onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
+          one_tap_mobile_enabled?: boolean | null
+          organization_name?: string | null
+          organization_size?: string | null
+          quick_clips_enabled?: boolean | null
+          remix_engine_enabled?: boolean | null
+          segment_type?: string | null
+          subscription_ends_at?: string | null
+          subscription_started_at?: string | null
+          subscription_status?: string | null
+          subscription_tier?: string | null
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
+          updated_at?: string
+          user_id: string
+          watermarks_enabled?: boolean | null
+          white_label_enabled?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          custom_branding_enabled?: boolean | null
+          education_lessons_enabled?: boolean | null
+          has_arc_access?: boolean | null
+          has_mind_access?: boolean | null
+          has_production_hub_access?: boolean | null
+          has_spark_access?: boolean | null
+          has_studio_access?: boolean | null
+          has_vibe_access?: boolean | null
+          hipaa_compliance_enabled?: boolean | null
+          id?: string
+          industry?: string | null
+          last_feature_check_at?: string | null
+          max_agents?: number | null
+          max_api_calls_monthly?: number | null
+          max_rag_documents?: number | null
+          max_storage_mb?: number | null
+          max_team_members?: number | null
+          offline_mode_enabled?: boolean | null
+          onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
+          one_tap_mobile_enabled?: boolean | null
+          organization_name?: string | null
+          organization_size?: string | null
+          quick_clips_enabled?: boolean | null
+          remix_engine_enabled?: boolean | null
+          segment_type?: string | null
+          subscription_ends_at?: string | null
+          subscription_started_at?: string | null
+          subscription_status?: string | null
+          subscription_tier?: string | null
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
+          updated_at?: string
+          user_id?: string
+          watermarks_enabled?: boolean | null
+          white_label_enabled?: boolean | null
+        }
+        Relationships: []
+      }
       user_subscriptions: {
         Row: {
           account_type: Database["public"]["Enums"]["account_type"] | null
