@@ -2,150 +2,127 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-// Genie Product Suite with detailed descriptions
+// Genie Product Suite - Architecture Finalized
+// Based on docs/GENIE_SUITE_ARCHITECTURE_SUMMARY.md
 export const GENIE_PRODUCTS = {
-  studio: {
-    id: 'studio',
-    name: 'Genie Studio',
-    tagline: 'AI Agent Builder & Orchestrator',
-    description: 'Build, deploy, and manage AI agents with visual workflows. Create sophisticated conversational AI without coding.',
-    color: 'from-blue-500 to-cyan-500',
-    bgColor: 'bg-blue-500/10',
-    borderColor: 'border-blue-500/30',
-    icon: '🎨',
-    features: [
-      'Visual drag-and-drop agent builder',
-      'Multi-model orchestration (GPT, Claude, Llama)',
-      'Custom workflow automation',
-      'RAG integration for knowledge bases',
-      'Real-time agent testing & debugging',
-      'API & webhook integrations'
-    ],
-    capabilities: {
-      free: ['Basic agent builder', '1 active agent', 'Community templates'],
-      starter: ['Core agent builder', '5 agents', 'Basic workflows'],
-      business: ['Full visual builder', '25 agents', 'Advanced workflows', 'Custom integrations'],
-      pro: ['Unlimited agents', 'Enterprise workflows', 'White-label', 'Priority support']
-    }
-  },
-  spark: {
-    id: 'spark',
-    name: 'Genie Spark',
-    tagline: 'Instant AI Prototyping',
-    description: 'Rapid AI agent prototyping with natural language. Describe what you need and Spark builds it in seconds.',
-    color: 'from-amber-500 to-orange-500',
-    bgColor: 'bg-amber-500/10',
-    borderColor: 'border-amber-500/30',
-    icon: '⚡',
-    features: [
-      'Prompt-to-agent in seconds',
-      'Natural language configuration',
-      'One-click deployment',
-      'Template marketplace',
-      'Quick iteration & testing',
-      'Instant shareable demos'
-    ],
-    capabilities: {
-      free: ['5 prototypes/month', 'Basic templates', 'Watermarked exports'],
-      starter: ['20 prototypes/month', 'Full template library', 'No watermarks'],
-      business: ['100 prototypes/month', 'Custom templates', 'Team sharing'],
-      pro: ['Unlimited prototypes', 'Priority generation', 'API access']
-    }
-  },
-  vibe: {
-    id: 'vibe',
-    name: 'Genie Vibe',
-    tagline: 'AI Recording Studio',
-    description: 'Professional AI-powered recording and production. Transform scripts into polished video content.',
-    color: 'from-purple-500 to-pink-500',
-    bgColor: 'bg-purple-500/10',
-    borderColor: 'border-purple-500/30',
-    icon: '🎬',
-    features: [
-      'AI voice generation & cloning',
-      'Script enhancement & optimization',
-      'Background blur & virtual sets',
-      'Multi-track recording & editing',
-      'Auto-captioning & subtitles',
-      'Export to multiple formats'
-    ],
-    capabilities: {
-      free: ['Not available'],
-      starter: ['Not available'],
-      business: ['10 hours recording/month', 'Basic AI voices', 'Background blur'],
-      pro: ['Unlimited recording', 'Premium AI voices', 'Virtual sets', 'Voice cloning']
-    }
-  },
-  arc: {
-    id: 'arc',
-    name: 'Genie Arc',
-    tagline: 'Team Collaboration Hub',
-    description: 'Collaborative production and show management. Coordinate teams, manage shows, and stream live.',
-    color: 'from-indigo-500 to-violet-500',
-    bgColor: 'bg-indigo-500/10',
-    borderColor: 'border-indigo-500/30',
-    icon: '🌐',
-    features: [
-      'Show & episode management',
-      'Multi-guest coordination',
-      'Real-time collaboration',
-      'Live streaming integration',
-      'Production scheduling',
-      'Asset & media sharing'
-    ],
-    capabilities: {
-      free: ['Not available'],
-      starter: ['Not available'],
-      business: ['Not available'],
-      pro: ['Unlimited shows', '10 guests per session', 'Live streaming', 'Production dashboard']
-    }
-  },
   mind: {
     id: 'mind',
     name: 'Genie Mind',
-    tagline: 'Knowledge & RAG Engine',
-    description: 'Enterprise knowledge base with semantic search. Build intelligent agents grounded in your data.',
+    tagline: 'AI That Understands',
+    description: 'AI Intelligence Layer for pre-production. Semantic search, document processing, and intelligent content analysis.',
     color: 'from-emerald-500 to-teal-500',
     bgColor: 'bg-emerald-500/10',
     borderColor: 'border-emerald-500/30',
     icon: '🧠',
     features: [
+      'Two-stage AI pipeline (Classification + OCR)',
+      'Document type auto-detection',
+      'Multi-model routing (Claude, Gemini, GPT)',
       'Vector-powered semantic search',
-      'Multi-format document ingestion',
       'Knowledge graph visualization',
-      'Context memory & retrieval',
-      'Auto-chunking & embedding',
       'Source attribution & citations'
     ],
     capabilities: {
+      free: ['Basic document analysis', '10 documents/month'],
+      starter: ['50 documents/month', 'Basic AI routing'],
+      business: ['500 documents/month', 'Advanced RAG', 'Multi-model support'],
+      pro: ['Unlimited documents', 'Custom embeddings', 'Knowledge graphs']
+    }
+  },
+  spark: {
+    id: 'spark',
+    name: 'Genie Spark',
+    tagline: 'Ignite Your Ideas',
+    description: 'AI Content Generation Engine. Transform ideas into polished scripts with natural language prompts.',
+    color: 'from-amber-500 to-orange-500',
+    bgColor: 'bg-amber-500/10',
+    borderColor: 'border-amber-500/30',
+    icon: '⚡',
+    features: [
+      'Text prompt to script generation',
+      'Template-based content creation',
+      'PPT/Slides to script conversion',
+      'Document to video script',
+      'Natural language configuration',
+      'One-click script deployment'
+    ],
+    capabilities: {
+      free: ['5 scripts/month', 'Basic templates'],
+      starter: ['25 scripts/month', 'Full template library'],
+      business: ['150 scripts/month', 'Custom templates', 'Team sharing'],
+      pro: ['Unlimited scripts', 'Priority generation', 'API access']
+    }
+  },
+  vibe: {
+    id: 'vibe',
+    name: 'Genie Vibe',
+    tagline: 'Feel the Flow',
+    description: 'Creative Production Layer. Professional recording studio with AI voice generation and video capture.',
+    color: 'from-purple-500 to-pink-500',
+    bgColor: 'bg-purple-500/10',
+    borderColor: 'border-purple-500/30',
+    icon: '🎬',
+    features: [
+      'AI voice generation (ElevenLabs)',
+      'Multi-source video capture',
+      'Background blur & virtual sets',
+      'Auto-captioning & subtitles',
+      'Multi-track recording & editing',
+      'Export to multiple formats'
+    ],
+    capabilities: {
       free: ['Not available'],
-      starter: ['Not available'],
-      business: ['10,000 documents', 'Basic RAG', 'Semantic search'],
-      pro: ['Unlimited documents', 'Advanced RAG', 'Knowledge graphs', 'Custom embeddings']
+      starter: ['5 hours recording/month', 'Basic TTS'],
+      business: ['25 hours recording/month', 'Premium AI voices', 'Background blur'],
+      pro: ['Unlimited recording', 'Voice cloning', 'Virtual sets']
+    }
+  },
+  studio: {
+    id: 'studio',
+    name: 'Genie Studio',
+    tagline: 'Mind to Media',
+    description: 'Complete AI-powered media production suite. Unified platform integrating Mind, Spark, Vibe, and Production Hub.',
+    color: 'from-blue-500 to-cyan-500',
+    bgColor: 'bg-blue-500/10',
+    borderColor: 'border-blue-500/30',
+    icon: '🎨',
+    features: [
+      'Unified Mind → Vibe pipeline',
+      'Bidirectional content flow',
+      'Multi-model AI orchestration',
+      'Visual workflow builder',
+      'Real-time collaboration',
+      'Cross-platform publishing'
+    ],
+    capabilities: {
+      free: ['Basic features', 'Watermarked exports'],
+      starter: ['Core features', 'No watermarks', '5 projects'],
+      business: ['Full suite access', '50 projects', 'Team features'],
+      pro: ['Unlimited projects', 'White-label', 'Priority support']
     }
   },
   productionHub: {
     id: 'productionHub',
     name: 'Production Hub',
-    tagline: 'Content Production Pipeline',
-    description: 'End-to-end content production and distribution. Manage your entire media workflow in one place.',
-    color: 'from-rose-500 to-red-500',
-    bgColor: 'bg-rose-500/10',
-    borderColor: 'border-rose-500/30',
+    tagline: 'Orchestrate Excellence',
+    description: 'Team Coordination Layer. Multi-person productions, content approvals, and large-scale content series management.',
+    color: 'from-indigo-500 to-violet-500',
+    bgColor: 'bg-indigo-500/10',
+    borderColor: 'border-indigo-500/30',
     icon: '🎯',
     features: [
-      'Centralized media library',
-      'Video processing & transcoding',
-      'Digital asset management',
-      'Multi-channel distribution',
-      'Analytics & reporting',
-      'Team permissions & workflows'
+      'Show & episode management',
+      'Multi-guest coordination',
+      'Approval workflows',
+      'Production scheduling',
+      'Asset & media sharing',
+      'Analytics & reporting'
     ],
     capabilities: {
       free: ['Not available'],
       starter: ['Not available'],
-      business: ['Not available'],
-      pro: ['500 GB storage', 'Unlimited processing', 'Multi-channel publish', 'Analytics dashboard']
+      business: ['5 shows', 'Basic scheduling', '3 team members'],
+      pro: ['Unlimited shows', '10 guests/session', 'Live streaming', 'Full dashboard']
     }
   }
 } as const;
