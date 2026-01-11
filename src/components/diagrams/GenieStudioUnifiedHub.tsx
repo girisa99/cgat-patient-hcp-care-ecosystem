@@ -139,8 +139,34 @@ interface RoadmapPhase {
   weeks: string;
   status: 'completed' | 'in-progress' | 'planned';
   completion: number;
+  statusText: string;
   features: { name: string; status: string; market?: string }[];
   segments: string[];
+  integrations: string[];
+}
+
+interface ProductSuite {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  description: string;
+  status: 'completed' | 'partial' | 'planned';
+  phase: string;
+  features: string[];
+  agents: string[];
+  apis: string[];
+}
+
+interface CrossFunctionalScenario {
+  name: string;
+  marketData?: string;
+  segments?: string[];
+  scenarios: number[];
+  products: string[];
+  features?: string[];
+  agents: string[];
+  apis: string[];
 }
 
 // =============================================================================
@@ -258,44 +284,192 @@ const userPainPoints: UserPainPoint[] = [
 ];
 
 const roadmapPhases: RoadmapPhase[] = [
-  { id: 'P0', name: 'Core + Vibe↔Mind', weeks: '1-4', status: 'completed', completion: 100, features: [
+  { id: 'P0', name: 'Core MVP', weeks: '1-4', status: 'completed', completion: 100, statusText: '100% Complete', features: [
     { name: 'Script Editor + AI Enhancement', status: 'done' },
     { name: 'TTS Generation (ElevenLabs/OpenAI)', status: 'done' },
     { name: 'Recording Studio Core', status: 'done' },
     { name: 'Teleprompter + Audio Mixer', status: 'done' },
     { name: 'Vibe ↔ Mind Bidirectional', status: 'done' },
-  ], segments: ['all'] },
-  { id: 'P1', name: 'Mobile & Remix', weeks: '5-8', status: 'in-progress', completion: 30, features: [
+    { name: 'Basic Export (MP4/WebM)', status: 'done' },
+    { name: 'Project Management', status: 'done' },
+    { name: 'Recording Library (IndexedDB)', status: 'done' },
+  ], segments: ['all'], integrations: ['Mind', 'Vibe'] },
+  { id: 'P1', name: 'Mobile + Remix', weeks: '5-8', status: 'in-progress', completion: 30, statusText: '30% Complete', features: [
     { name: 'One-Tap Mobile Record', status: 'planned', market: '68% want' },
     { name: 'Quick Clips Generator', status: 'planned', market: '82% creators want' },
     { name: 'Multi-Clip Timeline', status: 'planned' },
-    { name: 'Social Templates', status: 'planned' },
-  ], segments: ['creator', 'traveler', 'smb'] },
-  { id: 'P2', name: 'Advanced Features', weeks: '9-12', status: 'planned', completion: 10, features: [
-    { name: 'Offline Mode', status: 'planned', market: '54% need' },
-    { name: 'Voice-First Editing', status: 'planned', market: '47% want voice commands' },
+    { name: 'Quick Templates (Social)', status: 'planned' },
+    { name: 'PiP Recording Enhancement', status: 'partial' },
+    { name: 'Background Music Library', status: 'done' },
+    { name: 'Screen + Camera PiP', status: 'partial' },
+    { name: 'Arc Integration (Basic)', status: 'partial' },
+  ], segments: ['creator', 'traveler', 'smb'], integrations: ['Mind', 'Vibe', 'Arc'] },
+  { id: 'P2', name: 'Advanced Features', weeks: '9-12', status: 'planned', completion: 10, statusText: '10% Complete', features: [
+    { name: 'Offline Recording', status: 'planned', market: '54% need' },
+    { name: 'Voice-First Editing', status: 'planned', market: '47% want' },
     { name: 'AI Auto-Arrange', status: 'planned' },
     { name: 'Smart Transitions', status: 'planned' },
-  ], segments: ['traveler', 'healthcare', 'enterprise'] },
-  { id: 'P3', name: 'Segment-Specific', weeks: '13-16', status: 'planned', completion: 0, features: [
-    { name: 'Product Demo Mode', status: 'planned', market: '71% want quick templates' },
-    { name: 'Lesson Builder', status: 'planned', market: '69% want AI lesson scripts' },
-    { name: 'HIPAA Recordings', status: 'planned', market: '94% want HIPAA <$100/mo' },
-    { name: 'Voice Cloning', status: 'planned', market: '61% want voice cloning' },
-  ], segments: ['smb', 'education', 'healthcare'] },
-  { id: 'P4', name: 'Enterprise', weeks: '17-20', status: 'planned', completion: 0, features: [
+    { name: 'Music Sync Assembly', status: 'planned' },
+    { name: 'Collaborative Editing', status: 'planned' },
+    { name: 'Spark Integration', status: 'planned' },
+    { name: 'Location Story Mode', status: 'planned' },
+  ], segments: ['traveler', 'healthcare', 'enterprise'], integrations: ['Mind', 'Vibe', 'Arc', 'Spark'] },
+  { id: 'P3', name: 'Segment-Specific', weeks: '13-18', status: 'planned', completion: 0, statusText: '0%', features: [
+    { name: 'Voice Cloning', status: 'planned', market: '61% want' },
+    { name: 'Product Demo Mode (SMB)', status: 'planned', market: '71% want' },
+    { name: 'Lesson Builder (Education)', status: 'planned', market: '69% want' },
+    { name: 'Patient Education (Healthcare)', status: 'planned' },
+    { name: 'Testimonial Collector', status: 'planned' },
+    { name: 'Multi-Language Dubbing', status: 'planned' },
+    { name: 'Traveler Kit (Auto-edit)', status: 'planned', market: '76% want' },
+    { name: 'HIPAA Recording Mode', status: 'planned', market: '94% want <$100/mo' },
+  ], segments: ['smb', 'education', 'healthcare'], integrations: ['Mind', 'Vibe', 'Arc', 'Spark', 'Hub'] },
+  { id: 'P4', name: 'Enterprise', weeks: '19-26', status: 'planned', completion: 0, statusText: '0%', features: [
     { name: 'AI Avatar Presenter', status: 'planned' },
     { name: 'White-label Solution', status: 'planned' },
     { name: 'Multi-tenant Workspaces', status: 'planned' },
-    { name: 'Approval Workflows', status: 'planned' },
-  ], segments: ['enterprise'] },
-  { id: 'P5', name: 'Future + Auth', weeks: '21-24', status: 'planned', completion: 0, features: [
-    { name: 'Batch Processing', status: 'planned' },
-    { name: 'SSO/SAML Integration', status: 'planned' },
+    { name: 'Franchise Templates', status: 'planned' },
+    { name: 'Team Review Mobile', status: 'planned' },
+    { name: 'Offline Compliance Mode', status: 'planned' },
+    { name: 'Native Mobile App', status: 'planned' },
+    { name: 'Real-time Translation', status: 'planned' },
+  ], segments: ['enterprise'], integrations: ['Full Suite'] },
+  { id: 'P5', name: 'Future + Auth', weeks: '27+', status: 'planned', completion: 0, statusText: '0%', features: [
+    { name: 'Batch Video Processing', status: 'planned' },
     { name: 'API Access', status: 'planned' },
+    { name: 'SSO/SAML Integration', status: 'planned' },
     { name: 'Custom Model Training', status: 'planned' },
-  ], segments: ['enterprise'] },
+    { name: 'Advanced Analytics', status: 'planned' },
+    { name: 'B-Roll Library', status: 'planned' },
+    { name: 'Version Control (Git-like)', status: 'planned' },
+    { name: 'Compliance Audit Trail', status: 'planned' },
+  ], segments: ['enterprise'], integrations: ['Full Suite + Partners'] },
 ];
+
+// Product Suite
+const productSuite: ProductSuite[] = [
+  {
+    id: 'spark',
+    name: 'Genie Spark',
+    icon: '⚡',
+    color: 'hsl(25, 95%, 53%)',
+    description: 'Quick Ideas & Brainstorming',
+    status: 'planned',
+    phase: 'P2',
+    features: ['Idea capture', 'Quick prompts', 'Template starter'],
+    agents: ['idea_generator_agent', 'template_matcher_agent'],
+    apis: ['ai-universal-processor']
+  },
+  {
+    id: 'mind',
+    name: 'Genie Mind',
+    icon: '🧞',
+    color: 'hsl(258, 90%, 66%)',
+    description: 'Script & Content Creation',
+    status: 'completed',
+    phase: 'P0',
+    features: ['Script Editor', 'AI Enhancement', 'Project Management', 'TTS Generation'],
+    agents: ['script_generator_agent', 'tts_orchestrator_agent'],
+    apis: ['ai-universal-processor', 'tts-generate']
+  },
+  {
+    id: 'vibe',
+    name: 'Genie Vibe',
+    icon: '🎬',
+    color: 'hsl(160, 84%, 39%)',
+    description: 'Recording & Production Studio',
+    status: 'completed',
+    phase: 'P0',
+    features: ['Recording Studio', 'Teleprompter', 'Audio Mixer', 'Export Pipeline'],
+    agents: ['content_analyzer_agent', 'export_agent'],
+    apis: ['media-processor', 'export-pipeline']
+  },
+  {
+    id: 'arc',
+    name: 'Genie Arc',
+    icon: '🌈',
+    color: 'hsl(217, 91%, 60%)',
+    description: 'Team Collaboration Hub',
+    status: 'partial',
+    phase: 'P1',
+    features: ['Team workspace', 'Review & approval', 'Asset sharing', 'Version control'],
+    agents: ['collaboration_agent', 'approval_workflow_agent'],
+    apis: ['collaboration-sync', 'asset-manager']
+  },
+  {
+    id: 'hub',
+    name: 'Production Hub',
+    icon: '🎯',
+    color: 'hsl(270, 76%, 51%)',
+    description: 'Enterprise Production Center',
+    status: 'partial',
+    phase: 'P1',
+    features: ['Multi-show management', 'Broadcast scheduling', 'Team assignments', 'Pipeline automation'],
+    agents: ['production_orchestrator_agent', 'scheduling_agent', 'resource_allocation_agent'],
+    apis: ['shows-api', 'calendar-sync', 'team-management']
+  }
+];
+
+// Cross-functional scenarios matrix
+const crossFunctionalScenarios: Record<string, CrossFunctionalScenario> = {
+  universal: {
+    name: 'Universal (All Products)',
+    scenarios: [1, 2, 3, 4, 5, 6, 7, 8, 61, 62, 63, 64, 65, 111, 112, 126, 127],
+    features: ['Script Creation', 'TTS Generation', 'Recording', 'Export', 'Vibe↔Mind'],
+    products: ['Mind', 'Vibe'],
+    agents: ['script_generator_agent', 'tts_orchestrator_agent', 'content_analyzer_agent'],
+    apis: ['ai-universal-processor', 'tts-generate', 'process-documents']
+  },
+  mobileCrossover: {
+    name: 'Mobile-First',
+    marketData: '68% want mobile-first',
+    segments: ['Creator', 'Traveler', 'SMB', 'Healthcare', 'Education'],
+    scenarios: [81, 82, 83, 84, 85],
+    products: ['Mind', 'Vibe', 'Spark'],
+    agents: ['mobile_sync_agent', 'offline_cache_agent'],
+    apis: ['mobile-sync', 'offline-storage']
+  },
+  remixCrossover: {
+    name: 'Remix & Clips',
+    marketData: '82% creators want quick clips',
+    segments: ['Creator', 'SMB', 'Education'],
+    scenarios: [90, 101, 102, 103, 104, 105, 107, 108, 109, 110],
+    products: ['Vibe', 'Arc'],
+    agents: ['remix_engine_agent', 'clip_generator_agent'],
+    apis: ['media-processor', 'clip-assembly']
+  },
+  offlineCrossover: {
+    name: 'Offline Mode',
+    marketData: '54% need offline',
+    segments: ['Traveler', 'Healthcare', 'Enterprise'],
+    scenarios: [82, 89, 99],
+    products: ['Vibe', 'Mind (cached)'],
+    agents: ['offline_sync_agent'],
+    apis: ['offline-storage', 'sync-queue']
+  },
+  complianceCrossover: {
+    name: 'Compliance & Legal',
+    segments: ['Healthcare', 'Enterprise', 'Finance'],
+    scenarios: [36, 43, 44, 45, 46, 93, 99],
+    products: ['Vibe', 'Arc', 'Hub'],
+    agents: ['hipaa_compliance_agent', 'audit_trail_agent'],
+    apis: ['hipaa-audit', 'compliance-check']
+  },
+  agentAutomation: {
+    name: 'Agent & Automation',
+    scenarios: [111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125],
+    products: ['Mind', 'Vibe', 'Hub'],
+    agents: ['orchestrator_agent', 'quality_control_agent', 'analytics_agent', 'export_agent'],
+    apis: ['agent-registry', 'workflow-engine', 'automation-rules']
+  },
+  apiIntegration: {
+    name: 'API & Data Integration',
+    scenarios: [126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140],
+    products: ['All Suite'],
+    agents: ['data_sync_agent', 'webhook_handler_agent'],
+    apis: ['ElevenLabs', 'OpenAI', 'Google Cloud', 'Azure', 'AWS S3', 'Stripe', 'Supabase']
+  }
+};
 
 const architectureLayers = [
   { id: 'presentation', name: 'Presentation Layer', icon: Layout, color: 'hsl(199, 89%, 48%)', components: ['Script Repository UI', 'Recording Studio UI', 'Teleprompter', 'Export Manager'] },
@@ -496,6 +670,8 @@ export const GenieStudioUnifiedHub: React.FC = () => {
 
   const categories = [
     { id: 'overview', label: 'Overview', icon: Globe },
+    { id: 'products', label: 'Product Suite', icon: Package },
+    { id: 'scenarios', label: 'Scenarios', icon: Workflow },
     { id: 'architecture', label: 'Architecture', icon: Layers },
     { id: 'technical', label: 'Technical', icon: Server },
     { id: 'functional', label: 'Functional', icon: Users },
@@ -515,9 +691,9 @@ export const GenieStudioUnifiedHub: React.FC = () => {
                 <Sparkles className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-2xl">Genie Studio Hub</CardTitle>
+                <CardTitle className="text-2xl">Genie Suite: Complete Production Pipeline</CardTitle>
                 <CardDescription>
-                  Unified view across 6 segments • {competitors.length} Competitors • {appOpportunities.length} Apps • {integrations.length} Integrations
+                  5 Products (Mind + Vibe + Spark + Arc + Hub) • 140 Scenarios • 6 Phases (P0-P5) • 12 Agents • 15 APIs • 6 Segments
                 </CardDescription>
               </div>
             </div>
@@ -593,6 +769,181 @@ export const GenieStudioUnifiedHub: React.FC = () => {
               <p className="text-sm text-muted-foreground">AI Agents</p>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* PRODUCT SUITE TAB */}
+        <TabsContent value="products" className="space-y-4 mt-4">
+          {/* Stats Bar */}
+          <Card className="bg-card border-border">
+            <CardContent className="py-4">
+              <div className="flex flex-wrap justify-center gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span className="font-semibold text-green-600">13 Implemented</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-yellow-500" />
+                  <span className="font-semibold text-yellow-600">7 Partial</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Target className="h-4 w-4 text-blue-500" />
+                  <span className="font-semibold text-blue-600">120 Planned</span>
+                </div>
+                <span className="text-muted-foreground">|</span>
+                <span className="text-orange-500">🤖 12 Agents</span>
+                <span className="text-cyan-500">🔌 15 APIs</span>
+                <span className="text-muted-foreground">|</span>
+                <span className="text-orange-400">68% Mobile</span>
+                <span className="text-blue-400">54% Offline</span>
+                <span className="text-pink-400">82% Clips</span>
+                <span className="text-green-400">94% HIPAA</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Product Suite Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {productSuite.map(product => (
+              <Card key={product.id} className="bg-card border-border overflow-hidden">
+                <div 
+                  className="h-2" 
+                  style={{ backgroundColor: product.color }}
+                />
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl">{product.icon}</span>
+                    <Badge 
+                      variant={product.status === 'completed' ? 'default' : product.status === 'partial' ? 'secondary' : 'outline'}
+                    >
+                      {product.phase}
+                    </Badge>
+                  </div>
+                  <CardTitle className="text-lg">{product.name}</CardTitle>
+                  <CardDescription>{product.description}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground mb-1">Features</p>
+                    <div className="flex flex-wrap gap-1">
+                      {product.features.slice(0, 3).map(f => (
+                        <Badge key={f} variant="outline" className="text-xs">{f}</Badge>
+                      ))}
+                      {product.features.length > 3 && (
+                        <Badge variant="outline" className="text-xs">+{product.features.length - 3}</Badge>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground mb-1">Agents ({product.agents.length})</p>
+                    <div className="flex flex-wrap gap-1">
+                      {product.agents.slice(0, 2).map(a => (
+                        <Badge key={a} variant="secondary" className="text-xs font-mono">{a.split('_')[0]}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground mb-1">APIs ({product.apis.length})</p>
+                    <div className="flex flex-wrap gap-1">
+                      {product.apis.slice(0, 2).map(api => (
+                        <Badge key={api} variant="outline" className="text-xs">{api}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        {/* SCENARIOS TAB */}
+        <TabsContent value="scenarios" className="space-y-4 mt-4">
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Workflow className="h-5 w-5" />
+                Cross-Functional Scenarios Matrix
+              </CardTitle>
+              <CardDescription>
+                140+ scenarios mapped to products, agents, and APIs
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Object.entries(crossFunctionalScenarios).map(([key, scenario]) => (
+                  <div key={key} className="p-4 rounded-lg border border-border bg-muted/20">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold">{scenario.name}</h4>
+                      {scenario.marketData && (
+                        <Badge variant="outline" className="text-xs text-green-600">
+                          {scenario.marketData}
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground w-20">Scenarios:</span>
+                        <Badge variant="secondary">{scenario.scenarios.length} total</Badge>
+                      </div>
+                      
+                      <div className="flex items-start gap-2">
+                        <span className="text-muted-foreground w-20">Products:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {scenario.products.map(p => (
+                            <Badge key={p} variant="outline" className="text-xs">{p}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {scenario.segments && (
+                        <div className="flex items-start gap-2">
+                          <span className="text-muted-foreground w-20">Segments:</span>
+                          <div className="flex flex-wrap gap-1">
+                            {scenario.segments.slice(0, 3).map(s => (
+                              <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>
+                            ))}
+                            {scenario.segments.length > 3 && (
+                              <Badge variant="secondary" className="text-xs">+{scenario.segments.length - 3}</Badge>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-start gap-2">
+                        <span className="text-muted-foreground w-20">Agents:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {scenario.agents.slice(0, 2).map(a => (
+                            <Badge key={a} variant="outline" className="text-xs font-mono">
+                              <Bot className="h-3 w-3 mr-1" />
+                              {a.split('_')[0]}
+                            </Badge>
+                          ))}
+                          {scenario.agents.length > 2 && (
+                            <Badge variant="outline" className="text-xs">+{scenario.agents.length - 2}</Badge>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start gap-2">
+                        <span className="text-muted-foreground w-20">APIs:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {scenario.apis.slice(0, 2).map(api => (
+                            <Badge key={api} variant="outline" className="text-xs">
+                              <Code className="h-3 w-3 mr-1" />
+                              {api}
+                            </Badge>
+                          ))}
+                          {scenario.apis.length > 2 && (
+                            <Badge variant="outline" className="text-xs">+{scenario.apis.length - 2}</Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* ARCHITECTURE TAB */}
@@ -908,9 +1259,15 @@ export const GenieStudioUnifiedHub: React.FC = () => {
                         </div>
                       ))}
                     </div>
-                    <div className="flex gap-1 mt-3">
+                    <div className="flex flex-wrap gap-1 mt-3">
+                      <span className="text-xs text-muted-foreground mr-2">Segments:</span>
                       {phase.segments.map(seg => (
                         <Badge key={seg} variant="secondary" className="text-xs">{seg}</Badge>
+                      ))}
+                      <span className="text-xs text-muted-foreground mx-2">|</span>
+                      <span className="text-xs text-muted-foreground mr-2">Integrations:</span>
+                      {phase.integrations.map(int => (
+                        <Badge key={int} variant="outline" className="text-xs">{int}</Badge>
                       ))}
                     </div>
                   </div>
