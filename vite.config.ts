@@ -106,6 +106,7 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        maximumFileSizeToCacheInBytes: 25 * 1024 * 1024, // 25 MB limit for large bundles
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/api\..*\/.*/i,
