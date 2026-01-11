@@ -47,12 +47,13 @@ const GenieStudioAuth: React.FC = () => {
     lastName: ''
   });
 
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      navigate('/genie-studio', { replace: true });
-    }
-  }, [authLoading, isAuthenticated, navigate]);
+  // Note: Removed auto-redirect to allow viewing auth page design
+  // Re-enable this if automatic redirect is needed for authenticated users:
+  // useEffect(() => {
+  //   if (!authLoading && isAuthenticated) {
+  //     navigate('/genie-studio', { replace: true });
+  //   }
+  // }, [authLoading, isAuthenticated, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
