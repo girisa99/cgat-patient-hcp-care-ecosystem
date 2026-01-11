@@ -129,15 +129,21 @@ export const EnhancedPricingSection = () => {
             </button>
           </CollapsibleTrigger>
           
-          <CollapsibleContent className="mt-8 relative z-20 bg-background">
+          <CollapsibleContent className="mt-8 relative z-20">
             <Tabs defaultValue="features" className="w-full">
               <div className="flex justify-center mb-6">
-                <TabsList className="grid w-full max-w-md grid-cols-2 h-12 bg-muted">
-                  <TabsTrigger value="features" className="gap-2 data-[state=active]:bg-background">
+                <TabsList className="grid w-full max-w-md grid-cols-2 h-12 p-1 bg-muted border border-border">
+                  <TabsTrigger 
+                    value="features" 
+                    className="gap-2 text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground"
+                  >
                     <Check className="h-4 w-4" />
                     Feature Comparison
                   </TabsTrigger>
-                  <TabsTrigger value="faq" className="gap-2 data-[state=active]:bg-background">
+                  <TabsTrigger 
+                    value="faq" 
+                    className="gap-2 text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground"
+                  >
                     <HelpCircle className="h-4 w-4" />
                     FAQ
                   </TabsTrigger>
@@ -145,7 +151,7 @@ export const EnhancedPricingSection = () => {
               </div>
               
               <TabsContent value="features" className="mt-0">
-                <Card className="overflow-hidden border-border shadow-lg">
+                <Card className="overflow-hidden border-border shadow-lg bg-card">
                   <CardContent className="p-0">
                     <ComparisonTable />
                   </CardContent>
@@ -211,15 +217,15 @@ const ComparisonTable = () => {
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-sm">
         <thead>
-          <tr className="border-b border-border bg-muted/30">
-            <th className="text-left py-4 px-4 font-semibold w-1/5">Feature</th>
+          <tr className="border-b border-border bg-muted/50">
+            <th className="text-left py-4 px-4 font-semibold text-foreground w-1/5">Feature</th>
             {tiers.map((tier) => (
               <th key={tier} className={cn(
                 "text-center py-4 px-3 font-semibold",
-                tier === 'business' && "bg-blue-500/5"
+                tier === 'business' && "bg-blue-500/10"
               )}>
                 <div className="space-y-1">
-                  <div>{SUBSCRIPTION_TIERS[tier].name}</div>
+                  <div className="text-foreground">{SUBSCRIPTION_TIERS[tier].name}</div>
                   <div className="text-xs font-normal text-muted-foreground">
                     {SUBSCRIPTION_TIERS[tier].price === 0 
                       ? 'Free' 
@@ -233,18 +239,18 @@ const ComparisonTable = () => {
         <tbody>
           {featureGroups.map((group, groupIdx) => (
             <React.Fragment key={group.name}>
-              <tr className="bg-muted/20">
+              <tr className="bg-muted/30">
                 <td colSpan={5} className="py-2 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   {group.name}
                 </td>
               </tr>
               {group.features.map((feature, idx) => (
-                <tr key={idx} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
-                  <td className="py-3 px-4 text-muted-foreground">{feature.name}</td>
-                  <td className="text-center py-3 px-3">{renderCell(feature.free)}</td>
-                  <td className="text-center py-3 px-3">{renderCell(feature.starter)}</td>
-                  <td className={cn("text-center py-3 px-3", "bg-blue-500/5")}>{renderCell(feature.business)}</td>
-                  <td className="text-center py-3 px-3">{renderCell(feature.pro)}</td>
+                <tr key={idx} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+                  <td className="py-3 px-4 text-foreground">{feature.name}</td>
+                  <td className="text-center py-3 px-3 text-foreground">{renderCell(feature.free)}</td>
+                  <td className="text-center py-3 px-3 text-foreground">{renderCell(feature.starter)}</td>
+                  <td className={cn("text-center py-3 px-3 text-foreground", "bg-blue-500/5")}>{renderCell(feature.business)}</td>
+                  <td className="text-center py-3 px-3 text-foreground">{renderCell(feature.pro)}</td>
                 </tr>
               ))}
             </React.Fragment>
@@ -295,9 +301,9 @@ const FAQ = () => {
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {faqs.map((faq, idx) => (
-        <Card key={idx} className="border-border/50">
+        <Card key={idx} className="border-border bg-card">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium">{faq.q}</CardTitle>
+            <CardTitle className="text-base font-medium text-foreground">{faq.q}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">{faq.a}</p>
