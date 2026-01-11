@@ -285,34 +285,37 @@ export const OneTapRecordButton: React.FC<OneTapRecordButtonProps> = ({
     }
   };
 
-  // Floating FAB variant - positioned to not overlap tab bar
+  // Floating FAB variant - smaller, centered, positioned above tab bar
   if (variant === 'floating') {
     return (
-      <div className={cn("flex flex-col items-end gap-2", className)}>
+      <div className={cn("flex flex-col items-center gap-2", className)}>
         {/* Expanded Controls */}
         {isExpanded && recordingState === 'idle' && (
           <Card className="mb-2 animate-in fade-in slide-in-from-bottom-2">
-            <CardContent className="p-3 flex gap-2">
+            <CardContent className="p-2 flex gap-1.5">
               <Button
                 variant={recordingMode === 'video' ? 'default' : 'outline'}
                 size="sm"
+                className="h-8 px-2 text-xs"
                 onClick={() => setRecordingMode('video')}
               >
-                <Video className="h-4 w-4 mr-1" /> Video
+                <Video className="h-3.5 w-3.5 mr-1" /> Video
               </Button>
               <Button
                 variant={recordingMode === 'audio' ? 'default' : 'outline'}
                 size="sm"
+                className="h-8 px-2 text-xs"
                 onClick={() => setRecordingMode('audio')}
               >
-                <Mic className="h-4 w-4 mr-1" /> Audio
+                <Mic className="h-3.5 w-3.5 mr-1" /> Audio
               </Button>
               <Button
                 variant={recordingMode === 'photo' ? 'default' : 'outline'}
                 size="sm"
+                className="h-8 px-2 text-xs"
                 onClick={() => setRecordingMode('photo')}
               >
-                <Camera className="h-4 w-4 mr-1" /> Photo
+                <Camera className="h-3.5 w-3.5 mr-1" /> Photo
               </Button>
             </CardContent>
           </Card>
@@ -321,27 +324,27 @@ export const OneTapRecordButton: React.FC<OneTapRecordButtonProps> = ({
         {/* Recording Controls */}
         {recordingState !== 'idle' && recordingState !== 'processing' && (
           <Card className="mb-2 animate-in fade-in slide-in-from-bottom-2">
-            <CardContent className="p-3">
-              <div className="flex items-center gap-3">
-                <Badge variant={recordingState === 'recording' ? 'destructive' : 'secondary'}>
+            <CardContent className="p-2">
+              <div className="flex items-center gap-2">
+                <Badge variant={recordingState === 'recording' ? 'destructive' : 'secondary'} className="text-xs">
                   {formatDuration(duration)}
                 </Badge>
                 
-                <Progress value={(duration / maxDuration) * 100} className="w-24 h-2" />
+                <Progress value={(duration / maxDuration) * 100} className="w-16 h-1.5" />
                 
-                <div className="flex gap-1">
+                <div className="flex gap-0.5">
                   {recordingState === 'recording' && (
-                    <Button variant="ghost" size="icon" onClick={pauseRecording}>
-                      <Pause className="h-4 w-4" />
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={pauseRecording}>
+                      <Pause className="h-3.5 w-3.5" />
                     </Button>
                   )}
                   {recordingState === 'paused' && (
-                    <Button variant="ghost" size="icon" onClick={resumeRecording}>
-                      <Play className="h-4 w-4" />
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={resumeRecording}>
+                      <Play className="h-3.5 w-3.5" />
                     </Button>
                   )}
-                  <Button variant="ghost" size="icon" onClick={cancelRecording}>
-                    <X className="h-4 w-4 text-destructive" />
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={cancelRecording}>
+                    <X className="h-3.5 w-3.5 text-destructive" />
                   </Button>
                 </div>
               </div>
@@ -349,11 +352,11 @@ export const OneTapRecordButton: React.FC<OneTapRecordButtonProps> = ({
           </Card>
         )}
 
-        {/* Main Record Button */}
+        {/* Main Record Button - Smaller */}
         <Button
           size="lg"
           className={cn(
-            "h-16 w-16 rounded-full shadow-lg transition-all",
+            "h-12 w-12 rounded-full shadow-lg transition-all",
             getRecordButtonColor()
           )}
           onClick={handleOneTapRecord}
@@ -367,9 +370,9 @@ export const OneTapRecordButton: React.FC<OneTapRecordButtonProps> = ({
           disabled={recordingState === 'processing'}
         >
           {recordingState === 'processing' ? (
-            <Loader2 className="h-6 w-6 animate-spin" />
+            <Loader2 className="h-5 w-5 animate-spin" />
           ) : recordingState === 'recording' ? (
-            <Square className="h-6 w-6" />
+            <Square className="h-5 w-5" />
           ) : (
             getModeIcon()
           )}
@@ -377,7 +380,7 @@ export const OneTapRecordButton: React.FC<OneTapRecordButtonProps> = ({
 
         {/* Hint */}
         {recordingState === 'idle' && !isExpanded && (
-          <span className="text-xs text-muted-foreground mt-1">
+          <span className="text-[10px] text-muted-foreground">
             Double-tap for options
           </span>
         )}

@@ -321,24 +321,29 @@ export const MultiClipTimeline: React.FC<MultiClipTimelineProps> = ({
           />
         </div>
 
-        {/* Add Clip Buttons */}
-        <div className="flex gap-2 flex-wrap">
-          <Button variant="outline" size="sm" onClick={() => addClipFromLibrary('video')}>
-            <Film className="h-4 w-4 mr-1" />
+        {/* Add Clip Buttons - More compact with tooltips */}
+        <div className="flex gap-1.5 flex-wrap">
+          <Button variant="outline" size="sm" className="h-8 px-2 text-xs" onClick={() => addClipFromLibrary('video')}>
+            <Film className="h-3.5 w-3.5 mr-1" />
             Video
           </Button>
-          <Button variant="outline" size="sm" onClick={() => addClipFromLibrary('audio')}>
-            <Music className="h-4 w-4 mr-1" />
+          <Button variant="outline" size="sm" className="h-8 px-2 text-xs" onClick={() => addClipFromLibrary('audio')}>
+            <Music className="h-3.5 w-3.5 mr-1" />
             Audio
           </Button>
-          <Button variant="outline" size="sm" onClick={() => addClipFromLibrary('image')}>
-            <Image className="h-4 w-4 mr-1" />
+          <Button variant="outline" size="sm" className="h-8 px-2 text-xs" onClick={() => addClipFromLibrary('image')}>
+            <Image className="h-3.5 w-3.5 mr-1" />
             Image
           </Button>
-          <Button variant="outline" size="sm" onClick={() => addClipFromLibrary('text')}>
-            <Type className="h-4 w-4 mr-1" />
+          <Button variant="outline" size="sm" className="h-8 px-2 text-xs" onClick={() => addClipFromLibrary('text')}>
+            <Type className="h-3.5 w-3.5 mr-1" />
             Text
           </Button>
+        </div>
+        
+        {/* Help text explaining track types */}
+        <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+          <p><strong>Video:</strong> Main footage | <strong>Audio:</strong> Music/voiceover | <strong>Image:</strong> Photos/graphics | <strong>Text:</strong> Titles/captions</p>
         </div>
 
         {/* Zoom Controls */}

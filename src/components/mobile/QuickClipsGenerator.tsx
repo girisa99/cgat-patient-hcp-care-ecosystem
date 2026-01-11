@@ -285,20 +285,20 @@ export const QuickClipsGenerator: React.FC<QuickClipsGeneratorProps> = ({
         </div>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="p-3">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 mb-4">
-            <TabsTrigger value="analyze">
-              <Wand2 className="h-4 w-4 mr-1" />
-              Analyze
+          <TabsList className="grid w-full grid-cols-3 mb-3 h-auto p-1">
+            <TabsTrigger value="analyze" className="text-xs px-2 py-1.5 flex items-center gap-1">
+              <Wand2 className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">Analyze</span>
             </TabsTrigger>
-            <TabsTrigger value="suggestions" disabled={suggestions.length === 0}>
-              <Scissors className="h-4 w-4 mr-1" />
-              Suggestions ({suggestions.length})
+            <TabsTrigger value="suggestions" disabled={suggestions.length === 0} className="text-xs px-2 py-1.5 flex items-center gap-1">
+              <Scissors className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">Clips</span>
             </TabsTrigger>
-            <TabsTrigger value="clips" disabled={generatedClips.length === 0}>
-              <Film className="h-4 w-4 mr-1" />
-              Clips ({generatedClips.length})
+            <TabsTrigger value="clips" disabled={generatedClips.length === 0} className="text-xs px-2 py-1.5 flex items-center gap-1">
+              <Film className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">Ready</span>
             </TabsTrigger>
           </TabsList>
 
