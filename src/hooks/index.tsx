@@ -93,6 +93,12 @@ export { useDocumentationVersioning, useSuperAdminVersioning, useHealthcareProvi
 // UI Hooks
 export { useToast } from './use-toast';
 
+// Mobile & Native Hooks
+export { useCapacitor } from './useCapacitor';
+export { useBiometricAuth } from './useBiometricAuth';
+export { useOfflineSync } from './useOfflineSync';
+export { useMobileFeatures } from './useMobileFeatures';
+
 /**
  * ✅ SINGLE SOURCE OF TRUTH ARCHITECTURE - COMPLETE!
  * 
