@@ -2,67 +2,151 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-// Genie Product Suite
+// Genie Product Suite with detailed descriptions
 export const GENIE_PRODUCTS = {
   studio: {
     id: 'studio',
     name: 'Genie Studio',
     tagline: 'AI Agent Builder & Orchestrator',
-    description: 'Build, deploy, and manage AI agents with visual workflows',
+    description: 'Build, deploy, and manage AI agents with visual workflows. Create sophisticated conversational AI without coding.',
     color: 'from-blue-500 to-cyan-500',
     bgColor: 'bg-blue-500/10',
     borderColor: 'border-blue-500/30',
-    features: ['Visual Agent Builder', 'Workflow Orchestration', 'Multi-Model Support', 'RAG Integration']
+    icon: '🎨',
+    features: [
+      'Visual drag-and-drop agent builder',
+      'Multi-model orchestration (GPT, Claude, Llama)',
+      'Custom workflow automation',
+      'RAG integration for knowledge bases',
+      'Real-time agent testing & debugging',
+      'API & webhook integrations'
+    ],
+    capabilities: {
+      free: ['Basic agent builder', '1 active agent', 'Community templates'],
+      starter: ['Core agent builder', '5 agents', 'Basic workflows'],
+      business: ['Full visual builder', '25 agents', 'Advanced workflows', 'Custom integrations'],
+      pro: ['Unlimited agents', 'Enterprise workflows', 'White-label', 'Priority support']
+    }
   },
   spark: {
     id: 'spark',
     name: 'Genie Spark',
     tagline: 'Instant AI Prototyping',
-    description: 'Rapid AI agent prototyping with natural language',
+    description: 'Rapid AI agent prototyping with natural language. Describe what you need and Spark builds it in seconds.',
     color: 'from-amber-500 to-orange-500',
     bgColor: 'bg-amber-500/10',
     borderColor: 'border-amber-500/30',
-    features: ['Prompt-to-Agent', 'Quick Deploy', 'Template Library', 'One-Click Testing']
+    icon: '⚡',
+    features: [
+      'Prompt-to-agent in seconds',
+      'Natural language configuration',
+      'One-click deployment',
+      'Template marketplace',
+      'Quick iteration & testing',
+      'Instant shareable demos'
+    ],
+    capabilities: {
+      free: ['5 prototypes/month', 'Basic templates', 'Watermarked exports'],
+      starter: ['20 prototypes/month', 'Full template library', 'No watermarks'],
+      business: ['100 prototypes/month', 'Custom templates', 'Team sharing'],
+      pro: ['Unlimited prototypes', 'Priority generation', 'API access']
+    }
   },
   vibe: {
     id: 'vibe',
     name: 'Genie Vibe',
     tagline: 'AI Recording Studio',
-    description: 'Professional AI-powered recording and production',
+    description: 'Professional AI-powered recording and production. Transform scripts into polished video content.',
     color: 'from-purple-500 to-pink-500',
     bgColor: 'bg-purple-500/10',
     borderColor: 'border-purple-500/30',
-    features: ['AI Voice Generation', 'Script Enhancement', 'Background Blur', 'Multi-Track Recording']
+    icon: '🎬',
+    features: [
+      'AI voice generation & cloning',
+      'Script enhancement & optimization',
+      'Background blur & virtual sets',
+      'Multi-track recording & editing',
+      'Auto-captioning & subtitles',
+      'Export to multiple formats'
+    ],
+    capabilities: {
+      free: ['Not available'],
+      starter: ['Not available'],
+      business: ['10 hours recording/month', 'Basic AI voices', 'Background blur'],
+      pro: ['Unlimited recording', 'Premium AI voices', 'Virtual sets', 'Voice cloning']
+    }
   },
   arc: {
     id: 'arc',
     name: 'Genie Arc',
     tagline: 'Team Collaboration Hub',
-    description: 'Collaborative production and show management',
+    description: 'Collaborative production and show management. Coordinate teams, manage shows, and stream live.',
     color: 'from-indigo-500 to-violet-500',
     bgColor: 'bg-indigo-500/10',
     borderColor: 'border-indigo-500/30',
-    features: ['Show Management', 'Team Collaboration', 'Multi-Guest Support', 'Live Streaming']
+    icon: '🌐',
+    features: [
+      'Show & episode management',
+      'Multi-guest coordination',
+      'Real-time collaboration',
+      'Live streaming integration',
+      'Production scheduling',
+      'Asset & media sharing'
+    ],
+    capabilities: {
+      free: ['Not available'],
+      starter: ['Not available'],
+      business: ['Not available'],
+      pro: ['Unlimited shows', '10 guests per session', 'Live streaming', 'Production dashboard']
+    }
   },
   mind: {
     id: 'mind',
     name: 'Genie Mind',
     tagline: 'Knowledge & RAG Engine',
-    description: 'Enterprise knowledge base with semantic search',
+    description: 'Enterprise knowledge base with semantic search. Build intelligent agents grounded in your data.',
     color: 'from-emerald-500 to-teal-500',
     bgColor: 'bg-emerald-500/10',
     borderColor: 'border-emerald-500/30',
-    features: ['Vector Search', 'Document Ingestion', 'Knowledge Graphs', 'Context Memory']
+    icon: '🧠',
+    features: [
+      'Vector-powered semantic search',
+      'Multi-format document ingestion',
+      'Knowledge graph visualization',
+      'Context memory & retrieval',
+      'Auto-chunking & embedding',
+      'Source attribution & citations'
+    ],
+    capabilities: {
+      free: ['Not available'],
+      starter: ['Not available'],
+      business: ['10,000 documents', 'Basic RAG', 'Semantic search'],
+      pro: ['Unlimited documents', 'Advanced RAG', 'Knowledge graphs', 'Custom embeddings']
+    }
   },
   productionHub: {
     id: 'productionHub',
     name: 'Production Hub',
     tagline: 'Content Production Pipeline',
-    description: 'End-to-end content production and distribution',
+    description: 'End-to-end content production and distribution. Manage your entire media workflow in one place.',
     color: 'from-rose-500 to-red-500',
     bgColor: 'bg-rose-500/10',
     borderColor: 'border-rose-500/30',
-    features: ['Media Library', 'Video Processing', 'Asset Management', 'Distribution Channels']
+    icon: '🎯',
+    features: [
+      'Centralized media library',
+      'Video processing & transcoding',
+      'Digital asset management',
+      'Multi-channel distribution',
+      'Analytics & reporting',
+      'Team permissions & workflows'
+    ],
+    capabilities: {
+      free: ['Not available'],
+      starter: ['Not available'],
+      business: ['Not available'],
+      pro: ['500 GB storage', 'Unlimited processing', 'Multi-channel publish', 'Analytics dashboard']
+    }
   }
 } as const;
 
@@ -70,6 +154,38 @@ export type GenieProduct = keyof typeof GENIE_PRODUCTS;
 
 // Stripe product/price mappings for Genie Studio tiers
 export const SUBSCRIPTION_TIERS = {
+  free: {
+    name: 'Free Trial',
+    price_id: null,
+    product_id: null,
+    price: 0,
+    billing: null,
+    recommended: false,
+    trialDays: 14,
+    products: ['studio', 'spark'] as GenieProduct[],
+    limits: {
+      agents: 1,
+      apiCalls: 100,
+      storage: '500 MB',
+      teamMembers: 1
+    },
+    features: [
+      '1 AI Agent',
+      'Genie Studio Basic',
+      'Genie Spark (5 prototypes)',
+      '100 API calls/month',
+      '500 MB Storage',
+      'Community Support',
+      'Watermarked exports'
+    ],
+    restrictions: [
+      'Watermarks on exports',
+      'Limited API calls',
+      'Single user only',
+      'No custom branding'
+    ],
+    highlights: ['14-day free trial', 'No credit card required', 'Get started instantly']
+  },
   starter: {
     name: 'Starter',
     price_id: 'price_1RcuqjLkMzXLFD6lgODL8TGA',
@@ -87,12 +203,14 @@ export const SUBSCRIPTION_TIERS = {
     features: [
       '5 AI Agents',
       'Genie Studio Core',
-      'Genie Spark Basic',
+      'Genie Spark (20 prototypes)',
       'Basic RAG (1,000 docs)',
       'Community Support',
       '1,000 API calls/month',
-      '5 GB Storage'
+      '5 GB Storage',
+      'No watermarks'
     ],
+    restrictions: [],
     highlights: ['Perfect for individuals', 'Quick prototyping', 'Essential AI tools']
   },
   business: {
@@ -112,8 +230,8 @@ export const SUBSCRIPTION_TIERS = {
     features: [
       '25 AI Agents',
       'Genie Studio Full',
-      'Genie Spark Pro',
-      'Genie Vibe Recording',
+      'Genie Spark Pro (100 prototypes)',
+      'Genie Vibe Recording Studio',
       'Genie Mind Knowledge Base',
       'Advanced RAG (10,000 docs)',
       'Priority Support',
@@ -122,6 +240,7 @@ export const SUBSCRIPTION_TIERS = {
       'Custom Branding',
       '5 Team Members'
     ],
+    restrictions: [],
     highlights: ['Best for small teams', 'Full recording suite', 'Advanced knowledge base']
   },
   pro: {
@@ -153,6 +272,7 @@ export const SUBSCRIPTION_TIERS = {
       'SSO & SAML',
       'Dedicated Account Manager'
     ],
+    restrictions: [],
     highlights: ['Enterprise-ready', 'Full team collaboration', 'Unlimited everything']
   },
   beta: {
@@ -170,6 +290,7 @@ export const SUBSCRIPTION_TIERS = {
       teamMembers: -1
     },
     features: ['Full Access', 'All Features', 'Beta Tester Perks', 'Lifetime Benefits'],
+    restrictions: [],
     highlights: ['Early adopter benefits', 'Shape the product', 'Lifetime access']
   }
 } as const;
@@ -183,6 +304,8 @@ export interface SubscriptionStatus {
   price_id: string | null;
   subscription_end: string | null;
   source: 'stripe' | 'database' | null;
+  isTrialActive?: boolean;
+  trialEndsAt?: string | null;
 }
 
 export interface UseSubscriptionReturn {
@@ -194,6 +317,7 @@ export interface UseSubscriptionReturn {
   openCustomerPortal: () => Promise<string | null>;
   hasModuleAccess: (moduleKey: string) => boolean;
   getTierFeatures: (tier: SubscriptionTier) => string[];
+  startFreeTrial: () => Promise<boolean>;
 }
 
 export const useSubscription = (): UseSubscriptionReturn => {
@@ -204,7 +328,9 @@ export const useSubscription = (): UseSubscriptionReturn => {
     product_id: null,
     price_id: null,
     subscription_end: null,
-    source: null
+    source: null,
+    isTrialActive: false,
+    trialEndsAt: null
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -218,11 +344,13 @@ export const useSubscription = (): UseSubscriptionReturn => {
       if (!session) {
         setSubscription({
           subscribed: false,
-          tier: null,
+          tier: 'free',
           product_id: null,
           price_id: null,
           subscription_end: null,
-          source: null
+          source: null,
+          isTrialActive: false,
+          trialEndsAt: null
         });
         return;
       }
@@ -231,35 +359,80 @@ export const useSubscription = (): UseSubscriptionReturn => {
       
       if (fnError) {
         console.error('Error checking subscription:', fnError);
-        throw new Error(fnError.message);
+        // Default to free tier on error
+        setSubscription({
+          subscribed: false,
+          tier: 'free',
+          product_id: null,
+          price_id: null,
+          subscription_end: null,
+          source: null,
+          isTrialActive: false,
+          trialEndsAt: null
+        });
+        return;
       }
 
-      if (data.error) {
-        throw new Error(data.error);
+      if (data?.error) {
+        console.error('Subscription check returned error:', data.error);
+        setSubscription({
+          subscribed: false,
+          tier: 'free',
+          product_id: null,
+          price_id: null,
+          subscription_end: null,
+          source: null,
+          isTrialActive: false,
+          trialEndsAt: null
+        });
+        return;
       }
 
       // Map tier name from response
-      let tierKey: SubscriptionTier | null = null;
-      if (data.tier) {
+      let tierKey: SubscriptionTier = 'free';
+      if (data?.tier) {
         const tierName = data.tier.toLowerCase();
         if (tierName in SUBSCRIPTION_TIERS) {
           tierKey = tierName as SubscriptionTier;
         }
+      } else if (data?.subscribed) {
+        // If subscribed but no tier, try to match by product_id
+        if (data.product_id) {
+          for (const [key, config] of Object.entries(SUBSCRIPTION_TIERS)) {
+            if (config.product_id === data.product_id) {
+              tierKey = key as SubscriptionTier;
+              break;
+            }
+          }
+        }
       }
 
       setSubscription({
-        subscribed: data.subscribed || false,
+        subscribed: data?.subscribed || false,
         tier: tierKey,
-        product_id: data.product_id || null,
-        price_id: data.price_id || null,
-        subscription_end: data.subscription_end || null,
-        source: data.source || null
+        product_id: data?.product_id || null,
+        price_id: data?.price_id || null,
+        subscription_end: data?.subscription_end || null,
+        source: data?.source || null,
+        isTrialActive: data?.isTrialActive || false,
+        trialEndsAt: data?.trialEndsAt || null
       });
 
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to check subscription';
       console.error('Subscription check error:', message);
       setError(message);
+      // Default to free tier on error
+      setSubscription({
+        subscribed: false,
+        tier: 'free',
+        product_id: null,
+        price_id: null,
+        subscription_end: null,
+        source: null,
+        isTrialActive: false,
+        trialEndsAt: null
+      });
     } finally {
       setIsLoading(false);
     }
@@ -269,11 +442,18 @@ export const useSubscription = (): UseSubscriptionReturn => {
     try {
       const tierConfig = SUBSCRIPTION_TIERS[tier];
       if (!tierConfig.price_id) {
-        toast({
-          title: "Cannot checkout",
-          description: "This tier does not require payment",
-          variant: "destructive"
-        });
+        if (tier === 'free') {
+          toast({
+            title: "Free Trial",
+            description: "You're already on the free tier. Start exploring!",
+          });
+        } else {
+          toast({
+            title: "Cannot checkout",
+            description: "This tier does not require payment",
+            variant: "destructive"
+          });
+        }
         return null;
       }
 
@@ -282,9 +462,9 @@ export const useSubscription = (): UseSubscriptionReturn => {
       });
 
       if (fnError) throw new Error(fnError.message);
-      if (data.error) throw new Error(data.error);
+      if (data?.error) throw new Error(data.error);
 
-      return data.url;
+      return data?.url || null;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create checkout';
       toast({
@@ -301,9 +481,9 @@ export const useSubscription = (): UseSubscriptionReturn => {
       const { data, error: fnError } = await supabase.functions.invoke('customer-portal');
 
       if (fnError) throw new Error(fnError.message);
-      if (data.error) throw new Error(data.error);
+      if (data?.error) throw new Error(data.error);
 
-      return data.url;
+      return data?.url || null;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to open customer portal';
       toast({
@@ -315,16 +495,48 @@ export const useSubscription = (): UseSubscriptionReturn => {
     }
   }, [toast]);
 
+  const startFreeTrial = useCallback(async (): Promise<boolean> => {
+    try {
+      toast({
+        title: "Free Trial Started!",
+        description: "Welcome! Explore Genie Suite with your 14-day free trial.",
+      });
+      
+      setSubscription(prev => ({
+        ...prev,
+        tier: 'free',
+        isTrialActive: true,
+        trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+      }));
+      
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to start trial';
+      toast({
+        title: "Trial Error",
+        description: message,
+        variant: "destructive"
+      });
+      return false;
+    }
+  }, [toast]);
+
   const hasModuleAccess = useCallback((moduleKey: string): boolean => {
     // Beta users have full access
     if (subscription.tier === 'beta') return true;
     
-    // If not subscribed, no access
-    if (!subscription.subscribed) return false;
+    // Free trial has limited access
+    if (subscription.tier === 'free') {
+      return ['studio', 'spark'].includes(moduleKey);
+    }
+    
+    // Check if subscribed tier includes the module
+    if (subscription.tier && subscription.tier in SUBSCRIPTION_TIERS) {
+      const tierProducts = SUBSCRIPTION_TIERS[subscription.tier].products;
+      return tierProducts.includes(moduleKey as GenieProduct);
+    }
 
-    // For now, all paid tiers have access to all modules
-    // This can be extended with the subscription_modules table
-    return true;
+    return false;
   }, [subscription]);
 
   const getTierFeatures = useCallback((tier: SubscriptionTier): string[] => {
@@ -342,11 +554,13 @@ export const useSubscription = (): UseSubscriptionReturn => {
         } else if (event === 'SIGNED_OUT') {
           setSubscription({
             subscribed: false,
-            tier: null,
+            tier: 'free',
             product_id: null,
             price_id: null,
             subscription_end: null,
-            source: null
+            source: null,
+            isTrialActive: false,
+            trialEndsAt: null
           });
         }
       }
@@ -369,6 +583,7 @@ export const useSubscription = (): UseSubscriptionReturn => {
     createCheckout,
     openCustomerPortal,
     hasModuleAccess,
-    getTierFeatures
+    getTierFeatures,
+    startFreeTrial
   };
 };

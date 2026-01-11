@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Loader2, Star, Crown, Zap } from 'lucide-react';
+import { Check, Loader2, Star, Crown, Zap, Gift } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SubscriptionTier, SUBSCRIPTION_TIERS } from '@/hooks/useSubscription';
 
@@ -14,6 +14,7 @@ interface PricingCardProps {
 }
 
 const tierIcons: Record<SubscriptionTier, React.ReactNode> = {
+  free: <Gift className="h-6 w-6" />,
   starter: <Zap className="h-6 w-6" />,
   business: <Star className="h-6 w-6" />,
   pro: <Crown className="h-6 w-6" />,
@@ -21,6 +22,7 @@ const tierIcons: Record<SubscriptionTier, React.ReactNode> = {
 };
 
 const tierColors: Record<SubscriptionTier, string> = {
+  free: 'border-emerald-500/30',
   starter: 'border-muted-foreground/20',
   business: 'border-primary/50',
   pro: 'border-primary ring-2 ring-primary/20',
@@ -82,7 +84,7 @@ export const PricingCard = ({ tier, isCurrentPlan, onSelect, isLoading }: Pricin
         <Button 
           className="w-full" 
           variant={isCurrentPlan ? "outline" : tier === 'pro' ? "default" : "secondary"}
-          disabled={isCurrentPlan || isLoading || !isPaid}
+          disabled={isCurrentPlan || isLoading || (!isPaid && tier !== 'free')}
           onClick={() => onSelect(tier)}
         >
           {isLoading ? (
@@ -92,8 +94,10 @@ export const PricingCard = ({ tier, isCurrentPlan, onSelect, isLoading }: Pricin
             </>
           ) : isCurrentPlan ? (
             'Current Plan'
-          ) : !isPaid ? (
+          ) : !isPaid && tier !== 'free' ? (
             'Beta Access Only'
+          ) : tier === 'free' ? (
+            'Start Free Trial'
           ) : (
             `Get ${config.name}`
           )}
