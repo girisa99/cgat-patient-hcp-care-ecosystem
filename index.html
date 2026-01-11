@@ -2,24 +2,70 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>project-zero-dawn</title>
-    <meta name="description" content="https://genieaiexpermentationhub.com/public/presentation/document-processing">
-    <meta name="author" content="Lovable" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>CGAT Healthcare</title>
+    <meta name="description" content="CGAT Patient HCP Care Ecosystem - Healthcare Management Platform">
+    <meta name="author" content="CGAT Healthcare" />
 
+    <!-- Mobile Web App Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="CGAT Health" />
+    <meta name="application-name" content="CGAT Healthcare" />
     
+    <!-- Theme Colors -->
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="msapplication-TileColor" content="#0f172a" />
     
+    <!-- iOS Splash Screens (Add actual images in production) -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    
+    <!-- Prevent telephone number detection -->
+    <meta name="format-detection" content="telephone=no" />
+    
+    <!-- Open Graph -->
     <meta property="og:type" content="website" />
+    <meta property="og:title" content="CGAT Healthcare" />
+    <meta property="og:description" content="CGAT Patient HCP Care Ecosystem - Healthcare Management Platform" />
     <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
 
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@lovable_dev" />
+    <meta name="twitter:title" content="CGAT Healthcare" />
+    <meta name="twitter:description" content="CGAT Patient HCP Care Ecosystem - Healthcare Management Platform" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-    <meta property="og:title" content="project-zero-dawn">
-  <meta name="twitter:title" content="project-zero-dawn">
-  <meta property="og:description" content="https://genieaiexpermentationhub.com/public/presentation/document-processing">
-  <meta name="twitter:description" content="https://genieaiexpermentationhub.com/public/presentation/document-processing">
-</head>
+
+    <!-- Safe Area Styles for iOS -->
+    <style>
+      :root {
+        --safe-area-inset-top: env(safe-area-inset-top);
+        --safe-area-inset-right: env(safe-area-inset-right);
+        --safe-area-inset-bottom: env(safe-area-inset-bottom);
+        --safe-area-inset-left: env(safe-area-inset-left);
+      }
+      
+      body {
+        padding-top: var(--safe-area-inset-top);
+        padding-bottom: var(--safe-area-inset-bottom);
+        padding-left: var(--safe-area-inset-left);
+        padding-right: var(--safe-area-inset-right);
+      }
+      
+      /* Prevent overscroll on iOS */
+      body.mobile-app {
+        overscroll-behavior: none;
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      /* iOS safe area for bottom navigation */
+      .ios-safe-area .bottom-nav {
+        padding-bottom: var(--safe-area-inset-bottom);
+      }
+    </style>
+  </head>
 
   <body>
     <div id="root"></div>
