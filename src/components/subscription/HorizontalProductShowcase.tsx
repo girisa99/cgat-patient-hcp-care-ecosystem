@@ -175,16 +175,13 @@ export const HorizontalProductShowcase = () => {
                 ))}
               </div>
               
-              {/* Action */}
+              {/* Action - consistent for all products */}
               <Button 
-                variant={isStudio ? "default" : "ghost"} 
+                variant="ghost" 
                 size="sm"
-                className={cn(
-                  "w-full text-xs h-8",
-                  isStudio && "bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600"
-                )}
+                className="w-full text-xs h-8"
               >
-                {isStudio ? "Get Started" : "Explore"}
+                Explore
                 <ArrowRight className="ml-1.5 h-3 w-3" />
               </Button>
             </div>

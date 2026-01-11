@@ -103,17 +103,18 @@ export const GENIE_PRODUCTS = {
   },
   productionHub: {
     id: 'productionHub',
-    name: 'Production Hub',
+    name: 'Production Hub (Arc)',
     tagline: 'Orchestrate Excellence',
-    description: 'Team Coordination Layer. Multi-person productions, content approvals, and large-scale content series management.',
+    description: 'Team Coordination & Arc Layer. Multi-person productions, content approvals, live streaming, and large-scale content series management.',
     color: 'from-indigo-500 to-violet-500',
     bgColor: 'bg-indigo-500/10',
     borderColor: 'border-indigo-500/30',
     icon: '🎯',
     features: [
       'Show & episode management',
-      'Multi-guest coordination',
+      'Multi-guest coordination (Arc)',
       'Approval workflows',
+      'Live streaming integration',
       'Production scheduling',
       'Asset & media sharing',
       'Analytics & reporting'
