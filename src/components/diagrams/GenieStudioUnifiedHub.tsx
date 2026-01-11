@@ -65,8 +65,10 @@ import {
   Radio,
   Sparkles,
   Video,
-  Mic
+  Mic,
+  DollarSign
 } from 'lucide-react';
+import { GenieInvestorDashboard } from './GenieInvestorDashboard';
 import { cn } from '@/lib/utils';
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
@@ -729,6 +731,7 @@ export const GenieStudioUnifiedHub: React.FC = () => {
     { id: 'technical', label: 'Technical', icon: Server },
     { id: 'functional', label: 'Functional', icon: Users },
     { id: 'market', label: 'Market Analysis', icon: BarChart3 },
+    { id: 'investor', label: 'Investor Dashboard', icon: DollarSign },
     { id: 'assets', label: 'Assets & Studio', icon: Video },
     { id: 'roadmap', label: 'Roadmap', icon: Target },
   ];
@@ -1779,6 +1782,11 @@ export const GenieStudioUnifiedHub: React.FC = () => {
               </Card>
             </TabsContent>
           </Tabs>
+        </TabsContent>
+
+        {/* INVESTOR DASHBOARD TAB */}
+        <TabsContent value="investor" className="space-y-4 mt-4">
+          <GenieInvestorDashboard />
         </TabsContent>
 
         {/* ASSETS & STUDIO TAB */}
