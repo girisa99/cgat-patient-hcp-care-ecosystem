@@ -72,8 +72,11 @@ import {
   Wrench,
   Monitor,
   Building,
-  BookOpen
+  BookOpen,
+  CreditCard,
+  Smartphone
 } from 'lucide-react';
+import { NativeFeatureButton } from '@/components/mobile';
 import { cn } from '@/lib/utils';
 import { RecordingStudio } from '@/components/document-processing/RecordingStudio';
 import { toast } from 'sonner';
@@ -2449,6 +2452,23 @@ export default function GenieStudio() {
                       <span className="text-[10px] font-normal text-muted-foreground">Team Productions</span>
                     </div>
                   </Button>
+                  
+                  {/* Subscription Button */}
+                  <Button 
+                    size="lg" 
+                    variant="outline"
+                    onClick={() => navigate('/subscription')}
+                    className="border-amber-500/30 hover:border-amber-500 hover:bg-amber-500/10 flex items-center gap-2 h-auto py-2.5 px-5"
+                  >
+                    <CreditCard className="h-5 w-5 text-amber-600" />
+                    <div className="flex flex-col items-start">
+                      <span className="font-semibold">Upgrade Plan</span>
+                      <span className="text-[10px] font-normal text-muted-foreground">View Pricing</span>
+                    </div>
+                  </Button>
+                  
+                  {/* Mobile Features Button */}
+                  <NativeFeatureButton variant="outline" className="h-auto py-2.5" />
                 </div>
               </div>
             </div>
