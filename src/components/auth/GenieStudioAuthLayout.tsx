@@ -102,7 +102,7 @@ const GenieStudioAuthLayout: React.FC<GenieStudioAuthLayoutProps> = ({ children 
             />
           </div>
           <div className="text-purple-300 text-sm">
-            © 2024 Genie AI. All rights reserved.
+            © 2025 Genie AI. All rights reserved.
           </div>
         </div>
       </div>
