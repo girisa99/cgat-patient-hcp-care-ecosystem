@@ -13,6 +13,7 @@ import { Activity, BarChart3, Database, FileText, Play, RefreshCw, Shield, TestT
 import TestCasesDisplay from '@/components/testing/TestCasesDisplay';
 import { EnhancedArchitectureDocumentation } from '@/components/testing/EnhancedArchitectureDocumentation';
 import { AIProviderTest } from '@/components/AIProviderTest';
+import { supabase } from '@/integrations/supabase/client';
 
 const Testing: React.FC = () => {
   console.log('🧪 Comprehensive Testing Suite - Full functionality restored');
@@ -60,7 +61,6 @@ const Testing: React.FC = () => {
       });
 
       // Fetch real data from database using Supabase
-      const { supabase } = await import('@/integrations/supabase/client');
       const { data: testData, error } = await supabase
         .from('comprehensive_test_cases')
         .select('*')
