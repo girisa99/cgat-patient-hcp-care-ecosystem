@@ -56,11 +56,35 @@ interface RecordingResult {
   thumbnailUrl?: string;
 }
 
-// Mixed audio result
-interface MixedAudioResult {
-  url: string;
-  duration: number;
-  tracks: Array<{ id: string; name: string; type: string }>;
+// Video track from mixer
+interface VideoTrack {
+  id: string;
+  name: string;
+  url?: string;
+  thumbnailUrl?: string;
+  duration?: number;
+  selected: boolean;
+  order: number;
+  visible: boolean;
+}
+
+// Audio track from mixer
+interface AudioTrackMix {
+  id: string;
+  name: string;
+  url?: string;
+  type: 'recording' | 'voiceover' | 'music';
+  duration?: number;
+  volume: number;
+  muted: boolean;
+}
+
+// Mixed output result (video + audio)
+interface MixedResult {
+  videoTracks: VideoTrack[];
+  audioTracks: AudioTrackMix[];
+  totalDuration: number;
+  masterVolume: number;
 }
 
 const GenieVibe: React.FC = () => {
@@ -78,7 +102,7 @@ const GenieVibe: React.FC = () => {
   const [activeTab, setActiveTab] = useState<PipelineStage>('record');
   const [recordings, setRecordings] = useState<RecordingResult[]>([]);
   const [timelineClips, setTimelineClips] = useState<TimelineClip[]>([]);
-  const [mixedAudio, setMixedAudio] = useState<MixedAudioResult | null>(null);
+  const [mixedMedia, setMixedMedia] = useState<MixedResult | null>(null);
   const [completedStages, setCompletedStages] = useState<PipelineStage[]>([]);
 
   // Combine voiceovers and TTS for audio mixer
@@ -158,17 +182,43 @@ const GenieVibe: React.FC = () => {
   }, [markStageCompleted]);
 
   // Handle mix completion - advance to timeline
-  const handleMixComplete = useCallback((result: MixedAudioResult) => {
-    setMixedAudio(result);
+  const handleMixComplete = useCallback((result: MixedResult) => {
+    setMixedMedia(result);
     markStageCompleted('mix');
     
-    toast.success('Audio mixed! Arrange on timeline?', {
+    // Add video tracks to timeline if not already there
+    result.videoTracks.forEach((video, index) => {
+      const existingClip = timelineClips.find(c => c.id === video.id);
+      if (!existingClip) {
+        const lastEndTime = timelineClips.length > 0 
+          ? Math.max(...timelineClips.map(c => c.startTime + c.duration))
+          : 0;
+        
+        const newClip: TimelineClip = {
+          id: video.id,
+          type: 'video',
+          name: video.name,
+          sourceUrl: video.url,
+          thumbnailUrl: video.thumbnailUrl,
+          startTime: lastEndTime + (index * 0.1),
+          duration: video.duration || 5,
+          inPoint: 0,
+          outPoint: video.duration || 5,
+          track: 0,
+          volume: 1,
+          opacity: video.visible ? 1 : 0,
+        };
+        setTimelineClips(prev => [...prev, newClip]);
+      }
+    });
+    
+    toast.success('Media mixed! Arrange on timeline?', {
       action: {
         label: 'Go to Timeline',
         onClick: () => setActiveTab('timeline')
       }
     });
-  }, [markStageCompleted]);
+  }, [markStageCompleted, timelineClips]);
 
   // Handle timeline export
   const handleTimelineExport = useCallback((format: string) => {
