@@ -92,13 +92,15 @@ export const GENIE_PRODUCTS = {
       'Multi-model AI orchestration',
       'Visual workflow builder',
       'Real-time collaboration',
-      'Cross-platform publishing'
+      'Cross-platform publishing',
+      'Two-way host/participant feedback',
+      'Live status sync with Production Hub'
     ],
     capabilities: {
       free: ['Basic features', 'Watermarked exports'],
-      starter: ['Core features', 'No watermarks', '5 projects'],
-      business: ['Full suite access', '50 projects', 'Team features'],
-      pro: ['Unlimited projects', 'White-label', 'Priority support']
+      starter: ['Core features', 'No watermarks', '5 projects', 'Basic feedback'],
+      business: ['Full suite access', '50 projects', 'Team feedback', 'Status sync'],
+      pro: ['Unlimited projects', 'White-label', 'Full collaboration', 'Approval workflows']
     }
   },
   productionHub: {
@@ -117,13 +119,18 @@ export const GENIE_PRODUCTS = {
       'Live streaming integration',
       'Production scheduling',
       'Asset & media sharing',
-      'Analytics & reporting'
+      'Analytics & reporting',
+      'Real-time session feedback',
+      'Two-way host/participant communication',
+      'Status dropdown with dynamic categories',
+      'Auto-sync with ARC sessions',
+      'Branded notification templates'
     ],
     capabilities: {
       free: ['Not available'],
       starter: ['Not available'],
-      business: ['5 shows', 'Basic scheduling', '3 team members'],
-      pro: ['Unlimited shows', '10 guests/session', 'Live streaming', 'Full dashboard']
+      business: ['5 shows', 'Basic scheduling', '3 team members', 'Basic feedback'],
+      pro: ['Unlimited shows', '10 guests/session', 'Live streaming', 'Full dashboard', 'Full collaboration', 'Approval chains']
     }
   }
 } as const;

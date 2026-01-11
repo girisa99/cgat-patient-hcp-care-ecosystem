@@ -1,8 +1,8 @@
 # Genie Suite Architecture Summary
 
-> **Version:** 1.1  
-> **Last Updated:** 2026-01-06  
-> **Status:** Current Implementation State (80 Scenarios Documented)
+> **Version:** 1.2  
+> **Last Updated:** 2026-01-11  
+> **Status:** Current Implementation State (110 Scenarios + Collaboration Features)
 
 ---
 
@@ -17,19 +17,118 @@
 | **Genie Vibe** | "Feel the Flow" | Creative Layer (Production) | ✅ Complete |
 | **Production Hub (Arc)** | "Orchestrate Excellence" | Team Coordination (Optional) | ✅ Complete |
 | **Recording Studio** | — | Video Capture & Export | ✅ Complete |
+| **Session Collaboration** | "Real-time Teamwork" | Two-way Host/Participant Communication | ✅ **NEW** |
 
 ---
 
-## Bidirectional Flow (NEW)
+## NEW: Two-Way Collaboration System (Implemented 2026-01-11)
+
+### Session Feedback & Review System
+
+**Purpose:** Enable real-time bidirectional communication between hosts and participants with live status tracking.
+
+#### Key Features
+
+| Feature | Description | Status |
+|---------|-------------|--------|
+| **Suggestion Box** | Participants submit suggestions for scripts, titles, recordings | ✅ Complete |
+| **Real-time Status Sync** | Live status updates across ARC and Production Hub | ✅ Complete |
+| **Bidirectional Notifications** | Push/pull notifications between host and participants | ✅ Complete |
+| **Review Workflow** | Structured review stages with approval/rejection | ✅ Complete |
+| **Branded Communications** | All notifications follow show/brand styling | ✅ Complete |
+
+#### Status Dropdown Categories
+
+```
+• pending           - Awaiting review
+• under_review      - Currently being reviewed
+• approved          - Accepted and implemented
+• rejected          - Declined with feedback
+• needs_clarification - Requires more information
+• implemented       - Changes applied to production
+```
+
+#### Review Status Types
+
+```
+• title_review          - Episode/show title review
+• script_review         - Script content review
+• recording_review      - Recording quality review
+• schedule_review       - Timing/scheduling review
+• production_review     - Overall production review
+• final_approval        - Final sign-off before publish
+```
+
+#### Integration Points
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    COLLABORATION FLOW                            │
+└─────────────────────────────────────────────────────────────────┘
+
+ [Production Hub / Kanban]     ←→     [ARC Session]
+         │                                    │
+         ▼                                    ▼
+ ┌───────────────┐                  ┌───────────────┐
+ │ Task Status   │  Real-time Sync  │ Review Status │
+ │ (stage-based) │  ◄─────────────► │ (per segment) │
+ └───────────────┘                  └───────────────┘
+         │                                    │
+         ▼                                    ▼
+ [ProductionStatusBadge]          [SessionFeedbackPanel]
+         │                                    │
+         └──────────────┬─────────────────────┘
+                        │
+                        ▼
+              [Push/Pull Notifications]
+                        │
+         ┌──────────────┼──────────────┐
+         ▼              ▼              ▼
+    [Host Alert]  [Participant]  [Email Digest]
+```
+
+### Database Tables (NEW)
+
+| Table | Purpose |
+|-------|---------|
+| `genie_session_feedback` | Stores suggestions, comments, and review items |
+| `genie_session_review_status` | Tracks review status per category per session |
+
+### Hooks & Components (NEW)
+
+| Hook/Component | Purpose |
+|----------------|---------|
+| `useSessionFeedback` | Manage feedback CRUD and real-time subscriptions |
+| `useProductionFeedbackSync` | Bidirectional sync with Production Hub |
+| `SessionFeedbackPanel` | UI for viewing/adding feedback |
+| `ProductionStatusBadge` | Status indicators on Kanban cards |
+
+---
+
+## Bidirectional Flow (Updated)
 
 ### Default Flow: Mind → Script → TTS → Vibe → Publish
 ```
 [Mind] → [Script Editor] → [TTS Generation] → [Vibe Recording] → [Export/Publish]
 ```
 
-### NEW Flow: Vibe → Mind → Script → Vibe
+### Content Analysis Flow: Vibe → Mind → Script → Vibe
 ```
 [Vibe Content] → [ContentAnalyzer] → [Mind AI] → [Script] → [TTS] → [Vibe Recording]
+```
+
+### NEW: Collaboration Flow
+```
+[Host Creates Session] → [Invites Participants] → [Participants Review]
+        │                                                   │
+        ▼                                                   ▼
+[Receives Suggestions] ◄──── Real-time Sync ────► [Submit Feedback]
+        │                                                   │
+        ▼                                                   ▼
+[Reviews & Approves] ───────────────────────────► [Status Updates]
+        │                                                   │
+        ▼                                                   ▼
+[Production Advances] ◄──── Auto-Stage Sync ────► [Kanban Updates]
 ```
 
 ---
@@ -45,6 +144,16 @@
 - Sidebar panel for quick Mind actions
 - One-click send to Mind functionality
 
+### SessionFeedbackPanel (`session/SessionFeedbackPanel.tsx`) - NEW
+- Real-time feedback submission and review
+- Threaded replies and status management
+- Branded styling based on show configuration
+
+### ProductionStatusBadge (`production/ProductionStatusBadge.tsx`) - NEW
+- Visual status indicators for Kanban cards
+- Shows pending feedback count, urgent items
+- Auto-updates via real-time subscriptions
+
 ### Script Versioning
 - `ScriptData.version`: 'original' | 'enhanced'
 - `ScriptData.content`: Original content
@@ -58,15 +167,41 @@
 |-------|--------|------------|
 | Phase 1: P0 Partials + NLP | ✅ Complete | 100% |
 | Phase 1.5: Vibe ↔ Mind | ✅ Complete | 100% |
-| Phase 2: High Impact P0 | 🔄 In Progress | 0% |
+| Phase 1.6: Collaboration | ✅ Complete | 100% |
+| Phase 2: High Impact P0 | 🔄 In Progress | 5% |
 | Phase 3: P1 Essentials | 📋 Planned | 0% |
 | **Phase 4: Mobile-First** | 📋 Planned | 0% |
 | **Phase 5: Segment-Specific** | 📋 Planned | 0% |
 | **Phase 6: Remix & Clips** | 📋 Planned | 0% |
 | **Commercialization** | 📋 Planned | 0% |
 
-**Scenarios:** 110 Total (8 Implemented, 6 Partial, 96 Planned)  
-**Overall Progress:** 13%
+**Scenarios:** 110 Total (12 Implemented, 6 Partial, 92 Planned)  
+**Overall Progress:** 16%
+
+---
+
+## Segments That Leverage Collaboration Features
+
+### Full Collaboration Access
+
+| Segment | Use Cases | Key Collaboration Features |
+|---------|-----------|---------------------------|
+| **Enterprise** | Multi-team productions, approval chains | Full workflow, SSO, audit logs |
+| **Education** | Course reviews, student feedback | Review cycles, grading integration |
+| **Healthcare** | Compliance reviews, multi-stakeholder approvals | HIPAA-aware, consent tracking |
+
+### Standard Collaboration Access
+
+| Segment | Use Cases | Key Collaboration Features |
+|---------|-----------|---------------------------|
+| **SMB** | Team content creation, manager approvals | Basic workflow, 3 team members |
+| **Creator** | Guest collaborations, sponsor reviews | Basic feedback, limited team |
+
+### Solo Mode (No Collaboration Required)
+
+| Segment | Use Cases |
+|---------|-----------|
+| **Traveler** | Solo vlog creation, location-based content |
 
 ---
 
@@ -84,6 +219,7 @@
 - ✅ **PDF → Mind → Script**
 - ✅ **URL → Mind → Script**
 - ✅ **Image → Mind → Script**
+- ✅ **Host/Participant Two-Way Feedback** (NEW)
 - ⏳ One-Tap Mobile Record (Scenario 81)
 
 ### P1 Essential (Scenarios 11-24, 83-90)
@@ -144,13 +280,20 @@
 - Multi-person productions
 - Content requiring approvals
 - Large-scale content series
+- **Team collaboration with feedback loops** (NEW)
 
 **When NOT Needed:**
 - Solo creators
 - Single-session recordings
 - Simple script → record → publish
 
-**Note:** Publishing always happens from Vibe. Production Hub tracks readiness.
+**Collaboration Features:**
+- Real-time feedback between host and participants
+- Status dropdown with dynamic categories
+- Auto-sync with ARC session stages
+- Branded notifications following show styling
+
+**Note:** Publishing always happens from Vibe. Production Hub tracks readiness and collaboration.
 
 ---
 
@@ -161,7 +304,7 @@
 | `GENIE_STUDIO_TECHNICAL_ARCHITECTURE.md` | Technical implementation details |
 | `GENIE_STUDIO_FUNCTIONAL_ARCHITECTURE.md` | User flows and UX specifications |
 | `GENIE_PHASE_IMPLEMENTATION_ROADMAP.md` | Phase-by-phase implementation plan |
-| `GENIE_STUDIO_SCENARIO_MAP.md` | All 65 user scenarios |
+| `GENIE_STUDIO_SCENARIO_MAP.md` | All 110 user scenarios |
 | `GENIE_SUITE_ARCHITECTURE_SUMMARY.md` | This summary document |
 
 ---
@@ -191,14 +334,14 @@ STAGE 2: Intelligent Model Routing
 
 ## User Segments & Subscription Tiers
 
-| Segment | Target Users | Tier | Monthly | Key Competitors | Genie Advantage |
-|---------|-------------|------|---------|-----------------|-----------------|
-| **Creator** | Solo creators, influencers | Starter | $9.99 | CapCut, Canva, Descript | All-in-one: Script → TTS → Record → Publish |
-| **Traveler** | Travel vloggers | Starter | $9.99 | GoPro Quik, Adobe Rush | Offline + AI narration + location tagging |
-| **Small Business** | Shops, services | Business | $29.99 | Loom, Synthesia, Pictory | Affordable AI + product templates |
-| **Education** | Teachers, trainers | Pro | $79.99 | Screencastify, Edpuzzle | Lesson builder + AI curriculum scripts |
-| **Healthcare** | Clinics, hospitals | Enterprise | Custom | VIDIZMO, Gumlet | HIPAA-compliant under $100/mo |
-| **Enterprise** | Large orgs, agencies | Enterprise | Custom | Synthesia, HeyGen | White-label + approval workflows |
+| Segment | Target Users | Tier | Monthly | Collaboration | Key Competitors | Genie Advantage |
+|---------|-------------|------|---------|---------------|-----------------|-----------------|
+| **Creator** | Solo creators, influencers | Starter | $9.99 | Basic | CapCut, Canva, Descript | All-in-one: Script → TTS → Record → Publish |
+| **Traveler** | Travel vloggers | Starter | $9.99 | None | GoPro Quik, Adobe Rush | Offline + AI narration + location tagging |
+| **Small Business** | Shops, services | Business | $29.99 | Standard | Loom, Synthesia, Pictory | Affordable AI + product templates + team feedback |
+| **Education** | Teachers, trainers | Pro | $79.99 | Full | Screencastify, Edpuzzle | Lesson builder + review cycles + student collaboration |
+| **Healthcare** | Clinics, hospitals | Enterprise | Custom | Full | VIDIZMO, Gumlet | HIPAA-compliant + multi-stakeholder approvals |
+| **Enterprise** | Large orgs, agencies | Enterprise | Custom | Full | Synthesia, HeyGen | White-label + approval workflows + audit trails |
 
 ---
 
@@ -217,6 +360,8 @@ STAGE 2: Intelligent Model Routing
 | HIPAA compliance | N/A | N/A | N/A | N/A | ❌ | ❌ |
 | Multi-language TTS | ⚠️ | ❌ | ⚠️ | ❌ | ❌ | ⚠️ |
 | Content remix/repurpose | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Real-time team collaboration** | ❌ | N/A | ❌ | ❌ | ❌ | ⚠️ |
+| **Bidirectional feedback loops** | ❌ | N/A | ❌ | ❌ | ❌ | ❌ |
 
 **Legend:** ❌ = Major gap | ⚠️ = Partial solution exists
 
@@ -229,6 +374,8 @@ STAGE 2: Intelligent Model Routing
 | 3 | "AI voiceover that sounds human" | 61% | ElevenLabs + voice cloning |
 | 4 | "Offline capability" | 54% | Service worker + local storage |
 | 5 | "Voice-first editing" | 47% | "Hey Genie, trim this" |
+| 6 | **"Team feedback without email"** | 42% | **Session Collaboration System** (NEW) |
+| 7 | **"Know when changes are approved"** | 38% | **Real-time status sync** (NEW) |
 
 ### Segment-Specific Top Requests
 
@@ -240,6 +387,7 @@ STAGE 2: Intelligent Model Routing
 | Education | "Generate lesson from my notes" | 88 (Lesson Builder) |
 | Healthcare | "HIPAA-compliant under $100/mo" | 93 (Patient Education) |
 | Enterprise | "Approval workflows" | 97 (Franchise Templates) |
+| **All Teams** | **"No more email back-and-forth"** | **Session Collaboration** (NEW) |
 
 ---
 
@@ -250,6 +398,7 @@ STAGE 2: Intelligent Model Routing
 2. **Voice-First Interface** - "Hey Genie, create a 30-second promo"
 3. **Content Remix Engine** - Upload existing → repurpose automatically
 4. **Offline Recording** - Record anywhere, sync later
+5. **Real-time Team Collaboration** - No email back-and-forth (NEW)
 
 ### Mid-Term (Phase 3-4)
 1. **Affordable TTS Quality** - ElevenLabs-quality at 1/3 the price
@@ -265,4 +414,4 @@ STAGE 2: Intelligent Model Routing
 
 ---
 
-*Last Updated: 2026-01-09*
+*Last Updated: 2026-01-11*
