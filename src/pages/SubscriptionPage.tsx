@@ -1,13 +1,11 @@
 import React from 'react';
 import { SubscriptionProvider, SubscriptionStatus } from '@/components/subscription';
 import { EnhancedPricingSection } from '@/components/subscription/EnhancedPricingSection';
-import { ProductsOverview } from '@/components/subscription/ProductsOverview';
+import { HorizontalProductShowcase } from '@/components/subscription/HorizontalProductShowcase';
 import AppLayout from '@/components/layout/AppLayout';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CreditCard, LayoutGrid, Clock, Package, Sparkles, TrendingUp, Users, Zap, Shield } from 'lucide-react';
+import { CreditCard, TrendingUp, Users, Zap, Shield, Package } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
 // Import suite logo
@@ -18,161 +16,124 @@ const SubscriptionPage = () => {
     <SubscriptionProvider>
       <AppLayout>
         <div className="min-h-screen">
-          {/* Hero Header - Cleaner design */}
+          {/* Hero Header - Compact */}
           <div className="relative border-b border-border/50 bg-gradient-to-b from-muted/30 to-background">
             <div className="absolute inset-0 bg-grid-pattern opacity-5" />
-            
-            <div className="relative container mx-auto py-10 px-4 sm:px-6 lg:px-8">
-              <div className="flex flex-col items-center text-center space-y-4">
+            <div className="relative container mx-auto py-6 px-4 sm:px-6 lg:px-8">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <img 
                     src={genieSuiteLogo} 
                     alt="Genie Suite" 
-                    className="h-10 sm:h-12 w-auto"
+                    className="h-10 w-auto"
                   />
-                  <Badge variant="secondary" className="hidden sm:flex gap-1">
-                    <Sparkles className="h-3 w-3" />
-                    Complete Suite
-                  </Badge>
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+                      Genie Suite
+                    </h1>
+                    <p className="text-sm text-muted-foreground">
+                      AI-powered content creation & agent building
+                    </p>
+                  </div>
                 </div>
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-amber-500 bg-clip-text text-transparent">
-                  Genie Suite Plans
-                </h1>
-                <p className="text-base sm:text-lg text-muted-foreground max-w-xl">
-                  AI-powered content creation, agent building & knowledge management
-                </p>
+                <Badge variant="outline" className="flex gap-1.5">
+                  <CreditCard className="h-3.5 w-3.5" />
+                  Subscription & Plans
+                </Badge>
               </div>
             </div>
           </div>
 
-          {/* Main Content - Better spacing and alignment */}
-          <div className="container mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
-            <Tabs defaultValue="plans" className="space-y-6">
-              {/* Centered, responsive tab list */}
-              <div className="flex justify-center">
-                <TabsList className="grid grid-cols-4 w-full max-w-xl h-12 p-1 bg-muted/50">
-                  <TabsTrigger value="plans" className="flex items-center justify-center gap-1.5 text-xs sm:text-sm">
-                    <LayoutGrid className="h-4 w-4" />
-                    <span className="hidden xs:inline">Plans</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="products" className="flex items-center justify-center gap-1.5 text-xs sm:text-sm">
-                    <Package className="h-4 w-4" />
-                    <span className="hidden xs:inline">Products</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="current" className="flex items-center justify-center gap-1.5 text-xs sm:text-sm">
-                    <CreditCard className="h-4 w-4" />
-                    <span className="hidden xs:inline">My Plan</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="usage" className="flex items-center justify-center gap-1.5 text-xs sm:text-sm">
-                    <Clock className="h-4 w-4" />
-                    <span className="hidden xs:inline">Usage</span>
-                  </TabsTrigger>
-                </TabsList>
+          {/* Main Content - Sequential Layout */}
+          <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-10">
+            
+            {/* Section 1: Complete Genie Suite - Horizontal Scroll */}
+            <section>
+              <HorizontalProductShowcase />
+            </section>
+
+            {/* Section 2: Subscription Plans */}
+            <section>
+              <EnhancedPricingSection />
+            </section>
+
+            {/* Section 3: Current Status & Usage */}
+            <section className="space-y-6">
+              <div className="text-center">
+                <h2 className="text-xl font-bold text-foreground">Your Subscription</h2>
+                <p className="text-sm text-muted-foreground">Current plan status and usage metrics</p>
               </div>
-
-              {/* Plans Tab */}
-              <TabsContent value="plans" className="mt-6">
-                <EnhancedPricingSection />
-              </TabsContent>
-
-              {/* Products Tab */}
-              <TabsContent value="products" className="mt-6">
-                <ProductsOverview />
-              </TabsContent>
-
-              {/* Current Plan Tab - Improved layout */}
-              <TabsContent value="current" className="mt-6">
-                <div className="max-w-2xl mx-auto space-y-6">
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
+                {/* Subscription Status */}
+                <div>
                   <SubscriptionStatus />
-                  
-                  {/* User segment info */}
-                  <Card className="border-border/50">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Users className="h-5 w-5 text-primary" />
-                        Your Account Segment
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <SegmentBadge 
-                          label="Account Type" 
-                          value="Healthcare Professional" 
-                          icon={<Shield className="h-4 w-4" />}
-                        />
-                        <SegmentBadge 
-                          label="Organization" 
-                          value="Individual" 
-                          icon={<Users className="h-4 w-4" />}
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Your subscription tier determines feature access. Segments help us customize your experience.
-                      </p>
-                    </CardContent>
-                  </Card>
                 </div>
-              </TabsContent>
-
-              {/* Usage Tab - Enhanced layout */}
-              <TabsContent value="usage" className="mt-6">
-                <div className="max-w-4xl mx-auto space-y-6">
-                  {/* Usage Summary */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <UsageMetric 
-                      title="API Calls" 
-                      used={2847} 
-                      limit={10000} 
-                      icon={<Zap className="h-5 w-5" />}
-                      color="blue"
-                    />
-                    <UsageMetric 
-                      title="Storage" 
-                      used={12.5} 
-                      limit={50} 
-                      icon={<Package className="h-5 w-5" />}
-                      unit="GB"
-                      color="purple"
-                    />
-                    <UsageMetric 
-                      title="Active Agents" 
-                      used={8} 
-                      limit={25} 
-                      icon={<Users className="h-5 w-5" />}
-                      color="amber"
-                    />
-                    <UsageMetric 
-                      title="RAG Documents" 
-                      used={1250} 
-                      limit={10000}
-                      icon={<TrendingUp className="h-5 w-5" />}
-                      color="emerald"
-                    />
-                  </div>
-
-                  {/* Detailed Usage Card */}
-                  <Card className="border-border/50">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5 text-primary" />
-                        Usage Trends
-                      </CardTitle>
-                      <CardDescription>
-                        Track your monthly consumption and optimize your plan
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-48 flex items-center justify-center bg-muted/30 rounded-lg border border-dashed border-border">
-                        <p className="text-sm text-muted-foreground text-center px-4">
-                          📊 Detailed usage charts coming soon<br/>
-                          <span className="text-xs">Track patterns, set alerts, and get optimization tips</span>
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
+                
+                {/* Account Segment */}
+                <Card className="border-border">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Users className="h-5 w-5 text-primary" />
+                      Account Details
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <SegmentBadge 
+                        label="Account Type" 
+                        value="Healthcare Professional" 
+                        icon={<Shield className="h-4 w-4" />}
+                      />
+                      <SegmentBadge 
+                        label="Organization" 
+                        value="Individual" 
+                        icon={<Users className="h-4 w-4" />}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Subscription tier determines feature access. Segments customize your experience.
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* Usage Metrics */}
+              <div className="max-w-5xl mx-auto">
+                <h3 className="text-lg font-semibold text-foreground mb-4">Usage Overview</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <UsageMetric 
+                    title="API Calls" 
+                    used={2847} 
+                    limit={10000} 
+                    icon={<Zap className="h-4 w-4" />}
+                    color="blue"
+                  />
+                  <UsageMetric 
+                    title="Storage" 
+                    used={12.5} 
+                    limit={50} 
+                    icon={<Package className="h-4 w-4" />}
+                    unit="GB"
+                    color="purple"
+                  />
+                  <UsageMetric 
+                    title="Agents" 
+                    used={8} 
+                    limit={25} 
+                    icon={<Users className="h-4 w-4" />}
+                    color="amber"
+                  />
+                  <UsageMetric 
+                    title="Documents" 
+                    used={1250} 
+                    limit={10000}
+                    icon={<TrendingUp className="h-4 w-4" />}
+                    color="emerald"
+                  />
                 </div>
-              </TabsContent>
-            </Tabs>
+              </div>
+            </section>
           </div>
         </div>
       </AppLayout>
@@ -188,12 +149,12 @@ interface SegmentBadgeProps {
 }
 
 const SegmentBadge = ({ label, value, icon }: SegmentBadgeProps) => (
-  <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+  <div className="p-3 rounded-lg bg-muted/50 border border-border">
     <div className="flex items-center gap-2 text-muted-foreground mb-1">
       {icon}
       <span className="text-xs">{label}</span>
     </div>
-    <p className="text-sm font-medium">{value}</p>
+    <p className="text-sm font-medium text-foreground">{value}</p>
   </div>
 );
 
@@ -225,19 +186,17 @@ const UsageMetric = ({ title, used, limit, icon, unit = '', color }: UsageMetric
   };
 
   return (
-    <Card className="border-border/50">
+    <Card className="border-border">
       <CardContent className="pt-4 pb-3">
-        <div className="flex items-center justify-between mb-3">
-          <div className={cn("p-2 rounded-lg", colorClasses[color])}>
+        <div className="flex items-center justify-between mb-2">
+          <div className={cn("p-1.5 rounded-md", colorClasses[color])}>
             {icon}
           </div>
-          <Badge variant="outline" className="text-xs">
-            {percentage}%
-          </Badge>
+          <span className="text-xs text-muted-foreground">{percentage}%</span>
         </div>
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium">{title}</h4>
-          <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+        <div className="space-y-1.5">
+          <h4 className="text-sm font-medium text-foreground">{title}</h4>
+          <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
             <div 
               className={cn("h-full rounded-full transition-all duration-500", progressColors[color])}
               style={{ width: `${Math.min(percentage, 100)}%` }}
