@@ -4,3 +4,7 @@ export { PricingSection } from './PricingSection';
 export { SubscriptionStatus } from './SubscriptionStatus';
 export { CheckoutButton } from './CheckoutButton';
 export { ManageSubscriptionButton } from './ManageSubscriptionButton';
+export { ProductShowcase } from './ProductShowcase';
+export { ProductsOverview } from './ProductsOverview';
+export { EnhancedPricingCard } from './EnhancedPricingCard';
+export { EnhancedPricingSection } from './EnhancedPricingSection';
