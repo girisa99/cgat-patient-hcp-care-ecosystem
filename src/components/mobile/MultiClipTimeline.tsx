@@ -259,58 +259,58 @@ export const MultiClipTimeline: React.FC<MultiClipTimelineProps> = ({
   const selectedClip = clips.find(c => c.id === selectedClipId);
 
   return (
-    <Card className={cn("w-full", className)}>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Film className="h-5 w-5 text-primary" />
+    <Card className={cn("w-full overflow-hidden", className)}>
+      <CardHeader className="pb-2 px-3">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Film className="h-4 w-4 text-primary" />
             Multi-Clip Timeline
           </CardTitle>
           <div className="flex items-center gap-1">
-            <Badge variant="outline">{clips.length} clips</Badge>
-            <Badge variant="secondary">{formatTime(totalDuration)}</Badge>
+            <Badge variant="outline" className="text-xs px-1.5">{clips.length} clips</Badge>
+            <Badge variant="secondary" className="text-xs px-1.5">{formatTime(totalDuration)}</Badge>
           </div>
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-3">
-        {/* Transport Controls */}
-        <div className="flex items-center justify-between gap-4 p-2 bg-muted/50 rounded-lg">
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" onClick={undo} disabled={historyIndex <= 0}>
-              <Undo className="h-4 w-4" />
+      <CardContent className="space-y-2 px-2 pb-3">
+        {/* Transport Controls - Compact */}
+        <div className="flex items-center justify-between gap-2 p-1.5 bg-muted/50 rounded-lg">
+          <div className="flex items-center gap-0.5">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={undo} disabled={historyIndex <= 0}>
+              <Undo className="h-3.5 w-3.5" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={redo} disabled={historyIndex >= history.length - 1}>
-              <Redo className="h-4 w-4" />
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={redo} disabled={historyIndex >= history.length - 1}>
+              <Redo className="h-3.5 w-3.5" />
             </Button>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => seekTo(0)}>
-              <SkipBack className="h-4 w-4" />
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => seekTo(0)}>
+              <SkipBack className="h-3.5 w-3.5" />
             </Button>
             <Button 
               size="icon" 
-              className="h-10 w-10"
+              className="h-8 w-8"
               onClick={togglePlay}
             >
-              {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => seekTo(totalDuration)}>
-              <SkipForward className="h-4 w-4" />
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => seekTo(totalDuration)}>
+              <SkipForward className="h-3.5 w-3.5" />
             </Button>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-mono min-w-[80px]">{formatTime(currentTime)}</span>
-            <Button variant="ghost" size="icon" onClick={() => setIsMuted(!isMuted)}>
-              {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] font-mono min-w-[55px] text-right">{formatTime(currentTime)}</span>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsMuted(!isMuted)}>
+              {isMuted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
             </Button>
           </div>
         </div>
 
         {/* Timeline Seekbar */}
-        <div className="px-2">
+        <div className="px-1">
           <Slider
             value={[currentTime]}
             min={0}
@@ -321,60 +321,60 @@ export const MultiClipTimeline: React.FC<MultiClipTimelineProps> = ({
           />
         </div>
 
-        {/* Add Clip Buttons - More compact with tooltips */}
-        <div className="flex gap-1.5 flex-wrap">
-          <Button variant="outline" size="sm" className="h-8 px-2 text-xs" onClick={() => addClipFromLibrary('video')}>
-            <Film className="h-3.5 w-3.5 mr-1" />
+        {/* Add Clip Buttons - More compact */}
+        <div className="flex gap-1 flex-wrap">
+          <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => addClipFromLibrary('video')}>
+            <Film className="h-3 w-3 mr-0.5" />
             Video
           </Button>
-          <Button variant="outline" size="sm" className="h-8 px-2 text-xs" onClick={() => addClipFromLibrary('audio')}>
-            <Music className="h-3.5 w-3.5 mr-1" />
+          <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => addClipFromLibrary('audio')}>
+            <Music className="h-3 w-3 mr-0.5" />
             Audio
           </Button>
-          <Button variant="outline" size="sm" className="h-8 px-2 text-xs" onClick={() => addClipFromLibrary('image')}>
-            <Image className="h-3.5 w-3.5 mr-1" />
+          <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => addClipFromLibrary('image')}>
+            <Image className="h-3 w-3 mr-0.5" />
             Image
           </Button>
-          <Button variant="outline" size="sm" className="h-8 px-2 text-xs" onClick={() => addClipFromLibrary('text')}>
-            <Type className="h-3.5 w-3.5 mr-1" />
+          <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => addClipFromLibrary('text')}>
+            <Type className="h-3 w-3 mr-0.5" />
             Text
           </Button>
         </div>
         
-        {/* Help text explaining track types */}
-        <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+        {/* Help text - more compact */}
+        <div className="text-[10px] text-muted-foreground bg-muted/50 p-1.5 rounded">
           <p><strong>Video:</strong> Main footage | <strong>Audio:</strong> Music/voiceover | <strong>Image:</strong> Photos/graphics | <strong>Text:</strong> Titles/captions</p>
         </div>
 
-        {/* Zoom Controls */}
+        {/* Zoom Controls - compact */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => setZoom(Math.max(0.25, zoom - 0.25))}>
-              <ZoomOut className="h-4 w-4" />
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setZoom(Math.max(0.25, zoom - 0.25))}>
+              <ZoomOut className="h-3.5 w-3.5" />
             </Button>
-            <span className="text-sm text-muted-foreground min-w-[50px] text-center">
+            <span className="text-[10px] text-muted-foreground min-w-[40px] text-center">
               {Math.round(zoom * 100)}%
             </span>
-            <Button variant="ghost" size="icon" onClick={() => setZoom(Math.min(4, zoom + 0.25))}>
-              <ZoomIn className="h-4 w-4" />
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setZoom(Math.min(4, zoom + 0.25))}>
+              <ZoomIn className="h-3.5 w-3.5" />
             </Button>
           </div>
-          <Button variant="ghost" size="icon">
-            <Maximize2 className="h-4 w-4" />
+          <Button variant="ghost" size="icon" className="h-7 w-7">
+            <Maximize2 className="h-3.5 w-3.5" />
           </Button>
         </div>
 
-        {/* Timeline Tracks */}
+        {/* Timeline Tracks - constrained width */}
         <div className="border rounded-lg overflow-hidden">
           {/* Timeline Header - Time Ruler */}
           <div className="flex border-b bg-muted/30">
-            <div className="w-24 flex-shrink-0 p-2 border-r text-xs font-medium">
+            <div className="w-16 flex-shrink-0 p-1.5 border-r text-[10px] font-medium">
               Tracks
             </div>
-              <ScrollArea className="flex-1">
+            <ScrollArea className="flex-1">
               <div 
-                className="h-6 relative"
-                style={{ width: totalDuration * pxPerSecond }}
+                className="h-5 relative"
+                style={{ width: Math.max(totalDuration * pxPerSecond, 200) }}
               >
                 {/* Time markers */}
                 {Array.from({ length: Math.ceil(totalDuration / 5) + 1 }).map((_, i) => (
@@ -383,7 +383,7 @@ export const MultiClipTimeline: React.FC<MultiClipTimelineProps> = ({
                     className="absolute top-0 h-full border-l border-muted-foreground/30"
                     style={{ left: i * 5 * pxPerSecond }}
                   >
-                    <span className="text-[10px] text-muted-foreground pl-1">
+                    <span className="text-[8px] text-muted-foreground pl-0.5">
                       {formatTime(i * 5).split(':').slice(0, 2).join(':')}
                     </span>
                   </div>
@@ -394,14 +394,14 @@ export const MultiClipTimeline: React.FC<MultiClipTimelineProps> = ({
                   className="absolute top-0 w-0.5 h-full bg-red-500 z-10"
                   style={{ left: currentTime * pxPerSecond }}
                 >
-                  <div className="w-3 h-3 bg-red-500 -ml-[5px] -mt-1 rotate-45" />
+                  <div className="w-2 h-2 bg-red-500 -ml-[3px] -mt-0.5 rotate-45" />
                 </div>
               </div>
               <ScrollBar orientation="horizontal" />
             </ScrollArea>
           </div>
 
-          {/* Track Rows */}
+          {/* Track Rows - compact */}
           {tracks.map((track, trackIndex) => {
             const TrackIcon = getTrackIcon(track.type);
             const trackClips = clips.filter(c => c.track === trackIndex);
@@ -414,17 +414,17 @@ export const MultiClipTimeline: React.FC<MultiClipTimelineProps> = ({
                   track.muted && "opacity-50"
                 )}
               >
-                {/* Track Header */}
-                <div className="w-24 flex-shrink-0 p-2 border-r bg-muted/20 space-y-1">
-                  <div className="flex items-center gap-1">
-                    <TrackIcon className="h-3 w-3" />
-                    <span className="text-xs font-medium truncate">{track.name}</span>
+                {/* Track Header - narrow */}
+                <div className="w-16 flex-shrink-0 p-1.5 border-r bg-muted/20 space-y-0.5">
+                  <div className="flex items-center gap-0.5">
+                    <TrackIcon className="h-2.5 w-2.5" />
+                    <span className="text-[9px] font-medium truncate">{track.name}</span>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex gap-0.5">
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-5 w-5"
+                      className="h-4 w-4"
                       onClick={() => {
                         const newTracks = [...tracks];
                         newTracks[trackIndex].muted = !newTracks[trackIndex].muted;
@@ -432,27 +432,27 @@ export const MultiClipTimeline: React.FC<MultiClipTimelineProps> = ({
                       }}
                     >
                       {track.muted ? (
-                        <VolumeX className="h-3 w-3" />
+                        <VolumeX className="h-2.5 w-2.5" />
                       ) : (
-                        <Volume2 className="h-3 w-3" />
+                        <Volume2 className="h-2.5 w-2.5" />
                       )}
                     </Button>
                   </div>
                 </div>
 
-                {/* Track Content */}
+                {/* Track Content - constrained */}
                 <ScrollArea className="flex-1">
                   <div 
                     ref={trackIndex === 0 ? timelineRef : undefined}
-                    className="h-16 relative bg-muted/10"
-                    style={{ width: totalDuration * pxPerSecond }}
+                    className="h-12 relative bg-muted/10"
+                    style={{ width: Math.max(totalDuration * pxPerSecond, 200) }}
                   >
                     {/* Clips on this track */}
                     {trackClips.map(clip => (
                       <div
                         key={clip.id}
                         className={cn(
-                          "absolute top-1 h-14 rounded cursor-pointer transition-all",
+                          "absolute top-1 h-10 rounded cursor-pointer transition-all",
                           getClipColor(clip.type),
                           selectedClipId === clip.id 
                             ? "ring-2 ring-primary ring-offset-1" 
@@ -460,18 +460,18 @@ export const MultiClipTimeline: React.FC<MultiClipTimelineProps> = ({
                         )}
                         style={{
                           left: clip.startTime * pxPerSecond,
-                          width: clip.duration * pxPerSecond,
+                          width: Math.max(clip.duration * pxPerSecond, 30),
                         }}
                         onClick={() => selectClip(clip.id)}
                       >
-                        <div className="p-1 h-full flex flex-col justify-between overflow-hidden">
-                          <div className="flex items-center gap-1">
-                            <GripVertical className="h-3 w-3 text-white/70 cursor-grab" />
-                            <span className="text-[10px] text-white font-medium truncate">
+                        <div className="p-0.5 h-full flex flex-col justify-between overflow-hidden">
+                          <div className="flex items-center gap-0.5">
+                            <GripVertical className="h-2.5 w-2.5 text-white/70 cursor-grab" />
+                            <span className="text-[8px] text-white font-medium truncate">
                               {clip.name}
                             </span>
                           </div>
-                          <span className="text-[9px] text-white/70">
+                          <span className="text-[7px] text-white/70">
                             {clip.duration.toFixed(1)}s
                           </span>
                         </div>

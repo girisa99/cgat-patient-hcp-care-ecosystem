@@ -177,10 +177,10 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
       {/* Mobile Status Bar */}
       <MobileStatusBar className="flex-shrink-0" />
 
-      {/* Header - Compact for mobile with navigation */}
+      {/* Header - Compact for mobile with navigation - no shadow */}
       <div className="flex items-center justify-between px-2 py-2 border-b bg-card flex-shrink-0 min-h-[48px]">
         <div className="flex items-center gap-1 min-w-0 flex-1">
-          {/* Back button */}
+          {/* Back button - flat design */}
           {onClose && (
             <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={onClose}>
               <ArrowLeft className="h-4 w-4" />
