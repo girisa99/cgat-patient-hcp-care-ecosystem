@@ -47,16 +47,16 @@ interface PhaseData {
 const phases: PhaseData[] = [
   {
     id: 'P0',
-    name: 'Core + Vibe↔Mind',
+    name: 'Core + Collaboration',
     status: 'completed',
     completion: 100,
     marketDriver: 'Foundation MVP',
-    scenarios: 13,
+    scenarios: 14,
     features: [
       { name: 'Script Repository UI', status: 'completed', layer: 'presentation' },
       { name: 'Bidirectional Flow', status: 'completed', layer: 'application' },
       { name: 'ContentAnalyzer', status: 'completed', layer: 'domain' },
-      { name: 'Supabase + TTS APIs', status: 'completed', layer: 'infrastructure' },
+      { name: 'Session Collaboration', status: 'completed', layer: 'infrastructure' },
     ]
   },
   {
@@ -139,20 +139,20 @@ const layers = [
 ];
 
 const segments = [
-  { id: 'creator', name: 'Creator', icon: Users, competitors: 'CapCut, Canva', gap: 'No unified script→TTS→record', price: '$0-24/mo' },
-  { id: 'traveler', name: 'Traveler', icon: Globe, competitors: 'GoPro Quik, Adobe Rush', gap: 'No offline + AI narration', price: '$0-50/yr' },
-  { id: 'smb', name: 'SMB', icon: Package, competitors: 'Loom, Synthesia', gap: 'Synthesia $67/mo too expensive', price: '$12-67/mo' },
-  { id: 'education', name: 'Education', icon: GraduationCap, competitors: 'Screencastify, Camtasia', gap: 'No AI lesson scripts', price: '$0-249' },
-  { id: 'healthcare', name: 'Healthcare', icon: Heart, competitors: 'VIDIZMO, Gumlet', gap: 'No affordable HIPAA ($1000+)', price: '$1000+/mo' },
-  { id: 'enterprise', name: 'Enterprise', icon: Building, competitors: 'Synthesia, HeyGen', gap: 'No integrated workflows', price: '$67-1000+/mo' },
+  { id: 'creator', name: 'Creator', icon: Users, competitors: 'CapCut, Canva', gap: 'No unified script→TTS→record', price: '$0-24/mo', collaboration: 'Basic' },
+  { id: 'traveler', name: 'Traveler', icon: Globe, competitors: 'GoPro Quik, Adobe Rush', gap: 'No offline + AI narration', price: '$0-50/yr', collaboration: 'None' },
+  { id: 'smb', name: 'SMB', icon: Package, competitors: 'Loom, Synthesia', gap: 'No team feedback loops', price: '$12-67/mo', collaboration: 'Standard' },
+  { id: 'education', name: 'Education', icon: GraduationCap, competitors: 'Screencastify, Camtasia', gap: 'No review cycles', price: '$0-249', collaboration: 'Full' },
+  { id: 'healthcare', name: 'Healthcare', icon: Heart, competitors: 'VIDIZMO, Gumlet', gap: 'No affordable HIPAA ($1000+)', price: '$1000+/mo', collaboration: 'Full' },
+  { id: 'enterprise', name: 'Enterprise', icon: Building, competitors: 'Synthesia, HeyGen', gap: 'No integrated approval workflows', price: '$67-1000+/mo', collaboration: 'Full' },
 ];
 
 const subscriptionTiers = [
-  { name: 'Free', price: '$0', features: ['3 videos/mo', 'Watermark', '5 AI scripts'], target: 'Trial' },
-  { name: 'Starter', price: '$9.99', features: ['Unlimited', 'No watermark', '100 AI scripts'], target: 'Creator/Traveler' },
-  { name: 'Business', price: '$29.99', features: ['Product demos', 'Templates', '3 team members'], target: 'SMB' },
-  { name: 'Pro', price: '$79.99', features: ['Lesson Builder', 'API access', '10 team members'], target: 'Education' },
-  { name: 'Enterprise', price: 'Custom', features: ['HIPAA', 'White-label', 'Unlimited'], target: 'Healthcare/Enterprise' },
+  { name: 'Free', price: '$0', features: ['3 videos/mo', 'Watermark', '5 AI scripts'], target: 'Trial', collaboration: 'None' },
+  { name: 'Starter', price: '$9.99', features: ['Unlimited', 'No watermark', 'Basic feedback'], target: 'Creator/Traveler', collaboration: 'Basic' },
+  { name: 'Business', price: '$29.99', features: ['Team feedback', 'Status sync', '3 team members'], target: 'SMB', collaboration: 'Standard' },
+  { name: 'Pro', price: '$79.99', features: ['Full collab', 'Approval chains', '10 team members'], target: 'Education', collaboration: 'Full' },
+  { name: 'Enterprise', price: 'Custom', features: ['HIPAA', 'White-label', 'Unlimited collab'], target: 'Healthcare/Enterprise', collaboration: 'Full' },
 ];
 
 export const GenieStudioFullArchitectureDiagram: React.FC = () => {
@@ -257,9 +257,9 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
             <div ref={diagramRef} className="p-6 bg-white rounded-lg space-y-6">
               <TabsContent value="overview" className="space-y-4 mt-0">
                 {/* Stats Bar */}
-                <div className="grid grid-cols-5 gap-4">
+                <div className="grid grid-cols-6 gap-3">
                   <div className="p-4 rounded-lg border" style={{ backgroundColor: colors.completed.light, borderColor: colors.completed.bg }}>
-                    <div className="text-2xl font-bold" style={{ color: colors.completed.bg }}>13</div>
+                    <div className="text-2xl font-bold" style={{ color: colors.completed.bg }}>14</div>
                     <div className="text-sm" style={{ color: colors.text }}>Implemented</div>
                   </div>
                   <div className="p-4 rounded-lg border" style={{ backgroundColor: colors.inProgress.light, borderColor: colors.inProgress.bg }}>
@@ -267,16 +267,20 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
                     <div className="text-sm" style={{ color: colors.text }}>Partial</div>
                   </div>
                   <div className="p-4 rounded-lg border" style={{ backgroundColor: colors.planned.light, borderColor: colors.planned.bg }}>
-                    <div className="text-2xl font-bold" style={{ color: colors.planned.bg }}>120</div>
+                    <div className="text-2xl font-bold" style={{ color: colors.planned.bg }}>119</div>
                     <div className="text-sm" style={{ color: colors.text }}>Planned</div>
                   </div>
                   <div className="p-4 rounded-lg border" style={{ backgroundColor: '#f8fafc', borderColor: colors.border }}>
-                    <div className="text-2xl font-bold" style={{ color: colors.text }}>14%</div>
+                    <div className="text-2xl font-bold" style={{ color: colors.text }}>16%</div>
                     <div className="text-sm" style={{ color: colors.textMuted }}>Complete</div>
                   </div>
                   <div className="p-4 rounded-lg border" style={{ backgroundColor: '#fdf4ff', borderColor: '#a855f7' }}>
                     <div className="text-2xl font-bold" style={{ color: '#a855f7' }}>12</div>
                     <div className="text-sm" style={{ color: colors.textMuted }}>AI Agents</div>
+                  </div>
+                  <div className="p-4 rounded-lg border" style={{ backgroundColor: '#ecfdf5', borderColor: '#10b981' }}>
+                    <div className="text-2xl font-bold" style={{ color: '#10b981' }}>✓</div>
+                    <div className="text-sm" style={{ color: colors.textMuted }}>Collaboration</div>
                   </div>
                 </div>
 
@@ -336,6 +340,30 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
                       <p className="font-medium" style={{ color: colors.text }}>Flow 2 (Content Analysis):</p>
                       <p style={{ color: colors.textMuted }}>Vibe → ContentAnalyzer → Mind → Script → TTS → Publish</p>
                     </div>
+                  </div>
+                </div>
+
+                {/* NEW: Collaboration Flow */}
+                <div className="p-4 rounded-lg border-2" style={{ borderColor: '#10b981', backgroundColor: '#ecfdf5' }}>
+                  <h4 className="font-semibold mb-2" style={{ color: '#10b981' }}>✅ Two-Way Session Collaboration (NEW - Implemented)</h4>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <p className="font-medium" style={{ color: colors.text }}>Real-time Feedback:</p>
+                      <p style={{ color: colors.textMuted }}>Host ↔ Participants bidirectional suggestions</p>
+                    </div>
+                    <div>
+                      <p className="font-medium" style={{ color: colors.text }}>Status Sync:</p>
+                      <p style={{ color: colors.textMuted }}>ARC Sessions ↔ Production Hub Kanban</p>
+                    </div>
+                    <div>
+                      <p className="font-medium" style={{ color: colors.text }}>Review Workflow:</p>
+                      <p style={{ color: colors.textMuted }}>Title → Script → Recording → Approval</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-green-300">
+                    <p className="text-xs" style={{ color: colors.textMuted }}>
+                      <strong>Status Dropdown:</strong> pending, under_review, approved, rejected, needs_clarification, implemented
+                    </p>
                   </div>
                 </div>
               </TabsContent>
