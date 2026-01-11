@@ -8239,6 +8239,200 @@ export type Database = {
           },
         ]
       }
+      genie_session_participants: {
+        Row: {
+          created_at: string | null
+          email: string
+          email_reminder_15m: boolean | null
+          email_reminder_1h: boolean | null
+          email_reminder_24h: boolean | null
+          email_reminder_30m: boolean | null
+          id: string
+          invite_status: string
+          join_status: string | null
+          joined_at: string | null
+          left_at: string | null
+          name: string
+          participant_token: string
+          phone: string | null
+          reminder_15m_sent: boolean | null
+          reminder_1h_sent: boolean | null
+          reminder_24h_sent: boolean | null
+          reminder_30m_sent: boolean | null
+          role: string
+          session_id: string
+          sms_15m_sent: boolean | null
+          sms_30m_sent: boolean | null
+          sms_reminder_15m: boolean | null
+          sms_reminder_30m: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          email_reminder_15m?: boolean | null
+          email_reminder_1h?: boolean | null
+          email_reminder_24h?: boolean | null
+          email_reminder_30m?: boolean | null
+          id?: string
+          invite_status?: string
+          join_status?: string | null
+          joined_at?: string | null
+          left_at?: string | null
+          name: string
+          participant_token?: string
+          phone?: string | null
+          reminder_15m_sent?: boolean | null
+          reminder_1h_sent?: boolean | null
+          reminder_24h_sent?: boolean | null
+          reminder_30m_sent?: boolean | null
+          role?: string
+          session_id: string
+          sms_15m_sent?: boolean | null
+          sms_30m_sent?: boolean | null
+          sms_reminder_15m?: boolean | null
+          sms_reminder_30m?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          email_reminder_15m?: boolean | null
+          email_reminder_1h?: boolean | null
+          email_reminder_24h?: boolean | null
+          email_reminder_30m?: boolean | null
+          id?: string
+          invite_status?: string
+          join_status?: string | null
+          joined_at?: string | null
+          left_at?: string | null
+          name?: string
+          participant_token?: string
+          phone?: string | null
+          reminder_15m_sent?: boolean | null
+          reminder_1h_sent?: boolean | null
+          reminder_24h_sent?: boolean | null
+          reminder_30m_sent?: boolean | null
+          role?: string
+          session_id?: string
+          sms_15m_sent?: boolean | null
+          sms_30m_sent?: boolean | null
+          sms_reminder_15m?: boolean | null
+          sms_reminder_30m?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_session_participants_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "genie_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genie_sessions: {
+        Row: {
+          agenda: string | null
+          created_at: string | null
+          description: string | null
+          duration_minutes: number | null
+          ended_at: string | null
+          external_meeting_id: string | null
+          external_meeting_url: string | null
+          host_email: string | null
+          host_name: string | null
+          host_token: string
+          id: string
+          join_url: string | null
+          metadata: Json | null
+          production_stage: string | null
+          recording_enabled: boolean | null
+          recording_storage_path: string | null
+          recording_url: string | null
+          scheduled_at: string
+          script_id: string | null
+          session_active_at: string | null
+          session_mode: string
+          session_token: string
+          session_type: string
+          show_id: string | null
+          started_at: string | null
+          status: string
+          timezone: string | null
+          title: string
+          updated_at: string | null
+          user_id: string | null
+          waiting_room_enabled: boolean | null
+        }
+        Insert: {
+          agenda?: string | null
+          created_at?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          ended_at?: string | null
+          external_meeting_id?: string | null
+          external_meeting_url?: string | null
+          host_email?: string | null
+          host_name?: string | null
+          host_token?: string
+          id?: string
+          join_url?: string | null
+          metadata?: Json | null
+          production_stage?: string | null
+          recording_enabled?: boolean | null
+          recording_storage_path?: string | null
+          recording_url?: string | null
+          scheduled_at: string
+          script_id?: string | null
+          session_active_at?: string | null
+          session_mode?: string
+          session_token?: string
+          session_type?: string
+          show_id?: string | null
+          started_at?: string | null
+          status?: string
+          timezone?: string | null
+          title: string
+          updated_at?: string | null
+          user_id?: string | null
+          waiting_room_enabled?: boolean | null
+        }
+        Update: {
+          agenda?: string | null
+          created_at?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          ended_at?: string | null
+          external_meeting_id?: string | null
+          external_meeting_url?: string | null
+          host_email?: string | null
+          host_name?: string | null
+          host_token?: string
+          id?: string
+          join_url?: string | null
+          metadata?: Json | null
+          production_stage?: string | null
+          recording_enabled?: boolean | null
+          recording_storage_path?: string | null
+          recording_url?: string | null
+          scheduled_at?: string
+          script_id?: string | null
+          session_active_at?: string | null
+          session_mode?: string
+          session_token?: string
+          session_type?: string
+          show_id?: string | null
+          started_at?: string | null
+          status?: string
+          timezone?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string | null
+          waiting_room_enabled?: boolean | null
+        }
+        Relationships: []
+      }
       genie_token_budgets: {
         Row: {
           allocated_tokens: number

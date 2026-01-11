@@ -90,6 +90,8 @@ import { useGenieScripts, type GenieScript } from '@/components/genie-studio/use
 import { SmartContentPipeline } from '@/components/genie-studio/SmartContentPipeline';
 import type { GeneratedContent } from '@/components/genie-studio/PostGenerationActions';
 import { supabase } from '@/integrations/supabase/client';
+import { useGenieSession } from '@/hooks/useGenieSession';
+import { SessionCalendarButtons } from '@/components/genie-studio/SessionCalendarButtons';
 
 // Import Genie logos - Using combined versions with taglines (finalized)
 import genieStudioLogo from '@/assets/logos/genie-studio-banner.png';
@@ -1907,55 +1909,82 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
 
     const scheduledDate = new Date(`${newShowDate}T${newShowTime}`);
     
-    // Add host as default participant
-    const allParticipants = [
-      { name: hostName, email: '', role: 'host' as const, status: 'confirmed' as const, id: crypto.randomUUID() },
-      ...showParticipants.map(p => ({ ...p, id: crypto.randomUUID() }))
-    ];
+    // Prepare participants with reminder preferences
+    const participantsForSession = showParticipants.map(p => ({
+      name: p.name,
+      email: p.email,
+      role: p.role,
+      email_reminder_24h: true,
+      email_reminder_1h: true,
+      email_reminder_30m: true,
+      email_reminder_15m: true,
+      sms_reminder_30m: false,
+      sms_reminder_15m: false,
+    }));
+
+    setIsSendingInvite(true);
     
-    // Create event with participants
-    const newEvent = addEvent({
-      type: newShowType as 'podcast' | 'webcast' | 'broadcast',
-      title: newShowTitle,
-      description: newShowDescription,
-      scheduledDate,
-      participants: allParticipants,
-      scriptContent: showScript,
-      hostName: hostName,
-      status: 'scheduled',
-      eventCategory: newEventCategory
-    });
+    try {
+      // Create session via edge function
+      const { data, error } = await supabase.functions.invoke('create-session', {
+        body: {
+          title: newShowTitle,
+          description: newShowDescription,
+          session_type: newShowType,
+          session_mode: 'browser', // Default to browser-based
+          production_stage: productionStage,
+          scheduled_at: scheduledDate.toISOString(),
+          duration_minutes: 60,
+          script_id: selectedScriptId,
+          agenda: showTopics,
+          host_name: hostName,
+          host_email: hostEmail,
+          participants: participantsForSession,
+        },
+      });
 
-    // Send invites to all participants (except host unless they have email)
-    const participantsToInvite = showParticipants.filter(p => p.email.trim());
-    if (participantsToInvite.length > 0) {
-      setIsSendingInvite(true);
-      for (const participant of participantsToInvite) {
-        try {
-          await supabase.functions.invoke('send-show-invite', {
-            body: {
-              to: participant.email,
-              participantName: participant.name,
-              role: participant.role,
-              showType: newShowType,
-              showTitle: newShowTitle,
-              showDescription: newShowDescription,
-              scheduledDate: scheduledDate.toISOString(),
-              hostName: hostName,
-              topics: showTopics,
-              script: attachScriptToInvite ? showScript.slice(0, 500) : undefined,
-              suggestedIntro: suggestedIntro
-            }
-          });
-        } catch (err) {
-          console.error('Failed to send invite to:', participant.email, err);
-        }
+      if (error) throw error;
+
+      // Send invites
+      if (data?.session?.id && participantsForSession.length > 0) {
+        await supabase.functions.invoke('send-session-invites', {
+          body: { session_id: data.session.id },
+        });
+        toast.success(`Session created! Invites sent to ${participantsForSession.length} participant(s)`);
+      } else {
+        toast.success('Session created successfully!');
       }
-      setIsSendingInvite(false);
-      toast.success(`Invites sent to ${participantsToInvite.length} participant(s)!`);
-    }
 
-    toast.success(`${newShowType.charAt(0).toUpperCase() + newShowType.slice(1)} scheduled!`);
+      // Show calendar links if available
+      if (data?.calendar_links) {
+        toast.info('Add to your calendar using the links provided', {
+          action: {
+            label: 'Google Calendar',
+            onClick: () => window.open(data.calendar_links.google, '_blank'),
+          },
+        });
+      }
+
+      // Also save to local events for UI display
+      addEvent({
+        type: newShowType as any,
+        title: newShowTitle,
+        description: newShowDescription,
+        scheduledDate,
+        participants: showParticipants.map(p => ({ ...p, id: crypto.randomUUID(), status: 'pending' as const })),
+        scriptContent: showScript,
+        hostName: hostName,
+        status: 'scheduled',
+        eventCategory: newEventCategory,
+        meetingLink: data?.session?.join_url,
+      });
+
+    } catch (err: any) {
+      console.error('Create session error:', err);
+      toast.error(err.message || 'Failed to create session');
+    } finally {
+      setIsSendingInvite(false);
+    }
     
     // Reset dialog state
     setIsCreateShowDialogOpen(false);
@@ -1973,24 +2002,6 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
     setHostEmail('');
     setSelectedScriptId(null);
     setProductionStage('script_review');
-    
-    // Load the appropriate template with filled content
-    const templateId = newShowType === 'podcast' ? 'podcast-episode' : 
-                       newShowType === 'webcast' ? 'webcast-webinar' : 'live-broadcast';
-    const template = SCRIPT_TEMPLATES.find(t => t.id === templateId);
-    if (template) {
-      let content = template.content
-        .replace('[Episode Topic]', newShowTitle)
-        .replace('[Webcast Title]', newShowTitle)
-        .replace('[Broadcast Title]', newShowTitle);
-      
-      if (showScript.trim()) {
-        content = showScript;
-      }
-      
-      setScriptContent(content);
-      setScriptName(`${newShowTitle} Script`);
-    }
   };
 
   const handleSendInvite = async () => {
