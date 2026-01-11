@@ -1,9 +1,9 @@
 # Genie Mind & Genie Vibe - Phase Implementation Roadmap
 
-> **Last Updated:** 2026-01-09
-> **Status:** Active Implementation - Phase 1.5 Complete, Phases 2-5 Planned
-> **Version:** 1.5
-> **Total Features:** 37 (10 Complete, 27 Planned)
+> **Last Updated:** 2026-01-11
+> **Status:** Active Implementation - Phase 1.5 Complete, Phase 1.6 Complete, Phases 2-5 Planned
+> **Version:** 1.6
+> **Total Features:** 45 (18 Complete, 27 Planned)
 > **Market-Driven:** Includes competitive analysis and user research priorities
 
 ---
@@ -294,6 +294,116 @@ FLOW 2 (NEW):     Vibe → Mind → Script → TTS → Vibe → Publish
 | 33 | **Subscription-Segment Connectivity** | **Frontend** | Connect user segments to pricing tiers | ✅ Complete |
 | 34 | **Email Confirmation Flow** | **Supabase Auth** | Post-signup email confirmation | 📋 Planned |
 
+---
+
+### Phase 1.6: Session Management & Live Production ✅ COMPLETE (NEW - 2026-01-11)
+
+| # | Feature | Primary Module | Shared Services Used | Status |
+|---|---------|---------------|---------------------|--------|
+| 35 | **Session Infrastructure** | **Backend** | `genie_sessions`, `genie_session_participants` tables | ✅ Complete |
+| 36 | **Hybrid Video Mode** | **Genie Vibe** | Browser-based + Zoom/Meet/Teams external APIs | ✅ Complete |
+| 37 | **Calendar Integration** | **Frontend** | Google Calendar, Outlook, iCal (.ics generation) | ✅ Complete |
+| 38 | **Email Reminders** | **Backend** | 24h, 1h, 30m, 15m automated reminders | ✅ Complete |
+| 39 | **SMS Reminders** | **Backend** | Twilio integration for 30m, 15m reminders | ✅ Complete |
+| 40 | **Waiting Room** | **Frontend** | Host-controlled participant admission | ✅ Complete |
+| 41 | **Session URL Generation** | **Backend** | Unique join URLs with token-based access | ✅ Complete |
+| 42 | **Recording Indicator** | **Genie Vibe** | UniversalAI connector for recording with participant notification | ✅ Complete |
+
+#### Phase 1.6 Implementation Details
+
+**Session Types Supported:**
+- `webcast` - Browser-based broadcast with host control
+- `podcast` - Audio-focused sessions with multiple participants
+- `interview` - 1:1 or panel interview format
+- `panel` - Multi-participant discussion
+- `tutorial` - Educational content with screen sharing
+- `broadcast` - One-to-many streaming
+
+**Hybrid Video Architecture:**
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      SESSION MODE SELECTION                              │
+├─────────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐         │
+│  │    BROWSER      │  │     ZOOM        │  │   GOOGLE MEET   │         │
+│  │   (Default)     │  │   (External)    │  │   (External)    │         │
+│  │   Vibe Native   │  │   Zoom API      │  │   Meet API      │         │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘         │
+│                                                                          │
+│  ┌─────────────────┐                                                    │
+│  │  MICROSOFT      │  All modes → Recording saved to Genie Vibe       │
+│  │    TEAMS        │  All modes → Session data in genie_sessions       │
+│  │   (External)    │                                                    │
+│  └─────────────────┘                                                    │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Calendar Integration Flow:**
+```
+Session Created → Generate Unique URL
+        │
+        ├── Google Calendar Link (webcal:// + API params)
+        ├── Outlook Web Link (outlook.office.com/calendar)
+        ├── iCal File (.ics download)
+        └── Direct Add to Calendar UI Component
+```
+
+**Reminder System:**
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      REMINDER ORCHESTRATION                              │
+├─────────────────────────────────────────────────────────────────────────┤
+│  EMAIL REMINDERS (via Resend/SMTP)                                      │
+│  ├── 24 hours before session                                            │
+│  ├── 1 hour before session                                              │
+│  ├── 30 minutes before session                                          │
+│  └── 15 minutes before session                                          │
+│                                                                          │
+│  SMS REMINDERS (via Twilio)                                             │
+│  ├── 30 minutes before session (if phone provided)                      │
+│  └── 15 minutes before session (if phone provided)                      │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Waiting Room Flow:**
+```
+Participant Clicks Join URL → Check Session Status
+        │
+        ├── [> 30min before] → "Session not yet available"
+        ├── [≤ 30min before] → Enter Waiting Room
+        │           │
+        │           ├── View Agenda (optional)
+        │           ├── Test Audio/Video
+        │           └── Wait for Host Admission
+        │
+        └── [Host Admits] → Enter Live Session
+                    │
+                    ├── View Script (teleprompter - not recorded)
+                    ├── See Recording Indicator
+                    └── Participate in Session
+```
+
+**New Components Created:**
+- `supabase/functions/create-session/index.ts` - Session creation and URL generation
+- `supabase/functions/send-session-invites/index.ts` - Email invitations with calendar buttons
+- `supabase/functions/session-reminders/index.ts` - Automated email and SMS reminders
+- `src/utils/calendarUtils.ts` - Calendar link and .ics file generation
+- `src/components/genie-studio/SessionCalendarButtons.tsx` - UI for calendar integration
+- `src/hooks/useGenieSession.ts` - Session management React hook
+
+**Database Tables:**
+- `genie_sessions` - Session configuration, scheduling, URLs, host settings
+- `genie_session_participants` - Participants, roles, reminder preferences, join status
+
+**Cross-Functional Usage:**
+| Module | Usage |
+|--------|-------|
+| **Genie Studio** | Session creation, participant management, show scheduling |
+| **Recording Studio** | Session recording, teleprompter sync, waiting room entry |
+| **Production Hub** | Pre-production scheduling, team coordination |
+| **Mobile (Future)** | Mobile session participation via same URLs |
+| **Healthcare (Future)** | HIPAA-compliant patient education sessions |
+
 #### 31. Google OAuth Integration - PENDING CONFIGURATION
 
 **Status:** Code complete, requires Supabase dashboard configuration
@@ -319,17 +429,19 @@ FLOW 2 (NEW):     Vibe → Mind → Script → TTS → Vibe → Publish
 |-------|-------|----------|-------------|---------|-----------------|
 | Phase 1 (P0 Partials + NLP + Frontend) | 5 | 5 | 0 | 0 | Core MVP |
 | Phase 1.5 (Vibe ↔ Mind Integration) | 5 | 5 | 0 | 0 | Differentiation |
+| **Phase 1.6 (Session Management)** | **8** | **8** | **0** | **0** | **Live Production** |
 | Phase 2 (High Impact P0) | 4 | 0 | 0 | 4 | External integrations |
 | Phase 3 (P1 Essentials) | 8 | 0 | 0 | 8 | Production quality |
 | **Phase 4 (Mobile-First & Segments)** | **9** | **0** | **0** | **9** | **68% mobile demand** |
 | **Phase 5 (Commercialization)** | **6** | **0** | **0** | **6** | **Revenue** |
 | **Phase 6 (Auth & Security)** | **4** | **2** | **1** | **1** | **User onboarding** |
-| **Total** | **41** | **12** | **1** | **28** | |
+| **Total** | **49** | **20** | **1** | **28** | |
 
 **Phase 1 Completion:** 100% ✅ (Backend + Frontend)
 **Phase 1.5 Completion:** 100% ✅ (Vibe ↔ Mind Bidirectional Flow)
+**Phase 1.6 Completion:** 100% ✅ (Session Management & Live Production)
 **Phase 6 Auth:** 50% ✅ (Google OAuth pending Supabase config)
-**Overall Progress:** 29%
+**Overall Progress:** 41%
 
 ---
 
@@ -372,6 +484,8 @@ Q3 2026 (Phase 5): HIPAA + Enterprise features
 | `geminiMediaService` | `src/services/geminiMediaService.ts` | Gemini-specific media |
 | `ragService` | `src/services/ragService.ts` | RAG knowledge base |
 | `useDocumentAI` | `src/hooks/useDocumentAI.ts` | Document AI processing |
+| **`useGenieSession`** | **`src/hooks/useGenieSession.ts`** | **Session management hook (NEW)** |
+| **`calendarUtils`** | **`src/utils/calendarUtils.ts`** | **Calendar link & .ics generation (NEW)** |
 
 ### Edge Functions (Existing)
 
@@ -383,6 +497,9 @@ Q3 2026 (Phase 5): HIPAA + Enterprise features
 | `gemini-generate-video` | Gemini video generation |
 | `process-documents` | Document processing |
 | `check-ai-provider` | Provider availability check |
+| **`create-session`** | **Session creation & URL generation (NEW)** |
+| **`send-session-invites`** | **Email invitations with calendar buttons (NEW)** |
+| **`session-reminders`** | **Email & SMS reminder automation (NEW)** |
 
 ---
 
@@ -524,6 +641,8 @@ OUTPUT: Structured Data (JSON Schema, Field Mapping, Analytics)
 | `analytics_agent` | Analytics | All Modules | Usage tracking and insights | P2 |
 | `subscription_agent` | Subscription Manager | Backend | Billing, tier management, limits | P0 |
 | `approval_workflow_agent` | Approval Workflow | Arc | Legal/compliance approval chains | P3 |
+| **`session_orchestrator_agent`** | **Session Orchestrator** | **Genie Studio, Recording Studio** | **Session scheduling, invites, reminders** | **P0 ✅** |
+| **`reminder_agent`** | **Reminder Agent** | **Backend** | **Email & SMS reminder automation via Twilio** | **P0 ✅** |
 
 ### Agent Automation Opportunities
 
@@ -541,6 +660,12 @@ PHASE 0 (IMPLEMENTED) ✅
 ├── TTS Automation
 │   ├── Script → Voice (tts_orchestrator_agent)
 │   └── Multi-provider failover (automatic)
+│
+├── Session Management Automation (NEW - 2026-01-11)
+│   ├── Session Creation → URL Generation (session_orchestrator_agent)
+│   ├── Participant Invite → Calendar Integration (session_orchestrator_agent)
+│   ├── Email Reminders → 24h, 1h, 30m, 15m (reminder_agent)
+│   └── SMS Reminders → 30m, 15m via Twilio (reminder_agent)
 
 PHASE 1 (PLANNED)
 ├── Voice Clone Automation
@@ -601,6 +726,9 @@ PHASE 3 (PLANNED)
 | `compliance-scanner` | `/compliance-scanner` | HIPAA/GDPR scanning | compliance_monitor_agent | P3 |
 | `stripe-webhook` | `/stripe-webhook` | Stripe payment webhooks | subscription_agent | P0 |
 | `subscription-manager` | `/subscription-manager` | Subscription operations | subscription_agent | P0 |
+| **`create-session`** | `/create-session` | Session creation & URL generation | session_orchestrator_agent | P0 ✅ |
+| **`send-session-invites`** | `/send-session-invites` | Email invitations with calendar links | session_orchestrator_agent | P0 ✅ |
+| **`session-reminders`** | `/session-reminders` | Email & SMS reminders via Twilio | session_orchestrator_agent | P0 ✅ |
 
 ### External APIs
 
@@ -611,10 +739,15 @@ PHASE 3 (PLANNED)
 | **Anthropic** | Claude AI | JSON | REST API | P0 ✅ |
 | **Google Gemini** | Vision, Video, TTS | JSON | REST API | P0 ✅ |
 | **Stripe** | Payments, Subscriptions | JSON | REST API + Webhooks | P0 |
+| **Twilio** | SMS Reminders | JSON | REST API | P0 ✅ |
+| **Resend/SMTP** | Email Invites & Reminders | JSON | REST API | P0 ✅ |
 | **YouTube** | Video Publishing | JSON | OAuth2 + REST API | P1 |
 | **TikTok** | Video Publishing | JSON | OAuth2 + REST API | P1 |
 | **Instagram** | Video Publishing | JSON | OAuth2 + Graph API | P1 |
 | **LinkedIn** | Video Publishing | JSON | OAuth2 + REST API | P1 |
+| **Zoom** | External Video Sessions | JSON | OAuth2 + REST API | P0 ✅ |
+| **Google Meet** | External Video Sessions | JSON | OAuth2 + REST API | P0 ✅ |
+| **Microsoft Teams** | External Video Sessions | JSON | OAuth2 + REST API | P0 ✅ |
 | **Figma** | Design Import | JSON | OAuth2 + REST API | P2 |
 | **Miro** | Whiteboard Import | JSON | OAuth2 + REST API | P2 |
 | **Canva** | Design Import | JSON | OAuth2 + REST API | P2 |

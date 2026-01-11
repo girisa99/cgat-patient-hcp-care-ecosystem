@@ -1,21 +1,21 @@
 # Genie Studio & Recording Studio: Complete Scenario Map
 
-> **Version:** 2.3  
-> **Last Updated:** 2026-01-10  
-> **Total Scenarios:** 140 (includes mobile-first, segment-specific, remix & clips, agents & APIs)  
+> **Version:** 2.4  
+> **Last Updated:** 2026-01-11  
+> **Total Scenarios:** 150 (includes session management, mobile-first, segment-specific, remix & clips, agents & APIs)  
 > **Status:** Documentation Complete with Agent/API/Automation Mapping
 
 ---
 
 ## Executive Summary
 
-This document catalogs all identified user journeys and scenarios for the Genie Studio and Recording Studio integration. It covers the complete production pipeline from imagination to final output, including edge cases, error recovery, bidirectional Vibe ↔ Mind flows, advanced AI capabilities, market-driven feature priorities, agent assignments, API integrations, and automation opportunities.
+This document catalogs all identified user journeys and scenarios for the Genie Studio and Recording Studio integration. It covers the complete production pipeline from imagination to final output, including edge cases, error recovery, bidirectional Vibe ↔ Mind flows, advanced AI capabilities, market-driven feature priorities, agent assignments, API integrations, session management for live productions, and automation opportunities.
 
 ### Implementation Overview
 
 | Status | Count | Description |
 |--------|-------|-------------|
-| ✅ **Implemented** | 13 | Fully functional in codebase |
+| ✅ **Implemented** | 23 | Fully functional in codebase |
 | 🔶 **Partial** | 7 | Core functionality exists, needs enhancement |
 | ⏳ **Planned** | 120 | Documented, not yet implemented |
 
@@ -595,6 +595,95 @@ Week 4-6: Phase 4 (Scenarios 79-80)
          ├── Stripe integration (79)
          └── Admin dashboard (80)
 ```
+
+---
+
+## NEW: Category Q - Session Management & Live Production (Scenarios 141-150)
+
+**Added: 2026-01-11** | **Priority: P0** | Critical for live productions - ✅ IMPLEMENTED
+
+### Session Management Architecture
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│                    SESSION MANAGEMENT FLOW                      │
+│                  "Schedule → Invite → Record"                   │
+└────────────────────────────────────────────────────────────────┘
+
+Step 1: CREATE SESSION
+├── Select session type (podcast, webcast, interview, etc.)
+├── Choose video mode (browser, Zoom, Meet, Teams)
+├── Set date/time and duration
+└── Configure waiting room settings
+
+Step 2: INVITE PARTICIPANTS
+├── Add participant details (name, email, phone)
+├── Assign roles (host, co-host, guest, panelist)
+├── Generate unique join URLs
+└── Send invitations with calendar buttons
+
+Step 3: REMINDER SYSTEM
+├── Email reminders: 24h, 1h, 30m, 15m
+├── SMS reminders: 30m, 15m (via Twilio)
+└── Calendar events auto-created
+
+Step 4: WAITING ROOM & JOIN
+├── URL activates 30min before session
+├── Host admits participants
+├── Agenda displayed on entry
+└── Recording indicator shown to all
+
+Step 5: LIVE SESSION
+├── Teleprompter with script (not recorded)
+├── Recording via Vibe/UniversalAI
+├── Multi-participant management
+└── Auto-save to project library
+```
+
+| # | Scenario Name | Segment | Description | Priority | Status |
+|---|---------------|---------|-------------|----------|--------|
+| 141 | **Session Creation** | All | Create scheduled session with type, mode, and settings | P0 | ✅ Implemented |
+| 142 | **Hybrid Video Mode** | All | Browser-based default + external platform APIs (Zoom/Meet/Teams) | P0 | ✅ Implemented |
+| 143 | **Calendar Integration** | All | Google Calendar, Outlook, iCal with .ics file generation | P0 | ✅ Implemented |
+| 144 | **Email Invitations** | All | Send branded invites with calendar buttons and join links | P0 | ✅ Implemented |
+| 145 | **Email Reminders** | All | Automated reminders at 24h, 1h, 30m, 15m before session | P0 | ✅ Implemented |
+| 146 | **SMS Reminders** | All | Twilio SMS at 30m, 15m for participants with phone numbers | P0 | ✅ Implemented |
+| 147 | **Waiting Room** | All | Host-controlled admission with participant test area | P0 | ✅ Implemented |
+| 148 | **Agenda Display** | All | Show session agenda to participants on join | P0 | ✅ Implemented |
+| 149 | **Recording Indicator** | All | Notify all participants when recording is active | P0 | ✅ Implemented |
+| 150 | **Mobile Session Join** | All | Same URLs work for mobile participants | P0 | ✅ Implemented |
+
+### Session Types Matrix
+
+| Session Type | Participants | Recording Mode | Typical Use Case |
+|--------------|-------------|----------------|------------------|
+| `podcast` | 2-6 | Audio + Video | Multi-host audio shows with optional video |
+| `webcast` | 1 host + many | One-to-many | Presentations, announcements |
+| `interview` | 2-4 | Conversation | Guest interviews, expert discussions |
+| `panel` | 4-8 | Multi-camera | Group discussions, debates |
+| `tutorial` | 1-2 | Screen + Camera | Educational content, demos |
+| `broadcast` | 1 host | Stream | Live streaming events |
+
+### Video Mode Integration
+
+| Mode | Provider | API Required | Features |
+|------|----------|--------------|----------|
+| `browser` | Vibe Native | None | Full Vibe integration, teleprompter, recording |
+| `zoom` | Zoom | Zoom API | External meeting, import recording |
+| `google_meet` | Google | Meet API | External meeting, import recording |
+| `teams` | Microsoft | Teams API | External meeting, import recording |
+
+### Cross-Functional Usage
+
+| Module | Session Feature Usage |
+|--------|----------------------|
+| **Genie Studio** | Create sessions, manage participants, schedule shows |
+| **Recording Studio** | Session entry, waiting room, live recording |
+| **Production Hub** | Team session coordination, approval workflows |
+| **Analytics** | Session metrics, participant engagement tracking |
+| **Healthcare** | HIPAA-compliant patient education sessions |
+| **Education** | Class sessions, student participation |
+| **Enterprise** | Internal broadcasts, team meetings |
 
 ---
 
