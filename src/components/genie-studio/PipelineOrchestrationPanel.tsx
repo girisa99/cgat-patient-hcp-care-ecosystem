@@ -58,8 +58,8 @@ const INPUT_SOURCES: { value: InputSource; label: string; icon: React.ReactNode;
   { value: 'image', label: 'Image', icon: <ImageIcon className="h-4 w-4" />, available: true },
   { value: 'prompt', label: 'Text Prompt', icon: <PenTool className="h-4 w-4" />, available: true },
   { value: 'url', label: 'Web URL', icon: <Link className="h-4 w-4" />, available: true },
-  { value: 'figma', label: 'Figma', icon: <Figma className="h-4 w-4" />, available: false },
-  { value: 'miro', label: 'Miro', icon: <PenTool className="h-4 w-4" />, available: false },
+  { value: 'figma', label: 'Figma', icon: <Figma className="h-4 w-4" />, available: true },
+  { value: 'miro', label: 'Miro', icon: <PenTool className="h-4 w-4" />, available: true },
   { value: 'canva', label: 'Canva', icon: <Presentation className="h-4 w-4" />, available: false },
   { value: 'whiteboard', label: 'Whiteboard', icon: <PenTool className="h-4 w-4" />, available: false },
 ];
