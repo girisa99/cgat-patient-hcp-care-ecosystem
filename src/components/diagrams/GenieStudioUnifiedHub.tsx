@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -629,6 +630,8 @@ export const GenieStudioUnifiedHub: React.FC = () => {
   const [selectedSegment, setSelectedSegment] = useState<string>('all');
   const [activeCategory, setActiveCategory] = useState<string>('overview');
   const [activeSubTab, setActiveSubTab] = useState<string>('summary');
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [expandedCompetitor, setExpandedCompetitor] = useState<string | null>(null);
   const diagramRef = useRef<HTMLDivElement>(null);
 
   // Filtered data based on selected segment
@@ -701,8 +704,8 @@ export const GenieStudioUnifiedHub: React.FC = () => {
               <Button variant="outline" size="sm" onClick={handleDownloadPNG} className="gap-2">
                 <Download className="h-4 w-4" />PNG
               </Button>
-              <Button variant="outline" size="sm" className="gap-2">
-                <FileText className="h-4 w-4" />Docs<ExternalLink className="h-3 w-3" />
+              <Button variant="outline" size="sm" onClick={() => setIsFullscreen(true)} className="gap-2">
+                <Maximize2 className="h-4 w-4" />Fullscreen
               </Button>
             </div>
           </div>
@@ -1056,6 +1059,45 @@ export const GenieStudioUnifiedHub: React.FC = () => {
               </Table>
             </CardContent>
           </Card>
+
+          {/* Platform Compatibility Matrix */}
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Cpu className="h-5 w-5" />
+                Platform Compatibility Matrix
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Feature/App</TableHead>
+                    <TableHead className="text-center">iOS</TableHead>
+                    <TableHead className="text-center">Android</TableHead>
+                    <TableHead className="text-center">Web</TableHead>
+                    <TableHead className="text-center">Desktop</TableHead>
+                    <TableHead className="text-center">API</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredApps.slice(0, 8).map(app => (
+                    <TableRow key={app.name}>
+                      <TableCell className="font-medium">{app.name}</TableCell>
+                      {(['iOS', 'Android', 'Web', 'Desktop', 'API'] as const).map(platform => (
+                        <TableCell key={platform} className="text-center">
+                          {app.platforms.includes(platform) 
+                            ? <Check className="h-4 w-4 text-green-500 mx-auto" />
+                            : <span className="h-4 w-4 text-muted-foreground mx-auto">—</span>
+                          }
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* FUNCTIONAL TAB */}
@@ -1107,35 +1149,67 @@ export const GenieStudioUnifiedHub: React.FC = () => {
                           <TableHead>Competitor</TableHead>
                           <TableHead>Segment</TableHead>
                           <TableHead>Type</TableHead>
-                          <TableHead>Strengths</TableHead>
-                          <TableHead>Weaknesses</TableHead>
                           <TableHead>Pricing</TableHead>
                           <TableHead>Threat</TableHead>
+                          <TableHead></TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredCompetitors.map(comp => (
-                          <TableRow key={comp.name}>
-                            <TableCell className="font-semibold">{comp.name}</TableCell>
-                            <TableCell><Badge variant="secondary">{comp.segment}</Badge></TableCell>
-                            <TableCell><Badge variant="outline">{comp.type}</Badge></TableCell>
-                            <TableCell className="text-xs max-w-[200px]">
-                              <ul className="list-disc list-inside">
-                                {comp.strengths.slice(0, 2).map(s => <li key={s}>{s}</li>)}
-                              </ul>
-                            </TableCell>
-                            <TableCell className="text-xs max-w-[200px]">
-                              <ul className="list-disc list-inside text-muted-foreground">
-                                {comp.weaknesses.slice(0, 2).map(w => <li key={w}>{w}</li>)}
-                              </ul>
-                            </TableCell>
-                            <TableCell className="font-mono text-xs">{comp.pricing}</TableCell>
-                            <TableCell>
-                              <Badge variant={comp.threat === 'High' ? 'destructive' : comp.threat === 'Medium' ? 'secondary' : 'outline'}>
-                                {comp.threat}
-                              </Badge>
-                            </TableCell>
-                          </TableRow>
+                        {filteredCompetitors.map((comp, idx) => (
+                          <React.Fragment key={`${comp.name}-${idx}`}>
+                            <TableRow 
+                              className="cursor-pointer hover:bg-muted/50"
+                              onClick={() => setExpandedCompetitor(
+                                expandedCompetitor === comp.name ? null : comp.name
+                              )}
+                            >
+                              <TableCell className="font-semibold">{comp.name}</TableCell>
+                              <TableCell><Badge variant="secondary">{comp.segment}</Badge></TableCell>
+                              <TableCell><Badge variant="outline">{comp.type}</Badge></TableCell>
+                              <TableCell className="font-mono text-xs">{comp.pricing}</TableCell>
+                              <TableCell>
+                                <Badge variant={comp.threat === 'High' ? 'destructive' : comp.threat === 'Medium' ? 'secondary' : 'outline'}>
+                                  {comp.threat}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {expandedCompetitor === comp.name 
+                                  ? <ChevronUp className="h-4 w-4" />
+                                  : <ChevronDown className="h-4 w-4" />
+                                }
+                              </TableCell>
+                            </TableRow>
+                            {expandedCompetitor === comp.name && (
+                              <TableRow>
+                                <TableCell colSpan={6} className="bg-muted/30">
+                                  <div className="grid grid-cols-2 gap-4 p-4">
+                                    <div>
+                                      <h4 className="font-medium text-green-500 mb-2 flex items-center gap-2">
+                                        <Check className="h-4 w-4" />
+                                        Strengths
+                                      </h4>
+                                      <ul className="space-y-1 text-sm">
+                                        {comp.strengths.map((s, i) => (
+                                          <li key={i}>• {s}</li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                    <div>
+                                      <h4 className="font-medium text-red-500 mb-2 flex items-center gap-2">
+                                        <X className="h-4 w-4" />
+                                        Weaknesses
+                                      </h4>
+                                      <ul className="space-y-1 text-sm text-muted-foreground">
+                                        {comp.weaknesses.map((w, i) => (
+                                          <li key={i}>• {w}</li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </React.Fragment>
                         ))}
                       </TableBody>
                     </Table>
@@ -1277,6 +1351,134 @@ export const GenieStudioUnifiedHub: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Fullscreen Modal */}
+      <AnimatePresence>
+        {isFullscreen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm"
+          >
+            <div className="absolute top-4 right-4 z-10 flex gap-2">
+              <Button variant="outline" size="sm" onClick={handleDownloadPNG} className="gap-2">
+                <Download className="h-4 w-4" />
+                PNG
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setIsFullscreen(false)} className="gap-2">
+                <X className="h-4 w-4" />
+                Close
+              </Button>
+            </div>
+            <ScrollArea className="h-screen w-screen p-8">
+              <div className="max-w-7xl mx-auto">
+                {/* Segment Selector in Fullscreen */}
+                <div className="mb-6">
+                  <SegmentSelector selected={selectedSegment} onSelect={setSelectedSegment} />
+                </div>
+                
+                {/* Stats Overview */}
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+                  <Card className="bg-card border-border p-4 text-center">
+                    <p className="text-3xl font-bold text-primary">{filteredCompetitors.length}</p>
+                    <p className="text-sm text-muted-foreground">Competitors</p>
+                  </Card>
+                  <Card className="bg-card border-border p-4 text-center">
+                    <p className="text-3xl font-bold text-green-500">{filteredApps.length}</p>
+                    <p className="text-sm text-muted-foreground">App Opportunities</p>
+                  </Card>
+                  <Card className="bg-card border-border p-4 text-center">
+                    <p className="text-3xl font-bold text-blue-500">{filteredIntegrations.length}</p>
+                    <p className="text-sm text-muted-foreground">Integrations</p>
+                  </Card>
+                  <Card className="bg-card border-border p-4 text-center">
+                    <p className="text-3xl font-bold text-purple-500">{productSuite.length}</p>
+                    <p className="text-sm text-muted-foreground">Products</p>
+                  </Card>
+                  <Card className="bg-card border-border p-4 text-center">
+                    <p className="text-3xl font-bold text-orange-500">{filteredAgents.length}</p>
+                    <p className="text-sm text-muted-foreground">AI Agents</p>
+                  </Card>
+                  <Card className="bg-card border-border p-4 text-center">
+                    <p className="text-3xl font-bold text-cyan-500">{roadmapPhases.length}</p>
+                    <p className="text-sm text-muted-foreground">Phases (P0-P5)</p>
+                  </Card>
+                </div>
+
+                {/* Product Suite Grid in Fullscreen */}
+                <Card className="bg-card border-border mb-6">
+                  <CardHeader>
+                    <CardTitle>Product Suite Overview</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                      {productSuite.map(product => (
+                        <div key={product.id} className="p-4 rounded-lg border" style={{ borderColor: product.color }}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-2xl">{product.icon}</span>
+                            <span className="font-semibold">{product.name}</span>
+                          </div>
+                          <Badge variant={product.status === 'completed' ? 'default' : product.status === 'partial' ? 'secondary' : 'outline'}>
+                            {product.phase} - {product.status}
+                          </Badge>
+                          <ul className="text-sm mt-2 space-y-1">
+                            {product.features.slice(0, 4).map((f, i) => (
+                              <li key={i} className="text-muted-foreground">
+                                {product.status === 'completed' ? '✓' : product.status === 'partial' ? '◐' : '○'} {f}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Phase Progress in Fullscreen */}
+                <Card className="bg-card border-border">
+                  <CardHeader>
+                    <CardTitle>Implementation Phases</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {roadmapPhases.map(phase => {
+                        const stats = phase.features.reduce((acc, f) => {
+                          if (f.status === 'done') acc.done++;
+                          else if (f.status === 'partial') acc.partial++;
+                          else acc.planned++;
+                          return acc;
+                        }, { done: 0, partial: 0, planned: 0 });
+                        
+                        return (
+                          <div key={phase.id} className="flex items-center gap-4 p-4 rounded-lg border border-border">
+                            <Badge variant={phase.status === 'completed' ? 'default' : phase.status === 'in-progress' ? 'secondary' : 'outline'} className="text-lg px-3 py-1">
+                              {phase.id}
+                            </Badge>
+                            <div className="flex-1">
+                              <p className="font-medium">{phase.name}</p>
+                              <p className="text-sm text-muted-foreground">Weeks {phase.weeks}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <Badge className="bg-green-500/20 text-green-500">{stats.done} Done</Badge>
+                              <Badge className="bg-yellow-500/20 text-yellow-500">{stats.partial} Partial</Badge>
+                              <Badge className="bg-blue-500/20 text-blue-500">{stats.planned} Planned</Badge>
+                            </div>
+                            <div className="w-32">
+                              <Progress value={phase.completion} className="h-2" />
+                            </div>
+                            <span className="text-sm font-medium">{phase.statusText}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </ScrollArea>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
