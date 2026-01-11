@@ -48,12 +48,15 @@ export const EnhancedPricingCard = ({ tier, isCurrentPlan, onSelect, isLoading }
   const [showFeaturesDialog, setShowFeaturesDialog] = useState(false);
 
   return (
-    <Card className={cn(
-      'relative flex flex-col transition-all duration-300 hover:shadow-xl overflow-visible h-full',
-      tierBorders[tier],
-      isCurrentPlan && 'ring-2 ring-primary',
-      isRecommended && 'scale-[1.02] shadow-lg z-10'
-    )}>
+    <Card 
+      id={`tier-${tier}`}
+      className={cn(
+        'relative flex flex-col transition-all duration-300 hover:shadow-xl overflow-visible h-full',
+        tierBorders[tier],
+        isCurrentPlan && 'ring-2 ring-primary',
+        isRecommended && 'scale-[1.02] shadow-lg z-10'
+      )}
+    >
       {/* Gradient Header */}
       <div className={cn(
         "absolute top-0 left-0 right-0 h-2 bg-gradient-to-r",

@@ -1,16 +1,26 @@
 import React, { useState } from 'react';
 import { EnhancedPricingCard } from './EnhancedPricingCard';
-import { SubscriptionTier, SUBSCRIPTION_TIERS } from '@/hooks/useSubscription';
+import { SubscriptionTier, SUBSCRIPTION_TIERS, USER_SEGMENTS, UserSegment } from '@/hooks/useSubscription';
 import { useSubscriptionContext } from './SubscriptionProvider';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Check, Sparkles, X, HelpCircle } from 'lucide-react';
+import { Check, Sparkles, X, HelpCircle, Users, Briefcase, GraduationCap, Heart, Building2, Plane } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Import suite logo
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
+
+// Segment icons mapping
+const segmentIcons: Record<UserSegment, React.ReactNode> = {
+  creator: <Users className="h-4 w-4" />,
+  traveler: <Plane className="h-4 w-4" />,
+  smallBusiness: <Briefcase className="h-4 w-4" />,
+  education: <GraduationCap className="h-4 w-4" />,
+  healthcare: <Heart className="h-4 w-4" />,
+  enterprise: <Building2 className="h-4 w-4" />
+};
 
 export const EnhancedPricingSection = () => {
   const { subscription, createCheckout, isLoading, startFreeTrial } = useSubscriptionContext();
@@ -112,6 +122,44 @@ export const EnhancedPricingSection = () => {
           </p>
         </div>
       )}
+
+      {/* User Segments - Who is each plan for? */}
+      <div className="pt-8 space-y-4">
+        <div className="text-center">
+          <h3 className="text-xl font-semibold text-foreground">Find Your Perfect Plan</h3>
+          <p className="text-sm text-muted-foreground mt-1">Recommended plans based on your use case</p>
+        </div>
+        
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          {(Object.entries(USER_SEGMENTS) as [UserSegment, typeof USER_SEGMENTS[UserSegment]][]).map(([key, segment]) => (
+            <Card 
+              key={key}
+              className={cn(
+                "p-3 cursor-pointer transition-all hover:scale-[1.02]",
+                SUBSCRIPTION_TIERS[segment.recommendedTier].recommended 
+                  ? "border-primary/50 bg-primary/5" 
+                  : "border-border"
+              )}
+              onClick={() => {
+                // Scroll to recommended tier card
+                const tierElement = document.getElementById(`tier-${segment.recommendedTier}`);
+                tierElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1.5 rounded-md bg-muted">
+                  {segmentIcons[key]}
+                </div>
+                <span className="font-medium text-sm text-foreground">{segment.name}</span>
+              </div>
+              <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{segment.description}</p>
+              <Badge variant="outline" className="text-xs">
+                {SUBSCRIPTION_TIERS[segment.recommendedTier].name} - ${segment.monthlyPrice}/mo
+              </Badge>
+            </Card>
+          ))}
+        </div>
+      </div>
 
       {/* Feature Comparison & FAQ - Simple flat layout */}
       <div className="pt-8 space-y-6">

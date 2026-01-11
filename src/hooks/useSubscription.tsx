@@ -275,6 +275,65 @@ export const SUBSCRIPTION_TIERS = {
 
 export type SubscriptionTier = keyof typeof SUBSCRIPTION_TIERS;
 
+// User Segments mapped to subscription tiers (per architecture)
+export const USER_SEGMENTS = {
+  creator: {
+    name: 'Creator',
+    description: 'Solo creators, influencers',
+    recommendedTier: 'starter' as SubscriptionTier,
+    monthlyPrice: 29.99,
+    competitors: ['CapCut', 'Canva', 'Descript'],
+    advantage: 'All-in-one: Script → TTS → Record → Publish'
+  },
+  traveler: {
+    name: 'Traveler',
+    description: 'Travel vloggers',
+    recommendedTier: 'starter' as SubscriptionTier,
+    monthlyPrice: 29.99,
+    competitors: ['GoPro Quik', 'Adobe Rush'],
+    advantage: 'Offline + AI narration + location tagging'
+  },
+  smallBusiness: {
+    name: 'Small Business',
+    description: 'Shops, services',
+    recommendedTier: 'business' as SubscriptionTier,
+    monthlyPrice: 49.99,
+    competitors: ['Loom', 'Synthesia', 'Pictory'],
+    advantage: 'Affordable AI + product templates'
+  },
+  education: {
+    name: 'Education',
+    description: 'Teachers, trainers',
+    recommendedTier: 'pro' as SubscriptionTier,
+    monthlyPrice: 79.99,
+    competitors: ['Screencastify', 'Edpuzzle'],
+    advantage: 'Lesson builder + AI curriculum scripts'
+  },
+  healthcare: {
+    name: 'Healthcare',
+    description: 'Clinics, hospitals',
+    recommendedTier: 'pro' as SubscriptionTier,
+    monthlyPrice: 79.99,
+    competitors: ['VIDIZMO', 'Gumlet'],
+    advantage: 'HIPAA-compliant under $100/mo'
+  },
+  enterprise: {
+    name: 'Enterprise',
+    description: 'Large orgs, agencies',
+    recommendedTier: 'pro' as SubscriptionTier,
+    monthlyPrice: 79.99,
+    competitors: ['Synthesia', 'HeyGen'],
+    advantage: 'White-label + approval workflows'
+  }
+} as const;
+
+export type UserSegment = keyof typeof USER_SEGMENTS;
+
+// Get recommended tier for a segment
+export const getRecommendedTierForSegment = (segment: UserSegment): SubscriptionTier => {
+  return USER_SEGMENTS[segment].recommendedTier;
+};
+
 export interface SubscriptionStatus {
   subscribed: boolean;
   tier: SubscriptionTier | null;
