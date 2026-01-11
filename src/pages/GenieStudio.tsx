@@ -2591,7 +2591,7 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
                 </div>
                 
                 <div className="flex flex-wrap items-start gap-3">
-                  {/* Genie Vibe Button - Primary */}
+                  {/* Genie Vibe Button - Recording Studio (opens inline) */}
                   <Button 
                     size="lg" 
                     onClick={() => setIsStudioOpen(true)}
@@ -2599,36 +2599,22 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
                   >
                     <img src={genieVibeProductLogo} alt="Genie Vibe" className="h-8 w-8 object-contain rounded bg-white p-0.5" />
                     <div className="flex flex-col items-start">
-                      <span className="font-semibold">Genie Vibe</span>
+                      <span className="font-semibold">Quick Record</span>
                       <span className="text-[10px] font-normal opacity-80">Script to Screen</span>
                     </div>
                   </Button>
                   
-                  {/* Genie Vibe Desktop Studio */}
+                  {/* Genie Vibe Full Studio - Single unified button */}
                   <Button 
                     size="lg" 
                     variant="outline"
                     onClick={() => navigate('/genie-vibe')}
                     className="border-purple-500/30 hover:border-purple-500 hover:bg-purple-500/10 flex items-center gap-3 h-auto py-2.5 px-5"
                   >
-                    <Monitor className="h-6 w-6 text-purple-600" />
+                    <img src={genieVibeProductLogo} alt="Genie Vibe" className="h-8 w-8 object-contain rounded bg-pink-50 p-0.5" />
                     <div className="flex flex-col items-start">
-                      <span className="font-semibold">Desktop Studio</span>
-                      <span className="text-[10px] font-normal text-muted-foreground">Full Editor</span>
-                    </div>
-                  </Button>
-                  
-                  {/* Genie Vibe Mobile */}
-                  <Button 
-                    size="lg" 
-                    variant="outline"
-                    onClick={() => navigate('/genie-vibe/mobile')}
-                    className="border-pink-500/30 hover:border-pink-500 hover:bg-pink-500/10 flex items-center gap-3 h-auto py-2.5 px-5"
-                  >
-                    <Smartphone className="h-6 w-6 text-pink-600" />
-                    <div className="flex flex-col items-start">
-                      <span className="font-semibold">Mobile Studio</span>
-                      <span className="text-[10px] font-normal text-muted-foreground">Quick Record</span>
+                      <span className="font-semibold">Genie Vibe</span>
+                      <span className="text-[10px] font-normal text-muted-foreground">Full Studio</span>
                     </div>
                   </Button>
                   
