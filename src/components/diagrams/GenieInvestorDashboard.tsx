@@ -4,13 +4,28 @@
  * Updated 2026-01-11 with collaboration features
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import {
   Users,
   Plane,
@@ -19,17 +34,12 @@ import {
   Heart,
   Building,
   TrendingUp,
-  TrendingDown,
   Check,
   X,
   Star,
   Target,
   Zap,
   Download,
-  Maximize2,
-  PieChart,
-  BarChart3,
-  LineChart,
   Lightbulb,
   Shield,
   Globe,
@@ -41,7 +51,9 @@ import {
   Clock,
   DollarSign,
   Layers,
-  AlertCircle
+  AlertCircle,
+  Filter,
+  BarChart3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import html2canvas from 'html2canvas';
@@ -713,7 +725,7 @@ const competitivePosition = {
 
 export const GenieInvestorDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
-  const [selectedSegment, setSelectedSegment] = useState<string | null>(null);
+  const [selectedSegment, setSelectedSegment] = useState<string>('all');
   const diagramRef = useRef<HTMLDivElement>(null);
 
   const handleDownloadPNG = async () => {
@@ -734,353 +746,412 @@ export const GenieInvestorDashboard: React.FC = () => {
     }
   };
 
-  const getSegmentById = (id: string) => segments.find(s => s.id === id);
+  // Get filtered segments based on dropdown
+  const filteredSegments = useMemo(() => {
+    if (selectedSegment === 'all') return segments;
+    return segments.filter(s => s.id === selectedSegment);
+  }, [selectedSegment]);
+
+  // Get all competitors flattened for table view
+  const allCompetitors = useMemo(() => {
+    const segs = selectedSegment === 'all' ? segments : segments.filter(s => s.id === selectedSegment);
+    return segs.flatMap(seg => 
+      seg.competitors.map(comp => ({ ...comp, segment: seg.name, segmentIcon: seg.icon }))
+    );
+  }, [selectedSegment]);
 
   return (
-    <Card className="w-full border border-border bg-card">
-      <CardHeader className="flex flex-row items-center justify-between pb-4">
+    <div className="w-full">
+      {/* Header with Filter */}
+      <div className="flex items-center justify-between mb-4 pb-4 border-b">
         <div>
-          <CardTitle className="text-xl font-semibold flex items-center gap-2">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-primary" />
             Genie Suite — Investor Dashboard
-          </CardTitle>
-          <CardDescription>
-            Market Analysis • Competitive Landscape • User Analytics • Roadmap
-          </CardDescription>
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Market Analysis • Competitive Landscape • Pricing • Roadmap
+          </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3">
+          {/* Segment Filter Dropdown */}
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={selectedSegment} onValueChange={setSelectedSegment}>
+              <SelectTrigger className="w-[180px] bg-background">
+                <SelectValue placeholder="Filter by Segment" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border shadow-lg z-50">
+                <SelectItem value="all">All Segments</SelectItem>
+                {segments.map(seg => (
+                  <SelectItem key={seg.id} value={seg.id}>{seg.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <Button variant="outline" size="sm" onClick={handleDownloadPNG}>
             <Download className="h-4 w-4 mr-1" />
             Export
           </Button>
         </div>
-      </CardHeader>
+      </div>
 
-      <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-8 w-full mb-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="segments">6 Segments</TabsTrigger>
-            <TabsTrigger value="competitors">Competitors</TabsTrigger>
-            <TabsTrigger value="differentiators">Why Genie?</TabsTrigger>
-            <TabsTrigger value="pricing">Pricing</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="roadmap">Roadmap</TabsTrigger>
-            <TabsTrigger value="financials">TAM/SAM/SOM</TabsTrigger>
-          </TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid grid-cols-7 w-full mb-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="segments">Segments</TabsTrigger>
+          <TabsTrigger value="competitors">Competitors</TabsTrigger>
+          <TabsTrigger value="pricing">Pricing</TabsTrigger>
+          <TabsTrigger value="differentiators">Why Genie?</TabsTrigger>
+          <TabsTrigger value="roadmap">Roadmap</TabsTrigger>
+          <TabsTrigger value="financials">Financials</TabsTrigger>
+        </TabsList>
 
-          <ScrollArea className="h-[650px]">
-            <div ref={diagramRef} className="p-6 bg-white dark:bg-slate-900 rounded-lg space-y-6">
+        <ScrollArea className="h-[600px]">
+          <div ref={diagramRef} className="space-y-4">
               
-              {/* OVERVIEW TAB */}
-              <TabsContent value="overview" className="space-y-6 mt-0">
-                {/* Key Metrics */}
-                <div className="grid grid-cols-6 gap-3">
+            {/* OVERVIEW TAB */}
+            <TabsContent value="overview" className="space-y-4 mt-0">
+              {/* Key Metrics Table */}
+              <Table className="border">
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="font-semibold">Metric</TableHead>
+                    <TableHead className="text-right font-semibold">Value</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {keyMetrics.map((metric, i) => (
-                    <Card key={i} className="p-4 text-center">
-                      <metric.icon className="h-6 w-6 mx-auto mb-2 text-primary" />
-                      <div className="text-2xl font-bold text-foreground">{metric.value}</div>
-                      <div className="text-xs text-muted-foreground">{metric.label}</div>
-                    </Card>
+                    <TableRow key={i}>
+                      <TableCell className="flex items-center gap-2">
+                        <metric.icon className="h-4 w-4 text-primary" />
+                        {metric.label}
+                      </TableCell>
+                      <TableCell className="text-right font-bold text-primary">{metric.value}</TableCell>
+                    </TableRow>
                   ))}
+                </TableBody>
+              </Table>
+
+              {/* Segments Summary Table */}
+              <div>
+                <h3 className="font-semibold mb-2 flex items-center gap-2">
+                  <Target className="h-4 w-4" />
+                  Market Segments Summary
+                </h3>
+                <Table className="border">
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead>Segment</TableHead>
+                      <TableHead>Market Size</TableHead>
+                      <TableHead>Growth</TableHead>
+                      <TableHead>Priority</TableHead>
+                      <TableHead>Position</TableHead>
+                      <TableHead>Soft Price</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredSegments.map((seg) => (
+                      <TableRow key={seg.id}>
+                        <TableCell className="flex items-center gap-2 font-medium">
+                          <seg.icon className="h-4 w-4" />
+                          {seg.name}
+                        </TableCell>
+                        <TableCell>{seg.marketSize}</TableCell>
+                        <TableCell className="text-green-600">{seg.growthRate}</TableCell>
+                        <TableCell>
+                          <Badge variant={seg.priority === 'P0' ? 'default' : 'outline'}>{seg.priority}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={seg.marketPosition === 'Blue Ocean' ? 'default' : 'secondary'}>{seg.marketPosition}</Badge>
+                        </TableCell>
+                        <TableCell className="text-primary font-medium">{seg.softPricePoint}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Quick Stats */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="p-4 border rounded-lg text-center">
+                  <div className="text-3xl font-bold text-primary">73%</div>
+                  <div className="text-sm text-muted-foreground">Want unified platform</div>
                 </div>
+                <div className="p-4 border rounded-lg text-center">
+                  <div className="text-3xl font-bold text-green-600">42%</div>
+                  <div className="text-sm text-muted-foreground">Need team collaboration</div>
+                </div>
+                <div className="p-4 border rounded-lg text-center">
+                  <div className="text-3xl font-bold text-blue-600">68%</div>
+                  <div className="text-sm text-muted-foreground">Prefer mobile-first</div>
+                </div>
+              </div>
 
-                {/* Quick Segment Summary */}
-                <Card className="p-4">
-                  <h3 className="font-semibold mb-4 flex items-center gap-2">
-                    <Target className="h-5 w-5" />
-                    Market Segments at a Glance
-                  </h3>
-                  <div className="grid grid-cols-6 gap-3">
-                    {segments.map((seg) => (
-                      <div
-                        key={seg.id}
-                        className={cn(
-                          "p-3 rounded-lg border cursor-pointer transition-all hover:scale-105",
-                          seg.bgColor,
-                          selectedSegment === seg.id && "ring-2 ring-primary"
-                        )}
-                        onClick={() => setSelectedSegment(seg.id === selectedSegment ? null : seg.id)}
-                      >
-                        <seg.icon className="h-6 w-6 mb-2" />
-                        <div className="font-semibold text-sm">{seg.name}</div>
-                        <div className="text-xs text-muted-foreground">{seg.marketSize}</div>
-                        <Badge variant="outline" className="mt-2 text-xs">
-                          {seg.collaboration} Collab
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-
-                {/* Competitive Advantage Summary */}
-                <Card className="p-4 bg-gradient-to-r from-primary/5 to-primary/10">
-                  <h3 className="font-semibold mb-3 flex items-center gap-2">
-                    <Award className="h-5 w-5 text-primary" />
-                    Why Genie Wins
-                  </h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-primary">73%</div>
-                      <div className="text-sm text-muted-foreground">Want unified platform</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-green-500">42%</div>
-                      <div className="text-sm text-muted-foreground">Need team collaboration</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-blue-500">68%</div>
-                      <div className="text-sm text-muted-foreground">Prefer mobile-first</div>
-                    </div>
-                  </div>
-                </Card>
-
-                {/* Implementation Progress */}
-                <Card className="p-4">
-                  <h3 className="font-semibold mb-3 flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5" />
-                    Implementation Progress
-                  </h3>
-                  <div className="space-y-3">
-                    {roadmapPhases.slice(0, 3).map((phase) => (
-                      <div key={phase.phase} className="flex items-center gap-4">
-                        <Badge variant={phase.status === 'completed' ? 'default' : phase.status === 'in-progress' ? 'secondary' : 'outline'}>
-                          {phase.phase}
-                        </Badge>
-                        <div className="flex-1">
-                          <div className="flex justify-between text-sm mb-1">
-                            <span>{phase.name}</span>
-                            <span>{phase.completion}%</span>
-                          </div>
-                          <Progress value={phase.completion} className="h-2" />
-                        </div>
-                        <span className="text-xs text-muted-foreground">{phase.scenarios} scenarios</span>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              </TabsContent>
-
-              {/* SEGMENTS TAB - Enhanced with Pros/Cons */}
-              <TabsContent value="segments" className="space-y-4 mt-0">
-                <div className="grid grid-cols-2 gap-4">
-                  {segments.map((seg) => (
-                    <Card key={seg.id} className={cn("p-4", seg.bgColor)}>
-                      <div className="flex items-center gap-3 mb-3">
-                        <seg.icon className="h-8 w-8" />
-                        <div className="flex-1">
+              {/* Roadmap Progress Table */}
+              <div>
+                <h3 className="font-semibold mb-2 flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  Implementation Roadmap
+                </h3>
+                <Table className="border">
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead>Phase</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Quarter</TableHead>
+                      <TableHead>Scenarios</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="w-32">Progress</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {roadmapPhases.map((phase) => (
+                      <TableRow key={phase.phase}>
+                        <TableCell><Badge variant="outline">{phase.phase}</Badge></TableCell>
+                        <TableCell className="font-medium">{phase.name}</TableCell>
+                        <TableCell>{phase.quarter}</TableCell>
+                        <TableCell>{phase.scenarios}</TableCell>
+                        <TableCell>
+                          <Badge variant={phase.status === 'completed' ? 'default' : phase.status === 'in-progress' ? 'secondary' : 'outline'}>
+                            {phase.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
                           <div className="flex items-center gap-2">
-                            <h3 className="font-semibold">{seg.name}</h3>
-                            <Badge variant={seg.marketPosition === 'Blue Ocean' ? 'default' : seg.marketPosition === 'Disruptor' ? 'secondary' : 'outline'} className="text-xs">
-                              {seg.marketPosition}
-                            </Badge>
+                            <Progress value={phase.completion} className="h-2 flex-1" />
+                            <span className="text-xs w-8">{phase.completion}%</span>
                           </div>
-                          <div className="flex gap-2 mt-1">
-                            <Badge variant="outline" className="text-xs">{seg.marketSize}</Badge>
-                            <Badge variant="outline" className="text-xs">{seg.growthRate}</Badge>
-                            <Badge className="text-xs">{seg.softPricePoint}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+
+            {/* SEGMENTS TAB - Clean Table View */}
+            <TabsContent value="segments" className="space-y-4 mt-0">
+              {/* Segments Table */}
+              <Table className="border">
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead>Segment</TableHead>
+                    <TableHead>TAM/SAM/SOM</TableHead>
+                    <TableHead>Position</TableHead>
+                    <TableHead>Genie Advantage</TableHead>
+                    <TableHead>Improvement Needed</TableHead>
+                    <TableHead>User Prefs</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredSegments.map((seg) => (
+                    <TableRow key={seg.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <seg.icon className="h-5 w-5" />
+                          <div>
+                            <div className="font-medium">{seg.name}</div>
+                            <div className="text-xs text-muted-foreground">{seg.softPricePoint}</div>
                           </div>
                         </div>
-                      </div>
-                      
-                      {/* Pain Points */}
-                      <div className="mb-2">
-                        <div className="text-xs font-semibold text-muted-foreground mb-1">Top Pain Points:</div>
-                        {seg.painPoints.slice(0, 2).map((pain, i) => (
-                          <div key={i} className="text-xs italic text-muted-foreground truncate">{pain}</div>
-                        ))}
-                      </div>
-
-                      {/* Genie Advantage vs Disadvantage */}
-                      <div className="grid grid-cols-2 gap-2 mb-3">
-                        <div>
-                          <div className="text-xs font-semibold text-green-600 mb-1">✓ Genie Advantage</div>
-                          {seg.genieAdvantage.slice(0, 2).map((adv, i) => (
-                            <div key={i} className="text-xs flex items-start gap-1">
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div>TAM: {seg.tam}</div>
+                          <div className="text-muted-foreground">SAM: {seg.sam} | SOM: {seg.som}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={seg.marketPosition === 'Blue Ocean' ? 'default' : seg.marketPosition === 'Disruptor' ? 'secondary' : 'outline'}>
+                          {seg.marketPosition}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <ul className="text-xs space-y-0.5">
+                          {seg.genieAdvantage.slice(0, 2).map((a, i) => (
+                            <li key={i} className="flex items-start gap-1">
                               <Check className="h-3 w-3 text-green-500 mt-0.5 shrink-0" />
-                              <span className="line-clamp-1">{adv}</span>
-                            </div>
+                              <span className="line-clamp-1">{a}</span>
+                            </li>
                           ))}
-                        </div>
-                        <div>
-                          <div className="text-xs font-semibold text-amber-600 mb-1">⚠ Improvement Needed</div>
-                          {seg.genieDisadvantage?.slice(0, 2).map((dis, i) => (
-                            <div key={i} className="text-xs flex items-start gap-1">
+                        </ul>
+                      </TableCell>
+                      <TableCell>
+                        <ul className="text-xs space-y-0.5">
+                          {seg.genieDisadvantage?.slice(0, 2).map((d, i) => (
+                            <li key={i} className="flex items-start gap-1">
                               <AlertCircle className="h-3 w-3 text-amber-500 mt-0.5 shrink-0" />
-                              <span className="line-clamp-1">{dis}</span>
-                            </div>
+                              <span className="line-clamp-1">{d}</span>
+                            </li>
                           ))}
+                        </ul>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-xs">
+                          <div>📱 {seg.userPreferences.mobile}%</div>
+                          <div>🖥️ {seg.userPreferences.desktop}%</div>
+                          <div>👥 {seg.userPreferences.collaboration}%</div>
                         </div>
-                      </div>
-
-                      {/* Competitors with threat */}
-                      <div className="mb-3">
-                        <div className="text-xs font-semibold text-red-600 mb-1">Key Competitors ({seg.competitors.length}):</div>
-                        <div className="flex flex-wrap gap-1">
-                          {seg.competitors.slice(0, 3).map((c, i) => (
-                            <Badge 
-                              key={i} 
-                              variant={c.threat === 'High' ? 'destructive' : 'outline'} 
-                              className="text-xs"
-                            >
-                              {c.name} {c.threat === 'High' && '🔥'}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* User Preferences */}
-                      <div className="grid grid-cols-3 gap-2 text-center border-t pt-2">
-                        <div>
-                          <div className="text-sm font-bold">{seg.userPreferences.mobile}%</div>
-                          <div className="text-xs text-muted-foreground">📱 Mobile</div>
-                        </div>
-                        <div>
-                          <div className="text-sm font-bold">{seg.userPreferences.desktop}%</div>
-                          <div className="text-xs text-muted-foreground">🖥️ Desktop</div>
-                        </div>
-                        <div>
-                          <div className="text-sm font-bold">{seg.userPreferences.collaboration}%</div>
-                          <div className="text-xs text-muted-foreground">👥 Collab</div>
-                        </div>
-                      </div>
-                    </Card>
+                      </TableCell>
+                    </TableRow>
                   ))}
+                </TableBody>
+              </Table>
+
+              {/* Pain Points Table */}
+              <div>
+                <h3 className="font-semibold mb-2">Pain Points by Segment</h3>
+                <Table className="border">
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="w-40">Segment</TableHead>
+                      <TableHead>Top Pain Points</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredSegments.map((seg) => (
+                      <TableRow key={seg.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <seg.icon className="h-4 w-4" />
+                            {seg.name}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <ul className="text-sm space-y-1">
+                            {seg.painPoints.map((pain, i) => (
+                              <li key={i} className="italic text-muted-foreground">{pain}</li>
+                            ))}
+                          </ul>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+
+            {/* COMPETITORS TAB - Clean Table View */}
+            <TabsContent value="competitors" className="space-y-4 mt-0">
+              {/* Position Summary */}
+              <div className="grid grid-cols-4 gap-3 text-sm">
+                <div className="p-3 border rounded-lg bg-green-50 dark:bg-green-900/20">
+                  <div className="font-semibold text-green-700 dark:text-green-300 mb-1">✅ Stronger Than</div>
+                  <div className="text-xs">{competitivePosition.strongerThan.join(', ')}</div>
                 </div>
-              </TabsContent>
+                <div className="p-3 border rounded-lg bg-amber-50 dark:bg-amber-900/20">
+                  <div className="font-semibold text-amber-700 dark:text-amber-300 mb-1">⚖️ At Parity</div>
+                  <div className="text-xs">{competitivePosition.parityWith.join(', ')}</div>
+                </div>
+                <div className="p-3 border rounded-lg bg-orange-50 dark:bg-orange-900/20">
+                  <div className="font-semibold text-orange-700 dark:text-orange-300 mb-1">🏃 Catching Up</div>
+                  <div className="text-xs">{competitivePosition.catchingUpTo.join(', ')}</div>
+                </div>
+                <div className="p-3 border rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                  <div className="font-semibold text-blue-700 dark:text-blue-300 mb-1">🎯 Different</div>
+                  <div className="text-xs">{competitivePosition.respectButDifferent.join(', ')}</div>
+                </div>
+              </div>
 
-              {/* COMPETITORS TAB - NEW */}
-              <TabsContent value="competitors" className="space-y-4 mt-0">
-                {/* Competitive Position Overview */}
-                <Card className="p-4 bg-gradient-to-r from-green-500/5 to-red-500/5">
-                  <h3 className="font-semibold mb-4 flex items-center gap-2">
-                    <Target className="h-5 w-5" />
-                    Genie Competitive Position
-                  </h3>
-                  <div className="grid grid-cols-4 gap-4">
-                    <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                      <div className="text-sm font-semibold text-green-700 dark:text-green-300 mb-2">✅ Stronger Than</div>
-                      <div className="flex flex-wrap gap-1">
-                        {competitivePosition.strongerThan.map((c, i) => (
-                          <Badge key={i} variant="outline" className="text-xs bg-green-50">{c}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="p-3 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
-                      <div className="text-sm font-semibold text-amber-700 dark:text-amber-300 mb-2">⚖️ At Parity</div>
-                      <div className="flex flex-wrap gap-1">
-                        {competitivePosition.parityWith.map((c, i) => (
-                          <Badge key={i} variant="outline" className="text-xs bg-amber-50">{c}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                      <div className="text-sm font-semibold text-orange-700 dark:text-orange-300 mb-2">🏃 Catching Up To</div>
-                      <div className="flex flex-wrap gap-1">
-                        {competitivePosition.catchingUpTo.map((c, i) => (
-                          <Badge key={i} variant="outline" className="text-xs bg-orange-50">{c}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                      <div className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2">🎯 Different Focus</div>
-                      <div className="flex flex-wrap gap-1">
-                        {competitivePosition.respectButDifferent.map((c, i) => (
-                          <Badge key={i} variant="outline" className="text-xs bg-blue-50">{c}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-
-                {/* Detailed Competitor Analysis by Segment */}
-                {segments.map((seg) => (
-                  <Card key={seg.id} className={cn("p-4", seg.bgColor)}>
-                    <div className="flex items-center gap-2 mb-4">
-                      <seg.icon className="h-6 w-6" />
-                      <h3 className="font-semibold">{seg.name} Competitors</h3>
-                      <Badge variant="outline">{seg.competitors.length} players</Badge>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      {seg.competitors.map((comp, i) => (
-                        <div key={i} className="p-3 bg-white dark:bg-slate-800 rounded-lg border">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold">{comp.name}</span>
-                              <Badge variant={comp.threat === 'High' ? 'destructive' : comp.threat === 'Medium' ? 'secondary' : 'outline'} className="text-xs">
-                                {comp.threat} Threat
-                              </Badge>
-                            </div>
-                            <span className="text-sm font-medium text-primary">{comp.pricing}</span>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-2 text-xs mb-2">
-                            <div><span className="text-muted-foreground">Users:</span> {comp.userBase}</div>
-                            <div><span className="text-muted-foreground">Revenue:</span> {comp.revenue}</div>
-                            <div><span className="text-muted-foreground">Founded:</span> {comp.founded} ({comp.yearsInMarket}yr)</div>
-                            <div><span className="text-muted-foreground">Languages:</span> {comp.languages}</div>
-                          </div>
-
-                          {/* UX & Feature Ratings */}
-                          <div className="flex gap-4 mb-2">
-                            <div className="flex items-center gap-1">
-                              <span className="text-xs text-muted-foreground">UX:</span>
-                              {[1,2,3,4,5].map(n => (
-                                <Star key={n} className={cn("h-3 w-3", n <= comp.uxRating ? "text-yellow-500 fill-yellow-500" : "text-gray-300")} />
-                              ))}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <span className="text-xs text-muted-foreground">Features:</span>
-                              {[1,2,3,4,5].map(n => (
-                                <Star key={n} className={cn("h-3 w-3", n <= comp.featureRating ? "text-blue-500 fill-blue-500" : "text-gray-300")} />
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Pros & Cons */}
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <div className="text-xs font-semibold text-green-600 mb-1">Their Pros:</div>
-                              {comp.pros.slice(0, 2).map((p, j) => (
-                                <div key={j} className="text-xs flex items-start gap-1">
-                                  <Check className="h-3 w-3 text-green-500 mt-0.5 shrink-0" />
-                                  <span className="line-clamp-1">{p}</span>
-                                </div>
-                              ))}
-                            </div>
-                            <div>
-                              <div className="text-xs font-semibold text-red-600 mb-1">Their Cons:</div>
-                              {comp.cons.slice(0, 2).map((c, j) => (
-                                <div key={j} className="text-xs flex items-start gap-1">
-                                  <X className="h-3 w-3 text-red-500 mt-0.5 shrink-0" />
-                                  <span className="line-clamp-1">{c}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Genie vs This Competitor */}
-                          <div className="mt-2 pt-2 border-t grid grid-cols-2 gap-2">
-                            <div>
-                              <div className="text-xs font-semibold text-primary mb-1">Genie Better At:</div>
-                              {comp.genieBetterAt.slice(0, 2).map((g, j) => (
-                                <div key={j} className="text-xs text-primary">• {g}</div>
-                              ))}
-                            </div>
-                            <div>
-                              <div className="text-xs font-semibold text-muted-foreground mb-1">Genie Improving:</div>
-                              {comp.genieWorseAt.slice(0, 2).map((g, j) => (
-                                <div key={j} className="text-xs text-muted-foreground">• {g}</div>
-                              ))}
-                            </div>
-                          </div>
+              {/* Competitors Table */}
+              <Table className="border">
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead>Competitor</TableHead>
+                    <TableHead>Segment</TableHead>
+                    <TableHead>Pricing</TableHead>
+                    <TableHead>Users</TableHead>
+                    <TableHead>Revenue</TableHead>
+                    <TableHead>UX</TableHead>
+                    <TableHead>Threat</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {allCompetitors.map((comp, i) => (
+                    <TableRow key={i}>
+                      <TableCell>
+                        <div className="font-medium">{comp.name}</div>
+                        <div className="text-xs text-muted-foreground">Est. {comp.founded} ({comp.yearsInMarket}yr)</div>
+                      </TableCell>
+                      <TableCell className="text-sm">{comp.segment}</TableCell>
+                      <TableCell className="font-medium text-primary">{comp.pricing}</TableCell>
+                      <TableCell className="text-sm">{comp.userBase}</TableCell>
+                      <TableCell className="text-sm">{comp.revenue}</TableCell>
+                      <TableCell>
+                        <div className="flex">
+                          {[1,2,3,4,5].map(n => (
+                            <Star key={n} className={cn("h-3 w-3", n <= comp.uxRating ? "text-yellow-500 fill-yellow-500" : "text-gray-300")} />
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </Card>
-                ))}
-              </TabsContent>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={comp.threat === 'High' ? 'destructive' : comp.threat === 'Medium' ? 'secondary' : 'outline'}>
+                          {comp.threat}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {/* Pros/Cons Comparison Table */}
+              <div>
+                <h3 className="font-semibold mb-2">Competitor Pros/Cons & Genie Comparison</h3>
+                <Table className="border">
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="w-32">Competitor</TableHead>
+                      <TableHead>Their Pros</TableHead>
+                      <TableHead>Their Cons</TableHead>
+                      <TableHead className="text-green-600">Genie Better At</TableHead>
+                      <TableHead className="text-amber-600">Genie Improving</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {allCompetitors.slice(0, 10).map((comp, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="font-medium">{comp.name}</TableCell>
+                        <TableCell>
+                          <ul className="text-xs space-y-0.5">
+                            {comp.pros.slice(0, 2).map((p, j) => (
+                              <li key={j} className="flex items-start gap-1">
+                                <Check className="h-3 w-3 text-green-500 mt-0.5 shrink-0" />
+                                {p}
+                              </li>
+                            ))}
+                          </ul>
+                        </TableCell>
+                        <TableCell>
+                          <ul className="text-xs space-y-0.5">
+                            {comp.cons.slice(0, 2).map((c, j) => (
+                              <li key={j} className="flex items-start gap-1">
+                                <X className="h-3 w-3 text-red-500 mt-0.5 shrink-0" />
+                                {c}
+                              </li>
+                            ))}
+                          </ul>
+                        </TableCell>
+                        <TableCell>
+                          <ul className="text-xs text-green-600 space-y-0.5">
+                            {comp.genieBetterAt.slice(0, 2).map((g, j) => (
+                              <li key={j}>• {g}</li>
+                            ))}
+                          </ul>
+                        </TableCell>
+                        <TableCell>
+                          <ul className="text-xs text-amber-600 space-y-0.5">
+                            {comp.genieWorseAt.slice(0, 2).map((g, j) => (
+                              <li key={j}>• {g}</li>
+                            ))}
+                          </ul>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
 
               {/* DIFFERENTIATORS TAB - Enhanced with Pros/Cons */}
               <TabsContent value="differentiators" className="space-y-4 mt-0">
@@ -1501,8 +1572,7 @@ export const GenieInvestorDashboard: React.FC = () => {
             </div>
           </ScrollArea>
         </Tabs>
-      </CardContent>
-    </Card>
+      </div>
   );
 };
 
