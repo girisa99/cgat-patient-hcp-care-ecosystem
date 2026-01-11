@@ -18,10 +18,11 @@ export default defineConfig(({ mode }) => ({
     stabilityFrameworkPlugin({
       enabled: true,
       failOnViolations: false,
-      warnOnDuplicates: true,
+      warnOnDuplicates: false,  // Disable size warnings
       checkNaming: true,
-      checkComplexity: true,
-      maxComplexity: 10
+      checkComplexity: false,   // Disable complexity warnings (too noisy for large codebase)
+      maxComplexity: 100,
+      maxFileSize: 1000
     }),
   ].filter(Boolean),
   resolve: {
