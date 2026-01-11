@@ -2,6 +2,72 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+// Genie Product Suite
+export const GENIE_PRODUCTS = {
+  studio: {
+    id: 'studio',
+    name: 'Genie Studio',
+    tagline: 'AI Agent Builder & Orchestrator',
+    description: 'Build, deploy, and manage AI agents with visual workflows',
+    color: 'from-blue-500 to-cyan-500',
+    bgColor: 'bg-blue-500/10',
+    borderColor: 'border-blue-500/30',
+    features: ['Visual Agent Builder', 'Workflow Orchestration', 'Multi-Model Support', 'RAG Integration']
+  },
+  spark: {
+    id: 'spark',
+    name: 'Genie Spark',
+    tagline: 'Instant AI Prototyping',
+    description: 'Rapid AI agent prototyping with natural language',
+    color: 'from-amber-500 to-orange-500',
+    bgColor: 'bg-amber-500/10',
+    borderColor: 'border-amber-500/30',
+    features: ['Prompt-to-Agent', 'Quick Deploy', 'Template Library', 'One-Click Testing']
+  },
+  vibe: {
+    id: 'vibe',
+    name: 'Genie Vibe',
+    tagline: 'AI Recording Studio',
+    description: 'Professional AI-powered recording and production',
+    color: 'from-purple-500 to-pink-500',
+    bgColor: 'bg-purple-500/10',
+    borderColor: 'border-purple-500/30',
+    features: ['AI Voice Generation', 'Script Enhancement', 'Background Blur', 'Multi-Track Recording']
+  },
+  arc: {
+    id: 'arc',
+    name: 'Genie Arc',
+    tagline: 'Team Collaboration Hub',
+    description: 'Collaborative production and show management',
+    color: 'from-indigo-500 to-violet-500',
+    bgColor: 'bg-indigo-500/10',
+    borderColor: 'border-indigo-500/30',
+    features: ['Show Management', 'Team Collaboration', 'Multi-Guest Support', 'Live Streaming']
+  },
+  mind: {
+    id: 'mind',
+    name: 'Genie Mind',
+    tagline: 'Knowledge & RAG Engine',
+    description: 'Enterprise knowledge base with semantic search',
+    color: 'from-emerald-500 to-teal-500',
+    bgColor: 'bg-emerald-500/10',
+    borderColor: 'border-emerald-500/30',
+    features: ['Vector Search', 'Document Ingestion', 'Knowledge Graphs', 'Context Memory']
+  },
+  productionHub: {
+    id: 'productionHub',
+    name: 'Production Hub',
+    tagline: 'Content Production Pipeline',
+    description: 'End-to-end content production and distribution',
+    color: 'from-rose-500 to-red-500',
+    bgColor: 'bg-rose-500/10',
+    borderColor: 'border-rose-500/30',
+    features: ['Media Library', 'Video Processing', 'Asset Management', 'Distribution Channels']
+  }
+} as const;
+
+export type GenieProduct = keyof typeof GENIE_PRODUCTS;
+
 // Stripe product/price mappings for Genie Studio tiers
 export const SUBSCRIPTION_TIERS = {
   starter: {
@@ -9,28 +75,102 @@ export const SUBSCRIPTION_TIERS = {
     price_id: 'price_1RcuqjLkMzXLFD6lgODL8TGA',
     product_id: 'prod_STVvS8axANDSwJ',
     price: 29.99,
-    features: ['5 AI Agents', 'Basic RAG', 'Community Support', '1,000 API calls/month']
+    billing: 'month',
+    recommended: false,
+    products: ['studio', 'spark'] as GenieProduct[],
+    limits: {
+      agents: 5,
+      apiCalls: 1000,
+      storage: '5 GB',
+      teamMembers: 1
+    },
+    features: [
+      '5 AI Agents',
+      'Genie Studio Core',
+      'Genie Spark Basic',
+      'Basic RAG (1,000 docs)',
+      'Community Support',
+      '1,000 API calls/month',
+      '5 GB Storage'
+    ],
+    highlights: ['Perfect for individuals', 'Quick prototyping', 'Essential AI tools']
   },
   business: {
     name: 'Business',
     price_id: 'price_1Rcur3LkMzXLFD6l7sIFDyHE',
     product_id: 'prod_STVwMyqVuPDe6J',
     price: 49.99,
-    features: ['25 AI Agents', 'Advanced RAG', 'Priority Support', '10,000 API calls/month', 'Custom Branding']
+    billing: 'month',
+    recommended: true,
+    products: ['studio', 'spark', 'vibe', 'mind'] as GenieProduct[],
+    limits: {
+      agents: 25,
+      apiCalls: 10000,
+      storage: '50 GB',
+      teamMembers: 5
+    },
+    features: [
+      '25 AI Agents',
+      'Genie Studio Full',
+      'Genie Spark Pro',
+      'Genie Vibe Recording',
+      'Genie Mind Knowledge Base',
+      'Advanced RAG (10,000 docs)',
+      'Priority Support',
+      '10,000 API calls/month',
+      '50 GB Storage',
+      'Custom Branding',
+      '5 Team Members'
+    ],
+    highlights: ['Best for small teams', 'Full recording suite', 'Advanced knowledge base']
   },
   pro: {
     name: 'Pro',
     price_id: 'price_1RcurPLkMzXLFD6lHlz7yLLy',
     product_id: 'prod_STVwrfRNQCBILz',
     price: 79.99,
-    features: ['Unlimited Agents', 'Enterprise RAG', '24/7 Support', 'Unlimited API calls', 'White Label', 'Custom Integrations']
+    billing: 'month',
+    recommended: false,
+    products: ['studio', 'spark', 'vibe', 'arc', 'mind', 'productionHub'] as GenieProduct[],
+    limits: {
+      agents: -1,
+      apiCalls: -1,
+      storage: '500 GB',
+      teamMembers: -1
+    },
+    features: [
+      'Unlimited AI Agents',
+      'Full Genie Suite Access',
+      'Genie Arc Team Collaboration',
+      'Production Hub',
+      'Enterprise RAG (Unlimited)',
+      '24/7 Priority Support',
+      'Unlimited API calls',
+      '500 GB Storage',
+      'White Label',
+      'Custom Integrations',
+      'Unlimited Team Members',
+      'SSO & SAML',
+      'Dedicated Account Manager'
+    ],
+    highlights: ['Enterprise-ready', 'Full team collaboration', 'Unlimited everything']
   },
   beta: {
     name: 'Beta',
     price_id: null,
     product_id: null,
     price: 0,
-    features: ['Full Access', 'All Features', 'Beta Tester Perks', 'Lifetime Benefits']
+    billing: null,
+    recommended: false,
+    products: ['studio', 'spark', 'vibe', 'arc', 'mind', 'productionHub'] as GenieProduct[],
+    limits: {
+      agents: -1,
+      apiCalls: -1,
+      storage: 'Unlimited',
+      teamMembers: -1
+    },
+    features: ['Full Access', 'All Features', 'Beta Tester Perks', 'Lifetime Benefits'],
+    highlights: ['Early adopter benefits', 'Shape the product', 'Lifetime access']
   }
 } as const;
 
