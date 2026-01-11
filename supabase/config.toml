@@ -197,3 +197,6 @@ verify_jwt = false
 
 [functions.session-update-notify]
 verify_jwt = false
+
+[functions.session-feedback]
+verify_jwt = false

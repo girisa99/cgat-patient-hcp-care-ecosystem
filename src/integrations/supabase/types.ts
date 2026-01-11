@@ -8286,6 +8286,100 @@ export type Database = {
           },
         ]
       }
+      genie_session_feedback: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          feedback_type: string
+          host_responded_at: string | null
+          host_response: string | null
+          host_user_id: string | null
+          id: string
+          is_from_host: boolean | null
+          parent_feedback_id: string | null
+          participant_id: string | null
+          priority: string | null
+          read_by_host: boolean | null
+          read_by_participant: boolean | null
+          reference_type: string | null
+          reference_value: string | null
+          session_id: string
+          status: string
+          subject: string | null
+          suggested_value: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          content: string
+          created_at?: string
+          feedback_type: string
+          host_responded_at?: string | null
+          host_response?: string | null
+          host_user_id?: string | null
+          id?: string
+          is_from_host?: boolean | null
+          parent_feedback_id?: string | null
+          participant_id?: string | null
+          priority?: string | null
+          read_by_host?: boolean | null
+          read_by_participant?: boolean | null
+          reference_type?: string | null
+          reference_value?: string | null
+          session_id: string
+          status?: string
+          subject?: string | null
+          suggested_value?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          feedback_type?: string
+          host_responded_at?: string | null
+          host_response?: string | null
+          host_user_id?: string | null
+          id?: string
+          is_from_host?: boolean | null
+          parent_feedback_id?: string | null
+          participant_id?: string | null
+          priority?: string | null
+          read_by_host?: boolean | null
+          read_by_participant?: boolean | null
+          reference_type?: string | null
+          reference_value?: string | null
+          session_id?: string
+          status?: string
+          subject?: string | null
+          suggested_value?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_session_feedback_parent_feedback_id_fkey"
+            columns: ["parent_feedback_id"]
+            isOneToOne: false
+            referencedRelation: "genie_session_feedback"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "genie_session_feedback_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "genie_session_participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "genie_session_feedback_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "genie_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       genie_session_notifications: {
         Row: {
           activity_id: string | null
@@ -8430,6 +8524,77 @@ export type Database = {
             foreignKeyName: "genie_session_participants_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
+            referencedRelation: "genie_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genie_session_review_status: {
+        Row: {
+          created_at: string
+          final_approval_status: string | null
+          final_approved_at: string | null
+          final_approved_by: string | null
+          id: string
+          pending_feedback_count: number | null
+          production_review_status: string | null
+          recording_review_status: string | null
+          resolved_feedback_count: number | null
+          schedule_review_status: string | null
+          script_approved_at: string | null
+          script_approved_by: string | null
+          script_review_status: string | null
+          session_id: string
+          title_approved_at: string | null
+          title_approved_by: string | null
+          title_review_status: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          final_approval_status?: string | null
+          final_approved_at?: string | null
+          final_approved_by?: string | null
+          id?: string
+          pending_feedback_count?: number | null
+          production_review_status?: string | null
+          recording_review_status?: string | null
+          resolved_feedback_count?: number | null
+          schedule_review_status?: string | null
+          script_approved_at?: string | null
+          script_approved_by?: string | null
+          script_review_status?: string | null
+          session_id: string
+          title_approved_at?: string | null
+          title_approved_by?: string | null
+          title_review_status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          final_approval_status?: string | null
+          final_approved_at?: string | null
+          final_approved_by?: string | null
+          id?: string
+          pending_feedback_count?: number | null
+          production_review_status?: string | null
+          recording_review_status?: string | null
+          resolved_feedback_count?: number | null
+          schedule_review_status?: string | null
+          script_approved_at?: string | null
+          script_approved_by?: string | null
+          script_review_status?: string | null
+          session_id?: string
+          title_approved_at?: string | null
+          title_approved_by?: string | null
+          title_review_status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_session_review_status_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
             referencedRelation: "genie_sessions"
             referencedColumns: ["id"]
           },
