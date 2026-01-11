@@ -32,9 +32,10 @@ import {
   Video,
   FileText,
   Save,
-  X,
   Smartphone,
-  Monitor
+  Monitor,
+  Camera,
+  ScreenShare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -60,15 +61,23 @@ const GenieVibe: React.FC = () => {
   
   // TTS state
   const [selectedProvider, setSelectedProvider] = useState<'openai' | 'elevenlabs'>('elevenlabs');
-  const [selectedVoice, setSelectedVoice] = useState('alloy');
+  const [selectedVoice, setSelectedVoice] = useState('CwhRBWXzGAHq8TQ4Fs17'); // Default to ElevenLabs Roger
   const [voiceText, setVoiceText] = useState('');
   const [speed, setSpeed] = useState([1.0]);
-  const [isStudioOpen, setIsStudioOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('tts');
+  const [activeTab, setActiveTab] = useState('video'); // Default to video recording tab
   
   const { generate, isGenerating, lastResult } = useTTSGeneration();
   
+  // Get voices for current provider and ensure default voice is valid
   const currentVoices = selectedProvider === 'openai' ? OPENAI_VOICES : ELEVENLABS_VOICES;
+  
+  // Update selected voice when provider changes to ensure it's valid
+  React.useEffect(() => {
+    const voiceExists = currentVoices.some(v => v.value === selectedVoice);
+    if (!voiceExists && currentVoices.length > 0) {
+      setSelectedVoice(currentVoices[0].value);
+    }
+  }, [selectedProvider, currentVoices, selectedVoice]);
 
   // Combine voiceovers and TTS for display
   const allAudio = [...voiceovers, ...ttsFiles];
@@ -204,13 +213,6 @@ const GenieVibe: React.FC = () => {
                 <Badge className="bg-pink-500/10 text-pink-600 border-pink-500/20">
                   {allAudio.length} Voiceovers
                 </Badge>
-                <Button
-                  onClick={() => setIsStudioOpen(true)}
-                  className="bg-gradient-to-r from-pink-500 to-purple-500 text-white"
-                >
-                  <Video className="h-4 w-4 mr-2" />
-                  Open Recording Studio
-                </Button>
               </div>
             </div>
           </div>
@@ -219,10 +221,14 @@ const GenieVibe: React.FC = () => {
         {/* Main Content */}
         <div className="max-w-7xl mx-auto px-6 py-8">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="bg-muted/50 border border-border/50">
+            <TabsList className="bg-muted/50 border border-border/50 flex-wrap h-auto gap-1 p-1">
+              <TabsTrigger value="video" className="gap-2">
+                <Video className="h-4 w-4" />
+                Video Recording
+              </TabsTrigger>
               <TabsTrigger value="tts" className="gap-2">
                 <Mic className="h-4 w-4" />
-                AI Voice Generator
+                AI Voice
               </TabsTrigger>
               <TabsTrigger value="scripts" className="gap-2">
                 <FileText className="h-4 w-4" />
@@ -230,13 +236,88 @@ const GenieVibe: React.FC = () => {
               </TabsTrigger>
               <TabsTrigger value="library" className="gap-2">
                 <Headphones className="h-4 w-4" />
-                Audio Library
+                Audio
               </TabsTrigger>
               <TabsTrigger value="music" className="gap-2">
                 <Music className="h-4 w-4" />
                 Music
               </TabsTrigger>
             </TabsList>
+
+            {/* Video Recording Tab */}
+            <TabsContent value="video" className="space-y-6">
+              <Card className="border-border/50 bg-card/80 backdrop-blur">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center">
+                        <Video className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-semibold">Video Recording Studio</h2>
+                        <p className="text-sm text-muted-foreground">Record camera, screen, or both</p>
+                      </div>
+                    </div>
+                    <Badge className="bg-red-500/10 text-red-600 border-red-500/20">
+                      HD Recording
+                    </Badge>
+                  </div>
+
+                  <div className="grid md:grid-cols-3 gap-4 mb-6">
+                    <Card className="border-2 border-dashed hover:border-primary transition-colors cursor-pointer p-6 text-center">
+                      <Camera className="h-10 w-10 mx-auto mb-3 text-blue-500" />
+                      <h3 className="font-semibold">Camera</h3>
+                      <p className="text-xs text-muted-foreground">Record from webcam</p>
+                    </Card>
+                    <Card className="border-2 border-dashed hover:border-primary transition-colors cursor-pointer p-6 text-center">
+                      <ScreenShare className="h-10 w-10 mx-auto mb-3 text-green-500" />
+                      <h3 className="font-semibold">Screen</h3>
+                      <p className="text-xs text-muted-foreground">Record screen activity</p>
+                    </Card>
+                    <Card className="border-2 border-dashed hover:border-primary transition-colors cursor-pointer p-6 text-center">
+                      <div className="flex justify-center gap-1 mb-3">
+                        <Camera className="h-8 w-8 text-purple-500" />
+                        <ScreenShare className="h-8 w-8 text-purple-500" />
+                      </div>
+                      <h3 className="font-semibold">Both</h3>
+                      <p className="text-xs text-muted-foreground">Camera + Screen overlay</p>
+                    </Card>
+                  </div>
+
+                  {/* Recording Preview Area */}
+                  <div className="aspect-video bg-black rounded-lg flex items-center justify-center mb-6 relative overflow-hidden">
+                    <div className="text-center">
+                      <Video className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
+                      <p className="text-muted-foreground">Select a recording mode above to start</p>
+                    </div>
+                  </div>
+
+                  {/* Recording Controls */}
+                  <div className="flex justify-center gap-4">
+                    <Button size="lg" className="gap-2 bg-red-500 hover:bg-red-600 text-white px-8">
+                      <div className="h-3 w-3 rounded-full bg-white animate-pulse" />
+                      Start Recording
+                    </Button>
+                  </div>
+
+                  {/* Script Teleprompter Option */}
+                  {scriptsNeedingVoice.length > 0 && (
+                    <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FileText className="h-4 w-4 text-purple-500" />
+                        <span className="font-medium">Use Script as Teleprompter</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {scriptsNeedingVoice.length} scripts available to guide your recording
+                      </p>
+                      <Button variant="outline" size="sm">
+                        Select Script
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
 
             {/* TTS Generator Tab */}
             <TabsContent value="tts" className="space-y-6">
@@ -513,44 +594,6 @@ const GenieVibe: React.FC = () => {
           </Tabs>
         </div>
 
-        {/* Recording Studio Dialog - Simplified for now */}
-        {isStudioOpen && (
-          <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur">
-            <div className="h-full flex flex-col">
-              <div className="flex items-center justify-between p-4 border-b">
-                <h2 className="text-xl font-semibold">Recording Studio</h2>
-                <Button variant="ghost" size="icon" onClick={() => setIsStudioOpen(false)}>
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
-              <div className="flex-1 overflow-auto p-6">
-                <Card className="max-w-2xl mx-auto">
-                  <CardContent className="p-8 text-center">
-                    <Video className="h-16 w-16 mx-auto text-pink-500 mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">Full Recording Studio</h3>
-                    <p className="text-muted-foreground mb-4">
-                      The full recording studio with camera, screen recording, and multi-track editing is available in the main Genie Studio.
-                    </p>
-                    <div className="flex gap-3 justify-center">
-                      <Button variant="outline" onClick={() => setIsStudioOpen(false)}>
-                        Close
-                      </Button>
-                      <Button 
-                        className="bg-gradient-to-r from-pink-500 to-purple-500 text-white"
-                        onClick={() => {
-                          setIsStudioOpen(false);
-                          navigate('/genie-studio');
-                        }}
-                      >
-                        Go to Genie Studio
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </AppLayout>
   );
