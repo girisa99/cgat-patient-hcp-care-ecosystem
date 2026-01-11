@@ -1041,6 +1041,8 @@ export default function GenieStudio() {
   const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
   const [productionStage, setProductionStage] = useState<'script_review' | 'edit' | 'rehearsal' | 'final_review' | 'recording'>('script_review');
   const [hostEmail, setHostEmail] = useState('');
+  const [aiProvider, setAiProvider] = useState<'gemini' | 'openai' | 'anthropic'>('gemini');
+  const [aiModel, setAiModel] = useState<string>('gemini-2.0-flash');
   
   // Scripts from database (replaces localStorage)
   const {
@@ -1771,7 +1773,15 @@ export default function GenieStudio() {
     
     setIsGeneratingSuggestions(true);
     try {
-      const contentForAI = showScript.trim() || showTopics.trim();
+      // Clean the content before sending to AI
+      const rawContent = showScript.trim() || showTopics.trim();
+      const contentForAI = rawContent
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+        .replace(/[""]/g, '"')
+        .replace(/['']/g, "'")
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        .substring(0, 3000); // Limit to prevent token overflow
+      
       const showTypeLabel = newShowType === 'podcast' ? 'Podcast Episode' : 
                            newShowType === 'webcast' ? 'Webcast/Webinar' : 
                            newShowType === 'interview' ? 'Interview' :
@@ -1779,11 +1789,11 @@ export default function GenieStudio() {
                            newShowType === 'tutorial' ? 'Tutorial' :
                            'Live Broadcast';
       
-      // Use ai-universal-processor with Lovable AI Gateway
+      // Use selected AI provider
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: { 
-          provider: 'gemini',
-          model: 'gemini-2.0-flash',
+          provider: aiProvider,
+          model: aiModel,
           prompt: `Generate a catchy title and engaging introduction for a ${showTypeLabel} about the following topics/content:
 
 ${contentForAI}
@@ -1855,20 +1865,46 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
     }
   };
 
-  // Handle script file upload
+  // Handle script file upload - cleans special characters
   const handleScriptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
     try {
       const text = await file.text();
-      setShowScript(text);
+      
+      // Clean special characters while preserving structure
+      const cleanedText = text
+        // Remove common problematic characters
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+        // Normalize quotes
+        .replace(/[""]/g, '"')
+        .replace(/['']/g, "'")
+        // Normalize dashes
+        .replace(/[–—]/g, '-')
+        // Normalize ellipsis
+        .replace(/…/g, '...')
+        // Remove zero-width characters
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        // Normalize line breaks
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        // Remove excessive blank lines (more than 2 consecutive)
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+      
+      setShowScript(cleanedText);
       setSelectedScriptId(null);
       
       // Use filename (without extension) as title if empty
       if (!newShowTitle.trim()) {
         const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
-        setNewShowTitle(nameWithoutExt);
+        // Clean the filename too
+        const cleanedName = nameWithoutExt
+          .replace(/[_-]+/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        setNewShowTitle(cleanedName);
       }
       
       toast.success('Script uploaded successfully');
@@ -1936,6 +1972,7 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
           scheduled_at: scheduledDate.toISOString(),
           duration_minutes: 60,
           script_id: selectedScriptId,
+          script_content: attachScriptToInvite ? showScript : null, // Include script content if attachment is enabled
           agenda: showTopics,
           host_name: hostName,
           host_email: hostEmail,
@@ -4383,24 +4420,84 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
                       <Wand2 className="h-4 w-4 text-purple-500" />
                       AI-Suggested Title & Introduction
                     </Label>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleGenerateSuggestions}
-                      disabled={isGeneratingSuggestions || (!showTopics.trim() && !showScript.trim())}
-                    >
-                      {isGeneratingSuggestions ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                          Generating...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="h-4 w-4 mr-1" />
-                          Generate
-                        </>
-                      )}
-                    </Button>
+                  </div>
+                  
+                  {/* AI Provider Selection */}
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    <div className="flex-1 min-w-[140px]">
+                      <Label className="text-xs text-muted-foreground mb-1 block">AI Provider</Label>
+                      <Select 
+                        value={aiProvider} 
+                        onValueChange={(v: 'gemini' | 'openai' | 'anthropic') => {
+                          setAiProvider(v);
+                          // Set default model for provider
+                          if (v === 'gemini') setAiModel('gemini-2.0-flash');
+                          else if (v === 'openai') setAiModel('gpt-4o-mini');
+                          else if (v === 'anthropic') setAiModel('claude-3-haiku');
+                        }}
+                      >
+                        <SelectTrigger className="h-9 bg-background">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="gemini">🌟 Google Gemini</SelectItem>
+                          <SelectItem value="openai">🤖 OpenAI</SelectItem>
+                          <SelectItem value="anthropic">🧠 Anthropic</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex-1 min-w-[160px]">
+                      <Label className="text-xs text-muted-foreground mb-1 block">Model</Label>
+                      <Select value={aiModel} onValueChange={setAiModel}>
+                        <SelectTrigger className="h-9 bg-background">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {aiProvider === 'gemini' && (
+                            <>
+                              <SelectItem value="gemini-2.0-flash">Gemini 2.0 Flash (Fast)</SelectItem>
+                              <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash</SelectItem>
+                              <SelectItem value="gemini-2.5-pro">Gemini 2.5 Pro (Best)</SelectItem>
+                            </>
+                          )}
+                          {aiProvider === 'openai' && (
+                            <>
+                              <SelectItem value="gpt-4o-mini">GPT-4o Mini (Fast)</SelectItem>
+                              <SelectItem value="gpt-4o">GPT-4o</SelectItem>
+                              <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
+                            </>
+                          )}
+                          {aiProvider === 'anthropic' && (
+                            <>
+                              <SelectItem value="claude-3-haiku">Claude 3 Haiku (Fast)</SelectItem>
+                              <SelectItem value="claude-3-5-sonnet">Claude 3.5 Sonnet</SelectItem>
+                              <SelectItem value="claude-3-opus">Claude 3 Opus (Best)</SelectItem>
+                            </>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleGenerateSuggestions}
+                        disabled={isGeneratingSuggestions || (!showTopics.trim() && !showScript.trim())}
+                        className="h-9"
+                      >
+                        {isGeneratingSuggestions ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="h-4 w-4 mr-1" />
+                            Generate
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                   
                   {suggestedTitle && (
