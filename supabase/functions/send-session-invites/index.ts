@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { Resend } from "npm:resend@2.0.0";
+import { encode as base64Encode } from "https://deno.land/std@0.190.0/encoding/base64.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -82,8 +83,10 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (resend) {
         try {
-          // Prepare script preview if available (truncated for email)
+          // Prepare script content for email
           let scriptPreview = '';
+          let scriptDownloadSection = '';
+          
           if (session.script_content) {
             const cleanScript = session.script_content
               .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
@@ -92,10 +95,24 @@ const handler = async (req: Request): Promise<Response> => {
               .replace(/[\u200B-\u200D\uFEFF]/g, '')
               .trim();
             
-            // Truncate to first 500 characters with ellipsis
+            // Truncate to first 500 characters with ellipsis for preview
             scriptPreview = cleanScript.length > 500 
               ? cleanScript.substring(0, 500) + '...' 
               : cleanScript;
+          }
+
+          // Check for downloadable attachment URL
+          if (session.script_attachment_url) {
+            scriptDownloadSection = `
+              <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center;">
+                <p style="margin: 0 0 10px 0; font-weight: 600;">📎 Script Attachment</p>
+                <p style="margin: 0 0 15px 0; font-size: 14px; color: #6b7280;">${session.script_filename || 'Script Document'}</p>
+                <a href="${session.script_attachment_url}" 
+                   style="display: inline-block; background: #8B5CF6; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                  📥 Download Script
+                </a>
+              </div>
+            `;
           }
 
           const emailResult = await resend.emails.send({
@@ -157,13 +174,14 @@ const handler = async (req: Request): Promise<Response> => {
           <p style="margin: 5px 0; white-space: pre-wrap;">${session.agenda}</p>
         </div>
         ` : ''}
+        ${scriptDownloadSection}
         ${scriptPreview ? `
         <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
           <div class="script-header">
-            📝 Script Preview (Attached)
+            📝 Script Preview
           </div>
           <div class="script-preview">${scriptPreview}</div>
-          <p style="font-size: 12px; color: #9ca3af; margin-top: 10px;">Full script will be available during the session.</p>
+          <p style="font-size: 12px; color: #9ca3af; margin-top: 10px;">Full script available via download link above or during the session.</p>
         </div>
         ` : ''}
       </div>

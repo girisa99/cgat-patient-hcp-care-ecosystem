@@ -8239,6 +8239,110 @@ export type Database = {
           },
         ]
       }
+      genie_session_activity: {
+        Row: {
+          activity_description: string | null
+          activity_title: string
+          activity_type: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          new_value: Json | null
+          previous_value: Json | null
+          session_id: string
+          user_id: string | null
+        }
+        Insert: {
+          activity_description?: string | null
+          activity_title: string
+          activity_type: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          new_value?: Json | null
+          previous_value?: Json | null
+          session_id: string
+          user_id?: string | null
+        }
+        Update: {
+          activity_description?: string | null
+          activity_title?: string
+          activity_type?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          new_value?: Json | null
+          previous_value?: Json | null
+          session_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_session_activity_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "genie_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genie_session_notifications: {
+        Row: {
+          activity_id: string | null
+          created_at: string
+          id: string
+          is_read: boolean | null
+          message: string | null
+          notification_type: string
+          participant_id: string | null
+          read_at: string | null
+          sent_at: string | null
+          session_id: string
+          title: string
+        }
+        Insert: {
+          activity_id?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          notification_type: string
+          participant_id?: string | null
+          read_at?: string | null
+          sent_at?: string | null
+          session_id: string
+          title: string
+        }
+        Update: {
+          activity_id?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          notification_type?: string
+          participant_id?: string | null
+          read_at?: string | null
+          sent_at?: string | null
+          session_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_session_notifications_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "genie_session_participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "genie_session_notifications_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "genie_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       genie_session_participants: {
         Row: {
           created_at: string | null
@@ -8351,7 +8455,9 @@ export type Database = {
           recording_storage_path: string | null
           recording_url: string | null
           scheduled_at: string
+          script_attachment_url: string | null
           script_content: string | null
+          script_filename: string | null
           script_id: string | null
           session_active_at: string | null
           session_mode: string
@@ -8385,7 +8491,9 @@ export type Database = {
           recording_storage_path?: string | null
           recording_url?: string | null
           scheduled_at: string
+          script_attachment_url?: string | null
           script_content?: string | null
+          script_filename?: string | null
           script_id?: string | null
           session_active_at?: string | null
           session_mode?: string
@@ -8419,7 +8527,9 @@ export type Database = {
           recording_storage_path?: string | null
           recording_url?: string | null
           scheduled_at?: string
+          script_attachment_url?: string | null
           script_content?: string | null
+          script_filename?: string | null
           script_id?: string | null
           session_active_at?: string | null
           session_mode?: string

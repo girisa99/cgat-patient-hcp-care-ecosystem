@@ -1031,6 +1031,7 @@ export default function GenieStudio() {
   // New: Schedule Show with script, topics, and participants
   const [showTopics, setShowTopics] = useState('');
   const [showScript, setShowScript] = useState('');
+  const [showScriptFilename, setShowScriptFilename] = useState<string | null>(null);
   const [showParticipants, setShowParticipants] = useState<Omit<Participant, 'id'>[]>([]);
   const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
   const [suggestedTitle, setSuggestedTitle] = useState('');
@@ -1894,6 +1895,7 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
         .trim();
       
       setShowScript(cleanedText);
+      setShowScriptFilename(file.name); // Store original filename
       setSelectedScriptId(null);
       
       // Use filename (without extension) as title if empty
@@ -1973,6 +1975,7 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
           duration_minutes: 60,
           script_id: selectedScriptId,
           script_content: attachScriptToInvite ? showScript : null, // Include script content if attachment is enabled
+          script_filename: attachScriptToInvite && showScriptFilename ? showScriptFilename : null, // Original filename
           agenda: showTopics,
           host_name: hostName,
           host_email: hostEmail,

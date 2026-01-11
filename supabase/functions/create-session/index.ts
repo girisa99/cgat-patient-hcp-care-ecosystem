@@ -17,6 +17,7 @@ interface CreateSessionRequest {
   timezone?: string;
   script_id?: string;
   script_content?: string; // Actual script content for invite attachment
+  script_filename?: string; // Original filename of uploaded script
   agenda?: string;
   host_name: string;
   host_email?: string;
@@ -65,6 +66,46 @@ const handler = async (req: Request): Promise<Response> => {
     // Generate join URL based on session mode
     const baseUrl = 'https://preview--genie-session.lovable.app';
     
+    // Upload script to storage if content provided
+    let scriptAttachmentUrl: string | null = null;
+    let scriptFilename: string | null = body.script_filename || null;
+    
+    if (body.script_content && body.script_content.length > 0) {
+      try {
+        const sessionId = crypto.randomUUID();
+        const timestamp = Date.now();
+        const filename = scriptFilename || `script_${timestamp}.txt`;
+        const storagePath = `sessions/${sessionId}/${filename}`;
+        
+        // Convert script content to Uint8Array
+        const encoder = new TextEncoder();
+        const scriptBytes = encoder.encode(body.script_content);
+        
+        // Upload to storage bucket
+        const { error: uploadError } = await supabase.storage
+          .from('genie-media')
+          .upload(storagePath, scriptBytes, {
+            contentType: 'text/plain',
+            upsert: true
+          });
+        
+        if (uploadError) {
+          console.error('Script upload error:', uploadError);
+        } else {
+          // Get public URL
+          const { data: urlData } = supabase.storage
+            .from('genie-media')
+            .getPublicUrl(storagePath);
+          
+          scriptAttachmentUrl = urlData.publicUrl;
+          scriptFilename = filename;
+          console.log('Script uploaded to:', scriptAttachmentUrl);
+        }
+      } catch (uploadErr) {
+        console.error('Script upload failed:', uploadErr);
+      }
+    }
+    
     // Create session
     const { data: session, error: sessionError } = await supabase
       .from('genie_sessions')
@@ -79,7 +120,9 @@ const handler = async (req: Request): Promise<Response> => {
         duration_minutes: body.duration_minutes || 60,
         timezone: body.timezone || 'UTC',
         script_id: body.script_id,
-        script_content: body.script_content, // Store script content for invite attachment
+        script_content: body.script_content, // Store script content for invite preview
+        script_attachment_url: scriptAttachmentUrl, // Downloadable URL
+        script_filename: scriptFilename,
         agenda: body.agenda,
         host_name: body.host_name,
         host_email: body.host_email,
