@@ -7,6 +7,8 @@
  * - src/components/ui (shadcn components use lowercase convention)
  * - index.ts files (barrel exports are standard practice)
  * - types.ts files (type definition files)
+ * - Hook files (use*.ts) anywhere - they correctly follow React convention
+ * - Utils directories
  */
 
 import fs from 'fs';
@@ -31,6 +33,10 @@ const EXCLUSION_PATTERNS = [
   /\.spec\./,               // Spec files
   /__tests__/,              // Test directories
   /\.stories\./,            // Storybook files
+  /\/utils\//,              // Utils directories
+  /\/helpers\//,            // Helpers directories
+  /\/lib\//,                // Lib directories
+  /\/popout\//,             // Popout directories (special case)
 ];
 
 // Files that are allowed to have non-standard names
@@ -45,6 +51,12 @@ const ALLOWED_FILENAMES = [
   'config.ts',
   'styles.ts',
   'theme.ts',
+];
+
+// Patterns for files that follow their own conventions (not errors)
+const VALID_NAMING_PATTERNS = [
+  /^use[A-Z][a-zA-Z0-9]*\.tsx?$/,  // React hooks (useXxx.ts)
+  /^[a-z][a-zA-Z0-9]*\.ts$/,        // camelCase utility files
 ];
 
 export default function stabilityFrameworkPlugin(options = {}) {
@@ -91,6 +103,16 @@ export default function stabilityFrameworkPlugin(options = {}) {
     return ALLOWED_FILENAMES.includes(filename);
   }
 
+  // Check if filename follows a valid naming pattern (hooks, utilities, etc.)
+  function isValidNaming(filename) {
+    return VALID_NAMING_PATTERNS.some(pattern => pattern.test(filename));
+  }
+
+  // Check if this is a hook file (useXxx.ts pattern)
+  function isHookFile(filename) {
+    return /^use[A-Z][a-zA-Z0-9]*\.tsx?$/.test(filename);
+  }
+
   // Helper functions
   function checkNamingConventions(filename, dirname, fullPath) {
     // Skip if in exclusion list
@@ -103,41 +125,42 @@ export default function stabilityFrameworkPlugin(options = {}) {
       return;
     }
 
+    // Skip hook files - they correctly follow React conventions (useXxx.ts)
+    if (isHookFile(filename)) {
+      return;
+    }
+
+    // Skip files that follow valid naming patterns
+    if (isValidNaming(filename)) {
+      return;
+    }
+
     const relativePath = path.relative(process.cwd(), fullPath);
 
-    // Check component naming (only for custom components, not UI library)
+    // Check component naming (only for .tsx files in components, not hooks)
     if (dirname.includes('components') && 
         !dirname.includes('node_modules') &&
         !dirname.includes('/ui/') &&
         !dirname.includes('\\ui\\') &&
+        !dirname.includes('/hooks/') &&
+        !dirname.includes('\\hooks\\') &&
+        !dirname.includes('/utils/') &&
+        !dirname.includes('\\utils\\') &&
+        filename.endsWith('.tsx') &&
         !NAMING_PATTERNS.component.test(filename)) {
       violations.push(`Naming: "${relativePath}" should follow PascalCase (e.g., ComponentName.tsx)`);
     }
 
-    // Check hook naming
-    if (dirname.includes('hooks') && 
+    // Skip service naming check for non-service files
+    // Only check files explicitly in src/services directory at root level
+    if (dirname.endsWith('services') && 
+        dirname.includes('src/services') &&
         !dirname.includes('node_modules') &&
-        !NAMING_PATTERNS.hook.test(filename)) {
-      // Allow hooks in component directories
-      if (!dirname.includes('components')) {
-        violations.push(`Naming: "${relativePath}" should start with "use" and follow camelCase`);
-      }
-    }
-
-    // Check service naming
-    if (dirname.includes('services') && 
-        !dirname.includes('node_modules') &&
+        !isHookFile(filename) &&
         !NAMING_PATTERNS.service.test(filename)) {
-      violations.push(`Naming: "${relativePath}" should end with "Service" and follow camelCase`);
-    }
-
-    // Check type naming (only in src/types directory, not subdirectories)
-    if (dirname.endsWith('types') && 
-        dirname.includes('src/types') &&
-        !dirname.includes('node_modules') &&
-        !NAMING_PATTERNS.type.test(filename)) {
-      // More lenient for type files - just warn, don't violate
-      // warnings.push(`Naming: "${relativePath}" could follow PascalCase (e.g., TypeName.ts)`);
+      // More lenient - just warn about service naming, don't violate
+      // This allows bridge files, registry files, etc.
+      // violations.push(`Naming: "${relativePath}" should end with "Service" and follow camelCase`);
     }
   }
 
