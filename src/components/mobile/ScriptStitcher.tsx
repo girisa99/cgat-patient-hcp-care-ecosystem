@@ -207,11 +207,11 @@ export const ScriptStitcher: React.FC<ScriptStitcherProps> = ({
             </SelectTrigger>
             <SelectContent>
               {availableScripts.length === 0 ? (
-                <div className="p-2 text-xs text-muted-foreground text-center">
+                <SelectItem value="__empty__" disabled>
                   No scripts available
-                </div>
+                </SelectItem>
               ) : (
-                availableScripts.map(script => (
+                availableScripts.filter(script => script.id).map(script => (
                   <SelectItem key={script.id} value={script.id}>
                     <div className="flex items-center gap-2">
                       <FileText className="h-3 w-3" />
@@ -328,15 +328,21 @@ export const ScriptStitcher: React.FC<ScriptStitcherProps> = ({
           </label>
           
           <Select 
-            value={selectedMusic?.id} 
-            onValueChange={selectMusic}
+            value={selectedMusic?.id || "none"} 
+            onValueChange={(value) => {
+              if (value === "none") {
+                setSelectedMusic(null);
+              } else {
+                selectMusic(value);
+              }
+            }}
           >
             <SelectTrigger className="h-9 text-sm">
               <SelectValue placeholder="Select background music..." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">No music</SelectItem>
-              {availableMusic.map(track => (
+              <SelectItem value="none">No music</SelectItem>
+              {availableMusic.filter(track => track.id).map(track => (
                 <SelectItem key={track.id} value={track.id}>
                   <div className="flex items-center gap-2">
                     <Music className="h-3 w-3" />
