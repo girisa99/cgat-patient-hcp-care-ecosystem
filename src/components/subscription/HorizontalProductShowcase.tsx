@@ -6,8 +6,8 @@ import { ArrowRight, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
-// Import logos from assets - using icon versions for carousel visibility
-import genieStudioLogo from '@/assets/logos/genie-studio-icon-only.png';
+// Import logos from assets - using horizontal/combined versions for better visibility
+import genieStudioLogo from '@/assets/logos/genie-studio-horizontal.png';
 import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
 import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
 import genieMindLogo from '@/assets/logos/genie-mind-combined.png';
@@ -130,27 +130,33 @@ export const HorizontalProductShowcase = () => {
                   <div className={cn(
                     "rounded-lg bg-white shadow flex items-center justify-center overflow-hidden",
                     product.borderColor, "border",
-                    isStudio ? "h-14 w-14 p-1" : "h-12 w-12 p-1.5"
+                    isStudio ? "h-16 w-auto min-w-[100px] p-2" : "h-12 w-12 p-1.5"
                   )}>
                     <img 
                       src={productLogos[key]} 
                       alt={product.name}
                       className={cn(
                         "object-contain",
-                        isStudio ? "h-12 w-12" : "h-8 w-8"
+                        isStudio ? "h-12 w-auto max-w-[120px]" : "h-8 w-8"
                       )}
                     />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className={cn(
-                      "font-semibold text-foreground truncate",
-                      isStudio ? "text-lg" : "text-base"
-                    )}>
-                      {product.name}
-                    </h3>
-                    <p className="text-xs text-muted-foreground truncate">{product.tagline}</p>
-                  </div>
+                  {!isStudio && (
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-foreground truncate text-base">
+                        {product.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground truncate">{product.tagline}</p>
+                    </div>
+                  )}
                 </div>
+                {/* Genie Studio title below logo */}
+                {isStudio && (
+                  <div className="mb-2">
+                    <h3 className="text-lg font-semibold text-foreground">{product.name}</h3>
+                    <p className="text-xs text-muted-foreground">{product.tagline}</p>
+                  </div>
+                )}
                 
                 {/* Description */}
                 <p className={cn(
