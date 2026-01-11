@@ -6,9 +6,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Check, Sparkles, X, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, Sparkles, X, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 // Import suite logo
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
@@ -17,7 +16,6 @@ export const EnhancedPricingSection = () => {
   const { subscription, createCheckout, isLoading, startFreeTrial } = useSubscriptionContext();
   const { toast } = useToast();
   const [loadingTier, setLoadingTier] = useState<SubscriptionTier | null>(null);
-  const [showComparison, setShowComparison] = useState(false);
 
   const handleSelectTier = async (tier: SubscriptionTier) => {
     setLoadingTier(tier);
@@ -115,55 +113,47 @@ export const EnhancedPricingSection = () => {
         </div>
       )}
 
-      {/* Collapsible Feature Comparison & FAQ */}
-      <div className="relative z-10 bg-background pt-8">
-        <Collapsible open={showComparison} onOpenChange={setShowComparison}>
-          <CollapsibleTrigger asChild>
-            <button className="w-full flex items-center justify-center gap-2 py-4 px-6 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors text-base font-medium shadow-sm">
-              <span>View Feature Comparison & FAQ</span>
-              {showComparison ? (
-                <ChevronUp className="h-5 w-5" />
-              ) : (
-                <ChevronDown className="h-5 w-5" />
-              )}
-            </button>
-          </CollapsibleTrigger>
+      {/* Feature Comparison & FAQ - Simple flat layout */}
+      <div className="pt-8 space-y-6">
+        {/* Section Header */}
+        <div className="text-center">
+          <h3 className="text-xl font-semibold text-foreground">Compare Plans</h3>
+          <p className="text-sm text-muted-foreground mt-1">See what's included in each plan</p>
+        </div>
+        
+        {/* Simple Tab Navigation - No nested frames */}
+        <Tabs defaultValue="features" className="w-full">
+          <div className="flex justify-center">
+            <TabsList className="inline-flex h-10 items-center justify-center rounded-lg bg-muted p-1">
+              <TabsTrigger 
+                value="features" 
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+              >
+                <Check className="h-4 w-4" />
+                Feature Comparison
+              </TabsTrigger>
+              <TabsTrigger 
+                value="faq" 
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+              >
+                <HelpCircle className="h-4 w-4" />
+                FAQ
+              </TabsTrigger>
+            </TabsList>
+          </div>
           
-          <CollapsibleContent className="mt-8 relative z-20">
-            <Tabs defaultValue="features" className="w-full">
-              <div className="flex justify-center mb-6">
-                <TabsList className="grid w-full max-w-md grid-cols-2 h-12 p-1 bg-muted border border-border">
-                  <TabsTrigger 
-                    value="features" 
-                    className="gap-2 text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground"
-                  >
-                    <Check className="h-4 w-4" />
-                    Feature Comparison
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="faq" 
-                    className="gap-2 text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground"
-                  >
-                    <HelpCircle className="h-4 w-4" />
-                    FAQ
-                  </TabsTrigger>
-                </TabsList>
-              </div>
-              
-              <TabsContent value="features" className="mt-0">
-                <Card className="overflow-hidden border-border shadow-lg bg-card">
-                  <CardContent className="p-0">
-                    <ComparisonTable />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="faq" className="mt-0">
-                <FAQ />
-              </TabsContent>
-            </Tabs>
-          </CollapsibleContent>
-        </Collapsible>
+          {/* Feature Comparison Table - Direct, no card wrapper */}
+          <TabsContent value="features" className="mt-6">
+            <div className="overflow-x-auto rounded-lg border border-border bg-card">
+              <ComparisonTable />
+            </div>
+          </TabsContent>
+          
+          {/* FAQ - Direct grid, no extra wrapping */}
+          <TabsContent value="faq" className="mt-6">
+            <FAQ />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
