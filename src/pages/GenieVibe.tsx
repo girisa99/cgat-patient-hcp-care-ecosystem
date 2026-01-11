@@ -193,6 +193,17 @@ const GenieVibe: React.FC = () => {
                   </Button>
                 </div>
 
+                {/* Link to Mobile Page */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1"
+                  onClick={() => navigate('/genie-vibe/mobile')}
+                >
+                  <Smartphone className="h-4 w-4" />
+                  Open Mobile View
+                </Button>
+
                 <Badge className="bg-pink-500/10 text-pink-600 border-pink-500/20">
                   {allAudio.length} Voiceovers
                 </Badge>

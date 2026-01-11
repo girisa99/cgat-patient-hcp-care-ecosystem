@@ -29,7 +29,11 @@ import {
   Share2,
   Download,
   Music,
-  Monitor
+  Monitor,
+  ArrowLeft,
+  Home,
+  Camera,
+  ScreenShare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -173,9 +177,15 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
       {/* Mobile Status Bar */}
       <MobileStatusBar className="flex-shrink-0" />
 
-      {/* Header - Compact for mobile */}
+      {/* Header - Compact for mobile with navigation */}
       <div className="flex items-center justify-between px-3 py-2 border-b bg-card flex-shrink-0">
         <div className="flex items-center gap-2">
+          {/* Back button */}
+          {onClose && (
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          )}
           <Video className="h-4 w-4 text-primary" />
           <span className="font-semibold text-sm">Genie Vibe</span>
           <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
@@ -188,7 +198,7 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
           {/* Desktop Switch button */}
           {onSwitchToDesktop && (
             <Button 
-              variant="ghost" 
+              variant="outline" 
               size="sm" 
               className="h-8 text-xs gap-1"
               onClick={onSwitchToDesktop}
@@ -203,11 +213,6 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleShare}>
             <Share2 className="h-4 w-4" />
           </Button>
-          {onClose && (
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          )}
         </div>
       </div>
 
@@ -326,12 +331,15 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
                   </Card>
                 )}
 
-                {/* Quick Actions Grid */}
+                {/* Quick Actions Grid - More informative */}
                 <div className="grid grid-cols-2 gap-2">
                   <Button 
                     variant="outline" 
                     className="h-auto py-3 flex flex-col gap-1"
-                    onClick={() => setActiveTab('clips')}
+                    onClick={() => {
+                      vibrate?.(50);
+                      setActiveTab('clips');
+                    }}
                   >
                     <Scissors className="h-4 w-4 text-blue-500" />
                     <span className="text-xs">Quick Clips</span>
@@ -340,13 +348,53 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
                   <Button 
                     variant="outline" 
                     className="h-auto py-3 flex flex-col gap-1"
-                    onClick={() => setActiveTab('timeline')}
+                    onClick={() => {
+                      vibrate?.(50);
+                      setActiveTab('timeline');
+                    }}
                   >
                     <Layers className="h-4 w-4 text-purple-500" />
                     <span className="text-xs">Timeline</span>
                     <span className="text-[10px] text-muted-foreground">Multi-track edit</span>
                   </Button>
+                  <Button 
+                    variant="outline" 
+                    className="h-auto py-3 flex flex-col gap-1"
+                    onClick={() => {
+                      vibrate?.(50);
+                      setActiveTab('stitch');
+                    }}
+                  >
+                    <Music className="h-4 w-4 text-pink-500" />
+                    <span className="text-xs">Stitch Scripts</span>
+                    <span className="text-[10px] text-muted-foreground">Combine with music</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="h-auto py-3 flex flex-col gap-1"
+                    onClick={() => {
+                      vibrate?.(50);
+                      setActiveTab('library');
+                    }}
+                  >
+                    <Library className="h-4 w-4 text-green-500" />
+                    <span className="text-xs">Library</span>
+                    <span className="text-[10px] text-muted-foreground">{recordings.length} recordings</span>
+                  </Button>
                 </div>
+                
+                {/* Offline Status */}
+                {!isOnline && (
+                  <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                    <div className="flex items-center gap-2 text-yellow-600">
+                      <Zap className="h-4 w-4" />
+                      <span className="text-sm font-medium">Offline Mode</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Recordings are saved locally and will sync when you're back online.
+                    </p>
+                  </div>
+                )}
               </div>
             </TabsContent>
 

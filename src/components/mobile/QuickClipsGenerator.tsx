@@ -389,9 +389,20 @@ export const QuickClipsGenerator: React.FC<QuickClipsGeneratorProps> = ({
             </Button>
 
             {!sourceUrl && (
-              <p className="text-xs text-muted-foreground text-center py-4">
-                Record or upload content first to analyze
-              </p>
+              <div className="text-center py-6 space-y-3">
+                <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center">
+                  <Scissors className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">No Content to Analyze</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Record a video or audio first, then come back here to auto-generate clips for social media.
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground bg-muted/50 rounded px-3 py-2">
+                  💡 Tip: AI will find the best moments, quotes, and highlights from your recordings.
+                </p>
+              </div>
             )}
           </div>
         )}
