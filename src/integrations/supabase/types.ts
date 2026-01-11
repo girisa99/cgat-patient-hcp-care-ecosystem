@@ -14422,6 +14422,153 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_modules: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          is_core: boolean | null
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id: string
+          is_active?: boolean | null
+          is_core?: boolean | null
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_core?: boolean | null
+          name?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      subscription_tiers: {
+        Row: {
+          created_at: string | null
+          default_modules: string[] | null
+          description: string | null
+          display_name: string
+          feature_limits: Json | null
+          id: string
+          is_active: boolean | null
+          max_users: number | null
+          name: string
+          price_monthly: number | null
+          price_yearly: number | null
+          sort_order: number | null
+          stripe_price_id_monthly: string | null
+          stripe_price_id_yearly: string | null
+          stripe_product_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          default_modules?: string[] | null
+          description?: string | null
+          display_name: string
+          feature_limits?: Json | null
+          id: string
+          is_active?: boolean | null
+          max_users?: number | null
+          name: string
+          price_monthly?: number | null
+          price_yearly?: number | null
+          sort_order?: number | null
+          stripe_price_id_monthly?: string | null
+          stripe_price_id_yearly?: string | null
+          stripe_product_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          default_modules?: string[] | null
+          description?: string | null
+          display_name?: string
+          feature_limits?: Json | null
+          id?: string
+          is_active?: boolean | null
+          max_users?: number | null
+          name?: string
+          price_monthly?: number | null
+          price_yearly?: number | null
+          sort_order?: number | null
+          stripe_price_id_monthly?: string | null
+          stripe_price_id_yearly?: string | null
+          stripe_product_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      subscription_usage: {
+        Row: {
+          created_at: string | null
+          id: string
+          module_id: string | null
+          period_end: string
+          period_start: string
+          subscription_id: string
+          updated_at: string | null
+          usage_count: number | null
+          usage_limit: number | null
+          usage_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          module_id?: string | null
+          period_end: string
+          period_start: string
+          subscription_id: string
+          updated_at?: string | null
+          usage_count?: number | null
+          usage_limit?: number | null
+          usage_type: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          module_id?: string | null
+          period_end?: string
+          period_start?: string
+          subscription_id?: string
+          updated_at?: string | null
+          usage_count?: number | null
+          usage_limit?: number | null
+          usage_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_usage_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_usage_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "user_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_connectors: {
         Row: {
           auth_type: string
@@ -16218,6 +16365,83 @@ export type Database = {
             columns: ["role_id"]
             isOneToOne: false
             referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_subscriptions: {
+        Row: {
+          account_type: Database["public"]["Enums"]["account_type"] | null
+          created_at: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          is_beta_user: boolean | null
+          is_grandfathered: boolean | null
+          module_limits: Json | null
+          modules_disabled: string[] | null
+          modules_enabled: string[] | null
+          status: Database["public"]["Enums"]["subscription_status"] | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_role:
+            | Database["public"]["Enums"]["subscription_role"]
+            | null
+          tier: string
+          trial_ends_at: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          account_type?: Database["public"]["Enums"]["account_type"] | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          is_beta_user?: boolean | null
+          is_grandfathered?: boolean | null
+          module_limits?: Json | null
+          modules_disabled?: string[] | null
+          modules_enabled?: string[] | null
+          status?: Database["public"]["Enums"]["subscription_status"] | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_role?:
+            | Database["public"]["Enums"]["subscription_role"]
+            | null
+          tier?: string
+          trial_ends_at?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          account_type?: Database["public"]["Enums"]["account_type"] | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          is_beta_user?: boolean | null
+          is_grandfathered?: boolean | null
+          module_limits?: Json | null
+          modules_disabled?: string[] | null
+          modules_enabled?: string[] | null
+          status?: Database["public"]["Enums"]["subscription_status"] | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_role?:
+            | Database["public"]["Enums"]["subscription_role"]
+            | null
+          tier?: string
+          trial_ends_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_tier_fkey"
+            columns: ["tier"]
+            isOneToOne: false
+            referencedRelation: "subscription_tiers"
             referencedColumns: ["id"]
           },
         ]
@@ -18670,9 +18894,17 @@ export type Database = {
           role_name: string
         }[]
       }
+      get_user_subscription_tier: {
+        Args: { _user_id: string }
+        Returns: string
+      }
       get_visitor_analytics_summary: {
         Args: { days_back?: number }
         Returns: Json
+      }
+      has_module_access: {
+        Args: { _module_id: string; _user_id: string }
+        Returns: boolean
       }
       has_permission: {
         Args: { permission_name: string; user_id: string }
@@ -19055,6 +19287,7 @@ export type Database = {
       verify_jsonb_migration_integrity: { Args: never; Returns: Json }
     }
     Enums: {
+      account_type: "individual" | "team" | "organization" | "enterprise"
       business_type:
         | "acute_care"
         | "primary_care"
@@ -19210,6 +19443,21 @@ export type Database = {
         | "conference"
         | "training_session"
       sla_tier: "standard" | "priority" | "critical" | "emergency_only"
+      subscription_role: "owner" | "admin" | "member" | "viewer"
+      subscription_status:
+        | "trial"
+        | "active"
+        | "past_due"
+        | "suspended"
+        | "churned"
+        | "beta"
+      subscription_tier:
+        | "free"
+        | "starter"
+        | "business"
+        | "pro"
+        | "enterprise"
+        | "beta"
       technology_integration:
         | "edi_integration"
         | "api_integration"
@@ -19387,6 +19635,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_type: ["individual", "team", "organization", "enterprise"],
       business_type: [
         "acute_care",
         "primary_care",
@@ -19560,6 +19809,23 @@ export const Constants = {
         "training_session",
       ],
       sla_tier: ["standard", "priority", "critical", "emergency_only"],
+      subscription_role: ["owner", "admin", "member", "viewer"],
+      subscription_status: [
+        "trial",
+        "active",
+        "past_due",
+        "suspended",
+        "churned",
+        "beta",
+      ],
+      subscription_tier: [
+        "free",
+        "starter",
+        "business",
+        "pro",
+        "enterprise",
+        "beta",
+      ],
       technology_integration: [
         "edi_integration",
         "api_integration",
