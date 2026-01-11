@@ -1,8 +1,8 @@
 /**
  * Mobile Recording View
  * P1 Feature: Mobile-optimized recording interface for Genie Vibe
- * Integrates: OneTapRecord, QuickClips, MultiClipTimeline, PWA
- * Differentiator: Only mobile solution with AI scripts + one-tap + remix
+ * Integrates: OneTapRecord, QuickClips, MultiClipTimeline, ScriptStitcher, PWA
+ * Differentiator: Only mobile solution with AI scripts + one-tap + stitch + remix
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
@@ -27,7 +27,9 @@ import {
   Minimize2,
   Zap,
   Share2,
-  Download
+  Download,
+  Music,
+  Monitor
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -40,26 +42,34 @@ import {
   QuickClipsGenerator, 
   MultiClipTimeline,
   PWAInstallPrompt,
-  MobileStatusBar
+  MobileStatusBar,
+  ScriptStitcher
 } from '@/components/mobile';
 import type { RecordingResult } from '@/components/mobile/OneTapRecordButton';
 import type { TimelineClip } from '@/components/mobile/MultiClipTimeline';
+import type { StitchedResult } from '@/components/mobile/ScriptStitcher';
 
 interface MobileRecordingViewProps {
   isOpen?: boolean;
   onClose?: () => void;
   onRecordingComplete?: (result: RecordingResult) => void;
+  onStitchComplete?: (result: StitchedResult) => void;
   scripts?: Array<{ id: string; title: string; content: string }>;
+  music?: Array<{ id: string; name: string; url?: string; duration?: number }>;
+  onSwitchToDesktop?: () => void;
   className?: string;
 }
 
-type MobileTab = 'record' | 'clips' | 'timeline' | 'library';
+type MobileTab = 'record' | 'stitch' | 'clips' | 'timeline' | 'library';
 
 export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
   isOpen = true,
   onClose,
   onRecordingComplete,
+  onStitchComplete,
   scripts = [],
+  music = [],
+  onSwitchToDesktop,
   className
 }) => {
   const isMobile = useIsMobile();
@@ -71,6 +81,14 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showScripts, setShowScripts] = useState(false);
   const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
+
+  // Handle stitch completion
+  const handleStitchComplete = useCallback((result: StitchedResult) => {
+    onStitchComplete?.(result);
+    toast.success(`Stitched ${result.segments.length} scripts (${Math.round(result.totalDuration)}s total)`);
+    // Optionally switch to timeline to show the result
+    setActiveTab('timeline');
+  }, [onStitchComplete]);
 
   // Handle recording completion
   const handleRecordingComplete = useCallback((result: RecordingResult) => {
@@ -167,6 +185,18 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
         </div>
         
         <div className="flex items-center gap-0.5">
+          {/* Desktop Switch button */}
+          {onSwitchToDesktop && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 text-xs gap-1"
+              onClick={onSwitchToDesktop}
+            >
+              <Monitor className="h-3.5 w-3.5" />
+              Desktop
+            </Button>
+          )}
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleFullscreen}>
             {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </Button>
@@ -320,6 +350,19 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
               </div>
             </TabsContent>
 
+            {/* Stitch Tab - Combine scripts with music */}
+            <TabsContent value="stitch" className="h-full m-0 p-4 overflow-auto">
+              <ScriptStitcher
+                availableScripts={scripts}
+                availableMusic={music.length > 0 ? music : [
+                  { id: 'ambient-1', name: 'Calm Ambient', duration: 120 },
+                  { id: 'upbeat-1', name: 'Upbeat Corporate', duration: 90 },
+                  { id: 'inspirational-1', name: 'Inspirational', duration: 150 },
+                ]}
+                onExport={handleStitchComplete}
+              />
+            </TabsContent>
+
             {/* Clips Tab */}
             <TabsContent value="clips" className="h-full m-0 p-4 overflow-auto">
               <QuickClipsGenerator
@@ -388,23 +431,27 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
             </TabsContent>
           </div>
 
-          {/* Bottom Tab Bar - Fixed at bottom with safe area */}
-          <TabsList className="flex-shrink-0 h-14 rounded-none border-t bg-card grid grid-cols-4 safe-area-bottom">
-            <TabsTrigger value="record" className="flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1.5">
+          {/* Bottom Tab Bar - Fixed at bottom with safe area, 5 tabs */}
+          <TabsList className="flex-shrink-0 h-14 rounded-none border-t bg-card grid grid-cols-5 safe-area-bottom">
+            <TabsTrigger value="record" className="flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1.5 px-1">
               <Video className="h-4 w-4" />
-              <span className="text-[10px]">Record</span>
+              <span className="text-[9px]">Record</span>
             </TabsTrigger>
-            <TabsTrigger value="clips" className="flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1.5">
+            <TabsTrigger value="stitch" className="flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1.5 px-1">
+              <Music className="h-4 w-4" />
+              <span className="text-[9px]">Stitch</span>
+            </TabsTrigger>
+            <TabsTrigger value="clips" className="flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1.5 px-1">
               <Scissors className="h-4 w-4" />
-              <span className="text-[10px]">Clips</span>
+              <span className="text-[9px]">Clips</span>
             </TabsTrigger>
-            <TabsTrigger value="timeline" className="flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1.5">
+            <TabsTrigger value="timeline" className="flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1.5 px-1">
               <Layers className="h-4 w-4" />
-              <span className="text-[10px]">Timeline</span>
+              <span className="text-[9px]">Timeline</span>
             </TabsTrigger>
-            <TabsTrigger value="library" className="flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1.5">
+            <TabsTrigger value="library" className="flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1.5 px-1">
               <Library className="h-4 w-4" />
-              <span className="text-[10px]">Library</span>
+              <span className="text-[9px]">Library</span>
             </TabsTrigger>
           </TabsList>
         </Tabs>

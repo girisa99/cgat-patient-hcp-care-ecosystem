@@ -2197,7 +2197,8 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
     return (
       <MobileRecordingView
         isOpen={true}
-        onClose={() => setForceDesktopView(true)}
+        onClose={() => navigate(-1)}
+        onSwitchToDesktop={() => setForceDesktopView(true)}
         scripts={scriptsForMobile}
         onRecordingComplete={(result) => {
           console.log('Mobile recording complete:', result);
