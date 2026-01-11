@@ -3,12 +3,11 @@
  * Syncs review status with Kanban stages and provides real-time updates
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { SessionReviewStatus, FeedbackStatus } from './useSessionFeedback';
 import type { ProductionStage } from '@/types/shows';
-import type { GenieBrandTheme } from './useGenieBrandConfig';
+import type { Json } from '@/integrations/supabase/types';
 
 export interface ProductionFeedbackStatus {
   showId: string;
@@ -49,19 +48,34 @@ const STAGE_TO_REVIEW_FIELD: Record<ProductionStage, string> = {
   'published': 'final_approval_status',
 };
 
+// Helper to safely parse Json to object
+const parseJsonMetadata = (metadata: Json | null): Record<string, unknown> => {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+    return {};
+  }
+  return metadata as Record<string, unknown>;
+};
+
 export const useProductionFeedbackSync = () => {
   const [productionStatuses, setProductionStatuses] = useState<Map<string, ProductionFeedbackStatus>>(new Map());
   const [brandConfig, setBrandConfig] = useState<BrandedEmailConfig | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch linked session for a show
+  // Fetch linked session for a show (using metadata.show_id)
   const getLinkedSession = useCallback(async (showId: string) => {
-    const { data: session } = await supabase
+    // Query sessions where metadata contains the show_id
+    const { data: sessions } = await supabase
       .from('genie_sessions')
-      .select('id, title, brand_config_id')
-      .eq('show_id', showId)
-      .maybeSingle();
-    return session;
+      .select('id, title, metadata')
+      .not('metadata', 'is', null);
+    
+    // Find session with matching show_id in metadata
+    const session = sessions?.find(s => {
+      const meta = parseJsonMetadata(s.metadata);
+      return meta.show_id === showId;
+    });
+    
+    return session || null;
   }, []);
 
   // Fetch brand config for styling
@@ -74,15 +88,15 @@ export const useProductionFeedbackSync = () => {
       .eq('id', brandConfigId)
       .single();
 
-    if (data) {
-      const theme = data.theme_config as GenieBrandTheme;
+    if (data && data.theme_config) {
+      const theme = data.theme_config as Record<string, unknown>;
       return {
-        primaryColor: theme?.primaryColor || '#3B82F6',
-        secondaryColor: theme?.secondaryColor || '#8B5CF6',
-        accentColor: theme?.accentColor || '#10B981',
-        logoUrl: theme?.logoUrl,
+        primaryColor: (theme.primaryColor as string) || '#3B82F6',
+        secondaryColor: (theme.secondaryColor as string) || '#8B5CF6',
+        accentColor: (theme.accentColor as string) || '#10B981',
+        logoUrl: theme.logoUrl as string | undefined,
         brandName: data.brand_name,
-        fontFamily: theme?.fontFamily || 'system-ui',
+        fontFamily: (theme.fontFamily as string) || 'system-ui',
       };
     }
     return null;
@@ -146,11 +160,19 @@ export const useProductionFeedbackSync = () => {
         .limit(1)
         .single();
 
-      // Load brand config
-      if (session.brand_config_id) {
-        const config = await fetchBrandConfig(session.brand_config_id);
+      // Load brand config from metadata if available
+      const meta = parseJsonMetadata(session.metadata);
+      if (meta.brand_config_id) {
+        const config = await fetchBrandConfig(meta.brand_config_id as string);
         if (config) setBrandConfig(config);
       }
+
+      // Map final_approval_status to valid type
+      const mapApprovalStatus = (status: string | null): 'pending' | 'approved' | 'rejected' => {
+        if (status === 'approved') return 'approved';
+        if (status === 'rejected') return 'rejected';
+        return 'pending';
+      };
 
       return {
         showId,
@@ -160,7 +182,7 @@ export const useProductionFeedbackSync = () => {
         scriptStatus: reviewStatus?.script_review_status || 'not_started',
         titleStatus: reviewStatus?.title_review_status || 'not_started',
         recordingStatus: reviewStatus?.recording_review_status || 'not_started',
-        overallApproval: reviewStatus?.final_approval_status || 'pending',
+        overallApproval: mapApprovalStatus(reviewStatus?.final_approval_status),
         lastActivity: lastFeedback?.updated_at || null,
         urgentItems: urgentCount || 0,
       };
@@ -246,11 +268,22 @@ export const useProductionFeedbackSync = () => {
     }
   }, [getLinkedSession]);
 
-  // Link a show to a session
+  // Link a show to a session (via metadata)
   const linkShowToSession = useCallback(async (showId: string, sessionId: string) => {
+    // First get current metadata
+    const { data: currentSession } = await supabase
+      .from('genie_sessions')
+      .select('metadata')
+      .eq('id', sessionId)
+      .single();
+
+    const currentMeta = parseJsonMetadata(currentSession?.metadata || null);
+    
     const { error } = await supabase
       .from('genie_sessions')
-      .update({ show_id: showId })
+      .update({ 
+        metadata: { ...currentMeta, show_id: showId } as Json
+      })
       .eq('id', sessionId);
 
     if (error) {
@@ -304,7 +337,7 @@ export const useProductionFeedbackSync = () => {
           },
           async (payload) => {
             // Check for auto-stage sync
-            const newData = payload.new as any;
+            const newData = payload.new as Record<string, unknown>;
             if (newData) {
               for (const [field, value] of Object.entries(newData)) {
                 if (field.endsWith('_review_status') && value === 'approved') {
