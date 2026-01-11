@@ -1036,6 +1036,9 @@ export default function GenieStudio() {
   const [scheduleStep, setScheduleStep] = useState<'details' | 'content' | 'participants'>('details');
   const [hostName, setHostName] = useState('');
   const [attachScriptToInvite, setAttachScriptToInvite] = useState(true);
+  const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
+  const [productionStage, setProductionStage] = useState<'script_review' | 'edit' | 'rehearsal' | 'final_review' | 'recording'>('script_review');
+  const [hostEmail, setHostEmail] = useState('');
   
   // Scripts from database (replaces localStorage)
   const {
@@ -1768,25 +1771,50 @@ export default function GenieStudio() {
     try {
       const contentForAI = showScript.trim() || showTopics.trim();
       const showTypeLabel = newShowType === 'podcast' ? 'Podcast Episode' : 
-                           newShowType === 'webcast' ? 'Webcast/Webinar' : 'Live Broadcast';
+                           newShowType === 'webcast' ? 'Webcast/Webinar' : 
+                           newShowType === 'interview' ? 'Interview' :
+                           newShowType === 'panel' ? 'Panel Discussion' :
+                           newShowType === 'tutorial' ? 'Tutorial' :
+                           'Live Broadcast';
       
-      const { data, error } = await supabase.functions.invoke('enhance-script', {
+      // Use ai-universal-processor with Lovable AI Gateway
+      const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: { 
-          scriptContent: `Generate a catchy title and engaging introduction for a ${showTypeLabel} about the following topics/content:\n\n${contentForAI}\n\nProvide:\n1. A compelling title (max 60 characters)\n2. A brief introduction paragraph (2-3 sentences) that hooks the audience`,
-          mode: 'generate-intro'
+          provider: 'gemini',
+          model: 'gemini-2.0-flash',
+          prompt: `Generate a catchy title and engaging introduction for a ${showTypeLabel} about the following topics/content:
+
+${contentForAI}
+
+Provide your response in this exact format:
+TITLE: [A compelling title, max 60 characters]
+INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audience]`,
+          systemPrompt: 'You are a professional media producer who creates compelling titles and introductions for podcasts, webcasts, and broadcasts. Be creative, engaging, and audience-focused.',
+          action: 'generate'
         }
       });
       
       if (error) throw error;
       
-      if (data?.enhancedScript) {
+      if (data?.content) {
         // Parse the AI response
-        const lines = data.enhancedScript.split('\n').filter((l: string) => l.trim());
-        const titleLine = lines.find((l: string) => l.toLowerCase().includes('title:')) || lines[0];
-        const introLines = lines.filter((l: string) => !l.toLowerCase().includes('title:'));
+        const content = data.content;
+        const titleMatch = content.match(/TITLE:\s*(.+?)(?:\n|INTRODUCTION)/s);
+        const introMatch = content.match(/INTRODUCTION:\s*(.+)/s);
         
-        setSuggestedTitle(titleLine?.replace(/^(title:?\s*)/i, '').replace(/^["']|["']$/g, '').trim() || '');
-        setSuggestedIntro(introLines.join(' ').replace(/^(introduction:?\s*)/i, '').trim() || '');
+        const extractedTitle = titleMatch ? titleMatch[1].trim().replace(/^["']|["']$/g, '') : '';
+        const extractedIntro = introMatch ? introMatch[1].trim() : '';
+        
+        setSuggestedTitle(extractedTitle);
+        setSuggestedIntro(extractedIntro);
+        
+        // Auto-populate the show title and description if empty
+        if (!newShowTitle.trim() && extractedTitle) {
+          setNewShowTitle(extractedTitle);
+        }
+        if (!newShowDescription.trim() && extractedIntro) {
+          setNewShowDescription(extractedIntro);
+        }
         
         toast.success('AI suggestions generated!');
       }
@@ -1796,13 +1824,55 @@ export default function GenieStudio() {
       const fallbackTitles: Record<string, string> = {
         podcast: `${showTopics.split(',')[0]?.trim() || 'Episode'} Deep Dive`,
         webcast: `${showTopics.split(',')[0]?.trim() || 'Topic'} Masterclass`,
+        interview: `In Conversation: ${showTopics.split(',')[0]?.trim() || 'Expert Insights'}`,
+        panel: `Panel: ${showTopics.split(',')[0]?.trim() || 'Industry Leaders Discuss'}`,
+        tutorial: `How To: ${showTopics.split(',')[0]?.trim() || 'Master the Basics'}`,
         broadcast: `Live: ${showTopics.split(',')[0]?.trim() || 'Discussion'}`
       };
-      setSuggestedTitle(fallbackTitles[newShowType]);
+      setSuggestedTitle(fallbackTitles[newShowType] || fallbackTitles.podcast);
       setSuggestedIntro(`Join us for an insightful ${newShowType} exploring ${showTopics || 'exciting topics'}. Our guests will share valuable perspectives and actionable insights.`);
       toast.success('Suggestions ready!');
     } finally {
       setIsGeneratingSuggestions(false);
+    }
+  };
+
+  // Handle script selection - auto-populate title and description
+  const handleScriptSelect = (scriptId: string) => {
+    const script = savedScripts.find(s => s.id === scriptId);
+    if (script) {
+      setSelectedScriptId(scriptId);
+      setShowScript(script.content);
+      
+      // Auto-populate title from script name if empty
+      if (!newShowTitle.trim()) {
+        setNewShowTitle(script.name);
+      }
+      
+      toast.success(`Script "${script.name}" loaded`);
+    }
+  };
+
+  // Handle script file upload
+  const handleScriptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    try {
+      const text = await file.text();
+      setShowScript(text);
+      setSelectedScriptId(null);
+      
+      // Use filename (without extension) as title if empty
+      if (!newShowTitle.trim()) {
+        const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
+        setNewShowTitle(nameWithoutExt);
+      }
+      
+      toast.success('Script uploaded successfully');
+    } catch (err) {
+      console.error('Failed to read file:', err);
+      toast.error('Failed to read file');
     }
   };
 
@@ -1900,6 +1970,9 @@ export default function GenieStudio() {
     setSuggestedIntro('');
     setScheduleStep('details');
     setHostName('');
+    setHostEmail('');
+    setSelectedScriptId(null);
+    setProductionStage('script_review');
     
     // Load the appropriate template with filled content
     const templateId = newShowType === 'podcast' ? 'podcast-episode' : 
@@ -4118,18 +4191,63 @@ export default function GenieStudio() {
                   </div>
                 </div>
                 
-                {/* Host Name */}
-                <div>
-                  <Label htmlFor="host-name">{newEventCategory === 'business_meeting' ? 'Organizer Name' : 'Host Name'} *</Label>
-                  <Input
-                    id="host-name"
-                    value={hostName}
-                    onChange={(e) => setHostName(e.target.value)}
-                    placeholder={newEventCategory === 'business_meeting' ? "Your name as the organizer..." : "Your name as the host..."}
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">You will be automatically added and receive an invite.</p>
+                {/* Production Stage - Only for Media Productions */}
+                {newEventCategory === 'media_production' && (
+                  <div>
+                    <Label>Production Stage</Label>
+                    <div className="grid grid-cols-5 gap-2 mt-2">
+                      {[
+                        { value: 'script_review', label: 'Script Review', icon: FileText, color: 'from-blue-500 to-cyan-500' },
+                        { value: 'edit', label: 'Edit', icon: PenTool, color: 'from-purple-500 to-indigo-500' },
+                        { value: 'rehearsal', label: 'Rehearsal', icon: Play, color: 'from-yellow-500 to-orange-500' },
+                        { value: 'final_review', label: 'Final Review', icon: Check, color: 'from-green-500 to-emerald-500' },
+                        { value: 'recording', label: 'Recording', icon: Video, color: 'from-red-500 to-pink-500' }
+                      ].map((stage) => (
+                        <div
+                          key={stage.value}
+                          className={cn(
+                            "p-2 rounded-lg border-2 cursor-pointer transition-all text-center",
+                            productionStage === stage.value
+                              ? "border-primary bg-primary/5"
+                              : "border-border hover:border-primary/50"
+                          )}
+                          onClick={() => setProductionStage(stage.value as any)}
+                        >
+                          <div className={cn("h-6 w-6 rounded-md bg-gradient-to-br flex items-center justify-center mx-auto mb-1", stage.color)}>
+                            <stage.icon className="h-3 w-3 text-white" />
+                          </div>
+                          <span className="text-[10px] font-medium block leading-tight">{stage.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Host Name & Email */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="host-name">{newEventCategory === 'business_meeting' ? 'Organizer Name' : 'Host Name'} *</Label>
+                    <Input
+                      id="host-name"
+                      value={hostName}
+                      onChange={(e) => setHostName(e.target.value)}
+                      placeholder={newEventCategory === 'business_meeting' ? "Your name..." : "Your name..."}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="host-email">Email (for calendar invite)</Label>
+                    <Input
+                      id="host-email"
+                      type="email"
+                      value={hostEmail}
+                      onChange={(e) => setHostEmail(e.target.value)}
+                      placeholder="your@email.com"
+                      className="mt-1"
+                    />
+                  </div>
                 </div>
+                <p className="text-xs text-muted-foreground -mt-2">You will be automatically added as host and receive an invite.</p>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -4169,32 +4287,66 @@ export default function GenieStudio() {
                     className="mt-1"
                   />
                 </div>
-                <div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="show-script">Script / Outline</Label>
-                    {savedScripts.length > 0 && (
-                      <Select onValueChange={(id) => {
-                        const script = savedScripts.find(s => s.id === id);
-                        if (script) setShowScript(script.content);
-                      }}>
-                        <SelectTrigger className="w-[180px] h-8 text-xs">
-                          <SelectValue placeholder="Load saved script" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {savedScripts.map(script => (
+                {/* Script Selection - Load Saved or Upload */}
+                <div className="border rounded-lg p-4 bg-muted/30">
+                  <Label className="flex items-center gap-2 mb-3">
+                    <FileText className="h-4 w-4" />
+                    Select or Upload Script
+                  </Label>
+                  <div className="flex gap-2">
+                    <Select 
+                      value={selectedScriptId || ''} 
+                      onValueChange={handleScriptSelect}
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Select a saved script..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {savedScripts.length === 0 ? (
+                          <SelectItem value="_none" disabled>No saved scripts</SelectItem>
+                        ) : (
+                          savedScripts.map(script => (
                             <SelectItem key={script.id} value={script.id}>
-                              {script.name}
+                              <div className="flex items-center gap-2">
+                                <FileText className="h-3 w-3" />
+                                {script.name}
+                              </div>
                             </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept=".txt,.md,.doc,.docx"
+                        onChange={handleScriptUpload}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <Button variant="outline" className="pointer-events-none">
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload
+                      </Button>
+                    </div>
                   </div>
+                  {selectedScriptId && (
+                    <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                      <Check className="h-3 w-3" />
+                      Script loaded - title and description will auto-populate
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="show-script">Script / Outline Content</Label>
                   <Textarea
                     id="show-script"
                     value={showScript}
-                    onChange={(e) => setShowScript(e.target.value)}
-                    placeholder="Paste your script or outline here. This will be shared with participants..."
+                    onChange={(e) => {
+                      setShowScript(e.target.value);
+                      setSelectedScriptId(null); // Clear selection when manually editing
+                    }}
+                    placeholder="Paste your script or outline here, or select/upload above. This will be shared with participants..."
                     className="mt-1 min-h-[120px] font-mono text-sm"
                   />
                 </div>
