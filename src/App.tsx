@@ -266,6 +266,13 @@ const AppContent = () => {
                       </Suspense>
                     </ProtectedRoute>
                   } />
+                  <Route path="/genie-vibe/mobile" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
+                      <Suspense fallback={<PageLoading message="Loading Mobile Studio..." />}>
+                        {React.createElement(React.lazy(() => import('@/pages/MobileRecordingPage')))}
+                      </Suspense>
+                    </ProtectedRoute>
+                  } />
                   <Route path="/data-import" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam', 'demoUser']}>
                       <DataImport />

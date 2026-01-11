@@ -32,3 +32,4 @@ export { DraggablePanel } from './DraggablePanel';
 export { FloatingAudioMixer } from './FloatingAudioMixer';
 export { ContentAnalyzer } from './ContentAnalyzer';
 export { VibeToMindBridge } from './VibeToMindBridge';
+export { MobileRecordingView } from './MobileRecordingView';

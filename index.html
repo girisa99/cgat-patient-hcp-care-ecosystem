@@ -3,39 +3,45 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>CGAT Healthcare</title>
-    <meta name="description" content="CGAT Patient HCP Care Ecosystem - Healthcare Management Platform">
-    <meta name="author" content="CGAT Healthcare" />
+    <title>Genie AI - Mind to Media Production Suite</title>
+    <meta name="description" content="AI-powered video production with one-tap recording, AI scripts, quick clips, and smart remix. The only mobile solution combining AI + recording + editing.">
+    <meta name="author" content="Genie AI" />
+    <meta name="keywords" content="AI video, mobile recording, quick clips, video editing, AI scripts, teleprompter, content creation" />
 
     <!-- Mobile Web App Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="CGAT Health" />
-    <meta name="application-name" content="CGAT Healthcare" />
+    <meta name="apple-mobile-web-app-title" content="Genie AI" />
+    <meta name="application-name" content="Genie AI" />
     
     <!-- Theme Colors -->
     <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
     <meta name="msapplication-TileColor" content="#0f172a" />
     
-    <!-- iOS Splash Screens (Add actual images in production) -->
+    <!-- PWA Icons -->
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#0f172a" />
     
     <!-- Prevent telephone number detection -->
     <meta name="format-detection" content="telephone=no" />
     
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="CGAT Healthcare" />
-    <meta property="og:description" content="CGAT Patient HCP Care Ecosystem - Healthcare Management Platform" />
+    <meta property="og:title" content="Genie AI - Mind to Media Production Suite" />
+    <meta property="og:description" content="AI-powered video production with one-tap recording, AI scripts, quick clips, and smart remix. Mobile-first content creation." />
     <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta property="og:site_name" content="Genie AI" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
-    <meta name="twitter:title" content="CGAT Healthcare" />
-    <meta name="twitter:description" content="CGAT Patient HCP Care Ecosystem - Healthcare Management Platform" />
+    <meta name="twitter:site" content="@genieai" />
+    <meta name="twitter:title" content="Genie AI - Mind to Media Production Suite" />
+    <meta name="twitter:description" content="AI-powered video production with one-tap recording, AI scripts, quick clips, and smart remix." />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
 
     <!-- Safe Area Styles for iOS -->
@@ -64,11 +70,47 @@
       .ios-safe-area .bottom-nav {
         padding-bottom: var(--safe-area-inset-bottom);
       }
+      
+      /* PWA splash screen */
+      #pwa-splash {
+        position: fixed;
+        inset: 0;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.3s ease;
+      }
+      
+      #pwa-splash.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
     </style>
   </head>
 
   <body>
+    <!-- PWA Splash Screen -->
+    <div id="pwa-splash">
+      <div style="text-align: center; color: white;">
+        <div style="font-size: 48px; margin-bottom: 16px;">✨</div>
+        <div style="font-size: 24px; font-weight: bold;">Genie AI</div>
+        <div style="font-size: 14px; opacity: 0.7; margin-top: 8px;">Loading...</div>
+      </div>
+    </div>
+    
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Hide splash when app loads -->
+    <script>
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          var splash = document.getElementById('pwa-splash');
+          if (splash) splash.classList.add('hidden');
+        }, 500);
+      });
+    </script>
   </body>
 </html>
