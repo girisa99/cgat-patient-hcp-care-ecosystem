@@ -14,8 +14,8 @@ import MasterAuthTabs from '@/components/auth/MasterAuthTabs';
 import MasterAuthValidation from '@/components/auth/MasterAuthValidation';
 import { useNavigate } from 'react-router-dom';
 
-// Import Genie Studio logo
-import genieStudioLogo from '@/assets/logos/genie-studio-horizontal.png';
+// Import Genie Studio combined logo
+import genieStudioCombinedLogo from '@/assets/logos/genie-studio-combined.png';
 
 interface AuthFormData {
   email: string;
@@ -201,23 +201,14 @@ const GenieStudioAuth: React.FC = () => {
 
   return (
     <GenieStudioAuthLayout>
-      <Card className="w-full max-w-md mx-auto shadow-2xl border-0 bg-background/95 backdrop-blur-sm">
-        <CardHeader className="text-center pb-6">
-          {/* Logo */}
-          <div className="flex justify-center mb-4">
-            <div className="bg-white dark:bg-slate-800 p-3 rounded-xl shadow-lg">
-              <img 
-                src={genieStudioLogo} 
-                alt="Genie Studio" 
-                className="h-10 w-auto object-contain"
-              />
-            </div>
-          </div>
-          
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-purple-600 via-blue-500 to-indigo-600 bg-clip-text text-transparent">
-            Genie Studio
+      <Card className="w-full max-w-md mx-auto shadow-2xl border-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm">
+        <CardHeader className="text-center pb-4">
+          {/* Title - Genie in dark, Studio in purple */}
+          <CardTitle className="text-3xl font-bold">
+            <span className="text-gray-900 dark:text-white">Genie </span>
+            <span className="text-violet-600">Studio</span>
           </CardTitle>
-          <CardDescription className="text-base text-muted-foreground">
+          <CardDescription className="text-base text-gray-600 dark:text-gray-300 mt-2">
             Sign in to access your AI-powered creative workspace
           </CardDescription>
         </CardHeader>
@@ -236,14 +227,14 @@ const GenieStudioAuth: React.FC = () => {
             googleRedirectTo={`${window.location.origin}/genie-studio-pricing`}
           />
           
-          <div className="mt-8 text-center space-y-3">
-            <div className="flex items-center justify-center space-x-2 text-xs text-muted-foreground">
-              <Sparkles className="w-4 h-4 text-purple-500" />
+          <div className="mt-6 text-center space-y-3">
+            <div className="flex items-center justify-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
+              <Sparkles className="w-4 h-4 text-violet-500" />
               <span>AI-Powered • Secure • Enterprise Ready</span>
             </div>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-gray-500 dark:text-gray-400">
               <p>By signing in, you agree to our</p>
-              <p className="font-semibold text-purple-600 hover:underline cursor-pointer">
+              <p className="font-semibold text-violet-600 hover:underline cursor-pointer">
                 Privacy Policy and Terms of Service
               </p>
             </div>
