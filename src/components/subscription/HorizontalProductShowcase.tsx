@@ -6,34 +6,32 @@ import { ArrowRight, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
-// Import combined logos from assets
+// Import combined logos from assets - matching architecture
 import genieStudioLogo from '@/assets/logos/genie-studio-combined.png';
 import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
 import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
-import genieArcLogo from '@/assets/logos/genie-arc-combined.png';
 import genieMindLogo from '@/assets/logos/genie-mind-combined.png';
-import genieProductionLogo from '@/assets/logos/genie-studio-product.png';
+// Production Hub uses Arc logo (Arc is consolidated into Production Hub per architecture)
+import genieProductionHubLogo from '@/assets/logos/genie-arc-combined.png';
 
 const productLogos: Record<GenieProduct, string> = {
-  studio: genieStudioLogo,
+  mind: genieMindLogo,
   spark: genieSparkLogo,
   vibe: genieVibeLogo,
-  arc: genieArcLogo,
-  mind: genieMindLogo,
-  productionHub: genieProductionLogo
+  studio: genieStudioLogo,
+  productionHub: genieProductionHubLogo
 };
 
 const productRoutes: Record<GenieProduct, string> = {
-  studio: '/genie-studio',
+  mind: '/genie-mind',
   spark: '/genie-spark',
   vibe: '/genie-vibe',
-  arc: '/genie-arc',
-  mind: '/genie-mind',
+  studio: '/genie-studio',
   productionHub: '/production-hub'
 };
 
-// Order products with Genie Studio in the center (position 3 of 6)
-const productOrder: GenieProduct[] = ['spark', 'vibe', 'studio', 'arc', 'mind', 'productionHub'];
+// Order: Mind (pre-prod) → Spark (generation) → Studio (center/hub) → Vibe (production) → Hub (coordination)
+const productOrder: GenieProduct[] = ['mind', 'spark', 'studio', 'vibe', 'productionHub'];
 
 export const HorizontalProductShowcase = () => {
   const navigate = useNavigate();
@@ -71,7 +69,7 @@ export const HorizontalProductShowcase = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-foreground">Complete Genie Suite</h2>
-          <p className="text-sm text-muted-foreground">Six powerful AI products working together</p>
+          <p className="text-sm text-muted-foreground">Five powerful AI products working together</p>
         </div>
         <div className="flex items-center gap-2">
           <Button 

@@ -3,26 +3,25 @@ import { GENIE_PRODUCTS, GenieProduct } from '@/hooks/useSubscription';
 import { cn } from '@/lib/utils';
 import { Check, X } from 'lucide-react';
 
-// Import combined logos from assets for consistent branding
+// Import combined logos from assets - matching architecture
 import genieStudioLogo from '@/assets/logos/genie-studio-combined.png';
 import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
 import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
-import genieArcLogo from '@/assets/logos/genie-arc-combined.png';
 import genieMindLogo from '@/assets/logos/genie-mind-combined.png';
-import genieProductionLogo from '@/assets/logos/genie-studio-product.png';
+// Production Hub uses Arc logo (Arc is consolidated into Production Hub per architecture)
+import genieProductionHubLogo from '@/assets/logos/genie-arc-combined.png';
 
 // Consistent logo mapping across all subscription components
 const productLogos: Record<GenieProduct, string> = {
-  studio: genieStudioLogo,
+  mind: genieMindLogo,
   spark: genieSparkLogo,
   vibe: genieVibeLogo,
-  arc: genieArcLogo,
-  mind: genieMindLogo,
-  productionHub: genieProductionLogo
+  studio: genieStudioLogo,
+  productionHub: genieProductionHubLogo
 };
 
-// Display order: Spark, Vibe, Studio (center), Arc, Mind, Production Hub
-const productDisplayOrder: GenieProduct[] = ['spark', 'vibe', 'studio', 'arc', 'mind', 'productionHub'];
+// Display order: Mind → Spark → Studio (center) → Vibe → Production Hub
+const productDisplayOrder: GenieProduct[] = ['mind', 'spark', 'studio', 'vibe', 'productionHub'];
 
 interface ProductShowcaseProps {
   includedProducts: readonly GenieProduct[];

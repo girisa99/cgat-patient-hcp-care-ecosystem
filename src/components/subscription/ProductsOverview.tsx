@@ -7,29 +7,27 @@ import { ArrowRight, Check, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
-// Import logos
+// Import logos - matching architecture
 import genieStudioLogo from '@/assets/logos/genie-studio-combined.png';
 import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
 import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
-import genieArcLogo from '@/assets/logos/genie-arc-combined.png';
 import genieMindLogo from '@/assets/logos/genie-mind-combined.png';
-import genieProductionLogo from '@/assets/logos/genie-studio-product.png';
+// Production Hub uses Arc logo (Arc is consolidated into Production Hub per architecture)
+import genieProductionHubLogo from '@/assets/logos/genie-arc-combined.png';
 
 const productLogos: Record<GenieProduct, string> = {
-  studio: genieStudioLogo,
+  mind: genieMindLogo,
   spark: genieSparkLogo,
   vibe: genieVibeLogo,
-  arc: genieArcLogo,
-  mind: genieMindLogo,
-  productionHub: genieProductionLogo
+  studio: genieStudioLogo,
+  productionHub: genieProductionHubLogo
 };
 
 const productRoutes: Record<GenieProduct, string> = {
-  studio: '/genie-studio',
+  mind: '/genie-mind',
   spark: '/genie-spark',
   vibe: '/genie-vibe',
-  arc: '/genie-arc',
-  mind: '/genie-mind',
+  studio: '/genie-studio',
   productionHub: '/production-hub'
 };
 
@@ -43,7 +41,7 @@ export const ProductsOverview = () => {
       <div className="text-center">
         <h2 className="text-3xl font-bold mb-2">The Complete Genie Suite</h2>
         <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-          Six powerful products designed to work together seamlessly for AI-powered content creation and management
+          Five powerful products designed to work together seamlessly for AI-powered content creation
         </p>
       </div>
 
