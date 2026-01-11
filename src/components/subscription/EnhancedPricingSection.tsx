@@ -116,41 +116,43 @@ export const EnhancedPricingSection = () => {
       )}
 
       {/* Collapsible Feature Comparison & FAQ */}
-      <div className="space-y-6">
+      <div className="relative z-10 bg-background pt-8">
         <Collapsible open={showComparison} onOpenChange={setShowComparison}>
           <CollapsibleTrigger asChild>
-            <button className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg border border-border/50 bg-card hover:bg-muted/50 transition-colors text-sm font-medium">
+            <button className="w-full flex items-center justify-center gap-2 py-4 px-6 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors text-base font-medium shadow-sm">
               <span>View Feature Comparison & FAQ</span>
               {showComparison ? (
-                <ChevronUp className="h-4 w-4" />
+                <ChevronUp className="h-5 w-5" />
               ) : (
-                <ChevronDown className="h-4 w-4" />
+                <ChevronDown className="h-5 w-5" />
               )}
             </button>
           </CollapsibleTrigger>
           
-          <CollapsibleContent className="mt-6">
+          <CollapsibleContent className="mt-8 relative z-20 bg-background">
             <Tabs defaultValue="features" className="w-full">
-              <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 h-11">
-                <TabsTrigger value="features" className="gap-2">
-                  <Check className="h-4 w-4" />
-                  Feature Comparison
-                </TabsTrigger>
-                <TabsTrigger value="faq" className="gap-2">
-                  <HelpCircle className="h-4 w-4" />
-                  FAQ
-                </TabsTrigger>
-              </TabsList>
+              <div className="flex justify-center mb-6">
+                <TabsList className="grid w-full max-w-md grid-cols-2 h-12 bg-muted">
+                  <TabsTrigger value="features" className="gap-2 data-[state=active]:bg-background">
+                    <Check className="h-4 w-4" />
+                    Feature Comparison
+                  </TabsTrigger>
+                  <TabsTrigger value="faq" className="gap-2 data-[state=active]:bg-background">
+                    <HelpCircle className="h-4 w-4" />
+                    FAQ
+                  </TabsTrigger>
+                </TabsList>
+              </div>
               
-              <TabsContent value="features" className="mt-6">
-                <Card className="overflow-hidden border-border/50">
+              <TabsContent value="features" className="mt-0">
+                <Card className="overflow-hidden border-border shadow-lg">
                   <CardContent className="p-0">
                     <ComparisonTable />
                   </CardContent>
                 </Card>
               </TabsContent>
               
-              <TabsContent value="faq" className="mt-6">
+              <TabsContent value="faq" className="mt-0">
                 <FAQ />
               </TabsContent>
             </Tabs>
