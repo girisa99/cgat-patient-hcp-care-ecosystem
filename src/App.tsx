@@ -41,6 +41,7 @@ import Stability from '@/pages/Stability';
 import Governance from '@/pages/Governance';
 import Agents from '@/pages/Agents';
 import Login from '@/pages/Login';
+import GenieStudioAuth from '@/pages/GenieStudioAuth';
 import { PresentationPage } from '@/pages/PresentationPage';
 import SystemIntegration from '@/pages/SystemIntegration';
 import OrderManagement from '@/pages/OrderManagement';
@@ -104,6 +105,7 @@ const AppContent = () => {
           <Routes>
               {/* Public routes - accessible without authentication */}
               <Route path="/login" element={<Login />} />
+              <Route path="/genie-studio-auth" element={<GenieStudioAuth />} />
               
               {/* Protected routes */}
               {isAuthenticated ? (
