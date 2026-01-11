@@ -18,6 +18,7 @@ const tierIcons: Record<SubscriptionTier, React.ReactNode> = {
   starter: <Zap className="h-6 w-6" />,
   business: <Star className="h-6 w-6" />,
   pro: <Crown className="h-6 w-6" />,
+  enterprise: <Crown className="h-6 w-6" />,
   beta: <Star className="h-6 w-6 text-primary" />
 };
 
@@ -26,6 +27,7 @@ const tierColors: Record<SubscriptionTier, string> = {
   starter: 'border-muted-foreground/20',
   business: 'border-primary/50',
   pro: 'border-primary ring-2 ring-primary/20',
+  enterprise: 'border-purple-500/50',
   beta: 'border-primary/30 bg-primary/5'
 };
 

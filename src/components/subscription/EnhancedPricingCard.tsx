@@ -20,6 +20,7 @@ const tierIcons: Record<SubscriptionTier, React.ReactNode> = {
   starter: <Zap className="h-6 w-6" />,
   business: <Star className="h-6 w-6" />,
   pro: <Crown className="h-6 w-6" />,
+  enterprise: <Users className="h-6 w-6" />,
   beta: <Star className="h-6 w-6 text-primary" />
 };
 
@@ -28,6 +29,7 @@ const tierGradients: Record<SubscriptionTier, string> = {
   starter: 'from-slate-500 to-zinc-600',
   business: 'from-blue-500 to-indigo-600',
   pro: 'from-amber-500 to-orange-600',
+  enterprise: 'from-purple-500 to-pink-600',
   beta: 'from-violet-500 to-purple-600'
 };
 
@@ -36,6 +38,7 @@ const tierBorders: Record<SubscriptionTier, string> = {
   starter: 'border-muted-foreground/20 hover:border-muted-foreground/40',
   business: 'border-blue-500/50 hover:border-blue-500 ring-1 ring-blue-500/20',
   pro: 'border-amber-500/50 hover:border-amber-500',
+  enterprise: 'border-purple-500/50 hover:border-purple-500',
   beta: 'border-violet-500/30 bg-violet-500/5'
 };
 
