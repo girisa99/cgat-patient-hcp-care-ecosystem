@@ -158,6 +158,16 @@ export const MasterAuthTabs: React.FC<MasterAuthTabsProps> = ({
             )}
           </Button>
 
+          {/* Forgot Password Link */}
+          <div className="text-center">
+            <a 
+              href="/forgot-password" 
+              className="text-sm text-purple-600 hover:text-purple-700 hover:underline transition-colors"
+            >
+              Forgot your password?
+            </a>
+          </div>
+
           {/* Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">

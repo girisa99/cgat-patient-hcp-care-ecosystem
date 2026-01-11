@@ -42,6 +42,9 @@ import Governance from '@/pages/Governance';
 import Agents from '@/pages/Agents';
 import Login from '@/pages/Login';
 import GenieStudioAuth from '@/pages/GenieStudioAuth';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
+import EmailConfirmation from '@/pages/EmailConfirmation';
 import { PresentationPage } from '@/pages/PresentationPage';
 import SystemIntegration from '@/pages/SystemIntegration';
 import OrderManagement from '@/pages/OrderManagement';
@@ -106,6 +109,9 @@ const AppContent = () => {
               {/* Public routes - accessible without authentication */}
               <Route path="/login" element={<Login />} />
               <Route path="/genie-studio-auth" element={<GenieStudioAuth />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/email-confirmation" element={<EmailConfirmation />} />
               
               {/* Protected routes */}
               {isAuthenticated ? (
