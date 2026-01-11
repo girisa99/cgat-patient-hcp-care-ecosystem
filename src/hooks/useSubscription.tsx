@@ -131,6 +131,7 @@ export const GENIE_PRODUCTS = {
 export type GenieProduct = keyof typeof GENIE_PRODUCTS;
 
 // Stripe product/price mappings for Genie Studio tiers
+// Synced with database subscription_tiers table
 export const SUBSCRIPTION_TIERS = {
   free: {
     name: 'Free Trial',
@@ -166,9 +167,9 @@ export const SUBSCRIPTION_TIERS = {
   },
   starter: {
     name: 'Starter',
-    price_id: 'price_1RcuqjLkMzXLFD6lgODL8TGA',
-    product_id: 'prod_STVvS8axANDSwJ',
-    price: 29.99,
+    price_id: 'price_1SoD2hCEkh96ps4f9SU3pLVL',
+    product_id: 'prod_TlkXDVA4NXZrx6',
+    price: 9.99,
     billing: 'month',
     recommended: false,
     products: ['studio', 'spark'] as GenieProduct[],
@@ -181,7 +182,7 @@ export const SUBSCRIPTION_TIERS = {
     features: [
       '5 AI Agents',
       'Genie Studio Core',
-      'Genie Spark (20 prototypes)',
+      'Genie Spark (100 scripts)',
       'Basic RAG (1,000 docs)',
       'Community Support',
       '1,000 API calls/month',
@@ -193,9 +194,9 @@ export const SUBSCRIPTION_TIERS = {
   },
   business: {
     name: 'Business',
-    price_id: 'price_1Rcur3LkMzXLFD6l7sIFDyHE',
-    product_id: 'prod_STVwMyqVuPDe6J',
-    price: 49.99,
+    price_id: 'price_1SoD35CEkh96ps4f5bUVwLVm',
+    product_id: 'prod_TlkYpiRUnldeAk',
+    price: 29.99,
     billing: 'month',
     recommended: true,
     products: ['studio', 'spark', 'vibe', 'mind'] as GenieProduct[],
@@ -203,12 +204,12 @@ export const SUBSCRIPTION_TIERS = {
       agents: 25,
       apiCalls: 10000,
       storage: '50 GB',
-      teamMembers: 5
+      teamMembers: 3
     },
     features: [
       '25 AI Agents',
       'Genie Studio Full',
-      'Genie Spark Pro (100 prototypes)',
+      'Genie Spark Pro (500 scripts)',
       'Genie Vibe Recording Studio',
       'Genie Mind Knowledge Base',
       'Advanced RAG (10,000 docs)',
@@ -216,15 +217,15 @@ export const SUBSCRIPTION_TIERS = {
       '10,000 API calls/month',
       '50 GB Storage',
       'Custom Branding',
-      '5 Team Members'
+      '3 Team Members'
     ],
     restrictions: [],
     highlights: ['Best for small teams', 'Full recording suite', 'Advanced knowledge base']
   },
   pro: {
     name: 'Pro',
-    price_id: 'price_1RcurPLkMzXLFD6lHlz7yLLy',
-    product_id: 'prod_STVwrfRNQCBILz',
+    price_id: 'price_1SoD3QCEkh96ps4fI0kTG9oo',
+    product_id: 'prod_TlkYBT75Nu2vt5',
     price: 79.99,
     billing: 'month',
     recommended: false,
@@ -233,7 +234,7 @@ export const SUBSCRIPTION_TIERS = {
       agents: -1,
       apiCalls: -1,
       storage: '500 GB',
-      teamMembers: -1
+      teamMembers: 10
     },
     features: [
       'Unlimited AI Agents',
@@ -246,12 +247,30 @@ export const SUBSCRIPTION_TIERS = {
       '500 GB Storage',
       'White Label',
       'Custom Integrations',
-      'Unlimited Team Members',
+      '10 Team Members',
       'SSO & SAML',
       'Dedicated Account Manager'
     ],
     restrictions: [],
     highlights: ['Enterprise-ready', 'Full team collaboration', 'Unlimited everything']
+  },
+  enterprise: {
+    name: 'Enterprise',
+    price_id: null,
+    product_id: null,
+    price: 0,
+    billing: null,
+    recommended: false,
+    products: ['studio', 'spark', 'vibe', 'arc', 'mind', 'productionHub'] as GenieProduct[],
+    limits: {
+      agents: -1,
+      apiCalls: -1,
+      storage: 'Unlimited',
+      teamMembers: -1
+    },
+    features: ['Custom pricing', 'HIPAA compliance', 'White-label', 'SLA guarantee', 'Dedicated support'],
+    restrictions: [],
+    highlights: ['Contact sales', 'Custom solutions', 'Enterprise features']
   },
   beta: {
     name: 'Beta',
