@@ -1,156 +1,193 @@
 /**
- * Genie Vibe - Standalone Recording & Voice Studio
- * "Voice Your Vision" - Recording studio and TTS generation
+ * Genie Vibe - Consolidated Recording & Production Studio
  * 
- * RESPONSIVE ARCHITECTURE:
- * - Desktop: Full studio with tabs, TTS generator, audio library, music
- * - Mobile: Streamlined recording-first with bottom nav, quick clips, timeline
+ * UNIFIED PIPELINE: Record → Clips → Mix → Timeline → Publish
  * 
- * DATA FLOW: Uses existing hooks - all data is user-scoped via RLS
+ * This is the main production studio with a streamlined 5-tab workflow.
+ * For scripts, AI voice generation, and music library - use Genie Studio.
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Slider } from '@/components/ui/slider';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   ArrowLeft, 
-  Mic, 
-  Headphones, 
-  Music,
-  Download,
-  Upload,
-  Loader2,
-  Volume2,
   Video,
-  FileText,
-  Save,
   Smartphone,
   Monitor,
+  Scissors,
+  Music,
+  Layers,
+  Upload,
   Camera,
   ScreenShare,
-  Scissors,
-  Sparkles,
-  Film,
-  Layers
+  FileText,
+  Check
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { useTTSGeneration, OPENAI_VOICES, ELEVENLABS_VOICES } from '@/components/document-processing/RecordingStudio/hooks/useTTSGeneration';
 import { useGenieScripts } from '@/components/genie-studio/useGenieScripts';
 import { useGenieMediaLibrary } from '@/components/genie-studio/useGenieMediaLibrary';
-import { SavedAudioCard } from '@/components/genie-studio/SavedAudioCard';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileRecordingView } from '@/components/document-processing/RecordingStudio/components/MobileRecordingView';
-import { QuickClipsGenerator, MultiClipTimeline, ScriptStitcher } from '@/components/mobile';
+import { 
+  QuickClipsGenerator, 
+  MultiClipTimeline, 
+  AudioMixer,
+  PublishPanel,
+  PipelineProgress
+} from '@/components/mobile';
 import type { TimelineClip } from '@/components/mobile/MultiClipTimeline';
-import type { StitchedResult } from '@/components/mobile/ScriptStitcher';
+import type { PipelineStage } from '@/components/mobile/PipelineProgress';
 import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
+
+// Recording result type
+interface RecordingResult {
+  id: string;
+  url?: string;
+  duration?: number;
+  type: 'video' | 'audio' | 'photo';
+  name?: string;
+  thumbnailUrl?: string;
+}
+
+// Mixed audio result
+interface MixedAudioResult {
+  url: string;
+  duration: number;
+  tracks: Array<{ id: string; name: string; type: string }>;
+}
 
 const GenieVibe: React.FC = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const voiceoverUploadRef = useRef<HTMLInputElement>(null);
   
   // View mode: 'desktop' or 'mobile' - auto-detect based on device
   const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>(isMobile ? 'mobile' : 'desktop');
   
   // Existing hooks - data flow unchanged
-  const { scripts: savedScripts, updateScript } = useGenieScripts();
-  const { voiceovers, instrumentalMusic, ttsFiles, refresh: refreshMedia } = useGenieMediaLibrary();
+  const { scripts: savedScripts } = useGenieScripts();
+  const { voiceovers, instrumentalMusic, ttsFiles } = useGenieMediaLibrary();
   
-  // TTS state
-  const [selectedProvider, setSelectedProvider] = useState<'openai' | 'elevenlabs'>('elevenlabs');
-  const [selectedVoice, setSelectedVoice] = useState('CwhRBWXzGAHq8TQ4Fs17'); // Default to ElevenLabs Roger
-  const [voiceText, setVoiceText] = useState('');
-  const [speed, setSpeed] = useState([1.0]);
-  const [activeTab, setActiveTab] = useState('video'); // Default to video recording tab
-  
-  const { generate, isGenerating, lastResult } = useTTSGeneration();
-  
-  // Get voices for current provider and ensure default voice is valid
-  const currentVoices = selectedProvider === 'openai' ? OPENAI_VOICES : ELEVENLABS_VOICES;
-  
-  // Update selected voice when provider changes to ensure it's valid
-  React.useEffect(() => {
-    const voiceExists = currentVoices.some(v => v.value === selectedVoice);
-    if (!voiceExists && currentVoices.length > 0) {
-      setSelectedVoice(currentVoices[0].value);
-    }
-  }, [selectedProvider, currentVoices, selectedVoice]);
-
-  // Combine voiceovers and TTS for display
-  const allAudio = [...voiceovers, ...ttsFiles];
-
-  // Timeline state for desktop
+  // Pipeline state - shared across all tabs
+  const [activeTab, setActiveTab] = useState<PipelineStage>('record');
+  const [recordings, setRecordings] = useState<RecordingResult[]>([]);
   const [timelineClips, setTimelineClips] = useState<TimelineClip[]>([]);
-  const [recordings, setRecordings] = useState<Array<{ id: string; url: string; type: string; duration: number }>>([]);
+  const [mixedAudio, setMixedAudio] = useState<MixedAudioResult | null>(null);
+  const [completedStages, setCompletedStages] = useState<PipelineStage[]>([]);
+
+  // Combine voiceovers and TTS for audio mixer
+  const allVoiceovers = useMemo(() => [...voiceovers, ...ttsFiles], [voiceovers, ttsFiles]);
+
+  // Calculate total timeline duration
+  const totalDuration = useMemo(() => {
+    if (timelineClips.length === 0) return 0;
+    return Math.max(...timelineClips.map(c => c.startTime + c.duration));
+  }, [timelineClips]);
 
   // Scripts formatted for components
-  const scriptsForMobile = savedScripts.map(s => ({
+  const scriptsForMobile = useMemo(() => savedScripts.map(s => ({
     id: s.id,
     title: s.name,
     content: s.enhancedContent || s.content || ''
-  }));
+  })), [savedScripts]);
 
   // Music formatted for components
-  const musicForMobile = instrumentalMusic.map(m => ({
+  const musicForMobile = useMemo(() => instrumentalMusic.map(m => ({
     id: m.id,
     name: m.name,
     url: m.url
-  }));
+  })), [instrumentalMusic]);
 
-  // Handle stitch completion
-  const handleStitchComplete = (result: StitchedResult) => {
-    toast.success(`Stitched ${result.segments.length} scripts (${Math.round(result.totalDuration)}s total)`);
-    setActiveTab('timeline');
-  };
+  // Mark stage as completed
+  const markStageCompleted = useCallback((stage: PipelineStage) => {
+    setCompletedStages(prev => 
+      prev.includes(stage) ? prev : [...prev, stage]
+    );
+  }, []);
 
-  // Handle clips change
-  const handleClipsChange = (clips: TimelineClip[]) => {
-    setTimelineClips(clips);
-  };
-
-  const handleGenerateTTS = async () => {
-    if (!voiceText.trim()) {
-      toast.error('Please enter some text to convert');
-      return;
-    }
-
-    const result = await generate({
-      text: voiceText,
-      provider: selectedProvider,
-      voice: selectedVoice,
-      speed: speed[0],
+  // Handle recording completion - auto-advance to clips
+  const handleRecordingComplete = useCallback((result: RecordingResult) => {
+    setRecordings(prev => [...prev, result]);
+    
+    // Auto-create timeline clip
+    const newClip: TimelineClip = {
+      id: result.id,
+      type: result.type === 'photo' ? 'image' : result.type,
+      name: result.name || `Recording ${recordings.length + 1}`,
+      sourceUrl: result.url,
+      thumbnailUrl: result.thumbnailUrl,
+      startTime: timelineClips.length > 0 
+        ? Math.max(...timelineClips.map(c => c.startTime + c.duration)) + 0.5
+        : 0,
+      duration: result.duration || 5,
+      inPoint: 0,
+      outPoint: result.duration || 5,
+      track: result.type === 'audio' ? 1 : 0,
+      volume: 1,
+      opacity: 1,
+    };
+    
+    setTimelineClips(prev => [...prev, newClip]);
+    markStageCompleted('record');
+    
+    toast.success('Recording saved! Continue to Quick Clips?', {
+      action: {
+        label: 'Go to Clips',
+        onClick: () => setActiveTab('clips')
+      }
     });
+  }, [recordings.length, timelineClips, markStageCompleted]);
 
-    if (result) {
-      toast.success('Voice generated successfully!');
-      refreshMedia();
-    }
-  };
+  // Handle clips generated - advance to mix
+  const handleClipsReady = useCallback((clips: TimelineClip[]) => {
+    setTimelineClips(prev => [...prev, ...clips]);
+    markStageCompleted('clips');
+    
+    toast.success('Clips ready! Add audio in Mix tab?', {
+      action: {
+        label: 'Go to Mix',
+        onClick: () => setActiveTab('mix')
+      }
+    });
+  }, [markStageCompleted]);
 
-  const handleSaveTTS = () => {
-    if (lastResult?.audioUrl) {
-      toast.success('Voiceover saved to library!');
-      refreshMedia();
-    }
-  };
+  // Handle mix completion - advance to timeline
+  const handleMixComplete = useCallback((result: MixedAudioResult) => {
+    setMixedAudio(result);
+    markStageCompleted('mix');
+    
+    toast.success('Audio mixed! Arrange on timeline?', {
+      action: {
+        label: 'Go to Timeline',
+        onClick: () => setActiveTab('timeline')
+      }
+    });
+  }, [markStageCompleted]);
 
-  const handleUploadVoiceover = (file: File) => {
-    toast.success(`"${file.name}" uploaded`);
-    refreshMedia();
-  };
+  // Handle timeline export
+  const handleTimelineExport = useCallback((format: string) => {
+    markStageCompleted('timeline');
+    toast.info(`Preparing ${timelineClips.length} clips for export...`);
+    setActiveTab('publish');
+  }, [timelineClips.length, markStageCompleted]);
 
-  // Scripts ready for voice
-  const scriptsNeedingVoice = savedScripts.filter(s => (s.enhancedContent || s.content) && !s.hasVoiceover);
+  // Handle final publish
+  const handlePublish = useCallback(async (format: string, quality: string) => {
+    markStageCompleted('publish');
+    // In production, this would trigger actual export
+    await new Promise(resolve => setTimeout(resolve, 1500));
+  }, [markStageCompleted]);
+
+  // Handle stage click from progress indicator
+  const handleStageClick = useCallback((stage: PipelineStage) => {
+    setActiveTab(stage);
+  }, []);
 
   // Use a variable to check mode to avoid TypeScript narrowing issues
   const showMobileView = viewMode === 'mobile';
@@ -166,16 +203,13 @@ const GenieVibe: React.FC = () => {
         scripts={scriptsForMobile}
         music={musicForMobile}
         onSwitchToDesktop={() => setViewMode('desktop')}
-        onRecordingComplete={(result) => {
-          console.log('Recording complete:', result);
-          refreshMedia();
-        }}
+        onRecordingComplete={handleRecordingComplete}
       />
     );
   }
 
   // ============================================================
-  // DESKTOP VIEW - Full studio with all features
+  // DESKTOP VIEW - Full 5-tab pipeline
   // ============================================================
   return (
     <AppLayout>
@@ -184,7 +218,7 @@ const GenieVibe: React.FC = () => {
         <div className="relative overflow-hidden border-b border-border/50 bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-violet-500/10">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-pink-500/20 via-transparent to-transparent" />
           
-          <div className="relative max-w-7xl mx-auto px-6 py-8">
+          <div className="relative max-w-7xl mx-auto px-6 py-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-6">
                 <Button
@@ -194,18 +228,18 @@ const GenieVibe: React.FC = () => {
                   className="text-muted-foreground hover:text-foreground"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Studio
+                  Genie Studio
                 </Button>
                 
                 <div className="flex items-center gap-4">
-                  <div className="h-16 w-16 rounded-2xl bg-white/90 backdrop-blur border border-pink-200/50 flex items-center justify-center shadow-lg overflow-hidden p-2">
+                  <div className="h-14 w-14 rounded-2xl bg-white/90 backdrop-blur border border-pink-200/50 flex items-center justify-center shadow-lg overflow-hidden p-2">
                     <img src={genieVibeLogo} alt="Genie Vibe" className="h-full w-full object-contain" />
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-                      Genie Vibe
+                    <h1 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+                      Genie Vibe Studio
                     </h1>
-                    <p className="text-sm text-muted-foreground">Recording & Voice Studio • Voice Your Vision</p>
+                    <p className="text-xs text-muted-foreground">Record → Clips → Mix → Timeline → Publish</p>
                   </div>
                 </div>
               </div>
@@ -233,53 +267,53 @@ const GenieVibe: React.FC = () => {
                 </div>
 
                 <Badge className="bg-pink-500/10 text-pink-600 border-pink-500/20">
-                  {allAudio.length} Voiceovers
+                  {recordings.length} Recordings
                 </Badge>
               </div>
             </div>
           </div>
         </div>
 
+        {/* Pipeline Progress Indicator */}
+        <PipelineProgress
+          currentStage={activeTab}
+          completedStages={completedStages}
+          onStageClick={handleStageClick}
+        />
+
         {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="bg-muted/50 border border-border/50 flex-wrap h-auto gap-1 p-1">
-              <TabsTrigger value="video" className="gap-2">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as PipelineStage)} className="space-y-6">
+            <TabsList className="bg-muted/50 border border-border/50 h-auto gap-1 p-1">
+              <TabsTrigger value="record" className="gap-2">
                 <Video className="h-4 w-4" />
                 Record
+                {completedStages.includes('record') && <Check className="h-3 w-3 text-green-500" />}
               </TabsTrigger>
               <TabsTrigger value="clips" className="gap-2">
-                <Sparkles className="h-4 w-4" />
-                Quick Clips
-              </TabsTrigger>
-              <TabsTrigger value="stitch" className="gap-2">
                 <Scissors className="h-4 w-4" />
-                Stitch
+                Clips
+                {completedStages.includes('clips') && <Check className="h-3 w-3 text-green-500" />}
+              </TabsTrigger>
+              <TabsTrigger value="mix" className="gap-2">
+                <Music className="h-4 w-4" />
+                Mix
+                {completedStages.includes('mix') && <Check className="h-3 w-3 text-green-500" />}
               </TabsTrigger>
               <TabsTrigger value="timeline" className="gap-2">
                 <Layers className="h-4 w-4" />
                 Timeline
+                {completedStages.includes('timeline') && <Check className="h-3 w-3 text-green-500" />}
               </TabsTrigger>
-              <TabsTrigger value="tts" className="gap-2">
-                <Mic className="h-4 w-4" />
-                AI Voice
-              </TabsTrigger>
-              <TabsTrigger value="scripts" className="gap-2">
-                <FileText className="h-4 w-4" />
-                Scripts ({scriptsNeedingVoice.length})
-              </TabsTrigger>
-              <TabsTrigger value="library" className="gap-2">
-                <Headphones className="h-4 w-4" />
-                Audio
-              </TabsTrigger>
-              <TabsTrigger value="music" className="gap-2">
-                <Music className="h-4 w-4" />
-                Music
+              <TabsTrigger value="publish" className="gap-2">
+                <Upload className="h-4 w-4" />
+                Publish
+                {completedStages.includes('publish') && <Check className="h-3 w-3 text-green-500" />}
               </TabsTrigger>
             </TabsList>
 
-            {/* Video Recording Tab */}
-            <TabsContent value="video" className="space-y-6">
+            {/* Record Tab */}
+            <TabsContent value="record" className="space-y-6">
               <Card className="border-border/50 bg-card/80 backdrop-blur">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-6">
@@ -288,30 +322,30 @@ const GenieVibe: React.FC = () => {
                         <Video className="h-6 w-6 text-white" />
                       </div>
                       <div>
-                        <h2 className="text-xl font-semibold">Video Recording Studio</h2>
-                        <p className="text-sm text-muted-foreground">Record camera, screen, or both</p>
+                        <h2 className="text-xl font-semibold">Record</h2>
+                        <p className="text-sm text-muted-foreground">Capture video, audio, or screen</p>
                       </div>
                     </div>
                     <Badge className="bg-red-500/10 text-red-600 border-red-500/20">
-                      HD Recording
+                      Step 1 of 5
                     </Badge>
                   </div>
 
                   <div className="grid md:grid-cols-3 gap-4 mb-6">
-                    <Card className="border-2 border-dashed hover:border-primary transition-colors cursor-pointer p-6 text-center">
-                      <Camera className="h-10 w-10 mx-auto mb-3 text-blue-500" />
+                    <Card className="border-2 border-dashed hover:border-primary transition-colors cursor-pointer p-6 text-center group">
+                      <Camera className="h-10 w-10 mx-auto mb-3 text-blue-500 group-hover:scale-110 transition-transform" />
                       <h3 className="font-semibold">Camera</h3>
                       <p className="text-xs text-muted-foreground">Record from webcam</p>
                     </Card>
-                    <Card className="border-2 border-dashed hover:border-primary transition-colors cursor-pointer p-6 text-center">
-                      <ScreenShare className="h-10 w-10 mx-auto mb-3 text-green-500" />
+                    <Card className="border-2 border-dashed hover:border-primary transition-colors cursor-pointer p-6 text-center group">
+                      <ScreenShare className="h-10 w-10 mx-auto mb-3 text-green-500 group-hover:scale-110 transition-transform" />
                       <h3 className="font-semibold">Screen</h3>
                       <p className="text-xs text-muted-foreground">Record screen activity</p>
                     </Card>
-                    <Card className="border-2 border-dashed hover:border-primary transition-colors cursor-pointer p-6 text-center">
+                    <Card className="border-2 border-dashed hover:border-primary transition-colors cursor-pointer p-6 text-center group">
                       <div className="flex justify-center gap-1 mb-3">
-                        <Camera className="h-8 w-8 text-purple-500" />
-                        <ScreenShare className="h-8 w-8 text-purple-500" />
+                        <Camera className="h-8 w-8 text-purple-500 group-hover:scale-110 transition-transform" />
+                        <ScreenShare className="h-8 w-8 text-purple-500 group-hover:scale-110 transition-transform" />
                       </div>
                       <h3 className="font-semibold">Both</h3>
                       <p className="text-xs text-muted-foreground">Camera + Screen overlay</p>
@@ -335,18 +369,53 @@ const GenieVibe: React.FC = () => {
                   </div>
 
                   {/* Script Teleprompter Option */}
-                  {scriptsNeedingVoice.length > 0 && (
+                  {scriptsForMobile.length > 0 && (
                     <div className="mt-6 p-4 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-2 mb-2">
                         <FileText className="h-4 w-4 text-purple-500" />
                         <span className="font-medium">Use Script as Teleprompter</span>
                       </div>
                       <p className="text-sm text-muted-foreground mb-3">
-                        {scriptsNeedingVoice.length} scripts available to guide your recording
+                        {scriptsForMobile.length} scripts available from Genie Studio
                       </p>
-                      <Button variant="outline" size="sm">
-                        Select Script
-                      </Button>
+                      <ScrollArea className="h-24">
+                        <div className="flex gap-2">
+                          {scriptsForMobile.slice(0, 5).map(script => (
+                            <Button key={script.id} variant="outline" size="sm" className="h-auto py-2 flex-shrink-0">
+                              <div className="text-left">
+                                <p className="text-xs font-medium">{script.title}</p>
+                                <p className="text-[10px] text-muted-foreground line-clamp-1 max-w-[120px]">
+                                  {script.content.slice(0, 50)}...
+                                </p>
+                              </div>
+                            </Button>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  )}
+
+                  {/* Recent Recordings */}
+                  {recordings.length > 0 && (
+                    <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="font-medium">Recent Recordings ({recordings.length})</span>
+                        <Button 
+                          variant="link" 
+                          size="sm" 
+                          className="h-auto p-0"
+                          onClick={() => setActiveTab('clips')}
+                        >
+                          Process with AI Clips →
+                        </Button>
+                      </div>
+                      <div className="flex gap-2 overflow-x-auto pb-2">
+                        {recordings.map(rec => (
+                          <div key={rec.id} className="w-20 h-14 bg-muted rounded flex-shrink-0 flex items-center justify-center">
+                            <Video className="h-6 w-6 text-muted-foreground" />
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </CardContent>
@@ -357,23 +426,74 @@ const GenieVibe: React.FC = () => {
             <TabsContent value="clips" className="space-y-6">
               <Card className="border-border/50 bg-card/80 backdrop-blur">
                 <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                        <Scissors className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-semibold">Quick Clips</h2>
+                        <p className="text-sm text-muted-foreground">AI auto-finds the best moments</p>
+                      </div>
+                    </div>
+                    <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20">
+                      Step 2 of 5
+                    </Badge>
+                  </div>
+                  
                   <QuickClipsGenerator 
+                    sourceUrl={recordings[0]?.url}
+                    sourceDuration={recordings[0]?.duration || 120}
                     onClipGenerated={(clip) => {
                       toast.success(`Generated clip: ${clip.suggestion.title}`);
+                      // Convert QuickClip to TimelineClip and add to timeline
+                      const timelineClip: TimelineClip = {
+                        id: clip.id,
+                        type: 'video',
+                        name: clip.suggestion.title,
+                        sourceUrl: clip.outputUrl,
+                        startTime: timelineClips.length > 0 
+                          ? Math.max(...timelineClips.map(c => c.startTime + c.duration)) + 0.5 
+                          : 0,
+                        duration: clip.suggestion.duration,
+                        inPoint: clip.suggestion.startTime,
+                        outPoint: clip.suggestion.endTime,
+                        track: 0,
+                        volume: 1,
+                        opacity: 1,
+                      };
+                      setTimelineClips(prev => [...prev, timelineClip]);
+                      markStageCompleted('clips');
                     }}
                   />
                 </CardContent>
               </Card>
             </TabsContent>
 
-            {/* Script Stitch Tab */}
-            <TabsContent value="stitch" className="space-y-6">
+            {/* Audio Mix Tab */}
+            <TabsContent value="mix" className="space-y-6">
               <Card className="border-border/50 bg-card/80 backdrop-blur">
                 <CardContent className="p-6">
-                  <ScriptStitcher
-                    availableScripts={scriptsForMobile}
-                    availableMusic={musicForMobile}
-                    onExport={handleStitchComplete}
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+                        <Music className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-semibold">Audio Mix</h2>
+                        <p className="text-sm text-muted-foreground">Add voiceovers, music & sound</p>
+                      </div>
+                    </div>
+                    <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20">
+                      Step 3 of 5
+                    </Badge>
+                  </div>
+                  
+                  <AudioMixer
+                    recordings={recordings}
+                    voiceovers={allVoiceovers}
+                    music={musicForMobile}
+                    onMixComplete={handleMixComplete}
                   />
                 </CardContent>
               </Card>
@@ -383,292 +503,60 @@ const GenieVibe: React.FC = () => {
             <TabsContent value="timeline" className="space-y-6">
               <Card className="border-border/50 bg-card/80 backdrop-blur">
                 <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-violet-500 flex items-center justify-center">
+                        <Layers className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-semibold">Timeline</h2>
+                        <p className="text-sm text-muted-foreground">Arrange and edit your clips</p>
+                      </div>
+                    </div>
+                    <Badge className="bg-purple-500/10 text-purple-600 border-purple-500/20">
+                      Step 4 of 5
+                    </Badge>
+                  </div>
+                  
                   <MultiClipTimeline
                     clips={timelineClips}
-                    onClipsChange={handleClipsChange}
-                    onExport={(format) => {
-                      toast.info(`Exporting ${timelineClips.length} clips as ${format}...`);
-                    }}
+                    onClipsChange={setTimelineClips}
+                    onExport={handleTimelineExport}
                   />
                 </CardContent>
               </Card>
             </TabsContent>
 
-            {/* TTS Generator Tab */}
-            <TabsContent value="tts" className="space-y-6">
+            {/* Publish Tab */}
+            <TabsContent value="publish" className="space-y-6">
               <Card className="border-border/50 bg-card/80 backdrop-blur">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                        <Mic className="h-6 w-6 text-white" />
+                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                        <Upload className="h-6 w-6 text-white" />
                       </div>
                       <div>
-                        <h2 className="text-xl font-semibold">AI Voice Generator</h2>
-                        <p className="text-sm text-muted-foreground">Create ultra-realistic voiceovers with AI</p>
+                        <h2 className="text-xl font-semibold">Publish</h2>
+                        <p className="text-sm text-muted-foreground">Export, share, and publish</p>
                       </div>
                     </div>
-                    <Badge className="bg-purple-500/10 text-purple-600 border-purple-500/20">
-                      {selectedProvider === 'openai' ? '6' : '9'}+ Voice Styles
+                    <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                      Step 5 of 5
                     </Badge>
                   </div>
-
-                  <div className="grid md:grid-cols-2 gap-4 mb-6">
-                    <div>
-                      <Label>Voice Provider</Label>
-                      <Select value={selectedProvider} onValueChange={(v: 'openai' | 'elevenlabs') => setSelectedProvider(v)}>
-                        <SelectTrigger className="mt-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="elevenlabs">ElevenLabs (Premium Quality)</SelectItem>
-                          <SelectItem value="openai">OpenAI TTS (Fast)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label>Voice Style</Label>
-                      <Select value={selectedVoice} onValueChange={setSelectedVoice}>
-                        <SelectTrigger className="mt-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {currentVoices.map(voice => (
-                            <SelectItem key={voice.value} value={voice.value}>
-                              {voice.label} - {voice.description}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="mb-6">
-                    <Label>Speed: {speed[0].toFixed(1)}x</Label>
-                    <Slider
-                      value={speed}
-                      onValueChange={setSpeed}
-                      min={0.5}
-                      max={2.0}
-                      step={0.1}
-                      className="mt-2"
-                    />
-                  </div>
-
-                  <div className="mb-6">
-                    <Label>Text to Convert</Label>
-                    <Textarea
-                      value={voiceText}
-                      onChange={(e) => setVoiceText(e.target.value)}
-                      placeholder="Enter the text you want to convert to speech..."
-                      className="mt-1 min-h-[150px]"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {voiceText.length} characters
-                    </p>
-                  </div>
-
-                  <div className="flex gap-3">
-                    <Button
-                      onClick={handleGenerateTTS}
-                      disabled={isGenerating || !voiceText.trim()}
-                      className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white"
-                    >
-                      {isGenerating ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Generating...
-                        </>
-                      ) : (
-                        <>
-                          <Mic className="h-4 w-4 mr-2" />
-                          Generate Voice
-                        </>
-                      )}
-                    </Button>
-                  </div>
-
-                  {/* Audio Preview */}
-                  {lastResult?.audioUrl && (
-                    <div className="mt-6 p-4 rounded-lg bg-green-500/10 border border-green-500/20">
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-full bg-green-500 flex items-center justify-center">
-                          <Headphones className="h-6 w-6 text-white" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium text-green-700">Voice Generated!</p>
-                          <audio src={lastResult.audioUrl} controls className="w-full mt-2" />
-                        </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline" onClick={handleSaveTTS}>
-                            <Save className="h-4 w-4 mr-1" />
-                            Save
-                          </Button>
-                          <Button size="sm" variant="outline" asChild>
-                            <a href={lastResult.audioUrl} download="voiceover.mp3">
-                              <Download className="h-4 w-4 mr-1" />
-                              Download
-                            </a>
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Upload Section */}
-              <Card className="border-border/50 bg-card/80 backdrop-blur">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <Upload className="h-5 w-5 text-purple-500" />
-                      Upload Voiceover
-                    </h3>
-                  </div>
-                  <input
-                    ref={voiceoverUploadRef}
-                    type="file"
-                    accept="audio/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleUploadVoiceover(file);
-                      if (voiceoverUploadRef.current) voiceoverUploadRef.current.value = '';
-                    }}
+                  
+                  <PublishPanel
+                    clips={timelineClips}
+                    totalDuration={totalDuration}
+                    projectName="My Genie Vibe Project"
+                    onExport={handlePublish}
                   />
-                  <Button 
-                    variant="outline" 
-                    onClick={() => voiceoverUploadRef.current?.click()}
-                    className="w-full"
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload Audio File (MP3, WAV, etc.)
-                  </Button>
                 </CardContent>
               </Card>
-            </TabsContent>
-
-            {/* Scripts Tab */}
-            <TabsContent value="scripts" className="space-y-6">
-              {scriptsNeedingVoice.length === 0 ? (
-                <Card className="border-dashed border-2 border-purple-500/30 bg-purple-500/5">
-                  <CardContent className="flex flex-col items-center justify-center py-16">
-                    <FileText className="h-12 w-12 text-purple-500 mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">No Scripts Pending Voice</h3>
-                    <p className="text-muted-foreground text-center mb-4">
-                      Create scripts in Genie Spark or Genie Mind to add voiceovers.
-                    </p>
-                    <Button onClick={() => navigate('/genie-spark')}>
-                      Go to Genie Spark
-                    </Button>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid md:grid-cols-2 gap-4">
-                  {scriptsNeedingVoice.map(script => (
-                    <Card key={script.id} className="hover:border-purple-500/30 transition-colors">
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          {script.type === 'video' ? (
-                            <Video className="h-4 w-4 text-red-500" />
-                          ) : (
-                            <Mic className="h-4 w-4 text-purple-500" />
-                          )}
-                          <span className="font-medium truncate">{script.name}</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
-                          {(script.enhancedContent || script.content).slice(0, 100)}...
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">
-                            {script.stats?.wordCount || 0} words
-                          </span>
-                          <Button 
-                            size="sm"
-                            onClick={() => {
-                              setVoiceText(script.cleanContent || script.enhancedContent || script.content);
-                              setActiveTab('tts');
-                              toast.success(`Loaded "${script.name}"`);
-                            }}
-                          >
-                            <Volume2 className="h-3 w-3 mr-1" />
-                            Add Voice
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            {/* Audio Library Tab */}
-            <TabsContent value="library" className="space-y-6">
-              {allAudio.length === 0 ? (
-                <Card className="border-dashed border-2 border-pink-500/30 bg-pink-500/5">
-                  <CardContent className="flex flex-col items-center justify-center py-16">
-                    <Headphones className="h-12 w-12 text-pink-500 mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">No Audio Yet</h3>
-                    <p className="text-muted-foreground text-center">
-                      Generate or upload voiceovers to see them here.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {allAudio.map(audio => (
-                    <SavedAudioCard
-                      key={audio.id}
-                      audio={{
-                        id: audio.id,
-                        name: audio.name,
-                        url: audio.url || '',
-                        timestamp: audio.timestamp
-                      }}
-                      onDelete={() => toast.info('Refresh to update list')}
-                    />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            {/* Music Tab */}
-            <TabsContent value="music" className="space-y-6">
-              {instrumentalMusic.length === 0 ? (
-                <Card className="border-dashed border-2 border-amber-500/30 bg-amber-500/5">
-                  <CardContent className="flex flex-col items-center justify-center py-16">
-                    <Music className="h-12 w-12 text-amber-500 mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">No Music Yet</h3>
-                    <p className="text-muted-foreground text-center">
-                      Upload background music tracks to use in your productions.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {instrumentalMusic.map(track => (
-                    <Card key={track.id} className="hover:border-amber-500/30 transition-colors">
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
-                            <Music className="h-5 w-5 text-white" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{track.name}</p>
-                            {track.url && <audio src={track.url} controls className="w-full mt-2 h-8" />}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
             </TabsContent>
           </Tabs>
         </div>
-
       </div>
     </AppLayout>
   );
