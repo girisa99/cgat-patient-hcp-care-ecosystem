@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +6,7 @@ import { Check, Loader2, Star, Crown, Zap, Users, Database, Cpu, HardDrive, Gift
 import { cn } from '@/lib/utils';
 import { SubscriptionTier, SUBSCRIPTION_TIERS, GenieProduct } from '@/hooks/useSubscription';
 import { ProductShowcase } from './ProductShowcase';
+import { FeaturesDialog } from './FeaturesDialog';
 
 interface EnhancedPricingCardProps {
   tier: SubscriptionTier;
@@ -44,6 +45,7 @@ export const EnhancedPricingCard = ({ tier, isCurrentPlan, onSelect, isLoading }
   const isRecommended = config.recommended;
   const isFree = tier === 'free';
   const hasRestrictions = 'restrictions' in config && Array.isArray(config.restrictions) && config.restrictions.length > 0;
+  const [showFeaturesDialog, setShowFeaturesDialog] = useState(false);
 
   return (
     <Card className={cn(
@@ -187,8 +189,13 @@ export const EnhancedPricingCard = ({ tier, isCurrentPlan, onSelect, isLoading }
               </li>
             ))}
             {config.features.length > 5 && (
-              <li className="text-xs text-primary font-medium pl-5 cursor-pointer hover:text-primary/80 hover:underline relative z-20">
-                +{config.features.length - 5} more features...
+              <li>
+                <button
+                  onClick={() => setShowFeaturesDialog(true)}
+                  className="text-xs text-primary font-medium pl-5 cursor-pointer hover:text-primary/80 hover:underline"
+                >
+                  +{config.features.length - 5} more features...
+                </button>
               </li>
             )}
           </ul>
@@ -221,6 +228,13 @@ export const EnhancedPricingCard = ({ tier, isCurrentPlan, onSelect, isLoading }
           )}
         </Button>
       </CardFooter>
+      
+      {/* Features Dialog */}
+      <FeaturesDialog 
+        open={showFeaturesDialog} 
+        onOpenChange={setShowFeaturesDialog} 
+        tier={tier} 
+      />
     </Card>
   );
 };
