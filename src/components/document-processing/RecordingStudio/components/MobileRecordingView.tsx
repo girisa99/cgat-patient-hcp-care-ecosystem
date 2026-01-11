@@ -255,62 +255,67 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
                   </Card>
                 )}
 
-                {/* Recording Area */}
-                <div className="text-center py-8">
-                  <div className="inline-flex flex-col items-center gap-4">
-                    <div className="w-48 h-48 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border-2 border-dashed border-primary/30">
-                      <Video className="h-16 w-16 text-primary/50" />
-                    </div>
-                    <p className="text-muted-foreground text-sm">
-                      Tap the record button below to start
-                    </p>
-                  </div>
+                {/* Recording Area with Inline Record Button */}
+                <div className="text-center py-4">
+                  <OneTapRecordButton
+                    variant="inline"
+                    onRecordingComplete={handleRecordingComplete}
+                    onRecordingStart={() => vibrate?.(100)}
+                  />
                 </div>
 
                 {/* Recent Recordings */}
                 {recordings.length > 0 && (
                   <Card>
-                    <CardHeader className="py-3 px-4">
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <Library className="h-4 w-4" />
+                    <CardHeader className="py-2 px-3">
+                      <CardTitle className="text-xs flex items-center gap-2">
+                        <Library className="h-3 w-3" />
                         Recent ({recordings.length})
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="py-2 px-4">
-                      <ScrollArea className="h-24">
-                        <div className="flex gap-2">
-                          {recordings.slice(0, 5).map(rec => (
-                            <div 
-                              key={rec.id} 
-                              className="w-16 h-16 bg-muted rounded flex-shrink-0 flex items-center justify-center"
-                            >
-                              {rec.type === 'video' && <Video className="h-6 w-6 text-muted-foreground" />}
-                              {rec.type === 'audio' && <Mic className="h-6 w-6 text-muted-foreground" />}
-                              {rec.type === 'photo' && (
-                                <img 
-                                  src={rec.url} 
-                                  alt="Photo" 
-                                  className="w-full h-full object-cover rounded"
-                                />
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </ScrollArea>
+                    <CardContent className="py-2 px-3">
+                      <div className="flex gap-2 overflow-x-auto">
+                        {recordings.slice(0, 5).map(rec => (
+                          <div 
+                            key={rec.id} 
+                            className="w-12 h-12 bg-muted rounded flex-shrink-0 flex items-center justify-center"
+                          >
+                            {rec.type === 'video' && <Video className="h-4 w-4 text-muted-foreground" />}
+                            {rec.type === 'audio' && <Mic className="h-4 w-4 text-muted-foreground" />}
+                            {rec.type === 'photo' && (
+                              <img 
+                                src={rec.url} 
+                                alt="Photo" 
+                                className="w-full h-full object-cover rounded"
+                              />
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </CardContent>
                   </Card>
                 )}
 
-                {/* Feature Highlights */}
-                <div className="grid grid-cols-2 gap-2 text-center">
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <Zap className="h-5 w-5 mx-auto text-yellow-500 mb-1" />
-                    <span className="text-xs">AI Enhancement</span>
-                  </div>
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <Scissors className="h-5 w-5 mx-auto text-blue-500 mb-1" />
+                {/* Quick Actions Grid */}
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    variant="outline" 
+                    className="h-auto py-3 flex flex-col gap-1"
+                    onClick={() => setActiveTab('clips')}
+                  >
+                    <Scissors className="h-4 w-4 text-blue-500" />
                     <span className="text-xs">Quick Clips</span>
-                  </div>
+                    <span className="text-[10px] text-muted-foreground">AI auto-cut</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="h-auto py-3 flex flex-col gap-1"
+                    onClick={() => setActiveTab('timeline')}
+                  >
+                    <Layers className="h-4 w-4 text-purple-500" />
+                    <span className="text-xs">Timeline</span>
+                    <span className="text-[10px] text-muted-foreground">Multi-track edit</span>
+                  </Button>
                 </div>
               </div>
             </TabsContent>
@@ -405,16 +410,7 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
         </Tabs>
       </div>
 
-      {/* Floating Record Button - Only show on Record tab, smaller and better positioned */}
-      {activeTab === 'record' && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[60]">
-          <OneTapRecordButton
-            variant="compact"
-            onRecordingComplete={handleRecordingComplete}
-            onRecordingStart={() => setActiveTab('record')}
-          />
-        </div>
-      )}
+      {/* Removed floating button - using inline record button in Record tab instead */}
 
       {/* PWA Install Prompt - Above the floating button */}
       <PWAInstallPrompt variant="banner" showOnMount={true} />
