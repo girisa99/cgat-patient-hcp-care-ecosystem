@@ -9,3 +9,5 @@ export { OneTapRecordButton } from './OneTapRecordButton';
 export { QuickClipsGenerator } from './QuickClipsGenerator';
 export { MultiClipTimeline } from './MultiClipTimeline';
 export { PWAInstallPrompt } from './PWAInstallPrompt';
+export { ScriptStitcher } from './ScriptStitcher';
+export type { ScriptSegment, MusicTrack, StitchedResult } from './ScriptStitcher';
