@@ -82,6 +82,22 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (resend) {
         try {
+          // Prepare script preview if available (truncated for email)
+          let scriptPreview = '';
+          if (session.script_content) {
+            const cleanScript = session.script_content
+              .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+              .replace(/[""]/g, '"')
+              .replace(/['']/g, "'")
+              .replace(/[\u200B-\u200D\uFEFF]/g, '')
+              .trim();
+            
+            // Truncate to first 500 characters with ellipsis
+            scriptPreview = cleanScript.length > 500 
+              ? cleanScript.substring(0, 500) + '...' 
+              : cleanScript;
+          }
+
           const emailResult = await resend.emails.send({
             from: 'Genie Studio <noreply@resend.dev>',
             to: [participant.email],
@@ -103,6 +119,8 @@ const handler = async (req: Request): Promise<Response> => {
     .btn-primary { background: linear-gradient(135deg, #8B5CF6, #EC4899); color: white; }
     .btn-secondary { background: #e5e7eb; color: #374151; }
     .calendar-buttons { margin-top: 20px; }
+    .script-preview { background: #f3f4f6; padding: 15px; border-radius: 8px; border-left: 4px solid #8B5CF6; margin-top: 15px; font-family: monospace; font-size: 13px; white-space: pre-wrap; word-wrap: break-word; max-height: 200px; overflow-y: auto; }
+    .script-header { font-weight: 600; color: #6b7280; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
   </style>
 </head>
 <body>
@@ -137,6 +155,15 @@ const handler = async (req: Request): Promise<Response> => {
         <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
           <strong>📋 Agenda:</strong>
           <p style="margin: 5px 0; white-space: pre-wrap;">${session.agenda}</p>
+        </div>
+        ` : ''}
+        ${scriptPreview ? `
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+          <div class="script-header">
+            📝 Script Preview (Attached)
+          </div>
+          <div class="script-preview">${scriptPreview}</div>
+          <p style="font-size: 12px; color: #9ca3af; margin-top: 10px;">Full script will be available during the session.</p>
         </div>
         ` : ''}
       </div>

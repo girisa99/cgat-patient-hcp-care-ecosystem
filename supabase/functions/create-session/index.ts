@@ -16,6 +16,7 @@ interface CreateSessionRequest {
   duration_minutes?: number;
   timezone?: string;
   script_id?: string;
+  script_content?: string; // Actual script content for invite attachment
   agenda?: string;
   host_name: string;
   host_email?: string;
@@ -78,6 +79,7 @@ const handler = async (req: Request): Promise<Response> => {
         duration_minutes: body.duration_minutes || 60,
         timezone: body.timezone || 'UTC',
         script_id: body.script_id,
+        script_content: body.script_content, // Store script content for invite attachment
         agenda: body.agenda,
         host_name: body.host_name,
         host_email: body.host_email,
