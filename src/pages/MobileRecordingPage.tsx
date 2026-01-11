@@ -77,88 +77,84 @@ const MobileRecordingPage: React.FC = () => {
   if (!isMobile && !forceDesktop) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background to-muted p-4 flex items-center justify-center">
-        <Card className="max-w-lg w-full">
-          <CardHeader className="text-center">
-            {/* Back Button */}
+        <Card className="max-w-lg w-full relative">
+          <CardHeader className="text-center pt-12">
+            {/* Back Button - positioned inside card */}
             <Button
               variant="ghost"
               size="sm"
               onClick={handleBackToStudio}
-              className="absolute left-4 top-4"
+              className="absolute left-2 top-2 h-8 px-2"
             >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Studio
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              <span className="text-xs">Back</span>
             </Button>
             
-            <div className="mx-auto p-4 bg-primary/10 rounded-full w-fit mb-4 mt-6">
-              <Smartphone className="h-12 w-12 text-primary" />
+            <div className="mx-auto p-3 bg-primary/10 rounded-full w-fit mb-3">
+              <Smartphone className="h-10 w-10 text-primary" />
             </div>
-            <CardTitle className="text-2xl">Genie Vibe Mobile</CardTitle>
-            <p className="text-muted-foreground">
+            <CardTitle className="text-xl">Genie Vibe Mobile</CardTitle>
+            <p className="text-muted-foreground text-sm">
               The best recording experience is on your phone
             </p>
           </CardHeader>
           
-          <CardContent className="space-y-6">
-            {/* QR Code placeholder */}
-            <div className="text-center p-6 border-2 border-dashed rounded-xl bg-muted/50">
-              <div className="w-32 h-32 mx-auto bg-muted rounded-lg flex items-center justify-center mb-3">
-                <Video className="h-12 w-12 text-muted-foreground" />
+          <CardContent className="space-y-4 px-4 pb-4">
+            {/* QR Code placeholder - simplified without URL display */}
+            <div className="text-center p-4 border-2 border-dashed rounded-xl bg-muted/50">
+              <div className="w-24 h-24 mx-auto bg-muted rounded-lg flex items-center justify-center mb-2">
+                <Video className="h-10 w-10 text-muted-foreground" />
               </div>
-              <p className="text-sm text-muted-foreground">
-                Scan with your phone camera or visit this URL on mobile
+              <p className="text-xs text-muted-foreground">
+                Scan with your phone camera to open on mobile
               </p>
-              <code className="text-xs bg-muted px-2 py-1 rounded mt-2 block">
-                {window.location.href}
-              </code>
             </div>
 
-            {/* Mobile Features */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 bg-muted/50 rounded-lg text-center">
-                <Zap className="h-6 w-6 mx-auto text-yellow-500 mb-2" />
-                <span className="text-sm font-medium">One-Tap Record</span>
-                <p className="text-xs text-muted-foreground">Video, Audio, Photo</p>
+            {/* Mobile Features - compact grid */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="p-2 bg-muted/50 rounded-lg text-center">
+                <Zap className="h-5 w-5 mx-auto text-yellow-500 mb-1" />
+                <span className="text-xs font-medium block">One-Tap Record</span>
+                <p className="text-[10px] text-muted-foreground">Video, Audio, Photo</p>
               </div>
-              <div className="p-3 bg-muted/50 rounded-lg text-center">
-                <Scissors className="h-6 w-6 mx-auto text-blue-500 mb-2" />
-                <span className="text-sm font-medium">AI Quick Clips</span>
-                <p className="text-xs text-muted-foreground">Auto-generate clips</p>
+              <div className="p-2 bg-muted/50 rounded-lg text-center">
+                <Scissors className="h-5 w-5 mx-auto text-blue-500 mb-1" />
+                <span className="text-xs font-medium block">AI Quick Clips</span>
+                <p className="text-[10px] text-muted-foreground">Auto-generate clips</p>
               </div>
-              <div className="p-3 bg-muted/50 rounded-lg text-center">
-                <Layers className="h-6 w-6 mx-auto text-purple-500 mb-2" />
-                <span className="text-sm font-medium">Multi-Clip Timeline</span>
-                <p className="text-xs text-muted-foreground">Combine & edit</p>
+              <div className="p-2 bg-muted/50 rounded-lg text-center">
+                <Layers className="h-5 w-5 mx-auto text-purple-500 mb-1" />
+                <span className="text-xs font-medium block">Multi-Clip Timeline</span>
+                <p className="text-[10px] text-muted-foreground">Combine & edit</p>
               </div>
-              <div className="p-3 bg-muted/50 rounded-lg text-center">
-                <Wifi className="h-6 w-6 mx-auto text-green-500 mb-2" />
-                <span className="text-sm font-medium">Works Offline</span>
-                <p className="text-xs text-muted-foreground">Sync when online</p>
+              <div className="p-2 bg-muted/50 rounded-lg text-center">
+                <Wifi className="h-5 w-5 mx-auto text-green-500 mb-1" />
+                <span className="text-xs font-medium block">Works Offline</span>
+                <p className="text-[10px] text-muted-foreground">Sync when online</p>
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="space-y-3">
+            {/* Actions - compact buttons */}
+            <div className="space-y-2">
               <Button 
-                className="w-full" 
+                className="w-full h-10 text-sm" 
                 onClick={() => setForceDesktop(true)}
               >
-                <Monitor className="h-4 w-4 mr-2" />
-                Continue on Desktop (Preview Mobile UI)
-                <ArrowRight className="h-4 w-4 ml-2" />
+                <Monitor className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span className="truncate">Preview Mobile UI on Desktop</span>
               </Button>
               
               <Button 
                 variant="outline" 
-                className="w-full"
+                className="w-full h-10 text-sm"
                 onClick={() => navigate('/genie-vibe')}
               >
-                Open Full Genie Vibe Desktop Studio
+                Open Full Genie Vibe Studio
               </Button>
               
               <Button 
                 variant="ghost" 
-                className="w-full"
+                className="w-full h-9 text-xs"
                 onClick={() => navigate('/genie-studio')}
               >
                 Back to Genie Studio Hub
@@ -167,8 +163,8 @@ const MobileRecordingPage: React.FC = () => {
 
             {/* Badge */}
             <div className="text-center">
-              <Badge variant="secondary" className="text-xs">
-                <Sparkles className="h-3 w-3 mr-1" />
+              <Badge variant="secondary" className="text-[10px]">
+                <Sparkles className="h-2.5 w-2.5 mr-1" />
                 68% of creators prefer mobile-first recording
               </Badge>
             </div>
