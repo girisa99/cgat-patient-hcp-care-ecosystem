@@ -1,21 +1,35 @@
 /**
  * Capacitor Native Features Hook
  * Provides unified access to all native mobile capabilities
+ * Uses dynamic imports to prevent build failures when running on web
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
-import { App } from '@capacitor/app';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-import { Geolocation, Position } from '@capacitor/geolocation';
-import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
-import { PushNotifications, Token, PushNotificationSchema } from '@capacitor/push-notifications';
-import { StatusBar, Style } from '@capacitor/status-bar';
 
 export interface CapacitorState {
   isNative: boolean;
   platform: 'web' | 'ios' | 'android';
   isReady: boolean;
+}
+
+export interface PositionData {
+  coords: {
+    latitude: number;
+    longitude: number;
+    accuracy: number;
+    altitude: number | null;
+    altitudeAccuracy: number | null;
+    heading: number | null;
+    speed: number | null;
+  };
+  timestamp: number;
+}
+
+export interface PushNotificationData {
+  title?: string;
+  body?: string;
+  data?: Record<string, unknown>;
 }
 
 export interface UseCapacitorReturn {
@@ -27,8 +41,8 @@ export interface UseCapacitorReturn {
   pickFromGallery: () => Promise<string | null>;
   
   // Location
-  getCurrentPosition: () => Promise<Position | null>;
-  watchPosition: (callback: (position: Position) => void) => Promise<string | null>;
+  getCurrentPosition: () => Promise<PositionData | null>;
+  watchPosition: (callback: (position: PositionData) => void) => Promise<string | null>;
   clearWatch: (watchId: string) => Promise<void>;
   
   // Haptics
@@ -37,7 +51,7 @@ export interface UseCapacitorReturn {
   
   // Push Notifications
   registerPush: () => Promise<string | null>;
-  onPushReceived: (callback: (notification: PushNotificationSchema) => void) => void;
+  onPushReceived: (callback: (notification: PushNotificationData) => void) => void;
   
   // Status Bar
   setStatusBarStyle: (style: 'dark' | 'light') => Promise<void>;
@@ -64,6 +78,7 @@ export const useCapacitor = (): UseCapacitorReturn => {
         
         // Setup status bar for native apps
         try {
+          const { StatusBar, Style } = await import('@capacitor/status-bar');
           await StatusBar.setStyle({ style: Style.Dark });
           await StatusBar.setBackgroundColor({ color: '#0f172a' });
         } catch (e) {
@@ -80,6 +95,8 @@ export const useCapacitor = (): UseCapacitorReturn => {
   // Camera functions
   const takePhoto = useCallback(async (): Promise<string | null> => {
     try {
+      const { Camera, CameraResultType, CameraSource } = await import('@capacitor/camera');
+      
       const permission = await Camera.checkPermissions();
       if (permission.camera !== 'granted') {
         await Camera.requestPermissions();
@@ -102,6 +119,8 @@ export const useCapacitor = (): UseCapacitorReturn => {
 
   const pickFromGallery = useCallback(async (): Promise<string | null> => {
     try {
+      const { Camera, CameraResultType, CameraSource } = await import('@capacitor/camera');
+      
       const image = await Camera.getPhoto({
         quality: 90,
         allowEditing: false,
@@ -117,29 +136,35 @@ export const useCapacitor = (): UseCapacitorReturn => {
   }, []);
 
   // Location functions
-  const getCurrentPosition = useCallback(async (): Promise<Position | null> => {
+  const getCurrentPosition = useCallback(async (): Promise<PositionData | null> => {
     try {
+      const { Geolocation } = await import('@capacitor/geolocation');
+      
       const permission = await Geolocation.checkPermissions();
       if (permission.location !== 'granted') {
         await Geolocation.requestPermissions();
       }
 
-      return await Geolocation.getCurrentPosition({
+      const position = await Geolocation.getCurrentPosition({
         enableHighAccuracy: true,
         timeout: 10000,
       });
+      
+      return position as PositionData;
     } catch (error) {
       console.error('Location error:', error);
       return null;
     }
   }, []);
 
-  const watchPosition = useCallback(async (callback: (position: Position) => void): Promise<string | null> => {
+  const watchPosition = useCallback(async (callback: (position: PositionData) => void): Promise<string | null> => {
     try {
+      const { Geolocation } = await import('@capacitor/geolocation');
+      
       const watchId = await Geolocation.watchPosition(
         { enableHighAccuracy: true },
         (position, err) => {
-          if (position) callback(position);
+          if (position) callback(position as PositionData);
           if (err) console.error('Watch position error:', err);
         }
       );
@@ -151,32 +176,49 @@ export const useCapacitor = (): UseCapacitorReturn => {
   }, []);
 
   const clearWatch = useCallback(async (watchId: string): Promise<void> => {
-    await Geolocation.clearWatch({ id: watchId });
+    try {
+      const { Geolocation } = await import('@capacitor/geolocation');
+      await Geolocation.clearWatch({ id: watchId });
+    } catch (error) {
+      console.error('Clear watch error:', error);
+    }
   }, []);
 
   // Haptics functions
   const vibrate = useCallback(async (style: 'light' | 'medium' | 'heavy' = 'medium'): Promise<void> => {
     if (!state.isNative) return;
     
-    const impactStyles: Record<string, ImpactStyle> = {
-      light: ImpactStyle.Light,
-      medium: ImpactStyle.Medium,
-      heavy: ImpactStyle.Heavy,
-    };
+    try {
+      const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
+      
+      const impactStyles: Record<string, typeof ImpactStyle[keyof typeof ImpactStyle]> = {
+        light: ImpactStyle.Light,
+        medium: ImpactStyle.Medium,
+        heavy: ImpactStyle.Heavy,
+      };
 
-    await Haptics.impact({ style: impactStyles[style] });
+      await Haptics.impact({ style: impactStyles[style] });
+    } catch (error) {
+      console.error('Haptics error:', error);
+    }
   }, [state.isNative]);
 
   const notificationHaptic = useCallback(async (type: 'success' | 'warning' | 'error' = 'success'): Promise<void> => {
     if (!state.isNative) return;
     
-    const notificationTypes: Record<string, NotificationType> = {
-      success: NotificationType.Success,
-      warning: NotificationType.Warning,
-      error: NotificationType.Error,
-    };
+    try {
+      const { Haptics, NotificationType } = await import('@capacitor/haptics');
+      
+      const notificationTypes: Record<string, typeof NotificationType[keyof typeof NotificationType]> = {
+        success: NotificationType.Success,
+        warning: NotificationType.Warning,
+        error: NotificationType.Error,
+      };
 
-    await Haptics.notification({ type: notificationTypes[type] });
+      await Haptics.notification({ type: notificationTypes[type] });
+    } catch (error) {
+      console.error('Notification haptic error:', error);
+    }
   }, [state.isNative]);
 
   // Push Notifications functions
@@ -187,6 +229,8 @@ export const useCapacitor = (): UseCapacitorReturn => {
     }
 
     try {
+      const { PushNotifications } = await import('@capacitor/push-notifications');
+      
       const permission = await PushNotifications.checkPermissions();
       if (permission.receive !== 'granted') {
         await PushNotifications.requestPermissions();
@@ -195,7 +239,7 @@ export const useCapacitor = (): UseCapacitorReturn => {
       await PushNotifications.register();
 
       return new Promise((resolve) => {
-        PushNotifications.addListener('registration', (token: Token) => {
+        PushNotifications.addListener('registration', (token) => {
           console.log('Push registration token:', token.value);
           resolve(token.value);
         });
@@ -211,44 +255,101 @@ export const useCapacitor = (): UseCapacitorReturn => {
     }
   }, [state.isNative]);
 
-  const onPushReceived = useCallback((callback: (notification: PushNotificationSchema) => void): void => {
+  const onPushReceived = useCallback((callback: (notification: PushNotificationData) => void): void => {
     if (!state.isNative) return;
 
-    PushNotifications.addListener('pushNotificationReceived', callback);
-    PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-      callback(action.notification);
-    });
+    const setupListeners = async () => {
+      try {
+        const { PushNotifications } = await import('@capacitor/push-notifications');
+        
+        PushNotifications.addListener('pushNotificationReceived', (notification) => {
+          callback(notification as PushNotificationData);
+        });
+        PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+          callback(action.notification as PushNotificationData);
+        });
+      } catch (error) {
+        console.error('Push listener setup error:', error);
+      }
+    };
+    
+    setupListeners();
   }, [state.isNative]);
 
   // Status Bar functions
   const setStatusBarStyle = useCallback(async (style: 'dark' | 'light'): Promise<void> => {
     if (!state.isNative) return;
-    await StatusBar.setStyle({ style: style === 'dark' ? Style.Dark : Style.Light });
+    
+    try {
+      const { StatusBar, Style } = await import('@capacitor/status-bar');
+      await StatusBar.setStyle({ style: style === 'dark' ? Style.Dark : Style.Light });
+    } catch (error) {
+      console.error('StatusBar style error:', error);
+    }
   }, [state.isNative]);
 
   const hideStatusBar = useCallback(async (): Promise<void> => {
     if (!state.isNative) return;
-    await StatusBar.hide();
+    
+    try {
+      const { StatusBar } = await import('@capacitor/status-bar');
+      await StatusBar.hide();
+    } catch (error) {
+      console.error('StatusBar hide error:', error);
+    }
   }, [state.isNative]);
 
   const showStatusBar = useCallback(async (): Promise<void> => {
     if (!state.isNative) return;
-    await StatusBar.show();
+    
+    try {
+      const { StatusBar } = await import('@capacitor/status-bar');
+      await StatusBar.show();
+    } catch (error) {
+      console.error('StatusBar show error:', error);
+    }
   }, [state.isNative]);
 
   // App Lifecycle functions
   const onAppStateChange = useCallback((callback: (isActive: boolean) => void): void => {
-    App.addListener('appStateChange', ({ isActive }) => {
-      callback(isActive);
-    });
+    const setupListener = async () => {
+      try {
+        const { App } = await import('@capacitor/app');
+        App.addListener('appStateChange', ({ isActive }) => {
+          callback(isActive);
+        });
+      } catch (error) {
+        console.error('App state listener error:', error);
+      }
+    };
+    
+    setupListener();
   }, []);
 
   const onBackButton = useCallback((callback: () => void): void => {
-    App.addListener('backButton', callback);
+    const setupListener = async () => {
+      try {
+        const { App } = await import('@capacitor/app');
+        App.addListener('backButton', callback);
+      } catch (error) {
+        console.error('Back button listener error:', error);
+      }
+    };
+    
+    setupListener();
   }, []);
 
   const exitApp = useCallback((): void => {
-    App.exitApp();
+    const doExit = async () => {
+      try {
+        const { App } = await import('@capacitor/app');
+        App.exitApp();
+      } catch (error) {
+        console.error('Exit app error:', error);
+      }
+    };
+    
+    doExit();
   }, []);
 
   return {
