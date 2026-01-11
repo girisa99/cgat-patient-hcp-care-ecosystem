@@ -12,15 +12,27 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
     allowedHosts: ["localhost", "dev.geniecellgene.com", "genieaiexpermentationhub.com"],
   },
+  build: {
+    rollupOptions: {
+      external: [
+        '@capacitor/geolocation',
+        '@capacitor/camera',
+        '@capacitor/haptics',
+        '@capacitor/push-notifications',
+        '@capacitor/status-bar',
+        '@capacitor/app',
+      ],
+    },
+  },
   plugins: [
     react(),
     mode === 'development' && componentTagger(),
     stabilityFrameworkPlugin({
       enabled: true,
       failOnViolations: false,
-      warnOnDuplicates: false,  // Disable size warnings
+      warnOnDuplicates: false,
       checkNaming: true,
-      checkComplexity: false,   // Disable complexity warnings (too noisy for large codebase)
+      checkComplexity: false,
       maxComplexity: 100,
       maxFileSize: 1000
     }),
