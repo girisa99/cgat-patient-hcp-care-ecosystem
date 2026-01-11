@@ -7,8 +7,8 @@ import { ArrowRight, Check, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
-// Import logos - matching architecture
-import genieStudioLogo from '@/assets/logos/genie-studio-combined.png';
+// Import logos from assets - using horizontal/banner versions for consistency
+import genieStudioLogo from '@/assets/logos/genie-studio-horizontal.png';
 import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
 import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
 import genieMindLogo from '@/assets/logos/genie-mind-combined.png';
