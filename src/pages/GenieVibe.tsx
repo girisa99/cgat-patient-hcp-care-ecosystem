@@ -51,8 +51,8 @@ const GenieVibe: React.FC = () => {
   const isMobile = useIsMobile();
   const voiceoverUploadRef = useRef<HTMLInputElement>(null);
   
-  // Force desktop view toggle (for testing on mobile)
-  const [forceDesktopView, setForceDesktopView] = useState(false);
+  // View mode: 'desktop' or 'mobile' - auto-detect based on device
+  const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>(isMobile ? 'mobile' : 'desktop');
   
   // Existing hooks - data flow unchanged
   const { scripts: savedScripts, updateScript } = useGenieScripts();
@@ -78,6 +78,13 @@ const GenieVibe: React.FC = () => {
     id: s.id,
     title: s.name,
     content: s.enhancedContent || s.content || ''
+  }));
+
+  // Music formatted for mobile view
+  const musicForMobile = instrumentalMusic.map(m => ({
+    id: m.id,
+    name: m.name,
+    url: m.url
   }));
 
   const handleGenerateTTS = async () => {
@@ -114,8 +121,8 @@ const GenieVibe: React.FC = () => {
   // Scripts ready for voice
   const scriptsNeedingVoice = savedScripts.filter(s => (s.enhancedContent || s.content) && !s.hasVoiceover);
 
-  // Determine if we should show mobile view
-  const showMobileView = isMobile && !forceDesktopView;
+  // Use a variable to check mode to avoid TypeScript narrowing issues
+  const showMobileView = viewMode === 'mobile';
 
   // ============================================================
   // MOBILE VIEW - Streamlined recording-first experience
@@ -126,8 +133,10 @@ const GenieVibe: React.FC = () => {
         isOpen={true}
         onClose={() => navigate('/genie-studio')}
         scripts={scriptsForMobile}
+        music={musicForMobile}
+        onSwitchToDesktop={() => setViewMode('desktop')}
         onRecordingComplete={(result) => {
-          console.log('Mobile recording complete:', result);
+          console.log('Recording complete:', result);
           refreshMedia();
         }}
       />
@@ -171,38 +180,26 @@ const GenieVibe: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-3">
-                {/* View Mode Toggle - Only show on tablet/small desktop */}
-                <div className="hidden md:flex items-center gap-1 p-1 bg-muted/50 rounded-lg">
+                {/* View Mode Toggle */}
+                <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-lg">
                   <Button
-                    variant={!showMobileView ? "secondary" : "ghost"}
+                    variant="secondary"
                     size="sm"
                     className="gap-1"
-                    onClick={() => setForceDesktopView(true)}
                   >
                     <Monitor className="h-4 w-4" />
-                    Desktop
+                    <span className="hidden sm:inline">Desktop</span>
                   </Button>
                   <Button
-                    variant={showMobileView ? "secondary" : "ghost"}
+                    variant="ghost"
                     size="sm"
                     className="gap-1"
-                    onClick={() => setForceDesktopView(false)}
+                    onClick={() => setViewMode('mobile')}
                   >
                     <Smartphone className="h-4 w-4" />
-                    Mobile Preview
+                    <span className="hidden sm:inline">Mobile</span>
                   </Button>
                 </div>
-
-                {/* Link to Mobile Page */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1"
-                  onClick={() => navigate('/genie-vibe/mobile')}
-                >
-                  <Smartphone className="h-4 w-4" />
-                  Open Mobile View
-                </Button>
 
                 <Badge className="bg-pink-500/10 text-pink-600 border-pink-500/20">
                   {allAudio.length} Voiceovers
