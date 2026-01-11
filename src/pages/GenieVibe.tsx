@@ -68,7 +68,7 @@ interface VideoTrack {
   visible: boolean;
 }
 
-// Audio track from mixer
+// Audio track from mixer (with sync properties)
 interface AudioTrackMix {
   id: string;
   name: string;
@@ -77,6 +77,12 @@ interface AudioTrackMix {
   duration?: number;
   volume: number;
   muted: boolean;
+  // Sync properties
+  startOffset: number;
+  fadeIn: number;
+  fadeOut: number;
+  trimStart: number;
+  trimEnd: number;
 }
 
 // Mixed output result (video + audio)
@@ -85,6 +91,7 @@ interface MixedResult {
   audioTracks: AudioTrackMix[];
   totalDuration: number;
   masterVolume: number;
+  syncPoints?: { videoTime: number; audioTrackId: string; label?: string }[];
 }
 
 const GenieVibe: React.FC = () => {
@@ -570,6 +577,7 @@ const GenieVibe: React.FC = () => {
                   
                   <MultiClipTimeline
                     clips={timelineClips}
+                    mixedAudioTracks={mixedMedia?.audioTracks}
                     onClipsChange={setTimelineClips}
                     onExport={handleTimelineExport}
                   />
