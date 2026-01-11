@@ -101,6 +101,15 @@ interface Competitor {
   weaknesses: string[];
   pricing: string;
   threat: 'Low' | 'Medium' | 'High';
+  // Enhanced market intelligence
+  userBase: string;
+  languages: number;
+  subscriptionModel: string;
+  revenue: string;
+  founded: number;
+  yearsInMarket: number;
+  genieDifferentiator: string;
+  improvementNeeded: string;
 }
 
 interface AppOpportunity {
@@ -188,35 +197,35 @@ const segments: Segment[] = [
 
 const competitors: Competitor[] = [
   // Creator Economy
-  { name: 'Descript', segment: 'Creator Economy', type: 'Direct', strengths: ['Transcription-first editing', 'Overdub voice cloning', 'Collaboration'], weaknesses: ['Expensive', 'Complex for beginners', 'Desktop only'], pricing: '$12-24/mo', threat: 'High' },
-  { name: 'Riverside.fm', segment: 'Creator Economy', type: 'Direct', strengths: ['Studio-quality remote recording', 'Separate tracks'], weaknesses: ['Limited post-production', 'No AI editing'], pricing: '$15-24/mo', threat: 'Medium' },
-  { name: 'Kapwing', segment: 'Creator Economy', type: 'Direct', strengths: ['Easy-to-use', 'Collaborative', 'Web-based'], weaknesses: ['Basic features', 'Watermarks on free'], pricing: '$16-24/mo', threat: 'Medium' },
-  { name: 'CapCut', segment: 'Creator Economy', type: 'Direct', strengths: ['Free tier', 'TikTok integration', 'Mobile-first'], weaknesses: ['Limited AI', 'No voice cloning', 'Basic analytics'], pricing: 'Free/$8/mo', threat: 'High' },
-  { name: 'ElevenLabs', segment: 'Creator Economy', type: 'Feature', strengths: ['Best-in-class voice cloning', 'Multiple voices'], weaknesses: ['No editing workflow', 'Standalone only'], pricing: '$5-99/mo', threat: 'Low' },
-  { name: 'Opus Clip', segment: 'Creator Economy', type: 'Feature', strengths: ['AI clip generation', 'Viral scoring'], weaknesses: ['No production suite', 'Limited customization'], pricing: '$15-39/mo', threat: 'Medium' },
-  { name: 'Clipchamp', segment: 'Creator Economy', type: 'Platform', strengths: ['Microsoft integration', 'Free tier', 'Web-based'], weaknesses: ['Basic features', 'No AI', 'Limited export'], pricing: 'Free/$11.99/mo', threat: 'Medium' },
+  { name: 'Descript', segment: 'Creator Economy', type: 'Direct', strengths: ['Transcription-first editing', 'Overdub voice cloning', 'Collaboration'], weaknesses: ['Expensive', 'Complex for beginners', 'Desktop only'], pricing: '$12-24/mo', threat: 'High', userBase: '3M+', languages: 25, subscriptionModel: 'Freemium + Tiered', revenue: '$50M ARR', founded: 2017, yearsInMarket: 9, genieDifferentiator: 'Unified script-to-publish pipeline, mobile-first, healthcare compliance', improvementNeeded: 'Match voice cloning quality, add desktop app' },
+  { name: 'Riverside.fm', segment: 'Creator Economy', type: 'Direct', strengths: ['Studio-quality remote recording', 'Separate tracks'], weaknesses: ['Limited post-production', 'No AI editing'], pricing: '$15-24/mo', threat: 'Medium', userBase: '500K+', languages: 12, subscriptionModel: 'Tiered Monthly', revenue: '$15M ARR', founded: 2020, yearsInMarket: 6, genieDifferentiator: 'Integrated post-production AI, script-first workflow', improvementNeeded: 'Add multi-guest remote recording' },
+  { name: 'Kapwing', segment: 'Creator Economy', type: 'Direct', strengths: ['Easy-to-use', 'Collaborative', 'Web-based'], weaknesses: ['Basic features', 'Watermarks on free'], pricing: '$16-24/mo', threat: 'Medium', userBase: '10M+', languages: 8, subscriptionModel: 'Freemium', revenue: '$20M ARR', founded: 2017, yearsInMarket: 9, genieDifferentiator: 'AI-powered auto-edit, TTS integration, no watermarks', improvementNeeded: 'Improve collaboration features' },
+  { name: 'CapCut', segment: 'Creator Economy', type: 'Direct', strengths: ['Free tier', 'TikTok integration', 'Mobile-first'], weaknesses: ['Limited AI', 'No voice cloning', 'Basic analytics'], pricing: 'Free/$8/mo', threat: 'High', userBase: '500M+', languages: 45, subscriptionModel: 'Freemium', revenue: '$200M+ ARR', founded: 2020, yearsInMarket: 6, genieDifferentiator: 'Script-first workflow, voice cloning, segment-specific templates', improvementNeeded: 'Match mobile UX polish, add trending sounds' },
+  { name: 'ElevenLabs', segment: 'Creator Economy', type: 'Feature', strengths: ['Best-in-class voice cloning', 'Multiple voices'], weaknesses: ['No editing workflow', 'Standalone only'], pricing: '$5-99/mo', threat: 'Low', userBase: '2M+', languages: 32, subscriptionModel: 'Usage-based + Tiered', revenue: '$80M ARR', founded: 2022, yearsInMarket: 4, genieDifferentiator: 'Integrated TTS in full production suite, not standalone', improvementNeeded: 'Improve voice quality parity' },
+  { name: 'Opus Clip', segment: 'Creator Economy', type: 'Feature', strengths: ['AI clip generation', 'Viral scoring'], weaknesses: ['No production suite', 'Limited customization'], pricing: '$15-39/mo', threat: 'Medium', userBase: '1M+', languages: 15, subscriptionModel: 'Tiered Monthly', revenue: '$25M ARR', founded: 2022, yearsInMarket: 4, genieDifferentiator: 'Full production pipeline, not just clipping', improvementNeeded: 'Add viral scoring algorithm' },
+  { name: 'Clipchamp', segment: 'Creator Economy', type: 'Platform', strengths: ['Microsoft integration', 'Free tier', 'Web-based'], weaknesses: ['Basic features', 'No AI', 'Limited export'], pricing: 'Free/$11.99/mo', threat: 'Medium', userBase: '20M+', languages: 20, subscriptionModel: 'Freemium (M365 bundled)', revenue: 'N/A (Microsoft)', founded: 2013, yearsInMarket: 13, genieDifferentiator: 'AI-powered editing, script workflow, segment templates', improvementNeeded: 'Add Office integration' },
   // Traveler
-  { name: 'InShot', segment: 'Traveler/Experience', type: 'Direct', strengths: ['Mobile-native', 'Social templates', 'Easy filters'], weaknesses: ['Ads', 'Limited pro features', 'No desktop'], pricing: 'Free/$3.99/mo', threat: 'Medium' },
-  { name: 'GoPro Quik', segment: 'Traveler/Experience', type: 'Direct', strengths: ['Action cam integration', 'Auto-edit'], weaknesses: ['GoPro-centric', 'Limited features'], pricing: 'Free/$9.99/yr', threat: 'Low' },
+  { name: 'InShot', segment: 'Traveler/Experience', type: 'Direct', strengths: ['Mobile-native', 'Social templates', 'Easy filters'], weaknesses: ['Ads', 'Limited pro features', 'No desktop'], pricing: 'Free/$3.99/mo', threat: 'Medium', userBase: '500M+', languages: 30, subscriptionModel: 'Freemium + Ads', revenue: '$100M+ ARR', founded: 2015, yearsInMarket: 11, genieDifferentiator: 'AI auto-edit travel montage, location tagging, offline sync', improvementNeeded: 'Match filter variety, social templates' },
+  { name: 'GoPro Quik', segment: 'Traveler/Experience', type: 'Direct', strengths: ['Action cam integration', 'Auto-edit'], weaknesses: ['GoPro-centric', 'Limited features'], pricing: 'Free/$9.99/yr', threat: 'Low', userBase: '10M+', languages: 12, subscriptionModel: 'Hardware-bundled + Subscription', revenue: 'N/A (GoPro)', founded: 2016, yearsInMarket: 10, genieDifferentiator: 'Device-agnostic, AI narration, trip story templates', improvementNeeded: 'Add action cam auto-detect' },
   // SMB
-  { name: 'Loom', segment: 'SMB Marketing', type: 'Direct', strengths: ['Screen recording', 'Quick sharing', 'Analytics'], weaknesses: ['Limited editing', 'No AI features'], pricing: '$12.50/mo', threat: 'High' },
-  { name: 'Synthesia', segment: 'SMB Marketing', type: 'Direct', strengths: ['AI avatars', 'Multi-language'], weaknesses: ['Expensive', 'Robotic feel'], pricing: '$22-67/mo', threat: 'High' },
-  { name: 'Pictory', segment: 'SMB Marketing', type: 'Direct', strengths: ['Blog-to-video', 'AI summary'], weaknesses: ['Template-bound', 'Limited customization'], pricing: '$19-39/mo', threat: 'Medium' },
-  { name: 'InVideo', segment: 'SMB Marketing', type: 'Direct', strengths: ['Templates', 'Stock library', '5000+ templates'], weaknesses: ['Quality ceiling', 'Learning curve'], pricing: '$15-30/mo', threat: 'Medium' },
-  { name: 'Canva Video', segment: 'SMB Marketing', type: 'Feature', strengths: ['Brand kits', 'Templates', 'Team features'], weaknesses: ['Basic editing', 'No AI narration', 'Limited effects'], pricing: '$12.99/mo', threat: 'Medium' },
+  { name: 'Loom', segment: 'SMB Marketing', type: 'Direct', strengths: ['Screen recording', 'Quick sharing', 'Analytics'], weaknesses: ['Limited editing', 'No AI features'], pricing: '$12.50/mo', threat: 'High', userBase: '25M+', languages: 10, subscriptionModel: 'Freemium + Tiered', revenue: '$150M ARR', founded: 2015, yearsInMarket: 11, genieDifferentiator: 'AI editing, script generation, approval workflows', improvementNeeded: 'Add quick screen recording mode' },
+  { name: 'Synthesia', segment: 'SMB Marketing', type: 'Direct', strengths: ['AI avatars', 'Multi-language'], weaknesses: ['Expensive', 'Robotic feel'], pricing: '$22-67/mo', threat: 'High', userBase: '100K+', languages: 140, subscriptionModel: 'Tiered Monthly/Annual', revenue: '$60M ARR', founded: 2017, yearsInMarket: 9, genieDifferentiator: '70% cheaper, natural TTS, real presenter option', improvementNeeded: 'Add AI avatar option' },
+  { name: 'Pictory', segment: 'SMB Marketing', type: 'Direct', strengths: ['Blog-to-video', 'AI summary'], weaknesses: ['Template-bound', 'Limited customization'], pricing: '$19-39/mo', threat: 'Medium', userBase: '200K+', languages: 8, subscriptionModel: 'Tiered Monthly', revenue: '$10M ARR', founded: 2020, yearsInMarket: 6, genieDifferentiator: 'Full editing control, not template-bound', improvementNeeded: 'Add blog/article import' },
+  { name: 'InVideo', segment: 'SMB Marketing', type: 'Direct', strengths: ['Templates', 'Stock library', '5000+ templates'], weaknesses: ['Quality ceiling', 'Learning curve'], pricing: '$15-30/mo', threat: 'Medium', userBase: '7M+', languages: 16, subscriptionModel: 'Freemium + Tiered', revenue: '$35M ARR', founded: 2017, yearsInMarket: 9, genieDifferentiator: 'AI-first approach, simpler UX, segment templates', improvementNeeded: 'Expand template library' },
+  { name: 'Canva Video', segment: 'SMB Marketing', type: 'Feature', strengths: ['Brand kits', 'Templates', 'Team features'], weaknesses: ['Basic editing', 'No AI narration', 'Limited effects'], pricing: '$12.99/mo', threat: 'Medium', userBase: '170M+', languages: 100, subscriptionModel: 'Freemium + Pro', revenue: '$2.3B ARR', founded: 2013, yearsInMarket: 13, genieDifferentiator: 'AI TTS, script-first, advanced editing', improvementNeeded: 'Add brand kit import' },
   // Education
-  { name: 'Loom Education', segment: 'Education', type: 'Direct', strengths: ['Free for edu', 'Simple', 'Async learning'], weaknesses: ['No production tools', 'Basic features'], pricing: 'Free', threat: 'Low' },
-  { name: 'Panopto', segment: 'Education', type: 'Platform', strengths: ['LMS integration', 'Lecture capture'], weaknesses: ['Enterprise pricing', 'Complex'], pricing: 'Custom', threat: 'High' },
-  { name: 'Edpuzzle', segment: 'Education', type: 'Feature', strengths: ['Interactive videos', 'Student tracking'], weaknesses: ['Limited creation', 'K-12 focus'], pricing: 'Free/$8/mo', threat: 'Medium' },
-  { name: 'WeVideo', segment: 'Education', type: 'Direct', strengths: ['LTI integration', 'Student accounts', 'Chromebook support'], weaknesses: ['Dated UI', 'Limited AI', 'Slow rendering'], pricing: '$4.99-15.99/mo', threat: 'Medium' },
+  { name: 'Loom Education', segment: 'Education', type: 'Direct', strengths: ['Free for edu', 'Simple', 'Async learning'], weaknesses: ['No production tools', 'Basic features'], pricing: 'Free', threat: 'Low', userBase: '5M+ edu', languages: 10, subscriptionModel: 'Free for Education', revenue: 'N/A (part of Loom)', founded: 2015, yearsInMarket: 11, genieDifferentiator: 'Full production suite, LMS integration, student tracking', improvementNeeded: 'Add edu-specific free tier' },
+  { name: 'Panopto', segment: 'Education', type: 'Platform', strengths: ['LMS integration', 'Lecture capture'], weaknesses: ['Enterprise pricing', 'Complex'], pricing: 'Custom', threat: 'High', userBase: '1000+ institutions', languages: 20, subscriptionModel: 'Enterprise Annual', revenue: '$100M+ ARR', founded: 2007, yearsInMarket: 19, genieDifferentiator: 'Affordable, AI-powered, modern UX, no enterprise bloat', improvementNeeded: 'Deepen LMS integrations' },
+  { name: 'Edpuzzle', segment: 'Education', type: 'Feature', strengths: ['Interactive videos', 'Student tracking'], weaknesses: ['Limited creation', 'K-12 focus'], pricing: 'Free/$8/mo', threat: 'Medium', userBase: '20M+ teachers', languages: 15, subscriptionModel: 'Freemium', revenue: '$30M ARR', founded: 2013, yearsInMarket: 13, genieDifferentiator: 'Full creation + interactivity, K-12 to higher ed', improvementNeeded: 'Add interactive quiz overlay' },
+  { name: 'WeVideo', segment: 'Education', type: 'Direct', strengths: ['LTI integration', 'Student accounts', 'Chromebook support'], weaknesses: ['Dated UI', 'Limited AI', 'Slow rendering'], pricing: '$4.99-15.99/mo', threat: 'Medium', userBase: '30M+', languages: 8, subscriptionModel: 'Freemium + Edu Plans', revenue: '$25M ARR', founded: 2011, yearsInMarket: 15, genieDifferentiator: 'Modern AI-first UX, faster rendering, mobile support', improvementNeeded: 'Add Chromebook optimization' },
   // Healthcare
-  { name: 'Healthwise', segment: 'Healthcare', type: 'Direct', strengths: ['Clinical content library', 'Evidence-based'], weaknesses: ['No customization', 'Expensive'], pricing: 'Custom', threat: 'Medium' },
-  { name: 'Emmi Solutions', segment: 'Healthcare', type: 'Direct', strengths: ['Patient engagement', 'Multi-language'], weaknesses: ['Expensive', 'Limited personalization'], pricing: 'Custom', threat: 'Medium' },
+  { name: 'Healthwise', segment: 'Healthcare', type: 'Direct', strengths: ['Clinical content library', 'Evidence-based'], weaknesses: ['No customization', 'Expensive'], pricing: 'Custom', threat: 'Medium', userBase: '2000+ hospitals', languages: 20, subscriptionModel: 'Enterprise Annual', revenue: '$80M ARR', founded: 1975, yearsInMarket: 51, genieDifferentiator: 'Customizable, AI-personalized, provider-created content', improvementNeeded: 'Build clinical content library partnerships' },
+  { name: 'Emmi Solutions', segment: 'Healthcare', type: 'Direct', strengths: ['Patient engagement', 'Multi-language'], weaknesses: ['Expensive', 'Limited personalization'], pricing: 'Custom', threat: 'Medium', userBase: '500+ health systems', languages: 25, subscriptionModel: 'Enterprise Annual', revenue: '$50M ARR', founded: 2002, yearsInMarket: 24, genieDifferentiator: 'AI personalization, affordable, provider-friendly', improvementNeeded: 'Add patient engagement tracking' },
   // Enterprise
-  { name: 'Brightcove', segment: 'Enterprise', type: 'Platform', strengths: ['Scalable', 'Reliable', 'Enterprise-grade'], weaknesses: ['No creation tools', 'Expensive'], pricing: 'Custom', threat: 'Medium' },
-  { name: 'Kaltura', segment: 'Enterprise', type: 'Platform', strengths: ['Feature-rich', 'Open source option'], weaknesses: ['Overwhelming', 'Complex setup'], pricing: 'Custom', threat: 'High' },
-  { name: 'Microsoft Stream', segment: 'Enterprise', type: 'Platform', strengths: ['M365 integration', 'Free with license'], weaknesses: ['Basic features', 'No AI creation'], pricing: 'Bundled', threat: 'Medium' },
-  { name: 'Synthesia Enterprise', segment: 'Enterprise', type: 'Direct', strengths: ['AI avatars', 'Multi-language', 'Enterprise ready'], weaknesses: ['Very expensive', 'Limited customization', 'Robotic feel'], pricing: 'Custom', threat: 'Medium' },
+  { name: 'Brightcove', segment: 'Enterprise', type: 'Platform', strengths: ['Scalable', 'Reliable', 'Enterprise-grade'], weaknesses: ['No creation tools', 'Expensive'], pricing: 'Custom', threat: 'Medium', userBase: '3000+ enterprises', languages: 20, subscriptionModel: 'Enterprise Annual', revenue: '$200M ARR', founded: 2004, yearsInMarket: 22, genieDifferentiator: 'Creation + hosting unified, AI-powered, affordable', improvementNeeded: 'Add enterprise CDN options' },
+  { name: 'Kaltura', segment: 'Enterprise', type: 'Platform', strengths: ['Feature-rich', 'Open source option'], weaknesses: ['Overwhelming', 'Complex setup'], pricing: 'Custom', threat: 'High', userBase: '1000+ enterprises', languages: 30, subscriptionModel: 'Enterprise + Open Source', revenue: '$170M ARR', founded: 2006, yearsInMarket: 20, genieDifferentiator: 'Simple UX, AI-first, no complexity overhead', improvementNeeded: 'Add open source option' },
+  { name: 'Microsoft Stream', segment: 'Enterprise', type: 'Platform', strengths: ['M365 integration', 'Free with license'], weaknesses: ['Basic features', 'No AI creation'], pricing: 'Bundled', threat: 'Medium', userBase: '300M+ M365', languages: 45, subscriptionModel: 'M365 Bundle', revenue: 'N/A (Microsoft)', founded: 2017, yearsInMarket: 9, genieDifferentiator: 'AI creation tools, not just hosting', improvementNeeded: 'Add M365 deep integration' },
+  { name: 'Synthesia Enterprise', segment: 'Enterprise', type: 'Direct', strengths: ['AI avatars', 'Multi-language', 'Enterprise ready'], weaknesses: ['Very expensive', 'Limited customization', 'Robotic feel'], pricing: 'Custom', threat: 'Medium', userBase: '500+ enterprises', languages: 140, subscriptionModel: 'Enterprise Annual', revenue: '$40M ARR', founded: 2017, yearsInMarket: 9, genieDifferentiator: 'Natural TTS, real presenter + AI hybrid, 60% cheaper', improvementNeeded: 'Add AI avatar generation' },
 ];
 
 const appOpportunities: AppOpportunity[] = [
@@ -1660,13 +1669,14 @@ export const GenieStudioUnifiedHub: React.FC = () => {
             <TabsContent value="competitors">
               <Card className="bg-card border-border">
                 <CardContent className="pt-4">
-                  <ScrollArea className="h-[500px]">
+                  <ScrollArea className="h-[600px]">
                     <Table>
                       <TableHeader>
                         <TableRow>
                           <TableHead>Competitor</TableHead>
-                          <TableHead>Segment</TableHead>
-                          <TableHead>Type</TableHead>
+                          <TableHead>Users</TableHead>
+                          <TableHead>Revenue</TableHead>
+                          <TableHead>Years</TableHead>
                           <TableHead>Pricing</TableHead>
                           <TableHead>Threat</TableHead>
                           <TableHead></TableHead>
@@ -1681,9 +1691,17 @@ export const GenieStudioUnifiedHub: React.FC = () => {
                                 expandedCompetitor === comp.name ? null : comp.name
                               )}
                             >
-                              <TableCell className="font-semibold">{comp.name}</TableCell>
-                              <TableCell><Badge variant="secondary">{comp.segment}</Badge></TableCell>
-                              <TableCell><Badge variant="outline">{comp.type}</Badge></TableCell>
+                              <TableCell>
+                                <div>
+                                  <p className="font-semibold">{comp.name}</p>
+                                  <p className="text-xs text-muted-foreground">{comp.segment}</p>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="text-xs">{comp.userBase}</Badge>
+                              </TableCell>
+                              <TableCell className="font-mono text-xs text-green-600">{comp.revenue}</TableCell>
+                              <TableCell className="text-center">{comp.yearsInMarket}y</TableCell>
                               <TableCell className="font-mono text-xs">{comp.pricing}</TableCell>
                               <TableCell>
                                 <Badge variant={comp.threat === 'High' ? 'destructive' : comp.threat === 'Medium' ? 'secondary' : 'outline'}>
@@ -1699,29 +1717,70 @@ export const GenieStudioUnifiedHub: React.FC = () => {
                             </TableRow>
                             {expandedCompetitor === comp.name && (
                               <TableRow>
-                                <TableCell colSpan={6} className="bg-muted/30">
-                                  <div className="grid grid-cols-2 gap-4 p-4">
-                                    <div>
-                                      <h4 className="font-medium text-green-500 mb-2 flex items-center gap-2">
-                                        <Check className="h-4 w-4" />
-                                        Strengths
-                                      </h4>
-                                      <ul className="space-y-1 text-sm">
-                                        {comp.strengths.map((s, i) => (
-                                          <li key={i}>• {s}</li>
-                                        ))}
-                                      </ul>
+                                <TableCell colSpan={7} className="bg-muted/30">
+                                  <div className="p-4 space-y-4">
+                                    {/* Market Intelligence Row */}
+                                    <div className="grid grid-cols-4 gap-4 p-3 bg-background rounded-lg border border-border">
+                                      <div className="text-center">
+                                        <p className="text-xs text-muted-foreground">Founded</p>
+                                        <p className="font-semibold">{comp.founded}</p>
+                                      </div>
+                                      <div className="text-center">
+                                        <p className="text-xs text-muted-foreground">Languages</p>
+                                        <p className="font-semibold">{comp.languages}</p>
+                                      </div>
+                                      <div className="text-center">
+                                        <p className="text-xs text-muted-foreground">Model</p>
+                                        <p className="font-semibold text-xs">{comp.subscriptionModel}</p>
+                                      </div>
+                                      <div className="text-center">
+                                        <p className="text-xs text-muted-foreground">Type</p>
+                                        <Badge variant="outline">{comp.type}</Badge>
+                                      </div>
                                     </div>
-                                    <div>
-                                      <h4 className="font-medium text-red-500 mb-2 flex items-center gap-2">
-                                        <X className="h-4 w-4" />
-                                        Weaknesses
+                                    
+                                    {/* Strengths & Weaknesses */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div>
+                                        <h4 className="font-medium text-green-500 mb-2 flex items-center gap-2">
+                                          <Check className="h-4 w-4" />
+                                          Strengths
+                                        </h4>
+                                        <ul className="space-y-1 text-sm">
+                                          {comp.strengths.map((s, i) => (
+                                            <li key={i}>• {s}</li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                      <div>
+                                        <h4 className="font-medium text-red-500 mb-2 flex items-center gap-2">
+                                          <X className="h-4 w-4" />
+                                          Weaknesses
+                                        </h4>
+                                        <ul className="space-y-1 text-sm text-muted-foreground">
+                                          {comp.weaknesses.map((w, i) => (
+                                            <li key={i}>• {w}</li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Genie Differentiation */}
+                                    <div className="p-3 bg-primary/10 rounded-lg border border-primary/30">
+                                      <h4 className="font-medium text-primary mb-2 flex items-center gap-2">
+                                        <Zap className="h-4 w-4" />
+                                        Genie Differentiator
                                       </h4>
-                                      <ul className="space-y-1 text-sm text-muted-foreground">
-                                        {comp.weaknesses.map((w, i) => (
-                                          <li key={i}>• {w}</li>
-                                        ))}
-                                      </ul>
+                                      <p className="text-sm">{comp.genieDifferentiator}</p>
+                                    </div>
+                                    
+                                    {/* Improvement Needed */}
+                                    <div className="p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/30">
+                                      <h4 className="font-medium text-yellow-600 mb-2 flex items-center gap-2">
+                                        <Target className="h-4 w-4" />
+                                        Improvement Recommended
+                                      </h4>
+                                      <p className="text-sm text-muted-foreground">{comp.improvementNeeded}</p>
                                     </div>
                                   </div>
                                 </TableCell>
