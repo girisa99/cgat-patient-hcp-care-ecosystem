@@ -8351,6 +8351,7 @@ export type Database = {
           recording_storage_path: string | null
           recording_url: string | null
           scheduled_at: string
+          script_content: string | null
           script_id: string | null
           session_active_at: string | null
           session_mode: string
@@ -8384,6 +8385,7 @@ export type Database = {
           recording_storage_path?: string | null
           recording_url?: string | null
           scheduled_at: string
+          script_content?: string | null
           script_id?: string | null
           session_active_at?: string | null
           session_mode?: string
@@ -8417,6 +8419,7 @@ export type Database = {
           recording_storage_path?: string | null
           recording_url?: string | null
           scheduled_at?: string
+          script_content?: string | null
           script_id?: string | null
           session_active_at?: string | null
           session_mode?: string
