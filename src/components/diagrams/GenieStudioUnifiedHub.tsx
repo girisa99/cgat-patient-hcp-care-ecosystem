@@ -1047,6 +1047,246 @@ export const GenieStudioUnifiedHub: React.FC = () => {
               </Table>
             </CardContent>
           </Card>
+
+          {/* SaaS & Multi-Tenant Readiness */}
+          <Card className="bg-card border-border border-purple-500/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-purple-500">
+                <Building className="h-5 w-5" />
+                SaaS & Multi-Tenant Readiness Assessment
+              </CardTitle>
+              <CardDescription>Commercial platform support across subscription tiers and workspace isolation</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Overall Status */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center p-4 bg-green-500/10 rounded-lg border border-green-500/30">
+                  <CheckCircle className="h-6 w-6 text-green-500 mx-auto mb-2" />
+                  <p className="text-lg font-bold text-green-500">Implemented</p>
+                  <p className="text-xs text-muted-foreground">Multi-Tenant Context</p>
+                </div>
+                <div className="text-center p-4 bg-green-500/10 rounded-lg border border-green-500/30">
+                  <CheckCircle className="h-6 w-6 text-green-500 mx-auto mb-2" />
+                  <p className="text-lg font-bold text-green-500">Implemented</p>
+                  <p className="text-xs text-muted-foreground">Facility Switching</p>
+                </div>
+                <div className="text-center p-4 bg-yellow-500/10 rounded-lg border border-yellow-500/30">
+                  <Clock className="h-6 w-6 text-yellow-500 mx-auto mb-2" />
+                  <p className="text-lg font-bold text-yellow-500">Documented</p>
+                  <p className="text-xs text-muted-foreground">Subscription Tiers</p>
+                </div>
+                <div className="text-center p-4 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                  <Target className="h-6 w-6 text-blue-500 mx-auto mb-2" />
+                  <p className="text-lg font-bold text-blue-500">Phase 5</p>
+                  <p className="text-xs text-muted-foreground">Stripe Integration</p>
+                </div>
+              </div>
+
+              {/* SaaS Feature Matrix */}
+              <div>
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  SaaS Feature Implementation Status
+                </h4>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Feature</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Phase</TableHead>
+                      <TableHead>Segments Supported</TableHead>
+                      <TableHead>Notes</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="font-medium">TenantContext Provider</TableCell>
+                      <TableCell><Badge className="bg-green-500">✓ Implemented</Badge></TableCell>
+                      <TableCell>P0</TableCell>
+                      <TableCell>All</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">src/contexts/TenantContext.tsx</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Facility Switching</TableCell>
+                      <TableCell><Badge className="bg-green-500">✓ Implemented</Badge></TableCell>
+                      <TableCell>P0</TableCell>
+                      <TableCell>Healthcare, Enterprise</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">Cross-tenant navigation</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">SuperAdmin Global Access</TableCell>
+                      <TableCell><Badge className="bg-green-500">✓ Implemented</Badge></TableCell>
+                      <TableCell>P0</TableCell>
+                      <TableCell>Enterprise</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">isSuperAdmin check</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">User-Scoped RLS</TableCell>
+                      <TableCell><Badge className="bg-green-500">✓ Implemented</Badge></TableCell>
+                      <TableCell>P0</TableCell>
+                      <TableCell>All</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">auth.uid() = user_id</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Subscription Tiers (5)</TableCell>
+                      <TableCell><Badge variant="secondary">📋 Documented</Badge></TableCell>
+                      <TableCell>P5</TableCell>
+                      <TableCell>All</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">Free/Starter/Business/Pro/Enterprise</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Module-Based Access</TableCell>
+                      <TableCell><Badge variant="secondary">📋 Documented</Badge></TableCell>
+                      <TableCell>P5</TableCell>
+                      <TableCell>All</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">modules_enabled array</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Stripe Integration</TableCell>
+                      <TableCell><Badge variant="outline">⏳ Planned</Badge></TableCell>
+                      <TableCell>P5</TableCell>
+                      <TableCell>All</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">stripe_customer_id</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Usage Tracking</TableCell>
+                      <TableCell><Badge variant="outline">⏳ Planned</Badge></TableCell>
+                      <TableCell>P5</TableCell>
+                      <TableCell>All</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">subscription_usage table</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">White-Label Config</TableCell>
+                      <TableCell><Badge variant="outline">⏳ Planned</Badge></TableCell>
+                      <TableCell>P4</TableCell>
+                      <TableCell>Enterprise</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">Branding customization</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Workspace Isolation</TableCell>
+                      <TableCell><Badge variant="outline">⏳ Planned</Badge></TableCell>
+                      <TableCell>P4</TableCell>
+                      <TableCell>Enterprise</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">workspace_id columns</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">SSO/SAML</TableCell>
+                      <TableCell><Badge variant="outline">⏳ Planned</Badge></TableCell>
+                      <TableCell>P5</TableCell>
+                      <TableCell>Enterprise</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">Enterprise auth</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">HIPAA Compliance Mode</TableCell>
+                      <TableCell><Badge variant="outline">⏳ Planned</Badge></TableCell>
+                      <TableCell>P3</TableCell>
+                      <TableCell>Healthcare</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">94% market demand</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Subscription Tier Overview */}
+              <div>
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <Briefcase className="h-4 w-4" />
+                  Planned Subscription Tiers
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                  {[
+                    { name: 'Free', price: '$0', color: 'bg-muted', users: 'Trial', features: '3 videos, watermark' },
+                    { name: 'Starter', price: '$9.99', color: 'bg-blue-500/20', users: 'Creator/Traveler', features: 'Unlimited, 10 TTS' },
+                    { name: 'Business', price: '$29.99', color: 'bg-green-500/20', users: 'SMB', features: '3 seats, demos' },
+                    { name: 'Pro', price: '$79.99', color: 'bg-purple-500/20', users: 'Education/Agency', features: '10 seats, lessons' },
+                    { name: 'Enterprise', price: 'Custom', color: 'bg-orange-500/20', users: 'Healthcare/Large', features: 'HIPAA, white-label' },
+                    { name: 'Beta', price: '$0', color: 'bg-yellow-500/20', users: 'Current Dev', features: 'Full access' },
+                  ].map(tier => (
+                    <div key={tier.name} className={`p-3 rounded-lg border ${tier.color}`}>
+                      <p className="font-semibold">{tier.name}</p>
+                      <p className="text-lg font-bold">{tier.price}</p>
+                      <p className="text-xs text-muted-foreground">{tier.users}</p>
+                      <p className="text-xs mt-1">{tier.features}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Implementation Roadmap */}
+              <div className="p-4 bg-muted/30 rounded-lg border border-border">
+                <h4 className="font-semibold mb-3">SaaS Implementation Roadmap</h4>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Badge className="bg-green-500">Phase 1 ✓</Badge>
+                    <p className="text-sm font-medium">Core Infrastructure</p>
+                    <ul className="text-xs space-y-1 text-muted-foreground">
+                      <li>✓ TenantContext Provider</li>
+                      <li>✓ Facility switching</li>
+                      <li>✓ SuperAdmin access</li>
+                      <li>✓ User-scoped RLS</li>
+                    </ul>
+                  </div>
+                  <div className="space-y-2">
+                    <Badge variant="secondary">Phase 2</Badge>
+                    <p className="text-sm font-medium">Access Control</p>
+                    <ul className="text-xs space-y-1 text-muted-foreground">
+                      <li>○ useSubscription hook</li>
+                      <li>○ useModuleAccess hook</li>
+                      <li>○ Upgrade prompts</li>
+                      <li>○ Beta user migration</li>
+                    </ul>
+                  </div>
+                  <div className="space-y-2">
+                    <Badge variant="outline">Phase 3</Badge>
+                    <p className="text-sm font-medium">Landing & Auth</p>
+                    <ul className="text-xs space-y-1 text-muted-foreground">
+                      <li>○ Public landing page</li>
+                      <li>○ Pricing page</li>
+                      <li>○ Stripe integration</li>
+                      <li>○ Plan selection</li>
+                    </ul>
+                  </div>
+                  <div className="space-y-2">
+                    <Badge variant="outline">Phase 4</Badge>
+                    <p className="text-sm font-medium">Management</p>
+                    <ul className="text-xs space-y-1 text-muted-foreground">
+                      <li>○ Admin dashboard</li>
+                      <li>○ Self-service plans</li>
+                      <li>○ Usage analytics</li>
+                      <li>○ Billing portal</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Segment-Tier Mapping */}
+              <div>
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Segment → Tier Mapping (Recommended)
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {[
+                    { segment: 'Creator Economy', tier: 'Starter', price: '$9.99', advantage: 'Script + TTS integrated' },
+                    { segment: 'Traveler/Experience', tier: 'Starter', price: '$9.99', advantage: 'AI narration + offline' },
+                    { segment: 'SMB Marketing', tier: 'Business', price: '$29.99', advantage: '50% cheaper than Synthesia' },
+                    { segment: 'Education', tier: 'Pro', price: '$79.99', advantage: 'AI lesson scripts' },
+                    { segment: 'Healthcare', tier: 'Enterprise', price: 'Custom', advantage: '90% cost savings vs VIDIZMO' },
+                    { segment: 'Enterprise', tier: 'Enterprise', price: 'Custom', advantage: 'Approval workflows' },
+                  ].map(mapping => (
+                    <div key={mapping.segment} className="p-3 rounded-lg border border-border bg-muted/20">
+                      <p className="font-medium text-sm">{mapping.segment}</p>
+                      <div className="flex items-center justify-between mt-1">
+                        <Badge variant="secondary">{mapping.tier}</Badge>
+                        <span className="text-sm font-mono">{mapping.price}</span>
+                      </div>
+                      <p className="text-xs text-green-500 mt-1">{mapping.advantage}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* PRODUCT SUITE TAB */}

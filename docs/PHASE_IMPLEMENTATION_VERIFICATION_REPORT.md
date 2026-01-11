@@ -282,9 +282,101 @@
 
 ---
 
+## SaaS & Multi-Tenant Readiness Assessment
+
+### Current Implementation Status
+
+| Component | Status | Phase | Details |
+|-----------|--------|-------|---------|
+| **TenantContext Provider** | ✅ Implemented | P0 | `src/contexts/TenantContext.tsx` - Full multi-tenant context |
+| **Facility Switching** | ✅ Implemented | P0 | Cross-tenant navigation with localStorage persistence |
+| **SuperAdmin Global Access** | ✅ Implemented | P0 | `isSuperAdmin` check bypasses tenant restrictions |
+| **User-Scoped RLS** | ✅ Implemented | P0 | `auth.uid() = user_id` policies on all tables |
+| **Multi-Tenant Metadata** | ✅ Implemented | P0 | `tenantScope: 'single' | 'multi' | 'global'` |
+| **Facility Permission Checks** | ✅ Implemented | P0 | `hasAccessToFacility()`, `canAccessCrossTenant()` |
+
+### Planned SaaS Features (Documented in `docs/SUBSCRIPTION_AND_USER_TYPES.md`)
+
+| Feature | Status | Phase | Implementation Notes |
+|---------|--------|-------|---------------------|
+| **Subscription Tiers (5)** | 📋 Documented | P5 | Free/Starter/Business/Pro/Enterprise |
+| **Module-Based Access** | 📋 Documented | P5 | `modules_enabled[]`, `modules_disabled[]` |
+| **Stripe Integration** | ⏳ Planned | P5 | `stripe_customer_id`, `stripe_subscription_id` |
+| **Usage Tracking** | ⏳ Planned | P5 | `subscription_usage` table |
+| **White-Label Config** | ⏳ Planned | P4 | Branding customization for Enterprise |
+| **Workspace Isolation** | ⏳ Planned | P4 | `workspace_id` column additions |
+| **SSO/SAML** | ⏳ Planned | P5 | Enterprise authentication |
+| **HIPAA Compliance Mode** | ⏳ Planned | P3 | 94% healthcare demand |
+| **Landing Page & Pricing** | ⏳ Planned | P5 | Public pages with tier selection |
+
+### Subscription Tier Mapping
+
+| Tier | Price | Target Segments | Key Features |
+|------|-------|-----------------|--------------|
+| **Free** | $0 | Trial users | 3 videos/mo, watermarked |
+| **Starter** | $9.99/mo | Creator, Traveler | Unlimited, 10 TTS voices, offline |
+| **Business** | $29.99/mo | SMB Marketing | 3 seats, product demos, templates |
+| **Pro** | $79.99/mo | Education, Agency | 10 seats, lesson builder, API |
+| **Enterprise** | Custom | Healthcare, Large Org | HIPAA, white-label, SSO, unlimited |
+| **Beta** | $0 | Current Dev Users | Full access (temporary) |
+
+### SaaS Implementation Roadmap
+
+| Phase | Status | Scope | Key Deliverables |
+|-------|--------|-------|------------------|
+| **Phase 1: Core Infrastructure** | ✅ Complete | P0 | TenantContext, facility switching, RLS |
+| **Phase 2: Access Control** | ⏳ Planned | P5 | useSubscription, useModuleAccess hooks |
+| **Phase 3: Landing & Auth** | ⏳ Planned | P5 | Public pages, Stripe, plan selection |
+| **Phase 4: Management** | ⏳ Planned | P5 | Admin dashboard, usage analytics |
+
+### Multi-Tenant Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    CURRENT STATE (P0 Complete)                   │
+├─────────────────────────────────────────────────────────────────┤
+│  ✅ TenantContext Provider (User-Scoped Isolation)              │
+│  ✅ Facility-Based Multi-Tenancy (Healthcare/Enterprise)       │
+│  ✅ SuperAdmin Cross-Tenant Access                               │
+│  ✅ RLS Policies (auth.uid() = user_id)                         │
+│  ✅ Facility Switching with Persistence                         │
+└─────────────────────────────────────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    FUTURE STATE (P4-P5 Planned)                  │
+├─────────────────────────────────────────────────────────────────┤
+│  ⏳ Workspace-Level Isolation (workspace_id)                    │
+│  ⏳ Subscription Tier Enforcement                                │
+│  ⏳ Module-Based Access Control                                  │
+│  ⏳ Stripe Billing Integration                                   │
+│  ⏳ Usage Metering & Limits                                      │
+│  ⏳ White-Label Configuration                                    │
+│  ⏳ SSO/SAML Enterprise Auth                                     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Segment-Tier Alignment
+
+| Segment | Recommended Tier | Price | Competitive Advantage |
+|---------|------------------|-------|----------------------|
+| Creator Economy | Starter | $9.99/mo | Script + TTS integrated (vs CapCut) |
+| Traveler/Experience | Starter | $9.99/mo | AI narration + offline (vs GoPro Quik) |
+| SMB Marketing | Business | $29.99/mo | 50% cheaper than Synthesia |
+| Education | Pro | $79.99/mo | AI lesson scripts (vs Camtasia) |
+| Healthcare | Enterprise | Custom | 90% cost savings vs VIDIZMO |
+| Enterprise | Enterprise | Custom | Approval workflows (vs HeyGen) |
+
+---
+
 ## Conclusion
 
 **Overall Status:** 14.3% Complete (P0 done, P1-P5 mostly pending)
+
+**SaaS/Multi-Tenant Status:**
+- ✅ **Core multi-tenant infrastructure**: 100% complete (TenantContext, RLS, facility switching)
+- 📋 **Subscription system**: Fully documented, pending implementation (Phase 5)
+- ⏳ **Commercialization**: Stripe, landing pages, billing planned for Phase 5
 
 **Critical Gaps:**
 1. Subscription/Payment infrastructure (revenue blocking)
@@ -303,5 +395,6 @@
 *Document generated from comprehensive analysis of:*
 - `docs/GENIE_PHASE_IMPLEMENTATION_ROADMAP.md`
 - `docs/GENIE_STUDIO_SCENARIO_MAP.md`
-- `docs/GENIE_STUDIO_COMPREHENSIVE_ASSESSMENT.md`
+- `docs/SUBSCRIPTION_AND_USER_TYPES.md`
+- `src/contexts/TenantContext.tsx`
 - `src/components/diagrams/GenieStudioUnifiedHub.tsx`
