@@ -405,14 +405,16 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
         </Tabs>
       </div>
 
-      {/* Floating Record Button - Positioned above tab bar */}
-      <div className="fixed bottom-20 right-4 z-[60]">
-        <OneTapRecordButton
-          variant="floating"
-          onRecordingComplete={handleRecordingComplete}
-          onRecordingStart={() => setActiveTab('record')}
-        />
-      </div>
+      {/* Floating Record Button - Only show on Record tab, smaller and better positioned */}
+      {activeTab === 'record' && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[60]">
+          <OneTapRecordButton
+            variant="compact"
+            onRecordingComplete={handleRecordingComplete}
+            onRecordingStart={() => setActiveTab('record')}
+          />
+        </div>
+      )}
 
       {/* PWA Install Prompt - Above the floating button */}
       <PWAInstallPrompt variant="banner" showOnMount={true} />
