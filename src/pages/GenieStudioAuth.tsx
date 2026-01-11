@@ -231,6 +231,8 @@ const GenieStudioAuth: React.FC = () => {
             onLogin={handleLogin}
             onSignup={handleSignup}
             onInputChange={handleInputChange}
+            showGoogleSignIn={true}
+            googleRedirectTo={`${window.location.origin}/genie-studio-pricing`}
           />
           
           <div className="mt-8 text-center space-y-3">
