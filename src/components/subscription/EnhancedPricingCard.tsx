@@ -47,10 +47,10 @@ export const EnhancedPricingCard = ({ tier, isCurrentPlan, onSelect, isLoading }
 
   return (
     <Card className={cn(
-      'relative flex flex-col transition-all duration-300 hover:shadow-xl overflow-hidden h-full',
+      'relative flex flex-col transition-all duration-300 hover:shadow-xl overflow-visible h-full',
       tierBorders[tier],
       isCurrentPlan && 'ring-2 ring-primary',
-      isRecommended && 'scale-[1.02] shadow-lg'
+      isRecommended && 'scale-[1.02] shadow-lg z-10'
     )}>
       {/* Gradient Header */}
       <div className={cn(
@@ -187,7 +187,7 @@ export const EnhancedPricingCard = ({ tier, isCurrentPlan, onSelect, isLoading }
               </li>
             ))}
             {config.features.length > 5 && (
-              <li className="text-xs text-primary/70 pl-5 cursor-pointer hover:text-primary">
+              <li className="text-xs text-primary font-medium pl-5 cursor-pointer hover:text-primary/80 hover:underline relative z-20">
                 +{config.features.length - 5} more features...
               </li>
             )}
