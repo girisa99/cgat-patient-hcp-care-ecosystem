@@ -4,69 +4,82 @@ import { SubscriptionTier, SUBSCRIPTION_TIERS } from '@/hooks/useSubscription';
 import { useSubscriptionContext } from './SubscriptionProvider';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Check, Sparkles } from 'lucide-react';
+import { Check, Sparkles, X, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 // Import suite logo
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
 
 export const EnhancedPricingSection = () => {
-  const { subscription, createCheckout, isLoading } = useSubscriptionContext();
+  const { subscription, createCheckout, isLoading, startFreeTrial } = useSubscriptionContext();
   const { toast } = useToast();
   const [loadingTier, setLoadingTier] = useState<SubscriptionTier | null>(null);
+  const [showComparison, setShowComparison] = useState(false);
 
   const handleSelectTier = async (tier: SubscriptionTier) => {
     setLoadingTier(tier);
     try {
-      const url = await createCheckout(tier);
-      if (url) {
-        window.open(url, '_blank');
+      if (tier === 'free') {
+        await startFreeTrial();
         toast({
-          title: "Redirecting to checkout",
-          description: "Complete your subscription in the new tab"
+          title: "Welcome to Genie Suite! 🎉",
+          description: "Your 14-day free trial has started. Explore all features!"
         });
+      } else {
+        const url = await createCheckout(tier);
+        if (url) {
+          window.open(url, '_blank');
+          toast({
+            title: "Redirecting to checkout",
+            description: "Complete your subscription in the new tab"
+          });
+        }
       }
     } finally {
       setLoadingTier(null);
     }
   };
 
-  const paidTiers: SubscriptionTier[] = ['starter', 'business', 'pro'];
+  const displayTiers: SubscriptionTier[] = ['free', 'starter', 'business', 'pro'];
 
   return (
-    <div className="w-full max-w-7xl mx-auto">
+    <div className="w-full max-w-7xl mx-auto space-y-12">
       {/* Header Section */}
-      <div className="text-center mb-12">
-        <div className="flex items-center justify-center gap-4 mb-6">
+      <div className="text-center space-y-6">
+        <div className="flex items-center justify-center gap-4">
           <img 
             src={genieSuiteLogo} 
             alt="Genie Suite" 
-            className="h-16 w-auto object-contain"
+            className="h-14 w-auto object-contain"
           />
         </div>
         
-        <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-500 via-purple-500 to-amber-500 bg-clip-text text-transparent">
-          Choose Your Genie Suite Plan
-        </h2>
-        
-        <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-6">
-          Unlock the power of AI-driven content creation with the right plan for your needs.
-          All plans include core Genie Studio features.
-        </p>
+        <div className="space-y-4">
+          <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-amber-500 bg-clip-text text-transparent">
+            Choose Your Genie Suite Plan
+          </h2>
+          
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            Start with a free trial, then scale as you grow. All plans include core Genie Studio features.
+          </p>
+        </div>
 
         {/* Trust badges */}
-        <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <Check className="h-4 w-4 text-green-500" />
+            <span>14-day free trial</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Check className="h-4 w-4 text-green-500" />
+            <span>No credit card required</span>
+          </div>
           <div className="flex items-center gap-1.5">
             <Check className="h-4 w-4 text-green-500" />
             <span>Cancel anytime</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Check className="h-4 w-4 text-green-500" />
-            <span>14-day money-back guarantee</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Check className="h-4 w-4 text-green-500" />
-            <span>Secure payment via Stripe</span>
           </div>
           <div className="flex items-center gap-1.5">
             <Check className="h-4 w-4 text-green-500" />
@@ -76,8 +89,8 @@ export const EnhancedPricingSection = () => {
       </div>
 
       {/* Pricing Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-        {paidTiers.map((tier) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {displayTiers.map((tier) => (
           <EnhancedPricingCard
             key={tier}
             tier={tier}
@@ -90,7 +103,7 @@ export const EnhancedPricingSection = () => {
 
       {/* Beta Access Banner */}
       {subscription.tier === 'beta' && (
-        <div className="mt-10 p-6 bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-pink-500/10 rounded-xl border border-violet-500/30 text-center">
+        <div className="p-6 bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-pink-500/10 rounded-xl border border-violet-500/30 text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
             <Sparkles className="h-5 w-5 text-violet-500" />
             <span className="font-semibold text-lg">Beta Access Activated</span>
@@ -102,22 +115,47 @@ export const EnhancedPricingSection = () => {
         </div>
       )}
 
-      {/* Comparison Table Toggle */}
-      <div className="mt-16">
-        <Tabs defaultValue="features" className="w-full">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
-            <TabsTrigger value="features">Feature Comparison</TabsTrigger>
-            <TabsTrigger value="faq">FAQ</TabsTrigger>
-          </TabsList>
+      {/* Collapsible Feature Comparison & FAQ */}
+      <div className="space-y-6">
+        <Collapsible open={showComparison} onOpenChange={setShowComparison}>
+          <CollapsibleTrigger asChild>
+            <button className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg border border-border/50 bg-card hover:bg-muted/50 transition-colors text-sm font-medium">
+              <span>View Feature Comparison & FAQ</span>
+              {showComparison ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </button>
+          </CollapsibleTrigger>
           
-          <TabsContent value="features" className="mt-8">
-            <ComparisonTable />
-          </TabsContent>
-          
-          <TabsContent value="faq" className="mt-8">
-            <FAQ />
-          </TabsContent>
-        </Tabs>
+          <CollapsibleContent className="mt-6">
+            <Tabs defaultValue="features" className="w-full">
+              <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 h-11">
+                <TabsTrigger value="features" className="gap-2">
+                  <Check className="h-4 w-4" />
+                  Feature Comparison
+                </TabsTrigger>
+                <TabsTrigger value="faq" className="gap-2">
+                  <HelpCircle className="h-4 w-4" />
+                  FAQ
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="features" className="mt-6">
+                <Card className="overflow-hidden border-border/50">
+                  <CardContent className="p-0">
+                    <ComparisonTable />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="faq" className="mt-6">
+                <FAQ />
+              </TabsContent>
+            </Tabs>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
     </div>
   );
@@ -125,46 +163,89 @@ export const EnhancedPricingSection = () => {
 
 // Comparison Table Component
 const ComparisonTable = () => {
-  const tiers = ['starter', 'business', 'pro'] as const;
-  const features = [
-    { name: 'AI Agents', starter: '5', business: '25', pro: 'Unlimited' },
-    { name: 'API Calls/month', starter: '1,000', business: '10,000', pro: 'Unlimited' },
-    { name: 'Storage', starter: '5 GB', business: '50 GB', pro: '500 GB' },
-    { name: 'Team Members', starter: '1', business: '5', pro: 'Unlimited' },
-    { name: 'Genie Studio', starter: 'Core', business: 'Full', pro: 'Full' },
-    { name: 'Genie Spark', starter: 'Basic', business: 'Pro', pro: 'Enterprise' },
-    { name: 'Genie Vibe', starter: '—', business: '✓', pro: '✓' },
-    { name: 'Genie Arc', starter: '—', business: '—', pro: '✓' },
-    { name: 'Genie Mind', starter: '—', business: '✓', pro: '✓' },
-    { name: 'Production Hub', starter: '—', business: '—', pro: '✓' },
-    { name: 'RAG Documents', starter: '1,000', business: '10,000', pro: 'Unlimited' },
-    { name: 'Custom Branding', starter: '—', business: '✓', pro: '✓' },
-    { name: 'White Label', starter: '—', business: '—', pro: '✓' },
-    { name: 'SSO & SAML', starter: '—', business: '—', pro: '✓' },
-    { name: 'Support', starter: 'Community', business: 'Priority', pro: '24/7 Dedicated' },
+  const tiers = ['free', 'starter', 'business', 'pro'] as const;
+  
+  const featureGroups = [
+    {
+      name: 'Core Limits',
+      features: [
+        { name: 'AI Agents', free: '1', starter: '5', business: '25', pro: 'Unlimited' },
+        { name: 'API Calls/month', free: '100', starter: '1,000', business: '10,000', pro: 'Unlimited' },
+        { name: 'Storage', free: '500 MB', starter: '5 GB', business: '50 GB', pro: '500 GB' },
+        { name: 'Team Members', free: '1', starter: '1', business: '5', pro: 'Unlimited' },
+      ]
+    },
+    {
+      name: 'Products',
+      features: [
+        { name: 'Genie Studio', free: 'Basic', starter: 'Core', business: 'Full', pro: 'Enterprise' },
+        { name: 'Genie Spark', free: '5 protos', starter: '20 protos', business: '100 protos', pro: 'Unlimited' },
+        { name: 'Genie Vibe', free: '—', starter: '—', business: '✓', pro: '✓ + Voice Clone' },
+        { name: 'Genie Arc', free: '—', starter: '—', business: '—', pro: '✓' },
+        { name: 'Genie Mind', free: '—', starter: '—', business: '10K docs', pro: 'Unlimited' },
+        { name: 'Production Hub', free: '—', starter: '—', business: '—', pro: '✓' },
+      ]
+    },
+    {
+      name: 'Features',
+      features: [
+        { name: 'RAG Documents', free: '—', starter: '1,000', business: '10,000', pro: 'Unlimited' },
+        { name: 'Custom Branding', free: '—', starter: '—', business: '✓', pro: '✓' },
+        { name: 'White Label', free: '—', starter: '—', business: '—', pro: '✓' },
+        { name: 'Watermarks', free: 'Yes', starter: 'No', business: 'No', pro: 'No' },
+        { name: 'SSO & SAML', free: '—', starter: '—', business: '—', pro: '✓' },
+        { name: 'Support', free: 'Community', starter: 'Email', business: 'Priority', pro: '24/7 Dedicated' },
+      ]
+    }
   ];
+
+  const renderCell = (value: string) => {
+    if (value === '✓') return <Check className="h-4 w-4 text-green-500 mx-auto" />;
+    if (value === '—') return <X className="h-4 w-4 text-muted-foreground/30 mx-auto" />;
+    return <span className="text-sm">{value}</span>;
+  };
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full border-collapse">
+      <table className="w-full border-collapse text-sm">
         <thead>
-          <tr className="border-b border-border">
-            <th className="text-left py-4 px-4 font-medium">Feature</th>
+          <tr className="border-b border-border bg-muted/30">
+            <th className="text-left py-4 px-4 font-semibold w-1/5">Feature</th>
             {tiers.map((tier) => (
-              <th key={tier} className="text-center py-4 px-4 font-medium">
-                {SUBSCRIPTION_TIERS[tier].name}
+              <th key={tier} className={cn(
+                "text-center py-4 px-3 font-semibold",
+                tier === 'business' && "bg-blue-500/5"
+              )}>
+                <div className="space-y-1">
+                  <div>{SUBSCRIPTION_TIERS[tier].name}</div>
+                  <div className="text-xs font-normal text-muted-foreground">
+                    {SUBSCRIPTION_TIERS[tier].price === 0 
+                      ? 'Free' 
+                      : `$${SUBSCRIPTION_TIERS[tier].price}/mo`}
+                  </div>
+                </div>
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {features.map((feature, idx) => (
-            <tr key={idx} className="border-b border-border/50 hover:bg-muted/30">
-              <td className="py-3 px-4 text-muted-foreground">{feature.name}</td>
-              <td className="text-center py-3 px-4">{feature.starter}</td>
-              <td className="text-center py-3 px-4 bg-blue-500/5">{feature.business}</td>
-              <td className="text-center py-3 px-4">{feature.pro}</td>
-            </tr>
+          {featureGroups.map((group, groupIdx) => (
+            <React.Fragment key={group.name}>
+              <tr className="bg-muted/20">
+                <td colSpan={5} className="py-2 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  {group.name}
+                </td>
+              </tr>
+              {group.features.map((feature, idx) => (
+                <tr key={idx} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
+                  <td className="py-3 px-4 text-muted-foreground">{feature.name}</td>
+                  <td className="text-center py-3 px-3">{renderCell(feature.free)}</td>
+                  <td className="text-center py-3 px-3">{renderCell(feature.starter)}</td>
+                  <td className={cn("text-center py-3 px-3", "bg-blue-500/5")}>{renderCell(feature.business)}</td>
+                  <td className="text-center py-3 px-3">{renderCell(feature.pro)}</td>
+                </tr>
+              ))}
+            </React.Fragment>
           ))}
         </tbody>
       </table>
@@ -176,38 +257,50 @@ const ComparisonTable = () => {
 const FAQ = () => {
   const faqs = [
     {
+      q: "What's included in the free trial?",
+      a: "The 14-day free trial includes Genie Studio Basic and Genie Spark with 5 prototypes. You can build 1 agent, make 100 API calls, and explore the platform. Exports will have watermarks during the trial."
+    },
+    {
       q: "Can I upgrade or downgrade my plan?",
-      a: "Yes! You can upgrade or downgrade your plan at any time. Changes take effect at the start of your next billing cycle."
+      a: "Yes! You can upgrade or downgrade your plan at any time. When upgrading, you'll be prorated for the remaining time. When downgrading, changes take effect at the start of your next billing cycle."
     },
     {
       q: "What payment methods do you accept?",
-      a: "We accept all major credit cards (Visa, MasterCard, American Express) through our secure Stripe payment system."
+      a: "We accept all major credit cards (Visa, MasterCard, American Express) through our secure Stripe payment system. Enterprise customers can also pay via invoice."
     },
     {
-      q: "Is there a free trial?",
-      a: "We offer a 14-day money-back guarantee on all plans. Try risk-free and get a full refund if it's not right for you."
+      q: "Do I need a credit card for the free trial?",
+      a: "No! Start your free trial without any payment information. We'll only ask for payment details when you decide to upgrade to a paid plan."
     },
     {
-      q: "What happens if I exceed my limits?",
-      a: "We'll notify you when you're approaching your limits. You can upgrade at any time to increase your capacity."
-    },
-    {
-      q: "Is my data secure?",
-      a: "Absolutely. We're HIPAA compliant and use enterprise-grade encryption for all data at rest and in transit."
+      q: "What happens when my trial ends?",
+      a: "When your trial ends, you can continue using the free tier with limitations, or upgrade to a paid plan to unlock all features. Your data and work are preserved either way."
     },
     {
       q: "Can I cancel anytime?",
-      a: "Yes, you can cancel your subscription at any time with no penalties. Your access continues until the end of your billing period."
+      a: "Yes, you can cancel your subscription at any time with no penalties. Your access continues until the end of your billing period, and you can downgrade to the free tier."
+    },
+    {
+      q: "Is my data secure?",
+      a: "Absolutely. We're HIPAA compliant and use enterprise-grade encryption for all data at rest and in transit. Your data is never shared with third parties."
+    },
+    {
+      q: "What's the difference between Genie Studio and Genie Spark?",
+      a: "Genie Studio is the full visual agent builder for complex workflows. Genie Spark is for rapid prototyping - describe what you need in plain English and get a working agent in seconds."
     }
   ];
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {faqs.map((faq, idx) => (
-        <div key={idx} className="p-4 rounded-lg border border-border/50 bg-card">
-          <h4 className="font-medium mb-2">{faq.q}</h4>
-          <p className="text-sm text-muted-foreground">{faq.a}</p>
-        </div>
+        <Card key={idx} className="border-border/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-medium">{faq.q}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">{faq.a}</p>
+          </CardContent>
+        </Card>
       ))}
     </div>
   );
