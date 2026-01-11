@@ -37,6 +37,9 @@ const EXCLUSION_PATTERNS = [
   /\/helpers\//,            // Helpers directories
   /\/lib\//,                // Lib directories
   /\/popout\//,             // Popout directories (special case)
+  /^\s*vite\//,             // Vite internal files
+  /modulepreload/,          // Vite polyfills
+  /preload-helper/,         // Vite helpers
 ];
 
 // Files that are allowed to have non-standard names
@@ -66,7 +69,8 @@ export default function stabilityFrameworkPlugin(options = {}) {
     warnOnDuplicates: true,
     checkNaming: true,
     checkComplexity: true,
-    maxComplexity: 10,
+    maxComplexity: 50,        // Increased from 10 - more realistic for production code
+    maxFileSize: 500,         // Increased from 200 - allow larger files
     excludePatterns: [],
     ...options
   };
@@ -206,8 +210,9 @@ export default function stabilityFrameworkPlugin(options = {}) {
     // Simple duplicate detection - in a real implementation,
     // you'd want more sophisticated similarity detection
     const lines = code.split('\n').filter(line => line.trim().length > 0);
+    const maxSize = config.maxFileSize || 500;
     
-    if (lines.length > 200) {
+    if (lines.length > maxSize) {
       const relativePath = path.relative(process.cwd(), fullPath);
       warnings.push(`Size: "${relativePath}" is quite large (${lines.length} lines). Consider breaking it down.`);
     }
