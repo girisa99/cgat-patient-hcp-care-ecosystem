@@ -3,18 +3,19 @@
  * 
  * UNIFIED PIPELINE: Record → Clips → Mix → Timeline → Publish
  * 
- * This is the main production studio with a streamlined 5-tab workflow.
- * For scripts, AI voice generation, and music library - use Genie Studio.
+ * Design System: Enterprise-ready, no frame-in-frame, mobile-first
+ * Teleprompter: Full suite (Desktop + Mobile)
+ * Social Publishing: Hybrid (OAuth + Download)
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import { 
   ArrowLeft, 
   Video,
@@ -27,7 +28,9 @@ import {
   Camera,
   ScreenShare,
   FileText,
-  Check
+  Check,
+  Play,
+  Eye
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -35,6 +38,7 @@ import { useGenieScripts } from '@/components/genie-studio/useGenieScripts';
 import { useGenieMediaLibrary } from '@/components/genie-studio/useGenieMediaLibrary';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileRecordingView } from '@/components/document-processing/RecordingStudio/components/MobileRecordingView';
+import { Teleprompter } from '@/components/teleprompter';
 import { 
   QuickClipsGenerator, 
   MultiClipTimeline, 
@@ -100,6 +104,10 @@ const GenieVibe: React.FC = () => {
   
   // View mode: 'desktop' or 'mobile' - auto-detect based on device
   const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>(isMobile ? 'mobile' : 'desktop');
+  
+  // Teleprompter state
+  const [isTeleprompterOpen, setIsTeleprompterOpen] = useState(false);
+  const [activeScript, setActiveScript] = useState<string>('');
   
   // Existing hooks - data flow unchanged
   const { scripts: savedScripts } = useGenieScripts();
@@ -266,70 +274,74 @@ const GenieVibe: React.FC = () => {
   }
 
   // ============================================================
-  // DESKTOP VIEW - Full 5-tab pipeline
+  // DESKTOP VIEW - Full 5-tab pipeline (Enterprise Ready, No Frame-in-Frame)
   // ============================================================
   return (
     <AppLayout>
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-pink-950/10">
-        {/* Hero Header */}
-        <div className="relative overflow-hidden border-b border-border/50 bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-violet-500/10">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-pink-500/20 via-transparent to-transparent" />
-          
-          <div className="relative max-w-7xl mx-auto px-6 py-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-6">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate('/genie-studio')}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Genie Studio
-                </Button>
-                
-                <div className="flex items-center gap-4">
-                  <div className="h-14 w-14 rounded-2xl bg-white/90 backdrop-blur border border-pink-200/50 flex items-center justify-center shadow-lg overflow-hidden p-2">
-                    <img src={genieVibeLogo} alt="Genie Vibe" className="h-full w-full object-contain" />
-                  </div>
-                  <div>
-                    <h1 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-                      Genie Vibe Studio
-                    </h1>
-                    <p className="text-xs text-muted-foreground">Record → Clips → Mix → Timeline → Publish</p>
-                  </div>
-                </div>
-              </div>
+      <div className="min-h-screen bg-background">
+        {/* Teleprompter Overlay */}
+        <Teleprompter
+          script={activeScript}
+          isOpen={isTeleprompterOpen}
+          onClose={() => setIsTeleprompterOpen(false)}
+        />
 
+        {/* Header - Clean & Minimal */}
+        <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="container flex h-16 items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/genie-studio')}
+                className="gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span className="hidden sm:inline">Genie Studio</span>
+              </Button>
+              
+              <Separator orientation="vertical" className="h-6" />
+              
               <div className="flex items-center gap-3">
-                {/* View Mode Toggle */}
-                <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-lg">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="gap-1"
-                  >
-                    <Monitor className="h-4 w-4" />
-                    <span className="hidden sm:inline">Desktop</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="gap-1"
-                    onClick={() => setViewMode('mobile')}
-                  >
-                    <Smartphone className="h-4 w-4" />
-                    <span className="hidden sm:inline">Mobile</span>
-                  </Button>
+                <div className="h-10 w-10 rounded-lg bg-card border flex items-center justify-center overflow-hidden p-1.5">
+                  <img src={genieVibeLogo} alt="Genie Vibe" className="h-full w-full object-contain" />
                 </div>
-
-                <Badge className="bg-pink-500/10 text-pink-600 border-pink-500/20">
-                  {recordings.length} Recordings
-                </Badge>
+                <div>
+                  <h1 className="text-lg font-semibold">Genie Vibe Studio</h1>
+                  <p className="text-xs text-muted-foreground hidden sm:block">Record → Clips → Mix → Timeline → Publish</p>
+                </div>
               </div>
             </div>
+
+            <div className="flex items-center gap-2">
+              {/* View Mode Toggle */}
+              <div className="flex items-center border rounded-lg p-1">
+                <Button
+                  variant={viewMode === 'desktop' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  className="h-8 gap-1.5"
+                  onClick={() => setViewMode('desktop')}
+                >
+                  <Monitor className="h-4 w-4" />
+                  <span className="hidden md:inline">Desktop</span>
+                </Button>
+                <Button
+                  variant={viewMode === 'mobile' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  className="h-8 gap-1.5"
+                  onClick={() => setViewMode('mobile')}
+                >
+                  <Smartphone className="h-4 w-4" />
+                  <span className="hidden md:inline">Mobile</span>
+                </Button>
+              </div>
+
+              <Badge variant="secondary">
+                {recordings.length} Recordings
+              </Badge>
+            </div>
           </div>
-        </div>
+        </header>
 
         {/* Pipeline Progress Indicator */}
         <PipelineProgress
@@ -338,283 +350,265 @@ const GenieVibe: React.FC = () => {
           onStageClick={handleStageClick}
         />
 
-        {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-6 py-6">
+        {/* Main Content - No Frame-in-Frame */}
+        <main className="container py-6">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as PipelineStage)} className="space-y-6">
-            <TabsList className="bg-muted/50 border border-border/50 h-auto gap-1 p-1">
-              <TabsTrigger value="record" className="gap-2">
+            <TabsList className="h-12 p-1">
+              <TabsTrigger value="record" className="gap-2 px-4">
                 <Video className="h-4 w-4" />
-                Record
-                {completedStages.includes('record') && <Check className="h-3 w-3 text-green-500" />}
+                <span className="hidden sm:inline">Record</span>
+                {completedStages.includes('record') && <Check className="h-3 w-3 text-green-500 ml-1" />}
               </TabsTrigger>
-              <TabsTrigger value="clips" className="gap-2">
+              <TabsTrigger value="clips" className="gap-2 px-4">
                 <Scissors className="h-4 w-4" />
-                Clips
-                {completedStages.includes('clips') && <Check className="h-3 w-3 text-green-500" />}
+                <span className="hidden sm:inline">Clips</span>
+                {completedStages.includes('clips') && <Check className="h-3 w-3 text-green-500 ml-1" />}
               </TabsTrigger>
-              <TabsTrigger value="mix" className="gap-2">
+              <TabsTrigger value="mix" className="gap-2 px-4">
                 <Music className="h-4 w-4" />
-                Mix
-                {completedStages.includes('mix') && <Check className="h-3 w-3 text-green-500" />}
+                <span className="hidden sm:inline">Mix</span>
+                {completedStages.includes('mix') && <Check className="h-3 w-3 text-green-500 ml-1" />}
               </TabsTrigger>
-              <TabsTrigger value="timeline" className="gap-2">
+              <TabsTrigger value="timeline" className="gap-2 px-4">
                 <Layers className="h-4 w-4" />
-                Timeline
-                {completedStages.includes('timeline') && <Check className="h-3 w-3 text-green-500" />}
+                <span className="hidden sm:inline">Timeline</span>
+                {completedStages.includes('timeline') && <Check className="h-3 w-3 text-green-500 ml-1" />}
               </TabsTrigger>
-              <TabsTrigger value="publish" className="gap-2">
+              <TabsTrigger value="publish" className="gap-2 px-4">
                 <Upload className="h-4 w-4" />
-                Publish
-                {completedStages.includes('publish') && <Check className="h-3 w-3 text-green-500" />}
+                <span className="hidden sm:inline">Publish</span>
+                {completedStages.includes('publish') && <Check className="h-3 w-3 text-green-500 ml-1" />}
               </TabsTrigger>
             </TabsList>
 
-            {/* Record Tab */}
-            <TabsContent value="record" className="space-y-6">
-              <Card className="border-border/50 bg-card/80 backdrop-blur">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center">
-                        <Video className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <h2 className="text-xl font-semibold">Record</h2>
-                        <p className="text-sm text-muted-foreground">Capture video, audio, or screen</p>
-                      </div>
+            {/* Record Tab - Direct Content, No Card Wrapper */}
+            <TabsContent value="record" className="space-y-6 mt-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-red-500/10 flex items-center justify-center">
+                    <Video className="h-5 w-5 text-red-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold">Record</h2>
+                    <p className="text-sm text-muted-foreground">Capture video, audio, or screen</p>
+                  </div>
+                </div>
+                <Badge variant="outline">Step 1 of 5</Badge>
+              </div>
+
+              {/* Recording Mode Selection */}
+              <div className="grid md:grid-cols-3 gap-4">
+                <button className="p-6 text-center border-2 border-dashed rounded-lg hover:border-primary hover:bg-muted/50 transition-all group">
+                  <Camera className="h-10 w-10 mx-auto mb-3 text-blue-500 group-hover:scale-110 transition-transform" />
+                  <h3 className="font-semibold">Camera</h3>
+                  <p className="text-xs text-muted-foreground">Record from webcam</p>
+                </button>
+                <button className="p-6 text-center border-2 border-dashed rounded-lg hover:border-primary hover:bg-muted/50 transition-all group">
+                  <ScreenShare className="h-10 w-10 mx-auto mb-3 text-green-500 group-hover:scale-110 transition-transform" />
+                  <h3 className="font-semibold">Screen</h3>
+                  <p className="text-xs text-muted-foreground">Record screen activity</p>
+                </button>
+                <button className="p-6 text-center border-2 border-dashed rounded-lg hover:border-primary hover:bg-muted/50 transition-all group">
+                  <div className="flex justify-center gap-1 mb-3">
+                    <Camera className="h-8 w-8 text-purple-500 group-hover:scale-110 transition-transform" />
+                    <ScreenShare className="h-8 w-8 text-purple-500 group-hover:scale-110 transition-transform" />
+                  </div>
+                  <h3 className="font-semibold">Both</h3>
+                  <p className="text-xs text-muted-foreground">Camera + Screen overlay</p>
+                </button>
+              </div>
+
+              {/* Recording Preview Area */}
+              <div className="aspect-video bg-black rounded-lg flex items-center justify-center relative overflow-hidden">
+                <div className="text-center">
+                  <Video className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
+                  <p className="text-muted-foreground">Select a recording mode above to start</p>
+                </div>
+              </div>
+
+              {/* Recording Controls */}
+              <div className="flex justify-center gap-4">
+                <Button size="lg" className="gap-2 bg-red-500 hover:bg-red-600 text-white px-8">
+                  <div className="h-3 w-3 rounded-full bg-white animate-pulse" />
+                  Start Recording
+                </Button>
+              </div>
+
+              {/* Script Teleprompter Option */}
+              {scriptsForMobile.length > 0 && (
+                <div className="p-4 bg-muted/30 rounded-lg border">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Eye className="h-4 w-4 text-primary" />
+                      <span className="font-medium">Teleprompter</span>
                     </div>
-                    <Badge className="bg-red-500/10 text-red-600 border-red-500/20">
-                      Step 1 of 5
+                    <Badge variant="secondary" className="text-xs">
+                      {scriptsForMobile.length} scripts
                     </Badge>
                   </div>
-
-                  <div className="grid md:grid-cols-3 gap-4 mb-6">
-                    <Card className="border-2 border-dashed hover:border-primary transition-colors cursor-pointer p-6 text-center group">
-                      <Camera className="h-10 w-10 mx-auto mb-3 text-blue-500 group-hover:scale-110 transition-transform" />
-                      <h3 className="font-semibold">Camera</h3>
-                      <p className="text-xs text-muted-foreground">Record from webcam</p>
-                    </Card>
-                    <Card className="border-2 border-dashed hover:border-primary transition-colors cursor-pointer p-6 text-center group">
-                      <ScreenShare className="h-10 w-10 mx-auto mb-3 text-green-500 group-hover:scale-110 transition-transform" />
-                      <h3 className="font-semibold">Screen</h3>
-                      <p className="text-xs text-muted-foreground">Record screen activity</p>
-                    </Card>
-                    <Card className="border-2 border-dashed hover:border-primary transition-colors cursor-pointer p-6 text-center group">
-                      <div className="flex justify-center gap-1 mb-3">
-                        <Camera className="h-8 w-8 text-purple-500 group-hover:scale-110 transition-transform" />
-                        <ScreenShare className="h-8 w-8 text-purple-500 group-hover:scale-110 transition-transform" />
-                      </div>
-                      <h3 className="font-semibold">Both</h3>
-                      <p className="text-xs text-muted-foreground">Camera + Screen overlay</p>
-                    </Card>
-                  </div>
-
-                  {/* Recording Preview Area */}
-                  <div className="aspect-video bg-black rounded-lg flex items-center justify-center mb-6 relative overflow-hidden">
-                    <div className="text-center">
-                      <Video className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
-                      <p className="text-muted-foreground">Select a recording mode above to start</p>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Select a script to use as teleprompter while recording
+                  </p>
+                  <ScrollArea className="h-20">
+                    <div className="flex gap-2">
+                      {scriptsForMobile.slice(0, 5).map(script => (
+                        <Button 
+                          key={script.id} 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-auto py-2 flex-shrink-0 gap-2"
+                          onClick={() => {
+                            setActiveScript(script.content);
+                            setIsTeleprompterOpen(true);
+                          }}
+                        >
+                          <Play className="h-3 w-3" />
+                          <div className="text-left">
+                            <p className="text-xs font-medium">{script.title}</p>
+                          </div>
+                        </Button>
+                      ))}
                     </div>
-                  </div>
+                  </ScrollArea>
+                </div>
+              )}
 
-                  {/* Recording Controls */}
-                  <div className="flex justify-center gap-4">
-                    <Button size="lg" className="gap-2 bg-red-500 hover:bg-red-600 text-white px-8">
-                      <div className="h-3 w-3 rounded-full bg-white animate-pulse" />
-                      Start Recording
+              {/* Recent Recordings */}
+              {recordings.length > 0 && (
+                <div className="p-4 bg-muted/30 rounded-lg border">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="font-medium">Recent Recordings ({recordings.length})</span>
+                    <Button 
+                      variant="link" 
+                      size="sm" 
+                      className="h-auto p-0"
+                      onClick={() => setActiveTab('clips')}
+                    >
+                      Process with AI Clips →
                     </Button>
                   </div>
-
-                  {/* Script Teleprompter Option */}
-                  {scriptsForMobile.length > 0 && (
-                    <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <FileText className="h-4 w-4 text-purple-500" />
-                        <span className="font-medium">Use Script as Teleprompter</span>
+                  <div className="flex gap-2 overflow-x-auto pb-2">
+                    {recordings.map(rec => (
+                      <div key={rec.id} className="w-20 h-14 bg-muted rounded flex-shrink-0 flex items-center justify-center border">
+                        <Video className="h-6 w-6 text-muted-foreground" />
                       </div>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        {scriptsForMobile.length} scripts available from Genie Studio
-                      </p>
-                      <ScrollArea className="h-24">
-                        <div className="flex gap-2">
-                          {scriptsForMobile.slice(0, 5).map(script => (
-                            <Button key={script.id} variant="outline" size="sm" className="h-auto py-2 flex-shrink-0">
-                              <div className="text-left">
-                                <p className="text-xs font-medium">{script.title}</p>
-                                <p className="text-[10px] text-muted-foreground line-clamp-1 max-w-[120px]">
-                                  {script.content.slice(0, 50)}...
-                                </p>
-                              </div>
-                            </Button>
-                          ))}
-                        </div>
-                      </ScrollArea>
-                    </div>
-                  )}
-
-                  {/* Recent Recordings */}
-                  {recordings.length > 0 && (
-                    <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="font-medium">Recent Recordings ({recordings.length})</span>
-                        <Button 
-                          variant="link" 
-                          size="sm" 
-                          className="h-auto p-0"
-                          onClick={() => setActiveTab('clips')}
-                        >
-                          Process with AI Clips →
-                        </Button>
-                      </div>
-                      <div className="flex gap-2 overflow-x-auto pb-2">
-                        {recordings.map(rec => (
-                          <div key={rec.id} className="w-20 h-14 bg-muted rounded flex-shrink-0 flex items-center justify-center">
-                            <Video className="h-6 w-6 text-muted-foreground" />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
             </TabsContent>
 
             {/* Quick Clips Tab */}
-            <TabsContent value="clips" className="space-y-6">
-              <Card className="border-border/50 bg-card/80 backdrop-blur">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-                        <Scissors className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <h2 className="text-xl font-semibold">Quick Clips</h2>
-                        <p className="text-sm text-muted-foreground">AI auto-finds the best moments</p>
-                      </div>
-                    </div>
-                    <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20">
-                      Step 2 of 5
-                    </Badge>
+            <TabsContent value="clips" className="space-y-6 mt-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                    <Scissors className="h-5 w-5 text-blue-500" />
                   </div>
-                  
-                  <QuickClipsGenerator 
-                    sourceUrl={recordings[0]?.url}
-                    sourceDuration={recordings[0]?.duration || 120}
-                    onClipGenerated={(clip) => {
-                      toast.success(`Generated clip: ${clip.suggestion.title}`);
-                      // Convert QuickClip to TimelineClip and add to timeline
-                      const timelineClip: TimelineClip = {
-                        id: clip.id,
-                        type: 'video',
-                        name: clip.suggestion.title,
-                        sourceUrl: clip.outputUrl,
-                        startTime: timelineClips.length > 0 
-                          ? Math.max(...timelineClips.map(c => c.startTime + c.duration)) + 0.5 
-                          : 0,
-                        duration: clip.suggestion.duration,
-                        inPoint: clip.suggestion.startTime,
-                        outPoint: clip.suggestion.endTime,
-                        track: 0,
-                        volume: 1,
-                        opacity: 1,
-                      };
-                      setTimelineClips(prev => [...prev, timelineClip]);
-                      markStageCompleted('clips');
-                    }}
-                  />
-                </CardContent>
-              </Card>
+                  <div>
+                    <h2 className="text-lg font-semibold">Quick Clips</h2>
+                    <p className="text-sm text-muted-foreground">AI auto-finds the best moments</p>
+                  </div>
+                </div>
+                <Badge variant="outline">Step 2 of 5</Badge>
+              </div>
+              
+              <QuickClipsGenerator 
+                sourceUrl={recordings[0]?.url}
+                sourceDuration={recordings[0]?.duration || 120}
+                onClipGenerated={(clip) => {
+                  toast.success(`Generated clip: ${clip.suggestion.title}`);
+                  const timelineClip: TimelineClip = {
+                    id: clip.id,
+                    type: 'video',
+                    name: clip.suggestion.title,
+                    sourceUrl: clip.outputUrl,
+                    startTime: timelineClips.length > 0 
+                      ? Math.max(...timelineClips.map(c => c.startTime + c.duration)) + 0.5 
+                      : 0,
+                    duration: clip.suggestion.duration,
+                    inPoint: clip.suggestion.startTime,
+                    outPoint: clip.suggestion.endTime,
+                    track: 0,
+                    volume: 1,
+                    opacity: 1,
+                  };
+                  setTimelineClips(prev => [...prev, timelineClip]);
+                  markStageCompleted('clips');
+                }}
+              />
             </TabsContent>
 
             {/* Audio Mix Tab */}
-            <TabsContent value="mix" className="space-y-6">
-              <Card className="border-border/50 bg-card/80 backdrop-blur">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
-                        <Music className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <h2 className="text-xl font-semibold">Audio Mix</h2>
-                        <p className="text-sm text-muted-foreground">Add voiceovers, music & sound</p>
-                      </div>
-                    </div>
-                    <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20">
-                      Step 3 of 5
-                    </Badge>
+            <TabsContent value="mix" className="space-y-6 mt-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                    <Music className="h-5 w-5 text-amber-500" />
                   </div>
-                  
-                  <AudioMixer
-                    recordings={recordings}
-                    voiceovers={allVoiceovers}
-                    music={musicForMobile}
-                    onMixComplete={handleMixComplete}
-                  />
-                </CardContent>
-              </Card>
+                  <div>
+                    <h2 className="text-lg font-semibold">Audio Mix</h2>
+                    <p className="text-sm text-muted-foreground">Add voiceovers, music & sound</p>
+                  </div>
+                </div>
+                <Badge variant="outline">Step 3 of 5</Badge>
+              </div>
+              
+              <AudioMixer
+                recordings={recordings}
+                voiceovers={allVoiceovers}
+                music={musicForMobile}
+                onMixComplete={handleMixComplete}
+              />
             </TabsContent>
 
             {/* Timeline Tab */}
-            <TabsContent value="timeline" className="space-y-6">
-              <Card className="border-border/50 bg-card/80 backdrop-blur">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-violet-500 flex items-center justify-center">
-                        <Layers className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <h2 className="text-xl font-semibold">Timeline</h2>
-                        <p className="text-sm text-muted-foreground">Arrange and edit your clips</p>
-                      </div>
-                    </div>
-                    <Badge className="bg-purple-500/10 text-purple-600 border-purple-500/20">
-                      Step 4 of 5
-                    </Badge>
+            <TabsContent value="timeline" className="space-y-6 mt-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                    <Layers className="h-5 w-5 text-purple-500" />
                   </div>
-                  
-                  <MultiClipTimeline
-                    clips={timelineClips}
-                    mixedAudioTracks={mixedMedia?.audioTracks}
-                    onClipsChange={setTimelineClips}
-                    onExport={handleTimelineExport}
-                  />
-                </CardContent>
-              </Card>
+                  <div>
+                    <h2 className="text-lg font-semibold">Timeline</h2>
+                    <p className="text-sm text-muted-foreground">Arrange and edit your clips</p>
+                  </div>
+                </div>
+                <Badge variant="outline">Step 4 of 5</Badge>
+              </div>
+              
+              <MultiClipTimeline
+                clips={timelineClips}
+                mixedAudioTracks={mixedMedia?.audioTracks}
+                onClipsChange={setTimelineClips}
+                onExport={handleTimelineExport}
+              />
             </TabsContent>
 
             {/* Publish Tab */}
-            <TabsContent value="publish" className="space-y-6">
-              <Card className="border-border/50 bg-card/80 backdrop-blur">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
-                        <Upload className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <h2 className="text-xl font-semibold">Publish</h2>
-                        <p className="text-sm text-muted-foreground">Export, share, and publish</p>
-                      </div>
-                    </div>
-                    <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
-                      Step 5 of 5
-                    </Badge>
+            <TabsContent value="publish" className="space-y-6 mt-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                    <Upload className="h-5 w-5 text-green-500" />
                   </div>
-                  
-                  <PublishPanel
-                    clips={timelineClips}
-                    totalDuration={totalDuration}
-                    projectName="My Genie Vibe Project"
-                    onExport={handlePublish}
-                  />
-                </CardContent>
-              </Card>
+                  <div>
+                    <h2 className="text-lg font-semibold">Publish</h2>
+                    <p className="text-sm text-muted-foreground">Export, share, and publish</p>
+                  </div>
+                </div>
+                <Badge variant="outline">Step 5 of 5</Badge>
+              </div>
+              
+              <PublishPanel
+                clips={timelineClips}
+                totalDuration={totalDuration}
+                projectName="My Genie Vibe Project"
+                onExport={handlePublish}
+              />
             </TabsContent>
           </Tabs>
-        </div>
+        </main>
       </div>
     </AppLayout>
   );
