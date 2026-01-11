@@ -178,40 +178,39 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
       <MobileStatusBar className="flex-shrink-0" />
 
       {/* Header - Compact for mobile with navigation */}
-      <div className="flex items-center justify-between px-3 py-2 border-b bg-card flex-shrink-0">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between px-2 py-2 border-b bg-card flex-shrink-0 min-h-[48px]">
+        <div className="flex items-center gap-1 min-w-0 flex-1">
           {/* Back button */}
           {onClose && (
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={onClose}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
           )}
-          <Video className="h-4 w-4 text-primary" />
-          <span className="font-semibold text-sm">Genie Vibe</span>
-          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-            <Sparkles className="h-2.5 w-2.5 mr-0.5" />
-            Mobile
+          <Video className="h-4 w-4 text-primary flex-shrink-0" />
+          <span className="font-semibold text-sm truncate">Vibe</span>
+          <Badge variant="secondary" className="text-[9px] px-1 py-0 flex-shrink-0 hidden xs:inline-flex">
+            <Sparkles className="h-2 w-2" />
           </Badge>
         </div>
         
-        <div className="flex items-center gap-0.5">
-          {/* Desktop Switch button */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {/* Desktop Switch button - icon only on very small screens */}
           {onSwitchToDesktop && (
             <Button 
               variant="outline" 
               size="sm" 
-              className="h-8 text-xs gap-1"
+              className="h-7 px-2 text-[10px] gap-1"
               onClick={onSwitchToDesktop}
             >
-              <Monitor className="h-3.5 w-3.5" />
-              Desktop
+              <Monitor className="h-3 w-3" />
+              <span className="hidden sm:inline">Desktop</span>
             </Button>
           )}
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleFullscreen}>
-            {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={toggleFullscreen}>
+            {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleShare}>
-            <Share2 className="h-4 w-4" />
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleShare}>
+            <Share2 className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>
