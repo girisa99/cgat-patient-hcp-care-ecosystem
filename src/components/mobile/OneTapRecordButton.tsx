@@ -285,10 +285,10 @@ export const OneTapRecordButton: React.FC<OneTapRecordButtonProps> = ({
     }
   };
 
-  // Floating FAB variant
+  // Floating FAB variant - positioned to not overlap tab bar
   if (variant === 'floating') {
     return (
-      <div className={cn("fixed bottom-24 right-4 z-50 flex flex-col items-end gap-2", className)}>
+      <div className={cn("flex flex-col items-end gap-2", className)}>
         {/* Expanded Controls */}
         {isExpanded && recordingState === 'idle' && (
           <Card className="mb-2 animate-in fade-in slide-in-from-bottom-2">

@@ -144,33 +144,37 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
 
   return (
     <div className={cn(
-      "fixed inset-0 z-50 bg-background flex flex-col",
+      "fixed inset-0 z-50 bg-background flex flex-col overflow-hidden",
       isFullscreen && "bg-black",
       className
-    )}>
+    )}
+    style={{ 
+      paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      height: '100dvh' // Use dynamic viewport height for mobile
+    }}>
       {/* Mobile Status Bar */}
       <MobileStatusBar className="flex-shrink-0" />
 
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 border-b bg-card">
+      {/* Header - Compact for mobile */}
+      <div className="flex items-center justify-between px-3 py-2 border-b bg-card flex-shrink-0">
         <div className="flex items-center gap-2">
-          <Video className="h-5 w-5 text-primary" />
-          <span className="font-semibold">Genie Vibe</span>
-          <Badge variant="secondary" className="text-xs">
-            <Sparkles className="h-3 w-3 mr-1" />
+          <Video className="h-4 w-4 text-primary" />
+          <span className="font-semibold text-sm">Genie Vibe</span>
+          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+            <Sparkles className="h-2.5 w-2.5 mr-0.5" />
             Mobile
           </Badge>
         </div>
         
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
+        <div className="flex items-center gap-0.5">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleFullscreen}>
             {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </Button>
-          <Button variant="ghost" size="icon" onClick={handleShare}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleShare}>
             <Share2 className="h-4 w-4" />
           </Button>
           {onClose && (
-            <Button variant="ghost" size="icon" onClick={onClose}>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
           )}
@@ -379,36 +383,38 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
             </TabsContent>
           </div>
 
-          {/* Bottom Tab Bar */}
-          <TabsList className="flex-shrink-0 h-16 rounded-none border-t bg-card grid grid-cols-4">
-            <TabsTrigger value="record" className="flex flex-col gap-1 data-[state=active]:bg-primary/10">
-              <Video className="h-5 w-5" />
-              <span className="text-xs">Record</span>
+          {/* Bottom Tab Bar - Fixed at bottom with safe area */}
+          <TabsList className="flex-shrink-0 h-14 rounded-none border-t bg-card grid grid-cols-4 safe-area-bottom">
+            <TabsTrigger value="record" className="flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1.5">
+              <Video className="h-4 w-4" />
+              <span className="text-[10px]">Record</span>
             </TabsTrigger>
-            <TabsTrigger value="clips" className="flex flex-col gap-1 data-[state=active]:bg-primary/10">
-              <Scissors className="h-5 w-5" />
-              <span className="text-xs">Clips</span>
+            <TabsTrigger value="clips" className="flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1.5">
+              <Scissors className="h-4 w-4" />
+              <span className="text-[10px]">Clips</span>
             </TabsTrigger>
-            <TabsTrigger value="timeline" className="flex flex-col gap-1 data-[state=active]:bg-primary/10">
-              <Layers className="h-5 w-5" />
-              <span className="text-xs">Timeline</span>
+            <TabsTrigger value="timeline" className="flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1.5">
+              <Layers className="h-4 w-4" />
+              <span className="text-[10px]">Timeline</span>
             </TabsTrigger>
-            <TabsTrigger value="library" className="flex flex-col gap-1 data-[state=active]:bg-primary/10">
-              <Library className="h-5 w-5" />
-              <span className="text-xs">Library</span>
+            <TabsTrigger value="library" className="flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1.5">
+              <Library className="h-4 w-4" />
+              <span className="text-[10px]">Library</span>
             </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
 
-      {/* Floating Record Button (always visible) */}
-      <OneTapRecordButton
-        variant="floating"
-        onRecordingComplete={handleRecordingComplete}
-        onRecordingStart={() => setActiveTab('record')}
-      />
+      {/* Floating Record Button - Positioned above tab bar */}
+      <div className="fixed bottom-20 right-4 z-[60]">
+        <OneTapRecordButton
+          variant="floating"
+          onRecordingComplete={handleRecordingComplete}
+          onRecordingStart={() => setActiveTab('record')}
+        />
+      </div>
 
-      {/* PWA Install Prompt */}
+      {/* PWA Install Prompt - Above the floating button */}
       <PWAInstallPrompt variant="banner" showOnMount={true} />
     </div>
   );
