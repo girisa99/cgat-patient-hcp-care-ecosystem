@@ -10,3 +10,6 @@ export { GenieStudioUnifiedHub } from './GenieStudioUnifiedHub';
 // Genie Studio - Individual diagrams (accessible via tabs)
 export { GenieRecordingStudioArchitectureDiagram } from './GenieRecordingStudioArchitectureDiagram';
 export { MarketAnalysisDashboard } from './MarketAnalysisDashboard';
+
+// Genie Studio - Investor Dashboard (comprehensive analytics)
+export { GenieInvestorDashboard } from './GenieInvestorDashboard';
