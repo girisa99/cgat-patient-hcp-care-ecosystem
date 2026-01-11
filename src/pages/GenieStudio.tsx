@@ -92,6 +92,8 @@ import type { GeneratedContent } from '@/components/genie-studio/PostGenerationA
 import { supabase } from '@/integrations/supabase/client';
 import { useGenieSession } from '@/hooks/useGenieSession';
 import { SessionCalendarButtons } from '@/components/genie-studio/SessionCalendarButtons';
+// Mobile Recording View for mobile-first experience
+import { MobileRecordingView } from '@/components/document-processing/RecordingStudio/components/MobileRecordingView';
 
 // Import Genie logos - Using combined versions with taglines (finalized)
 import genieStudioLogo from '@/assets/logos/genie-studio-banner.png';
@@ -933,6 +935,17 @@ export default function GenieStudio() {
   const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
   const [isCarouselPaused, setIsCarouselPaused] = useState(false);
   const carouselIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Mobile detection for responsive experience
+  const [isMobile, setIsMobile] = useState(false);
+  const [forceDesktopView, setForceDesktopView] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   // Auto-scroll carousel every 5 seconds
   useEffect(() => {
@@ -2167,6 +2180,36 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
     }
   };
 
+  // Mobile-first: Show optimized mobile recording experience
+  const showMobileView = isMobile && !forceDesktopView;
+  
+  // Scripts formatted for mobile view
+  const scriptsForMobile = savedScripts.map(s => ({
+    id: s.id,
+    title: s.name,
+    content: s.enhancedContent || s.content || ''
+  }));
+
+  // ============================================================
+  // MOBILE VIEW - Streamlined recording-first experience
+  // ============================================================
+  if (showMobileView) {
+    return (
+      <MobileRecordingView
+        isOpen={true}
+        onClose={() => setForceDesktopView(true)}
+        scripts={scriptsForMobile}
+        onRecordingComplete={(result) => {
+          console.log('Mobile recording complete:', result);
+          loadMedia();
+        }}
+      />
+    );
+  }
+
+  // ============================================================
+  // DESKTOP VIEW - Full studio with all features
+  // ============================================================
   return (
     <AppLayout>
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
