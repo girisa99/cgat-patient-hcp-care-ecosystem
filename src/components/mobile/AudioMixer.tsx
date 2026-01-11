@@ -53,6 +53,12 @@ interface AudioTrack {
   duration?: number;
   volume: number;
   muted: boolean;
+  // Sync/alignment properties
+  startOffset: number; // When this audio starts relative to video (in seconds)
+  fadeIn: number; // Fade in duration (seconds)
+  fadeOut: number; // Fade out duration (seconds)
+  trimStart: number; // Trim from beginning (seconds)
+  trimEnd: number; // Trim from end (seconds)
 }
 
 interface MixedOutput {
@@ -60,6 +66,8 @@ interface MixedOutput {
   audioTracks: AudioTrack[];
   totalDuration: number;
   masterVolume: number;
+  // Sync metadata
+  syncPoints?: { videoTime: number; audioTrackId: string; label?: string }[];
 }
 
 interface AudioMixerProps {
@@ -149,14 +157,27 @@ export const AudioMixer: React.FC<AudioMixerProps> = ({
       url: item.url,
       type,
       duration: item.duration || 30,
-      volume: 100,
+      volume: type === 'music' ? 30 : 100, // Lower default for music
       muted: false,
+      // Sync defaults
+      startOffset: 0,
+      fadeIn: type === 'music' ? 2 : 0, // Music fades in by default
+      fadeOut: type === 'music' ? 2 : 0, // Music fades out by default
+      trimStart: 0,
+      trimEnd: 0,
     };
     
     setAudioTracks(prev => [...prev, newTrack]);
     vibrate?.(50);
     toast.success(`Added ${type} track`);
   }, [audioTracks.length, vibrate]);
+
+  // Update audio track timing/sync
+  const updateAudioTrackTiming = useCallback((trackId: string, updates: Partial<AudioTrack>) => {
+    setAudioTracks(prev => 
+      prev.map(t => t.id === trackId ? { ...t, ...updates } : t)
+    );
+  }, []);
 
   const removeAudioTrack = useCallback((trackId: string) => {
     setAudioTracks(prev => prev.filter(t => t.id !== trackId));
@@ -467,27 +488,30 @@ export const AudioMixer: React.FC<AudioMixerProps> = ({
             </CardContent>
           </Card>
 
-          {/* Audio Tracks List */}
+          {/* Audio Tracks List with Sync Controls */}
           {audioTracks.length > 0 && (
             <Card>
               <CardHeader className="py-2 px-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-xs">Audio Mix</CardTitle>
+                  <CardTitle className="text-xs">Audio Mix & Sync</CardTitle>
                   <span className="text-[10px] text-muted-foreground">
                     {audioTracks.length} tracks
                   </span>
                 </div>
               </CardHeader>
               <CardContent className="px-3 pb-3">
-                <ScrollArea className="h-40">
-                  <div className="space-y-2 pr-2">
+                <ScrollArea className="h-64">
+                  <div className="space-y-3 pr-2">
                     {audioTracks.map(track => {
                       const TypeIcon = getAudioTypeIcon(track.type);
+                      const effectiveDuration = (track.duration || 30) - track.trimStart - track.trimEnd;
+                      
                       return (
                         <div 
                           key={track.id}
-                          className="p-2 border rounded-lg space-y-2"
+                          className="p-2 border rounded-lg space-y-2 bg-card"
                         >
+                          {/* Track Header */}
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 min-w-0">
                               <Badge className={cn("text-[10px] px-1.5", getAudioTypeColor(track.type))}>
@@ -519,12 +543,47 @@ export const AudioMixer: React.FC<AudioMixerProps> = ({
                               </Button>
                             </div>
                           </div>
+
+                          {/* Visual Timeline Bar */}
+                          <div className="relative h-6 bg-muted/50 rounded overflow-hidden">
+                            {/* Video reference line */}
+                            <div className="absolute inset-0 flex items-center">
+                              <div className="w-full h-0.5 bg-blue-500/30" />
+                            </div>
+                            {/* Audio position indicator */}
+                            <div 
+                              className={cn(
+                                "absolute top-0.5 bottom-0.5 rounded transition-all",
+                                track.type === 'music' ? 'bg-amber-500/60' : 
+                                track.type === 'voiceover' ? 'bg-purple-500/60' : 'bg-blue-500/60'
+                              )}
+                              style={{
+                                left: `${Math.min((track.startOffset / totalDuration) * 100, 100)}%`,
+                                width: `${Math.min((effectiveDuration / totalDuration) * 100, 100 - (track.startOffset / totalDuration) * 100)}%`,
+                              }}
+                            >
+                              {/* Fade indicators */}
+                              {track.fadeIn > 0 && (
+                                <div 
+                                  className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-background/80 to-transparent"
+                                  style={{ width: `${(track.fadeIn / effectiveDuration) * 100}%` }}
+                                />
+                              )}
+                              {track.fadeOut > 0 && (
+                                <div 
+                                  className="absolute right-0 top-0 bottom-0 bg-gradient-to-l from-background/80 to-transparent"
+                                  style={{ width: `${(track.fadeOut / effectiveDuration) * 100}%` }}
+                                />
+                              )}
+                              <span className="absolute inset-0 flex items-center justify-center text-[8px] text-white font-medium">
+                                {effectiveDuration.toFixed(1)}s
+                              </span>
+                            </div>
+                          </div>
                           
                           {/* Volume Slider */}
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-muted-foreground w-8">
-                              {track.volume}%
-                            </span>
+                            <span className="text-[10px] text-muted-foreground w-12">Volume</span>
                             <Slider
                               value={[track.volume]}
                               min={0}
@@ -534,6 +593,91 @@ export const AudioMixer: React.FC<AudioMixerProps> = ({
                               className="flex-1"
                               disabled={track.muted}
                             />
+                            <span className="text-[10px] text-muted-foreground w-8 text-right">
+                              {track.volume}%
+                            </span>
+                          </div>
+
+                          {/* Start Offset (Sync Point) */}
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-muted-foreground w-12">Start at</span>
+                            <Slider
+                              value={[track.startOffset]}
+                              min={0}
+                              max={Math.max(totalDuration - 1, 1)}
+                              step={0.5}
+                              onValueChange={([value]) => updateAudioTrackTiming(track.id, { startOffset: value })}
+                              className="flex-1"
+                            />
+                            <span className="text-[10px] text-muted-foreground w-8 text-right">
+                              {track.startOffset.toFixed(1)}s
+                            </span>
+                          </div>
+
+                          {/* Fade Controls (for music primarily) */}
+                          {track.type === 'music' && (
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="flex items-center gap-1">
+                                <span className="text-[9px] text-muted-foreground w-10">Fade In</span>
+                                <Slider
+                                  value={[track.fadeIn]}
+                                  min={0}
+                                  max={10}
+                                  step={0.5}
+                                  onValueChange={([value]) => updateAudioTrackTiming(track.id, { fadeIn: value })}
+                                  className="flex-1"
+                                />
+                                <span className="text-[9px] text-muted-foreground w-6">
+                                  {track.fadeIn}s
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="text-[9px] text-muted-foreground w-10">Fade Out</span>
+                                <Slider
+                                  value={[track.fadeOut]}
+                                  min={0}
+                                  max={10}
+                                  step={0.5}
+                                  onValueChange={([value]) => updateAudioTrackTiming(track.id, { fadeOut: value })}
+                                  className="flex-1"
+                                />
+                                <span className="text-[9px] text-muted-foreground w-6">
+                                  {track.fadeOut}s
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Trim Controls */}
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="flex items-center gap-1">
+                              <span className="text-[9px] text-muted-foreground w-12">Trim Start</span>
+                              <Slider
+                                value={[track.trimStart]}
+                                min={0}
+                                max={Math.max((track.duration || 30) - track.trimEnd - 1, 0)}
+                                step={0.5}
+                                onValueChange={([value]) => updateAudioTrackTiming(track.id, { trimStart: value })}
+                                className="flex-1"
+                              />
+                              <span className="text-[9px] text-muted-foreground w-6">
+                                {track.trimStart.toFixed(1)}s
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="text-[9px] text-muted-foreground w-12">Trim End</span>
+                              <Slider
+                                value={[track.trimEnd]}
+                                min={0}
+                                max={Math.max((track.duration || 30) - track.trimStart - 1, 0)}
+                                step={0.5}
+                                onValueChange={([value]) => updateAudioTrackTiming(track.id, { trimEnd: value })}
+                                className="flex-1"
+                              />
+                              <span className="text-[9px] text-muted-foreground w-6">
+                                {track.trimEnd.toFixed(1)}s
+                              </span>
+                            </div>
                           </div>
                         </div>
                       );

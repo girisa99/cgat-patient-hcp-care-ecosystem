@@ -52,6 +52,10 @@ export interface TimelineClip {
   volume?: number;
   opacity?: number;
   effects?: string[];
+  // Audio sync properties (from AudioMixer)
+  fadeIn?: number;
+  fadeOut?: number;
+  audioType?: 'recording' | 'voiceover' | 'music';
 }
 
 export interface TimelineTrack {
@@ -63,8 +67,25 @@ export interface TimelineTrack {
   visible: boolean;
 }
 
+// Audio track data from mixer (for import)
+export interface MixedAudioTrack {
+  id: string;
+  name: string;
+  url?: string;
+  type: 'recording' | 'voiceover' | 'music';
+  duration?: number;
+  volume: number;
+  muted: boolean;
+  startOffset: number;
+  fadeIn: number;
+  fadeOut: number;
+  trimStart: number;
+  trimEnd: number;
+}
+
 interface MultiClipTimelineProps {
   clips?: TimelineClip[];
+  mixedAudioTracks?: MixedAudioTrack[]; // Import from AudioMixer
   onClipsChange?: (clips: TimelineClip[]) => void;
   onExport?: (format: string) => void;
   className?: string;
@@ -72,12 +93,14 @@ interface MultiClipTimelineProps {
 
 const DEFAULT_TRACKS: TimelineTrack[] = [
   { id: 'video-1', name: 'Video 1', type: 'video', locked: false, muted: false, visible: true },
-  { id: 'audio-1', name: 'Audio 1', type: 'audio', locked: false, muted: false, visible: true },
+  { id: 'audio-1', name: 'Voiceover', type: 'audio', locked: false, muted: false, visible: true },
+  { id: 'audio-2', name: 'Music', type: 'audio', locked: false, muted: false, visible: true },
   { id: 'overlay-1', name: 'Overlay', type: 'overlay', locked: false, muted: false, visible: true },
 ];
 
 export const MultiClipTimeline: React.FC<MultiClipTimelineProps> = ({
   clips: initialClips = [],
+  mixedAudioTracks = [],
   onClipsChange,
   onExport,
   className
@@ -95,6 +118,44 @@ export const MultiClipTimeline: React.FC<MultiClipTimelineProps> = ({
   const [history, setHistory] = useState<TimelineClip[][]>([initialClips]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [draggedClip, setDraggedClip] = useState<TimelineClip | null>(null);
+
+  // Import mixed audio tracks from AudioMixer when they change
+  React.useEffect(() => {
+    if (mixedAudioTracks.length > 0) {
+      const audioClips: TimelineClip[] = mixedAudioTracks.map((audioTrack, index) => {
+        const effectiveDuration = (audioTrack.duration || 30) - audioTrack.trimStart - audioTrack.trimEnd;
+        // Assign voiceovers to track 1, music to track 2
+        const trackIndex = audioTrack.type === 'music' ? 2 : 1;
+        
+        return {
+          id: `imported-${audioTrack.id}`,
+          type: 'audio' as const,
+          name: audioTrack.name,
+          sourceUrl: audioTrack.url,
+          startTime: audioTrack.startOffset,
+          duration: effectiveDuration,
+          inPoint: audioTrack.trimStart,
+          outPoint: (audioTrack.duration || 30) - audioTrack.trimEnd,
+          track: trackIndex,
+          volume: audioTrack.volume / 100,
+          fadeIn: audioTrack.fadeIn,
+          fadeOut: audioTrack.fadeOut,
+          audioType: audioTrack.type,
+        };
+      });
+
+      // Merge with existing clips (avoid duplicates)
+      setClips(prev => {
+        const existingIds = new Set(prev.map(c => c.id));
+        const newClips = audioClips.filter(c => !existingIds.has(c.id));
+        if (newClips.length > 0) {
+          toast.success(`Imported ${newClips.length} audio track(s) from mixer`);
+          return [...prev, ...newClips];
+        }
+        return prev;
+      });
+    }
+  }, [mixedAudioTracks]);
 
   // Calculate total duration
   const totalDuration = useMemo(() => {
@@ -237,8 +298,16 @@ export const MultiClipTimeline: React.FC<MultiClipTimelineProps> = ({
     toast.success(`Added ${type} clip`);
   };
 
-  const getClipColor = (type: TimelineClip['type']) => {
-    switch (type) {
+  // Enhanced clip coloring - includes audio subtypes
+  const getClipColor = (clip: TimelineClip) => {
+    if (clip.type === 'audio' && clip.audioType) {
+      switch (clip.audioType) {
+        case 'voiceover': return 'bg-purple-500';
+        case 'music': return 'bg-amber-500';
+        case 'recording': return 'bg-green-500';
+      }
+    }
+    switch (clip.type) {
       case 'video': return 'bg-blue-500';
       case 'audio': return 'bg-green-500';
       case 'image': return 'bg-purple-500';
@@ -453,7 +522,7 @@ export const MultiClipTimeline: React.FC<MultiClipTimelineProps> = ({
                         key={clip.id}
                         className={cn(
                           "absolute top-1 h-10 rounded cursor-pointer transition-all",
-                          getClipColor(clip.type),
+                          getClipColor(clip),
                           selectedClipId === clip.id 
                             ? "ring-2 ring-primary ring-offset-1" 
                             : "hover:brightness-110"
