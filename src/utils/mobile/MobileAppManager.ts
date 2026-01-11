@@ -1,12 +1,8 @@
 /**
  * Mobile App Manager
  * Prepares the application for mobile deployment with Capacitor
- * Updated to use native Capacitor plugins
+ * Uses dynamic imports to avoid module resolution errors in web builds
  */
-
-import { Capacitor } from '@capacitor/core';
-import { App } from '@capacitor/app';
-import { StatusBar, Style } from '@capacitor/status-bar';
 
 export interface MobileConfig {
   enableOfflineMode: boolean;
@@ -45,12 +41,18 @@ class MobileAppManager {
     hasNotifications: false
   };
 
+  private capacitorCore: any = null;
+  private capacitorApp: any = null;
+  private capacitorStatusBar: any = null;
+
   /**
    * Initialize mobile capabilities detection
    */
   async initialize() {
-    console.log('📱 Initializing mobile app capabilities with Capacitor...');
+    console.log('📱 Initializing mobile app capabilities...');
     
+    // Try to load Capacitor modules dynamically
+    await this.loadCapacitorModules();
     await this.detectCapabilities();
     await this.setupMobileFeatures();
     
@@ -63,12 +65,45 @@ class MobileAppManager {
   }
 
   /**
+   * Dynamically load Capacitor modules (only works in native environment)
+   */
+  private async loadCapacitorModules() {
+    try {
+      // Try to dynamically import Capacitor core
+      const capacitorCore = await import('@capacitor/core').catch(() => null);
+      if (capacitorCore) {
+        this.capacitorCore = capacitorCore;
+        console.log('✅ Capacitor core loaded');
+        
+        // Only load other modules if we're in a native environment
+        if (capacitorCore.Capacitor?.isNativePlatform?.()) {
+          const [appModule, statusBarModule] = await Promise.all([
+            import('@capacitor/app').catch(() => null),
+            import('@capacitor/status-bar').catch(() => null)
+          ]);
+          
+          this.capacitorApp = appModule;
+          this.capacitorStatusBar = statusBarModule;
+          console.log('✅ Capacitor native modules loaded');
+        }
+      }
+    } catch (error) {
+      console.log('📱 Running in web mode (Capacitor not available)');
+    }
+  }
+
+  /**
    * Detect device capabilities using Capacitor
    */
   private async detectCapabilities() {
     // Detect if running in Capacitor native environment
-    this.capabilities.isNativeApp = Capacitor.isNativePlatform();
-    this.capabilities.platform = Capacitor.getPlatform() as 'web' | 'ios' | 'android';
+    if (this.capacitorCore?.Capacitor) {
+      this.capabilities.isNativeApp = this.capacitorCore.Capacitor.isNativePlatform();
+      this.capabilities.platform = this.capacitorCore.Capacitor.getPlatform() as 'web' | 'ios' | 'android';
+    } else {
+      this.capabilities.isNativeApp = false;
+      this.capabilities.platform = 'web';
+    }
 
     // Detect camera
     this.capabilities.hasCamera = !!(navigator.mediaDevices?.getUserMedia);
@@ -105,12 +140,15 @@ class MobileAppManager {
     console.log('📱 Setting up native features...');
 
     // Setup Status Bar
-    try {
-      await StatusBar.setStyle({ style: Style.Dark });
-      await StatusBar.setBackgroundColor({ color: '#0f172a' });
-      console.log('✅ Status bar configured');
-    } catch (error) {
-      console.warn('⚠️ Could not configure status bar:', error);
+    if (this.capacitorStatusBar?.StatusBar) {
+      try {
+        const { StatusBar, Style } = this.capacitorStatusBar;
+        await StatusBar.setStyle({ style: Style.Dark });
+        await StatusBar.setBackgroundColor({ color: '#0f172a' });
+        console.log('✅ Status bar configured');
+      } catch (error) {
+        console.warn('⚠️ Could not configure status bar:', error);
+      }
     }
 
     // Setup app lifecycle listeners
@@ -124,7 +162,11 @@ class MobileAppManager {
    * Setup app lifecycle listeners
    */
   private setupAppLifecycleListeners() {
-    App.addListener('appStateChange', ({ isActive }) => {
+    if (!this.capacitorApp?.App) return;
+    
+    const { App } = this.capacitorApp;
+    
+    App.addListener('appStateChange', ({ isActive }: { isActive: boolean }) => {
       console.log('📱 App state changed, active:', isActive);
       
       window.dispatchEvent(new CustomEvent('app-state-change', {
@@ -138,7 +180,7 @@ class MobileAppManager {
       window.dispatchEvent(new CustomEvent('native-back-button'));
     });
 
-    App.addListener('appUrlOpen', ({ url }) => {
+    App.addListener('appUrlOpen', ({ url }: { url: string }) => {
       console.log('🔗 App URL opened:', url);
       this.handleDeepLink(url);
     });
@@ -148,8 +190,12 @@ class MobileAppManager {
    * Setup deep link handling
    */
   private setupDeepLinkHandling() {
+    if (!this.capacitorApp?.App) return;
+    
+    const { App } = this.capacitorApp;
+    
     // Handle initial deep link if app was opened via URL
-    App.getLaunchUrl().then(result => {
+    App.getLaunchUrl().then((result: { url?: string } | null) => {
       if (result?.url) {
         console.log('🔗 App launched with URL:', result.url);
         this.handleDeepLink(result.url);
