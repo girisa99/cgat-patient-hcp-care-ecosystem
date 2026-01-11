@@ -220,18 +220,19 @@ const featureModules: FeatureModule[] = [
   { name: 'Translation', standaloneApp: 'GlobalCast', apiEndpoint: '/api/translate', agentCapability: 'Multi-language agent', segments: ['healthcare', 'enterprise'] },
 ];
 
-// User pain points with real quotes
+// User pain points with real quotes - Updated 2026-01-11 with collaboration needs
 const userPainPoints: UserPainPoint[] = [
   { segment: 'Creator Economy', quote: '"I spend 2 hours editing a 60-second reel. I wish I could just talk and have it edit itself."', source: 'TikTok Creator', painPoint: 'Time-consuming manual editing' },
-  { segment: 'Creator Economy', quote: '"Finding the right music and syncing it takes forever. Auto-sync would save me so much time."', source: 'YouTube Creator', painPoint: 'Music sync challenges' },
+  { segment: 'Creator Economy', quote: '"No easy way to get feedback from sponsors before publishing."', source: 'YouTube Creator', painPoint: 'Collaboration gaps' },
   { segment: 'Traveler/Experience', quote: '"I have 500 photos and videos from my trip but no time to make a video. They just sit in my camera roll."', source: 'Travel Blogger', painPoint: 'Content overwhelm' },
   { segment: 'SMB Marketing', quote: '"We can\'t afford a video team, but customers expect professional videos. It\'s a huge gap."', source: 'Small Business Owner', painPoint: 'Resource constraints' },
-  { segment: 'SMB Marketing', quote: '"Our product demos are outdated because updating them takes weeks with our current process."', source: 'Marketing Manager', painPoint: 'Update velocity' },
+  { segment: 'SMB Marketing', quote: '"Getting manager approval on videos takes weeks of back-and-forth emails."', source: 'Marketing Manager', painPoint: 'Approval bottlenecks' },
   { segment: 'Education', quote: '"Recording lectures is easy. Making them engaging for students? That takes hours of editing."', source: 'University Professor', painPoint: 'Engagement optimization' },
+  { segment: 'Education', quote: '"I need student feedback on my course videos but have no structured way to collect it."', source: 'Online Instructor', painPoint: 'Review cycle gaps' },
   { segment: 'Healthcare', quote: '"Patients forget 80% of what I tell them. Video would help, but HIPAA makes everything complicated."', source: 'Primary Care Physician', painPoint: 'Compliance complexity' },
-  { segment: 'Healthcare', quote: '"We need patient education in 15 languages. Currently, we just don\'t have it."', source: 'Hospital Administrator', painPoint: 'Localization needs' },
+  { segment: 'Healthcare', quote: '"Multi-stakeholder approval on patient content takes months."', source: 'Hospital Administrator', painPoint: 'Approval complexity' },
   { segment: 'Enterprise', quote: '"Our training videos are 3 years old. Nobody wants to watch them, and nobody has time to update them."', source: 'L&D Director', painPoint: 'Content staleness' },
-  { segment: 'Enterprise', quote: '"We spend $50K per corporate video. There has to be a better way."', source: 'VP Communications', painPoint: 'Production costs' },
+  { segment: 'Enterprise', quote: '"Approval chains for compliance videos involve 5+ people with no tracking."', source: 'VP Communications', painPoint: 'Workflow chaos' },
 ];
 
 export const GenieMarketAnalysisDiagram: React.FC = () => {
