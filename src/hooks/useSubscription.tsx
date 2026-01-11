@@ -2,8 +2,22 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+// =====================================================
 // Genie Product Suite - Architecture Finalized
 // Based on docs/GENIE_SUITE_ARCHITECTURE_SUMMARY.md
+// Updated: 2026-01-11 - Added AI Credits Integration
+// =====================================================
+
+// AI Credits included per subscription tier (monthly)
+export const TIER_CREDITS = {
+  free: 10,      // 10 free credits to try
+  starter: 100,  // 100 credits/month
+  business: 500, // 500 credits/month
+  pro: 2000,     // 2000 credits/month
+  enterprise: -1, // Unlimited
+  beta: -1,      // Unlimited
+} as const;
+
 export const GENIE_PRODUCTS = {
   mind: {
     id: 'mind',
@@ -148,6 +162,7 @@ export const SUBSCRIPTION_TIERS = {
     billing: null,
     recommended: false,
     trialDays: 14,
+    monthlyCredits: 10, // AI credits included
     products: ['studio', 'spark'] as GenieProduct[],
     limits: {
       agents: 1,
@@ -156,6 +171,7 @@ export const SUBSCRIPTION_TIERS = {
       teamMembers: 1
     },
     features: [
+      '10 AI Credits (one-time)',
       '1 AI Agent',
       'Genie Studio Basic',
       'Genie Spark (5 prototypes)',
@@ -179,6 +195,7 @@ export const SUBSCRIPTION_TIERS = {
     price: 9.99,
     billing: 'month',
     recommended: false,
+    monthlyCredits: 100, // AI credits included
     products: ['studio', 'spark'] as GenieProduct[],
     limits: {
       agents: 5,
@@ -187,6 +204,7 @@ export const SUBSCRIPTION_TIERS = {
       teamMembers: 1
     },
     features: [
+      '100 AI Credits/month',
       '5 AI Agents',
       'Genie Studio Core',
       'Genie Spark (100 scripts)',
@@ -206,6 +224,7 @@ export const SUBSCRIPTION_TIERS = {
     price: 29.99,
     billing: 'month',
     recommended: true,
+    monthlyCredits: 500, // AI credits included
     products: ['studio', 'spark', 'vibe', 'mind'] as GenieProduct[],
     limits: {
       agents: 25,
@@ -214,6 +233,7 @@ export const SUBSCRIPTION_TIERS = {
       teamMembers: 3
     },
     features: [
+      '500 AI Credits/month',
       '25 AI Agents',
       'Genie Studio Full',
       'Genie Spark Pro (500 scripts)',
@@ -236,6 +256,7 @@ export const SUBSCRIPTION_TIERS = {
     price: 79.99,
     billing: 'month',
     recommended: false,
+    monthlyCredits: 2000, // AI credits included
     products: ['studio', 'spark', 'vibe', 'arc', 'mind', 'productionHub'] as GenieProduct[],
     limits: {
       agents: -1,
@@ -244,6 +265,7 @@ export const SUBSCRIPTION_TIERS = {
       teamMembers: 10
     },
     features: [
+      '2,000 AI Credits/month',
       'Unlimited AI Agents',
       'Full Genie Suite Access',
       'Genie Arc Team Collaboration',
@@ -259,7 +281,7 @@ export const SUBSCRIPTION_TIERS = {
       'Dedicated Account Manager'
     ],
     restrictions: [],
-    highlights: ['Enterprise-ready', 'Full team collaboration', 'Unlimited everything']
+    highlights: ['Enterprise-ready', 'Full team collaboration', '2000 AI credits/month']
   },
   enterprise: {
     name: 'Enterprise',
@@ -268,6 +290,7 @@ export const SUBSCRIPTION_TIERS = {
     price: 0,
     billing: null,
     recommended: false,
+    monthlyCredits: -1, // Unlimited
     products: ['studio', 'spark', 'vibe', 'arc', 'mind', 'productionHub'] as GenieProduct[],
     limits: {
       agents: -1,
@@ -275,9 +298,9 @@ export const SUBSCRIPTION_TIERS = {
       storage: 'Unlimited',
       teamMembers: -1
     },
-    features: ['Custom pricing', 'HIPAA compliance', 'White-label', 'SLA guarantee', 'Dedicated support'],
+    features: ['Unlimited AI Credits', 'Custom pricing', 'HIPAA compliance', 'White-label', 'SLA guarantee', 'Dedicated support'],
     restrictions: [],
-    highlights: ['Contact sales', 'Custom solutions', 'Enterprise features']
+    highlights: ['Contact sales', 'Custom solutions', 'Unlimited AI credits']
   },
   beta: {
     name: 'Beta',
@@ -286,6 +309,7 @@ export const SUBSCRIPTION_TIERS = {
     price: 0,
     billing: null,
     recommended: false,
+    monthlyCredits: -1, // Unlimited
     products: ['studio', 'spark', 'vibe', 'arc', 'mind', 'productionHub'] as GenieProduct[],
     limits: {
       agents: -1,
@@ -293,9 +317,9 @@ export const SUBSCRIPTION_TIERS = {
       storage: 'Unlimited',
       teamMembers: -1
     },
-    features: ['Full Access', 'All Features', 'Beta Tester Perks', 'Lifetime Benefits'],
+    features: ['Unlimited AI Credits', 'Full Access', 'All Features', 'Beta Tester Perks', 'Lifetime Benefits'],
     restrictions: [],
-    highlights: ['Early adopter benefits', 'Shape the product', 'Lifetime access']
+    highlights: ['Early adopter benefits', 'Unlimited AI credits', 'Lifetime access']
   }
 } as const;
 

@@ -1862,6 +1862,152 @@ export type Database = {
           },
         ]
       }
+      ai_credit_packages: {
+        Row: {
+          bonus_credits: number | null
+          created_at: string | null
+          credits: number
+          description: string | null
+          discount_percent: number | null
+          feature_restrictions: string[] | null
+          id: string
+          is_active: boolean | null
+          name: string
+          price_cents: number
+          price_id: string | null
+          product_id: string | null
+          segment_restrictions: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          bonus_credits?: number | null
+          created_at?: string | null
+          credits: number
+          description?: string | null
+          discount_percent?: number | null
+          feature_restrictions?: string[] | null
+          id: string
+          is_active?: boolean | null
+          name: string
+          price_cents: number
+          price_id?: string | null
+          product_id?: string | null
+          segment_restrictions?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          bonus_credits?: number | null
+          created_at?: string | null
+          credits?: number
+          description?: string | null
+          discount_percent?: number | null
+          feature_restrictions?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price_cents?: number
+          price_id?: string | null
+          product_id?: string | null
+          segment_restrictions?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ai_credit_transactions: {
+        Row: {
+          balance_after: number
+          created_at: string | null
+          credits_amount: number
+          description: string | null
+          feature_metadata: Json | null
+          feature_used: string | null
+          id: string
+          package_id: string | null
+          stripe_invoice_id: string | null
+          stripe_payment_intent_id: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          balance_after: number
+          created_at?: string | null
+          credits_amount: number
+          description?: string | null
+          feature_metadata?: Json | null
+          feature_used?: string | null
+          id?: string
+          package_id?: string | null
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          balance_after?: number
+          created_at?: string | null
+          credits_amount?: number
+          description?: string | null
+          feature_metadata?: Json | null
+          feature_used?: string | null
+          id?: string
+          package_id?: string | null
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_credit_transactions_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "ai_credit_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_feature_costs: {
+        Row: {
+          category: string
+          created_at: string | null
+          credits_per_unit: number
+          description: string | null
+          display_name: string
+          feature_name: string
+          id: string
+          is_active: boolean | null
+          tier_discounts: Json | null
+          unit_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          credits_per_unit: number
+          description?: string | null
+          display_name: string
+          feature_name: string
+          id: string
+          is_active?: boolean | null
+          tier_discounts?: Json | null
+          unit_type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          credits_per_unit?: number
+          description?: string | null
+          display_name?: string
+          feature_name?: string
+          id?: string
+          is_active?: boolean | null
+          tier_discounts?: Json | null
+          unit_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       ai_model_configs: {
         Row: {
           configuration: Json | null
@@ -16614,6 +16760,48 @@ export type Database = {
         }
         Relationships: []
       }
+      user_ai_credits: {
+        Row: {
+          created_at: string | null
+          credits_balance: number
+          credits_purchased_total: number
+          credits_used_total: number
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          subscription_credits_monthly: number
+          subscription_credits_used: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          credits_balance?: number
+          credits_purchased_total?: number
+          credits_used_total?: number
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          subscription_credits_monthly?: number
+          subscription_credits_used?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          credits_balance?: number
+          credits_purchased_total?: number
+          credits_used_total?: number
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          subscription_credits_monthly?: number
+          subscription_credits_used?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_conversations: {
         Row: {
           conversation_context: Json | null
@@ -19245,6 +19433,21 @@ export type Database = {
         Args: { p_deployment_id: string; p_user_id: string }
         Returns: Json
       }
+      add_ai_credits: {
+        Args: {
+          p_credits: number
+          p_description?: string
+          p_package_id?: string
+          p_stripe_payment_intent_id?: string
+          p_transaction_type: string
+          p_user_id: string
+        }
+        Returns: {
+          error_message: string
+          new_balance: number
+          success: boolean
+        }[]
+      }
       archive_deployment: {
         Args: { p_deployment_id: string }
         Returns: boolean
@@ -19338,6 +19541,20 @@ export type Database = {
       deactivate_patient_enrollment: {
         Args: { p_enrollment_id: string; p_reason?: string }
         Returns: Json
+      }
+      deduct_ai_credits: {
+        Args: {
+          p_feature_id: string
+          p_metadata?: Json
+          p_units?: number
+          p_user_id: string
+        }
+        Returns: {
+          balance_after: number
+          credits_deducted: number
+          error_message: string
+          success: boolean
+        }[]
       }
       detect_schema_from_data: {
         Args: { max_samples?: number; sample_data: Json }
@@ -19435,6 +19652,28 @@ export type Database = {
           table_source: string
           updated_at: string
         }[]
+      }
+      get_or_create_user_credits: {
+        Args: { p_user_id: string }
+        Returns: {
+          created_at: string | null
+          credits_balance: number
+          credits_purchased_total: number
+          credits_used_total: number
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          subscription_credits_monthly: number
+          subscription_credits_used: number
+          updated_at: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_ai_credits"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       get_prepopulate_data: { Args: { user_uuid: string }; Returns: Json }
       get_recent_popup_events: {
