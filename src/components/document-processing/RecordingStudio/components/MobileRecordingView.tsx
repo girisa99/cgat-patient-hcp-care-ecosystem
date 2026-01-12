@@ -61,7 +61,8 @@ import {
   AIAutoArrange,
   SmartTransitions,
   MusicSyncAssembly,
-  LocationStoryMode
+  LocationStoryMode,
+  GuidedEditingExperience
 } from '@/components/mobile';
 import type { RecordingResult } from '@/components/mobile/OneTapRecordButton';
 import type { TimelineClip } from '@/components/mobile/MultiClipTimeline';
