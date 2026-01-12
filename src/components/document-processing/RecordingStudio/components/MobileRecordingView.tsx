@@ -235,22 +235,22 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
                       <div className="flex items-center gap-3">
                         <FileText className="h-4 w-4 text-primary flex-shrink-0" />
                         <Select
-                          value={selectedScriptId || ''}
-                          onValueChange={(value) => setSelectedScriptId(value || null)}
+                          value={selectedScriptId || '__none__'}
+                          onValueChange={(value) => setSelectedScriptId(value === '__none__' ? null : value)}
                         >
                           <SelectTrigger className="flex-1 bg-background">
                             <SelectValue placeholder="Select a script for teleprompter..." />
                           </SelectTrigger>
                           <SelectContent className="bg-popover z-50 max-h-64">
-                            <SelectItem value="">
+                            <SelectItem value="__none__">
                               <span className="text-muted-foreground">No script selected</span>
                             </SelectItem>
-                            {scripts.map(script => (
+                            {scripts.filter(script => script.id && script.id.trim() !== '').map(script => (
                               <SelectItem key={script.id} value={script.id}>
                                 <div className="flex flex-col items-start">
-                                  <span className="font-medium">{script.title}</span>
+                                  <span className="font-medium">{script.title || 'Untitled Script'}</span>
                                   <span className="text-xs text-muted-foreground line-clamp-1">
-                                    {script.content.substring(0, 50)}...
+                                    {script.content?.substring(0, 50) || 'No content'}...
                                   </span>
                                 </div>
                               </SelectItem>
