@@ -55,7 +55,8 @@ import {
   MobileStatusBar,
   ScriptStitcher,
   QuickTemplates,
-  VoiceCommands
+  VoiceCommands,
+  OfflineStudioMode
 } from '@/components/mobile';
 import type { RecordingResult } from '@/components/mobile/OneTapRecordButton';
 import type { TimelineClip } from '@/components/mobile/MultiClipTimeline';
@@ -426,49 +427,55 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
 
             {/* Library Tab */}
             <TabsContent value="library" className="h-full m-0 p-4 overflow-auto">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Library className="h-5 w-5" />
-                    Recording Library
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {recordings.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Video className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                      <p>No recordings yet</p>
-                      <p className="text-sm">Start recording to build your library</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-3">
-                      {recordings.map(rec => (
-                        <Card key={rec.id} className="overflow-hidden">
-                          <div className="aspect-video bg-muted flex items-center justify-center">
-                            {rec.type === 'photo' && rec.url ? (
-                              <img src={rec.url} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <Video className="h-8 w-8 text-muted-foreground" />
-                            )}
-                          </div>
-                          <CardContent className="p-2">
-                            <div className="flex items-center justify-between">
-                              <Badge variant="outline" className="text-xs">
-                                {rec.type}
-                              </Badge>
-                              {rec.duration && (
-                                <span className="text-xs text-muted-foreground">
-                                  {Math.round(rec.duration)}s
-                                </span>
+              <div className="space-y-4">
+                {/* Offline Status Card */}
+                <OfflineStudioMode compact={false} />
+                
+                {/* Recording Library */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Library className="h-5 w-5" />
+                      Recording Library
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {recordings.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Video className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                        <p>No recordings yet</p>
+                        <p className="text-sm">Start recording to build your library</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3">
+                        {recordings.map(rec => (
+                          <Card key={rec.id} className="overflow-hidden">
+                            <div className="aspect-video bg-muted flex items-center justify-center">
+                              {rec.type === 'photo' && rec.url ? (
+                                <img src={rec.url} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <Video className="h-8 w-8 text-muted-foreground" />
                               )}
                             </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                            <CardContent className="p-2">
+                              <div className="flex items-center justify-between">
+                                <Badge variant="outline" className="text-xs">
+                                  {rec.type}
+                                </Badge>
+                                {rec.duration && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {Math.round(rec.duration)}s
+                                  </span>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             {/* Templates Tab - Quick Social Templates (P1) */}
