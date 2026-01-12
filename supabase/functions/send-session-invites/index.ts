@@ -22,7 +22,7 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     // Use genieaiexperimentationhub.tech domain for all emails
-    const fromEmail = Deno.env.get('FROM_EMAIL') || 'noreply@genieaiexperimentationhub.tech';
+    const fromEmail = Deno.env.get('FROM_EMAIL') || 'info@genieaiexperimentationhub.tech';
     const defaultRecipient = 'dasikasaigiridhar@gmail.com';
     
     console.log('[send-session-invites] RESEND_API_KEY configured:', !!resendApiKey);
