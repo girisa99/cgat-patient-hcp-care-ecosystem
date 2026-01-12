@@ -1,8 +1,9 @@
 # Genie Suite Architecture Summary
 
-> **Version:** 1.3  
+> **Version:** 1.4  
 > **Last Updated:** 2026-01-12  
-> **Status:** Current Implementation State (150 Scenarios + Collaboration + P2 AI Agents)
+> **Status:** Current Implementation State (177 Scenarios | 28% Implemented)
+> **Architecture Docs:** See `/docs/architecture/` for module-specific diagrams
 
 ---
 
@@ -312,11 +313,16 @@
 
 | Document | Purpose |
 |----------|---------|
+| `architecture/GENIE_STUDIO_OVERALL_ARCHITECTURE.md` | **NEW** Master system architecture |
+| `architecture/GENIE_MIND_ARCHITECTURE.md` | **NEW** Mind module details |
+| `architecture/GENIE_VIBE_ARCHITECTURE.md` | **NEW** Vibe module (mobile/desktop/studio) |
+| `architecture/GENIE_ARC_PRODUCTION_HUB_ARCHITECTURE.md` | **NEW** Arc & Hub details |
+| `architecture/GENIE_SPARK_ARCHITECTURE.md` | **NEW** Spark module details |
 | `GENIE_STUDIO_TECHNICAL_ARCHITECTURE.md` | Technical implementation details |
 | `GENIE_STUDIO_FUNCTIONAL_ARCHITECTURE.md` | User flows and UX specifications |
 | `GENIE_PHASE_IMPLEMENTATION_ROADMAP.md` | Phase-by-phase implementation plan |
-| `GENIE_STUDIO_SCENARIO_MAP.md` | All 110 user scenarios |
-| `GENIE_SUITE_ARCHITECTURE_SUMMARY.md` | This summary document |
+| `GENIE_STUDIO_SCENARIO_MAP.md` | All 177 user scenarios |
+| `COMPREHENSIVE_177_SCENARIO_PHASE_REVIEW.md` | Complete phase-to-scenario mapping |
 
 ---
 
