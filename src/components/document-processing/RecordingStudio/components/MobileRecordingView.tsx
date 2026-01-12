@@ -13,6 +13,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { 
   Video, 
   Scissors, 
   Layers, 
@@ -21,7 +28,6 @@ import {
   Library,
   Mic,
   FileText,
-  ChevronUp,
   X,
   Maximize2,
   Minimize2,
@@ -83,7 +89,6 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
   const [recordings, setRecordings] = useState<RecordingResult[]>([]);
   const [timelineClips, setTimelineClips] = useState<TimelineClip[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showScripts, setShowScripts] = useState(false);
   const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
 
   // Handle stitch completion
@@ -223,52 +228,37 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
             {/* Record Tab */}
             <TabsContent value="record" className="h-full m-0 p-4 overflow-auto">
               <div className="space-y-4">
-                {/* Script Selector (if scripts available) */}
+                {/* Script Selector Dropdown (if scripts available) */}
                 {scripts.length > 0 && (
                   <Card>
-                    <CardHeader className="py-3 px-4">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-sm flex items-center gap-2">
-                          <FileText className="h-4 w-4" />
-                          Script
-                        </CardTitle>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => setShowScripts(!showScripts)}
+                    <CardContent className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        <FileText className="h-4 w-4 text-primary flex-shrink-0" />
+                        <Select
+                          value={selectedScriptId || ''}
+                          onValueChange={(value) => setSelectedScriptId(value || null)}
                         >
-                          <ChevronUp className={cn(
-                            "h-4 w-4 transition-transform",
-                            !showScripts && "rotate-180"
-                          )} />
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    {showScripts && (
-                      <CardContent className="py-2 px-4">
-                        <ScrollArea className="h-32">
-                          <div className="space-y-2">
+                          <SelectTrigger className="flex-1 bg-background">
+                            <SelectValue placeholder="Select a script for teleprompter..." />
+                          </SelectTrigger>
+                          <SelectContent className="bg-popover z-50 max-h-64">
+                            <SelectItem value="">
+                              <span className="text-muted-foreground">No script selected</span>
+                            </SelectItem>
                             {scripts.map(script => (
-                              <div
-                                key={script.id}
-                                className={cn(
-                                  "p-2 border rounded cursor-pointer transition-colors",
-                                  selectedScriptId === script.id 
-                                    ? "border-primary bg-primary/5" 
-                                    : "hover:bg-muted"
-                                )}
-                                onClick={() => setSelectedScriptId(script.id)}
-                              >
-                                <span className="text-sm font-medium">{script.title}</span>
-                                <p className="text-xs text-muted-foreground line-clamp-2">
-                                  {script.content}
-                                </p>
-                              </div>
+                              <SelectItem key={script.id} value={script.id}>
+                                <div className="flex flex-col items-start">
+                                  <span className="font-medium">{script.title}</span>
+                                  <span className="text-xs text-muted-foreground line-clamp-1">
+                                    {script.content.substring(0, 50)}...
+                                  </span>
+                                </div>
+                              </SelectItem>
                             ))}
-                          </div>
-                        </ScrollArea>
-                      </CardContent>
-                    )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </CardContent>
                   </Card>
                 )}
 
