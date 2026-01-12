@@ -518,10 +518,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('[send-show-invite] Sending email with ICS attachment to:', to);
     
-    // Configure email options with reply-to for host email
-    // Note: Resend requires verified domain for "from" address, so we use reply_to for host's email
+    // Configure email options with CC for host email
     const displayFromName = senderName || hostName || 'Genie Studio';
-    const replyToEmail = senderEmail || hostEmail;
+    const ccEmail = senderEmail || hostEmail;
+    
+    // Fix ICS attachment - use proper base64 encoding for Resend
+    const icsBuffer = new TextEncoder().encode(icsContent);
+    const icsBase64Fixed = btoa(String.fromCharCode(...icsBuffer));
     
     const emailOptions: any = {
       from: `${displayFromName} via Genie Studio <${fromEmail}>`,
@@ -531,16 +534,20 @@ const handler = async (req: Request): Promise<Response> => {
       attachments: [
         {
           filename: `${showTitle.replace(/[^a-z0-9]/gi, '_')}_genie_studio.ics`,
-          content: icsBase64,
-          type: 'text/calendar',
+          content: icsBase64Fixed,
         }
       ],
     };
     
-    // Add reply-to so recipients can reply directly to the host
-    if (replyToEmail) {
-      emailOptions.reply_to = replyToEmail;
-      console.log('[send-show-invite] Reply-to set to:', replyToEmail);
+    // Add CC so host receives a copy of all invites sent
+    if (ccEmail && ccEmail !== to) {
+      emailOptions.cc = [ccEmail];
+      console.log('[send-show-invite] CC set to:', ccEmail);
+    }
+    
+    // Also keep reply-to for convenience
+    if (ccEmail) {
+      emailOptions.reply_to = ccEmail;
     }
 
     const emailResponse = await resend.emails.send(emailOptions);
