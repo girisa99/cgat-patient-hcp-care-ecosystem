@@ -100,13 +100,60 @@ const handler = async (req: Request): Promise<Response> => {
     const endTime = new Date(date.getTime() + durationMinutes * 60 * 1000);
     const formatCalDate = (d: Date) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
     
-    // Build calendar event details
-    let calendarDetails = showDescription || '';
-    if (joinUrl) calendarDetails += `\n\nJoin URL: ${joinUrl}`;
-    if (recordingUrl) calendarDetails += `\n\nRecording URL: ${recordingUrl}`;
+    // Build rich calendar event details with meeting URL prominently featured
+    let calendarDetails = '';
+    if (joinUrl) {
+      calendarDetails += `🎬 JOIN MEETING:\n${joinUrl}\n\n`;
+    }
+    if (showDescription) {
+      calendarDetails += `${showDescription}\n\n`;
+    }
+    if (topics) {
+      calendarDetails += `📋 TOPICS:\n${topics}\n\n`;
+    }
+    calendarDetails += `🎙️ Host: ${hostName}\n`;
+    calendarDetails += `👤 Your Role: ${roleText}\n\n`;
+    calendarDetails += `─────────────────────\n`;
+    calendarDetails += `📺 Powered by Genie Studio\n`;
+    calendarDetails += `🌐 genieaiexperimentationhub.tech`;
     
     const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(showTitle)}&dates=${formatCalDate(date)}/${formatCalDate(endTime)}&details=${encodeURIComponent(calendarDetails)}&location=${encodeURIComponent(joinUrl || '')}`;
     const outlookUrl = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(showTitle)}&startdt=${date.toISOString()}&enddt=${endTime.toISOString()}&body=${encodeURIComponent(calendarDetails)}&location=${encodeURIComponent(joinUrl || '')}`;
+    const yahooUrl = `https://calendar.yahoo.com/?v=60&title=${encodeURIComponent(showTitle)}&st=${formatCalDate(date)}&dur=${Math.floor(durationMinutes/60).toString().padStart(2,'0')}${(durationMinutes%60).toString().padStart(2,'0')}&desc=${encodeURIComponent(calendarDetails)}&in_loc=${encodeURIComponent(joinUrl || '')}`;
+    
+    // Generate ICS file content
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Genie Studio//genieaiexperimentationhub.tech//EN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:REQUEST',
+      'X-WR-CALNAME:Genie Studio',
+      'BEGIN:VEVENT',
+      `UID:${crypto.randomUUID()}@genie-studio`,
+      `DTSTAMP:${formatCalDate(new Date())}`,
+      `DTSTART:${formatCalDate(date)}`,
+      `DTEND:${formatCalDate(endTime)}`,
+      `SUMMARY:${showTitle.replace(/,/g, '\\,').replace(/;/g, '\\;')}`,
+      `DESCRIPTION:${calendarDetails.replace(/,/g, '\\,').replace(/;/g, '\\;').replace(/\n/g, '\\n')}`,
+      joinUrl ? `LOCATION:${joinUrl.replace(/,/g, '\\,').replace(/;/g, '\\;')}` : '',
+      joinUrl ? `URL:${joinUrl}` : '',
+      `ORGANIZER;CN=${hostName.replace(/,/g, '').replace(/;/g, '')}:mailto:${fromEmail}`,
+      'BEGIN:VALARM',
+      'ACTION:DISPLAY',
+      'DESCRIPTION:Genie Studio - Session starts in 30 minutes',
+      'TRIGGER:-PT30M',
+      'END:VALARM',
+      'BEGIN:VALARM',
+      'ACTION:DISPLAY', 
+      'DESCRIPTION:Genie Studio - Session starts in 15 minutes',
+      'TRIGGER:-PT15M',
+      'END:VALARM',
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].filter(Boolean).join('\r\n');
+    
+    const icsBase64 = btoa(icsContent);
 
     // Build script attachment section
     let scriptSection = '';
@@ -243,16 +290,23 @@ const handler = async (req: Request): Promise<Response> => {
       
       <!-- Calendar Buttons -->
       <div style="text-align: center; margin: 24px 0; padding: 20px; background: rgba(30, 41, 59, 0.5); border-radius: 12px;">
-        <p style="color: #94a3b8; font-size: 14px; margin: 0 0 16px;">📅 Add to your calendar:</p>
+        <p style="color: #94a3b8; font-size: 14px; margin: 0 0 16px;">📅 Add to your calendar (includes meeting URL):</p>
         <a href="${googleCalUrl}" target="_blank" 
-           style="display: inline-block; background: #1e293b; color: #e2e8f0; padding: 12px 24px; border-radius: 8px; margin: 4px; text-decoration: none; font-size: 14px; border: 1px solid rgba(255,255,255,0.1);">
-          📅 Google Calendar
+           style="display: inline-block; background: #1e293b; color: #e2e8f0; padding: 12px 20px; border-radius: 8px; margin: 4px; text-decoration: none; font-size: 13px; border: 1px solid rgba(255,255,255,0.1);">
+          📅 Google
         </a>
         <a href="${outlookUrl}" target="_blank" 
-           style="display: inline-block; background: #1e293b; color: #e2e8f0; padding: 12px 24px; border-radius: 8px; margin: 4px; text-decoration: none; font-size: 14px; border: 1px solid rgba(255,255,255,0.1);">
+           style="display: inline-block; background: #1e293b; color: #e2e8f0; padding: 12px 20px; border-radius: 8px; margin: 4px; text-decoration: none; font-size: 13px; border: 1px solid rgba(255,255,255,0.1);">
           📧 Outlook
         </a>
+        <a href="${yahooUrl}" target="_blank" 
+           style="display: inline-block; background: #1e293b; color: #e2e8f0; padding: 12px 20px; border-radius: 8px; margin: 4px; text-decoration: none; font-size: 13px; border: 1px solid rgba(255,255,255,0.1);">
+          🗓️ Yahoo
+        </a>
       </div>
+      <p style="color: #64748b; font-size: 12px; text-align: center; margin: 0 0 16px;">
+        📎 An .ics calendar file is also attached to this email for Apple Calendar and other apps.
+      </p>
       
       <p style="color: #94a3b8; margin: 24px 0 0; font-size: 14px; line-height: 1.6;">
         Questions? Contact <strong style="color: #e2e8f0;">${hostName}</strong>.
@@ -272,12 +326,19 @@ const handler = async (req: Request): Promise<Response> => {
 </body>
 </html>`;
 
-    console.log('[send-show-invite] Sending email to:', to);
+    console.log('[send-show-invite] Sending email with ICS attachment to:', to);
     const emailResponse = await resend.emails.send({
       from: `Genie Studio <${fromEmail}>`,
       to: [to],
       subject: `${typeInfo.emoji} You're invited to "${showTitle}" - ${roleText}`,
       html: emailHtml,
+      attachments: [
+        {
+          filename: `${showTitle.replace(/[^a-z0-9]/gi, '_')}_genie_studio.ics`,
+          content: icsBase64,
+          type: 'text/calendar',
+        }
+      ],
     });
 
     console.log('[send-show-invite] Email sent successfully:', emailResponse);
