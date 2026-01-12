@@ -41,6 +41,10 @@ import {
   Copy,
   Download,
   CalendarPlus,
+  Linkedin,
+  Phone,
+  Bell,
+  MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -123,21 +127,31 @@ export default function ProductionHub() {
     starting_stage: 'outreach' as ProductionStage,
     host_name: '',
     host_email: '',
-    guests: [] as { name: string; email: string }[],
+    host_phone: '',
+    host_linkedin: '',
+    guests: [] as { name: string; email: string; phone?: string; linkedin?: string }[],
     linked_script_id: '',
     linked_music_id: '',
     event_category: 'media_production' as EventCategory,
     meeting_url: '',
     topics: '',
+    // Reminder settings
+    enable_email_reminders: true,
+    enable_sms_reminders: false,
   });
   const [newGuestName, setNewGuestName] = useState('');
   const [newGuestEmail, setNewGuestEmail] = useState('');
+  const [newGuestPhone, setNewGuestPhone] = useState('');
+  const [newGuestLinkedin, setNewGuestLinkedin] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   
   // Invite dialog state
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
+  const [invitePhone, setInvitePhone] = useState('');
+  const [inviteLinkedin, setInviteLinkedin] = useState('');
   const [inviteRole, setInviteRole] = useState<'host' | 'co-host' | 'guest' | 'panelist'>('guest');
+  const [sendSmsReminder, setSendSmsReminder] = useState(false);
   const [isSendingInvite, setIsSendingInvite] = useState(false);
 
   const showsByStage = getShowsByStage(activeCategory);
@@ -149,10 +163,17 @@ export default function ProductionHub() {
     if (!newGuestName.trim()) return;
     setNewShow(prev => ({
       ...prev,
-      guests: [...prev.guests, { name: newGuestName.trim(), email: newGuestEmail.trim() }]
+      guests: [...prev.guests, { 
+        name: newGuestName.trim(), 
+        email: newGuestEmail.trim(),
+        phone: newGuestPhone.trim() || undefined,
+        linkedin: newGuestLinkedin.trim() || undefined,
+      }]
     }));
     setNewGuestName('');
     setNewGuestEmail('');
+    setNewGuestPhone('');
+    setNewGuestLinkedin('');
   };
   
   const handleRemoveGuest = (index: number) => {
@@ -187,12 +208,16 @@ export default function ProductionHub() {
         starting_stage: 'outreach',
         host_name: '',
         host_email: '',
+        host_phone: '',
+        host_linkedin: '',
         guests: [],
         linked_script_id: '',
         linked_music_id: '',
         event_category: 'media_production',
         meeting_url: '',
         topics: '',
+        enable_email_reminders: true,
+        enable_sms_reminders: false,
       });
     } finally {
       setIsCreating(false);
@@ -211,7 +236,14 @@ export default function ProductionHub() {
   };
 
   // Send invite handler
-  const handleSendInvite = async (show: ShowWithParticipants, email: string, role: 'host' | 'co-host' | 'guest' | 'panelist') => {
+  const handleSendInvite = async (
+    show: ShowWithParticipants, 
+    email: string, 
+    role: 'host' | 'co-host' | 'guest' | 'panelist',
+    phone?: string,
+    linkedin?: string,
+    sendSms?: boolean
+  ) => {
     if (!email.trim()) {
       toast.error('Please enter an email address');
       return;
@@ -229,6 +261,7 @@ export default function ProductionHub() {
       const hostParticipant = show.participants?.find(p => p.role === 'host');
       const hostName = hostParticipant?.name || (show.metadata as any)?.host_name || 'Host';
 
+      // Send email invite
       const { data, error } = await supabase.functions.invoke('send-show-invite', {
         body: {
           to: email,
@@ -245,14 +278,36 @@ export default function ProductionHub() {
           scriptFilename: linkedScriptAsset?.name,
           joinUrl: show.meeting_link,
           durationMinutes: show.duration_minutes || 60,
+          linkedinUrl: linkedin,
         },
       });
 
       if (error) throw error;
 
-      toast.success(`Invite sent to ${email}!`);
+      // Send SMS if phone provided and SMS enabled
+      if (sendSms && phone) {
+        try {
+          await supabase.functions.invoke('twilio-notifications', {
+            body: {
+              type: 'sms',
+              to: phone,
+              message: `🎙️ You're invited to "${show.title}" as ${role}. Date: ${show.scheduled_date ? new Date(show.scheduled_date).toLocaleString() : 'TBD'}. Join: ${show.meeting_link || 'Link coming soon'}`,
+            },
+          });
+          toast.success(`Invite sent to ${email} + SMS to ${phone}!`);
+        } catch (smsError) {
+          console.error('SMS send failed:', smsError);
+          toast.success(`Email invite sent to ${email}. SMS failed.`);
+        }
+      } else {
+        toast.success(`Invite sent to ${email}!`);
+      }
+
       setIsInviteDialogOpen(false);
       setInviteEmail('');
+      setInvitePhone('');
+      setInviteLinkedin('');
+      setSendSmsReminder(false);
     } catch (err) {
       console.error('Error sending invite:', err);
       toast.error('Failed to send invite');
@@ -599,46 +654,79 @@ export default function ProductionHub() {
                     
                     {stageRequirements.showHost && (
                       <div className="space-y-3">
-                        <div className="space-y-2">
-                          <Label htmlFor="host_name" className="flex items-center gap-2">
-                            <User className="h-3 w-3" />
-                            Host Name
-                          </Label>
-                          <Input
-                            id="host_name"
-                            placeholder="Enter host name..."
-                            value={newShow.host_name}
-                            onChange={(e) => setNewShow(prev => ({ ...prev, host_name: e.target.value }))}
-                          />
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="host_name" className="flex items-center gap-2">
+                              <User className="h-3 w-3" />
+                              Host Name
+                            </Label>
+                            <Input
+                              id="host_name"
+                              placeholder="Enter host name..."
+                              value={newShow.host_name}
+                              onChange={(e) => setNewShow(prev => ({ ...prev, host_name: e.target.value }))}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="host_email" className="flex items-center gap-2">
+                              <Mail className="h-3 w-3" />
+                              Host Email
+                            </Label>
+                            <Input
+                              id="host_email"
+                              type="email"
+                              placeholder="host@example.com"
+                              value={newShow.host_email}
+                              onChange={(e) => setNewShow(prev => ({ ...prev, host_email: e.target.value }))}
+                            />
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="host_email" className="flex items-center gap-2">
-                            <Mail className="h-3 w-3" />
-                            Host Email
-                          </Label>
-                          <Input
-                            id="host_email"
-                            type="email"
-                            placeholder="host@example.com"
-                            value={newShow.host_email}
-                            onChange={(e) => setNewShow(prev => ({ ...prev, host_email: e.target.value }))}
-                          />
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="host_phone" className="text-xs text-muted-foreground">
+                              Phone (for SMS reminders)
+                            </Label>
+                            <Input
+                              id="host_phone"
+                              type="tel"
+                              placeholder="+1234567890"
+                              value={newShow.host_phone}
+                              onChange={(e) => setNewShow(prev => ({ ...prev, host_phone: e.target.value }))}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="host_linkedin" className="text-xs text-muted-foreground">
+                              LinkedIn URL
+                            </Label>
+                            <Input
+                              id="host_linkedin"
+                              type="url"
+                              placeholder="https://linkedin.com/in/..."
+                              value={newShow.host_linkedin}
+                              onChange={(e) => setNewShow(prev => ({ ...prev, host_linkedin: e.target.value }))}
+                            />
+                          </div>
                         </div>
                       </div>
                     )}
 
                     {stageRequirements.showGuests && (
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <Label className="flex items-center gap-2">
                           <UserPlus className="h-3 w-3" />
-                          Guests
+                          Guests / Panelists
                         </Label>
                         
                         {newShow.guests.length > 0 && (
                           <div className="space-y-1">
                             {newShow.guests.map((guest, idx) => (
                               <div key={idx} className="flex items-center justify-between p-2 bg-muted/50 rounded text-sm">
-                                <span>{guest.name} {guest.email && `(${guest.email})`}</span>
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="font-medium">{guest.name}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {[guest.email, guest.phone, guest.linkedin && 'LinkedIn'].filter(Boolean).join(' • ')}
+                                  </span>
+                                </div>
                                 <Button 
                                   variant="ghost" 
                                   size="icon" 
@@ -652,28 +740,49 @@ export default function ProductionHub() {
                           </div>
                         )}
                         
-                        <div className="flex gap-2">
+                        {/* Guest name and email row */}
+                        <div className="grid grid-cols-2 gap-2">
                           <Input
-                            placeholder="Guest name"
+                            placeholder="Guest name *"
                             value={newGuestName}
                             onChange={(e) => setNewGuestName(e.target.value)}
-                            className="flex-1"
                           />
                           <Input
-                            placeholder="Email (optional)"
+                            placeholder="Email"
+                            type="email"
                             value={newGuestEmail}
                             onChange={(e) => setNewGuestEmail(e.target.value)}
-                            className="flex-1"
                           />
-                          <Button 
-                            variant="outline" 
-                            size="icon"
-                            onClick={handleAddGuest}
-                            disabled={!newGuestName.trim()}
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
                         </div>
+                        
+                        {/* Phone and LinkedIn row - show for podcast, interview, panel */}
+                        {['podcast', 'interview', 'panel'].includes(newShow.show_type) && (
+                          <div className="grid grid-cols-2 gap-2">
+                            <Input
+                              placeholder="Phone (for SMS)"
+                              type="tel"
+                              value={newGuestPhone}
+                              onChange={(e) => setNewGuestPhone(e.target.value)}
+                            />
+                            <Input
+                              placeholder="LinkedIn URL"
+                              type="url"
+                              value={newGuestLinkedin}
+                              onChange={(e) => setNewGuestLinkedin(e.target.value)}
+                            />
+                          </div>
+                        )}
+                        
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={handleAddGuest}
+                          disabled={!newGuestName.trim()}
+                          className="w-full"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Guest
+                        </Button>
                       </div>
                     )}
                   </div>
@@ -739,6 +848,51 @@ export default function ProductionHub() {
                     )}
                   </div>
                 )}
+
+                {/* Reminder Settings */}
+                <div className="border-t pt-4 space-y-4">
+                  <h4 className="text-sm font-medium flex items-center gap-2">
+                    <Bell className="h-4 w-4" />
+                    Reminder Settings
+                  </h4>
+                  <p className="text-xs text-muted-foreground">
+                    Participants will receive reminders before the session starts.
+                  </p>
+                  
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-primary" />
+                      <div>
+                        <p className="text-sm font-medium">Email Reminders</p>
+                        <p className="text-xs text-muted-foreground">24h, 1h, 30m, 15m before</p>
+                      </div>
+                    </div>
+                    <Button 
+                      variant={newShow.enable_email_reminders ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setNewShow(prev => ({ ...prev, enable_email_reminders: !prev.enable_email_reminders }))}
+                    >
+                      {newShow.enable_email_reminders ? 'Enabled' : 'Disabled'}
+                    </Button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4 text-primary" />
+                      <div>
+                        <p className="text-sm font-medium">SMS Reminders (Twilio)</p>
+                        <p className="text-xs text-muted-foreground">30m, 15m before (requires phone)</p>
+                      </div>
+                    </div>
+                    <Button 
+                      variant={newShow.enable_sms_reminders ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setNewShow(prev => ({ ...prev, enable_sms_reminders: !prev.enable_sms_reminders }))}
+                    >
+                      {newShow.enable_sms_reminders ? 'Enabled' : 'Disabled'}
+                    </Button>
+                  </div>
+                </div>
               </div>
             </ScrollArea>
 
@@ -824,27 +978,48 @@ export default function ProductionHub() {
                         {selectedShow.participants.map((participant) => (
                           <div 
                             key={participant.id}
-                            className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
+                            className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
                           >
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-8 w-8">
-                                <AvatarFallback className="text-xs">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-10 w-10">
+                                <AvatarFallback className="text-sm">
                                   {participant.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
-                              <div>
-                                <p className="text-sm font-medium">{participant.name}</p>
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm font-medium">{participant.name}</p>
+                                  {participant.linkedin_url && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-5 w-5 text-[#0A66C2]"
+                                      onClick={() => window.open(participant.linkedin_url!, '_blank')}
+                                    >
+                                      <Linkedin className="h-3 w-3" />
+                                    </Button>
+                                  )}
+                                </div>
                                 <p className="text-xs text-muted-foreground capitalize">
                                   {participant.role.replace('_', ' ')}
+                                  {participant.email && ` • ${participant.email}`}
                                 </p>
+                                {participant.phone && (
+                                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                    <Phone className="h-3 w-3" />
+                                    {participant.phone}
+                                  </p>
+                                )}
                               </div>
                             </div>
-                            <Badge 
-                              variant={participant.status === 'confirmed' ? 'default' : 'secondary'}
-                              className="capitalize"
-                            >
-                              {participant.status}
-                            </Badge>
+                            <div className="flex items-center gap-2">
+                              <Badge 
+                                variant={participant.status === 'confirmed' ? 'default' : 'secondary'}
+                                className="capitalize"
+                              >
+                                {participant.status}
+                              </Badge>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -985,13 +1160,13 @@ export default function ProductionHub() {
                 Send Invite
               </DialogTitle>
               <DialogDescription>
-                Send an invite email with meeting details and script attachments
+                Send an invite email with meeting details, script attachments, and optional SMS
               </DialogDescription>
             </DialogHeader>
             
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="invite_email">Email Address</Label>
+                <Label htmlFor="invite_email">Email Address *</Label>
                 <Input
                   id="invite_email"
                   type="email"
@@ -1001,20 +1176,75 @@ export default function ProductionHub() {
                 />
               </div>
               
-              <div className="space-y-2">
-                <Label>Role</Label>
-                <Select value={inviteRole} onValueChange={(v: any) => setInviteRole(v)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="host">Host</SelectItem>
-                    <SelectItem value="co-host">Co-Host</SelectItem>
-                    <SelectItem value="guest">Guest Speaker</SelectItem>
-                    <SelectItem value="panelist">Panelist</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="invite_phone" className="flex items-center gap-1">
+                    <Phone className="h-3 w-3" />
+                    Phone (SMS)
+                  </Label>
+                  <Input
+                    id="invite_phone"
+                    type="tel"
+                    placeholder="+1234567890"
+                    value={invitePhone}
+                    onChange={(e) => setInvitePhone(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Role</Label>
+                  <Select value={inviteRole} onValueChange={(v: any) => setInviteRole(v)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="host">Host</SelectItem>
+                      <SelectItem value="co-host">Co-Host</SelectItem>
+                      <SelectItem value="guest">Guest Speaker</SelectItem>
+                      <SelectItem value="panelist">Panelist</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+
+              {/* LinkedIn URL - show for podcast/interview/panel */}
+              {selectedShow && ['podcast', 'interview', 'panel'].includes(selectedShow.show_type) && (
+                <div className="space-y-2">
+                  <Label htmlFor="invite_linkedin" className="flex items-center gap-1">
+                    <Linkedin className="h-3 w-3 text-[#0A66C2]" />
+                    LinkedIn Profile URL
+                  </Label>
+                  <Input
+                    id="invite_linkedin"
+                    type="url"
+                    placeholder="https://linkedin.com/in/..."
+                    value={inviteLinkedin}
+                    onChange={(e) => setInviteLinkedin(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Used for introductions when publishing the {selectedShow.show_type}
+                  </p>
+                </div>
+              )}
+
+              {/* SMS Reminder toggle */}
+              {invitePhone && (
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">Send SMS Invite Now</p>
+                      <p className="text-xs text-muted-foreground">Also send reminders 30m & 15m before</p>
+                    </div>
+                  </div>
+                  <Button 
+                    variant={sendSmsReminder ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSendSmsReminder(!sendSmsReminder)}
+                  >
+                    {sendSmsReminder ? 'Yes' : 'No'}
+                  </Button>
+                </div>
+              )}
 
               {selectedShow && (
                 <div className="p-3 bg-muted/50 rounded-lg space-y-2 text-sm">
@@ -1043,12 +1273,19 @@ export default function ProductionHub() {
                 Cancel
               </Button>
               <Button 
-                onClick={() => selectedShow && handleSendInvite(selectedShow, inviteEmail, inviteRole)}
+                onClick={() => selectedShow && handleSendInvite(
+                  selectedShow, 
+                  inviteEmail, 
+                  inviteRole,
+                  invitePhone || undefined,
+                  inviteLinkedin || undefined,
+                  sendSmsReminder
+                )}
                 disabled={isSendingInvite || !inviteEmail.trim()}
               >
                 {isSendingInvite && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 <Mail className="h-4 w-4 mr-2" />
-                Send Invite
+                Send Invite {sendSmsReminder && '+ SMS'}
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -58,14 +58,23 @@ export interface ShowParticipant {
   show_id: string;
   name: string;
   email: string | null;
+  phone: string | null;
   role: ParticipantRole;
   status: ParticipantStatus;
   bio: string | null;
   avatar_url: string | null;
+  linkedin_url: string | null;
   social_links: Record<string, string>;
   notes: string | null;
   invited_at: string | null;
   confirmed_at: string | null;
+  // Reminder preferences
+  email_reminder_24h: boolean;
+  email_reminder_1h: boolean;
+  email_reminder_30m: boolean;
+  email_reminder_15m: boolean;
+  sms_reminder_30m: boolean;
+  sms_reminder_15m: boolean;
   created_at: string;
   updated_at: string;
 }
