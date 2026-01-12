@@ -1300,29 +1300,254 @@ BILLING (Scenarios 79-80)
 
 ## Updated Implementation Status Summary
 
-### Total Scenarios: 140
+### Total Scenarios: 165
 
 | Category | Scenarios | Implemented | Partial | Planned |
 |----------|-----------|-------------|---------|---------|
 | A-K (Original) | 1-60 | 3 | 5 | 52 |
 | L: Vibe ↔ Mind | 61-65 | 5 | 0 | 0 |
-| M: Commercialization | 66-80 | 0 | 0 | 15 |
+| M: Commercialization | 66-80 | 8 | 0 | 7 |
 | N: Mobile-First | 81-90 | 0 | 0 | 10 |
 | O: Segment-Specific | 91-100 | 0 | 0 | 10 |
 | P: Remix & Clips | 101-110 | 0 | 0 | 10 |
 | **Q: Agent Integration** | 111-125 | 0 | 2 | 13 |
 | **R: API Integration** | 126-140 | 5 | 0 | 10 |
-| **TOTAL** | **140** | **13** | **7** | **120** |
+| **S: Subscription & Access** | 141-155 | 10 | 2 | 3 |
+| **T: Mobile Deployment** | 156-165 | 2 | 0 | 8 |
+| **TOTAL** | **165** | **33** | **9** | **123** |
 
 ### By Priority with Agent/API Coverage
 
 | Priority | Scenarios | Has Agent | Has API | Has Automation |
 |----------|-----------|-----------|---------|----------------|
-| P0 | 1-10, 61-70, 81, 111-115 | 100% | 100% | 80% |
-| P1 | 11-16, 83-90, 116-120 | 80% | 90% | 70% |
-| P2 | 17-32, 91-100, 121-125 | 60% | 80% | 50% |
+| P0 | 1-10, 61-70, 81, 111-115, 141-150 | 100% | 100% | 80% |
+| P1 | 11-16, 83-90, 116-120, 151-155 | 80% | 90% | 70% |
+| P2 | 17-32, 91-100, 121-125, 156-165 | 60% | 80% | 50% |
 | P3 | 33-46, 126-135 | 90% | 100% | 80% |
 | P4 | 47-60, 136-140 | 40% | 60% | 30% |
+
+---
+
+## NEW: Category S - Subscription & Access Control (Scenarios 141-155)
+
+**Added: 2026-01-12** | **Priority: P0-P1** | Critical for go-to-market
+
+### Implementation Status Summary
+
+| # | Scenario Name | Input | Process | Output | Priority | Status |
+|---|---------------|-------|---------|--------|----------|--------|
+| 141 | **User Registration** | Email/password or OAuth | Supabase Auth → Create profile | Authenticated user | P0 | ✅ Implemented |
+| 142 | **Login Flow** | Credentials | Auth validation → Session creation | Active session | P0 | ✅ Implemented |
+| 143 | **Subscription Check** | User session | check-subscription edge fn → Stripe query | Tier info + access | P0 | ✅ Implemented |
+| 144 | **Checkout Flow** | Tier selection | create-checkout edge fn → Stripe session | Payment URL | P0 | ✅ Implemented |
+| 145 | **Customer Portal** | Manage request | customer-portal edge fn → Stripe portal | Management URL | P0 | ✅ Implemented |
+| 146 | **Module Access Control** | User + module ID | hasModuleAccess() → Tier check | Access granted/denied | P0 | ✅ Implemented |
+| 147 | **Credit Balance Check** | User session | Query ai_credit_transactions | Credit balance | P0 | ✅ Implemented |
+| 148 | **Credit Consumption** | AI action | Deduct credits → Log transaction | Updated balance | P0 | ✅ Implemented |
+| 149 | **Tier Upgrade Prompt** | Locked feature access | Display upgrade modal | Upgrade flow started | P0 | ✅ Implemented |
+| 150 | **Beta User Bypass** | Beta flag check | if is_beta_user → Full access | Full access granted | P0 | ✅ Implemented |
+| 151 | **Free Trial Start** | New user signup | Set trial_ends_at → Enable trial features | Trial active | P1 | 🔶 Partial |
+| 152 | **Trial Expiration** | Trial period end | Downgrade to free tier | Limited access | P1 | 🔶 Partial |
+| 153 | **Pricing Page Display** | Visit /pricing | Render tier cards with segment filter | Interactive pricing | P1 | ✅ Implemented |
+| 154 | **Subscription Status UI** | Dashboard view | Display current tier, credits, expiry | Status badge | P1 | ✅ Implemented |
+| 155 | **Role-Based Navigation** | Auth state change | Filter nav items by tier | Appropriate menu | P1 | ⏳ Planned |
+
+### Subscription Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                         SUBSCRIPTION & ACCESS CONTROL                             │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│   Auth Layer     │────►│  Stripe Layer    │────►│  Access Layer    │
+│   (Supabase)     │     │  (Edge Functions)│     │  (Frontend Hooks)│
+└──────────────────┘     └──────────────────┘     └──────────────────┘
+        │                         │                        │
+        ▼                         ▼                        ▼
+┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│ • signUp/signIn  │     │ • check-subscription│   │ • useSubscription│
+│ • OAuth (Google) │     │ • create-checkout   │   │ • hasModuleAccess│
+│ • Session mgmt   │     │ • customer-portal   │   │ • getTierFeatures│
+│ • Profile data   │     │ • Stripe webhooks   │   │ • credit tracking│
+└──────────────────┘     └──────────────────┘     └──────────────────┘
+
+TIER STRUCTURE:
+┌───────────┬───────────┬───────────┬───────────┬───────────┬───────────┐
+│   FREE    │  STARTER  │  BUSINESS │    PRO    │ENTERPRISE │   BETA    │
+│   $0/mo   │  $9.99/mo │ $29.99/mo │ $79.99/mo │  Custom   │   $0/mo   │
+├───────────┼───────────┼───────────┼───────────┼───────────┼───────────┤
+│ 10 credits│ 100 cred  │ 500 cred  │ 2000 cred │ Unlimited │ Unlimited │
+│ Studio    │ Studio    │ Studio    │ Full Suite│ Full Suite│ Full Suite│
+│ Spark     │ Spark     │ Spark+Vibe│ + Arc     │ + HIPAA   │ + Beta    │
+│ Watermark │ No WM     │ + Mind    │ + Hub     │ + SSO     │ Perks     │
+└───────────┴───────────┴───────────┴───────────┴───────────┴───────────┘
+
+MODULE ACCESS MATRIX:
+┌─────────────────────┬──────┬─────────┬──────────┬─────┬────────────┬──────┐
+│ Module              │ Free │ Starter │ Business │ Pro │ Enterprise │ Beta │
+├─────────────────────┼──────┼─────────┼──────────┼─────┼────────────┼──────┤
+│ Genie Studio        │  ✅  │    ✅   │    ✅    │  ✅ │     ✅     │  ✅  │
+│ Genie Spark         │  ✅  │    ✅   │    ✅    │  ✅ │     ✅     │  ✅  │
+│ Genie Vibe          │  ❌  │    ❌   │    ✅    │  ✅ │     ✅     │  ✅  │
+│ Genie Mind          │  ❌  │    ❌   │    ✅    │  ✅ │     ✅     │  ✅  │
+│ Production Hub (Arc)│  ❌  │    ❌   │    ❌    │  ✅ │     ✅     │  ✅  │
+│ White Label         │  ❌  │    ❌   │    ❌    │  ✅ │     ✅     │  ✅  │
+│ API Access          │  ❌  │    ❌   │    ❌    │  ✅ │     ✅     │  ✅  │
+│ HIPAA Compliance    │  ❌  │    ❌   │    ❌    │  ❌ │     ✅     │  ✅  │
+└─────────────────────┴──────┴─────────┴──────────┴─────┴────────────┴──────┘
+```
+
+### Edge Functions Implemented
+
+| Function | Purpose | Status |
+|----------|---------|--------|
+| `check-subscription` | Query Stripe for user subscription status | ✅ Deployed |
+| `create-checkout` | Create Stripe checkout session for tier | ✅ Deployed |
+| `customer-portal` | Create Stripe customer portal session | ✅ Deployed |
+
+### Frontend Components Implemented
+
+| Component | Purpose | Location |
+|-----------|---------|----------|
+| `SubscriptionProvider` | Context provider for subscription state | `src/components/subscription/` |
+| `useSubscription` | Hook for subscription operations | `src/hooks/useSubscription.tsx` |
+| `PricingSection` | Tier cards with segment filtering | `src/components/subscription/` |
+| `CheckoutButton` | Stripe checkout trigger | `src/components/subscription/` |
+| `SubscriptionStatus` | Current tier/credits display | `src/components/subscription/` |
+| `GenieStudioPricing` | Full pricing page | `src/pages/GenieStudioPricing.tsx` |
+
+---
+
+## NEW: Category T - Mobile Deployment & Go-To-Market (Scenarios 156-165)
+
+**Added: 2026-01-12** | **Priority: P2** | Documentation: `docs/MOBILE_APP_DEPLOYMENT_GUIDE.md`
+
+### Mobile Distribution Strategy
+
+| # | Scenario Name | Input | Process | Output | Priority | Status |
+|---|---------------|-------|---------|--------|----------|--------|
+| 156 | **PWA Installation (iOS)** | Safari visit | Share → Add to Home Screen | Installed PWA | P2 | ✅ Ready |
+| 157 | **PWA Installation (Android)** | Chrome visit | Menu → Install App | Installed PWA | P2 | ✅ Ready |
+| 158 | **Capacitor iOS Build** | Git clone + Xcode | cap add ios → build → run | iOS app binary | P2 | ⏳ Documented |
+| 159 | **Capacitor Android Build** | Git clone + Studio | cap add android → build → run | Android APK | P2 | ⏳ Documented |
+| 160 | **App Store Submission (iOS)** | iOS build | TestFlight → Review → Publish | Live on App Store | P2 | ⏳ Documented |
+| 161 | **Play Store Submission** | Android AAB | Internal testing → Review → Publish | Live on Play Store | P2 | ⏳ Documented |
+| 162 | **Native Camera Access** | Recording request | @capacitor/camera permission | Camera stream | P2 | ⏳ Documented |
+| 163 | **Push Notifications** | Event trigger | @capacitor/push-notifications | Notification sent | P2 | ⏳ Documented |
+| 164 | **Offline Mode** | No connectivity | Service worker + IndexedDB | Local functionality | P2 | ⏳ Documented |
+| 165 | **Hot Reload (Dev)** | Code change | capacitor.config server.url | Live update | P2 | ⏳ Documented |
+
+### Mobile Deployment Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                          MOBILE DEPLOYMENT OPTIONS                               │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+                         ┌────────────────────┐
+                         │   Genie Studio     │
+                         │   (React/Vite)     │
+                         └─────────┬──────────┘
+                                   │
+              ┌────────────────────┼────────────────────┐
+              │                    │                    │
+              ▼                    ▼                    ▼
+     ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+     │      PWA        │  │   iOS Native    │  │ Android Native  │
+     │   (vite-pwa)    │  │   (Capacitor)   │  │   (Capacitor)   │
+     └────────┬────────┘  └────────┬────────┘  └────────┬────────┘
+              │                    │                    │
+              ▼                    ▼                    ▼
+     ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+     │ Browser Install │  │ App Store       │  │ Play Store      │
+     │ (Immediate)     │  │ (1-7 days)      │  │ (1-3 days)      │
+     └─────────────────┘  └─────────────────┘  └─────────────────┘
+
+FEATURE COMPARISON:
+┌────────────────────────────┬───────┬─────────┬─────────┐
+│ Feature                    │  PWA  │   iOS   │ Android │
+├────────────────────────────┼───────┼─────────┼─────────┤
+│ No app store required      │   ✅  │    ❌   │    ❌   │
+│ Full camera access         │   ⚠️  │    ✅   │    ✅   │
+│ Push notifications         │   ⚠️  │    ✅   │    ✅   │
+│ Offline mode               │   ✅  │    ✅   │    ✅   │
+│ App store presence         │   ❌  │    ✅   │    ✅   │
+│ Auto-updates               │   ✅  │    ❌   │    ❌   │
+│ Setup time                 │  0min │ 30min   │  20min  │
+│ Developer account required │   ❌  │    ✅   │    ✅   │
+│ Annual fees                │   $0  │  $99/yr │  $25    │
+└────────────────────────────┴───────┴─────────┴─────────┘
+
+GO-TO-MARKET TIMELINE:
+┌─────────────────────────────────────────────────────────────────┐
+│ Week 1-2: PWA Launch (Immediate)                                 │
+│ • Deploy PWA to production ✅                                    │
+│ • Create installation guide content                             │
+│ • Announce on social media / email                              │
+├─────────────────────────────────────────────────────────────────┤
+│ Week 3-4: Native App Development                                 │
+│ • Set up Xcode and Android Studio                               │
+│ • Configure app icons and splash screens                        │
+│ • Test on physical devices                                      │
+├─────────────────────────────────────────────────────────────────┤
+│ Week 5-6: App Store Submission                                   │
+│ • Prepare store listings and assets                             │
+│ • Submit to TestFlight (iOS) for beta                           │
+│ • Submit to Google Play internal testing                        │
+├─────────────────────────────────────────────────────────────────┤
+│ Week 7+: Public Launch                                           │
+│ • Release to production on both stores                          │
+│ • Monitor crash reports and analytics                           │
+│ • Plan update roadmap                                           │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Capacitor Configuration (Already Installed)
+
+| Package | Version | Purpose | Status |
+|---------|---------|---------|--------|
+| `@capacitor/core` | ^8.0.0 | Core runtime | ✅ Installed |
+| `@capacitor/cli` | ^8.0.0 | Build tools | ✅ Installed |
+| `@capacitor/camera` | ^8.0.0 | Camera access | ✅ Installed |
+| `@capacitor/geolocation` | ^8.0.0 | Location services | ✅ Installed |
+| `@capacitor/push-notifications` | ^8.0.0 | Push notifications | ✅ Installed |
+| `@capacitor/haptics` | ^8.0.0 | Haptic feedback | ✅ Installed |
+| `@capacitor/status-bar` | ^8.0.0 | Status bar control | ✅ Installed |
+
+---
+
+## Go-To-Market Verification Checklist
+
+### Subscription System ✅
+- [x] Stripe integration configured
+- [x] `check-subscription` edge function deployed
+- [x] `create-checkout` edge function deployed
+- [x] `customer-portal` edge function deployed
+- [x] `useSubscription` hook implemented
+- [x] Pricing page (`/pricing`) implemented
+- [x] Tier-based module access control
+- [x] AI credits tracking
+- [x] Beta user bypass
+
+### Authentication System ✅
+- [x] Supabase Auth configured
+- [x] Email/password signup/login
+- [x] OAuth (Google) support configured
+- [x] Session management
+- [x] Protected routes
+
+### Mobile Distribution ✅
+- [x] PWA configured (vite-plugin-pwa)
+- [x] Capacitor dependencies installed
+- [x] Mobile deployment guide documented
+- [ ] App icons prepared
+- [ ] Store listings drafted
+
+### Documentation ✅
+- [x] `SUBSCRIPTION_AND_USER_TYPES.md`
+- [x] `MOBILE_APP_DEPLOYMENT_GUIDE.md`
+- [x] Scenario map updated with S & T categories
 
 ---
 
@@ -1338,8 +1563,12 @@ BILLING (Scenarios 79-80)
 | 2026-01-10 | 2.2 | Added Authentication/SaaS integration mapping |
 | 2026-01-10 | 2.2 | Added automation opportunity matrix |
 | 2026-01-10 | 2.2 | Expanded from 110 to 140 scenarios |
+| 2026-01-12 | 2.4 | Added Category S (Subscription & Access Control) - Scenarios 141-155 |
+| 2026-01-12 | 2.4 | Added Category T (Mobile Deployment) - Scenarios 156-165 |
+| 2026-01-12 | 2.4 | Added Go-To-Market Verification Checklist |
+| 2026-01-12 | 2.4 | Expanded from 140 to 165 scenarios |
 
 ---
 
 *Document maintained by Genie Studio Development Team*
-*Total Scenarios: 140 | Implemented: 13 | Partial: 7 | Planned: 120*
+*Total Scenarios: 165 | Implemented: 33 | Partial: 9 | Planned: 123*
