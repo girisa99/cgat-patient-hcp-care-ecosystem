@@ -739,8 +739,8 @@ export default function ProductionHub() {
           open={isCreateDialogOpen}
           onOpenChange={setIsCreateDialogOpen}
           onSchedule={async (data: ScheduleShowData) => {
-            // Create show in database
-            await createShow({
+            // Create show in database - this auto-generates the meeting_link
+            const newShow = await createShow({
               title: data.title,
               description: data.description || undefined,
               show_type: data.show_type,
@@ -756,6 +756,9 @@ export default function ProductionHub() {
               linked_script_id: data.linked_script_id || undefined,
               linked_music_id: data.linked_music_id || undefined,
             });
+            
+            // Use the auto-generated meeting link from the new show
+            const meetingUrl = newShow?.meeting_link || data.meeting_url;
             
             // Send invites to host if email provided
             if (data.host.email && data.enable_email_reminders) {
@@ -781,7 +784,7 @@ export default function ProductionHub() {
                     stage: 'scheduled',
                     topics: data.topics,
                     script: linkedScript?.content?.substring(0, 500),
-                    joinUrl: data.meeting_url,
+                    joinUrl: meetingUrl,
                     durationMinutes: 60,
                   },
                 });
@@ -798,7 +801,7 @@ export default function ProductionHub() {
                   body: {
                     type: 'sms',
                     to: data.host.phone,
-                    message: `🎙️ You're hosting "${data.title}" on ${data.scheduled_date ? new Date(data.scheduled_date).toLocaleString() : 'TBD'}. ${data.meeting_url ? `Join: ${data.meeting_url}` : ''}`,
+                    message: `🎙️ You're hosting "${data.title}" on ${data.scheduled_date ? new Date(data.scheduled_date).toLocaleString() : 'TBD'}. ${meetingUrl ? `Join: ${meetingUrl}` : ''}`,
                   },
                 });
                 console.log('[ProductionHub] Host SMS sent to:', data.host.phone);
@@ -832,7 +835,7 @@ export default function ProductionHub() {
                       stage: 'scheduled',
                       topics: data.topics,
                       script: data.attach_script_to_invite && linkedScript?.content?.substring(0, 500),
-                      joinUrl: data.meeting_url,
+                      joinUrl: meetingUrl,
                       durationMinutes: 60,
                     },
                   });
@@ -849,7 +852,7 @@ export default function ProductionHub() {
                     body: {
                       type: 'sms',
                       to: guest.phone,
-                      message: `🎙️ You're invited to "${data.title}" on ${data.scheduled_date ? new Date(data.scheduled_date).toLocaleString() : 'TBD'}. ${data.meeting_url ? `Join: ${data.meeting_url}` : ''}`,
+                      message: `🎙️ You're invited to "${data.title}" on ${data.scheduled_date ? new Date(data.scheduled_date).toLocaleString() : 'TBD'}. ${meetingUrl ? `Join: ${meetingUrl}` : ''}`,
                     },
                   });
                 } catch (err) {

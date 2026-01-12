@@ -49,12 +49,34 @@ export default function MeetingRoom() {
       }
 
       try {
-        // Look up meeting by URL containing this code (meeting_link column)
-        const { data: shows, error: fetchError } = await supabase
-          .from('shows')
-          .select('*')
-          .ilike('meeting_link', `%${meetingCode}%`)
-          .limit(1);
+        // First, try to find by ID (UUID format)
+        let shows: any[] | null = null;
+        let fetchError: any = null;
+        
+        // Check if meetingCode looks like a UUID
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        
+        if (uuidRegex.test(meetingCode)) {
+          // Look up by show ID directly
+          const result = await supabase
+            .from('shows')
+            .select('*')
+            .eq('id', meetingCode)
+            .limit(1);
+          shows = result.data;
+          fetchError = result.error;
+        }
+        
+        // If not found by ID, try by meeting_link
+        if (!shows || shows.length === 0) {
+          const result = await supabase
+            .from('shows')
+            .select('*')
+            .ilike('meeting_link', `%${meetingCode}%`)
+            .limit(1);
+          shows = result.data;
+          fetchError = result.error;
+        }
 
         if (fetchError) throw fetchError;
 

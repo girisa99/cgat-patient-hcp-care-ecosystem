@@ -81,9 +81,15 @@ export function useShows() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Generate a unique show ID first, then create the meeting link
+      const showId = crypto.randomUUID();
+      const baseUrl = window.location.origin;
+      const meetingLink = `${baseUrl}/meeting/${showId}`;
+
       const { data: newShow, error } = await supabase
         .from('shows')
         .insert({
+          id: showId,
           user_id: user.id,
           title: data.title,
           description: data.description || null,
@@ -94,6 +100,7 @@ export function useShows() {
           guest_info: data.guest_info || [],
           linked_script_id: data.linked_script_id || null,
           linked_music_id: data.linked_music_id || null,
+          meeting_link: meetingLink,
         })
         .select()
         .single();
