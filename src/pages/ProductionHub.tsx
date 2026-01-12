@@ -5,6 +5,7 @@
  */
 
 import React, { useState } from 'react';
+import { format } from 'date-fns';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -431,18 +432,144 @@ export default function ProductionHub() {
     setIsScheduleManagementOpen(true);
   };
 
-  // Generate calendar URL
-  const generateCalendarUrl = (show: ShowWithParticipants, type: 'google' | 'outlook') => {
+  // Generate calendar URL with full details
+  const generateCalendarUrl = (show: ShowWithParticipants, type: 'google' | 'outlook' | 'yahoo') => {
     const startDate = new Date(show.scheduled_date || new Date());
     const endDate = new Date(startDate.getTime() + (show.duration_minutes || 60) * 60 * 1000);
     
-    const formatDate = (date: Date) => date.toISOString().replace(/[-:]/g, '').replace('.000', '');
+    const formatDate = (date: Date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    
+    // Build rich description with meeting URL, topics, host info
+    const participants = show.participants || [];
+    const host = participants.find(p => p.role === 'host');
+    const guests = participants.filter(p => p.role !== 'host');
+    
+    const lines: string[] = [];
+    if (show.meeting_link) {
+      lines.push('🎬 JOIN MEETING:');
+      lines.push(show.meeting_link);
+      lines.push('');
+    }
+    if (show.description) {
+      lines.push(show.description);
+      lines.push('');
+    }
+    const metadata = (show.metadata || {}) as Record<string, any>;
+    if (metadata.topics) {
+      lines.push('📋 TOPICS:');
+      lines.push(metadata.topics);
+      lines.push('');
+    }
+    if (host) {
+      lines.push(`🎙️ Host: ${host.name}`);
+    }
+    if (guests.length > 0) {
+      lines.push(`👥 Guests: ${guests.map(g => g.name).join(', ')}`);
+    }
+    lines.push('');
+    lines.push('─────────────────────');
+    lines.push('✨ Powered by Genie Studio');
+    
+    const richDescription = lines.join('\n');
     
     if (type === 'google') {
-      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(show.title)}&dates=${formatDate(startDate)}/${formatDate(endDate)}&details=${encodeURIComponent(show.description || '')}&location=${encodeURIComponent(show.meeting_link || '')}`;
+      const params = new URLSearchParams({
+        action: 'TEMPLATE',
+        text: `🎬 ${show.title} - Genie Studio`,
+        dates: `${formatDate(startDate)}/${formatDate(endDate)}`,
+        details: richDescription,
+        location: show.meeting_link || '',
+      });
+      if (participants.filter(p => p.email).length > 0) {
+        params.set('add', participants.filter(p => p.email).map(p => p.email as string).join(','));
+      }
+      return `https://calendar.google.com/calendar/render?${params.toString()}`;
+    } else if (type === 'yahoo') {
+      const duration = show.duration_minutes || 60;
+      const hours = Math.floor(duration / 60).toString().padStart(2, '0');
+      const minutes = (duration % 60).toString().padStart(2, '0');
+      const params = new URLSearchParams({
+        v: '60',
+        title: `🎬 ${show.title} - Genie Studio`,
+        st: formatDate(startDate),
+        dur: `${hours}${minutes}`,
+        desc: richDescription,
+        in_loc: show.meeting_link || '',
+      });
+      return `https://calendar.yahoo.com/?${params.toString()}`;
     } else {
-      return `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(show.title)}&startdt=${startDate.toISOString()}&enddt=${endDate.toISOString()}&body=${encodeURIComponent(show.description || '')}&location=${encodeURIComponent(show.meeting_link || '')}`;
+      const params = new URLSearchParams({
+        path: '/calendar/action/compose',
+        rru: 'addevent',
+        subject: `🎬 ${show.title} - Genie Studio`,
+        startdt: startDate.toISOString(),
+        enddt: endDate.toISOString(),
+        body: richDescription,
+        location: show.meeting_link || '',
+      });
+      return `https://outlook.live.com/calendar/0/deeplink/compose?${params.toString()}`;
     }
+  };
+
+  // Download ICS file for calendar
+  const downloadCalendarIcs = (show: ShowWithParticipants) => {
+    const startDate = new Date(show.scheduled_date || new Date());
+    const endDate = new Date(startDate.getTime() + (show.duration_minutes || 60) * 60 * 1000);
+    const formatDate = (date: Date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    
+    const participants = show.participants || [];
+    const host = participants.find(p => p.role === 'host');
+    const guests = participants.filter(p => p.role !== 'host');
+    const metadata = (show.metadata || {}) as Record<string, any>;
+    
+    let description = '';
+    if (show.meeting_link) description += `JOIN MEETING:\\n${show.meeting_link}\\n\\n`;
+    if (show.description) description += `${show.description}\\n\\n`;
+    if (metadata.topics) description += `TOPICS:\\n${metadata.topics}\\n\\n`;
+    if (host) description += `Host: ${host.name}\\n`;
+    if (guests.length > 0) description += `Guests: ${guests.map(g => g.name).join(', ')}\\n`;
+    description += '\\n------------------------\\nPowered by Genie Studio';
+    
+    const lines = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Genie Studio//AI-Powered Production Platform//EN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'X-WR-CALNAME:Genie Studio',
+      'BEGIN:VEVENT',
+      `UID:${show.id}@genie-studio`,
+      `DTSTAMP:${formatDate(new Date())}`,
+      `DTSTART:${formatDate(startDate)}`,
+      `DTEND:${formatDate(endDate)}`,
+      `SUMMARY:${show.title.replace(/,/g, '\\,').replace(/;/g, '\\;')} - Genie Studio`,
+      `DESCRIPTION:${description}`,
+      show.meeting_link ? `LOCATION:${show.meeting_link.replace(/,/g, '\\,').replace(/;/g, '\\;')}` : '',
+      show.meeting_link ? `URL:${show.meeting_link}` : '',
+      'BEGIN:VALARM',
+      'ACTION:DISPLAY',
+      'DESCRIPTION:Genie Studio - Session in 30 minutes',
+      'TRIGGER:-PT30M',
+      'END:VALARM',
+      'BEGIN:VALARM',
+      'ACTION:DISPLAY',
+      'DESCRIPTION:Genie Studio - Session in 15 minutes',
+      'TRIGGER:-PT15M',
+      'END:VALARM',
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].filter(Boolean).join('\r\n');
+    
+    const blob = new Blob([lines], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${show.title.replace(/[^a-z0-9]/gi, '_')}_genie_studio.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('Calendar file downloaded!');
   };
 
   return (
@@ -730,19 +857,37 @@ export default function ProductionHub() {
           }}
         />
 
-        {/* Show Detail Panel */}
+        {/* Show Detail Panel - Genie Studio Branded */}
         <Dialog open={!!selectedShow} onOpenChange={(open) => !open && setSelectedShow(null)}>
-          <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto bg-gradient-to-br from-background via-background to-primary/5 border-primary/20">
             {selectedShow && (
               <>
-                <DialogHeader>
-                  <div className="flex items-center gap-3">
-                    <Video className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <DialogTitle>{selectedShow.title}</DialogTitle>
-                      <Badge variant="outline" className="mt-1 capitalize">
-                        {selectedShow.show_type}
-                      </Badge>
+                <DialogHeader className="pb-4 border-b border-primary/10">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-pink-500/20">
+                      <Video className="h-6 w-6 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <DialogTitle className="text-xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent">
+                        {selectedShow.title}
+                      </DialogTitle>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge className="capitalize bg-gradient-to-r from-primary/20 to-pink-500/20 border-primary/30 text-primary">
+                          {selectedShow.show_type?.replace('_', ' ')}
+                        </Badge>
+                        {selectedShow.scheduled_date && (
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {format(new Date(selectedShow.scheduled_date), 'MMM d, yyyy h:mm a')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-muted-foreground">Powered by</p>
+                      <p className="text-sm font-semibold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent">
+                        ✨ Genie Studio
+                      </p>
                     </div>
                   </div>
                 </DialogHeader>
@@ -786,11 +931,24 @@ export default function ProductionHub() {
                     </div>
                   )}
 
-                  {/* Participants */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <Label className="text-sm font-medium">Participants</Label>
-                      <Button variant="outline" size="sm" onClick={() => setIsInviteDialogOpen(true)}>
+                  {/* Participants - Genie Studio Branded */}
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-violet-500/10 to-blue-500/10 border border-violet-500/20">
+                    <div className="flex items-center justify-between mb-3">
+                      <Label className="text-sm font-medium flex items-center gap-2">
+                        <Users className="h-4 w-4 text-primary" />
+                        <span>Participants</span>
+                        {selectedShow.participants && selectedShow.participants.length > 0 && (
+                          <Badge variant="secondary" className="text-xs">
+                            {selectedShow.participants.length}
+                          </Badge>
+                        )}
+                      </Label>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setIsInviteDialogOpen(true)}
+                        className="bg-gradient-to-r from-primary/10 to-pink-500/10 border-primary/30 hover:bg-primary/20"
+                      >
                         <Send className="h-3 w-3 mr-1" />
                         Send Invite
                       </Button>
@@ -800,17 +958,33 @@ export default function ProductionHub() {
                         {selectedShow.participants.map((participant) => (
                           <div 
                             key={participant.id}
-                            className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                            className={cn(
+                              "flex items-center justify-between p-3 rounded-lg border transition-colors",
+                              participant.role === 'host' 
+                                ? "bg-gradient-to-r from-primary/10 to-pink-500/10 border-primary/30" 
+                                : "bg-background/50 border-border/50"
+                            )}
                           >
                             <div className="flex items-center gap-3">
-                              <Avatar className="h-10 w-10">
-                                <AvatarFallback className="text-sm">
+                              <Avatar className={cn(
+                                "h-10 w-10",
+                                participant.role === 'host' && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                              )}>
+                                <AvatarFallback className={cn(
+                                  "text-sm",
+                                  participant.role === 'host' && "bg-gradient-to-br from-primary to-pink-500 text-white"
+                                )}>
                                   {participant.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
                               <div className="space-y-1">
                                 <div className="flex items-center gap-2">
                                   <p className="text-sm font-medium">{participant.name}</p>
+                                  {participant.role === 'host' && (
+                                    <Badge className="text-xs bg-gradient-to-r from-primary to-pink-500 text-white border-0">
+                                      Host
+                                    </Badge>
+                                  )}
                                   {participant.linkedin_url && (
                                     <Button
                                       variant="ghost"
@@ -823,7 +997,7 @@ export default function ProductionHub() {
                                   )}
                                 </div>
                                 <p className="text-xs text-muted-foreground capitalize">
-                                  {participant.role.replace('_', ' ')}
+                                  {participant.role !== 'host' && participant.role.replace('_', ' ')}
                                   {participant.email && ` • ${participant.email}`}
                                 </p>
                                 {participant.phone && (
@@ -837,7 +1011,10 @@ export default function ProductionHub() {
                             <div className="flex items-center gap-2">
                               <Badge 
                                 variant={participant.status === 'confirmed' ? 'default' : 'secondary'}
-                                className="capitalize"
+                                className={cn(
+                                  "capitalize",
+                                  participant.status === 'confirmed' && "bg-green-500/20 text-green-500 border-green-500/30"
+                                )}
                               >
                                 {participant.status}
                               </Badge>
@@ -846,7 +1023,19 @@ export default function ProductionHub() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">No participants added yet</p>
+                      <div className="text-center py-6 px-4 border-2 border-dashed border-muted-foreground/30 rounded-lg">
+                        <Users className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground mb-2">No participants added yet</p>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setIsInviteDialogOpen(true)}
+                          className="bg-gradient-to-r from-primary/10 to-pink-500/10"
+                        >
+                          <UserPlus className="h-3 w-3 mr-1" />
+                          Add Participants
+                        </Button>
+                      </div>
                     )}
                   </div>
 
@@ -877,28 +1066,54 @@ export default function ProductionHub() {
                     </div>
                   )}
 
-                  {/* Calendar Integration */}
+                  {/* Calendar Integration - Genie Studio Branded */}
                   {selectedShow.scheduled_date && (
-                    <div>
-                      <Label className="text-sm font-medium mb-2 block">Add to Calendar</Label>
-                      <div className="flex gap-2">
+                    <div className="p-4 rounded-xl bg-gradient-to-r from-primary/10 to-pink-500/10 border border-primary/20">
+                      <Label className="text-sm font-medium mb-3 block flex items-center gap-2">
+                        <CalendarPlus className="h-4 w-4 text-primary" />
+                        <span className="bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent font-semibold">
+                          Add to Calendar
+                        </span>
+                        <span className="text-xs text-muted-foreground font-normal">(includes meeting link & details)</span>
+                      </Label>
+                      <div className="flex flex-wrap gap-2">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => window.open(generateCalendarUrl(selectedShow, 'google'), '_blank')}
+                          className="bg-background/80 border-primary/30 hover:bg-primary/10"
                         >
-                          <CalendarPlus className="h-4 w-4 mr-1" />
-                          Google Calendar
+                          📅 Google Calendar
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => window.open(generateCalendarUrl(selectedShow, 'outlook'), '_blank')}
+                          className="bg-background/80 border-blue-500/30 hover:bg-blue-500/10"
                         >
-                          <CalendarPlus className="h-4 w-4 mr-1" />
-                          Outlook
+                          📧 Outlook
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(generateCalendarUrl(selectedShow, 'yahoo'), '_blank')}
+                          className="bg-background/80 border-violet-500/30 hover:bg-violet-500/10"
+                        >
+                          🗓️ Yahoo
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => downloadCalendarIcs(selectedShow)}
+                          className="bg-background/80 border-pink-500/30 hover:bg-pink-500/10"
+                        >
+                          <Download className="h-3 w-3 mr-1" />
+                          .ics
                         </Button>
                       </div>
+                      <p className="text-xs text-muted-foreground mt-2 text-center">
+                        ✨ Calendar invite includes meeting URL, topics & host details
+                      </p>
                     </div>
                   )}
 
@@ -933,7 +1148,7 @@ export default function ProductionHub() {
                   </div>
                 </div>
 
-                <DialogFooter className="flex-col sm:flex-row gap-2">
+                <DialogFooter className="flex-col sm:flex-row gap-2 pt-4 border-t border-primary/10">
                   <div className="flex gap-2 flex-1">
                     <Button 
                       variant="outline" 
@@ -942,6 +1157,7 @@ export default function ProductionHub() {
                         openScheduleManagement(selectedShow);
                         setSelectedShow(null);
                       }}
+                      className="bg-gradient-to-r from-blue-500/10 to-violet-500/10 border-blue-500/30 hover:bg-blue-500/20"
                     >
                       <Edit className="h-4 w-4 mr-1" />
                       Edit / Reschedule
@@ -953,6 +1169,7 @@ export default function ProductionHub() {
                         deleteShow(selectedShow.id);
                         setSelectedShow(null);
                       }}
+                      className="bg-gradient-to-r from-red-500/80 to-red-600/80"
                     >
                       <Trash2 className="h-4 w-4 mr-1" />
                       Cancel
@@ -960,19 +1177,25 @@ export default function ProductionHub() {
                   </div>
                   <div className="flex gap-2">
                     {selectedShow.current_stage === 'recording' && (
-                      <Button onClick={() => handleOpenRecordingStudio(selectedShow)}>
+                      <Button 
+                        onClick={() => handleOpenRecordingStudio(selectedShow)}
+                        className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600"
+                      >
                         <Video className="h-4 w-4 mr-1" />
                         Recording Studio
                       </Button>
                     )}
                     {selectedShow.current_stage !== 'published' && (
-                      <Button onClick={async () => {
-                        const stageIndex = PRODUCTION_STAGES.findIndex(s => s.id === selectedShow.current_stage);
-                        if (stageIndex < PRODUCTION_STAGES.length - 1) {
-                          await updateStage(selectedShow.id, PRODUCTION_STAGES[stageIndex + 1].id);
-                        }
-                        setSelectedShow(null);
-                      }}>
+                      <Button 
+                        onClick={async () => {
+                          const stageIndex = PRODUCTION_STAGES.findIndex(s => s.id === selectedShow.current_stage);
+                          if (stageIndex < PRODUCTION_STAGES.length - 1) {
+                            await updateStage(selectedShow.id, PRODUCTION_STAGES[stageIndex + 1].id);
+                          }
+                          setSelectedShow(null);
+                        }}
+                        className="bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90"
+                      >
                         Move to Next Stage
                         <ChevronRight className="h-4 w-4 ml-1" />
                       </Button>
