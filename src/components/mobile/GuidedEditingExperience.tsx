@@ -1,6 +1,6 @@
 /**
  * Guided Editing Experience - Complete 7-Phase Production
- * Main container with Wizard/Sidebar mode, Universal AI, and Scene Analyzer
+ * Main container with Wizard/Sidebar mode, Universal AI, Scene Analyzer, and Voice Director
  * Covers: Recording → Voice → Timeline → Editing → Transitions → Music → Export
  */
 
@@ -21,7 +21,8 @@ import {
   Video,
   Mic,
   FolderOpen,
-  Eye
+  Eye,
+  Volume2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -31,6 +32,8 @@ import { SmartEditingSidebar } from './SmartEditingSidebar';
 import { UniversalAIEditingAssistant } from './UniversalAIEditingAssistant';
 import { SceneAnalyzerPanel } from './SceneAnalyzerPanel';
 import { SceneAnalysis } from '@/hooks/useSceneAnalyzer';
+import { VoiceDirectorPanel } from './VoiceDirectorPanel';
+import { VoiceDirectorResult } from '@/hooks/useVoiceDirector';
 
 type ExperienceMode = 'choose' | 'wizard' | 'sidebar';
 
@@ -58,6 +61,7 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
   const [mode, setMode] = useState<ExperienceMode>('choose');
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [showSceneAnalyzer, setShowSceneAnalyzer] = useState(false);
+  const [showVoiceDirector, setShowVoiceDirector] = useState(false);
   const [currentStep, setCurrentStep] = useState('capture');
   const [sceneAnalyses, setSceneAnalyses] = useState<SceneAnalysis[]>([]);
 
@@ -78,6 +82,11 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
   const handleSuggestionApply = useCallback((suggestion: any) => {
     toast.info(`Applying: ${suggestion.description}`);
     onNavigateToStep(suggestion.type, suggestion);
+  }, [onNavigateToStep]);
+
+  const handleVoiceGenerated = useCallback((result: VoiceDirectorResult) => {
+    toast.success(`Voice generated: ${result.voice} (~${result.duration_estimate?.toFixed(1)}s)`);
+    onNavigateToStep('voice-ai-tts', { audioUrl: result.audioUrl, metadata: result.metadata });
   }, [onNavigateToStep]);
 
   const handleStepAction = useCallback((action: string, data?: any) => {
@@ -309,12 +318,27 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
           >
             ← Back
           </Button>
+          <Button
+            variant={showVoiceDirector ? "default" : "outline"}
+            size="sm"
+            className="h-8"
+            onClick={() => {
+              setShowVoiceDirector(!showVoiceDirector);
+              setShowSceneAnalyzer(false);
+            }}
+          >
+            <Volume2 className="h-3.5 w-3.5 mr-1.5" />
+            Voice
+          </Button>
           {videoClips.length > 0 && (
             <Button
               variant={showSceneAnalyzer ? "default" : "outline"}
               size="sm"
               className="h-8"
-              onClick={() => setShowSceneAnalyzer(!showSceneAnalyzer)}
+              onClick={() => {
+                setShowSceneAnalyzer(!showSceneAnalyzer);
+                setShowVoiceDirector(false);
+              }}
             >
               <Eye className="h-3.5 w-3.5 mr-1.5" />
               Analyze
@@ -356,6 +380,16 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
           onItemAction={handleStepAction}
           onAskAI={handleAskAI}
         />
+      )}
+
+      {/* Voice Director Panel */}
+      {showVoiceDirector && (
+        <div className="fixed inset-x-4 top-20 z-50 max-h-[70vh] overflow-auto">
+          <VoiceDirectorPanel
+            onVoiceGenerated={handleVoiceGenerated}
+            onClose={() => setShowVoiceDirector(false)}
+          />
+        </div>
       )}
 
       {/* Scene Analyzer Panel */}
