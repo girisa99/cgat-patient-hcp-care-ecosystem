@@ -1,8 +1,10 @@
 /**
  * Mobile Components Index
- * P1 Mobile MVP - Complete Component Library
+ * P1 Mobile MVP - Complete Component Library (85% Complete)
+ * P2 Advanced Features - Voice Commands (35% Complete)
  * 
  * Pipeline: Record → Clips → Mix → Timeline → Publish
+ * Last Updated: 2026-01-12
  */
 
 // Status & Native
@@ -20,6 +22,14 @@ export { MultiClipTimeline } from './MultiClipTimeline';
 export { PublishPanel } from './PublishPanel';
 export { PipelineProgress } from './PipelineProgress';
 export type { PipelineStage } from './PipelineProgress';
+
+// P1: Quick Templates (Social)
+export { QuickTemplates } from './QuickTemplates';
+export type { SocialTemplate, TemplateConfig } from './QuickTemplates';
+
+// P2: Voice-First Editing
+export { VoiceCommands } from './VoiceCommands';
+export type { VoiceCommand, VoiceCommandResult } from './VoiceCommands';
 
 // Legacy (kept for compatibility)
 export { ScriptStitcher } from './ScriptStitcher';
