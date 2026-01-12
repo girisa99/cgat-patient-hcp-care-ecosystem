@@ -53,11 +53,15 @@ import {
   MultiClipTimeline,
   PWAInstallPrompt,
   MobileStatusBar,
-  ScriptStitcher
+  ScriptStitcher,
+  QuickTemplates,
+  VoiceCommands
 } from '@/components/mobile';
 import type { RecordingResult } from '@/components/mobile/OneTapRecordButton';
 import type { TimelineClip } from '@/components/mobile/MultiClipTimeline';
 import type { StitchedResult } from '@/components/mobile/ScriptStitcher';
+import type { TemplateConfig } from '@/components/mobile/QuickTemplates';
+import type { VoiceCommandResult } from '@/components/mobile/VoiceCommands';
 
 interface MobileRecordingViewProps {
   isOpen?: boolean;
@@ -70,7 +74,7 @@ interface MobileRecordingViewProps {
   className?: string;
 }
 
-type MobileTab = 'record' | 'stitch' | 'clips' | 'timeline' | 'library';
+type MobileTab = 'record' | 'stitch' | 'clips' | 'timeline' | 'library' | 'templates' | 'voice';
 
 export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
   isOpen = true,
@@ -466,10 +470,42 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {/* Templates Tab - Quick Social Templates (P1) */}
+            <TabsContent value="templates" className="h-full m-0 p-4 overflow-auto">
+              <QuickTemplates
+                onSelectTemplate={(config: TemplateConfig) => {
+                  toast.success(`Selected ${config.platform} template: ${config.aspectRatio}`);
+                }}
+                onApplyTemplate={(template) => {
+                  toast.success(`Applied template: ${template.name}`);
+                  vibrate?.(100);
+                }}
+              />
+            </TabsContent>
+
+            {/* Voice Commands Tab - Voice-First Editing (P2) */}
+            <TabsContent value="voice" className="h-full m-0 p-4 overflow-auto">
+              <VoiceCommands
+                onCommand={(result: VoiceCommandResult) => {
+                  toast.info(`Voice command: ${result.command.action}`);
+                }}
+                onStartRecording={() => {
+                  vibrate?.(100);
+                  setActiveTab('record');
+                }}
+                onPauseRecording={() => toast.info('Pause command received')}
+                onStopRecording={() => toast.info('Stop command received')}
+                onTrimClip={() => toast.info('Trim command received')}
+                onDeleteClip={() => toast.info('Delete command received')}
+                onSaveProject={() => toast.info('Save command received')}
+                onExport={() => handleExport('mp4')}
+              />
+            </TabsContent>
           </div>
 
-          {/* Bottom Tab Bar - Fixed at bottom with safe area, 5 tabs */}
-          <TabsList className="flex-shrink-0 h-14 rounded-none border-t bg-card grid grid-cols-5 safe-area-bottom">
+          {/* Bottom Tab Bar - Fixed at bottom with safe area, 7 tabs with scroll */}
+          <TabsList className="flex-shrink-0 h-14 rounded-none border-t bg-card grid grid-cols-7 safe-area-bottom overflow-x-auto">
             <TabsTrigger value="record" className="flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1.5 px-1">
               <Video className="h-4 w-4" />
               <span className="text-[9px]">Record</span>
@@ -481,6 +517,14 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
             <TabsTrigger value="clips" className="flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1.5 px-1">
               <Scissors className="h-4 w-4" />
               <span className="text-[9px]">Clips</span>
+            </TabsTrigger>
+            <TabsTrigger value="templates" className="flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1.5 px-1">
+              <Sparkles className="h-4 w-4" />
+              <span className="text-[9px]">Social</span>
+            </TabsTrigger>
+            <TabsTrigger value="voice" className="flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1.5 px-1">
+              <Mic className="h-4 w-4" />
+              <span className="text-[9px]">Voice</span>
             </TabsTrigger>
             <TabsTrigger value="timeline" className="flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1.5 px-1">
               <Layers className="h-4 w-4" />
