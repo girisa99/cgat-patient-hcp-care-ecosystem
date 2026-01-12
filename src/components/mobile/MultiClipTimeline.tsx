@@ -32,7 +32,11 @@ import {
   Redo,
   ZoomIn,
   ZoomOut,
-  Maximize2
+  Maximize2,
+  AlertTriangle,
+  Grid,
+  Check,
+  Merge
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -89,12 +93,24 @@ interface MultiClipTimelineProps {
   onClipsChange?: (clips: TimelineClip[]) => void;
   onExport?: (format: string) => void;
   className?: string;
+  maxClips?: number; // Limit number of clips (default: 50)
+  maxDuration?: number; // Maximum total duration in seconds (default: 600 = 10 min)
 }
+
+// Clip limits for performance and UX
+const CLIP_LIMITS = {
+  MAX_CLIPS: 50,
+  MAX_DURATION_SECONDS: 600, // 10 minutes
+  MAX_TRACKS: 6,
+  WARN_CLIPS: 30,
+  WARN_DURATION: 300, // 5 minutes
+};
 
 const DEFAULT_TRACKS: TimelineTrack[] = [
   { id: 'video-1', name: 'Video 1', type: 'video', locked: false, muted: false, visible: true },
   { id: 'audio-1', name: 'Voiceover', type: 'audio', locked: false, muted: false, visible: true },
   { id: 'audio-2', name: 'Music', type: 'audio', locked: false, muted: false, visible: true },
+  { id: 'audio-3', name: 'SFX', type: 'audio', locked: false, muted: false, visible: true },
   { id: 'overlay-1', name: 'Overlay', type: 'overlay', locked: false, muted: false, visible: true },
 ];
 
@@ -103,7 +119,9 @@ export const MultiClipTimeline: React.FC<MultiClipTimelineProps> = ({
   mixedAudioTracks = [],
   onClipsChange,
   onExport,
-  className
+  className,
+  maxClips = CLIP_LIMITS.MAX_CLIPS,
+  maxDuration = CLIP_LIMITS.MAX_DURATION_SECONDS,
 }) => {
   const { vibrate } = useMobileFeatures();
   const timelineRef = useRef<HTMLDivElement>(null);
@@ -118,6 +136,7 @@ export const MultiClipTimeline: React.FC<MultiClipTimelineProps> = ({
   const [history, setHistory] = useState<TimelineClip[][]>([initialClips]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [draggedClip, setDraggedClip] = useState<TimelineClip | null>(null);
+  const [showClipGallery, setShowClipGallery] = useState(false);
 
   // Import mixed audio tracks from AudioMixer when they change
   React.useEffect(() => {
@@ -162,6 +181,12 @@ export const MultiClipTimeline: React.FC<MultiClipTimelineProps> = ({
     if (clips.length === 0) return 60; // Default 60 seconds
     return Math.max(...clips.map(c => c.startTime + c.duration), 60);
   }, [clips]);
+
+  // Check clip limits (after totalDuration is calculated)
+  const isAtClipLimit = clips.length >= maxClips;
+  const isNearClipLimit = clips.length >= CLIP_LIMITS.WARN_CLIPS;
+  const isAtDurationLimit = totalDuration >= maxDuration;
+  const isNearDurationLimit = totalDuration >= CLIP_LIMITS.WARN_DURATION;
 
   // Pixels per second
   const pxPerSecond = 50 * zoom;
@@ -281,6 +306,22 @@ export const MultiClipTimeline: React.FC<MultiClipTimelineProps> = ({
   };
 
   const addClipFromLibrary = (type: TimelineClip['type']) => {
+    // Check clip limit before adding
+    if (isAtClipLimit) {
+      toast.error(`Maximum ${maxClips} clips reached`, {
+        description: 'Delete some clips to add more',
+      });
+      return;
+    }
+    
+    // Check duration limit
+    if (isAtDurationLimit) {
+      toast.error(`Maximum ${Math.floor(maxDuration / 60)} minute timeline reached`, {
+        description: 'Trim or delete clips to add more',
+      });
+      return;
+    }
+
     const mockClip: TimelineClip = {
       id: crypto.randomUUID(),
       type,
@@ -295,7 +336,70 @@ export const MultiClipTimeline: React.FC<MultiClipTimelineProps> = ({
     };
     updateClips([...clips, mockClip]);
     setSelectedClipId(mockClip.id);
+    
+    // Warning for approaching limits
+    if (isNearClipLimit) {
+      toast.warning(`${maxClips - clips.length - 1} clips remaining`, {
+        description: 'Consider exporting or consolidating',
+      });
+    }
+    
     toast.success(`Added ${type} clip`);
+  };
+
+  // Merge multiple clips into one (for combining recordings)
+  const mergeSelectedClips = (clipIds: string[]) => {
+    if (clipIds.length < 2) {
+      toast.error('Select at least 2 clips to merge');
+      return;
+    }
+    
+    const clipsToMerge = clips.filter(c => clipIds.includes(c.id));
+    if (clipsToMerge.some(c => c.type !== clipsToMerge[0].type)) {
+      toast.error('Can only merge clips of the same type');
+      return;
+    }
+    
+    const sortedClips = clipsToMerge.sort((a, b) => a.startTime - b.startTime);
+    const mergedClip: TimelineClip = {
+      id: crypto.randomUUID(),
+      type: sortedClips[0].type,
+      name: `Merged (${sortedClips.length} clips)`,
+      startTime: sortedClips[0].startTime,
+      duration: sortedClips.reduce((sum, c) => sum + c.duration, 0),
+      inPoint: 0,
+      outPoint: sortedClips.reduce((sum, c) => sum + c.duration, 0),
+      track: sortedClips[0].track,
+      volume: sortedClips[0].volume,
+      opacity: sortedClips[0].opacity,
+    };
+    
+    const newClips = clips.filter(c => !clipIds.includes(c.id));
+    newClips.push(mergedClip);
+    updateClips(newClips);
+    setSelectedClipId(mergedClip.id);
+    toast.success(`Merged ${sortedClips.length} clips into one`);
+  };
+
+  // Add audio to existing recording position
+  const addAudioLayerAt = (atTime: number, audioType: 'voiceover' | 'music' | 'recording') => {
+    const trackIndex = audioType === 'music' ? 2 : audioType === 'voiceover' ? 1 : 3; // SFX track
+    const newClip: TimelineClip = {
+      id: crypto.randomUUID(),
+      type: 'audio',
+      name: `${audioType} layer`,
+      startTime: atTime,
+      duration: 10,
+      inPoint: 0,
+      outPoint: 10,
+      track: trackIndex,
+      volume: audioType === 'music' ? 0.3 : 1, // Music lower by default
+      opacity: 1,
+      audioType,
+    };
+    updateClips([...clips, newClip]);
+    setSelectedClipId(newClip.id);
+    toast.success(`Added ${audioType} at ${formatTime(atTime)}`);
   };
 
   // Enhanced clip coloring - includes audio subtypes
@@ -336,13 +440,114 @@ export const MultiClipTimeline: React.FC<MultiClipTimelineProps> = ({
             Multi-Clip Timeline
           </CardTitle>
           <div className="flex items-center gap-1">
-            <Badge variant="outline" className="text-xs px-1.5">{clips.length} clips</Badge>
-            <Badge variant="secondary" className="text-xs px-1.5">{formatTime(totalDuration)}</Badge>
+            <Badge 
+              variant={isNearClipLimit ? "destructive" : "outline"} 
+              className="text-xs px-1.5"
+            >
+              {clips.length}/{maxClips} clips
+            </Badge>
+            <Badge 
+              variant={isNearDurationLimit ? "destructive" : "secondary"} 
+              className="text-xs px-1.5"
+            >
+              {formatTime(totalDuration)}
+            </Badge>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-6 w-6"
+              onClick={() => setShowClipGallery(!showClipGallery)}
+              title="Toggle clip gallery view"
+            >
+              <Grid className="h-3.5 w-3.5" />
+            </Button>
           </div>
         </div>
+        
+        {/* Limit Warnings */}
+        {(isNearClipLimit || isNearDurationLimit) && (
+          <div className="flex items-center gap-2 mt-2 p-2 bg-yellow-500/10 rounded-lg text-yellow-600 dark:text-yellow-400">
+            <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+            <span className="text-xs">
+              {isNearClipLimit && `${maxClips - clips.length} clips remaining. `}
+              {isNearDurationLimit && `${Math.floor((maxDuration - totalDuration) / 60)}m remaining. `}
+              Consider exporting or consolidating.
+            </span>
+          </div>
+        )}
       </CardHeader>
 
       <CardContent className="space-y-2 px-2 pb-3">
+        {/* Clip Gallery View - for easy multi-clip review */}
+        {showClipGallery && clips.length > 0 && (
+          <div className="p-3 bg-muted/30 rounded-lg space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Clip Gallery ({clips.length})</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-7 text-xs"
+                onClick={() => {
+                  const selectedIds = clips.filter(c => c.id === selectedClipId).map(c => c.id);
+                  if (selectedIds.length >= 2) {
+                    mergeSelectedClips(selectedIds);
+                  } else {
+                    toast.info('Select clips on timeline to merge');
+                  }
+                }}
+              >
+                <Merge className="h-3 w-3 mr-1" />
+                Merge Selected
+              </Button>
+            </div>
+            <ScrollArea className="h-32">
+              <div className="grid grid-cols-4 gap-2 pr-4">
+                {clips.map((clip, index) => (
+                  <div
+                    key={clip.id}
+                    className={cn(
+                      "relative p-2 rounded-lg cursor-pointer transition-all border-2",
+                      selectedClipId === clip.id 
+                        ? "border-primary bg-primary/10" 
+                        : "border-transparent bg-muted/50 hover:border-muted-foreground/30",
+                      getClipColor(clip)
+                    )}
+                    onClick={() => selectClip(clip.id)}
+                  >
+                    <div className="absolute top-0.5 left-0.5 bg-background/80 rounded px-1 text-[8px] font-mono">
+                      #{index + 1}
+                    </div>
+                    {clip.thumbnailUrl ? (
+                      <img 
+                        src={clip.thumbnailUrl} 
+                        alt={clip.name} 
+                        className="w-full h-12 object-cover rounded"
+                      />
+                    ) : (
+                      <div className="w-full h-12 flex items-center justify-center bg-black/20 rounded">
+                        {clip.type === 'video' && <Film className="h-4 w-4 text-white" />}
+                        {clip.type === 'audio' && <Music className="h-4 w-4 text-white" />}
+                        {clip.type === 'image' && <Image className="h-4 w-4 text-white" />}
+                        {clip.type === 'text' && <Type className="h-4 w-4 text-white" />}
+                      </div>
+                    )}
+                    <p className="text-[8px] text-white truncate mt-1 text-center font-medium">
+                      {clip.duration.toFixed(1)}s
+                    </p>
+                    {selectedClipId === clip.id && (
+                      <div className="absolute -top-1 -right-1 bg-primary rounded-full p-0.5">
+                        <Check className="h-2.5 w-2.5 text-primary-foreground" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+            <p className="text-[10px] text-muted-foreground">
+              Click to select • Clips play in timeline order • Total: {formatTime(totalDuration)}
+            </p>
+          </div>
+        )}
         {/* Transport Controls - Compact */}
         <div className="flex items-center justify-between gap-2 p-1.5 bg-muted/50 rounded-lg">
           <div className="flex items-center gap-0.5">
@@ -392,27 +597,86 @@ export const MultiClipTimeline: React.FC<MultiClipTimelineProps> = ({
 
         {/* Add Clip Buttons - More compact */}
         <div className="flex gap-1 flex-wrap">
-          <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => addClipFromLibrary('video')}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="h-7 px-2 text-[10px]" 
+            onClick={() => addClipFromLibrary('video')}
+            disabled={isAtClipLimit}
+          >
             <Film className="h-3 w-3 mr-0.5" />
             Video
           </Button>
-          <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => addClipFromLibrary('audio')}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="h-7 px-2 text-[10px]" 
+            onClick={() => addClipFromLibrary('audio')}
+            disabled={isAtClipLimit}
+          >
             <Music className="h-3 w-3 mr-0.5" />
             Audio
           </Button>
-          <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => addClipFromLibrary('image')}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="h-7 px-2 text-[10px]" 
+            onClick={() => addClipFromLibrary('image')}
+            disabled={isAtClipLimit}
+          >
             <Image className="h-3 w-3 mr-0.5" />
             Image
           </Button>
-          <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => addClipFromLibrary('text')}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="h-7 px-2 text-[10px]" 
+            onClick={() => addClipFromLibrary('text')}
+            disabled={isAtClipLimit}
+          >
             <Type className="h-3 w-3 mr-0.5" />
             Text
           </Button>
         </div>
         
+        {/* Quick Audio Layer Buttons - Add audio at current playhead position */}
+        <div className="flex gap-1 flex-wrap">
+          <span className="text-[10px] text-muted-foreground self-center mr-1">Add audio layer:</span>
+          <Button 
+            variant="secondary" 
+            size="sm" 
+            className="h-6 px-2 text-[9px]" 
+            onClick={() => addAudioLayerAt(currentTime, 'voiceover')}
+            disabled={isAtClipLimit}
+          >
+            <Plus className="h-2.5 w-2.5 mr-0.5" />
+            Voiceover
+          </Button>
+          <Button 
+            variant="secondary" 
+            size="sm" 
+            className="h-6 px-2 text-[9px]" 
+            onClick={() => addAudioLayerAt(currentTime, 'music')}
+            disabled={isAtClipLimit}
+          >
+            <Plus className="h-2.5 w-2.5 mr-0.5" />
+            Music
+          </Button>
+          <Button 
+            variant="secondary" 
+            size="sm" 
+            className="h-6 px-2 text-[9px]" 
+            onClick={() => addAudioLayerAt(currentTime, 'recording')}
+            disabled={isAtClipLimit}
+          >
+            <Plus className="h-2.5 w-2.5 mr-0.5" />
+            SFX
+          </Button>
+        </div>
+        
         {/* Help text - more compact */}
         <div className="text-[10px] text-muted-foreground bg-muted/50 p-1.5 rounded">
-          <p><strong>Video:</strong> Main footage | <strong>Audio:</strong> Music/voiceover | <strong>Image:</strong> Photos/graphics | <strong>Text:</strong> Titles/captions</p>
+          <p><strong>Clips combine automatically</strong> in timeline order. Add multiple recordings + audio layers. Max: {maxClips} clips, {Math.floor(maxDuration/60)} minutes.</p>
         </div>
 
         {/* Zoom Controls - compact */}
