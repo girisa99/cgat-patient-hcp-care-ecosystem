@@ -33,6 +33,7 @@ import {
   Podcast,
   Calendar,
   Briefcase,
+  CalendarDays,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -40,6 +41,7 @@ import { useShows } from '@/hooks/useShows';
 import { useProjects } from '@/hooks/useProjects';
 import { useGenieScripts } from '@/components/genie-studio/useGenieScripts';
 import { VerticalKanban } from '@/components/production/VerticalKanban';
+import { ProductionCalendar } from '@/components/production/ProductionCalendar';
 import { 
   PRODUCTION_STAGES,
   MEETING_STAGES,
@@ -97,6 +99,7 @@ export default function ProductionHub() {
 
   // Category state for tabs
   const [activeCategory, setActiveCategory] = useState<EventCategory>('media_production');
+  const [viewMode, setViewMode] = useState<'kanban' | 'calendar'>('kanban');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
@@ -236,6 +239,26 @@ export default function ProductionHub() {
               <Plus className="h-4 w-4 mr-2" />
               New Production
             </Button>
+            {/* View Toggle */}
+            <div className="flex border rounded-lg p-1 bg-muted/50">
+              <Button 
+                variant={viewMode === 'kanban' ? 'default' : 'ghost'} 
+                size="sm"
+                onClick={() => setViewMode('kanban')}
+                className="h-8"
+              >
+                Pipeline
+              </Button>
+              <Button 
+                variant={viewMode === 'calendar' ? 'default' : 'ghost'} 
+                size="sm"
+                onClick={() => setViewMode('calendar')}
+                className="h-8"
+              >
+                <CalendarDays className="h-4 w-4 mr-1" />
+                Calendar
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -264,7 +287,7 @@ export default function ProductionHub() {
                 <div className="flex items-center justify-center h-64">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
-              ) : (
+              ) : viewMode === 'kanban' ? (
                 <VerticalKanban
                   showsByStage={showsByStage}
                   onSelectShow={setSelectedShow}
@@ -279,6 +302,11 @@ export default function ProductionHub() {
                     }
                   }}
                   eventCategory={activeCategory}
+                />
+              ) : (
+                <ProductionCalendar
+                  shows={shows.filter(s => s.event_category === activeCategory)}
+                  onShowClick={setSelectedShow}
                 />
               )}
             </TabsContent>
