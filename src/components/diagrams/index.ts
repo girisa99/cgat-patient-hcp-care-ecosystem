@@ -14,11 +14,16 @@ export { MarketAnalysisDashboard } from './MarketAnalysisDashboard';
 // Genie Studio - Investor Dashboard (comprehensive analytics)
 export { GenieInvestorDashboard } from './GenieInvestorDashboard';
 
-// Genie Studio - Architecture Diagrams (NEW - with download/expand)
+// Genie Studio - Architecture Hub (consolidated architecture tab)
+export { GenieArchitectureHub } from './GenieArchitectureHub';
+
+// Genie Studio - Architecture Diagrams (individual with download/expand)
 export { 
   GenieMindArchitectureDiagram,
   GenieVibeArchitectureDiagram,
   GenieArcProductionHubDiagram,
   GenieSparkArchitectureDiagram,
-  GenieStudioOverallArchitectureDiagram
+  GenieStudioOverallArchitectureDiagram,
+  GenieIntegrationsDiagram,
+  GenieMicroservicesDiagram
 } from './architecture';
