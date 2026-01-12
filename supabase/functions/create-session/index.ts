@@ -63,8 +63,9 @@ const handler = async (req: Request): Promise<Response> => {
     const scheduledAt = new Date(body.scheduled_at);
     const sessionActiveAt = new Date(scheduledAt.getTime() - 30 * 60 * 1000);
 
-    // Generate join URL based on session mode
-    const baseUrl = 'https://preview--genie-session.lovable.app';
+    // Generate join URL based on session mode - uses Genie Vibe recording studio
+    // Production: genieaiexperimentationhub.tech, Development: lovable.app preview
+    const baseUrl = 'https://genieaiexperimentationhub.tech';
     
     // Upload script to storage if content provided
     let scriptAttachmentUrl: string | null = null;

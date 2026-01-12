@@ -1,9 +1,13 @@
 /**
  * Meeting URL Generator Utilities
- * Auto-generate meeting URLs or connect to external platforms
+ * Auto-generate meeting URLs that route to Genie Vibe Recording Studio
+ * 
+ * Meeting URL Flow:
+ * 1. Generate URL: https://genieaiexperimentationhub.tech/meeting/{code}
+ * 2. User clicks URL → routes to /meeting/{code} page
+ * 3. MeetingRoom page loads show details and redirects to Genie Vibe
+ * 4. Device detection handled by Genie Vibe (web, mobile, desktop)
  */
-
-import { v4 as uuidv4 } from 'uuid';
 
 export type MeetingPlatform = 'auto' | 'google_meet' | 'zoom' | 'teams' | 'custom';
 
@@ -20,25 +24,58 @@ export interface GeneratedMeetingUrl {
   url: string;
   shortUrl: string;
   platform: MeetingPlatform;
+  meetingCode: string;
   activateAt?: Date;
   expiresAt?: Date;
 }
 
 /**
- * Generate an auto meeting URL using genieaiexperimentationhub.tech domain
+ * Get the base URL for meeting links
+ * In production: genieaiexperimentationhub.tech
+ * In development: current origin
  */
-export function generateAutoMeetingUrl(showId?: string): string {
-  const meetingCode = crypto.randomUUID().split('-').slice(0, 3).join('-');
-  // Use genieaiexperimentationhub.tech for production meeting URLs
-  return `https://genieaiexperimentationhub.tech/meeting/${meetingCode}`;
+export function getMeetingBaseUrl(): string {
+  const isProduction = typeof window !== 'undefined' && 
+    window.location.hostname !== 'localhost' && 
+    !window.location.hostname.includes('preview');
+  
+  return isProduction 
+    ? 'https://genieaiexperimentationhub.tech'
+    : (typeof window !== 'undefined' ? window.location.origin : 'https://genieaiexperimentationhub.tech');
 }
 
 /**
- * Generate a short URL for mobile devices
+ * Generate a unique meeting code
+ */
+export function generateMeetingCode(): string {
+  return crypto.randomUUID().split('-').slice(0, 3).join('-');
+}
+
+/**
+ * Generate an auto meeting URL that routes to Genie Vibe Recording Studio
+ * This URL works across all scheduling contexts: Arc, Production Hub, Calendar, etc.
+ */
+export function generateAutoMeetingUrl(showId?: string): string {
+  const meetingCode = showId ? `${showId.split('-')[0]}-${generateMeetingCode()}` : generateMeetingCode();
+  const baseUrl = getMeetingBaseUrl();
+  return `${baseUrl}/meeting/${meetingCode}`;
+}
+
+/**
+ * Extract meeting code from a meeting URL
+ */
+export function extractMeetingCode(url: string): string | null {
+  const match = url.match(/\/meeting\/([a-zA-Z0-9-]+)/);
+  return match ? match[1] : null;
+}
+
+/**
+ * Generate a short URL for mobile devices (placeholder - could integrate with URL shortener)
  */
 export function generateShortMeetingUrl(fullUrl: string): string {
-  const hash = Math.random().toString(36).substring(2, 8);
-  return `https://mtg.io/${hash}`;
+  const code = extractMeetingCode(fullUrl);
+  // For now, return a shorter version; could integrate with real shortener service
+  return code ? `${getMeetingBaseUrl()}/m/${code.slice(0, 8)}` : fullUrl;
 }
 
 /**
@@ -82,12 +119,14 @@ export function formatTeamsUrl(meetingUrl?: string): string {
 
 /**
  * Generate meeting URL based on platform selection
+ * For 'auto' platform, generates a Genie Vibe recording studio URL
  */
 export function generateMeetingUrl(
   showId: string,
   config: MeetingUrlConfig
 ): GeneratedMeetingUrl {
   let url: string;
+  let meetingCode = '';
   
   switch (config.platform) {
     case 'google_meet':
@@ -104,25 +143,32 @@ export function generateMeetingUrl(
       break;
     case 'auto':
     default:
-      url = generateAutoMeetingUrl(showId);
+      meetingCode = generateMeetingCode();
+      url = `${getMeetingBaseUrl()}/meeting/${meetingCode}`;
       break;
+  }
+  
+  // Extract code if available
+  if (!meetingCode) {
+    meetingCode = extractMeetingCode(url) || '';
   }
   
   return {
     url,
     shortUrl: generateShortMeetingUrl(url),
     platform: config.platform,
+    meetingCode,
   };
 }
 
 /**
- * Platform display info
+ * Platform display info - Genie Studio branded
  */
 export const MEETING_PLATFORMS = [
   { 
     id: 'auto' as MeetingPlatform, 
-    label: 'Auto-Generate (Browser)', 
-    description: 'Generate a built-in meeting URL',
+    label: 'Genie Vibe Recording', 
+    description: 'Auto-generate Genie Vibe studio URL',
     icon: '🌐'
   },
   { 

@@ -2206,7 +2206,7 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
         status: 'pending'
       });
 
-      // Send email invite via edge function
+      // Send email invite via edge function with Genie Vibe meeting URL
       const { error } = await supabase.functions.invoke('send-show-invite', {
         body: {
           to: inviteEmail,
@@ -2216,7 +2216,10 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
           showTitle: selectedEventForInvite.title,
           showDescription: selectedEventForInvite.description,
           scheduledDate: selectedEventForInvite.scheduledDate.toISOString(),
-          hostName: 'Genie Mind'
+          hostName: selectedEventForInvite.hostName || 'Genie Mind',
+          joinUrl: selectedEventForInvite.meetingLink, // Include meeting URL for Genie Vibe
+          durationMinutes: selectedEventForInvite.durationMinutes || 60,
+          topics: selectedEventForInvite.agenda,
         }
       });
 

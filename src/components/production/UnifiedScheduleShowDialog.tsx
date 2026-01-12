@@ -77,22 +77,18 @@ import {
   getGenieMeetingDisplayUrl,
   type CalendarEvent,
 } from '@/utils/calendarUtils';
+import {
+  generateAutoMeetingUrl,
+  generateMeetingCode,
+  getMeetingBaseUrl,
+  formatGoogleMeetUrl,
+  formatZoomUrl,
+  formatTeamsUrl,
+  MEETING_PLATFORMS,
+} from '@/utils/meetingUrlGenerator';
 
-// Meeting platform types
+// Meeting platform types - imported from utility
 export type MeetingPlatform = 'auto' | 'google_meet' | 'zoom' | 'teams' | 'custom';
-
-// AI Provider types
-type AIProvider = 'gemini' | 'openai' | 'anthropic';
-type AIModel = string;
-
-// Meeting platform configurations
-const MEETING_PLATFORMS = [
-  { id: 'auto' as MeetingPlatform, label: 'Auto-Generate (Genie)', icon: '🌐', description: 'Generate a Genie Studio meeting URL' },
-  { id: 'google_meet' as MeetingPlatform, label: 'Google Meet', icon: '📹', description: 'Add Google Meet code' },
-  { id: 'zoom' as MeetingPlatform, label: 'Zoom', icon: '🎥', description: 'Add Zoom meeting ID' },
-  { id: 'teams' as MeetingPlatform, label: 'Microsoft Teams', icon: '👥', description: 'Paste Teams URL' },
-  { id: 'custom' as MeetingPlatform, label: 'Custom URL', icon: '🔗', description: 'Enter any URL' },
-];
 
 // Props interface
 export interface UnifiedScheduleShowDialogProps {
@@ -213,33 +209,27 @@ const STAGE_ICONS: Record<string, React.ComponentType<{ className?: string }>> =
   archived: FileText,
 };
 
-// Generate meeting URL - uses genieaiexperimentationhub.tech for external sharing
-// but will route to /meeting/:code which connects to Genie Vibe
+// AI Provider types
+type AIProvider = 'gemini' | 'openai' | 'anthropic';
+type AIModel = string;
+
+// Generate meeting URL using the unified utility
+// Routes to /meeting/:code → Genie Vibe Recording Studio
 const generateGenieMeetingUrl = (): string => {
-  const meetingCode = crypto.randomUUID().split('-').slice(0, 3).join('-');
-  // Production domain for external sharing; locally routes to /meeting/:code → Genie Vibe
-  return `https://genieaiexperimentationhub.tech/meeting/${meetingCode}`;
+  return generateAutoMeetingUrl();
 };
 
-// Format platform-specific URLs
+// Format platform-specific URLs using utility functions
 const formatMeetingUrl = (platform: MeetingPlatform, customInput?: string): string => {
   switch (platform) {
     case 'auto':
       return generateGenieMeetingUrl();
     case 'google_meet':
-      if (customInput) {
-        const cleanCode = customInput.replace(/[^a-z0-9-]/gi, '');
-        return `https://meet.google.com/${cleanCode}`;
-      }
-      return `https://calendar.google.com/calendar/render?action=TEMPLATE&add=video`;
+      return formatGoogleMeetUrl(customInput);
     case 'zoom':
-      if (customInput) {
-        const cleanId = customInput.replace(/\D/g, '');
-        return `https://zoom.us/j/${cleanId}`;
-      }
-      return 'https://zoom.us/start/webmeeting';
+      return formatZoomUrl(customInput);
     case 'teams':
-      return customInput || 'https://teams.microsoft.com/l/meetup-join/';
+      return formatTeamsUrl(customInput);
     case 'custom':
       return customInput || '';
     default:
