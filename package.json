@@ -89,6 +89,7 @@
     "input-otp": "^1.4.2",
     "js-yaml": "^4.1.0",
     "jspdf": "^3.0.1",
+    "jszip": "^3.10.1",
     "lint-staged": "^16.1.2",
     "lodash": "^4.17.21",
     "lucide-react": "^0.462.0",
