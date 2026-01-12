@@ -77,8 +77,8 @@ const handler = async (req: Request): Promise<Response> => {
     const roleText = roleDisplay[role] || role;
 
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-    // Use Genie Studio branded email
-    const fromEmail = Deno.env.get('FROM_EMAIL') || 'studio@geniestudio.ai';
+    // Use verified domain for Resend - genieaiexperimentationhub.tech is verified
+    const fromEmail = Deno.env.get('FROM_EMAIL') || 'studio@genieaiexperimentationhub.tech';
     
     console.log('[send-show-invite] RESEND_API_KEY configured:', !!RESEND_API_KEY);
     console.log('[send-show-invite] FROM email:', fromEmail);

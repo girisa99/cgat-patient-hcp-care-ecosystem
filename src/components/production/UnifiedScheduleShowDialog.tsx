@@ -460,17 +460,95 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
       .trim();
   };
 
-  // Handle script file upload with storage
+  // Parse DOCX file to extract text content
+  const parseDocxFile = async (file: File): Promise<string> => {
+    try {
+      // DOCX files are ZIP archives containing XML files
+      const arrayBuffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      
+      // Check if it's a DOCX (ZIP) file by looking for PK header
+      if (bytes[0] === 0x50 && bytes[1] === 0x4B) {
+        // Import JSZip dynamically for parsing DOCX
+        const JSZip = (await import('jszip')).default;
+        const zip = await JSZip.loadAsync(arrayBuffer);
+        
+        // DOCX stores main content in word/document.xml
+        const documentXml = await zip.file('word/document.xml')?.async('string');
+        
+        if (documentXml) {
+          // Parse XML to extract text content
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(documentXml, 'text/xml');
+          
+          // Get all paragraph and text elements
+          const paragraphs: string[] = [];
+          const pElements = xmlDoc.getElementsByTagName('w:p');
+          
+          for (let i = 0; i < pElements.length; i++) {
+            const para = pElements[i];
+            const textElements = para.getElementsByTagName('w:t');
+            let paragraphText = '';
+            
+            for (let j = 0; j < textElements.length; j++) {
+              paragraphText += textElements[j].textContent || '';
+            }
+            
+            if (paragraphText.trim()) {
+              paragraphs.push(paragraphText.trim());
+            }
+          }
+          
+          return paragraphs.join('\n\n');
+        }
+      }
+      
+      // Fallback for non-DOCX files (plain text)
+      const textDecoder = new TextDecoder('utf-8');
+      return textDecoder.decode(bytes);
+    } catch (error) {
+      console.error('Error parsing DOCX file:', error);
+      // Last resort fallback - try reading as text
+      return await file.text();
+    }
+  };
+
+  // Handle script file upload with storage and proper DOCX parsing
   const handleScriptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
-      // Read and clean text content
-      const rawText = await file.text();
-      const cleanedText = cleanTextContent(rawText);
+      toast.info(`Processing ${file.name}...`);
       
-      // Upload file to Supabase Storage for attachment
+      let extractedText = '';
+      
+      // Check file type and parse accordingly
+      const isDocx = file.name.toLowerCase().endsWith('.docx') || 
+                     file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      const isDoc = file.name.toLowerCase().endsWith('.doc') || 
+                    file.type === 'application/msword';
+      
+      if (isDocx) {
+        // Parse DOCX file to extract actual text
+        extractedText = await parseDocxFile(file);
+      } else if (isDoc) {
+        // Old .doc format is not easily parseable in browser
+        toast.warning('Old .doc format detected. Please save as .docx for best results.');
+        extractedText = 'Unable to parse old .doc format. Please upload a .docx or .txt file.';
+      } else {
+        // Plain text file
+        extractedText = await file.text();
+      }
+      
+      // Clean the extracted text
+      const cleanedText = cleanTextContent(extractedText);
+      
+      // Try to extract title from content (first non-empty line)
+      const lines = cleanedText.split('\n').filter(line => line.trim());
+      const suggestedTitleFromDoc = lines[0]?.substring(0, 100) || '';
+      
+      // Upload file to Supabase Storage for attachment (keep original for download)
       const fileName = `scripts/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('production-attachments')
@@ -478,7 +556,7 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
       
       if (uploadError) {
         console.error('Script upload error:', uploadError);
-        // Still allow using the content even if storage upload fails
+        toast.warning('Script content loaded but file storage failed');
       }
       
       // Get public URL if uploaded successfully
@@ -488,28 +566,30 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
           .from('production-attachments')
           .getPublicUrl(uploadData.path);
         attachmentUrl = urlData?.publicUrl || '';
+        console.log('Script uploaded to storage:', attachmentUrl);
       }
 
       setScriptContent(cleanedText);
       setSelectedScriptId(null);
-      updateFormData('script_content', cleanedText);
       
-      // Store metadata for the attachment
+      // Update form data with extracted content
       setFormData(prev => ({
         ...prev,
         script_content: cleanedText,
-        // Store attachment info in metadata that can be passed to the invite function
+        linked_script_id: undefined,
+        // Auto-suggest title if empty
+        title: prev.title || suggestedTitleFromDoc,
       }));
       
-      // Store attachment URL in a separate state if needed
-      if (attachmentUrl) {
-        console.log('Script uploaded to storage:', attachmentUrl);
-      }
+      toast.success(`Script "${file.name}" loaded successfully!`);
       
-      toast.success(`Script "${file.name}" loaded and cleaned!`);
+      // If we extracted a title suggestion, populate it
+      if (suggestedTitleFromDoc && !formData.title) {
+        setSuggestedTitle(suggestedTitleFromDoc);
+      }
     } catch (error) {
       console.error('Script processing error:', error);
-      toast.error('Failed to read script file');
+      toast.error('Failed to read script file. Please try a .txt or .docx file.');
     }
   };
 
