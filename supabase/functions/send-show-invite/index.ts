@@ -1,3 +1,4 @@
+// send-show-invite edge function v2.1 - Fixed attachment encoding
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
 
 const corsHeaders = {
@@ -522,21 +523,21 @@ const handler = async (req: Request): Promise<Response> => {
     const displayFromName = senderName || hostName || 'Genie Studio';
     const ccEmail = senderEmail || hostEmail;
     
-    // Fix ICS attachment - use proper base64 encoding for Resend
-    const icsBuffer = new TextEncoder().encode(icsContent);
-    const icsBase64Fixed = btoa(String.fromCharCode(...icsBuffer));
+    // Build attachments array - use icsBase64 already computed above (line ~191)
+    const attachments: any[] = [];
+    
+    // Add ICS calendar file attachment
+    attachments.push({
+      filename: `${showTitle.replace(/[^a-z0-9]/gi, '_')}_invite.ics`,
+      content: icsBase64,
+    });
     
     const emailOptions: any = {
       from: `${displayFromName} via Genie Studio <${fromEmail}>`,
       to: [to],
       subject: emailSubject,
       html: emailHtml,
-      attachments: [
-        {
-          filename: `${showTitle.replace(/[^a-z0-9]/gi, '_')}_genie_studio.ics`,
-          content: icsBase64Fixed,
-        }
-      ],
+      attachments: attachments,
     };
     
     // Add CC so host receives a copy of all invites sent
