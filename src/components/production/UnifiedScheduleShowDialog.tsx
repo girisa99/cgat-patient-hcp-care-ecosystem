@@ -1,10 +1,11 @@
 /**
  * UnifiedScheduleShowDialog - Shared component for scheduling shows
  * Used in both Arc (GenieStudio) and Production Hub with consistent features
- * Includes: Category, Type, Stage, Participants, Meeting URL, Reminders, Timezone
+ * Includes: Category, Type, Stage, Participants, Meeting URL, Reminders, Timezone,
+ * AI Title Suggestions, Script Upload/Selection, Multi-Provider AI Support
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,8 +15,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import {
   Plus,
   Users,
@@ -36,7 +38,6 @@ import {
   User,
   UserPlus,
   Link,
-  Music,
   Tv,
   Radio,
   GraduationCap,
@@ -50,13 +51,13 @@ import {
   Play,
   PenTool,
   Check,
-  Send,
+  Sparkles,
+  Wand2,
+  Upload,
+  Zap,
+  Copy,
 } from 'lucide-react';
 import {
-  PRODUCTION_STAGES,
-  MEETING_STAGES,
-  EVENT_STAGES,
-  SHOW_TYPES,
   EVENT_CATEGORIES,
   getStagesForCategory,
   getShowTypesForCategory,
@@ -67,7 +68,22 @@ import {
   type EventStage,
 } from '@/types/shows';
 import { COMMON_TIMEZONES, getLocalTimezone } from '@/utils/timezoneUtils';
-import { MeetingPlatform } from '@/utils/meetingUrlGenerator';
+
+// Meeting platform types
+export type MeetingPlatform = 'auto' | 'google_meet' | 'zoom' | 'teams' | 'custom';
+
+// AI Provider types
+type AIProvider = 'gemini' | 'openai' | 'anthropic';
+type AIModel = string;
+
+// Meeting platform configurations
+const MEETING_PLATFORMS = [
+  { id: 'auto' as MeetingPlatform, label: 'Auto-Generate (Genie)', icon: '🌐', description: 'Generate a Genie Studio meeting URL' },
+  { id: 'google_meet' as MeetingPlatform, label: 'Google Meet', icon: '📹', description: 'Add Google Meet code' },
+  { id: 'zoom' as MeetingPlatform, label: 'Zoom', icon: '🎥', description: 'Add Zoom meeting ID' },
+  { id: 'teams' as MeetingPlatform, label: 'Microsoft Teams', icon: '👥', description: 'Paste Teams URL' },
+  { id: 'custom' as MeetingPlatform, label: 'Custom URL', icon: '🔗', description: 'Enter any URL' },
+];
 
 // Props interface
 export interface UnifiedScheduleShowDialogProps {
@@ -76,9 +92,9 @@ export interface UnifiedScheduleShowDialogProps {
   onSchedule: (data: ScheduleShowData) => Promise<void>;
   initialData?: Partial<ScheduleShowData>;
   mode?: 'create' | 'edit';
-  showSteps?: boolean; // For Arc style with 3 steps
+  showSteps?: boolean;
   availableScripts?: { id: string; name: string; content?: string }[];
-  variant?: 'arc' | 'production-hub'; // Which UI variant to use
+  variant?: 'arc' | 'production-hub';
 }
 
 // Data interface for the scheduled show
@@ -112,6 +128,10 @@ export interface ScheduleShowData {
   enable_sms_reminders: boolean;
   script_content?: string;
   attach_script_to_invite?: boolean;
+  suggested_title?: string;
+  suggested_intro?: string;
+  ai_provider?: AIProvider;
+  ai_model?: AIModel;
 }
 
 // Icon map for show types
@@ -159,7 +179,6 @@ const TYPE_COLORS: Record<string, string> = {
   training_session: 'from-orange-500 to-red-500',
 };
 
-// Stage icon map for production stages
 const STAGE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   script_review: FileText,
   script: FileText,
@@ -185,6 +204,38 @@ const STAGE_ICONS: Record<string, React.ComponentType<{ className?: string }>> =
   archived: FileText,
 };
 
+// Generate meeting URL using genieaiexperimentationhub.tech domain
+const generateGenieMeetingUrl = (): string => {
+  const meetingCode = crypto.randomUUID().split('-').slice(0, 3).join('-');
+  return `https://genieaiexperimentationhub.tech/meeting/${meetingCode}`;
+};
+
+// Format platform-specific URLs
+const formatMeetingUrl = (platform: MeetingPlatform, customInput?: string): string => {
+  switch (platform) {
+    case 'auto':
+      return generateGenieMeetingUrl();
+    case 'google_meet':
+      if (customInput) {
+        const cleanCode = customInput.replace(/[^a-z0-9-]/gi, '');
+        return `https://meet.google.com/${cleanCode}`;
+      }
+      return `https://calendar.google.com/calendar/render?action=TEMPLATE&add=video`;
+    case 'zoom':
+      if (customInput) {
+        const cleanId = customInput.replace(/\D/g, '');
+        return `https://zoom.us/j/${cleanId}`;
+      }
+      return 'https://zoom.us/start/webmeeting';
+    case 'teams':
+      return customInput || 'https://teams.microsoft.com/l/meetup-join/';
+    case 'custom':
+      return customInput || '';
+    default:
+      return generateGenieMeetingUrl();
+  }
+};
+
 // Default data factory
 const createDefaultData = (): ScheduleShowData => ({
   title: '',
@@ -197,19 +248,18 @@ const createDefaultData = (): ScheduleShowData => ({
   meeting_url: '',
   meeting_platform: 'auto',
   topics: '',
-  host: {
-    name: '',
-    email: '',
-    phone: '',
-    linkedin_url: '',
-  },
+  host: { name: '', email: '', phone: '', linkedin_url: '' },
   guests: [],
   linked_script_id: '',
   linked_music_id: '',
   enable_email_reminders: true,
   enable_sms_reminders: false,
   script_content: '',
-  attach_script_to_invite: false,
+  attach_script_to_invite: true,
+  suggested_title: '',
+  suggested_intro: '',
+  ai_provider: 'gemini',
+  ai_model: 'google/gemini-3-flash-preview',
 });
 
 export function UnifiedScheduleShowDialog({
@@ -227,6 +277,24 @@ export function UnifiedScheduleShowDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState<'details' | 'content' | 'participants'>('details');
   
+  // AI generation state
+  const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
+  const [aiProvider, setAiProvider] = useState<AIProvider>('gemini');
+  const [aiModel, setAiModel] = useState<AIModel>('google/gemini-3-flash-preview');
+  const [suggestedTitle, setSuggestedTitle] = useState('');
+  const [suggestedIntro, setSuggestedIntro] = useState('');
+  
+  // Meeting URL state
+  const [meetingPlatform, setMeetingPlatform] = useState<MeetingPlatform>('auto');
+  const [platformInput, setPlatformInput] = useState('');
+  const [urlCopied, setUrlCopied] = useState(false);
+  
+  // Script state
+  const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
+  const [scriptContent, setScriptContent] = useState('');
+  const [attachScriptToInvite, setAttachScriptToInvite] = useState(true);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   // Guest form state
   const [newGuest, setNewGuest] = useState({
     name: '',
@@ -239,8 +307,15 @@ export function UnifiedScheduleShowDialog({
   // Reset form when dialog opens/closes
   useEffect(() => {
     if (open) {
-      setFormData(initialData ? { ...createDefaultData(), ...initialData } : createDefaultData());
+      const defaultData = createDefaultData();
+      setFormData(initialData ? { ...defaultData, ...initialData } : defaultData);
       setCurrentStep('details');
+      setSuggestedTitle('');
+      setSuggestedIntro('');
+      setScriptContent('');
+      setSelectedScriptId(null);
+      setMeetingPlatform('auto');
+      setPlatformInput('');
     }
   }, [open, initialData]);
 
@@ -287,43 +362,137 @@ export function UnifiedScheduleShowDialog({
     }));
   };
 
-  // Handle meeting URL generation
-  const handleMeetingUrlChange = (url: string, platform: MeetingPlatform) => {
-    setFormData(prev => ({
-      ...prev,
-      meeting_url: url,
-      meeting_platform: platform,
-    }));
+  // Generate AI suggestions for title and intro
+  const handleGenerateSuggestions = async () => {
+    if (!formData.topics.trim() && !scriptContent.trim()) {
+      toast.error('Please add topics or script content first');
+      return;
+    }
+
+    setIsGeneratingSuggestions(true);
+    try {
+      const prompt = `You are helping create a ${formData.show_type} show.
+Topics: ${formData.topics || 'Not specified'}
+Script/Content: ${scriptContent ? scriptContent.substring(0, 1000) : 'Not provided'}
+Show Type: ${formData.show_type}
+Category: ${formData.event_category}
+
+Generate:
+1. A catchy, engaging title (max 60 characters)
+2. A brief introduction paragraph for the host to use (2-3 sentences)
+
+Respond in JSON format: {"title": "...", "intro": "..."}`;
+
+      const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+        body: {
+          messages: [{ role: 'user', content: prompt }],
+          provider: aiProvider,
+          model: aiModel,
+          extractJson: true,
+        },
+      });
+
+      if (error) throw error;
+
+      const response = data?.response || data?.content || '';
+      try {
+        // Try to parse JSON from response
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          setSuggestedTitle(parsed.title || '');
+          setSuggestedIntro(parsed.intro || '');
+          toast.success('AI suggestions generated!');
+        } else {
+          throw new Error('No JSON found');
+        }
+      } catch {
+        // Fallback: use response as intro
+        setSuggestedIntro(response);
+        toast.success('AI suggestion generated!');
+      }
+    } catch (error) {
+      console.error('AI generation error:', error);
+      toast.error('Failed to generate suggestions. Please try again.');
+    } finally {
+      setIsGeneratingSuggestions(false);
+    }
   };
 
-  // Handle direct URL input change
-  const handleDirectUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      meeting_url: e.target.value,
-      meeting_platform: 'custom',
-    }));
+  // Handle script selection
+  const handleScriptSelect = (scriptId: string) => {
+    setSelectedScriptId(scriptId);
+    const script = availableScripts.find(s => s.id === scriptId);
+    if (script?.content) {
+      setScriptContent(script.content);
+      updateFormData('linked_script_id', scriptId);
+    }
+  };
+
+  // Handle script file upload
+  const handleScriptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      setScriptContent(text);
+      setSelectedScriptId(null);
+      updateFormData('script_content', text);
+      toast.success(`Script "${file.name}" loaded!`);
+    } catch (error) {
+      toast.error('Failed to read script file');
+    }
+  };
+
+  // Generate meeting URL
+  const handleGenerateMeetingUrl = () => {
+    const url = formatMeetingUrl(meetingPlatform, platformInput);
+    updateFormData('meeting_url', url);
+    updateFormData('meeting_platform', meetingPlatform);
+    toast.success('Meeting URL generated!');
+  };
+
+  // Copy meeting URL
+  const handleCopyUrl = () => {
+    navigator.clipboard.writeText(formData.meeting_url);
+    setUrlCopied(true);
+    toast.success('URL copied!');
+    setTimeout(() => setUrlCopied(false), 2000);
   };
 
   // Submit handler
   const handleSubmit = async () => {
-    if (!formData.title.trim()) return;
-    
+    if (!formData.title.trim()) {
+      toast.error('Please enter a title');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      // Auto-generate meeting URL if platform is 'auto' and no URL provided
+      // Auto-generate meeting URL if not set and platform is auto
       let finalUrl = formData.meeting_url;
-      if (!finalUrl && formData.meeting_platform === 'auto') {
-        // Generate a simple meeting code without requiring showId
-        const meetingCode = crypto.randomUUID().split('-').slice(0, 3).join('-');
-        finalUrl = `${window.location.origin}/meeting/${meetingCode}`;
+      if (!finalUrl && meetingPlatform === 'auto') {
+        finalUrl = generateGenieMeetingUrl();
       }
-      
+
       await onSchedule({
         ...formData,
         meeting_url: finalUrl,
+        meeting_platform: meetingPlatform,
+        script_content: scriptContent,
+        attach_script_to_invite: attachScriptToInvite,
+        suggested_title: suggestedTitle,
+        suggested_intro: suggestedIntro,
+        ai_provider: aiProvider,
+        ai_model: aiModel,
       });
+      
+      toast.success('Production scheduled successfully!');
       onOpenChange(false);
+    } catch (error) {
+      console.error('Schedule error:', error);
+      toast.error('Failed to schedule production');
     } finally {
       setIsSubmitting(false);
     }
@@ -333,29 +502,24 @@ export function UnifiedScheduleShowDialog({
   const getStageRequirements = (stage: string) => {
     switch (stage) {
       case 'outreach':
-        return { showHost: true, showGuests: true, showScript: false, showMusic: false };
+        return { showHost: true, showGuests: true, showScript: false };
       case 'script':
-        return { showHost: true, showGuests: true, showScript: true, showMusic: false };
+        return { showHost: true, showGuests: true, showScript: true };
       case 'rehearsal':
-        return { showHost: true, showGuests: true, showScript: true, showMusic: true };
       case 'recording':
-        return { showHost: true, showGuests: true, showScript: true, showMusic: true };
+        return { showHost: true, showGuests: true, showScript: true };
       default:
-        return { showHost: true, showGuests: true, showScript: false, showMusic: false };
+        return { showHost: true, showGuests: true, showScript: false };
     }
   };
 
   const stageRequirements = getStageRequirements(formData.starting_stage);
-  const currentStages = getStagesForCategory(formData.event_category);
   const currentShowTypes = getShowTypesForCategory(formData.event_category);
-
-  // Determine if we need guests (for podcast, interview, panel types)
   const showGuestsSection = ['podcast', 'interview', 'panel', 'webinar', 'conference'].includes(formData.show_type);
 
-  // Render step indicator for Arc variant
+  // Render step indicator
   const renderStepIndicator = () => {
     if (!showSteps) return null;
-    
     const steps = ['details', 'content', 'participants'];
     return (
       <div className="flex items-center gap-2 py-2">
@@ -464,7 +628,6 @@ export function UnifiedScheduleShowDialog({
   // Render stage selection (for media productions)
   const renderStageSelection = () => {
     if (formData.event_category !== 'media_production') return null;
-    
     return (
       <div className="space-y-2">
         <Label>Production Stage</Label>
@@ -490,16 +653,10 @@ export function UnifiedScheduleShowDialog({
                     : "border-border hover:border-primary/50"
                 )}
               >
-                <div className={cn(
-                  "h-6 w-6 rounded-md bg-gradient-to-br flex items-center justify-center",
-                  stage.color
-                )}>
+                <div className={cn("h-6 w-6 rounded-md bg-gradient-to-br flex items-center justify-center", stage.color)}>
                   <Icon className="h-3 w-3 text-white" />
                 </div>
-                <span className={cn(
-                  "text-[10px] font-medium leading-tight text-center",
-                  isSelected ? "text-primary" : "text-muted-foreground"
-                )}>
+                <span className={cn("text-[10px] font-medium leading-tight text-center", isSelected ? "text-primary" : "text-muted-foreground")}>
                   {stage.label}
                 </span>
               </button>
@@ -510,7 +667,288 @@ export function UnifiedScheduleShowDialog({
     );
   };
 
-  // Render host/organizer fields
+  // Render meeting URL section
+  const renderMeetingUrlSection = () => (
+    <div className="space-y-3 border rounded-lg p-4 bg-muted/30">
+      <Label className="flex items-center gap-2">
+        <ExternalLink className="h-4 w-4" />
+        Meeting / Join URL
+      </Label>
+      
+      {/* Platform Selection */}
+      <div className="flex flex-wrap gap-1.5">
+        {MEETING_PLATFORMS.map((p) => (
+          <Badge
+            key={p.id}
+            variant={meetingPlatform === p.id ? 'default' : 'outline'}
+            className="cursor-pointer text-xs py-1 px-2"
+            onClick={() => {
+              setMeetingPlatform(p.id);
+              setPlatformInput('');
+            }}
+          >
+            <span className="mr-1">{p.icon}</span>
+            {p.label.split(' ')[0]}
+          </Badge>
+        ))}
+      </div>
+
+      {/* Platform-specific inputs */}
+      {meetingPlatform === 'google_meet' && (
+        <Input
+          placeholder="Enter Google Meet code (abc-defg-hij)"
+          value={platformInput}
+          onChange={(e) => setPlatformInput(e.target.value)}
+        />
+      )}
+      {meetingPlatform === 'zoom' && (
+        <Input
+          placeholder="Enter Zoom Meeting ID (123 456 7890)"
+          value={platformInput}
+          onChange={(e) => setPlatformInput(e.target.value)}
+        />
+      )}
+      {(meetingPlatform === 'teams' || meetingPlatform === 'custom') && (
+        <Input
+          placeholder="Paste the full meeting URL"
+          value={platformInput}
+          onChange={(e) => setPlatformInput(e.target.value)}
+        />
+      )}
+
+      {/* Generate / Apply button */}
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleGenerateMeetingUrl}
+          className="flex-1"
+        >
+          <Zap className="h-4 w-4 mr-1" />
+          {meetingPlatform === 'auto' ? 'Generate URL' : 'Apply URL'}
+        </Button>
+      </div>
+
+      {/* Generated URL display */}
+      {formData.meeting_url && (
+        <div className="flex items-center gap-2 p-2 bg-background rounded border">
+          <Globe className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <span className="text-sm font-mono truncate flex-1">{formData.meeting_url}</span>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCopyUrl}>
+            {urlCopied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+          </Button>
+        </div>
+      )}
+      
+      <p className="text-xs text-muted-foreground">
+        URL will activate 30 minutes before the scheduled time. Participants receive reminder emails and SMS.
+      </p>
+    </div>
+  );
+
+  // Render AI suggestions section
+  const renderAISuggestionsSection = () => (
+    <div className="space-y-3 border rounded-lg p-4 bg-gradient-to-br from-purple-500/5 to-pink-500/5">
+      <div className="flex items-center justify-between">
+        <Label className="flex items-center gap-2">
+          <Wand2 className="h-4 w-4 text-purple-500" />
+          AI-Suggested Title & Introduction
+        </Label>
+      </div>
+
+      {/* AI Provider Selection */}
+      <div className="flex flex-wrap gap-2">
+        <div className="flex-1 min-w-[140px]">
+          <Label className="text-xs text-muted-foreground mb-1 block">AI Provider</Label>
+          <Select
+            value={aiProvider}
+            onValueChange={(v: AIProvider) => {
+              setAiProvider(v);
+              if (v === 'gemini') setAiModel('google/gemini-3-flash-preview');
+              else if (v === 'openai') setAiModel('openai/gpt-5-mini');
+              else if (v === 'anthropic') setAiModel('anthropic/claude-3-haiku');
+            }}
+          >
+            <SelectTrigger className="h-9 bg-background">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="gemini">🌟 Google Gemini</SelectItem>
+              <SelectItem value="openai">🤖 OpenAI</SelectItem>
+              <SelectItem value="anthropic">🧠 Anthropic</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex-1 min-w-[160px]">
+          <Label className="text-xs text-muted-foreground mb-1 block">Model</Label>
+          <Select value={aiModel} onValueChange={setAiModel}>
+            <SelectTrigger className="h-9 bg-background">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {aiProvider === 'gemini' && (
+                <>
+                  <SelectItem value="google/gemini-3-flash-preview">Gemini 3 Flash (Fast)</SelectItem>
+                  <SelectItem value="google/gemini-2.5-flash">Gemini 2.5 Flash</SelectItem>
+                  <SelectItem value="google/gemini-2.5-pro">Gemini 2.5 Pro (Best)</SelectItem>
+                </>
+              )}
+              {aiProvider === 'openai' && (
+                <>
+                  <SelectItem value="openai/gpt-5-mini">GPT-5 Mini (Fast)</SelectItem>
+                  <SelectItem value="openai/gpt-5">GPT-5</SelectItem>
+                </>
+              )}
+              {aiProvider === 'anthropic' && (
+                <>
+                  <SelectItem value="anthropic/claude-3-haiku">Claude 3 Haiku (Fast)</SelectItem>
+                  <SelectItem value="anthropic/claude-3-5-sonnet">Claude 3.5 Sonnet</SelectItem>
+                </>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleGenerateSuggestions}
+            disabled={isGeneratingSuggestions || (!formData.topics.trim() && !scriptContent.trim())}
+            className="h-9"
+          >
+            {isGeneratingSuggestions ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4 mr-1" />
+                Generate
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {/* Suggestions display */}
+      {suggestedTitle && (
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs text-muted-foreground">Suggested Title</Label>
+            <div className="flex items-center gap-2 mt-1">
+              <Input
+                value={suggestedTitle}
+                onChange={(e) => setSuggestedTitle(e.target.value)}
+                className="bg-background"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => updateFormData('title', suggestedTitle)}
+              >
+                Use
+              </Button>
+            </div>
+          </div>
+          {suggestedIntro && (
+            <div>
+              <Label className="text-xs text-muted-foreground">Suggested Introduction</Label>
+              <Textarea
+                value={suggestedIntro}
+                onChange={(e) => setSuggestedIntro(e.target.value)}
+                className="mt-1 text-sm bg-background"
+                rows={3}
+              />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  // Render script section
+  const renderScriptSection = () => (
+    <div className="space-y-3 border rounded-lg p-4 bg-muted/30">
+      <Label className="flex items-center gap-2">
+        <FileText className="h-4 w-4" />
+        Select or Upload Script
+      </Label>
+      <div className="flex gap-2">
+        <Select
+          value={selectedScriptId || ''}
+          onValueChange={handleScriptSelect}
+        >
+          <SelectTrigger className="flex-1">
+            <SelectValue placeholder="Select a saved script..." />
+          </SelectTrigger>
+          <SelectContent>
+            {availableScripts.length === 0 ? (
+              <SelectItem value="_none" disabled>No saved scripts</SelectItem>
+            ) : (
+              availableScripts.map(script => (
+                <SelectItem key={script.id} value={script.id}>
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-3 w-3" />
+                    {script.name}
+                  </div>
+                </SelectItem>
+              ))
+            )}
+          </SelectContent>
+        </Select>
+        <div className="relative">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".txt,.md,.doc,.docx"
+            onChange={handleScriptUpload}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          />
+          <Button variant="outline" className="pointer-events-none">
+            <Upload className="h-4 w-4 mr-2" />
+            Upload
+          </Button>
+        </div>
+      </div>
+      
+      {(selectedScriptId || scriptContent) && (
+        <p className="text-xs text-green-600 flex items-center gap-1">
+          <Check className="h-3 w-3" />
+          Script loaded - title and description will auto-populate
+        </p>
+      )}
+
+      <div className="space-y-2">
+        <Label className="text-sm">Script / Outline Content</Label>
+        <Textarea
+          value={scriptContent}
+          onChange={(e) => {
+            setScriptContent(e.target.value);
+            setSelectedScriptId(null);
+          }}
+          placeholder="Paste your script or outline here, or select/upload above..."
+          className="min-h-[100px] font-mono text-sm"
+        />
+      </div>
+
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          id="attach-script"
+          checked={attachScriptToInvite}
+          onChange={(e) => setAttachScriptToInvite(e.target.checked)}
+          className="rounded border-border"
+        />
+        <Label htmlFor="attach-script" className="text-sm cursor-pointer">
+          Include script preview in participant invites
+        </Label>
+      </div>
+    </div>
+  );
+
+  // Render host fields
   const renderHostFields = () => (
     <div className="space-y-3">
       <h4 className="text-sm font-medium flex items-center gap-2">
@@ -575,7 +1013,6 @@ export function UnifiedScheduleShowDialog({
   // Render guests section
   const renderGuestsSection = () => {
     if (!showGuestsSection) return null;
-    
     return (
       <div className="space-y-3">
         <h4 className="text-sm font-medium flex items-center gap-2">
@@ -602,12 +1039,7 @@ export function UnifiedScheduleShowDialog({
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="capitalize text-xs">{guest.role}</Badge>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => handleRemoveGuest(idx)}
-                  >
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveGuest(idx)}>
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
@@ -616,37 +1048,16 @@ export function UnifiedScheduleShowDialog({
           </div>
         )}
 
-        {/* Add guest form */}
         <div className="grid grid-cols-2 gap-2">
-          <Input
-            placeholder="Guest name *"
-            value={newGuest.name}
-            onChange={(e) => setNewGuest(prev => ({ ...prev, name: e.target.value }))}
-          />
-          <Input
-            placeholder="Email"
-            type="email"
-            value={newGuest.email}
-            onChange={(e) => setNewGuest(prev => ({ ...prev, email: e.target.value }))}
-          />
+          <Input placeholder="Guest name *" value={newGuest.name} onChange={(e) => setNewGuest(prev => ({ ...prev, name: e.target.value }))} />
+          <Input placeholder="Email" type="email" value={newGuest.email} onChange={(e) => setNewGuest(prev => ({ ...prev, email: e.target.value }))} />
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <Input
-            placeholder="Phone (for SMS)"
-            value={newGuest.phone}
-            onChange={(e) => setNewGuest(prev => ({ ...prev, phone: e.target.value }))}
-          />
-          <Input
-            placeholder="LinkedIn URL"
-            value={newGuest.linkedin_url}
-            onChange={(e) => setNewGuest(prev => ({ ...prev, linkedin_url: e.target.value }))}
-          />
+          <Input placeholder="Phone (for SMS)" value={newGuest.phone} onChange={(e) => setNewGuest(prev => ({ ...prev, phone: e.target.value }))} />
+          <Input placeholder="LinkedIn URL" value={newGuest.linkedin_url} onChange={(e) => setNewGuest(prev => ({ ...prev, linkedin_url: e.target.value }))} />
         </div>
         <div className="flex gap-2">
-          <Select
-            value={newGuest.role}
-            onValueChange={(v: any) => setNewGuest(prev => ({ ...prev, role: v }))}
-          >
+          <Select value={newGuest.role} onValueChange={(v: any) => setNewGuest(prev => ({ ...prev, role: v }))}>
             <SelectTrigger className="w-[140px]">
               <SelectValue />
             </SelectTrigger>
@@ -657,12 +1068,7 @@ export function UnifiedScheduleShowDialog({
               <SelectItem value="speaker">Speaker</SelectItem>
             </SelectContent>
           </Select>
-          <Button
-            variant="outline"
-            className="flex-1"
-            onClick={handleAddGuest}
-            disabled={!newGuest.name.trim()}
-          >
+          <Button variant="outline" className="flex-1" onClick={handleAddGuest} disabled={!newGuest.name.trim()}>
             <Plus className="h-4 w-4 mr-1" />
             Add Guest
           </Button>
@@ -720,7 +1126,7 @@ export function UnifiedScheduleShowDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {mode === 'edit' ? 'Edit' : 'Create New'} {EVENT_CATEGORIES.find(c => c.id === formData.event_category)?.label || 'Production'}
@@ -732,15 +1138,10 @@ export function UnifiedScheduleShowDialog({
 
         {renderStepIndicator()}
 
-        <ScrollArea className="max-h-[60vh] pr-4">
+        <ScrollArea className="max-h-[65vh] pr-4">
           <div className="space-y-4 py-4">
-            {/* Category Selection */}
             {renderCategorySelection()}
-
-            {/* Type Selection */}
             {renderTypeSelection()}
-
-            {/* Stage Selection */}
             {renderStageSelection()}
 
             {/* Basic Info */}
@@ -757,7 +1158,7 @@ export function UnifiedScheduleShowDialog({
             {/* Date/Time with Timezone */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="date">Scheduled Date</Label>
+                <Label htmlFor="date">Scheduled Date & Time</Label>
                 <Input
                   id="date"
                   type="datetime-local"
@@ -770,10 +1171,7 @@ export function UnifiedScheduleShowDialog({
                   <Globe className="h-3 w-3" />
                   Timezone
                 </Label>
-                <Select
-                  value={formData.timezone}
-                  onValueChange={(v) => updateFormData('timezone', v)}
-                >
+                <Select value={formData.timezone} onValueChange={(v) => updateFormData('timezone', v)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -788,48 +1186,25 @@ export function UnifiedScheduleShowDialog({
               </div>
             </div>
 
-            {/* Meeting URL */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <ExternalLink className="h-3 w-3" />
-                Meeting/Join URL
-              </Label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="https://zoom.us/j/... or https://meet.google.com/..."
-                  value={formData.meeting_url}
-                  onChange={handleDirectUrlChange}
-                  className="flex-1"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const meetingCode = crypto.randomUUID().split('-').slice(0, 3).join('-');
-                    const url = `${window.location.origin}/meeting/${meetingCode}`;
-                    setFormData(prev => ({ ...prev, meeting_url: url, meeting_platform: 'auto' }));
-                  }}
-                  title="Auto-generate URL"
-                >
-                  <Globe className="h-4 w-4" />
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Add a Zoom, Google Meet, or Teams link, or click the button to auto-generate
-              </p>
-            </div>
+            {/* Meeting URL Section */}
+            {renderMeetingUrlSection()}
 
             {/* Topics */}
             <div className="space-y-2">
               <Label htmlFor="topics">Topics / Agenda</Label>
               <Input
                 id="topics"
-                placeholder="Key topics to discuss..."
+                placeholder="Key topics to discuss (comma-separated)..."
                 value={formData.topics}
                 onChange={(e) => updateFormData('topics', e.target.value)}
               />
             </div>
+
+            {/* Script Section */}
+            {renderScriptSection()}
+
+            {/* AI Suggestions Section */}
+            {renderAISuggestionsSection()}
 
             {/* Description */}
             <div className="space-y-2">
@@ -855,38 +1230,6 @@ export function UnifiedScheduleShowDialog({
               </div>
             )}
 
-            {/* Script Linking (for media productions) */}
-            {stageRequirements.showScript && availableScripts.length > 0 && (
-              <div className="border-t pt-4 space-y-3">
-                <h4 className="text-sm font-medium flex items-center gap-2">
-                  <Link className="h-4 w-4" />
-                  Link Assets
-                </h4>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <FileText className="h-3 w-3" />
-                    Script
-                  </Label>
-                  <Select
-                    value={formData.linked_script_id || '__none__'}
-                    onValueChange={(value) => updateFormData('linked_script_id', value === '__none__' ? '' : value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a script (optional)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">None</SelectItem>
-                      {availableScripts.map((script) => (
-                        <SelectItem key={script.id} value={script.id}>
-                          {script.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
-
             {/* Reminder Settings */}
             <div className="border-t pt-4">
               {renderReminderSettings()}
@@ -898,7 +1241,11 @@ export function UnifiedScheduleShowDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={!formData.title.trim() || isSubmitting}>
+          <Button 
+            onClick={handleSubmit} 
+            disabled={!formData.title.trim() || isSubmitting}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+          >
             {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             {mode === 'edit' ? 'Update' : 'Create'} Production
           </Button>
