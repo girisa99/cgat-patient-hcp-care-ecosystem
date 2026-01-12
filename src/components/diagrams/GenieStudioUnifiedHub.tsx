@@ -69,6 +69,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import { GenieInvestorDashboard } from './GenieInvestorDashboard';
+import { GenieArchitectureHub } from './GenieArchitectureHub';
 import { cn } from '@/lib/utils';
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
@@ -1483,69 +1484,9 @@ export const GenieStudioUnifiedHub: React.FC = () => {
           </Card>
         </TabsContent>
 
-        {/* ARCHITECTURE TAB */}
+        {/* ARCHITECTURE TAB - Updated with comprehensive Architecture Hub */}
         <TabsContent value="architecture" className="space-y-4 mt-4">
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Layers className="h-5 w-5" />
-                Architecture Layers
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {architectureLayers.map(layer => {
-                  const Icon = layer.icon;
-                  return (
-                    <div key={layer.id} className="p-4 rounded-lg border border-border" style={{ borderLeftColor: layer.color, borderLeftWidth: 4 }}>
-                      <div className="flex items-center gap-2 mb-3">
-                        <Icon className="h-5 w-5" style={{ color: layer.color }} />
-                        <h4 className="font-semibold">{layer.name}</h4>
-                      </div>
-                      <ul className="space-y-1 text-sm text-muted-foreground">
-                        {layer.components.map(comp => (
-                          <li key={comp} className="flex items-center gap-2">
-                            <Check className="h-3 w-3 text-green-500" />
-                            {comp}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Agents */}
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bot className="h-5 w-5" />
-                AI Agents ({filteredAgents.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {filteredAgents.map(agent => (
-                  <div key={agent.name} className="p-3 rounded-lg border border-border bg-muted/20 flex items-center gap-3">
-                    <Bot className="h-5 w-5 text-primary" />
-                    <div className="flex-1">
-                      <p className="font-mono text-sm">{agent.name}</p>
-                      <div className="flex gap-1 mt-1">
-                        {agent.segments.slice(0, 3).map(seg => (
-                          <Badge key={seg} variant="secondary" className="text-xs">{seg}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                    <Badge variant={agent.status === 'implemented' ? 'default' : agent.status === 'partial' ? 'secondary' : 'outline'}>
-                      {agent.status}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <GenieArchitectureHub />
         </TabsContent>
 
         {/* TECHNICAL TAB */}
