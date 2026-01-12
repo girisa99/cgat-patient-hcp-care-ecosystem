@@ -454,6 +454,13 @@ export default function ProductionHub() {
                 <ProductionCalendar
                   shows={shows.filter(s => s.event_category === activeCategory)}
                   onShowClick={setSelectedShow}
+                  onScheduleNew={(date, time) => {
+                    // Pre-fill the date and time in the new show form
+                    const dateStr = date.toISOString().split('T')[0];
+                    const dateTimeStr = `${dateStr}T${time}`;
+                    setNewShow(prev => ({ ...prev, scheduled_date: dateTimeStr }));
+                    setIsCreateDialogOpen(true);
+                  }}
                 />
               )}
             </TabsContent>

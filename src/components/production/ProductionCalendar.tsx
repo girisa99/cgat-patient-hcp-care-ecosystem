@@ -1,16 +1,39 @@
 /**
- * Production Calendar - Visual calendar with color-coded events
- * Shows scheduled recordings, meetings, and events with sync capabilities
+ * Production Calendar - Enhanced visual calendar with scheduling capabilities
+ * Features: Day click to schedule, week/month views, full legend, time slots
  */
 
 import React, { useState, useMemo } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, isToday } from 'date-fns';
+import { 
+  format, 
+  startOfMonth, 
+  endOfMonth, 
+  eachDayOfInterval, 
+  isSameMonth, 
+  isSameDay, 
+  addMonths, 
+  subMonths, 
+  startOfWeek, 
+  endOfWeek, 
+  isToday,
+  addWeeks,
+  subWeeks,
+  eachHourOfInterval,
+  startOfDay,
+  endOfDay,
+  isWeekend,
+  getDay
+} from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -25,34 +48,65 @@ import {
   Mic,
   ExternalLink,
   Clock,
-  MapPin,
-  User
+  User,
+  Plus,
+  CalendarDays,
+  CalendarRange,
+  Layers,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ShowWithParticipants, ShowType, EventCategory, SHOW_TYPES } from '@/types/shows';
 
-// Color legend configuration for different show types
-const SHOW_TYPE_COLORS: Record<ShowType, { bg: string; text: string; border: string; label: string }> = {
-  // Media Productions
-  podcast: { bg: 'bg-purple-500/20', text: 'text-purple-400', border: 'border-purple-500', label: '🎙️ Podcast' },
-  webcast: { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500', label: '📺 Webcast' },
-  interview: { bg: 'bg-cyan-500/20', text: 'text-cyan-400', border: 'border-cyan-500', label: '🎤 Interview' },
-  panel: { bg: 'bg-indigo-500/20', text: 'text-indigo-400', border: 'border-indigo-500', label: '👥 Panel' },
-  tutorial: { bg: 'bg-emerald-500/20', text: 'text-emerald-400', border: 'border-emerald-500', label: '📚 Tutorial' },
-  broadcast: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500', label: '📡 Broadcast' },
-  other: { bg: 'bg-gray-500/20', text: 'text-gray-400', border: 'border-gray-500', label: '🎬 Other' },
-  // Business Meetings
-  discovery_call: { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500', label: '📞 Discovery' },
-  sales_meeting: { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-500', label: '💼 Sales' },
-  project_kickoff: { bg: 'bg-pink-500/20', text: 'text-pink-400', border: 'border-pink-500', label: '🚀 Kickoff' },
-  status_update: { bg: 'bg-teal-500/20', text: 'text-teal-400', border: 'border-teal-500', label: '📊 Status' },
-  consultation: { bg: 'bg-violet-500/20', text: 'text-violet-400', border: 'border-violet-500', label: '💬 Consult' },
-  // Events
-  workshop: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500', label: '🔧 Workshop' },
-  webinar: { bg: 'bg-sky-500/20', text: 'text-sky-400', border: 'border-sky-500', label: '🖥️ Webinar' },
-  conference: { bg: 'bg-rose-500/20', text: 'text-rose-400', border: 'border-rose-500', label: '🏛️ Conference' },
-  training_session: { bg: 'bg-lime-500/20', text: 'text-lime-400', border: 'border-lime-500', label: '📖 Training' },
+// Color legend configuration for different show types - grouped by category
+const CATEGORY_COLORS: Record<EventCategory, { bg: string; text: string; label: string; icon: React.ReactNode }> = {
+  media_production: { bg: 'bg-purple-500/20', text: 'text-purple-400', label: 'Media', icon: <Podcast className="h-3 w-3" /> },
+  business_meeting: { bg: 'bg-amber-500/20', text: 'text-amber-400', label: 'Meetings', icon: <Briefcase className="h-3 w-3" /> },
+  event: { bg: 'bg-cyan-500/20', text: 'text-cyan-400', label: 'Events', icon: <CalendarDays className="h-3 w-3" /> },
 };
+
+const SHOW_TYPE_COLORS: Record<ShowType, { bg: string; text: string; border: string; label: string; category: EventCategory }> = {
+  // Media Productions
+  podcast: { bg: 'bg-purple-500/20', text: 'text-purple-400', border: 'border-purple-500', label: '🎙️ Podcast', category: 'media_production' },
+  webcast: { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500', label: '📺 Webcast', category: 'media_production' },
+  interview: { bg: 'bg-cyan-500/20', text: 'text-cyan-400', border: 'border-cyan-500', label: '🎤 Interview', category: 'media_production' },
+  panel: { bg: 'bg-indigo-500/20', text: 'text-indigo-400', border: 'border-indigo-500', label: '👥 Panel', category: 'media_production' },
+  tutorial: { bg: 'bg-emerald-500/20', text: 'text-emerald-400', border: 'border-emerald-500', label: '📚 Tutorial', category: 'media_production' },
+  broadcast: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500', label: '📡 Broadcast', category: 'media_production' },
+  other: { bg: 'bg-gray-500/20', text: 'text-gray-400', border: 'border-gray-500', label: '🎬 Other', category: 'media_production' },
+  // Business Meetings
+  discovery_call: { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500', label: '📞 Discovery', category: 'business_meeting' },
+  sales_meeting: { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-500', label: '💼 Sales', category: 'business_meeting' },
+  project_kickoff: { bg: 'bg-pink-500/20', text: 'text-pink-400', border: 'border-pink-500', label: '🚀 Kickoff', category: 'business_meeting' },
+  status_update: { bg: 'bg-teal-500/20', text: 'text-teal-400', border: 'border-teal-500', label: '📊 Status', category: 'business_meeting' },
+  consultation: { bg: 'bg-violet-500/20', text: 'text-violet-400', border: 'border-violet-500', label: '💬 Consult', category: 'business_meeting' },
+  // Events
+  workshop: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500', label: '🔧 Workshop', category: 'event' },
+  webinar: { bg: 'bg-sky-500/20', text: 'text-sky-400', border: 'border-sky-500', label: '🖥️ Webinar', category: 'event' },
+  conference: { bg: 'bg-rose-500/20', text: 'text-rose-400', border: 'border-rose-500', label: '🏛️ Conference', category: 'event' },
+  training_session: { bg: 'bg-lime-500/20', text: 'text-lime-400', border: 'border-lime-500', label: '📖 Training', category: 'event' },
+};
+
+// Business hours for time slots
+const BUSINESS_HOURS = { start: 8, end: 20 };
+
+// Time slot options for scheduling
+const TIME_SLOTS = [
+  '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', 
+  '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
+  '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
+  '17:00', '17:30', '18:00', '18:30', '19:00', '19:30'
+];
+
+const DURATION_OPTIONS = [
+  { value: '15', label: '15 min' },
+  { value: '30', label: '30 min' },
+  { value: '45', label: '45 min' },
+  { value: '60', label: '1 hour' },
+  { value: '90', label: '1.5 hours' },
+  { value: '120', label: '2 hours' },
+];
 
 const getShowTypeIcon = (type: ShowType) => {
   switch (type) {
@@ -68,9 +122,24 @@ const getShowTypeIcon = (type: ShowType) => {
   }
 };
 
+// Check if a day is a holiday (simplified - can be expanded)
+const isHoliday = (date: Date): string | null => {
+  const month = date.getMonth();
+  const day = date.getDate();
+  
+  // US Holidays (simplified)
+  if (month === 0 && day === 1) return "New Year's Day";
+  if (month === 6 && day === 4) return "Independence Day";
+  if (month === 11 && day === 25) return "Christmas Day";
+  if (month === 11 && day === 31) return "New Year's Eve";
+  
+  return null;
+};
+
 interface ProductionCalendarProps {
   shows: ShowWithParticipants[];
   onShowClick?: (show: ShowWithParticipants) => void;
+  onScheduleNew?: (date: Date, time: string) => void;
   onAddToGoogle?: (show: ShowWithParticipants) => void;
   onAddToOutlook?: (show: ShowWithParticipants) => void;
 }
@@ -78,20 +147,33 @@ interface ProductionCalendarProps {
 export function ProductionCalendar({ 
   shows, 
   onShowClick,
+  onScheduleNew,
   onAddToGoogle,
   onAddToOutlook 
 }: ProductionCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
   const [selectedShow, setSelectedShow] = useState<ShowWithParticipants | null>(null);
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+  const [scheduleTime, setScheduleTime] = useState('09:00');
+  const [scheduleDuration, setScheduleDuration] = useState('60');
   const [showLegend, setShowLegend] = useState(true);
 
-  // Get all days in the current month view (including padding days)
-  const monthStart = startOfMonth(currentDate);
-  const monthEnd = endOfMonth(currentDate);
-  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
-  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
-  
-  const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  // Get calendar days based on view mode
+  const calendarDays = useMemo(() => {
+    if (viewMode === 'week') {
+      const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 });
+      const weekEnd = endOfWeek(currentDate, { weekStartsOn: 0 });
+      return eachDayOfInterval({ start: weekStart, end: weekEnd });
+    } else {
+      const monthStart = startOfMonth(currentDate);
+      const monthEnd = endOfMonth(currentDate);
+      const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
+      const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
+      return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+    }
+  }, [currentDate, viewMode]);
 
   // Group shows by date
   const showsByDate = useMemo(() => {
@@ -103,25 +185,86 @@ export function ProductionCalendar({
         grouped[dateKey].push(show);
       }
     });
+    // Sort shows within each day by time
+    Object.keys(grouped).forEach(key => {
+      grouped[key].sort((a, b) => 
+        new Date(a.scheduled_date!).getTime() - new Date(b.scheduled_date!).getTime()
+      );
+    });
     return grouped;
   }, [shows]);
 
-  // Get unique show types that are scheduled
-  const activeShowTypes = useMemo(() => {
-    const types = new Set<ShowType>();
-    shows.forEach(show => {
-      if (show.scheduled_date) types.add(show.show_type);
+  // Get shows for selected day with time details
+  const selectedDayShows = useMemo(() => {
+    if (!selectedDay) return [];
+    const dateKey = format(selectedDay, 'yyyy-MM-dd');
+    return showsByDate[dateKey] || [];
+  }, [selectedDay, showsByDate]);
+
+  // Get busy time slots for selected day
+  const busySlots = useMemo(() => {
+    return selectedDayShows.map(show => {
+      const start = new Date(show.scheduled_date!);
+      const end = new Date(start.getTime() + (show.duration_minutes || 60) * 60 * 1000);
+      return { start, end, show };
     });
-    return Array.from(types);
+  }, [selectedDayShows]);
+
+  // Group show types by category for legend
+  const legendByCategory = useMemo(() => {
+    const activeTypes = new Set<ShowType>();
+    shows.forEach(show => {
+      if (show.scheduled_date) activeTypes.add(show.show_type);
+    });
+    
+    const categories: Record<EventCategory, ShowType[]> = {
+      media_production: [],
+      business_meeting: [],
+      event: [],
+    };
+    
+    activeTypes.forEach(type => {
+      const category = SHOW_TYPE_COLORS[type].category;
+      categories[category].push(type);
+    });
+    
+    return categories;
   }, [shows]);
 
-  const handlePrevMonth = () => setCurrentDate(subMonths(currentDate, 1));
-  const handleNextMonth = () => setCurrentDate(addMonths(currentDate, 1));
+  const handlePrevPeriod = () => {
+    if (viewMode === 'week') {
+      setCurrentDate(subWeeks(currentDate, 1));
+    } else {
+      setCurrentDate(subMonths(currentDate, 1));
+    }
+  };
+
+  const handleNextPeriod = () => {
+    if (viewMode === 'week') {
+      setCurrentDate(addWeeks(currentDate, 1));
+    } else {
+      setCurrentDate(addMonths(currentDate, 1));
+    }
+  };
+
   const handleToday = () => setCurrentDate(new Date());
 
-  const handleShowClick = (show: ShowWithParticipants) => {
+  const handleDayClick = (day: Date) => {
+    setSelectedDay(day);
+    setIsScheduleDialogOpen(true);
+  };
+
+  const handleShowClick = (show: ShowWithParticipants, e?: React.MouseEvent) => {
+    e?.stopPropagation();
     setSelectedShow(show);
     onShowClick?.(show);
+  };
+
+  const handleScheduleSubmit = () => {
+    if (selectedDay && onScheduleNew) {
+      onScheduleNew(selectedDay, scheduleTime);
+    }
+    setIsScheduleDialogOpen(false);
   };
 
   const generateGoogleCalendarUrl = (show: ShowWithParticipants) => {
@@ -141,23 +284,76 @@ export function ProductionCalendar({
     return `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(show.title)}&startdt=${startDate.toISOString()}&enddt=${endDate.toISOString()}&body=${encodeURIComponent(show.description || '')}`;
   };
 
+  // Check if time slot is available
+  const isSlotAvailable = (time: string) => {
+    if (!selectedDay) return true;
+    const [hours, minutes] = time.split(':').map(Number);
+    const slotStart = new Date(selectedDay);
+    slotStart.setHours(hours, minutes, 0, 0);
+    const slotEnd = new Date(slotStart.getTime() + parseInt(scheduleDuration) * 60 * 1000);
+    
+    return !busySlots.some(({ start, end }) => 
+      (slotStart >= start && slotStart < end) || (slotEnd > start && slotEnd <= end) ||
+      (slotStart <= start && slotEnd >= end)
+    );
+  };
+
   return (
     <TooltipProvider>
       <div className="space-y-4">
         {/* Calendar Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <CalendarIcon className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-bold">{format(currentDate, 'MMMM yyyy')}</h2>
+            <h2 className="text-xl font-bold">
+              {viewMode === 'week' 
+                ? `Week of ${format(startOfWeek(currentDate, { weekStartsOn: 0 }), 'MMM d, yyyy')}`
+                : format(currentDate, 'MMMM yyyy')
+              }
+            </h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* New Meeting Button */}
+            <Button 
+              onClick={() => {
+                setSelectedDay(new Date());
+                setIsScheduleDialogOpen(true);
+              }}
+              size="sm"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              New Meeting
+            </Button>
+            
+            {/* View Toggle */}
+            <div className="flex border rounded-lg p-0.5 bg-muted/50">
+              <Button 
+                variant={viewMode === 'month' ? 'default' : 'ghost'} 
+                size="sm"
+                onClick={() => setViewMode('month')}
+                className="h-7 px-2"
+              >
+                <CalendarRange className="h-3 w-3 mr-1" />
+                Month
+              </Button>
+              <Button 
+                variant={viewMode === 'week' ? 'default' : 'ghost'} 
+                size="sm"
+                onClick={() => setViewMode('week')}
+                className="h-7 px-2"
+              >
+                <CalendarDays className="h-3 w-3 mr-1" />
+                Week
+              </Button>
+            </div>
+            
             <Button variant="outline" size="sm" onClick={handleToday}>
               Today
             </Button>
-            <Button variant="outline" size="icon" onClick={handlePrevMonth}>
+            <Button variant="outline" size="icon" className="h-8 w-8" onClick={handlePrevPeriod}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" onClick={handleNextMonth}>
+            <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleNextPeriod}>
               <ChevronRight className="h-4 w-4" />
             </Button>
             <Button 
@@ -166,27 +362,46 @@ export function ProductionCalendar({
               onClick={() => setShowLegend(!showLegend)}
               className="text-xs"
             >
+              <Layers className="h-3 w-3 mr-1" />
               {showLegend ? 'Hide' : 'Show'} Legend
             </Button>
           </div>
         </div>
 
-        {/* Color Legend */}
-        {showLegend && activeShowTypes.length > 0 && (
-          <Card className="bg-card/50">
+        {/* Color Legend - Grouped by Category */}
+        {showLegend && (
+          <Card className="bg-card/50 border-dashed">
             <CardContent className="py-3">
-              <div className="flex flex-wrap gap-2">
-                {activeShowTypes.map(type => {
-                  const colors = SHOW_TYPE_COLORS[type];
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {(['media_production', 'business_meeting', 'event'] as EventCategory[]).map(category => {
+                  const catColors = CATEGORY_COLORS[category];
+                  const types = legendByCategory[category];
+                  
                   return (
-                    <Badge 
-                      key={type} 
-                      variant="outline" 
-                      className={cn('text-xs', colors.bg, colors.text, colors.border)}
-                    >
-                      {getShowTypeIcon(type)}
-                      <span className="ml-1">{colors.label}</span>
-                    </Badge>
+                    <div key={category} className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Badge className={cn('text-xs', catColors.bg, catColors.text)}>
+                          {catColors.icon}
+                          <span className="ml-1">{catColors.label}</span>
+                        </Badge>
+                      </div>
+                      <div className="flex flex-wrap gap-1 pl-2">
+                        {types.length > 0 ? types.map(type => {
+                          const colors = SHOW_TYPE_COLORS[type];
+                          return (
+                            <Badge 
+                              key={type} 
+                              variant="outline" 
+                              className={cn('text-[10px] py-0', colors.bg, colors.text, colors.border)}
+                            >
+                              {colors.label}
+                            </Badge>
+                          );
+                        }) : (
+                          <span className="text-xs text-muted-foreground">No scheduled items</span>
+                        )}
+                      </div>
+                    </div>
                   );
                 })}
               </div>
@@ -199,8 +414,14 @@ export function ProductionCalendar({
           <CardContent className="p-4">
             {/* Weekday Headers */}
             <div className="grid grid-cols-7 gap-1 mb-2">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="text-center text-xs font-medium text-muted-foreground py-2">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, idx) => (
+                <div 
+                  key={day} 
+                  className={cn(
+                    "text-center text-xs font-medium py-2",
+                    (idx === 0 || idx === 6) ? 'text-muted-foreground/50' : 'text-muted-foreground'
+                  )}
+                >
                   {day}
                 </div>
               ))}
@@ -208,47 +429,66 @@ export function ProductionCalendar({
 
             {/* Days Grid */}
             <div className="grid grid-cols-7 gap-1">
-              {days.map((day, idx) => {
+              {calendarDays.map((day, idx) => {
                 const dateKey = format(day, 'yyyy-MM-dd');
                 const dayShows = showsByDate[dateKey] || [];
                 const isCurrentMonth = isSameMonth(day, currentDate);
                 const isCurrentDay = isToday(day);
+                const weekend = isWeekend(day);
+                const holiday = isHoliday(day);
+                const minHeight = viewMode === 'week' ? 'min-h-[180px]' : 'min-h-[100px]';
 
                 return (
                   <div
                     key={idx}
+                    onClick={() => handleDayClick(day)}
                     className={cn(
-                      'min-h-[100px] border rounded-lg p-1 transition-colors',
+                      minHeight,
+                      'border rounded-lg p-1 transition-colors cursor-pointer hover:bg-accent/30',
                       isCurrentMonth ? 'bg-card' : 'bg-muted/30',
-                      isCurrentDay && 'ring-2 ring-primary',
-                      dayShows.length > 0 && 'hover:bg-accent/50 cursor-pointer'
+                      isCurrentDay && 'ring-2 ring-primary ring-offset-1',
+                      weekend && 'bg-muted/20',
+                      holiday && 'bg-red-500/5'
                     )}
                   >
-                    <div className={cn(
-                      'text-xs font-medium mb-1',
-                      isCurrentMonth ? 'text-foreground' : 'text-muted-foreground',
-                      isCurrentDay && 'text-primary font-bold'
-                    )}>
-                      {format(day, 'd')}
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={cn(
+                        'text-xs font-medium',
+                        isCurrentMonth ? 'text-foreground' : 'text-muted-foreground',
+                        isCurrentDay && 'bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full',
+                        weekend && !isCurrentDay && 'text-muted-foreground/70'
+                      )}>
+                        {format(day, 'd')}
+                      </span>
+                      {holiday && (
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Sun className="h-3 w-3 text-amber-500" />
+                          </TooltipTrigger>
+                          <TooltipContent>{holiday}</TooltipContent>
+                        </Tooltip>
+                      )}
                     </div>
                     
-                    <ScrollArea className="h-[70px]">
+                    <ScrollArea className={viewMode === 'week' ? 'h-[150px]' : 'h-[70px]'}>
                       <div className="space-y-1">
-                        {dayShows.slice(0, 3).map(show => {
+                        {dayShows.slice(0, viewMode === 'week' ? 10 : 3).map(show => {
                           const colors = SHOW_TYPE_COLORS[show.show_type];
+                          const showTime = format(new Date(show.scheduled_date!), 'h:mm a');
                           return (
                             <Tooltip key={show.id}>
                               <TooltipTrigger asChild>
                                 <button
-                                  onClick={() => handleShowClick(show)}
+                                  onClick={(e) => handleShowClick(show, e)}
                                   className={cn(
                                     'w-full text-left text-[10px] px-1 py-0.5 rounded truncate flex items-center gap-1 border-l-2',
                                     colors.bg,
                                     colors.text,
-                                    colors.border
+                                    colors.border,
+                                    'hover:opacity-80'
                                   )}
                                 >
-                                  {getShowTypeIcon(show.show_type)}
+                                  <span className="font-medium">{showTime.replace(':00', '')}</span>
                                   <span className="truncate">{show.title}</span>
                                 </button>
                               </TooltipTrigger>
@@ -268,9 +508,9 @@ export function ProductionCalendar({
                             </Tooltip>
                           );
                         })}
-                        {dayShows.length > 3 && (
+                        {dayShows.length > (viewMode === 'week' ? 10 : 3) && (
                           <div className="text-[10px] text-muted-foreground text-center">
-                            +{dayShows.length - 3} more
+                            +{dayShows.length - (viewMode === 'week' ? 10 : 3)} more
                           </div>
                         )}
                       </div>
@@ -326,14 +566,150 @@ export function ProductionCalendar({
                     );
                   })}
                 {shows.filter(s => s.scheduled_date && new Date(s.scheduled_date) >= new Date()).length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No upcoming shows scheduled
-                  </p>
+                  <div className="text-center py-8">
+                    <CalendarIcon className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      No upcoming shows scheduled
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="mt-2"
+                      onClick={() => {
+                        setSelectedDay(new Date());
+                        setIsScheduleDialogOpen(true);
+                      }}
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Schedule New
+                    </Button>
+                  </div>
                 )}
               </div>
             </ScrollArea>
           </CardContent>
         </Card>
+
+        {/* Day Schedule Dialog */}
+        <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CalendarDays className="h-5 w-5 text-primary" />
+                {selectedDay ? format(selectedDay, 'EEEE, MMMM d, yyyy') : 'Schedule'}
+              </DialogTitle>
+              <DialogDescription>
+                {selectedDayShows.length > 0 
+                  ? `${selectedDayShows.length} event(s) scheduled. Select a time slot to add a new meeting.`
+                  : 'No events scheduled. Select a time slot to add a new meeting.'}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              {/* Existing events for the day */}
+              {selectedDayShows.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Scheduled Events</Label>
+                  <div className="space-y-1 max-h-[150px] overflow-y-auto">
+                    {selectedDayShows.map(show => {
+                      const colors = SHOW_TYPE_COLORS[show.show_type];
+                      const startTime = format(new Date(show.scheduled_date!), 'h:mm a');
+                      const endTime = format(
+                        new Date(new Date(show.scheduled_date!).getTime() + (show.duration_minutes || 60) * 60 * 1000),
+                        'h:mm a'
+                      );
+                      return (
+                        <div 
+                          key={show.id}
+                          onClick={() => handleShowClick(show)}
+                          className={cn(
+                            'flex items-center gap-2 p-2 rounded border-l-3 cursor-pointer hover:bg-accent/50',
+                            colors.bg, colors.border, 'border-l-4'
+                          )}
+                        >
+                          <Clock className="h-3 w-3" />
+                          <span className="text-xs font-medium">{startTime} - {endTime}</span>
+                          <span className="text-xs truncate flex-1">{show.title}</span>
+                          {getShowTypeIcon(show.show_type)}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Time slot selection */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Start Time</Label>
+                  <Select value={scheduleTime} onValueChange={setScheduleTime}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[200px]">
+                      {TIME_SLOTS.map(time => {
+                        const available = isSlotAvailable(time);
+                        return (
+                          <SelectItem 
+                            key={time} 
+                            value={time}
+                            disabled={!available}
+                            className={cn(!available && 'text-muted-foreground line-through')}
+                          >
+                            {time} {!available && '(busy)'}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Duration</Label>
+                  <Select value={scheduleDuration} onValueChange={setScheduleDuration}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DURATION_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Holiday/Weekend notice */}
+              {selectedDay && (
+                <>
+                  {isHoliday(selectedDay) && (
+                    <div className="flex items-center gap-2 p-2 bg-amber-500/10 border border-amber-500/30 rounded-lg text-sm">
+                      <Sun className="h-4 w-4 text-amber-500" />
+                      <span>Holiday: {isHoliday(selectedDay)}</span>
+                    </div>
+                  )}
+                  {isWeekend(selectedDay) && !isHoliday(selectedDay) && (
+                    <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg text-sm text-muted-foreground">
+                      <Moon className="h-4 w-4" />
+                      <span>This is a weekend day</span>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsScheduleDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleScheduleSubmit}>
+                <Plus className="h-4 w-4 mr-1" />
+                Schedule New Meeting
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Show Details Dialog */}
         <Dialog open={!!selectedShow} onOpenChange={() => setSelectedShow(null)}>
