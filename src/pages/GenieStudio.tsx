@@ -1879,54 +1879,187 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
     }
   };
 
-  // Handle script file upload - cleans special characters
+  // Handle script file upload - cleans special characters and extracts metadata
   const handleScriptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
     try {
-      const text = await file.text();
+      // Handle .doc/.docx files - they need special processing
+      const isWordDoc = file.name.endsWith('.doc') || file.name.endsWith('.docx');
+      
+      let text = '';
+      
+      if (isWordDoc) {
+        // For Word docs, we need to use the document processor edge function
+        toast.info('Processing Word document...');
+        
+        // Convert file to base64
+        const arrayBuffer = await file.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        let binary = '';
+        for (let i = 0; i < uint8Array.byteLength; i++) {
+          binary += String.fromCharCode(uint8Array[i]);
+        }
+        const base64Content = btoa(binary);
+        
+        // Call document processor
+        const { data, error } = await supabase.functions.invoke('document-processor', {
+          body: {
+            file_content: base64Content,
+            file_name: file.name,
+            file_type: file.type || 'application/msword',
+            extract_text: true
+          }
+        });
+        
+        if (error) {
+          console.error('Document processing error:', error);
+          toast.error('Failed to process Word document. Try uploading as .txt instead.');
+          return;
+        }
+        
+        text = data?.extracted_text || data?.text || '';
+      } else {
+        text = await file.text();
+      }
       
       // Clean special characters while preserving structure
       const cleanedText = text
         // Remove common problematic characters
         .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
         // Normalize quotes
-        .replace(/[""]/g, '"')
-        .replace(/['']/g, "'")
+        .replace(/[""„‟]/g, '"')
+        .replace(/[''‚‛]/g, "'")
         // Normalize dashes
-        .replace(/[–—]/g, '-')
+        .replace(/[–—―‒]/g, '-')
         // Normalize ellipsis
         .replace(/…/g, '...')
         // Remove zero-width characters
-        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        .replace(/[\u200B-\u200D\uFEFF\u00A0]/g, ' ')
+        // Remove non-breaking spaces  
+        .replace(/\u00A0/g, ' ')
         // Normalize line breaks
         .replace(/\r\n/g, '\n')
         .replace(/\r/g, '\n')
         // Remove excessive blank lines (more than 2 consecutive)
         .replace(/\n{3,}/g, '\n\n')
+        // Remove multiple spaces
+        .replace(/ {2,}/g, ' ')
         .trim();
       
       setShowScript(cleanedText);
-      setShowScriptFilename(file.name); // Store original filename
+      setShowScriptFilename(file.name);
       setSelectedScriptId(null);
       
-      // Use filename (without extension) as title if empty
-      if (!newShowTitle.trim()) {
-        const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
-        // Clean the filename too
-        const cleanedName = nameWithoutExt
-          .replace(/[_-]+/g, ' ')
-          .replace(/\s+/g, ' ')
-          .trim();
-        setNewShowTitle(cleanedName);
+      // Extract potential title from first non-empty line or heading
+      const lines = cleanedText.split('\n').filter(line => line.trim());
+      let extractedTitle = '';
+      let extractedDescription = '';
+      
+      // Look for title-like patterns
+      for (const line of lines.slice(0, 5)) {
+        const trimmedLine = line.trim();
+        // Check for heading formats: # Title, Title:, TITLE, or just short first line
+        if (trimmedLine.startsWith('#')) {
+          extractedTitle = trimmedLine.replace(/^#+\s*/, '').trim();
+          break;
+        } else if (trimmedLine.endsWith(':') && trimmedLine.length < 100) {
+          extractedTitle = trimmedLine.replace(/:$/, '').trim();
+          break;
+        } else if (trimmedLine.length < 80 && trimmedLine === trimmedLine.toUpperCase() && trimmedLine.length > 5) {
+          // All caps title
+          extractedTitle = trimmedLine.charAt(0) + trimmedLine.slice(1).toLowerCase();
+          break;
+        } else if (lines.indexOf(line) === 0 && trimmedLine.length < 80) {
+          // Use first short line as title
+          extractedTitle = trimmedLine;
+        }
       }
       
-      toast.success('Script uploaded successfully');
+      // Extract description from second paragraph or after title
+      const titleIndex = extractedTitle ? lines.findIndex(l => l.includes(extractedTitle)) : -1;
+      if (titleIndex >= 0 && lines.length > titleIndex + 1) {
+        extractedDescription = lines.slice(titleIndex + 1, titleIndex + 4)
+          .filter(l => l.trim().length > 20)
+          .join(' ')
+          .substring(0, 300);
+      }
+      
+      // Use filename as fallback title
+      if (!newShowTitle.trim()) {
+        if (extractedTitle) {
+          setNewShowTitle(extractedTitle);
+        } else {
+          const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
+          const cleanedName = nameWithoutExt
+            .replace(/[_-]+/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+          setNewShowTitle(cleanedName);
+        }
+      }
+      
+      // Set description if extracted and empty
+      if (!newShowDescription.trim() && extractedDescription) {
+        setNewShowDescription(extractedDescription);
+      }
+      
+      // Extract potential topics from content using keywords
+      if (!showTopics.trim()) {
+        const topicsFromContent = extractTopicsFromScript(cleanedText);
+        if (topicsFromContent.length > 0) {
+          setShowTopics(topicsFromContent.join(', '));
+        }
+      }
+      
+      toast.success('Script uploaded and analyzed!');
+      
+      // Auto-trigger AI suggestions if we have content
+      if (cleanedText.length > 100) {
+        toast.info('Generating AI suggestions...', { duration: 2000 });
+        // Delay slightly to allow state updates
+        setTimeout(() => {
+          handleGenerateSuggestions();
+        }, 500);
+      }
     } catch (err) {
       console.error('Failed to read file:', err);
       toast.error('Failed to read file');
     }
+  };
+  
+  // Helper function to extract topics from script content
+  const extractTopicsFromScript = (content: string): string[] => {
+    const topics: Set<string> = new Set();
+    const lowerContent = content.toLowerCase();
+    
+    // Common topic keywords/phrases
+    const topicPatterns = [
+      /(?:discussing|about|cover|explore|topic[s]?[:\s]+)([^.!?\n]{10,60})/gi,
+      /(?:key points?|main topics?|agenda)[:\s]+([^.!?\n]{10,100})/gi,
+    ];
+    
+    for (const pattern of topicPatterns) {
+      const matches = content.matchAll(pattern);
+      for (const match of matches) {
+        if (match[1]) {
+          topics.add(match[1].trim());
+        }
+      }
+    }
+    
+    // Look for headings as topics
+    const headingPattern = /^#+\s*(.+)$/gm;
+    const headingMatches = content.matchAll(headingPattern);
+    for (const match of headingMatches) {
+      if (match[1] && match[1].length > 5 && match[1].length < 50) {
+        topics.add(match[1].trim());
+      }
+    }
+    
+    // Return first 5 unique topics
+    return Array.from(topics).slice(0, 5);
   };
 
   const handleAddParticipantToShow = () => {
