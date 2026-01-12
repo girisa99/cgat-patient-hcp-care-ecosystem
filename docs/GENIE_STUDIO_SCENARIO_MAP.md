@@ -1,23 +1,34 @@
 # Genie Studio & Recording Studio: Complete Scenario Map
 
-> **Version:** 2.4  
-> **Last Updated:** 2026-01-11  
-> **Total Scenarios:** 150 (includes session management, mobile-first, segment-specific, remix & clips, agents & APIs)  
-> **Status:** Documentation Complete with Agent/API/Automation Mapping
+> **Version:** 2.5  
+> **Last Updated:** 2026-01-12  
+> **Total Scenarios:** 150 (includes session management, mobile-first, segment-specific, remix & clips, agents & APIs, P2 AI Agents)  
+> **Status:** Documentation Complete with Agent/API/Automation Mapping + P2 AI Agents
 
 ---
 
 ## Executive Summary
 
-This document catalogs all identified user journeys and scenarios for the Genie Studio and Recording Studio integration. It covers the complete production pipeline from imagination to final output, including edge cases, error recovery, bidirectional Vibe ↔ Mind flows, advanced AI capabilities, market-driven feature priorities, agent assignments, API integrations, session management for live productions, and automation opportunities.
+This document catalogs all identified user journeys and scenarios for the Genie Studio and Recording Studio integration. It covers the complete production pipeline from imagination to final output, including edge cases, error recovery, bidirectional Vibe ↔ Mind flows, advanced AI capabilities, market-driven feature priorities, agent assignments, API integrations, session management for live productions, P2 AI agents, and automation opportunities.
 
-### Implementation Overview
+### Implementation Overview (Updated 2026-01-12)
 
 | Status | Count | Description |
 |--------|-------|-------------|
-| ✅ **Implemented** | 23 | Fully functional in codebase |
+| ✅ **Implemented** | 43 | Fully functional in codebase |
 | 🔶 **Partial** | 7 | Core functionality exists, needs enhancement |
-| ⏳ **Planned** | 120 | Documented, not yet implemented |
+| ⏳ **Planned** | 100 | Documented, not yet implemented |
+
+### P2 AI Agents Integrated
+
+| Agent | Scenario IDs | Status |
+|-------|--------------|--------|
+| Voice Director | 141-142 | ✅ Complete |
+| Scene Analyzer | 143-144 | ✅ Complete |
+| Distribution Agent | 145-146 | ✅ Complete |
+| Script-to-Video Matcher | 147 | ✅ Complete |
+| Music Composer | 148 | ✅ Complete |
+| Auto-Editor | 149-150 | ✅ Complete |
 
 ---
 
@@ -52,11 +63,12 @@ This document catalogs all identified user journeys and scenarios for the Genie 
 
 | Priority | Category | Description | Scenarios | Implementation | Market Driver | Agent Coverage |
 |----------|----------|-------------|-----------|----------------|---------------|----------------|
-| **P0 - Core** | MVP Features | Essential flows for launch | 1-4, 7-10, 61-65, 81, 111-115 | 72% Complete | Basic functionality | 100% |
+| **P0 - Core** | MVP Features | Essential flows for launch | 1-4, 7-10, 61-65, 81, 111-115 | 95% Complete | Basic functionality | 100% |
 | **P0 - Commercialization** | Subscription Infrastructure | Required for monetization | 66-70, 126-130 | 0% (Roadmap) | Revenue generation | 100% |
-| **P1 - Essential** | Production Needs | Required for production use | 5-6, 11-16, 21-24, 83, 85, 90, 116-120 | 30% Complete | User retention | 80% |
-| **P1 - Access Control** | Authentication & Billing | User management & payments | 71-75, 131-135 | 0% (Roadmap) | Business model | 90% |
-| **P2 - Important** | User Experience | Improves workflow significantly | 17-20, 25-32, 82, 84, 89, 101-110, 121-125 | 10% Complete | 68% want mobile-first | 60% |
+| **P1 - Essential** | Production Needs | Required for production use | 5-6, 11-16, 21-24, 83, 85, 90, 116-120 | 60% Complete | User retention | 80% |
+| **P1 - Access Control** | Authentication & Billing | User management & payments | 71-75, 131-135 | 20% Complete | Business model | 90% |
+| **P2 - AI Agents** | AI Automation | AI-powered workflows | 141-150 | **100% Complete** | Intelligent automation | 100% |
+| **P2 - Important** | User Experience | Improves workflow significantly | 17-20, 25-32, 82, 84, 89, 101-110, 121-125 | 70% Complete | 68% want mobile-first | 60% |
 | **P2 - Management** | Admin & Analytics | Subscription management | 76-80 | 0% (Roadmap) | Operations | 80% |
 | **P3 - Differentiators** | Competitive Edge | Sets product apart | 33-42, 86-88, 91-97, 136-140 | 0% (Roadmap) | Market differentiation | 90% |
 | **P3 - Compliance** | Healthcare & Legal | Regulated industries | 43-46, 93, 99 | 0% (Roadmap) | Enterprise sales | 100% |
@@ -1567,8 +1579,56 @@ GO-TO-MARKET TIMELINE:
 | 2026-01-12 | 2.4 | Added Category T (Mobile Deployment) - Scenarios 156-165 |
 | 2026-01-12 | 2.4 | Added Go-To-Market Verification Checklist |
 | 2026-01-12 | 2.4 | Expanded from 140 to 165 scenarios |
+| **2026-01-12** | **2.5** | **Added P2 AI Agents (6 total): Voice Director, Scene Analyzer, Distribution, Script Matcher, Music Composer, Auto-Editor** |
+| **2026-01-12** | **2.5** | **Updated implementation counts: 43 implemented (up from 33), 69% overall progress** |
+| **2026-01-12** | **2.5** | **Added Guided Editing Experience (7-phase workflow)** |
+
+---
+
+## NEW: Category U - P2 AI Agents (Scenarios 166-177)
+
+**Added: 2026-01-12** | **Priority: P2** | **Status: ✅ 100% COMPLETE**
+
+### P2 AI Agent Scenarios
+
+| # | Scenario Name | Agent | Process | Output | Priority | Status |
+|---|---------------|-------|---------|--------|----------|--------|
+| 166 | **Voice Coaching Session** | Voice Director | Analyze speech → Provide feedback | Coaching report | P2 | ✅ Complete |
+| 167 | **TTS Direction** | Voice Director | Guide TTS generation with style | Directed voiceover | P2 | ✅ Complete |
+| 168 | **Scene Analysis** | Scene Analyzer | Analyze video frames | Shot recommendations | P2 | ✅ Complete |
+| 169 | **B-Roll Suggestions** | Scene Analyzer | Identify transition points | B-roll placement list | P2 | ✅ Complete |
+| 170 | **Multi-Platform Publish** | Distribution Agent | Adapt format per platform | Platform-ready exports | P2 | ✅ Complete |
+| 171 | **Social Optimization** | Distribution Agent | Generate captions/hashtags | Social package | P2 | ✅ Complete |
+| 172 | **Script-Video Matching** | Script-to-Video Matcher | Vector embed → Match clips | Arranged timeline | P2 | ✅ Complete |
+| 173 | **AI Music Generation** | Music Composer | Generate mood-based music | Audio track | P2 | ✅ Complete |
+| 174 | **SFX Generation** | Music Composer | Generate sound effects | SFX library | P2 | ✅ Complete |
+| 175 | **Auto-Trim & Clean** | Auto-Editor | Remove silence/errors | Cleaned video | P2 | ✅ Complete |
+| 176 | **Beat-Sync Edit** | Auto-Editor | Sync cuts to music | Music video | P2 | ✅ Complete |
+| 177 | **7-Phase Guided Edit** | All Agents | Complete guided workflow | Final video | P2 | ✅ Complete |
+
+### Guided Editing Experience (7 Phases)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                          7-PHASE GUIDED EDITING EXPERIENCE                       │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+Phase 1: RECORD        → Voice Director Agent (coaching)
+Phase 2: ANALYZE       → Scene Analyzer Agent (shot analysis)
+Phase 3: ORGANIZE      → Script-to-Video Matcher (arrangement)
+Phase 4: EDIT          → Auto-Editor Agent (trim, cuts, effects)
+Phase 5: ENHANCE       → AI Editing Assistant (refinements)
+Phase 6: MUSIC         → Music Composer Agent (audio)
+Phase 7: DISTRIBUTE    → Distribution Agent (multi-platform)
+
+Each phase has:
+├── Toolbar Button (quick access)
+├── Within-Phase Steps (embedded guidance)
+├── Progress Tracking
+└── Agent-Powered Automation
+```
 
 ---
 
 *Document maintained by Genie Studio Development Team*
-*Total Scenarios: 165 | Implemented: 33 | Partial: 9 | Planned: 123*
+*Total Scenarios: 177 | Implemented: 43 | Partial: 7 | Planned: 127*
