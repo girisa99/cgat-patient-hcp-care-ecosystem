@@ -445,12 +445,19 @@ const AppContent = () => {
   );
 };
 
-// Lazy load public presentation page
+// Lazy load public pages
 const PublicPresentationPage = React.lazy(() => import('@/pages/PublicPresentationPage'));
+const MeetingRoom = React.lazy(() => import('@/pages/MeetingRoom'));
 
 // Public routes wrapper - no auth required
 const PublicRoutes = () => (
   <Routes>
+    {/* Meeting room route - connects to Genie Vibe */}
+    <Route path="/meeting/:meetingCode" element={
+      <Suspense fallback={<PageLoading message="Loading meeting room..." />}>
+        <MeetingRoom />
+      </Suspense>
+    } />
     {/* Main public presentation route */}
     <Route path="/presentation/document-processing" element={
       <Suspense fallback={<PageLoading message="Loading presentation..." />}>
@@ -479,7 +486,9 @@ const AppRouter = () => {
   const location = useLocation();
   
   // Check if this is a public route - render without auth
-  if (location.pathname.startsWith('/public/') || location.pathname.startsWith('/presentation/')) {
+  if (location.pathname.startsWith('/public/') || 
+      location.pathname.startsWith('/presentation/') ||
+      location.pathname.startsWith('/meeting/')) {
     return (
       <HelmetProvider>
         <PublicRoutes />

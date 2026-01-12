@@ -267,21 +267,195 @@ export function ProductionCalendar({
     setIsScheduleDialogOpen(false);
   };
 
+  // Generate rich calendar event details with meeting URL, topics, host, etc.
+  const buildRichCalendarDescription = (show: ShowWithParticipants): string => {
+    const lines: string[] = [];
+    
+    // Meeting URL prominently
+    if (show.meeting_link) {
+      lines.push('🎬 JOIN MEETING:');
+      lines.push(show.meeting_link);
+      lines.push('');
+    }
+    
+    // Description
+    if (show.description) {
+      lines.push(show.description);
+      lines.push('');
+    }
+    
+    // Topics/Agenda
+    if (show.agenda) {
+      lines.push('📋 TOPICS:');
+      lines.push(show.agenda);
+      lines.push('');
+    }
+    
+    // Get host from participants
+    const participants = show.participants || [];
+    const host = participants.find(p => p.role === 'host');
+    if (host) {
+      lines.push(`🎙️ Host: ${host.name}`);
+    }
+    
+    // Get guests
+    const guests = participants.filter(p => p.role !== 'host');
+    if (guests.length > 0) {
+      lines.push(`👥 Guests: ${guests.map(g => g.name).join(', ')}`);
+    }
+    
+    // Script info (from metadata)
+    const metadata = (show.metadata || {}) as Record<string, any>;
+    if (metadata.script_content || metadata.linked_script_id) {
+      lines.push('📝 Script attached');
+    }
+    
+    // Branding
+    lines.push('');
+    lines.push('─────────────────────');
+    lines.push('📺 Powered by Genie Studio');
+    lines.push('🌐 genieaiexperimentationhub.tech');
+    
+    return lines.join('\n');
+  };
+
   const generateGoogleCalendarUrl = (show: ShowWithParticipants) => {
     if (!show.scheduled_date) return '#';
     const startDate = new Date(show.scheduled_date);
     const endDate = new Date(startDate.getTime() + (show.duration_minutes || 60) * 60 * 1000);
     const formatCalDate = (d: Date) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const richDescription = buildRichCalendarDescription(show);
     
-    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(show.title)}&dates=${formatCalDate(startDate)}/${formatCalDate(endDate)}&details=${encodeURIComponent(show.description || '')}`;
+    const params = new URLSearchParams({
+      action: 'TEMPLATE',
+      text: show.title,
+      dates: `${formatCalDate(startDate)}/${formatCalDate(endDate)}`,
+      details: richDescription,
+      location: show.meeting_link || show.location || '',
+    });
+    
+    // Add attendees if available
+    const participants = show.participants || [];
+    const attendeeEmails = participants.filter(p => p.email).map(p => p.email as string);
+    if (attendeeEmails.length > 0) {
+      params.set('add', attendeeEmails.join(','));
+    }
+    
+    return `https://calendar.google.com/calendar/render?${params.toString()}`;
   };
 
   const generateOutlookUrl = (show: ShowWithParticipants) => {
     if (!show.scheduled_date) return '#';
     const startDate = new Date(show.scheduled_date);
     const endDate = new Date(startDate.getTime() + (show.duration_minutes || 60) * 60 * 1000);
+    const richDescription = buildRichCalendarDescription(show);
     
-    return `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(show.title)}&startdt=${startDate.toISOString()}&enddt=${endDate.toISOString()}&body=${encodeURIComponent(show.description || '')}`;
+    const params = new URLSearchParams({
+      path: '/calendar/action/compose',
+      rru: 'addevent',
+      subject: show.title,
+      startdt: startDate.toISOString(),
+      enddt: endDate.toISOString(),
+      body: richDescription,
+      location: show.meeting_link || show.location || '',
+    });
+    
+    return `https://outlook.live.com/calendar/0/deeplink/compose?${params.toString()}`;
+  };
+  
+  const generateYahooUrl = (show: ShowWithParticipants) => {
+    if (!show.scheduled_date) return '#';
+    const startDate = new Date(show.scheduled_date);
+    const duration = show.duration_minutes || 60;
+    const hours = Math.floor(duration / 60).toString().padStart(2, '0');
+    const minutes = (duration % 60).toString().padStart(2, '0');
+    const formatCalDate = (d: Date) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const richDescription = buildRichCalendarDescription(show);
+    
+    const params = new URLSearchParams({
+      v: '60',
+      title: show.title,
+      st: formatCalDate(startDate),
+      dur: `${hours}${minutes}`,
+      desc: richDescription,
+      in_loc: show.meeting_link || show.location || '',
+    });
+    
+    return `https://calendar.yahoo.com/?${params.toString()}`;
+  };
+  
+  // Generate and download ICS file
+  const downloadIcsFile = (show: ShowWithParticipants) => {
+    if (!show.scheduled_date) return;
+    
+    const startDate = new Date(show.scheduled_date);
+    const endDate = new Date(startDate.getTime() + (show.duration_minutes || 60) * 60 * 1000);
+    const formatCalDate = (d: Date) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const richDescription = buildRichCalendarDescription(show);
+    
+    const escapeIcs = (text: string): string => {
+      return text
+        .replace(/\\/g, '\\\\')
+        .replace(/,/g, '\\,')
+        .replace(/;/g, '\\;')
+        .replace(/\n/g, '\\n');
+    };
+    
+    const lines = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Genie Studio//genieaiexperimentationhub.tech//EN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'X-WR-CALNAME:Genie Studio',
+      'BEGIN:VEVENT',
+      `UID:${show.id}@genie-studio`,
+      `DTSTAMP:${formatCalDate(new Date())}`,
+      `DTSTART:${formatCalDate(startDate)}`,
+      `DTEND:${formatCalDate(endDate)}`,
+      `SUMMARY:${escapeIcs(show.title)}`,
+      `DESCRIPTION:${escapeIcs(richDescription)}`,
+    ];
+    
+    if (show.meeting_link) {
+      lines.push(`LOCATION:${escapeIcs(show.meeting_link)}`);
+      lines.push(`URL:${escapeIcs(show.meeting_link)}`);
+    } else if (show.location) {
+      lines.push(`LOCATION:${escapeIcs(show.location)}`);
+    }
+    
+    // Add attendees
+    const participants = show.participants || [];
+    participants.forEach(p => {
+      if (p.email) {
+        lines.push(`ATTENDEE;CN=${escapeIcs(p.name)};RSVP=TRUE:mailto:${escapeIcs(p.email)}`);
+      }
+    });
+    
+    // Add reminders
+    lines.push(
+      'BEGIN:VALARM',
+      'ACTION:DISPLAY',
+      'DESCRIPTION:Genie Studio - Session in 30 minutes',
+      'TRIGGER:-PT30M',
+      'END:VALARM',
+      'BEGIN:VALARM',
+      'ACTION:DISPLAY',
+      'DESCRIPTION:Genie Studio - Session in 15 minutes',
+      'TRIGGER:-PT15M',
+      'END:VALARM'
+    );
+    
+    lines.push('END:VEVENT', 'END:VCALENDAR');
+    
+    const content = lines.join('\r\n');
+    const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${show.title.replace(/[^a-z0-9]/gi, '_')}_genie_studio.ics`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   // Check if time slot is available
