@@ -1,7 +1,7 @@
 /**
  * Production Hub - Vertical Swimlane Kanban production pipeline management
  * Supports Media Productions, Business Meetings, and Events
- * Includes meeting booking, invite sending, and calendar sync
+ * Includes meeting booking, invite sending, calendar sync, reschedule/cancel
  */
 
 import React, { useState } from 'react';
@@ -45,6 +45,11 @@ import {
   Phone,
   Bell,
   MessageSquare,
+  Globe,
+  Edit,
+  CalendarClock,
+  XCircle,
+  Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -53,6 +58,8 @@ import { useProjects } from '@/hooks/useProjects';
 import { useGenieScripts } from '@/components/genie-studio/useGenieScripts';
 import { VerticalKanban } from '@/components/production/VerticalKanban';
 import { ProductionCalendar } from '@/components/production/ProductionCalendar';
+import { ScheduleManagementDialog } from '@/components/production/ScheduleManagementDialog';
+import { MeetingUrlGenerator } from '@/components/production/MeetingUrlGenerator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { 
@@ -70,6 +77,8 @@ import {
   type ShowType,
   type EventCategory
 } from '@/types/shows';
+import { COMMON_TIMEZONES, formatDateWithTimezone, getLocalTimezone } from '@/utils/timezoneUtils';
+import { generateAutoMeetingUrl, MeetingPlatform, MEETING_PLATFORMS } from '@/utils/meetingUrlGenerator';
 
 // Helper to get stage-specific required fields
 const getStageRequirements = (stage: ProductionStage) => {
@@ -153,6 +162,16 @@ export default function ProductionHub() {
   const [inviteRole, setInviteRole] = useState<'host' | 'co-host' | 'guest' | 'panelist'>('guest');
   const [sendSmsReminder, setSendSmsReminder] = useState(false);
   const [isSendingInvite, setIsSendingInvite] = useState(false);
+  
+  // Schedule management dialog state
+  const [isScheduleManagementOpen, setIsScheduleManagementOpen] = useState(false);
+  const [scheduleManagementShow, setScheduleManagementShow] = useState<ShowWithParticipants | null>(null);
+  
+  // Selected timezone for display
+  const [displayTimezone, setDisplayTimezone] = useState(getLocalTimezone());
+  
+  // Meeting URL platform state
+  const [meetingPlatform, setMeetingPlatform] = useState<MeetingPlatform>('auto');
 
   const showsByStage = getShowsByStage(activeCategory);
   
@@ -320,6 +339,96 @@ export default function ProductionHub() {
   const handleCopyMeetingUrl = (url: string) => {
     navigator.clipboard.writeText(url);
     toast.success('Meeting URL copied to clipboard');
+  };
+  
+  // Reschedule show handler
+  const handleReschedule = async (showId: string, newDate: string, notifyParticipants: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('shows')
+        .update({ scheduled_date: newDate })
+        .eq('id', showId);
+      
+      if (error) throw error;
+      
+      // Send notification emails if requested
+      if (notifyParticipants) {
+        const show = shows.find(s => s.id === showId);
+        if (show?.participants) {
+          for (const participant of show.participants) {
+            if (participant.email) {
+              await supabase.functions.invoke('send-show-invite', {
+                body: {
+                  to: participant.email,
+                  participantName: participant.name,
+                  role: participant.role,
+                  showType: show.show_type,
+                  showTitle: show.title,
+                  scheduledDate: newDate,
+                  isReschedule: true,
+                  joinUrl: show.meeting_link,
+                },
+              });
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Reschedule error:', err);
+      throw err;
+    }
+  };
+  
+  // Cancel show handler
+  const handleCancelShow = async (showId: string, reason?: string) => {
+    try {
+      const show = shows.find(s => s.id === showId);
+      
+      // Notify participants before deleting
+      if (show?.participants) {
+        for (const participant of show.participants) {
+          if (participant.email) {
+            await supabase.functions.invoke('send-show-invite', {
+              body: {
+                to: participant.email,
+                participantName: participant.name,
+                showTitle: show.title,
+                showType: show.show_type,
+                isCancellation: true,
+                cancellationReason: reason,
+              },
+            });
+          }
+        }
+      }
+      
+      // Delete the show
+      await deleteShow(showId);
+    } catch (err) {
+      console.error('Cancel error:', err);
+      throw err;
+    }
+  };
+  
+  // Update show handler
+  const handleUpdateShow = async (showId: string, updates: Partial<ShowWithParticipants>) => {
+    try {
+      const { error } = await supabase
+        .from('shows')
+        .update(updates)
+        .eq('id', showId);
+      
+      if (error) throw error;
+    } catch (err) {
+      console.error('Update error:', err);
+      throw err;
+    }
+  };
+  
+  // Open schedule management dialog
+  const openScheduleManagement = (show: ShowWithParticipants) => {
+    setScheduleManagementShow(show);
+    setIsScheduleManagementOpen(true);
   };
 
   // Generate calendar URL
@@ -1121,6 +1230,17 @@ export default function ProductionHub() {
                 <DialogFooter className="flex-col sm:flex-row gap-2">
                   <div className="flex gap-2 flex-1">
                     <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        openScheduleManagement(selectedShow);
+                        setSelectedShow(null);
+                      }}
+                    >
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit / Reschedule
+                    </Button>
+                    <Button 
                       variant="destructive" 
                       size="sm"
                       onClick={() => {
@@ -1129,7 +1249,7 @@ export default function ProductionHub() {
                       }}
                     >
                       <Trash2 className="h-4 w-4 mr-1" />
-                      Delete
+                      Cancel
                     </Button>
                   </div>
                   <div className="flex gap-2">
@@ -1297,6 +1417,16 @@ export default function ProductionHub() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Schedule Management Dialog */}
+        <ScheduleManagementDialog
+          show={scheduleManagementShow}
+          open={isScheduleManagementOpen}
+          onOpenChange={setIsScheduleManagementOpen}
+          onUpdate={handleUpdateShow}
+          onCancel={handleCancelShow}
+          onReschedule={handleReschedule}
+        />
       </div>
     </AppLayout>
   );
