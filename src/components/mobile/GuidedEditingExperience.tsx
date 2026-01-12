@@ -1,15 +1,14 @@
 /**
- * Guided Editing Experience
- * Main container that lets user choose Wizard or Sidebar mode
- * Includes Universal AI Assistant
- * Works on both mobile and desktop
+ * Guided Editing Experience - Complete 7-Phase Production
+ * Main container with Wizard/Sidebar mode and Universal AI
+ * Covers: Recording → Voice → Timeline → Editing → Transitions → Music → Export
  */
 
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Wand2,
   ListChecks,
@@ -19,8 +18,9 @@ import {
   Zap,
   ArrowRight,
   Bot,
-  X,
-  ChevronDown
+  Video,
+  Mic,
+  FolderOpen
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -36,7 +36,9 @@ interface GuidedEditingExperienceProps {
   hasMusic: boolean;
   hasArrangement: boolean;
   hasTransitions: boolean;
-  onNavigateToStep: (step: string) => void;
+  hasVoiceover?: boolean;
+  hasEdits?: boolean;
+  onNavigateToStep: (step: string, data?: any) => void;
   className?: string;
 }
 
@@ -45,19 +47,53 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
   hasMusic,
   hasArrangement,
   hasTransitions,
+  hasVoiceover = false,
+  hasEdits = false,
   onNavigateToStep,
   className,
 }) => {
   const [mode, setMode] = useState<ExperienceMode>('choose');
   const [showAIAssistant, setShowAIAssistant] = useState(false);
-  const [currentStep, setCurrentStep] = useState('import');
+  const [currentStep, setCurrentStep] = useState('capture');
 
   const videoClips = clips.filter(c => c.type === 'video');
+  const audioClips = clips.filter(c => c.type === 'audio');
 
-  const handleStepAction = useCallback((stepId: string) => {
-    setCurrentStep(stepId);
-    onNavigateToStep(stepId);
-    toast.info(`Opening ${stepId}...`);
+  const handleStepAction = useCallback((action: string, data?: any) => {
+    setCurrentStep(action);
+    onNavigateToStep(action, data);
+    
+    // Show contextual toasts
+    const actionMessages: Record<string, string> = {
+      'record-video': 'Opening video recorder...',
+      'record-audio': 'Opening audio recorder...',
+      'record-one-tap': 'One-tap recording ready - tap to start!',
+      'record-multi': 'Multi-take mode - record multiple segments',
+      'record-location': 'Location mode - tag recordings with location',
+      'import-files': 'Select files to import...',
+      'voice-record-live': 'Opening voiceover recorder with teleprompter...',
+      'voice-ai-tts': 'Opening AI Text-to-Speech...',
+      'voice-clone-voice': 'Opening voice clone studio...',
+      'arrange-ai-auto': 'AI is arranging your clips...',
+      'arrange-manual': 'Opening timeline editor...',
+      'arrange-script-based': 'Matching clips to script...',
+      'edit-trim': 'Opening trim editor...',
+      'edit-effects': 'Opening effects panel...',
+      'edit-text': 'Opening text overlay editor...',
+      'transitions-ai-smart': 'AI is adding smart transitions...',
+      'transitions-preset': 'Opening transition presets...',
+      'transitions-manual': 'Opening transition picker...',
+      'music-upload': 'Select a music file...',
+      'music-ai-generate': 'AI is generating music...',
+      'music-beat-sync': 'Syncing clips to beat...',
+      'preview': 'Playing preview...',
+      'export-social': 'Preparing for social media export...',
+      'export-download': 'Preparing download...',
+      'export-share': 'Generating share link...',
+    };
+
+    const message = actionMessages[action] || `Opening ${action}...`;
+    toast.info(message);
   }, [onNavigateToStep]);
 
   const handleAskAI = useCallback((question: string) => {
@@ -69,7 +105,7 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
   }, []);
 
   const handleComplete = useCallback(() => {
-    toast.success('🎉 Video editing complete! Ready to export.');
+    toast.success('🎉 Production complete! Your video is ready to export.');
     onNavigateToStep('export');
   }, [onNavigateToStep]);
 
@@ -77,6 +113,28 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
     handleStepAction(action);
     setShowAIAssistant(false);
   }, [handleStepAction]);
+
+  // Quick Start options
+  const quickStartOptions = [
+    {
+      id: 'record-video',
+      icon: <Video className="h-5 w-5 text-blue-500" />,
+      label: 'Record Video',
+      description: 'Start with camera',
+    },
+    {
+      id: 'record-audio',
+      icon: <Mic className="h-5 w-5 text-green-500" />,
+      label: 'Record Audio',
+      description: 'Voice or podcast',
+    },
+    {
+      id: 'import-files',
+      icon: <FolderOpen className="h-5 w-5 text-orange-500" />,
+      label: 'Import Files',
+      description: 'Upload existing',
+    },
+  ];
 
   // Mode Selection Screen
   if (mode === 'choose') {
@@ -86,13 +144,47 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
           <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
             <Sparkles className="h-6 w-6 text-primary" />
           </div>
-          <CardTitle className="text-lg">Choose Your Experience</CardTitle>
+          <CardTitle className="text-lg">Create Your Video</CardTitle>
           <CardDescription className="text-sm">
-            How would you like to edit your {videoClips.length} clips?
+            {videoClips.length > 0 || audioClips.length > 0 
+              ? `Continue with ${videoClips.length} video & ${audioClips.length} audio clips`
+              : 'Choose how you want to start'}
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-3 pb-6">
+        <CardContent className="space-y-4 pb-6">
+          {/* Quick Start - Only show if no clips */}
+          {videoClips.length === 0 && audioClips.length === 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground text-center">Quick Start</p>
+              <div className="grid grid-cols-3 gap-2">
+                {quickStartOptions.map((option) => (
+                  <button
+                    key={option.id}
+                    onClick={() => {
+                      setMode('wizard');
+                      setTimeout(() => handleStepAction(option.id), 100);
+                    }}
+                    className="flex flex-col items-center gap-1 p-3 rounded-lg border hover:border-primary/50 hover:bg-primary/5 transition-all"
+                  >
+                    {option.icon}
+                    <span className="text-xs font-medium">{option.label}</span>
+                    <span className="text-[9px] text-muted-foreground">{option.description}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="relative py-2">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-muted" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="bg-card px-2 text-xs text-muted-foreground">or choose your experience</span>
+            </div>
+          </div>
+
           {/* Wizard Mode */}
           <button
             onClick={() => setMode('wizard')}
@@ -108,7 +200,7 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
                   <Badge variant="secondary" className="text-[9px]">Beginner</Badge>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  I'll guide you through each step with clear instructions and AI suggestions
+                  I'll guide you through 7 phases: Record → Voice → Organize → Edit → Transitions → Music → Export
                 </p>
               </div>
               <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-3" />
@@ -130,7 +222,7 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
                   <Badge variant="secondary" className="text-[9px]">Advanced</Badge>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Flexible editing with a smart checklist. Complete steps in any order
+                  Flexible editing with all 7 phases accessible. Complete steps in any order you want
                 </p>
               </div>
               <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-3" />
@@ -141,7 +233,7 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
           <div className="pt-3 border-t">
             <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mb-3">
               <Bot className="h-3.5 w-3.5" />
-              <span>AI Assistant available in both modes</span>
+              <span>Universal AI available in both modes</span>
             </div>
             <Button
               variant="outline"
@@ -187,15 +279,25 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
           </TabsList>
         </Tabs>
 
-        <Button
-          variant={showAIAssistant ? "default" : "outline"}
-          size="sm"
-          className="h-8"
-          onClick={() => setShowAIAssistant(!showAIAssistant)}
-        >
-          <MessageCircle className="h-3.5 w-3.5 mr-1.5" />
-          AI Help
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-xs"
+            onClick={() => setMode('choose')}
+          >
+            ← Back
+          </Button>
+          <Button
+            variant={showAIAssistant ? "default" : "outline"}
+            size="sm"
+            className="h-8"
+            onClick={() => setShowAIAssistant(!showAIAssistant)}
+          >
+            <MessageCircle className="h-3.5 w-3.5 mr-1.5" />
+            AI
+          </Button>
+        </div>
       </div>
 
       {/* Content based on mode */}
@@ -205,6 +307,8 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
           hasMusic={hasMusic}
           hasArrangement={hasArrangement}
           hasTransitions={hasTransitions}
+          hasVoiceover={hasVoiceover}
+          hasEdits={hasEdits}
           onStepAction={handleStepAction}
           onAskAI={handleAskAI}
           onComplete={handleComplete}
@@ -226,7 +330,7 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
       {!showAIAssistant && (
         <Button
           size="icon"
-          className="fixed bottom-4 right-4 h-12 w-12 rounded-full shadow-lg z-40"
+          className="fixed bottom-20 right-4 h-12 w-12 rounded-full shadow-lg z-40"
           onClick={() => setShowAIAssistant(true)}
         >
           <Bot className="h-5 w-5" />
