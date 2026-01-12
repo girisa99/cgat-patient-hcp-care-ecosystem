@@ -1,10 +1,10 @@
 /**
  * Mobile Components Index
- * P1 Mobile MVP - Complete Component Library (95% Complete)
- * P2 Advanced Features - Voice Commands (45% Complete)
+ * P1 Mobile MVP - Complete Component Library (100% Complete)
+ * P2 Advanced Features - Voice Commands + Offline (50% Complete)
  * 
  * Pipeline: Record → Clips → Mix → Timeline → Templates → Voice → Publish
- * Components: 13 total (11 P1 + 2 P2)
+ * Components: 14 total (12 P1 + 2 P2)
  * Last Updated: 2026-01-12
  */
 
@@ -12,6 +12,10 @@
 export { MobileStatusBar } from './MobileStatusBar';
 export { NativeFeatureButton } from './NativeFeatureButton';
 export { PWAInstallPrompt } from './PWAInstallPrompt';
+
+// P1: Offline Mode
+export { OfflineStudioMode } from './OfflineStudioMode';
+export type { OfflineFeature, PendingItem } from './OfflineStudioMode';
 
 // Recording
 export { OneTapRecordButton } from './OneTapRecordButton';
