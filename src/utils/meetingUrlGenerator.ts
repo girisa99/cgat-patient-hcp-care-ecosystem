@@ -31,17 +31,10 @@ export interface GeneratedMeetingUrl {
 
 /**
  * Get the base URL for meeting links
- * In production: genieaiexperimentationhub.tech
- * In development: current origin
+ * Uses current origin for consistent local/production routing
  */
 export function getMeetingBaseUrl(): string {
-  const isProduction = typeof window !== 'undefined' && 
-    window.location.hostname !== 'localhost' && 
-    !window.location.hostname.includes('preview');
-  
-  return isProduction 
-    ? 'https://genieaiexperimentationhub.tech'
-    : (typeof window !== 'undefined' ? window.location.origin : 'https://genieaiexperimentationhub.tech');
+  return typeof window !== 'undefined' ? window.location.origin : 'https://genieaiexperimentationhub.tech';
 }
 
 /**
