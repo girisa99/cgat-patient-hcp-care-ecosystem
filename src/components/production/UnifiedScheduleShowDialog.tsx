@@ -56,6 +56,7 @@ import {
   Upload,
   Zap,
   Copy,
+  Download,
 } from 'lucide-react';
 import {
   EVENT_CATEGORIES,
@@ -68,6 +69,14 @@ import {
   type EventStage,
 } from '@/types/shows';
 import { COMMON_TIMEZONES, getLocalTimezone } from '@/utils/timezoneUtils';
+import {
+  generateGoogleCalendarUrl,
+  generateOutlookUrl,
+  generateYahooCalendarUrl,
+  downloadIcsFile,
+  getGenieMeetingDisplayUrl,
+  type CalendarEvent,
+} from '@/utils/calendarUtils';
 
 // Meeting platform types
 export type MeetingPlatform = 'auto' | 'google_meet' | 'zoom' | 'teams' | 'custom';
@@ -667,6 +676,52 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
     );
   };
 
+  // Build calendar event object
+  const buildCalendarEvent = (): CalendarEvent | null => {
+    if (!formData.scheduled_date || !formData.title) return null;
+    
+    const startTime = new Date(formData.scheduled_date);
+    const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hour duration
+    
+    return {
+      title: formData.title,
+      description: formData.description,
+      startTime,
+      endTime,
+      meetingUrl: formData.meeting_url,
+      topics: formData.topics,
+      hostName: formData.host.name,
+      guestNames: formData.guests.map(g => g.name),
+      organizer: formData.host.email,
+      attendees: formData.guests.map(g => g.email).filter(Boolean),
+    };
+  };
+
+  // Handle add to calendar
+  const handleAddToCalendar = (type: 'google' | 'outlook' | 'yahoo' | 'ics') => {
+    const event = buildCalendarEvent();
+    if (!event) {
+      toast.error('Please set a title and date first');
+      return;
+    }
+    
+    switch (type) {
+      case 'google':
+        window.open(generateGoogleCalendarUrl(event), '_blank');
+        break;
+      case 'outlook':
+        window.open(generateOutlookUrl(event), '_blank');
+        break;
+      case 'yahoo':
+        window.open(generateYahooCalendarUrl(event), '_blank');
+        break;
+      case 'ics':
+        downloadIcsFile(event, `${formData.title.replace(/[^a-z0-9]/gi, '_')}_genie_studio.ics`);
+        toast.success('Calendar file downloaded!');
+        break;
+    }
+  };
+
   // Render meeting URL section
   const renderMeetingUrlSection = () => (
     <div className="space-y-3 border rounded-lg p-4 bg-muted/30">
@@ -730,19 +785,78 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
         </Button>
       </div>
 
-      {/* Generated URL display */}
+      {/* Generated URL display with branding */}
       {formData.meeting_url && (
-        <div className="flex items-center gap-2 p-2 bg-background rounded border">
-          <Globe className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-          <span className="text-sm font-mono truncate flex-1">{formData.meeting_url}</span>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCopyUrl}>
-            {urlCopied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
-          </Button>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 p-2 bg-background rounded border">
+            <Globe className="h-4 w-4 text-primary flex-shrink-0" />
+            <div className="flex flex-col flex-1 min-w-0">
+              <span className="text-xs font-medium text-primary">
+                {formData.meeting_url.includes('genieaiexperimentationhub.tech') ? '🎬 Genie Studio Meeting' : 'Meeting URL'}
+              </span>
+              <span className="text-sm font-mono truncate">{formData.meeting_url}</span>
+            </div>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCopyUrl}>
+              {urlCopied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.open(formData.meeting_url, '_blank')}>
+              <ExternalLink className="h-3 w-3" />
+            </Button>
+          </div>
+          
+          {/* Add to Calendar buttons */}
+          {formData.scheduled_date && formData.title && (
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                Add to Calendar (includes meeting URL & details)
+              </Label>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAddToCalendar('google')}
+                  className="text-xs"
+                >
+                  📅 Google Calendar
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAddToCalendar('outlook')}
+                  className="text-xs"
+                >
+                  📧 Outlook
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAddToCalendar('yahoo')}
+                  className="text-xs"
+                >
+                  🗓️ Yahoo
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAddToCalendar('ics')}
+                  className="text-xs"
+                >
+                  <Download className="h-3 w-3 mr-1" />
+                  .ics (Apple/Other)
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
       
       <p className="text-xs text-muted-foreground">
-        URL will activate 30 minutes before the scheduled time. Participants receive reminder emails and SMS.
+        🕐 URL activates 30 min before. Participants receive email & SMS reminders via Resend & Twilio.
       </p>
     </div>
   );
