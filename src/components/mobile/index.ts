@@ -4,7 +4,7 @@
  * P2 Advanced Features - 100% Complete
  * 
  * Pipeline: Record → Clips → Mix → Timeline → Templates → Voice → Edit → Publish
- * Components: 19 total (14 P1 + 5 P2)
+ * Components: 23 total (14 P1 + 5 P2 + 4 Guided Experience)
  * Last Updated: 2026-01-12
  */
 
@@ -50,6 +50,12 @@ export { MusicSyncAssembly } from './MusicSyncAssembly';
 
 // P2: Location Story Mode
 export { LocationStoryMode } from './LocationStoryMode';
+
+// Guided Editing Experience (Wizard + Sidebar + AI Assistant)
+export { GuidedEditingWizard } from './GuidedEditingWizard';
+export { SmartEditingSidebar } from './SmartEditingSidebar';
+export { UniversalAIEditingAssistant } from './UniversalAIEditingAssistant';
+export { GuidedEditingExperience } from './GuidedEditingExperience';
 
 // Legacy (kept for compatibility)
 export { ScriptStitcher } from './ScriptStitcher';
