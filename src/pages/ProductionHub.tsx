@@ -1,6 +1,7 @@
 /**
  * Production Hub - Vertical Swimlane Kanban production pipeline management
  * Supports Media Productions, Business Meetings, and Events
+ * Includes meeting booking, invite sending, and calendar sync
  */
 
 import React, { useState } from 'react';
@@ -34,6 +35,12 @@ import {
   Calendar,
   Briefcase,
   CalendarDays,
+  Send,
+  Mail,
+  ExternalLink,
+  Copy,
+  Download,
+  CalendarPlus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -42,6 +49,8 @@ import { useProjects } from '@/hooks/useProjects';
 import { useGenieScripts } from '@/components/genie-studio/useGenieScripts';
 import { VerticalKanban } from '@/components/production/VerticalKanban';
 import { ProductionCalendar } from '@/components/production/ProductionCalendar';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { 
   PRODUCTION_STAGES,
   MEETING_STAGES,
@@ -113,14 +122,23 @@ export default function ProductionHub() {
     scheduled_date: '',
     starting_stage: 'outreach' as ProductionStage,
     host_name: '',
+    host_email: '',
     guests: [] as { name: string; email: string }[],
     linked_script_id: '',
     linked_music_id: '',
     event_category: 'media_production' as EventCategory,
+    meeting_url: '',
+    topics: '',
   });
   const [newGuestName, setNewGuestName] = useState('');
   const [newGuestEmail, setNewGuestEmail] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  
+  // Invite dialog state
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<'host' | 'co-host' | 'guest' | 'panelist'>('guest');
+  const [isSendingInvite, setIsSendingInvite] = useState(false);
 
   const showsByStage = getShowsByStage(activeCategory);
   
@@ -168,10 +186,13 @@ export default function ProductionHub() {
         scheduled_date: '',
         starting_stage: 'outreach',
         host_name: '',
+        host_email: '',
         guests: [],
         linked_script_id: '',
         linked_music_id: '',
         event_category: 'media_production',
+        meeting_url: '',
+        topics: '',
       });
     } finally {
       setIsCreating(false);
@@ -187,6 +208,77 @@ export default function ProductionHub() {
 
   const handleOpenRecordingStudio = (show: ShowWithParticipants) => {
     navigate(`/genie-studio?showId=${show.id}`);
+  };
+
+  // Send invite handler
+  const handleSendInvite = async (show: ShowWithParticipants, email: string, role: 'host' | 'co-host' | 'guest' | 'panelist') => {
+    if (!email.trim()) {
+      toast.error('Please enter an email address');
+      return;
+    }
+
+    setIsSendingInvite(true);
+    try {
+      // Get linked script from assets if available
+      const linkedScriptAsset = show.assets?.find(a => a.asset_type === 'script');
+      const linkedScript = linkedScriptAsset 
+        ? availableScripts.find(s => s.name === linkedScriptAsset.name) 
+        : null;
+
+      // Get host name from participants or metadata
+      const hostParticipant = show.participants?.find(p => p.role === 'host');
+      const hostName = hostParticipant?.name || (show.metadata as any)?.host_name || 'Host';
+
+      const { data, error } = await supabase.functions.invoke('send-show-invite', {
+        body: {
+          to: email,
+          participantName: email.split('@')[0],
+          role,
+          showType: show.show_type,
+          showTitle: show.title,
+          showDescription: show.description,
+          scheduledDate: show.scheduled_date,
+          hostName,
+          topics: (show.metadata as any)?.topics || '',
+          script: linkedScript?.content?.substring(0, 500),
+          scriptAttachmentUrl: linkedScriptAsset?.file_url,
+          scriptFilename: linkedScriptAsset?.name,
+          joinUrl: show.meeting_link,
+          durationMinutes: show.duration_minutes || 60,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success(`Invite sent to ${email}!`);
+      setIsInviteDialogOpen(false);
+      setInviteEmail('');
+    } catch (err) {
+      console.error('Error sending invite:', err);
+      toast.error('Failed to send invite');
+    } finally {
+      setIsSendingInvite(false);
+    }
+  };
+
+  // Copy meeting URL to clipboard
+  const handleCopyMeetingUrl = (url: string) => {
+    navigator.clipboard.writeText(url);
+    toast.success('Meeting URL copied to clipboard');
+  };
+
+  // Generate calendar URL
+  const generateCalendarUrl = (show: ShowWithParticipants, type: 'google' | 'outlook') => {
+    const startDate = new Date(show.scheduled_date || new Date());
+    const endDate = new Date(startDate.getTime() + (show.duration_minutes || 60) * 60 * 1000);
+    
+    const formatDate = (date: Date) => date.toISOString().replace(/[-:]/g, '').replace('.000', '');
+    
+    if (type === 'google') {
+      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(show.title)}&dates=${formatDate(startDate)}/${formatDate(endDate)}&details=${encodeURIComponent(show.description || '')}&location=${encodeURIComponent(show.meeting_link || '')}`;
+    } else {
+      return `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(show.title)}&startdt=${startDate.toISOString()}&enddt=${endDate.toISOString()}&body=${encodeURIComponent(show.description || '')}&location=${encodeURIComponent(show.meeting_link || '')}`;
+    }
   };
 
   return (
@@ -460,6 +552,33 @@ export default function ProductionHub() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="meeting_url" className="flex items-center gap-2">
+                    <ExternalLink className="h-3 w-3" />
+                    Meeting/Join URL
+                  </Label>
+                  <Input
+                    id="meeting_url"
+                    type="url"
+                    placeholder="https://zoom.us/j/... or https://meet.google.com/..."
+                    value={newShow.meeting_url}
+                    onChange={(e) => setNewShow(prev => ({ ...prev, meeting_url: e.target.value }))}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Add a Zoom, Google Meet, or Teams link for participants
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="topics">Topics / Agenda</Label>
+                  <Input
+                    id="topics"
+                    placeholder="Key topics to discuss..."
+                    value={newShow.topics}
+                    onChange={(e) => setNewShow(prev => ({ ...prev, topics: e.target.value }))}
+                  />
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="description">Description</Label>
                   <Textarea
                     id="description"
@@ -479,17 +598,32 @@ export default function ProductionHub() {
                     </h4>
                     
                     {stageRequirements.showHost && (
-                      <div className="space-y-2">
-                        <Label htmlFor="host_name" className="flex items-center gap-2">
-                          <User className="h-3 w-3" />
-                          Host Name
-                        </Label>
-                        <Input
-                          id="host_name"
-                          placeholder="Enter host name..."
-                          value={newShow.host_name}
-                          onChange={(e) => setNewShow(prev => ({ ...prev, host_name: e.target.value }))}
-                        />
+                      <div className="space-y-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="host_name" className="flex items-center gap-2">
+                            <User className="h-3 w-3" />
+                            Host Name
+                          </Label>
+                          <Input
+                            id="host_name"
+                            placeholder="Enter host name..."
+                            value={newShow.host_name}
+                            onChange={(e) => setNewShow(prev => ({ ...prev, host_name: e.target.value }))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="host_email" className="flex items-center gap-2">
+                            <Mail className="h-3 w-3" />
+                            Host Email
+                          </Label>
+                          <Input
+                            id="host_email"
+                            type="email"
+                            placeholder="host@example.com"
+                            value={newShow.host_email}
+                            onChange={(e) => setNewShow(prev => ({ ...prev, host_email: e.target.value }))}
+                          />
+                        </div>
                       </div>
                     )}
 
@@ -680,9 +814,9 @@ export default function ProductionHub() {
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <Label className="text-sm font-medium">Participants</Label>
-                      <Button variant="outline" size="sm">
-                        <Plus className="h-3 w-3 mr-1" />
-                        Add
+                      <Button variant="outline" size="sm" onClick={() => setIsInviteDialogOpen(true)}>
+                        <Send className="h-3 w-3 mr-1" />
+                        Send Invite
                       </Button>
                     </div>
                     {selectedShow.participants && selectedShow.participants.length > 0 ? (
@@ -719,9 +853,61 @@ export default function ProductionHub() {
                     )}
                   </div>
 
+                  {/* Meeting URL & Calendar */}
+                  {selectedShow.meeting_link && (
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Meeting Link</Label>
+                      <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
+                        <ExternalLink className="h-4 w-4 text-primary flex-shrink-0" />
+                        <span className="text-sm truncate flex-1">{selectedShow.meeting_link}</span>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 flex-shrink-0"
+                          onClick={() => handleCopyMeetingUrl(selectedShow.meeting_link!)}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 flex-shrink-0"
+                          onClick={() => window.open(selectedShow.meeting_link!, '_blank')}
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Calendar Integration */}
+                  {selectedShow.scheduled_date && (
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Add to Calendar</Label>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(generateCalendarUrl(selectedShow, 'google'), '_blank')}
+                        >
+                          <CalendarPlus className="h-4 w-4 mr-1" />
+                          Google Calendar
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(generateCalendarUrl(selectedShow, 'outlook'), '_blank')}
+                        >
+                          <CalendarPlus className="h-4 w-4 mr-1" />
+                          Outlook
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Assets */}
                   <div>
-                    <Label className="text-sm font-medium mb-2 block">Assets</Label>
+                    <Label className="text-sm font-medium mb-2 block">Assets & Attachments</Label>
                     {selectedShow.assets && selectedShow.assets.length > 0 ? (
                       <div className="grid grid-cols-2 gap-2">
                         {selectedShow.assets.map((asset) => (
@@ -730,7 +916,17 @@ export default function ProductionHub() {
                             className="flex items-center gap-2 p-2 rounded-lg bg-muted/50"
                           >
                             <FileText className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm truncate">{asset.name}</span>
+                            <span className="text-sm truncate flex-1">{asset.name}</span>
+                            {asset.file_url && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 flex-shrink-0"
+                                onClick={() => window.open(asset.file_url!, '_blank')}
+                              >
+                                <Download className="h-3 w-3" />
+                              </Button>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -777,6 +973,84 @@ export default function ProductionHub() {
                 </DialogFooter>
               </>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Send Invite Dialog */}
+        <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Send className="h-5 w-5 text-primary" />
+                Send Invite
+              </DialogTitle>
+              <DialogDescription>
+                Send an invite email with meeting details and script attachments
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="invite_email">Email Address</Label>
+                <Input
+                  id="invite_email"
+                  type="email"
+                  placeholder="participant@example.com"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Role</Label>
+                <Select value={inviteRole} onValueChange={(v: any) => setInviteRole(v)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="host">Host</SelectItem>
+                    <SelectItem value="co-host">Co-Host</SelectItem>
+                    <SelectItem value="guest">Guest Speaker</SelectItem>
+                    <SelectItem value="panelist">Panelist</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {selectedShow && (
+                <div className="p-3 bg-muted/50 rounded-lg space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Video className="h-4 w-4 text-primary" />
+                    <span className="font-medium">{selectedShow.title}</span>
+                  </div>
+                  {selectedShow.scheduled_date && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Calendar className="h-3 w-3" />
+                      <span>{new Date(selectedShow.scheduled_date).toLocaleString()}</span>
+                    </div>
+                  )}
+                  {selectedShow.meeting_link && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <ExternalLink className="h-3 w-3" />
+                      <span className="truncate">{selectedShow.meeting_link}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsInviteDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => selectedShow && handleSendInvite(selectedShow, inviteEmail, inviteRole)}
+                disabled={isSendingInvite || !inviteEmail.trim()}
+              >
+                {isSendingInvite && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                <Mail className="h-4 w-4 mr-2" />
+                Send Invite
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
