@@ -39,7 +39,8 @@ import {
   ArrowLeft,
   Home,
   Camera,
-  ScreenShare
+  ScreenShare,
+  Wand2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -81,7 +82,7 @@ interface MobileRecordingViewProps {
   className?: string;
 }
 
-type MobileTab = 'record' | 'stitch' | 'clips' | 'timeline' | 'library' | 'templates' | 'voice' | 'editor' | 'ai-tools' | 'location';
+type MobileTab = 'record' | 'stitch' | 'clips' | 'timeline' | 'library' | 'templates' | 'voice' | 'editor' | 'ai-tools' | 'location' | 'guide';
 
 export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
   isOpen = true,
@@ -96,11 +97,39 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
   const isMobile = useIsMobile();
   const { capabilities, isOnline, shareContent, vibrate } = useMobileFeatures();
   
-  const [activeTab, setActiveTab] = useState<MobileTab>('record');
+  const [activeTab, setActiveTab] = useState<MobileTab>('guide'); // Start with guide
   const [recordings, setRecordings] = useState<RecordingResult[]>([]);
   const [timelineClips, setTimelineClips] = useState<TimelineClip[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
+  
+  // Guided Experience State
+  const [hasMusic, setHasMusic] = useState(false);
+  const [hasArrangement, setHasArrangement] = useState(false);
+  const [hasTransitions, setHasTransitions] = useState(false);
+  
+  // Navigation handler for guided experience
+  const handleNavigateToStep = useCallback((step: string) => {
+    switch (step) {
+      case 'import':
+        setActiveTab('record');
+        break;
+      case 'music':
+        setActiveTab('ai-tools');
+        break;
+      case 'arrange':
+        setActiveTab('ai-tools');
+        break;
+      case 'transitions':
+        setActiveTab('ai-tools');
+        break;
+      case 'export':
+        setActiveTab('timeline');
+        break;
+      default:
+        break;
+    }
+  }, []);
 
   // Handle stitch completion
   const handleStitchComplete = useCallback((result: StitchedResult) => {
@@ -532,11 +561,15 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
               <div className="space-y-4">
                 <AIAutoArrange
                   clips={timelineClips}
-                  onArrange={setTimelineClips}
+                  onArrange={(arranged) => {
+                    setTimelineClips(arranged);
+                    setHasArrangement(true);
+                  }}
                 />
                 <SmartTransitions
                   clips={timelineClips}
                   onApplyTransitions={(transitions) => {
+                    setHasTransitions(true);
                     toast.success(`Applied ${transitions.length} transitions`);
                   }}
                 />
@@ -544,6 +577,7 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
                   clips={timelineClips}
                   onSyncClips={(syncedClips) => {
                     setTimelineClips(syncedClips);
+                    setHasMusic(true);
                     toast.success('Clips synced to music beats!');
                   }}
                 />
@@ -557,11 +591,27 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
                 onClipsChange={setTimelineClips}
               />
             </TabsContent>
+
+            {/* Guide Tab - Guided Editing Experience (P2) */}
+            <TabsContent value="guide" className="h-full m-0 p-3 overflow-auto">
+              <GuidedEditingExperience
+                clips={timelineClips}
+                hasMusic={hasMusic}
+                hasArrangement={hasArrangement}
+                hasTransitions={hasTransitions}
+                onNavigateToStep={handleNavigateToStep}
+              />
+            </TabsContent>
           </div>
 
           {/* Bottom Tab Bar - Fixed at bottom with safe area, scrollable on small screens */}
           <div className="flex-shrink-0 border-t bg-card safe-area-bottom">
             <TabsList className="h-16 rounded-none bg-transparent flex justify-start gap-0 overflow-x-auto w-full">
+              {/* Guide Tab - First Position for Easy Access */}
+              <TabsTrigger value="guide" className="flex-1 min-w-[48px] flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1 px-1 rounded-none">
+                <Wand2 className="h-4 w-4" />
+                <span className="text-[9px] font-medium whitespace-nowrap">Guide</span>
+              </TabsTrigger>
               <TabsTrigger value="record" className="flex-1 min-w-[44px] flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1 px-1 rounded-none">
                 <Video className="h-4 w-4" />
                 <span className="text-[9px] font-medium whitespace-nowrap">Record</span>
