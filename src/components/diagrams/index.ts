@@ -13,3 +13,12 @@ export { MarketAnalysisDashboard } from './MarketAnalysisDashboard';
 
 // Genie Studio - Investor Dashboard (comprehensive analytics)
 export { GenieInvestorDashboard } from './GenieInvestorDashboard';
+
+// Genie Studio - Architecture Diagrams (NEW - with download/expand)
+export { 
+  GenieMindArchitectureDiagram,
+  GenieVibeArchitectureDiagram,
+  GenieArcProductionHubDiagram,
+  GenieSparkArchitectureDiagram,
+  GenieStudioOverallArchitectureDiagram
+} from './architecture';
