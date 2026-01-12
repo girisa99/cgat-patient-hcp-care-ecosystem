@@ -1,11 +1,11 @@
 # Genie Mind & Genie Vibe - Phase Implementation Roadmap
 
 > **Last Updated:** 2026-01-12
-> **Status:** Active Implementation - P0 100%, P1 85%, P2 35%, P1.5/P1.6 Complete
-> **Version:** 2.0
-> **Total Features:** 52 (35 Complete/Partial, 17 Planned)
+> **Status:** Active Implementation - P0 100%, P1 95%, P2 45%, P1.5/P1.6 Complete
+> **Version:** 2.1
+> **Total Features:** 52 (40 Complete/Partial, 12 Planned)
 > **Market-Driven:** Includes competitive analysis and user research priorities
-> **Mobile Components:** 11 implemented in `src/components/mobile/`
+> **Mobile Components:** 13 implemented in `src/components/mobile/` (includes QuickTemplates + VoiceCommands)
 
 ---
 
@@ -265,8 +265,8 @@ FLOW 2 (NEW):     Vibe → Mind → Script → TTS → Vibe → Publish
 |---|---------|---------------|----------------|---------------|--------|----------|
 | 16 | **One-Tap Mobile Record** | **Genie Vibe** | All | 68% want mobile-first | ✅ Complete | `src/components/mobile/OneTapRecordButton.tsx` |
 | 17 | **Offline Recording Framework** | **Genie Vibe** | Traveler | 54% need offline | ⚠️ Partial | `src/utils/mobile/MobileAppManager.ts` |
-| 18 | **Quick Templates (Social)** | **Genie Vibe** | Creator | One-app workflow | ⚠️ Partial | In progress |
-| 19 | **Voice-First Editing** | **Genie Vibe** | Creator | 47% want voice commands | ⚠️ Partial | Framework exists |
+| 18 | **Quick Templates (Social)** | **Genie Vibe** | Creator | One-app workflow | ✅ Complete | `src/components/mobile/QuickTemplates.tsx` |
+| 19 | **Voice-First Editing** | **Genie Vibe** | Creator | 47% want voice commands | ✅ Complete | `src/components/mobile/VoiceCommands.tsx` |
 | 20 | **Product Demo Mode** | **Genie Vibe** | SMB | 71% want quick templates | 📋 Planned | |
 | 21 | **Lesson Builder** | **Genie Vibe** | Education | 69% want AI lesson scripts | 📋 Planned | |
 | 22 | **Patient Education** | **Genie Vibe** | Healthcare | HIPAA under $100/mo (94%) | 📋 Planned | |
@@ -278,6 +278,8 @@ FLOW 2 (NEW):     Vibe → Mind → Script → TTS → Vibe → Publish
 | 28 | **PWA Install Prompt** | **Genie Vibe** | All | Mobile install | ✅ Complete | `src/components/mobile/PWAInstallPrompt.tsx` |
 | 29 | **Mobile Recording View** | **Genie Vibe** | All | Mobile-first UI | ✅ Complete | `RecordingStudio/components/MobileRecordingView.tsx` |
 | 30 | **Publish Panel** | **Genie Vibe** | All | Export & share | ✅ Complete | `src/components/mobile/PublishPanel.tsx` |
+| 31 | **Mobile Status Bar** | **Genie Vibe** | All | Native-like UX | ✅ Complete | `src/components/mobile/MobileStatusBar.tsx` |
+| 32 | **Native Feature Button** | **Genie Vibe** | All | Native capabilities | ✅ Complete | `src/components/mobile/NativeFeatureButton.tsx` |
 
 ### Phase 5: Commercialization & Compliance
 
