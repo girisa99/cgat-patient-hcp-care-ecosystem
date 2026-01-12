@@ -38,9 +38,11 @@ const handler = async (req: Request): Promise<Response> => {
     const roleDisplay = { host: 'Host', 'co-host': 'Co-Host', guest: 'Guest Speaker', panelist: 'Panelist' }[role];
 
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-    const fromEmail = Deno.env.get('SENDGRID_FROM_EMAIL') || 'onboarding@resend.dev';
+    // Use genieaiexperimentationhub.tech domain for all emails
+    const fromEmail = Deno.env.get('FROM_EMAIL') || 'noreply@genieaiexperimentationhub.tech';
     
     console.log('[send-show-invite] RESEND_API_KEY configured:', !!RESEND_API_KEY);
+    console.log('[send-show-invite] FROM email:', fromEmail);
 
     if (!RESEND_API_KEY) {
       return new Response(JSON.stringify({ success: true, message: 'Invite recorded (email sending requires RESEND_API_KEY)', emailSent: false }), { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
