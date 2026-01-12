@@ -77,8 +77,8 @@ const handler = async (req: Request): Promise<Response> => {
     const roleText = roleDisplay[role] || role;
 
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-    // Use genieaiexperimentationhub.tech domain for all emails
-    const fromEmail = Deno.env.get('FROM_EMAIL') || 'noreply@genieaiexperimentationhub.tech';
+    // Use Genie Studio branded email
+    const fromEmail = Deno.env.get('FROM_EMAIL') || 'studio@geniestudio.ai';
     
     console.log('[send-show-invite] RESEND_API_KEY configured:', !!RESEND_API_KEY);
     console.log('[send-show-invite] FROM email:', fromEmail);
@@ -115,7 +115,7 @@ const handler = async (req: Request): Promise<Response> => {
     calendarDetails += `Your Role: ${roleText}\n\n`;
     calendarDetails += `------------------------\n`;
     calendarDetails += `Powered by Genie Studio\n`;
-    calendarDetails += `genieaiexperimentationhub.tech`;
+    calendarDetails += `Your AI-Powered Production Platform`;
     
     // Rich calendar details with emojis for web-based calendar links (these support Unicode)
     let richCalendarDetails = '';
@@ -131,12 +131,12 @@ const handler = async (req: Request): Promise<Response> => {
     richCalendarDetails += `🎙️ Host: ${hostName}\n`;
     richCalendarDetails += `👤 Your Role: ${roleText}\n\n`;
     richCalendarDetails += `─────────────────────\n`;
-    richCalendarDetails += `📺 Powered by Genie Studio\n`;
-    richCalendarDetails += `🌐 genieaiexperimentationhub.tech`;
+    richCalendarDetails += `✨ Powered by Genie Studio\n`;
+    richCalendarDetails += `🚀 AI-Powered Production Platform`;
     
-    const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(showTitle)}&dates=${formatCalDate(date)}/${formatCalDate(endTime)}&details=${encodeURIComponent(richCalendarDetails)}&location=${encodeURIComponent(joinUrl || '')}`;
-    const outlookUrl = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(showTitle)}&startdt=${date.toISOString()}&enddt=${endTime.toISOString()}&body=${encodeURIComponent(richCalendarDetails)}&location=${encodeURIComponent(joinUrl || '')}`;
-    const yahooUrl = `https://calendar.yahoo.com/?v=60&title=${encodeURIComponent(showTitle)}&st=${formatCalDate(date)}&dur=${Math.floor(durationMinutes/60).toString().padStart(2,'0')}${(durationMinutes%60).toString().padStart(2,'0')}&desc=${encodeURIComponent(richCalendarDetails)}&in_loc=${encodeURIComponent(joinUrl || '')}`;
+    const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`🎬 ${showTitle} - Genie Studio`)}&dates=${formatCalDate(date)}/${formatCalDate(endTime)}&details=${encodeURIComponent(richCalendarDetails)}&location=${encodeURIComponent(joinUrl || '')}`;
+    const outlookUrl = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(`🎬 ${showTitle} - Genie Studio`)}&startdt=${date.toISOString()}&enddt=${endTime.toISOString()}&body=${encodeURIComponent(richCalendarDetails)}&location=${encodeURIComponent(joinUrl || '')}`;
+    const yahooUrl = `https://calendar.yahoo.com/?v=60&title=${encodeURIComponent(`🎬 ${showTitle} - Genie Studio`)}&st=${formatCalDate(date)}&dur=${Math.floor(durationMinutes/60).toString().padStart(2,'0')}${(durationMinutes%60).toString().padStart(2,'0')}&desc=${encodeURIComponent(richCalendarDetails)}&in_loc=${encodeURIComponent(joinUrl || '')}`;
     
     // Helper function to encode UTF-8 string to base64 (handles Unicode)
     const utf8ToBase64 = (str: string): string => {
@@ -153,7 +153,7 @@ const handler = async (req: Request): Promise<Response> => {
     const icsContent = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
-      'PRODID:-//Genie Studio//genieaiexperimentationhub.tech//EN',
+      'PRODID:-//Genie Studio//AI-Powered Production Platform//EN',
       'CALSCALE:GREGORIAN',
       'METHOD:REQUEST',
       'X-WR-CALNAME:Genie Studio',
@@ -162,7 +162,7 @@ const handler = async (req: Request): Promise<Response> => {
       `DTSTAMP:${formatCalDate(new Date())}`,
       `DTSTART:${formatCalDate(date)}`,
       `DTEND:${formatCalDate(endTime)}`,
-      `SUMMARY:${showTitle.replace(/,/g, '\\,').replace(/;/g, '\\;')}`,
+      `SUMMARY:${showTitle.replace(/,/g, '\\,').replace(/;/g, '\\;')} - Genie Studio`,
       `DESCRIPTION:${calendarDetails.replace(/,/g, '\\,').replace(/;/g, '\\;').replace(/\n/g, '\\n')}`,
       joinUrl ? `LOCATION:${joinUrl.replace(/,/g, '\\,').replace(/;/g, '\\;')}` : '',
       joinUrl ? `URL:${joinUrl}` : '',
@@ -187,11 +187,12 @@ const handler = async (req: Request): Promise<Response> => {
     let scriptSection = '';
     if (scriptAttachmentUrl) {
       scriptSection = `
-        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 20px; margin: 20px 0; text-align: center;">
-          <p style="color: #34d399; margin: 0 0 12px; font-weight: 600;">📎 Script Attachment</p>
-          <p style="color: #94a3b8; margin: 0 0 16px; font-size: 14px;">${scriptFilename || 'Script Document'}</p>
+        <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 182, 212, 0.1)); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 16px; padding: 24px; margin: 24px 0; text-align: center;">
+          <div style="font-size: 32px; margin-bottom: 12px;">📎</div>
+          <p style="color: #34d399; margin: 0 0 8px; font-weight: 700; font-size: 16px;">Your Script is Ready!</p>
+          <p style="color: #94a3b8; margin: 0 0 20px; font-size: 14px;">${scriptFilename || 'Production Script Document'}</p>
           <a href="${scriptAttachmentUrl}" 
-             style="display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 12px 32px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 14px;">
+             style="display: inline-block; background: linear-gradient(135deg, #10b981, #06b6d4); color: white; padding: 14px 36px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 15px; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);">
             📥 Download Script
           </a>
         </div>
@@ -206,10 +207,10 @@ const handler = async (req: Request): Promise<Response> => {
       const previewText = cleanScript.length > 500 ? cleanScript.substring(0, 500) + '...' : cleanScript;
       
       scriptSection = `
-        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 20px; margin: 20px 0;">
-          <p style="color: #34d399; margin: 0 0 12px; font-weight: 600;">📝 Script Preview</p>
-          <pre style="color: #cbd5e1; font-size: 12px; white-space: pre-wrap; word-wrap: break-word; margin: 0; max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px;">${previewText}</pre>
-          <p style="color: #64748b; font-size: 11px; margin: 12px 0 0;">Full script will be available during the session teleprompter.</p>
+        <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 182, 212, 0.1)); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 16px; padding: 24px; margin: 24px 0;">
+          <p style="color: #34d399; margin: 0 0 12px; font-weight: 700; font-size: 16px;">📝 Script Preview</p>
+          <pre style="color: #cbd5e1; font-size: 13px; white-space: pre-wrap; word-wrap: break-word; margin: 0; max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 16px; border-radius: 12px; line-height: 1.6;">${previewText}</pre>
+          <p style="color: #64748b; font-size: 12px; margin: 16px 0 0; text-align: center;">✨ Full script available in Genie Studio teleprompter during your session</p>
         </div>
       `;
     }
@@ -218,9 +219,9 @@ const handler = async (req: Request): Promise<Response> => {
     let topicsSection = '';
     if (topics) {
       topicsSection = `
-        <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 12px; padding: 20px; margin: 20px 0;">
-          <p style="color: #60a5fa; margin: 0 0 12px; font-weight: 600;">📋 Discussion Topics</p>
-          <p style="color: #e2e8f0; margin: 0; line-height: 1.6;">${topics}</p>
+        <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.1)); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 16px; padding: 24px; margin: 24px 0;">
+          <p style="color: #60a5fa; margin: 0 0 16px; font-weight: 700; font-size: 16px;">📋 Discussion Topics</p>
+          <p style="color: #e2e8f0; margin: 0; line-height: 1.8; font-size: 15px;">${topics}</p>
         </div>
       `;
     }
@@ -229,27 +230,29 @@ const handler = async (req: Request): Promise<Response> => {
     let introSection = '';
     if (suggestedIntro) {
       introSection = `
-        <div style="background: rgba(236, 72, 153, 0.1); border: 1px solid rgba(236, 72, 153, 0.3); border-radius: 12px; padding: 20px; margin: 20px 0;">
-          <p style="color: #f472b6; margin: 0 0 12px; font-weight: 600;">✨ Suggested Introduction</p>
-          <p style="color: #e2e8f0; margin: 0; font-style: italic; line-height: 1.6;">"${suggestedIntro}"</p>
+        <div style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.1), rgba(168, 85, 247, 0.1)); border: 1px solid rgba(236, 72, 153, 0.3); border-radius: 16px; padding: 24px; margin: 24px 0;">
+          <p style="color: #f472b6; margin: 0 0 16px; font-weight: 700; font-size: 16px;">✨ Your Introduction</p>
+          <p style="color: #e2e8f0; margin: 0; font-style: italic; line-height: 1.8; font-size: 15px; padding: 16px; background: rgba(0,0,0,0.2); border-radius: 12px; border-left: 4px solid #ec4899;">"${suggestedIntro}"</p>
         </div>
       `;
     }
 
-    // Build join/recording URL buttons
+    // Build join/recording URL buttons - PROMINENT SECTION
     let actionButtons = '';
     if (joinUrl || recordingUrl) {
       actionButtons = `
-        <div style="text-align: center; margin: 30px 0;">
+        <div style="text-align: center; margin: 32px 0; padding: 28px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(236, 72, 153, 0.15)); border-radius: 20px; border: 2px solid rgba(139, 92, 246, 0.3);">
+          <p style="color: #a78bfa; font-size: 14px; margin: 0 0 20px; font-weight: 600;">🚀 Click below to join when it's time!</p>
           ${joinUrl ? `
             <a href="${joinUrl}" 
-               style="display: inline-block; background: linear-gradient(135deg, #8b5cf6, #ec4899); color: white; padding: 16px 40px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 16px; margin: 6px;">
-              ✨ Join Session
+               style="display: inline-block; background: linear-gradient(135deg, #8b5cf6, #ec4899); color: white; padding: 18px 48px; border-radius: 14px; text-decoration: none; font-weight: bold; font-size: 18px; margin: 8px; box-shadow: 0 12px 30px rgba(139, 92, 246, 0.4); transition: all 0.3s;">
+              ✨ Join Session Now
             </a>
+            <p style="color: #64748b; font-size: 12px; margin: 16px 0 0;">Meeting URL: ${joinUrl}</p>
           ` : ''}
           ${recordingUrl ? `
             <a href="${recordingUrl}" 
-               style="display: inline-block; background: linear-gradient(135deg, #ef4444, #f97316); color: white; padding: 16px 40px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 16px; margin: 6px;">
+               style="display: inline-block; background: linear-gradient(135deg, #ef4444, #f97316); color: white; padding: 18px 48px; border-radius: 14px; text-decoration: none; font-weight: bold; font-size: 18px; margin: 8px; box-shadow: 0 12px 30px rgba(239, 68, 68, 0.4);">
               🎬 Recording Studio
             </a>
           ` : ''}
@@ -257,99 +260,175 @@ const handler = async (req: Request): Promise<Response> => {
       `;
     }
 
+    // Genie Studio benefits section
+    const benefitsSection = `
+      <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9)); border-radius: 16px; padding: 24px; margin: 24px 0; border: 1px solid rgba(139, 92, 246, 0.2);">
+        <p style="color: #a78bfa; font-size: 16px; margin: 0 0 16px; font-weight: 700; text-align: center;">✨ Why Genie Studio?</p>
+        <div style="display: grid; gap: 12px;">
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <span style="font-size: 20px;">🎙️</span>
+            <div>
+              <p style="color: #e2e8f0; margin: 0; font-weight: 600; font-size: 14px;">Professional Production Tools</p>
+              <p style="color: #94a3b8; margin: 4px 0 0; font-size: 13px;">Teleprompter, real-time editing, multi-camera support</p>
+            </div>
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <span style="font-size: 20px;">🤖</span>
+            <div>
+              <p style="color: #e2e8f0; margin: 0; font-weight: 600; font-size: 14px;">AI-Powered Assistance</p>
+              <p style="color: #94a3b8; margin: 4px 0 0; font-size: 13px;">Smart scripts, auto-captions, content suggestions</p>
+            </div>
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <span style="font-size: 20px;">🎬</span>
+            <div>
+              <p style="color: #e2e8f0; margin: 0; font-weight: 600; font-size: 14px;">Seamless Recording & Streaming</p>
+              <p style="color: #94a3b8; margin: 4px 0 0; font-size: 13px;">HD quality with instant publish to all platforms</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
     const emailHtml = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>You're Invited to ${showTitle}</title>
+  <title>You're Invited to ${showTitle} - Genie Studio</title>
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f0f23; margin: 0; padding: 20px;">
-  <div style="max-width: 600px; margin: 0 auto; background: #1a1a2e; border-radius: 16px; overflow: hidden; border: 1px solid rgba(139, 92, 246, 0.2); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+  <div style="max-width: 640px; margin: 0 auto; background: linear-gradient(180deg, #1a1a2e 0%, #16162a 100%); border-radius: 24px; overflow: hidden; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6);">
     
-    <!-- Header -->
-    <div style="background: linear-gradient(135deg, ${typeInfo.color}, #ec4899); padding: 40px; text-align: center;">
-      <div style="font-size: 48px; margin-bottom: 16px;">${typeInfo.emoji}</div>
-      <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">You're Invited!</h1>
-      <p style="color: rgba(255,255,255,0.9); margin: 12px 0 16px; font-size: 16px;">Join as <strong>${roleText}</strong></p>
-      <span style="display: inline-block; background: rgba(255,255,255,0.2); color: white; padding: 8px 20px; border-radius: 24px; font-size: 14px; font-weight: 500; backdrop-filter: blur(10px);">
+    <!-- Header with Genie Studio Branding -->
+    <div style="background: linear-gradient(135deg, ${typeInfo.color}, #ec4899, #8b5cf6); padding: 48px 32px; text-align: center;">
+      <div style="margin-bottom: 20px;">
+        <span style="font-size: 48px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));">${typeInfo.emoji}</span>
+      </div>
+      <h1 style="color: white; margin: 0; font-size: 32px; font-weight: 800; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">Welcome to Genie Studio!</h1>
+      <p style="color: rgba(255,255,255,0.95); margin: 16px 0 20px; font-size: 18px; font-weight: 500;">You're invited as <strong>${roleText}</strong></p>
+      <span style="display: inline-block; background: rgba(255,255,255,0.25); color: white; padding: 10px 24px; border-radius: 30px; font-size: 15px; font-weight: 600; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
         ${typeInfo.emoji} ${typeInfo.name}
       </span>
     </div>
     
+    <!-- Welcome Message -->
+    <div style="padding: 36px 32px 0;">
+      <div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(236, 72, 153, 0.1)); border-radius: 16px; padding: 24px; text-align: center; border: 1px solid rgba(139, 92, 246, 0.2);">
+        <p style="color: #e2e8f0; margin: 0; font-size: 18px; line-height: 1.7;">
+          Hi <strong style="color: #a78bfa; font-size: 20px;">${participantName}</strong>! 👋
+        </p>
+        <p style="color: #94a3b8; margin: 16px 0 0; font-size: 16px; line-height: 1.6;">
+          <strong style="color: #e2e8f0;">${hostName}</strong> has invited you to an exciting ${typeInfo.name.toLowerCase()} production on <strong style="color: #a78bfa;">Genie Studio</strong> - the AI-powered production platform.
+        </p>
+      </div>
+    </div>
+    
     <!-- Content -->
     <div style="padding: 32px;">
-      <p style="color: #e2e8f0; margin: 0 0 16px; font-size: 16px;">
-        Hi <strong style="color: #a78bfa;">${participantName}</strong>,
-      </p>
-      <p style="color: #94a3b8; margin: 0 0 24px; font-size: 15px; line-height: 1.6;">
-        You've been invited by <strong style="color: #e2e8f0;">${hostName}</strong> to participate in an exciting ${typeInfo.name.toLowerCase()}.
-      </p>
       
       <!-- Show Details Card -->
-      <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 16px; padding: 24px; margin: 24px 0;">
-        <h2 style="color: #f1f5f9; margin: 0 0 16px; font-size: 22px; font-weight: 600;">${showTitle}</h2>
-        ${showDescription ? `<p style="color: #94a3b8; margin: 0 0 20px; line-height: 1.6;">${showDescription}</p>` : ''}
+      <div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(99, 102, 241, 0.08)); border: 1px solid rgba(139, 92, 246, 0.35); border-radius: 20px; padding: 28px; margin: 24px 0;">
+        <h2 style="color: #f1f5f9; margin: 0 0 20px; font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 12px;">
+          <span>${typeInfo.emoji}</span> ${showTitle}
+        </h2>
+        ${showDescription ? `<p style="color: #94a3b8; margin: 0 0 24px; line-height: 1.7; font-size: 15px;">${showDescription}</p>` : ''}
         
-        <div style="display: grid; gap: 12px;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 18px;">📅</span>
-            <span style="color: #e2e8f0; font-size: 15px;">${formattedDate}</span>
+        <div style="display: grid; gap: 16px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 12px;">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <span style="font-size: 22px;">📅</span>
+            <div>
+              <p style="color: #64748b; margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Date</p>
+              <p style="color: #e2e8f0; margin: 4px 0 0; font-size: 16px; font-weight: 600;">${formattedDate}</p>
+            </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 18px;">⏰</span>
-            <span style="color: #e2e8f0; font-size: 15px;">${formattedTime}</span>
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <span style="font-size: 22px;">⏰</span>
+            <div>
+              <p style="color: #64748b; margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Time</p>
+              <p style="color: #e2e8f0; margin: 4px 0 0; font-size: 16px; font-weight: 600;">${formattedTime}</p>
+            </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 18px;">⏱️</span>
-            <span style="color: #e2e8f0; font-size: 15px;">${durationMinutes} minutes</span>
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <span style="font-size: 22px;">⏱️</span>
+            <div>
+              <p style="color: #64748b; margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Duration</p>
+              <p style="color: #e2e8f0; margin: 4px 0 0; font-size: 16px; font-weight: 600;">${durationMinutes} minutes</p>
+            </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 18px;">👤</span>
-            <span style="color: #a78bfa; font-size: 15px; font-weight: 600;">Your Role: ${roleText}</span>
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <span style="font-size: 22px;">🌟</span>
+            <div>
+              <p style="color: #64748b; margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Your Role</p>
+              <p style="color: #a78bfa; margin: 4px 0 0; font-size: 16px; font-weight: 700;">${roleText}</p>
+            </div>
           </div>
         </div>
       </div>
       
+      ${actionButtons}
       ${topicsSection}
       ${scriptSection}
       ${introSection}
-      ${actionButtons}
+      ${benefitsSection}
       
       <!-- Calendar Buttons -->
-      <div style="text-align: center; margin: 24px 0; padding: 20px; background: rgba(30, 41, 59, 0.5); border-radius: 12px;">
-        <p style="color: #94a3b8; font-size: 14px; margin: 0 0 16px;">📅 Add to your calendar (includes meeting URL):</p>
-        <a href="${googleCalUrl}" target="_blank" 
-           style="display: inline-block; background: #1e293b; color: #e2e8f0; padding: 12px 20px; border-radius: 8px; margin: 4px; text-decoration: none; font-size: 13px; border: 1px solid rgba(255,255,255,0.1);">
-          📅 Google
-        </a>
-        <a href="${outlookUrl}" target="_blank" 
-           style="display: inline-block; background: #1e293b; color: #e2e8f0; padding: 12px 20px; border-radius: 8px; margin: 4px; text-decoration: none; font-size: 13px; border: 1px solid rgba(255,255,255,0.1);">
-          📧 Outlook
-        </a>
-        <a href="${yahooUrl}" target="_blank" 
-           style="display: inline-block; background: #1e293b; color: #e2e8f0; padding: 12px 20px; border-radius: 8px; margin: 4px; text-decoration: none; font-size: 13px; border: 1px solid rgba(255,255,255,0.1);">
-          🗓️ Yahoo
-        </a>
+      <div style="text-align: center; margin: 28px 0; padding: 24px; background: linear-gradient(135deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.8)); border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);">
+        <p style="color: #e2e8f0; font-size: 15px; margin: 0 0 20px; font-weight: 600;">📅 Save to your calendar <span style="color: #64748b; font-weight: 400;">(includes meeting link)</span></p>
+        <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 10px;">
+          <a href="${googleCalUrl}" target="_blank" 
+             style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #1e293b, #0f172a); color: #e2e8f0; padding: 14px 24px; border-radius: 12px; text-decoration: none; font-size: 14px; font-weight: 600; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+            📅 Google Calendar
+          </a>
+          <a href="${outlookUrl}" target="_blank" 
+             style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #1e293b, #0f172a); color: #e2e8f0; padding: 14px 24px; border-radius: 12px; text-decoration: none; font-size: 14px; font-weight: 600; border: 1px solid rgba(59, 130, 246, 0.3); box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+            📧 Outlook
+          </a>
+          <a href="${yahooUrl}" target="_blank" 
+             style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #1e293b, #0f172a); color: #e2e8f0; padding: 14px 24px; border-radius: 12px; text-decoration: none; font-size: 14px; font-weight: 600; border: 1px solid rgba(168, 85, 247, 0.3); box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+            🗓️ Yahoo
+          </a>
+        </div>
+        <p style="color: #64748b; font-size: 12px; text-align: center; margin: 20px 0 0;">
+          📎 An .ics calendar file is also attached for Apple Calendar and other apps
+        </p>
       </div>
-      <p style="color: #64748b; font-size: 12px; text-align: center; margin: 0 0 16px;">
-        📎 An .ics calendar file is also attached to this email for Apple Calendar and other apps.
-      </p>
       
-      <p style="color: #94a3b8; margin: 24px 0 0; font-size: 14px; line-height: 1.6;">
-        Questions? Contact <strong style="color: #e2e8f0;">${hostName}</strong>.
-      </p>
+      <div style="text-align: center; padding: 20px; background: rgba(139, 92, 246, 0.08); border-radius: 12px; margin-top: 24px;">
+        <p style="color: #94a3b8; margin: 0; font-size: 15px; line-height: 1.6;">
+          Questions? Reach out to <strong style="color: #e2e8f0;">${hostName}</strong>
+        </p>
+        <p style="color: #a78bfa; margin: 12px 0 0; font-size: 14px; font-weight: 500;">
+          We can't wait to see you! 🎉
+        </p>
+      </div>
     </div>
     
-    <!-- Footer -->
-    <div style="background: rgba(0,0,0,0.3); padding: 24px; text-align: center; border-top: 1px solid rgba(139, 92, 246, 0.1);">
-      <p style="color: #64748b; font-size: 12px; margin: 0 0 8px;">
-        Powered by <strong style="color: #a78bfa;">Genie Studio</strong>
+    <!-- Footer with Genie Studio Branding -->
+    <div style="background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.6) 100%); padding: 32px; text-align: center; border-top: 1px solid rgba(139, 92, 246, 0.2);">
+      <div style="margin-bottom: 16px;">
+        <span style="font-size: 28px;">✨</span>
+      </div>
+      <p style="color: #a78bfa; font-size: 18px; margin: 0 0 8px; font-weight: 700;">
+        Genie Studio
       </p>
-      <p style="color: #475569; font-size: 11px; margin: 0;">
-        genieaiexperimentationhub.tech
+      <p style="color: #64748b; font-size: 13px; margin: 0 0 16px;">
+        AI-Powered Production Platform
       </p>
+      <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
+        <span style="color: #475569; font-size: 11px;">🎙️ Podcasts</span>
+        <span style="color: #475569; font-size: 11px;">📺 Webcasts</span>
+        <span style="color: #475569; font-size: 11px;">🎤 Interviews</span>
+        <span style="color: #475569; font-size: 11px;">📚 Tutorials</span>
+      </div>
     </div>
+  </div>
+  
+  <!-- Legal Footer -->
+  <div style="text-align: center; padding: 24px; max-width: 640px; margin: 0 auto;">
+    <p style="color: #475569; font-size: 11px; margin: 0; line-height: 1.6;">
+      This invitation was sent via Genie Studio. If you received this in error, please ignore it.
+    </p>
   </div>
 </body>
 </html>`;
@@ -358,7 +437,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResponse = await resend.emails.send({
       from: `Genie Studio <${fromEmail}>`,
       to: [to],
-      subject: `${typeInfo.emoji} You're invited to "${showTitle}" - ${roleText}`,
+      subject: `✨ ${participantName}, you're invited to "${showTitle}" as ${roleText} - Genie Studio`,
       html: emailHtml,
       attachments: [
         {

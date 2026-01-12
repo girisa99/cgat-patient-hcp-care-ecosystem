@@ -159,19 +159,25 @@ export function ScheduleManagementDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CalendarClock className="h-5 w-5 text-primary" />
-            Manage Schedule: {show.title}
-          </DialogTitle>
-          <DialogDescription>
-            Edit details, reschedule, or cancel this event
-          </DialogDescription>
+      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto bg-gradient-to-br from-background via-background to-primary/5 border-primary/20">
+        <DialogHeader className="pb-4 border-b border-primary/10">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-pink-500/20">
+              <CalendarClock className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <DialogTitle className="text-lg font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent">
+                Manage Schedule
+              </DialogTitle>
+              <DialogDescription className="text-xs mt-1">
+                {show.title}
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
         {/* Current Schedule Info */}
-        <Card className="p-3 bg-muted/30">
+        <Card className="p-3 bg-gradient-to-r from-primary/10 to-pink-500/10 border-primary/20">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium">{show.title}</p>
@@ -185,21 +191,21 @@ export function ScheduleManagementDialog({
                 </p>
               )}
             </div>
-            <Badge variant="outline" className="capitalize">{show.show_type}</Badge>
+            <Badge variant="outline" className="capitalize bg-primary/10 border-primary/30 text-primary">{show.show_type}</Badge>
           </div>
         </Card>
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="edit" className="flex items-center gap-1">
+          <TabsList className="grid w-full grid-cols-3 bg-muted/50">
+            <TabsTrigger value="edit" className="flex items-center gap-1 data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
               <Edit className="h-3 w-3" />
               Edit
             </TabsTrigger>
-            <TabsTrigger value="reschedule" className="flex items-center gap-1">
+            <TabsTrigger value="reschedule" className="flex items-center gap-1 data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-500">
               <CalendarClock className="h-3 w-3" />
               Reschedule
             </TabsTrigger>
-            <TabsTrigger value="cancel" className="flex items-center gap-1 text-destructive data-[state=active]:text-destructive">
+            <TabsTrigger value="cancel" className="flex items-center gap-1 text-destructive data-[state=active]:bg-destructive/20 data-[state=active]:text-destructive">
               <XCircle className="h-3 w-3" />
               Cancel
             </TabsTrigger>
