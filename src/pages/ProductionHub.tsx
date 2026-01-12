@@ -612,6 +612,7 @@ export default function ProductionHub() {
           open={isCreateDialogOpen}
           onOpenChange={setIsCreateDialogOpen}
           onSchedule={async (data: ScheduleShowData) => {
+            // Create show in database
             await createShow({
               title: data.title,
               description: data.description || undefined,
@@ -628,7 +629,99 @@ export default function ProductionHub() {
               linked_script_id: data.linked_script_id || undefined,
               linked_music_id: data.linked_music_id || undefined,
             });
-            toast.success('Production created successfully!');
+            
+            // Send invites to host if email provided
+            if (data.host.email && data.enable_email_reminders) {
+              try {
+                const linkedScript = data.linked_script_id 
+                  ? availableScripts.find(s => s.id === data.linked_script_id) 
+                  : null;
+                
+                await supabase.functions.invoke('send-show-invite', {
+                  body: {
+                    to: data.host.email,
+                    participantName: data.host.name || 'Host',
+                    role: 'host',
+                    showType: data.show_type,
+                    showTitle: data.title,
+                    showDescription: data.description,
+                    scheduledDate: data.scheduled_date,
+                    hostName: data.host.name || 'Host',
+                    topics: data.topics,
+                    script: linkedScript?.content?.substring(0, 500),
+                    joinUrl: data.meeting_url,
+                    durationMinutes: 60,
+                  },
+                });
+                console.log('[ProductionHub] Host invite sent to:', data.host.email);
+              } catch (err) {
+                console.error('[ProductionHub] Failed to send host invite:', err);
+              }
+            }
+            
+            // Send SMS to host if phone provided
+            if (data.host.phone && data.enable_sms_reminders) {
+              try {
+                await supabase.functions.invoke('twilio-notifications', {
+                  body: {
+                    type: 'sms',
+                    to: data.host.phone,
+                    message: `🎙️ You're hosting "${data.title}" on ${data.scheduled_date ? new Date(data.scheduled_date).toLocaleString() : 'TBD'}. ${data.meeting_url ? `Join: ${data.meeting_url}` : ''}`,
+                  },
+                });
+                console.log('[ProductionHub] Host SMS sent to:', data.host.phone);
+              } catch (err) {
+                console.error('[ProductionHub] Failed to send host SMS:', err);
+              }
+            }
+            
+            // Send invites to all guests
+            for (const guest of data.guests) {
+              if (guest.email && data.enable_email_reminders) {
+                try {
+                  const linkedScript = data.linked_script_id 
+                    ? availableScripts.find(s => s.id === data.linked_script_id) 
+                    : null;
+                  
+                  await supabase.functions.invoke('send-show-invite', {
+                    body: {
+                      to: guest.email,
+                      participantName: guest.name,
+                      role: 'guest',
+                      showType: data.show_type,
+                      showTitle: data.title,
+                      showDescription: data.description,
+                      scheduledDate: data.scheduled_date,
+                      hostName: data.host.name || 'Host',
+                      topics: data.topics,
+                      script: data.attach_script_to_invite && linkedScript?.content?.substring(0, 500),
+                      joinUrl: data.meeting_url,
+                      durationMinutes: 60,
+                    },
+                  });
+                  console.log('[ProductionHub] Guest invite sent to:', guest.email);
+                } catch (err) {
+                  console.error('[ProductionHub] Failed to send guest invite:', err);
+                }
+              }
+              
+              // Send SMS to guest if phone provided
+              if (guest.phone && data.enable_sms_reminders) {
+                try {
+                  await supabase.functions.invoke('twilio-notifications', {
+                    body: {
+                      type: 'sms',
+                      to: guest.phone,
+                      message: `🎙️ You're invited to "${data.title}" on ${data.scheduled_date ? new Date(data.scheduled_date).toLocaleString() : 'TBD'}. ${data.meeting_url ? `Join: ${data.meeting_url}` : ''}`,
+                    },
+                  });
+                } catch (err) {
+                  console.error('[ProductionHub] Failed to send guest SMS:', err);
+                }
+              }
+            }
+            
+            toast.success('Production created and invites sent!');
           }}
           availableScripts={availableScripts.map(s => ({ id: s.id, name: s.name, content: s.content || '' }))}
           initialData={{
