@@ -18,6 +18,17 @@ interface AIRequest {
   imageGeneration?: boolean;
   aspectRatio?: string;
   style?: string;
+  // Scene analysis context
+  context?: {
+    image?: string;
+    analysisDepth?: 'quick' | 'standard' | 'detailed';
+    focusAreas?: string[];
+    projectContext?: Record<string, any>;
+    nodeData?: any;
+    inputData?: any;
+    nodes?: any[];
+    edges?: any[];
+  };
 }
 
 // Universal AI supported models registry
@@ -54,7 +65,7 @@ serve(async (req) => {
   }
 
   try {
-    const { provider, model, prompt, systemPrompt, temperature = 0.7, maxTokens = 4000, action, imageGeneration, aspectRatio, style } = await req.json() as AIRequest;
+    const { provider, model, prompt, systemPrompt, temperature = 0.7, maxTokens = 4000, action, imageGeneration, aspectRatio, style, context } = await req.json() as AIRequest;
 
     console.log(`[UniversalAI] Processing request - Provider: ${provider}, Model: ${model}, Action: ${action}, ImageGen: ${imageGeneration}`);
 
@@ -92,23 +103,30 @@ serve(async (req) => {
 
     let response;
     
+    // Handle scene analysis action with vision capabilities
+    if (action === 'analyze_scene' && context?.image) {
+      console.log(`[UniversalAI] Scene analysis request - Provider: ${provider}`);
+      response = await callVisionAnalysis(provider, model, prompt, systemPrompt, context.image, context);
+    }
     // Route to appropriate handler based on provider
-    switch (provider) {
-      case 'openai':
-        response = await callOpenAI(model || 'gpt-4o-mini', prompt, systemPrompt, temperature, maxTokens);
-        break;
-      case 'claude':
-        response = await callClaude(model || 'claude-3-5-haiku-20241022', prompt, systemPrompt, temperature, maxTokens);
-        break;
-      case 'gemini':
-        response = await callGemini(model || 'gemini-2.0-flash', prompt, systemPrompt, temperature, maxTokens);
-        break;
-      case 'lovable':
-        // Route through Lovable AI Gateway (for image generation or text)
-        response = await callLovableAI(model || 'google/gemini-2.5-flash', prompt, systemPrompt, imageGeneration, aspectRatio, style);
-        break;
-      default:
-        throw new Error(`Unsupported provider: ${provider}. Available: openai, claude, gemini, lovable`);
+    else {
+      switch (provider) {
+        case 'openai':
+          response = await callOpenAI(model || 'gpt-4o-mini', prompt, systemPrompt, temperature, maxTokens);
+          break;
+        case 'claude':
+          response = await callClaude(model || 'claude-3-5-haiku-20241022', prompt, systemPrompt, temperature, maxTokens);
+          break;
+        case 'gemini':
+          response = await callGemini(model || 'gemini-2.0-flash', prompt, systemPrompt, temperature, maxTokens);
+          break;
+        case 'lovable':
+          // Route through Lovable AI Gateway (for image generation or text)
+          response = await callLovableAI(model || 'google/gemini-2.5-flash', prompt, systemPrompt, imageGeneration, aspectRatio, style);
+          break;
+        default:
+          throw new Error(`Unsupported provider: ${provider}. Available: openai, claude, gemini, lovable`);
+      }
     }
 
     const aiResponse: AIResponse = {
@@ -510,6 +528,270 @@ async function callLovableAI(
   }
 
   // Handle text response
+  return {
+    content: data.choices?.[0]?.message?.content || '',
+    usage: data.usage
+  };
+}
+
+/**
+ * Vision-based scene analysis - routes to appropriate provider with image
+ */
+async function callVisionAnalysis(
+  provider: string,
+  model: string,
+  prompt: string,
+  systemPrompt: string | undefined,
+  imageBase64: string,
+  context: Record<string, any>
+) {
+  console.log(`[UniversalAI-Vision] Analyzing scene with provider: ${provider}`);
+  
+  // Build the full prompt with system context
+  const fullSystemPrompt = systemPrompt || `You are an expert video production AI assistant specializing in scene analysis.
+Analyze the provided image and return a JSON object with:
+- description: Brief scene description
+- objects: Array of detected objects with name, confidence, category
+- faces: Array of detected faces with expression, confidence
+- emotions: Dominant emotion and mood (positive/neutral/negative/mixed)
+- composition: Analysis of visual composition, brightness, color palette
+- suggestions: Array of editing suggestions with type, priority, description
+- quality: Overall quality score (0-100), sharpness, issues
+- timing: Suggested duration and pacing (slow/medium/fast)`;
+
+  const analysisPrompt = prompt || 'Analyze this scene for video production. Provide detailed insights for editing.';
+
+  switch (provider) {
+    case 'openai':
+      return await callOpenAIVision(model || 'gpt-4o', analysisPrompt, fullSystemPrompt, imageBase64);
+    case 'claude':
+      return await callClaudeVision(model || 'claude-3-5-sonnet-20241022', analysisPrompt, fullSystemPrompt, imageBase64);
+    case 'gemini':
+      return await callGeminiVision(model || 'gemini-2.0-flash-exp', analysisPrompt, fullSystemPrompt, imageBase64);
+    case 'lovable':
+      return await callLovableAIVision(model || 'google/gemini-2.5-flash', analysisPrompt, fullSystemPrompt, imageBase64);
+    default:
+      // Default to Lovable AI Gateway for vision
+      return await callLovableAIVision('google/gemini-2.5-flash', analysisPrompt, fullSystemPrompt, imageBase64);
+  }
+}
+
+/**
+ * OpenAI Vision API call
+ */
+async function callOpenAIVision(model: string, prompt: string, systemPrompt: string, imageBase64: string) {
+  const apiKey = Deno.env.get('OPENAI_API_KEY');
+  if (!apiKey) {
+    throw new Error('OpenAI API key not configured for vision analysis.');
+  }
+
+  const normalizedModel = model.includes('vision') || model === 'gpt-4o' || model.includes('o4-mini') 
+    ? model : 'gpt-4o';
+
+  console.log(`[Vision-OpenAI] Using model: ${normalizedModel}`);
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: normalizedModel,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:image/jpeg;base64,${imageBase64}`,
+                detail: 'high'
+              }
+            }
+          ]
+        }
+      ],
+      max_tokens: 4000
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.text();
+    console.error(`[Vision-OpenAI] Error (${response.status}):`, errorData);
+    throw new Error(`OpenAI Vision API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return {
+    content: data.choices[0].message.content,
+    usage: data.usage
+  };
+}
+
+/**
+ * Claude Vision API call
+ */
+async function callClaudeVision(model: string, prompt: string, systemPrompt: string, imageBase64: string) {
+  const apiKey = Deno.env.get('ANTHROPIC_API_KEY') || Deno.env.get('CLAUDE_API_KEY');
+  if (!apiKey) {
+    throw new Error('Claude API key not configured for vision analysis.');
+  }
+
+  const normalizedModel = model.includes('sonnet') ? model : 'claude-3-5-sonnet-20241022';
+
+  console.log(`[Vision-Claude] Using model: ${normalizedModel}`);
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'Content-Type': 'application/json',
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: normalizedModel,
+      max_tokens: 4000,
+      system: systemPrompt,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: 'image/jpeg',
+                data: imageBase64
+              }
+            },
+            { type: 'text', text: prompt }
+          ]
+        }
+      ]
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.text();
+    console.error(`[Vision-Claude] Error (${response.status}):`, errorData);
+    throw new Error(`Claude Vision API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return {
+    content: data.content?.[0]?.text || '',
+    usage: data.usage
+  };
+}
+
+/**
+ * Gemini Vision API call (via direct API)
+ */
+async function callGeminiVision(model: string, prompt: string, systemPrompt: string, imageBase64: string) {
+  const apiKey = Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GEMINI_API_KEY');
+  if (!apiKey) {
+    throw new Error('Gemini API key not configured for vision analysis.');
+  }
+
+  const normalizedModel = 'gemini-2.0-flash-exp'; // Best vision model
+
+  console.log(`[Vision-Gemini] Using model: ${normalizedModel}`);
+
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${normalizedModel}:generateContent?key=${apiKey}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      contents: [{
+        parts: [
+          { text: `${systemPrompt}\n\n${prompt}` },
+          {
+            inline_data: {
+              mime_type: 'image/jpeg',
+              data: imageBase64
+            }
+          }
+        ]
+      }],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 4000
+      }
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.text();
+    console.error(`[Vision-Gemini] Error (${response.status}):`, errorData);
+    throw new Error(`Gemini Vision API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return {
+    content: data.candidates?.[0]?.content?.parts?.[0]?.text || '',
+    usage: data.usageMetadata
+  };
+}
+
+/**
+ * Lovable AI Gateway Vision call
+ */
+async function callLovableAIVision(model: string, prompt: string, systemPrompt: string, imageBase64: string) {
+  const apiKey = Deno.env.get('LOVABLE_API_KEY');
+  if (!apiKey) {
+    throw new Error('LOVABLE_API_KEY not configured for vision analysis.');
+  }
+
+  // Use vision-capable model
+  const targetModel = model.startsWith('google/') ? model : 'google/gemini-2.5-flash';
+
+  console.log(`[Vision-Lovable] Using model: ${targetModel}`);
+
+  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: targetModel,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:image/jpeg;base64,${imageBase64}`
+              }
+            }
+          ]
+        }
+      ]
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`[Vision-Lovable] Error (${response.status}):`, errorText);
+    
+    if (response.status === 429) {
+      throw new Error('Rate limit exceeded. Please try again later.');
+    }
+    if (response.status === 402) {
+      throw new Error('API credits exhausted. Please add funds.');
+    }
+    
+    throw new Error(`Lovable AI Vision error: ${response.status}`);
+  }
+
+  const data = await response.json();
   return {
     content: data.choices?.[0]?.message?.content || '',
     usage: data.usage
