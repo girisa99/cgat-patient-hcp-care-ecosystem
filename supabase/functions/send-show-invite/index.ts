@@ -518,9 +518,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('[send-show-invite] Sending email with ICS attachment to:', to);
     
-    // Configure email options with reply-to
+    // Configure email options with reply-to for host email
+    // Note: Resend requires verified domain for "from" address, so we use reply_to for host's email
+    const displayFromName = senderName || hostName || 'Genie Studio';
+    const replyToEmail = senderEmail || hostEmail;
+    
     const emailOptions: any = {
-      from: `Genie Studio <${fromEmail}>`,
+      from: `${displayFromName} via Genie Studio <${fromEmail}>`,
       to: [to],
       subject: emailSubject,
       html: emailHtml,
@@ -533,11 +537,10 @@ const handler = async (req: Request): Promise<Response> => {
       ],
     };
     
-    // Add reply-to if sender email provided
-    if (senderEmail) {
-      emailOptions.reply_to = senderEmail;
-    } else if (hostEmail) {
-      emailOptions.reply_to = hostEmail;
+    // Add reply-to so recipients can reply directly to the host
+    if (replyToEmail) {
+      emailOptions.reply_to = replyToEmail;
+      console.log('[send-show-invite] Reply-to set to:', replyToEmail);
     }
 
     const emailResponse = await resend.emails.send(emailOptions);
