@@ -100,28 +100,56 @@ const handler = async (req: Request): Promise<Response> => {
     const endTime = new Date(date.getTime() + durationMinutes * 60 * 1000);
     const formatCalDate = (d: Date) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
     
-    // Build rich calendar event details with meeting URL prominently featured
+    // Build rich calendar event details with meeting URL prominently featured (ASCII only for ICS)
     let calendarDetails = '';
     if (joinUrl) {
-      calendarDetails += `🎬 JOIN MEETING:\n${joinUrl}\n\n`;
+      calendarDetails += `JOIN MEETING:\n${joinUrl}\n\n`;
     }
     if (showDescription) {
       calendarDetails += `${showDescription}\n\n`;
     }
     if (topics) {
-      calendarDetails += `📋 TOPICS:\n${topics}\n\n`;
+      calendarDetails += `TOPICS:\n${topics}\n\n`;
     }
-    calendarDetails += `🎙️ Host: ${hostName}\n`;
-    calendarDetails += `👤 Your Role: ${roleText}\n\n`;
-    calendarDetails += `─────────────────────\n`;
-    calendarDetails += `📺 Powered by Genie Studio\n`;
-    calendarDetails += `🌐 genieaiexperimentationhub.tech`;
+    calendarDetails += `Host: ${hostName}\n`;
+    calendarDetails += `Your Role: ${roleText}\n\n`;
+    calendarDetails += `------------------------\n`;
+    calendarDetails += `Powered by Genie Studio\n`;
+    calendarDetails += `genieaiexperimentationhub.tech`;
     
-    const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(showTitle)}&dates=${formatCalDate(date)}/${formatCalDate(endTime)}&details=${encodeURIComponent(calendarDetails)}&location=${encodeURIComponent(joinUrl || '')}`;
-    const outlookUrl = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(showTitle)}&startdt=${date.toISOString()}&enddt=${endTime.toISOString()}&body=${encodeURIComponent(calendarDetails)}&location=${encodeURIComponent(joinUrl || '')}`;
-    const yahooUrl = `https://calendar.yahoo.com/?v=60&title=${encodeURIComponent(showTitle)}&st=${formatCalDate(date)}&dur=${Math.floor(durationMinutes/60).toString().padStart(2,'0')}${(durationMinutes%60).toString().padStart(2,'0')}&desc=${encodeURIComponent(calendarDetails)}&in_loc=${encodeURIComponent(joinUrl || '')}`;
+    // Rich calendar details with emojis for web-based calendar links (these support Unicode)
+    let richCalendarDetails = '';
+    if (joinUrl) {
+      richCalendarDetails += `🎬 JOIN MEETING:\n${joinUrl}\n\n`;
+    }
+    if (showDescription) {
+      richCalendarDetails += `${showDescription}\n\n`;
+    }
+    if (topics) {
+      richCalendarDetails += `📋 TOPICS:\n${topics}\n\n`;
+    }
+    richCalendarDetails += `🎙️ Host: ${hostName}\n`;
+    richCalendarDetails += `👤 Your Role: ${roleText}\n\n`;
+    richCalendarDetails += `─────────────────────\n`;
+    richCalendarDetails += `📺 Powered by Genie Studio\n`;
+    richCalendarDetails += `🌐 genieaiexperimentationhub.tech`;
     
-    // Generate ICS file content
+    const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(showTitle)}&dates=${formatCalDate(date)}/${formatCalDate(endTime)}&details=${encodeURIComponent(richCalendarDetails)}&location=${encodeURIComponent(joinUrl || '')}`;
+    const outlookUrl = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(showTitle)}&startdt=${date.toISOString()}&enddt=${endTime.toISOString()}&body=${encodeURIComponent(richCalendarDetails)}&location=${encodeURIComponent(joinUrl || '')}`;
+    const yahooUrl = `https://calendar.yahoo.com/?v=60&title=${encodeURIComponent(showTitle)}&st=${formatCalDate(date)}&dur=${Math.floor(durationMinutes/60).toString().padStart(2,'0')}${(durationMinutes%60).toString().padStart(2,'0')}&desc=${encodeURIComponent(richCalendarDetails)}&in_loc=${encodeURIComponent(joinUrl || '')}`;
+    
+    // Helper function to encode UTF-8 string to base64 (handles Unicode)
+    const utf8ToBase64 = (str: string): string => {
+      const encoder = new TextEncoder();
+      const bytes = encoder.encode(str);
+      let binary = '';
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary);
+    };
+    
+    // Generate ICS file content (ASCII only - no emojis for compatibility)
     const icsContent = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
@@ -153,7 +181,7 @@ const handler = async (req: Request): Promise<Response> => {
       'END:VCALENDAR'
     ].filter(Boolean).join('\r\n');
     
-    const icsBase64 = btoa(icsContent);
+    const icsBase64 = utf8ToBase64(icsContent);
 
     // Build script attachment section
     let scriptSection = '';
