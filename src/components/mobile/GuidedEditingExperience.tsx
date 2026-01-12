@@ -1,7 +1,7 @@
 /**
  * Guided Editing Experience - Complete 7-Phase Production
- * Main container with Wizard/Sidebar mode, Universal AI, Scene Analyzer, and Voice Director
- * Covers: Recording → Voice → Timeline → Editing → Transitions → Music → Export
+ * Main container with Wizard/Sidebar mode, Universal AI, Scene Analyzer, Voice Director, and Distribution Agent
+ * Covers: Recording → Voice → Timeline → Editing → Transitions → Music → Export → Distribute
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
@@ -22,7 +22,8 @@ import {
   Mic,
   FolderOpen,
   Eye,
-  Volume2
+  Volume2,
+  Share2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -34,6 +35,8 @@ import { SceneAnalyzerPanel } from './SceneAnalyzerPanel';
 import { SceneAnalysis } from '@/hooks/useSceneAnalyzer';
 import { VoiceDirectorPanel } from './VoiceDirectorPanel';
 import { VoiceDirectorResult } from '@/hooks/useVoiceDirector';
+import { DistributionAgentPanel } from './DistributionAgentPanel';
+import { DistributionResult } from '@/hooks/useDistributionAgent';
 
 type ExperienceMode = 'choose' | 'wizard' | 'sidebar';
 
@@ -62,8 +65,10 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [showSceneAnalyzer, setShowSceneAnalyzer] = useState(false);
   const [showVoiceDirector, setShowVoiceDirector] = useState(false);
+  const [showDistribution, setShowDistribution] = useState(false);
   const [currentStep, setCurrentStep] = useState('capture');
   const [sceneAnalyses, setSceneAnalyses] = useState<SceneAnalysis[]>([]);
+  const [exportedVideoUrl, setExportedVideoUrl] = useState<string>('');
 
   const videoClips = clips.filter(c => c.type === 'video');
   const audioClips = clips.filter(c => c.type === 'audio');
@@ -88,6 +93,12 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
     toast.success(`Voice generated: ${result.voice} (~${result.duration_estimate?.toFixed(1)}s)`);
     onNavigateToStep('voice-ai-tts', { audioUrl: result.audioUrl, metadata: result.metadata });
   }, [onNavigateToStep]);
+
+  const handleDistributionComplete = useCallback((results: DistributionResult[]) => {
+    const successCount = results.filter(r => r.status === 'success' || r.status === 'scheduled').length;
+    toast.success(`🎉 Distributed to ${successCount}/${results.length} platforms!`);
+    setShowDistribution(false);
+  }, []);
 
   const handleStepAction = useCallback((action: string, data?: any) => {
     setCurrentStep(action);
@@ -325,6 +336,7 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
             onClick={() => {
               setShowVoiceDirector(!showVoiceDirector);
               setShowSceneAnalyzer(false);
+              setShowDistribution(false);
             }}
           >
             <Volume2 className="h-3.5 w-3.5 mr-1.5" />
@@ -335,15 +347,29 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
               variant={showSceneAnalyzer ? "default" : "outline"}
               size="sm"
               className="h-8"
-              onClick={() => {
-                setShowSceneAnalyzer(!showSceneAnalyzer);
-                setShowVoiceDirector(false);
-              }}
-            >
-              <Eye className="h-3.5 w-3.5 mr-1.5" />
-              Analyze
-            </Button>
+            onClick={() => {
+              setShowSceneAnalyzer(!showSceneAnalyzer);
+              setShowVoiceDirector(false);
+              setShowDistribution(false);
+            }}
+          >
+            <Eye className="h-3.5 w-3.5 mr-1.5" />
+            Analyze
+          </Button>
           )}
+          <Button
+            variant={showDistribution ? "default" : "outline"}
+            size="sm"
+            className="h-8"
+            onClick={() => {
+              setShowDistribution(!showDistribution);
+              setShowVoiceDirector(false);
+              setShowSceneAnalyzer(false);
+            }}
+          >
+            <Share2 className="h-3.5 w-3.5 mr-1.5" />
+            Distribute
+          </Button>
           <Button
             variant={showAIAssistant ? "default" : "outline"}
             size="sm"
@@ -399,6 +425,18 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
             frames={frameImages}
             onAnalysisComplete={handleSceneAnalysisComplete}
             onSuggestionApply={handleSuggestionApply}
+          />
+        </div>
+      )}
+
+      {/* Distribution Agent Panel */}
+      {showDistribution && (
+        <div className="fixed inset-x-4 top-20 z-50 max-h-[70vh] overflow-auto">
+          <DistributionAgentPanel
+            videoUrl={exportedVideoUrl}
+            videoTitle="My Video"
+            onClose={() => setShowDistribution(false)}
+            onDistributionComplete={handleDistributionComplete}
           />
         </div>
       )}
