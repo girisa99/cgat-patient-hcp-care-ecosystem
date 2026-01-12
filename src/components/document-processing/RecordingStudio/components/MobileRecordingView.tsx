@@ -56,7 +56,12 @@ import {
   ScriptStitcher,
   QuickTemplates,
   VoiceCommands,
-  OfflineStudioMode
+  OfflineStudioMode,
+  TimelineClipEditor,
+  AIAutoArrange,
+  SmartTransitions,
+  MusicSyncAssembly,
+  LocationStoryMode
 } from '@/components/mobile';
 import type { RecordingResult } from '@/components/mobile/OneTapRecordButton';
 import type { TimelineClip } from '@/components/mobile/MultiClipTimeline';
@@ -75,7 +80,7 @@ interface MobileRecordingViewProps {
   className?: string;
 }
 
-type MobileTab = 'record' | 'stitch' | 'clips' | 'timeline' | 'library' | 'templates' | 'voice';
+type MobileTab = 'record' | 'stitch' | 'clips' | 'timeline' | 'library' | 'templates' | 'voice' | 'editor' | 'ai-tools' | 'location';
 
 export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
   isOpen = true,
@@ -509,38 +514,92 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
                 onExport={() => handleExport('mp4')}
               />
             </TabsContent>
+            {/* Editor Tab - Full Clip Manipulation (P2) */}
+            <TabsContent value="editor" className="h-full m-0 p-2 overflow-auto">
+              <TimelineClipEditor
+                clips={timelineClips}
+                selectedClipId={timelineClips[0]?.id || null}
+                currentTime={0}
+                onClipsChange={setTimelineClips}
+                onSelectClip={() => {}}
+                onSeek={() => {}}
+              />
+            </TabsContent>
+
+            {/* AI Tools Tab - Auto-Arrange & Transitions (P2) */}
+            <TabsContent value="ai-tools" className="h-full m-0 p-2 overflow-auto">
+              <div className="space-y-4">
+                <AIAutoArrange
+                  clips={timelineClips}
+                  onArrange={setTimelineClips}
+                />
+                <SmartTransitions
+                  clips={timelineClips}
+                  onApplyTransitions={(transitions) => {
+                    toast.success(`Applied ${transitions.length} transitions`);
+                  }}
+                />
+                <MusicSyncAssembly
+                  clips={timelineClips}
+                  onSyncClips={(syncedClips) => {
+                    setTimelineClips(syncedClips);
+                    toast.success('Clips synced to music beats!');
+                  }}
+                />
+              </div>
+            </TabsContent>
+
+            {/* Location Tab - Location Story Mode (P2) */}
+            <TabsContent value="location" className="h-full m-0 p-2 overflow-auto">
+              <LocationStoryMode
+                clips={timelineClips}
+                onClipsChange={setTimelineClips}
+              />
+            </TabsContent>
           </div>
 
           {/* Bottom Tab Bar - Fixed at bottom with safe area, scrollable on small screens */}
           <div className="flex-shrink-0 border-t bg-card safe-area-bottom">
             <TabsList className="h-16 rounded-none bg-transparent flex justify-start gap-0 overflow-x-auto w-full">
-              <TabsTrigger value="record" className="flex-1 min-w-[48px] flex flex-col gap-1 data-[state=active]:bg-primary/10 py-2 px-2 rounded-none">
-                <Video className="h-5 w-5" />
-                <span className="text-[10px] font-medium whitespace-nowrap">Record</span>
+              <TabsTrigger value="record" className="flex-1 min-w-[44px] flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1 px-1 rounded-none">
+                <Video className="h-4 w-4" />
+                <span className="text-[9px] font-medium whitespace-nowrap">Record</span>
               </TabsTrigger>
-              <TabsTrigger value="stitch" className="flex-1 min-w-[48px] flex flex-col gap-1 data-[state=active]:bg-primary/10 py-2 px-2 rounded-none">
-                <Music className="h-5 w-5" />
-                <span className="text-[10px] font-medium whitespace-nowrap">Stitch</span>
+              <TabsTrigger value="clips" className="flex-1 min-w-[44px] flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1 px-1 rounded-none">
+                <Scissors className="h-4 w-4" />
+                <span className="text-[9px] font-medium whitespace-nowrap">Clips</span>
               </TabsTrigger>
-              <TabsTrigger value="clips" className="flex-1 min-w-[48px] flex flex-col gap-1 data-[state=active]:bg-primary/10 py-2 px-2 rounded-none">
-                <Scissors className="h-5 w-5" />
-                <span className="text-[10px] font-medium whitespace-nowrap">Clips</span>
+              <TabsTrigger value="editor" className="flex-1 min-w-[44px] flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1 px-1 rounded-none">
+                <Settings className="h-4 w-4" />
+                <span className="text-[9px] font-medium whitespace-nowrap">Edit</span>
               </TabsTrigger>
-              <TabsTrigger value="templates" className="flex-1 min-w-[48px] flex flex-col gap-1 data-[state=active]:bg-primary/10 py-2 px-2 rounded-none">
-                <Sparkles className="h-5 w-5" />
-                <span className="text-[10px] font-medium whitespace-nowrap">Social</span>
+              <TabsTrigger value="timeline" className="flex-1 min-w-[44px] flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1 px-1 rounded-none">
+                <Layers className="h-4 w-4" />
+                <span className="text-[9px] font-medium whitespace-nowrap">Timeline</span>
               </TabsTrigger>
-              <TabsTrigger value="voice" className="flex-1 min-w-[48px] flex flex-col gap-1 data-[state=active]:bg-primary/10 py-2 px-2 rounded-none">
-                <Mic className="h-5 w-5" />
-                <span className="text-[10px] font-medium whitespace-nowrap">Voice</span>
+              <TabsTrigger value="ai-tools" className="flex-1 min-w-[44px] flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1 px-1 rounded-none">
+                <Sparkles className="h-4 w-4" />
+                <span className="text-[9px] font-medium whitespace-nowrap">AI</span>
               </TabsTrigger>
-              <TabsTrigger value="timeline" className="flex-1 min-w-[48px] flex flex-col gap-1 data-[state=active]:bg-primary/10 py-2 px-2 rounded-none">
-                <Layers className="h-5 w-5" />
-                <span className="text-[10px] font-medium whitespace-nowrap">Timeline</span>
+              <TabsTrigger value="templates" className="flex-1 min-w-[44px] flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1 px-1 rounded-none">
+                <Camera className="h-4 w-4" />
+                <span className="text-[9px] font-medium whitespace-nowrap">Social</span>
               </TabsTrigger>
-              <TabsTrigger value="library" className="flex-1 min-w-[48px] flex flex-col gap-1 data-[state=active]:bg-primary/10 py-2 px-2 rounded-none">
-                <Library className="h-5 w-5" />
-                <span className="text-[10px] font-medium whitespace-nowrap">Library</span>
+              <TabsTrigger value="voice" className="flex-1 min-w-[44px] flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1 px-1 rounded-none">
+                <Mic className="h-4 w-4" />
+                <span className="text-[9px] font-medium whitespace-nowrap">Voice</span>
+              </TabsTrigger>
+              <TabsTrigger value="location" className="flex-1 min-w-[44px] flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1 px-1 rounded-none">
+                <ScreenShare className="h-4 w-4" />
+                <span className="text-[9px] font-medium whitespace-nowrap">Location</span>
+              </TabsTrigger>
+              <TabsTrigger value="stitch" className="flex-1 min-w-[44px] flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1 px-1 rounded-none">
+                <Music className="h-4 w-4" />
+                <span className="text-[9px] font-medium whitespace-nowrap">Stitch</span>
+              </TabsTrigger>
+              <TabsTrigger value="library" className="flex-1 min-w-[44px] flex flex-col gap-0.5 data-[state=active]:bg-primary/10 py-1 px-1 rounded-none">
+                <Library className="h-4 w-4" />
+                <span className="text-[9px] font-medium whitespace-nowrap">Library</span>
               </TabsTrigger>
             </TabsList>
           </div>
