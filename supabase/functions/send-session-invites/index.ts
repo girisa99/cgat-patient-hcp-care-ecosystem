@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { Resend } from "npm:resend@2.0.0";
-import { encode as base64Encode } from "https://deno.land/std@0.190.0/encoding/base64.ts";
+import { Resend } from "npm:resend@4.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,6 +21,10 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    const fromEmail = Deno.env.get('SENDGRID_FROM_EMAIL') || 'onboarding@resend.dev';
+    
+    console.log('[send-session-invites] RESEND_API_KEY configured:', !!resendApiKey);
+    console.log('[send-session-invites] FROM email:', fromEmail);
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const resend = resendApiKey ? new Resend(resendApiKey) : null;
@@ -115,8 +118,9 @@ const handler = async (req: Request): Promise<Response> => {
             `;
           }
 
+          console.log('[send-session-invites] Sending email to:', participant.email);
           const emailResult = await resend.emails.send({
-            from: 'Genie Studio <noreply@resend.dev>',
+            from: `Genie Studio <${fromEmail}>`,
             to: [participant.email],
             subject: `You're invited: ${session.title}`,
             html: `
