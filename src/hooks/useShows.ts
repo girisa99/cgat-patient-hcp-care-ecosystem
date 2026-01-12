@@ -1,10 +1,12 @@
 /**
  * Hook for managing shows/productions and scheduling
+ * Uses unified meeting URL generator for Genie Vibe integration
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { generateAutoMeetingUrl, getMeetingBaseUrl } from '@/utils/meetingUrlGenerator';
 import type { 
   Show, 
   ShowParticipant, 
@@ -81,10 +83,10 @@ export function useShows() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Generate a unique show ID first, then create the meeting link
+      // Generate a unique show ID first, then create the meeting link using unified generator
       const showId = crypto.randomUUID();
-      const baseUrl = window.location.origin;
-      const meetingLink = `${baseUrl}/meeting/${showId}`;
+      // Use the unified meeting URL generator - routes to Genie Vibe recording studio
+      const meetingLink = generateAutoMeetingUrl(showId);
 
       const { data: newShow, error } = await supabase
         .from('shows')

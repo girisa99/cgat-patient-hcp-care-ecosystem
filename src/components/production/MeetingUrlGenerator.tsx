@@ -54,14 +54,14 @@ export function MeetingUrlGenerator({
     
     setGeneratedUrl(result.url);
     onUrlChange(result.url, platform);
-    toast.success('Meeting URL generated!');
+    toast.success('Meeting URL generated - routes to Genie Vibe Studio');
   };
 
   const handleAutoGenerate = () => {
     const url = generateAutoMeetingUrl(showId);
     setGeneratedUrl(url);
     onUrlChange(url, 'auto');
-    toast.success('Auto-generated meeting URL!');
+    toast.success('Genie Vibe meeting URL generated!');
   };
 
   const handleCopyUrl = () => {
