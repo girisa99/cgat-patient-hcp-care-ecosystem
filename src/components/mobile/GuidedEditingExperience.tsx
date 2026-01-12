@@ -1,10 +1,10 @@
 /**
  * Guided Editing Experience - Complete 7-Phase Production
- * Main container with Wizard/Sidebar mode and Universal AI
+ * Main container with Wizard/Sidebar mode, Universal AI, and Scene Analyzer
  * Covers: Recording → Voice → Timeline → Editing → Transitions → Music → Export
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +20,8 @@ import {
   Bot,
   Video,
   Mic,
-  FolderOpen
+  FolderOpen,
+  Eye
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -28,6 +29,8 @@ import { TimelineClip } from './MultiClipTimeline';
 import { GuidedEditingWizard } from './GuidedEditingWizard';
 import { SmartEditingSidebar } from './SmartEditingSidebar';
 import { UniversalAIEditingAssistant } from './UniversalAIEditingAssistant';
+import { SceneAnalyzerPanel } from './SceneAnalyzerPanel';
+import { SceneAnalysis } from '@/hooks/useSceneAnalyzer';
 
 type ExperienceMode = 'choose' | 'wizard' | 'sidebar';
 
@@ -54,10 +57,28 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
 }) => {
   const [mode, setMode] = useState<ExperienceMode>('choose');
   const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [showSceneAnalyzer, setShowSceneAnalyzer] = useState(false);
   const [currentStep, setCurrentStep] = useState('capture');
+  const [sceneAnalyses, setSceneAnalyses] = useState<SceneAnalysis[]>([]);
 
   const videoClips = clips.filter(c => c.type === 'video');
   const audioClips = clips.filter(c => c.type === 'audio');
+  
+  // Extract frame thumbnails for scene analysis
+  const frameImages = useMemo(() => 
+    videoClips.map(c => c.thumbnailUrl).filter(Boolean) as string[],
+    [videoClips]
+  );
+
+  const handleSceneAnalysisComplete = useCallback((analyses: SceneAnalysis[]) => {
+    setSceneAnalyses(analyses);
+    toast.success(`Analyzed ${analyses.length} scenes with AI`);
+  }, []);
+
+  const handleSuggestionApply = useCallback((suggestion: any) => {
+    toast.info(`Applying: ${suggestion.description}`);
+    onNavigateToStep(suggestion.type, suggestion);
+  }, [onNavigateToStep]);
 
   const handleStepAction = useCallback((action: string, data?: any) => {
     setCurrentStep(action);
@@ -288,6 +309,17 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
           >
             ← Back
           </Button>
+          {videoClips.length > 0 && (
+            <Button
+              variant={showSceneAnalyzer ? "default" : "outline"}
+              size="sm"
+              className="h-8"
+              onClick={() => setShowSceneAnalyzer(!showSceneAnalyzer)}
+            >
+              <Eye className="h-3.5 w-3.5 mr-1.5" />
+              Analyze
+            </Button>
+          )}
           <Button
             variant={showAIAssistant ? "default" : "outline"}
             size="sm"
@@ -326,8 +358,19 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
         />
       )}
 
+      {/* Scene Analyzer Panel */}
+      {showSceneAnalyzer && (
+        <div className="fixed inset-x-4 top-20 z-50 max-h-[60vh] overflow-auto">
+          <SceneAnalyzerPanel
+            frames={frameImages}
+            onAnalysisComplete={handleSceneAnalysisComplete}
+            onSuggestionApply={handleSuggestionApply}
+          />
+        </div>
+      )}
+
       {/* Floating AI Button (when assistant is closed) */}
-      {!showAIAssistant && (
+      {!showAIAssistant && !showSceneAnalyzer && (
         <Button
           size="icon"
           className="fixed bottom-20 right-4 h-12 w-12 rounded-full shadow-lg z-40"
