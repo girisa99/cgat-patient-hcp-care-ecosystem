@@ -57,6 +57,11 @@ export { SmartEditingSidebar } from './SmartEditingSidebar';
 export { UniversalAIEditingAssistant } from './UniversalAIEditingAssistant';
 export { GuidedEditingExperience } from './GuidedEditingExperience';
 
+// P2 Agent Panels (Script/Music/Auto-Edit)
+export { ScriptVideoMatcherPanel } from './ScriptVideoMatcherPanel';
+export { MusicComposerPanel } from './MusicComposerPanel';
+export { AutoEditorPanel } from './AutoEditorPanel';
+
 // Legacy (kept for compatibility)
 export { ScriptStitcher } from './ScriptStitcher';
 export type { ScriptSegment, MusicTrack, StitchedResult } from './ScriptStitcher';
