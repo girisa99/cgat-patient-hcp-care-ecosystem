@@ -25,12 +25,12 @@ export interface GeneratedMeetingUrl {
 }
 
 /**
- * Generate an auto meeting URL (browser-based)
+ * Generate an auto meeting URL using genieaiexperimentationhub.tech domain
  */
-export function generateAutoMeetingUrl(showId: string): string {
-  const meetingCode = uuidv4().split('-').slice(0, 3).join('-');
-  // In production, this would be your actual meeting domain
-  return `${window.location.origin}/meeting/${meetingCode}`;
+export function generateAutoMeetingUrl(showId?: string): string {
+  const meetingCode = crypto.randomUUID().split('-').slice(0, 3).join('-');
+  // Use genieaiexperimentationhub.tech for production meeting URLs
+  return `https://genieaiexperimentationhub.tech/meeting/${meetingCode}`;
 }
 
 /**
