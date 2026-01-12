@@ -31,10 +31,11 @@ export interface GeneratedMeetingUrl {
 
 /**
  * Get the base URL for meeting links
- * Uses current origin for consistent local/production routing
+ * Always uses genieaiexperimentationhub.tech for consistent meeting URLs
+ * Note: Can add .com domain before go-live
  */
 export function getMeetingBaseUrl(): string {
-  return typeof window !== 'undefined' ? window.location.origin : 'https://genieaiexperimentationhub.tech';
+  return 'https://genieaiexperimentationhub.tech';
 }
 
 /**
