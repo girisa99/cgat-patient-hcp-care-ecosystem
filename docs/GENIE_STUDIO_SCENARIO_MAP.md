@@ -1,9 +1,9 @@
 # Genie Studio & Recording Studio: Complete Scenario Map
 
-> **Version:** 2.5  
+> **Version:** 2.6  
 > **Last Updated:** 2026-01-12  
-> **Total Scenarios:** 150 (includes session management, mobile-first, segment-specific, remix & clips, agents & APIs, P2 AI Agents)  
-> **Status:** Documentation Complete with Agent/API/Automation Mapping + P2 AI Agents
+> **Total Scenarios:** 177 (includes Categories A-U: Core, Upload, Enhance, Loops, Hybrid, Generation, Compliance, AI, Live, Mobile, Segment, Remix, Agents, APIs, Subscription, Mobile Deploy, P2 AI Agents)  
+> **Status:** Documentation Complete with Agent/API/Automation Mapping + P2 AI Agents + 7-Phase Guided Experience
 
 ---
 
@@ -13,11 +13,12 @@ This document catalogs all identified user journeys and scenarios for the Genie 
 
 ### Implementation Overview (Updated 2026-01-12)
 
-| Status | Count | Description |
-|--------|-------|-------------|
-| ✅ **Implemented** | 43 | Fully functional in codebase |
-| 🔶 **Partial** | 7 | Core functionality exists, needs enhancement |
-| ⏳ **Planned** | 100 | Documented, not yet implemented |
+| Status | Count | Percentage | Description |
+|--------|-------|------------|-------------|
+| ✅ **Implemented** | 43 | 24% | Fully functional in codebase |
+| 🔶 **Partial** | 7 | 4% | Core functionality exists, needs enhancement |
+| ⏳ **Planned** | 127 | 72% | Documented, not yet implemented |
+| **Total** | **177** | **100%** | All scenarios across Categories A-U |
 
 ### P2 AI Agents Integrated
 
