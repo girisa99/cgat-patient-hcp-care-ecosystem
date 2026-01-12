@@ -440,18 +440,75 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
     }
   };
 
-  // Handle script file upload
+  // Clean text content from special characters
+  const cleanTextContent = (text: string): string => {
+    return text
+      // Remove BOM and zero-width characters
+      .replace(/[\uFEFF\u200B\u200C\u200D\u2028\u2029]/g, '')
+      // Remove control characters except newlines and tabs
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+      // Normalize smart quotes to regular quotes
+      .replace(/[\u2018\u2019\u201A\u201B]/g, "'")
+      .replace(/[\u201C\u201D\u201E\u201F]/g, '"')
+      // Replace em/en dashes with regular hyphens
+      .replace(/[\u2013\u2014]/g, '-')
+      // Replace ellipsis with three dots
+      .replace(/\u2026/g, '...')
+      // Replace other common problematic characters
+      .replace(/[\u00A0]/g, ' ') // Non-breaking space
+      .replace(/[\u00AD]/g, '') // Soft hyphen
+      .trim();
+  };
+
+  // Handle script file upload with storage
   const handleScriptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
-      const text = await file.text();
-      setScriptContent(text);
+      // Read and clean text content
+      const rawText = await file.text();
+      const cleanedText = cleanTextContent(rawText);
+      
+      // Upload file to Supabase Storage for attachment
+      const fileName = `scripts/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('production-attachments')
+        .upload(fileName, file, { upsert: true });
+      
+      if (uploadError) {
+        console.error('Script upload error:', uploadError);
+        // Still allow using the content even if storage upload fails
+      }
+      
+      // Get public URL if uploaded successfully
+      let attachmentUrl = '';
+      if (uploadData?.path) {
+        const { data: urlData } = supabase.storage
+          .from('production-attachments')
+          .getPublicUrl(uploadData.path);
+        attachmentUrl = urlData?.publicUrl || '';
+      }
+
+      setScriptContent(cleanedText);
       setSelectedScriptId(null);
-      updateFormData('script_content', text);
-      toast.success(`Script "${file.name}" loaded!`);
+      updateFormData('script_content', cleanedText);
+      
+      // Store metadata for the attachment
+      setFormData(prev => ({
+        ...prev,
+        script_content: cleanedText,
+        // Store attachment info in metadata that can be passed to the invite function
+      }));
+      
+      // Store attachment URL in a separate state if needed
+      if (attachmentUrl) {
+        console.log('Script uploaded to storage:', attachmentUrl);
+      }
+      
+      toast.success(`Script "${file.name}" loaded and cleaned!`);
     } catch (error) {
+      console.error('Script processing error:', error);
       toast.error('Failed to read script file');
     }
   };
