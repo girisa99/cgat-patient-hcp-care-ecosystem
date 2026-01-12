@@ -32,6 +32,13 @@ import {
   Play,
   Eye
 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useGenieScripts } from '@/components/genie-studio/useGenieScripts';
@@ -449,27 +456,50 @@ const GenieVibe: React.FC = () => {
                   <p className="text-sm text-muted-foreground mb-3">
                     Select a script to use as teleprompter while recording
                   </p>
-                  <ScrollArea className="h-20">
-                    <div className="flex gap-2">
-                      {scriptsForMobile.slice(0, 5).map(script => (
-                        <Button 
-                          key={script.id} 
-                          variant="outline" 
-                          size="sm" 
-                          className="h-auto py-2 flex-shrink-0 gap-2"
-                          onClick={() => {
-                            setActiveScript(script.content);
-                            setIsTeleprompterOpen(true);
-                          }}
-                        >
-                          <Play className="h-3 w-3" />
-                          <div className="text-left">
-                            <p className="text-xs font-medium">{script.title}</p>
-                          </div>
-                        </Button>
-                      ))}
-                    </div>
-                  </ScrollArea>
+                  <div className="flex items-center gap-3">
+                    <Select
+                      value={activeScript ? scriptsForMobile.find(s => s.content === activeScript)?.id || '' : ''}
+                      onValueChange={(value) => {
+                        if (value === '__none__') {
+                          setActiveScript('');
+                        } else {
+                          const selected = scriptsForMobile.find(s => s.id === value);
+                          if (selected) {
+                            setActiveScript(selected.content);
+                          }
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="flex-1 bg-background">
+                        <SelectValue placeholder="Select a script for teleprompter..." />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover z-50 max-h-64">
+                        <SelectItem value="__none__">
+                          <span className="text-muted-foreground">No script selected</span>
+                        </SelectItem>
+                        {scriptsForMobile.filter(script => script.id && script.id.trim() !== '').map(script => (
+                          <SelectItem key={script.id} value={script.id}>
+                            <div className="flex flex-col items-start">
+                              <span className="font-medium">{script.title || 'Untitled Script'}</span>
+                              <span className="text-xs text-muted-foreground line-clamp-1">
+                                {script.content?.substring(0, 50) || 'No content'}...
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {activeScript && (
+                      <Button 
+                        size="sm" 
+                        className="gap-2"
+                        onClick={() => setIsTeleprompterOpen(true)}
+                      >
+                        <Eye className="h-4 w-4" />
+                        Open Teleprompter
+                      </Button>
+                    )}
+                  </div>
                 </div>
               )}
 
