@@ -213,9 +213,11 @@ const STAGE_ICONS: Record<string, React.ComponentType<{ className?: string }>> =
   archived: FileText,
 };
 
-// Generate meeting URL using genieaiexperimentationhub.tech domain
+// Generate meeting URL - uses genieaiexperimentationhub.tech for external sharing
+// but will route to /meeting/:code which connects to Genie Vibe
 const generateGenieMeetingUrl = (): string => {
   const meetingCode = crypto.randomUUID().split('-').slice(0, 3).join('-');
+  // Production domain for external sharing; locally routes to /meeting/:code → Genie Vibe
   return `https://genieaiexperimentationhub.tech/meeting/${meetingCode}`;
 };
 
