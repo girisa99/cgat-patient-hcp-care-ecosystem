@@ -391,6 +391,68 @@ STAGE 2: Intelligent Model Routing
 
 ---
 
+## Subscription & Monetization (Implemented)
+
+### Tier Structure
+
+| Tier | Price | AI Credits | Products | Team |
+|------|-------|------------|----------|------|
+| **Free** | $0/mo | 10 (trial) | Studio, Spark | 1 |
+| **Starter** | $9.99/mo | 100/mo | Studio, Spark | 1 |
+| **Business** | $29.99/mo | 500/mo | +Vibe, Mind | 3 |
+| **Pro** | $79.99/mo | 2000/mo | Full Suite + Arc | 10 |
+| **Enterprise** | Custom | Unlimited | +HIPAA, SSO | Unlimited |
+| **Beta** | $0/mo | Unlimited | Full Access | Unlimited |
+
+### Edge Functions (Deployed)
+
+| Function | Purpose |
+|----------|---------|
+| `check-subscription` | Query Stripe for active subscription |
+| `create-checkout` | Generate Stripe checkout session |
+| `customer-portal` | Stripe billing portal access |
+
+### Access Control Flow
+
+```
+User Login → check-subscription → Set tier in context
+         ↓
+Module Access Check → hasModuleAccess(moduleId)
+         ↓
+✅ Access Granted  OR  ❌ Show Upgrade Prompt
+```
+
+---
+
+## Mobile Deployment (Ready)
+
+### Distribution Options
+
+| Option | Time to Market | Features | Setup |
+|--------|---------------|----------|-------|
+| **PWA** | Immediate | 80% native | None |
+| **iOS Native** | 1-2 weeks | Full | Xcode + Mac |
+| **Android Native** | 1-2 weeks | Full | Android Studio |
+
+### Capacitor Plugins Installed
+
+- `@capacitor/camera` - Video recording
+- `@capacitor/geolocation` - Location tagging
+- `@capacitor/push-notifications` - Alerts
+- `@capacitor/haptics` - Haptic feedback
+- `@capacitor/status-bar` - Native UI
+
+### Go-To-Market Timeline
+
+1. **Week 1-2:** PWA launch (immediate availability)
+2. **Week 3-4:** Native app development & testing
+3. **Week 5-6:** App store submissions
+4. **Week 7+:** Public launch on stores
+
+**Documentation:** `docs/MOBILE_APP_DEPLOYMENT_GUIDE.md`
+
+---
+
 ## Strategic Differentiators
 
 ### Immediate (Phase 1-2)
@@ -399,6 +461,7 @@ STAGE 2: Intelligent Model Routing
 3. **Content Remix Engine** - Upload existing → repurpose automatically
 4. **Offline Recording** - Record anywhere, sync later
 5. **Real-time Team Collaboration** - No email back-and-forth (NEW)
+6. **AI Credits System** - Fair usage-based pricing
 
 ### Mid-Term (Phase 3-4)
 1. **Affordable TTS Quality** - ElevenLabs-quality at 1/3 the price
@@ -414,4 +477,19 @@ STAGE 2: Intelligent Model Routing
 
 ---
 
-*Last Updated: 2026-01-11*
+## Go-To-Market Readiness
+
+| Component | Status | Documentation |
+|-----------|--------|---------------|
+| Authentication | ✅ Ready | Supabase Auth |
+| Subscription Tiers | ✅ Ready | `SUBSCRIPTION_AND_USER_TYPES.md` |
+| Stripe Integration | ✅ Ready | Edge functions deployed |
+| Module Access Control | ✅ Ready | `useSubscription` hook |
+| AI Credits | ✅ Ready | `ai_credit_*` tables |
+| PWA Distribution | ✅ Ready | `vite-plugin-pwa` |
+| Native Mobile | ✅ Documented | `MOBILE_APP_DEPLOYMENT_GUIDE.md` |
+| Pricing Page | ✅ Ready | `/pricing` route |
+
+---
+
+*Last Updated: 2026-01-12*
