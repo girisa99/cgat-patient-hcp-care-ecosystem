@@ -211,10 +211,10 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
         <div>
           <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
             <Layers className="h-5 w-5" />
-            Genie Mind + Genie Vibe — Complete Architecture (177 Scenarios)
+            Genie Mind + Genie Vibe — Complete Architecture (253 Scenarios)
           </CardTitle>
           <p className="text-sm text-muted-foreground mt-1">
-            6 Market Segments • 6 Phases (P0-P5) • 5 Subscription Tiers • 12 Agents • 15 APIs • Full Automation Matrix
+            6 Market Segments • 6 Phases (P0-P3 ✓ Complete | P4-P5 Planned) • 5 Subscription Tiers • 12 Agents • 15 APIs
           </p>
         </div>
         <div className="flex gap-2">
@@ -249,7 +249,7 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
             <TabsTrigger value="segments">6 Segments</TabsTrigger>
             <TabsTrigger value="agents">Agents</TabsTrigger>
             <TabsTrigger value="subscriptions">Pricing</TabsTrigger>
-            <TabsTrigger value="scenarios">177 Scenarios</TabsTrigger>
+            <TabsTrigger value="scenarios">253 Scenarios</TabsTrigger>
             <TabsTrigger value="competitive">Competition</TabsTrigger>
           </TabsList>
 
@@ -434,15 +434,15 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
               </TabsContent>
 
               <TabsContent value="scenarios" className="space-y-4 mt-0">
-                <h3 className="text-lg font-semibold" style={{ color: colors.text }}>177 Scenarios by Phase (with Agents & APIs)</h3>
+                <h3 className="text-lg font-semibold" style={{ color: colors.text }}>253 Scenarios by Phase (with Agents & APIs)</h3>
                 <div className="space-y-3">
                   {[
-                    { phase: 'P0', scenarios: ['Script Creation (1-8)', 'Vibe↔Mind Bidirectional (61-65)', 'TTS Generation', 'Basic Recording', 'Project Management'], count: 13, status: 'completed' as const },
-                    { phase: 'P1', scenarios: ['One-Tap Mobile Record (81)', 'Quick Templates (83)', 'Social Integration (85)', 'Multi-Clip Timeline (101)', 'Remix & Assembly'], count: 10, status: 'in-progress' as const },
-                    { phase: 'P2', scenarios: ['Offline Recording (82)', 'Voice-First Editing (84)', 'AI Auto-Arrange (102)', 'Smart Transitions (103)', 'Collaborative Editing'], count: 10, status: 'planned' as const },
-                    { phase: 'P3', scenarios: ['Product Demo Mode (86)', 'Lesson Builder (88)', 'Patient Education (93)', 'Voice Cloning (32)', 'HIPAA Compliance (36)'], count: 10, status: 'planned' as const },
-                    { phase: 'P4', scenarios: ['White-label (48)', 'Multi-tenant (49)', 'Approval Workflows (59)', 'SSO/SAML (53)', 'Team Review Mobile (98)'], count: 10, status: 'planned' as const },
-                    { phase: 'P5', scenarios: ['AI Avatars (41)', 'Batch Processing (51)', 'API Access (52)', 'Custom Model Training (55)', 'Advanced Analytics (54)'], count: 10, status: 'planned' as const },
+                    { phase: 'P0', scenarios: ['Script Creation (1-8)', 'Vibe↔Mind Bidirectional (61-65)', 'TTS Generation', 'Basic Recording', 'Project Management', 'Core AI Processing'], count: 43, status: 'completed' as const },
+                    { phase: 'P1', scenarios: ['One-Tap Mobile Record (81)', 'Quick Templates (83)', 'Social Integration (85)', 'Multi-Clip Timeline (101)', 'Remix & Assembly'], count: 32, status: 'completed' as const },
+                    { phase: 'P2', scenarios: ['Offline Recording (82)', 'Voice-First Editing (84)', 'AI Auto-Arrange (102)', 'Smart Transitions (103)', 'Collaborative Editing'], count: 38, status: 'completed' as const },
+                    { phase: 'P3', scenarios: ['Product Demo Mode (86)', 'Lesson Builder (88)', 'Patient Education (93)', 'Voice Cloning (32)', 'HIPAA Compliance (36)'], count: 45, status: 'completed' as const },
+                    { phase: 'P4', scenarios: ['White-label (48)', 'Multi-tenant (49)', 'Approval Workflows (59)', 'SSO/SAML (53)', 'Team Review Mobile (98)'], count: 48, status: 'planned' as const },
+                    { phase: 'P5', scenarios: ['AI Avatars (41)', 'Batch Processing (51)', 'API Access (52)', 'Custom Model Training (55)', 'Advanced Analytics (54)'], count: 47, status: 'planned' as const },
                   ].map((p) => (
                     <div key={p.phase} className="p-3 rounded-lg border" style={{ borderColor: getStatusColor(p.status).bg, backgroundColor: getStatusColor(p.status).light }}>
                       <div className="flex items-center justify-between mb-2">

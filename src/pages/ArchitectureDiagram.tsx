@@ -69,7 +69,7 @@ const diagramCategories = {
       // Single source of truth - Unified Hub contains all content:
       // Overview, Verification, Products, Scenarios, Architecture, Technical, 
       // Functional, Market Analysis, Investor Dashboard, Assets & Studio, Roadmap
-      { id: 'genie-hub', label: 'Complete Suite (177 Scenarios)', icon: Sparkles },
+      { id: 'genie-hub', label: 'Complete Suite (253 Scenarios)', icon: Sparkles },
     ]
   }
 };

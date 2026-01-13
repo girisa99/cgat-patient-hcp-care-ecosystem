@@ -88,7 +88,7 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
           <Layers className="h-8 w-8 text-violet-500" />
           Genie Studio - Complete Architecture
         </h2>
-        <p className="text-muted-foreground mt-2">Mind to Media • 177 Scenarios • 5 Modules • 6 Phases</p>
+        <p className="text-muted-foreground mt-2">Mind to Media • 253 Scenarios • 5 Modules • 6 Phases (P0-P3 ✓)</p>
       </div>
 
       {/* Implementation Summary */}
