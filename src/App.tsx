@@ -266,6 +266,13 @@ const AppContent = () => {
                       </Suspense>
                     </ProtectedRoute>
                   } />
+                  <Route path="/production-hub" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
+                      <Suspense fallback={<PageLoading message="Loading Production Hub..." />}>
+                        <LazyPages.ProductionHub />
+                      </Suspense>
+                    </ProtectedRoute>
+                  } />
                   <Route path="/genie-vibe/mobile" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
                       <Suspense fallback={<PageLoading message="Loading Mobile Studio..." />}>
