@@ -68,7 +68,7 @@ export interface Participant {
   id: string;
   name: string;
   email: string;
-  role: 'host' | 'co-host' | 'guest' | 'panelist' | 'attendee' | 'organizer' | 'speaker';
+  role: 'host' | 'co-host' | 'guest' | 'panelist' | 'attendee' | 'organizer' | 'speaker' | 'stakeholder';
   status: 'pending' | 'confirmed' | 'declined';
 }
 

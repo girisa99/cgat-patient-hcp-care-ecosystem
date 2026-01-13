@@ -176,7 +176,7 @@ export interface ScheduleShowData {
     email: string;
     phone?: string;
     linkedin_url?: string;
-    role: 'guest' | 'panelist' | 'co-host' | 'speaker';
+    role: 'guest' | 'panelist' | 'co-host' | 'speaker' | 'attendee' | 'stakeholder';
   }[];
   linked_script_id?: string;
   linked_music_id?: string;
@@ -725,7 +725,8 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
 
   const stageRequirements = getStageRequirements(formData.starting_stage);
   const currentShowTypes = getShowTypesForCategory(formData.event_category);
-  const showGuestsSection = ['podcast', 'interview', 'panel', 'webinar', 'conference'].includes(formData.show_type);
+  // Always show participants section - users need to add participants for email invites
+  const showGuestsSection = true;
 
   // Render step indicator
   const renderStepIndicator = () => {
@@ -1400,14 +1401,17 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
     </div>
   );
 
-  // Render guests section
+  // Render guests/participants section
   const renderGuestsSection = () => {
-    if (!showGuestsSection) return null;
+    const isGenieDemoCategory = formData.event_category === 'genie_demo';
+    const sectionTitle = isGenieDemoCategory ? 'Participants / Attendees' : 'Guests / Panelists';
+    
     return (
       <div className="space-y-3">
         <h4 className="text-sm font-medium flex items-center gap-2">
           <UserPlus className="h-4 w-4" />
-          Guests / Panelists
+          {sectionTitle}
+          <Badge variant="outline" className="text-[10px] ml-auto">Required for invites</Badge>
         </h4>
         
         {formData.guests.length > 0 && (
@@ -1456,13 +1460,21 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
               <SelectItem value="co-host">Co-Host</SelectItem>
               <SelectItem value="panelist">Panelist</SelectItem>
               <SelectItem value="speaker">Speaker</SelectItem>
+              <SelectItem value="attendee">Attendee</SelectItem>
+              <SelectItem value="stakeholder">Stakeholder</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline" className="flex-1" onClick={handleAddGuest} disabled={!newGuest.name.trim()}>
             <Plus className="h-4 w-4 mr-1" />
-            Add Guest
+            Add Participant
           </Button>
         </div>
+        
+        {formData.guests.length === 0 && (
+          <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 p-2 rounded">
+            ⚠️ Add at least one participant with an email address to send calendar invites.
+          </p>
+        )}
       </div>
     );
   };
