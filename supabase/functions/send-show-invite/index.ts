@@ -6,11 +6,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Dynamic interface - accepts any string values for maximum flexibility
 interface ShowInviteRequest {
   to: string;
   participantName: string;
-  role: 'host' | 'co-host' | 'guest' | 'panelist' | 'speaker' | 'attendee' | 'stakeholder';
-  showType: 'podcast' | 'webcast' | 'broadcast' | 'interview' | 'panel' | 'tutorial' | 'webinar' | 'workshop' | 'genie_studio_full' | 'genie_spark_demo' | 'genie_arc_demo' | 'genie_mind_demo' | 'genie_vibe_demo' | 'genie_suite_overview';
+  role: string; // Dynamic - host, co-host, guest, panelist, speaker, attendee, stakeholder, etc.
+  showType: string; // Dynamic - any show type from the frontend
   showTitle: string;
   showDescription?: string;
   scheduledDate: string;
@@ -18,8 +19,8 @@ interface ShowInviteRequest {
   hostEmail?: string;
   senderName?: string;
   senderEmail?: string;
-  category?: 'media_production' | 'business_meeting' | 'event' | 'genie_demo';
-  stage?: string;
+  category?: string; // Dynamic - media_production, business_meeting, event, genie_demo, etc.
+  stage?: string; // Dynamic - any stage value
   topics?: string;
   script?: string;
   scriptAttachmentUrl?: string;
@@ -67,7 +68,7 @@ const handler = async (req: Request): Promise<Response> => {
     const formattedDate = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     const formattedTime = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
 
-    // Category display
+    // Category display - dynamic with fallback
     const categoryDisplay: Record<string, { name: string; emoji: string }> = {
       media_production: { name: 'Media Production', emoji: '🎬' },
       business_meeting: { name: 'Business Meeting', emoji: '💼' },
@@ -75,16 +76,27 @@ const handler = async (req: Request): Promise<Response> => {
       genie_demo: { name: 'Genie Studio Demo', emoji: '✨' },
     };
 
-    // Extended show type display
+    // Extended show type display - dynamic with fallback for any show type
     const showTypeDisplay: Record<string, { name: string; emoji: string; color: string }> = {
+      // Media Production types
       podcast: { name: 'Podcast', emoji: '🎙️', color: '#8B5CF6' },
       webcast: { name: 'Webcast', emoji: '📺', color: '#3B82F6' },
       broadcast: { name: 'Live Broadcast', emoji: '📡', color: '#EF4444' },
       interview: { name: 'Interview', emoji: '🎤', color: '#06B6D4' },
       panel: { name: 'Panel Discussion', emoji: '👥', color: '#6366F1' },
       tutorial: { name: 'Tutorial', emoji: '📚', color: '#10B981' },
-      webinar: { name: 'Webinar', emoji: '🖥️', color: '#0EA5E9' },
+      other: { name: 'Production', emoji: '🎬', color: '#64748B' },
+      // Business Meeting types
+      discovery_call: { name: 'Discovery Call', emoji: '📞', color: '#3B82F6' },
+      sales_meeting: { name: 'Sales Meeting', emoji: '💼', color: '#10B981' },
+      project_kickoff: { name: 'Project Kickoff', emoji: '🚀', color: '#8B5CF6' },
+      status_update: { name: 'Status Update', emoji: '📊', color: '#F59E0B' },
+      consultation: { name: 'Consultation', emoji: '💬', color: '#EC4899' },
+      // Event types
       workshop: { name: 'Workshop', emoji: '🔧', color: '#F97316' },
+      webinar: { name: 'Webinar', emoji: '🖥️', color: '#0EA5E9' },
+      conference: { name: 'Conference', emoji: '🏛️', color: '#6366F1' },
+      training_session: { name: 'Training Session', emoji: '📖', color: '#10B981' },
       // Genie Demo types
       genie_studio_full: { name: 'Genie Studio Full Demo', emoji: '✨', color: '#8B5CF6' },
       genie_spark_demo: { name: 'Genie Spark Demo', emoji: '⚡', color: '#F59E0B' },
@@ -94,19 +106,44 @@ const handler = async (req: Request): Promise<Response> => {
       genie_suite_overview: { name: 'Genie Suite Overview', emoji: '🚀', color: '#EC4899' },
     };
 
-    const categoryInfo = categoryDisplay[category] || { name: 'Production', emoji: '🎬' };
-    const typeInfo = showTypeDisplay[showType] || { name: 'Show', emoji: '📺', color: '#8B5CF6' };
+    // Dynamic fallback - format any unrecognized category or type nicely
+    const formatDisplayName = (str: string): string => {
+      return str.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    };
+
+    const categoryInfo = categoryDisplay[category] || { 
+      name: formatDisplayName(category), 
+      emoji: '📅' 
+    };
+    const typeInfo = showTypeDisplay[showType] || { 
+      name: formatDisplayName(showType), 
+      emoji: '📺', 
+      color: '#8B5CF6' 
+    };
+    
+    // Dynamic role display with fallback
     const roleDisplay: Record<string, string> = {
       host: 'Host', 
       'co-host': 'Co-Host', 
+      co_host: 'Co-Host',
       guest: 'Guest Speaker', 
       panelist: 'Panelist',
       speaker: 'Speaker',
       attendee: 'Attendee',
-      stakeholder: 'Stakeholder'
+      stakeholder: 'Stakeholder',
+      organizer: 'Organizer',
+      interviewer: 'Interviewer',
+      interviewee: 'Interviewee',
     };
-    const roleText = roleDisplay[role] || role;
-    const stageText = stage ? stage.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '';
+    const roleText = roleDisplay[role] || formatDisplayName(role);
+    const stageText = stage ? formatDisplayName(stage) : '';
+    
+    console.log('[send-show-invite] Resolved display values:', {
+      category: categoryInfo.name,
+      type: typeInfo.name,
+      role: roleText,
+      stage: stageText
+    });
 
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
     // IMPORTANT: Use Resend's verified test sender to ensure delivery

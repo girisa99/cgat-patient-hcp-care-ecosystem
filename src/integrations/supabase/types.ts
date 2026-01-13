@@ -20845,6 +20845,12 @@ export type Database = {
         | "webinar"
         | "conference"
         | "training_session"
+        | "genie_studio_full"
+        | "genie_spark_demo"
+        | "genie_arc_demo"
+        | "genie_mind_demo"
+        | "genie_vibe_demo"
+        | "genie_suite_overview"
       sla_tier: "standard" | "priority" | "critical" | "emergency_only"
       subscription_role: "owner" | "admin" | "member" | "viewer"
       subscription_status:
@@ -21220,6 +21226,12 @@ export const Constants = {
         "webinar",
         "conference",
         "training_session",
+        "genie_studio_full",
+        "genie_spark_demo",
+        "genie_arc_demo",
+        "genie_mind_demo",
+        "genie_vibe_demo",
+        "genie_suite_overview",
       ],
       sla_tier: ["standard", "priority", "critical", "emergency_only"],
       subscription_role: ["owner", "admin", "member", "viewer"],
