@@ -239,3 +239,18 @@ verify_jwt = false
 
 [functions.chat-with-claude]
 verify_jwt = false
+
+[functions.legal-review-gate]
+verify_jwt = false
+
+[functions.bulk-operations]
+verify_jwt = false
+
+[functions.workspace-collaboration]
+verify_jwt = false
+
+[functions.analytics-dashboard]
+verify_jwt = false
+
+[functions.template-marketplace]
+verify_jwt = false
