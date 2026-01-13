@@ -121,7 +121,28 @@ const handler = async (req: Request): Promise<Response> => {
           }
 
           console.log('[send-session-invites] Sending email to:', participant.email);
-          const emailResult = await resend.emails.send({
+          
+          // Build CC list: host email + other participants
+          const ccList: string[] = [];
+          
+          // Add host email to CC if available and different from participant
+          if (session.host_email && session.host_email !== participant.email) {
+            ccList.push(session.host_email);
+          }
+          
+          // Add other participants to CC (excluding current participant)
+          if (participants && participants.length > 1) {
+            for (const otherParticipant of participants) {
+              if (otherParticipant.email !== participant.email && 
+                  otherParticipant.email !== session.host_email) {
+                ccList.push(otherParticipant.email);
+              }
+            }
+          }
+          
+          console.log('[send-session-invites] CC list:', ccList);
+          
+          const emailPayload: any = {
             from: `Genie Studio <${fromEmail}>`,
             to: [participant.email],
             subject: `You're invited: ${session.title}`,
@@ -211,7 +232,14 @@ const handler = async (req: Request): Promise<Response> => {
 </body>
 </html>
             `,
-          });
+          };
+          
+          // Add CC if there are recipients
+          if (ccList.length > 0) {
+            emailPayload.cc = ccList;
+          }
+          
+          const emailResult = await resend.emails.send(emailPayload);
 
           results.push({
             participant_id: participant.id,
