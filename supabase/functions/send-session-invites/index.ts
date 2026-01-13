@@ -21,12 +21,14 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
-    // Use genieaiexperimentationhub.tech domain for all emails
+    // Use PUBLIC_SITE_URL for dynamic base URL, fallback to production domain
+    const baseUrl = Deno.env.get('PUBLIC_SITE_URL') || 'https://genieaiexperimentationhub.tech';
     const fromEmail = Deno.env.get('FROM_EMAIL') || 'info@genieaiexperimentationhub.tech';
     const defaultRecipient = 'dasikasaigiridhar@gmail.com';
     
     console.log('[send-session-invites] RESEND_API_KEY configured:', !!resendApiKey);
     console.log('[send-session-invites] FROM email:', fromEmail);
+    console.log('[send-session-invites] Base URL:', baseUrl);
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const resend = resendApiKey ? new Resend(resendApiKey) : null;
@@ -80,7 +82,8 @@ const handler = async (req: Request): Promise<Response> => {
     const formatCalDate = (date: Date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
     
     for (const participant of participants || []) {
-      const participantJoinUrl = `https://preview--genie-session.lovable.app/join/${session.session_token}?p=${participant.participant_token}`;
+      // Use dynamic base URL from environment
+      const participantJoinUrl = `${baseUrl}/join/${session.session_token}?p=${participant.participant_token}`;
       
       // Generate participant-specific calendar links
       const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(session.title)}&dates=${formatCalDate(startTime)}/${formatCalDate(endTime)}&details=${encodeURIComponent(`Join: ${participantJoinUrl}`)}&location=${encodeURIComponent(participantJoinUrl)}`;
