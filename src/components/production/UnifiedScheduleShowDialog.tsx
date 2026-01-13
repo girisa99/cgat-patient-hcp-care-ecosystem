@@ -767,6 +767,8 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
 
   // Submit handler
   const handleSubmit = async () => {
+    console.log('[UnifiedScheduleShowDialog] handleSubmit called');
+    
     if (!formData.title.trim()) {
       toast.error('Please enter a title');
       return;
@@ -780,19 +782,30 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
         finalUrl = generateGenieMeetingUrl();
       }
 
-      // Call onSchedule - wrap in try/catch to ensure dialog closes even if there are issues
+      console.log('[UnifiedScheduleShowDialog] Preparing to call onSchedule with data:', {
+        title: formData.title,
+        hostEmail: formData.host?.email,
+        guestCount: formData.guests?.length,
+        meetingUrl: finalUrl,
+      });
+
+      // Call onSchedule and WAIT for it to complete
+      const scheduleData = {
+        ...formData,
+        meeting_url: finalUrl,
+        meeting_platform: meetingPlatform,
+        script_content: scriptContent,
+        attach_script_to_invite: attachScriptToInvite,
+        suggested_title: suggestedTitle,
+        suggested_intro: suggestedIntro,
+        ai_provider: aiProvider,
+        ai_model: aiModel,
+      };
+
       try {
-        await onSchedule({
-          ...formData,
-          meeting_url: finalUrl,
-          meeting_platform: meetingPlatform,
-          script_content: scriptContent,
-          attach_script_to_invite: attachScriptToInvite,
-          suggested_title: suggestedTitle,
-          suggested_intro: suggestedIntro,
-          ai_provider: aiProvider,
-          ai_model: aiModel,
-        });
+        console.log('[UnifiedScheduleShowDialog] Calling onSchedule NOW...');
+        await onSchedule(scheduleData);
+        console.log('[UnifiedScheduleShowDialog] onSchedule completed successfully');
       } catch (scheduleError) {
         // Log but don't re-throw - we want the dialog to close regardless
         console.error('[UnifiedScheduleShowDialog] Schedule error (non-blocking):', scheduleError);
