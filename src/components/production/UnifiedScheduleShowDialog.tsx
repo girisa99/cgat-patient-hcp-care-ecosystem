@@ -540,7 +540,7 @@ export function UnifiedScheduleShowDialog({
     try {
       const prompt = `You are helping create a ${formData.show_type} show.
 Topics: ${formData.topics || 'Not specified'}
-Script/Content: ${scriptContent ? scriptContent.substring(0, 1000) : 'Not provided'}
+Script/Content: ${scriptContent ? cleanTextContent(scriptContent).substring(0, 1000) : 'Not provided'}
 Show Type: ${formData.show_type}
 Category: ${formData.event_category}
 
@@ -552,16 +552,15 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
 
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
-          messages: [{ role: 'user', content: prompt }],
+          prompt, // FIXED: Edge function expects 'prompt' not 'messages'
           provider: aiProvider,
           model: aiModel,
-          extractJson: true,
         },
       });
 
       if (error) throw error;
 
-      const response = data?.response || data?.content || '';
+      const response = data?.content || data?.response || '';
       try {
         // Try to parse JSON from response
         const jsonMatch = response.match(/\{[\s\S]*\}/);
