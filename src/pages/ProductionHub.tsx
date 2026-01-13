@@ -852,15 +852,7 @@ export default function ProductionHub() {
           open={isCreateDialogOpen}
           onOpenChange={setIsCreateDialogOpen}
           onSchedule={async (data: ScheduleShowData) => {
-            // CRITICAL DEBUG - This MUST appear!
-            alert('🚀 ProductionHub onSchedule received! Title: ' + data.title);
-            console.log('🚀🚀🚀 [ProductionHub] onSchedule START - MUST SEE THIS 🚀🚀🚀');
-            console.log('[ProductionHub] Full data:', JSON.stringify({
-              title: data.title,
-              hostEmail: data.host?.email,
-              guestCount: data.guests?.length,
-              meetingUrl: data.meeting_url,
-            }));
+            console.log('[ProductionHub] onSchedule START with data:', data.title, data.host?.email);
             
             let newShow: any = null;
             let meetingUrl = data.meeting_url;

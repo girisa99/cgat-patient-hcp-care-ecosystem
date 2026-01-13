@@ -20802,6 +20802,11 @@ export type Database = {
         | "recording"
         | "post_production"
         | "published"
+        | "demo_scheduled"
+        | "demo_prep"
+        | "demo_live"
+        | "demo_followup"
+        | "demo_closed"
       purchasing_method:
         | "just_in_time"
         | "bulk_ordering"
@@ -21164,6 +21169,11 @@ export const Constants = {
         "recording",
         "post_production",
         "published",
+        "demo_scheduled",
+        "demo_prep",
+        "demo_live",
+        "demo_followup",
+        "demo_closed",
       ],
       purchasing_method: [
         "just_in_time",
