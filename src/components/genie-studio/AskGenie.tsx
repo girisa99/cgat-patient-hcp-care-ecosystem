@@ -941,33 +941,52 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
     }
   }, [handleSendMessage]);
 
-  // Floating trigger button with pulse animation
+  // Floating trigger button with pulse animation - uses combined logo
   const TriggerButton = () => (
     <motion.div
       initial={{ scale: 0 }}
       animate={{ scale: 1 }}
-      className="fixed bottom-6 right-6 z-50"
+      className="fixed bottom-6 right-6 z-50 flex items-center gap-2"
     >
-      <Button
-        onClick={() => setIsOpen(true)}
-        className={cn(
-          "h-14 w-14 rounded-full shadow-xl relative overflow-hidden group",
-          `bg-gradient-to-r ${productContext.color} hover:opacity-90`
-        )}
-      >
-        <Sparkles className="h-6 w-6 text-white relative z-10" />
-        {/* Pulse ring */}
-        <span className="absolute inset-0 rounded-full animate-ping bg-white/30" />
-      </Button>
-      {/* Label */}
-      <motion.span 
+      {/* Label with logo and tagline */}
+      <motion.div 
         initial={{ opacity: 0, x: 10 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.5 }}
-        className="absolute right-16 top-1/2 -translate-y-1/2 bg-background border rounded-lg px-3 py-1.5 text-sm font-medium shadow-lg whitespace-nowrap"
+        className="bg-background border rounded-2xl px-4 py-2.5 shadow-xl flex items-center gap-3 cursor-pointer hover:shadow-2xl transition-shadow"
+        onClick={() => setIsOpen(true)}
       >
-        Ask Genie {productContext.emoji}
-      </motion.span>
+        <img 
+          src={ASK_GENIE.logo}
+          alt={ASK_GENIE.name}
+          className="h-10 w-auto object-contain"
+        />
+        <div className="text-left">
+          <div className="font-semibold text-sm bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent flex items-center gap-1">
+            {ASK_GENIE.name} {ASK_GENIE.emoji}
+          </div>
+          <div className="text-[10px] text-muted-foreground italic">
+            {ASK_GENIE.tagline}
+          </div>
+        </div>
+      </motion.div>
+      
+      {/* Floating button with logo */}
+      <Button
+        onClick={() => setIsOpen(true)}
+        className={cn(
+          "h-14 w-14 rounded-full shadow-xl relative overflow-hidden group p-0",
+          `bg-gradient-to-r ${ASK_GENIE.color} hover:opacity-90`
+        )}
+      >
+        <img 
+          src={ASK_GENIE.logo}
+          alt={ASK_GENIE.name}
+          className="h-10 w-10 object-contain relative z-10"
+        />
+        {/* Pulse ring */}
+        <span className="absolute inset-0 rounded-full animate-ping bg-white/30" />
+      </Button>
     </motion.div>
   );
 
@@ -985,46 +1004,56 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
         className
       )}
     >
-      {/* Header */}
+      {/* Enhanced Header with Logo Banner */}
       <div className={cn(
-        "flex items-center justify-between p-4 border-b",
-        `bg-gradient-to-r ${ASK_GENIE.color}`
+        "flex flex-col border-b overflow-hidden",
+        `bg-gradient-to-br ${ASK_GENIE.color}`
       )}>
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center overflow-hidden">
-            <img 
-              src={ASK_GENIE.logo} 
-              alt="Ask Genie" 
-              className="h-8 w-8 object-contain"
-            />
-          </div>
-          <div>
-            <h3 className="font-semibold text-white flex items-center gap-2">
-              {ASK_GENIE.name} {ASK_GENIE.emoji}
-              <Badge variant="outline" className="text-xs bg-white/20 text-white border-white/30">
-                {productContext.name}
-              </Badge>
-            </h3>
-            <p className="text-xs text-white/80">{ASK_GENIE.tagline}</p>
+        {/* Hero Banner */}
+        <div className="px-4 py-3 flex items-center justify-center">
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 rounded-full bg-white/20 flex items-center justify-center overflow-hidden shadow-lg">
+              <img 
+                src={ASK_GENIE.logo} 
+                alt={ASK_GENIE.name} 
+                className="h-12 w-12 object-contain"
+              />
+            </div>
+            <div className="text-center">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2 justify-center">
+                {ASK_GENIE.name} {ASK_GENIE.emoji}
+              </h2>
+              <p className="text-sm text-white/90 italic font-medium">"{ASK_GENIE.tagline}"</p>
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-white hover:bg-white/20"
-            onClick={() => setIsMinimized(!isMinimized)}
-          >
-            {isMinimized ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-white hover:bg-white/20"
-            onClick={handleClose}
-          >
-            <X className="h-4 w-4" />
-          </Button>
+        
+        {/* Context Bar */}
+        <div className="flex items-center justify-between px-4 py-2 bg-black/10">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs bg-white/20 text-white border-white/30">
+              {productContext.emoji} {productContext.name}
+            </Badge>
+            <span className="text-xs text-white/70">{productContext.tagline}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-white hover:bg-white/20"
+              onClick={() => setIsMinimized(!isMinimized)}
+            >
+              {isMinimized ? <Maximize2 className="h-3.5 w-3.5" /> : <Minimize2 className="h-3.5 w-3.5" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-white hover:bg-white/20"
+              onClick={handleClose}
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -1033,31 +1062,59 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
           {/* Messages */}
           <ScrollArea className="flex-1 p-4" ref={scrollRef}>
             {showWelcome && messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center p-4">
+              <div className="flex flex-col items-center justify-center h-full text-center">
+                {/* Hero Banner */}
                 <motion.div 
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="h-20 w-20 rounded-full bg-white/10 flex items-center justify-center mb-4 overflow-hidden shadow-lg"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={cn(
+                    "w-full rounded-xl p-4 mb-4 bg-gradient-to-br",
+                    ASK_GENIE.color
+                  )}
                 >
-                  <img 
-                    src={ASK_GENIE.logo} 
-                    alt="Ask Genie" 
-                    className="h-16 w-16 object-contain"
-                  />
+                  <div className="flex items-center justify-center gap-4">
+                    <div className="h-16 w-16 rounded-full bg-white/30 flex items-center justify-center overflow-hidden shadow-lg">
+                      <img 
+                        src={ASK_GENIE.logo} 
+                        alt={ASK_GENIE.name}
+                        className="h-14 w-14 object-contain"
+                      />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        {ASK_GENIE.name} {ASK_GENIE.emoji}
+                      </h3>
+                      <p className="text-sm text-white/90 italic">"{ASK_GENIE.tagline}"</p>
+                      <p className="text-[10px] text-white/70 mt-1">{ASK_GENIE.description.slice(0, 80)}...</p>
+                    </div>
+                  </div>
+                  
+                  {/* Feature Highlights */}
+                  <div className="grid grid-cols-3 gap-2 mt-4">
+                    <div className="bg-white/20 rounded-lg px-2 py-1.5 text-center">
+                      <Brain className="h-4 w-4 mx-auto text-white mb-1" />
+                      <span className="text-[10px] text-white/90">Smart Context</span>
+                    </div>
+                    <div className="bg-white/20 rounded-lg px-2 py-1.5 text-center">
+                      <Wand2 className="h-4 w-4 mx-auto text-white mb-1" />
+                      <span className="text-[10px] text-white/90">Creative Help</span>
+                    </div>
+                    <div className="bg-white/20 rounded-lg px-2 py-1.5 text-center">
+                      <Map className="h-4 w-4 mx-auto text-white mb-1" />
+                      <span className="text-[10px] text-white/90">Visual Flows</span>
+                    </div>
+                  </div>
                 </motion.div>
                 
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="space-y-2"
+                  className="space-y-2 px-2"
                 >
-                  <h4 className="font-semibold text-lg">{getRandomPhrase('greetings')}</h4>
-                  <p className="text-muted-foreground text-sm">
-                    I'm {ASK_GENIE.name}! <span className="italic">"{ASK_GENIE.tagline}"</span>
-                  </p>
-                  <p className="text-xs text-muted-foreground/70 mb-4">
-                    Right now you're in <strong>{productContext.name}</strong> - {productContext.tagline}
+                  <h4 className="font-semibold text-base">{getRandomPhrase('greetings')}</h4>
+                  <p className="text-xs text-muted-foreground/70">
+                    Currently helping you in <strong>{productContext.name}</strong> - "{productContext.tagline}"
                   </p>
                   
                   {/* Subscription awareness hint - gentle, not pushy */}
@@ -1066,13 +1123,12 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.5 }}
-                      className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 rounded-lg p-3 border border-amber-200/50 dark:border-amber-800/50"
+                      className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 rounded-lg p-2.5 border border-amber-200/50 dark:border-amber-800/50"
                     >
-                      <p className="text-xs text-amber-700 dark:text-amber-300 flex items-center gap-2">
-                        <Lightbulb className="h-3.5 w-3.5" />
+                      <p className="text-[11px] text-amber-700 dark:text-amber-300 flex items-center gap-2">
+                        <Lightbulb className="h-3 w-3" />
                         <span>
-                          Currently on <strong className="capitalize">{subscriptionTier}</strong> tier. 
-                          Ask me what magic awaits you! ✨
+                          On <strong className="capitalize">{subscriptionTier}</strong> tier — Ask me what magic awaits! ✨
                         </span>
                       </p>
                     </motion.div>
