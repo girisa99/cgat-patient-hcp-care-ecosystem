@@ -9,8 +9,8 @@ const corsHeaders = {
 interface ShowInviteRequest {
   to: string;
   participantName: string;
-  role: 'host' | 'co-host' | 'guest' | 'panelist' | 'speaker';
-  showType: 'podcast' | 'webcast' | 'broadcast' | 'interview' | 'panel' | 'tutorial' | 'webinar' | 'workshop';
+  role: 'host' | 'co-host' | 'guest' | 'panelist' | 'speaker' | 'attendee' | 'stakeholder';
+  showType: 'podcast' | 'webcast' | 'broadcast' | 'interview' | 'panel' | 'tutorial' | 'webinar' | 'workshop' | 'genie_studio_full' | 'genie_spark_demo' | 'genie_arc_demo' | 'genie_mind_demo' | 'genie_vibe_demo' | 'genie_suite_overview';
   showTitle: string;
   showDescription?: string;
   scheduledDate: string;
@@ -18,7 +18,7 @@ interface ShowInviteRequest {
   hostEmail?: string;
   senderName?: string;
   senderEmail?: string;
-  category?: 'media_production' | 'business_meeting' | 'event';
+  category?: 'media_production' | 'business_meeting' | 'event' | 'genie_demo';
   stage?: string;
   topics?: string;
   script?: string;
@@ -72,6 +72,7 @@ const handler = async (req: Request): Promise<Response> => {
       media_production: { name: 'Media Production', emoji: '🎬' },
       business_meeting: { name: 'Business Meeting', emoji: '💼' },
       event: { name: 'Event', emoji: '🎉' },
+      genie_demo: { name: 'Genie Studio Demo', emoji: '✨' },
     };
 
     // Extended show type display
@@ -84,16 +85,25 @@ const handler = async (req: Request): Promise<Response> => {
       tutorial: { name: 'Tutorial', emoji: '📚', color: '#10B981' },
       webinar: { name: 'Webinar', emoji: '🖥️', color: '#0EA5E9' },
       workshop: { name: 'Workshop', emoji: '🔧', color: '#F97316' },
+      // Genie Demo types
+      genie_studio_full: { name: 'Genie Studio Full Demo', emoji: '✨', color: '#8B5CF6' },
+      genie_spark_demo: { name: 'Genie Spark Demo', emoji: '⚡', color: '#F59E0B' },
+      genie_arc_demo: { name: 'Genie Arc Demo', emoji: '🎬', color: '#10B981' },
+      genie_mind_demo: { name: 'Genie Mind Demo', emoji: '🧠', color: '#3B82F6' },
+      genie_vibe_demo: { name: 'Genie Vibe Demo', emoji: '🎵', color: '#A855F7' },
+      genie_suite_overview: { name: 'Genie Suite Overview', emoji: '🚀', color: '#EC4899' },
     };
 
     const categoryInfo = categoryDisplay[category] || { name: 'Production', emoji: '🎬' };
     const typeInfo = showTypeDisplay[showType] || { name: 'Show', emoji: '📺', color: '#8B5CF6' };
-    const roleDisplay: Record<string, string> = { 
+    const roleDisplay: Record<string, string> = {
       host: 'Host', 
       'co-host': 'Co-Host', 
       guest: 'Guest Speaker', 
       panelist: 'Panelist',
-      speaker: 'Speaker'
+      speaker: 'Speaker',
+      attendee: 'Attendee',
+      stakeholder: 'Stakeholder'
     };
     const roleText = roleDisplay[role] || role;
     const stageText = stage ? stage.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '';

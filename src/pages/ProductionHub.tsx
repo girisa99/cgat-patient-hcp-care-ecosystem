@@ -864,6 +864,7 @@ export default function ProductionHub() {
                 title: data.title,
                 description: data.description || undefined,
                 show_type: data.show_type,
+                event_category: data.event_category, // Pass the category
                 scheduled_date: data.scheduled_date || undefined,
                 starting_stage: data.starting_stage as ProductionStage,
                 host_name: data.host.name || undefined,
@@ -906,8 +907,8 @@ export default function ProductionHub() {
                     hostEmail: data.host.email,
                     senderName: data.host.name || 'Host',
                     senderEmail: data.host.email,
-                    category: 'media_production',
-                    stage: 'scheduled',
+                    category: data.event_category || 'media_production', // Use actual category
+                    stage: data.starting_stage || 'scheduled',
                     topics: data.topics,
                     script: linkedScript?.content?.substring(0, 500),
                     joinUrl: meetingUrl,
@@ -958,7 +959,7 @@ export default function ProductionHub() {
                       body: {
                         to: guest.email,
                         participantName: guest.name,
-                        role: 'guest',
+                        role: guest.role || 'guest',
                         showType: data.show_type || 'podcast',
                         showTitle: data.title,
                         showDescription: data.description,
@@ -967,8 +968,8 @@ export default function ProductionHub() {
                         hostEmail: data.host?.email,
                         senderName: data.host?.name || 'Host',
                         senderEmail: data.host?.email,
-                        category: 'media_production',
-                        stage: 'scheduled',
+                        category: data.event_category || 'media_production', // Use actual category
+                        stage: data.starting_stage || 'scheduled',
                         topics: data.topics,
                         script: data.attach_script_to_invite && linkedScript?.content?.substring(0, 500),
                         joinUrl: meetingUrl,
