@@ -107,31 +107,43 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
     
-    // Create session
+    // Create session - ensure empty strings are converted to null for UUID fields
+    const sessionData: Record<string, any> = {
+      title: body.title,
+      description: body.description || null,
+      session_type: body.session_type,
+      session_mode: body.session_mode,
+      production_stage: body.production_stage || 'recording',
+      scheduled_at: body.scheduled_at,
+      duration_minutes: body.duration_minutes || 60,
+      timezone: body.timezone || 'UTC',
+      script_content: body.script_content || null,
+      script_attachment_url: scriptAttachmentUrl,
+      script_filename: scriptFilename,
+      agenda: body.agenda || null,
+      host_name: body.host_name,
+      host_email: body.host_email || null,
+      external_meeting_url: body.session_mode !== 'browser' ? body.external_meeting_url : null,
+      session_active_at: sessionActiveAt.toISOString(),
+      waiting_room_enabled: true,
+      recording_enabled: true,
+    };
+
+    // Only add user_id if it's a valid UUID (not empty)
+    if (userId && userId.trim() !== '') {
+      sessionData.user_id = userId;
+    }
+
+    // Only add script_id if it's a valid UUID (not empty)
+    if (body.script_id && body.script_id.trim() !== '') {
+      sessionData.script_id = body.script_id;
+    }
+
+    console.log('Session data:', JSON.stringify(sessionData, null, 2));
+
     const { data: session, error: sessionError } = await supabase
       .from('genie_sessions')
-      .insert({
-        user_id: userId,
-        title: body.title,
-        description: body.description,
-        session_type: body.session_type,
-        session_mode: body.session_mode,
-        production_stage: body.production_stage || 'recording',
-        scheduled_at: body.scheduled_at,
-        duration_minutes: body.duration_minutes || 60,
-        timezone: body.timezone || 'UTC',
-        script_id: body.script_id,
-        script_content: body.script_content, // Store script content for invite preview
-        script_attachment_url: scriptAttachmentUrl, // Downloadable URL
-        script_filename: scriptFilename,
-        agenda: body.agenda,
-        host_name: body.host_name,
-        host_email: body.host_email,
-        external_meeting_url: body.session_mode !== 'browser' ? body.external_meeting_url : null,
-        session_active_at: sessionActiveAt.toISOString(),
-        waiting_room_enabled: true,
-        recording_enabled: true,
-      })
+      .insert(sessionData)
       .select()
       .single();
 
