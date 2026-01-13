@@ -273,12 +273,12 @@ const STAGE_ICONS: Record<string, React.ComponentType<{ className?: string }>> =
   live: Radio,
   wrap_up: Check,
   archived: FileText,
-  // Demo stages
-  setup: Wrench,
-  walkthrough: Play,
+  // Demo stages - matches production_stage enum in database
+  demo_scheduled: Calendar,
+  demo_prep: Wrench,
   demo_live: Video,
-  q_and_a: MessageCircle,
-  feedback: MessageSquare,
+  demo_followup: MessageCircle,
+  demo_closed: Check,
 };
 
 // AI Provider types
@@ -990,14 +990,13 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
   // Render stage selection (for media productions and genie demos)
   const renderStageSelection = () => {
     if (formData.event_category === 'genie_demo') {
-      // Demo stages
+      // Demo stages - matches production_stage enum in database
       const demoStages = [
-        { value: 'setup', label: 'Setup', color: 'from-blue-500 to-cyan-500' },
-        { value: 'walkthrough', label: 'Walkthrough', color: 'from-purple-500 to-indigo-500' },
+        { value: 'demo_scheduled', label: 'Scheduled', color: 'from-blue-500 to-cyan-500' },
+        { value: 'demo_prep', label: 'Preparation', color: 'from-purple-500 to-indigo-500' },
         { value: 'demo_live', label: 'Live Demo', color: 'from-red-500 to-pink-500' },
-        { value: 'q_and_a', label: 'Q&A', color: 'from-yellow-500 to-orange-500' },
-        { value: 'feedback', label: 'Feedback', color: 'from-orange-500 to-amber-500' },
-        { value: 'completed', label: 'Done', color: 'from-green-500 to-emerald-500' },
+        { value: 'demo_followup', label: 'Follow-up', color: 'from-yellow-500 to-orange-500' },
+        { value: 'demo_closed', label: 'Closed', color: 'from-green-500 to-emerald-500' },
       ];
       return (
         <div className="space-y-2">
