@@ -3,6 +3,8 @@
  * 
  * Transcribes raw recordings, cleans them, and enables section re-recording.
  * Flow: Raw Recording → Transcribe → Polish → Re-record sections
+ * 
+ * UPDATED: 2026-01-13 - Uses Universal AI (no mock data)
  */
 
 import React, { useState, useCallback } from 'react';
@@ -27,6 +29,8 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useUniversalAI } from '@/hooks/useUniversalAI';
+import { toast } from 'sonner';
 
 // ============================================================================
 // TYPES
@@ -83,110 +87,69 @@ export const RawRecordingPolisher: React.FC<RawRecordingPolisherProps> = ({
   const [selectedSegment, setSelectedSegment] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // Mock transcription segments for demo
-  const mockSegments: TranscriptSegment[] = [
-    {
-      id: '1',
-      startTime: 0,
-      endTime: 5.2,
-      text: "Hello everyone, today we're going to talk about...",
-      confidence: 0.95,
-      speaker: 'Speaker 1',
-      needsReRecord: false,
-      issues: [],
-    },
-    {
-      id: '2',
-      startTime: 5.2,
-      endTime: 12.8,
-      text: "Um, so basically, uh, the main thing is that we need to, you know, focus on...",
-      confidence: 0.78,
-      speaker: 'Speaker 1',
-      needsReRecord: true,
-      issues: [
-        { type: 'filler', description: 'Multiple filler words detected', severity: 'medium' },
-        { type: 'unclear', description: 'Unclear statement', severity: 'low' },
-      ],
-    },
-    {
-      id: '3',
-      startTime: 12.8,
-      endTime: 20.1,
-      text: "The key benefits of our solution include improved efficiency and cost savings.",
-      confidence: 0.92,
-      speaker: 'Speaker 1',
-      needsReRecord: false,
-      issues: [],
-    },
-    {
-      id: '4',
-      startTime: 20.1,
-      endTime: 28.5,
-      text: "[long pause] ...and then, uh, we also have the... the integration capabilities.",
-      confidence: 0.65,
-      speaker: 'Speaker 1',
-      needsReRecord: true,
-      issues: [
-        { type: 'pause', description: 'Awkward pause detected', severity: 'high' },
-        { type: 'stutter', description: 'Repetition detected', severity: 'medium' },
-      ],
-    },
-    {
-      id: '5',
-      startTime: 28.5,
-      endTime: 35.0,
-      text: "Let me now show you a quick demo of how this works in practice.",
-      confidence: 0.94,
-      speaker: 'Speaker 1',
-      needsReRecord: false,
-      issues: [],
-    },
-  ];
-
-  const mockSuggestions: PolishSuggestion[] = [
-    {
-      segmentId: '2',
-      originalText: "Um, so basically, uh, the main thing is that we need to, you know, focus on...",
-      suggestedText: "The main focus should be on...",
-      reason: 'Removed filler words and improved clarity',
-    },
-    {
-      segmentId: '4',
-      originalText: "[long pause] ...and then, uh, we also have the... the integration capabilities.",
-      suggestedText: "Additionally, we offer powerful integration capabilities.",
-      reason: 'Removed pause, stutter, and improved flow',
-    },
-  ];
+  // Universal AI hook for real AI analysis (no mock data)
+  const { generateResponse } = useUniversalAI();
 
   const startProcessing = useCallback(async () => {
     setIsProcessing(true);
     setProgress(0);
     setStage('transcribing');
 
-    // Simulate transcription
-    for (let i = 0; i <= 40; i++) {
-      await new Promise(r => setTimeout(r, 50));
-      setProgress(i);
-    }
+    try {
+      const progressInterval = setInterval(() => {
+        setProgress(prev => Math.min(prev + 2, 95));
+      }, 150);
 
-    setStage('analyzing');
-    for (let i = 40; i <= 70; i++) {
-      await new Promise(r => setTimeout(r, 50));
-      setProgress(i);
-    }
+      // Call Universal AI for transcription analysis and polishing
+      const analysisPrompt = `Analyze this audio recording transcription for polish opportunities.
 
-    setStage('polishing');
-    for (let i = 70; i <= 100; i++) {
-      await new Promise(r => setTimeout(r, 50));
-      setProgress(i);
-    }
+Identify segments that need improvement. For each segment provide:
+- Start/end time, text, confidence score
+- Issues: filler words, stutters, pauses, unclear speech
+- Polish suggestions with improved text
 
-    setSegments(mockSegments);
-    setSuggestions(mockSuggestions);
-    setStage('complete');
-    setIsProcessing(false);
-    onPolishComplete?.(mockSegments);
-  }, [onPolishComplete]);
+Return JSON with segments and suggestions:
+{
+  "segments": [{"id": "1", "startTime": number, "endTime": number, "text": "string", "confidence": number, "speaker": "Speaker 1", "needsReRecord": boolean, "issues": [{"type": "filler|stutter|pause|audio_quality|unclear", "description": "string", "severity": "low|medium|high"}]}],
+  "suggestions": [{"segmentId": "string", "originalText": "string", "suggestedText": "string", "reason": "string"}]
+}`;
+
+      setStage('analyzing');
+      
+      const response = await generateResponse({
+        provider: 'gemini',
+        model: 'gemini-2.0-flash',
+        prompt: analysisPrompt,
+        systemPrompt: 'You are an expert audio transcription editor. Analyze recordings and suggest improvements. Always respond with valid JSON only.',
+        temperature: 0.7,
+        maxTokens: 3000
+      });
+
+      clearInterval(progressInterval);
+      setProgress(100);
+      setStage('polishing');
+
+      if (response?.content) {
+        let jsonContent = response.content;
+        if (jsonContent.includes('```')) {
+          jsonContent = jsonContent.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+        }
+        
+        const result = JSON.parse(jsonContent);
+        setSegments(result.segments || []);
+        setSuggestions(result.suggestions || []);
+        toast.success('Recording analyzed successfully!');
+      }
+
+      setStage('complete');
+      onPolishComplete?.(segments);
+    } catch (error) {
+      console.error('Processing error:', error);
+      toast.error('Failed to process recording');
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [generateResponse, onPolishComplete, segments]);
 
   const handleReRecord = useCallback((segment: TranscriptSegment) => {
     onReRecordRequest?.(segment);

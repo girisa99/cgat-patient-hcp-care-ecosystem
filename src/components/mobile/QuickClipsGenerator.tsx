@@ -2,6 +2,8 @@
  * Quick Clips Generator
  * P1 Feature: Auto-generate social-ready clips from recordings
  * Target: Creator economy - one-app workflow demand
+ * 
+ * UPDATED: 2026-01-13 - Uses Universal AI (no mock data)
  */
 
 import React, { useState, useCallback } from 'react';
@@ -31,6 +33,7 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useMobileFeatures } from '@/hooks/useMobileFeatures';
+import { useUniversalAI } from '@/hooks/useUniversalAI';
 
 export interface ClipSuggestion {
   id: string;
@@ -87,7 +90,9 @@ export const QuickClipsGenerator: React.FC<QuickClipsGeneratorProps> = ({
   const [activeTab, setActiveTab] = useState('analyze');
   const [selectedPlatform, setSelectedPlatform] = useState('instagram');
 
-  // Mock AI analysis - in production this would call an AI service
+  // Universal AI hook for real AI analysis (no mock data)
+  const { generateResponse, isLoading: aiLoading } = useUniversalAI();
+
   const analyzeContent = useCallback(async () => {
     if (!sourceUrl) {
       toast.error('No source content to analyze');
@@ -98,88 +103,81 @@ export const QuickClipsGenerator: React.FC<QuickClipsGeneratorProps> = ({
     setAnalysisProgress(0);
 
     try {
-      // Simulate AI analysis progress
-      for (let i = 0; i <= 100; i += 10) {
-        await new Promise(resolve => setTimeout(resolve, 200));
-        setAnalysisProgress(i);
+      // Progress indicator while AI processes
+      const progressInterval = setInterval(() => {
+        setAnalysisProgress(prev => Math.min(prev + 5, 90));
+      }, 300);
+
+      // Call Universal AI for clip analysis
+      const analysisPrompt = `Analyze this video content for social media clips. Video duration: ${sourceDuration} seconds.
+      
+Identify the best moments for creating short-form social content. For each suggestion, provide:
+- A catchy title
+- Brief description of why this moment works
+- Estimated start time (in seconds from beginning)
+- Duration (15-60 seconds for different platforms)
+- Type: intro, quote, highlight, moment, or outro
+- Best platform: instagram, youtube, tiktok, twitter, linkedin, or universal
+- Relevant tags for discoverability
+
+Return JSON array with this structure:
+[{"id": "1", "title": "string", "description": "string", "startTime": number, "endTime": number, "duration": number, "confidence": number, "type": "string", "tags": ["string"], "platform": "string"}]`;
+
+      const response = await generateResponse({
+        provider: 'gemini',
+        model: 'gemini-2.0-flash',
+        prompt: analysisPrompt,
+        systemPrompt: 'You are an expert social media content strategist. Analyze video content and identify the best moments for viral clips. Always respond with valid JSON only.',
+        temperature: 0.7,
+        maxTokens: 2000
+      });
+
+      clearInterval(progressInterval);
+      setAnalysisProgress(100);
+
+      if (response?.content) {
+        try {
+          // Parse AI response - handle potential markdown code blocks
+          let jsonContent = response.content;
+          if (jsonContent.includes('```')) {
+            jsonContent = jsonContent.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+          }
+          
+          const aiSuggestions: ClipSuggestion[] = JSON.parse(jsonContent);
+          
+          // Validate and sanitize suggestions
+          const validatedSuggestions = aiSuggestions.map((s, idx) => ({
+            id: s.id || `${idx + 1}`,
+            title: s.title || `Clip ${idx + 1}`,
+            description: s.description || 'AI-detected highlight',
+            startTime: Math.max(0, s.startTime || 0),
+            endTime: Math.min(sourceDuration, s.endTime || s.startTime + 30),
+            duration: s.duration || 30,
+            confidence: Math.min(1, Math.max(0, s.confidence || 0.8)),
+            type: (['intro', 'quote', 'highlight', 'moment', 'outro'].includes(s.type) ? s.type : 'highlight') as ClipSuggestion['type'],
+            tags: Array.isArray(s.tags) ? s.tags : ['ai-detected'],
+            platform: (['instagram', 'youtube', 'tiktok', 'twitter', 'linkedin', 'universal'].includes(s.platform) ? s.platform : 'universal') as ClipSuggestion['platform']
+          }));
+
+          setSuggestions(validatedSuggestions);
+          setActiveTab('suggestions');
+          vibrate?.(200);
+          toast.success(`Found ${validatedSuggestions.length} clip suggestions!`);
+        } catch (parseError) {
+          console.error('Failed to parse AI response:', parseError);
+          toast.error('AI analysis completed but response format was invalid');
+        }
+      } else {
+        toast.error('No response from AI analysis');
       }
-
-      // Mock suggestions - in production these would come from AI
-      const mockSuggestions: ClipSuggestion[] = [
-        {
-          id: '1',
-          title: 'Hook Opening',
-          description: 'Engaging intro that grabs attention',
-          startTime: 0,
-          endTime: 15,
-          duration: 15,
-          confidence: 0.95,
-          type: 'intro',
-          tags: ['attention-grabbing', 'hook', 'viral-potential'],
-          platform: 'instagram'
-        },
-        {
-          id: '2',
-          title: 'Key Quote',
-          description: 'Memorable statement with high engagement potential',
-          startTime: 45,
-          endTime: 65,
-          duration: 20,
-          confidence: 0.88,
-          type: 'quote',
-          tags: ['quotable', 'shareable', 'impactful'],
-          platform: 'twitter'
-        },
-        {
-          id: '3',
-          title: 'Highlight Moment',
-          description: 'Peak engagement section with visual interest',
-          startTime: 120,
-          endTime: 150,
-          duration: 30,
-          confidence: 0.82,
-          type: 'highlight',
-          tags: ['climax', 'emotional', 'action'],
-          platform: 'youtube'
-        },
-        {
-          id: '4',
-          title: 'Tutorial Snippet',
-          description: 'Educational content suitable for how-to clips',
-          startTime: 200,
-          endTime: 260,
-          duration: 60,
-          confidence: 0.79,
-          type: 'moment',
-          tags: ['educational', 'tutorial', 'value'],
-          platform: 'linkedin'
-        },
-        {
-          id: '5',
-          title: 'Call to Action',
-          description: 'Strong closing with clear next steps',
-          startTime: Math.max(0, sourceDuration - 20),
-          endTime: sourceDuration,
-          duration: 20,
-          confidence: 0.91,
-          type: 'outro',
-          tags: ['cta', 'conversion', 'closing'],
-          platform: 'universal'
-        },
-      ];
-
-      setSuggestions(mockSuggestions);
-      setActiveTab('suggestions');
-      vibrate?.(200);
-      toast.success(`Found ${mockSuggestions.length} clip suggestions!`);
       
     } catch (error) {
       console.error('Analysis error:', error);
-      toast.error('Failed to analyze content');
+      toast.error('Failed to analyze content. Please try again.');
     } finally {
       setIsAnalyzing(false);
     }
-  }, [sourceUrl, sourceDuration, vibrate]);
+  }, [sourceUrl, sourceDuration, vibrate, generateResponse]);
 
   const toggleClipSelection = (clipId: string) => {
     const newSelected = new Set(selectedClips);
