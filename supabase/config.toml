@@ -254,3 +254,9 @@ verify_jwt = false
 
 [functions.template-marketplace]
 verify_jwt = false
+
+[functions.send-meeting-minutes]
+verify_jwt = false
+
+[functions.notify-recording-consent]
+verify_jwt = false

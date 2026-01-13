@@ -508,6 +508,102 @@ const handler = async (req: Request): Promise<Response> => {
       }
       
       console.log('[create-session] Email sending complete:', emailResults.length, 'emails processed');
+      
+      // ========== SEND RECORDING CONSENT NOTIFICATION ==========
+      // Notify all participants that the session will be recorded
+      const participantEmails = body.participants.map(p => p.email).filter(Boolean);
+      if (participantEmails.length > 0) {
+        try {
+          console.log('[create-session] Sending recording consent notifications');
+          
+          for (const email of participantEmails) {
+            const participant = body.participants.find(p => p.email === email);
+            const formattedDate = scheduledAt.toLocaleDateString('en-US', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            });
+            
+            await resend.emails.send({
+              from: `Genie AI <${fromEmail}>`,
+              to: [email],
+              subject: `🎥 Recording Notice: ${body.title}`,
+              html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5;">
+  <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%); padding: 30px; color: white; text-align: center;">
+      <div style="font-size: 48px; margin-bottom: 10px;">🎥</div>
+      <h1 style="margin: 0; font-size: 24px;">Recording Notice</h1>
+      <p style="margin: 10px 0 0 0; opacity: 0.9;">Important Privacy Information</p>
+    </div>
+    
+    <div style="padding: 30px;">
+      <p style="color: #333; font-size: 16px; line-height: 1.6;">Hi ${participant?.name || 'there'},</p>
+      
+      <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <h2 style="margin: 0 0 15px 0; color: #333; font-size: 20px;">${body.title}</h2>
+        <p style="margin: 0; color: #666;"><strong>Host:</strong> ${body.host_name}</p>
+        <p style="margin: 5px 0 0 0; color: #666;"><strong>When:</strong> ${formattedDate}</p>
+      </div>
+      
+      <div style="background: #fff3cd; border: 2px solid #ffc107; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <h3 style="margin: 0 0 10px 0; color: #856404;">⚠️ Recording & Transcription Notice</h3>
+        <p style="margin: 0; color: #856404; line-height: 1.6;">
+          <strong>This session will be recorded and transcribed.</strong> By joining, you consent to:
+        </p>
+        <ul style="margin: 15px 0 0 0; padding-left: 20px; color: #856404;">
+          <li>Audio/video recording of the session</li>
+          <li>AI-powered transcription of spoken content</li>
+          <li>Meeting minutes and summaries may be generated</li>
+          <li>Recordings may be stored for future reference</li>
+        </ul>
+      </div>
+      
+      <div style="background: #d4edda; border: 1px solid #28a745; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <h3 style="margin: 0 0 10px 0; color: #155724;">🔒 Your Privacy Rights</h3>
+        <ul style="margin: 0; padding-left: 20px; color: #155724;">
+          <li>You can request to not be recorded (contact the host)</li>
+          <li>You may request data removal after the session</li>
+          <li>If you do not consent, please decline this invitation</li>
+        </ul>
+      </div>
+      
+      <p style="color: #666; font-size: 14px; text-align: center; margin: 20px 0;">
+        By joining the session, you acknowledge that you have read and understood this recording notice.
+      </p>
+    </div>
+    
+    <div style="background: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #eee;">
+      <p style="margin: 0; color: #999; font-size: 11px;">Powered by Genie AI</p>
+    </div>
+  </div>
+</body>
+</html>
+              `,
+            });
+          }
+          
+          // Mark consent notification as sent
+          await supabase
+            .from('genie_sessions')
+            .update({ recording_consent_shown: true })
+            .eq('id', session.id);
+            
+          console.log('[create-session] Recording consent notifications sent');
+        } catch (consentErr) {
+          console.error('[create-session] Recording consent notification error:', consentErr);
+        }
+      }
+      
     } else if (!resendApiKey) {
       console.log('[create-session] RESEND_API_KEY not configured - skipping emails');
     }
