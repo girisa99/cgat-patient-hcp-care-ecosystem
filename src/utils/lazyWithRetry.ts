@@ -92,7 +92,7 @@ export function lazyWithRetry<T extends React.ComponentType<any>>(
  * Pre-defined lazy loaders for commonly used pages
  */
 export const LazyPages = {
-  GenieStudio: lazyWithRetry(() => import('@/pages/GenieStudio')),
+  GenieStudio: lazyWithRetry(() => import('@/pages/GenieStudio'), 3, 2000),
   GenieSpark: lazyWithRetry(() => import('@/pages/GenieSpark')),
   GenieArc: lazyWithRetry(() => import('@/pages/GenieArc')),
   GenieMind: lazyWithRetry(() => import('@/pages/GenieMind')),

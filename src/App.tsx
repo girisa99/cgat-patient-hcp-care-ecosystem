@@ -17,6 +17,9 @@ import { GlobalAgentGeneratorProvider } from '@/hooks/useGlobalAgentGenerator';
 import { GlobalAgentGeneratorModal } from '@/components/global/GlobalAgentGeneratorModal';
 import { LazyPages, lazyWithRetry } from '@/utils/lazyWithRetry';
 
+// Import GenieStudio directly (not lazy) to debug loading issue
+import GenieStudioPage from '@/pages/GenieStudio';
+
 // Import pages that exist
 import Index from '@/pages/Index';
 import Dashboard from '@/pages/Dashboard';
@@ -226,9 +229,7 @@ const AppContent = () => {
                   } />
                   <Route path="/genie-studio" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
-                      <Suspense fallback={<PageLoading message="Loading Genie Studio..." />}>
-                        <LazyPages.GenieStudio />
-                      </Suspense>
+                      <GenieStudioPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/genie-spark" element={
