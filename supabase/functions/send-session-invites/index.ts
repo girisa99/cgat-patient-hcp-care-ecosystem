@@ -125,7 +125,7 @@ const handler = async (req: Request): Promise<Response> => {
 
           console.log('[send-session-invites] Sending email to:', participant.email);
           
-          // Build CC list: host email + other participants
+          // Build CC list: ONLY host email (not other participants - each gets individual email)
           const ccList: string[] = [];
           
           // Add host email to CC if available and different from participant
@@ -133,17 +133,10 @@ const handler = async (req: Request): Promise<Response> => {
             ccList.push(session.host_email);
           }
           
-          // Add other participants to CC (excluding current participant)
-          if (participants && participants.length > 1) {
-            for (const otherParticipant of participants) {
-              if (otherParticipant.email !== participant.email && 
-                  otherParticipant.email !== session.host_email) {
-                ccList.push(otherParticipant.email);
-              }
-            }
-          }
+          // NOTE: Removed adding other participants to CC - each participant receives 
+          // their own individual email with only the host CC'd for privacy
           
-          console.log('[send-session-invites] CC list:', ccList);
+          console.log('[send-session-invites] CC list (host only):', ccList);
           
           const emailPayload: any = {
             from: `Genie Studio <${fromEmail}>`,

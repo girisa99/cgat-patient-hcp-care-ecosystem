@@ -149,16 +149,22 @@ const handler = async (req: Request): Promise<Response> => {
     const showType = showTypeMapping[body.session_type] || 'podcast';
     
     // Determine event category from production_stage
+    // Valid enum values: 'genie_demo', 'media_production', 'business_meeting', 'event'
     const categoryMapping: Record<string, string> = {
-      'demo_live': 'demo',
-      'demo_scheduled': 'demo',
-      'demo_completed': 'demo',
-      'demo_follow_up': 'demo',
+      'demo_live': 'genie_demo',
+      'demo_scheduled': 'genie_demo',
+      'demo_completed': 'genie_demo',
+      'demo_follow_up': 'genie_demo',
+      'genie_demo': 'genie_demo',
       'recording': 'media_production',
       'post_production': 'media_production',
       'published': 'media_production',
+      'scheduled': 'media_production',
+      'in_progress': 'media_production',
+      'meeting': 'business_meeting',
+      'event': 'event',
     };
-    const eventCategory = categoryMapping[body.production_stage || ''] || 'media_production';
+    const eventCategory = categoryMapping[body.production_stage || ''] || 'genie_demo';
     
     // Create the show record
     const showData: Record<string, any> = {
@@ -377,7 +383,8 @@ const handler = async (req: Request): Promise<Response> => {
           
           console.log('[create-session] Sending invite to:', participant.email);
           
-          const emailResult = await resend.emails.send({
+          // Build email payload with host CC'd (not other participants for privacy)
+          const emailPayload: any = {
             from: `Genie Studio <${fromEmail}>`,
             to: [participant.email],
             subject: `You're invited: ${body.title}`,
@@ -454,7 +461,15 @@ const handler = async (req: Request): Promise<Response> => {
 </body>
 </html>
             `,
-          });
+          };
+          
+          // CC the host on each participant email (not other participants for privacy)
+          if (body.host_email && body.host_email !== participant.email) {
+            emailPayload.cc = [body.host_email];
+            console.log('[create-session] CC host:', body.host_email);
+          }
+          
+          const emailResult = await resend.emails.send(emailPayload);
           
           emailResults.push({
             email: participant.email,
