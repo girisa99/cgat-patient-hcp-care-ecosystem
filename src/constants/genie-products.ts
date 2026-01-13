@@ -14,6 +14,7 @@ import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
 import genieStudioBanner from '@/assets/logos/genie-studio-banner.png';
 import genieStudioHorizontal from '@/assets/logos/genie-studio-horizontal.png';
 import genieArcLogo from '@/assets/logos/genie-arc-combined.png';
+import askGenieLogo from '@/assets/logos/ask-genie-logo.png';
 
 export type GenieProduct = 'mind' | 'spark' | 'vibe' | 'studio' | 'arc';
 
@@ -33,6 +34,27 @@ export interface GenieProductInfo {
     icon?: string;         // Small icon version
   };
 }
+
+/**
+ * Ask Genie - The Universal AI Assistant
+ * Tagline: "Your wish is my command"
+ */
+export const ASK_GENIE = {
+  id: 'ask-genie',
+  name: 'Ask Genie',
+  tagline: 'Your wish is my command',
+  description: 'Your intelligent AI companion that guides you through the entire Genie Studio experience with empathy, creativity, and a touch of magic.',
+  emoji: '🧞',
+  color: 'from-violet-500 to-fuchsia-500',
+  bgColor: 'bg-violet-50 dark:bg-violet-950/20',
+  borderColor: 'border-violet-200 dark:border-violet-800',
+  logo: askGenieLogo,
+  personality: {
+    traits: ['empathetic', 'creative', 'witty', 'helpful', 'encouraging'],
+    humor: 'gentle and playful, never pushy',
+    approach: 'guides through suggestions, not demands'
+  }
+} as const;
 
 /**
  * Official Genie Product Taglines - DO NOT MODIFY
@@ -177,3 +199,74 @@ export const PRODUCT_KEYS: GenieProduct[] = ['mind', 'spark', 'vibe', 'studio', 
  * Display order for UI: Mind → Spark → Studio (center) → Vibe → Arc
  */
 export const PRODUCT_DISPLAY_ORDER: GenieProduct[] = ['mind', 'spark', 'studio', 'vibe', 'arc'];
+
+/**
+ * Supported Languages for Voice/TTS Features
+ * Based on integrations: ElevenLabs, OpenAI, Google Cloud, Amazon Polly, Azure
+ */
+export const SUPPORTED_LANGUAGES = {
+  tts: {
+    primary: ['English (US)', 'English (UK)', 'English (AU)'],
+    providers: {
+      openai: ['English'],
+      elevenlabs: ['English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese', 'Polish', 'Hindi', 'Arabic', 'Japanese', 'Korean', 'Chinese'],
+      google: ['English (US)', 'English (UK)', 'English (AU)', 'Spanish', 'French', 'German', 'Italian', 'Japanese', 'Korean', 'Portuguese'],
+      amazon: ['English (US)', 'English (UK)', 'English (AU)', 'Spanish', 'French', 'German', 'Italian', 'Japanese', 'Korean', 'Portuguese', 'Hindi', 'Arabic'],
+      azure: ['English (US)', 'English (UK)', 'English (AU)', 'Spanish', 'French', 'German', 'Italian', 'Japanese', 'Korean', 'Portuguese', 'Hindi', 'Arabic', 'Chinese']
+    }
+  },
+  voiceRecording: ['Any language (user-recorded)'],
+  scriptGeneration: ['English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese', 'Hindi', 'Japanese', 'Korean', 'Chinese', 'Arabic'],
+  conversations: ['English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese', 'Japanese', 'Korean', 'Chinese']
+} as const;
+
+/**
+ * Subscription tier feature availability for Ask Genie awareness
+ */
+export const SUBSCRIPTION_FEATURE_ACCESS = {
+  free: {
+    products: ['studio', 'spark'],
+    limitations: {
+      spark: '5 scripts/month',
+      studio: 'Watermarked exports',
+      vibe: 'Not available',
+      arc: 'Not available',
+      mind: 'Basic only'
+    },
+    upgradeHints: {
+      vibe: "Imagine turning your scripts into professional recordings with AI voices... 🎙️ That magic awaits in Starter!",
+      arc: "Picture this: a production hub where your team collaborates seamlessly... 🎬 Pro unlocks that dream!",
+      mind: "What if your AI could remember everything and understand your creative vision? 🧠 Business tier makes it real!"
+    }
+  },
+  starter: {
+    products: ['studio', 'spark'],
+    limitations: {
+      spark: '25 scripts/month',
+      vibe: '5 hours recording/month',
+      arc: 'Not available',
+      mind: '1K documents'
+    },
+    upgradeHints: {
+      arc: "Your productions deserve a home. Genie Arc brings your team together! ✨ Available in Business tier.",
+      moreRecording: "Running low on recording hours? Business gives you 25 hours to create magic! 🎥"
+    }
+  },
+  business: {
+    products: ['studio', 'spark', 'vibe', 'mind'],
+    limitations: {
+      spark: '150 scripts/month',
+      vibe: '25 hours recording/month',
+      arc: '5 shows',
+      mind: '10K documents'
+    },
+    upgradeHints: {
+      unlimited: "Going pro means unlimited everything. No more counting, just creating! 🚀"
+    }
+  },
+  pro: {
+    products: ['studio', 'spark', 'vibe', 'mind', 'arc'],
+    limitations: {},
+    upgradeHints: {}
+  }
+} as const;

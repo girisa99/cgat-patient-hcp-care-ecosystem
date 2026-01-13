@@ -147,7 +147,12 @@ const PERSONALITY = {
 };
 
 // Import centralized product definitions - SINGLE SOURCE OF TRUTH
-import { GENIE_PRODUCTS, getProductTagline } from '@/constants/genie-products';
+import { 
+  GENIE_PRODUCTS, 
+  ASK_GENIE, 
+  SUBSCRIPTION_FEATURE_ACCESS,
+  SUPPORTED_LANGUAGES 
+} from '@/constants/genie-products';
 
 // Use centralized taglines - These come from genie-products.ts and should NOT be duplicated
 const ORIGINAL_TAGLINES = {
@@ -165,6 +170,34 @@ const PRODUCT_DESCRIPTIONS = {
   spark: GENIE_PRODUCTS.spark.description,
   mind: GENIE_PRODUCTS.mind.description,
   studio: GENIE_PRODUCTS.studio.description
+};
+
+// Subscription-aware upgrade suggestions (gentle, not pushy)
+const getUpgradeHint = (product: GenieProduct, tier: 'free' | 'starter' | 'business' | 'pro' = 'free'): string | null => {
+  const access = SUBSCRIPTION_FEATURE_ACCESS[tier];
+  if (!access) return null;
+  
+  const hints = access.upgradeHints as Record<string, string>;
+  return hints[product] || null;
+};
+
+// Check if feature is available for tier
+const isFeatureAvailable = (product: GenieProduct, tier: 'free' | 'starter' | 'business' | 'pro' = 'free'): boolean => {
+  const access = SUBSCRIPTION_FEATURE_ACCESS[tier];
+  if (!access) return false;
+  
+  // Map 'arc' to check in products array
+  const productKey = product === 'arc' ? 'arc' : product;
+  return access.products.includes(productKey as any);
+};
+
+// Get limitation message for tier
+const getLimitation = (product: GenieProduct, tier: 'free' | 'starter' | 'business' | 'pro' = 'free'): string | null => {
+  const access = SUBSCRIPTION_FEATURE_ACCESS[tier];
+  if (!access) return null;
+  
+  const limitations = access.limitations as Record<string, string>;
+  return limitations[product] || null;
 };
 
 // Mermaid diagrams for visual workflow guidance
@@ -953,20 +986,24 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
       {/* Header */}
       <div className={cn(
         "flex items-center justify-between p-4 border-b",
-        `bg-gradient-to-r ${productContext.color}`
+        `bg-gradient-to-r ${ASK_GENIE.color}`
       )}>
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
-            <Sparkles className="h-5 w-5 text-white" />
+          <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center overflow-hidden">
+            <img 
+              src={ASK_GENIE.logo} 
+              alt="Ask Genie" 
+              className="h-8 w-8 object-contain"
+            />
           </div>
           <div>
             <h3 className="font-semibold text-white flex items-center gap-2">
-              Ask Genie
+              {ASK_GENIE.name} {ASK_GENIE.emoji}
               <Badge variant="outline" className="text-xs bg-white/20 text-white border-white/30">
                 {productContext.name}
               </Badge>
             </h3>
-            <p className="text-xs text-white/80">{productContext.tagline} {productContext.emoji}</p>
+            <p className="text-xs text-white/80">{ASK_GENIE.tagline}</p>
           </div>
         </div>
         <div className="flex items-center gap-1">
@@ -998,26 +1035,46 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
                 <motion.div 
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className={cn(
-                    "h-16 w-16 rounded-full flex items-center justify-center mb-4",
-                    `bg-gradient-to-r ${productContext.color}`
-                  )}
+                  className="h-20 w-20 rounded-full bg-white/10 flex items-center justify-center mb-4 overflow-hidden shadow-lg"
                 >
-                  <Sparkles className="h-8 w-8 text-white" />
+                  <img 
+                    src={ASK_GENIE.logo} 
+                    alt="Ask Genie" 
+                    className="h-16 w-16 object-contain"
+                  />
                 </motion.div>
                 
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
+                  className="space-y-2"
                 >
-                  <h4 className="font-semibold text-lg mb-1">{getRandomPhrase('greetings')}</h4>
-                  <p className="text-muted-foreground text-sm mb-2">
-                    I'm your {productContext.name} guide. {productContext.tagline}!
+                  <h4 className="font-semibold text-lg">{getRandomPhrase('greetings')}</h4>
+                  <p className="text-muted-foreground text-sm">
+                    I'm {ASK_GENIE.name}! <span className="italic">"{ASK_GENIE.tagline}"</span>
                   </p>
-                  <p className="text-xs text-muted-foreground/70 mb-4 italic">
-                    {productContext.description}
+                  <p className="text-xs text-muted-foreground/70 mb-4">
+                    Right now you're in <strong>{productContext.name}</strong> - {productContext.tagline}
                   </p>
+                  
+                  {/* Subscription awareness hint - gentle, not pushy */}
+                  {subscriptionTier !== 'pro' && (
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.5 }}
+                      className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 rounded-lg p-3 border border-amber-200/50 dark:border-amber-800/50"
+                    >
+                      <p className="text-xs text-amber-700 dark:text-amber-300 flex items-center gap-2">
+                        <Lightbulb className="h-3.5 w-3.5" />
+                        <span>
+                          Currently on <strong className="capitalize">{subscriptionTier}</strong> tier. 
+                          Ask me what magic awaits you! ✨
+                        </span>
+                      </p>
+                    </motion.div>
+                  )}
                 </motion.div>
                 
                 {/* Contextual Quick Actions */}
