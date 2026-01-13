@@ -129,6 +129,87 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
     
+    // First, create a corresponding record in the shows table for ProductionHub visibility
+    // Generate a show ID first
+    const showId = crypto.randomUUID();
+    const meetingLink = `${baseUrl}/meeting/${showId.substring(0, 36)}`;
+    
+    // Map session_type to show_type and determine category
+    const showTypeMapping: Record<string, string> = {
+      'genie_studio_full': 'podcast',
+      'podcast': 'podcast',
+      'video_podcast': 'video_podcast',
+      'webinar': 'webinar',
+      'interview': 'interview',
+      'panel_discussion': 'panel_discussion',
+      'tutorial': 'tutorial',
+      'demo': 'demo',
+    };
+    const showType = showTypeMapping[body.session_type] || 'podcast';
+    
+    // Determine event category from production_stage
+    const categoryMapping: Record<string, string> = {
+      'demo_live': 'demo',
+      'demo_scheduled': 'demo',
+      'demo_completed': 'demo',
+      'demo_follow_up': 'demo',
+      'recording': 'media_production',
+      'post_production': 'media_production',
+      'published': 'media_production',
+    };
+    const eventCategory = categoryMapping[body.production_stage || ''] || 'media_production';
+    
+    // Create the show record
+    const showData: Record<string, any> = {
+      id: showId,
+      title: body.title,
+      description: body.description || null,
+      show_type: showType,
+      event_category: eventCategory,
+      current_stage: body.production_stage || 'recording',
+      scheduled_date: scheduledAt.toISOString(),
+      duration_minutes: body.duration_minutes || 60,
+      host_name: body.host_name,
+      guest_info: body.participants.map(p => ({
+        name: p.name,
+        email: p.email,
+        phone: p.phone,
+        role: p.role,
+      })),
+      meeting_link: meetingLink,
+      agenda: body.agenda || null,
+      metadata: {
+        topics: body.agenda,
+        session_mode: body.session_mode,
+        timezone: body.timezone || 'UTC',
+      },
+    };
+    
+    // Only add user_id if valid
+    if (userId && userId.trim() !== '') {
+      showData.user_id = userId;
+    }
+    
+    // Only add linked_script_id if valid UUID
+    if (body.script_id && body.script_id.trim() !== '') {
+      showData.linked_script_id = body.script_id;
+    }
+    
+    console.log('Creating show record for ProductionHub:', JSON.stringify(showData, null, 2));
+    
+    const { data: showRecord, error: showError } = await supabase
+      .from('shows')
+      .insert(showData)
+      .select()
+      .single();
+    
+    if (showError) {
+      console.error('Show creation error (non-blocking):', showError);
+      // Don't throw - continue with session creation even if show fails
+    } else {
+      console.log('Show created for ProductionHub:', showRecord?.id);
+    }
+    
     // Create session - ensure empty strings are converted to null for UUID fields
     const sessionData: Record<string, any> = {
       title: body.title,
@@ -149,6 +230,7 @@ const handler = async (req: Request): Promise<Response> => {
       session_active_at: sessionActiveAt.toISOString(),
       waiting_room_enabled: true,
       recording_enabled: true,
+      show_id: showRecord?.id || null, // Link to the shows table
     };
 
     // Only add user_id if it's a valid UUID (not empty)
@@ -183,8 +265,16 @@ const handler = async (req: Request): Promise<Response> => {
       .from('genie_sessions')
       .update({ join_url: joinUrl })
       .eq('id', session.id);
+    
+    // Also update the show with the join URL as meeting_link
+    if (showRecord?.id) {
+      await supabase
+        .from('shows')
+        .update({ meeting_link: joinUrl })
+        .eq('id', showRecord.id);
+    }
 
-    // Create participants
+    // Create participants for genie_session_participants table
     const participantsToInsert = body.participants.map(p => ({
       session_id: session.id,
       name: p.name,
@@ -206,6 +296,46 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (participantsError) {
       console.error('Participants creation error:', participantsError);
+    }
+    
+    // Also create show_participants for ProductionHub visibility
+    if (showRecord?.id && body.participants.length > 0) {
+      const showParticipants = body.participants.map(p => ({
+        show_id: showRecord.id,
+        name: p.name,
+        email: p.email,
+        role: p.role || 'guest',
+        status: 'invited',
+      }));
+      
+      const { error: showParticipantsError } = await supabase
+        .from('show_participants')
+        .insert(showParticipants);
+      
+      if (showParticipantsError) {
+        console.error('Show participants creation error:', showParticipantsError);
+      } else {
+        console.log('Show participants created:', showParticipants.length);
+      }
+    }
+    
+    // Add host as a show participant
+    if (showRecord?.id && body.host_name) {
+      const { error: hostParticipantError } = await supabase
+        .from('show_participants')
+        .insert({
+          show_id: showRecord.id,
+          name: body.host_name,
+          email: body.host_email || null,
+          role: 'host',
+          status: 'confirmed',
+        });
+      
+      if (hostParticipantError) {
+        console.error('Host participant creation error:', hostParticipantError);
+      } else {
+        console.log('Host added as participant');
+      }
     }
 
     // Generate calendar links - pass the validated scheduledAt date
