@@ -767,9 +767,9 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
 
   // Submit handler
   const handleSubmit = async () => {
-    // Debug: Show toast immediately to confirm click
-    toast.info('Processing... Please wait');
-    console.log('[UnifiedScheduleShowDialog] handleSubmit called - button was clicked!');
+    // CRITICAL DEBUG: Using alert to confirm button click is registering
+    console.log('🔥 handleSubmit CALLED');
+    toast.info('Creating production...');
     
     if (!formData.title.trim()) {
       toast.error('Please enter a title');
@@ -784,11 +784,10 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
         finalUrl = generateGenieMeetingUrl();
       }
 
-      console.log('[UnifiedScheduleShowDialog] Preparing to call onSchedule with data:', {
+      console.log('🔥 Preparing schedule data:', {
         title: formData.title,
         hostEmail: formData.host?.email,
         guestCount: formData.guests?.length,
-        meetingUrl: finalUrl,
       });
 
       // Call onSchedule and WAIT for it to complete
@@ -804,21 +803,20 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
         ai_model: aiModel,
       };
 
+      console.log('🔥 Calling onSchedule...');
       try {
-        console.log('[UnifiedScheduleShowDialog] Calling onSchedule NOW...');
         await onSchedule(scheduleData);
-        console.log('[UnifiedScheduleShowDialog] onSchedule completed successfully');
+        console.log('🔥 onSchedule completed!');
         toast.success('Production scheduled and invites sent!');
       } catch (scheduleError) {
-        // Log but don't re-throw - we want the dialog to close regardless
-        console.error('[UnifiedScheduleShowDialog] Schedule error (non-blocking):', scheduleError);
-        toast.error('Error during scheduling: ' + (scheduleError as Error).message);
+        console.error('🔥 Schedule error:', scheduleError);
+        toast.error('Error: ' + (scheduleError as Error).message);
       }
       
       // Close dialog after submission attempt
       onOpenChange(false);
     } catch (error) {
-      console.error('[UnifiedScheduleShowDialog] Critical error:', error);
+      console.error('🔥 Critical error:', error);
       toast.error('Failed to schedule production');
     } finally {
       setIsSubmitting(false);
