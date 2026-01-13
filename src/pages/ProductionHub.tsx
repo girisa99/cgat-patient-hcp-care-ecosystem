@@ -983,8 +983,8 @@ export default function ProductionHub() {
             
             toast.success('Production created and invites sent!');
             
-            // Navigate to production hub to show the new show
-            navigate('/production-hub');
+            // Close dialog - already on Production Hub, no navigation needed
+            setIsCreateDialogOpen(false);
           }}
           availableScripts={availableScripts.map(s => ({ id: s.id, name: s.name, content: s.content || '' }))}
           initialData={{
