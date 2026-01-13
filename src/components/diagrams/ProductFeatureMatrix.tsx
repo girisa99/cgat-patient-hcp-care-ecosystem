@@ -318,6 +318,76 @@ const SCENARIOS: ScenarioMapping[] = [
   { id: 175, name: 'Auto-Trim & Clean', description: 'Silence/error removal', category: 'U', phase: 'P2', status: 'complete', products: ['vibe-studio', 'vibe-mobile'], features: ['Auto Trim'], agents: ['auto_editor'], apis: [], crossover: false },
   { id: 176, name: 'Beat-Sync Edit', description: 'Music-synced cuts', category: 'U', phase: 'P2', status: 'complete', products: ['vibe-studio', 'vibe-mobile'], features: ['Beat Sync'], agents: ['music_sync'], apis: [], crossover: false },
   { id: 177, name: 'Seven-Phase Guided Edit', description: 'Complete guided workflow', category: 'U', phase: 'P2', status: 'complete', products: ['vibe-studio', 'vibe-mobile'], features: ['Guided Wizard'], agents: ['guided_editor'], apis: [], crossover: false },
+
+  // =============================================================================
+  // CATEGORY V: P3 DIFFERENTIATORS (178-195)
+  // =============================================================================
+  { id: 178, name: 'Voice Clone Studio', description: 'Train custom voice models', category: 'V', phase: 'P3', status: 'planned', products: ['vibe-studio', 'vibe-desktop'], features: ['Voice Training UI'], agents: ['voice_clone_agent'], apis: ['/voice-clone-processor'], crossover: false },
+  { id: 179, name: 'Custom Avatar Creator', description: 'Design AI-driven avatars', category: 'V', phase: 'P3', status: 'planned', products: ['vibe-studio'], features: ['Avatar Designer'], agents: ['avatar_creator'], apis: [], crossover: false },
+  { id: 180, name: 'Lip Sync Engine', description: 'Audio-to-lip movement sync', category: 'V', phase: 'P3', status: 'planned', products: ['vibe-studio'], features: ['Lip Sync AI'], agents: ['lip_sync_agent'], apis: [], crossover: false },
+  { id: 181, name: 'Multi-Language Dubbing', description: 'Translate and dub in 20+ languages', category: 'V', phase: 'P3', status: 'planned', products: ['spark', 'vibe-studio'], features: ['Dubbing Pipeline'], agents: ['translation_agent', 'tts_orchestrator'], apis: [], crossover: true },
+  { id: 182, name: 'Emotion Detection', description: 'Analyze speaker emotions in video', category: 'V', phase: 'P3', status: 'planned', products: ['mind', 'vibe-studio'], features: ['Emotion AI'], agents: ['emotion_analyzer'], apis: [], crossover: true },
+  { id: 183, name: 'Auto Highlight Reels', description: 'AI-generated highlight compilations', category: 'V', phase: 'P3', status: 'planned', products: ['vibe-studio', 'vibe-mobile'], features: ['Highlight Gen'], agents: ['highlight_agent'], apis: [], crossover: false },
+  { id: 184, name: 'Interactive Video Branches', description: 'Choose-your-adventure videos', category: 'V', phase: 'P3', status: 'planned', products: ['vibe-studio'], features: ['Branching Logic'], agents: [], apis: [], crossover: false },
+  { id: 185, name: 'Real-Time Collaboration', description: 'Multi-user live editing', category: 'V', phase: 'P3', status: 'planned', products: ['arc', 'vibe-studio'], features: ['Real-Time Sync'], agents: [], apis: ['/collaboration-sync'], crossover: true },
+  { id: 186, name: 'Version Control System', description: 'Git-like version management', category: 'V', phase: 'P3', status: 'planned', products: ['vibe-studio', 'arc'], features: ['Version Control'], agents: [], apis: [], crossover: true },
+  { id: 187, name: 'AI Color Grading', description: 'Auto color correction and LUTs', category: 'V', phase: 'P3', status: 'planned', products: ['vibe-studio', 'vibe-desktop'], features: ['Color AI'], agents: ['color_grading_agent'], apis: [], crossover: false },
+  { id: 188, name: 'Background Removal/Replace', description: 'Green-screen-free background swap', category: 'V', phase: 'P3', status: 'planned', products: ['vibe-studio', 'vibe-mobile'], features: ['Background AI'], agents: ['background_agent'], apis: [], crossover: false },
+  { id: 189, name: 'Object Tracking', description: 'Track and label objects in video', category: 'V', phase: 'P3', status: 'planned', products: ['mind', 'vibe-studio'], features: ['Object Detection'], agents: ['object_tracker'], apis: [], crossover: true },
+  { id: 190, name: 'Auto Chapters & Timestamps', description: 'Generate YouTube chapters', category: 'V', phase: 'P3', status: 'planned', products: ['mind', 'vibe-studio'], features: ['Chapter Gen'], agents: ['chapter_agent'], apis: [], crossover: true },
+  { id: 191, name: 'SEO Metadata Generator', description: 'AI-optimized titles, descriptions, tags', category: 'V', phase: 'P3', status: 'planned', products: ['spark', 'vibe-studio'], features: ['SEO AI'], agents: ['seo_agent'], apis: [], crossover: true },
+  { id: 192, name: 'Thumbnail Generator', description: 'AI-designed video thumbnails', category: 'V', phase: 'P3', status: 'planned', products: ['spark', 'vibe-studio', 'vibe-mobile'], features: ['Thumbnail AI'], agents: ['thumbnail_agent'], apis: [], crossover: true },
+  { id: 193, name: 'Viral Potential Scoring', description: 'Predict engagement metrics', category: 'V', phase: 'P3', status: 'planned', products: ['mind', 'arc'], features: ['Viral Score'], agents: ['viral_predictor'], apis: [], crossover: true },
+  { id: 194, name: 'Competitor Content Analysis', description: 'Analyze competitor videos', category: 'V', phase: 'P3', status: 'planned', products: ['mind'], features: ['Competitor AI'], agents: ['competitor_analyzer'], apis: [], crossover: false },
+  { id: 195, name: 'Trend Forecasting', description: 'Predict upcoming content trends', category: 'V', phase: 'P3', status: 'planned', products: ['mind', 'spark'], features: ['Trend AI'], agents: ['trend_forecaster'], apis: [], crossover: true },
+
+  // =============================================================================
+  // CATEGORY W: P4 ADVANCED/FUTURE (196-215)
+  // =============================================================================
+  { id: 196, name: 'Full AI Avatar Video', description: 'Complete avatar-based video creation', category: 'W', phase: 'P4', status: 'planned', products: ['vibe-studio'], features: ['Avatar Pipeline'], agents: ['avatar_agent', 'lip_sync_agent'], apis: [], crossover: false },
+  { id: 197, name: 'VR/360 Video Support', description: 'Immersive video editing', category: 'W', phase: 'P4', status: 'planned', products: ['vibe-studio', 'vibe-desktop'], features: ['VR Editor'], agents: [], apis: [], crossover: false },
+  { id: 198, name: 'Live Streaming Studio', description: 'Multi-camera live production', category: 'W', phase: 'P4', status: 'planned', products: ['arc', 'vibe-studio'], features: ['Live Streaming'], agents: ['stream_director'], apis: ['/live-stream'], crossover: true },
+  { id: 199, name: 'Multi-Guest Live Sessions', description: 'Remote guest integration', category: 'W', phase: 'P4', status: 'planned', products: ['arc'], features: ['Multi-Guest'], agents: ['guest_coordinator'], apis: [], crossover: false },
+  { id: 200, name: 'AI Producer Bot', description: 'Autonomous video production', category: 'W', phase: 'P4', status: 'planned', products: ['mind', 'spark', 'vibe-studio'], features: ['Producer AI'], agents: ['producer_bot'], apis: [], crossover: true },
+  { id: 201, name: 'Content Calendar AI', description: 'AI-planned content schedules', category: 'W', phase: 'P4', status: 'planned', products: ['arc', 'spark'], features: ['Calendar AI'], agents: ['calendar_planner'], apis: [], crossover: true },
+  { id: 202, name: 'Audience Analytics', description: 'Deep viewer behavior analysis', category: 'W', phase: 'P4', status: 'planned', products: ['arc', 'mind'], features: ['Audience AI'], agents: ['audience_analyzer'], apis: [], crossover: true },
+  { id: 203, name: 'A/B Testing Platform', description: 'Test video variations', category: 'W', phase: 'P4', status: 'planned', products: ['arc'], features: ['A/B Platform'], agents: ['ab_test_agent'], apis: [], crossover: false },
+  { id: 204, name: 'Revenue Analytics', description: 'Monetization insights', category: 'W', phase: 'P4', status: 'planned', products: ['arc'], features: ['Revenue AI'], agents: ['revenue_analyzer'], apis: [], crossover: false },
+  { id: 205, name: 'Sponsor Integration', description: 'Automated sponsor placement', category: 'W', phase: 'P4', status: 'planned', products: ['vibe-studio', 'arc'], features: ['Sponsor AI'], agents: ['sponsor_agent'], apis: [], crossover: true },
+  { id: 206, name: 'Dynamic Ad Insertion', description: 'Programmatic ad placement', category: 'W', phase: 'P4', status: 'planned', products: ['vibe-studio', 'arc'], features: ['Ad Insertion'], agents: ['ad_agent'], apis: [], crossover: true },
+  { id: 207, name: 'White-Label Platform', description: 'Rebrandable solution', category: 'W', phase: 'P4', status: 'planned', products: ['arc'], features: ['White Label'], agents: [], apis: [], crossover: false },
+  { id: 208, name: 'Agency Dashboard', description: 'Multi-client management', category: 'W', phase: 'P4', status: 'planned', products: ['arc'], features: ['Agency UI'], agents: [], apis: [], crossover: false },
+  { id: 209, name: 'Template Marketplace', description: 'Buy/sell video templates', category: 'W', phase: 'P4', status: 'planned', products: ['vibe-studio', 'arc'], features: ['Marketplace'], agents: [], apis: [], crossover: true },
+  { id: 210, name: 'AI Scene Generator', description: 'Generate video scenes from prompts', category: 'W', phase: 'P4', status: 'planned', products: ['spark', 'vibe-studio'], features: ['Scene Gen'], agents: ['scene_generator'], apis: [], crossover: true },
+  { id: 211, name: 'Motion Capture Integration', description: 'Import MoCap data', category: 'W', phase: 'P4', status: 'planned', products: ['vibe-studio', 'vibe-desktop'], features: ['MoCap Import'], agents: [], apis: [], crossover: false },
+  { id: 212, name: '3D Asset Integration', description: 'Import 3D models and scenes', category: 'W', phase: 'P4', status: 'planned', products: ['vibe-studio', 'vibe-desktop'], features: ['3D Import'], agents: [], apis: [], crossover: false },
+  { id: 213, name: 'Real-Time Effects', description: 'Live filters and effects', category: 'W', phase: 'P4', status: 'planned', products: ['vibe-studio', 'vibe-mobile'], features: ['Live Effects'], agents: [], apis: [], crossover: false },
+  { id: 214, name: 'AI Script to Storyboard', description: 'Auto-generate storyboards', category: 'W', phase: 'P4', status: 'planned', products: ['spark', 'vibe-studio'], features: ['Storyboard AI'], agents: ['storyboard_agent'], apis: [], crossover: true },
+  { id: 215, name: 'Podcast Studio Pro', description: 'Full podcast production suite', category: 'W', phase: 'P4', status: 'planned', products: ['vibe-studio', 'arc'], features: ['Podcast Suite'], agents: ['podcast_producer'], apis: [], crossover: true },
+
+  // =============================================================================
+  // CATEGORY X: P5 ENTERPRISE (216-235)
+  // =============================================================================
+  { id: 216, name: 'SSO/SAML Integration', description: 'Enterprise single sign-on', category: 'X', phase: 'P5', status: 'planned', products: ['arc'], features: ['SSO'], agents: [], apis: [], crossover: false },
+  { id: 217, name: 'HIPAA Compliance Suite', description: 'Full healthcare compliance', category: 'X', phase: 'P5', status: 'planned', products: ['arc', 'vibe-studio'], features: ['HIPAA Tools'], agents: ['compliance_monitor'], apis: [], crossover: true },
+  { id: 218, name: 'SOC2 Audit Trail', description: 'Comprehensive audit logging', category: 'X', phase: 'P5', status: 'planned', products: ['arc'], features: ['Audit Trail'], agents: [], apis: [], crossover: false },
+  { id: 219, name: 'Data Residency Controls', description: 'Regional data storage', category: 'X', phase: 'P5', status: 'planned', products: ['arc'], features: ['Data Residency'], agents: [], apis: [], crossover: false },
+  { id: 220, name: 'Custom Model Training', description: 'Fine-tune AI models', category: 'X', phase: 'P5', status: 'planned', products: ['mind'], features: ['Model Training'], agents: ['model_trainer'], apis: [], crossover: false },
+  { id: 221, name: 'On-Premise Deployment', description: 'Self-hosted installation', category: 'X', phase: 'P5', status: 'planned', products: ['arc'], features: ['On-Premise'], agents: [], apis: [], crossover: false },
+  { id: 222, name: 'Custom SLA Management', description: 'Enterprise SLA configuration', category: 'X', phase: 'P5', status: 'planned', products: ['arc'], features: ['SLA Config'], agents: [], apis: [], crossover: false },
+  { id: 223, name: 'Advanced Role Permissions', description: 'Granular access control', category: 'X', phase: 'P5', status: 'planned', products: ['arc'], features: ['RBAC Advanced'], agents: [], apis: [], crossover: false },
+  { id: 224, name: 'Multi-Tenant Isolation', description: 'Complete workspace isolation', category: 'X', phase: 'P5', status: 'planned', products: ['arc'], features: ['Multi-Tenant'], agents: [], apis: [], crossover: false },
+  { id: 225, name: 'Enterprise API Gateway', description: 'Dedicated API infrastructure', category: 'X', phase: 'P5', status: 'planned', products: ['arc'], features: ['API Gateway'], agents: [], apis: [], crossover: false },
+  { id: 226, name: 'Priority Support Portal', description: '24/7 enterprise support', category: 'X', phase: 'P5', status: 'planned', products: ['arc'], features: ['Support Portal'], agents: [], apis: [], crossover: false },
+  { id: 227, name: 'Custom Integrations', description: 'Bespoke integration development', category: 'X', phase: 'P5', status: 'planned', products: ['arc'], features: ['Custom Dev'], agents: [], apis: [], crossover: false },
+  { id: 228, name: 'Brand Asset Management', description: 'Enterprise DAM integration', category: 'X', phase: 'P5', status: 'planned', products: ['arc', 'vibe-studio'], features: ['DAM Integration'], agents: [], apis: [], crossover: true },
+  { id: 229, name: 'Content Governance', description: 'Enterprise content policies', category: 'X', phase: 'P5', status: 'planned', products: ['arc'], features: ['Governance'], agents: ['governance_agent'], apis: [], crossover: false },
+  { id: 230, name: 'Global CDN', description: 'Enterprise content delivery', category: 'X', phase: 'P5', status: 'planned', products: ['arc'], features: ['CDN'], agents: [], apis: [], crossover: false },
+  { id: 231, name: 'Dedicated Infrastructure', description: 'Isolated compute resources', category: 'X', phase: 'P5', status: 'planned', products: ['arc'], features: ['Dedicated Infra'], agents: [], apis: [], crossover: false },
+  { id: 232, name: 'Enterprise Analytics', description: 'Advanced reporting suite', category: 'X', phase: 'P5', status: 'planned', products: ['arc'], features: ['Enterprise Analytics'], agents: ['analytics_agent'], apis: [], crossover: false },
+  { id: 233, name: 'Bulk Operations API', description: 'Mass video operations', category: 'X', phase: 'P5', status: 'planned', products: ['arc'], features: ['Bulk API'], agents: [], apis: ['/bulk-operations'], crossover: false },
+  { id: 234, name: 'Workflow Automation SDK', description: 'Custom workflow development', category: 'X', phase: 'P5', status: 'planned', products: ['arc'], features: ['Workflow SDK'], agents: [], apis: [], crossover: false },
+  { id: 235, name: 'AI Model Governance', description: 'Enterprise AI policies', category: 'X', phase: 'P5', status: 'planned', products: ['mind', 'arc'], features: ['AI Governance'], agents: ['ai_governance'], apis: [], crossover: true },
 ];
 
 // Recommendations based on competitor analysis
@@ -449,6 +519,9 @@ export const ProductFeatureMatrix: React.FC<{ className?: string }> = ({ classNa
     'S': 'Subscription & Access',
     'T': 'Mobile Deployment',
     'U': 'P2 AI Agents',
+    'V': 'P3 Differentiators',
+    'W': 'P4 Advanced/Future',
+    'X': 'P5 Enterprise',
   };
 
   return (
@@ -461,7 +534,7 @@ export const ProductFeatureMatrix: React.FC<{ className?: string }> = ({ classNa
               Product-Feature Matrix
             </CardTitle>
             <CardDescription>
-              177 Scenarios across 6 Products (Vibe Studio/Mobile/Desktop, Mind, Spark, Arc)
+              {SCENARIOS.length} Scenarios (P0-P5) across 6 Products (Vibe Studio/Mobile/Desktop, Mind, Spark, Arc)
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
