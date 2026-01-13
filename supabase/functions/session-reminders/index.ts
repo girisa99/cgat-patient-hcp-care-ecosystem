@@ -20,6 +20,8 @@ const handler = async (req: Request): Promise<Response> => {
     const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
     const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
     const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
+    // Use PUBLIC_SITE_URL for dynamic base URL, fallback to production domain
+    const baseUrl = Deno.env.get('PUBLIC_SITE_URL') || 'https://genieaiexperimentationhub.tech';
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const resend = resendApiKey ? new Resend(resendApiKey) : null;
@@ -51,7 +53,8 @@ const handler = async (req: Request): Promise<Response> => {
       const timeDiffMinutes = Math.floor((scheduledAt.getTime() - now.getTime()) / (60 * 1000));
       
       for (const participant of session.genie_session_participants || []) {
-        const participantJoinUrl = `https://preview--genie-session.lovable.app/join/${session.session_token}?p=${participant.participant_token}`;
+        // Use dynamic base URL from environment
+        const participantJoinUrl = `${baseUrl}/join/${session.session_token}?p=${participant.participant_token}`;
 
         // Check each reminder threshold
         const reminders = [

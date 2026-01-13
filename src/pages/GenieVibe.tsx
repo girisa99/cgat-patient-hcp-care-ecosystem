@@ -9,8 +9,8 @@
  * INTEGRATED: Ask Genie AI assistant for context-aware help
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -128,7 +128,13 @@ interface MixedResult {
 
 const GenieVibe: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const isMobile = useIsMobile();
+  
+  // Get context from URL params (from MeetingRoom or ProductionHub)
+  const showId = searchParams.get('showId');
+  const sessionId = searchParams.get('session');
+  const titleFromUrl = searchParams.get('title');
   
   // View mode: 'desktop' or 'mobile' - auto-detect based on device
   const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>(isMobile ? 'mobile' : 'desktop');
@@ -136,6 +142,10 @@ const GenieVibe: React.FC = () => {
   // Teleprompter state
   const [isTeleprompterOpen, setIsTeleprompterOpen] = useState(false);
   const [activeScript, setActiveScript] = useState<string>('');
+  
+  // Production context state - loaded from show if available
+  const [productionTitle, setProductionTitle] = useState<string>('');
+  const [productionScript, setProductionScript] = useState<string>('');
   
   // Existing hooks - data flow unchanged
   const { scripts: savedScripts } = useGenieScripts();
@@ -152,6 +162,41 @@ const GenieVibe: React.FC = () => {
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const [currentPlayheadTime, setCurrentPlayheadTime] = useState(0);
 
+  // Load production context from URL params (showId from MeetingRoom or ProductionHub)
+  useEffect(() => {
+    const loadProductionContext = async () => {
+      if (titleFromUrl) {
+        setProductionTitle(decodeURIComponent(titleFromUrl));
+      }
+      
+      if (showId) {
+        try {
+          const { supabase } = await import('@/integrations/supabase/client');
+          const { data: show } = await supabase
+            .from('shows')
+            .select('*, show_participants (*)')
+            .eq('id', showId)
+            .single();
+          
+          if (show) {
+            setProductionTitle(show.title || '');
+            // Check for script in metadata
+            const metadata = show.metadata as Record<string, any> || {};
+            if (metadata?.script_content || metadata?.script) {
+              setProductionScript(metadata.script_content || metadata.script);
+              setActiveScript(metadata.script_content || metadata.script);
+              toast.success(`Loaded production: ${show.title}`);
+            }
+          }
+        } catch (err) {
+          console.error('Error loading production context:', err);
+        }
+      }
+    };
+    
+    loadProductionContext();
+  }, [showId, titleFromUrl]);
+  
   // Combine voiceovers and TTS for audio mixer
   const allVoiceovers = useMemo(() => [...voiceovers, ...ttsFiles], [voiceovers, ttsFiles]);
 
