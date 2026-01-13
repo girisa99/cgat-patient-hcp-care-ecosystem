@@ -198,16 +198,17 @@ export function useShows() {
     }
   };
 
-  const updateStage = async (id: string, newStage: ProductionStage) => {
+  const updateStage = async (id: string, newStage: ProductionStage | MeetingStage | EventStage | string) => {
     try {
       const { error } = await supabase
         .from('shows')
-        .update({ current_stage: newStage })
+        .update({ current_stage: newStage as ProductionStage })
         .eq('id', id);
 
       if (error) throw error;
 
-      toast.success(`Moved to ${newStage.replace('_', ' ')}`);
+      const displayName = String(newStage).replace(/_/g, ' ');
+      toast.success(`Moved to ${displayName}`);
       await fetchShows();
     } catch (err: any) {
       console.error('Error updating stage:', err);

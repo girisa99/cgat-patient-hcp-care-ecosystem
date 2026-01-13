@@ -70,14 +70,17 @@ import {
   PRODUCTION_STAGES,
   MEETING_STAGES,
   EVENT_STAGES,
+  DEMO_STAGES,
   SHOW_TYPES, 
   EVENT_CATEGORIES,
   getStagesForCategory,
   getShowTypesForCategory,
+  getCurrentStage,
   type ShowWithParticipants, 
   type ProductionStage,
   type MeetingStage,
   type EventStage,
+  type DemoStage,
   type ShowType,
   type EventCategory
 } from '@/types/shows';
@@ -1081,34 +1084,41 @@ export default function ProductionHub() {
                 </DialogHeader>
 
                 <div className="space-y-6 py-4">
-                  {/* Stage Progress */}
+                  {/* Stage Progress - Dynamic based on category */}
                   <div>
                     <Label className="text-sm font-medium mb-2 block">Production Stage</Label>
-                    <div className="flex items-center gap-1 flex-wrap">
-                      {PRODUCTION_STAGES.map((stage, index) => {
-                        const isActive = stage.id === selectedShow.current_stage;
-                        const stageIndex = PRODUCTION_STAGES.findIndex(s => s.id === selectedShow.current_stage);
-                        const isPast = index < stageIndex;
-                        
-                        return (
-                          <React.Fragment key={stage.id}>
-                            <div 
-                              className={cn(
-                                "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
-                                isActive && stage.color + " text-white",
-                                isPast && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-                                !isActive && !isPast && "bg-muted text-muted-foreground"
-                              )}
-                            >
-                              {stage.label}
-                            </div>
-                            {index < PRODUCTION_STAGES.length - 1 && (
-                              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                            )}
-                          </React.Fragment>
-                        );
-                      })}
-                    </div>
+                    {(() => {
+                      const categoryStages = getStagesForCategory(selectedShow.event_category || 'media_production');
+                      const currentStageId = getCurrentStage(selectedShow);
+                      
+                      return (
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {categoryStages.map((stage, index) => {
+                            const isActive = stage.id === currentStageId;
+                            const stageIndex = categoryStages.findIndex(s => s.id === currentStageId);
+                            const isPast = index < stageIndex;
+                            
+                            return (
+                              <React.Fragment key={stage.id}>
+                                <div 
+                                  className={cn(
+                                    "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
+                                    isActive && stage.color + " text-white",
+                                    isPast && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+                                    !isActive && !isPast && "bg-muted text-muted-foreground"
+                                  )}
+                                >
+                                  {stage.label}
+                                </div>
+                                {index < categoryStages.length - 1 && (
+                                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                )}
+                              </React.Fragment>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Description */}
@@ -1373,21 +1383,29 @@ export default function ProductionHub() {
                         Recording Studio
                       </Button>
                     )}
-                    {selectedShow.current_stage !== 'published' && (
-                      <Button 
-                        onClick={async () => {
-                          const stageIndex = PRODUCTION_STAGES.findIndex(s => s.id === selectedShow.current_stage);
-                          if (stageIndex < PRODUCTION_STAGES.length - 1) {
-                            await updateStage(selectedShow.id, PRODUCTION_STAGES[stageIndex + 1].id);
-                          }
-                          setSelectedShow(null);
-                        }}
-                        className="bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90"
-                      >
-                        Move to Next Stage
-                        <ChevronRight className="h-4 w-4 ml-1" />
-                      </Button>
-                    )}
+                    {(() => {
+                      const categoryStages = getStagesForCategory(selectedShow.event_category || 'media_production');
+                      const currentStageId = getCurrentStage(selectedShow);
+                      const stageIndex = categoryStages.findIndex(s => s.id === currentStageId);
+                      const isLastStage = stageIndex >= categoryStages.length - 1;
+                      
+                      if (isLastStage) return null;
+                      
+                      return (
+                        <Button 
+                          onClick={async () => {
+                            if (stageIndex < categoryStages.length - 1) {
+                              await updateStage(selectedShow.id, categoryStages[stageIndex + 1].id);
+                            }
+                            setSelectedShow(null);
+                          }}
+                          className="bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90"
+                        >
+                          Move to Next Stage
+                          <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
+                      );
+                    })()}
                   </div>
                 </DialogFooter>
               </>
