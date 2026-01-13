@@ -46,8 +46,8 @@ export interface SavedScript {
 // Types for shows/events - Extended for all scheduling types
 export interface ShowEvent {
   id: string;
-  type: 'podcast' | 'webcast' | 'broadcast' | 'interview' | 'panel' | 'tutorial' | 'discovery_call' | 'sales_meeting' | 'project_kickoff' | 'status_update' | 'consultation' | 'workshop' | 'webinar' | 'conference' | 'training_session' | 'other';
-  eventCategory?: 'media_production' | 'business_meeting' | 'event';
+  type: 'podcast' | 'webcast' | 'broadcast' | 'interview' | 'panel' | 'tutorial' | 'discovery_call' | 'sales_meeting' | 'project_kickoff' | 'status_update' | 'consultation' | 'workshop' | 'webinar' | 'conference' | 'training_session' | 'genie_studio_full' | 'genie_spark_demo' | 'genie_arc_demo' | 'genie_mind_demo' | 'genie_vibe_demo' | 'genie_suite_overview' | 'other';
+  eventCategory?: 'media_production' | 'business_meeting' | 'event' | 'genie_demo';
   title: string;
   description: string;
   scheduledDate: Date;

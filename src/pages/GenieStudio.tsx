@@ -79,7 +79,8 @@ import {
   Building,
   BookOpen,
   CreditCard,
-  Smartphone
+  Smartphone,
+  Brain
 } from 'lucide-react';
 import { NativeFeatureButton } from '@/components/mobile';
 import { cn } from '@/lib/utils';
@@ -250,7 +251,7 @@ export default function GenieStudio() {
   const [selectedEventForInvite, setSelectedEventForInvite] = useState<ShowEvent | null>(null);
   const [isCreateShowDialogOpen, setIsCreateShowDialogOpen] = useState(false);
   const [newShowType, setNewShowType] = useState<string>('podcast');
-  const [newEventCategory, setNewEventCategory] = useState<'media_production' | 'business_meeting' | 'event'>('media_production');
+  const [newEventCategory, setNewEventCategory] = useState<'media_production' | 'business_meeting' | 'event' | 'genie_demo'>('media_production');
   const [newShowTitle, setNewShowTitle] = useState('');
   const [newShowDescription, setNewShowDescription] = useState('');
   const [newShowDate, setNewShowDate] = useState('');
@@ -3663,11 +3664,12 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
                 {/* Event Category Selector */}
                 <div>
                   <Label>Category</Label>
-                  <div className="grid grid-cols-3 gap-3 mt-2">
+                  <div className="grid grid-cols-4 gap-2 mt-2">
                     {[
-                      { value: 'media_production', label: 'Media Production', icon: Video, color: 'from-purple-500 to-indigo-500', description: 'Podcasts, webcasts, interviews' },
-                      { value: 'business_meeting', label: 'Meeting', icon: Users, color: 'from-blue-500 to-cyan-500', description: 'Calls, consultations' },
-                      { value: 'event', label: 'Event', icon: Calendar, color: 'from-orange-500 to-red-500', description: 'Workshops, webinars' }
+                      { value: 'media_production', label: 'Media', icon: Video, color: 'from-purple-500 to-indigo-500', description: 'Podcasts, webcasts' },
+                      { value: 'business_meeting', label: 'Businesss', icon: Briefcase, color: 'from-blue-500 to-cyan-500', description: 'Calls, meetings' },
+                      { value: 'event', label: 'Event', icon: Calendar, color: 'from-orange-500 to-red-500', description: 'Workshops, webinars' },
+                      { value: 'genie_demo', label: 'Genie Studio Demo', icon: Sparkles, color: 'from-fuchsia-500 to-pink-500', description: 'Product demos' }
                     ].map((cat) => (
                       <div
                         key={cat.value}
@@ -3682,6 +3684,7 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
                           // Set default type for category
                           if (cat.value === 'media_production') setNewShowType('podcast');
                           else if (cat.value === 'business_meeting') setNewShowType('discovery_call');
+                          else if (cat.value === 'genie_demo') setNewShowType('genie_studio_full');
                           else setNewShowType('workshop');
                         }}
                       >
@@ -3750,6 +3753,30 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
                       { value: 'webinar', label: 'Webinar', icon: Monitor, color: 'from-purple-500 to-indigo-500' },
                       { value: 'conference', label: 'Conference', icon: Building, color: 'from-green-500 to-emerald-500' },
                       { value: 'training_session', label: 'Training', icon: BookOpen, color: 'from-orange-500 to-red-500' }
+                    ].map((type) => (
+                      <div
+                        key={type.value}
+                        className={cn(
+                          "p-3 rounded-lg border-2 cursor-pointer transition-all text-center",
+                          newShowType === type.value
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-primary/50"
+                        )}
+                        onClick={() => setNewShowType(type.value)}
+                      >
+                        <div className={cn("h-8 w-8 rounded-lg bg-gradient-to-br flex items-center justify-center mx-auto mb-1", type.color)}>
+                          <type.icon className="h-4 w-4 text-white" />
+                        </div>
+                        <span className="text-xs font-medium">{type.label}</span>
+                      </div>
+                    ))}
+                    {newEventCategory === 'genie_demo' && [
+                      { value: 'genie_studio_full', label: 'Full Studio Demo', icon: Sparkles, color: 'from-fuchsia-500 to-pink-500' },
+                      { value: 'genie_spark_demo', label: 'Genie Spark', icon: Zap, color: 'from-amber-500 to-orange-500' },
+                      { value: 'genie_arc_demo', label: 'Genie Arc', icon: Film, color: 'from-emerald-500 to-teal-500' },
+                      { value: 'genie_mind_demo', label: 'Genie Mind', icon: Brain, color: 'from-blue-500 to-cyan-500' },
+                      { value: 'genie_vibe_demo', label: 'Genie Vibe', icon: Music, color: 'from-purple-500 to-pink-500' },
+                      { value: 'genie_suite_overview', label: 'Suite Overview', icon: Layers, color: 'from-indigo-500 to-violet-500' }
                     ].map((type) => (
                       <div
                         key={type.value}
