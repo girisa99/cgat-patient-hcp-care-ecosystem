@@ -852,34 +852,40 @@ export default function ProductionHub() {
           open={isCreateDialogOpen}
           onOpenChange={setIsCreateDialogOpen}
           onSchedule={async (data: ScheduleShowData) => {
-            console.log('[ProductionHub] onSchedule called with data:', data);
+            console.log('[ProductionHub] onSchedule called with data:', JSON.stringify(data, null, 2));
+            
+            let newShow: any = null;
+            let meetingUrl = data.meeting_url;
             
             // Create show in database - this auto-generates the meeting_link
-            const newShow = await createShow({
-              title: data.title,
-              description: data.description || undefined,
-              show_type: data.show_type,
-              scheduled_date: data.scheduled_date || undefined,
-              starting_stage: data.starting_stage as ProductionStage,
-              host_name: data.host.name || undefined,
-              guest_info: data.guests.length > 0 ? data.guests.map(g => ({
-                name: g.name,
-                email: g.email,
-                phone: g.phone,
-                linkedin: g.linkedin_url,
-              })) : undefined,
-              linked_script_id: data.linked_script_id || undefined,
-              linked_music_id: data.linked_music_id || undefined,
-            });
-            
-            console.log('[ProductionHub] Show created:', newShow);
-            
-            // Use the auto-generated meeting link from the new show
-            const meetingUrl = newShow?.meeting_link || data.meeting_url;
-            console.log('[ProductionHub] Meeting URL:', meetingUrl);
+            try {
+              newShow = await createShow({
+                title: data.title,
+                description: data.description || undefined,
+                show_type: data.show_type,
+                scheduled_date: data.scheduled_date || undefined,
+                starting_stage: data.starting_stage as ProductionStage,
+                host_name: data.host.name || undefined,
+                guest_info: data.guests.length > 0 ? data.guests.map(g => ({
+                  name: g.name,
+                  email: g.email,
+                  phone: g.phone,
+                  linkedin: g.linkedin_url,
+                })) : undefined,
+                linked_script_id: data.linked_script_id || undefined,
+                linked_music_id: data.linked_music_id || undefined,
+              });
+              
+              console.log('[ProductionHub] Show created:', newShow);
+              meetingUrl = newShow?.meeting_link || data.meeting_url;
+              console.log('[ProductionHub] Meeting URL:', meetingUrl);
+            } catch (err) {
+              console.error('[ProductionHub] Failed to create show:', err);
+              // Continue with email sending even if show creation fails
+            }
             
             // Send invites to host if email provided - ALWAYS send when email exists
-            if (data.host.email) {
+            if (data.host?.email) {
               console.log('[ProductionHub] Sending host invite to:', data.host.email);
               try {
                 const linkedScript = data.linked_script_id 
@@ -891,7 +897,7 @@ export default function ProductionHub() {
                     to: data.host.email,
                     participantName: data.host.name || 'Host',
                     role: 'host',
-                    showType: data.show_type,
+                    showType: data.show_type || 'podcast',
                     showTitle: data.title,
                     showDescription: data.description,
                     scheduledDate: data.scheduled_date,
@@ -908,13 +914,18 @@ export default function ProductionHub() {
                   },
                 });
                 console.log('[ProductionHub] Host invite result:', inviteResult);
+                if (inviteResult.error) {
+                  console.error('[ProductionHub] Host invite error:', inviteResult.error);
+                }
               } catch (err) {
                 console.error('[ProductionHub] Failed to send host invite:', err);
               }
+            } else {
+              console.log('[ProductionHub] No host email provided, skipping host invite');
             }
             
             // Send SMS to host if phone provided and SMS reminders enabled
-            if (data.host.phone && data.enable_sms_reminders) {
+            if (data.host?.phone && data.enable_sms_reminders) {
               try {
                 await supabase.functions.invoke('twilio-notifications', {
                   body: {
@@ -930,61 +941,61 @@ export default function ProductionHub() {
             }
             
             // Send invites to all guests - ALWAYS send when email exists
-            for (const guest of data.guests) {
-              if (guest.email) {
-                console.log('[ProductionHub] Sending guest invite to:', guest.email);
-                try {
-                  const linkedScript = data.linked_script_id 
-                    ? availableScripts.find(s => s.id === data.linked_script_id) 
-                    : null;
-                  
-                  const guestInviteResult = await supabase.functions.invoke('send-show-invite', {
-                    body: {
-                      to: guest.email,
-                      participantName: guest.name,
-                      role: 'guest',
-                      showType: data.show_type,
-                      showTitle: data.title,
-                      showDescription: data.description,
-                      scheduledDate: data.scheduled_date,
-                      hostName: data.host.name || 'Host',
-                      hostEmail: data.host.email,
-                      senderName: data.host.name || 'Host',
-                      senderEmail: data.host.email,
-                      category: 'media_production',
-                      stage: 'scheduled',
-                      topics: data.topics,
-                      script: data.attach_script_to_invite && linkedScript?.content?.substring(0, 500),
-                      joinUrl: meetingUrl,
-                      durationMinutes: 60,
-                    },
-                  });
-                  console.log('[ProductionHub] Guest invite result:', guestInviteResult);
-                } catch (err) {
-                  console.error('[ProductionHub] Failed to send guest invite:', err);
+            if (data.guests && data.guests.length > 0) {
+              for (const guest of data.guests) {
+                if (guest.email) {
+                  console.log('[ProductionHub] Sending guest invite to:', guest.email);
+                  try {
+                    const linkedScript = data.linked_script_id 
+                      ? availableScripts.find(s => s.id === data.linked_script_id) 
+                      : null;
+                    
+                    const guestInviteResult = await supabase.functions.invoke('send-show-invite', {
+                      body: {
+                        to: guest.email,
+                        participantName: guest.name,
+                        role: 'guest',
+                        showType: data.show_type || 'podcast',
+                        showTitle: data.title,
+                        showDescription: data.description,
+                        scheduledDate: data.scheduled_date,
+                        hostName: data.host?.name || 'Host',
+                        hostEmail: data.host?.email,
+                        senderName: data.host?.name || 'Host',
+                        senderEmail: data.host?.email,
+                        category: 'media_production',
+                        stage: 'scheduled',
+                        topics: data.topics,
+                        script: data.attach_script_to_invite && linkedScript?.content?.substring(0, 500),
+                        joinUrl: meetingUrl,
+                        durationMinutes: 60,
+                      },
+                    });
+                    console.log('[ProductionHub] Guest invite result:', guestInviteResult);
+                  } catch (err) {
+                    console.error('[ProductionHub] Failed to send guest invite:', err);
+                  }
                 }
-              }
-              
-              // Send SMS to guest if phone provided
-              if (guest.phone && data.enable_sms_reminders) {
-                try {
-                  await supabase.functions.invoke('twilio-notifications', {
-                    body: {
-                      type: 'sms',
-                      to: guest.phone,
-                      message: `🎙️ You're invited to "${data.title}" on ${data.scheduled_date ? new Date(data.scheduled_date).toLocaleString() : 'TBD'}. ${meetingUrl ? `Join: ${meetingUrl}` : ''}`,
-                    },
-                  });
-                } catch (err) {
-                  console.error('[ProductionHub] Failed to send guest SMS:', err);
+                
+                // Send SMS to guest if phone provided
+                if (guest.phone && data.enable_sms_reminders) {
+                  try {
+                    await supabase.functions.invoke('twilio-notifications', {
+                      body: {
+                        type: 'sms',
+                        to: guest.phone,
+                        message: `🎙️ You're invited to "${data.title}" on ${data.scheduled_date ? new Date(data.scheduled_date).toLocaleString() : 'TBD'}. ${meetingUrl ? `Join: ${meetingUrl}` : ''}`,
+                      },
+                    });
+                  } catch (err) {
+                    console.error('[ProductionHub] Failed to send guest SMS:', err);
+                  }
                 }
               }
             }
             
-            toast.success('Production created and invites sent!');
-            
-            // Close dialog - already on Production Hub, no navigation needed
-            setIsCreateDialogOpen(false);
+            console.log('[ProductionHub] Scheduling complete');
+            // Don't call setIsCreateDialogOpen here - let the dialog handle its own closing
           }}
           availableScripts={availableScripts.map(s => ({ id: s.id, name: s.name, content: s.content || '' }))}
           initialData={{
