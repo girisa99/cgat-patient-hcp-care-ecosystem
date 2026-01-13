@@ -10634,6 +10634,78 @@ export type Database = {
           },
         ]
       }
+      module_registry: {
+        Row: {
+          allowed_tiers: string[] | null
+          category: string
+          created_at: string
+          credit_cost: number | null
+          dependencies: string[] | null
+          description: string | null
+          display_name: string
+          feature_flags: Json | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          min_tier: string | null
+          name: string
+          product: string
+          requires_subscription: boolean
+          sort_order: number | null
+          updated_at: string
+          usage_limit_business: number | null
+          usage_limit_free: number | null
+          usage_limit_pro: number | null
+          usage_limit_starter: number | null
+        }
+        Insert: {
+          allowed_tiers?: string[] | null
+          category?: string
+          created_at?: string
+          credit_cost?: number | null
+          dependencies?: string[] | null
+          description?: string | null
+          display_name: string
+          feature_flags?: Json | null
+          icon?: string | null
+          id: string
+          is_active?: boolean
+          min_tier?: string | null
+          name: string
+          product: string
+          requires_subscription?: boolean
+          sort_order?: number | null
+          updated_at?: string
+          usage_limit_business?: number | null
+          usage_limit_free?: number | null
+          usage_limit_pro?: number | null
+          usage_limit_starter?: number | null
+        }
+        Update: {
+          allowed_tiers?: string[] | null
+          category?: string
+          created_at?: string
+          credit_cost?: number | null
+          dependencies?: string[] | null
+          description?: string | null
+          display_name?: string
+          feature_flags?: Json | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          min_tier?: string | null
+          name?: string
+          product?: string
+          requires_subscription?: boolean
+          sort_order?: number | null
+          updated_at?: string
+          usage_limit_business?: number | null
+          usage_limit_free?: number | null
+          usage_limit_pro?: number | null
+          usage_limit_starter?: number | null
+        }
+        Relationships: []
+      }
       modules: {
         Row: {
           created_at: string | null
@@ -16913,6 +16985,47 @@ export type Database = {
             columns: ["module_id"]
             isOneToOne: false
             referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_module_usage: {
+        Row: {
+          created_at: string
+          id: string
+          module_id: string
+          period_end: string
+          period_start: string
+          updated_at: string
+          usage_count: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          module_id: string
+          period_end?: string
+          period_start?: string
+          updated_at?: string
+          usage_count?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          module_id?: string
+          period_end?: string
+          period_start?: string
+          updated_at?: string
+          usage_count?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_module_usage_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "module_registry"
             referencedColumns: ["id"]
           },
         ]

@@ -4,6 +4,9 @@ export { TwoStagePipelineFlowDiagram } from './TwoStagePipelineFlowDiagram';
 export { SubAgentArchitectureDiagram } from './SubAgentArchitectureDiagram';
 export { BeforeAfterArchitectureDiagram } from './BeforeAfterArchitectureDiagram';
 
+// Product-Feature Matrix (177 Scenarios → 6 Products mapping)
+export { ProductFeatureMatrix } from './ProductFeatureMatrix';
+
 // =============================================================================
 // GENIE STUDIO - CONSOLIDATED SINGLE SOURCE OF TRUTH
 // =============================================================================

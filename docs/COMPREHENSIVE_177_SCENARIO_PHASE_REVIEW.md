@@ -67,11 +67,14 @@ This document provides a complete mapping of all 177 user scenarios to their res
 
 | # | Scenario | Description | Status | Gap |
 |---|----------|-------------|--------|-----|
-| 66 | Subscription Tier Database | Create database schema for tiers | ⏳ Planned | Week 1-2 |
-| 67 | Module Registry Database | Module definitions and access rules | ⏳ Planned | Week 1-2 |
+| 66 | Subscription Tier Database | Create database schema for tiers | ✅ Complete | subscription_tiers table exists |
+| 67 | Module Registry Database | Module definitions and access rules | ✅ Complete | module_registry + user_module_usage tables |
 | 68 | useSubscription Hook | React hook for subscription state | ✅ Complete | Exists |
-| 69 | useModuleAccess Hook | Access control per Genie module | ✅ Complete | Exists |
+| 69 | useModuleAccess Hook | Access control per Genie module | ✅ Complete | useModuleRegistry hook |
 | 70 | Beta User Migration | Mark existing users as beta tier | ✅ Complete | Implemented |
+| 71 | Route-Level Access Guards | Protect routes by tier | ✅ Complete | RoleBasedRoute + TierNavigation |
+| 72 | Module-Level Access Gates | Component wrappers | ✅ Complete | ModuleGate component |
+| 73 | Upgrade Prompts UI | Upgrade modals/banners | ✅ Complete | UpgradeBanner, UpgradeModal, UpgradeCard |
 
 #### Category Q: Agent Integration Core (P0)
 
