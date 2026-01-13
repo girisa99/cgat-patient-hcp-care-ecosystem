@@ -63,7 +63,7 @@ export const ASK_GENIE = {
  * - Genie Vibe: "Script to Screen"
  * - Genie Spark: "Ignite your Ideas"
  * - Genie Studio: "Mind to Media"
- * - Genie Arc: "Production hub for teams"
+ * - Genie Arc: "Your Production Journey With Infinite Possibilities"
  */
 export const GENIE_PRODUCTS: Record<GenieProduct, GenieProductInfo> = {
   mind: {
@@ -150,7 +150,7 @@ export const GENIE_PRODUCTS: Record<GenieProduct, GenieProductInfo> = {
   arc: {
     id: 'arc',
     name: 'Genie Arc',
-    tagline: 'Production hub for teams',
+    tagline: 'Your Production Journey With Infinite Possibilities',
     description: 'Orchestrate your production workflow with powerful scheduling, team collaboration, and show management tools built for creative teams.',
     emoji: '🎯',
     color: 'from-emerald-500 to-teal-500',
