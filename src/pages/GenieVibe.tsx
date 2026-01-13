@@ -33,7 +33,12 @@ import {
   Eye,
   Wand2,
   Combine,
-  Sparkles
+  Sparkles,
+  Shuffle,
+  Zap,
+  AudioWaveform,
+  MapPin,
+  Edit3
 } from 'lucide-react';
 import {
   Select,
@@ -59,7 +64,13 @@ import {
   MultiFileMerger,
   BRollIntegrator,
   VoiceCommands,
-  SceneAnalyzerPanel
+  SceneAnalyzerPanel,
+  // P2 Components
+  AIAutoArrange,
+  SmartTransitions,
+  MusicSyncAssembly,
+  LocationStoryMode,
+  TimelineClipEditor
 } from '@/components/shared';
 import type { TimelineClip } from '@/components/mobile/MultiClipTimeline';
 import type { PipelineStage } from '@/components/mobile/PipelineProgress';
@@ -134,6 +145,10 @@ const GenieVibe: React.FC = () => {
   const [timelineClips, setTimelineClips] = useState<TimelineClip[]>([]);
   const [mixedMedia, setMixedMedia] = useState<MixedResult | null>(null);
   const [completedStages, setCompletedStages] = useState<PipelineStage[]>([]);
+  
+  // P2: Timeline Editor state
+  const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
+  const [currentPlayheadTime, setCurrentPlayheadTime] = useState(0);
 
   // Combine voiceovers and TTS for audio mixer
   const allVoiceovers = useMemo(() => [...voiceovers, ...ttsFiles], [voiceovers, ttsFiles]);
@@ -396,6 +411,27 @@ const GenieVibe: React.FC = () => {
                 <Layers className="h-4 w-4" />
                 <span className="hidden sm:inline">Timeline</span>
                 {completedStages.includes('timeline') && <Check className="h-3 w-3 text-green-500 ml-1" />}
+              </TabsTrigger>
+              {/* P2 Advanced Tabs */}
+              <TabsTrigger value="arrange" className="gap-2 px-3">
+                <Shuffle className="h-4 w-4" />
+                <span className="hidden lg:inline">AI Arrange</span>
+              </TabsTrigger>
+              <TabsTrigger value="transitions" className="gap-2 px-3">
+                <Zap className="h-4 w-4" />
+                <span className="hidden lg:inline">Transitions</span>
+              </TabsTrigger>
+              <TabsTrigger value="beatsync" className="gap-2 px-3">
+                <AudioWaveform className="h-4 w-4" />
+                <span className="hidden lg:inline">Beat Sync</span>
+              </TabsTrigger>
+              <TabsTrigger value="location" className="gap-2 px-3">
+                <MapPin className="h-4 w-4" />
+                <span className="hidden lg:inline">Location</span>
+              </TabsTrigger>
+              <TabsTrigger value="editor" className="gap-2 px-3">
+                <Edit3 className="h-4 w-4" />
+                <span className="hidden lg:inline">Editor</span>
               </TabsTrigger>
               <TabsTrigger value="publish" className="gap-2 px-4">
                 <Upload className="h-4 w-4" />
@@ -690,6 +726,138 @@ const GenieVibe: React.FC = () => {
               />
             </TabsContent>
 
+            {/* P2: AI Auto Arrange Tab */}
+            <TabsContent value="arrange" className="space-y-6 mt-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                    <Shuffle className="h-5 w-5 text-indigo-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold">AI Auto-Arrange</h2>
+                    <p className="text-sm text-muted-foreground">Intelligently reorder clips for flow</p>
+                  </div>
+                </div>
+                <Badge variant="outline" className="bg-indigo-500/10 text-indigo-600 border-indigo-500/30">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  P2 Feature
+                </Badge>
+              </div>
+              
+              <AIAutoArrange
+                clips={timelineClips}
+                onArrange={(arrangedClips) => {
+                  setTimelineClips(arrangedClips);
+                  toast.success('Clips auto-arranged by AI!');
+                }}
+              />
+            </TabsContent>
+
+            {/* P2: Smart Transitions Tab */}
+            <TabsContent value="transitions" className="space-y-6 mt-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                    <Zap className="h-5 w-5 text-orange-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold">Smart Transitions</h2>
+                    <p className="text-sm text-muted-foreground">AI-powered transition suggestions</p>
+                  </div>
+                </div>
+                <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/30">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  P2 Feature
+                </Badge>
+              </div>
+              
+              <SmartTransitions
+                clips={timelineClips}
+                onApplyTransitions={() => {
+                  toast.success('Smart transitions applied!');
+                }}
+              />
+            </TabsContent>
+
+            {/* P2: Beat Sync Tab */}
+            <TabsContent value="beatsync" className="space-y-6 mt-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-pink-500/10 flex items-center justify-center">
+                    <AudioWaveform className="h-5 w-5 text-pink-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold">Music Beat Sync</h2>
+                    <p className="text-sm text-muted-foreground">Sync cuts to music beats</p>
+                  </div>
+                </div>
+                <Badge variant="outline" className="bg-pink-500/10 text-pink-600 border-pink-500/30">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  P2 Feature
+                </Badge>
+              </div>
+              
+              <MusicSyncAssembly
+                clips={timelineClips}
+                onSyncClips={(syncedClips) => {
+                  setTimelineClips(syncedClips);
+                  toast.success('Clips synced to music beats!');
+                }}
+              />
+            </TabsContent>
+
+            {/* P2: Location Story Tab */}
+            <TabsContent value="location" className="space-y-6 mt-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-teal-500/10 flex items-center justify-center">
+                    <MapPin className="h-5 w-5 text-teal-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold">Location Story</h2>
+                    <p className="text-sm text-muted-foreground">Geo-based narrative creation</p>
+                  </div>
+                </div>
+                <Badge variant="outline" className="bg-teal-500/10 text-teal-600 border-teal-500/30">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  P2 Feature
+                </Badge>
+              </div>
+              
+              <LocationStoryMode
+                clips={timelineClips}
+                onClipsChange={setTimelineClips}
+              />
+            </TabsContent>
+
+            {/* P2: Timeline Clip Editor Tab */}
+            <TabsContent value="editor" className="space-y-6 mt-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-violet-500/10 flex items-center justify-center">
+                    <Edit3 className="h-5 w-5 text-violet-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold">Clip Editor</h2>
+                    <p className="text-sm text-muted-foreground">Full clip manipulation tools</p>
+                  </div>
+                </div>
+                <Badge variant="outline" className="bg-violet-500/10 text-violet-600 border-violet-500/30">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  P2 Feature
+                </Badge>
+              </div>
+              
+              <TimelineClipEditor
+                clips={timelineClips}
+                selectedClipId={selectedClipId}
+                currentTime={currentPlayheadTime}
+                onClipsChange={setTimelineClips}
+                onSelectClip={setSelectedClipId}
+                onSeek={setCurrentPlayheadTime}
+              />
+            </TabsContent>
+
             {/* Publish Tab */}
             <TabsContent value="publish" className="space-y-6 mt-0">
               <div className="flex items-center justify-between">
@@ -702,7 +870,7 @@ const GenieVibe: React.FC = () => {
                     <p className="text-sm text-muted-foreground">Export, share, and publish</p>
                   </div>
                 </div>
-                <Badge variant="outline">Step 5 of 5</Badge>
+                <Badge variant="outline">Final Step</Badge>
               </div>
               
               <PublishPanel
