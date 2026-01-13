@@ -61,6 +61,7 @@ import { VerticalKanban } from '@/components/production/VerticalKanban';
 import { ProductionCalendar } from '@/components/production/ProductionCalendar';
 import { ScheduleManagementDialog } from '@/components/production/ScheduleManagementDialog';
 import { UnifiedScheduleShowDialog, type ScheduleShowData } from '@/components/production/UnifiedScheduleShowDialog';
+import { WebinarHighlightExtractor, BRollIntegrator, DistributionAgentPanel } from '@/components/shared';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { 
@@ -649,7 +650,7 @@ export default function ProductionHub() {
         <div className="flex-1 overflow-auto">
           <Tabs value={activeCategory} onValueChange={(v) => setActiveCategory(v as EventCategory)} className="h-full flex flex-col">
             <div className="px-4 pt-4 border-b bg-muted/30">
-              <TabsList className="grid w-full max-w-md grid-cols-3">
+              <TabsList className="grid w-full max-w-2xl grid-cols-5">
                 <TabsTrigger value="media_production" className="flex items-center gap-2">
                   <Podcast className="h-4 w-4" />
                   Media
@@ -662,10 +663,19 @@ export default function ProductionHub() {
                   <Calendar className="h-4 w-4" />
                   Events
                 </TabsTrigger>
+                <TabsTrigger value="highlights" className="flex items-center gap-2">
+                  <Zap className="h-4 w-4" />
+                  Highlights
+                </TabsTrigger>
+                <TabsTrigger value="distribution" className="flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  Distribute
+                </TabsTrigger>
               </TabsList>
             </div>
             
-            <TabsContent value={activeCategory} className="flex-1 p-4 mt-0">
+            {/* Media/Meetings/Events Content */}
+            <TabsContent value="media_production" className="flex-1 p-4 mt-0">
               {isLoading ? (
                 <div className="flex items-center justify-center h-64">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -676,22 +686,15 @@ export default function ProductionHub() {
                   onSelectShow={setSelectedShow}
                   onOpenRecordingStudio={handleOpenRecordingStudio}
                   onUpdateStage={async (showId, newStage) => {
-                    if (activeCategory === 'media_production') {
-                      await updateStage(showId, newStage as ProductionStage);
-                    } else if (activeCategory === 'business_meeting') {
-                      await updateMeetingStage(showId, newStage as MeetingStage);
-                    } else {
-                      await updateEventStage(showId, newStage as EventStage);
-                    }
+                    await updateStage(showId, newStage as ProductionStage);
                   }}
-                  eventCategory={activeCategory}
+                  eventCategory="media_production"
                 />
               ) : (
                 <ProductionCalendar
-                  shows={shows.filter(s => s.event_category === activeCategory)}
+                  shows={shows.filter(s => s.event_category === 'media_production')}
                   onShowClick={setSelectedShow}
                   onScheduleNew={(date, time) => {
-                    // Pre-fill the date and time in the new show form
                     const dateStr = date.toISOString().split('T')[0];
                     const dateTimeStr = `${dateStr}T${time}`;
                     setNewShow(prev => ({ ...prev, scheduled_date: dateTimeStr }));
@@ -699,6 +702,83 @@ export default function ProductionHub() {
                   }}
                 />
               )}
+            </TabsContent>
+            
+            <TabsContent value="business_meeting" className="flex-1 p-4 mt-0">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : viewMode === 'kanban' ? (
+                <VerticalKanban
+                  showsByStage={showsByStage}
+                  onSelectShow={setSelectedShow}
+                  onOpenRecordingStudio={handleOpenRecordingStudio}
+                  onUpdateStage={async (showId, newStage) => {
+                    await updateMeetingStage(showId, newStage as MeetingStage);
+                  }}
+                  eventCategory="business_meeting"
+                />
+              ) : (
+                <ProductionCalendar
+                  shows={shows.filter(s => s.event_category === 'business_meeting')}
+                  onShowClick={setSelectedShow}
+                  onScheduleNew={(date, time) => {
+                    const dateStr = date.toISOString().split('T')[0];
+                    const dateTimeStr = `${dateStr}T${time}`;
+                    setNewShow(prev => ({ ...prev, scheduled_date: dateTimeStr }));
+                    setIsCreateDialogOpen(true);
+                  }}
+                />
+              )}
+            </TabsContent>
+            
+            <TabsContent value="event" className="flex-1 p-4 mt-0">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : viewMode === 'kanban' ? (
+                <VerticalKanban
+                  showsByStage={showsByStage}
+                  onSelectShow={setSelectedShow}
+                  onOpenRecordingStudio={handleOpenRecordingStudio}
+                  onUpdateStage={async (showId, newStage) => {
+                    await updateEventStage(showId, newStage as EventStage);
+                  }}
+                  eventCategory="event"
+                />
+              ) : (
+                <ProductionCalendar
+                  shows={shows.filter(s => s.event_category === 'event')}
+                  onShowClick={setSelectedShow}
+                  onScheduleNew={(date, time) => {
+                    const dateStr = date.toISOString().split('T')[0];
+                    const dateTimeStr = `${dateStr}T${time}`;
+                    setNewShow(prev => ({ ...prev, scheduled_date: dateTimeStr }));
+                    setIsCreateDialogOpen(true);
+                  }}
+                />
+              )}
+            </TabsContent>
+            
+            {/* Highlights Tab - Webinar Highlight Extractor */}
+            <TabsContent value="highlights" className="flex-1 p-4 mt-0">
+              <WebinarHighlightExtractor
+                onExtractComplete={(highlights) => {
+                  toast.success(`Extracted ${highlights.length} highlights!`);
+                }}
+              />
+            </TabsContent>
+            
+            {/* Distribution Tab */}
+            <TabsContent value="distribution" className="flex-1 p-4 mt-0">
+              <DistributionAgentPanel
+                onDistributionComplete={(results) => {
+                  const successCount = results.filter(r => r.status === 'success').length;
+                  toast.success(`Published to ${successCount} platforms!`);
+                }}
+              />
             </TabsContent>
           </Tabs>
         </div>

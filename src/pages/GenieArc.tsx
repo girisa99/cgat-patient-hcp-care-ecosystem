@@ -37,6 +37,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useShows } from '@/hooks/useShows';
 import { toast } from 'sonner';
+import { PodcastToVideoConverter } from '@/components/shared';
 import genieArcLogo from '@/assets/logos/genie-arc-combined.png';
 
 const SHOW_TYPES = [
@@ -149,7 +150,7 @@ const GenieArc: React.FC = () => {
 
         {/* Main Content */}
         <div className="max-w-7xl mx-auto px-6 py-8">
-          {/* Filter Tabs */}
+          {/* Main Tabs - Shows + Tools */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
             <TabsList className="bg-muted/50 border border-border/50">
               <TabsTrigger value="all">All Shows</TabsTrigger>
@@ -159,97 +160,204 @@ const GenieArc: React.FC = () => {
                   {type.label}
                 </TabsTrigger>
               ))}
+              <TabsTrigger value="podcast-to-video" className="gap-2">
+                <Video className="h-4 w-4" />
+                Podcast→Video
+              </TabsTrigger>
             </TabsList>
-          </Tabs>
-
-          {/* Shows Grid */}
-          {isLoading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
-            </div>
-          ) : !filteredShows?.length ? (
-            <Card className="border-dashed border-2 border-indigo-500/30 bg-indigo-500/5">
-              <CardContent className="flex flex-col items-center justify-center py-16">
-                <div className="h-20 w-20 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center mb-4">
-                  <FolderOpen className="h-10 w-10 text-white" />
+            
+            {/* Shows Tabs Content */}
+            <TabsContent value="all" className="mt-6">
+              {isLoading ? (
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">No Shows Yet</h3>
-                <p className="text-muted-foreground text-center mb-4 max-w-md">
-                  Create your first show to start planning episodes, managing scripts, and tracking production.
-                </p>
-                <Button
-                  onClick={() => setIsCreateDialogOpen(true)}
-                  className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Your First Show
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredShows.map(show => {
-                const showType = SHOW_TYPES.find(t => t.value === show.show_type) || SHOW_TYPES[0];
-                return (
-                  <Card 
-                    key={show.id}
-                    className="group hover:shadow-lg hover:border-indigo-500/30 transition-all cursor-pointer"
-                    onClick={() => navigate(`/genie-studio/productions?show=${show.id}`)}
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className={cn(
-                          "h-12 w-12 rounded-xl flex items-center justify-center bg-gradient-to-br",
-                          showType.color
-                        )}>
-                          <showType.icon className="h-6 w-6 text-white" />
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          {show.current_stage?.replace('_', ' ') || 'Planning'}
-                        </Badge>
+              ) : !filteredShows?.length ? (
+                <Card className="border-dashed border-2 border-indigo-500/30 bg-indigo-500/5">
+                  <CardContent className="flex flex-col items-center justify-center py-16">
+                    <div className="h-20 w-20 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center mb-4">
+                      <FolderOpen className="h-10 w-10 text-white" />
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2">No Shows Yet</h3>
+                    <p className="text-muted-foreground text-center mb-4 max-w-md">
+                      Create your first show to start planning episodes, managing scripts, and tracking production.
+                    </p>
+                    <Button
+                      onClick={() => setIsCreateDialogOpen(true)}
+                      className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Your First Show
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredShows.map(show => {
+                    const showType = SHOW_TYPES.find(t => t.value === show.show_type) || SHOW_TYPES[0];
+                    return (
+                      <Card 
+                        key={show.id}
+                        className="group hover:shadow-lg hover:border-indigo-500/30 transition-all cursor-pointer"
+                        onClick={() => navigate(`/genie-studio/productions?show=${show.id}`)}
+                      >
+                        <CardContent className="p-6">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className={cn(
+                              "h-12 w-12 rounded-xl flex items-center justify-center bg-gradient-to-br",
+                              showType.color
+                            )}>
+                              <showType.icon className="h-6 w-6 text-white" />
+                            </div>
+                            <Badge variant="outline" className="text-xs">
+                              {show.current_stage?.replace('_', ' ') || 'Planning'}
+                            </Badge>
+                          </div>
+                          
+                          <h3 className="font-semibold text-lg mb-1 group-hover:text-indigo-600 transition-colors">
+                            {show.title}
+                          </h3>
+                          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                            {show.description || 'No description'}
+                          </p>
+                          
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">
+                              {show.current_stage || 'Planning'}
+                            </span>
+                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/genie-studio/productions?show=${show.id}`);
+                                }}
+                              >
+                                <Play className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteShow(show.id, show.title);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </TabsContent>
+            
+            {SHOW_TYPES.map(type => (
+              <TabsContent key={type.value} value={type.value} className="mt-6">
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-20">
+                    <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+                  </div>
+                ) : !shows?.filter(s => s.show_type === type.value)?.length ? (
+                  <Card className="border-dashed border-2 border-indigo-500/30 bg-indigo-500/5">
+                    <CardContent className="flex flex-col items-center justify-center py-16">
+                      <div className="h-20 w-20 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center mb-4">
+                        <type.icon className="h-10 w-10 text-white" />
                       </div>
-                      
-                      <h3 className="font-semibold text-lg mb-1 group-hover:text-indigo-600 transition-colors">
-                        {show.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                        {show.description || 'No description'}
+                      <h3 className="text-xl font-semibold mb-2">No {type.label}s Yet</h3>
+                      <p className="text-muted-foreground text-center mb-4 max-w-md">
+                        Create your first {type.label.toLowerCase()} to get started.
                       </p>
-                      
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">
-                          {show.current_stage || 'Planning'}
-                        </span>
-                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/genie-studio/productions?show=${show.id}`);
-                            }}
-                          >
-                            <Play className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-destructive"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteShow(show.id, show.title);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
+                      <Button
+                        onClick={() => setIsCreateDialogOpen(true)}
+                        className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create {type.label}
+                      </Button>
                     </CardContent>
                   </Card>
-                );
-              })}
-            </div>
-          )}
+                ) : (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {shows?.filter(s => s.show_type === type.value).map(show => {
+                      const showType = SHOW_TYPES.find(t => t.value === show.show_type) || SHOW_TYPES[0];
+                      return (
+                        <Card 
+                          key={show.id}
+                          className="group hover:shadow-lg hover:border-indigo-500/30 transition-all cursor-pointer"
+                          onClick={() => navigate(`/genie-studio/productions?show=${show.id}`)}
+                        >
+                          <CardContent className="p-6">
+                            <div className="flex items-start justify-between mb-4">
+                              <div className={cn(
+                                "h-12 w-12 rounded-xl flex items-center justify-center bg-gradient-to-br",
+                                showType.color
+                              )}>
+                                <showType.icon className="h-6 w-6 text-white" />
+                              </div>
+                              <Badge variant="outline" className="text-xs">
+                                {show.current_stage?.replace('_', ' ') || 'Planning'}
+                              </Badge>
+                            </div>
+                            
+                            <h3 className="font-semibold text-lg mb-1 group-hover:text-indigo-600 transition-colors">
+                              {show.title}
+                            </h3>
+                            <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                              {show.description || 'No description'}
+                            </p>
+                            
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-muted-foreground">
+                                {show.current_stage || 'Planning'}
+                              </span>
+                              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/genie-studio/productions?show=${show.id}`);
+                                  }}
+                                >
+                                  <Play className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-destructive"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteShow(show.id, show.title);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </TabsContent>
+            ))}
+            
+            {/* Podcast to Video Converter Tab */}
+            <TabsContent value="podcast-to-video" className="mt-6">
+              <PodcastToVideoConverter
+                onConversionComplete={(result) => {
+                  toast.success(`Video conversion complete!`);
+                }}
+              />
+            </TabsContent>
+          </Tabs>
         </div>
 
         {/* Create Show Dialog */}
