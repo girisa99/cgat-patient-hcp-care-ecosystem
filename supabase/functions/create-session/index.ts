@@ -208,8 +208,8 @@ const handler = async (req: Request): Promise<Response> => {
       console.error('Participants creation error:', participantsError);
     }
 
-    // Generate calendar links
-    const calendarLinks = generateCalendarLinks(session, body, joinUrl);
+    // Generate calendar links - pass the validated scheduledAt date
+    const calendarLinks = generateCalendarLinks(session, body, joinUrl, scheduledAt);
 
     console.log('Session created successfully:', session.id);
 
@@ -236,8 +236,9 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
-function generateCalendarLinks(session: any, body: CreateSessionRequest, joinUrl: string) {
-  const startTime = new Date(body.scheduled_at);
+function generateCalendarLinks(session: any, body: CreateSessionRequest, joinUrl: string, scheduledAt: Date) {
+  // Use the pre-validated scheduledAt date instead of parsing body.scheduled_at again
+  const startTime = scheduledAt;
   const endTime = new Date(startTime.getTime() + (body.duration_minutes || 60) * 60 * 1000);
   
   const formatDate = (date: Date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
