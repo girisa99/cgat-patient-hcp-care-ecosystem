@@ -409,7 +409,7 @@ export const PodcastToVideoConverter: React.FC<PodcastToVideoConverterProps> = (
 
                 <div className="space-y-4">
                   <h4 className="font-medium flex items-center gap-2">
-                    <Waveform className="h-4 w-4" />
+                    <AudioWaveform className="h-4 w-4" />
                     Audio Visualization
                   </h4>
                   <div className="space-y-3">
