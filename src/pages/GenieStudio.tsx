@@ -98,6 +98,9 @@ import type { GeneratedContent } from '@/components/genie-studio/PostGenerationA
 import { supabase } from '@/integrations/supabase/client';
 import { useGenieSession } from '@/hooks/useGenieSession';
 import { SessionCalendarButtons } from '@/components/genie-studio/SessionCalendarButtons';
+// Import unified schedule dialog for Arc integration
+import { UnifiedScheduleShowDialog, type ScheduleShowData } from '@/components/production/UnifiedScheduleShowDialog';
+import { ProductionStage } from '@/types/shows';
 // Mobile Recording View for mobile-first experience
 import { MobileRecordingView } from '@/components/document-processing/RecordingStudio/components/MobileRecordingView';
 // Ask Genie - Unified AI Assistant
@@ -1305,85 +1308,78 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
     setShowParticipants(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleCreateShow = async () => {
-    if (!newShowTitle.trim() || !newShowDate || !newShowTime || !hostName.trim()) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    const scheduledDate = new Date(`${newShowDate}T${newShowTime}`);
-    
-    // Prepare participants with reminder preferences
-    const participantsForSession = showParticipants.map(p => ({
-      name: p.name,
-      email: p.email,
-      role: p.role,
-      email_reminder_24h: true,
-      email_reminder_1h: true,
-      email_reminder_30m: true,
-      email_reminder_15m: true,
-      sms_reminder_30m: false,
-      sms_reminder_15m: false,
-    }));
-
-    setIsSendingInvite(true);
-    
+  // Unified schedule handler for Arc - navigates to Production Hub after scheduling
+  const handleUnifiedSchedule = async (data: ScheduleShowData) => {
     try {
-      // Create session via edge function
-      const { data, error } = await supabase.functions.invoke('create-session', {
+      setIsSendingInvite(true);
+      
+      // Create session via edge function  
+      const { data: sessionData, error } = await supabase.functions.invoke('create-session', {
         body: {
-          title: newShowTitle,
-          description: newShowDescription,
-          session_type: newShowType,
-          session_mode: 'browser', // Default to browser-based
-          production_stage: productionStage,
-          scheduled_at: scheduledDate.toISOString(),
+          title: data.title,
+          description: data.description,
+          session_type: data.show_type,
+          session_mode: 'browser',
+          production_stage: data.starting_stage,
+          scheduled_at: data.scheduled_date,
           duration_minutes: 60,
-          script_id: selectedScriptId,
-          script_content: attachScriptToInvite ? showScript : null, // Include script content if attachment is enabled
-          script_filename: attachScriptToInvite && showScriptFilename ? showScriptFilename : null, // Original filename
-          agenda: showTopics,
-          host_name: hostName,
-          host_email: hostEmail,
-          participants: participantsForSession,
+          script_id: data.linked_script_id,
+          script_content: data.attach_script_to_invite ? data.script_content : null,
+          agenda: data.topics,
+          host_name: data.host.name,
+          host_email: data.host.email,
+          participants: data.guests.map(g => ({
+            name: g.name,
+            email: g.email,
+            role: g.role,
+            email_reminder_24h: data.enable_email_reminders,
+            email_reminder_1h: data.enable_email_reminders,
+            email_reminder_30m: data.enable_email_reminders,
+            email_reminder_15m: data.enable_email_reminders,
+            sms_reminder_30m: data.enable_sms_reminders,
+            sms_reminder_15m: data.enable_sms_reminders,
+          })),
         },
       });
 
       if (error) throw error;
 
-      // Send invites
-      if (data?.session?.id && participantsForSession.length > 0) {
+      // Send invites if session created successfully
+      if (sessionData?.session?.id && data.guests.length > 0 && data.enable_email_reminders) {
         await supabase.functions.invoke('send-session-invites', {
-          body: { session_id: data.session.id },
+          body: { session_id: sessionData.session.id },
         });
-        toast.success(`Session created! Invites sent to ${participantsForSession.length} participant(s)`);
+        toast.success(`Session created! Invites sent to ${data.guests.length} participant(s)`);
       } else {
         toast.success('Session created successfully!');
       }
 
-      // Show calendar links if available
-      if (data?.calendar_links) {
-        toast.info('Add to your calendar using the links provided', {
-          action: {
-            label: 'Google Calendar',
-            onClick: () => window.open(data.calendar_links.google, '_blank'),
-          },
-        });
-      }
-
       // Also save to local events for UI display
       addEvent({
-        type: newShowType as any,
-        title: newShowTitle,
-        description: newShowDescription,
-        scheduledDate,
-        participants: showParticipants.map(p => ({ ...p, id: crypto.randomUUID(), status: 'pending' as const })),
-        scriptContent: showScript,
-        hostName: hostName,
+        type: data.show_type as any,
+        title: data.title,
+        description: data.description,
+        scheduledDate: new Date(data.scheduled_date),
+        participants: data.guests.map(g => ({ 
+          id: crypto.randomUUID(), 
+          name: g.name, 
+          email: g.email, 
+          role: g.role, 
+          status: 'pending' as const 
+        })),
+        scriptContent: data.script_content,
+        hostName: data.host.name,
         status: 'scheduled',
-        eventCategory: newEventCategory,
-        meetingLink: data?.session?.join_url,
+        eventCategory: data.event_category,
+        meetingLink: sessionData?.session?.join_url || data.meeting_url,
       });
+
+      // Close dialog and navigate to Production Hub
+      setIsCreateShowDialogOpen(false);
+      toast.info('Redirecting to Production Hub for full workflow management...', { duration: 2000 });
+      setTimeout(() => {
+        navigate('/production-hub');
+      }, 1000);
 
     } catch (err: any) {
       console.error('Create session error:', err);
@@ -1391,23 +1387,6 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
     } finally {
       setIsSendingInvite(false);
     }
-    
-    // Reset dialog state
-    setIsCreateShowDialogOpen(false);
-    setNewShowTitle('');
-    setNewShowDescription('');
-    setNewShowDate('');
-    setNewShowTime('');
-    setShowTopics('');
-    setShowScript('');
-    setShowParticipants([]);
-    setSuggestedTitle('');
-    setSuggestedIntro('');
-    setScheduleStep('details');
-    setHostName('');
-    setHostEmail('');
-    setSelectedScriptId(null);
-    setProductionStage('script_review');
   };
 
   const handleSendInvite = async () => {
@@ -3598,670 +3577,14 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
           </DialogContent>
         </Dialog>
 
-        <Dialog open={isCreateShowDialogOpen} onOpenChange={(open) => {
-          setIsCreateShowDialogOpen(open);
-          if (!open) {
-            setScheduleStep('details');
-            setShowParticipants([]);
-            setSuggestedTitle('');
-            setSuggestedIntro('');
-          }
-        }}>
-          <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-xl bg-white flex items-center justify-center shadow-md overflow-hidden border border-border/30">
-                  <img src={genieArcLogo} alt="Genie Arc" className="h-10 w-10 object-contain" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">Genie Arc</span>
-                    <span className="text-xs text-muted-foreground">Schedule a Show</span>
-                  </div>
-                  <p className="text-sm font-normal text-muted-foreground">
-                    Step {scheduleStep === 'details' ? '1' : scheduleStep === 'content' ? '2' : '3'} of 3: {
-                      scheduleStep === 'details' ? 'Basic Details' : 
-                      scheduleStep === 'content' ? 'Content & Script' : 
-                      'Invite Participants'
-                    }
-                  </p>
-                  <p className="text-xs text-indigo-500 mt-0.5">Your Production Journey With Infinite Possibilities</p>
-                </div>
-              </DialogTitle>
-            </DialogHeader>
-            
-            {/* Step Progress */}
-            <div className="flex items-center gap-2 py-2">
-              {['details', 'content', 'participants'].map((step, i) => (
-                <div key={step} className="flex items-center flex-1">
-                  <div 
-                    className={cn(
-                      "h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors",
-                      scheduleStep === step 
-                        ? "bg-primary text-primary-foreground" 
-                        : (scheduleStep === 'content' && i === 0) || (scheduleStep === 'participants' && i <= 1)
-                          ? "bg-green-500 text-white"
-                          : "bg-muted text-muted-foreground"
-                    )}
-                  >
-                    {i + 1}
-                  </div>
-                  {i < 2 && (
-                    <div className={cn(
-                      "flex-1 h-0.5 mx-2",
-                      (scheduleStep === 'content' && i === 0) || (scheduleStep === 'participants')
-                        ? "bg-green-500"
-                        : "bg-muted"
-                    )} />
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Step 1: Basic Details */}
-            {scheduleStep === 'details' && (
-              <div className="space-y-4 py-4">
-                {/* Event Category Selector */}
-                <div>
-                  <Label>Category</Label>
-                  <div className="grid grid-cols-4 gap-2 mt-2">
-                    {[
-                      { value: 'media_production', label: 'Media', icon: Video, color: 'from-purple-500 to-indigo-500', description: 'Podcasts, webcasts' },
-                      { value: 'business_meeting', label: 'Businesss', icon: Briefcase, color: 'from-blue-500 to-cyan-500', description: 'Calls, meetings' },
-                      { value: 'event', label: 'Event', icon: Calendar, color: 'from-orange-500 to-red-500', description: 'Workshops, webinars' },
-                      { value: 'genie_demo', label: 'Genie Studio Demo', icon: Sparkles, color: 'from-fuchsia-500 to-pink-500', description: 'Product demos' }
-                    ].map((cat) => (
-                      <div
-                        key={cat.value}
-                        className={cn(
-                          "p-3 rounded-lg border-2 cursor-pointer transition-all text-center",
-                          newEventCategory === cat.value
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
-                        )}
-                        onClick={() => {
-                          setNewEventCategory(cat.value as any);
-                          // Set default type for category
-                          if (cat.value === 'media_production') setNewShowType('podcast');
-                          else if (cat.value === 'business_meeting') setNewShowType('discovery_call');
-                          else if (cat.value === 'genie_demo') setNewShowType('genie_studio_full');
-                          else setNewShowType('workshop');
-                        }}
-                      >
-                        <div className={cn("h-8 w-8 rounded-lg bg-gradient-to-br flex items-center justify-center mx-auto mb-1", cat.color)}>
-                          <cat.icon className="h-4 w-4 text-white" />
-                        </div>
-                        <span className="text-xs font-medium block">{cat.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Show Type based on Category */}
-                <div>
-                  <Label>Type</Label>
-                  <div className="grid grid-cols-3 gap-3 mt-2">
-                    {newEventCategory === 'media_production' && [
-                      { value: 'podcast', label: 'Podcast', icon: Podcast, color: 'from-purple-500 to-indigo-500' },
-                      { value: 'webcast', label: 'Webcast', icon: Tv, color: 'from-blue-500 to-cyan-500' },
-                      { value: 'interview', label: 'Interview', icon: Users, color: 'from-green-500 to-emerald-500' },
-                      { value: 'panel', label: 'Panel', icon: Users, color: 'from-yellow-500 to-orange-500' },
-                      { value: 'tutorial', label: 'Tutorial', icon: GraduationCap, color: 'from-pink-500 to-rose-500' },
-                      { value: 'broadcast', label: 'Broadcast', icon: Radio, color: 'from-red-500 to-pink-500' }
-                    ].map((type) => (
-                      <div
-                        key={type.value}
-                        className={cn(
-                          "p-3 rounded-lg border-2 cursor-pointer transition-all text-center",
-                          newShowType === type.value
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
-                        )}
-                        onClick={() => setNewShowType(type.value)}
-                      >
-                        <div className={cn("h-8 w-8 rounded-lg bg-gradient-to-br flex items-center justify-center mx-auto mb-1", type.color)}>
-                          <type.icon className="h-4 w-4 text-white" />
-                        </div>
-                        <span className="text-xs font-medium">{type.label}</span>
-                      </div>
-                    ))}
-                    {newEventCategory === 'business_meeting' && [
-                      { value: 'discovery_call', label: 'Discovery Call', icon: Phone, color: 'from-blue-500 to-cyan-500' },
-                      { value: 'sales_meeting', label: 'Sales Meeting', icon: Briefcase, color: 'from-green-500 to-emerald-500' },
-                      { value: 'project_kickoff', label: 'Project Kickoff', icon: Rocket, color: 'from-purple-500 to-indigo-500' },
-                      { value: 'status_update', label: 'Status Update', icon: BarChart, color: 'from-yellow-500 to-orange-500' },
-                      { value: 'consultation', label: 'Consultation', icon: MessageCircle, color: 'from-pink-500 to-rose-500' }
-                    ].map((type) => (
-                      <div
-                        key={type.value}
-                        className={cn(
-                          "p-3 rounded-lg border-2 cursor-pointer transition-all text-center",
-                          newShowType === type.value
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
-                        )}
-                        onClick={() => setNewShowType(type.value)}
-                      >
-                        <div className={cn("h-8 w-8 rounded-lg bg-gradient-to-br flex items-center justify-center mx-auto mb-1", type.color)}>
-                          <type.icon className="h-4 w-4 text-white" />
-                        </div>
-                        <span className="text-xs font-medium">{type.label}</span>
-                      </div>
-                    ))}
-                    {newEventCategory === 'event' && [
-                      { value: 'workshop', label: 'Workshop', icon: Wrench, color: 'from-blue-500 to-cyan-500' },
-                      { value: 'webinar', label: 'Webinar', icon: Monitor, color: 'from-purple-500 to-indigo-500' },
-                      { value: 'conference', label: 'Conference', icon: Building, color: 'from-green-500 to-emerald-500' },
-                      { value: 'training_session', label: 'Training', icon: BookOpen, color: 'from-orange-500 to-red-500' }
-                    ].map((type) => (
-                      <div
-                        key={type.value}
-                        className={cn(
-                          "p-3 rounded-lg border-2 cursor-pointer transition-all text-center",
-                          newShowType === type.value
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
-                        )}
-                        onClick={() => setNewShowType(type.value)}
-                      >
-                        <div className={cn("h-8 w-8 rounded-lg bg-gradient-to-br flex items-center justify-center mx-auto mb-1", type.color)}>
-                          <type.icon className="h-4 w-4 text-white" />
-                        </div>
-                        <span className="text-xs font-medium">{type.label}</span>
-                      </div>
-                    ))}
-                    {newEventCategory === 'genie_demo' && [
-                      { value: 'genie_studio_full', label: 'Full Studio Demo', icon: Sparkles, color: 'from-fuchsia-500 to-pink-500' },
-                      { value: 'genie_spark_demo', label: 'Genie Spark', icon: Zap, color: 'from-amber-500 to-orange-500' },
-                      { value: 'genie_arc_demo', label: 'Genie Arc', icon: Film, color: 'from-emerald-500 to-teal-500' },
-                      { value: 'genie_mind_demo', label: 'Genie Mind', icon: Brain, color: 'from-blue-500 to-cyan-500' },
-                      { value: 'genie_vibe_demo', label: 'Genie Vibe', icon: Music, color: 'from-purple-500 to-pink-500' },
-                      { value: 'genie_suite_overview', label: 'Suite Overview', icon: Layers, color: 'from-indigo-500 to-violet-500' }
-                    ].map((type) => (
-                      <div
-                        key={type.value}
-                        className={cn(
-                          "p-3 rounded-lg border-2 cursor-pointer transition-all text-center",
-                          newShowType === type.value
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
-                        )}
-                        onClick={() => setNewShowType(type.value)}
-                      >
-                        <div className={cn("h-8 w-8 rounded-lg bg-gradient-to-br flex items-center justify-center mx-auto mb-1", type.color)}>
-                          <type.icon className="h-4 w-4 text-white" />
-                        </div>
-                        <span className="text-xs font-medium">{type.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Production Stage - Only for Media Productions */}
-                {newEventCategory === 'media_production' && (
-                  <div>
-                    <Label>Production Stage</Label>
-                    <div className="grid grid-cols-5 gap-2 mt-2">
-                      {[
-                        { value: 'script_review', label: 'Script Review', icon: FileText, color: 'from-blue-500 to-cyan-500' },
-                        { value: 'edit', label: 'Edit', icon: PenTool, color: 'from-purple-500 to-indigo-500' },
-                        { value: 'rehearsal', label: 'Rehearsal', icon: Play, color: 'from-yellow-500 to-orange-500' },
-                        { value: 'final_review', label: 'Final Review', icon: Check, color: 'from-green-500 to-emerald-500' },
-                        { value: 'recording', label: 'Recording', icon: Video, color: 'from-red-500 to-pink-500' }
-                      ].map((stage) => (
-                        <div
-                          key={stage.value}
-                          className={cn(
-                            "p-2 rounded-lg border-2 cursor-pointer transition-all text-center",
-                            productionStage === stage.value
-                              ? "border-primary bg-primary/5"
-                              : "border-border hover:border-primary/50"
-                          )}
-                          onClick={() => setProductionStage(stage.value as any)}
-                        >
-                          <div className={cn("h-6 w-6 rounded-md bg-gradient-to-br flex items-center justify-center mx-auto mb-1", stage.color)}>
-                            <stage.icon className="h-3 w-3 text-white" />
-                          </div>
-                          <span className="text-[10px] font-medium block leading-tight">{stage.label}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                {/* Host Name & Email */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="host-name">{newEventCategory === 'business_meeting' ? 'Organizer Name' : 'Host Name'} *</Label>
-                    <Input
-                      id="host-name"
-                      value={hostName}
-                      onChange={(e) => setHostName(e.target.value)}
-                      placeholder={newEventCategory === 'business_meeting' ? "Your name..." : "Your name..."}
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="host-email">Email (for calendar invite)</Label>
-                    <Input
-                      id="host-email"
-                      type="email"
-                      value={hostEmail}
-                      onChange={(e) => setHostEmail(e.target.value)}
-                      placeholder="your@email.com"
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground -mt-2">You will be automatically added as host and receive an invite.</p>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="show-date">Date *</Label>
-                    <Input
-                      id="show-date"
-                      type="date"
-                      value={newShowDate}
-                      onChange={(e) => setNewShowDate(e.target.value)}
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="show-time">Time *</Label>
-                    <Input
-                      id="show-time"
-                      type="time"
-                      value={newShowTime}
-                      onChange={(e) => setNewShowTime(e.target.value)}
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Step 2: Content & Script */}
-            {scheduleStep === 'content' && (
-              <div className="space-y-4 py-4">
-                <div>
-                  <Label htmlFor="show-topics">Topics (comma-separated)</Label>
-                  <Input
-                    id="show-topics"
-                    value={showTopics}
-                    onChange={(e) => setShowTopics(e.target.value)}
-                    placeholder="e.g., AI in Healthcare, Future of Technology, Innovation..."
-                    className="mt-1"
-                  />
-                </div>
-                {/* Script Selection - Load Saved or Upload */}
-                <div className="border rounded-lg p-4 bg-muted/30">
-                  <Label className="flex items-center gap-2 mb-3">
-                    <FileText className="h-4 w-4" />
-                    Select or Upload Script
-                  </Label>
-                  <div className="flex gap-2">
-                    <Select 
-                      value={selectedScriptId || ''} 
-                      onValueChange={handleScriptSelect}
-                    >
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Select a saved script..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {savedScripts.length === 0 ? (
-                          <SelectItem value="_none" disabled>No saved scripts</SelectItem>
-                        ) : (
-                          savedScripts.map(script => (
-                            <SelectItem key={script.id} value={script.id}>
-                              <div className="flex items-center gap-2">
-                                <FileText className="h-3 w-3" />
-                                {script.name}
-                              </div>
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <div className="relative">
-                      <input
-                        type="file"
-                        accept=".txt,.md,.doc,.docx"
-                        onChange={handleScriptUpload}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      />
-                      <Button variant="outline" className="pointer-events-none">
-                        <Upload className="h-4 w-4 mr-2" />
-                        Upload
-                      </Button>
-                    </div>
-                  </div>
-                  {selectedScriptId && (
-                    <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
-                      <Check className="h-3 w-3" />
-                      Script loaded - title and description will auto-populate
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="show-script">Script / Outline Content</Label>
-                  <Textarea
-                    id="show-script"
-                    value={showScript}
-                    onChange={(e) => {
-                      setShowScript(e.target.value);
-                      setSelectedScriptId(null); // Clear selection when manually editing
-                    }}
-                    placeholder="Paste your script or outline here, or select/upload above. This will be shared with participants..."
-                    className="mt-1 min-h-[120px] font-mono text-sm"
-                  />
-                </div>
-                
-                {/* Attach Script Option */}
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="attach-script"
-                    checked={attachScriptToInvite}
-                    onChange={(e) => setAttachScriptToInvite(e.target.checked)}
-                    className="rounded border-border"
-                  />
-                  <Label htmlFor="attach-script" className="text-sm cursor-pointer">
-                    Include script preview in participant invites
-                  </Label>
-                </div>
-                
-                {/* AI Suggestions */}
-                <div className="border rounded-lg p-4 bg-gradient-to-br from-purple-500/5 to-pink-500/5">
-                  <div className="flex items-center justify-between mb-3">
-                    <Label className="flex items-center gap-2">
-                      <Wand2 className="h-4 w-4 text-purple-500" />
-                      AI-Suggested Title & Introduction
-                    </Label>
-                  </div>
-                  
-                  {/* AI Provider Selection */}
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    <div className="flex-1 min-w-[140px]">
-                      <Label className="text-xs text-muted-foreground mb-1 block">AI Provider</Label>
-                      <Select 
-                        value={aiProvider} 
-                        onValueChange={(v: 'gemini' | 'openai' | 'anthropic') => {
-                          setAiProvider(v);
-                          // Set default model for provider
-                          if (v === 'gemini') setAiModel('gemini-2.0-flash');
-                          else if (v === 'openai') setAiModel('gpt-4o-mini');
-                          else if (v === 'anthropic') setAiModel('claude-3-haiku');
-                        }}
-                      >
-                        <SelectTrigger className="h-9 bg-background">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="gemini">🌟 Google Gemini</SelectItem>
-                          <SelectItem value="openai">🤖 OpenAI</SelectItem>
-                          <SelectItem value="anthropic">🧠 Anthropic</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex-1 min-w-[160px]">
-                      <Label className="text-xs text-muted-foreground mb-1 block">Model</Label>
-                      <Select value={aiModel} onValueChange={setAiModel}>
-                        <SelectTrigger className="h-9 bg-background">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {aiProvider === 'gemini' && (
-                            <>
-                              <SelectItem value="gemini-2.0-flash">Gemini 2.0 Flash (Fast)</SelectItem>
-                              <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash</SelectItem>
-                              <SelectItem value="gemini-2.5-pro">Gemini 2.5 Pro (Best)</SelectItem>
-                            </>
-                          )}
-                          {aiProvider === 'openai' && (
-                            <>
-                              <SelectItem value="gpt-4o-mini">GPT-4o Mini (Fast)</SelectItem>
-                              <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-                              <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
-                            </>
-                          )}
-                          {aiProvider === 'anthropic' && (
-                            <>
-                              <SelectItem value="claude-3-haiku">Claude 3 Haiku (Fast)</SelectItem>
-                              <SelectItem value="claude-3-5-sonnet">Claude 3.5 Sonnet</SelectItem>
-                              <SelectItem value="claude-3-opus">Claude 3 Opus (Best)</SelectItem>
-                            </>
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex items-end">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleGenerateSuggestions}
-                        disabled={isGeneratingSuggestions || (!showTopics.trim() && !showScript.trim())}
-                        className="h-9"
-                      >
-                        {isGeneratingSuggestions ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                            Generating...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="h-4 w-4 mr-1" />
-                            Generate
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {suggestedTitle && (
-                    <div className="space-y-3">
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Suggested Title</Label>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Input
-                            value={suggestedTitle}
-                            onChange={(e) => setSuggestedTitle(e.target.value)}
-                            className="bg-background"
-                          />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setNewShowTitle(suggestedTitle)}
-                          >
-                            Use
-                          </Button>
-                        </div>
-                      </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Suggested Introduction</Label>
-                        <Textarea
-                          value={suggestedIntro}
-                          onChange={(e) => setSuggestedIntro(e.target.value)}
-                          className="mt-1 text-sm bg-background"
-                          rows={3}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="show-title">Show Title *</Label>
-                  <Input
-                    id="show-title"
-                    value={newShowTitle}
-                    onChange={(e) => setNewShowTitle(e.target.value)}
-                    placeholder="Enter show title or use AI suggestion..."
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="show-description">Description</Label>
-                  <Textarea
-                    id="show-description"
-                    value={newShowDescription}
-                    onChange={(e) => setNewShowDescription(e.target.value)}
-                    placeholder="Brief description of the show..."
-                    className="mt-1"
-                    rows={2}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: Invite Participants */}
-            {scheduleStep === 'participants' && (
-              <div className="space-y-4 py-4">
-                <div className="p-3 rounded-lg bg-muted/50 border">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Calendar className="h-4 w-4 text-primary" />
-                    <span className="font-medium">{newShowTitle || 'Untitled Show'}</span>
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {newShowType.charAt(0).toUpperCase() + newShowType.slice(1)} • {newShowDate} at {newShowTime}
-                  </div>
-                </div>
-
-                {/* Current Participants */}
-                {showParticipants.length > 0 && (
-                  <div className="space-y-2">
-                    <Label>Participants to Invite ({showParticipants.length})</Label>
-                    <div className="space-y-2 max-h-[150px] overflow-y-auto">
-                      {showParticipants.map((p, index) => (
-                        <div key={index} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="text-xs bg-primary/10">
-                              {p.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{p.name}</p>
-                            <p className="text-xs text-muted-foreground truncate">{p.email}</p>
-                          </div>
-                          <Badge variant="outline" className="capitalize text-xs">
-                            {p.role}
-                          </Badge>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveParticipantFromShow(index)}
-                          >
-                            <X className="h-4 w-4 text-muted-foreground" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Add Participant Form */}
-                <div className="border rounded-lg p-4 space-y-3">
-                  <Label className="flex items-center gap-2">
-                    <UserPlus className="h-4 w-4" />
-                    Add Participant
-                  </Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label htmlFor="invite-name" className="text-xs">Name *</Label>
-                      <Input
-                        id="invite-name"
-                        value={inviteName}
-                        onChange={(e) => setInviteName(e.target.value)}
-                        placeholder="Full name"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="invite-role" className="text-xs">Role</Label>
-                      <Select value={inviteRole} onValueChange={(v: any) => setInviteRole(v)}>
-                        <SelectTrigger className="mt-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="host">Host</SelectItem>
-                          <SelectItem value="co-host">Co-Host</SelectItem>
-                          <SelectItem value="guest">Guest</SelectItem>
-                          <SelectItem value="panelist">Panelist</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="invite-email" className="text-xs">Email *</Label>
-                    <Input
-                      id="invite-email"
-                      type="email"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      placeholder="email@example.com"
-                      className="mt-1"
-                    />
-                  </div>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={handleAddParticipantToShow}
-                    disabled={!inviteName.trim() || !inviteEmail.trim()}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Participant
-                  </Button>
-                </div>
-
-                <p className="text-xs text-muted-foreground text-center">
-                  Participants will receive an email invite with show details, topics, and script preview.
-                </p>
-              </div>
-            )}
-
-            <DialogFooter className="flex-col sm:flex-row gap-2">
-              {scheduleStep !== 'details' && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => setScheduleStep(scheduleStep === 'participants' ? 'content' : 'details')}
-                >
-                  Back
-                </Button>
-              )}
-              <div className="flex-1" />
-              <Button variant="outline" onClick={() => setIsCreateShowDialogOpen(false)}>
-                Cancel
-              </Button>
-              {scheduleStep !== 'participants' ? (
-                <Button 
-                  onClick={() => setScheduleStep(scheduleStep === 'details' ? 'content' : 'participants')}
-                  disabled={scheduleStep === 'details' && (!newShowDate || !newShowTime || !hostName.trim())}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
-                >
-                  Next Step
-                </Button>
-              ) : (
-                <Button 
-                  onClick={handleCreateShow}
-                  disabled={isSendingInvite || !newShowTitle.trim()}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
-                >
-                  {isSendingInvite ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Sending Invites...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4 mr-2" />
-                      Schedule & Send Invites
-                    </>
-                  )}
-                </Button>
-              )}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* Unified Schedule Show Dialog - Shared with Production Hub */}
+        <UnifiedScheduleShowDialog
+          open={isCreateShowDialogOpen}
+          onOpenChange={setIsCreateShowDialogOpen}
+          onSchedule={handleUnifiedSchedule}
+          variant="arc"
+          availableScripts={savedScripts.map(s => ({ id: s.id, name: s.name, content: s.content }))}
+        />
 
         {/* Invite Participants Dialog */}
         <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
