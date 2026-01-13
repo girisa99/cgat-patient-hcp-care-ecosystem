@@ -1009,22 +1009,25 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
         "flex flex-col border-b overflow-hidden",
         `bg-gradient-to-br ${ASK_GENIE.color}`
       )}>
-        {/* Hero Banner */}
-        <div className="px-4 py-3 flex items-center justify-center">
-          <div className="flex items-center gap-4">
-            <div className="h-14 w-14 rounded-full bg-white/20 flex items-center justify-center overflow-hidden shadow-lg">
-              <img 
-                src={ASK_GENIE.logo} 
-                alt={ASK_GENIE.name} 
-                className="h-12 w-12 object-contain"
-              />
-            </div>
-            <div className="text-center">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2 justify-center">
-                {ASK_GENIE.name} {ASK_GENIE.emoji}
-              </h2>
-              <p className="text-sm text-white/90 italic font-medium">"{ASK_GENIE.tagline}"</p>
-            </div>
+        {/* Hero Banner - Single Clear Logo Display */}
+        <div className="px-5 py-4 flex items-center gap-5">
+          {/* Large Clear Logo */}
+          <div className="h-20 w-20 rounded-2xl bg-white flex items-center justify-center overflow-hidden shadow-xl border-2 border-white/50 flex-shrink-0">
+            <img 
+              src={ASK_GENIE.logo} 
+              alt={ASK_GENIE.name} 
+              className="h-16 w-16 object-contain"
+            />
+          </div>
+          {/* Name & Tagline */}
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+              {ASK_GENIE.name} {ASK_GENIE.emoji}
+            </h2>
+            <p className="text-sm text-white/90 italic font-medium mt-1">"{ASK_GENIE.tagline}"</p>
+            <p className="text-xs text-white/70 mt-1.5 leading-relaxed line-clamp-2">
+              Your intelligent AI assistant for creative production workflows
+            </p>
           </div>
         </div>
         
@@ -1063,45 +1066,31 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
           <ScrollArea className="flex-1 p-4" ref={scrollRef}>
             {showWelcome && messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
-                {/* Hero Banner */}
+                {/* Feature Highlights - No duplicate logo */}
                 <motion.div 
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={cn(
-                    "w-full rounded-xl p-4 mb-4 bg-gradient-to-br",
-                    ASK_GENIE.color
-                  )}
+                  className="w-full rounded-xl p-4 mb-4 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 border border-purple-200/50 dark:border-purple-800/30"
                 >
-                  <div className="flex items-center justify-center gap-4">
-                    <div className="h-16 w-16 rounded-full bg-white/30 flex items-center justify-center overflow-hidden shadow-lg">
-                      <img 
-                        src={ASK_GENIE.logo} 
-                        alt={ASK_GENIE.name}
-                        className="h-14 w-14 object-contain"
-                      />
+                  <h4 className="text-sm font-semibold text-purple-800 dark:text-purple-200 mb-3 flex items-center justify-center gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    What I Can Help You With
+                  </h4>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-white/80 dark:bg-white/10 rounded-lg px-3 py-2.5 text-center shadow-sm">
+                      <Brain className="h-5 w-5 mx-auto text-purple-600 dark:text-purple-400 mb-1.5" />
+                      <span className="text-xs font-medium text-purple-900 dark:text-purple-100">Smart Context</span>
+                      <p className="text-[9px] text-muted-foreground mt-0.5">Understands your workflow</p>
                     </div>
-                    <div className="text-left">
-                      <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                        {ASK_GENIE.name} {ASK_GENIE.emoji}
-                      </h3>
-                      <p className="text-sm text-white/90 italic">"{ASK_GENIE.tagline}"</p>
-                      <p className="text-[10px] text-white/70 mt-1">{ASK_GENIE.description.slice(0, 80)}...</p>
+                    <div className="bg-white/80 dark:bg-white/10 rounded-lg px-3 py-2.5 text-center shadow-sm">
+                      <Wand2 className="h-5 w-5 mx-auto text-purple-600 dark:text-purple-400 mb-1.5" />
+                      <span className="text-xs font-medium text-purple-900 dark:text-purple-100">Creative Help</span>
+                      <p className="text-[9px] text-muted-foreground mt-0.5">Generate & refine ideas</p>
                     </div>
-                  </div>
-                  
-                  {/* Feature Highlights */}
-                  <div className="grid grid-cols-3 gap-2 mt-4">
-                    <div className="bg-white/20 rounded-lg px-2 py-1.5 text-center">
-                      <Brain className="h-4 w-4 mx-auto text-white mb-1" />
-                      <span className="text-[10px] text-white/90">Smart Context</span>
-                    </div>
-                    <div className="bg-white/20 rounded-lg px-2 py-1.5 text-center">
-                      <Wand2 className="h-4 w-4 mx-auto text-white mb-1" />
-                      <span className="text-[10px] text-white/90">Creative Help</span>
-                    </div>
-                    <div className="bg-white/20 rounded-lg px-2 py-1.5 text-center">
-                      <Map className="h-4 w-4 mx-auto text-white mb-1" />
-                      <span className="text-[10px] text-white/90">Visual Flows</span>
+                    <div className="bg-white/80 dark:bg-white/10 rounded-lg px-3 py-2.5 text-center shadow-sm">
+                      <Map className="h-5 w-5 mx-auto text-purple-600 dark:text-purple-400 mb-1.5" />
+                      <span className="text-xs font-medium text-purple-900 dark:text-purple-100">Visual Flows</span>
+                      <p className="text-[9px] text-muted-foreground mt-0.5">Build production maps</p>
                     </div>
                   </div>
                 </motion.div>
