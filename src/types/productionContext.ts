@@ -29,6 +29,13 @@ export const SHOW_TYPE_TO_SCRIPT_MODE: Record<ShowType, ScriptMode> = {
   webinar: 'webcast',
   conference: 'webcast',
   training_session: 'video',
+  // Genie Studio Demos - default to video style
+  genie_studio_full: 'video',
+  genie_spark_demo: 'video',
+  genie_arc_demo: 'video',
+  genie_mind_demo: 'video',
+  genie_vibe_demo: 'video',
+  genie_suite_overview: 'video',
 };
 
 /**

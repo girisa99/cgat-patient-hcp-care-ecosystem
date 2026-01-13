@@ -54,7 +54,8 @@ import {
   CalendarRange,
   Layers,
   Sun,
-  Moon
+  Moon,
+  Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ShowWithParticipants, ShowType, EventCategory, SHOW_TYPES } from '@/types/shows';
@@ -64,6 +65,7 @@ const CATEGORY_COLORS: Record<EventCategory, { bg: string; text: string; label: 
   media_production: { bg: 'bg-purple-500/20', text: 'text-purple-400', label: 'Media', icon: <Podcast className="h-3 w-3" /> },
   business_meeting: { bg: 'bg-amber-500/20', text: 'text-amber-400', label: 'Meetings', icon: <Briefcase className="h-3 w-3" /> },
   event: { bg: 'bg-cyan-500/20', text: 'text-cyan-400', label: 'Events', icon: <CalendarDays className="h-3 w-3" /> },
+  genie_demo: { bg: 'bg-fuchsia-500/20', text: 'text-fuchsia-400', label: 'Demos', icon: <Sparkles className="h-3 w-3" /> },
 };
 
 const SHOW_TYPE_COLORS: Record<ShowType, { bg: string; text: string; border: string; label: string; category: EventCategory }> = {
@@ -86,6 +88,13 @@ const SHOW_TYPE_COLORS: Record<ShowType, { bg: string; text: string; border: str
   webinar: { bg: 'bg-sky-500/20', text: 'text-sky-400', border: 'border-sky-500', label: '🖥️ Webinar', category: 'event' },
   conference: { bg: 'bg-rose-500/20', text: 'text-rose-400', border: 'border-rose-500', label: '🏛️ Conference', category: 'event' },
   training_session: { bg: 'bg-lime-500/20', text: 'text-lime-400', border: 'border-lime-500', label: '📖 Training', category: 'event' },
+  // Genie Studio Demos
+  genie_studio_full: { bg: 'bg-fuchsia-500/20', text: 'text-fuchsia-400', border: 'border-fuchsia-500', label: '✨ Full Studio', category: 'genie_demo' },
+  genie_spark_demo: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500', label: '⚡ Spark Demo', category: 'genie_demo' },
+  genie_arc_demo: { bg: 'bg-indigo-500/20', text: 'text-indigo-400', border: 'border-indigo-500', label: '🎬 Arc Demo', category: 'genie_demo' },
+  genie_mind_demo: { bg: 'bg-purple-500/20', text: 'text-purple-400', border: 'border-purple-500', label: '🧠 Mind Demo', category: 'genie_demo' },
+  genie_vibe_demo: { bg: 'bg-pink-500/20', text: 'text-pink-400', border: 'border-pink-500', label: '🎵 Vibe Demo', category: 'genie_demo' },
+  genie_suite_overview: { bg: 'bg-gradient-to-r from-purple-500/20 to-fuchsia-500/20', text: 'text-fuchsia-400', border: 'border-fuchsia-500', label: '🌟 Suite Overview', category: 'genie_demo' },
 };
 
 // Business hours for time slots
@@ -221,6 +230,7 @@ export function ProductionCalendar({
       media_production: [],
       business_meeting: [],
       event: [],
+      genie_demo: [],
     };
     
     activeTypes.forEach(type => {

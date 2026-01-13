@@ -95,7 +95,7 @@ export function useShows() {
           user_id: user.id,
           title: data.title,
           description: data.description || null,
-          show_type: data.show_type,
+          show_type: data.show_type as any, // Allow extended show types
           scheduled_date: data.scheduled_date || null,
           current_stage: data.starting_stage || 'outreach' as ProductionStage,
           host_name: data.host_name || null,
@@ -103,7 +103,7 @@ export function useShows() {
           linked_script_id: data.linked_script_id || null,
           linked_music_id: data.linked_music_id || null,
           meeting_link: meetingLink,
-        })
+        } as any)
         .select()
         .single();
 
@@ -123,7 +123,7 @@ export function useShows() {
     try {
       const { error } = await supabase
         .from('shows')
-        .update(updates)
+        .update(updates as any) // Allow extended types
         .eq('id', id);
 
       if (error) throw error;

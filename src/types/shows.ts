@@ -4,7 +4,7 @@
  */
 
 // Event Categories
-export type EventCategory = 'media_production' | 'business_meeting' | 'event';
+export type EventCategory = 'media_production' | 'business_meeting' | 'event' | 'genie_demo';
 
 // Extended Show Types (includes all scheduling types)
 export type ShowType = 
@@ -13,12 +13,15 @@ export type ShowType =
   // Business Meetings
   | 'discovery_call' | 'sales_meeting' | 'project_kickoff' | 'status_update' | 'consultation'
   // Events
-  | 'workshop' | 'webinar' | 'conference' | 'training_session';
+  | 'workshop' | 'webinar' | 'conference' | 'training_session'
+  // Genie Studio Demos
+  | 'genie_studio_full' | 'genie_spark_demo' | 'genie_arc_demo' | 'genie_mind_demo' | 'genie_vibe_demo' | 'genie_suite_overview';
 
 // Stage types per category
 export type ProductionStage = 'outreach' | 'script' | 'rehearsal' | 'recording' | 'post_production' | 'published';
 export type MeetingStage = 'scheduled' | 'confirmed' | 'agenda_prep' | 'in_progress' | 'follow_up' | 'completed' | 'cancelled';
 export type EventStage = 'planning' | 'promotion' | 'registration' | 'live' | 'wrap_up' | 'archived' | 'cancelled';
+export type DemoStage = 'setup' | 'walkthrough' | 'demo_live' | 'q_and_a' | 'feedback' | 'completed';
 
 export type ParticipantRole = 'host' | 'co_host' | 'guest' | 'panelist' | 'interviewer' | 'interviewee' | 'narrator' | 'attendee' | 'organizer' | 'speaker' | 'other';
 export type ParticipantStatus = 'invited' | 'confirmed' | 'declined' | 'tentative' | 'cancelled';
@@ -121,6 +124,7 @@ export const EVENT_CATEGORIES: {
   { id: 'media_production', label: 'Media Production', description: 'Podcasts, webcasts, interviews', icon: 'Video' },
   { id: 'business_meeting', label: 'Business Meeting', description: 'Calls, meetings, consultations', icon: 'Users' },
   { id: 'event', label: 'Event', description: 'Workshops, webinars, conferences', icon: 'Calendar' },
+  { id: 'genie_demo', label: 'Genie Studio Demo', description: 'Product demos & walkthroughs', icon: 'Sparkles' },
 ];
 
 // Stage configuration for Media Productions
@@ -194,6 +198,13 @@ export const SHOW_TYPES: { id: ShowType; label: string; icon: string; category: 
   { id: 'webinar', label: 'Webinar', icon: 'Monitor', category: 'event' },
   { id: 'conference', label: 'Conference', icon: 'Building', category: 'event' },
   { id: 'training_session', label: 'Training Session', icon: 'BookOpen', category: 'event' },
+  // Genie Studio Demos
+  { id: 'genie_studio_full', label: 'Full Studio Demo', icon: 'Sparkles', category: 'genie_demo' },
+  { id: 'genie_spark_demo', label: 'Genie Spark Demo', icon: 'Zap', category: 'genie_demo' },
+  { id: 'genie_arc_demo', label: 'Genie Arc Demo', icon: 'Film', category: 'genie_demo' },
+  { id: 'genie_mind_demo', label: 'Genie Mind Demo', icon: 'Brain', category: 'genie_demo' },
+  { id: 'genie_vibe_demo', label: 'Genie Vibe Demo', icon: 'Music', category: 'genie_demo' },
+  { id: 'genie_suite_overview', label: 'Suite Overview', icon: 'Layers', category: 'genie_demo' },
 ];
 
 export const PARTICIPANT_ROLES: { id: ParticipantRole; label: string }[] = [
@@ -210,6 +221,22 @@ export const PARTICIPANT_ROLES: { id: ParticipantRole; label: string }[] = [
   { id: 'other', label: 'Other' },
 ];
 
+// Demo stages configuration
+export const DEMO_STAGES: { 
+  id: DemoStage; 
+  label: string; 
+  description: string; 
+  icon: string;
+  color: string;
+}[] = [
+  { id: 'setup', label: 'Setup', description: 'Prepare demo environment', icon: 'Settings', color: 'bg-blue-500' },
+  { id: 'walkthrough', label: 'Walkthrough', description: 'Feature overview', icon: 'Map', color: 'bg-purple-500' },
+  { id: 'demo_live', label: 'Live Demo', description: 'Interactive demonstration', icon: 'Play', color: 'bg-red-500' },
+  { id: 'q_and_a', label: 'Q&A', description: 'Questions & answers', icon: 'MessageCircle', color: 'bg-yellow-500' },
+  { id: 'feedback', label: 'Feedback', description: 'Gather feedback', icon: 'Star', color: 'bg-orange-500' },
+  { id: 'completed', label: 'Completed', description: 'Demo finished', icon: 'CheckCircle', color: 'bg-green-500' },
+];
+
 // Helper function to get stages based on category
 export const getStagesForCategory = (category: EventCategory) => {
   switch (category) {
@@ -219,6 +246,8 @@ export const getStagesForCategory = (category: EventCategory) => {
       return MEETING_STAGES;
     case 'event':
       return EVENT_STAGES;
+    case 'genie_demo':
+      return DEMO_STAGES;
     default:
       return PRODUCTION_STAGES;
   }
