@@ -405,15 +405,109 @@ export function UnifiedScheduleShowDialog({
     }));
   };
 
+  // Auto-generate content based on category, type, stage
+  const generateAutoContent = (category: EventCategory, showType: ShowType, stage: string) => {
+    const demoProduct = GENIE_DEMO_PRODUCTS[showType as keyof typeof GENIE_DEMO_PRODUCTS];
+    
+    // Generate title based on type
+    const titleTemplates: Record<string, string> = {
+      // Genie Demo types
+      genie_studio_full: `Genie Studio Demo - ${demoProduct?.tagline || 'Mind to Media'}`,
+      genie_spark_demo: `Genie Spark Demo - ${demoProduct?.tagline || 'Ignite your Ideas'}`,
+      genie_arc_demo: `Genie Arc Demo - ${demoProduct?.tagline || 'Your Production Journey'}`,
+      genie_mind_demo: `Genie Mind Demo - ${demoProduct?.tagline || 'AI that understands'}`,
+      genie_vibe_demo: `Genie Vibe Demo - ${demoProduct?.tagline || 'Script to Screen'}`,
+      genie_suite_overview: 'Genie Studio Suite - Complete Platform Overview',
+      // Media production types
+      podcast: 'Podcast Recording Session',
+      webcast: 'Live Webcast Production',
+      interview: 'Interview Recording',
+      panel: 'Panel Discussion',
+      tutorial: 'Tutorial Recording',
+      broadcast: 'Live Broadcast',
+      // Business meeting types
+      discovery_call: 'Discovery Call',
+      sales_meeting: 'Sales Meeting',
+      project_kickoff: 'Project Kickoff',
+      status_update: 'Status Update Meeting',
+      consultation: 'Consultation Session',
+      // Event types
+      workshop: 'Workshop Session',
+      webinar: 'Webinar Presentation',
+      conference: 'Conference Session',
+      training_session: 'Training Session',
+    };
+
+    // Generate topics/agenda based on type
+    const topicsTemplates: Record<string, string> = {
+      // Genie Demo topics
+      genie_studio_full: 'Platform Overview, Key Features, Use Cases, Q&A',
+      genie_spark_demo: 'Content Generation, AI-Powered Creation, Smart Templates, Live Demo',
+      genie_arc_demo: 'Production Pipeline, Team Collaboration, Scheduling, Workflow Management',
+      genie_mind_demo: 'AI Assistant, Pre-Production Intelligence, Smart Suggestions',
+      genie_vibe_demo: 'Recording Studio, Script to Screen, Real-time Effects, Multi-platform Output',
+      genie_suite_overview: 'Mind → Spark → Arc → Vibe → Publish, Complete Workflow Demo',
+      // Media production topics
+      podcast: 'Welcome, Main Discussion, Guest Insights, Closing Thoughts',
+      webcast: 'Introduction, Presentation, Live Demo, Q&A Session',
+      interview: 'Introduction, Background, Main Questions, Closing',
+      panel: 'Introductions, Topic Discussion, Audience Q&A, Wrap-up',
+      tutorial: 'Overview, Step-by-step Guide, Practice Session, Summary',
+      broadcast: 'Opening, Main Content, Highlights, Sign-off',
+      // Business meeting topics
+      discovery_call: 'Introduction, Needs Assessment, Solution Overview, Next Steps',
+      sales_meeting: 'Value Proposition, Demo, Pricing Discussion, Close',
+      project_kickoff: 'Project Goals, Timeline, Roles & Responsibilities, Action Items',
+      status_update: 'Progress Review, Blockers, Upcoming Tasks, Decisions Needed',
+      consultation: 'Current Situation, Analysis, Recommendations, Implementation Plan',
+      // Event topics
+      workshop: 'Objectives, Hands-on Activities, Group Exercises, Key Takeaways',
+      webinar: 'Welcome, Main Presentation, Case Studies, Q&A',
+      conference: 'Keynote, Breakout Sessions, Networking, Closing Remarks',
+      training_session: 'Learning Objectives, Instruction, Practice, Assessment',
+    };
+
+    return {
+      title: titleTemplates[showType] || `${showType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} Session`,
+      topics: topicsTemplates[showType] || 'Introduction, Main Content, Discussion, Wrap-up',
+    };
+  };
+
   // Handle category change
   const handleCategoryChange = (category: EventCategory) => {
     const types = getShowTypesForCategory(category);
     const stages = getStagesForCategory(category);
+    const newType = types[0]?.id as ShowType;
+    const newStage = stages[0]?.id as ProductionStage;
+    
+    const autoContent = generateAutoContent(category, newType, newStage);
+    
     setFormData(prev => ({
       ...prev,
       event_category: category,
-      show_type: types[0]?.id as ShowType,
-      starting_stage: stages[0]?.id as ProductionStage,
+      show_type: newType,
+      starting_stage: newStage,
+      title: autoContent.title,
+      topics: autoContent.topics,
+    }));
+  };
+
+  // Handle type change with auto-content update
+  const handleTypeChange = (showType: ShowType) => {
+    const autoContent = generateAutoContent(formData.event_category, showType, formData.starting_stage);
+    setFormData(prev => ({
+      ...prev,
+      show_type: showType,
+      title: autoContent.title,
+      topics: autoContent.topics,
+    }));
+  };
+
+  // Handle stage change
+  const handleStageChange = (stage: ProductionStage) => {
+    setFormData(prev => ({
+      ...prev,
+      starting_stage: stage,
     }));
   };
 
@@ -819,7 +913,7 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
                 <button
                   key={type.id}
                   type="button"
-                  onClick={() => updateFormData('show_type', type.id)}
+                  onClick={() => handleTypeChange(type.id as ShowType)}
                   className={cn(
                     "flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all",
                     isSelected
@@ -847,7 +941,7 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
               <button
                 key={type.id}
                 type="button"
-                onClick={() => updateFormData('show_type', type.id)}
+                onClick={() => handleTypeChange(type.id as ShowType)}
                 className={cn(
                   "flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all",
                   isSelected
@@ -895,7 +989,7 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
                 <button
                   key={stage.value}
                   type="button"
-                  onClick={() => updateFormData('starting_stage', stage.value as any)}
+                  onClick={() => handleStageChange(stage.value as any)}
                   className={cn(
                     "flex flex-col items-center gap-1 p-1.5 rounded-lg border-2 transition-all",
                     isSelected ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
@@ -933,7 +1027,7 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
               <button
                 key={stage.value}
                 type="button"
-                onClick={() => updateFormData('starting_stage', stage.value as ProductionStage)}
+                onClick={() => handleStageChange(stage.value as ProductionStage)}
                 className={cn(
                   "flex flex-col items-center gap-1.5 p-2 rounded-lg border-2 transition-all",
                   isSelected ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
