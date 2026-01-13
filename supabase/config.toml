@@ -215,3 +215,27 @@ verify_jwt = false
 
 [functions.recurring-scheduler]
 verify_jwt = false
+
+[functions.calendar-sync]
+verify_jwt = false
+
+[functions.audio-mixer]
+verify_jwt = false
+
+[functions.scene-analyzer]
+verify_jwt = false
+
+[functions.shorts-generator]
+verify_jwt = false
+
+[functions.viral-score-predictor]
+verify_jwt = false
+
+[functions.quiz-video-generator]
+verify_jwt = false
+
+[functions.microlearning-generator]
+verify_jwt = false
+
+[functions.chat-with-claude]
+verify_jwt = false
