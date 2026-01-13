@@ -651,30 +651,30 @@ export default function ProductionHub() {
         {/* Category Tabs & Kanban Board */}
         <div className="flex-1 overflow-auto">
           <Tabs value={activeCategory} onValueChange={(v) => setActiveCategory(v as EventCategory)} className="h-full flex flex-col">
-            <div className="px-4 pt-4 border-b bg-muted/30">
-              <TabsList className="grid w-full max-w-3xl grid-cols-6">
-                <TabsTrigger value="guide" className="flex items-center gap-2">
-                  <Wand2 className="h-4 w-4" />
+            <div className="px-4 pt-4 pb-2 border-b bg-muted/30">
+              <TabsList className="inline-flex h-auto p-1 bg-background/80 backdrop-blur shadow-sm border border-border/50 rounded-lg gap-0.5">
+                <TabsTrigger value="guide" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md whitespace-nowrap">
+                  <Wand2 className="h-3.5 w-3.5" />
                   Guide
                 </TabsTrigger>
-                <TabsTrigger value="media_production" className="flex items-center gap-2">
-                  <Podcast className="h-4 w-4" />
+                <TabsTrigger value="media_production" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md whitespace-nowrap">
+                  <Podcast className="h-3.5 w-3.5" />
                   Media
                 </TabsTrigger>
-                <TabsTrigger value="business_meeting" className="flex items-center gap-2">
-                  <Briefcase className="h-4 w-4" />
-                  Meetings
+                <TabsTrigger value="business_meeting" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md whitespace-nowrap">
+                  <Briefcase className="h-3.5 w-3.5" />
+                  Meeting
                 </TabsTrigger>
-                <TabsTrigger value="event" className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
+                <TabsTrigger value="event" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md whitespace-nowrap">
+                  <Calendar className="h-3.5 w-3.5" />
                   Events
                 </TabsTrigger>
-                <TabsTrigger value="highlights" className="flex items-center gap-2">
-                  <Zap className="h-4 w-4" />
+                <TabsTrigger value="highlights" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md whitespace-nowrap">
+                  <Zap className="h-3.5 w-3.5" />
                   Highlights
                 </TabsTrigger>
-                <TabsTrigger value="distribution" className="flex items-center gap-2">
-                  <Globe className="h-4 w-4" />
+                <TabsTrigger value="distribution" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md whitespace-nowrap">
+                  <Globe className="h-3.5 w-3.5" />
                   Distribute
                 </TabsTrigger>
               </TabsList>

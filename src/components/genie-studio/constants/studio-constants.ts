@@ -35,11 +35,11 @@ export const FEATURES: FeatureCard[] = [
   {
     id: 'productions',
     title: 'Production Hub',
-    description: 'Manage podcast & webcast productions pipeline',
+    description: 'Full production pipeline with scheduling, team invites, calendar sync & multi-stage workflow',
     icon: Layers,
     color: 'from-indigo-500 to-violet-500',
     badge: 'New',
-    stats: { label: '6 Stages', value: 'Kanban' },
+    stats: { label: 'Pipeline', value: '6 Stages' },
     tab: 'productions',
     isExternal: true,
     route: '/genie-studio/productions'
