@@ -1,13 +1,14 @@
 /**
- * Product-Feature Matrix - 177 Scenarios Across All Products
+ * Product-Feature Matrix - 253 Scenarios Across All Products
  * 
- * Maps all 177 user scenarios to:
+ * Maps all 253 user scenarios to:
  * - Vibe (Studio, Mobile, Desktop)
  * - Mind
  * - Spark
  * - Arc/Production Hub
  * 
  * Includes: Implementation status, gaps, recommendations
+ * Updated: 2026-01-13 - Added 76 new scenarios for Production Calendar, Arc↔Hub Sync, etc.
  */
 
 import React, { useState, useMemo } from 'react';
@@ -89,7 +90,7 @@ interface Product {
 }
 
 // =============================================================================
-// DATA - Complete 177 Scenario Product Mapping
+// DATA - Complete 253 Scenario Product Mapping (177 Original + 76 New Features)
 // =============================================================================
 
 const PRODUCTS: Product[] = [
@@ -167,7 +168,7 @@ const PRODUCTS: Product[] = [
   }
 ];
 
-// Complete 177 scenario mapping to products
+// Complete 253 scenario mapping to products (177 Original + 76 New Features Beyond Roadmap)
 const SCENARIOS: ScenarioMapping[] = [
   // Category A: Imagination → Production (1-10) - P0
   { id: 1, name: 'Text Prompt → Script → Video', description: 'AI generates script, TTS, video assembly', category: 'A', phase: 'P0', status: 'complete', products: ['spark', 'vibe-studio'], features: ['Script Generation', 'TTS', 'Video Assembly'], agents: ['script_generator', 'tts_orchestrator', 'video_assembly'], apis: ['/ai-universal-processor'], crossover: true },

@@ -2,7 +2,7 @@
  * Genie Studio Unified Hub - SINGLE SOURCE OF TRUTH
  * 
  * This is the ONLY consolidated view for all Genie Studio content.
- * Contains 11 tabs: Overview, Verification, Product Suite, Scenarios (177 total, 21 categories A-U),
+ * Contains 11 tabs: Overview, Verification, Product Suite, Scenarios (253 total, 21 categories A-U + 76 new),
  * Architecture (7 diagrams), Technical, Functional, Market Analysis, Investor Dashboard, 
  * Assets & Studio (with logo downloads), and Roadmap (P0-P5, 24 weeks).
  * 
@@ -898,7 +898,7 @@ export const GenieStudioUnifiedHub: React.FC = () => {
               <div>
                 <CardTitle className="text-2xl">Genie Suite: Complete Production Pipeline</CardTitle>
                 <CardDescription>
-                  5 Products (Mind + Vibe + Spark + Arc + Hub) • 177 Scenarios (21 Categories A-U) • 6 Phases (P0-P5) • 12 Agents • 15 APIs • 6 Segments
+                  5 Products (Mind + Vibe + Spark + Arc + Hub) • 253 Scenarios (21 Categories A-U + 76 New Features) • 6 Phases (P0-P5) • 12 Agents • 27 APIs • 6 Segments
                 </CardDescription>
               </div>
             </div>
@@ -985,7 +985,7 @@ export const GenieStudioUnifiedHub: React.FC = () => {
                 <CheckCircle className="h-5 w-5 text-green-500" />
                 Phase Implementation Verification Report
               </CardTitle>
-              <CardDescription>Real-time status across P0-P5 phases, 177 scenarios (21 categories A-U), and 6 segments</CardDescription>
+              <CardDescription>Real-time status across P0-P5 phases, 253 scenarios (21 categories A-U + 76 new features), and 6 segments</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
@@ -1652,7 +1652,7 @@ export const GenieStudioUnifiedHub: React.FC = () => {
                 Cross-Functional Scenarios Matrix
               </CardTitle>
               <CardDescription>
-                177 scenarios (21 categories A-U) mapped to products, agents, and APIs
+                253 scenarios (21 categories A-U + 76 new features) mapped to products, agents, and APIs
               </CardDescription>
             </CardHeader>
             <CardContent>

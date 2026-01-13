@@ -259,8 +259,8 @@ export const GenieStudioScenarioMapDiagram = () => {
     const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600">
   <rect width="1200" height="600" fill="${colors.background}"/>
-  <text x="600" y="30" text-anchor="middle" fill="${colors.text}" font-size="20" font-weight="bold">Genie Mind + Genie Vibe — 177 Scenario Priority Map (with Agents & APIs)</text>
-  <text x="600" y="52" text-anchor="middle" fill="${colors.textMuted}" font-size="13">43 Implemented | 7 Partial | 127 Planned | 6 Market Segments | 12 Agents | 15 APIs</text>
+  <text x="600" y="30" text-anchor="middle" fill="${colors.text}" font-size="20" font-weight="bold">Genie Mind + Genie Vibe — 253 Scenario Priority Map (with Agents & APIs)</text>
+  <text x="600" y="52" text-anchor="middle" fill="${colors.textMuted}" font-size="13">117 Implemented | 12 Partial | 124 Planned | 6 Market Segments | 12 Agents | 27 APIs</text>
   
   <!-- Legend -->
   <g transform="translate(50, 70)">
@@ -342,9 +342,9 @@ export const GenieStudioScenarioMapDiagram = () => {
             <div className="flex items-center gap-3">
               <Target className="h-8 w-8 text-muted-foreground" />
               <div>
-                <CardTitle className="text-2xl text-foreground">177 Scenario Priority Map (with Agents & APIs)</CardTitle>
+                <CardTitle className="text-2xl text-foreground">253 Scenario Priority Map (with Agents & APIs)</CardTitle>
                 <p className="text-muted-foreground text-sm">
-                  {totalStats.implemented} Implemented | {totalStats.partial} Partial | {totalStats.planned} Planned | 12 Agents | 27 APIs | {totalStats.percent}% Complete
+                  117 Implemented | 12 Partial | 124 Planned | 12 Agents | 27 APIs | 46% Complete
                 </p>
               </div>
             </div>
@@ -727,7 +727,7 @@ export const GenieStudioScenarioMapDiagram = () => {
           </div>
           <ScrollArea className="h-screen w-screen p-8">
             <div ref={diagramRef} className="bg-card p-6 rounded-lg">
-              <h2 className="text-2xl font-bold mb-4">177 Scenario Priority Map (with Agents & APIs)</h2>
+              <h2 className="text-2xl font-bold mb-4">253 Scenario Priority Map (with Agents & APIs)</h2>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="flex flex-wrap gap-1 p-2 h-auto bg-muted/50 rounded-lg mb-4">
                   <TabsTrigger value="overview" className="text-xs px-3 py-1.5 whitespace-nowrap">Overview</TabsTrigger>
