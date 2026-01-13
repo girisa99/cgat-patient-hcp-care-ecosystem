@@ -11,12 +11,6 @@ import { Download, Maximize2, X, Plug, Globe, Cloud, Database, Shield, Zap, Radi
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
 
-const colors = {
-  active: { bg: '#10b981', text: '#ffffff' },
-  partial: { bg: '#f59e0b', text: '#ffffff' },
-  planned: { bg: '#6366f1', text: '#ffffff' },
-};
-
 const aiIntegrations = [
   { name: 'OpenAI', services: ['GPT-4o', 'GPT-4o Mini', 'TTS', 'Whisper'], status: 'active', type: 'AI' },
   { name: 'Anthropic', services: ['Claude 3.5 Sonnet', 'Claude 3 Opus'], status: 'active', type: 'AI' },
@@ -75,7 +69,7 @@ export const GenieIntegrationsDiagram: React.FC = () => {
     try {
       toast.info('Generating PNG...');
       const canvas = await html2canvas(diagramRef.current, {
-        backgroundColor: '#0f172a',
+        backgroundColor: '#ffffff',
         scale: 3,
         useCORS: true,
         logging: false,
@@ -94,48 +88,48 @@ export const GenieIntegrationsDiagram: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge className="text-xs" style={{ backgroundColor: colors.active.bg, color: colors.active.text }}>✓ Active</Badge>;
+        return <Badge className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700">✓ Active</Badge>;
       case 'partial':
-        return <Badge className="text-xs" style={{ backgroundColor: colors.partial.bg, color: colors.partial.text }}>◐ Partial</Badge>;
+        return <Badge className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700">◐ Partial</Badge>;
       default:
-        return <Badge className="text-xs" style={{ backgroundColor: colors.planned.bg, color: colors.planned.text }}>○ Planned</Badge>;
+        return <Badge className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700">○ Planned</Badge>;
     }
   };
 
   const content = (
-    <div ref={diagramRef} className="p-6 bg-slate-900 rounded-xl space-y-6">
+    <div ref={diagramRef} className="p-6 bg-background rounded-xl space-y-6 border border-border">
       {/* Header */}
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-white flex items-center justify-center gap-3">
-          <Plug className="h-8 w-8 text-cyan-400" />
+      <div className="text-center border-b border-border pb-4">
+        <h2 className="text-2xl font-bold text-foreground flex items-center justify-center gap-3">
+          <Plug className="h-8 w-8 text-cyan-500" />
           Genie Integrations Architecture
         </h2>
-        <p className="text-slate-400 mt-2">APIs • External Services • Webhooks • Data Flow</p>
+        <p className="text-muted-foreground mt-2">APIs • External Services • Webhooks • Data Flow</p>
       </div>
 
       {/* Stats Bar */}
-      <Card className="bg-gradient-to-r from-cyan-900/30 to-blue-900/30 border-cyan-500/30">
+      <Card className="bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-950/20 dark:to-blue-950/20 border-2 border-cyan-200 dark:border-cyan-800/40">
         <CardContent className="pt-4">
           <div className="grid grid-cols-5 gap-4 text-center">
             <div>
-              <div className="text-2xl font-bold text-cyan-300">{aiIntegrations.length}</div>
-              <div className="text-xs text-slate-400">AI Providers</div>
+              <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">{aiIntegrations.length}</div>
+              <div className="text-xs text-muted-foreground font-medium">AI Providers</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-blue-300">{platformIntegrations.length}</div>
-              <div className="text-xs text-slate-400">Platform APIs</div>
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{platformIntegrations.length}</div>
+              <div className="text-xs text-muted-foreground font-medium">Platform APIs</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-purple-300">{enterpriseIntegrations.length}</div>
-              <div className="text-xs text-slate-400">Enterprise</div>
+              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{enterpriseIntegrations.length}</div>
+              <div className="text-xs text-muted-foreground font-medium">Enterprise</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-emerald-300">{internalApis.length}</div>
-              <div className="text-xs text-slate-400">Edge Functions</div>
+              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{internalApis.length}</div>
+              <div className="text-xs text-muted-foreground font-medium">Edge Functions</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-orange-300">{webhooks.length}</div>
-              <div className="text-xs text-slate-400">Webhooks</div>
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{webhooks.length}</div>
+              <div className="text-xs text-muted-foreground font-medium">Webhooks</div>
             </div>
           </div>
         </CardContent>
@@ -143,9 +137,9 @@ export const GenieIntegrationsDiagram: React.FC = () => {
 
       <div className="grid grid-cols-2 gap-4">
         {/* AI Integrations */}
-        <Card className="bg-slate-800/50 border-purple-500/30">
+        <Card className="border-2 border-purple-200 dark:border-purple-800/40 bg-purple-50/50 dark:bg-purple-950/10">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg text-purple-300 flex items-center gap-2">
+            <CardTitle className="text-lg text-purple-700 dark:text-purple-400 flex items-center gap-2">
               <Zap className="h-5 w-5" />
               AI & ML Integrations
             </CardTitle>
@@ -153,14 +147,14 @@ export const GenieIntegrationsDiagram: React.FC = () => {
           <CardContent>
             <div className="space-y-2">
               {aiIntegrations.map((integration) => (
-                <div key={integration.name} className="bg-slate-700/50 rounded-lg p-2 border border-slate-600">
+                <div key={integration.name} className="bg-background rounded-lg p-2 border-2 border-border shadow-sm">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-white font-medium text-sm">{integration.name}</span>
+                    <span className="text-foreground font-semibold text-sm">{integration.name}</span>
                     {getStatusBadge(integration.status)}
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {integration.services.map((service) => (
-                      <Badge key={service} variant="outline" className="text-xs text-purple-300 border-purple-500/30">
+                      <Badge key={service} variant="secondary" className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
                         {service}
                       </Badge>
                     ))}
@@ -172,9 +166,9 @@ export const GenieIntegrationsDiagram: React.FC = () => {
         </Card>
 
         {/* Platform Integrations */}
-        <Card className="bg-slate-800/50 border-blue-500/30">
+        <Card className="border-2 border-blue-200 dark:border-blue-800/40 bg-blue-50/50 dark:bg-blue-950/10">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg text-blue-300 flex items-center gap-2">
+            <CardTitle className="text-lg text-blue-700 dark:text-blue-400 flex items-center gap-2">
               <Globe className="h-5 w-5" />
               Platform Integrations
             </CardTitle>
@@ -182,14 +176,14 @@ export const GenieIntegrationsDiagram: React.FC = () => {
           <CardContent>
             <div className="space-y-2">
               {platformIntegrations.map((integration) => (
-                <div key={integration.name} className="bg-slate-700/50 rounded-lg p-2 border border-slate-600">
+                <div key={integration.name} className="bg-background rounded-lg p-2 border-2 border-border shadow-sm">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-white font-medium text-sm">{integration.name}</span>
+                    <span className="text-foreground font-semibold text-sm">{integration.name}</span>
                     {getStatusBadge(integration.status)}
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {integration.services.map((service) => (
-                      <Badge key={service} variant="outline" className="text-xs text-blue-300 border-blue-500/30">
+                      <Badge key={service} variant="secondary" className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
                         {service}
                       </Badge>
                     ))}
@@ -202,9 +196,9 @@ export const GenieIntegrationsDiagram: React.FC = () => {
       </div>
 
       {/* Enterprise Integrations */}
-      <Card className="bg-slate-800/50 border-emerald-500/30">
+      <Card className="border-2 border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/50 dark:bg-emerald-950/10">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg text-emerald-300 flex items-center gap-2">
+          <CardTitle className="text-lg text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
             <Shield className="h-5 w-5" />
             Enterprise Integrations
           </CardTitle>
@@ -212,12 +206,12 @@ export const GenieIntegrationsDiagram: React.FC = () => {
         <CardContent>
           <div className="grid grid-cols-3 gap-2">
             {enterpriseIntegrations.map((integration) => (
-              <div key={integration.name} className="bg-slate-700/50 rounded-lg p-2 border border-slate-600">
+              <div key={integration.name} className="bg-background rounded-lg p-2 border-2 border-border shadow-sm">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-white font-medium text-sm">{integration.name}</span>
+                  <span className="text-foreground font-semibold text-sm">{integration.name}</span>
                   {getStatusBadge(integration.status)}
                 </div>
-                <Badge variant="outline" className="text-xs text-emerald-300 border-emerald-500/30">
+                <Badge variant="secondary" className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
                   {integration.type}
                 </Badge>
               </div>
@@ -227,9 +221,9 @@ export const GenieIntegrationsDiagram: React.FC = () => {
       </Card>
 
       {/* Internal APIs (Edge Functions) */}
-      <Card className="bg-slate-800/50 border-orange-500/30">
+      <Card className="border-2 border-orange-200 dark:border-orange-800/40 bg-orange-50/50 dark:bg-orange-950/10">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg text-orange-300 flex items-center gap-2">
+          <CardTitle className="text-lg text-orange-700 dark:text-orange-400 flex items-center gap-2">
             <Cloud className="h-5 w-5" />
             Internal Edge Functions (Microservices)
           </CardTitle>
@@ -237,14 +231,14 @@ export const GenieIntegrationsDiagram: React.FC = () => {
         <CardContent>
           <div className="grid grid-cols-3 gap-2">
             {internalApis.map((api) => (
-              <div key={api.name} className="bg-slate-700/50 rounded-lg p-2 border border-slate-600">
+              <div key={api.name} className="bg-background rounded-lg p-2 border-2 border-border shadow-sm">
                 <div className="flex items-center justify-between mb-1">
-                  <code className="text-orange-300 text-xs">{api.name}</code>
+                  <code className="text-orange-600 dark:text-orange-400 text-xs font-semibold">{api.name}</code>
                   {getStatusBadge(api.status)}
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400 text-xs">{api.description}</span>
-                  <Badge variant="outline" className="text-xs text-slate-300">{api.method}</Badge>
+                  <span className="text-muted-foreground text-xs">{api.description}</span>
+                  <Badge variant="secondary" className="text-xs">{api.method}</Badge>
                 </div>
               </div>
             ))}
@@ -253,9 +247,9 @@ export const GenieIntegrationsDiagram: React.FC = () => {
       </Card>
 
       {/* Webhooks */}
-      <Card className="bg-slate-800/50 border-pink-500/30">
+      <Card className="border-2 border-pink-200 dark:border-pink-800/40 bg-pink-50/50 dark:bg-pink-950/10">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg text-pink-300 flex items-center gap-2">
+          <CardTitle className="text-lg text-pink-700 dark:text-pink-400 flex items-center gap-2">
             <Radio className="h-5 w-5" />
             Webhooks & Event Handlers
           </CardTitle>
@@ -263,19 +257,19 @@ export const GenieIntegrationsDiagram: React.FC = () => {
         <CardContent>
           <div className="grid grid-cols-4 gap-2">
             {webhooks.map((webhook) => (
-              <div key={webhook.name} className="bg-slate-700/50 rounded-lg p-2 border border-slate-600">
+              <div key={webhook.name} className="bg-background rounded-lg p-2 border-2 border-border shadow-sm">
                 <div className="flex items-center justify-between mb-1">
-                  <code className="text-pink-300 text-xs">{webhook.name}</code>
+                  <code className="text-pink-600 dark:text-pink-400 text-xs font-semibold">{webhook.name}</code>
                   {getStatusBadge(webhook.status)}
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {webhook.events.slice(0, 2).map((event) => (
-                    <Badge key={event} variant="outline" className="text-xs text-slate-400">
+                    <Badge key={event} variant="secondary" className="text-xs">
                       {event}
                     </Badge>
                   ))}
                   {webhook.events.length > 2 && (
-                    <Badge variant="outline" className="text-xs text-slate-500">+{webhook.events.length - 2}</Badge>
+                    <Badge variant="secondary" className="text-xs">+{webhook.events.length - 2}</Badge>
                   )}
                 </div>
               </div>
@@ -288,15 +282,15 @@ export const GenieIntegrationsDiagram: React.FC = () => {
 
   if (isFullscreen) {
     return (
-      <div className="fixed inset-0 z-50 bg-slate-950/95 overflow-auto">
-        <div className="sticky top-0 z-10 bg-slate-900 border-b border-slate-700 px-4 py-3 flex items-center justify-between">
-          <h2 className="text-white font-semibold text-lg">Genie Integrations Architecture</h2>
+      <div className="fixed inset-0 z-50 bg-background overflow-auto">
+        <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-3 flex items-center justify-between shadow-sm">
+          <h2 className="text-foreground font-semibold text-lg">Genie Integrations Architecture</h2>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleDownloadPNG} className="bg-slate-800 border-slate-600 text-white hover:bg-slate-700">
+            <Button variant="outline" size="sm" onClick={handleDownloadPNG}>
               <Download className="h-4 w-4 mr-2" />
               Download PNG
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setIsFullscreen(false)} className="bg-slate-800 border-slate-600 text-white hover:bg-slate-700">
+            <Button variant="outline" size="sm" onClick={() => setIsFullscreen(false)}>
               <X className="h-4 w-4 mr-2" />
               Close
             </Button>
@@ -310,10 +304,10 @@ export const GenieIntegrationsDiagram: React.FC = () => {
   }
 
   return (
-    <Card className="bg-slate-900 border-slate-700">
+    <Card className="bg-card border-border">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-white text-lg flex items-center gap-2">
-          <Plug className="h-5 w-5 text-cyan-400" />
+        <CardTitle className="text-foreground text-lg flex items-center gap-2">
+          <Plug className="h-5 w-5 text-cyan-500" />
           Integrations Architecture
         </CardTitle>
         <div className="flex gap-2">

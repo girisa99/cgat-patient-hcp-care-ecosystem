@@ -11,12 +11,6 @@ import { Download, Maximize2, X, Users, Building, Workflow, Calendar, Shield, Gi
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
 
-const colors = {
-  complete: { bg: '#10b981', text: '#ffffff' },
-  partial: { bg: '#f59e0b', text: '#ffffff' },
-  planned: { bg: '#6366f1', text: '#ffffff' },
-};
-
 const arcFeatures = [
   { name: 'Team Workspace', description: 'Shared project environments', status: 'partial', category: 'Collaboration' },
   { name: 'Review & Approval', description: 'Workflow-based approvals', status: 'partial', category: 'Workflow' },
@@ -62,7 +56,7 @@ export const GenieArcProductionHubDiagram: React.FC = () => {
     try {
       toast.info('Generating PNG...');
       const canvas = await html2canvas(diagramRef.current, {
-        backgroundColor: '#0f172a',
+        backgroundColor: '#ffffff',
         scale: 3,
         useCORS: true,
         logging: false,
@@ -81,30 +75,30 @@ export const GenieArcProductionHubDiagram: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'complete':
-        return <Badge className="text-xs" style={{ backgroundColor: colors.complete.bg, color: colors.complete.text }}>✓ Complete</Badge>;
+        return <Badge className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700">✓ Complete</Badge>;
       case 'partial':
-        return <Badge className="text-xs" style={{ backgroundColor: colors.partial.bg, color: colors.partial.text }}>◐ Partial</Badge>;
+        return <Badge className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700">◐ Partial</Badge>;
       default:
-        return <Badge className="text-xs" style={{ backgroundColor: colors.planned.bg, color: colors.planned.text }}>○ Planned</Badge>;
+        return <Badge className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700">○ Planned</Badge>;
     }
   };
 
   const content = (
-    <div ref={diagramRef} className="p-6 bg-slate-900 rounded-xl space-y-6">
+    <div ref={diagramRef} className="p-6 bg-background rounded-xl space-y-6 border border-border">
       {/* Header */}
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-white flex items-center justify-center gap-3">
-          <Users className="h-8 w-8 text-blue-400" />
+      <div className="text-center border-b border-border pb-4">
+        <h2 className="text-2xl font-bold text-foreground flex items-center justify-center gap-3">
+          <Users className="h-8 w-8 text-blue-500" />
           Genie Arc & Production Hub
         </h2>
-        <p className="text-slate-400 mt-2">Team Collaboration • Enterprise Production • Workflow Automation</p>
+        <p className="text-muted-foreground mt-2">Team Collaboration • Enterprise Production • Workflow Automation</p>
       </div>
 
       <div className="grid grid-cols-2 gap-6">
         {/* Arc Section */}
-        <Card className="bg-slate-800/50 border-blue-500/30">
+        <Card className="border-2 border-blue-200 dark:border-blue-800/40 bg-blue-50/50 dark:bg-blue-950/10">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg text-blue-300 flex items-center gap-2">
+            <CardTitle className="text-lg text-blue-700 dark:text-blue-400 flex items-center gap-2">
               <Users className="h-5 w-5" />
               🌈 Genie Arc - Collaboration Hub
             </CardTitle>
@@ -112,13 +106,13 @@ export const GenieArcProductionHubDiagram: React.FC = () => {
           <CardContent>
             <div className="space-y-3">
               {arcFeatures.map((feature) => (
-                <div key={feature.name} className="bg-slate-700/50 rounded-lg p-3 border border-slate-600">
+                <div key={feature.name} className="bg-background rounded-lg p-3 border-2 border-border shadow-sm">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-white font-medium text-sm">{feature.name}</span>
+                    <span className="text-foreground font-semibold text-sm">{feature.name}</span>
                     {getStatusBadge(feature.status)}
                   </div>
-                  <p className="text-slate-400 text-xs">{feature.description}</p>
-                  <Badge variant="outline" className="text-xs mt-2 text-blue-300 border-blue-500/30">
+                  <p className="text-muted-foreground text-xs">{feature.description}</p>
+                  <Badge variant="secondary" className="text-xs mt-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
                     {feature.category}
                   </Badge>
                 </div>
@@ -128,9 +122,9 @@ export const GenieArcProductionHubDiagram: React.FC = () => {
         </Card>
 
         {/* Hub Section */}
-        <Card className="bg-slate-800/50 border-violet-500/30">
+        <Card className="border-2 border-violet-200 dark:border-violet-800/40 bg-violet-50/50 dark:bg-violet-950/10">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg text-violet-300 flex items-center gap-2">
+            <CardTitle className="text-lg text-violet-700 dark:text-violet-400 flex items-center gap-2">
               <Building className="h-5 w-5" />
               🎬 Production Hub - Enterprise Center
             </CardTitle>
@@ -138,13 +132,13 @@ export const GenieArcProductionHubDiagram: React.FC = () => {
           <CardContent>
             <div className="space-y-3">
               {hubFeatures.map((feature) => (
-                <div key={feature.name} className="bg-slate-700/50 rounded-lg p-3 border border-slate-600">
+                <div key={feature.name} className="bg-background rounded-lg p-3 border-2 border-border shadow-sm">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-white font-medium text-sm">{feature.name}</span>
+                    <span className="text-foreground font-semibold text-sm">{feature.name}</span>
                     {getStatusBadge(feature.status)}
                   </div>
-                  <p className="text-slate-400 text-xs">{feature.description}</p>
-                  <Badge variant="outline" className="text-xs mt-2 text-violet-300 border-violet-500/30">
+                  <p className="text-muted-foreground text-xs">{feature.description}</p>
+                  <Badge variant="secondary" className="text-xs mt-2 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300">
                     {feature.category}
                   </Badge>
                 </div>
@@ -155,9 +149,9 @@ export const GenieArcProductionHubDiagram: React.FC = () => {
       </div>
 
       {/* Agent Integrations */}
-      <Card className="bg-slate-800/50 border-emerald-500/30">
+      <Card className="border-2 border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/50 dark:bg-emerald-950/10">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg text-emerald-300 flex items-center gap-2">
+          <CardTitle className="text-lg text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
             <Workflow className="h-5 w-5" />
             Agent Integrations
           </CardTitle>
@@ -165,12 +159,12 @@ export const GenieArcProductionHubDiagram: React.FC = () => {
         <CardContent>
           <div className="grid grid-cols-3 gap-3">
             {agentIntegrations.map((agent) => (
-              <div key={agent.name} className="bg-slate-700/50 rounded-lg p-3 border border-slate-600">
+              <div key={agent.name} className="bg-background rounded-lg p-3 border-2 border-border shadow-sm">
                 <div className="flex items-center justify-between mb-1">
-                  <code className="text-emerald-300 text-xs">{agent.name}</code>
+                  <code className="text-emerald-600 dark:text-emerald-400 text-xs font-semibold">{agent.name}</code>
                   {getStatusBadge(agent.status)}
                 </div>
-                <p className="text-slate-400 text-xs">{agent.description}</p>
+                <p className="text-muted-foreground text-xs">{agent.description}</p>
               </div>
             ))}
           </div>
@@ -178,9 +172,9 @@ export const GenieArcProductionHubDiagram: React.FC = () => {
       </Card>
 
       {/* API Endpoints */}
-      <Card className="bg-slate-800/50 border-cyan-500/30">
+      <Card className="border-2 border-cyan-200 dark:border-cyan-800/40 bg-cyan-50/50 dark:bg-cyan-950/10">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg text-cyan-300 flex items-center gap-2">
+          <CardTitle className="text-lg text-cyan-700 dark:text-cyan-400 flex items-center gap-2">
             <Radio className="h-5 w-5" />
             API Endpoints
           </CardTitle>
@@ -188,12 +182,12 @@ export const GenieArcProductionHubDiagram: React.FC = () => {
         <CardContent>
           <div className="grid grid-cols-3 gap-3">
             {apiEndpoints.map((api) => (
-              <div key={api.name} className="bg-slate-700/50 rounded-lg p-3 border border-slate-600">
+              <div key={api.name} className="bg-background rounded-lg p-3 border-2 border-border shadow-sm">
                 <div className="flex items-center justify-between mb-1">
-                  <code className="text-cyan-300 text-xs">{api.name}</code>
+                  <code className="text-cyan-600 dark:text-cyan-400 text-xs font-semibold">{api.name}</code>
                   {getStatusBadge(api.status)}
                 </div>
-                <p className="text-slate-400 text-xs">{api.description}</p>
+                <p className="text-muted-foreground text-xs">{api.description}</p>
               </div>
             ))}
           </div>
@@ -201,9 +195,9 @@ export const GenieArcProductionHubDiagram: React.FC = () => {
       </Card>
 
       {/* Workflow Diagram */}
-      <Card className="bg-slate-800/50 border-orange-500/30">
+      <Card className="border-2 border-orange-200 dark:border-orange-800/40 bg-orange-50/50 dark:bg-orange-950/10">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg text-orange-300 flex items-center gap-2">
+          <CardTitle className="text-lg text-orange-700 dark:text-orange-400 flex items-center gap-2">
             <GitBranch className="h-5 w-5" />
             Approval Workflow
           </CardTitle>
@@ -212,11 +206,11 @@ export const GenieArcProductionHubDiagram: React.FC = () => {
           <div className="flex items-center justify-between overflow-x-auto gap-4 pb-2">
             {['Draft', 'Review', 'Revisions', 'Approval', 'Published'].map((stage, index) => (
               <React.Fragment key={stage}>
-                <div className="flex-shrink-0 bg-slate-700/50 rounded-lg p-3 border border-slate-600 text-center min-w-[100px]">
-                  <CheckCircle className={`h-5 w-5 mx-auto mb-1 ${index <= 1 ? 'text-emerald-400' : 'text-slate-500'}`} />
-                  <div className="text-white text-sm font-medium">{stage}</div>
+                <div className="flex-shrink-0 bg-background rounded-lg p-3 border-2 border-border text-center min-w-[100px] shadow-sm">
+                  <CheckCircle className={`h-5 w-5 mx-auto mb-1 ${index <= 1 ? 'text-emerald-500' : 'text-muted-foreground'}`} />
+                  <div className="text-foreground text-sm font-semibold">{stage}</div>
                 </div>
-                {index < 4 && <div className="text-slate-500 text-lg">→</div>}
+                {index < 4 && <div className="text-muted-foreground text-lg font-bold">→</div>}
               </React.Fragment>
             ))}
           </div>
@@ -225,21 +219,21 @@ export const GenieArcProductionHubDiagram: React.FC = () => {
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4 text-center">
-        <div className="bg-blue-900/30 rounded-lg p-3 border border-blue-500/30">
-          <div className="text-2xl font-bold text-blue-300">6</div>
-          <div className="text-xs text-slate-400">Arc Features</div>
+        <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3 border-2 border-blue-200 dark:border-blue-800/40">
+          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">6</div>
+          <div className="text-xs text-muted-foreground font-medium">Arc Features</div>
         </div>
-        <div className="bg-violet-900/30 rounded-lg p-3 border border-violet-500/30">
-          <div className="text-2xl font-bold text-violet-300">6</div>
-          <div className="text-xs text-slate-400">Hub Features</div>
+        <div className="bg-violet-50 dark:bg-violet-950/20 rounded-lg p-3 border-2 border-violet-200 dark:border-violet-800/40">
+          <div className="text-2xl font-bold text-violet-600 dark:text-violet-400">6</div>
+          <div className="text-xs text-muted-foreground font-medium">Hub Features</div>
         </div>
-        <div className="bg-emerald-900/30 rounded-lg p-3 border border-emerald-500/30">
-          <div className="text-2xl font-bold text-emerald-300">6</div>
-          <div className="text-xs text-slate-400">Agents</div>
+        <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-lg p-3 border-2 border-emerald-200 dark:border-emerald-800/40">
+          <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">6</div>
+          <div className="text-xs text-muted-foreground font-medium">Agents</div>
         </div>
-        <div className="bg-cyan-900/30 rounded-lg p-3 border border-cyan-500/30">
-          <div className="text-2xl font-bold text-cyan-300">25%</div>
-          <div className="text-xs text-slate-400">Complete</div>
+        <div className="bg-cyan-50 dark:bg-cyan-950/20 rounded-lg p-3 border-2 border-cyan-200 dark:border-cyan-800/40">
+          <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">25%</div>
+          <div className="text-xs text-muted-foreground font-medium">Complete</div>
         </div>
       </div>
     </div>
@@ -247,15 +241,15 @@ export const GenieArcProductionHubDiagram: React.FC = () => {
 
   if (isFullscreen) {
     return (
-      <div className="fixed inset-0 z-50 bg-slate-950/95 overflow-auto">
-        <div className="sticky top-0 z-10 bg-slate-900 border-b border-slate-700 px-4 py-3 flex items-center justify-between">
-          <h2 className="text-white font-semibold text-lg">Genie Arc & Production Hub Architecture</h2>
+      <div className="fixed inset-0 z-50 bg-background overflow-auto">
+        <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-3 flex items-center justify-between shadow-sm">
+          <h2 className="text-foreground font-semibold text-lg">Genie Arc & Production Hub Architecture</h2>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleDownloadPNG} className="bg-slate-800 border-slate-600 text-white hover:bg-slate-700">
+            <Button variant="outline" size="sm" onClick={handleDownloadPNG}>
               <Download className="h-4 w-4 mr-2" />
               Download PNG
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setIsFullscreen(false)} className="bg-slate-800 border-slate-600 text-white hover:bg-slate-700">
+            <Button variant="outline" size="sm" onClick={() => setIsFullscreen(false)}>
               <X className="h-4 w-4 mr-2" />
               Close
             </Button>
@@ -269,10 +263,10 @@ export const GenieArcProductionHubDiagram: React.FC = () => {
   }
 
   return (
-    <Card className="bg-slate-900 border-slate-700">
+    <Card className="bg-card border-border">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-white text-lg flex items-center gap-2">
-          <Users className="h-5 w-5 text-blue-400" />
+        <CardTitle className="text-foreground text-lg flex items-center gap-2">
+          <Users className="h-5 w-5 text-blue-500" />
           Genie Arc & Production Hub
         </CardTitle>
         <div className="flex gap-2">

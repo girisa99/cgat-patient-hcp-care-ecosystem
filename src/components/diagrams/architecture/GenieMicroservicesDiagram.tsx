@@ -11,16 +11,10 @@ import { Download, Maximize2, X, Server, Database, Layers, Shield, Workflow, Cpu
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
 
-const colors = {
-  active: { bg: '#10b981', text: '#ffffff' },
-  partial: { bg: '#f59e0b', text: '#ffffff' },
-  planned: { bg: '#6366f1', text: '#ffffff' },
-};
-
 const domainServices = [
   {
     domain: 'AI Intelligence',
-    color: '#7c3aed',
+    color: 'violet',
     icon: '🧠',
     services: [
       { name: 'ai-universal-processor', responsibility: 'Multi-model orchestration', status: 'active' },
@@ -31,7 +25,7 @@ const domainServices = [
   },
   {
     domain: 'Voice & Audio',
-    color: '#0ea5e9',
+    color: 'sky',
     icon: '🎙️',
     services: [
       { name: 'tts-orchestrator', responsibility: 'TTS provider routing', status: 'active' },
@@ -42,7 +36,7 @@ const domainServices = [
   },
   {
     domain: 'Media Production',
-    color: '#059669',
+    color: 'emerald',
     icon: '🎬',
     services: [
       { name: 'media-processor', responsibility: 'Video processing', status: 'partial' },
@@ -53,7 +47,7 @@ const domainServices = [
   },
   {
     domain: 'Document Processing',
-    color: '#f97316',
+    color: 'orange',
     icon: '📄',
     services: [
       { name: 'document-parser', responsibility: 'Multi-format parsing', status: 'active' },
@@ -64,7 +58,7 @@ const domainServices = [
   },
   {
     domain: 'Collaboration',
-    color: '#3b82f6',
+    color: 'blue',
     icon: '👥',
     services: [
       { name: 'realtime-sync', responsibility: 'WebSocket coordination', status: 'partial' },
@@ -75,7 +69,7 @@ const domainServices = [
   },
   {
     domain: 'Distribution',
-    color: '#ec4899',
+    color: 'pink',
     icon: '🚀',
     services: [
       { name: 'publish-orchestrator', responsibility: 'Multi-platform publish', status: 'planned' },
@@ -103,6 +97,15 @@ const dataFlow = [
   { from: 'Shared Services', to: 'Database', protocol: 'PostgreSQL' },
 ];
 
+const colorClasses: Record<string, { bg: string; border: string; text: string }> = {
+  violet: { bg: 'bg-violet-50 dark:bg-violet-950/20', border: 'border-violet-200 dark:border-violet-800/40', text: 'text-violet-600 dark:text-violet-400' },
+  sky: { bg: 'bg-sky-50 dark:bg-sky-950/20', border: 'border-sky-200 dark:border-sky-800/40', text: 'text-sky-600 dark:text-sky-400' },
+  emerald: { bg: 'bg-emerald-50 dark:bg-emerald-950/20', border: 'border-emerald-200 dark:border-emerald-800/40', text: 'text-emerald-600 dark:text-emerald-400' },
+  orange: { bg: 'bg-orange-50 dark:bg-orange-950/20', border: 'border-orange-200 dark:border-orange-800/40', text: 'text-orange-600 dark:text-orange-400' },
+  blue: { bg: 'bg-blue-50 dark:bg-blue-950/20', border: 'border-blue-200 dark:border-blue-800/40', text: 'text-blue-600 dark:text-blue-400' },
+  pink: { bg: 'bg-pink-50 dark:bg-pink-950/20', border: 'border-pink-200 dark:border-pink-800/40', text: 'text-pink-600 dark:text-pink-400' },
+};
+
 export const GenieMicroservicesDiagram: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const diagramRef = useRef<HTMLDivElement>(null);
@@ -112,7 +115,7 @@ export const GenieMicroservicesDiagram: React.FC = () => {
     try {
       toast.info('Generating PNG...');
       const canvas = await html2canvas(diagramRef.current, {
-        backgroundColor: '#0f172a',
+        backgroundColor: '#ffffff',
         scale: 3,
         useCORS: true,
         logging: false,
@@ -131,54 +134,54 @@ export const GenieMicroservicesDiagram: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge className="text-xs" style={{ backgroundColor: colors.active.bg, color: colors.active.text }}>✓</Badge>;
+        return <Badge className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700">✓</Badge>;
       case 'partial':
-        return <Badge className="text-xs" style={{ backgroundColor: colors.partial.bg, color: colors.partial.text }}>◐</Badge>;
+        return <Badge className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700">◐</Badge>;
       default:
-        return <Badge className="text-xs" style={{ backgroundColor: colors.planned.bg, color: colors.planned.text }}>○</Badge>;
+        return <Badge className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700">○</Badge>;
     }
   };
 
   const content = (
-    <div ref={diagramRef} className="p-6 bg-slate-900 rounded-xl space-y-6">
+    <div ref={diagramRef} className="p-6 bg-background rounded-xl space-y-6 border border-border">
       {/* Header */}
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-white flex items-center justify-center gap-3">
-          <Layers className="h-8 w-8 text-violet-400" />
+      <div className="text-center border-b border-border pb-4">
+        <h2 className="text-2xl font-bold text-foreground flex items-center justify-center gap-3">
+          <Layers className="h-8 w-8 text-violet-500" />
           Microservices Architecture
         </h2>
-        <p className="text-slate-400 mt-2">Domain-Driven Design • Edge Functions • Event-Driven • Scalable</p>
+        <p className="text-muted-foreground mt-2">Domain-Driven Design • Edge Functions • Event-Driven • Scalable</p>
       </div>
 
       {/* Architecture Stats */}
-      <Card className="bg-gradient-to-r from-violet-900/30 to-purple-900/30 border-violet-500/30">
+      <Card className="bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20 border-2 border-violet-200 dark:border-violet-800/40">
         <CardContent className="pt-4">
           <div className="grid grid-cols-5 gap-4 text-center">
             <div>
-              <div className="text-2xl font-bold text-violet-300">{domainServices.length}</div>
-              <div className="text-xs text-slate-400">Domains</div>
+              <div className="text-2xl font-bold text-violet-600 dark:text-violet-400">{domainServices.length}</div>
+              <div className="text-xs text-muted-foreground font-medium">Domains</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-emerald-300">
+              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                 {domainServices.reduce((acc, d) => acc + d.services.length, 0)}
               </div>
-              <div className="text-xs text-slate-400">Services</div>
+              <div className="text-xs text-muted-foreground font-medium">Services</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-blue-300">{sharedServices.length}</div>
-              <div className="text-xs text-slate-400">Shared</div>
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{sharedServices.length}</div>
+              <div className="text-xs text-muted-foreground font-medium">Shared</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-orange-300">
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                 {domainServices.reduce((acc, d) => acc + d.services.filter(s => s.status === 'active').length, 0)}
               </div>
-              <div className="text-xs text-slate-400">Active</div>
+              <div className="text-xs text-muted-foreground font-medium">Active</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-pink-300">
+              <div className="text-2xl font-bold text-pink-600 dark:text-pink-400">
                 {domainServices.reduce((acc, d) => acc + d.services.filter(s => s.status === 'planned').length, 0)}
               </div>
-              <div className="text-xs text-slate-400">Planned</div>
+              <div className="text-xs text-muted-foreground font-medium">Planned</div>
             </div>
           </div>
         </CardContent>
@@ -186,35 +189,38 @@ export const GenieMicroservicesDiagram: React.FC = () => {
 
       {/* Domain Services Grid */}
       <div className="grid grid-cols-3 gap-4">
-        {domainServices.map((domain) => (
-          <Card key={domain.domain} className="bg-slate-800/50 border-slate-600" style={{ borderColor: `${domain.color}40` }}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2" style={{ color: domain.color }}>
-                <span className="text-lg">{domain.icon}</span>
-                {domain.domain}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-1.5">
-                {domain.services.map((service) => (
-                  <div key={service.name} className="bg-slate-700/50 rounded p-2 border border-slate-600 flex items-center justify-between">
-                    <div>
-                      <code className="text-xs" style={{ color: domain.color }}>{service.name}</code>
-                      <p className="text-slate-400 text-xs">{service.responsibility}</p>
+        {domainServices.map((domain) => {
+          const colors = colorClasses[domain.color];
+          return (
+            <Card key={domain.domain} className={`${colors.bg} border-2 ${colors.border}`}>
+              <CardHeader className="pb-2">
+                <CardTitle className={`text-sm flex items-center gap-2 ${colors.text}`}>
+                  <span className="text-lg">{domain.icon}</span>
+                  {domain.domain}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-1.5">
+                  {domain.services.map((service) => (
+                    <div key={service.name} className="bg-background rounded p-2 border-2 border-border flex items-center justify-between shadow-sm">
+                      <div>
+                        <code className={`text-xs font-semibold ${colors.text}`}>{service.name}</code>
+                        <p className="text-muted-foreground text-xs">{service.responsibility}</p>
+                      </div>
+                      {getStatusBadge(service.status)}
                     </div>
-                    {getStatusBadge(service.status)}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Shared Services */}
-      <Card className="bg-slate-800/50 border-cyan-500/30">
+      <Card className="border-2 border-cyan-200 dark:border-cyan-800/40 bg-cyan-50/50 dark:bg-cyan-950/10">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg text-cyan-300 flex items-center gap-2">
+          <CardTitle className="text-lg text-cyan-700 dark:text-cyan-400 flex items-center gap-2">
             <Cpu className="h-5 w-5" />
             Shared Infrastructure Services
           </CardTitle>
@@ -222,10 +228,10 @@ export const GenieMicroservicesDiagram: React.FC = () => {
         <CardContent>
           <div className="grid grid-cols-6 gap-3">
             {sharedServices.map((service) => (
-              <div key={service.name} className="bg-slate-700/50 rounded-lg p-3 border border-slate-600 text-center">
-                <service.icon className="h-6 w-6 mx-auto mb-2 text-cyan-400" />
-                <div className="text-white text-sm font-medium">{service.name}</div>
-                <p className="text-slate-400 text-xs mt-1">{service.description}</p>
+              <div key={service.name} className="bg-background rounded-lg p-3 border-2 border-border text-center shadow-sm">
+                <service.icon className="h-6 w-6 mx-auto mb-2 text-cyan-500" />
+                <div className="text-foreground text-sm font-semibold">{service.name}</div>
+                <p className="text-muted-foreground text-xs mt-1">{service.description}</p>
                 <div className="mt-2">{getStatusBadge(service.status)}</div>
               </div>
             ))}
@@ -234,9 +240,9 @@ export const GenieMicroservicesDiagram: React.FC = () => {
       </Card>
 
       {/* Data Flow */}
-      <Card className="bg-slate-800/50 border-orange-500/30">
+      <Card className="border-2 border-orange-200 dark:border-orange-800/40 bg-orange-50/50 dark:bg-orange-950/10">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg text-orange-300 flex items-center gap-2">
+          <CardTitle className="text-lg text-orange-700 dark:text-orange-400 flex items-center gap-2">
             <Workflow className="h-5 w-5" />
             Request Flow Architecture
           </CardTitle>
@@ -245,14 +251,14 @@ export const GenieMicroservicesDiagram: React.FC = () => {
           <div className="flex items-center justify-between overflow-x-auto gap-2 pb-2">
             {dataFlow.map((flow, index) => (
               <React.Fragment key={index}>
-                <div className="flex-shrink-0 bg-slate-700/50 rounded-lg p-3 border border-slate-600 text-center min-w-[120px]">
-                  <div className="text-white text-sm font-medium">{flow.from}</div>
-                  <Badge variant="outline" className="text-xs text-orange-300 border-orange-500/30 mt-1">
+                <div className="flex-shrink-0 bg-background rounded-lg p-3 border-2 border-border text-center min-w-[120px] shadow-sm">
+                  <div className="text-foreground text-sm font-semibold">{flow.from}</div>
+                  <Badge variant="secondary" className="text-xs mt-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300">
                     {flow.protocol}
                   </Badge>
                 </div>
                 {index < dataFlow.length - 1 && (
-                  <div className="text-orange-400 text-lg flex-shrink-0">→</div>
+                  <div className="text-orange-500 text-lg flex-shrink-0 font-bold">→</div>
                 )}
               </React.Fragment>
             ))}
@@ -261,27 +267,27 @@ export const GenieMicroservicesDiagram: React.FC = () => {
       </Card>
 
       {/* Principles */}
-      <Card className="bg-slate-800/50 border-emerald-500/30">
+      <Card className="border-2 border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/50 dark:bg-emerald-950/10">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg text-emerald-300">Architecture Principles</CardTitle>
+          <CardTitle className="text-lg text-emerald-700 dark:text-emerald-400">Architecture Principles</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-4 gap-3 text-center text-sm">
-            <div className="bg-slate-700/50 rounded-lg p-3 border border-emerald-500/30">
-              <div className="text-emerald-300 font-medium">Domain Isolation</div>
-              <div className="text-xs text-slate-400 mt-1">Each service owns its data</div>
+            <div className="bg-background rounded-lg p-3 border-2 border-emerald-200 dark:border-emerald-800/40 shadow-sm">
+              <div className="text-emerald-600 dark:text-emerald-400 font-semibold">Domain Isolation</div>
+              <div className="text-xs text-muted-foreground mt-1">Each service owns its data</div>
             </div>
-            <div className="bg-slate-700/50 rounded-lg p-3 border border-blue-500/30">
-              <div className="text-blue-300 font-medium">API Contracts</div>
-              <div className="text-xs text-slate-400 mt-1">Clear service boundaries</div>
+            <div className="bg-background rounded-lg p-3 border-2 border-blue-200 dark:border-blue-800/40 shadow-sm">
+              <div className="text-blue-600 dark:text-blue-400 font-semibold">API Contracts</div>
+              <div className="text-xs text-muted-foreground mt-1">Clear service boundaries</div>
             </div>
-            <div className="bg-slate-700/50 rounded-lg p-3 border border-purple-500/30">
-              <div className="text-purple-300 font-medium">Event-Driven</div>
-              <div className="text-xs text-slate-400 mt-1">Async communication</div>
+            <div className="bg-background rounded-lg p-3 border-2 border-purple-200 dark:border-purple-800/40 shadow-sm">
+              <div className="text-purple-600 dark:text-purple-400 font-semibold">Event-Driven</div>
+              <div className="text-xs text-muted-foreground mt-1">Async communication</div>
             </div>
-            <div className="bg-slate-700/50 rounded-lg p-3 border border-orange-500/30">
-              <div className="text-orange-300 font-medium">Horizontal Scale</div>
-              <div className="text-xs text-slate-400 mt-1">Edge function isolation</div>
+            <div className="bg-background rounded-lg p-3 border-2 border-orange-200 dark:border-orange-800/40 shadow-sm">
+              <div className="text-orange-600 dark:text-orange-400 font-semibold">Horizontal Scale</div>
+              <div className="text-xs text-muted-foreground mt-1">Edge function isolation</div>
             </div>
           </div>
         </CardContent>
@@ -291,15 +297,15 @@ export const GenieMicroservicesDiagram: React.FC = () => {
 
   if (isFullscreen) {
     return (
-      <div className="fixed inset-0 z-50 bg-slate-950/95 overflow-auto">
-        <div className="sticky top-0 z-10 bg-slate-900 border-b border-slate-700 px-4 py-3 flex items-center justify-between">
-          <h2 className="text-white font-semibold text-lg">Microservices Architecture</h2>
+      <div className="fixed inset-0 z-50 bg-background overflow-auto">
+        <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-3 flex items-center justify-between shadow-sm">
+          <h2 className="text-foreground font-semibold text-lg">Microservices Architecture</h2>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleDownloadPNG} className="bg-slate-800 border-slate-600 text-white hover:bg-slate-700">
+            <Button variant="outline" size="sm" onClick={handleDownloadPNG}>
               <Download className="h-4 w-4 mr-2" />
               Download PNG
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setIsFullscreen(false)} className="bg-slate-800 border-slate-600 text-white hover:bg-slate-700">
+            <Button variant="outline" size="sm" onClick={() => setIsFullscreen(false)}>
               <X className="h-4 w-4 mr-2" />
               Close
             </Button>
@@ -313,10 +319,10 @@ export const GenieMicroservicesDiagram: React.FC = () => {
   }
 
   return (
-    <Card className="bg-slate-900 border-slate-700">
+    <Card className="bg-card border-border">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-white text-lg flex items-center gap-2">
-          <Layers className="h-5 w-5 text-violet-400" />
+        <CardTitle className="text-foreground text-lg flex items-center gap-2">
+          <Layers className="h-5 w-5 text-violet-500" />
           Microservices Architecture
         </CardTitle>
         <div className="flex gap-2">
