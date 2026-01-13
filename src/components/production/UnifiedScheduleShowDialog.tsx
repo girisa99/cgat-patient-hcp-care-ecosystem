@@ -57,7 +57,17 @@ import {
   Zap,
   Copy,
   Download,
+  Brain,
+  Music,
+  Film,
+  Layers,
 } from 'lucide-react';
+// Import Genie product logos for demo category
+import genieMindLogo from '@/assets/logos/genie-mind-combined.png';
+import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
+import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
+import genieArcLogo from '@/assets/logos/genie-arc-combined.png';
+import genieStudioLogo from '@/assets/logos/genie-studio-banner.png';
 import {
   EVENT_CATEGORIES,
   getStagesForCategory,
@@ -67,6 +77,7 @@ import {
   type ProductionStage,
   type MeetingStage,
   type EventStage,
+  DEMO_STAGES,
 } from '@/types/shows';
 import { COMMON_TIMEZONES, getLocalTimezone } from '@/utils/timezoneUtils';
 import {
@@ -86,6 +97,46 @@ import {
   formatTeamsUrl,
   MEETING_PLATFORMS,
 } from '@/utils/meetingUrlGenerator';
+
+// Genie Demo product configuration with logos and taglines
+const GENIE_DEMO_PRODUCTS = {
+  genie_studio_full: {
+    logo: genieStudioLogo,
+    name: 'Genie Studio',
+    tagline: 'Mind to Media',
+    color: 'from-indigo-500 to-violet-500',
+  },
+  genie_spark_demo: {
+    logo: genieSparkLogo,
+    name: 'Genie Spark',
+    tagline: 'Ignite your Ideas',
+    color: 'from-amber-500 to-orange-500',
+  },
+  genie_arc_demo: {
+    logo: genieArcLogo,
+    name: 'Genie Arc',
+    tagline: 'Your Production Journey',
+    color: 'from-emerald-500 to-teal-500',
+  },
+  genie_mind_demo: {
+    logo: genieMindLogo,
+    name: 'Genie Mind',
+    tagline: 'AI that understands',
+    color: 'from-blue-500 to-cyan-500',
+  },
+  genie_vibe_demo: {
+    logo: genieVibeLogo,
+    name: 'Genie Vibe',
+    tagline: 'Script to Screen',
+    color: 'from-purple-500 to-pink-500',
+  },
+  genie_suite_overview: {
+    logo: genieStudioLogo,
+    name: 'Full Suite',
+    tagline: 'Complete Platform Overview',
+    color: 'from-fuchsia-500 to-pink-500',
+  },
+} as const;
 
 // Meeting platform types - imported from utility
 export type MeetingPlatform = 'auto' | 'google_meet' | 'zoom' | 'teams' | 'custom';
@@ -157,6 +208,13 @@ const SHOW_TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }
   webinar: Monitor,
   conference: Building,
   training_session: BookOpen,
+  // Genie Demo types
+  genie_studio_full: Layers,
+  genie_spark_demo: Zap,
+  genie_arc_demo: Film,
+  genie_mind_demo: Brain,
+  genie_vibe_demo: Music,
+  genie_suite_overview: Sparkles,
 };
 
 // Color map for categories/types
@@ -164,6 +222,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   media_production: 'from-purple-500 to-indigo-500',
   business_meeting: 'from-blue-500 to-cyan-500',
   event: 'from-orange-500 to-red-500',
+  genie_demo: 'from-fuchsia-500 to-pink-500',
 };
 
 const TYPE_COLORS: Record<string, string> = {
@@ -182,6 +241,13 @@ const TYPE_COLORS: Record<string, string> = {
   webinar: 'from-purple-500 to-indigo-500',
   conference: 'from-green-500 to-emerald-500',
   training_session: 'from-orange-500 to-red-500',
+  // Genie Demo types - inherit from product config
+  genie_studio_full: 'from-indigo-500 to-violet-500',
+  genie_spark_demo: 'from-amber-500 to-orange-500',
+  genie_arc_demo: 'from-emerald-500 to-teal-500',
+  genie_mind_demo: 'from-blue-500 to-cyan-500',
+  genie_vibe_demo: 'from-purple-500 to-pink-500',
+  genie_suite_overview: 'from-fuchsia-500 to-pink-500',
 };
 
 const STAGE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -207,6 +273,12 @@ const STAGE_ICONS: Record<string, React.ComponentType<{ className?: string }>> =
   live: Radio,
   wrap_up: Check,
   archived: FileText,
+  // Demo stages
+  setup: Wrench,
+  walkthrough: Play,
+  demo_live: Video,
+  q_and_a: MessageCircle,
+  feedback: MessageSquare,
 };
 
 // AI Provider types
@@ -695,10 +767,10 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
   const renderCategorySelection = () => (
     <div className="space-y-2">
       <Label>Category</Label>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         {EVENT_CATEGORIES.map((cat) => {
           const isSelected = formData.event_category === cat.id;
-          const Icon = cat.id === 'media_production' ? Podcast : cat.id === 'business_meeting' ? Briefcase : Calendar;
+          const Icon = cat.id === 'media_production' ? Podcast : cat.id === 'business_meeting' ? Briefcase : cat.id === 'genie_demo' ? Sparkles : Calendar;
           return (
             <button
               key={cat.id}
@@ -717,8 +789,8 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
               )}>
                 <Icon className="h-4 w-4 text-white" />
               </div>
-              <span className={cn("text-xs font-medium", isSelected ? "text-primary" : "text-muted-foreground")}>
-                {cat.label.replace(' Production', '').replace(' Meeting', 's')}
+              <span className={cn("text-xs font-medium text-center leading-tight", isSelected ? "text-primary" : "text-muted-foreground")}>
+                {cat.id === 'genie_demo' ? 'Genie Demo' : cat.label.replace(' Production', '').replace(' Meeting', 's')}
               </span>
             </button>
           );
@@ -727,44 +799,121 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
     </div>
   );
 
-  // Render type selection
-  const renderTypeSelection = () => (
-    <div className="space-y-2">
-      <Label>Type</Label>
-      <div className="grid grid-cols-3 gap-2">
-        {currentShowTypes.map((type) => {
-          const isSelected = formData.show_type === type.id;
-          const Icon = SHOW_TYPE_ICONS[type.id] || Video;
-          return (
-            <button
-              key={type.id}
-              type="button"
-              onClick={() => updateFormData('show_type', type.id)}
-              className={cn(
-                "flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all",
-                isSelected
-                  ? "border-primary bg-primary/10"
-                  : "border-border hover:border-primary/50"
-              )}
-            >
-              <div className={cn(
-                "h-8 w-8 rounded-lg bg-gradient-to-br flex items-center justify-center",
-                TYPE_COLORS[type.id] || 'from-gray-500 to-gray-600'
-              )}>
-                <Icon className="h-4 w-4 text-white" />
-              </div>
-              <span className={cn("text-xs font-medium", isSelected ? "text-primary" : "text-muted-foreground")}>
-                {type.label}
-              </span>
-            </button>
-          );
-        })}
+  // Render type selection - Enhanced for Genie Demo with logos
+  const renderTypeSelection = () => {
+    const isGenieDemoCategory = formData.event_category === 'genie_demo';
+    
+    return (
+      <div className="space-y-2">
+        <Label>Type</Label>
+        <div className={cn("grid gap-2", isGenieDemoCategory ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-3")}>
+          {currentShowTypes.map((type) => {
+            const isSelected = formData.show_type === type.id;
+            const Icon = SHOW_TYPE_ICONS[type.id] || Video;
+            const demoProduct = GENIE_DEMO_PRODUCTS[type.id as keyof typeof GENIE_DEMO_PRODUCTS];
+            
+            // For Genie Demo types, use product logos
+            if (isGenieDemoCategory && demoProduct) {
+              return (
+                <button
+                  key={type.id}
+                  type="button"
+                  onClick={() => updateFormData('show_type', type.id)}
+                  className={cn(
+                    "flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all",
+                    isSelected
+                      ? "border-primary bg-primary/10 shadow-md"
+                      : "border-border hover:border-primary/50"
+                  )}
+                >
+                  <div className="h-12 w-12 rounded-lg bg-white/90 border border-border/30 flex items-center justify-center p-1 overflow-hidden">
+                    <img src={demoProduct.logo} alt={demoProduct.name} className="h-full w-full object-contain" />
+                  </div>
+                  <div className="text-center">
+                    <div className={cn("text-xs font-semibold", isSelected ? "text-primary" : "text-foreground")}>
+                      {demoProduct.name}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground leading-tight">
+                      {demoProduct.tagline}
+                    </div>
+                  </div>
+                </button>
+              );
+            }
+            
+            // Standard type selection for other categories
+            return (
+              <button
+                key={type.id}
+                type="button"
+                onClick={() => updateFormData('show_type', type.id)}
+                className={cn(
+                  "flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all",
+                  isSelected
+                    ? "border-primary bg-primary/10"
+                    : "border-border hover:border-primary/50"
+                )}
+              >
+                <div className={cn(
+                  "h-8 w-8 rounded-lg bg-gradient-to-br flex items-center justify-center",
+                  TYPE_COLORS[type.id] || 'from-gray-500 to-gray-600'
+                )}>
+                  <Icon className="h-4 w-4 text-white" />
+                </div>
+                <span className={cn("text-xs font-medium", isSelected ? "text-primary" : "text-muted-foreground")}>
+                  {type.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
-  // Render stage selection (for media productions)
+  // Render stage selection (for media productions and genie demos)
   const renderStageSelection = () => {
+    if (formData.event_category === 'genie_demo') {
+      // Demo stages
+      const demoStages = [
+        { value: 'setup', label: 'Setup', color: 'from-blue-500 to-cyan-500' },
+        { value: 'walkthrough', label: 'Walkthrough', color: 'from-purple-500 to-indigo-500' },
+        { value: 'demo_live', label: 'Live Demo', color: 'from-red-500 to-pink-500' },
+        { value: 'q_and_a', label: 'Q&A', color: 'from-yellow-500 to-orange-500' },
+        { value: 'feedback', label: 'Feedback', color: 'from-orange-500 to-amber-500' },
+        { value: 'completed', label: 'Done', color: 'from-green-500 to-emerald-500' },
+      ];
+      return (
+        <div className="space-y-2">
+          <Label>Demo Stage</Label>
+          <div className="grid grid-cols-6 gap-1.5">
+            {demoStages.map((stage) => {
+              const isSelected = formData.starting_stage === stage.value;
+              const Icon = STAGE_ICONS[stage.value] || FileText;
+              return (
+                <button
+                  key={stage.value}
+                  type="button"
+                  onClick={() => updateFormData('starting_stage', stage.value as any)}
+                  className={cn(
+                    "flex flex-col items-center gap-1 p-1.5 rounded-lg border-2 transition-all",
+                    isSelected ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
+                  )}
+                >
+                  <div className={cn("h-5 w-5 rounded-md bg-gradient-to-br flex items-center justify-center", stage.color)}>
+                    <Icon className="h-2.5 w-2.5 text-white" />
+                  </div>
+                  <span className={cn("text-[9px] font-medium leading-tight text-center", isSelected ? "text-primary" : "text-muted-foreground")}>
+                    {stage.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+    
     if (formData.event_category !== 'media_production') return null;
     return (
       <div className="space-y-2">
@@ -786,9 +935,7 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
                 onClick={() => updateFormData('starting_stage', stage.value as ProductionStage)}
                 className={cn(
                   "flex flex-col items-center gap-1.5 p-2 rounded-lg border-2 transition-all",
-                  isSelected
-                    ? "border-primary bg-primary/10"
-                    : "border-border hover:border-primary/50"
+                  isSelected ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
                 )}
               >
                 <div className={cn("h-6 w-6 rounded-md bg-gradient-to-br flex items-center justify-center", stage.color)}>
