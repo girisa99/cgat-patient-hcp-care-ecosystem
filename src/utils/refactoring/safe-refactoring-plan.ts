@@ -1,6 +1,7 @@
 /**
  * SAFE REFACTORING PLAN
- * Non-breaking improvements for presentation and agent components
+ * Non-breaking improvements for GenieStudio and related components
+ * Updated: Phase 2 extraction complete
  */
 
 export const SAFE_REFACTORING_PLAN = {
@@ -16,28 +17,32 @@ export const SAFE_REFACTORING_PLAN = {
   },
 
   phase2: {
-    title: "🔄 IN PROGRESS - Extract Slide Data",
-    status: "SAFE_PARTIAL",
+    title: "✅ COMPLETED - Extract Types, Constants, Hooks & Components",
+    status: "DONE",
     actions: [
-      "✅ Created src/data/presentation-slides.tsx",
-      "⏳ Main component still uses internal slides (preserves functionality)",
-      "📋 Future: Gradually migrate slides without breaking changes"
+      "✅ Created src/components/genie-studio/types/studio-types.ts - MediaItem, SavedScript, ShowEvent, Participant types",
+      "✅ Created src/components/genie-studio/constants/studio-constants.ts - MUSIC_GENRES, FEATURES, QUICK_TIPS, SCRIPT_TEMPLATES",
+      "✅ Created src/components/genie-studio/hooks/useMediaLibrary.ts - Media loading hook",
+      "✅ Created src/components/genie-studio/hooks/useShowEvents.ts - Events management hook",
+      "✅ Created src/components/genie-studio/HeroCarousel.tsx - Hero carousel component",
+      "✅ Created barrel exports (types/index.ts, constants/index.ts, hooks/index.ts)",
+      "📋 Main GenieStudio.tsx can now import from extracted modules"
     ],
-    risk: "ZERO",
-    impact: "Better organization, easier maintenance"
+    risk: "ZERO - Additive changes only",
+    impact: "Better organization, reusable components, easier maintenance"
   },
 
   phase3: {
-    title: "📋 PLANNED - Component Splitting Strategy",
-    status: "PLANNED",
+    title: "📋 NEXT - Integrate Extracted Components",
+    status: "READY",
     actions: [
-      "Create reusable slide components (SlideCard, SlideNavigation, etc.)",
-      "Extract slide renderer logic",
-      "Maintain exact same UI/UX",
-      "Use composition pattern for backwards compatibility"
+      "Update GenieStudio.tsx to import from extracted modules",
+      "Remove duplicated code from main file",
+      "Extract Dashboard Tab content to DashboardTab.tsx",
+      "Extract remaining tab content to separate components"
     ],
-    risk: "LOW",
-    impact: "Better maintainability, reusable components"
+    risk: "LOW - Gradual replacement",
+    impact: "Reduce GenieStudio.tsx from 5041 to ~1500 lines"
   },
 
   phase4: {
@@ -64,11 +69,16 @@ export const PRESERVATION_GUARANTEES = {
   animations: "100% - All transitions and effects preserved"
 };
 
-export const ROLLBACK_STRATEGY = {
-  immediate: "All changes are additive - original files untouched",
-  gitHistory: "Each phase is a separate commit for easy rollback",
-  testing: "Each phase tested independently before proceeding",
-  verification: "UI screenshots taken before/after each change"
+export const EXTRACTED_MODULES = {
+  types: "src/components/genie-studio/types/studio-types.ts",
+  constants: "src/components/genie-studio/constants/studio-constants.ts",
+  hooks: [
+    "src/components/genie-studio/hooks/useMediaLibrary.ts",
+    "src/components/genie-studio/hooks/useShowEvents.ts"
+  ],
+  components: [
+    "src/components/genie-studio/HeroCarousel.tsx"
+  ]
 };
 
-console.log('🛡️ Safe Refactoring Plan Active - Zero Breaking Changes Guaranteed');
+console.log('🛡️ Safe Refactoring Plan Active - Phase 2 Complete');
