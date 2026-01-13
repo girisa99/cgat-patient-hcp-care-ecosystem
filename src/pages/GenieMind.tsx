@@ -3,6 +3,7 @@
  * "Think Beyond Limits" - AI-powered script editing and management
  * 
  * DATA FLOW: Uses existing hooks - all data is user-scoped via RLS
+ * INTEGRATED: Ask Genie AI assistant for context-aware help
  */
 
 import React, { useState } from 'react';
@@ -32,6 +33,7 @@ import { ScriptEditorTab } from '@/components/genie-studio/ScriptEditorTab';
 import { SavedAudioCard } from '@/components/genie-studio/SavedAudioCard';
 import { useGenieScripts, type GenieScript } from '@/components/genie-studio/useGenieScripts';
 import { useGenieMediaLibrary } from '@/components/genie-studio/useGenieMediaLibrary';
+import { AskGenie } from '@/components/genie-studio/AskGenie';
 import genieMindLogo from '@/assets/logos/genie-mind-combined.png';
 
 const GenieMind: React.FC = () => {
@@ -362,6 +364,13 @@ const GenieMind: React.FC = () => {
               </Tabs>
             </TabsContent>
           </Tabs>
+
+          {/* Ask Genie - Context-aware AI for Mind */}
+          <AskGenie 
+            product="mind" 
+            currentTab={activeTab}
+            sessionData={{ scriptsCount: savedScripts?.length || 0 }}
+          />
         </div>
       </div>
     </AppLayout>

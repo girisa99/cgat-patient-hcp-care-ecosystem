@@ -6,6 +6,7 @@
  * Design System: Enterprise-ready, no frame-in-frame, mobile-first
  * Teleprompter: Full suite (Desktop + Mobile)
  * Social Publishing: Hybrid (OAuth + Download)
+ * INTEGRATED: Ask Genie AI assistant for context-aware help
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -72,6 +73,7 @@ import {
   LocationStoryMode,
   TimelineClipEditor
 } from '@/components/shared';
+import { AskGenie } from '@/components/genie-studio/AskGenie';
 import type { TimelineClip } from '@/components/mobile/MultiClipTimeline';
 import type { PipelineStage } from '@/components/mobile/PipelineProgress';
 import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
@@ -882,6 +884,12 @@ const GenieVibe: React.FC = () => {
             </TabsContent>
           </Tabs>
         </main>
+
+        {/* Ask Genie - Context-aware AI for Vibe */}
+        <AskGenie 
+          product="vibe" 
+          currentTab={activeTab}
+        />
       </div>
     </AppLayout>
   );
