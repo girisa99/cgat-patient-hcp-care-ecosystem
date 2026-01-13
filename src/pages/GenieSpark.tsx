@@ -17,7 +17,12 @@ import { useGenieScripts, type GenieScript } from '@/components/genie-studio/use
 import { toast } from 'sonner';
 import type { GeneratedContent } from '@/components/genie-studio/PostGenerationActions';
 import { BackToSubscription } from '@/components/subscription/BackToSubscription';
-import { ImageScriptAssembler } from '@/components/production';
+import { 
+  ImageScriptAssembler, 
+  AudioMixer, 
+  MusicComposerPanel, 
+  VoiceDirectorPanel 
+} from '@/components/shared';
 import { QuickTemplateSelector } from '@/components/templates';
 import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
 

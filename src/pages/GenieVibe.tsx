@@ -54,12 +54,13 @@ import {
   MultiClipTimeline, 
   AudioMixer,
   PublishPanel,
-  PipelineProgress
-} from '@/components/mobile';
-import { 
+  PipelineProgress,
   RawRecordingPolisher, 
-  MultiFileMerger 
-} from '@/components/production';
+  MultiFileMerger,
+  BRollIntegrator,
+  VoiceCommands,
+  SceneAnalyzerPanel
+} from '@/components/shared';
 import type { TimelineClip } from '@/components/mobile/MultiClipTimeline';
 import type { PipelineStage } from '@/components/mobile/PipelineProgress';
 import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
