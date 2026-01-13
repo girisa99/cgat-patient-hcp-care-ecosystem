@@ -5,7 +5,7 @@ import { Download } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Import centralized product definitions - SINGLE SOURCE OF TRUTH
-import { GENIE_PRODUCTS, PRODUCT_DISPLAY_ORDER } from '@/constants/genie-products';
+import { GENIE_PRODUCTS, PRODUCT_DISPLAY_ORDER, ASK_GENIE } from '@/constants/genie-products';
 
 interface LogoAsset {
   id: string;
@@ -16,16 +16,27 @@ interface LogoAsset {
 }
 
 // Build logo assets from centralized product definitions
-const logoAssets: LogoAsset[] = PRODUCT_DISPLAY_ORDER.map(productKey => {
-  const product = GENIE_PRODUCTS[productKey];
-  return {
-    id: `genie-${productKey}`,
-    title: product.name,
-    tagline: product.tagline,
-    description: `${product.name} logo for presentations, websites, products, and all use cases`,
-    src: product.logos.combined,
-  };
-});
+const logoAssets: LogoAsset[] = [
+  // Add Ask Genie first
+  {
+    id: 'ask-genie',
+    title: ASK_GENIE.name,
+    tagline: ASK_GENIE.tagline,
+    description: `${ASK_GENIE.name} logo for presentations, websites, products, and all use cases`,
+    src: ASK_GENIE.logo,
+  },
+  // Then add all other products
+  ...PRODUCT_DISPLAY_ORDER.map(productKey => {
+    const product = GENIE_PRODUCTS[productKey];
+    return {
+      id: `genie-${productKey}`,
+      title: product.name,
+      tagline: product.tagline,
+      description: `${product.name} logo for presentations, websites, products, and all use cases`,
+      src: product.logos.combined,
+    };
+  })
+];
 
 export const GenieStudioLogoAssets = () => {
   const handleDownloadPNG = async (logo: LogoAsset) => {
