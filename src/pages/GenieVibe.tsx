@@ -30,7 +30,10 @@ import {
   FileText,
   Check,
   Play,
-  Eye
+  Eye,
+  Wand2,
+  Combine,
+  Sparkles
 } from 'lucide-react';
 import {
   Select,
@@ -53,6 +56,10 @@ import {
   PublishPanel,
   PipelineProgress
 } from '@/components/mobile';
+import { 
+  RawRecordingPolisher, 
+  MultiFileMerger 
+} from '@/components/production';
 import type { TimelineClip } from '@/components/mobile/MultiClipTimeline';
 import type { PipelineStage } from '@/components/mobile/PipelineProgress';
 import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
@@ -360,11 +367,19 @@ const GenieVibe: React.FC = () => {
         {/* Main Content - No Frame-in-Frame */}
         <main className="container py-6">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as PipelineStage)} className="space-y-6">
-            <TabsList className="h-12 p-1">
+            <TabsList className="h-12 p-1 flex-wrap">
               <TabsTrigger value="record" className="gap-2 px-4">
                 <Video className="h-4 w-4" />
                 <span className="hidden sm:inline">Record</span>
                 {completedStages.includes('record') && <Check className="h-3 w-3 text-green-500 ml-1" />}
+              </TabsTrigger>
+              <TabsTrigger value="polish" className="gap-2 px-4">
+                <Wand2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Polish</span>
+              </TabsTrigger>
+              <TabsTrigger value="merge" className="gap-2 px-4">
+                <Combine className="h-4 w-4" />
+                <span className="hidden sm:inline">Merge</span>
               </TabsTrigger>
               <TabsTrigger value="clips" className="gap-2 px-4">
                 <Scissors className="h-4 w-4" />
@@ -526,6 +541,65 @@ const GenieVibe: React.FC = () => {
                   </div>
                 </div>
               )}
+            </TabsContent>
+
+            {/* Polish Tab - RawRecordingPolisher */}
+            <TabsContent value="polish" className="space-y-6 mt-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                    <Wand2 className="h-5 w-5 text-purple-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold">Polish Recording</h2>
+                    <p className="text-sm text-muted-foreground">AI-enhanced cleanup and refinement</p>
+                  </div>
+                </div>
+                <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  AI Powered
+                </Badge>
+              </div>
+              
+              <RawRecordingPolisher 
+                recordingUrl={recordings[0]?.url}
+                recordingDuration={recordings[0]?.duration || 120}
+                onPolishComplete={(segments) => {
+                  toast.success(`Recording polished: ${segments.length} segments processed`);
+                  markStageCompleted('record');
+                }}
+              />
+            </TabsContent>
+
+            {/* Merge Tab - MultiFileMerger */}
+            <TabsContent value="merge" className="space-y-6 mt-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                    <Combine className="h-5 w-5 text-cyan-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold">Merge Files</h2>
+                    <p className="text-sm text-muted-foreground">Combine multiple recordings into one</p>
+                  </div>
+                </div>
+                <Badge variant="outline">Multi-File</Badge>
+              </div>
+              
+              <MultiFileMerger 
+                onMergeComplete={(outputUrl) => {
+                  toast.success('Files merged successfully!');
+                  // Add merged recording to recordings list
+                  const newRecording = {
+                    id: `merged-${Date.now()}`,
+                    url: outputUrl,
+                    duration: 120,
+                    type: 'video' as const,
+                    name: `Merged Recording`,
+                  };
+                  setRecordings(prev => [...prev, newRecording]);
+                }}
+              />
             </TabsContent>
 
             {/* Quick Clips Tab */}
