@@ -104,14 +104,17 @@ const handler = async (req: Request): Promise<Response> => {
     
     console.log('[send-show-invite] RESEND_API_KEY configured:', !!RESEND_API_KEY);
     console.log('[send-show-invite] FROM email:', fromEmail);
+    console.log('[send-show-invite] Target recipients:', to);
 
     if (!RESEND_API_KEY) {
+      console.warn('[send-show-invite] RESEND_API_KEY not configured - email will not be sent');
       return new Response(JSON.stringify({ 
-        success: true, 
-        message: 'Invite recorded (email sending requires RESEND_API_KEY)', 
+        success: false, 
+        error: 'Email service not configured. Please add RESEND_API_KEY to send invites.',
+        message: 'RESEND_API_KEY is required to send email invites', 
         emailSent: false 
       }), { 
-        status: 200, 
+        status: 400, 
         headers: { 'Content-Type': 'application/json', ...corsHeaders } 
       });
     }
