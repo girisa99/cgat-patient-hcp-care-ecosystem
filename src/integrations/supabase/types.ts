@@ -3215,6 +3215,60 @@ export type Database = {
         }
         Relationships: []
       }
+      bulk_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          errors: Json | null
+          failed_items: number | null
+          id: string
+          items: Json
+          operation_type: string
+          options: Json | null
+          processed_items: number | null
+          results: Json | null
+          started_at: string | null
+          status: string
+          total_items: number
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          errors?: Json | null
+          failed_items?: number | null
+          id?: string
+          items?: Json
+          operation_type: string
+          options?: Json | null
+          processed_items?: number | null
+          results?: Json | null
+          started_at?: string | null
+          status?: string
+          total_items?: number
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          errors?: Json | null
+          failed_items?: number | null
+          id?: string
+          items?: Json
+          operation_type?: string
+          options?: Json | null
+          processed_items?: number | null
+          results?: Json | null
+          started_at?: string | null
+          status?: string
+          total_items?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       call_sessions: {
         Row: {
           agent_id: string | null
@@ -3871,6 +3925,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      content_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          content_id: string
+          content_type: string
+          due_date: string | null
+          id: string
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          content_id: string
+          content_type?: string
+          due_date?: string | null
+          id?: string
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          content_id?: string
+          content_type?: string
+          due_date?: string | null
+          id?: string
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      content_shares: {
+        Row: {
+          content_id: string
+          content_type: string
+          expires_at: string | null
+          id: string
+          permissions: string[] | null
+          shared_at: string
+          shared_by: string | null
+          shared_with: string
+        }
+        Insert: {
+          content_id: string
+          content_type?: string
+          expires_at?: string | null
+          id?: string
+          permissions?: string[] | null
+          shared_at?: string
+          shared_by?: string | null
+          shared_with: string
+        }
+        Update: {
+          content_id?: string
+          content_type?: string
+          expires_at?: string | null
+          id?: string
+          permissions?: string[] | null
+          shared_at?: string
+          shared_by?: string | null
+          shared_with?: string
+        }
+        Relationships: []
       }
       conversation_analysis: {
         Row: {
@@ -9889,6 +10009,66 @@ export type Database = {
         }
         Relationships: []
       }
+      legal_reviews: {
+        Row: {
+          approval_type: string | null
+          auto_screened: boolean | null
+          compliance_flags: string[] | null
+          compliance_score: number | null
+          content_data: Json | null
+          content_id: string
+          content_type: string
+          created_at: string
+          flagged_issues: string[] | null
+          id: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewer_id: string | null
+          screening_results: Json | null
+          status: string
+          submitted_at: string
+          updated_at: string
+        }
+        Insert: {
+          approval_type?: string | null
+          auto_screened?: boolean | null
+          compliance_flags?: string[] | null
+          compliance_score?: number | null
+          content_data?: Json | null
+          content_id: string
+          content_type: string
+          created_at?: string
+          flagged_issues?: string[] | null
+          id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          screening_results?: Json | null
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+        }
+        Update: {
+          approval_type?: string | null
+          auto_screened?: boolean | null
+          compliance_flags?: string[] | null
+          compliance_score?: number | null
+          content_data?: Json | null
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          flagged_issues?: string[] | null
+          id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          screening_results?: Json | null
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       linkedin_oauth_tokens: {
         Row: {
           access_token: string
@@ -10055,6 +10235,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      marketplace_templates: {
+        Row: {
+          avg_rating: number | null
+          category: string
+          configuration: Json
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          description: string | null
+          id: string
+          install_count: number | null
+          is_featured: boolean | null
+          is_verified: boolean | null
+          name: string
+          preview_url: string | null
+          price: number | null
+          status: string
+          tags: string[] | null
+          template_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          avg_rating?: number | null
+          category: string
+          configuration?: Json
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          description?: string | null
+          id?: string
+          install_count?: number | null
+          is_featured?: boolean | null
+          is_verified?: boolean | null
+          name: string
+          preview_url?: string | null
+          price?: number | null
+          status?: string
+          tags?: string[] | null
+          template_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avg_rating?: number | null
+          category?: string
+          configuration?: Json
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          description?: string | null
+          id?: string
+          install_count?: number | null
+          is_featured?: boolean | null
+          is_verified?: boolean | null
+          name?: string
+          preview_url?: string | null
+          price?: number | null
+          status?: string
+          tags?: string[] | null
+          template_type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       mcp_configurations: {
         Row: {
@@ -15361,6 +15604,76 @@ export type Database = {
         }
         Relationships: []
       }
+      template_installations: {
+        Row: {
+          configuration: Json | null
+          id: string
+          installed_at: string
+          template_id: string
+          user_id: string
+        }
+        Insert: {
+          configuration?: Json | null
+          id?: string
+          installed_at?: string
+          template_id: string
+          user_id: string
+        }
+        Update: {
+          configuration?: Json | null
+          id?: string
+          installed_at?: string
+          template_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_installations_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      template_reviews: {
+        Row: {
+          created_at: string
+          id: string
+          rating: number
+          review: string | null
+          template_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          rating: number
+          review?: string | null
+          template_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          rating?: number
+          review?: string | null
+          template_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_reviews_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       test_configurations: {
         Row: {
           assertions: Json | null
@@ -19255,6 +19568,132 @@ export type Database = {
         }
         Relationships: []
       }
+      workspace_activity: {
+        Row: {
+          activity_type: string
+          created_at: string
+          details: Json | null
+          id: string
+          user_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          user_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          user_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      workspace_invitations: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          role: string
+          status: string
+          token: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          invited_by?: string | null
+          role?: string
+          status?: string
+          token: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: string
+          status?: string
+          token?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      workspace_members: {
+        Row: {
+          id: string
+          invited_by: string | null
+          joined_at: string
+          role: string
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          id?: string
+          invited_by?: string | null
+          joined_at?: string
+          role?: string
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          id?: string
+          invited_by?: string | null
+          joined_at?: string
+          role?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      workspace_teams: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       consolidated_node_catalog: {
@@ -19872,6 +20311,10 @@ export type Database = {
         Args: { knowledge_id: string }
         Returns: undefined
       }
+      increment_template_installs: {
+        Args: { template_id: string }
+        Returns: undefined
+      }
       initialize_conversation_journey: {
         Args: { p_agent_id: string; p_conversation_id: string }
         Returns: Json
@@ -20190,6 +20633,10 @@ export type Database = {
       }
       update_site_stat: {
         Args: { increment_value?: number; stat_name_param: string }
+        Returns: undefined
+      }
+      update_template_avg_rating: {
+        Args: { p_template_id: string }
         Returns: undefined
       }
       update_testing_suite_comprehensive: { Args: never; Returns: Json }
