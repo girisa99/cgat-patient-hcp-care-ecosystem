@@ -549,7 +549,7 @@ export const EnhancedGenieInterface: React.FC<EnhancedGenieInterfaceProps> = ({
       <div className="border-t p-4 bg-muted/20">
         <div className="flex gap-2">
           <Textarea
-            placeholder="Ask GENIE anything..."
+            placeholder="Ask Genie anything..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             className="flex-1 min-h-[40px] max-h-[100px] resize-none"

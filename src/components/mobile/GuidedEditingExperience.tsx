@@ -282,7 +282,7 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
               onClick={() => setShowAIAssistant(true)}
             >
               <MessageCircle className="h-4 w-4 mr-2" />
-              Chat with AI First
+              Ask Genie First
             </Button>
           </div>
         </CardContent>
