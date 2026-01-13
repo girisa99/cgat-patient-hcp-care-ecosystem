@@ -51,6 +51,7 @@ import {
   CalendarClock,
   XCircle,
   Zap,
+  Wand2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -62,6 +63,7 @@ import { ProductionCalendar } from '@/components/production/ProductionCalendar';
 import { ScheduleManagementDialog } from '@/components/production/ScheduleManagementDialog';
 import { UnifiedScheduleShowDialog, type ScheduleShowData } from '@/components/production/UnifiedScheduleShowDialog';
 import { WebinarHighlightExtractor, BRollIntegrator, DistributionAgentPanel } from '@/components/shared';
+import { ProductionGuidedWizard } from '@/components/production/ProductionGuidedWizard';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { 
@@ -650,7 +652,11 @@ export default function ProductionHub() {
         <div className="flex-1 overflow-auto">
           <Tabs value={activeCategory} onValueChange={(v) => setActiveCategory(v as EventCategory)} className="h-full flex flex-col">
             <div className="px-4 pt-4 border-b bg-muted/30">
-              <TabsList className="grid w-full max-w-2xl grid-cols-5">
+              <TabsList className="grid w-full max-w-3xl grid-cols-6">
+                <TabsTrigger value="guide" className="flex items-center gap-2">
+                  <Wand2 className="h-4 w-4" />
+                  Guide
+                </TabsTrigger>
                 <TabsTrigger value="media_production" className="flex items-center gap-2">
                   <Podcast className="h-4 w-4" />
                   Media
@@ -673,6 +679,33 @@ export default function ProductionHub() {
                 </TabsTrigger>
               </TabsList>
             </div>
+            
+            {/* Guided Wizard Tab */}
+            <TabsContent value="guide" className="flex-1 p-4 mt-0">
+              <ProductionGuidedWizard
+                onCreateShow={(data) => {
+                  setNewShow(prev => ({ 
+                    ...prev, 
+                    title: data.title, 
+                    show_type: data.type,
+                    event_category: data.category 
+                  }));
+                  setIsCreateDialogOpen(true);
+                }}
+                onInviteGuests={() => {
+                  if (selectedShow) setIsInviteDialogOpen(true);
+                }}
+                onLinkScript={() => navigate('/genie-spark')}
+                onScheduleRehearsals={() => {
+                  if (selectedShow) setIsScheduleManagementOpen(true);
+                }}
+                onStartRecording={() => navigate('/genie-vibe')}
+                currentStage={(selectedShow as any)?.stage || (selectedShow as any)?.production_stage || 'outreach'}
+                hasShow={shows.length > 0}
+                hasGuests={selectedShow?.participants?.length ? selectedShow.participants.length > 0 : false}
+                hasScript={selectedShow?.assets?.some(a => a.asset_type === 'script') || false}
+              />
+            </TabsContent>
             
             {/* Media/Meetings/Events Content */}
             <TabsContent value="media_production" className="flex-1 p-4 mt-0">

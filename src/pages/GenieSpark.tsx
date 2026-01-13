@@ -11,7 +11,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Zap, PenTool, Mic, Sparkles, Image, LayoutTemplate } from 'lucide-react';
+import { Zap, PenTool, Mic, Sparkles, Image, LayoutTemplate, Wand2 } from 'lucide-react';
 import { SmartContentPipeline } from '@/components/genie-studio/SmartContentPipeline';
 import { useGenieScripts, type GenieScript } from '@/components/genie-studio/useGenieScripts';
 import { toast } from 'sonner';
@@ -24,11 +24,13 @@ import {
   VoiceDirectorPanel 
 } from '@/components/shared';
 import { QuickTemplateSelector } from '@/components/templates';
+import { SparkGuidedWizard } from '@/components/genie-spark/SparkGuidedWizard';
 import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
 
 const GenieSpark: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('pipeline');
+  const [hasGeneratedContent, setHasGeneratedContent] = useState(false);
   const { scripts: savedScripts, saveScript } = useGenieScripts();
 
   const handleSendToScriptEditor = (content: GeneratedContent) => {
@@ -129,6 +131,10 @@ const GenieSpark: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6 py-8">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="bg-muted/50 border border-border/50">
+              <TabsTrigger value="guide" className="gap-2">
+                <Wand2 className="h-4 w-4" />
+                Guide
+              </TabsTrigger>
               <TabsTrigger value="pipeline" className="gap-2">
                 <Sparkles className="h-4 w-4" />
                 Content Pipeline
@@ -142,6 +148,36 @@ const GenieSpark: React.FC = () => {
                 Image to Script
               </TabsTrigger>
             </TabsList>
+
+            {/* Guided Wizard Tab */}
+            <TabsContent value="guide" className="mt-0">
+              <SparkGuidedWizard
+                onContentTypeSelect={(type) => {
+                  toast.success(`Content type: ${type}`);
+                }}
+                onTemplateSelect={(category) => {
+                  toast.success(`Template style: ${category}`);
+                }}
+                onGenerate={async (prompt) => {
+                  toast.info('Generating content...');
+                  // Simulate generation delay
+                  await new Promise(r => setTimeout(r, 2000));
+                  setHasGeneratedContent(true);
+                  toast.success('Content generated!');
+                }}
+                onSendToEditor={() => {
+                  navigate('/genie-mind?tab=script-editor');
+                }}
+                onExport={(format) => {
+                  if (format === 'vibe') {
+                    navigate('/genie-vibe');
+                  } else {
+                    toast.success('Downloading content...');
+                  }
+                }}
+                hasGeneratedContent={hasGeneratedContent}
+              />
+            </TabsContent>
 
             {/* Content Pipeline Tab */}
             <TabsContent value="pipeline" className="mt-0">
