@@ -697,22 +697,36 @@ export const GenieStudioUnifiedHub: React.FC = () => {
       { id: 'P1', name: 'Mobile + Remix', weeks: '5-8', complete: 1, partial: 3, planned: 4, completion: 30, status: 'in-progress' as const },
       { id: 'P2', name: 'Advanced Features', weeks: '9-12', complete: 0, partial: 1, planned: 7, completion: 10, status: 'in-progress' as const },
       { id: 'P3', name: 'Segment-Specific', weeks: '13-18', complete: 0, partial: 0, planned: 8, completion: 0, status: 'planned' as const },
-      { id: 'P4', name: 'Enterprise', weeks: '19-26', complete: 0, partial: 0, planned: 8, completion: 0, status: 'planned' as const },
-      { id: 'P5', name: 'Future + Auth', weeks: '27+', complete: 0, partial: 0, planned: 8, completion: 0, status: 'planned' as const },
+      { id: 'P4', name: 'Enterprise', weeks: '19-26', complete: 0, partial: 0, planned: 12, completion: 0, status: 'planned' as const },
+      { id: 'P5', name: 'Future + Auth', weeks: '27+', complete: 0, partial: 0, planned: 15, completion: 0, status: 'planned' as const },
     ],
     scenarios: {
-      total: 140,
-      implemented: 13,
+      total: 177,
+      implemented: 43,
       partial: 7,
-      planned: 120,
+      planned: 127,
       categories: [
-        { name: 'Universal (All Products)', scenarios: '1-8, 61-65, 111-115, 126-127', status: '72%', implemented: 13 },
-        { name: 'Mobile-First', scenarios: '81-85', status: '10%', implemented: 0 },
-        { name: 'Remix & Clips', scenarios: '90, 101-110', status: '0%', implemented: 0 },
-        { name: 'Offline Mode', scenarios: '82, 89, 99', status: '0%', implemented: 0 },
-        { name: 'Compliance & Legal', scenarios: '43-46, 93, 99', status: '0%', implemented: 0 },
-        { name: 'Agent & Automation', scenarios: '111-125', status: '30%', implemented: 5 },
-        { name: 'API & Data Integration', scenarios: '126-140', status: '0%', implemented: 0 },
+        { name: 'A: Script Management (7)', scenarios: 'A1-A7', status: '100%', implemented: 7 },
+        { name: 'B: Text-to-Speech (7)', scenarios: 'B1-B7', status: '100%', implemented: 7 },
+        { name: 'C: Recording Studio (8)', scenarios: 'C1-C8', status: '100%', implemented: 8 },
+        { name: 'D: Export & Delivery (6)', scenarios: 'D1-D6', status: '100%', implemented: 6 },
+        { name: 'E: Mind↔Vibe Bridge (5)', scenarios: 'E1-E5', status: '100%', implemented: 5 },
+        { name: 'F: Subscription & Billing (10)', scenarios: 'F1-F10', status: '80%', implemented: 8 },
+        { name: 'G: User Management (5)', scenarios: 'G1-G5', status: '60%', implemented: 3 },
+        { name: 'H: Analytics & Dashboard (6)', scenarios: 'H1-H6', status: '0%', implemented: 0 },
+        { name: 'I: Mobile-First Features (8)', scenarios: 'I1-I8', status: '0%', implemented: 0 },
+        { name: 'J: Remix & Clips (12)', scenarios: 'J1-J12', status: '0%', implemented: 0 },
+        { name: 'K: Template Gallery (8)', scenarios: 'K1-K8', status: '0%', implemented: 0 },
+        { name: 'L: Offline Mode (5)', scenarios: 'L1-L5', status: '0%', implemented: 0 },
+        { name: 'M: Brand Customization (6)', scenarios: 'M1-M6', status: '0%', implemented: 0 },
+        { name: 'N: Segment: Creator (12)', scenarios: 'N1-N12', status: '0%', implemented: 0 },
+        { name: 'O: Segment: Traveler (8)', scenarios: 'O1-O8', status: '0%', implemented: 0 },
+        { name: 'P: Segment: SMB (10)', scenarios: 'P1-P10', status: '0%', implemented: 0 },
+        { name: 'Q: Segment: Education (10)', scenarios: 'Q1-Q10', status: '0%', implemented: 0 },
+        { name: 'R: Segment: Healthcare (12)', scenarios: 'R1-R12', status: '0%', implemented: 0 },
+        { name: 'S: Segment: Enterprise (10)', scenarios: 'S1-S10', status: '0%', implemented: 0 },
+        { name: 'T: Agents & Automation (15)', scenarios: 'T1-T15', status: '20%', implemented: 3 },
+        { name: 'U: API & Integration (17)', scenarios: 'U1-U17', status: '0%', implemented: 0 },
       ]
     },
     segmentCoverage: [
@@ -766,7 +780,7 @@ export const GenieStudioUnifiedHub: React.FC = () => {
               <div>
                 <CardTitle className="text-2xl">Genie Suite: Complete Production Pipeline</CardTitle>
                 <CardDescription>
-                  5 Products (Mind + Vibe + Spark + Arc + Hub) • 140 Scenarios • 6 Phases (P0-P5) • 12 Agents • 15 APIs • 6 Segments
+                  5 Products (Mind + Vibe + Spark + Arc + Hub) • 177 Scenarios (21 Categories A-U) • 6 Phases (P0-P5) • 12 Agents • 15 APIs • 6 Segments
                 </CardDescription>
               </div>
             </div>
@@ -787,17 +801,17 @@ export const GenieStudioUnifiedHub: React.FC = () => {
 
       {/* Category Tabs */}
       <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
-        <TabsList className="w-full justify-start flex-wrap h-auto gap-1 bg-muted/50 p-1">
+        <TabsList className="w-full justify-start flex-wrap h-auto gap-1.5 bg-muted/50 p-2 rounded-lg">
           {categories.map(cat => {
             const Icon = cat.icon;
             return (
               <TabsTrigger 
                 key={cat.id} 
                 value={cat.id} 
-                className="gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground"
+                className="gap-1.5 px-3 py-2 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-muted-foreground whitespace-nowrap"
               >
-                <Icon className="h-4 w-4" />
-                <span className="hidden md:inline">{cat.label}</span>
+                <Icon className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{cat.label}</span>
               </TabsTrigger>
             );
           })}
@@ -853,29 +867,34 @@ export const GenieStudioUnifiedHub: React.FC = () => {
                 <CheckCircle className="h-5 w-5 text-green-500" />
                 Phase Implementation Verification Report
               </CardTitle>
-              <CardDescription>Real-time status across P0-P5 phases, 140 scenarios, and 6 segments</CardDescription>
+              <CardDescription>Real-time status across P0-P5 phases, 177 scenarios (21 categories A-U), and 6 segments</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <div className="text-center p-4 bg-green-500/10 rounded-lg border border-green-500/30">
-                  <p className="text-3xl font-bold text-green-500">13</p>
-                  <p className="text-sm text-muted-foreground">Implemented</p>
-                  <p className="text-xs text-green-600">9.3%</p>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+                <div className="text-center p-3 bg-green-500/10 rounded-lg border border-green-500/30">
+                  <p className="text-2xl font-bold text-green-500">43</p>
+                  <p className="text-xs text-muted-foreground">Implemented</p>
+                  <p className="text-xs text-green-600">24%</p>
                 </div>
-                <div className="text-center p-4 bg-yellow-500/10 rounded-lg border border-yellow-500/30">
-                  <p className="text-3xl font-bold text-yellow-500">7</p>
-                  <p className="text-sm text-muted-foreground">Partial</p>
-                  <p className="text-xs text-yellow-600">5%</p>
+                <div className="text-center p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/30">
+                  <p className="text-2xl font-bold text-yellow-500">7</p>
+                  <p className="text-xs text-muted-foreground">Partial</p>
+                  <p className="text-xs text-yellow-600">4%</p>
                 </div>
-                <div className="text-center p-4 bg-blue-500/10 rounded-lg border border-blue-500/30">
-                  <p className="text-3xl font-bold text-blue-500">120</p>
-                  <p className="text-sm text-muted-foreground">Planned</p>
-                  <p className="text-xs text-blue-600">85.7%</p>
+                <div className="text-center p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                  <p className="text-2xl font-bold text-blue-500">127</p>
+                  <p className="text-xs text-muted-foreground">Planned</p>
+                  <p className="text-xs text-blue-600">72%</p>
                 </div>
-                <div className="text-center p-4 bg-primary/10 rounded-lg border border-primary/30">
-                  <p className="text-3xl font-bold text-primary">140</p>
-                  <p className="text-sm text-muted-foreground">Total Scenarios</p>
-                  <p className="text-xs text-primary">6 Phases</p>
+                <div className="text-center p-3 bg-primary/10 rounded-lg border border-primary/30">
+                  <p className="text-2xl font-bold text-primary">177</p>
+                  <p className="text-xs text-muted-foreground">Total Scenarios</p>
+                  <p className="text-xs text-primary">21 Categories</p>
+                </div>
+                <div className="text-center p-3 bg-purple-500/10 rounded-lg border border-purple-500/30">
+                  <p className="text-2xl font-bold text-purple-500">6</p>
+                  <p className="text-xs text-muted-foreground">Phases</p>
+                  <p className="text-xs text-purple-600">P0-P5</p>
                 </div>
               </div>
             </CardContent>
@@ -1402,7 +1421,7 @@ export const GenieStudioUnifiedHub: React.FC = () => {
                 Cross-Functional Scenarios Matrix
               </CardTitle>
               <CardDescription>
-                140+ scenarios mapped to products, agents, and APIs
+                177 scenarios (21 categories A-U) mapped to products, agents, and APIs
               </CardDescription>
             </CardHeader>
             <CardContent>

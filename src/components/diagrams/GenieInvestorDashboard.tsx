@@ -291,7 +291,7 @@ const projections = {
     users: '50K',
     arr: '$2.5M',
     segments: 'Creator, SMB, Healthcare (P0)',
-    scenarios: '30/140',
+    scenarios: '60/177',
     milestones: ['HIPAA certification', 'Mobile app v2', 'Enterprise pilot'],
   },
   year2: {
@@ -299,7 +299,7 @@ const projections = {
     users: '250K',
     arr: '$15M',
     segments: 'All 6 segments active',
-    scenarios: '80/140',
+    scenarios: '130/177',
     milestones: ['Series A', 'International expansion', 'API marketplace'],
   },
   assumptions: [
