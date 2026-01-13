@@ -72,6 +72,7 @@ export function useShows() {
     title: string;
     description?: string;
     show_type: ShowType;
+    event_category?: EventCategory;
     scheduled_date?: string;
     starting_stage?: ProductionStage;
     host_name?: string;
@@ -88,6 +89,9 @@ export function useShows() {
       // Use the unified meeting URL generator - routes to Genie Vibe recording studio
       const meetingLink = generateAutoMeetingUrl(showId);
 
+      // Determine the correct event_category, defaulting to media_production
+      const category = data.event_category || 'media_production';
+
       const { data: newShow, error } = await supabase
         .from('shows')
         .insert({
@@ -96,6 +100,7 @@ export function useShows() {
           title: data.title,
           description: data.description || null,
           show_type: data.show_type as any, // Allow extended show types
+          event_category: category as any, // Include event_category
           scheduled_date: data.scheduled_date || null,
           current_stage: data.starting_stage || 'outreach' as ProductionStage,
           host_name: data.host_name || null,
@@ -331,6 +336,24 @@ export function useShows() {
       };
       filteredShows.forEach(show => {
         const stage = show.event_stage || 'planning';
+        if (stages[stage]) {
+          stages[stage].push(show);
+        }
+      });
+      return stages;
+    }
+
+    // For Genie demos, use current_stage with demo-specific stages
+    if (category === 'genie_demo') {
+      const stages: Record<string, ShowWithParticipants[]> = {
+        demo_scheduled: [],
+        demo_prep: [],
+        demo_live: [],
+        demo_followup: [],
+        demo_closed: [],
+      };
+      filteredShows.forEach(show => {
+        const stage = show.current_stage || 'demo_scheduled';
         if (stages[stage]) {
           stages[stage].push(show);
         }

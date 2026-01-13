@@ -15118,6 +15118,7 @@ export type Database = {
           attendees_count: number | null
           created_at: string
           current_stage: Database["public"]["Enums"]["production_stage"]
+          demo_stage: Database["public"]["Enums"]["production_stage"] | null
           description: string | null
           duration_minutes: number | null
           embed_enabled: boolean | null
@@ -15150,6 +15151,7 @@ export type Database = {
           attendees_count?: number | null
           created_at?: string
           current_stage?: Database["public"]["Enums"]["production_stage"]
+          demo_stage?: Database["public"]["Enums"]["production_stage"] | null
           description?: string | null
           duration_minutes?: number | null
           embed_enabled?: boolean | null
@@ -15182,6 +15184,7 @@ export type Database = {
           attendees_count?: number | null
           created_at?: string
           current_stage?: Database["public"]["Enums"]["production_stage"]
+          demo_stage?: Database["public"]["Enums"]["production_stage"] | null
           description?: string | null
           duration_minutes?: number | null
           embed_enabled?: boolean | null
@@ -20705,7 +20708,11 @@ export type Database = {
         | "conversational"
         | "ai_structure"
         | "online"
-      event_category: "media_production" | "business_meeting" | "event"
+      event_category:
+        | "media_production"
+        | "business_meeting"
+        | "event"
+        | "genie_demo"
       event_stage:
         | "planning"
         | "promotion"
@@ -21061,7 +21068,12 @@ export const Constants = {
         "ai_structure",
         "online",
       ],
-      event_category: ["media_production", "business_meeting", "event"],
+      event_category: [
+        "media_production",
+        "business_meeting",
+        "event",
+        "genie_demo",
+      ],
       event_stage: [
         "planning",
         "promotion",
