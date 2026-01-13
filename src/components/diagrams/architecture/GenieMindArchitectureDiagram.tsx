@@ -10,18 +10,6 @@ import { Badge } from '@/components/ui/badge';
 import { Download, Maximize2, X, Brain, Cpu, Mic, FileText, Sparkles, Layers } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
-
-const colors = {
-  primary: { bg: '#7c3aed', text: '#ffffff' },
-  secondary: { bg: '#4f46e5', text: '#ffffff' },
-  ai: { bg: '#059669', text: '#ffffff' },
-  tts: { bg: '#0ea5e9', text: '#ffffff' },
-  script: { bg: '#f97316', text: '#ffffff' },
-  complete: { bg: '#10b981', text: '#ffffff' },
-  partial: { bg: '#f59e0b', text: '#ffffff' },
-  planned: { bg: '#6366f1', text: '#ffffff' },
-};
 
 const aiModels = [
   { name: 'Claude 3.5 Sonnet', provider: 'Anthropic', use: 'Script Enhancement, Analysis', status: 'active' },
@@ -57,7 +45,7 @@ export const GenieMindArchitectureDiagram: React.FC = () => {
     try {
       toast.info('Generating PNG...');
       const canvas = await html2canvas(diagramRef.current, {
-        backgroundColor: '#0f172a',
+        backgroundColor: '#ffffff',
         scale: 3,
         useCORS: true,
         logging: false,
@@ -77,29 +65,29 @@ export const GenieMindArchitectureDiagram: React.FC = () => {
     switch (status) {
       case 'complete':
       case 'active':
-        return <Badge className="text-xs" style={{ backgroundColor: colors.complete.bg, color: colors.complete.text }}>✓ Active</Badge>;
+        return <Badge className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700">✓ Active</Badge>;
       case 'partial':
-        return <Badge className="text-xs" style={{ backgroundColor: colors.partial.bg, color: colors.partial.text }}>◐ Partial</Badge>;
+        return <Badge className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700">◐ Partial</Badge>;
       default:
-        return <Badge className="text-xs" style={{ backgroundColor: colors.planned.bg, color: colors.planned.text }}>○ Planned</Badge>;
+        return <Badge className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700">○ Planned</Badge>;
     }
   };
 
   const content = (
-    <div ref={diagramRef} className="p-6 bg-slate-900 rounded-xl space-y-6">
+    <div ref={diagramRef} className="p-6 bg-background rounded-xl space-y-6 border border-border">
       {/* Header */}
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-white flex items-center justify-center gap-3">
-          <Brain className="h-8 w-8 text-purple-400" />
+      <div className="text-center border-b border-border pb-4">
+        <h2 className="text-2xl font-bold text-foreground flex items-center justify-center gap-3">
+          <Brain className="h-8 w-8 text-purple-500" />
           Genie Mind Architecture
         </h2>
-        <p className="text-slate-400 mt-2">AI Intelligence Layer • Model Routing • Script Engine • TTS Integration</p>
+        <p className="text-muted-foreground mt-2">AI Intelligence Layer • Model Routing • Script Engine • TTS Integration</p>
       </div>
 
       {/* AI Models Section */}
-      <Card className="bg-slate-800/50 border-purple-500/30">
+      <Card className="border-2 border-purple-200 dark:border-purple-800/40 bg-purple-50/50 dark:bg-purple-950/10">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg text-purple-300 flex items-center gap-2">
+          <CardTitle className="text-lg text-purple-700 dark:text-purple-400 flex items-center gap-2">
             <Cpu className="h-5 w-5" />
             AI Model Router
           </CardTitle>
@@ -107,13 +95,13 @@ export const GenieMindArchitectureDiagram: React.FC = () => {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {aiModels.map((model) => (
-              <div key={model.name} className="bg-slate-700/50 rounded-lg p-3 border border-slate-600">
+              <div key={model.name} className="bg-background rounded-lg p-3 border-2 border-border shadow-sm">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-white font-medium text-sm">{model.name}</span>
+                  <span className="text-foreground font-semibold text-sm">{model.name}</span>
                   {getStatusBadge(model.status)}
                 </div>
-                <p className="text-slate-400 text-xs">{model.provider}</p>
-                <p className="text-purple-300 text-xs mt-1">{model.use}</p>
+                <p className="text-muted-foreground text-xs font-medium">{model.provider}</p>
+                <p className="text-purple-600 dark:text-purple-400 text-xs mt-1">{model.use}</p>
               </div>
             ))}
           </div>
@@ -121,9 +109,9 @@ export const GenieMindArchitectureDiagram: React.FC = () => {
       </Card>
 
       {/* TTS Providers Section */}
-      <Card className="bg-slate-800/50 border-cyan-500/30">
+      <Card className="border-2 border-cyan-200 dark:border-cyan-800/40 bg-cyan-50/50 dark:bg-cyan-950/10">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg text-cyan-300 flex items-center gap-2">
+          <CardTitle className="text-lg text-cyan-700 dark:text-cyan-400 flex items-center gap-2">
             <Mic className="h-5 w-5" />
             TTS Integration Hub
           </CardTitle>
@@ -131,19 +119,19 @@ export const GenieMindArchitectureDiagram: React.FC = () => {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {ttsProviders.map((provider) => (
-              <div key={provider.name} className="bg-slate-700/50 rounded-lg p-3 border border-slate-600">
+              <div key={provider.name} className="bg-background rounded-lg p-3 border-2 border-border shadow-sm">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-white font-medium text-sm">{provider.name}</span>
+                  <span className="text-foreground font-semibold text-sm">{provider.name}</span>
                   {getStatusBadge(provider.status)}
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {provider.voices.slice(0, 4).map((voice) => (
-                    <Badge key={voice} variant="outline" className="text-xs text-cyan-300 border-cyan-500/30">
+                    <Badge key={voice} variant="secondary" className="text-xs bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300">
                       {voice}
                     </Badge>
                   ))}
                   {provider.voices.length > 4 && (
-                    <Badge variant="outline" className="text-xs text-slate-400">
+                    <Badge variant="secondary" className="text-xs">
                       +{provider.voices.length - 4}
                     </Badge>
                   )}
@@ -155,9 +143,9 @@ export const GenieMindArchitectureDiagram: React.FC = () => {
       </Card>
 
       {/* Script Engine Section */}
-      <Card className="bg-slate-800/50 border-orange-500/30">
+      <Card className="border-2 border-orange-200 dark:border-orange-800/40 bg-orange-50/50 dark:bg-orange-950/10">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg text-orange-300 flex items-center gap-2">
+          <CardTitle className="text-lg text-orange-700 dark:text-orange-400 flex items-center gap-2">
             <FileText className="h-5 w-5" />
             Script Engine
           </CardTitle>
@@ -165,12 +153,12 @@ export const GenieMindArchitectureDiagram: React.FC = () => {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {scriptFeatures.map((feature) => (
-              <div key={feature.name} className="bg-slate-700/50 rounded-lg p-3 border border-slate-600">
+              <div key={feature.name} className="bg-background rounded-lg p-3 border-2 border-border shadow-sm">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-white font-medium text-sm">{feature.name}</span>
+                  <span className="text-foreground font-semibold text-sm">{feature.name}</span>
                   {getStatusBadge(feature.status)}
                 </div>
-                <p className="text-slate-400 text-xs">{feature.description}</p>
+                <p className="text-muted-foreground text-xs">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -178,60 +166,53 @@ export const GenieMindArchitectureDiagram: React.FC = () => {
       </Card>
 
       {/* Data Flow */}
-      <Card className="bg-slate-800/50 border-emerald-500/30">
+      <Card className="border-2 border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/50 dark:bg-emerald-950/10">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg text-emerald-300 flex items-center gap-2">
+          <CardTitle className="text-lg text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
             <Layers className="h-5 w-5" />
             Data Flow Architecture
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between flex-wrap gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-purple-500" />
-              <span className="text-white">User Input</span>
-              <span className="text-slate-500">→</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-emerald-500" />
-              <span className="text-white">AI Router</span>
-              <span className="text-slate-500">→</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-orange-500" />
-              <span className="text-white">Script Engine</span>
-              <span className="text-slate-500">→</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-cyan-500" />
-              <span className="text-white">TTS Generation</span>
-              <span className="text-slate-500">→</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-pink-500" />
-              <span className="text-white">Genie Vibe</span>
-            </div>
+            {[
+              { label: 'User Input', color: 'purple' },
+              { label: 'AI Router', color: 'emerald' },
+              { label: 'Script Engine', color: 'orange' },
+              { label: 'TTS Generation', color: 'cyan' },
+              { label: 'Genie Vibe', color: 'pink' },
+            ].map((item, index, arr) => (
+              <React.Fragment key={item.label}>
+                <div className="flex items-center gap-2">
+                  <div className={`w-3 h-3 rounded-full bg-${item.color}-500`} />
+                  <span className="text-foreground font-medium">{item.label}</span>
+                </div>
+                {index < arr.length - 1 && (
+                  <span className="text-muted-foreground font-bold">→</span>
+                )}
+              </React.Fragment>
+            ))}
           </div>
         </CardContent>
       </Card>
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4 text-center">
-        <div className="bg-purple-900/30 rounded-lg p-3 border border-purple-500/30">
-          <div className="text-2xl font-bold text-purple-300">6</div>
-          <div className="text-xs text-slate-400">AI Models</div>
+        <div className="bg-purple-50 dark:bg-purple-950/20 rounded-lg p-3 border-2 border-purple-200 dark:border-purple-800/40">
+          <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">6</div>
+          <div className="text-xs text-muted-foreground font-medium">AI Models</div>
         </div>
-        <div className="bg-cyan-900/30 rounded-lg p-3 border border-cyan-500/30">
-          <div className="text-2xl font-bold text-cyan-300">4</div>
-          <div className="text-xs text-slate-400">TTS Providers</div>
+        <div className="bg-cyan-50 dark:bg-cyan-950/20 rounded-lg p-3 border-2 border-cyan-200 dark:border-cyan-800/40">
+          <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">4</div>
+          <div className="text-xs text-muted-foreground font-medium">TTS Providers</div>
         </div>
-        <div className="bg-orange-900/30 rounded-lg p-3 border border-orange-500/30">
-          <div className="text-2xl font-bold text-orange-300">16+</div>
-          <div className="text-xs text-slate-400">Voice Options</div>
+        <div className="bg-orange-50 dark:bg-orange-950/20 rounded-lg p-3 border-2 border-orange-200 dark:border-orange-800/40">
+          <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">16+</div>
+          <div className="text-xs text-muted-foreground font-medium">Voice Options</div>
         </div>
-        <div className="bg-emerald-900/30 rounded-lg p-3 border border-emerald-500/30">
-          <div className="text-2xl font-bold text-emerald-300">85%</div>
-          <div className="text-xs text-slate-400">Complete</div>
+        <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-lg p-3 border-2 border-emerald-200 dark:border-emerald-800/40">
+          <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">85%</div>
+          <div className="text-xs text-muted-foreground font-medium">Complete</div>
         </div>
       </div>
     </div>
@@ -239,15 +220,15 @@ export const GenieMindArchitectureDiagram: React.FC = () => {
 
   if (isFullscreen) {
     return (
-      <div className="fixed inset-0 z-50 bg-slate-950/95 overflow-auto">
-        <div className="sticky top-0 z-10 bg-slate-900 border-b border-slate-700 px-4 py-3 flex items-center justify-between">
-          <h2 className="text-white font-semibold text-lg">Genie Mind Architecture</h2>
+      <div className="fixed inset-0 z-50 bg-background overflow-auto">
+        <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-3 flex items-center justify-between shadow-sm">
+          <h2 className="text-foreground font-semibold text-lg">Genie Mind Architecture</h2>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleDownloadPNG} className="bg-slate-800 border-slate-600 text-white hover:bg-slate-700">
+            <Button variant="outline" size="sm" onClick={handleDownloadPNG}>
               <Download className="h-4 w-4 mr-2" />
               Download PNG
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setIsFullscreen(false)} className="bg-slate-800 border-slate-600 text-white hover:bg-slate-700">
+            <Button variant="outline" size="sm" onClick={() => setIsFullscreen(false)}>
               <X className="h-4 w-4 mr-2" />
               Close
             </Button>
@@ -261,10 +242,10 @@ export const GenieMindArchitectureDiagram: React.FC = () => {
   }
 
   return (
-    <Card className="bg-slate-900 border-slate-700">
+    <Card className="bg-card border-border">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-white text-lg flex items-center gap-2">
-          <Brain className="h-5 w-5 text-purple-400" />
+        <CardTitle className="text-foreground text-lg flex items-center gap-2">
+          <Brain className="h-5 w-5 text-purple-500" />
           Genie Mind Architecture
         </CardTitle>
         <div className="flex gap-2">

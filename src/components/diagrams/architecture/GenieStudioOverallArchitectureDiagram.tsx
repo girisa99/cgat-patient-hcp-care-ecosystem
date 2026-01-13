@@ -11,23 +11,12 @@ import { Download, Maximize2, X, Layers, Brain, Film, Users, Zap, Building, Data
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
 
-const colors = {
-  complete: { bg: '#10b981', text: '#ffffff' },
-  partial: { bg: '#f59e0b', text: '#ffffff' },
-  planned: { bg: '#6366f1', text: '#ffffff' },
-  mind: '#7c3aed',
-  vibe: '#059669',
-  arc: '#3b82f6',
-  spark: '#f97316',
-  hub: '#8b5cf6',
-};
-
 const modules = [
-  { id: 'mind', name: 'Genie Mind', icon: '🧠', color: colors.mind, description: 'AI Intelligence Layer', status: 'partial', completion: 85 },
-  { id: 'vibe', name: 'Genie Vibe', icon: '🎬', color: colors.vibe, description: 'Production Layer', status: 'partial', completion: 43 },
-  { id: 'spark', name: 'Genie Spark', icon: '⚡', color: colors.spark, description: 'Quick-Start Engine', status: 'planned', completion: 0 },
-  { id: 'arc', name: 'Genie Arc', icon: '🌈', color: colors.arc, description: 'Team Collaboration', status: 'partial', completion: 25 },
-  { id: 'hub', name: 'Production Hub', icon: '🎥', color: colors.hub, description: 'Enterprise Center', status: 'partial', completion: 20 },
+  { id: 'mind', name: 'Genie Mind', icon: '🧠', color: 'violet', description: 'AI Intelligence Layer', status: 'partial', completion: 85 },
+  { id: 'vibe', name: 'Genie Vibe', icon: '🎬', color: 'emerald', description: 'Production Layer', status: 'partial', completion: 43 },
+  { id: 'spark', name: 'Genie Spark', icon: '⚡', color: 'orange', description: 'Quick-Start Engine', status: 'planned', completion: 0 },
+  { id: 'arc', name: 'Genie Arc', icon: '🌈', color: 'blue', description: 'Team Collaboration', status: 'partial', completion: 25 },
+  { id: 'hub', name: 'Production Hub', icon: '🎥', color: 'purple', description: 'Enterprise Center', status: 'partial', completion: 20 },
 ];
 
 const techStack = {
@@ -58,6 +47,14 @@ const scenarioSummary = {
   p5: { total: 10, done: 0 },
 };
 
+const moduleColorClasses: Record<string, { border: string; bg: string; text: string; progress: string }> = {
+  violet: { border: 'border-violet-400/40', bg: 'bg-violet-500/10', text: 'text-violet-600 dark:text-violet-400', progress: 'bg-violet-500' },
+  emerald: { border: 'border-emerald-400/40', bg: 'bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', progress: 'bg-emerald-500' },
+  orange: { border: 'border-orange-400/40', bg: 'bg-orange-500/10', text: 'text-orange-600 dark:text-orange-400', progress: 'bg-orange-500' },
+  blue: { border: 'border-blue-400/40', bg: 'bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400', progress: 'bg-blue-500' },
+  purple: { border: 'border-purple-400/40', bg: 'bg-purple-500/10', text: 'text-purple-600 dark:text-purple-400', progress: 'bg-purple-500' },
+};
+
 export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const diagramRef = useRef<HTMLDivElement>(null);
@@ -67,7 +64,7 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
     try {
       toast.info('Generating PNG...');
       const canvas = await html2canvas(diagramRef.current, {
-        backgroundColor: '#0f172a',
+        backgroundColor: '#ffffff',
         scale: 3,
         useCORS: true,
         logging: false,
@@ -84,43 +81,43 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
   };
 
   const content = (
-    <div ref={diagramRef} className="p-6 bg-slate-900 rounded-xl space-y-6">
+    <div ref={diagramRef} className="p-6 bg-background rounded-xl space-y-6 border border-border">
       {/* Header */}
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-white flex items-center justify-center gap-3">
-          <Layers className="h-8 w-8 text-violet-400" />
+      <div className="text-center border-b border-border pb-4">
+        <h2 className="text-2xl font-bold text-foreground flex items-center justify-center gap-3">
+          <Layers className="h-8 w-8 text-violet-500" />
           Genie Studio - Complete Architecture
         </h2>
-        <p className="text-slate-400 mt-2">Mind to Media • 177 Scenarios • 5 Modules • 6 Phases</p>
+        <p className="text-muted-foreground mt-2">Mind to Media • 177 Scenarios • 5 Modules • 6 Phases</p>
       </div>
 
       {/* Implementation Summary */}
-      <Card className="bg-gradient-to-r from-violet-900/30 to-purple-900/30 border-violet-500/30">
+      <Card className="bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20 border-violet-200 dark:border-violet-800/40">
         <CardContent className="pt-4">
           <div className="grid grid-cols-6 gap-4 text-center">
             <div>
-              <div className="text-3xl font-bold text-violet-300">{scenarioSummary.total}</div>
-              <div className="text-xs text-slate-400">Total Scenarios</div>
+              <div className="text-3xl font-bold text-violet-600 dark:text-violet-400">{scenarioSummary.total}</div>
+              <div className="text-xs text-muted-foreground font-medium">Total Scenarios</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-emerald-300">{scenarioSummary.implemented}</div>
-              <div className="text-xs text-slate-400">Implemented (24%)</div>
+              <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{scenarioSummary.implemented}</div>
+              <div className="text-xs text-muted-foreground font-medium">Implemented (24%)</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-amber-300">{scenarioSummary.partial}</div>
-              <div className="text-xs text-slate-400">Partial (4%)</div>
+              <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">{scenarioSummary.partial}</div>
+              <div className="text-xs text-muted-foreground font-medium">Partial (4%)</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-blue-300">{scenarioSummary.planned}</div>
-              <div className="text-xs text-slate-400">Planned (72%)</div>
+              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{scenarioSummary.planned}</div>
+              <div className="text-xs text-muted-foreground font-medium">Planned (72%)</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-pink-300">12</div>
-              <div className="text-xs text-slate-400">AI Agents</div>
+              <div className="text-3xl font-bold text-pink-600 dark:text-pink-400">12</div>
+              <div className="text-xs text-muted-foreground font-medium">AI Agents</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-cyan-300">15</div>
-              <div className="text-xs text-slate-400">API Endpoints</div>
+              <div className="text-3xl font-bold text-cyan-600 dark:text-cyan-400">15</div>
+              <div className="text-xs text-muted-foreground font-medium">API Endpoints</div>
             </div>
           </div>
         </CardContent>
@@ -128,28 +125,31 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
 
       {/* Module Cards */}
       <div className="grid grid-cols-5 gap-4">
-        {modules.map((module) => (
-          <Card key={module.id} className="bg-slate-800/50 border-slate-600" style={{ borderColor: `${module.color}40` }}>
-            <CardContent className="pt-4 text-center">
-              <div className="text-3xl mb-2">{module.icon}</div>
-              <div className="text-white font-medium text-sm">{module.name}</div>
-              <div className="text-slate-400 text-xs mb-2">{module.description}</div>
-              <div className="w-full h-2 bg-slate-700 rounded-full">
-                <div 
-                  className="h-full rounded-full transition-all" 
-                  style={{ width: `${module.completion}%`, backgroundColor: module.color }}
-                />
-              </div>
-              <div className="text-xs mt-1" style={{ color: module.color }}>{module.completion}% Complete</div>
-            </CardContent>
-          </Card>
-        ))}
+        {modules.map((module) => {
+          const colors = moduleColorClasses[module.color];
+          return (
+            <Card key={module.id} className={`${colors.bg} ${colors.border} border-2`}>
+              <CardContent className="pt-4 text-center">
+                <div className="text-3xl mb-2">{module.icon}</div>
+                <div className="text-foreground font-semibold text-sm">{module.name}</div>
+                <div className="text-muted-foreground text-xs mb-2">{module.description}</div>
+                <div className="w-full h-2 bg-muted rounded-full">
+                  <div 
+                    className={`h-full rounded-full transition-all ${colors.progress}`}
+                    style={{ width: `${module.completion}%` }}
+                  />
+                </div>
+                <div className={`text-xs mt-1 font-medium ${colors.text}`}>{module.completion}% Complete</div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Data Flow */}
-      <Card className="bg-slate-800/50 border-cyan-500/30">
+      <Card className="border-2 border-cyan-200 dark:border-cyan-800/40 bg-cyan-50/50 dark:bg-cyan-950/10">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg text-cyan-300 flex items-center gap-2">
+          <CardTitle className="text-lg text-cyan-700 dark:text-cyan-400 flex items-center gap-2">
             <Database className="h-5 w-5" />
             Data Flow Architecture
           </CardTitle>
@@ -158,12 +158,12 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
           <div className="flex items-center justify-between overflow-x-auto gap-2 pb-2">
             {dataFlows.map((flow, index) => (
               <React.Fragment key={index}>
-                <div className="flex-shrink-0 bg-slate-700/50 rounded-lg p-3 border border-slate-600 text-center min-w-[100px]">
-                  <div className="text-white text-sm font-medium">{flow.from}</div>
-                  <div className="text-slate-400 text-xs mt-1">{flow.description}</div>
+                <div className="flex-shrink-0 bg-background rounded-lg p-3 border-2 border-border text-center min-w-[100px] shadow-sm">
+                  <div className="text-foreground text-sm font-semibold">{flow.from}</div>
+                  <div className="text-muted-foreground text-xs mt-1">{flow.description}</div>
                 </div>
                 {index < dataFlows.length - 1 && (
-                  <div className="text-cyan-400 text-lg flex-shrink-0">→</div>
+                  <div className="text-cyan-500 text-lg flex-shrink-0 font-bold">→</div>
                 )}
               </React.Fragment>
             ))}
@@ -173,9 +173,9 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
 
       {/* Tech Stack */}
       <div className="grid grid-cols-4 gap-4">
-        <Card className="bg-slate-800/50 border-blue-500/30">
+        <Card className="border-2 border-blue-200 dark:border-blue-800/40 bg-blue-50/50 dark:bg-blue-950/10">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-blue-300 flex items-center gap-2">
+            <CardTitle className="text-sm text-blue-700 dark:text-blue-400 flex items-center gap-2">
               <Layers className="h-4 w-4" />
               Frontend
             </CardTitle>
@@ -183,7 +183,7 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
           <CardContent>
             <div className="flex flex-wrap gap-1">
               {techStack.frontend.map((tech) => (
-                <Badge key={tech} variant="outline" className="text-xs text-blue-300 border-blue-500/30">
+                <Badge key={tech} variant="secondary" className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700">
                   {tech}
                 </Badge>
               ))}
@@ -191,9 +191,9 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-emerald-500/30">
+        <Card className="border-2 border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/50 dark:bg-emerald-950/10">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-emerald-300 flex items-center gap-2">
+            <CardTitle className="text-sm text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
               <Server className="h-4 w-4" />
               Backend
             </CardTitle>
@@ -201,7 +201,7 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
           <CardContent>
             <div className="flex flex-wrap gap-1">
               {techStack.backend.map((tech) => (
-                <Badge key={tech} variant="outline" className="text-xs text-emerald-300 border-emerald-500/30">
+                <Badge key={tech} variant="secondary" className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700">
                   {tech}
                 </Badge>
               ))}
@@ -209,9 +209,9 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-purple-500/30">
+        <Card className="border-2 border-purple-200 dark:border-purple-800/40 bg-purple-50/50 dark:bg-purple-950/10">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-purple-300 flex items-center gap-2">
+            <CardTitle className="text-sm text-purple-700 dark:text-purple-400 flex items-center gap-2">
               <Brain className="h-4 w-4" />
               AI/ML
             </CardTitle>
@@ -219,7 +219,7 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
           <CardContent>
             <div className="flex flex-wrap gap-1">
               {techStack.ai.map((tech) => (
-                <Badge key={tech} variant="outline" className="text-xs text-purple-300 border-purple-500/30">
+                <Badge key={tech} variant="secondary" className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700">
                   {tech}
                 </Badge>
               ))}
@@ -227,9 +227,9 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-orange-500/30">
+        <Card className="border-2 border-orange-200 dark:border-orange-800/40 bg-orange-50/50 dark:bg-orange-950/10">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-orange-300 flex items-center gap-2">
+            <CardTitle className="text-sm text-orange-700 dark:text-orange-400 flex items-center gap-2">
               <Cloud className="h-4 w-4" />
               Infrastructure
             </CardTitle>
@@ -237,7 +237,7 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
           <CardContent>
             <div className="flex flex-wrap gap-1">
               {techStack.infra.map((tech) => (
-                <Badge key={tech} variant="outline" className="text-xs text-orange-300 border-orange-500/30">
+                <Badge key={tech} variant="secondary" className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700">
                   {tech}
                 </Badge>
               ))}
@@ -247,9 +247,9 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
       </div>
 
       {/* Phase Progress */}
-      <Card className="bg-slate-800/50 border-pink-500/30">
+      <Card className="border-2 border-pink-200 dark:border-pink-800/40 bg-pink-50/50 dark:bg-pink-950/10">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg text-pink-300 flex items-center gap-2">
+          <CardTitle className="text-lg text-pink-700 dark:text-pink-400 flex items-center gap-2">
             <Shield className="h-5 w-5" />
             Phase Progress (P0-P5)
           </CardTitle>
@@ -257,25 +257,34 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
         <CardContent>
           <div className="grid grid-cols-6 gap-3">
             {[
-              { id: 'P0', ...scenarioSummary.p0, color: '#10b981' },
-              { id: 'P1', ...scenarioSummary.p1, color: '#0ea5e9' },
-              { id: 'P2', ...scenarioSummary.p2, color: '#f59e0b' },
-              { id: 'P3', ...scenarioSummary.p3, color: '#ec4899' },
-              { id: 'P4', ...scenarioSummary.p4, color: '#8b5cf6' },
-              { id: 'P5', ...scenarioSummary.p5, color: '#64748b' },
+              { id: 'P0', ...scenarioSummary.p0, colorClass: 'emerald' },
+              { id: 'P1', ...scenarioSummary.p1, colorClass: 'sky' },
+              { id: 'P2', ...scenarioSummary.p2, colorClass: 'amber' },
+              { id: 'P3', ...scenarioSummary.p3, colorClass: 'pink' },
+              { id: 'P4', ...scenarioSummary.p4, colorClass: 'violet' },
+              { id: 'P5', ...scenarioSummary.p5, colorClass: 'slate' },
             ].map((phase) => {
               const percentage = Math.round((phase.done / phase.total) * 100);
+              const colorMap: Record<string, string> = {
+                emerald: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500',
+                sky: 'text-sky-600 dark:text-sky-400 bg-sky-500',
+                amber: 'text-amber-600 dark:text-amber-400 bg-amber-500',
+                pink: 'text-pink-600 dark:text-pink-400 bg-pink-500',
+                violet: 'text-violet-600 dark:text-violet-400 bg-violet-500',
+                slate: 'text-slate-600 dark:text-slate-400 bg-slate-500',
+              };
+              const [textColor, , progressColor] = colorMap[phase.colorClass].split(' ');
               return (
-                <div key={phase.id} className="bg-slate-700/50 rounded-lg p-3 border border-slate-600 text-center">
-                  <div className="text-lg font-bold" style={{ color: phase.color }}>{phase.id}</div>
-                  <div className="text-white text-sm">{phase.done}/{phase.total}</div>
-                  <div className="w-full h-1.5 bg-slate-600 rounded-full mt-2">
+                <div key={phase.id} className="bg-background rounded-lg p-3 border-2 border-border text-center shadow-sm">
+                  <div className={`text-lg font-bold ${textColor}`}>{phase.id}</div>
+                  <div className="text-foreground text-sm font-medium">{phase.done}/{phase.total}</div>
+                  <div className="w-full h-1.5 bg-muted rounded-full mt-2">
                     <div 
-                      className="h-full rounded-full" 
-                      style={{ width: `${percentage}%`, backgroundColor: phase.color }}
+                      className={`h-full rounded-full ${progressColor}`}
+                      style={{ width: `${percentage}%` }}
                     />
                   </div>
-                  <div className="text-xs text-slate-400 mt-1">{percentage}%</div>
+                  <div className="text-xs text-muted-foreground mt-1 font-medium">{percentage}%</div>
                 </div>
               );
             })}
@@ -287,15 +296,15 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
 
   if (isFullscreen) {
     return (
-      <div className="fixed inset-0 z-50 bg-slate-950/95 overflow-auto">
-        <div className="sticky top-0 z-10 bg-slate-900 border-b border-slate-700 px-4 py-3 flex items-center justify-between">
-          <h2 className="text-white font-semibold text-lg">Genie Studio - Complete Architecture</h2>
+      <div className="fixed inset-0 z-50 bg-background overflow-auto">
+        <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-3 flex items-center justify-between shadow-sm">
+          <h2 className="text-foreground font-semibold text-lg">Genie Studio - Complete Architecture</h2>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleDownloadPNG} className="bg-slate-800 border-slate-600 text-white hover:bg-slate-700">
+            <Button variant="outline" size="sm" onClick={handleDownloadPNG}>
               <Download className="h-4 w-4 mr-2" />
               Download PNG
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setIsFullscreen(false)} className="bg-slate-800 border-slate-600 text-white hover:bg-slate-700">
+            <Button variant="outline" size="sm" onClick={() => setIsFullscreen(false)}>
               <X className="h-4 w-4 mr-2" />
               Close
             </Button>
@@ -309,10 +318,10 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
   }
 
   return (
-    <Card className="bg-slate-900 border-slate-700">
+    <Card className="bg-card border-border">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-white text-lg flex items-center gap-2">
-          <Layers className="h-5 w-5 text-violet-400" />
+        <CardTitle className="text-foreground text-lg flex items-center gap-2">
+          <Layers className="h-5 w-5 text-violet-500" />
           Genie Studio - Complete Architecture
         </CardTitle>
         <div className="flex gap-2">
