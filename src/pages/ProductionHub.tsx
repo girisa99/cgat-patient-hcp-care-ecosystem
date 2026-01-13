@@ -669,8 +669,12 @@ export default function ProductionHub() {
                   <Calendar className="h-3.5 w-3.5" />
                   Events
                 </TabsTrigger>
-                <TabsTrigger value="highlights" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md whitespace-nowrap">
+                <TabsTrigger value="genie_demo" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md whitespace-nowrap">
                   <Zap className="h-3.5 w-3.5" />
+                  Genie Demo
+                </TabsTrigger>
+                <TabsTrigger value="highlights" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md whitespace-nowrap">
+                  <Video className="h-3.5 w-3.5" />
                   Highlights
                 </TabsTrigger>
                 <TabsTrigger value="distribution" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md whitespace-nowrap">
@@ -789,6 +793,36 @@ export default function ProductionHub() {
                     const dateStr = date.toISOString().split('T')[0];
                     const dateTimeStr = `${dateStr}T${time}`;
                     setNewShow(prev => ({ ...prev, scheduled_date: dateTimeStr }));
+                    setIsCreateDialogOpen(true);
+                  }}
+                />
+              )}
+            </TabsContent>
+            
+            {/* Genie Demo Tab */}
+            <TabsContent value="genie_demo" className="flex-1 p-4 mt-0">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : viewMode === 'kanban' ? (
+                <VerticalKanban
+                  showsByStage={showsByStage}
+                  onSelectShow={setSelectedShow}
+                  onOpenRecordingStudio={handleOpenRecordingStudio}
+                  onUpdateStage={async (showId, newStage) => {
+                    await updateStage(showId, newStage as ProductionStage);
+                  }}
+                  eventCategory="genie_demo"
+                />
+              ) : (
+                <ProductionCalendar
+                  shows={shows.filter(s => s.event_category === 'genie_demo')}
+                  onShowClick={setSelectedShow}
+                  onScheduleNew={(date, time) => {
+                    const dateStr = date.toISOString().split('T')[0];
+                    const dateTimeStr = `${dateStr}T${time}`;
+                    setNewShow(prev => ({ ...prev, scheduled_date: dateTimeStr, event_category: 'genie_demo' }));
                     setIsCreateDialogOpen(true);
                   }}
                 />
