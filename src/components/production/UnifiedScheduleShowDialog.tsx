@@ -1760,13 +1760,7 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
           </Button>
           <Button 
             type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              console.log('🔥🔥🔥 BUTTON CLICKED DIRECTLY 🔥🔥🔥');
-              alert('Button clicked! Check console for 🔥 logs');
-              handleSubmit();
-            }}
+            onClick={handleSubmit}
             disabled={!formData.title.trim() || isSubmitting}
             className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
           >
