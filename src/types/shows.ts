@@ -21,7 +21,8 @@ export type ShowType =
 export type ProductionStage = 'outreach' | 'script' | 'rehearsal' | 'recording' | 'post_production' | 'published';
 export type MeetingStage = 'scheduled' | 'confirmed' | 'agenda_prep' | 'in_progress' | 'follow_up' | 'completed' | 'cancelled';
 export type EventStage = 'planning' | 'promotion' | 'registration' | 'live' | 'wrap_up' | 'archived' | 'cancelled';
-export type DemoStage = 'setup' | 'walkthrough' | 'demo_live' | 'q_and_a' | 'feedback' | 'completed';
+// DemoStage matches the production_stage enum values in database
+export type DemoStage = 'demo_scheduled' | 'demo_prep' | 'demo_live' | 'demo_followup' | 'demo_closed';
 
 export type ParticipantRole = 'host' | 'co_host' | 'guest' | 'panelist' | 'interviewer' | 'interviewee' | 'narrator' | 'attendee' | 'organizer' | 'speaker' | 'other';
 export type ParticipantStatus = 'invited' | 'confirmed' | 'declined' | 'tentative' | 'cancelled';
@@ -221,7 +222,7 @@ export const PARTICIPANT_ROLES: { id: ParticipantRole; label: string }[] = [
   { id: 'other', label: 'Other' },
 ];
 
-// Demo stages configuration
+// Demo stages configuration - matches production_stage enum in database
 export const DEMO_STAGES: { 
   id: DemoStage; 
   label: string; 
@@ -229,12 +230,11 @@ export const DEMO_STAGES: {
   icon: string;
   color: string;
 }[] = [
-  { id: 'setup', label: 'Setup', description: 'Prepare demo environment', icon: 'Settings', color: 'bg-blue-500' },
-  { id: 'walkthrough', label: 'Walkthrough', description: 'Feature overview', icon: 'Map', color: 'bg-purple-500' },
+  { id: 'demo_scheduled', label: 'Scheduled', description: 'Demo scheduled', icon: 'Calendar', color: 'bg-blue-500' },
+  { id: 'demo_prep', label: 'Preparation', description: 'Prepare demo environment', icon: 'Settings', color: 'bg-purple-500' },
   { id: 'demo_live', label: 'Live Demo', description: 'Interactive demonstration', icon: 'Play', color: 'bg-red-500' },
-  { id: 'q_and_a', label: 'Q&A', description: 'Questions & answers', icon: 'MessageCircle', color: 'bg-yellow-500' },
-  { id: 'feedback', label: 'Feedback', description: 'Gather feedback', icon: 'Star', color: 'bg-orange-500' },
-  { id: 'completed', label: 'Completed', description: 'Demo finished', icon: 'CheckCircle', color: 'bg-green-500' },
+  { id: 'demo_followup', label: 'Follow-up', description: 'Post-demo follow-up', icon: 'MessageCircle', color: 'bg-yellow-500' },
+  { id: 'demo_closed', label: 'Closed', description: 'Demo completed', icon: 'CheckCircle', color: 'bg-green-500' },
 ];
 
 // Helper function to get stages based on category
