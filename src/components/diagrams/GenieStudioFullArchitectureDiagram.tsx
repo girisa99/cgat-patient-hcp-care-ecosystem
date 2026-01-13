@@ -211,7 +211,7 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
         <div>
           <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
             <Layers className="h-5 w-5" />
-            Genie Mind + Genie Vibe — Complete Architecture (140 Scenarios)
+            Genie Mind + Genie Vibe — Complete Architecture (177 Scenarios)
           </CardTitle>
           <p className="text-sm text-muted-foreground mt-1">
             6 Market Segments • 6 Phases (P0-P5) • 5 Subscription Tiers • 12 Agents • 15 APIs • Full Automation Matrix
@@ -249,7 +249,7 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
             <TabsTrigger value="segments">6 Segments</TabsTrigger>
             <TabsTrigger value="agents">Agents</TabsTrigger>
             <TabsTrigger value="subscriptions">Pricing</TabsTrigger>
-            <TabsTrigger value="scenarios">140 Scenarios</TabsTrigger>
+            <TabsTrigger value="scenarios">177 Scenarios</TabsTrigger>
             <TabsTrigger value="competitive">Competition</TabsTrigger>
           </TabsList>
 
@@ -434,7 +434,7 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
               </TabsContent>
 
               <TabsContent value="scenarios" className="space-y-4 mt-0">
-                <h3 className="text-lg font-semibold" style={{ color: colors.text }}>140 Scenarios by Phase (with Agents & APIs)</h3>
+                <h3 className="text-lg font-semibold" style={{ color: colors.text }}>177 Scenarios by Phase (with Agents & APIs)</h3>
                 <div className="space-y-3">
                   {[
                     { phase: 'P0', scenarios: ['Script Creation (1-8)', 'Vibe↔Mind Bidirectional (61-65)', 'TTS Generation', 'Basic Recording', 'Project Management'], count: 13, status: 'completed' as const },

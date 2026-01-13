@@ -350,15 +350,15 @@ export const GenieRecordingStudioArchitectureDiagram = () => {
         Genie Suite: Mind + Vibe + Spark + Arc + Hub Architecture
       </text>
       <text x="800" y="65" textAnchor="middle" fill="#94a3b8" fontSize="13">
-        Complete Production Pipeline • 140 Scenarios • 6 Phases (P0-P5) • 12 Agents • 15 APIs • Full Automation
+        Complete Production Pipeline • 177 Scenarios • 6 Phases (P0-P5) • 12 Agents • 15 APIs • Full Automation
       </text>
 
       {/* Stats Bar */}
       <g transform="translate(100, 80)">
         <rect x="0" y="0" width="1400" height="40" rx="8" fill="#1e293b" stroke="#334155" strokeWidth="1" />
-        <text x="50" y="25" fill="#10b981" fontSize="12" fontWeight="bold">✓ 13 Implemented</text>
+        <text x="50" y="25" fill="#10b981" fontSize="12" fontWeight="bold">✓ 43 Implemented</text>
         <text x="200" y="25" fill="#f59e0b" fontSize="12" fontWeight="bold">◐ 7 Partial</text>
-        <text x="330" y="25" fill="#6366f1" fontSize="12" fontWeight="bold">○ 120 Planned</text>
+        <text x="330" y="25" fill="#6366f1" fontSize="12" fontWeight="bold">○ 127 Planned</text>
         <text x="480" y="25" fill="#a855f7" fontSize="12" fontWeight="bold">🤖 12 Agents</text>
         <text x="610" y="25" fill="#06b6d4" fontSize="12" fontWeight="bold">🔌 15 APIs</text>
         <text x="750" y="25" fill="#94a3b8" fontSize="11">|</text>
