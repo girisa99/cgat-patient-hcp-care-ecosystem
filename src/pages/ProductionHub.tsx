@@ -868,11 +868,13 @@ export default function ProductionHub() {
                 scheduled_date: data.scheduled_date || undefined,
                 starting_stage: data.starting_stage as ProductionStage,
                 host_name: data.host.name || undefined,
+                host_email: data.host.email || undefined, // Pass host email for participant tracking
                 guest_info: data.guests.length > 0 ? data.guests.map(g => ({
                   name: g.name,
                   email: g.email,
                   phone: g.phone,
                   linkedin: g.linkedin_url,
+                  role: g.role || 'guest',
                 })) : undefined,
                 linked_script_id: data.linked_script_id || undefined,
                 linked_music_id: data.linked_music_id || undefined,

@@ -76,13 +76,21 @@ export function useShows() {
     scheduled_date?: string;
     starting_stage?: ProductionStage;
     host_name?: string;
-    guest_info?: { name: string; email?: string }[];
+    host_email?: string;
+    guest_info?: { name: string; email?: string; phone?: string; linkedin?: string; role?: string }[];
     linked_script_id?: string;
     linked_music_id?: string;
   }) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
+
+      console.log('[useShows] Creating show with data:', {
+        title: data.title,
+        host_name: data.host_name,
+        host_email: data.host_email,
+        guest_count: data.guest_info?.length || 0,
+      });
 
       // Generate a unique show ID first, then create the meeting link using unified generator
       const showId = crypto.randomUUID();
@@ -112,13 +120,61 @@ export function useShows() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useShows] Failed to create show:', error);
+        throw error;
+      }
+
+      console.log('[useShows] Show created successfully:', newShow?.id);
+
+      // Create show_participants records for each guest
+      if (data.guest_info && data.guest_info.length > 0) {
+        console.log('[useShows] Creating participants for', data.guest_info.length, 'guests');
+        
+        const participantRecords = data.guest_info.map((guest) => ({
+          show_id: showId,
+          name: guest.name,
+          email: guest.email || null,
+          role: (guest.role || 'guest') as any,
+          status: 'invited' as any,
+        }));
+
+        const { error: participantsError } = await supabase
+          .from('show_participants')
+          .insert(participantRecords as any);
+
+        if (participantsError) {
+          console.error('[useShows] Failed to create participants:', participantsError);
+          // Don't throw - show was created, participants are optional
+          toast.warning('Show created but some participants may not have been saved');
+        } else {
+          console.log('[useShows] Participants created successfully');
+        }
+      }
+
+      // Also add host as a participant if host_email is provided
+      if (data.host_name && data.host_email) {
+        console.log('[useShows] Adding host as participant:', data.host_email);
+        const { error: hostError } = await supabase
+          .from('show_participants')
+          .insert({
+            show_id: showId,
+            name: data.host_name,
+            email: data.host_email,
+            role: 'host' as any,
+            status: 'confirmed' as any,
+          } as any);
+
+        if (hostError) {
+          console.error('[useShows] Failed to add host as participant:', hostError);
+        }
+      }
 
       toast.success('Show created successfully');
       await fetchShows();
       return newShow as Show;
     } catch (err: any) {
-      console.error('Error creating show:', err);
+      console.error('[useShows] Error creating show:', err);
       toast.error('Failed to create show');
       throw err;
     }
