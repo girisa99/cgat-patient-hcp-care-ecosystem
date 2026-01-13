@@ -1519,16 +1519,52 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
     const isGenieDemoCategory = formData.event_category === 'genie_demo';
     const sectionTitle = isGenieDemoCategory ? 'Participants / Attendees' : 'Guests / Panelists';
     
+    // Calculate who will receive invites
+    const inviteRecipients = [
+      ...(formData.host.email ? [{ name: formData.host.name || 'Host', email: formData.host.email, role: 'host' }] : []),
+      ...formData.guests.filter(g => g.email).map(g => ({ name: g.name, email: g.email, role: g.role })),
+    ];
+    
     return (
       <div className="space-y-3">
         <h4 className="text-sm font-medium flex items-center gap-2">
           <UserPlus className="h-4 w-4" />
           {sectionTitle}
-          <Badge variant="outline" className="text-[10px] ml-auto">Required for invites</Badge>
+          <Badge variant="outline" className="text-[10px] ml-auto">Add participants below</Badge>
         </h4>
+
+        {/* Invite Summary - Shows who will receive emails */}
+        <div className="p-3 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20">
+          <div className="flex items-center gap-2 mb-2">
+            <Mail className="h-4 w-4 text-green-600" />
+            <span className="text-sm font-medium text-green-700 dark:text-green-400">
+              Invite Summary ({inviteRecipients.length} recipient{inviteRecipients.length !== 1 ? 's' : ''})
+            </span>
+          </div>
+          {inviteRecipients.length > 0 ? (
+            <div className="space-y-1">
+              {inviteRecipients.map((recipient, idx) => (
+                <div key={idx} className="flex items-center gap-2 text-xs">
+                  <span className="w-5 h-5 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center text-green-600 dark:text-green-400 text-[10px] font-bold">
+                    {recipient.name.charAt(0).toUpperCase()}
+                  </span>
+                  <span className="font-medium">{recipient.name}</span>
+                  <span className="text-muted-foreground">({recipient.email})</span>
+                  <Badge variant="secondary" className="text-[9px] px-1 capitalize">{recipient.role}</Badge>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-amber-600">
+              No recipients with email addresses yet. Add host email and/or participants below.
+            </p>
+          )}
+        </div>
         
+        {/* Existing participants list */}
         {formData.guests.length > 0 && (
           <div className="space-y-1.5">
+            <p className="text-xs font-medium text-muted-foreground">Added Participants:</p>
             {formData.guests.map((guest, idx) => (
               <div key={idx} className="flex items-center justify-between p-2 bg-muted/50 rounded text-sm">
                 <div className="flex items-center gap-2">
@@ -1555,37 +1591,54 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-2">
-          <Input placeholder="Guest name *" value={newGuest.name} onChange={(e) => setNewGuest(prev => ({ ...prev, name: e.target.value }))} />
-          <Input placeholder="Email" type="email" value={newGuest.email} onChange={(e) => setNewGuest(prev => ({ ...prev, email: e.target.value }))} />
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <Input placeholder="Phone (for SMS)" value={newGuest.phone} onChange={(e) => setNewGuest(prev => ({ ...prev, phone: e.target.value }))} />
-          <Input placeholder="LinkedIn URL" value={newGuest.linkedin_url} onChange={(e) => setNewGuest(prev => ({ ...prev, linkedin_url: e.target.value }))} />
-        </div>
-        <div className="flex gap-2">
-          <Select value={newGuest.role} onValueChange={(v: any) => setNewGuest(prev => ({ ...prev, role: v }))}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="guest">Guest</SelectItem>
-              <SelectItem value="co-host">Co-Host</SelectItem>
-              <SelectItem value="panelist">Panelist</SelectItem>
-              <SelectItem value="speaker">Speaker</SelectItem>
-              <SelectItem value="attendee">Attendee</SelectItem>
-              <SelectItem value="stakeholder">Stakeholder</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" className="flex-1" onClick={handleAddGuest} disabled={!newGuest.name.trim()}>
-            <Plus className="h-4 w-4 mr-1" />
-            Add Participant
-          </Button>
+        {/* Add new participant form */}
+        <div className="p-3 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5">
+          <p className="text-xs font-medium text-primary mb-2 flex items-center gap-1">
+            <Plus className="h-3 w-3" />
+            Add New Participant
+          </p>
+          <div className="grid grid-cols-2 gap-2 mb-2">
+            <Input placeholder="Name *" value={newGuest.name} onChange={(e) => setNewGuest(prev => ({ ...prev, name: e.target.value }))} className="text-sm" />
+            <Input placeholder="Email *" type="email" value={newGuest.email} onChange={(e) => setNewGuest(prev => ({ ...prev, email: e.target.value }))} className="text-sm" />
+          </div>
+          <div className="grid grid-cols-2 gap-2 mb-2">
+            <Input placeholder="Phone (for SMS)" value={newGuest.phone} onChange={(e) => setNewGuest(prev => ({ ...prev, phone: e.target.value }))} className="text-sm" />
+            <Input placeholder="LinkedIn URL" value={newGuest.linkedin_url} onChange={(e) => setNewGuest(prev => ({ ...prev, linkedin_url: e.target.value }))} className="text-sm" />
+          </div>
+          <div className="flex gap-2">
+            <Select value={newGuest.role} onValueChange={(v: any) => setNewGuest(prev => ({ ...prev, role: v }))}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="guest">Guest</SelectItem>
+                <SelectItem value="co-host">Co-Host</SelectItem>
+                <SelectItem value="panelist">Panelist</SelectItem>
+                <SelectItem value="speaker">Speaker</SelectItem>
+                <SelectItem value="attendee">Attendee</SelectItem>
+                <SelectItem value="stakeholder">Stakeholder</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button 
+              variant="default" 
+              className="flex-1 bg-gradient-to-r from-primary to-primary/80" 
+              onClick={handleAddGuest} 
+              disabled={!newGuest.name.trim() || !newGuest.email.trim()}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Add to Invite List
+            </Button>
+          </div>
+          {(!newGuest.name.trim() || !newGuest.email.trim()) && newGuest.name.trim() && (
+            <p className="text-xs text-amber-600 mt-2">
+              ⚠️ Email required to send invite
+            </p>
+          )}
         </div>
         
-        {formData.guests.length === 0 && (
+        {formData.guests.length === 0 && !formData.host.email && (
           <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 p-2 rounded">
-            ⚠️ Add at least one participant with an email address to send calendar invites.
+            ⚠️ No one will receive invites. Add host email above or participants here.
           </p>
         )}
       </div>
