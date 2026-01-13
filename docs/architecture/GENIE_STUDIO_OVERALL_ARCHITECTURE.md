@@ -196,13 +196,37 @@ Legend: → One-way flow | ↔ Bidirectional | ◇ Optional/Conditional | ← Re
 
 ---
 
+## NEW: Features Implemented Beyond Original Roadmap
+
+The following features were implemented during P0-P2 but were NOT part of the original 177 scenario roadmap. These have been added to the scenario map (now 253 total):
+
+| Feature Category | Components/Utilities | Status |
+|------------------|---------------------|--------|
+| **Production Calendar** | `ProductionCalendar.tsx` - Week/Month views, day-click scheduling, color-coded legends | ✅ |
+| **Calendar Integration** | `calendarUtils.ts` - Google/Outlook/Yahoo/iCal URL generation | ✅ |
+| **Meeting URL System** | `meetingUrlGenerator.ts` - Auto-generate Genie Vibe URLs, multi-platform support | ✅ |
+| **Timezone Support** | `timezoneUtils.ts` - 15 timezones, conversion, multi-zone display | ✅ |
+| **Category System** | `shows.ts` - Media Production, Business Meeting, Event categories | ✅ |
+| **Stage Pipelines** | 3 category-specific stage pipelines (Production, Meeting, Event) | ✅ |
+| **Vertical Kanban** | `VerticalKanban.tsx` - Swimlane layout, drag-drop, category filtering | ✅ |
+| **Unified Scheduling** | `UnifiedScheduleShowDialog.tsx` - Step-by-step wizard for all categories | ✅ |
+| **Arc ↔ Hub Sync** | `useShows.ts` - Real-time sync between Arc and Production Hub | ✅ |
+
+### Scenario Count Update
+
+| Original | Added | Total |
+|----------|-------|-------|
+| 177 scenarios | +76 new | **253 scenarios** |
+
+---
+
 ## Cross-References
 
 | Document | Purpose |
 |----------|---------|
 | `GENIE_MIND_ARCHITECTURE.md` | Mind module details |
 | `GENIE_VIBE_ARCHITECTURE.md` | Vibe module details |
-| `GENIE_ARC_PRODUCTION_HUB_ARCHITECTURE.md` | Arc & Hub details |
+| `GENIE_ARC_PRODUCTION_HUB_ARCHITECTURE.md` | Arc & Hub details (includes new features) |
 | `GENIE_SPARK_ARCHITECTURE.md` | Spark module details |
 | `GENIE_STUDIO_SCENARIO_MAP.md` | All 253 user scenarios |
 | `GENIE_PHASE_IMPLEMENTATION_ROADMAP.md` | Implementation timeline |
@@ -219,4 +243,5 @@ Legend: → One-way flow | ↔ Bidirectional | ◇ Optional/Conditional | ← Re
 ---
 
 *Document maintained by Genie Studio Development Team*  
-*P0-P2 Closeout Date: 2026-01-13*
+*P0-P2 Closeout Date: 2026-01-13*  
+*Features Beyond Roadmap: Documented*
