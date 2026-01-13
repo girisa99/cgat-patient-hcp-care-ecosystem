@@ -5,21 +5,25 @@
  * DATA FLOW: Uses existing hooks - all data is user-scoped via RLS
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Zap, PenTool, Mic } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Zap, PenTool, Mic, Sparkles, Image, LayoutTemplate } from 'lucide-react';
 import { SmartContentPipeline } from '@/components/genie-studio/SmartContentPipeline';
 import { useGenieScripts, type GenieScript } from '@/components/genie-studio/useGenieScripts';
 import { toast } from 'sonner';
 import type { GeneratedContent } from '@/components/genie-studio/PostGenerationActions';
 import { BackToSubscription } from '@/components/subscription/BackToSubscription';
+import { ImageScriptAssembler } from '@/components/production';
+import { QuickTemplateSelector } from '@/components/templates';
 import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
 
 const GenieSpark: React.FC = () => {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('pipeline');
   const { scripts: savedScripts, saveScript } = useGenieScripts();
 
   const handleSendToScriptEditor = (content: GeneratedContent) => {
@@ -116,13 +120,67 @@ const GenieSpark: React.FC = () => {
           </div>
         </div>
 
-        {/* Main Content */}
+        {/* Main Content with Tabs */}
         <div className="max-w-7xl mx-auto px-6 py-8">
-          <SmartContentPipeline
-            onSendToScriptEditor={handleSendToScriptEditor}
-            onSendToVibe={handleSendToVibe}
-            onSaveToKnowledgeBase={handleSaveToKnowledgeBase}
-          />
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="bg-muted/50 border border-border/50">
+              <TabsTrigger value="pipeline" className="gap-2">
+                <Sparkles className="h-4 w-4" />
+                Content Pipeline
+              </TabsTrigger>
+              <TabsTrigger value="templates" className="gap-2">
+                <LayoutTemplate className="h-4 w-4" />
+                Quick Templates
+              </TabsTrigger>
+              <TabsTrigger value="images" className="gap-2">
+                <Image className="h-4 w-4" />
+                Image to Script
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Content Pipeline Tab */}
+            <TabsContent value="pipeline" className="mt-0">
+              <SmartContentPipeline
+                onSendToScriptEditor={handleSendToScriptEditor}
+                onSendToVibe={handleSendToVibe}
+                onSaveToKnowledgeBase={handleSaveToKnowledgeBase}
+              />
+            </TabsContent>
+
+            {/* Quick Templates Tab */}
+            <TabsContent value="templates" className="mt-0">
+              <QuickTemplateSelector 
+                onSelect={(template) => {
+                  toast.success(`Template "${template.name}" selected!`);
+                  // Navigate to pipeline with template pre-loaded
+                  setActiveTab('pipeline');
+                }}
+              />
+            </TabsContent>
+
+            {/* Image to Script Tab */}
+            <TabsContent value="images" className="mt-0">
+              <ImageScriptAssembler 
+                onAssemblyComplete={(slides) => {
+                  toast.success(`Assembly complete with ${slides.length} slides!`);
+                }}
+                onGenerateVideo={(slides) => {
+                  toast.success(`Generating video from ${slides.length} slides!`);
+                  // Create script from slides
+                  const scriptContent = slides.map(s => s.scriptText).join('\n\n');
+                  const newScript: GenieScript = {
+                    id: `script-${Date.now()}`,
+                    name: 'Image-Based Script',
+                    content: scriptContent,
+                    type: 'video',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now()
+                  };
+                  saveScript(newScript);
+                }}
+              />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </AppLayout>
