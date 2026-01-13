@@ -14,7 +14,7 @@ import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
 import genieStudioBanner from '@/assets/logos/genie-studio-banner.png';
 import genieStudioHorizontal from '@/assets/logos/genie-studio-horizontal.png';
 import genieArcLogo from '@/assets/logos/genie-arc-combined.png';
-import askGenieLogo from '@/assets/logos/ask-genie-logo.png';
+import askGenieLogo from '@/assets/logos/ask-genie-combined.png';
 
 export type GenieProduct = 'mind' | 'spark' | 'vibe' | 'studio' | 'arc';
 
