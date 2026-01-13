@@ -1374,17 +1374,18 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
         meetingLink: sessionData?.session?.join_url || data.meeting_url,
       });
 
-      // Close dialog and navigate to Production Hub
+      // Close dialog first
       setIsCreateShowDialogOpen(false);
-      toast.info('Redirecting to Production Hub for full workflow management...', { duration: 2000 });
-      setTimeout(() => {
-        navigate('/production-hub');
-      }, 1000);
+      setIsSendingInvite(false);
+      
+      // Navigate to Production Hub immediately
+      toast.success('Redirecting to Production Hub...', { duration: 1500 });
+      navigate('/production-hub');
+      return;
 
     } catch (err: any) {
       console.error('Create session error:', err);
       toast.error(err.message || 'Failed to create session');
-    } finally {
       setIsSendingInvite(false);
     }
   };
