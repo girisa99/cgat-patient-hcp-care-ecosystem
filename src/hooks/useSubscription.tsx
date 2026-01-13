@@ -2,10 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+// Import centralized product taglines - SINGLE SOURCE OF TRUTH
+import { GENIE_PRODUCTS as CENTRAL_PRODUCTS } from '@/constants/genie-products';
+
 // =====================================================
 // Genie Product Suite - Architecture Finalized
 // Based on docs/GENIE_SUITE_ARCHITECTURE_SUMMARY.md
-// Updated: 2026-01-11 - Added AI Credits Integration
+// Updated: 2026-01-13 - Using centralized taglines from genie-products.ts
 // =====================================================
 
 // AI Credits included per subscription tier (monthly)
@@ -22,7 +25,7 @@ export const GENIE_PRODUCTS = {
   mind: {
     id: 'mind',
     name: 'Genie Mind',
-    tagline: 'AI That Understands',
+    tagline: CENTRAL_PRODUCTS.mind.tagline, // 'AI that understands' - from centralized file
     description: 'AI Intelligence Layer for pre-production. Semantic search, document processing, and intelligent content analysis.',
     color: 'from-emerald-500 to-teal-500',
     bgColor: 'bg-emerald-500/10',
@@ -46,7 +49,7 @@ export const GENIE_PRODUCTS = {
   spark: {
     id: 'spark',
     name: 'Genie Spark',
-    tagline: 'Ignite Your Ideas',
+    tagline: CENTRAL_PRODUCTS.spark.tagline, // 'Ignite your Ideas' - from centralized file
     description: 'AI Content Generation Engine. Transform ideas into polished scripts with natural language prompts.',
     color: 'from-amber-500 to-orange-500',
     bgColor: 'bg-amber-500/10',
@@ -70,7 +73,7 @@ export const GENIE_PRODUCTS = {
   vibe: {
     id: 'vibe',
     name: 'Genie Vibe',
-    tagline: 'Feel the Flow',
+    tagline: CENTRAL_PRODUCTS.vibe.tagline, // 'Script to Screen' - from centralized file
     description: 'Creative Production Layer. Professional recording studio with AI voice generation and video capture.',
     color: 'from-purple-500 to-pink-500',
     bgColor: 'bg-purple-500/10',
@@ -94,7 +97,7 @@ export const GENIE_PRODUCTS = {
   studio: {
     id: 'studio',
     name: 'Genie Studio',
-    tagline: 'Mind to Media',
+    tagline: CENTRAL_PRODUCTS.studio.tagline, // 'Mind to Media' - from centralized file
     description: 'Complete AI-powered media production suite. Unified platform integrating Mind, Spark, Vibe, and Production Hub.',
     color: 'from-blue-500 to-cyan-500',
     bgColor: 'bg-blue-500/10',
@@ -120,7 +123,7 @@ export const GENIE_PRODUCTS = {
   productionHub: {
     id: 'productionHub',
     name: 'Production Hub (Arc)',
-    tagline: 'Orchestrate Excellence',
+    tagline: CENTRAL_PRODUCTS.arc.tagline, // 'Production hub for teams' - from centralized file
     description: 'Team Coordination & Arc Layer. Multi-person productions, content approvals, live streaming, and large-scale content series management.',
     color: 'from-indigo-500 to-violet-500',
     bgColor: 'bg-indigo-500/10',

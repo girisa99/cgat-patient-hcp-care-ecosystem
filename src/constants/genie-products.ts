@@ -3,11 +3,22 @@
  * 
  * IMPORTANT: These are the official taglines and should NOT be changed.
  * All components should import from this file to maintain consistency.
+ * 
+ * Last Updated: 2026-01-13
  */
+
+// Import finalized logos
+import genieMindLogo from '@/assets/logos/genie-mind-combined.png';
+import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
+import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
+import genieStudioBanner from '@/assets/logos/genie-studio-banner.png';
+import genieStudioHorizontal from '@/assets/logos/genie-studio-horizontal.png';
+import genieArcLogo from '@/assets/logos/genie-arc-combined.png';
 
 export type GenieProduct = 'mind' | 'spark' | 'vibe' | 'studio' | 'arc';
 
 export interface GenieProductInfo {
+  id: GenieProduct;
   name: string;
   tagline: string;
   description: string;
@@ -16,6 +27,11 @@ export interface GenieProductInfo {
   bgColor: string;
   borderColor: string;
   features: string[];
+  logos: {
+    combined: string;      // Main logo with tagline
+    horizontal?: string;   // Wide format for headers
+    icon?: string;         // Small icon version
+  };
 }
 
 /**
@@ -29,6 +45,7 @@ export interface GenieProductInfo {
  */
 export const GENIE_PRODUCTS: Record<GenieProduct, GenieProductInfo> = {
   mind: {
+    id: 'mind',
     name: 'Genie Mind',
     tagline: 'AI that understands',
     description: 'Your intelligent AI companion that truly understands context, learns from interactions, and provides meaningful insights across your creative journey.',
@@ -42,9 +59,13 @@ export const GENIE_PRODUCTS: Record<GenieProduct, GenieProductInfo> = {
       'Personalized learning',
       'Cross-product memory',
       'Smart recommendations'
-    ]
+    ],
+    logos: {
+      combined: genieMindLogo
+    }
   },
   spark: {
+    id: 'spark',
     name: 'Genie Spark',
     tagline: 'Ignite your Ideas',
     description: 'Transform your creative sparks into brilliant content. Generate scripts, stories, and compelling narratives with AI-powered inspiration.',
@@ -58,9 +79,13 @@ export const GENIE_PRODUCTS: Record<GenieProduct, GenieProductInfo> = {
       'Content ideation',
       'Creative brainstorming',
       'Multi-format writing'
-    ]
+    ],
+    logos: {
+      combined: genieSparkLogo
+    }
   },
   vibe: {
+    id: 'vibe',
     name: 'Genie Vibe',
     tagline: 'Script to Screen',
     description: 'Bring your scripts to life with seamless audio and video recording, editing, and production tools that capture the perfect vibe.',
@@ -74,9 +99,13 @@ export const GENIE_PRODUCTS: Record<GenieProduct, GenieProductInfo> = {
       'Script-to-screen workflow',
       'Real-time effects',
       'Multi-track editing'
-    ]
+    ],
+    logos: {
+      combined: genieVibeLogo
+    }
   },
   studio: {
+    id: 'studio',
     name: 'Genie Studio',
     tagline: 'Mind to Media',
     description: 'The complete creative studio that transforms your ideas into polished media. From concept to completion, all in one place.',
@@ -90,9 +119,14 @@ export const GENIE_PRODUCTS: Record<GenieProduct, GenieProductInfo> = {
       'Project organization',
       'Cross-product workflows',
       'Export & publishing'
-    ]
+    ],
+    logos: {
+      combined: genieStudioBanner,
+      horizontal: genieStudioHorizontal
+    }
   },
   arc: {
+    id: 'arc',
     name: 'Genie Arc',
     tagline: 'Production hub for teams',
     description: 'Orchestrate your production workflow with powerful scheduling, team collaboration, and show management tools built for creative teams.',
@@ -106,7 +140,10 @@ export const GENIE_PRODUCTS: Record<GenieProduct, GenieProductInfo> = {
       'Production pipeline',
       'Resource management',
       'Live coordination'
-    ]
+    ],
+    logos: {
+      combined: genieArcLogo
+    }
   }
 };
 
@@ -125,6 +162,18 @@ export const getProductTagline = (product: GenieProduct): string => {
 };
 
 /**
+ * Get product logo
+ */
+export const getProductLogo = (product: GenieProduct): string => {
+  return GENIE_PRODUCTS[product].logos.combined;
+};
+
+/**
  * All product keys
  */
 export const PRODUCT_KEYS: GenieProduct[] = ['mind', 'spark', 'vibe', 'studio', 'arc'];
+
+/**
+ * Display order for UI: Mind → Spark → Studio (center) → Vibe → Arc
+ */
+export const PRODUCT_DISPLAY_ORDER: GenieProduct[] = ['mind', 'spark', 'studio', 'vibe', 'arc'];

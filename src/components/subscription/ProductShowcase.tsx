@@ -1,23 +1,19 @@
 import React from 'react';
-import { GENIE_PRODUCTS, GenieProduct } from '@/hooks/useSubscription';
+import { GENIE_PRODUCTS as SUBSCRIPTION_PRODUCTS, GenieProduct as SubscriptionProduct } from '@/hooks/useSubscription';
+import { GENIE_PRODUCTS as CENTRAL_PRODUCTS, getProductLogo } from '@/constants/genie-products';
 import { cn } from '@/lib/utils';
 import { Check, X } from 'lucide-react';
 
-// Import logos from assets - using horizontal/banner versions for consistency
-import genieStudioLogo from '@/assets/logos/genie-studio-horizontal.png';
-import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
-import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
-import genieMindLogo from '@/assets/logos/genie-mind-combined.png';
-// Production Hub uses Arc logo (Arc is consolidated into Production Hub per architecture)
-import genieProductionHubLogo from '@/assets/logos/genie-arc-combined.png';
+// Re-export for backwards compatibility
+type GenieProduct = SubscriptionProduct;
 
-// Consistent logo mapping across all subscription components
+// Use centralized logos where available, fallback to subscription products
 const productLogos: Record<GenieProduct, string> = {
-  mind: genieMindLogo,
-  spark: genieSparkLogo,
-  vibe: genieVibeLogo,
-  studio: genieStudioLogo,
-  productionHub: genieProductionHubLogo
+  mind: CENTRAL_PRODUCTS.mind.logos.combined,
+  spark: CENTRAL_PRODUCTS.spark.logos.combined,
+  vibe: CENTRAL_PRODUCTS.vibe.logos.combined,
+  studio: CENTRAL_PRODUCTS.studio.logos.horizontal || CENTRAL_PRODUCTS.studio.logos.combined,
+  productionHub: CENTRAL_PRODUCTS.arc.logos.combined // Arc is Production Hub
 };
 
 // Display order: Mind → Spark → Studio (center) → Vibe → Production Hub
@@ -40,7 +36,7 @@ export const ProductShowcase = ({
     return (
       <div className={cn("grid grid-cols-1 gap-1.5", className)}>
         {allProducts.map((productKey) => {
-          const product = GENIE_PRODUCTS[productKey];
+          const product = SUBSCRIPTION_PRODUCTS[productKey];
           const isIncluded = includedProducts.includes(productKey);
           const isStudio = productKey === 'studio';
           
@@ -84,7 +80,7 @@ export const ProductShowcase = ({
   return (
     <div className={cn("grid grid-cols-2 md:grid-cols-3 gap-4", className)}>
       {allProducts.map((productKey) => {
-        const product = GENIE_PRODUCTS[productKey];
+        const product = SUBSCRIPTION_PRODUCTS[productKey];
         const isIncluded = includedProducts.includes(productKey);
         const isStudio = productKey === 'studio';
         

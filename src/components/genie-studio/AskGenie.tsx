@@ -146,22 +146,25 @@ const PERSONALITY = {
   ]
 };
 
-// ORIGINAL TAGLINES - These are sacred and cannot be changed!
+// Import centralized product definitions - SINGLE SOURCE OF TRUTH
+import { GENIE_PRODUCTS, getProductTagline } from '@/constants/genie-products';
+
+// Use centralized taglines - These come from genie-products.ts and should NOT be duplicated
 const ORIGINAL_TAGLINES = {
-  arc: "Script Your Success",
-  vibe: "From Mind to Media", // Vibe is audio & video recording
-  spark: "Ignite Your Ideas",
-  mind: "Think Beyond Limits",
-  studio: "Mind to Media — AI-Powered Production Suite"
+  arc: GENIE_PRODUCTS.arc.tagline,
+  vibe: GENIE_PRODUCTS.vibe.tagline,
+  spark: GENIE_PRODUCTS.spark.tagline,
+  mind: GENIE_PRODUCTS.mind.tagline,
+  studio: GENIE_PRODUCTS.studio.tagline
 };
 
-// Product descriptions for context
+// Use centralized descriptions
 const PRODUCT_DESCRIPTIONS = {
-  arc: "Production planning, show creation, scheduling, and the Production Hub for broadcasts, podcasts, and webcasts",
-  vibe: "Audio AND video recording studio - record, mix, produce, and publish your media content",
-  spark: "AI-powered content creation engine - generate scripts, ideas, images, and multi-format content",
-  mind: "AI intelligence hub - script editing, AI model management, TTS/voice integration, and workflow optimization",
-  studio: "The complete Genie Studio suite bringing Arc, Vibe, Spark, and Mind together"
+  arc: GENIE_PRODUCTS.arc.description,
+  vibe: GENIE_PRODUCTS.vibe.description,
+  spark: GENIE_PRODUCTS.spark.description,
+  mind: GENIE_PRODUCTS.mind.description,
+  studio: GENIE_PRODUCTS.studio.description
 };
 
 // Mermaid diagrams for visual workflow guidance
