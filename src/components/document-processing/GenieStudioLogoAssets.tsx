@@ -4,11 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { toast } from 'sonner';
 
-// Import finalized combined logos (same logo used for all purposes)
-import genieStudioBanner from '@/assets/logos/genie-studio-banner.png';
-import genieMindCombined from '@/assets/logos/genie-mind-combined.png';
-import genieVibeCombined from '@/assets/logos/genie-vibe-combined.png';
-import genieArcCombined from '@/assets/logos/genie-arc-combined.png';
+// Import centralized product definitions - SINGLE SOURCE OF TRUTH
+import { GENIE_PRODUCTS, PRODUCT_DISPLAY_ORDER } from '@/constants/genie-products';
 
 interface LogoAsset {
   id: string;
@@ -18,36 +15,17 @@ interface LogoAsset {
   src: string;
 }
 
-const logoAssets: LogoAsset[] = [
-  {
-    id: 'genie-studio',
-    title: 'Genie Studio',
-    tagline: 'Mind to Media — AI-Powered Production Suite',
-    description: 'The complete suite banner logo for presentations, websites, products, and all use cases',
-    src: genieStudioBanner,
-  },
-  {
-    id: 'genie-arc',
-    title: 'Genie Arc',
-    tagline: 'Your Production Journey With Infinite Possibilities',
-    description: 'Planning & scheduling module logo for presentations, websites, products, and all use cases',
-    src: genieArcCombined,
-  },
-  {
-    id: 'genie-mind',
-    title: 'Genie Mind',
-    tagline: 'AI That Understands',
-    description: 'Pre-production module logo for presentations, websites, products, and all use cases',
-    src: genieMindCombined,
-  },
-  {
-    id: 'genie-vibe',
-    title: 'Genie Vibe',
-    tagline: 'Script to Screen',
-    description: 'Production module logo for presentations, websites, products, and all use cases',
-    src: genieVibeCombined,
-  },
-];
+// Build logo assets from centralized product definitions
+const logoAssets: LogoAsset[] = PRODUCT_DISPLAY_ORDER.map(productKey => {
+  const product = GENIE_PRODUCTS[productKey];
+  return {
+    id: `genie-${productKey}`,
+    title: product.name,
+    tagline: product.tagline,
+    description: `${product.name} logo for presentations, websites, products, and all use cases`,
+    src: product.logos.combined,
+  };
+});
 
 export const GenieStudioLogoAssets = () => {
   const handleDownloadPNG = async (logo: LogoAsset) => {
