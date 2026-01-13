@@ -22,6 +22,9 @@ export { ScriptsManager } from './ScriptsManager';
 export { VideoRecorder } from './VideoRecorder';
 export { TeleprompterPopup } from './TeleprompterPopup';
 export { VideoEditor } from './VideoEditor';
+// DEPRECATED: GenieStudioScriptGallery and GenieStudioVisualAssets are now consolidated
+// into GenieStudioUnifiedHub (in src/components/diagrams). Keeping exports for backwards
+// compatibility but these should not be used directly - use Unified Hub instead.
 export { GenieStudioScriptGallery } from './GenieStudioScriptGallery';
 export { GenieStudioVisualAssets } from './GenieStudioVisualAssets';
 

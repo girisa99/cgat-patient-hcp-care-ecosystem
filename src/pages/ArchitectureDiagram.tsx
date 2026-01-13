@@ -5,14 +5,12 @@ import {
   SolutionArchitectureDiagram,
   DocumentProcessingArchitectureDiagram,
   MedicalImagingAIPipelineDiagram,
-  ContentTypeRoutingDiagram,
-  GenieStudioScriptGallery,
-  GenieStudioVisualAssets
+  ContentTypeRoutingDiagram
 } from '@/components/document-processing';
 import { TwoStagePipelineSVGDiagram } from '@/components/document-processing/TwoStagePipelineSVGDiagram';
 import { DocumentConfigurationReferenceDiagram } from '@/components/document-processing/DocumentConfigurationReferenceDiagram';
 import { DocumentProcessingPresentation } from '@/components/document-processing/DocumentProcessingPresentation';
-import { PatientOnboardingFlowDiagram, SubAgentArchitectureDiagram, BeforeAfterArchitectureDiagram, GenieStudioUnifiedHub, GenieRecordingStudioArchitectureDiagram, MarketAnalysisDashboard } from '@/components/diagrams';
+import { PatientOnboardingFlowDiagram, SubAgentArchitectureDiagram, BeforeAfterArchitectureDiagram, GenieStudioUnifiedHub } from '@/components/diagrams';
 import { Button } from '@/components/ui/button';
 // Tabs imports kept for potential future use but not needed for current category navigation
 import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building, Users, Network, ArrowRightLeft, Download, Workflow, Bot, History, Sparkles, Image, Video, Server, Target, Map, Presentation } from 'lucide-react';
@@ -37,6 +35,8 @@ interface DiagramVersion {
 }
 
 // Define diagram categories for cleaner organization
+// CONSOLIDATED: Genie Studio now uses single Unified Hub as source of truth
+// (Script Gallery, Visual Assets, Recording Studio, Market Analysis are all tabs within Unified Hub)
 const diagramCategories = {
   overview: {
     label: 'Overview',
@@ -66,11 +66,10 @@ const diagramCategories = {
     label: 'Genie Studio',
     icon: Sparkles,
     diagrams: [
-      { id: 'genie-hub', label: 'Unified Hub', icon: Map },
-      { id: 'genie-scripts', label: 'Script Gallery', icon: FileText },
-      { id: 'genie-assets', label: 'Visual Assets', icon: Image },
-      { id: 'genie-recording', label: 'Recording Studio', icon: Video },
-      { id: 'genie-market', label: 'Market Analysis', icon: Target },
+      // Single source of truth - Unified Hub contains all content:
+      // Overview, Verification, Products, Scenarios, Architecture, Technical, 
+      // Functional, Market Analysis, Investor Dashboard, Assets & Studio, Roadmap
+      { id: 'genie-hub', label: 'Complete Suite (177 Scenarios)', icon: Sparkles },
     ]
   }
 };
@@ -149,15 +148,10 @@ const ArchitectureDiagram = () => {
       case 'sub-agents':
         return <SubAgentArchitectureDiagram />;
       case 'genie-hub':
+        // Unified Hub is the single source of truth for all Genie Studio content
+        // Contains: Overview, Verification, Products, Scenarios, Architecture, 
+        // Technical, Functional, Market Analysis, Investor Dashboard, Assets & Studio, Roadmap
         return <GenieStudioUnifiedHub />;
-      case 'genie-scripts':
-        return <GenieStudioScriptGallery />;
-      case 'genie-assets':
-        return <GenieStudioVisualAssets />;
-      case 'genie-recording':
-        return <GenieRecordingStudioArchitectureDiagram />;
-      case 'genie-market':
-        return <MarketAnalysisDashboard />;
       default:
         return <SolutionArchitectureDiagram />;
     }
