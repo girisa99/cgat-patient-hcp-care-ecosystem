@@ -1,7 +1,17 @@
 /**
- * Genie Studio Unified Hub
- * Consolidated view with segment-first navigation across all categories
- * Categories: Architecture, Technical, Functional, Market Analysis, Assets, Recording Studio
+ * Genie Studio Unified Hub - SINGLE SOURCE OF TRUTH
+ * 
+ * This is the ONLY consolidated view for all Genie Studio content.
+ * Contains 11 tabs: Overview, Verification, Product Suite, Scenarios (177 total, 21 categories A-U),
+ * Architecture (7 diagrams), Technical, Functional, Market Analysis, Investor Dashboard, 
+ * Assets & Studio (with logo downloads), and Roadmap (P0-P5, 24 weeks).
+ * 
+ * CONSOLIDATED FROM (now deprecated as separate views):
+ * - GenieStudioScriptGallery → Use "Scenarios" and "Products" tabs
+ * - GenieVisualAssetsGalleryDiagram → Use "Assets & Studio" tab
+ * - GenieRecordingStudioArchitectureDiagram → Use "Architecture" and "Assets" tabs
+ * - MarketAnalysisDashboard → Use "Market Analysis" tab
+ * - GenieMarketAnalysisDiagram → Use "Market Analysis" tab
  */
 
 import React, { useState, useRef, useMemo } from 'react';
@@ -70,6 +80,7 @@ import {
 } from 'lucide-react';
 import { GenieInvestorDashboard } from './GenieInvestorDashboard';
 import { GenieArchitectureHub } from './GenieArchitectureHub';
+import { GenieStudioLogoAssets } from '@/components/document-processing/GenieStudioLogoAssets';
 import { cn } from '@/lib/utils';
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
@@ -1817,6 +1828,7 @@ export const GenieStudioUnifiedHub: React.FC = () => {
 
         {/* ASSETS & STUDIO TAB */}
         <TabsContent value="assets" className="space-y-4 mt-4">
+          {/* Studio Features Summary */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card className="bg-card border-border p-6 text-center">
               <Mic className="h-12 w-12 mx-auto mb-3 text-primary" />
@@ -1837,6 +1849,44 @@ export const GenieStudioUnifiedHub: React.FC = () => {
               <Badge className="mt-2" variant="secondary">P1 - Partial</Badge>
             </Card>
           </div>
+
+          {/* Logo Assets - Consolidated from Visual Assets */}
+          <GenieStudioLogoAssets />
+
+          {/* Production Metrics */}
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2">
+                <Video className="h-5 w-5 text-primary" />
+                Production Pipeline Status
+              </CardTitle>
+              <CardDescription>Real-time status of Genie Suite production components</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/30 text-center">
+                  <p className="text-2xl font-bold text-green-500">5</p>
+                  <p className="text-xs text-muted-foreground">Products</p>
+                  <p className="text-xs text-green-600">Mind, Vibe, Arc, Spark, Hub</p>
+                </div>
+                <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/30 text-center">
+                  <p className="text-2xl font-bold text-blue-500">12</p>
+                  <p className="text-xs text-muted-foreground">AI Agents</p>
+                  <p className="text-xs text-blue-600">Active & Configured</p>
+                </div>
+                <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-500/30 text-center">
+                  <p className="text-2xl font-bold text-purple-500">15</p>
+                  <p className="text-xs text-muted-foreground">APIs</p>
+                  <p className="text-xs text-purple-600">Integrated Services</p>
+                </div>
+                <div className="p-4 rounded-lg bg-orange-500/10 border border-orange-500/30 text-center">
+                  <p className="text-2xl font-bold text-orange-500">4</p>
+                  <p className="text-xs text-muted-foreground">Logo Assets</p>
+                  <p className="text-xs text-orange-600">Ready to Download</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* ROADMAP TAB */}
