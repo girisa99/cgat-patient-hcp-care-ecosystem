@@ -99,8 +99,9 @@ const handler = async (req: Request): Promise<Response> => {
     const stageText = stage ? stage.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '';
 
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-    // Use verified domain for Resend
-    const fromEmail = Deno.env.get('FROM_EMAIL') || 'info@genieaiexperimentationhub.tech';
+    // IMPORTANT: Use Resend's verified test sender to ensure delivery
+    // For production, verify your domain at https://resend.com/domains
+    const fromEmail = Deno.env.get('FROM_EMAIL') || 'onboarding@resend.dev';
     
     console.log('[send-show-invite] RESEND_API_KEY configured:', !!RESEND_API_KEY);
     console.log('[send-show-invite] FROM email:', fromEmail);
