@@ -8882,6 +8882,9 @@ export type Database = {
           join_url: string | null
           metadata: Json | null
           production_stage: string | null
+          recording_consent_acknowledged_at: string | null
+          recording_consent_acknowledged_by: Json | null
+          recording_consent_shown: boolean | null
           recording_enabled: boolean | null
           recording_storage_path: string | null
           recording_url: string | null
@@ -8918,6 +8921,9 @@ export type Database = {
           join_url?: string | null
           metadata?: Json | null
           production_stage?: string | null
+          recording_consent_acknowledged_at?: string | null
+          recording_consent_acknowledged_by?: Json | null
+          recording_consent_shown?: boolean | null
           recording_enabled?: boolean | null
           recording_storage_path?: string | null
           recording_url?: string | null
@@ -8954,6 +8960,9 @@ export type Database = {
           join_url?: string | null
           metadata?: Json | null
           production_stage?: string | null
+          recording_consent_acknowledged_at?: string | null
+          recording_consent_acknowledged_by?: Json | null
+          recording_consent_shown?: boolean | null
           recording_enabled?: boolean | null
           recording_storage_path?: string | null
           recording_url?: string | null
@@ -10697,6 +10706,111 @@ export type Database = {
           report_text?: string | null
         }
         Relationships: []
+      }
+      meeting_minutes: {
+        Row: {
+          action_items: Json | null
+          ai_summary: string | null
+          consent_given_at: string | null
+          created_at: string
+          created_by: string | null
+          decisions: Json | null
+          duration_seconds: number | null
+          host_id: string | null
+          host_name: string | null
+          id: string
+          is_public: boolean | null
+          key_points: Json | null
+          last_shared_at: string | null
+          meeting_date: string
+          meeting_title: string
+          participants: Json | null
+          recording_consent_given: boolean | null
+          recording_url: string | null
+          sentiment_analysis: Json | null
+          session_id: string | null
+          shared_with: Json | null
+          show_id: string | null
+          status: string | null
+          summary: string | null
+          topics_discussed: Json | null
+          transcript: Json | null
+          updated_at: string
+        }
+        Insert: {
+          action_items?: Json | null
+          ai_summary?: string | null
+          consent_given_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          decisions?: Json | null
+          duration_seconds?: number | null
+          host_id?: string | null
+          host_name?: string | null
+          id?: string
+          is_public?: boolean | null
+          key_points?: Json | null
+          last_shared_at?: string | null
+          meeting_date?: string
+          meeting_title: string
+          participants?: Json | null
+          recording_consent_given?: boolean | null
+          recording_url?: string | null
+          sentiment_analysis?: Json | null
+          session_id?: string | null
+          shared_with?: Json | null
+          show_id?: string | null
+          status?: string | null
+          summary?: string | null
+          topics_discussed?: Json | null
+          transcript?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          action_items?: Json | null
+          ai_summary?: string | null
+          consent_given_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          decisions?: Json | null
+          duration_seconds?: number | null
+          host_id?: string | null
+          host_name?: string | null
+          id?: string
+          is_public?: boolean | null
+          key_points?: Json | null
+          last_shared_at?: string | null
+          meeting_date?: string
+          meeting_title?: string
+          participants?: Json | null
+          recording_consent_given?: boolean | null
+          recording_url?: string | null
+          sentiment_analysis?: Json | null
+          session_id?: string | null
+          shared_with?: Json | null
+          show_id?: string | null
+          status?: string | null
+          summary?: string | null
+          topics_discussed?: Json | null
+          transcript?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_minutes_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "genie_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_minutes_show_id_fkey"
+            columns: ["show_id"]
+            isOneToOne: false
+            referencedRelation: "shows"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       modalities: {
         Row: {
