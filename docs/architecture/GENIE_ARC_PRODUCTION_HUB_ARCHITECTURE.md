@@ -275,16 +275,20 @@ These features were implemented during P0-P2 development but were not part of th
 
 ---
 
-## Nice-to-Have Enhancements (P3 Candidates)
+## Nice-to-Have Enhancements (P3 Candidates) - RE-VERIFIED ✅
 
-| Module | Enhancement | Component | Priority | Notes |
-|--------|-------------|-----------|----------|-------|
-| **Arc** | Audio mixing in agents | `AudioMixer` | Medium | Useful for audio workflows |
-| **Arc** | Voice coaching | `VoiceDirectorPanel` | Low | Arc is workflow-focused |
-| **Arc** | Scene analysis | `SceneAnalyzerPanel` | Medium | Video agent automation |
-| **Arc** | Guided Experience | — | **Not Recommended** | Power user tool |
-| **Hub** | Recurring schedules | — | Medium | Weekly/monthly recurrence |
-| **Hub** | External calendar sync | — | Medium | Two-way Google/Outlook sync |
+Based on P3 planning re-verification (2026-01-13):
+
+| Module | Enhancement | Component | Priority | Value Assessment | Recommendation |
+|--------|-------------|-----------|----------|------------------|----------------|
+| **Arc** | Audio mixing in agents | `AudioMixer` | **High** | ✅ **Valuable** - Audio workflow agents | **Implement P3** |
+| **Arc** | Scene analysis in agents | `SceneAnalyzerPanel` | **High** | ✅ **Valuable** - Video QA automation | **Implement P3** |
+| **Arc** | Voice coaching | `VoiceDirectorPanel` | Low | ❌ Low value - Arc is workflow-focused | Skip |
+| **Arc** | Guided Experience | — | Not Recommended | ❌ No value - Power user tool | Skip |
+| **Hub** | Recurring schedules | — | **High** | ✅ **Valuable** - Weekly/monthly shows | **Implement P3** |
+| **Hub** | External calendar sync | — | **Medium** | ✅ **Valuable** - Two-way Google/Outlook | **Implement P3** |
+
+See: `docs/P3_IMPLEMENTATION_PLAN.md` for full implementation details.
 
 ---
 

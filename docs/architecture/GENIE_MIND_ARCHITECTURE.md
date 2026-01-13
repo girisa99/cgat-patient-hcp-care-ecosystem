@@ -322,12 +322,18 @@ VERSION FLOW:
 
 ---
 
-## Nice-to-Have Enhancements (P3 Candidates)
+## Nice-to-Have Enhancements (P3 Candidates) - RE-VERIFIED ✅
 
-| Enhancement | Component | Priority | Notes |
-|-------------|-----------|----------|-------|
-| Voice commands | `VoiceCommands` | Low | Mind is keyboard-focused workflow |
-| Guided Experience | — | **Not Recommended** | Structured editor - wizard adds friction |
+Based on P3 planning re-verification (2026-01-13):
+
+| Enhancement | Component | Priority | Value Assessment | Recommendation |
+|-------------|-----------|----------|------------------|----------------|
+| Voice commands | `VoiceCommands` | Low | ❌ Low value - Mind is keyboard-focused | **Skip** |
+| Guided Experience | — | Not Recommended | ❌ No value - Structured editor workflow | **Skip** |
+
+**Conclusion:** No P3 nice-to-have items recommended for Genie Mind. Focus on cross-functional P3 features instead.
+
+See: `docs/P3_IMPLEMENTATION_PLAN.md` for full P3 roadmap.
 
 ---
 
