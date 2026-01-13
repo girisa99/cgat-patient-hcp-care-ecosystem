@@ -2091,7 +2091,7 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
                     </div>
                   </Button>
                   
-                  {/* Genie Arc Button - Optional for Teams */}
+                  {/* Genie Arc Button */}
                   <Button 
                     size="lg" 
                     variant="outline"
@@ -2100,10 +2100,7 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
                   >
                     <img src={genieArcProductLogo} alt="Genie Arc" className="h-8 w-8 object-contain rounded bg-indigo-100 p-0.5" />
                     <div className="flex flex-col items-start">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-semibold">Genie Arc</span>
-                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-indigo-400/50 text-indigo-600">Optional</Badge>
-                      </div>
+                      <span className="font-semibold">Genie Arc</span>
                       <span className="text-[10px] font-normal text-muted-foreground">Team Productions</span>
                     </div>
                   </Button>

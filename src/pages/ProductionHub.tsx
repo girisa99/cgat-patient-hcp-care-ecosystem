@@ -419,7 +419,7 @@ export default function ProductionHub() {
     try {
       const { error } = await supabase
         .from('shows')
-        .update(updates)
+        .update(updates as any) // Allow extended types
         .eq('id', showId);
       
       if (error) throw error;
