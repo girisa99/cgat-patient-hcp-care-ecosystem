@@ -767,7 +767,9 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
 
   // Submit handler
   const handleSubmit = async () => {
-    console.log('[UnifiedScheduleShowDialog] handleSubmit called');
+    // Debug: Show toast immediately to confirm click
+    toast.info('Processing... Please wait');
+    console.log('[UnifiedScheduleShowDialog] handleSubmit called - button was clicked!');
     
     if (!formData.title.trim()) {
       toast.error('Please enter a title');
@@ -806,13 +808,14 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
         console.log('[UnifiedScheduleShowDialog] Calling onSchedule NOW...');
         await onSchedule(scheduleData);
         console.log('[UnifiedScheduleShowDialog] onSchedule completed successfully');
+        toast.success('Production scheduled and invites sent!');
       } catch (scheduleError) {
         // Log but don't re-throw - we want the dialog to close regardless
         console.error('[UnifiedScheduleShowDialog] Schedule error (non-blocking):', scheduleError);
+        toast.error('Error during scheduling: ' + (scheduleError as Error).message);
       }
       
-      // Always close dialog and show success after submission attempt
-      toast.success('Production scheduled successfully!');
+      // Close dialog after submission attempt
       onOpenChange(false);
     } catch (error) {
       console.error('[UnifiedScheduleShowDialog] Critical error:', error);
