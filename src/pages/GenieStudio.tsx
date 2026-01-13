@@ -94,6 +94,8 @@ import { useGenieSession } from '@/hooks/useGenieSession';
 import { SessionCalendarButtons } from '@/components/genie-studio/SessionCalendarButtons';
 // Mobile Recording View for mobile-first experience
 import { MobileRecordingView } from '@/components/document-processing/RecordingStudio/components/MobileRecordingView';
+// Ask Genie - Unified AI Assistant
+import { AskGenie } from '@/components/genie-studio/AskGenie';
 
 // Import Genie logos - Using combined versions with taglines (finalized)
 import genieStudioLogo from '@/assets/logos/genie-studio-banner.png';
@@ -5026,6 +5028,13 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
 
         {/* Hidden audio element for music */}
         <audio ref={musicAudioRef} className="hidden" />
+
+        {/* Ask Genie - Unified AI Assistant for Genie Studio */}
+        <AskGenie 
+          product="studio" 
+          currentTab={activeTab}
+          sessionData={{ scriptsCount: savedScripts?.length || 0 }}
+        />
       </div>
     </AppLayout>
   );

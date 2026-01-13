@@ -1,6 +1,6 @@
 /**
  * Guided Editing Experience - Complete 7-Phase Production
- * Main container with Wizard/Sidebar mode, Universal AI, Scene Analyzer, Voice Director, and Distribution Agent
+ * Main container with Wizard/Sidebar mode, Ask Genie AI, Scene Analyzer, Voice Director, and Distribution Agent
  * Covers: Recording → Voice → Timeline → Editing → Transitions → Music → Export → Distribute
  */
 
@@ -274,7 +274,7 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
           <div className="pt-3 border-t">
             <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mb-3">
               <Bot className="h-3.5 w-3.5" />
-              <span>Universal AI available in both modes</span>
+              <span>Ask Genie available in both modes</span>
             </div>
             <Button
               variant="outline"
@@ -377,7 +377,7 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
             onClick={() => setShowAIAssistant(!showAIAssistant)}
           >
             <MessageCircle className="h-3.5 w-3.5 mr-1.5" />
-            AI
+            Ask Genie
           </Button>
         </div>
       </div>
