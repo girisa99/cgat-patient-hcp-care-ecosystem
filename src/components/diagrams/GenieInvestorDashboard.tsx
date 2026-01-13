@@ -313,12 +313,12 @@ const projections = {
 
 // Roadmap
 const roadmapPhases = [
-  { phase: 'P0', name: 'Core + Collaboration', quarter: 'Q1 2026', completion: 100, status: 'completed' },
-  { phase: 'P1', name: 'Mobile & Remix', quarter: 'Q2 2026', completion: 30, status: 'in-progress' },
-  { phase: 'P2', name: 'Advanced Features', quarter: 'Q3 2026', completion: 10, status: 'planned' },
-  { phase: 'P3', name: 'Segment-Specific', quarter: 'Q4 2026', completion: 0, status: 'planned' },
-  { phase: 'P4', name: 'Enterprise', quarter: 'Q1 2027', completion: 0, status: 'planned' },
-  { phase: 'P5', name: 'Innovation', quarter: 'Q2 2027', completion: 0, status: 'planned' },
+  { phase: 'P0', name: 'Core MVP (43 Scenarios)', quarter: 'Q1 2026', completion: 100, status: 'completed' },
+  { phase: 'P1', name: 'Essential Production (38 Scenarios)', quarter: 'Q1 2026', completion: 100, status: 'completed' },
+  { phase: 'P2', name: 'AI Agents & UX (55 Scenarios)', quarter: 'Q2 2026', completion: 100, status: 'completed' },
+  { phase: 'P3', name: 'Differentiators (52 Scenarios)', quarter: 'Q2 2026', completion: 100, status: 'completed' },
+  { phase: 'P4', name: 'Enterprise (35 Scenarios)', quarter: 'Q3 2026', completion: 0, status: 'planned' },
+  { phase: 'P5', name: 'Innovation (30 Scenarios)', quarter: 'Q4 2026', completion: 0, status: 'planned' },
 ];
 
 export const GenieInvestorDashboard: React.FC = () => {

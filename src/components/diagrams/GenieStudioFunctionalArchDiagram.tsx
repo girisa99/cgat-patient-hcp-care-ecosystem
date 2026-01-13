@@ -95,7 +95,7 @@ export const GenieStudioFunctionalArchDiagram = () => {
               <Users className="h-8 w-8 text-muted-foreground" />
               <div>
                 <CardTitle className="text-2xl text-foreground">Functional Architecture</CardTitle>
-                <p className="text-muted-foreground text-sm">User Journeys • 6 Personas • 5 Subscription Tiers • 177 Scenarios • 12 Agents</p>
+                <p className="text-muted-foreground text-sm">User Journeys • 6 Personas • 5 Subscription Tiers • 253 Scenarios • 12 Agents</p>
               </div>
             </div>
             <div className="flex gap-2">
@@ -471,7 +471,7 @@ export const GenieStudioFunctionalArchDiagram = () => {
           </div>
           <ScrollArea className="h-screen w-screen p-8">
             <div ref={diagramRef} className="bg-card p-6 rounded-lg">
-              <h2 className="text-2xl font-bold mb-4">Functional Architecture (177 Scenarios • 12 Agents)</h2>
+              <h2 className="text-2xl font-bold mb-4">Functional Architecture (253 Scenarios • 12 Agents)</h2>
             </div>
           </ScrollArea>
         </div>

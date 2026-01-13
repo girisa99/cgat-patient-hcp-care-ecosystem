@@ -4,7 +4,7 @@ export { TwoStagePipelineFlowDiagram } from './TwoStagePipelineFlowDiagram';
 export { SubAgentArchitectureDiagram } from './SubAgentArchitectureDiagram';
 export { BeforeAfterArchitectureDiagram } from './BeforeAfterArchitectureDiagram';
 
-// Product-Feature Matrix (177 Scenarios → 6 Products mapping)
+// Product-Feature Matrix (253 Scenarios → 6 Products mapping)
 export { ProductFeatureMatrix } from './ProductFeatureMatrix';
 
 // =============================================================================

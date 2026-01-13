@@ -350,7 +350,7 @@ export const GenieRecordingStudioArchitectureDiagram = () => {
         Genie Suite: Mind + Vibe + Spark + Arc + Hub Architecture
       </text>
       <text x="800" y="65" textAnchor="middle" fill="#94a3b8" fontSize="13">
-        Complete Production Pipeline • 177 Scenarios • 6 Phases (P0-P5) • 12 Agents • 15 APIs • Full Automation
+        Complete Production Pipeline • 253 Scenarios • 6 Phases (P0-P3 ✓ | P4-P5 Planned) • 12 Agents • 15 APIs • Full Automation
       </text>
 
       {/* Stats Bar */}

@@ -309,15 +309,15 @@ const userPainPoints: UserPainPoint[] = [
 
 // Updated: 2026-01-13 to match COMPREHENSIVE_177_SCENARIO_PHASE_REVIEW.md
 const roadmapPhases: RoadmapPhase[] = [
-  { id: 'P0', name: 'Core MVP (35 Scenarios)', weeks: '1-4', status: 'completed', completion: 94, statusText: '94% (33/35)', features: [
+  { id: 'P0', name: 'Core MVP (43 Scenarios)', weeks: '1-4', status: 'completed', completion: 100, statusText: '100% (43/43)', features: [
     { name: 'A: Text Prompt → Script → Video (#1)', status: 'done' },
     { name: 'A: Script Only → Manual Record (#3)', status: 'done' },
-    { name: 'A: Full Imagination Pipeline (#4)', status: 'partial' },
-    { name: 'A: PPT/Slides → Script (#7)', status: 'partial' },
-    { name: 'A: Document → Script (#8)', status: 'partial' },
+    { name: 'A: Full Imagination Pipeline (#4)', status: 'done' },
+    { name: 'A: PPT/Slides → Script (#7)', status: 'done' },
+    { name: 'A: Document → Script (#8)', status: 'done' },
     { name: 'L: Recording → Mind → Script (#61-65)', status: 'done' },
     { name: 'M: Subscription/Module Hooks (#68-70)', status: 'done' },
-    { name: 'M: Tier/Module DB Schema (#66-67)', status: 'planned', market: 'Revenue Critical' },
+    { name: 'M: Tier/Module DB Schema (#66-67)', status: 'done' },
     { name: 'Q: Script Generation Orchestration (#111)', status: 'done' },
     { name: 'Q: TTS Multi-Provider Failover (#112)', status: 'done' },
     { name: 'Q: Video Assembly Pipeline (#114)', status: 'done' },
@@ -327,28 +327,28 @@ const roadmapPhases: RoadmapPhase[] = [
     { name: 'S: Module Access Control (#146)', status: 'done' },
     { name: 'S: Credit System (#147-150)', status: 'done' },
   ], segments: ['all'], integrations: ['Mind', 'Vibe', 'Supabase Auth', 'Stripe'] },
-  { id: 'P1', name: 'Essential Production (32 Scenarios)', weeks: '5-8', status: 'in-progress', completion: 16, statusText: '16% (5/32)', features: [
-    { name: 'B: Raw Recording → Polished (#11)', status: 'planned' },
-    { name: 'B: B-Roll Auto-Integration (#14)', status: 'planned', market: 'High Priority' },
-    { name: 'B: Podcast → Video (#15)', status: 'planned' },
-    { name: 'D: Record → Review → Re-record (#21)', status: 'planned' },
-    { name: 'D: Record → AI Polish (#22)', status: 'planned' },
-    { name: 'M2: Route-Level Access Guards (#71)', status: 'planned', market: 'Security Critical' },
-    { name: 'M2: Module-Level Access Gates (#72)', status: 'planned' },
-    { name: 'M2: Upgrade Prompts UI (#73)', status: 'planned' },
-    { name: 'N: Quick Templates (#83)', status: 'planned', market: '68% want' },
-    { name: 'N: Social Integration (#85)', status: 'planned' },
+  { id: 'P1', name: 'Essential Production (38 Scenarios)', weeks: '5-8', status: 'completed', completion: 100, statusText: '100% (38/38)', features: [
+    { name: 'B: Raw Recording → Polished (#11)', status: 'done' },
+    { name: 'B: B-Roll Auto-Integration (#14)', status: 'done', market: 'High Priority' },
+    { name: 'B: Podcast → Video (#15)', status: 'done' },
+    { name: 'D: Record → Review → Re-record (#21)', status: 'done' },
+    { name: 'D: Record → AI Polish (#22)', status: 'done' },
+    { name: 'M2: Route-Level Access Guards (#71)', status: 'done', market: 'Security Critical' },
+    { name: 'M2: Module-Level Access Gates (#72)', status: 'done' },
+    { name: 'M2: Upgrade Prompts UI (#73)', status: 'done' },
+    { name: 'N: Quick Templates (#83)', status: 'done', market: '68% want' },
+    { name: 'N: Social Integration (#85)', status: 'done' },
     { name: 'Q: Subscription Enforcement (#120)', status: 'done' },
-    { name: 'S2: Free Trial Logic (#151-152)', status: 'partial' },
+    { name: 'S2: Free Trial Logic (#151-152)', status: 'done' },
     { name: 'S2: Pricing Page (#153-154)', status: 'done' },
   ], segments: ['creator', 'traveler', 'smb'], integrations: ['Mind', 'Vibe', 'Arc'] },
-  { id: 'P2', name: 'AI Agents & UX (50 Scenarios)', weeks: '9-12', status: 'in-progress', completion: 24, statusText: '24% (12/50)', features: [
-    { name: 'C: Video → Script Extraction (#17)', status: 'planned' },
-    { name: 'C: Video → Translate → TTS (#19)', status: 'planned' },
-    { name: 'E: Parallel Editing (#27)', status: 'planned' },
-    { name: 'E: Version Compare (#28)', status: 'planned' },
-    { name: 'P: Multi-Clip Import (#101)', status: 'planned' },
-    { name: 'P: Timeline Arrangement (#103)', status: 'planned', market: 'Core feature' },
+  { id: 'P2', name: 'AI Agents & UX (55 Scenarios)', weeks: '9-12', status: 'completed', completion: 100, statusText: '100% (55/55)', features: [
+    { name: 'C: Video → Script Extraction (#17)', status: 'done' },
+    { name: 'C: Video → Translate → TTS (#19)', status: 'done' },
+    { name: 'E: Parallel Editing (#27)', status: 'done' },
+    { name: 'E: Version Compare (#28)', status: 'done' },
+    { name: 'P: Multi-Clip Import (#101)', status: 'done' },
+    { name: 'P: Timeline Arrangement (#103)', status: 'done', market: 'Core feature' },
     { name: 'T: PWA Installation (#156)', status: 'done' },
     { name: 'T: Service Worker (#157)', status: 'done' },
     { name: 'U: Voice Coaching Session (#166)', status: 'done' },
@@ -364,15 +364,15 @@ const roadmapPhases: RoadmapPhase[] = [
     { name: 'U: Beat-Sync Edit (#176)', status: 'done' },
     { name: 'U: 7-Phase Guided Edit (#177)', status: 'done' },
   ], segments: ['creator', 'smb', 'education'], integrations: ['Mind', 'Vibe', 'Arc', 'Spark'] },
-  { id: 'P3', name: 'Differentiators (26 Scenarios)', weeks: '13-18', status: 'planned', completion: 23, statusText: '23% (6/26)', features: [
-    { name: 'F: Bulk Video Generation (#33)', status: 'planned', market: 'Enterprise sales' },
-    { name: 'F: Auto Thumbnails (#37)', status: 'planned', market: 'Creator retention' },
-    { name: 'F: SEO Optimization (#38)', status: 'planned' },
-    { name: 'F: Social Cuts (#39)', status: 'planned' },
-    { name: 'G: Legal Review Gate (#43)', status: 'planned' },
-    { name: 'G: HIPAA Redaction (#45)', status: 'planned', market: '94% want <$100' },
-    { name: 'O: Patient Education Templates (#93)', status: 'planned' },
-    { name: 'Q: Voice Clone Training (#113)', status: 'planned', market: 'Premium feature' },
+  { id: 'P3', name: 'Differentiators (52 Scenarios)', weeks: '13-18', status: 'completed', completion: 100, statusText: '100% (52/52)', features: [
+    { name: 'F: Bulk Video Generation (#33)', status: 'done', market: 'Enterprise sales' },
+    { name: 'F: Auto Thumbnails (#37)', status: 'done', market: 'Creator retention' },
+    { name: 'F: SEO Optimization (#38)', status: 'done' },
+    { name: 'F: Social Cuts (#39)', status: 'done' },
+    { name: 'G: Legal Review Gate (#43)', status: 'done' },
+    { name: 'G: HIPAA Redaction (#45)', status: 'done', market: '94% want <$100' },
+    { name: 'O: Patient Education Templates (#93)', status: 'done' },
+    { name: 'Q: Voice Clone Training (#113)', status: 'done', market: 'Premium feature' },
     { name: 'R: Universal AI Processing (#126)', status: 'done' },
     { name: 'R: Document Processing (#127)', status: 'done' },
     { name: 'R: Knowledge Search (#128)', status: 'done' },
@@ -380,7 +380,7 @@ const roadmapPhases: RoadmapPhase[] = [
     { name: 'R: Stripe Webhook (#132)', status: 'done' },
     { name: 'R: Subscription Manager (#135)', status: 'done' },
   ], segments: ['smb', 'education', 'healthcare', 'enterprise'], integrations: ['Mind', 'Vibe', 'Arc', 'Spark', 'Hub'] },
-  { id: 'P4', name: 'Future/Advanced (24 Scenarios)', weeks: '19-24', status: 'planned', completion: 13, statusText: '13% (3/24)', features: [
+  { id: 'P4', name: 'Enterprise Features (35 Scenarios)', weeks: '19-24', status: 'planned', completion: 15, statusText: '15% (5/35)', features: [
     { name: 'H: Partial Recording Salvage (#47)', status: 'planned' },
     { name: 'H: Failed Generation Retry (#48)', status: 'planned' },
     { name: 'I: Script Translation (#51)', status: 'planned' },
@@ -392,10 +392,10 @@ const roadmapPhases: RoadmapPhase[] = [
     { name: 'R2: Anthropic Integration (#137)', status: 'done' },
     { name: 'R2: ElevenLabs Integration (#138)', status: 'done' },
     { name: 'R2: YouTube Publish (#140)', status: 'planned' },
-  ], segments: ['enterprise'], integrations: ['Full Suite', 'External APIs'] },
-  { id: 'P5', name: 'Enterprise (10 Scenarios)', weeks: '25+', status: 'planned', completion: 0, statusText: '0% (0/10)', features: [
-    { name: 'SSO/SAML Integration', status: 'planned' },
     { name: 'White-Label Solution', status: 'planned' },
+    { name: 'SSO/SAML Integration', status: 'planned' },
+  ], segments: ['enterprise'], integrations: ['Full Suite', 'External APIs'] },
+  { id: 'P5', name: 'Innovation & Scale (30 Scenarios)', weeks: '25+', status: 'planned', completion: 0, statusText: '0% (0/30)', features: [
     { name: 'HIPAA Full Compliance', status: 'planned' },
     { name: 'SLA Monitoring', status: 'planned' },
     { name: 'Dedicated Support Tier', status: 'planned' },
@@ -404,16 +404,16 @@ const roadmapPhases: RoadmapPhase[] = [
     { name: 'Advanced Analytics/BI', status: 'planned' },
     { name: 'Team Management', status: 'planned' },
     { name: 'Complete Audit Logs', status: 'planned' },
-    { name: 'SSO/SAML Integration', status: 'planned' },
     { name: 'Custom Model Training', status: 'planned' },
-    { name: 'Advanced Analytics', status: 'planned' },
     { name: 'B-Roll Library', status: 'planned' },
     { name: 'Version Control (Git-like)', status: 'planned' },
     { name: 'Compliance Audit Trail', status: 'planned' },
+    { name: 'AI Avatars', status: 'planned' },
+    { name: 'Multi-Tenant Architecture', status: 'planned' },
   ], segments: ['enterprise'], integrations: ['Full Suite + Partners'] },
 ];
 
-// Product Suite
+// Product Suite - Updated with P0-P3 complete status
 const productSuite: ProductSuite[] = [
   {
     id: 'spark',
@@ -421,9 +421,9 @@ const productSuite: ProductSuite[] = [
     icon: '⚡',
     color: 'hsl(25, 95%, 53%)',
     description: 'Quick Ideas & Brainstorming',
-    status: 'planned',
+    status: 'completed',
     phase: 'P2',
-    features: ['Idea capture', 'Quick prompts', 'Template starter'],
+    features: ['Idea capture', 'Quick prompts', 'Template starter', '5-Phase Guided Wizard'],
     agents: ['idea_generator_agent', 'template_matcher_agent'],
     apis: ['ai-universal-processor']
   },
@@ -456,12 +456,12 @@ const productSuite: ProductSuite[] = [
     name: 'Genie Arc',
     icon: '🌈',
     color: 'hsl(217, 91%, 60%)',
-    description: 'Team Collaboration Hub',
-    status: 'partial',
+    description: 'Your Production Journey With Infinite Possibilities',
+    status: 'completed',
     phase: 'P1',
-    features: ['Team workspace', 'Review & approval', 'Asset sharing', 'Version control'],
-    agents: ['collaboration_agent', 'approval_workflow_agent'],
-    apis: ['collaboration-sync', 'asset-manager']
+    features: ['Team workspace', 'Review & approval', 'Asset sharing', 'Version control', 'Show Management'],
+    agents: ['collaboration_agent', 'approval_workflow_agent', 'production_orchestrator_agent'],
+    apis: ['collaboration-sync', 'asset-manager', 'shows-api']
   },
   {
     id: 'hub',
@@ -469,8 +469,8 @@ const productSuite: ProductSuite[] = [
     icon: '🎯',
     color: 'hsl(270, 76%, 51%)',
     description: 'Enterprise Production Center',
-    status: 'partial',
-    phase: 'P1',
+    status: 'completed',
+    phase: 'P3',
     features: ['Multi-show management', 'Broadcast scheduling', 'Team assignments', 'Pipeline automation'],
     agents: ['production_orchestrator_agent', 'scheduling_agent', 'resource_allocation_agent'],
     apis: ['shows-api', 'calendar-sync', 'team-management']
