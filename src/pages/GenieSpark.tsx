@@ -3,6 +3,7 @@
  * "Ignite Your Ideas" - AI-powered content generation engine
  * 
  * DATA FLOW: Uses existing hooks - all data is user-scoped via RLS
+ * INTEGRATED: Ask Genie AI assistant for context-aware help
  */
 
 import React, { useState } from 'react';
@@ -25,6 +26,7 @@ import {
 } from '@/components/shared';
 import { QuickTemplateSelector } from '@/components/templates';
 import { SparkGuidedWizard } from '@/components/genie-spark/SparkGuidedWizard';
+import { AskGenie } from '@/components/genie-studio/AskGenie';
 import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
 
 const GenieSpark: React.FC = () => {
@@ -222,6 +224,13 @@ const GenieSpark: React.FC = () => {
               />
             </TabsContent>
           </Tabs>
+
+          {/* Ask Genie - Context-aware AI for Spark */}
+          <AskGenie 
+            product="spark" 
+            currentTab={activeTab}
+            sessionData={{ scriptsCount: savedScripts?.length || 0, hasGeneratedContent }}
+          />
         </div>
       </div>
     </AppLayout>

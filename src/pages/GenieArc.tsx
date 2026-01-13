@@ -3,6 +3,7 @@
  * "Script Your Success" - Production planning and show creation
  * 
  * DATA FLOW: Uses existing hooks - all data is user-scoped via RLS
+ * INTEGRATED: Ask Genie AI assistant for context-aware help
  */
 
 import React, { useState } from 'react';
@@ -38,6 +39,7 @@ import { cn } from '@/lib/utils';
 import { useShows } from '@/hooks/useShows';
 import { toast } from 'sonner';
 import { PodcastToVideoConverter } from '@/components/shared';
+import { AskGenie } from '@/components/genie-studio/AskGenie';
 import genieArcLogo from '@/assets/logos/genie-arc-combined.png';
 
 const SHOW_TYPES = [
@@ -454,6 +456,13 @@ const GenieArc: React.FC = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Ask Genie - Context-aware AI for Arc */}
+        <AskGenie 
+          product="arc" 
+          currentTab={activeTab}
+          sessionData={{ showCount: shows?.length || 0 }}
+        />
       </div>
     </AppLayout>
   );
