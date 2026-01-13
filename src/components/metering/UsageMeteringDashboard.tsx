@@ -65,7 +65,7 @@ export const UsageMeteringDashboard: React.FC<{ className?: string }> = ({ class
   const { moduleStats, recentEvents, isLoading, refetch } = useUsageTracking();
   const { tierLimits, usage, usagePercentages, isNearLimit } = useConversationLimits();
   const { subscription } = useSubscription();
-  const tier = subscription?.subscription_tier || 'free';
+  const tier = subscription?.tier || 'free';
   const credits = { used: 0, total: 1000 }; // Placeholder - would come from credit tracking
 
   // Usage metrics derived from hooks
@@ -149,8 +149,8 @@ export const UsageMeteringDashboard: React.FC<{ className?: string }> = ({ class
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className={cn(
-              tier === 'enterprise' || tier === 'beta' ? 'border-green-500 text-green-600' :
-              tier === 'professional' ? 'border-blue-500 text-blue-600' :
+              tier === 'business' ? 'border-green-500 text-green-600' :
+              tier === 'pro' ? 'border-blue-500 text-blue-600' :
               tier === 'starter' ? 'border-amber-500 text-amber-600' :
               'border-slate-500'
             )}>

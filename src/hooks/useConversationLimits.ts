@@ -8,7 +8,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 
 // ============================================================================
@@ -95,9 +95,9 @@ const TIER_LIMITS: Record<string, TierLimits> = {
 // ============================================================================
 
 export const useConversationLimits = (conversationId?: string) => {
-  const { user } = useAuth();
+  const { user } = useMasterAuth();
   const { subscription } = useSubscription();
-  const tier = subscription?.subscription_tier || 'free';
+  const tier = subscription?.tier || 'free';
   
   // Get tier limits
   const tierLimits = useMemo(() => {
