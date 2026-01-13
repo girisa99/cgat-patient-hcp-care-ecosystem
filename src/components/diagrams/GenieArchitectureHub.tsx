@@ -1,13 +1,13 @@
 /**
  * Genie Architecture Hub
- * Consolidated Architecture Tab with All Diagrams
+ * Consolidated Architecture Tab with All Diagrams + P0-P5 Stage Gates
  */
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Layers, Brain, Film, Users, Zap, Plug, Server } from 'lucide-react';
+import { Layers, Brain, Film, Users, Zap, Plug, Server, Target, Sparkles } from 'lucide-react';
 
 // Import all architecture diagrams
 import { GenieStudioOverallArchitectureDiagram } from './architecture/GenieStudioOverallArchitectureDiagram';
@@ -17,9 +17,13 @@ import { GenieArcProductionHubDiagram } from './architecture/GenieArcProductionH
 import { GenieSparkArchitectureDiagram } from './architecture/GenieSparkArchitectureDiagram';
 import { GenieIntegrationsDiagram } from './architecture/GenieIntegrationsDiagram';
 import { GenieMicroservicesDiagram } from './architecture/GenieMicroservicesDiagram';
+import { GenieStageGateDashboard } from './architecture/GenieStageGateDashboard';
+import { GenieP3IntegrationDashboard } from './architecture/GenieP3IntegrationDashboard';
 
 const architectureTabs = [
   { id: 'overall', label: 'Overview', icon: Layers, description: 'Complete system architecture' },
+  { id: 'stage-gates', label: 'Stage Gates', icon: Target, description: 'P0-P5 Readiness' },
+  { id: 'p3-features', label: 'P3 Features', icon: Sparkles, description: 'Enterprise Capabilities' },
   { id: 'mind', label: 'Genie Mind', icon: Brain, description: 'AI Intelligence Layer' },
   { id: 'vibe', label: 'Genie Vibe', icon: Film, description: 'Production Layer' },
   { id: 'arc-hub', label: 'Arc & Hub', icon: Users, description: 'Collaboration & Enterprise' },
@@ -29,7 +33,7 @@ const architectureTabs = [
 ];
 
 export const GenieArchitectureHub: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('overall');
+  const [activeTab, setActiveTab] = useState('stage-gates');
 
   return (
     <div className="space-y-4">
@@ -41,18 +45,18 @@ export const GenieArchitectureHub: React.FC = () => {
             Genie Studio Architecture
           </h2>
           <p className="text-slate-400 text-sm">
-            Complete technical documentation with download & expand functionality
+            Complete technical documentation with P0-P5 stage gate tracking
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-emerald-300 border-emerald-500/30">
-            7 Diagrams
+            9 Views
           </Badge>
-          <Badge variant="outline" className="text-blue-300 border-blue-500/30">
-            PNG Export
+          <Badge variant="outline" className="text-amber-300 border-amber-500/30">
+            P3 Complete
           </Badge>
           <Badge variant="outline" className="text-purple-300 border-purple-500/30">
-            Fullscreen
+            Go-Live Ready
           </Badge>
         </div>
       </div>
@@ -78,6 +82,14 @@ export const GenieArchitectureHub: React.FC = () => {
         <div className="mt-4">
           <TabsContent value="overall" className="m-0">
             <GenieStudioOverallArchitectureDiagram />
+          </TabsContent>
+
+          <TabsContent value="stage-gates" className="m-0">
+            <GenieStageGateDashboard />
+          </TabsContent>
+
+          <TabsContent value="p3-features" className="m-0">
+            <GenieP3IntegrationDashboard />
           </TabsContent>
 
           <TabsContent value="mind" className="m-0">
