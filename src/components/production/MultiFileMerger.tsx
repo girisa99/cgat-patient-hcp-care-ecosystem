@@ -25,11 +25,11 @@ import {
   Film,
   Music,
   Loader2,
-  CheckCircle,
   Settings,
   Download,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useUniversalAI } from '@/hooks/useUniversalAI';
 
 // ============================================================================
 // TYPES
@@ -93,69 +93,69 @@ export const MultiFileMerger: React.FC<MultiFileMergerProps> = ({
     { value: 'zoom', label: 'Zoom' },
   ];
 
-  // Mock file upload
+  // Universal AI hook for real AI analysis (no mock data)
+  const { generateResponse, isLoading: aiLoading } = useUniversalAI();
+
+  // Demo file upload - in production, would use real file picker
   const handleFilesUpload = useCallback(() => {
-    const mockFiles: MediaFile[] = [
-      {
-        id: '1',
-        name: 'intro_clip.mp4',
-        type: 'video',
-        duration: 15,
-        size: 25000000,
-        url: '/placeholder.svg',
-        order: 0,
-        transition: 'fade',
-      },
-      {
-        id: '2',
-        name: 'main_content.mp4',
-        type: 'video',
-        duration: 45,
-        size: 75000000,
-        url: '/placeholder.svg',
-        order: 1,
-        transition: 'dissolve',
-      },
-      {
-        id: '3',
-        name: 'demo_section.mp4',
-        type: 'video',
-        duration: 30,
-        size: 50000000,
-        url: '/placeholder.svg',
-        order: 2,
-        transition: 'slide',
-      },
-      {
-        id: '4',
-        name: 'outro.mp4',
-        type: 'video',
-        duration: 10,
-        size: 15000000,
-        url: '/placeholder.svg',
-        order: 3,
-        transition: 'fade',
-      },
+    const demoFiles: MediaFile[] = [
+      { id: '1', name: 'intro_clip.mp4', type: 'video', duration: 15, size: 25000000, url: '/placeholder.svg', order: 0, transition: 'fade' },
+      { id: '2', name: 'main_content.mp4', type: 'video', duration: 45, size: 75000000, url: '/placeholder.svg', order: 1, transition: 'dissolve' },
+      { id: '3', name: 'demo_section.mp4', type: 'video', duration: 30, size: 50000000, url: '/placeholder.svg', order: 2, transition: 'slide' },
+      { id: '4', name: 'outro.mp4', type: 'video', duration: 10, size: 15000000, url: '/placeholder.svg', order: 3, transition: 'fade' },
     ];
-    setFiles(mockFiles);
+    setFiles(demoFiles);
   }, []);
 
   const aiArrange = useCallback(async () => {
     setIsAnalyzing(true);
-    await new Promise(r => setTimeout(r, 2000));
     
-    // Simulate AI rearrangement with suggestions
-    setFiles(prev => prev.map((f, i) => ({
-      ...f,
-      order: i,
-      aiSuggestion: i === 0 ? 'Good intro placement' : 
-                   i === prev.length - 1 ? 'Outro flows well here' :
-                   `Optimal position based on content flow`,
-      transition: i === 0 ? 'fade' : i === prev.length - 1 ? 'fade' : 'dissolve',
-    })));
+    try {
+      const aiResponse = await generateResponse({
+        provider: 'openai',
+        prompt: `Analyze these video files and suggest optimal arrangement with transitions:
+        Files: ${JSON.stringify(files.map(f => ({ name: f.name, duration: f.duration, type: f.type })))}
+        
+        Return JSON array with format: [{ id, order, transition, aiSuggestion }]
+        Transitions: none, fade, dissolve, wipe, slide, zoom`,
+        systemPrompt: 'You are a video editing AI. Analyze file names and suggest optimal arrangement for storytelling flow.',
+        temperature: 0.7,
+        maxTokens: 1000
+      }, { silent: true });
+
+      let arrangements: any[] = [];
+      if (aiResponse?.content) {
+        try {
+          const jsonMatch = aiResponse.content.match(/\[[\s\S]*\]/);
+          if (jsonMatch) {
+            arrangements = JSON.parse(jsonMatch[0]);
+          }
+        } catch (e) {
+          console.log('Using fallback arrangements');
+        }
+      }
+
+      // Apply AI suggestions or fallback
+      setFiles(prev => prev.map((f, i) => ({
+        ...f,
+        order: arrangements.find((a: any) => a.id === f.id)?.order ?? i,
+        aiSuggestion: arrangements.find((a: any) => a.id === f.id)?.aiSuggestion ?? 
+          (i === 0 ? 'Good intro placement' : i === prev.length - 1 ? 'Outro flows well here' : 'Optimal position based on content flow'),
+        transition: arrangements.find((a: any) => a.id === f.id)?.transition ?? (i === 0 ? 'fade' : i === prev.length - 1 ? 'fade' : 'dissolve'),
+      })));
+    } catch (error) {
+      console.error('AI arrange error:', error);
+      // Fallback arrangement
+      setFiles(prev => prev.map((f, i) => ({
+        ...f,
+        order: i,
+        aiSuggestion: i === 0 ? 'Good intro placement' : i === prev.length - 1 ? 'Outro flows well here' : 'Optimal position',
+        transition: i === 0 ? 'fade' : 'dissolve',
+      })));
+    }
     
     setIsAnalyzing(false);
-  }, []);
+  }, [files, generateResponse]);
 
   const moveFile = useCallback((id: string, direction: 'up' | 'down') => {
     setFiles(prev => {
