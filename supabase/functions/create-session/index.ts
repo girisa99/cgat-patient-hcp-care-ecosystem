@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { Resend } from "npm:resend@4.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -342,6 +343,174 @@ const handler = async (req: Request): Promise<Response> => {
     const calendarLinks = generateCalendarLinks(session, body, joinUrl, scheduledAt);
 
     console.log('Session created successfully:', session.id);
+    
+    // ========== SEND EMAIL INVITES ==========
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    const fromEmail = Deno.env.get('FROM_EMAIL') || 'info@genieaiexperimentationhub.tech';
+    const emailResults: any[] = [];
+    
+    if (resendApiKey && body.participants.length > 0) {
+      console.log('[create-session] Sending email invites to', body.participants.length, 'participants');
+      const resend = new Resend(resendApiKey);
+      
+      // Format date for display
+      const formattedDate = scheduledAt.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+      const formattedTime = scheduledAt.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      
+      // Generate calendar URLs for invite
+      const endTime = new Date(scheduledAt.getTime() + (body.duration_minutes || 60) * 60 * 1000);
+      const formatCalDate = (date: Date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      
+      for (const participant of body.participants) {
+        try {
+          const participantJoinUrl = joinUrl;
+          const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(body.title)}&dates=${formatCalDate(scheduledAt)}/${formatCalDate(endTime)}&details=${encodeURIComponent(`Join: ${participantJoinUrl}`)}&location=${encodeURIComponent(participantJoinUrl)}`;
+          const outlookUrl = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(body.title)}&startdt=${scheduledAt.toISOString()}&enddt=${endTime.toISOString()}&body=${encodeURIComponent(`Join: ${participantJoinUrl}`)}&location=${encodeURIComponent(participantJoinUrl)}`;
+          
+          console.log('[create-session] Sending invite to:', participant.email);
+          
+          const emailResult = await resend.emails.send({
+            from: `Genie Studio <${fromEmail}>`,
+            to: [participant.email],
+            subject: `You're invited: ${body.title}`,
+            html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #8B5CF6, #EC4899); padding: 30px; border-radius: 12px 12px 0 0; text-align: center; }
+    .header h1 { color: white; margin: 0; font-size: 24px; }
+    .content { background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px; }
+    .details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+    .detail-row { display: flex; margin: 10px 0; }
+    .detail-label { font-weight: 600; width: 100px; color: #6b7280; }
+    .btn { display: inline-block; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; margin: 5px; }
+    .btn-primary { background: linear-gradient(135deg, #8B5CF6, #EC4899); color: white; }
+    .btn-secondary { background: #e5e7eb; color: #374151; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📅 You're Invited!</h1>
+    </div>
+    <div class="content">
+      <p>Hi ${participant.name},</p>
+      <p>You've been invited to join a ${body.session_type} session by ${body.host_name}.</p>
+      
+      <div class="details">
+        <h3 style="margin-top: 0;">${body.title}</h3>
+        ${body.description ? `<p>${body.description}</p>` : ''}
+        <div class="detail-row">
+          <span class="detail-label">📅 Date:</span>
+          <span>${formattedDate}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">⏰ Time:</span>
+          <span>${formattedTime}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">⏱️ Duration:</span>
+          <span>${body.duration_minutes || 60} minutes</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">👤 Your Role:</span>
+          <span style="text-transform: capitalize;">${participant.role}</span>
+        </div>
+        ${body.agenda ? `
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+          <strong>📋 Agenda:</strong>
+          <p style="margin: 5px 0; white-space: pre-wrap;">${body.agenda}</p>
+        </div>
+        ` : ''}
+      </div>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${participantJoinUrl}" class="btn btn-primary">Join Session</a>
+      </div>
+      
+      <div style="text-align: center;">
+        <p style="color: #6b7280; font-size: 14px;">Add to your calendar:</p>
+        <a href="${googleCalUrl}" class="btn btn-secondary" target="_blank">📅 Google Calendar</a>
+        <a href="${outlookUrl}" class="btn btn-secondary" target="_blank">📧 Outlook</a>
+      </div>
+      
+      <p style="margin-top: 30px; font-size: 12px; color: #9ca3af; text-align: center;">
+        The session link will be active 30 minutes before the scheduled time.<br>
+        You'll receive reminder notifications before the session starts.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+            `,
+          });
+          
+          emailResults.push({
+            email: participant.email,
+            status: 'sent',
+            result: emailResult
+          });
+          console.log('[create-session] Email sent to:', participant.email);
+          
+        } catch (emailErr: any) {
+          console.error('[create-session] Email error for', participant.email, emailErr);
+          emailResults.push({
+            email: participant.email,
+            status: 'failed',
+            error: emailErr.message
+          });
+        }
+      }
+      
+      // Also send to host if email provided
+      if (body.host_email) {
+        try {
+          console.log('[create-session] Sending host notification to:', body.host_email);
+          await resend.emails.send({
+            from: `Genie Studio <${fromEmail}>`,
+            to: [body.host_email],
+            subject: `Session Created: ${body.title}`,
+            html: `
+<!DOCTYPE html>
+<html>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px;">
+  <h2>🎬 Your session has been scheduled!</h2>
+  <p><strong>${body.title}</strong></p>
+  <p>📅 ${formattedDate} at ${formattedTime}</p>
+  <p>👥 ${body.participants.length} participant(s) invited</p>
+  <p style="margin-top: 20px;">
+    <a href="${hostUrl}" style="background: linear-gradient(135deg, #8B5CF6, #EC4899); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+      🎤 Start as Host
+    </a>
+  </p>
+  <p style="margin-top: 20px; font-size: 12px; color: #6b7280;">
+    Participants have been sent their invitation emails with calendar links.
+  </p>
+</body>
+</html>
+            `,
+          });
+          emailResults.push({ email: body.host_email, status: 'sent', type: 'host' });
+        } catch (hostEmailErr: any) {
+          console.error('[create-session] Host email error:', hostEmailErr);
+        }
+      }
+      
+      console.log('[create-session] Email sending complete:', emailResults.length, 'emails processed');
+    } else if (!resendApiKey) {
+      console.log('[create-session] RESEND_API_KEY not configured - skipping emails');
+    }
 
     return new Response(JSON.stringify({
       success: true,
@@ -352,6 +521,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
       participants,
       calendar_links: calendarLinks,
+      emails_sent: emailResults,
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
