@@ -200,3 +200,18 @@ verify_jwt = false
 
 [functions.session-feedback]
 verify_jwt = false
+
+[functions.social-publish]
+verify_jwt = false
+
+[functions.voice-clone-processor]
+verify_jwt = false
+
+[functions.auto-thumbnail-generator]
+verify_jwt = false
+
+[functions.hipaa-redaction]
+verify_jwt = false
+
+[functions.recurring-scheduler]
+verify_jwt = false
