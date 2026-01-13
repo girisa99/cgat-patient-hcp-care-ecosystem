@@ -307,67 +307,103 @@ const userPainPoints: UserPainPoint[] = [
   { segment: 'Enterprise', quote: '"Legal review takes 3 weeks per video. By the time it\'s approved, the content is outdated."', source: 'Corporate Comms Manager', painPoint: 'Approval bottlenecks' },
 ];
 
+// Updated: 2026-01-13 to match COMPREHENSIVE_177_SCENARIO_PHASE_REVIEW.md
 const roadmapPhases: RoadmapPhase[] = [
-  { id: 'P0', name: 'Core MVP', weeks: '1-4', status: 'completed', completion: 100, statusText: '100% Complete', features: [
-    { name: 'Script Editor + AI Enhancement', status: 'done' },
-    { name: 'TTS Generation (ElevenLabs/OpenAI)', status: 'done' },
-    { name: 'Recording Studio Core', status: 'done' },
-    { name: 'Teleprompter + Audio Mixer', status: 'done' },
-    { name: 'Vibe ↔ Mind Bidirectional', status: 'done' },
-    { name: 'Basic Export (MP4/WebM)', status: 'done' },
-    { name: 'Project Management', status: 'done' },
-    { name: 'Recording Library (IndexedDB)', status: 'done' },
-  ], segments: ['all'], integrations: ['Mind', 'Vibe'] },
-  { id: 'P1', name: 'Mobile + Remix', weeks: '5-8', status: 'in-progress', completion: 85, statusText: '85% Complete', features: [
-    { name: 'One-Tap Mobile Record', status: 'done', market: '68% want' },
-    { name: 'Quick Clips Generator', status: 'done', market: '82% creators want' },
-    { name: 'Multi-Clip Timeline', status: 'done' },
-    { name: 'Script Stitcher', status: 'done' },
-    { name: 'Audio Mixer (Mobile)', status: 'done' },
-    { name: 'Pipeline Progress UI', status: 'done' },
-    { name: 'PWA Install Prompt', status: 'done' },
-    { name: 'Mobile Recording View', status: 'done' },
-    { name: 'Quick Templates (Social)', status: 'partial' },
-    { name: 'Background Music Library', status: 'done' },
-    { name: 'Screen + Camera PiP', status: 'done' },
-    { name: 'Arc + Production Hub Integration', status: 'done' },
-    { name: 'Publish Panel', status: 'done' },
-  ], segments: ['creator', 'traveler', 'smb'], integrations: ['Mind', 'Vibe', 'Arc', 'Production Hub'] },
-  { id: 'P2', name: 'Advanced Features', weeks: '9-12', status: 'in-progress', completion: 35, statusText: '35% Complete', features: [
-    { name: 'Offline Mode Framework', status: 'done', market: '54% need' },
-    { name: 'Publish Panel', status: 'done' },
-    { name: 'Offline Recording (Full)', status: 'partial', market: '54% need' },
-    { name: 'Voice-First Editing', status: 'partial', market: '47% want' },
-    { name: 'AI Auto-Arrange', status: 'planned' },
-    { name: 'Smart Transitions', status: 'planned' },
-    { name: 'Music Sync Assembly', status: 'planned' },
-    { name: 'Collaborative Editing', status: 'planned' },
-    { name: 'Spark Integration', status: 'partial' },
-    { name: 'Location Story Mode', status: 'planned' },
-  ], segments: ['traveler', 'healthcare', 'enterprise'], integrations: ['Mind', 'Vibe', 'Arc', 'Spark'] },
-  { id: 'P3', name: 'Segment-Specific', weeks: '13-18', status: 'planned', completion: 0, statusText: '0%', features: [
-    { name: 'Voice Cloning', status: 'planned', market: '61% want' },
-    { name: 'Product Demo Mode (SMB)', status: 'planned', market: '71% want' },
-    { name: 'Lesson Builder (Education)', status: 'planned', market: '69% want' },
-    { name: 'Patient Education (Healthcare)', status: 'planned' },
-    { name: 'Testimonial Collector', status: 'planned' },
-    { name: 'Multi-Language Dubbing', status: 'planned' },
-    { name: 'Traveler Kit (Auto-edit)', status: 'planned', market: '76% want' },
-    { name: 'HIPAA Recording Mode', status: 'planned', market: '94% want <$100/mo' },
-  ], segments: ['smb', 'education', 'healthcare'], integrations: ['Mind', 'Vibe', 'Arc', 'Spark', 'Hub'] },
-  { id: 'P4', name: 'Enterprise', weeks: '19-26', status: 'planned', completion: 0, statusText: '0%', features: [
-    { name: 'AI Avatar Presenter', status: 'planned' },
-    { name: 'White-label Solution', status: 'planned' },
-    { name: 'Multi-tenant Workspaces', status: 'planned' },
-    { name: 'Franchise Templates', status: 'planned' },
-    { name: 'Team Review Mobile', status: 'planned' },
-    { name: 'Offline Compliance Mode', status: 'planned' },
-    { name: 'Native Mobile App', status: 'planned' },
-    { name: 'Real-time Translation', status: 'planned' },
-  ], segments: ['enterprise'], integrations: ['Full Suite'] },
-  { id: 'P5', name: 'Future + Auth', weeks: '27+', status: 'planned', completion: 0, statusText: '0%', features: [
-    { name: 'Batch Video Processing', status: 'planned' },
-    { name: 'API Access', status: 'planned' },
+  { id: 'P0', name: 'Core MVP (35 Scenarios)', weeks: '1-4', status: 'completed', completion: 94, statusText: '94% (33/35)', features: [
+    { name: 'A: Text Prompt → Script → Video (#1)', status: 'done' },
+    { name: 'A: Script Only → Manual Record (#3)', status: 'done' },
+    { name: 'A: Full Imagination Pipeline (#4)', status: 'partial' },
+    { name: 'A: PPT/Slides → Script (#7)', status: 'partial' },
+    { name: 'A: Document → Script (#8)', status: 'partial' },
+    { name: 'L: Recording → Mind → Script (#61-65)', status: 'done' },
+    { name: 'M: Subscription/Module Hooks (#68-70)', status: 'done' },
+    { name: 'M: Tier/Module DB Schema (#66-67)', status: 'planned', market: 'Revenue Critical' },
+    { name: 'Q: Script Generation Orchestration (#111)', status: 'done' },
+    { name: 'Q: TTS Multi-Provider Failover (#112)', status: 'done' },
+    { name: 'Q: Video Assembly Pipeline (#114)', status: 'done' },
+    { name: 'Q: Social Multi-Platform Publish (#115)', status: 'done' },
+    { name: 'S: User Registration/Login (#141-142)', status: 'done' },
+    { name: 'S: Subscription Check/Checkout (#143-145)', status: 'done' },
+    { name: 'S: Module Access Control (#146)', status: 'done' },
+    { name: 'S: Credit System (#147-150)', status: 'done' },
+  ], segments: ['all'], integrations: ['Mind', 'Vibe', 'Supabase Auth', 'Stripe'] },
+  { id: 'P1', name: 'Essential Production (32 Scenarios)', weeks: '5-8', status: 'in-progress', completion: 16, statusText: '16% (5/32)', features: [
+    { name: 'B: Raw Recording → Polished (#11)', status: 'planned' },
+    { name: 'B: B-Roll Auto-Integration (#14)', status: 'planned', market: 'High Priority' },
+    { name: 'B: Podcast → Video (#15)', status: 'planned' },
+    { name: 'D: Record → Review → Re-record (#21)', status: 'planned' },
+    { name: 'D: Record → AI Polish (#22)', status: 'planned' },
+    { name: 'M2: Route-Level Access Guards (#71)', status: 'planned', market: 'Security Critical' },
+    { name: 'M2: Module-Level Access Gates (#72)', status: 'planned' },
+    { name: 'M2: Upgrade Prompts UI (#73)', status: 'planned' },
+    { name: 'N: Quick Templates (#83)', status: 'planned', market: '68% want' },
+    { name: 'N: Social Integration (#85)', status: 'planned' },
+    { name: 'Q: Subscription Enforcement (#120)', status: 'done' },
+    { name: 'S2: Free Trial Logic (#151-152)', status: 'partial' },
+    { name: 'S2: Pricing Page (#153-154)', status: 'done' },
+  ], segments: ['creator', 'traveler', 'smb'], integrations: ['Mind', 'Vibe', 'Arc'] },
+  { id: 'P2', name: 'AI Agents & UX (50 Scenarios)', weeks: '9-12', status: 'in-progress', completion: 24, statusText: '24% (12/50)', features: [
+    { name: 'C: Video → Script Extraction (#17)', status: 'planned' },
+    { name: 'C: Video → Translate → TTS (#19)', status: 'planned' },
+    { name: 'E: Parallel Editing (#27)', status: 'planned' },
+    { name: 'E: Version Compare (#28)', status: 'planned' },
+    { name: 'P: Multi-Clip Import (#101)', status: 'planned' },
+    { name: 'P: Timeline Arrangement (#103)', status: 'planned', market: 'Core feature' },
+    { name: 'T: PWA Installation (#156)', status: 'done' },
+    { name: 'T: Service Worker (#157)', status: 'done' },
+    { name: 'U: Voice Coaching Session (#166)', status: 'done' },
+    { name: 'U: TTS Direction (#167)', status: 'done' },
+    { name: 'U: Scene Analysis (#168)', status: 'done' },
+    { name: 'U: B-Roll Suggestions (#169)', status: 'done' },
+    { name: 'U: Multi-Platform Publish (#170)', status: 'done' },
+    { name: 'U: Social Optimization (#171)', status: 'done' },
+    { name: 'U: Script-Video Matching (#172)', status: 'done' },
+    { name: 'U: AI Music Generation (#173)', status: 'done' },
+    { name: 'U: SFX Generation (#174)', status: 'done' },
+    { name: 'U: Auto-Trim & Clean (#175)', status: 'done' },
+    { name: 'U: Beat-Sync Edit (#176)', status: 'done' },
+    { name: 'U: 7-Phase Guided Edit (#177)', status: 'done' },
+  ], segments: ['creator', 'smb', 'education'], integrations: ['Mind', 'Vibe', 'Arc', 'Spark'] },
+  { id: 'P3', name: 'Differentiators (26 Scenarios)', weeks: '13-18', status: 'planned', completion: 23, statusText: '23% (6/26)', features: [
+    { name: 'F: Bulk Video Generation (#33)', status: 'planned', market: 'Enterprise sales' },
+    { name: 'F: Auto Thumbnails (#37)', status: 'planned', market: 'Creator retention' },
+    { name: 'F: SEO Optimization (#38)', status: 'planned' },
+    { name: 'F: Social Cuts (#39)', status: 'planned' },
+    { name: 'G: Legal Review Gate (#43)', status: 'planned' },
+    { name: 'G: HIPAA Redaction (#45)', status: 'planned', market: '94% want <$100' },
+    { name: 'O: Patient Education Templates (#93)', status: 'planned' },
+    { name: 'Q: Voice Clone Training (#113)', status: 'planned', market: 'Premium feature' },
+    { name: 'R: Universal AI Processing (#126)', status: 'done' },
+    { name: 'R: Document Processing (#127)', status: 'done' },
+    { name: 'R: Knowledge Search (#128)', status: 'done' },
+    { name: 'R: Image Generation (#129)', status: 'done' },
+    { name: 'R: Stripe Webhook (#132)', status: 'done' },
+    { name: 'R: Subscription Manager (#135)', status: 'done' },
+  ], segments: ['smb', 'education', 'healthcare', 'enterprise'], integrations: ['Mind', 'Vibe', 'Arc', 'Spark', 'Hub'] },
+  { id: 'P4', name: 'Future/Advanced (24 Scenarios)', weeks: '19-24', status: 'planned', completion: 13, statusText: '13% (3/24)', features: [
+    { name: 'H: Partial Recording Salvage (#47)', status: 'planned' },
+    { name: 'H: Failed Generation Retry (#48)', status: 'planned' },
+    { name: 'I: Script Translation (#51)', status: 'planned' },
+    { name: 'I: Voice Dubbing (#52)', status: 'planned' },
+    { name: 'J: Creator → Editor Handoff (#55)', status: 'planned' },
+    { name: 'J: Real-time Collaboration (#57)', status: 'planned' },
+    { name: 'K: Script Versioning (#59)', status: 'planned' },
+    { name: 'R2: OpenAI Integration (#136)', status: 'done' },
+    { name: 'R2: Anthropic Integration (#137)', status: 'done' },
+    { name: 'R2: ElevenLabs Integration (#138)', status: 'done' },
+    { name: 'R2: YouTube Publish (#140)', status: 'planned' },
+  ], segments: ['enterprise'], integrations: ['Full Suite', 'External APIs'] },
+  { id: 'P5', name: 'Enterprise (10 Scenarios)', weeks: '25+', status: 'planned', completion: 0, statusText: '0% (0/10)', features: [
+    { name: 'SSO/SAML Integration', status: 'planned' },
+    { name: 'White-Label Solution', status: 'planned' },
+    { name: 'HIPAA Full Compliance', status: 'planned' },
+    { name: 'SLA Monitoring', status: 'planned' },
+    { name: 'Dedicated Support Tier', status: 'planned' },
+    { name: 'Custom API Integrations', status: 'planned' },
+    { name: 'Data Residency Options', status: 'planned' },
+    { name: 'Advanced Analytics/BI', status: 'planned' },
+    { name: 'Team Management', status: 'planned' },
+    { name: 'Complete Audit Logs', status: 'planned' },
     { name: 'SSO/SAML Integration', status: 'planned' },
     { name: 'Custom Model Training', status: 'planned' },
     { name: 'Advanced Analytics', status: 'planned' },
@@ -702,66 +738,137 @@ export const GenieStudioUnifiedHub: React.FC = () => {
   };
 
   // Verification data - comprehensive phase status
+  // Updated: 2026-01-13 to match COMPREHENSIVE_177_SCENARIO_PHASE_REVIEW.md
   const verificationData = {
     phases: [
-      { id: 'P0', name: 'Core MVP', weeks: '1-4', complete: 8, partial: 0, planned: 0, completion: 100, status: 'complete' as const },
-      { id: 'P1', name: 'Mobile + Remix', weeks: '5-8', complete: 1, partial: 3, planned: 4, completion: 30, status: 'in-progress' as const },
-      { id: 'P2', name: 'Advanced Features', weeks: '9-12', complete: 0, partial: 1, planned: 7, completion: 10, status: 'in-progress' as const },
-      { id: 'P3', name: 'Segment-Specific', weeks: '13-18', complete: 0, partial: 0, planned: 8, completion: 0, status: 'planned' as const },
-      { id: 'P4', name: 'Enterprise', weeks: '19-26', complete: 0, partial: 0, planned: 12, completion: 0, status: 'planned' as const },
-      { id: 'P5', name: 'Future + Auth', weeks: '27+', complete: 0, partial: 0, planned: 15, completion: 0, status: 'planned' as const },
+      // P0: Core MVP - 35 scenarios, 94% complete
+      { id: 'P0', name: 'Core MVP', weeks: '1-4', complete: 28, partial: 5, planned: 2, total: 35, completion: 94, status: 'complete' as const,
+        features: ['Script Management', 'TTS Multi-Provider', 'Recording Studio', 'Export Pipeline', 'Mind↔Vibe Bridge', 'Subscription Hooks', 'Credit System'] },
+      // P1: Essential Production - 32 scenarios, 16% complete
+      { id: 'P1', name: 'Essential Production', weeks: '5-8', complete: 5, partial: 2, planned: 25, total: 32, completion: 16, status: 'in-progress' as const,
+        features: ['Route Guards', 'Module Access Gates', 'B-Roll Integration', 'Platform Publishing', 'Usage Tracking'] },
+      // P2: AI Agents & UX - 50 scenarios, 24% complete (12 of 50)
+      { id: 'P2', name: 'AI Agents & UX', weeks: '9-12', complete: 12, partial: 0, planned: 38, total: 50, completion: 24, status: 'in-progress' as const,
+        features: ['Voice Coaching', 'Scene Analysis', 'Multi-Platform Publish', 'Script-Video Matching', 'PWA Installation', 'Service Worker'] },
+      // P3: Differentiators - 26 scenarios, 0% complete
+      { id: 'P3', name: 'Differentiators', weeks: '13-18', complete: 6, partial: 0, planned: 20, total: 26, completion: 23, status: 'planned' as const,
+        features: ['Bulk Video Gen', 'Auto Thumbnails', 'SEO Optimization', 'Social Cuts', 'Voice Cloning', 'Universal AI Processor'] },
+      // P4: Future/Advanced - 24 scenarios, 0% complete
+      { id: 'P4', name: 'Future/Advanced', weeks: '19-24', complete: 3, partial: 0, planned: 21, total: 24, completion: 13, status: 'planned' as const,
+        features: ['OpenAI Integration', 'Anthropic Integration', 'ElevenLabs Integration', 'Multi-Language', 'Collaboration'] },
+      // P5: Enterprise - 10 scenarios, 0% complete
+      { id: 'P5', name: 'Enterprise', weeks: '25+', complete: 0, partial: 0, planned: 10, total: 10, completion: 0, status: 'planned' as const,
+        features: ['SSO/SAML', 'White-Label', 'HIPAA Full', 'SLA Monitoring', 'Data Residency'] },
     ],
     scenarios: {
       total: 177,
       implemented: 43,
       partial: 7,
       planned: 127,
+      overallProgress: 28, // 50 including partial / 177
       categories: [
-        { name: 'A: Script Management (7)', scenarios: 'A1-A7', status: '100%', implemented: 7 },
-        { name: 'B: Text-to-Speech (7)', scenarios: 'B1-B7', status: '100%', implemented: 7 },
-        { name: 'C: Recording Studio (8)', scenarios: 'C1-C8', status: '100%', implemented: 8 },
-        { name: 'D: Export & Delivery (6)', scenarios: 'D1-D6', status: '100%', implemented: 6 },
-        { name: 'E: Mind↔Vibe Bridge (5)', scenarios: 'E1-E5', status: '100%', implemented: 5 },
-        { name: 'F: Subscription & Billing (10)', scenarios: 'F1-F10', status: '80%', implemented: 8 },
-        { name: 'G: User Management (5)', scenarios: 'G1-G5', status: '60%', implemented: 3 },
-        { name: 'H: Analytics & Dashboard (6)', scenarios: 'H1-H6', status: '0%', implemented: 0 },
-        { name: 'I: Mobile-First Features (8)', scenarios: 'I1-I8', status: '0%', implemented: 0 },
-        { name: 'J: Remix & Clips (12)', scenarios: 'J1-J12', status: '0%', implemented: 0 },
-        { name: 'K: Template Gallery (8)', scenarios: 'K1-K8', status: '0%', implemented: 0 },
-        { name: 'L: Offline Mode (5)', scenarios: 'L1-L5', status: '0%', implemented: 0 },
-        { name: 'M: Brand Customization (6)', scenarios: 'M1-M6', status: '0%', implemented: 0 },
-        { name: 'N: Segment: Creator (12)', scenarios: 'N1-N12', status: '0%', implemented: 0 },
-        { name: 'O: Segment: Traveler (8)', scenarios: 'O1-O8', status: '0%', implemented: 0 },
-        { name: 'P: Segment: SMB (10)', scenarios: 'P1-P10', status: '0%', implemented: 0 },
-        { name: 'Q: Segment: Education (10)', scenarios: 'Q1-Q10', status: '0%', implemented: 0 },
-        { name: 'R: Segment: Healthcare (12)', scenarios: 'R1-R12', status: '0%', implemented: 0 },
-        { name: 'S: Segment: Enterprise (10)', scenarios: 'S1-S10', status: '0%', implemented: 0 },
-        { name: 'T: Agents & Automation (15)', scenarios: 'T1-T15', status: '20%', implemented: 3 },
-        { name: 'U: API & Integration (17)', scenarios: 'U1-U17', status: '0%', implemented: 0 },
+        // Category A-E: Imagination → Production (P0 Core)
+        { name: 'A: Imagination → Production (10)', scenarios: '1-10', status: '70%', implemented: 5, partial: 3, pending: 2, phase: 'P0' },
+        // Category B: Upload → Production (P1)
+        { name: 'B: Upload → Production (6)', scenarios: '11-16', status: '0%', implemented: 0, partial: 0, pending: 6, phase: 'P1' },
+        // Category C: Video → Script (P2)
+        { name: 'C: Video → Script → Enhance (4)', scenarios: '17-20', status: '0%', implemented: 0, partial: 0, pending: 4, phase: 'P2' },
+        // Category D: Record → Refine (P1)
+        { name: 'D: Record → Refine Loops (4)', scenarios: '21-24', status: '0%', implemented: 0, partial: 0, pending: 4, phase: 'P1' },
+        // Category E: Hybrid Cross-Studio (P2)
+        { name: 'E: Hybrid & Cross-Studio (8)', scenarios: '25-32', status: '0%', implemented: 0, partial: 0, pending: 8, phase: 'P2' },
+        // Category F: Generation (P3)
+        { name: 'F: Generation & Automation (10)', scenarios: '33-42', status: '0%', implemented: 0, partial: 0, pending: 10, phase: 'P3' },
+        // Category G: Compliance (P3)
+        { name: 'G: Compliance & Legal (4)', scenarios: '43-46', status: '0%', implemented: 0, partial: 0, pending: 4, phase: 'P3' },
+        // Category H: Recovery (P4)
+        { name: 'H: Recovery & Error Handling (4)', scenarios: '47-50', status: '0%', implemented: 0, partial: 0, pending: 4, phase: 'P4' },
+        // Category I: Multi-Language (P4)
+        { name: 'I: Multi-Language & Localization (4)', scenarios: '51-54', status: '0%', implemented: 0, partial: 0, pending: 4, phase: 'P4' },
+        // Category J: Collaboration (P4)
+        { name: 'J: Collaboration & Handoffs (4)', scenarios: '55-58', status: '0%', implemented: 0, partial: 0, pending: 4, phase: 'P4' },
+        // Category K: Versioning (P4)
+        { name: 'K: Versioning & Archival (2)', scenarios: '59-60', status: '0%', implemented: 0, partial: 0, pending: 2, phase: 'P4' },
+        // Category L: Bidirectional Mind↔Vibe (P0)
+        { name: 'L: Bidirectional Mind↔Vibe (5)', scenarios: '61-65', status: '100%', implemented: 5, partial: 0, pending: 0, phase: 'P0' },
+        // Category M: Commercialization (P0)
+        { name: 'M: Commercialization Infrastructure (5)', scenarios: '66-70', status: '60%', implemented: 3, partial: 0, pending: 2, phase: 'P0' },
+        // Category M2: Access Control (P1)
+        { name: 'M2: Access Control (5)', scenarios: '71-75', status: '0%', implemented: 0, partial: 0, pending: 5, phase: 'P1' },
+        // Category M3: Public Pages (P2)
+        { name: 'M3: Public Landing/Pricing (5)', scenarios: '76-80', status: '0%', implemented: 0, partial: 0, pending: 5, phase: 'P2' },
+        // Category N: Mobile-First (P1/P2)
+        { name: 'N: Mobile-First Features (10)', scenarios: '81-90', status: '0%', implemented: 0, partial: 0, pending: 10, phase: 'P1' },
+        // Category O: Segment-Specific (P3/P4)
+        { name: 'O: Segment-Specific Features (10)', scenarios: '91-100', status: '0%', implemented: 0, partial: 0, pending: 10, phase: 'P3' },
+        // Category P: Remix & Clips (P2)
+        { name: 'P: Remix & Clip Assembly (10)', scenarios: '101-110', status: '0%', implemented: 0, partial: 0, pending: 10, phase: 'P2' },
+        // Category Q: Agent Integration (P0/P1)
+        { name: 'Q: Agent Integration Core (10)', scenarios: '111-120', status: '50%', implemented: 4, partial: 1, pending: 5, phase: 'P0' },
+        // Category Q2: Agent Advanced (P2)
+        { name: 'Q2: Agent Advanced (5)', scenarios: '121-125', status: '0%', implemented: 0, partial: 0, pending: 5, phase: 'P2' },
+        // Category R: API Integration (P3)
+        { name: 'R: API Integration (10)', scenarios: '126-135', status: '60%', implemented: 6, partial: 0, pending: 4, phase: 'P3' },
+        // Category R2: External APIs (P4)
+        { name: 'R2: External API Integration (5)', scenarios: '136-140', status: '60%', implemented: 3, partial: 0, pending: 2, phase: 'P4' },
+        // Category S: Subscription & Access (P0)
+        { name: 'S: Subscription & Access (10)', scenarios: '141-150', status: '100%', implemented: 10, partial: 0, pending: 0, phase: 'P0' },
+        // Category S2: Subscription Extended (P1)
+        { name: 'S2: Subscription Extended (5)', scenarios: '151-155', status: '60%', implemented: 2, partial: 2, pending: 1, phase: 'P1' },
+        // Category T: Mobile Deployment (P2)
+        { name: 'T: Mobile Deployment (10)', scenarios: '156-165', status: '20%', implemented: 2, partial: 0, pending: 8, phase: 'P2' },
+        // Category U: P2 AI Agents (P2 - COMPLETE!)
+        { name: 'U: P2 AI Agents (12)', scenarios: '166-177', status: '100%', implemented: 12, partial: 0, pending: 0, phase: 'P2' },
       ]
     },
     segmentCoverage: [
-      { segment: 'Creator Economy', p0: 100, p1: 30, p2: 10, p3: 0, pending: 25 },
-      { segment: 'Traveler/Experience', p0: 100, p1: 30, p2: 0, p3: 0, pending: 8 },
-      { segment: 'SMB Marketing', p0: 100, p1: 30, p2: 10, p3: 0, pending: 15 },
-      { segment: 'Education', p0: 100, p1: 0, p2: 0, p3: 0, pending: 10 },
-      { segment: 'Healthcare', p0: 100, p1: 0, p2: 0, p3: 0, pending: 12 },
-      { segment: 'Enterprise', p0: 100, p1: 0, p2: 0, p3: 0, pending: 20 },
+      { segment: 'Creator Economy', p0: 94, p1: 16, p2: 24, p3: 0, p4: 0, pending: 35, priorityGaps: ['Quick Clips', 'Social Cuts', 'Offline'] },
+      { segment: 'Traveler/Experience', p0: 94, p1: 16, p2: 24, p3: 0, p4: 0, pending: 12, priorityGaps: ['TripClip', 'Offline Mode', 'GPS Tagging'] },
+      { segment: 'SMB Marketing', p0: 94, p1: 16, p2: 24, p3: 0, p4: 0, pending: 20, priorityGaps: ['QuickPromo', 'DemoMaker', 'Bulk Gen'] },
+      { segment: 'Education', p0: 94, p1: 0, p2: 24, p3: 0, p4: 0, pending: 18, priorityGaps: ['LMS Integration', 'EduClip', 'Lecture Chunking'] },
+      { segment: 'Healthcare', p0: 94, p1: 0, p2: 24, p3: 0, p4: 0, pending: 22, priorityGaps: ['HIPAA Compliance', 'PHI Redaction', 'Patient Education'] },
+      { segment: 'Enterprise', p0: 94, p1: 0, p2: 24, p3: 0, p4: 0, pending: 30, priorityGaps: ['SSO/SAML', 'Approval Workflows', 'White-Label'] },
     ],
     criticalGaps: [
-      { issue: 'Subscription/Payment Infrastructure', impact: 'Revenue Blocking', effort: '2-3 weeks', priority: 'P0' },
-      { issue: 'Mobile-First Features', impact: '68% Market Demand', effort: '3-4 weeks', priority: 'P1' },
-      { issue: 'Segment-Specific Features', impact: 'Differentiation', effort: '6-8 weeks', priority: 'P3' },
-      { issue: 'Agent Implementation', impact: 'Only 3 of 12 Active', effort: '4-6 weeks', priority: 'P2' },
+      { issue: 'Route-Level Access Guards (P1)', impact: 'Security Critical - No tier-based protection', effort: '1-2 weeks', priority: 'P1', scenarios: [71, 72, 73] },
+      { issue: 'Subscription Database Schema (P0)', impact: 'Revenue Blocking - Missing tier/module tables', effort: '2 weeks', priority: 'P0', scenarios: [66, 67] },
+      { issue: 'Image Generation Integration (P0)', impact: 'Medium - AI pipeline incomplete', effort: '1 week', priority: 'P0', scenarios: [2, 4] },
+      { issue: 'Mobile-First Features (P1)', impact: '68% Market Demand - No mobile recording', effort: '3-4 weeks', priority: 'P1', scenarios: [81, 82, 83, 84, 85] },
+      { issue: 'B-Roll Auto-Integration (P1)', impact: 'High - Manual insertion only', effort: '2 weeks', priority: 'P1', scenarios: [14] },
+      { issue: 'Timeline Editor (P2)', impact: 'High - No full timeline UI', effort: '4 weeks', priority: 'P2', scenarios: [103] },
+      { issue: 'Compliance Scanner (P3)', impact: 'Healthcare/Enterprise blocker', effort: '3 weeks', priority: 'P3', scenarios: [44, 45, 46] },
     ],
     pendingScenarios: [
-      { id: '81', name: 'One-Tap Mobile Record', segment: 'All', market: '68% want', phase: 'P1' },
-      { id: '90', name: 'Quick Clips Generator', segment: 'Creator', market: '82% want', phase: 'P1' },
-      { id: '82', name: 'Offline Recording', segment: 'Traveler', market: '54% need', phase: 'P2' },
-      { id: '94', name: 'Product Demo Automation', segment: 'SMB', market: '71% want', phase: 'P3' },
-      { id: '103', name: 'Lesson Builder', segment: 'Education', market: '69% want', phase: 'P3' },
-      { id: '93', name: 'HIPAA Patient Education', segment: 'Healthcare', market: '94% want <$100', phase: 'P3' },
-    ]
+      { id: '66', name: 'Subscription Tier Database', segment: 'All', market: 'Revenue Critical', phase: 'P0', category: 'M' },
+      { id: '67', name: 'Module Registry Database', segment: 'All', market: 'Revenue Critical', phase: 'P0', category: 'M' },
+      { id: '71', name: 'Route-Level Access Guards', segment: 'All', market: 'Security Critical', phase: 'P1', category: 'M2' },
+      { id: '81', name: 'One-Tap Mobile Record', segment: 'All', market: '68% want', phase: 'P1', category: 'N' },
+      { id: '90', name: 'Quick Clips Generator', segment: 'Creator', market: '82% want', phase: 'P1', category: 'N' },
+      { id: '82', name: 'Offline Recording', segment: 'Traveler', market: '54% need', phase: 'P2', category: 'N' },
+      { id: '103', name: 'Timeline Arrangement', segment: 'Creator', market: 'Core feature', phase: 'P2', category: 'P' },
+      { id: '33', name: 'Bulk Video Generation', segment: 'Enterprise', market: 'Enterprise sales', phase: 'P3', category: 'F' },
+      { id: '45', name: 'HIPAA Auto-Redaction', segment: 'Healthcare', market: '94% want <$100', phase: 'P3', category: 'G' },
+      { id: '113', name: 'Voice Clone Training', segment: 'Creator', market: 'Premium feature', phase: 'P3', category: 'Q' },
+    ],
+    recommendations: [
+      { priority: 1, action: 'Complete P0 Database Schema', details: 'Create subscription_tiers and module_registry tables with RLS', effort: '1-2 weeks', impact: 'Unlocks monetization' },
+      { priority: 2, action: 'Implement Route Guards (P1)', details: 'Add React Router guards for tier-based access', effort: '1 week', impact: 'Security + tier enforcement' },
+      { priority: 3, action: 'Finish Image Generation (P0)', details: 'Connect DALL-E/Imagen to pipeline', effort: '1 week', impact: 'Complete imagination pipeline' },
+      { priority: 4, action: 'Start Mobile Features (P1)', details: 'One-tap record, quick templates', effort: '3-4 weeks', impact: '68% market demand' },
+      { priority: 5, action: 'Build P3 Differentiators', details: 'Bulk gen, auto thumbnails, SEO', effort: '6-8 weeks', impact: 'Enterprise sales, creator retention' },
+    ],
+    p3Readiness: {
+      ready: true,
+      conditional: 'Complete P1 route guards and usage tracking in parallel',
+      prerequisites: {
+        p0Complete: { status: true, percentage: 94, note: 'Only 2 scenarios pending (DB schema)' },
+        p1Progress: { status: false, percentage: 16, note: 'Need route guards, usage tracking' },
+        p2AIAgents: { status: true, percentage: 100, note: 'All 12 agents implemented (166-177)' },
+        mobileComponents: { status: true, note: '29 components ready' },
+        subscriptionHooks: { status: true, note: 'useSubscription, hasModuleAccess exist' },
+        stripeIntegration: { status: 'partial', note: 'Edge functions exist, checkout incomplete' },
+      }
+    }
   };
 
   const categories = [
@@ -1078,6 +1185,7 @@ export const GenieStudioUnifiedHub: React.FC = () => {
                   <TableRow>
                     <TableHead>ID</TableHead>
                     <TableHead>Scenario</TableHead>
+                    <TableHead>Category</TableHead>
                     <TableHead>Segment</TableHead>
                     <TableHead>Market Driver</TableHead>
                     <TableHead>Phase</TableHead>
@@ -1088,6 +1196,7 @@ export const GenieStudioUnifiedHub: React.FC = () => {
                     <TableRow key={scenario.id}>
                       <TableCell className="font-mono">#{scenario.id}</TableCell>
                       <TableCell className="font-medium">{scenario.name}</TableCell>
+                      <TableCell><Badge variant="outline" className="text-xs">{scenario.category}</Badge></TableCell>
                       <TableCell><Badge variant="outline">{scenario.segment}</Badge></TableCell>
                       <TableCell className="text-green-500 text-sm">{scenario.market}</TableCell>
                       <TableCell><Badge variant="secondary">{scenario.phase}</Badge></TableCell>
@@ -1095,6 +1204,117 @@ export const GenieStudioUnifiedHub: React.FC = () => {
                   ))}
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+
+          {/* P3 Readiness Assessment */}
+          <Card className="bg-card border-border border-green-500/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-600">
+                <Target className="h-5 w-5" />
+                P3 Readiness Assessment
+              </CardTitle>
+              <CardDescription>
+                {verificationData.p3Readiness.ready ? 
+                  `CONDITIONAL YES - ${verificationData.p3Readiness.conditional}` : 
+                  'NOT READY - Prerequisites incomplete'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                <div className={cn(
+                  "p-3 rounded-lg border text-center",
+                  verificationData.p3Readiness.prerequisites.p0Complete.status 
+                    ? "bg-green-500/10 border-green-500/30" 
+                    : "bg-red-500/10 border-red-500/30"
+                )}>
+                  <p className="text-xs text-muted-foreground">P0 Complete</p>
+                  <p className="text-lg font-bold">{verificationData.p3Readiness.prerequisites.p0Complete.percentage}%</p>
+                  <p className="text-xs">{verificationData.p3Readiness.prerequisites.p0Complete.status ? '✓' : '✗'}</p>
+                </div>
+                <div className={cn(
+                  "p-3 rounded-lg border text-center",
+                  verificationData.p3Readiness.prerequisites.p1Progress.status 
+                    ? "bg-green-500/10 border-green-500/30" 
+                    : "bg-yellow-500/10 border-yellow-500/30"
+                )}>
+                  <p className="text-xs text-muted-foreground">P1 Progress</p>
+                  <p className="text-lg font-bold">{verificationData.p3Readiness.prerequisites.p1Progress.percentage}%</p>
+                  <p className="text-xs">{verificationData.p3Readiness.prerequisites.p1Progress.status ? '✓' : '⚠️'}</p>
+                </div>
+                <div className={cn(
+                  "p-3 rounded-lg border text-center",
+                  verificationData.p3Readiness.prerequisites.p2AIAgents.status 
+                    ? "bg-green-500/10 border-green-500/30" 
+                    : "bg-red-500/10 border-red-500/30"
+                )}>
+                  <p className="text-xs text-muted-foreground">P2 AI Agents</p>
+                  <p className="text-lg font-bold">{verificationData.p3Readiness.prerequisites.p2AIAgents.percentage}%</p>
+                  <p className="text-xs">{verificationData.p3Readiness.prerequisites.p2AIAgents.status ? '✓' : '✗'}</p>
+                </div>
+                <div className={cn(
+                  "p-3 rounded-lg border text-center",
+                  verificationData.p3Readiness.prerequisites.mobileComponents.status 
+                    ? "bg-green-500/10 border-green-500/30" 
+                    : "bg-red-500/10 border-red-500/30"
+                )}>
+                  <p className="text-xs text-muted-foreground">Mobile Components</p>
+                  <p className="text-lg font-bold">29</p>
+                  <p className="text-xs">{verificationData.p3Readiness.prerequisites.mobileComponents.status ? '✓' : '✗'}</p>
+                </div>
+                <div className={cn(
+                  "p-3 rounded-lg border text-center",
+                  verificationData.p3Readiness.prerequisites.subscriptionHooks.status 
+                    ? "bg-green-500/10 border-green-500/30" 
+                    : "bg-red-500/10 border-red-500/30"
+                )}>
+                  <p className="text-xs text-muted-foreground">Subscription Hooks</p>
+                  <p className="text-lg font-bold">2</p>
+                  <p className="text-xs">{verificationData.p3Readiness.prerequisites.subscriptionHooks.status ? '✓' : '✗'}</p>
+                </div>
+                <div className={cn(
+                  "p-3 rounded-lg border text-center",
+                  verificationData.p3Readiness.prerequisites.stripeIntegration.status === 'complete' 
+                    ? "bg-green-500/10 border-green-500/30" 
+                    : verificationData.p3Readiness.prerequisites.stripeIntegration.status === 'partial'
+                    ? "bg-yellow-500/10 border-yellow-500/30"
+                    : "bg-red-500/10 border-red-500/30"
+                )}>
+                  <p className="text-xs text-muted-foreground">Stripe Integration</p>
+                  <p className="text-lg font-bold capitalize">{String(verificationData.p3Readiness.prerequisites.stripeIntegration.status)}</p>
+                  <p className="text-xs">{verificationData.p3Readiness.prerequisites.stripeIntegration.status === 'complete' ? '✓' : '⚠️'}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Recommended Actions */}
+          <Card className="bg-card border-border border-blue-500/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-blue-500">
+                <Star className="h-5 w-5" />
+                Recommended Next Actions (Prioritized)
+              </CardTitle>
+              <CardDescription>Implementation priorities based on impact and prerequisites</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {verificationData.recommendations.map((rec, idx) => (
+                  <div key={idx} className="flex items-start gap-4 p-4 rounded-lg border border-border bg-muted/20">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-sm">
+                      {rec.priority}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold">{rec.action}</h4>
+                      <p className="text-sm text-muted-foreground">{rec.details}</p>
+                      <div className="flex gap-4 mt-2 text-xs">
+                        <span className="text-orange-500">Effort: {rec.effort}</span>
+                        <span className="text-green-500">Impact: {rec.impact}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
 
