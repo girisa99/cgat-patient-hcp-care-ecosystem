@@ -852,6 +852,8 @@ export default function ProductionHub() {
           open={isCreateDialogOpen}
           onOpenChange={setIsCreateDialogOpen}
           onSchedule={async (data: ScheduleShowData) => {
+            console.log('[ProductionHub] onSchedule called with data:', data);
+            
             // Create show in database - this auto-generates the meeting_link
             const newShow = await createShow({
               title: data.title,
@@ -870,17 +872,21 @@ export default function ProductionHub() {
               linked_music_id: data.linked_music_id || undefined,
             });
             
+            console.log('[ProductionHub] Show created:', newShow);
+            
             // Use the auto-generated meeting link from the new show
             const meetingUrl = newShow?.meeting_link || data.meeting_url;
+            console.log('[ProductionHub] Meeting URL:', meetingUrl);
             
-            // Send invites to host if email provided
-            if (data.host.email && data.enable_email_reminders) {
+            // Send invites to host if email provided - ALWAYS send when email exists
+            if (data.host.email) {
+              console.log('[ProductionHub] Sending host invite to:', data.host.email);
               try {
                 const linkedScript = data.linked_script_id 
                   ? availableScripts.find(s => s.id === data.linked_script_id) 
                   : null;
                 
-                await supabase.functions.invoke('send-show-invite', {
+                const inviteResult = await supabase.functions.invoke('send-show-invite', {
                   body: {
                     to: data.host.email,
                     participantName: data.host.name || 'Host',
@@ -901,13 +907,13 @@ export default function ProductionHub() {
                     durationMinutes: 60,
                   },
                 });
-                console.log('[ProductionHub] Host invite sent to:', data.host.email);
+                console.log('[ProductionHub] Host invite result:', inviteResult);
               } catch (err) {
                 console.error('[ProductionHub] Failed to send host invite:', err);
               }
             }
             
-            // Send SMS to host if phone provided
+            // Send SMS to host if phone provided and SMS reminders enabled
             if (data.host.phone && data.enable_sms_reminders) {
               try {
                 await supabase.functions.invoke('twilio-notifications', {
@@ -923,15 +929,16 @@ export default function ProductionHub() {
               }
             }
             
-            // Send invites to all guests
+            // Send invites to all guests - ALWAYS send when email exists
             for (const guest of data.guests) {
-              if (guest.email && data.enable_email_reminders) {
+              if (guest.email) {
+                console.log('[ProductionHub] Sending guest invite to:', guest.email);
                 try {
                   const linkedScript = data.linked_script_id 
                     ? availableScripts.find(s => s.id === data.linked_script_id) 
                     : null;
                   
-                  await supabase.functions.invoke('send-show-invite', {
+                  const guestInviteResult = await supabase.functions.invoke('send-show-invite', {
                     body: {
                       to: guest.email,
                       participantName: guest.name,
@@ -952,7 +959,7 @@ export default function ProductionHub() {
                       durationMinutes: 60,
                     },
                   });
-                  console.log('[ProductionHub] Guest invite sent to:', guest.email);
+                  console.log('[ProductionHub] Guest invite result:', guestInviteResult);
                 } catch (err) {
                   console.error('[ProductionHub] Failed to send guest invite:', err);
                 }
@@ -975,6 +982,9 @@ export default function ProductionHub() {
             }
             
             toast.success('Production created and invites sent!');
+            
+            // Navigate to production hub to show the new show
+            navigate('/production-hub');
           }}
           availableScripts={availableScripts.map(s => ({ id: s.id, name: s.name, content: s.content || '' }))}
           initialData={{
