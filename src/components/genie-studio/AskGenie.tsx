@@ -52,6 +52,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { toast } from 'sonner';
 
+// Import centralized product definitions - SINGLE SOURCE OF TRUTH
+import { 
+  GENIE_PRODUCTS, 
+  ASK_GENIE, 
+  SUBSCRIPTION_FEATURE_ACCESS,
+  SUPPORTED_LANGUAGES 
+} from '@/constants/genie-products';
+
+
 // Genie Product Context Types
 export type GenieProduct = 'arc' | 'vibe' | 'spark' | 'mind' | 'studio';
 
@@ -146,13 +155,6 @@ const PERSONALITY = {
   ]
 };
 
-// Import centralized product definitions - SINGLE SOURCE OF TRUTH
-import { 
-  GENIE_PRODUCTS, 
-  ASK_GENIE, 
-  SUBSCRIPTION_FEATURE_ACCESS,
-  SUPPORTED_LANGUAGES 
-} from '@/constants/genie-products';
 
 // Use centralized taglines - These come from genie-products.ts and should NOT be duplicated
 const ORIGINAL_TAGLINES = {
