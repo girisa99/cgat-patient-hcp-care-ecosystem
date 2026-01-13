@@ -941,51 +941,40 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
     }
   }, [handleSendMessage]);
 
-  // Floating trigger button with pulse animation - uses combined logo
+  // Floating trigger button - single clean design with clear logo
   const TriggerButton = () => (
     <motion.div
-      initial={{ scale: 0 }}
-      animate={{ scale: 1 }}
-      className="fixed bottom-6 right-6 z-50 flex items-center gap-2"
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      whileHover={{ scale: 1.02 }}
+      className="fixed bottom-6 right-6 z-50"
     >
-      {/* Label with logo and tagline */}
-      <motion.div 
-        initial={{ opacity: 0, x: 10 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.5 }}
-        className="bg-background border rounded-2xl px-4 py-2.5 shadow-xl flex items-center gap-3 cursor-pointer hover:shadow-2xl transition-shadow"
-        onClick={() => setIsOpen(true)}
-      >
-        <img 
-          src={ASK_GENIE.logo}
-          alt={ASK_GENIE.name}
-          className="h-10 w-auto object-contain"
-        />
-        <div className="text-left">
-          <div className="font-semibold text-sm bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent flex items-center gap-1">
-            {ASK_GENIE.name} {ASK_GENIE.emoji}
-          </div>
-          <div className="text-[10px] text-muted-foreground italic">
-            {ASK_GENIE.tagline}
-          </div>
-        </div>
-      </motion.div>
-      
-      {/* Floating button with logo */}
       <Button
         onClick={() => setIsOpen(true)}
-        className={cn(
-          "h-14 w-14 rounded-full shadow-xl relative overflow-hidden group p-0",
-          `bg-gradient-to-r ${ASK_GENIE.color} hover:opacity-90`
-        )}
+        className="h-auto w-auto rounded-2xl shadow-2xl px-4 py-3 bg-white hover:bg-gray-50 border-2 border-purple-200 hover:border-purple-300 transition-all duration-300 group"
+        variant="ghost"
       >
-        <img 
-          src={ASK_GENIE.logo}
-          alt={ASK_GENIE.name}
-          className="h-10 w-10 object-contain relative z-10"
-        />
-        {/* Pulse ring */}
-        <span className="absolute inset-0 rounded-full animate-ping bg-white/30" />
+        <div className="flex items-center gap-3">
+          {/* Clear Logo on White Background */}
+          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-100 to-violet-100 flex items-center justify-center shadow-inner overflow-hidden">
+            <img 
+              src={ASK_GENIE.logo}
+              alt={ASK_GENIE.name}
+              className="h-10 w-10 object-contain"
+            />
+          </div>
+          {/* Text */}
+          <div className="text-left pr-1">
+            <div className="font-bold text-base bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent flex items-center gap-1.5">
+              {ASK_GENIE.name} {ASK_GENIE.emoji}
+            </div>
+            <div className="text-xs text-muted-foreground italic">
+              {ASK_GENIE.tagline}
+            </div>
+          </div>
+        </div>
+        {/* Subtle pulse indicator */}
+        <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-green-500 animate-pulse shadow-lg" />
       </Button>
     </motion.div>
   );
