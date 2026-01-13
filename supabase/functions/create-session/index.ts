@@ -58,9 +58,31 @@ const handler = async (req: Request): Promise<Response> => {
 
     const body: CreateSessionRequest = await req.json();
     console.log('Creating session:', body.title);
+    console.log('Scheduled at input:', body.scheduled_at);
 
+    // Parse scheduled_at - handle various input formats
+    let scheduledAt: Date;
+    if (body.scheduled_at) {
+      // If it's a datetime-local format (YYYY-MM-DDTHH:MM), append :00Z for proper parsing
+      const dateStr = body.scheduled_at.includes('Z') || body.scheduled_at.includes('+') 
+        ? body.scheduled_at 
+        : body.scheduled_at.length === 16 
+          ? `${body.scheduled_at}:00` // Add seconds for datetime-local format
+          : body.scheduled_at;
+      
+      scheduledAt = new Date(dateStr);
+      console.log('Parsed scheduled date:', scheduledAt.toISOString());
+    } else {
+      // Default to 1 hour from now if not provided
+      scheduledAt = new Date(Date.now() + 60 * 60 * 1000);
+    }
+    
+    // Validate the date is valid
+    if (isNaN(scheduledAt.getTime())) {
+      throw new Error(`Invalid scheduled_at date: ${body.scheduled_at}`);
+    }
+    
     // Calculate when session becomes active (30 min before)
-    const scheduledAt = new Date(body.scheduled_at);
     const sessionActiveAt = new Date(scheduledAt.getTime() - 30 * 60 * 1000);
 
     // Generate join URL based on session mode - uses Genie Studio meeting route
@@ -114,7 +136,7 @@ const handler = async (req: Request): Promise<Response> => {
       session_type: body.session_type,
       session_mode: body.session_mode,
       production_stage: body.production_stage || 'recording',
-      scheduled_at: body.scheduled_at,
+      scheduled_at: scheduledAt.toISOString(),
       duration_minutes: body.duration_minutes || 60,
       timezone: body.timezone || 'UTC',
       script_content: body.script_content || null,
