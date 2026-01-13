@@ -852,13 +852,14 @@ export default function ProductionHub() {
           open={isCreateDialogOpen}
           onOpenChange={setIsCreateDialogOpen}
           onSchedule={async (data: ScheduleShowData) => {
-            console.log('[ProductionHub] onSchedule called with data:', JSON.stringify(data, null, 2));
+            console.log('[ProductionHub] onSchedule START with data:', data.title, data.host?.email);
             
             let newShow: any = null;
             let meetingUrl = data.meeting_url;
             
             // Create show in database - this auto-generates the meeting_link
             try {
+              console.log('[ProductionHub] Calling createShow...');
               newShow = await createShow({
                 title: data.title,
                 description: data.description || undefined,
@@ -876,22 +877,22 @@ export default function ProductionHub() {
                 linked_music_id: data.linked_music_id || undefined,
               });
               
-              console.log('[ProductionHub] Show created:', newShow);
+              console.log('[ProductionHub] Show created successfully:', newShow?.id);
               meetingUrl = newShow?.meeting_link || data.meeting_url;
-              console.log('[ProductionHub] Meeting URL:', meetingUrl);
             } catch (err) {
-              console.error('[ProductionHub] Failed to create show:', err);
+              console.error('[ProductionHub] Failed to create show (continuing with emails):', err);
               // Continue with email sending even if show creation fails
             }
             
             // Send invites to host if email provided - ALWAYS send when email exists
             if (data.host?.email) {
-              console.log('[ProductionHub] Sending host invite to:', data.host.email);
+              console.log('[ProductionHub] Attempting to send host invite to:', data.host.email);
               try {
                 const linkedScript = data.linked_script_id 
                   ? availableScripts.find(s => s.id === data.linked_script_id) 
                   : null;
                 
+                console.log('[ProductionHub] Invoking send-show-invite edge function...');
                 const inviteResult = await supabase.functions.invoke('send-show-invite', {
                   body: {
                     to: data.host.email,
@@ -916,6 +917,8 @@ export default function ProductionHub() {
                 console.log('[ProductionHub] Host invite result:', inviteResult);
                 if (inviteResult.error) {
                   console.error('[ProductionHub] Host invite error:', inviteResult.error);
+                } else {
+                  console.log('[ProductionHub] Host invite sent successfully!');
                 }
               } catch (err) {
                 console.error('[ProductionHub] Failed to send host invite:', err);
@@ -934,7 +937,7 @@ export default function ProductionHub() {
                     message: `🎙️ You're hosting "${data.title}" on ${data.scheduled_date ? new Date(data.scheduled_date).toLocaleString() : 'TBD'}. ${meetingUrl ? `Join: ${meetingUrl}` : ''}`,
                   },
                 });
-                console.log('[ProductionHub] Host SMS sent to:', data.host.phone);
+                console.log('[ProductionHub] Host SMS sent');
               } catch (err) {
                 console.error('[ProductionHub] Failed to send host SMS:', err);
               }
@@ -942,6 +945,7 @@ export default function ProductionHub() {
             
             // Send invites to all guests - ALWAYS send when email exists
             if (data.guests && data.guests.length > 0) {
+              console.log('[ProductionHub] Sending invites to', data.guests.length, 'guests');
               for (const guest of data.guests) {
                 if (guest.email) {
                   console.log('[ProductionHub] Sending guest invite to:', guest.email);
@@ -971,7 +975,7 @@ export default function ProductionHub() {
                         durationMinutes: 60,
                       },
                     });
-                    console.log('[ProductionHub] Guest invite result:', guestInviteResult);
+                    console.log('[ProductionHub] Guest invite result for', guest.email, ':', guestInviteResult);
                   } catch (err) {
                     console.error('[ProductionHub] Failed to send guest invite:', err);
                   }
@@ -994,8 +998,8 @@ export default function ProductionHub() {
               }
             }
             
-            console.log('[ProductionHub] Scheduling complete');
-            // Don't call setIsCreateDialogOpen here - let the dialog handle its own closing
+            console.log('[ProductionHub] Scheduling complete - dialog will close');
+            toast.success('Show scheduled! Check console for email status.');
           }}
           availableScripts={availableScripts.map(s => ({ id: s.id, name: s.name, content: s.content || '' }))}
           initialData={{
