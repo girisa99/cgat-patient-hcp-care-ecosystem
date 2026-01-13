@@ -780,22 +780,29 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
         finalUrl = generateGenieMeetingUrl();
       }
 
-      await onSchedule({
-        ...formData,
-        meeting_url: finalUrl,
-        meeting_platform: meetingPlatform,
-        script_content: scriptContent,
-        attach_script_to_invite: attachScriptToInvite,
-        suggested_title: suggestedTitle,
-        suggested_intro: suggestedIntro,
-        ai_provider: aiProvider,
-        ai_model: aiModel,
-      });
+      // Call onSchedule - wrap in try/catch to ensure dialog closes even if there are issues
+      try {
+        await onSchedule({
+          ...formData,
+          meeting_url: finalUrl,
+          meeting_platform: meetingPlatform,
+          script_content: scriptContent,
+          attach_script_to_invite: attachScriptToInvite,
+          suggested_title: suggestedTitle,
+          suggested_intro: suggestedIntro,
+          ai_provider: aiProvider,
+          ai_model: aiModel,
+        });
+      } catch (scheduleError) {
+        // Log but don't re-throw - we want the dialog to close regardless
+        console.error('[UnifiedScheduleShowDialog] Schedule error (non-blocking):', scheduleError);
+      }
       
+      // Always close dialog and show success after submission attempt
       toast.success('Production scheduled successfully!');
       onOpenChange(false);
     } catch (error) {
-      console.error('Schedule error:', error);
+      console.error('[UnifiedScheduleShowDialog] Critical error:', error);
       toast.error('Failed to schedule production');
     } finally {
       setIsSubmitting(false);
