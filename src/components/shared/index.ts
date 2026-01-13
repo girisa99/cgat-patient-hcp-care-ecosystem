@@ -68,8 +68,14 @@ export { AIAutoArrange } from '@/components/mobile/AIAutoArrange';
 // Multi-Clip Timeline - timeline editing
 export { MultiClipTimeline } from '@/components/mobile/MultiClipTimeline';
 
+// Timeline Clip Editor - full clip manipulation
+export { TimelineClipEditor } from '@/components/mobile/TimelineClipEditor';
+
 // Music Sync Assembly - beat sync
 export { MusicSyncAssembly } from '@/components/mobile/MusicSyncAssembly';
+
+// Location Story Mode - geo-based storytelling
+export { LocationStoryMode } from '@/components/mobile/LocationStoryMode';
 
 // Floating Audio Mixer - compact mixer
 export { FloatingAudioMixer } from '@/components/document-processing/RecordingStudio/components/FloatingAudioMixer';
