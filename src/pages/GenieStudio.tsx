@@ -1344,12 +1344,19 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
 
       if (error) throw error;
 
-      // Send invites if session created successfully
-      if (sessionData?.session?.id && data.guests.length > 0 && data.enable_email_reminders) {
-        await supabase.functions.invoke('send-session-invites', {
+      // Send invites if session created successfully and there are guests
+      if (sessionData?.session?.id && data.guests.length > 0) {
+        console.log('Sending invites for session:', sessionData.session.id);
+        const inviteResult = await supabase.functions.invoke('send-session-invites', {
           body: { session_id: sessionData.session.id },
         });
-        toast.success(`Session created! Invites sent to ${data.guests.length} participant(s)`);
+        console.log('Invite result:', inviteResult);
+        if (inviteResult.error) {
+          console.error('Invite error:', inviteResult.error);
+          toast.warning('Session created but invites may have failed to send');
+        } else {
+          toast.success(`Session created! Invites sent to ${data.guests.length} participant(s)`);
+        }
       } else {
         toast.success('Session created successfully!');
       }
