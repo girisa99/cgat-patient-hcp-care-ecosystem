@@ -651,35 +651,35 @@ export default function ProductionHub() {
         {/* Category Tabs & Kanban Board */}
         <div className="flex-1 overflow-auto">
           <Tabs value={activeCategory} onValueChange={(v) => setActiveCategory(v as EventCategory)} className="h-full flex flex-col">
-            <div className="px-4 pt-4 pb-2 border-b bg-muted/30">
-              <TabsList className="inline-flex h-auto p-1 bg-background/80 backdrop-blur shadow-sm border border-border/50 rounded-lg gap-0.5">
-                <TabsTrigger value="guide" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md whitespace-nowrap">
+            <div className="px-4 pt-4 pb-2 border-b bg-muted/30 overflow-x-auto">
+              <TabsList className="inline-flex h-auto p-1 bg-background/80 backdrop-blur shadow-sm border border-border/50 rounded-lg gap-0.5 min-w-max">
+                <TabsTrigger value="guide" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex items-center gap-1 px-2 py-1.5 text-xs rounded-md whitespace-nowrap">
                   <Wand2 className="h-3.5 w-3.5" />
                   Guide
                 </TabsTrigger>
-                <TabsTrigger value="media_production" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md whitespace-nowrap">
+                <TabsTrigger value="media_production" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex items-center gap-1 px-2 py-1.5 text-xs rounded-md whitespace-nowrap">
                   <Podcast className="h-3.5 w-3.5" />
                   Media
                 </TabsTrigger>
-                <TabsTrigger value="business_meeting" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md whitespace-nowrap">
+                <TabsTrigger value="business_meeting" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex items-center gap-1 px-2 py-1.5 text-xs rounded-md whitespace-nowrap">
                   <Briefcase className="h-3.5 w-3.5" />
                   Meeting
                 </TabsTrigger>
-                <TabsTrigger value="event" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md whitespace-nowrap">
+                <TabsTrigger value="event" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex items-center gap-1 px-2 py-1.5 text-xs rounded-md whitespace-nowrap">
                   <Calendar className="h-3.5 w-3.5" />
                   Events
                 </TabsTrigger>
-                <TabsTrigger value="genie_demo" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md whitespace-nowrap">
+                <TabsTrigger value="genie_demo" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex items-center gap-1 px-2 py-1.5 text-xs rounded-md whitespace-nowrap">
                   <Zap className="h-3.5 w-3.5" />
-                  Genie Demo
+                  Demo
                 </TabsTrigger>
-                <TabsTrigger value="highlights" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md whitespace-nowrap">
+                <TabsTrigger value="highlights" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex items-center gap-1 px-2 py-1.5 text-xs rounded-md whitespace-nowrap">
                   <Video className="h-3.5 w-3.5" />
-                  Highlights
+                  Clips
                 </TabsTrigger>
-                <TabsTrigger value="distribution" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md whitespace-nowrap">
+                <TabsTrigger value="distribution" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex items-center gap-1 px-2 py-1.5 text-xs rounded-md whitespace-nowrap">
                   <Globe className="h-3.5 w-3.5" />
-                  Distribute
+                  Publish
                 </TabsTrigger>
               </TabsList>
             </div>
