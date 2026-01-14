@@ -416,20 +416,60 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
       });
     }
     
+    // Log to console so user can copy from there
+    console.log('=== RALPH WIGGUM FINDINGS ===');
+    console.log(prompt);
+    console.log('=== END FINDINGS ===');
+    
+    // Try multiple clipboard methods
+    let copied = false;
+    
     try {
-      await navigator.clipboard.writeText(prompt);
-      
-      // Mark all shared findings as "in_progress"
-      for (const finding of activeFindings) {
-        await updateFindingStatus(finding.id, 'in_progress', 'lovable-share');
+      // Method 1: Modern Clipboard API
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(prompt);
+        copied = true;
       }
-      
-      toast.success(
-        `✨ Copied ${activeFindings.length} findings to clipboard!\nPaste in Lovable chat.\nStatus updated to WIP.`,
-        { duration: 4000 }
-      );
     } catch (err) {
-      toast.error('Failed to copy to clipboard');
+      console.warn('Clipboard API failed:', err);
+    }
+    
+    if (!copied) {
+      try {
+        // Method 2: Fallback using textarea
+        const textArea = document.createElement('textarea');
+        textArea.value = prompt;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        copied = document.execCommand('copy');
+        document.body.removeChild(textArea);
+      } catch (err) {
+        console.warn('Fallback clipboard failed:', err);
+      }
+    }
+    
+    // Mark all shared findings as "in_progress"
+    for (const finding of activeFindings) {
+      await updateFindingStatus(finding.id, 'in_progress', 'lovable-share');
+    }
+    
+    if (copied) {
+      toast.success(
+        `✨ Copied ${activeFindings.length} findings!\nPaste (Ctrl+V) in Lovable chat.\nStatus → WIP`,
+        { duration: 5000 }
+      );
+    } else {
+      // Show the content so user can manually copy
+      toast.info(
+        'Clipboard blocked. Check console (F12) for findings to copy.',
+        { duration: 8000 }
+      );
+      // Also show in an alert as last resort
+      alert(`COPY THIS TO LOVABLE:\n\n${prompt}`);
     }
   }, [currentPageFindings, currentPageName, currentRoute, updateFindingStatus]);
   
