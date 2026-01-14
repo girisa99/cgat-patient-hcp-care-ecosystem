@@ -1,13 +1,14 @@
 /**
  * Investor Dashboard Tab - Financials, Projections, Go-to-Market
+ * Enterprise design with proper design system tokens
  */
 
 import React from 'react';
 import { motion } from 'framer-motion';
 import {
-  DollarSign, TrendingUp, Users, Globe,
-  Calendar, Target, BarChart3, PieChart,
-  ArrowUpRight, Rocket, Building2
+  DollarSign, TrendingUp,
+  BarChart3, PieChart,
+  ArrowUpRight, Rocket
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -20,12 +21,12 @@ import {
 
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.05 } },
+  visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 15 },
-  visible: { opacity: 1, y: 0 },
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
 };
 
 const formatCurrency = (amount: number) => {
@@ -40,48 +41,56 @@ export const InvestorDashboardTab: React.FC = () => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="max-w-[1920px] mx-auto space-y-8 px-6"
+      className="max-w-[1920px] mx-auto space-y-10"
     >
       {/* Executive Summary */}
       <motion.div 
         variants={itemVariants}
-        className="bg-gradient-to-r from-emerald-600/20 via-violet-600/20 to-fuchsia-600/20 rounded-2xl p-8 border border-violet-500/30"
+        className="bg-gradient-to-r from-green-500/10 via-primary/10 to-accent/10 rounded-2xl p-8 border border-primary/20"
       >
-        <h2 className="text-3xl font-bold text-white mb-6">Investor Executive Summary</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-6">Investor Executive Summary</h2>
         <div className="grid grid-cols-5 gap-6">
           {[
-            { label: 'Target Market (Total Addressable Market)', value: '$89.5B', sublabel: 'AI Video by 2030', color: 'emerald' },
-            { label: 'Serviceable Addressable Market', value: '$12.3B', sublabel: 'Creator Economy Segment', color: 'violet' },
-            { label: 'Serviceable Obtainable Market Year 1', value: '$45M', sublabel: 'Initial 6 Countries', color: 'blue' },
-            { label: 'Development Investment', value: '$2.1M', sublabel: 'Seed to Series A', color: 'amber' },
-            { label: 'Projected Annual Recurring Revenue 2027', value: '$8.5M', sublabel: 'Conservative Estimate', color: 'fuchsia' },
+            { label: 'Total Addressable Market', value: '$89.5B', sublabel: 'AI Video by 2030', color: 'text-green-600 dark:text-green-400' },
+            { label: 'Serviceable Addressable Market', value: '$12.3B', sublabel: 'Creator Economy', color: 'text-primary' },
+            { label: 'Serviceable Obtainable Market', value: '$45M', sublabel: 'Year 1 Target', color: 'text-blue-600 dark:text-blue-400' },
+            { label: 'Development Investment', value: '$2.1M', sublabel: 'Seed to Series A', color: 'text-amber-600 dark:text-amber-400' },
+            { label: 'Projected ARR 2027', value: '$8.5M', sublabel: 'Conservative', color: 'text-accent' },
           ].map((item, index) => (
-            <div key={index} className="text-center">
-              <div className={`text-3xl font-bold text-${item.color}-400`}>{item.value}</div>
-              <div className="text-white font-medium mt-2">{item.label}</div>
-              <div className="text-xs text-slate-400 mt-1">{item.sublabel}</div>
-            </div>
+            <motion.div 
+              key={index} 
+              className="text-center"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1 * index }}
+            >
+              <div className={`text-3xl font-bold ${item.color}`}>{item.value}</div>
+              <div className="text-foreground font-medium mt-2 text-sm">{item.label}</div>
+              <div className="text-xs text-muted-foreground mt-1">{item.sublabel}</div>
+            </motion.div>
           ))}
         </div>
       </motion.div>
 
       {/* Financial Projections */}
       <motion.div variants={itemVariants}>
-        <h3 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
-          <TrendingUp className="w-6 h-6 text-emerald-400" />
-          Financial Projections (2025-2028)
+        <h3 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
+            <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
+          </div>
+          Financial Projections (2026-2028)
         </h3>
-        <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 overflow-hidden">
+        <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-slate-700/30">
-                <th className="text-left text-slate-300 font-medium px-4 py-3">Period</th>
-                <th className="text-right text-slate-300 font-medium px-4 py-3">Users</th>
-                <th className="text-right text-slate-300 font-medium px-4 py-3">Monthly Recurring Revenue</th>
-                <th className="text-right text-slate-300 font-medium px-4 py-3">Annual Recurring Revenue</th>
-                <th className="text-right text-slate-300 font-medium px-4 py-3">Total Costs</th>
-                <th className="text-right text-slate-300 font-medium px-4 py-3">Net Income</th>
-                <th className="text-right text-slate-300 font-medium px-4 py-3">Margin</th>
+              <tr className="bg-muted/50 border-b border-border">
+                <th className="text-left text-foreground font-semibold px-4 py-4">Period</th>
+                <th className="text-right text-foreground font-semibold px-4 py-4">Users</th>
+                <th className="text-right text-foreground font-semibold px-4 py-4">MRR</th>
+                <th className="text-right text-foreground font-semibold px-4 py-4">ARR</th>
+                <th className="text-right text-foreground font-semibold px-4 py-4">Total Costs</th>
+                <th className="text-right text-foreground font-semibold px-4 py-4">Net Income</th>
+                <th className="text-right text-foreground font-semibold px-4 py-4">Margin</th>
               </tr>
             </thead>
             <tbody>
@@ -90,19 +99,19 @@ export const InvestorDashboardTab: React.FC = () => {
                 return (
                   <tr 
                     key={index}
-                    className="border-t border-slate-700/30 hover:bg-slate-700/20 transition-colors"
+                    className="border-t border-border hover:bg-muted/30 transition-colors"
                   >
-                    <td className="px-4 py-3 text-white font-medium">
+                    <td className="px-4 py-4 text-foreground font-medium">
                       {proj.quarter ? `${proj.year} ${proj.quarter}` : proj.year}
                     </td>
-                    <td className="px-4 py-3 text-right text-slate-300">{proj.users.toLocaleString()}</td>
-                    <td className="px-4 py-3 text-right text-emerald-400 font-medium">{formatCurrency(proj.mrr)}</td>
-                    <td className="px-4 py-3 text-right text-violet-400 font-medium">{formatCurrency(proj.arr)}</td>
-                    <td className="px-4 py-3 text-right text-amber-400">{formatCurrency(proj.totalCost)}</td>
-                    <td className={`px-4 py-3 text-right font-medium ${proj.netIncome >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                    <td className="px-4 py-4 text-right text-muted-foreground">{proj.users.toLocaleString()}</td>
+                    <td className="px-4 py-4 text-right text-green-600 dark:text-green-400 font-medium">{formatCurrency(proj.mrr)}</td>
+                    <td className="px-4 py-4 text-right text-primary font-medium">{formatCurrency(proj.arr)}</td>
+                    <td className="px-4 py-4 text-right text-amber-600 dark:text-amber-400">{formatCurrency(proj.totalCost)}</td>
+                    <td className={`px-4 py-4 text-right font-medium ${proj.netIncome >= 0 ? 'text-green-600 dark:text-green-400' : 'text-destructive'}`}>
                       {formatCurrency(proj.netIncome)}
                     </td>
-                    <td className={`px-4 py-3 text-right ${margin >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                    <td className={`px-4 py-4 text-right font-medium ${margin >= 0 ? 'text-green-600 dark:text-green-400' : 'text-destructive'}`}>
                       {margin}%
                     </td>
                   </tr>
@@ -115,125 +124,142 @@ export const InvestorDashboardTab: React.FC = () => {
 
       {/* Unit Economics */}
       <motion.div variants={itemVariants}>
-        <h3 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
-          <PieChart className="w-6 h-6 text-violet-400" />
+        <h3 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <PieChart className="w-5 h-5 text-primary" />
+          </div>
           Unit Economics by Segment
         </h3>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-5">
           {unitEconomics.map((ue, index) => (
-            <div key={index} className="bg-slate-800/50 rounded-xl p-5 border border-slate-700/50">
-              <h4 className="text-lg font-semibold text-white mb-4">{ue.segment}</h4>
+            <motion.div 
+              key={index} 
+              className="bg-card rounded-2xl p-5 border border-border shadow-sm"
+              whileHover={{ y: -4 }}
+            >
+              <h4 className="text-lg font-semibold text-foreground mb-4">{ue.segment}</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="text-xs text-slate-400 uppercase">Average Revenue Per User</div>
-                  <div className="text-xl font-bold text-emerald-400">${ue.arpu}/mo</div>
+                  <div className="text-xs text-muted-foreground uppercase font-medium">ARPU</div>
+                  <div className="text-xl font-bold text-green-600 dark:text-green-400">${ue.arpu}/mo</div>
                 </div>
                 <div>
-                  <div className="text-xs text-slate-400 uppercase">Customer Acquisition Cost</div>
-                  <div className="text-xl font-bold text-amber-400">${ue.cac}</div>
+                  <div className="text-xs text-muted-foreground uppercase font-medium">CAC</div>
+                  <div className="text-xl font-bold text-amber-600 dark:text-amber-400">${ue.cac}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-slate-400 uppercase">Lifetime Value</div>
-                  <div className="text-xl font-bold text-violet-400">${ue.ltv}</div>
+                  <div className="text-xs text-muted-foreground uppercase font-medium">LTV</div>
+                  <div className="text-xl font-bold text-primary">${ue.ltv}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-slate-400 uppercase">Lifetime Value to Customer Acquisition Cost Ratio</div>
-                  <div className={`text-xl font-bold ${ue.ltvCacRatio >= 3 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  <div className="text-xs text-muted-foreground uppercase font-medium">LTV:CAC</div>
+                  <div className={`text-xl font-bold ${ue.ltvCacRatio >= 3 ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}`}>
                     {ue.ltvCacRatio}x
                   </div>
                 </div>
               </div>
-              <div className="mt-4 pt-4 border-t border-slate-700/50 flex justify-between text-sm">
-                <span className="text-slate-400">Churn Rate: <span className="text-white">{ue.churnRate}%</span></span>
-                <span className="text-slate-400">Payback: <span className="text-white">{ue.paybackMonths}mo</span></span>
+              <div className="mt-4 pt-4 border-t border-border flex justify-between text-sm">
+                <span className="text-muted-foreground">Churn: <span className="text-foreground font-medium">{ue.churnRate}%</span></span>
+                <span className="text-muted-foreground">Payback: <span className="text-foreground font-medium">{ue.paybackMonths}mo</span></span>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </motion.div>
 
       {/* Go-to-Market Strategy */}
       <motion.div variants={itemVariants}>
-        <h3 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
-          <Rocket className="w-6 h-6 text-fuchsia-400" />
+        <h3 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+            <Rocket className="w-5 h-5 text-accent" />
+          </div>
           Go-to-Market Strategy
         </h3>
         <div className="space-y-4">
           {goToMarketPhases.map((phase, index) => (
-            <div key={index} className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
+            <motion.div 
+              key={index} 
+              className="bg-card rounded-2xl p-6 border border-border shadow-sm"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 * index }}
+            >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-400 font-bold">
-                    {phase.phase}
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <span className="text-primary font-bold text-lg">{index + 1}</span>
                   </div>
                   <div>
-                    <h4 className="text-lg font-semibold text-white">{phase.name}</h4>
-                    <p className="text-sm text-slate-400">{phase.duration}</p>
+                    <h4 className="text-lg font-semibold text-foreground">{phase.name}</h4>
+                    <p className="text-sm text-muted-foreground">{phase.duration}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-bold text-emerald-400">{phase.targetUsers.toLocaleString()}</div>
-                  <div className="text-xs text-slate-400">Target Users</div>
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">{phase.targetUsers.toLocaleString()}</div>
+                  <div className="text-xs text-muted-foreground">Target Users</div>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-6">
                 <div>
-                  <h5 className="text-sm font-medium text-violet-400 mb-2">Target Segments</h5>
+                  <h5 className="text-sm font-semibold text-primary mb-2">Target Segments</h5>
                   <div className="flex flex-wrap gap-2">
                     {phase.segments.map((seg, idx) => (
-                      <span key={idx} className="text-xs px-2 py-1 rounded bg-violet-500/20 text-violet-300">
+                      <span key={idx} className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">
                         {seg}
                       </span>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <h5 className="text-sm font-medium text-emerald-400 mb-2">Countries</h5>
+                  <h5 className="text-sm font-semibold text-green-600 dark:text-green-400 mb-2">Countries</h5>
                   <div className="flex flex-wrap gap-2">
                     {phase.countries.map((country, idx) => (
-                      <span key={idx} className="text-xs px-2 py-1 rounded bg-emerald-500/20 text-emerald-300">
+                      <span key={idx} className="text-xs px-2 py-1 rounded-full bg-green-500/10 text-green-700 dark:text-green-400 font-medium">
                         {country}
                       </span>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <h5 className="text-sm font-medium text-amber-400 mb-2">Key Activities</h5>
+                  <h5 className="text-sm font-semibold text-amber-600 dark:text-amber-400 mb-2">Key Activities</h5>
                   <ul className="space-y-1">
                     {phase.activities.slice(0, 3).map((activity, idx) => (
-                      <li key={idx} className="text-xs text-slate-300 flex items-center gap-1">
-                        <ArrowUpRight className="w-3 h-3 text-amber-400" />
+                      <li key={idx} className="text-xs text-muted-foreground flex items-center gap-1">
+                        <ArrowUpRight className="w-3 h-3 text-amber-500" />
                         {activity}
                       </li>
                     ))}
                   </ul>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </motion.div>
 
       {/* Pricing Comparison */}
       <motion.div variants={itemVariants}>
-        <h3 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
-          <DollarSign className="w-6 h-6 text-amber-400" />
+        <h3 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+            <DollarSign className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+          </div>
           Competitive Pricing Analysis
         </h3>
         <div className="grid grid-cols-2 gap-6">
           {/* Competitor Pricing */}
-          <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
-            <h4 className="text-lg font-semibold text-white mb-4">Competitor Pricing by Segment</h4>
-            <div className="space-y-4">
+          <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
+            <h4 className="text-lg font-semibold text-foreground mb-4">Competitor Pricing</h4>
+            <div className="space-y-3">
               {competitorPricing.map((cp, index) => (
-                <div key={index} className="flex items-center justify-between py-2 border-b border-slate-700/30 last:border-0">
+                <div key={index} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                   <div>
-                    <span className="text-white font-medium">{cp.name}</span>
-                    <span className="text-xs text-slate-400 ml-2">({cp.segment})</span>
+                    <span className="text-foreground font-medium">{cp.name}</span>
+                    <span className="text-xs text-muted-foreground ml-2">({cp.segment})</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-amber-400 font-medium">{typeof cp.price === 'number' ? `$${cp.price}/mo` : cp.price}</span>
-                    <span className="text-xs text-slate-400 ml-2">{cp.features}</span>
+                    <span className="text-amber-600 dark:text-amber-400 font-medium">
+                      {typeof cp.price === 'number' ? `$${cp.price}/mo` : cp.price}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -241,18 +267,18 @@ export const InvestorDashboardTab: React.FC = () => {
           </div>
 
           {/* Genie Pricing */}
-          <div className="bg-violet-500/10 rounded-xl p-6 border border-violet-500/20">
-            <h4 className="text-lg font-semibold text-white mb-4">Genie Suite Pricing Tiers</h4>
+          <div className="bg-primary/5 rounded-2xl p-6 border border-primary/20">
+            <h4 className="text-lg font-semibold text-foreground mb-4">Genie Suite Pricing Tiers</h4>
             <div className="space-y-3">
               {Object.entries(pricingTiers).map(([segment, tiers], index) => (
-                <div key={index} className="border-b border-violet-500/20 last:border-0 pb-3">
-                  <div className="text-xs font-medium text-violet-400 uppercase mb-2">{segment}</div>
+                <div key={index} className="border-b border-primary/20 last:border-0 pb-3">
+                  <div className="text-xs font-semibold text-primary uppercase mb-2">{segment}</div>
                   <div className="grid grid-cols-2 gap-2">
                     {Object.entries(tiers).map(([tierName, tierData]) => (
-                      <div key={tierName} className="flex items-center justify-between bg-slate-800/30 rounded px-3 py-2">
-                        <span className="text-white text-sm font-medium capitalize">{tierName}</span>
-                        <span className="text-emerald-400 font-bold">
-                          {typeof tierData.price === 'number' ? `$${tierData.price}/mo` : tierData.price}
+                      <div key={tierName} className="flex items-center justify-between bg-card rounded-lg px-3 py-2 border border-border">
+                        <span className="text-foreground text-sm font-medium capitalize">{tierName}</span>
+                        <span className="text-green-600 dark:text-green-400 font-bold">
+                          {typeof tierData.price === 'number' ? `$${tierData.price}` : tierData.price}
                         </span>
                       </div>
                     ))}
@@ -260,9 +286,9 @@ export const InvestorDashboardTab: React.FC = () => {
                 </div>
               ))}
             </div>
-            <div className="mt-4 p-3 bg-emerald-500/20 rounded-lg border border-emerald-500/30">
-              <span className="text-emerald-300 text-sm">
-                <strong>Sweet Spot:</strong> 40-60% below competitor pricing with more features included
+            <div className="mt-4 p-3 bg-green-500/10 rounded-xl border border-green-500/20">
+              <span className="text-green-700 dark:text-green-400 text-sm font-medium">
+                💰 Sweet Spot: 40-60% below competitor pricing with more features
               </span>
             </div>
           </div>
@@ -270,32 +296,32 @@ export const InvestorDashboardTab: React.FC = () => {
       </motion.div>
 
       {/* Cost Breakdown */}
-      <motion.div variants={itemVariants} className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
-        <h3 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-blue-400" />
+      <motion.div variants={itemVariants} className="bg-card rounded-2xl p-6 border border-border shadow-sm">
+        <h3 className="text-xl font-bold text-foreground mb-6 flex items-center gap-3">
+          <BarChart3 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           Monthly Cost Projections (Year 1)
         </h3>
         <div className="grid grid-cols-6 gap-4">
           {[
-            { label: 'AI Model Costs (OpenAI, Claude, ElevenLabs)', value: '$15,000', pct: 25 },
-            { label: 'Cloud Infrastructure (Supabase, CDN)', value: '$8,000', pct: 13 },
-            { label: 'Development Team (5 engineers)', value: '$25,000', pct: 42 },
-            { label: 'Marketing & User Acquisition', value: '$8,000', pct: 13 },
-            { label: 'Support & Operations', value: '$3,000', pct: 5 },
-            { label: 'Miscellaneous (Legal, Tools)', value: '$1,000', pct: 2 },
+            { label: 'AI Models (OpenAI, Claude, ElevenLabs)', value: '$15,000', pct: 25 },
+            { label: 'Cloud Infrastructure', value: '$8,000', pct: 13 },
+            { label: 'Development Team', value: '$25,000', pct: 42 },
+            { label: 'Marketing', value: '$8,000', pct: 13 },
+            { label: 'Support', value: '$3,000', pct: 5 },
+            { label: 'Other', value: '$1,000', pct: 2 },
           ].map((cost, index) => (
-            <div key={index} className="bg-slate-700/30 rounded-lg p-4">
-              <div className="text-xl font-bold text-white">{cost.value}</div>
-              <div className="text-xs text-slate-400 mt-1">{cost.label}</div>
+            <div key={index} className="bg-muted/50 rounded-xl p-4">
+              <div className="text-xl font-bold text-foreground">{cost.value}</div>
+              <div className="text-xs text-muted-foreground mt-1">{cost.label}</div>
               <div className="mt-3">
-                <Progress value={cost.pct} className="h-2 bg-slate-600" />
-                <div className="text-xs text-slate-500 mt-1 text-right">{cost.pct}%</div>
+                <Progress value={cost.pct} className="h-2" />
+                <div className="text-xs text-muted-foreground mt-1 text-right">{cost.pct}%</div>
               </div>
             </div>
           ))}
         </div>
-        <div className="mt-4 text-center text-slate-400">
-          <span className="text-xl font-bold text-white">$60,000</span> estimated monthly burn rate at launch
+        <div className="mt-4 text-center text-muted-foreground">
+          Estimated monthly burn rate at launch: <span className="text-xl font-bold text-foreground">$60,000</span>
         </div>
       </motion.div>
     </motion.div>

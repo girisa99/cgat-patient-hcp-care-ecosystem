@@ -1,50 +1,50 @@
 /**
  * Roadmap Tab - P0-P5 Implementation Status
+ * Enterprise design with proper design system tokens
  */
 
 import React from 'react';
 import { motion } from 'framer-motion';
 import {
-  CheckCircle2, Clock, Circle, AlertCircle,
-  TrendingUp, Layers, Target, Rocket
+  CheckCircle2, Clock, Circle,
+  Layers, Target, Rocket
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { implementationPhases, scenarioCategories } from '../data/implementation-data';
 
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.05 } },
+  visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 15 },
-  visible: { opacity: 1, y: 0 },
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
 };
 
 const getStatusIcon = (status: string) => {
   switch (status) {
     case 'completed':
-      return <CheckCircle2 className="w-5 h-5 text-emerald-400" />;
+      return <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />;
     case 'in-progress':
-      return <Clock className="w-5 h-5 text-amber-400" />;
+      return <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />;
     default:
-      return <Circle className="w-5 h-5 text-slate-400" />;
+      return <Circle className="w-5 h-5 text-muted-foreground" />;
   }
 };
 
-const getStatusColor = (status: string) => {
+const getStatusStyles = (status: string) => {
   switch (status) {
     case 'completed':
-      return 'border-emerald-500/30 bg-emerald-500/5';
+      return 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20';
     case 'in-progress':
-      return 'border-amber-500/30 bg-amber-500/5';
+      return 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20';
     default:
-      return 'border-slate-600/30 bg-slate-800/30';
+      return 'border-border bg-muted/30';
   }
 };
 
 export const RoadmapTab: React.FC = () => {
-  // Calculate totals
   const totalScenarios = implementationPhases.reduce((acc, p) => acc + p.scenariosTotal, 0);
   const completedScenarios = implementationPhases.reduce((acc, p) => acc + p.scenariosComplete, 0);
   const overallProgress = Math.round((completedScenarios / totalScenarios) * 100);
@@ -54,135 +54,152 @@ export const RoadmapTab: React.FC = () => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="max-w-[1920px] mx-auto space-y-8 px-6"
+      className="max-w-[1920px] mx-auto space-y-10"
     >
       {/* Overall Progress */}
-      <motion.div variants={itemVariants} className="bg-gradient-to-r from-violet-600/20 to-fuchsia-600/20 rounded-2xl p-8 border border-violet-500/30">
+      <motion.div 
+        variants={itemVariants} 
+        className="bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 rounded-2xl p-8 border border-primary/20"
+      >
         <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-3xl font-bold text-white">Implementation Roadmap</h2>
-            <p className="text-slate-300 mt-1">P0-P5 Phase Progress Tracking</p>
+          <div className="flex items-center gap-4">
+            <motion.div 
+              className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center"
+              animate={{ rotate: [0, 5, -5, 0] }}
+              transition={{ duration: 4, repeat: Infinity }}
+            >
+              <Rocket className="w-7 h-7 text-primary-foreground" />
+            </motion.div>
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">Implementation Roadmap</h2>
+              <p className="text-muted-foreground mt-1">P0-P5 Phase Progress Tracking</p>
+            </div>
           </div>
           <div className="flex items-center gap-8">
             <div className="text-center">
-              <div className="text-4xl font-bold text-white">{totalScenarios}</div>
-              <div className="text-sm text-slate-400">Total Scenarios</div>
+              <motion.div 
+                className="text-4xl font-bold text-foreground"
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3, type: "spring" }}
+              >
+                {totalScenarios}
+              </motion.div>
+              <div className="text-sm text-muted-foreground">Total Scenarios</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-emerald-400">{completedScenarios}</div>
-              <div className="text-sm text-slate-400">Completed</div>
+              <motion.div 
+                className="text-4xl font-bold text-green-600 dark:text-green-400"
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.4, type: "spring" }}
+              >
+                {completedScenarios}
+              </motion.div>
+              <div className="text-sm text-muted-foreground">Completed</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-violet-400">{overallProgress}%</div>
-              <div className="text-sm text-slate-400">Overall Progress</div>
+              <motion.div 
+                className="text-4xl font-bold text-primary"
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.5, type: "spring" }}
+              >
+                {overallProgress}%
+              </motion.div>
+              <div className="text-sm text-muted-foreground">Overall Progress</div>
             </div>
           </div>
         </div>
-        <Progress value={overallProgress} className="h-4 bg-slate-700" />
-        <div className="flex justify-between mt-2 text-xs text-slate-400">
-          <span>P0: Core MVP</span>
-          <span>P1: Essential</span>
-          <span>P2: AI Agents</span>
-          <span>P3: Enterprise</span>
-          <span>P4: Global</span>
-          <span>P5: Innovation</span>
-        </div>
+        <Progress value={overallProgress} className="h-3" />
       </motion.div>
 
       {/* Phase Cards */}
-      <motion.div variants={itemVariants} className="grid grid-cols-3 gap-6">
-        {implementationPhases.map((phase) => (
-          <div
-            key={phase.id}
-            className={`rounded-xl p-6 border ${getStatusColor(phase.status)}`}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                {getStatusIcon(phase.status)}
-                <div>
-                  <h3 className="text-xl font-bold text-white">{phase.id}: {phase.name}</h3>
-                  <p className="text-sm text-slate-400">Weeks {phase.weeks}</p>
-                </div>
-              </div>
-              <div className={`text-2xl font-bold ${
-                phase.status === 'completed' ? 'text-emerald-400' :
-                phase.status === 'in-progress' ? 'text-amber-400' :
-                'text-slate-400'
-              }`}>
-                {phase.completion}%
-              </div>
-            </div>
-
-            <Progress 
-              value={phase.completion} 
-              className={`h-2 mb-4 ${
-                phase.status === 'completed' ? 'bg-emerald-900/50' :
-                phase.status === 'in-progress' ? 'bg-amber-900/50' :
-                'bg-slate-700'
-              }`}
-            />
-
-            <div className="flex justify-between text-sm mb-4">
-              <span className="text-slate-400">Scenarios: {phase.scenariosComplete}/{phase.scenariosTotal}</span>
-              <span className={`font-medium ${
-                phase.status === 'completed' ? 'text-emerald-400' :
-                phase.status === 'in-progress' ? 'text-amber-400' :
-                'text-slate-400'
-              }`}>
-                {phase.status === 'completed' ? 'COMPLETE' :
-                 phase.status === 'in-progress' ? 'IN PROGRESS' :
-                 'PLANNED'}
-              </span>
-            </div>
-
-            <div className="space-y-2">
-              {phase.features.slice(0, 5).map((feature, idx) => (
-                <div key={idx} className="flex items-center gap-2 text-sm">
-                  {feature.status === 'done' ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  ) : feature.status === 'partial' ? (
-                    <Clock className="w-4 h-4 text-amber-400" />
-                  ) : (
-                    <Circle className="w-4 h-4 text-slate-500" />
-                  )}
-                  <span className={`${
-                    feature.status === 'done' ? 'text-slate-300' :
-                    feature.status === 'partial' ? 'text-amber-200' :
-                    'text-slate-500'
-                  }`}>
-                    {feature.name}
-                  </span>
-                </div>
-              ))}
-              {phase.features.length > 5 && (
-                <div className="text-xs text-slate-500 mt-2">
-                  +{phase.features.length - 5} more features
-                </div>
-              )}
-            </div>
+      <motion.div variants={itemVariants}>
+        <h3 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <Layers className="w-5 h-5 text-primary" />
           </div>
-        ))}
+          Implementation Phases
+        </h3>
+        <div className="grid grid-cols-3 gap-5">
+          {implementationPhases.map((phase, index) => (
+            <motion.div
+              key={phase.id}
+              className={`rounded-2xl p-5 border ${getStatusStyles(phase.status)}`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 * index }}
+              whileHover={{ y: -4 }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  {getStatusIcon(phase.status)}
+                  <div>
+                    <h4 className="font-semibold text-foreground">{phase.name}</h4>
+                    <p className="text-xs text-muted-foreground">{phase.weeks}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className={`text-2xl font-bold ${
+                    phase.status === 'completed' ? 'text-green-600 dark:text-green-400' :
+                    phase.status === 'in-progress' ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'
+                  }`}>
+                    {phase.completion}%
+                  </div>
+                </div>
+              </div>
+              
+              <Progress value={phase.completion} className="h-2 mb-4" />
+              
+              <div className="flex justify-between text-sm mb-4">
+                <span className="text-muted-foreground">Scenarios</span>
+                <span className="text-foreground font-medium">
+                  {phase.scenariosComplete} / {phase.scenariosTotal}
+                </span>
+              </div>
+              
+              <div className="space-y-2">
+                {phase.features.slice(0, 4).map((feature, idx) => (
+                  <div key={idx} className="flex items-center gap-2 text-sm">
+                    {feature.status === 'done' ? (
+                      <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    ) : feature.status === 'partial' ? (
+                      <Clock className="w-4 h-4 text-amber-500" />
+                    ) : (
+                      <Circle className="w-4 h-4 text-muted" />
+                    )}
+                    <span className={feature.status === 'done' ? 'text-foreground' : 'text-muted-foreground'}>
+                      {feature.name}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </motion.div>
 
-      {/* Scenario Categories by Phase */}
+      {/* Scenario Categories */}
       <motion.div variants={itemVariants}>
-        <h3 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
-          <Layers className="w-6 h-6 text-violet-400" />
-          Scenario Categories (A-U)
+        <h3 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+            <Target className="w-5 h-5 text-accent" />
+          </div>
+          Scenario Categories Breakdown
         </h3>
-        <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 overflow-hidden">
+        <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-slate-700/30">
-                <th className="text-left text-slate-300 font-medium px-4 py-3">Category</th>
-                <th className="text-left text-slate-300 font-medium px-4 py-3">Name</th>
-                <th className="text-center text-slate-300 font-medium px-4 py-3">Range</th>
-                <th className="text-center text-slate-300 font-medium px-4 py-3">Total</th>
-                <th className="text-center text-slate-300 font-medium px-4 py-3">Done</th>
-                <th className="text-center text-slate-300 font-medium px-4 py-3">Partial</th>
-                <th className="text-center text-slate-300 font-medium px-4 py-3">Pending</th>
-                <th className="text-center text-slate-300 font-medium px-4 py-3">Phase</th>
-                <th className="text-left text-slate-300 font-medium px-4 py-3 w-48">Progress</th>
+              <tr className="bg-muted/50 border-b border-border">
+                <th className="text-left text-foreground font-semibold px-4 py-4">Category</th>
+                <th className="text-center text-foreground font-semibold px-4 py-4">Range</th>
+                <th className="text-center text-foreground font-semibold px-4 py-4">Total</th>
+                <th className="text-center text-foreground font-semibold px-4 py-4">Implemented</th>
+                <th className="text-center text-foreground font-semibold px-4 py-4">Partial</th>
+                <th className="text-center text-foreground font-semibold px-4 py-4">Pending</th>
+                <th className="text-center text-foreground font-semibold px-4 py-4">Phase</th>
+                <th className="text-center text-foreground font-semibold px-4 py-4">Progress</th>
               </tr>
             </thead>
             <tbody>
@@ -191,30 +208,39 @@ export const RoadmapTab: React.FC = () => {
                 return (
                   <tr 
                     key={index}
-                    className="border-t border-slate-700/30 hover:bg-slate-700/20 transition-colors"
+                    className="border-t border-border hover:bg-muted/30 transition-colors"
                   >
-                    <td className="px-4 py-3 font-mono text-violet-400 font-medium">{cat.id}</td>
-                    <td className="px-4 py-3 text-white">{cat.name}</td>
-                    <td className="px-4 py-3 text-center text-slate-400">{cat.range}</td>
-                    <td className="px-4 py-3 text-center text-white font-medium">{cat.total}</td>
-                    <td className="px-4 py-3 text-center text-emerald-400">{cat.implemented}</td>
-                    <td className="px-4 py-3 text-center text-amber-400">{cat.partial}</td>
-                    <td className="px-4 py-3 text-center text-slate-500">{cat.pending}</td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                        cat.phase === 'P0' || cat.phase === 'P1' || cat.phase === 'P2'
-                          ? 'bg-emerald-500/20 text-emerald-400'
-                          : cat.phase === 'P3'
-                          ? 'bg-amber-500/20 text-amber-400'
-                          : 'bg-slate-500/20 text-slate-400'
+                    <td className="px-4 py-4 text-foreground font-medium">{cat.name}</td>
+                    <td className="px-4 py-4 text-center text-muted-foreground">{cat.range}</td>
+                    <td className="px-4 py-4 text-center text-foreground font-medium">{cat.total}</td>
+                    <td className="px-4 py-4 text-center">
+                      <span className="px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium">
+                        {cat.implemented}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-center">
+                      <span className="px-2 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 font-medium">
+                        {cat.partial}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-center">
+                      <span className="px-2 py-1 rounded-full bg-muted text-muted-foreground font-medium">
+                        {cat.pending}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-center">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        cat.phase.includes('P0') || cat.phase.includes('P1') ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                        cat.phase.includes('P2') ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' :
+                        'bg-muted text-muted-foreground'
                       }`}>
                         {cat.phase}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
-                        <Progress value={progress} className="h-2 flex-1 bg-slate-700" />
-                        <span className="text-xs text-slate-400 w-10 text-right">{progress}%</span>
+                        <Progress value={progress} className="h-2 flex-1" />
+                        <span className="text-xs text-muted-foreground w-8">{progress}%</span>
                       </div>
                     </td>
                   </tr>
@@ -225,76 +251,19 @@ export const RoadmapTab: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* Gap Analysis */}
-      <motion.div variants={itemVariants} className="bg-amber-500/10 rounded-2xl p-8 border border-amber-500/30">
-        <h3 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
-          <AlertCircle className="w-6 h-6 text-amber-400" />
-          Gap Analysis & Next Steps
-        </h3>
-        <div className="grid grid-cols-3 gap-6">
-          <div>
-            <h4 className="text-lg font-medium text-amber-400 mb-3">P3 Priorities (Next 6 Weeks)</h4>
-            <ul className="space-y-2 text-sm text-slate-300">
-              <li className="flex items-start gap-2">
-                <Target className="w-4 h-4 text-amber-400 mt-0.5" />
-                Bulk video generation automation
-              </li>
-              <li className="flex items-start gap-2">
-                <Target className="w-4 h-4 text-amber-400 mt-0.5" />
-                Social cuts (TikTok/Reels/Shorts format)
-              </li>
-              <li className="flex items-start gap-2">
-                <Target className="w-4 h-4 text-amber-400 mt-0.5" />
-                Voice cloning full integration
-              </li>
-              <li className="flex items-start gap-2">
-                <Target className="w-4 h-4 text-amber-400 mt-0.5" />
-                YouTube/LinkedIn direct publishing
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-lg font-medium text-blue-400 mb-3">P4 Planning (Weeks 19-24)</h4>
-            <ul className="space-y-2 text-sm text-slate-300">
-              <li className="flex items-start gap-2">
-                <Rocket className="w-4 h-4 text-blue-400 mt-0.5" />
-                Multi-language support (140+ languages)
-              </li>
-              <li className="flex items-start gap-2">
-                <Rocket className="w-4 h-4 text-blue-400 mt-0.5" />
-                Real-time collaboration features
-              </li>
-              <li className="flex items-start gap-2">
-                <Rocket className="w-4 h-4 text-blue-400 mt-0.5" />
-                Version control & history
-              </li>
-              <li className="flex items-start gap-2">
-                <Rocket className="w-4 h-4 text-blue-400 mt-0.5" />
-                HIPAA full certification
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-lg font-medium text-violet-400 mb-3">P5 Vision (Weeks 25+)</h4>
-            <ul className="space-y-2 text-sm text-slate-300">
-              <li className="flex items-start gap-2">
-                <TrendingUp className="w-4 h-4 text-violet-400 mt-0.5" />
-                SSO/SAML enterprise integration
-              </li>
-              <li className="flex items-start gap-2">
-                <TrendingUp className="w-4 h-4 text-violet-400 mt-0.5" />
-                White-label deployment options
-              </li>
-              <li className="flex items-start gap-2">
-                <TrendingUp className="w-4 h-4 text-violet-400 mt-0.5" />
-                Custom AI model training
-              </li>
-              <li className="flex items-start gap-2">
-                <TrendingUp className="w-4 h-4 text-violet-400 mt-0.5" />
-                Enterprise admin console
-              </li>
-            </ul>
-          </div>
+      {/* Legend */}
+      <motion.div variants={itemVariants} className="flex items-center justify-center gap-8 py-4">
+        <div className="flex items-center gap-2">
+          <CheckCircle2 className="w-5 h-5 text-green-500" />
+          <span className="text-sm text-muted-foreground">Completed</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Clock className="w-5 h-5 text-amber-500" />
+          <span className="text-sm text-muted-foreground">In Progress</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Circle className="w-5 h-5 text-muted" />
+          <span className="text-sm text-muted-foreground">Planned</span>
         </div>
       </motion.div>
     </motion.div>
