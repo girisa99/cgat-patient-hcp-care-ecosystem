@@ -41,7 +41,9 @@ import {
   Zap,
   AudioWaveform,
   MapPin,
-  Edit3
+  Edit3,
+  Library,
+  DollarSign
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -73,7 +75,10 @@ import type { PipelineStage } from '@/components/mobile/PipelineProgress';
 import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
 
 // Import extracted VibeRecordTab component (Phase 1+2 consolidation)
-import { VibeRecordTab } from '@/components/genie-vibe';
+import { VibeRecordTab, VibeLibraryTab, VibeCostTracker } from '@/components/genie-vibe';
+
+// Import useMediaProject for cost tracking (Phase 3)
+import { useMediaProject } from '@/components/document-processing/RecordingStudio/hooks';
 
 // Recording result type
 interface RecordingResult {
@@ -158,6 +163,18 @@ const GenieVibe: React.FC = () => {
   // P2: Timeline Editor state
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const [currentPlayheadTime, setCurrentPlayheadTime] = useState(0);
+  
+  // Phase 3: Media project cost tracking
+  const mediaProject = useMediaProject({
+    productionContext: showId ? { 
+      showId, 
+      showTitle: productionTitle,
+      showType: 'video',
+      scriptMode: 'video',
+      currentStage: 'recording',
+      participants: []
+    } : undefined
+  });
   
   // Note: Recording hooks moved to VibeRecordTab component (Phase 1+2 consolidation)
   // The VibeRecordTab handles: camera, screenShare, recording, TTS, teleprompter sync, background blur
@@ -436,6 +453,10 @@ const GenieVibe: React.FC = () => {
                 <span className="hidden sm:inline">Record</span>
                 {completedStages.includes('record') && <Check className="h-3 w-3 text-green-500 ml-1" />}
               </TabsTrigger>
+              <TabsTrigger value="library" className="gap-2 px-4">
+                <Library className="h-4 w-4" />
+                <span className="hidden sm:inline">Library</span>
+              </TabsTrigger>
               <TabsTrigger value="polish" className="gap-2 px-4">
                 <Wand2 className="h-4 w-4" />
                 <span className="hidden sm:inline">Polish</span>
@@ -497,7 +518,25 @@ const GenieVibe: React.FC = () => {
               />
             </TabsContent>
 
-            {/* Polish Tab - RawRecordingPolisher */}
+            {/* Library Tab - Phase 3: FFmpeg, StudioSound, Cost Tracking */}
+            <TabsContent value="library" className="space-y-6 mt-0">
+              <div className="grid lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <VibeLibraryTab
+                    onScriptGenerated={(script) => {
+                      toast.success(`Script "${script.title}" generated from recording!`);
+                    }}
+                  />
+                </div>
+                <div>
+                  <VibeCostTracker
+                    project={mediaProject.currentProject}
+                    assets={mediaProject.assets}
+                    sessionCost={mediaProject.totalSessionCost}
+                  />
+                </div>
+              </div>
+            </TabsContent>
             <TabsContent value="polish" className="space-y-6 mt-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
