@@ -123,10 +123,14 @@ const journeySteps = [
           { quote: "I have 15 years of expertise but no idea how to script a tutorial.", author: "Wei L.", role: "Software Architect" },
         ]
       },
-    ],
-    influencerVoices: [
-      { name: "James R.", platform: "YouTube", handle: "@TechReviewPro", followers: "1.2M", quote: "Research alone takes 3 hours. Then organizing it into a script is another 2. For 8 videos a month, thats 40 hours just on ideation." },
-      { name: "Zoe K.", platform: "TikTok", handle: "@ZoeDances", followers: "3.2M", quote: "I have to come up with fresh ideas daily. The pressure is insane." },
+      { 
+        segment: "Influencers", emoji: "📱", pain: "Daily content pressure across platforms", severity: 85,
+        metrics: { videosPerWeek: 8, audiosPerMonth: 20, editsPerWeek: 12, hoursPerWeek: 25, toolCost: "$500/mo" },
+        voc: [
+          { quote: "Research alone takes 3 hours. Then organizing it into a script is another 2. For 8 videos a month, thats 40 hours just on ideation.", author: "James R.", role: "YouTube @TechReviewPro, 1.2M" },
+          { quote: "I have to come up with fresh ideas daily. The pressure is insane.", author: "Zoe K.", role: "TikTok @ZoeDances, 3.2M" },
+        ]
+      },
     ],
   },
   {
@@ -205,10 +209,14 @@ const journeySteps = [
           { quote: "Technical accuracy vs accessibility - I cannot find balance.", author: "Tom H.", role: "Developer, 12 yrs" },
         ]
       },
-    ],
-    influencerVoices: [
-      { name: "Emma L.", platform: "TikTok", handle: "@LearnWithEmma", followers: "1.5M", quote: "Making complex topics simple AND entertaining is brutal. I rewrite each script 5 times." },
-      { name: "Mark S.", platform: "LinkedIn", handle: "@StartupStories", followers: "250K", quote: "Professional tone for LinkedIn, casual for TikTok - same content, completely different scripts." },
+      { 
+        segment: "Influencers", emoji: "📱", pain: "Platform-specific tone switching", severity: 82,
+        metrics: { videosPerWeek: 8, audiosPerMonth: 20, editsPerWeek: 15, hoursPerWeek: 8, toolCost: "$150/mo" },
+        voc: [
+          { quote: "Making complex topics simple AND entertaining is brutal. I rewrite each script 5 times.", author: "Emma L.", role: "TikTok @LearnWithEmma, 1.5M" },
+          { quote: "Professional tone for LinkedIn, casual for TikTok - same content, completely different scripts.", author: "Mark S.", role: "LinkedIn @StartupStories, 250K" },
+        ]
+      },
     ],
   },
   {
@@ -287,10 +295,14 @@ const journeySteps = [
           { quote: "My accent makes people dismiss my expertise. AI voice would change everything.", author: "Wei L.", role: "Engineer, 15 yrs" },
         ]
       },
-    ],
-    influencerVoices: [
-      { name: "Maria G.", platform: "YouTube", handle: "@BakingMagic", followers: "890K", quote: "Voice-over for 12 videos a month destroys my throat. Vocal rest breaks are mandatory now." },
-      { name: "Derek W.", platform: "TikTok", handle: "@ComedyKingDerek", followers: "5.8M", quote: "Different character voices are exhausting. An AI that could clone my style would save hours." },
+      { 
+        segment: "Influencers", emoji: "📱", pain: "Voice fatigue from high-volume production", severity: 78,
+        metrics: { videosPerWeek: 8, audiosPerMonth: 30, editsPerWeek: 10, hoursPerWeek: 10, toolCost: "$200/mo" },
+        voc: [
+          { quote: "Voice-over for 12 videos a month destroys my throat. Vocal rest breaks are mandatory now.", author: "Maria G.", role: "YouTube @BakingMagic, 890K" },
+          { quote: "Different character voices are exhausting. An AI that could clone my style would save hours.", author: "Derek W.", role: "TikTok @ComedyKingDerek, 5.8M" },
+        ]
+      },
     ],
   },
   {
@@ -369,10 +381,14 @@ const journeySteps = [
           { quote: "The thought of being judged on appearance stops me from starting.", author: "Carlos M.", role: "Mechanic, 28 yrs" },
         ]
       },
-    ],
-    influencerVoices: [
-      { name: "Alex T.", platform: "Instagram", handle: "@AlexFitness", followers: "1.5M", quote: "Gym recordings need perfect lighting and no background noise. I have scrapped hours of footage." },
-      { name: "Robert M.", platform: "Facebook", handle: "DIY Home Repairs", followers: "520K", quote: "Try filming while your hands are covered in grease. The technical side is a nightmare." },
+      { 
+        segment: "Influencers", emoji: "📱", pain: "Perfect production standards pressure", severity: 83,
+        metrics: { videosPerWeek: 8, audiosPerMonth: 20, editsPerWeek: 15, hoursPerWeek: 20, toolCost: "$400/mo" },
+        voc: [
+          { quote: "Gym recordings need perfect lighting and no background noise. I have scrapped hours of footage.", author: "Alex T.", role: "Instagram @AlexFitness, 1.5M" },
+          { quote: "Try filming while your hands are covered in grease. The technical side is a nightmare.", author: "Robert M.", role: "Facebook DIY Home Repairs, 520K" },
+        ]
+      },
     ],
   },
   {
@@ -451,10 +467,14 @@ const journeySteps = [
           { quote: "I teach Excel to 10,000 students but cannot figure out video editing software.", author: "Susan P.", role: "Accountant" },
         ]
       },
-    ],
-    influencerVoices: [
-      { name: "Priya S.", platform: "Instagram", handle: "@PriyaFashionista", followers: "780K", quote: "Same video, 4 different aspect ratios. I am essentially making it 4 times. It is exhausting." },
-      { name: "Linda C.", platform: "Facebook", handle: "Cooking with Linda", followers: "340K", quote: "I spend more time on captions and text overlays than on actual cooking." },
+      { 
+        segment: "Influencers", emoji: "📱", pain: "Multi-format repurposing nightmare", severity: 90,
+        metrics: { videosPerWeek: 8, audiosPerMonth: 20, editsPerWeek: 25, hoursPerWeek: 30, toolCost: "$300/mo" },
+        voc: [
+          { quote: "Same video, 4 different aspect ratios. I am essentially making it 4 times. It is exhausting.", author: "Priya S.", role: "Instagram @PriyaFashionista, 780K" },
+          { quote: "I spend more time on captions and text overlays than on actual cooking.", author: "Linda C.", role: "Facebook Cooking with Linda, 340K" },
+        ]
+      },
     ],
   },
   {
@@ -533,10 +553,14 @@ const journeySteps = [
           { quote: "Solo creator means every mistake is mine to fix.", author: "George P.", role: "Retired Teacher" },
         ]
       },
-    ],
-    influencerVoices: [
-      { name: "James R.", platform: "YouTube", handle: "@TechReviewPro", followers: "1.2M", quote: "I have an editor, thumbnail designer, and SEO person. Coordinating them is a part-time job." },
-      { name: "Derek W.", platform: "TikTok", handle: "@ComedyKingDerek", followers: "5.8M", quote: "My team is 6 people. We use 8 different tools just to stay coordinated." },
+      { 
+        segment: "Influencers", emoji: "📱", pain: "Team coordination across tools", severity: 80,
+        metrics: { videosPerWeek: 8, audiosPerMonth: 20, editsPerWeek: 15, hoursPerWeek: 12, toolCost: "$600/mo" },
+        voc: [
+          { quote: "I have an editor, thumbnail designer, and SEO person. Coordinating them is a part-time job.", author: "James R.", role: "YouTube @TechReviewPro, 1.2M" },
+          { quote: "My team is 6 people. We use 8 different tools just to stay coordinated.", author: "Derek W.", role: "TikTok @ComedyKingDerek, 5.8M" },
+        ]
+      },
     ],
   },
   {
@@ -615,10 +639,14 @@ const journeySteps = [
           { quote: "I just want my knowledge out there. The tech stuff stops me.", author: "George P.", role: "Retired, 40 yrs" },
         ]
       },
-    ],
-    influencerVoices: [
-      { name: "Derek W.", platform: "TikTok", handle: "@ComedyKingDerek", followers: "5.8M", quote: "I hired a VA just to handle uploads and scheduling. Thats $1,500/month just for publishing." },
-      { name: "Rachel M.", platform: "LinkedIn", handle: "@HRInsights", followers: "95K", quote: "LinkedIn video requires a completely different tone. I am making 2 versions of everything." },
+      { 
+        segment: "Influencers", emoji: "📱", pain: "Multi-platform publishing overhead", severity: 88,
+        metrics: { videosPerWeek: 8, audiosPerMonth: 20, editsPerWeek: 12, hoursPerWeek: 8, toolCost: "$350/mo" },
+        voc: [
+          { quote: "I hired a VA just to handle uploads and scheduling. Thats $1,500/month just for publishing.", author: "Derek W.", role: "TikTok @ComedyKingDerek, 5.8M" },
+          { quote: "LinkedIn video requires a completely different tone. I am making 2 versions of everything.", author: "Rachel M.", role: "LinkedIn @HRInsights, 95K" },
+        ]
+      },
     ],
   },
 ];
@@ -1190,26 +1218,6 @@ export const OverviewTab: React.FC = () => {
                         </div>
                       ))}
 
-                      {/* Influencer Voices */}
-                      {step.influencerVoices.map((inf, iIdx) => (
-                        <div 
-                          key={iIdx}
-                          className="flex-shrink-0 w-[300px] bg-purple-500/5 rounded-xl p-4 border border-purple-500/20"
-                        >
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="secondary" className="text-[10px]">{inf.platform}</Badge>
-                            <span className="text-sm font-medium text-foreground">{inf.name}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
-                            <span>{inf.handle}</span>
-                            <span>•</span>
-                            <span>{inf.followers}</span>
-                          </div>
-                          <p className="text-sm text-muted-foreground italic line-clamp-4">
-                            &ldquo;{inf.quote}&rdquo;
-                          </p>
-                        </div>
-                      ))}
                     </HorizontalScrollCards>
                   </CardContent>
                 </Card>
