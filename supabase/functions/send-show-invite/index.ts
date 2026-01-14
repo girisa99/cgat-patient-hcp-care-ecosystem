@@ -597,159 +597,196 @@ const handler = async (req: Request): Promise<Response> => {
       `;
       emailHtml = getResponsiveEmailWrapper(followUpContent, `Follow-up: ${showTitle}`);
     } else {
-      // REGULAR INVITE EMAIL
-      emailHtml = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>You're Invited to ${showTitle} - Genie Studio</title>
-</head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px;">
-  <div style="max-width: 640px; margin: 0 auto; background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);">
-    
-    <!-- Header with Genie Studio Branding -->
-    <div style="background: linear-gradient(135deg, ${typeInfo.color}, #8b5cf6); padding: 48px 32px; text-align: center;">
-      <div style="margin-bottom: 16px;">
-        <span style="font-size: 48px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));">${typeInfo.emoji}</span>
-      </div>
-      <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 800; text-shadow: 0 2px 8px rgba(0,0,0,0.2);">Genie Studio</h1>
-      <p style="color: rgba(255,255,255,0.95); margin: 12px 0 20px; font-size: 16px; font-weight: 500;">You're invited as <strong>${roleText}</strong></p>
-      <div style="display: inline-flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
-        <span style="display: inline-block; background: rgba(255,255,255,0.25); color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;">
-          ${categoryInfo.emoji} ${categoryInfo.name}
-        </span>
-        <span style="display: inline-block; background: rgba(255,255,255,0.25); color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;">
-          ${typeInfo.emoji} ${typeInfo.name}
-        </span>
-        ${stageText ? `<span style="display: inline-block; background: rgba(255,255,255,0.25); color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;">📍 ${stageText}</span>` : ''}
-      </div>
-    </div>
-    
-    <!-- Sender Info -->
-    <div style="padding: 24px 32px 0;">
-      <div style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b; border-radius: 12px; padding: 16px; text-align: center;">
-        <p style="color: #92400e; margin: 0; font-size: 14px;">
-          📧 Invitation sent by ${invitedByText}
-        </p>
-      </div>
-    </div>
-    
-    <!-- Welcome Message -->
-    <div style="padding: 24px 32px 0;">
-      <div style="background: linear-gradient(135deg, #f5f3ff, #ede9fe); border-radius: 16px; padding: 24px; text-align: center; border: 2px solid #c4b5fd;">
-        <p style="color: #1e293b; margin: 0; font-size: 18px; line-height: 1.7;">
-          Hi <strong style="color: #7c3aed; font-size: 20px;">${participantName}</strong>! 👋
-        </p>
-        <p style="color: #64748b; margin: 16px 0 0; font-size: 15px; line-height: 1.6;">
-          You've been invited to join <strong style="color: #1e293b;">"${showTitle}"</strong> on <strong style="color: #7c3aed;">Genie Studio</strong> - the AI-powered production platform.
-        </p>
-      </div>
-    </div>
-    
-    <!-- Content -->
-    <div style="padding: 24px 32px 32px;">
-      
-      <!-- Show Details Card -->
-      <div style="background: white; border: 2px solid #e2e8f0; border-radius: 20px; padding: 28px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-        <h2 style="color: #1e293b; margin: 0 0 20px; font-size: 22px; font-weight: 700; display: flex; align-items: center; gap: 12px;">
-          <span>${typeInfo.emoji}</span> ${showTitle}
-        </h2>
-        ${showDescription ? `<p style="color: #64748b; margin: 0 0 24px; line-height: 1.7; font-size: 15px;">${showDescription}</p>` : ''}
+      // REGULAR INVITE EMAIL - Responsive table-based layout
+      const inviteContent = `
+        <!-- Header -->
+        <tr>
+          <td class="header-padding" style="background: linear-gradient(135deg, ${typeInfo.color}, #8b5cf6); padding: 36px 24px; text-align: center;">
+            <div style="font-size: 44px; margin-bottom: 10px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));">${typeInfo.emoji}</div>
+            <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 800;">Genie Studio</h1>
+            <p style="color: rgba(255,255,255,0.95); margin: 10px 0 16px; font-size: 15px;">You're invited as <strong>${roleText}</strong></p>
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
+              <tr>
+                <td style="padding: 4px;">
+                  <span style="display: inline-block; background: rgba(255,255,255,0.25); color: white; padding: 6px 12px; border-radius: 16px; font-size: 12px; font-weight: 600;">${categoryInfo.emoji} ${categoryInfo.name}</span>
+                </td>
+                <td style="padding: 4px;">
+                  <span style="display: inline-block; background: rgba(255,255,255,0.25); color: white; padding: 6px 12px; border-radius: 16px; font-size: 12px; font-weight: 600;">${typeInfo.emoji} ${typeInfo.name}</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
         
-        <div style="display: grid; gap: 16px; background: #f8fafc; padding: 20px; border-radius: 12px;">
-          <div style="display: flex; align-items: center; gap: 14px;">
-            <span style="font-size: 22px;">📅</span>
-            <div>
-              <p style="color: #94a3b8; margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Date</p>
-              <p style="color: #1e293b; margin: 4px 0 0; font-size: 16px; font-weight: 600;">${formattedDate}</p>
+        <!-- Sender Info -->
+        <tr>
+          <td class="content-padding" style="padding: 20px 24px 0;">
+            <div style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b; border-radius: 10px; padding: 12px; text-align: center;">
+              <p style="color: #92400e; margin: 0; font-size: 13px;">📧 Invitation sent by ${invitedByText}</p>
             </div>
-          </div>
-          <div style="display: flex; align-items: center; gap: 14px;">
-            <span style="font-size: 22px;">⏰</span>
-            <div>
-              <p style="color: #94a3b8; margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Time</p>
-              <p style="color: #1e293b; margin: 4px 0 0; font-size: 16px; font-weight: 600;">${formattedTime}</p>
+          </td>
+        </tr>
+        
+        <!-- Welcome Message -->
+        <tr>
+          <td class="content-padding" style="padding: 20px 24px 0;">
+            <div style="background: linear-gradient(135deg, #f5f3ff, #ede9fe); border-radius: 12px; padding: 20px; text-align: center; border: 2px solid #c4b5fd;">
+              <p style="color: #1e293b; margin: 0; font-size: 16px; line-height: 1.6;">
+                Hi <strong style="color: #7c3aed;">${participantName}</strong>! 👋
+              </p>
+              <p class="responsive-text" style="color: #64748b; margin: 12px 0 0; font-size: 14px; line-height: 1.5; word-wrap: break-word;">
+                You've been invited to join <strong style="color: #1e293b;">"${showTitle}"</strong> on <strong style="color: #7c3aed;">Genie Studio</strong>
+              </p>
             </div>
-          </div>
-          <div style="display: flex; align-items: center; gap: 14px;">
-            <span style="font-size: 22px;">⏱️</span>
-            <div>
-              <p style="color: #94a3b8; margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Duration</p>
-              <p style="color: #1e293b; margin: 4px 0 0; font-size: 16px; font-weight: 600;">${durationMinutes} minutes</p>
-            </div>
-          </div>
-          <div style="display: flex; align-items: center; gap: 14px;">
-            <span style="font-size: 22px;">🌟</span>
-            <div>
-              <p style="color: #94a3b8; margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Your Role</p>
-              <p style="color: #7c3aed; margin: 4px 0 0; font-size: 16px; font-weight: 700;">${roleText}</p>
-            </div>
-          </div>
-          <div style="display: flex; align-items: center; gap: 14px;">
-            <span style="font-size: 22px;">👤</span>
-            <div>
-              <p style="color: #94a3b8; margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Host</p>
-              <p style="color: #1e293b; margin: 4px 0 0; font-size: 16px; font-weight: 600;">${hostName}${hostEmail ? ` <a href="mailto:${hostEmail}" style="color: #8b5cf6; font-size: 14px;">(${hostEmail})</a>` : ''}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      ${actionButtons}
-      ${topicsSection}
-      ${scriptSection}
-      ${introSection}
-      
-      <!-- Calendar Buttons -->
-      <div style="text-align: center; margin: 28px 0; padding: 24px; background: #f8fafc; border-radius: 16px; border: 1px solid #e2e8f0;">
-        <p style="color: #1e293b; font-size: 15px; margin: 0 0 20px; font-weight: 600;">📅 Add to your calendar</p>
-        <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 10px;">
-          <a href="${googleCalUrl}" target="_blank" 
-             style="display: inline-flex; align-items: center; gap: 8px; background: white; color: #1e293b; padding: 12px 20px; border-radius: 10px; text-decoration: none; font-size: 13px; font-weight: 600; border: 2px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-            📅 Google
-          </a>
-          <a href="${outlookUrl}" target="_blank" 
-             style="display: inline-flex; align-items: center; gap: 8px; background: white; color: #1e293b; padding: 12px 20px; border-radius: 10px; text-decoration: none; font-size: 13px; font-weight: 600; border: 2px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-            📧 Outlook
-          </a>
-          <a href="${yahooUrl}" target="_blank" 
-             style="display: inline-flex; align-items: center; gap: 8px; background: white; color: #1e293b; padding: 12px 20px; border-radius: 10px; text-decoration: none; font-size: 13px; font-weight: 600; border: 2px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-            🗓️ Yahoo
-          </a>
-        </div>
-        <p style="color: #94a3b8; font-size: 12px; text-align: center; margin: 16px 0 0;">
-          📎 An .ics calendar file is attached for Apple Calendar
-        </p>
-      </div>
-      
-      ${genieProductsSection}
-      
-      <div style="text-align: center; padding: 20px; background: #f5f3ff; border-radius: 12px; margin-top: 24px;">
-        <p style="color: #64748b; margin: 0; font-size: 15px; line-height: 1.6;">
-          Questions? Reply to this email or contact <strong style="color: #1e293b;">${hostName}</strong>${hostEmail ? ` at <a href="mailto:${hostEmail}" style="color: #8b5cf6;">${hostEmail}</a>` : ''}
-        </p>
-        <p style="color: #7c3aed; margin: 12px 0 0; font-size: 14px; font-weight: 500;">
-          We can't wait to see you! 🎉
-        </p>
-      </div>
-    </div>
-    
-    <!-- Footer -->
-    <div style="background: #f8fafc; padding: 24px 32px; text-align: center; border-top: 1px solid #e2e8f0;">
-      <p style="color: #7c3aed; font-size: 18px; margin: 0 0 4px; font-weight: 700;">
-        ✨ Genie Studio
-      </p>
-      <p style="color: #64748b; font-size: 13px; margin: 0 0 12px;">
-        AI-Powered Production Platform
-      </p>
-      <p style="color: #94a3b8; font-size: 11px; margin: 0;">
-        This invitation was sent via Genie Studio on behalf of ${senderDisplayName}
-      </p>
-    </div>
-  </div>
-</body>
-</html>`;
+          </td>
+        </tr>
+        
+        <!-- Main Content -->
+        <tr>
+          <td class="content-padding" style="padding: 20px 24px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+              
+              <!-- Show Title & Description -->
+              <tr>
+                <td style="padding-bottom: 16px;">
+                  <div style="background: #ffffff; border: 2px solid #e2e8f0; border-radius: 14px; padding: 20px;">
+                    <h2 class="responsive-text" style="color: #1e293b; margin: 0 0 12px; font-size: 18px; font-weight: 700; word-wrap: break-word;">
+                      ${typeInfo.emoji} ${showTitle}
+                    </h2>
+                    ${showDescription ? `<p class="responsive-text" style="color: #64748b; margin: 0; line-height: 1.6; font-size: 14px; word-wrap: break-word;">${showDescription}</p>` : ''}
+                  </div>
+                </td>
+              </tr>
+              
+              <!-- Details Grid -->
+              <tr>
+                <td style="padding-bottom: 16px;">
+                  <div style="background: #f8fafc; border-radius: 12px; padding: 16px;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="details-table">
+                      <tr>
+                        <td style="padding: 8px 0; vertical-align: top;" width="50%">
+                          <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                              <td style="padding-right: 10px; vertical-align: top;"><span style="font-size: 18px;">📅</span></td>
+                              <td>
+                                <p style="color: #94a3b8; margin: 0; font-size: 11px; text-transform: uppercase;">Date</p>
+                                <p style="color: #1e293b; margin: 2px 0 0; font-size: 14px; font-weight: 600;">${formattedDate}</p>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                        <td style="padding: 8px 0; vertical-align: top;" width="50%">
+                          <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                              <td style="padding-right: 10px; vertical-align: top;"><span style="font-size: 18px;">⏰</span></td>
+                              <td>
+                                <p style="color: #94a3b8; margin: 0; font-size: 11px; text-transform: uppercase;">Time</p>
+                                <p style="color: #1e293b; margin: 2px 0 0; font-size: 14px; font-weight: 600;">${formattedTime}</p>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 8px 0; vertical-align: top;">
+                          <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                              <td style="padding-right: 10px; vertical-align: top;"><span style="font-size: 18px;">⏱️</span></td>
+                              <td>
+                                <p style="color: #94a3b8; margin: 0; font-size: 11px; text-transform: uppercase;">Duration</p>
+                                <p style="color: #1e293b; margin: 2px 0 0; font-size: 14px; font-weight: 600;">${durationMinutes} min</p>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                        <td style="padding: 8px 0; vertical-align: top;">
+                          <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                              <td style="padding-right: 10px; vertical-align: top;"><span style="font-size: 18px;">🌟</span></td>
+                              <td>
+                                <p style="color: #94a3b8; margin: 0; font-size: 11px; text-transform: uppercase;">Your Role</p>
+                                <p style="color: #7c3aed; margin: 2px 0 0; font-size: 14px; font-weight: 700;">${roleText}</p>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td colspan="2" style="padding: 8px 0; vertical-align: top;">
+                          <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                              <td style="padding-right: 10px; vertical-align: top;"><span style="font-size: 18px;">👤</span></td>
+                              <td>
+                                <p style="color: #94a3b8; margin: 0; font-size: 11px; text-transform: uppercase;">Host</p>
+                                <p class="responsive-text" style="color: #1e293b; margin: 2px 0 0; font-size: 14px; font-weight: 600; word-wrap: break-word;">${hostName}${hostEmail ? ` <a href="mailto:${hostEmail}" style="color: #8b5cf6; font-size: 12px;">(${hostEmail})</a>` : ''}</p>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </div>
+                </td>
+              </tr>
+              
+              <!-- Join Button -->
+              ${joinUrl ? `
+              <tr>
+                <td style="padding: 16px 0; text-align: center;">
+                  <div style="background: linear-gradient(135deg, #f5f3ff, #ede9fe); border-radius: 14px; padding: 20px; border: 2px solid #8b5cf6;">
+                    <p style="color: #7c3aed; font-size: 12px; margin: 0 0 6px; font-weight: 600;">🔔 Link activates 30 min before</p>
+                    <a href="${joinUrl}" class="btn btn-primary" style="display: inline-block; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: #ffffff !important; padding: 14px 36px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 16px; margin-top: 8px;">
+                      ✨ Join Meeting
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              ` : ''}
+              
+              <!-- Calendar Buttons -->
+              <tr>
+                <td style="padding: 16px 0;">
+                  <div style="background: #f8fafc; border-radius: 12px; padding: 16px; text-align: center; border: 1px solid #e2e8f0;">
+                    <p style="color: #1e293b; font-size: 14px; margin: 0 0 12px; font-weight: 600;">📅 Add to calendar</p>
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
+                      <tr>
+                        <td style="padding: 4px;">
+                          <a href="${googleCalUrl}" target="_blank" style="display: inline-block; background: #ffffff; color: #1e293b; padding: 10px 16px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 600; border: 1px solid #e2e8f0;">📅 Google</a>
+                        </td>
+                        <td style="padding: 4px;">
+                          <a href="${outlookUrl}" target="_blank" style="display: inline-block; background: #ffffff; color: #1e293b; padding: 10px 16px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 600; border: 1px solid #e2e8f0;">📧 Outlook</a>
+                        </td>
+                        <td style="padding: 4px;">
+                          <a href="${yahooUrl}" target="_blank" style="display: inline-block; background: #ffffff; color: #1e293b; padding: 10px 16px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 600; border: 1px solid #e2e8f0;">🗓️ Yahoo</a>
+                        </td>
+                      </tr>
+                    </table>
+                    <p style="color: #94a3b8; font-size: 11px; margin: 10px 0 0;">📎 .ics file attached for Apple Calendar</p>
+                  </div>
+                </td>
+              </tr>
+              
+              <!-- Products Section -->
+              ${getProductsSection()}
+              
+              <!-- Contact -->
+              <tr>
+                <td style="padding: 16px 0 0;">
+                  <div style="background: #f5f3ff; border-radius: 10px; padding: 16px; text-align: center;">
+                    <p class="responsive-text" style="color: #64748b; margin: 0; font-size: 14px; line-height: 1.5; word-wrap: break-word;">
+                      Questions? Contact <strong style="color: #1e293b;">${hostName}</strong>${hostEmail ? ` at <a href="mailto:${hostEmail}" style="color: #8b5cf6;">${hostEmail}</a>` : ''}
+                    </p>
+                    <p style="color: #7c3aed; margin: 10px 0 0; font-size: 13px; font-weight: 500;">We can't wait to see you! 🎉</p>
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        
+        ${getEmailFooter()}
+      `;
+      emailHtml = getResponsiveEmailWrapper(inviteContent, `You're Invited: ${showTitle} - Genie Studio`);
     } // End of email type conditional
 
     console.log('[send-show-invite] Sending email with ICS attachment to:', to);
