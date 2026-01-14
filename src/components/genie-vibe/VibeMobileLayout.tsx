@@ -274,12 +274,11 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
       {/* Mobile Status Bar with Offline Indicator & Sync Queue */}
       <MobileStatusBar className="flex-shrink-0" showDetails={true} />
 
-      {/* Responsive Header - Auto-adjusts based on screen size */}
-      <div className="border-b bg-card flex-shrink-0">
-        {/* Main header row - stack on very small screens */}
-        <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 px-3 sm:px-4 py-2 sm:py-3">
-          {/* Left section: Back + Branding */}
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+      {/* Responsive Header - Clean mobile-first design */}
+      <div className="border-b bg-card flex-shrink-0 px-2 py-2 sm:px-4 sm:py-3">
+        <div className="flex items-center justify-between gap-2">
+          {/* Left: Back + Title */}
+          <div className="flex items-center gap-2 min-w-0 flex-shrink">
             <Button 
               variant="ghost" 
               size="icon" 
@@ -290,63 +289,46 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
               <ArrowLeft className="h-4 w-4" />
             </Button>
             
-            {/* Branding - responsive sizing */}
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-              <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 border flex items-center justify-center flex-shrink-0">
-                <Video className="h-4 w-4 text-primary" />
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 border flex items-center justify-center flex-shrink-0">
+                <Video className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
               </div>
-              <div className="min-w-0 flex-1">
-                <h1 className="font-semibold text-sm sm:text-base leading-tight whitespace-nowrap">
-                  Genie Vibe Studio
-                </h1>
-                {/* Pipeline subtitle - hide on mobile, show on sm+ */}
-                <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight hidden sm:block truncate">
-                  Record → Clips → Mix → Timeline → Publish
-                </p>
-              </div>
+              <h1 className="font-semibold text-sm sm:text-base truncate">
+                Vibe Studio
+              </h1>
             </div>
           </div>
           
-          {/* Right section: Controls */}
-          <div className="flex items-center gap-2 flex-shrink-0 justify-end">
-            {/* Save status indicator */}
+          {/* Right: Compact controls */}
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            {/* Sync status - icon only on mobile */}
             {recordings.length > 0 && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <div className="flex items-center">
                 {!syncState.isOnline ? (
-                  <CloudOff className="h-3.5 w-3.5 text-amber-500" />
+                  <CloudOff className="h-4 w-4 text-amber-500" />
                 ) : syncState.isSyncing ? (
-                  <Save className="h-3.5 w-3.5 animate-pulse text-primary" />
+                  <Save className="h-4 w-4 animate-pulse text-primary" />
                 ) : (
-                  <Check className="h-3.5 w-3.5 text-green-500" />
+                  <Check className="h-4 w-4 text-green-500" />
                 )}
               </div>
             )}
             
-            {/* View Mode Toggle */}
-            <div className="flex items-center border rounded-md p-0.5 bg-muted/30">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2 text-xs gap-1 text-muted-foreground"
-                onClick={onSwitchToDesktop}
-              >
-                <Monitor className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Desktop</span>
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="h-7 px-2 text-xs gap-1"
-              >
-                <Smartphone className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Mobile</span>
-              </Button>
-            </div>
+            {/* Desktop toggle - single button on mobile */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 sm:h-8 sm:w-auto sm:px-2 p-0"
+              onClick={onSwitchToDesktop}
+              title="Switch to Desktop"
+            >
+              <Monitor className="h-4 w-4" />
+              <span className="hidden sm:inline ml-1.5 text-xs">Desktop</span>
+            </Button>
             
-            {/* Recordings count */}
-            <Badge variant="secondary" className="h-7 px-2 text-xs whitespace-nowrap">
+            {/* Clip count badge */}
+            <Badge variant="secondary" className="h-7 px-2 text-xs">
               {recordings.length}
-              <span className="hidden xs:inline ml-1">clips</span>
             </Badge>
           </div>
         </div>
