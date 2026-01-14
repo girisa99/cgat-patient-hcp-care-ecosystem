@@ -19,8 +19,8 @@ export type ShowType =
 
 // Stage types per category
 export type ProductionStage = 'outreach' | 'script' | 'rehearsal' | 'recording' | 'post_production' | 'published';
-// Meeting stages - must match database enum. UI shows streamlined version (confirmed/agenda_prep auto-handled during scheduling)
-export type MeetingStage = 'scheduled' | 'confirmed' | 'agenda_prep' | 'in_progress' | 'follow_up' | 'completed' | 'cancelled';
+// Meeting stages - matches database enum. UI shows streamlined version (confirmed/agenda_prep auto-handled during scheduling)
+export type MeetingStage = 'scheduled' | 'confirmed' | 'agenda_prep' | 'in_progress' | 'follow_up' | 'completed' | 'cancelled' | 'rescheduled';
 export type EventStage = 'planning' | 'promotion' | 'registration' | 'live' | 'wrap_up' | 'archived' | 'cancelled';
 // DemoStage matches the production_stage enum values in database
 export type DemoStage = 'demo_scheduled' | 'demo_prep' | 'demo_live' | 'demo_followup' | 'demo_closed';
@@ -157,6 +157,7 @@ export const MEETING_STAGES: {
   { id: 'in_progress', label: 'In Progress', description: 'Meeting ongoing', icon: 'Play', color: 'bg-yellow-500' },
   { id: 'follow_up', label: 'Follow Up', description: 'Action items & notes', icon: 'MessageSquare', color: 'bg-orange-500' },
   { id: 'completed', label: 'Completed', description: 'Meeting finished', icon: 'CheckCircle2', color: 'bg-green-500' },
+  { id: 'rescheduled', label: 'Rescheduled', description: 'Meeting moved to new time', icon: 'CalendarClock', color: 'bg-purple-500' },
   { id: 'cancelled', label: 'Cancelled', description: 'Meeting cancelled', icon: 'XCircle', color: 'bg-gray-500' },
 ];
 
