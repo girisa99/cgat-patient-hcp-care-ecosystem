@@ -27,336 +27,598 @@ import { toast } from 'sonner';
 // - Genie Spark: "Ignite your Ideas" - AI script generation, story development, content ideation
 // - Genie Mind: "AI that understands" - Contextual AI, script editing, TTS, templates
 // - Genie Vibe: "Script to Screen" - Audio/video recording, editing, production
-// - Genie Arc: "Your Production Journey" - Production workflow, team collaboration, scheduling
+// - Genie Arc: "Your Production Journey With Infinite Possibilities" - Production workflow, team collaboration
 // - Ask Genie: "Your wish is my command" - Universal AI assistant throughout
+
+// Segment data with metrics - VoC is now nested within each segment
+interface SegmentPainWithVoC {
+  segment: string;
+  emoji: string;
+  pain: string;
+  severity: number;
+  metrics: {
+    videosPerWeek: number;
+    audiosPerMonth: number;
+    editsPerWeek: number;
+    hoursPerWeek: number;
+    toolCost: string;
+  };
+  voc: Array<{ quote: string; author: string; role: string }>;
+}
 
 const journeySteps = [
   {
     step: 1,
-    title: 'Ideation & Scripting',
+    title: "Ideation & Scripting",
     icon: FileText,
     product: {
-      name: 'Genie Spark',
-      tagline: 'Ignite your Ideas',
-      emoji: '✨',
-      color: 'text-amber-600',
-      bgColor: 'bg-amber-500/10',
+      name: "Genie Spark",
+      tagline: "Ignite your Ideas",
+      emoji: "✨",
+      color: "text-amber-600",
+      bgColor: "bg-amber-500/10",
     },
     before: { 
-      time: '2-4 hours', 
+      time: "2-4 hours", 
       timePercent: 18,
-      cost: '$45-90',
-      tools: 'ChatGPT + Google Docs + Research', 
-      pain: 'Context switching, version chaos',
-      output: '1 script draft'
+      cost: "$45-90",
+      tools: "ChatGPT + Google Docs + Research", 
+      pain: "Context switching, version chaos",
+      output: "1 script draft"
     },
     after: { 
-      time: '15-30 min', 
-      tools: 'Genie Spark', 
-      wow: 'AI script generation, story development & content ideation',
-      output: '3-5 script variants'
+      time: "15-30 min", 
+      tools: "Genie Spark", 
+      wow: "AI script generation, story development & content ideation",
+      output: "3-5 script variants"
     },
     criticalPain: true,
-    timeWasted: '85%',
+    timeWasted: "85%",
     segmentPains: [
-      { segment: 'Content Creators', emoji: '🎬', pain: 'Writer block with no AI assistance', severity: 75 },
-      { segment: 'Corporate L&D', emoji: '🏢', pain: 'Compliance language requirements', severity: 82 },
-      { segment: 'Marketing Teams', emoji: '📈', pain: 'Brand voice consistency', severity: 79 },
-      { segment: 'Healthcare', emoji: '🏥', pain: 'Medical accuracy verification', severity: 95 },
-      { segment: 'Educators', emoji: '📚', pain: 'Curriculum alignment', severity: 68 },
-      { segment: 'Knowledge Sharers', emoji: '💡', pain: "Don't know how to structure ideas", severity: 88 },
-    ],
-    vocQuotes: [
-      { quote: "I sit staring at a blank doc for hours. By the time I start writing, my creative energy is gone.", author: "Marcus L.", role: "YouTuber, 180K subs" },
-      { quote: "Every script needs legal review. That alone takes 2 weeks.", author: "Sarah M.", role: "L&D Manager, Bank" },
-      { quote: "I know my craft inside out but putting it into words for video? Impossible.", author: "Tony R.", role: "Auto Mechanic, 20 yrs exp" },
-      { quote: "We rewrite the same script 12 times before anyone is happy.", author: "Jennifer L.", role: "Marketing Director" },
-      { quote: "Medical terminology takes forever to get right in layman's terms.", author: "Dr. Patricia M.", role: "CMO, Hospital" },
+      { 
+        segment: "Content Creators", emoji: "🎬", pain: "Writer block with no AI assistance", severity: 75,
+        metrics: { videosPerWeek: 3, audiosPerMonth: 12, editsPerWeek: 4, hoursPerWeek: 8, toolCost: "$247/mo" },
+        voc: [
+          { quote: "I sit staring at a blank doc for hours. By the time I start writing, my creative energy is gone.", author: "Marcus L.", role: "YouTuber, 180K subs" },
+          { quote: "Coming up with fresh ideas for 3 videos a week is mentally exhausting.", author: "Sarah K.", role: "Lifestyle Creator" },
+        ]
+      },
+      { 
+        segment: "Corporate L&D", emoji: "🏢", pain: "Compliance language requirements", severity: 82,
+        metrics: { videosPerWeek: 1, audiosPerMonth: 4, editsPerWeek: 2, hoursPerWeek: 18, toolCost: "$890/mo" },
+        voc: [
+          { quote: "Every script needs legal review. That alone takes 2 weeks.", author: "Sarah M.", role: "L&D Manager, Bank" },
+          { quote: "We have 47 compliance checkpoints for each training video.", author: "Michael R.", role: "L&D Director" },
+        ]
+      },
+      { 
+        segment: "Marketing Teams", emoji: "📈", pain: "Brand voice consistency", severity: 79,
+        metrics: { videosPerWeek: 4, audiosPerMonth: 16, editsPerWeek: 6, hoursPerWeek: 22, toolCost: "$1,250/mo" },
+        voc: [
+          { quote: "Our brand voice guide is 40 pages. No one follows it consistently.", author: "Amanda S.", role: "Brand Manager" },
+          { quote: "We rewrite the same script 12 times before anyone is happy.", author: "Jennifer L.", role: "Marketing Director" },
+        ]
+      },
+      { 
+        segment: "Healthcare", emoji: "🏥", pain: "Medical accuracy verification", severity: 95,
+        metrics: { videosPerWeek: 1, audiosPerMonth: 4, editsPerWeek: 1, hoursPerWeek: 15, toolCost: "$2,100/mo" },
+        voc: [
+          { quote: "Medical terminology takes forever to get right in layman terms.", author: "Dr. Patricia M.", role: "CMO, Hospital" },
+          { quote: "One wrong word in patient education can cause harm.", author: "Nurse Director", role: "Large Hospital" },
+        ]
+      },
+      { 
+        segment: "Educators", emoji: "📚", pain: "Curriculum alignment", severity: 68,
+        metrics: { videosPerWeek: 3, audiosPerMonth: 8, editsPerWeek: 4, hoursPerWeek: 12, toolCost: "$180/mo" },
+        voc: [
+          { quote: "Aligning videos with learning standards adds hours to prep.", author: "Prof. David H.", role: "University Professor" },
+          { quote: "Students want engaging content but curriculum is rigid.", author: "High School Teacher", role: "15 yrs exp" },
+        ]
+      },
+      { 
+        segment: "Knowledge Sharers", emoji: "💡", pain: "Cannot structure ideas for video", severity: 88,
+        metrics: { videosPerWeek: 0, audiosPerMonth: 0, editsPerWeek: 0, hoursPerWeek: 0, toolCost: "$0" },
+        voc: [
+          { quote: "I know my craft inside out but putting it into words for video? Impossible.", author: "Tony R.", role: "Auto Mechanic, 20 yrs" },
+          { quote: "I have 15 years of expertise but no idea how to script a tutorial.", author: "Wei L.", role: "Software Architect" },
+        ]
+      },
     ],
     influencerVoices: [
-      { name: 'James R.', platform: 'YouTube', handle: '@TechReviewPro', followers: '1.2M', quote: "Research alone takes 3 hours. Then organizing it into a script is another 2. For 8 videos a month, that's 40 hours just on ideation." },
-      { name: 'Zoe K.', platform: 'TikTok', handle: '@ZoeDances', followers: '3.2M', quote: "I have to come up with fresh ideas daily. The pressure is insane. I'd kill for an AI that knows my style." },
-      { name: 'David K.', platform: 'LinkedIn', handle: '@ThoughtLeader', followers: '180K', quote: "Professional audience expects well-researched content. That means 5 hours of prep for a 2-minute video." },
+      { name: "James R.", platform: "YouTube", handle: "@TechReviewPro", followers: "1.2M", quote: "Research alone takes 3 hours. Then organizing it into a script is another 2. For 8 videos a month, thats 40 hours just on ideation." },
+      { name: "Zoe K.", platform: "TikTok", handle: "@ZoeDances", followers: "3.2M", quote: "I have to come up with fresh ideas daily. The pressure is insane." },
     ],
   },
   {
     step: 2,
-    title: 'Script Editing & Enhancement',
+    title: "Script Editing & Enhancement",
     icon: FileText,
     product: {
-      name: 'Genie Mind',
-      tagline: 'AI that understands',
-      emoji: '🧠',
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-500/10',
+      name: "Genie Mind",
+      tagline: "AI that understands",
+      emoji: "🧠",
+      color: "text-blue-600",
+      bgColor: "bg-blue-500/10",
     },
     before: { 
-      time: '1-2 hours', 
+      time: "1-2 hours", 
       timePercent: 10,
-      cost: '$25-50',
-      tools: 'Manual editing + Grammarly + Style guides', 
-      pain: 'Inconsistent tone, missing context',
-      output: '1 refined script'
+      cost: "$25-50",
+      tools: "Manual editing + Grammarly + Style guides", 
+      pain: "Inconsistent tone, missing context",
+      output: "1 refined script"
     },
     after: { 
-      time: '10 min', 
-      tools: 'Genie Mind', 
-      wow: 'Contextual AI understanding with cross-product memory',
-      output: 'Polished multi-format scripts'
+      time: "10 min", 
+      tools: "Genie Mind", 
+      wow: "Contextual AI understanding with cross-product memory",
+      output: "Polished multi-format scripts"
     },
     criticalPain: false,
-    timeWasted: '83%',
+    timeWasted: "83%",
     segmentPains: [
-      { segment: 'Content Creators', emoji: '🎬', pain: 'Maintaining consistent voice across videos', severity: 70 },
-      { segment: 'Corporate L&D', emoji: '🏢', pain: 'Policy compliance verification', severity: 80 },
-      { segment: 'Marketing Teams', emoji: '📈', pain: 'Brand guidelines enforcement', severity: 75 },
-      { segment: 'Healthcare', emoji: '🏥', pain: 'Medical terminology accuracy', severity: 92 },
-      { segment: 'Educators', emoji: '📚', pain: 'Learning objective alignment', severity: 65 },
-      { segment: 'Knowledge Sharers', emoji: '💡', pain: 'Translating expertise to simple language', severity: 85 },
-    ],
-    vocQuotes: [
-      { quote: "I spend 2 hours polishing a script, then realize the tone is all wrong for my audience.", author: "Lisa P.", role: "Lifestyle Vlogger" },
-      { quote: "Our brand voice guide is 40 pages. No one follows it consistently.", author: "Amanda S.", role: "Brand Manager" },
-      { quote: "I know the material, but I can't make it sound engaging for video.", author: "Prof. David H.", role: "University Professor" },
-      { quote: "Compliance check takes longer than writing the content.", author: "Michael R.", role: "L&D Director" },
+      { 
+        segment: "Content Creators", emoji: "🎬", pain: "Maintaining consistent voice across videos", severity: 70,
+        metrics: { videosPerWeek: 3, audiosPerMonth: 12, editsPerWeek: 6, hoursPerWeek: 4, toolCost: "$50/mo" },
+        voc: [
+          { quote: "I spend 2 hours polishing a script, then realize the tone is all wrong.", author: "Lisa P.", role: "Lifestyle Vlogger" },
+          { quote: "My old videos sound nothing like my new ones. No consistency.", author: "Mike J.", role: "Tech Creator" },
+        ]
+      },
+      { 
+        segment: "Corporate L&D", emoji: "🏢", pain: "Policy compliance verification", severity: 80,
+        metrics: { videosPerWeek: 1, audiosPerMonth: 4, editsPerWeek: 3, hoursPerWeek: 6, toolCost: "$200/mo" },
+        voc: [
+          { quote: "Compliance check takes longer than writing the content.", author: "Michael R.", role: "L&D Director" },
+          { quote: "Legal reviews every word. One mistake and we start over.", author: "Karen L.", role: "Training Manager" },
+        ]
+      },
+      { 
+        segment: "Marketing Teams", emoji: "📈", pain: "Brand guidelines enforcement", severity: 75,
+        metrics: { videosPerWeek: 4, audiosPerMonth: 16, editsPerWeek: 8, hoursPerWeek: 6, toolCost: "$300/mo" },
+        voc: [
+          { quote: "40-page brand guide and still no one writes consistently.", author: "Amanda S.", role: "Brand Manager" },
+          { quote: "Different writers, different voices. Customers notice.", author: "Chris W.", role: "CMO" },
+        ]
+      },
+      { 
+        segment: "Healthcare", emoji: "🏥", pain: "Medical terminology accuracy", severity: 92,
+        metrics: { videosPerWeek: 1, audiosPerMonth: 2, editsPerWeek: 2, hoursPerWeek: 8, toolCost: "$500/mo" },
+        voc: [
+          { quote: "Medical jargon needs simplification without losing accuracy.", author: "Dr. Emily C.", role: "Pediatrician" },
+          { quote: "Patients misunderstand one term and treatment fails.", author: "Nurse Lisa M.", role: "ER, 20 yrs" },
+        ]
+      },
+      { 
+        segment: "Educators", emoji: "📚", pain: "Learning objective alignment", severity: 65,
+        metrics: { videosPerWeek: 3, audiosPerMonth: 6, editsPerWeek: 4, hoursPerWeek: 3, toolCost: "$30/mo" },
+        voc: [
+          { quote: "I know the material, but making it engaging for video is different.", author: "Prof. David H.", role: "University Professor" },
+          { quote: "Students zone out if script sounds like a textbook.", author: "High School Teacher", role: "Science" },
+        ]
+      },
+      { 
+        segment: "Knowledge Sharers", emoji: "💡", pain: "Translating expertise to simple language", severity: 85,
+        metrics: { videosPerWeek: 0, audiosPerMonth: 0, editsPerWeek: 0, hoursPerWeek: 0, toolCost: "$0" },
+        voc: [
+          { quote: "I can explain to colleagues but simplifying for video is impossible.", author: "Rachel K.", role: "CFA, 14 yrs" },
+          { quote: "Technical accuracy vs accessibility - I cannot find balance.", author: "Tom H.", role: "Developer, 12 yrs" },
+        ]
+      },
     ],
     influencerVoices: [
-      { name: 'Emma L.', platform: 'TikTok', handle: '@LearnWithEmma', followers: '1.5M', quote: "Making complex topics simple AND entertaining is brutal. I rewrite each script 5 times." },
-      { name: 'Mark S.', platform: 'LinkedIn', handle: '@StartupStories', followers: '250K', quote: "Professional tone for LinkedIn, casual for TikTok - same content, completely different scripts." },
+      { name: "Emma L.", platform: "TikTok", handle: "@LearnWithEmma", followers: "1.5M", quote: "Making complex topics simple AND entertaining is brutal. I rewrite each script 5 times." },
+      { name: "Mark S.", platform: "LinkedIn", handle: "@StartupStories", followers: "250K", quote: "Professional tone for LinkedIn, casual for TikTok - same content, completely different scripts." },
     ],
   },
   {
     step: 3,
-    title: 'Voice & Audio Production',
+    title: "Voice & Audio Production",
     icon: Mic,
     product: {
-      name: 'Genie Vibe',
-      tagline: 'Script to Screen',
-      emoji: '🎬',
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-500/10',
+      name: "Genie Vibe",
+      tagline: "Script to Screen",
+      emoji: "🎬",
+      color: "text-purple-600",
+      bgColor: "bg-purple-500/10",
     },
     before: { 
-      time: '1-3 hours', 
+      time: "1-3 hours", 
       timePercent: 12,
-      cost: '$25-75',
-      tools: 'ElevenLabs + Audacity + Multiple logins', 
-      pain: 'Manual export/import cycles',
-      output: '1 audio file'
+      cost: "$25-75",
+      tools: "ElevenLabs + Audacity + Multiple logins", 
+      pain: "Manual export/import cycles",
+      output: "1 audio file"
     },
     after: { 
-      time: '5 min', 
-      tools: 'Genie Vibe', 
-      wow: '11 TTS providers, audio recording & multi-track editing',
-      output: 'Multi-language audio'
+      time: "5 min", 
+      tools: "Genie Vibe", 
+      wow: "11 TTS providers, audio recording & multi-track editing",
+      output: "Multi-language audio"
     },
     criticalPain: false,
-    timeWasted: '92%',
+    timeWasted: "92%",
     segmentPains: [
-      { segment: 'Content Creators', emoji: '🎬', pain: 'Voice fatigue on long recordings', severity: 62 },
-      { segment: 'Corporate L&D', emoji: '🏢', pain: 'Multi-language requirements', severity: 78 },
-      { segment: 'Marketing Teams', emoji: '📈', pain: 'Consistent brand voice across regions', severity: 71 },
-      { segment: 'Healthcare', emoji: '🏥', pain: 'Medical pronunciation accuracy', severity: 89 },
-      { segment: 'Educators', emoji: '📚', pain: 'Accent clarity for diverse students', severity: 65 },
-      { segment: 'Knowledge Sharers', emoji: '💡', pain: 'Shy about their voice/accent', severity: 94 },
-    ],
-    vocQuotes: [
-      { quote: "I hate my voice on recordings. I've rerecorded the same intro 50 times.", author: "Priya S.", role: "Accountant wanting to teach" },
-      { quote: "My accent makes people dismiss my expertise. AI voice would be a game changer.", author: "Wei L.", role: "Software Engineer, 15 yrs" },
-      { quote: "We need 12 language versions. Each one costs $500 in voice talent.", author: "Jennifer L.", role: "Global Marketing Lead" },
-      { quote: "Narrating a 45-minute course leaves me voiceless for days.", author: "Prof. David H.", role: "University Professor" },
+      { 
+        segment: "Content Creators", emoji: "🎬", pain: "Voice fatigue on long recordings", severity: 62,
+        metrics: { videosPerWeek: 3, audiosPerMonth: 15, editsPerWeek: 4, hoursPerWeek: 5, toolCost: "$80/mo" },
+        voc: [
+          { quote: "Voice-over for 12 videos a month destroys my throat.", author: "Maria G.", role: "YouTube, 890K subs" },
+          { quote: "I re-record the same intro 50 times to get it right.", author: "Alex T.", role: "Fitness Creator" },
+        ]
+      },
+      { 
+        segment: "Corporate L&D", emoji: "🏢", pain: "Multi-language requirements", severity: 78,
+        metrics: { videosPerWeek: 1, audiosPerMonth: 12, editsPerWeek: 2, hoursPerWeek: 8, toolCost: "$400/mo" },
+        voc: [
+          { quote: "We need 12 language versions. Each one costs $500 in voice talent.", author: "Jennifer L.", role: "Global L&D Lead" },
+          { quote: "Syncing audio across languages is a logistical nightmare.", author: "Training Director", role: "Multinational Corp" },
+        ]
+      },
+      { 
+        segment: "Marketing Teams", emoji: "📈", pain: "Consistent brand voice across regions", severity: 71,
+        metrics: { videosPerWeek: 4, audiosPerMonth: 20, editsPerWeek: 5, hoursPerWeek: 6, toolCost: "$350/mo" },
+        voc: [
+          { quote: "Different voice actors in each region. No brand consistency.", author: "Amanda S.", role: "Global Brand" },
+          { quote: "Re-recording for each market doubles our timeline.", author: "Regional Marketing Head", role: "APAC" },
+        ]
+      },
+      { 
+        segment: "Healthcare", emoji: "🏥", pain: "Medical pronunciation accuracy", severity: 89,
+        metrics: { videosPerWeek: 1, audiosPerMonth: 4, editsPerWeek: 1, hoursPerWeek: 4, toolCost: "$600/mo" },
+        voc: [
+          { quote: "Mispronouncing drug names can cause patient harm.", author: "Dr. James W.", role: "Clinical Educator" },
+          { quote: "Finding voice talent who can pronounce medical terms is impossible.", author: "Health Comms Director", role: "Hospital Network" },
+        ]
+      },
+      { 
+        segment: "Educators", emoji: "📚", pain: "Accent clarity for diverse students", severity: 65,
+        metrics: { videosPerWeek: 3, audiosPerMonth: 10, editsPerWeek: 3, hoursPerWeek: 4, toolCost: "$50/mo" },
+        voc: [
+          { quote: "Narrating a 45-minute course leaves me voiceless for days.", author: "Prof. David H.", role: "University" },
+          { quote: "International students struggle with my regional accent.", author: "Online Instructor", role: "Coursera" },
+        ]
+      },
+      { 
+        segment: "Knowledge Sharers", emoji: "💡", pain: "Shy about their voice/accent", severity: 94,
+        metrics: { videosPerWeek: 0, audiosPerMonth: 0, editsPerWeek: 0, hoursPerWeek: 0, toolCost: "$0" },
+        voc: [
+          { quote: "I hate my voice on recordings. I have deleted 50 attempts.", author: "Priya S.", role: "Accountant" },
+          { quote: "My accent makes people dismiss my expertise. AI voice would change everything.", author: "Wei L.", role: "Engineer, 15 yrs" },
+        ]
+      },
     ],
     influencerVoices: [
-      { name: 'Maria G.', platform: 'YouTube', handle: '@BakingMagic', followers: '890K', quote: "Voice-over for 12 videos a month destroys my throat. I've had to take breaks for vocal rest." },
-      { name: 'Derek W.', platform: 'TikTok', handle: '@ComedyKingDerek', followers: '5.8M', quote: "Different character voices are exhausting. An AI that could clone my style would save hours." },
-      { name: 'Emma L.', platform: 'TikTok', handle: '@LearnWithEmma', followers: '1.5M', quote: "Explaining complex topics clearly is hard. My voice gets tired before I nail the delivery." },
+      { name: "Maria G.", platform: "YouTube", handle: "@BakingMagic", followers: "890K", quote: "Voice-over for 12 videos a month destroys my throat. Vocal rest breaks are mandatory now." },
+      { name: "Derek W.", platform: "TikTok", handle: "@ComedyKingDerek", followers: "5.8M", quote: "Different character voices are exhausting. An AI that could clone my style would save hours." },
     ],
   },
   {
     step: 4,
-    title: 'Video Recording & Production',
+    title: "Video Recording & Production",
     icon: Video,
     product: {
-      name: 'Genie Vibe',
-      tagline: 'Script to Screen',
-      emoji: '🎬',
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-500/10',
+      name: "Genie Vibe",
+      tagline: "Script to Screen",
+      emoji: "🎬",
+      color: "text-purple-600",
+      bgColor: "bg-purple-500/10",
     },
     before: { 
-      time: '3-6 hours', 
+      time: "3-6 hours", 
       timePercent: 28,
-      cost: '$75-150',
-      tools: 'Loom + OBS + Teleprompter app + Camera', 
-      pain: 'Setup time, re-takes, lighting issues',
-      output: '1 raw video'
+      cost: "$75-150",
+      tools: "Loom + OBS + Teleprompter app + Camera", 
+      pain: "Setup time, re-takes, lighting issues",
+      output: "1 raw video"
     },
     after: { 
-      time: '20 min', 
-      tools: 'Genie Vibe', 
-      wow: 'Video capture, real-time effects & script-to-screen workflow',
-      output: 'Polished recording'
+      time: "20 min", 
+      tools: "Genie Vibe", 
+      wow: "Video capture, real-time effects & script-to-screen workflow",
+      output: "Polished recording"
     },
     criticalPain: true,
-    timeWasted: '89%',
+    timeWasted: "89%",
     segmentPains: [
-      { segment: 'Content Creators', emoji: '🎬', pain: 'Endless retakes for perfection', severity: 81 },
-      { segment: 'Corporate L&D', emoji: '🏢', pain: 'SME availability constraints', severity: 76 },
-      { segment: 'Marketing Teams', emoji: '📈', pain: 'Location and set requirements', severity: 68 },
-      { segment: 'Healthcare', emoji: '🏥', pain: 'Patient privacy in recordings', severity: 92 },
-      { segment: 'Educators', emoji: '📚', pain: 'Tech setup complexity', severity: 73 },
-      { segment: 'Knowledge Sharers', emoji: '💡', pain: 'Camera anxiety, fear of judgment', severity: 96 },
-    ],
-    vocQuotes: [
-      { quote: "I did 47 takes for a 10-minute tutorial. My perfectionism is killing me.", author: "David H.", role: "Professor, CompSci" },
-      { quote: "I know more than most YouTubers in my field, but I freeze on camera.", author: "Rachel K.", role: "Financial Analyst, CFA" },
-      { quote: "Setting up lights, camera, audio takes 2 hours. By then, I've lost motivation.", author: "Mike T.", role: "Electrician, 25 yrs exp" },
-      { quote: "Our CEO has 10 minutes between meetings. We get one shot.", author: "Karen L.", role: "Corporate Comms" },
+      { 
+        segment: "Content Creators", emoji: "🎬", pain: "Endless retakes for perfection", severity: 81,
+        metrics: { videosPerWeek: 3, audiosPerMonth: 12, editsPerWeek: 5, hoursPerWeek: 12, toolCost: "$150/mo" },
+        voc: [
+          { quote: "I did 47 takes for a 10-minute tutorial. Perfectionism is killing me.", author: "David H.", role: "Prof, CompSci" },
+          { quote: "One bad take and I reshoot the entire segment.", author: "Priya S.", role: "Fashion Creator" },
+        ]
+      },
+      { 
+        segment: "Corporate L&D", emoji: "🏢", pain: "SME availability constraints", severity: 76,
+        metrics: { videosPerWeek: 1, audiosPerMonth: 4, editsPerWeek: 2, hoursPerWeek: 10, toolCost: "$300/mo" },
+        voc: [
+          { quote: "Our CEO has 10 minutes between meetings. We get one shot.", author: "Karen L.", role: "Corporate Comms" },
+          { quote: "Subject matter experts are too busy to reshoot anything.", author: "L&D Producer", role: "Enterprise" },
+        ]
+      },
+      { 
+        segment: "Marketing Teams", emoji: "📈", pain: "Location and set requirements", severity: 68,
+        metrics: { videosPerWeek: 4, audiosPerMonth: 16, editsPerWeek: 6, hoursPerWeek: 15, toolCost: "$500/mo" },
+        voc: [
+          { quote: "Studio rental is $2,000/day. We can only afford 2 shoot days a month.", author: "Production Manager", role: "Agency" },
+          { quote: "Location scouting takes longer than the actual shoot.", author: "Video Producer", role: "Brand Team" },
+        ]
+      },
+      { 
+        segment: "Healthcare", emoji: "🏥", pain: "Patient privacy in recordings", severity: 92,
+        metrics: { videosPerWeek: 1, audiosPerMonth: 2, editsPerWeek: 1, hoursPerWeek: 6, toolCost: "$800/mo" },
+        voc: [
+          { quote: "HIPAA means we cannot show anything identifiable. Limits content severely.", author: "Compliance Officer", role: "Hospital" },
+          { quote: "Simulating procedures with actors costs a fortune.", author: "Medical Educator", role: "Teaching Hospital" },
+        ]
+      },
+      { 
+        segment: "Educators", emoji: "📚", pain: "Tech setup complexity", severity: 73,
+        metrics: { videosPerWeek: 3, audiosPerMonth: 8, editsPerWeek: 4, hoursPerWeek: 8, toolCost: "$100/mo" },
+        voc: [
+          { quote: "Setting up lights, camera, audio takes 2 hours. Motivation gone by then.", author: "Mike T.", role: "Electrician, 25 yrs" },
+          { quote: "I teach 5 classes. No time to figure out recording equipment.", author: "Prof. Margaret S.", role: "Physics" },
+        ]
+      },
+      { 
+        segment: "Knowledge Sharers", emoji: "💡", pain: "Camera anxiety, fear of judgment", severity: 96,
+        metrics: { videosPerWeek: 0, audiosPerMonth: 0, editsPerWeek: 0, hoursPerWeek: 0, toolCost: "$0" },
+        voc: [
+          { quote: "I know more than most YouTubers in my field, but I freeze on camera.", author: "Rachel K.", role: "CFA, 14 yrs" },
+          { quote: "The thought of being judged on appearance stops me from starting.", author: "Carlos M.", role: "Mechanic, 28 yrs" },
+        ]
+      },
     ],
     influencerVoices: [
-      { name: 'Alex T.', platform: 'Instagram', handle: '@AlexFitness', followers: '1.5M', quote: "Gym recordings need perfect lighting and no background noise. I've scrapped hours of footage." },
-      { name: 'Robert M.', platform: 'Facebook', handle: 'DIY Home Repairs', followers: '520K', quote: "Try filming while your hands are covered in grease. The technical side is a nightmare." },
-      { name: 'Priya S.', platform: 'Instagram', handle: '@PriyaFashionista', followers: '780K', quote: "One hair out of place and the whole shot is ruined. Fashion demands perfection." },
+      { name: "Alex T.", platform: "Instagram", handle: "@AlexFitness", followers: "1.5M", quote: "Gym recordings need perfect lighting and no background noise. I have scrapped hours of footage." },
+      { name: "Robert M.", platform: "Facebook", handle: "DIY Home Repairs", followers: "520K", quote: "Try filming while your hands are covered in grease. The technical side is a nightmare." },
     ],
   },
   {
     step: 5,
-    title: 'Editing & Assembly',
+    title: "Editing & Assembly",
     icon: Layers,
     product: {
-      name: 'Genie Vibe',
-      tagline: 'Script to Screen',
-      emoji: '🎬',
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-500/10',
+      name: "Genie Vibe",
+      tagline: "Script to Screen",
+      emoji: "🎬",
+      color: "text-purple-600",
+      bgColor: "bg-purple-500/10",
     },
     before: { 
-      time: '4-10 hours', 
+      time: "4-10 hours", 
       timePercent: 35,
-      cost: '$100-250',
-      tools: 'Premiere + After Effects + Canva', 
-      pain: 'Steep learning curve, render times',
-      output: '1 edited video'
+      cost: "$100-250",
+      tools: "Premiere + After Effects + Canva", 
+      pain: "Steep learning curve, render times",
+      output: "1 edited video"
     },
     after: { 
-      time: '30 min', 
-      tools: 'Genie Vibe', 
-      wow: 'Multi-track editing, real-time effects & auto-captions',
-      output: 'Platform-ready video'
+      time: "30 min", 
+      tools: "Genie Vibe", 
+      wow: "Multi-track editing, real-time effects & auto-captions",
+      output: "Platform-ready video"
     },
     criticalPain: true,
-    timeWasted: '92%',
+    timeWasted: "92%",
     segmentPains: [
-      { segment: 'Content Creators', emoji: '🎬', pain: 'Hours lost to timeline tweaking', severity: 88 },
-      { segment: 'Corporate L&D', emoji: '🏢', pain: 'Revision cycles with stakeholders', severity: 84 },
-      { segment: 'Marketing Teams', emoji: '📈', pain: 'Multi-format export hell', severity: 91 },
-      { segment: 'Healthcare', emoji: '🏥', pain: 'Annotation accuracy for medical content', severity: 87 },
-      { segment: 'Educators', emoji: '📚', pain: 'Accessibility requirements (captions, etc.)', severity: 72 },
-      { segment: 'Knowledge Sharers', emoji: '💡', pain: 'No video editing skills at all', severity: 98 },
-    ],
-    vocQuotes: [
-      { quote: "I'm a world-class mechanic, not a video editor. Learning Premiere would take months.", author: "Carlos M.", role: "Master Mechanic, ASE certified" },
-      { quote: "Client wants one word changed. That's 4 hours of re-rendering and re-uploading.", author: "Marcus T.", role: "Creative Director, Agency" },
-      { quote: "I teach Excel to 10,000 students but can't figure out video editing software.", author: "Susan P.", role: "Accountant, Excel trainer" },
-      { quote: "Exporting for YouTube, TikTok, LinkedIn, Instagram... each has different specs.", author: "Amy W.", role: "Social Media Manager" },
+      { 
+        segment: "Content Creators", emoji: "🎬", pain: "Hours lost to timeline tweaking", severity: 88,
+        metrics: { videosPerWeek: 3, audiosPerMonth: 12, editsPerWeek: 8, hoursPerWeek: 20, toolCost: "$60/mo" },
+        voc: [
+          { quote: "Same video, 4 different aspect ratios. I make it 4 times.", author: "Priya S.", role: "Fashion, 780K" },
+          { quote: "Color grading, sound design, motion graphics - each is a full-time job.", author: "James R.", role: "Tech, 1.2M" },
+        ]
+      },
+      { 
+        segment: "Corporate L&D", emoji: "🏢", pain: "Revision cycles with stakeholders", severity: 84,
+        metrics: { videosPerWeek: 1, audiosPerMonth: 4, editsPerWeek: 5, hoursPerWeek: 12, toolCost: "$400/mo" },
+        voc: [
+          { quote: "Client wants one word changed. Thats 4 hours of re-rendering.", author: "Marcus T.", role: "Creative Director" },
+          { quote: "7 stakeholders, 7 rounds of revisions, 7 weeks of delays.", author: "L&D Producer", role: "Fortune 500" },
+        ]
+      },
+      { 
+        segment: "Marketing Teams", emoji: "📈", pain: "Multi-format export nightmare", severity: 91,
+        metrics: { videosPerWeek: 4, audiosPerMonth: 16, editsPerWeek: 12, hoursPerWeek: 25, toolCost: "$200/mo" },
+        voc: [
+          { quote: "Exporting for YouTube, TikTok, LinkedIn, Instagram... each has different specs.", author: "Amy W.", role: "Social Media Mgr" },
+          { quote: "We have a full-time person just for format conversions.", author: "Video Team Lead", role: "Agency" },
+        ]
+      },
+      { 
+        segment: "Healthcare", emoji: "🏥", pain: "Annotation accuracy for medical content", severity: 87,
+        metrics: { videosPerWeek: 1, audiosPerMonth: 2, editsPerWeek: 2, hoursPerWeek: 10, toolCost: "$600/mo" },
+        voc: [
+          { quote: "Medical annotations must be precise. One error could harm patients.", author: "Clinical Educator", role: "Hospital" },
+          { quote: "Accessibility requirements for medical content are complex.", author: "Health Comms", role: "NHS" },
+        ]
+      },
+      { 
+        segment: "Educators", emoji: "📚", pain: "Accessibility requirements (captions, etc.)", severity: 72,
+        metrics: { videosPerWeek: 3, audiosPerMonth: 8, editsPerWeek: 5, hoursPerWeek: 10, toolCost: "$80/mo" },
+        voc: [
+          { quote: "I spend more time on captions than on actual content.", author: "Linda C.", role: "Online Instructor" },
+          { quote: "Accessibility compliance adds 2 hours per video minimum.", author: "Special Ed Teacher", role: "K-12" },
+        ]
+      },
+      { 
+        segment: "Knowledge Sharers", emoji: "💡", pain: "No video editing skills at all", severity: 98,
+        metrics: { videosPerWeek: 0, audiosPerMonth: 0, editsPerWeek: 0, hoursPerWeek: 0, toolCost: "$0" },
+        voc: [
+          { quote: "I am a world-class mechanic, not a video editor. Learning Premiere would take months.", author: "Carlos M.", role: "ASE Certified" },
+          { quote: "I teach Excel to 10,000 students but cannot figure out video editing software.", author: "Susan P.", role: "Accountant" },
+        ]
+      },
     ],
     influencerVoices: [
-      { name: 'Priya S.', platform: 'Instagram', handle: '@PriyaFashionista', followers: '780K', quote: "Same video, 4 different aspect ratios. I'm essentially making it 4 times. It's exhausting." },
-      { name: 'Linda C.', platform: 'Facebook', handle: 'Cooking with Linda', followers: '340K', quote: "I spend more time on captions and text overlays than on actual cooking." },
-      { name: 'James R.', platform: 'YouTube', handle: '@TechReviewPro', followers: '1.2M', quote: "Color grading, sound design, motion graphics - each is a full-time job. I do all three." },
+      { name: "Priya S.", platform: "Instagram", handle: "@PriyaFashionista", followers: "780K", quote: "Same video, 4 different aspect ratios. I am essentially making it 4 times. It is exhausting." },
+      { name: "Linda C.", platform: "Facebook", handle: "Cooking with Linda", followers: "340K", quote: "I spend more time on captions and text overlays than on actual cooking." },
     ],
   },
   {
     step: 6,
-    title: 'Production Pipeline & Collaboration',
+    title: "Production Pipeline & Collaboration",
     icon: Users,
     product: {
-      name: 'Genie Arc',
-      tagline: 'Your Production Journey',
-      emoji: '🔄',
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-500/10',
+      name: "Genie Arc",
+      tagline: "Your Production Journey With Infinite Possibilities",
+      emoji: "🎯",
+      color: "text-emerald-600",
+      bgColor: "bg-emerald-500/10",
     },
     before: { 
-      time: '2-4 hours', 
+      time: "2-4 hours", 
       timePercent: 15,
-      cost: '$50-100',
-      tools: 'Slack + Trello + Frame.io + Email chains', 
-      pain: 'Scattered feedback, version confusion',
-      output: 'Approved final cut'
+      cost: "$50-100",
+      tools: "Slack + Trello + Frame.io + Email chains", 
+      pain: "Scattered feedback, version confusion",
+      output: "Approved final cut"
     },
     after: { 
-      time: '15 min', 
-      tools: 'Genie Arc', 
-      wow: 'Team collaboration, resource management & live coordination',
-      output: 'Streamlined approval workflow'
+      time: "15 min", 
+      tools: "Genie Arc", 
+      wow: "Team collaboration, resource management & live coordination",
+      output: "Streamlined approval workflow"
     },
     criticalPain: false,
-    timeWasted: '88%',
+    timeWasted: "88%",
     segmentPains: [
-      { segment: 'Content Creators', emoji: '🎬', pain: 'Managing client feedback chaos', severity: 72 },
-      { segment: 'Corporate L&D', emoji: '🏢', pain: 'Stakeholder alignment across departments', severity: 85 },
-      { segment: 'Marketing Teams', emoji: '📈', pain: 'Campaign coordination across teams', severity: 80 },
-      { segment: 'Healthcare', emoji: '🏥', pain: 'Multi-department compliance review', severity: 90 },
-      { segment: 'Educators', emoji: '📚', pain: 'Peer review and feedback integration', severity: 60 },
-      { segment: 'Knowledge Sharers', emoji: '💡', pain: 'No team, doing everything solo', severity: 65 },
-    ],
-    vocQuotes: [
-      { quote: "Feedback comes through 5 different channels. I miss half of it.", author: "Marcus T.", role: "Creative Director" },
-      { quote: "Approval chains take 3 weeks. The content is stale by then.", author: "Karen L.", role: "Training Manager" },
-      { quote: "Legal, compliance, marketing all need to sign off. It's a nightmare to coordinate.", author: "Michael R.", role: "L&D Director, Fortune 500" },
-      { quote: "I work alone. Hiring a team would cost more than I make.", author: "Sarah K.", role: "YouTube Creator, 250K subs" },
+      { 
+        segment: "Content Creators", emoji: "🎬", pain: "Managing client feedback chaos", severity: 72,
+        metrics: { videosPerWeek: 3, audiosPerMonth: 12, editsPerWeek: 6, hoursPerWeek: 4, toolCost: "$50/mo" },
+        voc: [
+          { quote: "Feedback comes through 5 different channels. I miss half of it.", author: "Marcus T.", role: "Creative Director" },
+          { quote: "I coordinate editor, designer, SEO person - thats a part-time job.", author: "James R.", role: "YouTube, 1.2M" },
+        ]
+      },
+      { 
+        segment: "Corporate L&D", emoji: "🏢", pain: "Stakeholder alignment across departments", severity: 85,
+        metrics: { videosPerWeek: 1, audiosPerMonth: 4, editsPerWeek: 3, hoursPerWeek: 8, toolCost: "$300/mo" },
+        voc: [
+          { quote: "Legal, compliance, marketing all need to sign off. Nightmare to coordinate.", author: "Michael R.", role: "L&D Director" },
+          { quote: "Approval chains take 3 weeks. Content is stale by then.", author: "Karen L.", role: "Training Mgr" },
+        ]
+      },
+      { 
+        segment: "Marketing Teams", emoji: "📈", pain: "Campaign coordination across teams", severity: 80,
+        metrics: { videosPerWeek: 4, audiosPerMonth: 16, editsPerWeek: 8, hoursPerWeek: 10, toolCost: "$400/mo" },
+        voc: [
+          { quote: "Creative, media, analytics teams never align on timelines.", author: "Campaign Manager", role: "Brand" },
+          { quote: "8 different tools just to stay coordinated with my team of 6.", author: "Derek W.", role: "TikTok, 5.8M" },
+        ]
+      },
+      { 
+        segment: "Healthcare", emoji: "🏥", pain: "Multi-department compliance review", severity: 90,
+        metrics: { videosPerWeek: 1, audiosPerMonth: 2, editsPerWeek: 2, hoursPerWeek: 6, toolCost: "$500/mo" },
+        voc: [
+          { quote: "Compliance review queue is 8 weeks deep.", author: "Health Educator", role: "Community Health" },
+          { quote: "5 departments must approve before we can publish anything.", author: "Communications Dir", role: "Hospital" },
+        ]
+      },
+      { 
+        segment: "Educators", emoji: "📚", pain: "Peer review and feedback integration", severity: 60,
+        metrics: { videosPerWeek: 3, audiosPerMonth: 8, editsPerWeek: 4, hoursPerWeek: 3, toolCost: "$30/mo" },
+        voc: [
+          { quote: "Department head wants changes after everything is final.", author: "Assoc Professor", role: "University" },
+          { quote: "Getting feedback from other faculty takes weeks.", author: "Course Designer", role: "Online Ed" },
+        ]
+      },
+      { 
+        segment: "Knowledge Sharers", emoji: "💡", pain: "No team, doing everything solo", severity: 65,
+        metrics: { videosPerWeek: 0, audiosPerMonth: 0, editsPerWeek: 0, hoursPerWeek: 0, toolCost: "$0" },
+        voc: [
+          { quote: "I work alone. Hiring a team would cost more than I make.", author: "Sarah K.", role: "Creator, 250K" },
+          { quote: "Solo creator means every mistake is mine to fix.", author: "George P.", role: "Retired Teacher" },
+        ]
+      },
     ],
     influencerVoices: [
-      { name: 'James R.', platform: 'YouTube', handle: '@TechReviewPro', followers: '1.2M', quote: "I have an editor, thumbnail designer, and SEO person. Coordinating them is a part-time job." },
-      { name: 'Derek W.', platform: 'TikTok', handle: '@ComedyKingDerek', followers: '5.8M', quote: "My team is 6 people. We use 8 different tools just to stay coordinated." },
+      { name: "James R.", platform: "YouTube", handle: "@TechReviewPro", followers: "1.2M", quote: "I have an editor, thumbnail designer, and SEO person. Coordinating them is a part-time job." },
+      { name: "Derek W.", platform: "TikTok", handle: "@ComedyKingDerek", followers: "5.8M", quote: "My team is 6 people. We use 8 different tools just to stay coordinated." },
     ],
   },
   {
     step: 7,
-    title: 'Distribution & Publishing',
+    title: "Distribution & Publishing",
     icon: Globe,
     product: {
-      name: 'Genie Arc',
-      tagline: 'Your Production Journey',
-      emoji: '🔄',
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-500/10',
+      name: "Genie Arc",
+      tagline: "Your Production Journey With Infinite Possibilities",
+      emoji: "🎯",
+      color: "text-emerald-600",
+      bgColor: "bg-emerald-500/10",
     },
     before: { 
-      time: '1-2 hours', 
+      time: "1-2 hours", 
       timePercent: 7,
-      cost: '$25-50',
-      tools: 'Hootsuite + YouTube Studio + Manual uploads', 
-      pain: 'Format conversion nightmare',
-      output: '1-2 platforms'
+      cost: "$25-50",
+      tools: "Hootsuite + YouTube Studio + Manual uploads", 
+      pain: "Format conversion nightmare",
+      output: "1-2 platforms"
     },
     after: { 
-      time: '2 min', 
-      tools: 'Genie Arc', 
-      wow: 'Show scheduling, resource management & multi-platform publish',
-      output: '6+ platforms'
+      time: "2 min", 
+      tools: "Genie Arc", 
+      wow: "Show scheduling, resource management & multi-platform publish",
+      output: "6+ platforms"
     },
     criticalPain: false,
-    timeWasted: '96%',
+    timeWasted: "96%",
     segmentPains: [
-      { segment: 'Content Creators', emoji: '🎬', pain: 'Algorithm-specific optimization', severity: 74 },
-      { segment: 'Corporate L&D', emoji: '🏢', pain: 'LMS integration complexity', severity: 79 },
-      { segment: 'Marketing Teams', emoji: '📈', pain: 'Cross-platform scheduling', severity: 77 },
-      { segment: 'Healthcare', emoji: '🏥', pain: 'Compliance verification before publish', severity: 93 },
-      { segment: 'Educators', emoji: '📚', pain: 'Student access management', severity: 66 },
-      { segment: 'Knowledge Sharers', emoji: '💡', pain: "Don't know where to publish or how", severity: 91 },
-    ],
-    vocQuotes: [
-      { quote: "I made amazing content but it got 12 views. I don't understand the algorithm.", author: "Tom H.", role: "Developer, JS expert" },
-      { quote: "Upload to YouTube, then TikTok, then Instagram, then LinkedIn... each with different specs.", author: "Amy W.", role: "Marketing Coordinator" },
-      { quote: "I just want my knowledge out there. The tech stuff stops me.", author: "George P.", role: "Retired Teacher, 40 yrs exp" },
-      { quote: "Our LMS doesn't accept standard video formats. Re-encoding takes hours.", author: "Training Manager", role: "Fortune 500 Company" },
+      { 
+        segment: "Content Creators", emoji: "🎬", pain: "Algorithm-specific optimization", severity: 74,
+        metrics: { videosPerWeek: 3, audiosPerMonth: 12, editsPerWeek: 4, hoursPerWeek: 3, toolCost: "$50/mo" },
+        voc: [
+          { quote: "Shorts, Reels, TikToks all want different hooks. Same video, 3 intros.", author: "James R.", role: "YouTube, 1.2M" },
+          { quote: "I hired a VA just for uploads. Thats $1,500/month for publishing.", author: "Derek W.", role: "TikTok, 5.8M" },
+        ]
+      },
+      { 
+        segment: "Corporate L&D", emoji: "🏢", pain: "LMS integration complexity", severity: 79,
+        metrics: { videosPerWeek: 1, audiosPerMonth: 4, editsPerWeek: 2, hoursPerWeek: 4, toolCost: "$200/mo" },
+        voc: [
+          { quote: "Our LMS does not accept standard video formats. Re-encoding takes hours.", author: "Training Manager", role: "Fortune 500" },
+          { quote: "SCORM compliance adds another week to every project.", author: "L&D Tech Lead", role: "Enterprise" },
+        ]
+      },
+      { 
+        segment: "Marketing Teams", emoji: "📈", pain: "Cross-platform scheduling", severity: 77,
+        metrics: { videosPerWeek: 4, audiosPerMonth: 16, editsPerWeek: 6, hoursPerWeek: 5, toolCost: "$300/mo" },
+        voc: [
+          { quote: "Upload to YouTube, TikTok, Instagram, LinkedIn... each with different specs.", author: "Amy W.", role: "Social Media Coord" },
+          { quote: "Campaign timing across 8 platforms is impossible to coordinate.", author: "Digital Marketing Mgr", role: "Agency" },
+        ]
+      },
+      { 
+        segment: "Healthcare", emoji: "🏥", pain: "Compliance verification before publish", severity: 93,
+        metrics: { videosPerWeek: 1, audiosPerMonth: 2, editsPerWeek: 1, hoursPerWeek: 3, toolCost: "$400/mo" },
+        voc: [
+          { quote: "Every video needs final compliance stamp before going live.", author: "Regulatory Affairs", role: "Pharma" },
+          { quote: "Wrong information published could cost lives and lawsuits.", author: "CMO", role: "Health System" },
+        ]
+      },
+      { 
+        segment: "Educators", emoji: "📚", pain: "Student access management", severity: 66,
+        metrics: { videosPerWeek: 3, audiosPerMonth: 8, editsPerWeek: 3, hoursPerWeek: 2, toolCost: "$50/mo" },
+        voc: [
+          { quote: "Students cannot find videos. LMS organization is confusing.", author: "Online Instructor", role: "Coursera" },
+          { quote: "Different access levels for different cohorts is a nightmare.", author: "Course Admin", role: "University" },
+        ]
+      },
+      { 
+        segment: "Knowledge Sharers", emoji: "💡", pain: "Do not know where to publish or how", severity: 91,
+        metrics: { videosPerWeek: 0, audiosPerMonth: 0, editsPerWeek: 0, hoursPerWeek: 0, toolCost: "$0" },
+        voc: [
+          { quote: "I made amazing content but it got 12 views. I do not understand the algorithm.", author: "Tom H.", role: "Dev, JS expert" },
+          { quote: "I just want my knowledge out there. The tech stuff stops me.", author: "George P.", role: "Retired, 40 yrs" },
+        ]
+      },
     ],
     influencerVoices: [
-      { name: 'Derek W.', platform: 'TikTok', handle: '@ComedyKingDerek', followers: '5.8M', quote: "I hired a VA just to handle uploads and scheduling. That's $1,500/month just for publishing." },
-      { name: 'James R.', platform: 'YouTube', handle: '@TechReviewPro', followers: '1.2M', quote: "Shorts, Reels, TikToks all want different hooks. Same video, 3 different intros." },
-      { name: 'Rachel M.', platform: 'LinkedIn', handle: '@HRInsights', followers: '95K', quote: "LinkedIn video requires a completely different tone. I'm making 2 versions of everything." },
+      { name: "Derek W.", platform: "TikTok", handle: "@ComedyKingDerek", followers: "5.8M", quote: "I hired a VA just to handle uploads and scheduling. Thats $1,500/month just for publishing." },
+      { name: "Rachel M.", platform: "LinkedIn", handle: "@HRInsights", followers: "95K", quote: "LinkedIn video requires a completely different tone. I am making 2 versions of everything." },
     ],
   },
 ];
@@ -804,7 +1066,7 @@ export const OverviewTab: React.FC = () => {
                 <span className="text-[10px] text-muted-foreground">Production</span>
               </div>
               <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-500/10 rounded-md">
-                <span className="text-sm">🔄</span>
+                <span className="text-sm">🎯</span>
                 <span className="text-xs font-medium text-emerald-600">Arc</span>
                 <span className="text-[10px] text-muted-foreground">Workflow</span>
               </div>
@@ -861,41 +1123,74 @@ export const OverviewTab: React.FC = () => {
                   </CardHeader>
                   
                   <CardContent className="px-4 pb-4">
-                    {/* Horizontal Scrollable Cards */}
+                    {/* Horizontal Scrollable Cards - Segments with nested VoC */}
                     <HorizontalScrollCards>
-                      {/* Card 1: Segment Pain Points */}
-                      {step.segmentPains.map((pain, pIdx) => (
+                      {/* Segment Cards with Pain, Metrics, and VoC inside */}
+                      {step.segmentPains.map((segmentData, pIdx) => (
                         <div 
                           key={pIdx}
-                          className="flex-shrink-0 w-[280px] bg-amber-500/5 rounded-xl p-4 border border-amber-500/20"
+                          className="flex-shrink-0 w-[340px] bg-muted/30 rounded-xl border border-border overflow-hidden"
                         >
-                          <div className="flex items-center gap-2 mb-3">
-                            <span className="text-xl">{pain.emoji}</span>
-                            <span className="font-medium text-sm text-foreground">{pain.segment}</span>
-                            <Badge 
-                              variant="outline" 
-                              className={`ml-auto text-[10px] ${
-                                pain.severity >= 90 ? 'border-destructive text-destructive' : 
-                                pain.severity >= 75 ? 'border-amber-500 text-amber-600' : 
-                                'border-muted-foreground'
-                              }`}
-                            >
-                              {pain.severity}%
-                            </Badge>
+                          {/* Segment Header */}
+                          <div className="bg-amber-500/10 px-4 py-3 border-b border-amber-500/20">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xl">{segmentData.emoji}</span>
+                              <span className="font-semibold text-sm text-foreground">{segmentData.segment}</span>
+                              <Badge 
+                                variant="outline" 
+                                className={`ml-auto text-[10px] ${
+                                  segmentData.severity >= 90 ? "border-destructive text-destructive" : 
+                                  segmentData.severity >= 75 ? "border-amber-500 text-amber-600" : 
+                                  "border-muted-foreground"
+                                }`}
+                              >
+                                {segmentData.severity}%
+                              </Badge>
+                            </div>
+                            <div className="flex items-start gap-2 mt-2">
+                              <AlertTriangle className="w-3.5 h-3.5 text-amber-600 mt-0.5 flex-shrink-0" />
+                              <p className="text-xs text-muted-foreground">{segmentData.pain}</p>
+                            </div>
                           </div>
-                          <div className="flex items-start gap-2">
-                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600 mt-0.5 flex-shrink-0" />
-                            <p className="text-sm text-muted-foreground">{pain.pain}</p>
+                          
+                          {/* Metrics Grid */}
+                          <div className="px-3 py-2 bg-background/50 border-b border-border">
+                            <div className="grid grid-cols-5 gap-1 text-center">
+                              <div>
+                                <div className="text-xs font-bold text-foreground">{segmentData.metrics.videosPerWeek}</div>
+                                <div className="text-[8px] text-muted-foreground">vid/wk</div>
+                              </div>
+                              <div>
+                                <div className="text-xs font-bold text-foreground">{segmentData.metrics.audiosPerMonth}</div>
+                                <div className="text-[8px] text-muted-foreground">aud/mo</div>
+                              </div>
+                              <div>
+                                <div className="text-xs font-bold text-foreground">{segmentData.metrics.editsPerWeek}</div>
+                                <div className="text-[8px] text-muted-foreground">edits/wk</div>
+                              </div>
+                              <div>
+                                <div className="text-xs font-bold text-destructive">{segmentData.metrics.hoursPerWeek}h</div>
+                                <div className="text-[8px] text-muted-foreground">hrs/wk</div>
+                              </div>
+                              <div>
+                                <div className="text-xs font-bold text-green-600">{segmentData.metrics.toolCost}</div>
+                                <div className="text-[8px] text-muted-foreground">tools</div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* VoC Section - Auto Scroll */}
+                          <div className="p-3">
+                            <div className="text-[10px] font-medium text-primary mb-2 flex items-center gap-1">
+                              <MessageSquareQuote className="w-3 h-3" />
+                              Voice of Customer
+                            </div>
+                            <AutoScrollVoC quotes={segmentData.voc} interval={5000} />
                           </div>
                         </div>
                       ))}
 
-                      {/* Card 2: VoC Auto-Scroll */}
-                      <div className="flex-shrink-0 w-[320px] bg-primary/5 rounded-xl p-4 border border-primary/20">
-                        <AutoScrollVoC quotes={step.vocQuotes} interval={5000} />
-                      </div>
-
-                      {/* Card 3+: Influencer Voices */}
+                      {/* Influencer Voices */}
                       {step.influencerVoices.map((inf, iIdx) => (
                         <div 
                           key={iIdx}
