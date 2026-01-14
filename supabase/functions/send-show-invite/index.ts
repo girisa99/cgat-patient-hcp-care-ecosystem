@@ -1,6 +1,15 @@
-// send-show-invite edge function v3.0 - Centralized branding + Cancellation/Reschedule/Follow-up support
+// send-show-invite edge function v4.0 - Responsive templates + Centralized branding
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
-import { GENIE_BRANDING, getCategory, getShowType, getRole, getStage } from '../_shared/branding.ts';
+import { 
+  GENIE_BRANDING, 
+  getCategory, 
+  getShowType, 
+  getRole, 
+  getStage,
+  getResponsiveEmailWrapper,
+  getProductsSection,
+  getEmailFooter
+} from '../_shared/branding.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -405,49 +414,58 @@ const handler = async (req: Request): Promise<Response> => {
     `;
     
     if (isCancellation) {
-      // CANCELLATION EMAIL
-      emailHtml = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Event Cancelled - ${showTitle}</title>
-</head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #fef2f2; margin: 0; padding: 20px;">
-  <div style="max-width: 640px; margin: 0 auto; background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);">
-    <div style="background: linear-gradient(135deg, #ef4444, #dc2626); padding: 48px 32px; text-align: center;">
-      <span style="font-size: 64px;">❌</span>
-      <h1 style="color: white; margin: 16px 0 0; font-size: 28px; font-weight: 800;">Event Cancelled</h1>
-    </div>
-    <div style="padding: 32px;">
-      <div style="background: #fef2f2; border: 2px solid #fecaca; border-radius: 16px; padding: 24px; text-align: center;">
-        <h2 style="color: #dc2626; margin: 0 0 16px; font-size: 22px;">"${showTitle}"</h2>
-        <p style="color: #64748b; margin: 0; font-size: 16px;">Hi ${participantName},</p>
-        <p style="color: #374151; margin: 16px 0; font-size: 15px; line-height: 1.7;">
-          We regret to inform you that this event has been <strong>cancelled</strong>.
-        </p>
-        ${cancellationReason ? `
-          <div style="background: white; border-radius: 12px; padding: 16px; margin-top: 16px; border-left: 4px solid #ef4444;">
-            <p style="color: #6b7280; margin: 0 0 8px; font-size: 13px; text-transform: uppercase;">Reason</p>
-            <p style="color: #374151; margin: 0; font-size: 15px;">${cancellationReason}</p>
-          </div>
-        ` : ''}
-      </div>
-      <p style="color: #64748b; margin: 24px 0; text-align: center; font-size: 15px;">
-        Please update your calendar accordingly. We apologize for any inconvenience.
-      </p>
-      ${hostName ? `
-        <p style="color: #374151; margin: 0; text-align: center; font-size: 14px;">
-          Questions? Contact <strong>${hostName}</strong>${hostEmail ? ` at <a href="mailto:${hostEmail}" style="color: #8b5cf6;">${hostEmail}</a>` : ''}
-        </p>
-      ` : ''}
-    </div>
-    ${footerHtml}
-  </div>
-</body>
-</html>`;
+      // CANCELLATION EMAIL - Responsive table-based layout
+      const cancellationContent = `
+        <!-- Header -->
+        <tr>
+          <td style="background: linear-gradient(135deg, #ef4444, #dc2626); padding: 40px 24px; text-align: center;">
+            <div style="font-size: 56px; margin-bottom: 12px;">❌</div>
+            <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 800;">Event Cancelled</h1>
+          </td>
+        </tr>
+        <!-- Content -->
+        <tr>
+          <td class="content-padding" style="padding: 32px 24px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+              <tr>
+                <td style="background: #fef2f2; border: 2px solid #fecaca; border-radius: 12px; padding: 20px; text-align: center;">
+                  <h2 class="responsive-text" style="color: #dc2626; margin: 0 0 12px; font-size: 20px; word-wrap: break-word; overflow-wrap: break-word;">${showTitle}</h2>
+                  <p style="color: #64748b; margin: 0; font-size: 15px;">Hi ${participantName},</p>
+                  <p style="color: #374151; margin: 14px 0; font-size: 15px; line-height: 1.6;">
+                    We regret to inform you that this event has been <strong>cancelled</strong>.
+                  </p>
+                  ${cancellationReason ? `
+                    <div style="background: #ffffff; border-radius: 10px; padding: 14px; margin-top: 14px; border-left: 4px solid #ef4444; text-align: left;">
+                      <p style="color: #6b7280; margin: 0 0 6px; font-size: 12px; text-transform: uppercase; font-weight: 600;">Reason</p>
+                      <p class="responsive-text" style="color: #374151; margin: 0; font-size: 14px; word-wrap: break-word; overflow-wrap: break-word;">${cancellationReason}</p>
+                    </div>
+                  ` : ''}
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 20px 0; text-align: center;">
+                  <p style="color: #64748b; margin: 0; font-size: 14px; line-height: 1.6;">
+                    Please update your calendar accordingly. We apologize for any inconvenience.
+                  </p>
+                </td>
+              </tr>
+              ${hostName ? `
+              <tr>
+                <td style="text-align: center;">
+                  <p style="color: #374151; margin: 0; font-size: 14px;">
+                    Questions? Contact <strong>${hostName}</strong>${hostEmail ? ` at <a href="mailto:${hostEmail}" style="color: #8b5cf6;">${hostEmail}</a>` : ''}
+                  </p>
+                </td>
+              </tr>
+              ` : ''}
+            </table>
+          </td>
+        </tr>
+        ${getEmailFooter()}
+      `;
+      emailHtml = getResponsiveEmailWrapper(cancellationContent, `Event Cancelled - ${showTitle}`);
     } else if (isReschedule) {
-      // RESCHEDULE EMAIL
+      // RESCHEDULE EMAIL - Responsive table-based layout
       const oldDate = oldScheduledDate ? new Date(oldScheduledDate) : null;
       const newDate = newScheduledDate ? new Date(newScheduledDate) : new Date(scheduledDate || '');
       const oldFormattedDate = oldDate ? oldDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Previous Date';
@@ -455,108 +473,129 @@ const handler = async (req: Request): Promise<Response> => {
       const newFormattedDate = !isNaN(newDate.getTime()) ? newDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : formattedDate;
       const newFormattedTime = !isNaN(newDate.getTime()) ? newDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : formattedTime;
       
-      emailHtml = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Event Rescheduled - ${showTitle}</title>
-</head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #fef3c7; margin: 0; padding: 20px;">
-  <div style="max-width: 640px; margin: 0 auto; background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);">
-    <div style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 48px 32px; text-align: center;">
-      <span style="font-size: 64px;">📅</span>
-      <h1 style="color: white; margin: 16px 0 0; font-size: 28px; font-weight: 800;">Event Rescheduled</h1>
-    </div>
-    <div style="padding: 32px;">
-      <div style="text-align: center; margin-bottom: 24px;">
-        <h2 style="color: #1e293b; margin: 0 0 8px; font-size: 22px;">"${showTitle}"</h2>
-        <p style="color: #64748b; margin: 0; font-size: 16px;">Hi ${participantName}!</p>
-      </div>
-      
-      <p style="color: #374151; margin: 0 0 24px; text-align: center; font-size: 15px; line-height: 1.7;">
-        This event has been <strong>rescheduled</strong>. Please see the new date and time below.
-      </p>
-      
-      <div style="display: grid; gap: 16px; margin-bottom: 24px;">
-        ${oldDate ? `
-          <div style="background: #fef2f2; border: 2px solid #fecaca; border-radius: 12px; padding: 16px; text-align: center;">
-            <p style="color: #dc2626; margin: 0 0 8px; font-size: 12px; text-transform: uppercase; font-weight: 600;">❌ Old Date (Cancelled)</p>
-            <p style="color: #9ca3af; margin: 0; font-size: 16px; text-decoration: line-through;">${oldFormattedDate} at ${oldFormattedTime}</p>
-          </div>
-        ` : ''}
-        <div style="background: #f0fdf4; border: 2px solid #86efac; border-radius: 12px; padding: 20px; text-align: center;">
-          <p style="color: #16a34a; margin: 0 0 8px; font-size: 12px; text-transform: uppercase; font-weight: 600;">✅ New Date</p>
-          <p style="color: #166534; margin: 0; font-size: 20px; font-weight: 700;">${newFormattedDate}</p>
-          <p style="color: #16a34a; margin: 8px 0 0; font-size: 16px;">${newFormattedTime}</p>
-        </div>
-      </div>
-      
-      ${joinUrl ? `
-        <div style="text-align: center; margin: 24px 0;">
-          <a href="${joinUrl}" style="display: inline-block; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; padding: 16px 40px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 16px;">
-            ✨ Join Meeting
-          </a>
-        </div>
-      ` : ''}
-      
-      <p style="color: #64748b; margin: 24px 0 0; text-align: center; font-size: 14px;">
-        Please update your calendar. A new calendar invite is attached.
-      </p>
-    </div>
-    ${footerHtml}
-  </div>
-</body>
-</html>`;
+      const rescheduleContent = `
+        <!-- Header -->
+        <tr>
+          <td style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 40px 24px; text-align: center;">
+            <div style="font-size: 56px; margin-bottom: 12px;">📅</div>
+            <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 800;">Event Rescheduled</h1>
+          </td>
+        </tr>
+        <!-- Content -->
+        <tr>
+          <td class="content-padding" style="padding: 32px 24px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+              <tr>
+                <td style="text-align: center; padding-bottom: 20px;">
+                  <h2 class="responsive-text" style="color: #1e293b; margin: 0 0 8px; font-size: 20px; word-wrap: break-word;">${showTitle}</h2>
+                  <p style="color: #64748b; margin: 0; font-size: 15px;">Hi ${participantName}!</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding-bottom: 20px; text-align: center;">
+                  <p style="color: #374151; margin: 0; font-size: 15px; line-height: 1.6;">
+                    This event has been <strong>rescheduled</strong>. Please see the new date and time below.
+                  </p>
+                </td>
+              </tr>
+              ${oldDate ? `
+              <tr>
+                <td style="padding-bottom: 12px;">
+                  <div style="background: #fef2f2; border: 2px solid #fecaca; border-radius: 10px; padding: 14px; text-align: center;">
+                    <p style="color: #dc2626; margin: 0 0 6px; font-size: 11px; text-transform: uppercase; font-weight: 600;">❌ Old Date (Cancelled)</p>
+                    <p style="color: #9ca3af; margin: 0; font-size: 14px; text-decoration: line-through;">${oldFormattedDate} at ${oldFormattedTime}</p>
+                  </div>
+                </td>
+              </tr>
+              ` : ''}
+              <tr>
+                <td style="padding-bottom: 20px;">
+                  <div style="background: #f0fdf4; border: 2px solid #86efac; border-radius: 10px; padding: 18px; text-align: center;">
+                    <p style="color: #16a34a; margin: 0 0 6px; font-size: 11px; text-transform: uppercase; font-weight: 600;">✅ New Date</p>
+                    <p style="color: #166534; margin: 0; font-size: 18px; font-weight: 700;">${newFormattedDate}</p>
+                    <p style="color: #16a34a; margin: 6px 0 0; font-size: 15px;">${newFormattedTime}</p>
+                  </div>
+                </td>
+              </tr>
+              ${joinUrl ? `
+              <tr>
+                <td style="text-align: center; padding: 16px 0;">
+                  <a href="${joinUrl}" class="btn btn-primary" style="display: inline-block; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: #ffffff; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 15px;">
+                    ✨ Join Meeting
+                  </a>
+                </td>
+              </tr>
+              ` : ''}
+              <tr>
+                <td style="text-align: center; padding-top: 12px;">
+                  <p style="color: #64748b; margin: 0; font-size: 13px;">
+                    Please update your calendar. A new calendar invite is attached.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        ${getEmailFooter()}
+      `;
+      emailHtml = getResponsiveEmailWrapper(rescheduleContent, `Event Rescheduled - ${showTitle}`);
     } else if (isFollowUp) {
-      // FOLLOW-UP EMAIL
-      emailHtml = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Follow-up: ${showTitle}</title>
-</head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f3ff; margin: 0; padding: 20px;">
-  <div style="max-width: 640px; margin: 0 auto; background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);">
-    <div style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); padding: 48px 32px; text-align: center;">
-      <span style="font-size: 64px;">📬</span>
-      <h1 style="color: white; margin: 16px 0 0; font-size: 28px; font-weight: 800;">Follow-up Message</h1>
-    </div>
-    <div style="padding: 32px;">
-      <div style="text-align: center; margin-bottom: 24px;">
-        <h2 style="color: #1e293b; margin: 0 0 8px; font-size: 22px;">"${showTitle}"</h2>
-        <p style="color: #64748b; margin: 0; font-size: 16px;">Hi ${participantName}!</p>
-      </div>
-      
-      ${followUpMessage ? `
-        <div style="background: #f8fafc; border-radius: 16px; padding: 24px; margin: 24px 0; border-left: 4px solid #8b5cf6;">
-          <p style="color: #374151; margin: 0; font-size: 16px; line-height: 1.8; white-space: pre-wrap;">${followUpMessage}</p>
-        </div>
-      ` : `
-        <p style="color: #374151; margin: 0 0 24px; text-align: center; font-size: 15px; line-height: 1.7;">
-          Thank you for your participation in "${showTitle}". We wanted to follow up with you.
-        </p>
-      `}
-      
-      ${joinUrl ? `
-        <div style="text-align: center; margin: 24px 0;">
-          <a href="${joinUrl}" style="display: inline-block; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; padding: 16px 40px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 16px;">
-            🔗 Access Session
-          </a>
-        </div>
-      ` : ''}
-      
-      ${hostName ? `
-        <p style="color: #374151; margin: 24px 0 0; text-align: center; font-size: 14px;">
-          Questions? Contact <strong>${hostName}</strong>${hostEmail ? ` at <a href="mailto:${hostEmail}" style="color: #8b5cf6;">${hostEmail}</a>` : ''}
-        </p>
-      ` : ''}
-    </div>
-    ${footerHtml}
-  </div>
-</body>
-</html>`;
+      // FOLLOW-UP EMAIL - Responsive table-based layout
+      const followUpContent = `
+        <!-- Header -->
+        <tr>
+          <td style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); padding: 40px 24px; text-align: center;">
+            <div style="font-size: 56px; margin-bottom: 12px;">📬</div>
+            <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 800;">Follow-up Message</h1>
+          </td>
+        </tr>
+        <!-- Content -->
+        <tr>
+          <td class="content-padding" style="padding: 32px 24px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+              <tr>
+                <td style="text-align: center; padding-bottom: 20px;">
+                  <h2 class="responsive-text" style="color: #1e293b; margin: 0 0 8px; font-size: 20px; word-wrap: break-word;">${showTitle}</h2>
+                  <p style="color: #64748b; margin: 0; font-size: 15px;">Hi ${participantName}!</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding-bottom: 20px;">
+                  ${followUpMessage ? `
+                    <div style="background: #f8fafc; border-radius: 12px; padding: 20px; border-left: 4px solid #8b5cf6;">
+                      <p class="responsive-text" style="color: #374151; margin: 0; font-size: 15px; line-height: 1.7; white-space: pre-wrap; word-wrap: break-word;">${followUpMessage}</p>
+                    </div>
+                  ` : `
+                    <p style="color: #374151; margin: 0; text-align: center; font-size: 15px; line-height: 1.6;">
+                      Thank you for your participation in "${showTitle}". We wanted to follow up with you.
+                    </p>
+                  `}
+                </td>
+              </tr>
+              ${joinUrl ? `
+              <tr>
+                <td style="text-align: center; padding: 16px 0;">
+                  <a href="${joinUrl}" class="btn btn-primary" style="display: inline-block; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: #ffffff; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 15px;">
+                    🔗 Access Session
+                  </a>
+                </td>
+              </tr>
+              ` : ''}
+              ${hostName ? `
+              <tr>
+                <td style="text-align: center; padding-top: 12px;">
+                  <p style="color: #374151; margin: 0; font-size: 14px;">
+                    Questions? Contact <strong>${hostName}</strong>${hostEmail ? ` at <a href="mailto:${hostEmail}" style="color: #8b5cf6;">${hostEmail}</a>` : ''}
+                  </p>
+                </td>
+              </tr>
+              ` : ''}
+            </table>
+          </td>
+        </tr>
+        ${getEmailFooter()}
+      `;
+      emailHtml = getResponsiveEmailWrapper(followUpContent, `Follow-up: ${showTitle}`);
     } else {
       // REGULAR INVITE EMAIL
       emailHtml = `<!DOCTYPE html>
