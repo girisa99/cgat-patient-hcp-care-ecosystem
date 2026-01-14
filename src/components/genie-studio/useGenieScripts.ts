@@ -17,6 +17,7 @@ export interface ScriptStats {
 }
 
 export type ScriptPurpose = 'video' | 'audio' | 'podcast' | 'webcast' | 'interview' | 'panel' | 'tutorial';
+export type ScriptSource = 'spark' | 'mind' | 'manual' | 'upload' | 'import';
 
 export interface GenieScript {
   id: string;
@@ -24,6 +25,7 @@ export interface GenieScript {
   content: string;
   type: 'video' | 'audio';
   purpose?: ScriptPurpose;
+  source?: ScriptSource; // Origin: spark, mind, manual, upload, import
   showId?: string | null;
   enhancedContent?: string | null;
   cleanContent?: string | null;
@@ -85,6 +87,7 @@ export function useGenieScripts(): UseGenieScriptsReturn {
         content: row.content,
         type: row.type as 'video' | 'audio',
         purpose: row.purpose as ScriptPurpose | undefined,
+        source: (row.source as ScriptSource) || 'manual',
         showId: row.show_id,
         enhancedContent: row.enhanced_content,
         cleanContent: row.clean_content,
@@ -160,6 +163,7 @@ export function useGenieScripts(): UseGenieScriptsReturn {
           content: data.content,
           type: data.type as 'video' | 'audio',
           purpose: data.purpose as ScriptPurpose | undefined,
+          source: (data.source as ScriptSource) || 'manual',
           showId: data.show_id,
           enhancedContent: data.enhanced_content,
           cleanContent: data.clean_content,
@@ -186,6 +190,7 @@ export function useGenieScripts(): UseGenieScriptsReturn {
             name: script.name,
             content: script.content,
             type: script.type,
+            source: script.source ?? 'manual',
             purpose: (script as any).purpose ?? null,
             show_id: (script as any).showId ?? null,
             enhanced_content: script.enhancedContent ?? null,
@@ -208,6 +213,7 @@ export function useGenieScripts(): UseGenieScriptsReturn {
           content: data.content,
           type: data.type as 'video' | 'audio',
           purpose: data.purpose as ScriptPurpose | undefined,
+          source: (data.source as ScriptSource) || 'manual',
           showId: data.show_id,
           enhancedContent: data.enhanced_content,
           cleanContent: data.clean_content,

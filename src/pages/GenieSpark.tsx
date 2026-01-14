@@ -77,6 +77,7 @@ const GenieSpark: React.FC = () => {
       name: content.title || 'Generated Script',
       content: content.script,
       type: content.type === 'podcast_script' ? 'audio' : 'video',
+      source: 'spark', // Mark source as Genie Spark
       createdAt: Date.now(),
       updatedAt: Date.now(),
       stats: {

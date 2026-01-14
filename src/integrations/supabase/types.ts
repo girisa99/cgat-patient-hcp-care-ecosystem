@@ -8433,6 +8433,7 @@ export type Database = {
           purpose: string | null
           script_mode: string | null
           show_id: string | null
+          source: string | null
           stats: Json | null
           type: string
           updated_at: string
@@ -8454,6 +8455,7 @@ export type Database = {
           purpose?: string | null
           script_mode?: string | null
           show_id?: string | null
+          source?: string | null
           stats?: Json | null
           type?: string
           updated_at?: string
@@ -8475,6 +8477,7 @@ export type Database = {
           purpose?: string | null
           script_mode?: string | null
           show_id?: string | null
+          source?: string | null
           stats?: Json | null
           type?: string
           updated_at?: string
