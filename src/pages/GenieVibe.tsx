@@ -49,7 +49,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useGenieScripts } from '@/components/genie-studio/useGenieScripts';
 import { useGenieMediaLibrary } from '@/components/genie-studio/useGenieMediaLibrary';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobileOrTablet } from '@/hooks/use-mobile';
 import { MobileRecordingView } from '@/components/document-processing/RecordingStudio/components/MobileRecordingView';
 import { Teleprompter } from '@/components/teleprompter';
 import { 
@@ -137,15 +137,20 @@ interface MixedResult {
 const GenieVibe: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const isMobile = useIsMobile();
+  const isMobileOrTablet = useIsMobileOrTablet();
   
   // Get context from URL params (from MeetingRoom or ProductionHub)
   const showId = searchParams.get('showId');
   const sessionId = searchParams.get('session');
   const titleFromUrl = searchParams.get('title');
   
-  // View mode: 'desktop' or 'mobile' - auto-detect based on device
-  const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>(isMobile ? 'mobile' : 'desktop');
+  // View mode: 'desktop' or 'mobile' - auto-detect based on device (includes tablets)
+  const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>(isMobileOrTablet ? 'mobile' : 'desktop');
+  
+  // Auto-sync view mode with device detection when screen size changes
+  useEffect(() => {
+    setViewMode(isMobileOrTablet ? 'mobile' : 'desktop');
+  }, [isMobileOrTablet]);
   
   // Teleprompter state
   const [isTeleprompterOpen, setIsTeleprompterOpen] = useState(false);
