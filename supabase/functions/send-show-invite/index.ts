@@ -1,5 +1,6 @@
-// send-show-invite edge function v2.1 - Fixed attachment encoding
+// send-show-invite edge function v3.0 - Centralized branding + Cancellation/Reschedule/Follow-up support
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
+import { GENIE_BRANDING, getCategory, getShowType, getRole, getStage } from '../_shared/branding.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -107,75 +108,14 @@ const handler = async (req: Request): Promise<Response> => {
       formattedTime = 'TBD';
     }
 
-    // Category display - dynamic with fallback
-    const categoryDisplay: Record<string, { name: string; emoji: string }> = {
-      media_production: { name: 'Media Production', emoji: '🎬' },
-      business_meeting: { name: 'Business Meeting', emoji: '💼' },
-      event: { name: 'Event', emoji: '🎉' },
-      genie_demo: { name: 'Genie Studio Demo', emoji: '✨' },
-    };
-
-    // Extended show type display - dynamic with fallback for any show type
-    const showTypeDisplay: Record<string, { name: string; emoji: string; color: string }> = {
-      // Media Production types
-      podcast: { name: 'Podcast', emoji: '🎙️', color: '#8B5CF6' },
-      webcast: { name: 'Webcast', emoji: '📺', color: '#3B82F6' },
-      broadcast: { name: 'Live Broadcast', emoji: '📡', color: '#EF4444' },
-      interview: { name: 'Interview', emoji: '🎤', color: '#06B6D4' },
-      panel: { name: 'Panel Discussion', emoji: '👥', color: '#6366F1' },
-      tutorial: { name: 'Tutorial', emoji: '📚', color: '#10B981' },
-      other: { name: 'Production', emoji: '🎬', color: '#64748B' },
-      // Business Meeting types
-      discovery_call: { name: 'Discovery Call', emoji: '📞', color: '#3B82F6' },
-      sales_meeting: { name: 'Sales Meeting', emoji: '💼', color: '#10B981' },
-      project_kickoff: { name: 'Project Kickoff', emoji: '🚀', color: '#8B5CF6' },
-      status_update: { name: 'Status Update', emoji: '📊', color: '#F59E0B' },
-      consultation: { name: 'Consultation', emoji: '💬', color: '#EC4899' },
-      // Event types
-      workshop: { name: 'Workshop', emoji: '🔧', color: '#F97316' },
-      webinar: { name: 'Webinar', emoji: '🖥️', color: '#0EA5E9' },
-      conference: { name: 'Conference', emoji: '🏛️', color: '#6366F1' },
-      training_session: { name: 'Training Session', emoji: '📖', color: '#10B981' },
-      // Genie Demo types
-      genie_studio_full: { name: 'Genie Studio Full Demo', emoji: '✨', color: '#8B5CF6' },
-      genie_spark_demo: { name: 'Genie Spark Demo', emoji: '⚡', color: '#F59E0B' },
-      genie_arc_demo: { name: 'Genie Arc Demo', emoji: '🎬', color: '#10B981' },
-      genie_mind_demo: { name: 'Genie Mind Demo', emoji: '🧠', color: '#3B82F6' },
-      genie_vibe_demo: { name: 'Genie Vibe Demo', emoji: '🎵', color: '#A855F7' },
-      genie_suite_overview: { name: 'Genie Suite Overview', emoji: '🚀', color: '#EC4899' },
-    };
-
-    // Dynamic fallback - format any unrecognized category or type nicely
-    const formatDisplayName = (str: string): string => {
-      return str.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-    };
-
-    const categoryInfo = categoryDisplay[category] || { 
-      name: formatDisplayName(category), 
-      emoji: '📅' 
-    };
-    const typeInfo = showTypeDisplay[showType] || { 
-      name: formatDisplayName(showType), 
-      emoji: '📺', 
-      color: '#8B5CF6' 
-    };
+    // Use centralized branding for consistent display
+    const categoryInfo = getCategory(category);
+    const typeInfo = getShowType(showType || 'podcast');
+    const roleInfo = getRole(role || 'attendee');
+    const stageInfo = stage ? getStage(stage) : null;
     
-    // Dynamic role display with fallback
-    const roleDisplay: Record<string, string> = {
-      host: 'Host', 
-      'co-host': 'Co-Host', 
-      co_host: 'Co-Host',
-      guest: 'Guest Speaker', 
-      panelist: 'Panelist',
-      speaker: 'Speaker',
-      attendee: 'Attendee',
-      stakeholder: 'Stakeholder',
-      organizer: 'Organizer',
-      interviewer: 'Interviewer',
-      interviewee: 'Interviewee',
-    };
-    const roleText = roleDisplay[role] || formatDisplayName(role);
-    const stageText = stage ? formatDisplayName(stage) : '';
+    const roleText = roleInfo.name;
+    const stageText = stageInfo?.name || '';
     
     console.log('[send-show-invite] Resolved display values:', {
       category: categoryInfo.name,
@@ -386,76 +326,65 @@ const handler = async (req: Request): Promise<Response> => {
       `;
     }
 
-    // Genie Products Section with Links
+    // Genie Products Section with Links - Using centralized branding
+    const { products, platform } = GENIE_BRANDING;
     const genieProductsSection = `
       <div style="background: linear-gradient(135deg, #1e1b4b, #312e81); border-radius: 20px; padding: 32px; margin: 32px 0;">
         <div style="text-align: center; margin-bottom: 24px;">
           <p style="color: #c4b5fd; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 8px;">Discover</p>
-          <h3 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">Genie Studio Products</h3>
+          <h3 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">${platform.name} Products</h3>
+          <p style="color: #a5b4fc; margin: 8px 0 0; font-size: 14px;">${platform.tagline}</p>
         </div>
         
         <div style="display: grid; gap: 16px;">
           <!-- Genie Arc -->
-          <a href="https://genieaiexperimentationhub.tech/genie-arc" style="text-decoration: none; display: block; background: rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.2); transition: all 0.3s;">
+          <a href="${products.arc.url}" style="text-decoration: none; display: block; background: rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.2); transition: all 0.3s;">
             <div style="display: flex; align-items: center; gap: 16px;">
-              <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #8b5cf6, #6366f1); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                <span style="font-size: 24px;">🎯</span>
+              <div style="width: 48px; height: 48px; background: linear-gradient(135deg, ${products.arc.color}, #6366f1); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                <span style="font-size: 24px;">${products.arc.emoji}</span>
               </div>
               <div>
-                <p style="color: white; margin: 0 0 4px; font-weight: 700; font-size: 16px;">Genie Arc</p>
-                <p style="color: #a5b4fc; margin: 0; font-size: 13px;">AI-powered content creation and scriptwriting</p>
-              </div>
-            </div>
-          </a>
-          
-          <!-- Production Hub -->
-          <a href="https://genieaiexperimentationhub.tech/genie-studio/productions" style="text-decoration: none; display: block; background: rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.2);">
-            <div style="display: flex; align-items: center; gap: 16px;">
-              <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #ec4899, #f43f5e); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                <span style="font-size: 24px;">🎬</span>
-              </div>
-              <div>
-                <p style="color: white; margin: 0 0 4px; font-weight: 700; font-size: 16px;">Production Hub</p>
-                <p style="color: #a5b4fc; margin: 0; font-size: 13px;">Schedule, manage, and produce shows seamlessly</p>
+                <p style="color: white; margin: 0 0 4px; font-weight: 700; font-size: 16px;">${products.arc.name}</p>
+                <p style="color: #a5b4fc; margin: 0; font-size: 13px;">${products.arc.tagline}</p>
               </div>
             </div>
           </a>
           
           <!-- Genie Mind -->
-          <a href="https://genieaiexperimentationhub.tech/genie-mind" style="text-decoration: none; display: block; background: rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.2);">
+          <a href="${products.mind.url}" style="text-decoration: none; display: block; background: rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.2);">
             <div style="display: flex; align-items: center; gap: 16px;">
-              <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #06b6d4, #0ea5e9); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                <span style="font-size: 24px;">🧠</span>
+              <div style="width: 48px; height: 48px; background: linear-gradient(135deg, ${products.mind.color}, #0ea5e9); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                <span style="font-size: 24px;">${products.mind.emoji}</span>
               </div>
               <div>
-                <p style="color: white; margin: 0 0 4px; font-weight: 700; font-size: 16px;">Genie Mind</p>
-                <p style="color: #a5b4fc; margin: 0; font-size: 13px;">Intelligent research and knowledge management</p>
+                <p style="color: white; margin: 0 0 4px; font-weight: 700; font-size: 16px;">${products.mind.name}</p>
+                <p style="color: #a5b4fc; margin: 0; font-size: 13px;">${products.mind.tagline}</p>
               </div>
             </div>
           </a>
           
-          <!-- Spark -->
-          <a href="https://genieaiexperimentationhub.tech/genie-spark" style="text-decoration: none; display: block; background: rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.2);">
+          <!-- Genie Spark -->
+          <a href="${products.spark.url}" style="text-decoration: none; display: block; background: rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.2);">
             <div style="display: flex; align-items: center; gap: 16px;">
-              <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #f59e0b, #f97316); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                <span style="font-size: 24px;">⚡</span>
+              <div style="width: 48px; height: 48px; background: linear-gradient(135deg, ${products.spark.color}, #f97316); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                <span style="font-size: 24px;">${products.spark.emoji}</span>
               </div>
               <div>
-                <p style="color: white; margin: 0 0 4px; font-weight: 700; font-size: 16px;">Genie Spark</p>
-                <p style="color: #a5b4fc; margin: 0; font-size: 13px;">Quick ideas and creative brainstorming</p>
+                <p style="color: white; margin: 0 0 4px; font-weight: 700; font-size: 16px;">${products.spark.name}</p>
+                <p style="color: #a5b4fc; margin: 0; font-size: 13px;">${products.spark.tagline}</p>
               </div>
             </div>
           </a>
           
-          <!-- Vibe -->
-          <a href="https://genieaiexperimentationhub.tech/genie-vibe" style="text-decoration: none; display: block; background: rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.2);">
+          <!-- Genie Vibe -->
+          <a href="${products.vibe.url}" style="text-decoration: none; display: block; background: rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.2);">
             <div style="display: flex; align-items: center; gap: 16px;">
-              <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #10b981, #14b8a6); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                <span style="font-size: 24px;">🎭</span>
+              <div style="width: 48px; height: 48px; background: linear-gradient(135deg, ${products.vibe.color}, #14b8a6); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                <span style="font-size: 24px;">${products.vibe.emoji}</span>
               </div>
               <div>
-                <p style="color: white; margin: 0 0 4px; font-weight: 700; font-size: 16px;">Genie Vibe</p>
-                <p style="color: #a5b4fc; margin: 0; font-size: 13px;">Live meeting studio with real-time collaboration</p>
+                <p style="color: white; margin: 0 0 4px; font-weight: 700; font-size: 16px;">${products.vibe.name}</p>
+                <p style="color: #a5b4fc; margin: 0; font-size: 13px;">${products.vibe.tagline}</p>
               </div>
             </div>
           </a>
