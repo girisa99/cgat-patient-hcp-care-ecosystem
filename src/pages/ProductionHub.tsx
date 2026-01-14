@@ -348,13 +348,32 @@ export default function ProductionHub() {
     toast.success('Meeting URL copied to clipboard');
   };
   
+  // Helper to extract host info from show (from participants or show fields)
+  const getHostInfo = (show: ShowWithParticipants | null | undefined) => {
+    if (!show) return { hostName: '', hostEmail: '' };
+    
+    // First try to find host from participants
+    const hostParticipant = show.participants?.find(p => p.role === 'host');
+    if (hostParticipant?.email) {
+      return {
+        hostName: hostParticipant.name || (show as any).host_name || 'Host',
+        hostEmail: hostParticipant.email
+      };
+    }
+    
+    // Fallback to show's host_name field (no host_email column in shows table)
+    return {
+      hostName: (show as any).host_name || 'Host',
+      hostEmail: '' // Host email only available from participants
+    };
+  };
+
   // Reschedule show handler - with rate limiting for email sends
   const handleReschedule = async (showId: string, newDate: string, notifyParticipants: boolean) => {
     try {
       const show = shows.find(s => s.id === showId);
       const oldDate = show?.scheduled_date;
-      const hostEmail = (show as any)?.host_email;
-      const hostName = (show as any)?.host_name;
+      const { hostName, hostEmail } = getHostInfo(show);
       
       const { error } = await supabase
         .from('shows')
@@ -368,13 +387,13 @@ export default function ProductionHub() {
         const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
         let emailsSent = 0;
         
-        // Send to HOST first
+        // Send to HOST first (if we have their email from participants)
         if (hostEmail) {
           try {
             await supabase.functions.invoke('send-show-invite', {
               body: {
                 to: hostEmail,
-                participantName: hostName || 'Host',
+                participantName: hostName,
                 role: 'host',
                 showType: show?.show_type,
                 showTitle: show?.title,
@@ -443,18 +462,17 @@ export default function ProductionHub() {
   const handleCancelShow = async (showId: string, reason?: string) => {
     try {
       const show = shows.find(s => s.id === showId);
-      const hostEmail = (show as any)?.host_email;
-      const hostName = (show as any)?.host_name;
+      const { hostName, hostEmail } = getHostInfo(show);
       const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
       let emailsSent = 0;
       
-      // Send cancellation to HOST first
+      // Send cancellation to HOST first (if we have their email from participants)
       if (hostEmail) {
         try {
           await supabase.functions.invoke('send-show-invite', {
             body: {
               to: hostEmail,
-              participantName: hostName || 'Host',
+              participantName: hostName,
               showTitle: show?.title,
               showType: show?.show_type,
               hostName: hostName,
@@ -813,10 +831,37 @@ export default function ProductionHub() {
                   // Send follow-up emails to each participant with rate limiting
                   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
                   let successCount = 0;
+                  const { hostName, hostEmail } = getHostInfo(selectedShow);
                   
+                  // Send to host first if they have an email
+                  if (hostEmail) {
+                    try {
+                      await supabase.functions.invoke('send-show-invite', {
+                        body: {
+                          to: hostEmail,
+                          participantName: hostName,
+                          showTitle: selectedShow?.title || 'Session',
+                          showType: selectedShow?.show_type || 'meeting',
+                          hostName: hostName,
+                          hostEmail: hostEmail,
+                          scheduledDate: selectedShow?.scheduled_date,
+                          category: (selectedShow as any)?.event_category || 'media_production',
+                          isFollowUp: true,
+                          followUpMessage: message,
+                        },
+                      });
+                      successCount++;
+                      await delay(600);
+                    } catch (err) {
+                      console.error('Error sending follow-up to host', hostEmail, err);
+                    }
+                  }
+                  
+                  // Send to all participants (except host if already sent)
                   for (let i = 0; i < participants.length; i++) {
                     const participant = participants[i];
-                    if (participant.email) {
+                    // Skip host (already sent) and participants without email
+                    if (participant.email && participant.email !== hostEmail) {
                       try {
                         await supabase.functions.invoke('send-show-invite', {
                           body: {
@@ -824,8 +869,8 @@ export default function ProductionHub() {
                             participantName: participant.name,
                             showTitle: selectedShow?.title || 'Session',
                             showType: selectedShow?.show_type || 'meeting',
-                            hostName: (selectedShow as any)?.host_name || 'Host',
-                            hostEmail: (selectedShow as any)?.host_email,
+                            hostName: hostName,
+                            hostEmail: hostEmail,
                             scheduledDate: selectedShow?.scheduled_date,
                             category: (selectedShow as any)?.event_category || 'media_production',
                             isFollowUp: true,
@@ -843,7 +888,7 @@ export default function ProductionHub() {
                       }
                     }
                   }
-                  toast.success(`Follow-up sent to ${successCount} of ${participants.length} participant(s)`);
+                  toast.success(`Follow-up sent to ${successCount} recipient(s) (host + participants)`);
                 }}
                 selectedShow={selectedShow}
                 currentStage={(selectedShow as any)?.stage || (selectedShow as any)?.production_stage || 'outreach'}
