@@ -13,7 +13,6 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -58,14 +57,31 @@ import {
   PWAInstallPrompt,
   TimelineClipEditor
 } from '@/components/mobile';
-import type { RecordingResult } from '@/components/mobile/OneTapRecordButton';
+import type { RecordingResult as MobileRecordingResult } from '@/components/mobile/OneTapRecordButton';
 import type { TimelineClip } from '@/components/mobile/MultiClipTimeline';
+
+// Compatible recording result - allows timestamp to be optional for parent compatibility
+export interface RecordingResult {
+  id: string;
+  url?: string;
+  duration?: number;
+  type: 'video' | 'audio' | 'photo';
+  name?: string;
+  thumbnailUrl?: string;
+  timestamp?: number;
+  blob?: Blob;
+}
 
 interface VibeMobileLayoutProps {
   onSwitchToDesktop?: () => void;
   onRecordingComplete?: (result: RecordingResult) => void;
   scripts?: Array<{ id: string; title: string; content: string }>;
   className?: string;
+  // Shared state from parent (to preserve session between desktop/mobile)
+  initialRecordings?: RecordingResult[];
+  initialTimelineClips?: TimelineClip[];
+  onRecordingsChange?: (recordings: RecordingResult[]) => void;
+  onTimelineClipsChange?: (clips: TimelineClip[]) => void;
 }
 
 type SimplifiedTab = 'record' | 'edit' | 'export';
@@ -74,20 +90,40 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
   onSwitchToDesktop,
   onRecordingComplete,
   scripts = [],
-  className
+  className,
+  initialRecordings = [],
+  initialTimelineClips = [],
+  onRecordingsChange,
+  onTimelineClipsChange
 }) => {
-  const navigate = useNavigate();
   const { state: syncState, syncNow, getQueuedItems } = useOfflineSync();
   const { isOnline, shareContent, vibrate } = useMobileFeatures();
   
-  // Simplified 3-tab state
+  // Simplified 3-tab state - initialize from parent's state
   const [activeTab, setActiveTab] = useState<SimplifiedTab>('record');
-  const [recordings, setRecordings] = useState<RecordingResult[]>([]);
-  const [timelineClips, setTimelineClips] = useState<TimelineClip[]>([]);
+  const [recordings, setRecordingsInternal] = useState<RecordingResult[]>(initialRecordings);
+  const [timelineClips, setTimelineClipsInternal] = useState<TimelineClip[]>(initialTimelineClips);
   const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
+
+  // Wrapped setters that also notify parent
+  const setRecordings = useCallback((updater: RecordingResult[] | ((prev: RecordingResult[]) => RecordingResult[])) => {
+    setRecordingsInternal(prev => {
+      const newVal = typeof updater === 'function' ? updater(prev) : updater;
+      onRecordingsChange?.(newVal);
+      return newVal;
+    });
+  }, [onRecordingsChange]);
+
+  const setTimelineClips = useCallback((updater: TimelineClip[] | ((prev: TimelineClip[]) => TimelineClip[])) => {
+    setTimelineClipsInternal(prev => {
+      const newVal = typeof updater === 'function' ? updater(prev) : updater;
+      onTimelineClipsChange?.(newVal);
+      return newVal;
+    });
+  }, [onTimelineClipsChange]);
   
   // Auto-sync when coming back online
   useEffect(() => {
@@ -97,9 +133,10 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
     }
   }, [syncState.isOnline, syncState.pendingChanges, syncState.isSyncing, syncNow]);
 
-  // Handle recording completion
-  const handleRecordingComplete = useCallback((result: RecordingResult) => {
-    setRecordings(prev => [result, ...prev]);
+  // Handle recording completion - converts from OneTapRecordButton format
+  const handleRecordingComplete = useCallback((result: MobileRecordingResult) => {
+    const convertedResult: RecordingResult = { ...result };
+    setRecordings(prev => [convertedResult, ...prev]);
     
     // Auto-create timeline clip
     const newClip: TimelineClip = {
@@ -120,7 +157,7 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
     };
     
     setTimelineClips(prev => [...prev, newClip]);
-    onRecordingComplete?.(result);
+    onRecordingComplete?.(convertedResult);
     
     vibrate?.(100);
     toast.success('Recording saved!', {
@@ -175,49 +212,52 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
   return (
     <div 
       className={cn(
-        "fixed inset-0 z-50 bg-background flex flex-col overflow-hidden",
+        "fixed inset-0 z-50 bg-background flex flex-col",
         className
       )}
       style={{ 
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        height: '100dvh'
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        paddingBottom: 'env(safe-area-inset-bottom, 16px)',
+        height: '100dvh',
+        minHeight: '-webkit-fill-available'
       }}
     >
       {/* Mobile Status Bar with Offline Indicator & Sync Queue */}
       <MobileStatusBar className="flex-shrink-0" showDetails={true} />
 
-      {/* Compact Header */}
+      {/* Compact Header - Back goes to main Genie Vibe (with desktop/mobile toggle) */}
       <div className="flex items-center justify-between px-3 py-2 border-b bg-card flex-shrink-0">
         <div className="flex items-center gap-2">
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-8 w-8" 
-            onClick={() => navigate('/genie-studio')}
+            className="h-9 w-9" 
+            onClick={onSwitchToDesktop}
+            title="Back to Genie Vibe"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex items-center gap-2">
             <Video className="h-4 w-4 text-primary" />
-            <span className="font-semibold text-sm">Vibe Studio</span>
+            <span className="font-semibold text-sm">Vibe Mobile</span>
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {onSwitchToDesktop && (
             <Button 
               variant="outline" 
               size="sm" 
-              className="h-7 px-2 text-xs gap-1"
+              className="h-8 px-3 text-xs gap-1.5"
               onClick={onSwitchToDesktop}
             >
-              <Monitor className="h-3 w-3" />
+              <Monitor className="h-3.5 w-3.5" />
               Desktop
             </Button>
           )}
           
           {/* Recordings count */}
-          <Badge variant="secondary" className="h-6 text-xs">
+          <Badge variant="secondary" className="h-7 px-2 text-xs">
             {recordings.length} clips
           </Badge>
         </div>
@@ -565,26 +605,31 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
             </TabsContent>
           </div>
 
-          {/* Simplified 3-Tab Bottom Navigation */}
-          <div className="flex-shrink-0 border-t bg-card safe-area-bottom">
-            <TabsList className="h-16 rounded-none bg-transparent grid grid-cols-3 w-full">
+          {/* Simplified 3-Tab Bottom Navigation - Fixed at bottom with proper safe area */}
+          <div 
+            className="flex-shrink-0 border-t bg-card"
+            style={{ 
+              paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)'
+            }}
+          >
+            <TabsList className="h-14 rounded-none bg-transparent grid grid-cols-3 w-full border-0">
               <TabsTrigger 
                 value="record" 
-                className="flex flex-col gap-1 data-[state=active]:bg-primary/10 rounded-none h-full"
+                className="flex flex-col gap-0.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-none h-full border-0"
               >
                 <Video className="h-5 w-5" />
-                <span className="text-xs font-medium">Record</span>
+                <span className="text-[11px] font-medium">Record</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="edit" 
-                className="flex flex-col gap-1 data-[state=active]:bg-primary/10 rounded-none h-full relative"
+                className="flex flex-col gap-0.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-none h-full relative border-0"
               >
                 <Scissors className="h-5 w-5" />
-                <span className="text-xs font-medium">Edit</span>
+                <span className="text-[11px] font-medium">Edit</span>
                 {timelineClips.length > 0 && (
                   <Badge 
-                    variant="secondary" 
-                    className="absolute top-1 right-1/4 h-4 w-4 p-0 text-[10px] flex items-center justify-center"
+                    variant="default" 
+                    className="absolute top-0.5 right-[20%] h-4 min-w-4 p-0.5 text-[9px] flex items-center justify-center bg-primary"
                   >
                     {timelineClips.length}
                   </Badge>
@@ -592,17 +637,17 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
               </TabsTrigger>
               <TabsTrigger 
                 value="export" 
-                className="flex flex-col gap-1 data-[state=active]:bg-primary/10 rounded-none h-full"
+                className="flex flex-col gap-0.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-none h-full border-0"
               >
                 <Upload className="h-5 w-5" />
-                <span className="text-xs font-medium">Export</span>
+                <span className="text-[11px] font-medium">Export</span>
               </TabsTrigger>
             </TabsList>
           </div>
         </Tabs>
       </div>
 
-      {/* PWA Install Prompt */}
+      {/* PWA Install Prompt - Above navigation */}
       <PWAInstallPrompt variant="banner" showOnMount={true} />
     </div>
   );

@@ -81,7 +81,7 @@ import { VibeRecordTab, VibeLibraryTab, VibeCostTracker, VibeMobileLayout } from
 // Import useMediaProject for cost tracking (Phase 3)
 import { useMediaProject } from '@/components/document-processing/RecordingStudio/hooks';
 
-// Recording result type
+// Recording result type - matches OneTapRecordButton.RecordingResult
 interface RecordingResult {
   id: string;
   url?: string;
@@ -89,6 +89,8 @@ interface RecordingResult {
   type: 'video' | 'audio' | 'photo';
   name?: string;
   thumbnailUrl?: string;
+  timestamp?: number;
+  blob?: Blob;
 }
 
 // Video track from mixer
@@ -355,6 +357,7 @@ const GenieVibe: React.FC = () => {
   // ============================================================
   // MOBILE VIEW - Simplified 3-Tab Experience (Record | Edit | Export)
   // Phase 5: Auto-detected, offline status, sync queue visibility
+  // Session state is shared with desktop to preserve work when switching
   // ============================================================
   if (showMobileView) {
     return (
@@ -362,6 +365,11 @@ const GenieVibe: React.FC = () => {
         onSwitchToDesktop={() => setViewMode('desktop')}
         onRecordingComplete={handleRecordingComplete}
         scripts={scriptsForMobile}
+        // Share state between desktop and mobile
+        initialRecordings={recordings}
+        initialTimelineClips={timelineClips}
+        onRecordingsChange={setRecordings}
+        onTimelineClipsChange={setTimelineClips}
       />
     );
   }
