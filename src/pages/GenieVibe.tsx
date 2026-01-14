@@ -457,7 +457,7 @@ const GenieVibe: React.FC = () => {
                 </div>
                 <div>
                   <h1 className="text-lg font-semibold">Genie Vibe Studio</h1>
-                  <p className="text-xs text-muted-foreground hidden sm:block">Record → Clips → Mix → Timeline → Publish</p>
+                  <p className="text-xs text-muted-foreground hidden lg:block">Record → Clips → Mix → Timeline → Publish</p>
                 </div>
               </div>
             </div>

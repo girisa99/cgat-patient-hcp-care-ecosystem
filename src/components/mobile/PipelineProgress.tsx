@@ -40,7 +40,7 @@ export const PipelineProgress: React.FC<PipelineProgressProps> = ({
   const currentIndex = STAGES.findIndex(s => s.id === currentStage);
 
   return (
-    <div className={cn("flex items-center justify-between px-4 py-2 bg-muted/30 border-b", className)}>
+    <div className={cn("hidden lg:flex items-center justify-between px-4 py-2 bg-muted/30 border-b", className)}>
       {STAGES.map((stage, index) => {
         const Icon = stage.icon;
         const isActive = stage.id === currentStage;
