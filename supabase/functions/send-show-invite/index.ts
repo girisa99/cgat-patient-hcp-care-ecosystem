@@ -10,12 +10,12 @@ const corsHeaders = {
 interface ShowInviteRequest {
   to: string;
   participantName: string;
-  role: string; // Dynamic - host, co-host, guest, panelist, speaker, attendee, stakeholder, etc.
-  showType: string; // Dynamic - any show type from the frontend
+  role?: string; // Dynamic - host, co-host, guest, panelist, speaker, attendee, stakeholder, etc.
+  showType?: string; // Dynamic - any show type from the frontend
   showTitle: string;
   showDescription?: string;
-  scheduledDate: string;
-  hostName: string;
+  scheduledDate?: string;
+  hostName?: string;
   hostEmail?: string;
   senderName?: string;
   senderEmail?: string;
@@ -29,6 +29,14 @@ interface ShowInviteRequest {
   joinUrl?: string;
   recordingUrl?: string;
   durationMinutes?: number;
+  // Special email types
+  isCancellation?: boolean;
+  cancellationReason?: string;
+  isReschedule?: boolean;
+  newScheduledDate?: string;
+  oldScheduledDate?: string;
+  isFollowUp?: boolean;
+  followUpMessage?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -58,10 +66,20 @@ const handler = async (req: Request): Promise<Response> => {
       suggestedIntro, 
       joinUrl,
       recordingUrl,
-      durationMinutes = 60
+      durationMinutes = 60,
+      // Special email types
+      isCancellation = false,
+      cancellationReason,
+      isReschedule = false,
+      newScheduledDate,
+      oldScheduledDate,
+      isFollowUp = false,
+      followUpMessage,
     }: ShowInviteRequest = await req.json();
 
-    console.log(`[send-show-invite] Sending invite to ${to} for ${showType}: ${showTitle}`);
+    // Determine email type for logging
+    const emailType = isCancellation ? 'CANCELLATION' : isReschedule ? 'RESCHEDULE' : isFollowUp ? 'FOLLOW-UP' : 'INVITE';
+    console.log(`[send-show-invite] Sending ${emailType} to ${to} for ${showType || 'session'}: ${showTitle}`);
     console.log(`[send-show-invite] From: ${senderName} (${senderEmail}), Host: ${hostName} (${hostEmail})`);
     console.log(`[send-show-invite] scheduledDate received:`, scheduledDate);
 
@@ -262,18 +280,28 @@ const handler = async (req: Request): Promise<Response> => {
     
     const icsBase64 = utf8ToBase64(icsContent);
 
-    // Build subject line with category, type, stage
-    const subjectParts = [typeInfo.emoji];
-    if (category && categoryInfo.name) {
-      subjectParts.push(categoryInfo.name);
+    // Build subject line with category, type, stage - different for special email types
+    let emailSubject: string;
+    
+    if (isCancellation) {
+      emailSubject = `❌ CANCELLED: "${showTitle}" - ${categoryInfo.name || 'Event'}`;
+    } else if (isReschedule) {
+      emailSubject = `📅 RESCHEDULED: "${showTitle}" - New Date: ${formattedDate}`;
+    } else if (isFollowUp) {
+      emailSubject = `📬 Follow-up: "${showTitle}" - ${categoryInfo.name || 'Session'}`;
+    } else {
+      const subjectParts = [typeInfo.emoji];
+      if (category && categoryInfo.name) {
+        subjectParts.push(categoryInfo.name);
+      }
+      subjectParts.push(`${typeInfo.name}:`);
+      subjectParts.push(`"${showTitle}"`);
+      if (stageText) {
+        subjectParts.push(`(${stageText})`);
+      }
+      subjectParts.push(`- You're invited as ${roleText}`);
+      emailSubject = subjectParts.join(' ');
     }
-    subjectParts.push(`${typeInfo.name}:`);
-    subjectParts.push(`"${showTitle}"`);
-    if (stageText) {
-      subjectParts.push(`(${stageText})`);
-    }
-    subjectParts.push(`- You're invited as ${roleText}`);
-    const emailSubject = subjectParts.join(' ');
 
     // Sender display name
     const senderDisplayName = senderName || hostName || 'Genie Studio';
@@ -435,8 +463,174 @@ const handler = async (req: Request): Promise<Response> => {
       </div>
     `;
 
-    // Build the email HTML - LIGHT THEME
-    const emailHtml = `<!DOCTYPE html>
+    // Build the email HTML based on email type
+    let emailHtml: string;
+    
+    // Helper for common footer
+    const footerHtml = `
+      <div style="background: #f8fafc; padding: 24px 32px; text-align: center; border-top: 1px solid #e2e8f0;">
+        <p style="color: #7c3aed; font-size: 18px; margin: 0 0 4px; font-weight: 700;">✨ Genie Studio</p>
+        <p style="color: #64748b; font-size: 13px; margin: 0 0 12px;">AI-Powered Production Platform</p>
+        <p style="color: #94a3b8; font-size: 11px; margin: 0;">This email was sent via Genie Studio</p>
+      </div>
+    `;
+    
+    if (isCancellation) {
+      // CANCELLATION EMAIL
+      emailHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event Cancelled - ${showTitle}</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #fef2f2; margin: 0; padding: 20px;">
+  <div style="max-width: 640px; margin: 0 auto; background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);">
+    <div style="background: linear-gradient(135deg, #ef4444, #dc2626); padding: 48px 32px; text-align: center;">
+      <span style="font-size: 64px;">❌</span>
+      <h1 style="color: white; margin: 16px 0 0; font-size: 28px; font-weight: 800;">Event Cancelled</h1>
+    </div>
+    <div style="padding: 32px;">
+      <div style="background: #fef2f2; border: 2px solid #fecaca; border-radius: 16px; padding: 24px; text-align: center;">
+        <h2 style="color: #dc2626; margin: 0 0 16px; font-size: 22px;">"${showTitle}"</h2>
+        <p style="color: #64748b; margin: 0; font-size: 16px;">Hi ${participantName},</p>
+        <p style="color: #374151; margin: 16px 0; font-size: 15px; line-height: 1.7;">
+          We regret to inform you that this event has been <strong>cancelled</strong>.
+        </p>
+        ${cancellationReason ? `
+          <div style="background: white; border-radius: 12px; padding: 16px; margin-top: 16px; border-left: 4px solid #ef4444;">
+            <p style="color: #6b7280; margin: 0 0 8px; font-size: 13px; text-transform: uppercase;">Reason</p>
+            <p style="color: #374151; margin: 0; font-size: 15px;">${cancellationReason}</p>
+          </div>
+        ` : ''}
+      </div>
+      <p style="color: #64748b; margin: 24px 0; text-align: center; font-size: 15px;">
+        Please update your calendar accordingly. We apologize for any inconvenience.
+      </p>
+      ${hostName ? `
+        <p style="color: #374151; margin: 0; text-align: center; font-size: 14px;">
+          Questions? Contact <strong>${hostName}</strong>${hostEmail ? ` at <a href="mailto:${hostEmail}" style="color: #8b5cf6;">${hostEmail}</a>` : ''}
+        </p>
+      ` : ''}
+    </div>
+    ${footerHtml}
+  </div>
+</body>
+</html>`;
+    } else if (isReschedule) {
+      // RESCHEDULE EMAIL
+      const oldDate = oldScheduledDate ? new Date(oldScheduledDate) : null;
+      const newDate = newScheduledDate ? new Date(newScheduledDate) : new Date(scheduledDate || '');
+      const oldFormattedDate = oldDate ? oldDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Previous Date';
+      const oldFormattedTime = oldDate ? oldDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '';
+      const newFormattedDate = !isNaN(newDate.getTime()) ? newDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : formattedDate;
+      const newFormattedTime = !isNaN(newDate.getTime()) ? newDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : formattedTime;
+      
+      emailHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event Rescheduled - ${showTitle}</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #fef3c7; margin: 0; padding: 20px;">
+  <div style="max-width: 640px; margin: 0 auto; background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);">
+    <div style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 48px 32px; text-align: center;">
+      <span style="font-size: 64px;">📅</span>
+      <h1 style="color: white; margin: 16px 0 0; font-size: 28px; font-weight: 800;">Event Rescheduled</h1>
+    </div>
+    <div style="padding: 32px;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h2 style="color: #1e293b; margin: 0 0 8px; font-size: 22px;">"${showTitle}"</h2>
+        <p style="color: #64748b; margin: 0; font-size: 16px;">Hi ${participantName}!</p>
+      </div>
+      
+      <p style="color: #374151; margin: 0 0 24px; text-align: center; font-size: 15px; line-height: 1.7;">
+        This event has been <strong>rescheduled</strong>. Please see the new date and time below.
+      </p>
+      
+      <div style="display: grid; gap: 16px; margin-bottom: 24px;">
+        ${oldDate ? `
+          <div style="background: #fef2f2; border: 2px solid #fecaca; border-radius: 12px; padding: 16px; text-align: center;">
+            <p style="color: #dc2626; margin: 0 0 8px; font-size: 12px; text-transform: uppercase; font-weight: 600;">❌ Old Date (Cancelled)</p>
+            <p style="color: #9ca3af; margin: 0; font-size: 16px; text-decoration: line-through;">${oldFormattedDate} at ${oldFormattedTime}</p>
+          </div>
+        ` : ''}
+        <div style="background: #f0fdf4; border: 2px solid #86efac; border-radius: 12px; padding: 20px; text-align: center;">
+          <p style="color: #16a34a; margin: 0 0 8px; font-size: 12px; text-transform: uppercase; font-weight: 600;">✅ New Date</p>
+          <p style="color: #166534; margin: 0; font-size: 20px; font-weight: 700;">${newFormattedDate}</p>
+          <p style="color: #16a34a; margin: 8px 0 0; font-size: 16px;">${newFormattedTime}</p>
+        </div>
+      </div>
+      
+      ${joinUrl ? `
+        <div style="text-align: center; margin: 24px 0;">
+          <a href="${joinUrl}" style="display: inline-block; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; padding: 16px 40px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 16px;">
+            ✨ Join Meeting
+          </a>
+        </div>
+      ` : ''}
+      
+      <p style="color: #64748b; margin: 24px 0 0; text-align: center; font-size: 14px;">
+        Please update your calendar. A new calendar invite is attached.
+      </p>
+    </div>
+    ${footerHtml}
+  </div>
+</body>
+</html>`;
+    } else if (isFollowUp) {
+      // FOLLOW-UP EMAIL
+      emailHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Follow-up: ${showTitle}</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f3ff; margin: 0; padding: 20px;">
+  <div style="max-width: 640px; margin: 0 auto; background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);">
+    <div style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); padding: 48px 32px; text-align: center;">
+      <span style="font-size: 64px;">📬</span>
+      <h1 style="color: white; margin: 16px 0 0; font-size: 28px; font-weight: 800;">Follow-up Message</h1>
+    </div>
+    <div style="padding: 32px;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h2 style="color: #1e293b; margin: 0 0 8px; font-size: 22px;">"${showTitle}"</h2>
+        <p style="color: #64748b; margin: 0; font-size: 16px;">Hi ${participantName}!</p>
+      </div>
+      
+      ${followUpMessage ? `
+        <div style="background: #f8fafc; border-radius: 16px; padding: 24px; margin: 24px 0; border-left: 4px solid #8b5cf6;">
+          <p style="color: #374151; margin: 0; font-size: 16px; line-height: 1.8; white-space: pre-wrap;">${followUpMessage}</p>
+        </div>
+      ` : `
+        <p style="color: #374151; margin: 0 0 24px; text-align: center; font-size: 15px; line-height: 1.7;">
+          Thank you for your participation in "${showTitle}". We wanted to follow up with you.
+        </p>
+      `}
+      
+      ${joinUrl ? `
+        <div style="text-align: center; margin: 24px 0;">
+          <a href="${joinUrl}" style="display: inline-block; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; padding: 16px 40px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 16px;">
+            🔗 Access Session
+          </a>
+        </div>
+      ` : ''}
+      
+      ${hostName ? `
+        <p style="color: #374151; margin: 24px 0 0; text-align: center; font-size: 14px;">
+          Questions? Contact <strong>${hostName}</strong>${hostEmail ? ` at <a href="mailto:${hostEmail}" style="color: #8b5cf6;">${hostEmail}</a>` : ''}
+        </p>
+      ` : ''}
+    </div>
+    ${footerHtml}
+  </div>
+</body>
+</html>`;
+    } else {
+      // REGULAR INVITE EMAIL
+      emailHtml = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -588,6 +782,7 @@ const handler = async (req: Request): Promise<Response> => {
   </div>
 </body>
 </html>`;
+    } // End of email type conditional
 
     console.log('[send-show-invite] Sending email with ICS attachment to:', to);
     
