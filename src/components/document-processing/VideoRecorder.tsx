@@ -48,7 +48,7 @@ import {
 } from '@/components/ui/dialog';
 import { TeleprompterPopup } from './TeleprompterPopup';
 import { VideoEditor } from './VideoEditor';
-import { RecordingStudio } from './RecordingStudio';
+// RecordingStudio removed - now using dedicated /genie-vibe route
 
 interface MediaItem {
   id: string;
@@ -100,8 +100,7 @@ export const VideoRecorder: React.FC = () => {
   // Countdown state
   const [countdown, setCountdown] = useState<number | null>(null);
   
-  // Recording Studio modal state
-  const [isRecordingStudioOpen, setIsRecordingStudioOpen] = useState(false);
+  // Recording Studio modal state removed - now using /genie-vibe route
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   const previewRef = useRef<HTMLVideoElement>(null);
@@ -677,9 +676,9 @@ Thanks for watching!`,
     }
   };
 
-  // Open fullscreen recording studio modal
+  // Open Genie Vibe studio - redirect to dedicated page
   const handlePopOutRecording = () => {
-    setIsRecordingStudioOpen(true);
+    window.location.href = '/genie-vibe';
   };
 
   const handleSaveRecording = async () => {
@@ -1996,102 +1995,7 @@ Thanks for watching!`,
         />
       )}
 
-      {/* Fullscreen Recording Studio Modal */}
-      <RecordingStudio
-        isOpen={isRecordingStudioOpen}
-        onClose={() => setIsRecordingStudioOpen(false)}
-        scripts={availableScripts.map(s => ({
-          id: s.id,
-          title: s.title,
-          content: s.content,
-        }))}
-        voiceovers={mediaItems
-          .filter(m => m.file_type === 'audio')
-          .map(v => ({
-            id: v.id,
-            name: v.name,
-            url: v.url,
-            scriptText: v.metadata?.scriptText as string | null,
-            // Pass both scriptType and metadataType for proper filtering
-            scriptType: (v.metadata?.scriptType as string | null) || (v.metadata?.type as string | null),
-            metadataType: v.metadata?.type as string | null, // Additional metadata for filtering
-          }))}
-        music={mediaItems
-          .filter(m => m.file_type === 'audio' && (
-            m.name.toLowerCase().includes('music') || 
-            m.name.toLowerCase().includes('instrumental') || 
-            m.name.toLowerCase().includes('bgm') ||
-            m.name.toLowerCase().includes('background') ||
-            (m.metadata?.scriptType as string | null) === 'instrumental'
-          ))
-          .map(m => ({
-            id: m.id,
-            name: m.name,
-            url: m.url,
-          }))}
-        selectedScriptId={selectedScript?.id}
-        selectedVoiceoverId={selectedAudioFile?.id}
-        selectedMusicId={selectedBackgroundMusic?.id}
-        onUploadVoiceover={handleUploadVoiceover}
-        onUploadMusic={async (file) => {
-          // Reuse the music upload logic
-          const event = { target: { files: [file] } } as unknown as React.ChangeEvent<HTMLInputElement>;
-          // Can't directly reuse handleMusicUpload because it expects an event
-          // Instead, inline the upload logic
-          setIsUploading(true);
-          try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error('User not authenticated');
-
-            const bucket = 'generated-audio';
-            const fileName = `music_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-            
-            const { data, error: uploadError } = await supabase.storage
-              .from(bucket)
-              .upload(fileName, file, { contentType: file.type, upsert: false });
-
-            if (uploadError) throw uploadError;
-
-            const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(data.path);
-
-            const { data: dbData } = await supabase
-              .from('generated_media')
-              .insert({
-                user_id: user.id,
-                name: `🎵 ${file.name}`,
-                file_type: 'audio',
-                storage_bucket: bucket,
-                storage_path: data.path,
-                file_url: urlData.publicUrl,
-                file_size_bytes: file.size,
-                source: 'upload',
-                metadata: { type: 'instrumental', uploadedAs: 'background_music' }
-              })
-              .select()
-              .single();
-
-            if (dbData) {
-              setMediaItems(prev => [{
-                id: dbData.id,
-                name: `🎵 ${file.name}`,
-                url: urlData.publicUrl,
-                file_type: 'audio',
-                storage_bucket: bucket,
-                storage_path: data.path,
-                source: 'upload',
-                created_at: dbData.created_at,
-                metadata: { type: 'instrumental' }
-              }, ...prev]);
-            }
-            showSuccess('Music uploaded!');
-          } catch (err) {
-            showError('Failed to upload music');
-          } finally {
-            setIsUploading(false);
-          }
-        }}
-        isUploading={isUploading}
-      />
+      {/* Recording Studio Modal removed - now using dedicated /genie-vibe route */}
     </>
   );
 };

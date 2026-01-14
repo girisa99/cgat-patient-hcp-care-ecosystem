@@ -84,7 +84,7 @@ import {
 } from 'lucide-react';
 import { NativeFeatureButton } from '@/components/mobile';
 import { cn } from '@/lib/utils';
-import { RecordingStudio } from '@/components/document-processing/RecordingStudio';
+// RecordingStudio removed - now using dedicated /genie-vibe route
 import { toast } from 'sonner';
 import { useTTSGeneration, OPENAI_VOICES, ELEVENLABS_VOICES } from '@/components/document-processing/RecordingStudio/hooks/useTTSGeneration';
 import { useMediaProject } from '@/components/document-processing/RecordingStudio/hooks/useMediaProject';
@@ -165,8 +165,7 @@ import askGenieProductLogo from '@/assets/logos/ask-genie-combined.png';
 
 export default function GenieStudio() {
   const navigate = useNavigate();
-  const [isStudioOpen, setIsStudioOpen] = useState(false);
-  const [isRecordingInProgress, setIsRecordingInProgress] = useState(false);
+  // isStudioOpen removed - now using dedicated /genie-vibe route
   const [activeTab, setActiveTab] = useState('dashboard');
   const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
   const [isCarouselPaused, setIsCarouselPaused] = useState(false);
@@ -214,19 +213,7 @@ export default function GenieStudio() {
     return () => clearTimeout(resumeTimer);
   }, []);
   
-  // Prevent browser tab close during recording
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isRecordingInProgress) {
-        e.preventDefault();
-        e.returnValue = 'Recording in progress! Your recording will be lost if you leave.';
-        return e.returnValue;
-      }
-    };
-    
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isRecordingInProgress]);
+  // Note: Recording state tracking moved to /genie-vibe page
   
   // Script Editor State
   const [scriptContent, setScriptContent] = useState('');
@@ -711,18 +698,14 @@ export default function GenieStudio() {
     }
   }, [selectedProvider]);
 
-  const handleStudioClose = () => {
-    setIsStudioOpen(false);
-    loadMedia();
-    refreshDbMedia(); // Refresh database audio files
-    refreshScripts(); // Refresh scripts from database
-  };
+  // handleStudioClose removed - RecordingStudio modal no longer used
+  // Navigate to /genie-vibe instead
 
   const handleFeatureClick = (featureId: string) => {
     if (featureId === 'productions') {
       navigate('/genie-studio/productions');
     } else if (featureId === 'record') {
-      setIsStudioOpen(true);
+      navigate('/genie-vibe'); // Redirect to Genie Vibe full studio
     } else if (featureId === 'voice') {
       setActiveTab('voice-generator');
     } else if (featureId === 'script') {
@@ -1917,12 +1900,12 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
                           <span className="text-xs text-white">Smart teleprompter</span>
                         </div>
                       </div>
-                      <Button size="lg" onClick={() => setIsStudioOpen(true)} className="mt-2 bg-white text-pink-600 hover:bg-white/90 shadow-xl font-semibold px-8">
+                      <Button size="lg" onClick={() => navigate('/genie-vibe')} className="mt-2 bg-white text-pink-600 hover:bg-white/90 shadow-xl font-semibold px-8">
                         <Video className="h-5 w-5 mr-2" />Open Genie Vibe
                       </Button>
                     </div>
                     <div className="flex justify-center lg:justify-end">
-                      <div className="relative h-56 w-72 md:h-64 md:w-80 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center p-6 shadow-2xl cursor-pointer hover:scale-105 transition-transform" onClick={() => setIsStudioOpen(true)}>
+                      <div className="relative h-56 w-72 md:h-64 md:w-80 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center p-6 shadow-2xl cursor-pointer hover:scale-105 transition-transform" onClick={() => navigate('/genie-vibe')}>
                         <img src={genieVibeLogo} alt="Genie Vibe" className="h-full w-full object-contain drop-shadow-2xl" />
                       </div>
                     </div>
@@ -2071,10 +2054,10 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
                 </div>
                 
                 <div className="flex flex-wrap items-start gap-3">
-                  {/* Genie Vibe Button - Recording Studio (opens inline) */}
+                  {/* Genie Vibe Button - Navigate to full studio */}
                   <Button 
                     size="lg" 
-                    onClick={() => setIsStudioOpen(true)}
+                    onClick={() => navigate('/genie-vibe')}
                     className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white shadow-lg shadow-pink-500/25 transition-all hover:scale-105 flex items-center gap-3 h-auto py-2.5 px-5"
                   >
                     <img src={genieVibeProductLogo} alt="Genie Vibe" className="h-8 w-8 object-contain rounded bg-white p-0.5" />
@@ -3316,7 +3299,7 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
                     <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
                       <Video className="h-12 w-12 mx-auto mb-4 opacity-50" />
                       <p>No videos recorded yet</p>
-                      <Button variant="outline" className="mt-4" onClick={() => setIsStudioOpen(true)}>
+                      <Button variant="outline" className="mt-4" onClick={() => navigate('/genie-vibe')}>
                         <Video className="h-4 w-4 mr-2" />
                         Record Your First Video
                       </Button>
@@ -3490,15 +3473,7 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
           </Tabs>
         </div>
 
-        {/* Recording Studio Modal - Always mounted to preserve state */}
-        <RecordingStudio
-          isOpen={isStudioOpen}
-          onClose={handleStudioClose}
-          onRecordingStateChange={setIsRecordingInProgress}
-          scripts={studioScripts}
-          voiceovers={studioVoiceovers}
-          music={studioMusic}
-        />
+        {/* Recording Studio Modal removed - now using dedicated /genie-vibe route */}
 
         {/* Publish & Go Live Dialog */}
         <Dialog open={isPublishDialogOpen} onOpenChange={setIsPublishDialogOpen}>
