@@ -220,14 +220,13 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
   return (
     <div 
       className={cn(
-        "fixed inset-0 z-50 bg-background flex flex-col",
+        "fixed inset-0 z-50 bg-background flex flex-col overflow-hidden",
         className
       )}
       style={{ 
         paddingTop: 'env(safe-area-inset-top, 0px)',
-        paddingBottom: 'env(safe-area-inset-bottom, 16px)',
         height: '100dvh',
-        minHeight: '-webkit-fill-available'
+        maxHeight: '-webkit-fill-available'
       }}
     >
       {/* Mobile Status Bar with Offline Indicator & Sync Queue */}
@@ -448,9 +447,9 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
               </div>
             </TabsContent>
 
-            {/* ===== EDIT TAB ===== */}
-            <TabsContent value="edit" className="h-full m-0 overflow-auto">
-              <div className="p-3 space-y-3 pb-6">
+            {/* ===== EDIT TAB - Sequential Journey Flow ===== */}
+            <TabsContent value="edit" className="h-full m-0 overflow-auto pb-20">
+              <div className="p-3 space-y-4">
                 {timelineClips.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <Scissors className="h-12 w-12 text-muted-foreground/50 mb-4" />
@@ -465,22 +464,23 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
                   </div>
                 ) : (
                   <>
-                    {/* Timeline Summary */}
-                    <Card>
+                    {/* STEP 1: Clip Overview */}
+                    <Card className="border-primary/30">
                       <CardContent className="py-3 px-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge className="bg-primary text-primary-foreground text-[10px]">Step 1</Badge>
+                          <span className="text-sm font-medium">Your Clips</span>
+                        </div>
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-3">
                             <Badge variant="outline">{timelineClips.length} clips</Badge>
                             <span className="text-sm text-muted-foreground">
                               {Math.round(totalDuration)}s total
                             </span>
                           </div>
                           <div className="flex gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" title="Preview">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" title="Preview All">
                               <Play className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" title="Undo">
-                              <RotateCcw className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
@@ -497,64 +497,171 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
                       onSeek={() => {}}
                     />
 
-                    {/* Primary Editing Actions - Row 1 */}
-                    <div className="grid grid-cols-4 gap-2">
-                      <Button variant="outline" size="sm" className="h-auto py-2.5 flex-col gap-1">
-                        <Scissors className="h-4 w-4" />
-                        <span className="text-[10px]">Trim</span>
-                      </Button>
-                      <Button variant="outline" size="sm" className="h-auto py-2.5 flex-col gap-1">
-                        <Layers className="h-4 w-4" />
-                        <span className="text-[10px]">Merge</span>
-                      </Button>
-                      <Button variant="outline" size="sm" className="h-auto py-2.5 flex-col gap-1">
-                        <Shuffle className="h-4 w-4" />
-                        <span className="text-[10px]">Reorder</span>
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="h-auto py-2.5 flex-col gap-1 text-destructive hover:text-destructive"
-                        onClick={() => {
-                          if (selectedClipId) {
-                            setTimelineClips(prev => prev.filter(c => c.id !== selectedClipId));
-                            setSelectedClipId(null);
-                            toast.success('Clip deleted');
-                          }
-                        }}
-                        disabled={!selectedClipId}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="text-[10px]">Delete</span>
-                      </Button>
-                    </div>
+                    {/* STEP 2: Arrange & Organize */}
+                    <Card>
+                      <CardContent className="py-3 px-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="text-[10px]">Step 2</Badge>
+                          <span className="text-sm font-medium">Arrange & Organize</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-auto py-3 flex-col gap-1.5"
+                            onClick={() => toast.info('Drag clips in timeline to reorder')}
+                          >
+                            <Shuffle className="h-4 w-4 text-primary" />
+                            <span className="text-[10px]">Reorder</span>
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-auto py-3 flex-col gap-1.5"
+                            onClick={() => toast.info('Select 2+ clips to merge')}
+                            disabled={timelineClips.length < 2}
+                          >
+                            <Layers className="h-4 w-4 text-primary" />
+                            <span className="text-[10px]">Merge</span>
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-auto py-3 flex-col gap-1.5 text-destructive hover:text-destructive"
+                            onClick={() => {
+                              if (selectedClipId) {
+                                setTimelineClips(prev => prev.filter(c => c.id !== selectedClipId));
+                                setSelectedClipId(null);
+                                toast.success('Clip deleted');
+                              } else {
+                                toast.info('Select a clip first');
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="text-[10px]">Delete</span>
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
 
-                    {/* Secondary Editing Actions - Row 2 */}
-                    <div className="grid grid-cols-4 gap-2">
-                      <Button variant="outline" size="sm" className="h-auto py-2.5 flex-col gap-1">
-                        <Wand2 className="h-4 w-4" />
-                        <span className="text-[10px]">Enhance</span>
-                      </Button>
-                      <Button variant="outline" size="sm" className="h-auto py-2.5 flex-col gap-1">
-                        <Music className="h-4 w-4" />
-                        <span className="text-[10px]">Music</span>
-                      </Button>
-                      <Button variant="outline" size="sm" className="h-auto py-2.5 flex-col gap-1">
-                        <MessageCircle className="h-4 w-4" />
-                        <span className="text-[10px]">Voiceover</span>
-                      </Button>
-                      <Button variant="outline" size="sm" className="h-auto py-2.5 flex-col gap-1">
-                        <Sparkles className="h-4 w-4" />
-                        <span className="text-[10px]">AI Arrange</span>
-                      </Button>
-                    </div>
+                    {/* STEP 3: Trim & Split */}
+                    <Card>
+                      <CardContent className="py-3 px-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="text-[10px]">Step 3</Badge>
+                            <span className="text-sm font-medium">Trim & Refine</span>
+                          </div>
+                          {!selectedClipId && (
+                            <span className="text-[10px] text-muted-foreground">Select a clip</span>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button 
+                            variant={selectedClipId ? "default" : "outline"} 
+                            size="sm" 
+                            className="h-auto py-3 flex-col gap-1.5"
+                            disabled={!selectedClipId}
+                            onClick={() => toast.info('Drag clip edges to trim')}
+                          >
+                            <Scissors className="h-4 w-4" />
+                            <span className="text-[10px]">Trim Clip</span>
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-auto py-3 flex-col gap-1.5"
+                            disabled={!selectedClipId}
+                            onClick={() => toast.info('Split clip at current position')}
+                          >
+                            <div className="flex items-center gap-0.5">
+                              <Scissors className="h-3 w-3" />
+                              <Scissors className="h-3 w-3 -scale-x-100" />
+                            </div>
+                            <span className="text-[10px]">Split</span>
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
 
-                    {/* Collapsible Advanced Features */}
-                    <details className="group" open>
+                    {/* STEP 4: Enhance & Effects (AI Features) */}
+                    <Card className={cn(!isOnline && "opacity-60")}>
+                      <CardContent className="py-3 px-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="text-[10px]">Step 4</Badge>
+                            <span className="text-sm font-medium">Enhance</span>
+                            <Sparkles className="h-3 w-3 text-primary" />
+                          </div>
+                          {!isOnline && (
+                            <Badge variant="outline" className="text-[10px]">Needs Online</Badge>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-auto py-3 flex-col gap-1.5"
+                            disabled={!isOnline}
+                            onClick={() => toast.info('AI enhancement coming soon')}
+                          >
+                            <Wand2 className="h-4 w-4 text-primary" />
+                            <span className="text-[10px]">AI Enhance</span>
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-auto py-3 flex-col gap-1.5"
+                            disabled={!isOnline}
+                            onClick={() => toast.info('AI auto-arrange coming soon')}
+                          >
+                            <Sparkles className="h-4 w-4 text-primary" />
+                            <span className="text-[10px]">AI Arrange</span>
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* STEP 5: Add Audio */}
+                    <Card>
+                      <CardContent className="py-3 px-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="text-[10px]">Step 5</Badge>
+                          <span className="text-sm font-medium">Add Audio</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-auto py-3 flex-col gap-1.5"
+                            onClick={() => toast.info('Add background music')}
+                          >
+                            <Music className="h-4 w-4 text-primary" />
+                            <span className="text-[10px]">Music</span>
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-auto py-3 flex-col gap-1.5"
+                            onClick={() => toast.info('Record voiceover')}
+                          >
+                            <MessageCircle className="h-4 w-4 text-primary" />
+                            <span className="text-[10px]">Voiceover</span>
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* AI Quick Clips - Optional */}
+                    <details className="group">
                       <summary className="flex items-center justify-between p-3 bg-muted/50 rounded-lg cursor-pointer">
-                        <span className="text-sm font-medium">AI Quick Clips</span>
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium">AI Quick Clips</span>
+                        </div>
                         <Badge variant="secondary" className="text-xs">
-                          {isOnline ? 'Available' : 'Offline'}
+                          {isOnline ? 'Optional' : 'Offline'}
                         </Badge>
                       </summary>
                       <div className="mt-2">
@@ -568,28 +675,6 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
                       </div>
                     </details>
 
-                    {/* Voice Commands - P2 Feature */}
-                    <details className="group">
-                      <summary className="flex items-center justify-between p-3 bg-muted/50 rounded-lg cursor-pointer">
-                        <div className="flex items-center gap-2">
-                          <Mic className="h-4 w-4 text-primary" />
-                          <span className="text-sm font-medium">Voice Editing</span>
-                        </div>
-                        <Badge variant="outline" className="text-xs bg-primary/10 text-primary">
-                          Hands-free
-                        </Badge>
-                      </summary>
-                      <div className="mt-2 p-3 bg-muted/30 rounded-lg">
-                        <p className="text-xs text-muted-foreground mb-2">
-                          Say commands like "Trim first 5 seconds" or "Add music"
-                        </p>
-                        <Button variant="outline" size="sm" className="w-full gap-2">
-                          <Mic className="h-4 w-4" />
-                          Start Voice Editing
-                        </Button>
-                      </div>
-                    </details>
-
                     {/* Desktop Features Notice */}
                     <Card className="border-primary/20 bg-primary/5">
                       <CardContent className="py-3 px-4">
@@ -597,9 +682,9 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
                           <div className="flex items-center gap-2">
                             <Monitor className="h-4 w-4 text-primary" />
                             <div>
-                              <p className="text-xs font-medium">Full studio on Desktop</p>
+                              <p className="text-xs font-medium">More on Desktop</p>
                               <p className="text-[10px] text-muted-foreground">
-                                Transitions, TTS, Location Story, B-Roll
+                                Transitions, TTS, Location Story
                               </p>
                             </div>
                           </div>
@@ -610,7 +695,7 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
                             onClick={onSwitchToDesktop}
                           >
                             <Monitor className="h-3 w-3" />
-                            Desktop
+                            Switch
                           </Button>
                         </div>
                       </CardContent>
@@ -730,31 +815,31 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
             </TabsContent>
           </div>
 
-          {/* Bottom Navigation - Compact with safe area */}
+          {/* Bottom Navigation - Fixed at bottom */}
           <div 
-            className="flex-shrink-0 border-t bg-card safe-area-bottom"
+            className="flex-shrink-0 border-t bg-card"
             style={{ 
-              paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 4px)'
+              paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)'
             }}
           >
-            <TabsList className="h-16 rounded-none bg-transparent grid grid-cols-3 w-full border-0 gap-0">
+            <TabsList className="h-14 rounded-none bg-transparent grid grid-cols-3 w-full border-0 gap-0">
               <TabsTrigger 
                 value="record" 
-                className="flex flex-col items-center justify-center gap-1 py-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-none h-full border-0"
+                className="flex flex-col items-center justify-center gap-0.5 py-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-none h-full border-0"
               >
                 <Video className="h-5 w-5" />
-                <span className="text-xs font-medium">Record</span>
+                <span className="text-[11px] font-medium">Record</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="edit" 
-                className="flex flex-col items-center justify-center gap-1 py-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-none h-full relative border-0"
+                className="flex flex-col items-center justify-center gap-0.5 py-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-none h-full relative border-0"
               >
                 <Scissors className="h-5 w-5" />
-                <span className="text-xs font-medium">Edit</span>
+                <span className="text-[11px] font-medium">Edit</span>
                 {timelineClips.length > 0 && (
                   <Badge 
                     variant="default" 
-                    className="absolute top-1 right-[25%] h-4 min-w-4 px-1 text-[10px] flex items-center justify-center bg-primary"
+                    className="absolute top-0.5 right-[20%] h-4 min-w-4 px-1 text-[10px] flex items-center justify-center bg-primary"
                   >
                     {timelineClips.length}
                   </Badge>
@@ -762,10 +847,10 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
               </TabsTrigger>
               <TabsTrigger 
                 value="export" 
-                className="flex flex-col items-center justify-center gap-1 py-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-none h-full border-0"
+                className="flex flex-col items-center justify-center gap-0.5 py-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-none h-full border-0"
               >
                 <Upload className="h-5 w-5" />
-                <span className="text-xs font-medium">Export</span>
+                <span className="text-[11px] font-medium">Export</span>
               </TabsTrigger>
             </TabsList>
           </div>
