@@ -745,10 +745,14 @@ export const AskGenie: React.FC<AskGenieProps> = ({
   const { generateResponse } = useUniversalAI();
   const productContext = PRODUCT_CONTEXTS[product];
   
-  // Dynamic suggestions based on context
+  // Memoize sessionData to prevent unnecessary recalculations
+  const sessionDataKey = useMemo(() => JSON.stringify(sessionData || {}), [sessionData]);
+  
+  // Dynamic suggestions based on context - use sessionDataKey for stable deps
   const contextualSuggestions = useMemo(() => 
     getContextualSuggestions(product, currentTab, sessionData), 
-    [product, currentTab, sessionData]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [product, currentTab, sessionDataKey]
   );
 
   // Random personality phrases
@@ -758,14 +762,21 @@ export const AskGenie: React.FC<AskGenieProps> = ({
   };
 
   // Proactive help detection - check if user seems stuck
+  // Use refs to avoid unnecessary re-renders
+  const hasOfferedHelpRef = useRef(hasOfferedHelp);
+  hasOfferedHelpRef.current = hasOfferedHelp;
+  
+  const messagesLengthRef = useRef(messages.length);
+  messagesLengthRef.current = messages.length;
+
   useEffect(() => {
-    if (!isOpen || hasOfferedHelp) return;
+    if (!isOpen || hasOfferedHelpRef.current) return;
 
     const checkInterval = setInterval(() => {
       const timeSinceActivity = Date.now() - lastActivityTime;
       const stuckThreshold = 45000; // 45 seconds of inactivity
       
-      if (timeSinceActivity > stuckThreshold && messages.length === 0) {
+      if (timeSinceActivity > stuckThreshold && messagesLengthRef.current === 0) {
         // User might be stuck - offer help proactively
         const helpMessage: Message = {
           id: `help-${Date.now()}`,
@@ -782,14 +793,17 @@ export const AskGenie: React.FC<AskGenieProps> = ({
     }, 15000); // Check every 15 seconds
 
     return () => clearInterval(checkInterval);
-  }, [isOpen, lastActivityTime, hasOfferedHelp, messages.length, product]);
+  }, [isOpen, lastActivityTime, product]); // Removed hasOfferedHelp and messages.length from deps
 
-  // Track activity
+  // Track activity - only update when chat is opened, not on every input change
+  const isOpenRef = useRef(isOpen);
   useEffect(() => {
-    if (isOpen) {
+    // Only update lastActivityTime when isOpen changes from false to true
+    if (isOpen && !isOpenRef.current) {
       setLastActivityTime(Date.now());
     }
-  }, [isOpen, input]);
+    isOpenRef.current = isOpen;
+  }, [isOpen]);
 
   // Sync with external isOpen prop
   useEffect(() => {
