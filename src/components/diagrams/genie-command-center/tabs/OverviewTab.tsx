@@ -568,11 +568,11 @@ const journeySteps = [
     title: "Distribution & Publishing",
     icon: Globe,
     product: {
-      name: "Genie Arc",
-      tagline: "Your Production Journey With Infinite Possibilities",
-      emoji: "🎯",
+      name: "Genie Arc + Vibe",
+      tagline: "Multi-platform publishing",
+      emoji: "🎯🎬",
       color: "text-emerald-600",
-      bgColor: "bg-emerald-500/10",
+      bgColor: "bg-gradient-to-r from-emerald-500/10 to-purple-500/10",
     },
     before: { 
       time: "1-2 hours", 
@@ -584,7 +584,7 @@ const journeySteps = [
     },
     after: { 
       time: "2 min", 
-      tools: "Genie Arc", 
+      tools: "Genie Arc + Vibe", 
       wow: "Show scheduling, resource management & multi-platform publish",
       output: "6+ platforms"
     },
@@ -1498,41 +1498,82 @@ export const OverviewTab: React.FC = () => {
               </Card>
             </div>
 
-            {/* Journey Steps Summary */}
-            <Card className="border-primary/20">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Content Creation Journey - All Steps</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {journeySteps.map((step) => (
-                    <div key={step.step} className="p-4 bg-muted/30 rounded-xl">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className={`w-8 h-8 rounded-lg ${step.product.bgColor} flex items-center justify-center`}>
-                          <span className="text-lg">{step.product.emoji}</span>
-                        </div>
-                        <div>
-                          <div className="font-semibold text-foreground">Step {step.step}: {step.title}</div>
-                          <div className="text-xs text-muted-foreground">{step.product.name} - {step.product.tagline}</div>
-                        </div>
-                        <Badge variant="outline" className="ml-auto text-green-600 border-green-500/30">
-                          {step.timeWasted} time saved
-                        </Badge>
+            {/* Journey Steps - Full Content */}
+            {journeySteps.map((step) => (
+              <Card key={step.step} className="border-primary/20">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-xl ${step.product.bgColor} flex items-center justify-center`}>
+                        <span className="text-xl">{step.product.emoji}</span>
                       </div>
-                      <div className="grid grid-cols-7 gap-2">
-                        {step.segmentPains.map((seg) => (
-                          <div key={seg.segment} className="text-center p-2 bg-background/50 rounded-lg">
-                            <div className="text-lg mb-1">{seg.emoji}</div>
-                            <div className="text-[9px] font-medium text-foreground truncate">{seg.segment}</div>
-                            <div className="text-[8px] text-muted-foreground">{seg.severity}% pain</div>
-                          </div>
-                        ))}
+                      <div>
+                        <CardTitle className="text-base">Step {step.step}: {step.title}</CardTitle>
+                        <p className="text-xs text-muted-foreground">{step.product.name} - {step.product.tagline}</p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    <Badge variant="outline" className="text-green-600 border-green-500/30">
+                      {step.timeWasted} time saved
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {/* Before/After comparison */}
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="bg-destructive/5 rounded-lg p-3 border border-destructive/20">
+                      <div className="text-xs font-medium text-destructive mb-2">Before</div>
+                      <div className="text-sm text-muted-foreground">{step.before.time} • {step.before.cost}</div>
+                      <div className="text-xs text-muted-foreground mt-1">{step.before.pain}</div>
+                    </div>
+                    <div className="bg-green-500/5 rounded-lg p-3 border border-green-500/20">
+                      <div className="text-xs font-medium text-green-600 mb-2">After with {step.product.name}</div>
+                      <div className="text-sm text-green-600">{step.after.time}</div>
+                      <div className="text-xs text-muted-foreground mt-1">{step.after.wow}</div>
+                    </div>
+                  </div>
+                  
+                  {/* All Segment Cards with Full Content */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                    {step.segmentPains.map((seg) => (
+                      <div key={seg.segment} className="bg-muted/30 rounded-xl p-3 border border-border/50">
+                        {/* Segment Header */}
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-lg">{seg.emoji}</span>
+                          <span className="text-sm font-medium text-foreground">{seg.segment}</span>
+                        </div>
+                        
+                        {/* Pain Point */}
+                        <div className="text-xs text-muted-foreground mb-2">{seg.pain}</div>
+                        
+                        {/* Severity */}
+                        <div className="flex items-center gap-2 mb-2">
+                          <Progress value={seg.severity} className="h-1.5 flex-1" />
+                          <span className="text-[10px] text-destructive font-medium">{seg.severity}%</span>
+                        </div>
+                        
+                        {/* Metrics */}
+                        <div className="grid grid-cols-2 gap-1 text-[9px] text-muted-foreground mb-2">
+                          <span>📹 {seg.metrics.videosPerWeek}/wk</span>
+                          <span>🎧 {seg.metrics.audiosPerMonth}/mo</span>
+                          <span>⏱️ {seg.metrics.hoursPerWeek}h/wk</span>
+                          <span>💰 {seg.metrics.toolCost}</span>
+                        </div>
+                        
+                        {/* VoC Quotes */}
+                        <div className="space-y-2 pt-2 border-t border-border/50">
+                          {seg.voc.map((quote, qIdx) => (
+                            <div key={qIdx} className="text-[10px]">
+                              <p className="text-muted-foreground italic line-clamp-2">"{quote.quote}"</p>
+                              <p className="text-foreground font-medium mt-0.5">— {quote.author}, {quote.role}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
 
             {/* Genie Suite Summary */}
             <Card className="border-primary/30 bg-gradient-to-br from-primary/10 to-background">
