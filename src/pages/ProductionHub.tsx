@@ -64,6 +64,7 @@ import { ScheduleManagementDialog } from '@/components/production/ScheduleManage
 import { UnifiedScheduleShowDialog, type ScheduleShowData } from '@/components/production/UnifiedScheduleShowDialog';
 import { WebinarHighlightExtractor, BRollIntegrator, DistributionAgentPanel } from '@/components/shared';
 import { ProductionGuidedWizard } from '@/components/production/ProductionGuidedWizard';
+import { AskGenie } from '@/components/genie-studio/AskGenie';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { 
@@ -1762,6 +1763,12 @@ export default function ProductionHub() {
           onUpdate={handleUpdateShow}
           onCancel={handleCancelShow}
           onReschedule={handleReschedule}
+        />
+
+        {/* Ask Genie - Context-aware AI for Production Hub */}
+        <AskGenie 
+          product="arc" 
+          currentTab={activeCategory}
         />
       </div>
     </AppLayout>
