@@ -24,7 +24,10 @@ import {
   Loader2,
   CheckCircle,
   MapPin,
-  Route
+  Route,
+  Copy,
+  Sparkles,
+  Send
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -270,6 +273,99 @@ export const RalphWiggumPanel: React.FC<RalphWiggumPanelProps> = ({
     URL.revokeObjectURL(url);
   }, [onExportReport]);
   
+  /**
+   * Generate Lovable-ready prompt from findings
+   */
+  const generateLovablePrompt = useCallback((): string => {
+    if (!currentReview) return '';
+    
+    const { findings, journeyAnalysis, module } = currentReview;
+    
+    let prompt = `## Ralph Wiggum Review - Action Items for ${moduleNames[module]}
+
+Please implement the following improvements identified by the AI review system:
+
+`;
+
+    // Group findings by severity
+    const critical = findings.filter(f => f.severity === 'critical');
+    const warnings = findings.filter(f => f.severity === 'warning');
+    const suggestions = findings.filter(f => f.severity === 'suggestion');
+    
+    if (critical.length > 0) {
+      prompt += `### 🔴 Critical Issues (Fix Immediately)\n`;
+      critical.forEach((f, i) => {
+        prompt += `${i + 1}. **${f.title}**: ${f.description}`;
+        if (f.suggestion) prompt += `\n   - Suggestion: ${f.suggestion}`;
+        if (f.location) prompt += `\n   - Location: ${f.location}`;
+        prompt += '\n\n';
+      });
+    }
+    
+    if (warnings.length > 0) {
+      prompt += `### 🟡 Warnings (Should Fix)\n`;
+      warnings.forEach((f, i) => {
+        prompt += `${i + 1}. **${f.title}**: ${f.description}`;
+        if (f.suggestion) prompt += `\n   - Suggestion: ${f.suggestion}`;
+        prompt += '\n\n';
+      });
+    }
+    
+    if (suggestions.length > 0) {
+      prompt += `### 💡 Suggestions (Nice to Have)\n`;
+      suggestions.forEach((f, i) => {
+        prompt += `${i + 1}. **${f.title}**: ${f.description}`;
+        if (f.suggestion) prompt += `\n   - Suggestion: ${f.suggestion}`;
+        prompt += '\n\n';
+      });
+    }
+    
+    if (journeyAnalysis) {
+      prompt += `### 🗺️ Journey/UX Improvements\n`;
+      prompt += `- Current Stage: ${journeyAnalysis.currentStage}\n`;
+      prompt += `- Completion: ${journeyAnalysis.completionPercentage}%\n`;
+      
+      if (journeyAnalysis.potentialBlockers.length > 0) {
+        prompt += `- Blockers to Address:\n`;
+        journeyAnalysis.potentialBlockers.forEach(b => {
+          prompt += `  - ${b}\n`;
+        });
+      }
+      
+      if (journeyAnalysis.recommendations.length > 0) {
+        prompt += `- Recommendations:\n`;
+        journeyAnalysis.recommendations.forEach(r => {
+          prompt += `  - ${r}\n`;
+        });
+      }
+      
+      if (journeyAnalysis.sequenceIssues.length > 0) {
+        prompt += `- Sequence Issues:\n`;
+        journeyAnalysis.sequenceIssues.forEach(s => {
+          prompt += `  - ${s.step}: ${s.issue} (${s.impact} impact)\n`;
+        });
+      }
+    }
+    
+    prompt += `\n---\nPlease implement these improvements while maintaining existing functionality.`;
+    
+    return prompt;
+  }, [currentReview]);
+  
+  const handleCopyForLovable = useCallback(async () => {
+    const prompt = generateLovablePrompt();
+    if (!prompt) return;
+    
+    try {
+      await navigator.clipboard.writeText(prompt);
+      // Show toast notification
+      const event = new CustomEvent('ralph-copied', { detail: { success: true } });
+      window.dispatchEvent(event);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+    }
+  }, [generateLovablePrompt]);
+  
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -308,14 +404,26 @@ export const RalphWiggumPanel: React.FC<RalphWiggumPanelProps> = ({
                     <Settings className="h-3.5 w-3.5" />
                   </Button>
                   {currentReview && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={handleExport}
-                    >
-                      <Download className="h-3.5 w-3.5" />
-                    </Button>
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-primary"
+                        onClick={handleCopyForLovable}
+                        title="Copy for Lovable AI"
+                      >
+                        <Sparkles className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={handleExport}
+                        title="Export as Markdown"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
+                    </>
                   )}
                 </>
               )}
@@ -435,16 +543,26 @@ export const RalphWiggumPanel: React.FC<RalphWiggumPanelProps> = ({
                     </div>
                   )}
                   
-                  {/* Clear button */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full text-xs"
-                    onClick={onClearReview}
-                  >
-                    <X className="h-3 w-3 mr-1" />
-                    Clear Review
-                  </Button>
+                  {/* Action Buttons */}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="flex-1 text-xs bg-gradient-to-r from-violet-500 to-purple-600"
+                      onClick={handleCopyForLovable}
+                    >
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      Copy for Lovable
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs"
+                      onClick={onClearReview}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
               </ScrollArea>
             )}
