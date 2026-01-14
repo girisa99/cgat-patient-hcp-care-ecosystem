@@ -658,21 +658,68 @@ export const ProductionGuidedWizard: React.FC<ProductionGuidedWizardProps> = ({
           </Button>
         );
       case 'in_progress':
+        // Smart In Progress Stage - shows meeting URL and details from scheduled stage
         return (
-          <div className="space-y-2">
+          <div className="space-y-3">
+            {/* Meeting URL - Primary Action */}
             {selectedShow?.meeting_link ? (
-              <div className="flex gap-2">
-                <Button 
-                  onClick={handleJoinMeeting} 
-                  className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500"
-                >
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Join Meeting
-                </Button>
-                <Button variant="outline" size="icon" onClick={handleCopyMeetingUrl}>
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
+              <Card className="p-3 bg-gradient-to-r from-yellow-500/5 to-orange-500/5 border-yellow-500/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <Globe className="h-4 w-4 text-yellow-600" />
+                  <span className="text-sm font-medium">Meeting URL</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 text-xs bg-background p-2 rounded truncate">
+                    {selectedShow.meeting_link}
+                  </code>
+                  <Button variant="outline" size="sm" onClick={handleCopyMeetingUrl}>
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+              </Card>
+            ) : (
+              <Card className="p-3 text-center text-muted-foreground text-sm">
+                No meeting URL set. Add one to join.
+              </Card>
+            )}
+            
+            {/* Participants Summary */}
+            {selectedShow?.participants && selectedShow.participants.length > 0 && (
+              <Card className="p-3 bg-muted/30">
+                <div className="flex items-center justify-between text-sm mb-1">
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    Participants
+                  </span>
+                  <Badge variant="outline">{selectedShow.participants.length}</Badge>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {selectedShow.participants.slice(0, 3).map(p => p.name).join(', ')}
+                  {selectedShow.participants.length > 3 && ` +${selectedShow.participants.length - 3} more`}
+                </div>
+              </Card>
+            )}
+            
+            {/* Agenda/Outline if set */}
+            {(selectedShow?.metadata as any)?.topics && (
+              <Card className="p-3 bg-muted/30">
+                <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1">
+                  <FileText className="h-3 w-3" />
+                  Agenda
+                </div>
+                <p className="text-xs">{(selectedShow.metadata as any).topics}</p>
+              </Card>
+            )}
+            
+            {/* Join Button */}
+            {selectedShow?.meeting_link ? (
+              <Button 
+                onClick={handleJoinMeeting} 
+                className="w-full bg-gradient-to-r from-yellow-500 to-orange-500"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Join Meeting Now
+              </Button>
             ) : (
               <Button onClick={onOpenScheduleDialog || onInviteGuests} className="w-full">
                 <Link className="h-4 w-4 mr-2" />
