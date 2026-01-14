@@ -71,6 +71,29 @@ const GenieSpark: React.FC = () => {
     toast.success(`Script ready for recording in Vibe!`);
   };
 
+  const handleSendToProductionHub = (content: GeneratedContent) => {
+    const newScript: GenieScript = {
+      id: `script-${Date.now()}`,
+      name: content.title || 'Generated Script',
+      content: content.script,
+      type: content.type === 'podcast_script' ? 'audio' : 'video',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      stats: {
+        wordCount: content.metadata?.wordCount || 0,
+        sentenceCount: 0,
+        characterCount: content.script.length,
+        estimatedReadingMinutes: Math.ceil((content.metadata?.estimatedDuration || 0) / 60),
+        estimatedSpeakingMinutes: Math.ceil((content.metadata?.estimatedDuration || 0) / 60),
+        readabilityScore: 'moderate' as const
+      }
+    };
+    saveScript(newScript);
+    // Navigate to Production Hub with the script ID for linking
+    navigate(`/genie-studio/productions?linkScript=${newScript.id}`);
+    toast.success(`Script ready for Production Hub! Create a show to link it.`);
+  };
+
   const handleSaveToKnowledgeBase = (content: GeneratedContent) => {
     toast.success(`Script saved to Knowledge Base for future AI reference!`);
   };
@@ -186,6 +209,7 @@ const GenieSpark: React.FC = () => {
               <SmartContentPipeline
                 onSendToScriptEditor={handleSendToScriptEditor}
                 onSendToVibe={handleSendToVibe}
+                onSendToProductionHub={handleSendToProductionHub}
                 onSaveToKnowledgeBase={handleSaveToKnowledgeBase}
               />
             </TabsContent>
