@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { Json } from '@/integrations/supabase/types';
 
-// DEV-ONLY check
+// DEV-ONLY check - evaluated at module load time
 const isDev = import.meta.env.DEV;
 
 // Finding types
@@ -51,6 +51,7 @@ export interface RalphWiggumContextValue {
   isAnalyzing: boolean;
   currentPageRoute: string;
   isPanelOpen: boolean;
+  isEnabled: boolean;
   
   // Actions
   togglePanel: () => void;
@@ -77,7 +78,35 @@ export interface RalphWiggumContextValue {
   };
 }
 
-const RalphWiggumContext = createContext<RalphWiggumContextValue | null>(null);
+// Default no-op context for production
+const defaultContextValue: RalphWiggumContextValue = {
+  findings: [],
+  isLoading: false,
+  isAnalyzing: false,
+  currentPageRoute: '',
+  isPanelOpen: false,
+  isEnabled: false,
+  togglePanel: () => {},
+  openPanel: () => {},
+  closePanel: () => {},
+  refreshFindings: async () => {},
+  addFinding: async () => {},
+  updateFindingStatus: async () => {},
+  deleteFinding: async () => {},
+  exportFindings: async () => '',
+  triggerAnalysis: () => {},
+  filterByPage: () => [],
+  filterByStatus: () => [],
+  filterByType: () => [],
+  stats: {
+    total: 0,
+    byStatus: { new: 0, acknowledged: 0, in_progress: 0, fixed: 0, verified: 0, wont_fix: 0, duplicate: 0 },
+    byType: { critical: 0, warning: 0, suggestion: 0, journey: 0 },
+    byPage: {}
+  }
+};
+
+const RalphWiggumContext = createContext<RalphWiggumContextValue>(defaultContextValue);
 
 // Generate hash for duplicate detection
 const generateFindingHash = (title: string, description: string, pageRoute: string): string => {
@@ -91,17 +120,22 @@ const generateFindingHash = (title: string, description: string, pageRoute: stri
   return `ralph_${Math.abs(hash).toString(16)}`;
 };
 
-export const RalphWiggumProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+// Production-safe provider that just passes through children
+const ProductionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return (
+    <RalphWiggumContext.Provider value={defaultContextValue}>
+      {children}
+    </RalphWiggumContext.Provider>
+  );
+};
+
+// Dev-only provider with full functionality
+const DevProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [findings, setFindings] = useState<RalphFinding[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const location = useLocation();
-  
-  // Don't render in production
-  if (!isDev) {
-    return <>{children}</>;
-  }
   
   const currentPageRoute = location.pathname;
   
@@ -292,7 +326,7 @@ export const RalphWiggumProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, [findings]);
   
   // Trigger analysis for current page
-  const triggerAnalysis = useCallback((pageContent: Record<string, unknown>) => {
+  const triggerAnalysis = useCallback((_pageContent: Record<string, unknown>) => {
     setIsAnalyzing(true);
     // This will be called by the RalphWiggumGlobalPanel
     setTimeout(() => setIsAnalyzing(false), 3000);
@@ -338,6 +372,7 @@ export const RalphWiggumProvider: React.FC<{ children: React.ReactNode }> = ({ c
     isAnalyzing,
     currentPageRoute,
     isPanelOpen,
+    isEnabled: true,
     togglePanel: () => setIsPanelOpen(p => !p),
     openPanel: () => setIsPanelOpen(true),
     closePanel: () => setIsPanelOpen(false),
@@ -360,35 +395,9 @@ export const RalphWiggumProvider: React.FC<{ children: React.ReactNode }> = ({ c
   );
 };
 
+// Export the appropriate provider based on environment
+export const RalphWiggumProvider: React.FC<{ children: React.ReactNode }> = isDev ? DevProvider : ProductionProvider;
+
 export const useRalphWiggumGlobal = (): RalphWiggumContextValue => {
-  const context = useContext(RalphWiggumContext);
-  if (!context) {
-    // Return no-op context for production
-    return {
-      findings: [],
-      isLoading: false,
-      isAnalyzing: false,
-      currentPageRoute: '',
-      isPanelOpen: false,
-      togglePanel: () => {},
-      openPanel: () => {},
-      closePanel: () => {},
-      refreshFindings: async () => {},
-      addFinding: async () => {},
-      updateFindingStatus: async () => {},
-      deleteFinding: async () => {},
-      exportFindings: async () => '',
-      triggerAnalysis: () => {},
-      filterByPage: () => [],
-      filterByStatus: () => [],
-      filterByType: () => [],
-      stats: {
-        total: 0,
-        byStatus: { new: 0, acknowledged: 0, in_progress: 0, fixed: 0, verified: 0, wont_fix: 0, duplicate: 0 },
-        byType: { critical: 0, warning: 0, suggestion: 0, journey: 0 },
-        byPage: {}
-      }
-    };
-  }
-  return context;
+  return useContext(RalphWiggumContext);
 };

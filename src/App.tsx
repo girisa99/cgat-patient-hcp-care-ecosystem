@@ -530,13 +530,9 @@ const AppRouter = () => {
 // DEV-ONLY: Ralph Wiggum Global Provider and Panel
 const isDev = import.meta.env.DEV;
 
-// Lazy load Ralph Wiggum components for dev only
-const RalphWiggumProvider = isDev 
-  ? React.lazy(() => import('@/contexts/RalphWiggumContext').then(m => ({ default: m.RalphWiggumProvider })))
-  : React.Fragment;
-const RalphWiggumGlobalPanel = isDev 
-  ? React.lazy(() => import('@/components/global/RalphWiggumGlobalPanel'))
-  : () => null;
+// Import Ralph Wiggum components directly (they handle dev check internally)
+import { RalphWiggumProvider } from '@/contexts/RalphWiggumContext';
+import RalphWiggumGlobalPanel from '@/components/global/RalphWiggumGlobalPanel';
 
 const App = () => {
   console.log('🚀 App component rendering...');
@@ -545,16 +541,10 @@ const App = () => {
     <BrowserRouter>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
-          {isDev ? (
-            <Suspense fallback={null}>
-              <RalphWiggumProvider>
-                <AppRouter />
-                <RalphWiggumGlobalPanel />
-              </RalphWiggumProvider>
-            </Suspense>
-          ) : (
+          <RalphWiggumProvider>
             <AppRouter />
-          )}
+            {isDev && <RalphWiggumGlobalPanel />}
+          </RalphWiggumProvider>
         </QueryClientProvider>
       </ErrorBoundary>
     </BrowserRouter>
