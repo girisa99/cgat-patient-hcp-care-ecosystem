@@ -35,6 +35,8 @@
 | Production Readiness | Go-live checklist | [P3 Closeout](./P3_CLOSEOUT_PRODUCTION_READINESS.md) |
 | Scenario Map | Feature-to-scenario mapping | [Scenario Map](../GENIE_STUDIO_SCENARIO_MAP.md) |
 | Functional Architecture | Component structure | [Functional Doc](../GENIE_STUDIO_FUNCTIONAL_ARCHITECTURE.md) |
+| **Video Editing Analysis** | Market research & roadmap | [Video Editing Analysis](../Architecture/genie-studio-video-editing-analysis.md) |
+| **Cloud Integration** | OneDrive/Google/iCloud architecture | [Cloud Integration](../Architecture/genie-vibe-cloud-integration-architecture.md) |
 
 ---
 
@@ -177,6 +179,9 @@ docs/
 │   ├── GENIE_ARC_PRODUCTION_HUB_ARCHITECTURE.md
 │   ├── P3_CLOSEOUT_PRODUCTION_READINESS.md
 │   └── P3_API_DEPENDENCIES_GUIDE.md
+├── Architecture/
+│   ├── genie-studio-video-editing-analysis.md  # NEW: Market research & roadmap
+│   └── genie-vibe-cloud-integration-architecture.md  # NEW: Cloud storage integration
 ├── GENIE_STUDIO_TECHNICAL_ARCHITECTURE.md
 ├── GENIE_STUDIO_SCENARIO_MAP.md
 ├── GENIE_STUDIO_FUNCTIONAL_ARCHITECTURE.md
