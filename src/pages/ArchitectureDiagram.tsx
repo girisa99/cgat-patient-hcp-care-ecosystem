@@ -10,7 +10,8 @@ import {
 import { TwoStagePipelineSVGDiagram } from '@/components/document-processing/TwoStagePipelineSVGDiagram';
 import { DocumentConfigurationReferenceDiagram } from '@/components/document-processing/DocumentConfigurationReferenceDiagram';
 import { DocumentProcessingPresentation } from '@/components/document-processing/DocumentProcessingPresentation';
-import { PatientOnboardingFlowDiagram, SubAgentArchitectureDiagram, BeforeAfterArchitectureDiagram, GenieStudioUnifiedHub } from '@/components/diagrams';
+import { PatientOnboardingFlowDiagram, SubAgentArchitectureDiagram, BeforeAfterArchitectureDiagram } from '@/components/diagrams';
+import { GenieCommandCenter } from '@/components/diagrams/genie-command-center';
 import { Button } from '@/components/ui/button';
 // Tabs imports kept for potential future use but not needed for current category navigation
 import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building, Users, Network, ArrowRightLeft, Download, Workflow, Bot, History, Sparkles, Image, Video, Server, Target, Map, Presentation } from 'lucide-react';
@@ -63,13 +64,13 @@ const diagramCategories = {
     ]
   },
   genieStudio: {
-    label: 'Genie Studio',
+    label: 'Genie Suite',
     icon: Sparkles,
     diagrams: [
-      // Single source of truth - Unified Hub contains all content:
-      // Overview, Verification, Products, Scenarios, Architecture, Technical, 
-      // Functional, Market Analysis, Investor Dashboard, Assets & Studio, Roadmap
-      { id: 'genie-hub', label: 'Complete Suite (253 Scenarios)', icon: Sparkles },
+      // Genie Command Center - Enterprise Dashboard with 8 professional tabs:
+      // Overview, Market Analysis, Product Suite, Architecture, Technical Docs, 
+      // Roadmap, Investor Dashboard, Stage Gates
+      { id: 'genie-hub', label: 'Command Center (289 Scenarios)', icon: Sparkles },
     ]
   }
 };
@@ -148,10 +149,10 @@ const ArchitectureDiagram = () => {
       case 'sub-agents':
         return <SubAgentArchitectureDiagram />;
       case 'genie-hub':
-        // Unified Hub is the single source of truth for all Genie Studio content
-        // Contains: Overview, Verification, Products, Scenarios, Architecture, 
-        // Technical, Functional, Market Analysis, Investor Dashboard, Assets & Studio, Roadmap
-        return <GenieStudioUnifiedHub />;
+        // Genie Command Center - Enterprise Dashboard replacing old Unified Hub
+        // Professional investor-ready with 8 tabs: Overview, Market Analysis, Product Suite, 
+        // Architecture, Technical Docs, Roadmap, Investor Dashboard, Stage Gates
+        return <GenieCommandCenter />;
       default:
         return <SolutionArchitectureDiagram />;
     }
