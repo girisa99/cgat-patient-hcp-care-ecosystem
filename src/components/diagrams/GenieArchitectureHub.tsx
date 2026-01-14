@@ -6,8 +6,7 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Layers, Brain, Film, Users, Zap, Plug, Server, Target, Sparkles } from 'lucide-react';
+import { Layers, Brain, Film, Users, Zap, Plug, Server, Target, Sparkles, Database, Shield } from 'lucide-react';
 
 // Import all architecture diagrams
 import { GenieStudioOverallArchitectureDiagram } from './architecture/GenieStudioOverallArchitectureDiagram';
@@ -17,6 +16,8 @@ import { GenieArcProductionHubDiagram } from './architecture/GenieArcProductionH
 import { GenieSparkArchitectureDiagram } from './architecture/GenieSparkArchitectureDiagram';
 import { GenieIntegrationsDiagram } from './architecture/GenieIntegrationsDiagram';
 import { GenieMicroservicesDiagram } from './architecture/GenieMicroservicesDiagram';
+import { GenieDataArchitectureDiagram } from './architecture/GenieDataArchitectureDiagram';
+import { GenieSecurityArchitectureDiagram } from './architecture/GenieSecurityArchitectureDiagram';
 import { GenieStageGateDashboard } from './architecture/GenieStageGateDashboard';
 import { GenieP3IntegrationDashboard } from './architecture/GenieP3IntegrationDashboard';
 
@@ -30,6 +31,8 @@ const architectureTabs = [
   { id: 'spark', label: 'Genie Spark', icon: Zap, description: 'Quick-Start Engine' },
   { id: 'integrations', label: 'Integrations', icon: Plug, description: 'APIs & Services' },
   { id: 'microservices', label: 'Microservices', icon: Server, description: 'Service Architecture' },
+  { id: 'data', label: 'Data Arch', icon: Database, description: 'Schema & ER Diagram' },
+  { id: 'security', label: 'Security', icon: Shield, description: 'Auth & Compliance' },
 ];
 
 export const GenieArchitectureHub: React.FC = () => {
@@ -88,6 +91,14 @@ export const GenieArchitectureHub: React.FC = () => {
 
           <TabsContent value="microservices" className="m-0">
             <GenieMicroservicesDiagram />
+          </TabsContent>
+
+          <TabsContent value="data" className="m-0">
+            <GenieDataArchitectureDiagram />
+          </TabsContent>
+
+          <TabsContent value="security" className="m-0">
+            <GenieSecurityArchitectureDiagram />
           </TabsContent>
         </div>
     </Tabs>
