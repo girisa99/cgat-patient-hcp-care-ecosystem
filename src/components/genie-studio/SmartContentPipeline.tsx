@@ -213,6 +213,7 @@ interface DetectedFile {
 interface SmartContentPipelineProps {
   onSendToScriptEditor?: (content: GeneratedContent) => void;
   onSendToVibe?: (content: GeneratedContent) => void;
+  onSendToProductionHub?: (content: GeneratedContent) => void;
   onSaveToKnowledgeBase?: (content: GeneratedContent) => void;
   className?: string;
 }
@@ -220,6 +221,7 @@ interface SmartContentPipelineProps {
 export function SmartContentPipeline({
   onSendToScriptEditor,
   onSendToVibe,
+  onSendToProductionHub,
   onSaveToKnowledgeBase,
   className,
 }: SmartContentPipelineProps) {
@@ -795,6 +797,13 @@ export function SmartContentPipeline({
         await saveDraft(generatedContent);
         onSendToVibe?.(generatedContent);
         toast.success('Sent to Vibe Recording');
+        break;
+        
+      case 'production-hub':
+        // Save as draft before sending to Production Hub
+        await saveDraft(generatedContent);
+        onSendToProductionHub?.(generatedContent);
+        toast.success('Sent to Production Hub');
         break;
         
       case 'knowledge-base':

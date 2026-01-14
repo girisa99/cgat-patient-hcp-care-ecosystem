@@ -1,6 +1,6 @@
 /**
  * Post-Generation Actions Component
- * Provides actions after script generation: Download, Script Editor, Vibe, Knowledge Base
+ * Provides actions after script generation: Download, Script Editor, Vibe, Production Hub, Knowledge Base
  */
 
 import React from 'react';
@@ -17,7 +17,8 @@ import {
   FileText,
   Sparkles,
   Check,
-  ChevronRight
+  ChevronRight,
+  Film
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -46,7 +47,7 @@ interface SlideVoiceover {
   audioUrl?: string;
 }
 
-export type PostAction = 'download' | 'script-editor' | 'vibe' | 'knowledge-base';
+export type PostAction = 'download' | 'script-editor' | 'vibe' | 'production-hub' | 'knowledge-base';
 
 interface PostGenerationActionsProps {
   content: GeneratedContent;
@@ -88,6 +89,13 @@ const ACTION_OPTIONS: ActionOption[] = [
     description: 'Go directly to recording studio',
     icon: <Mic className="h-5 w-5" />,
     flow: 'Direct to Vibe for recording',
+  },
+  {
+    id: 'production-hub',
+    label: 'Send to Production Hub',
+    description: 'Link script to a show in Arc/Productions',
+    icon: <Film className="h-5 w-5" />,
+    flow: 'Arc → Schedule Show → Record',
   },
   {
     id: 'knowledge-base',
@@ -246,7 +254,7 @@ export function PostGenerationActions({
         {localSelected.includes('script-editor') && (
           <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
             <p className="text-xs font-medium text-primary mb-2">Your Workflow:</p>
-            <div className="flex items-center gap-2 text-xs">
+            <div className="flex items-center gap-2 text-xs flex-wrap">
               <Badge variant="outline" className="gap-1">
                 <FileText className="h-3 w-3" />
                 Script
@@ -265,6 +273,33 @@ export function PostGenerationActions({
               <Badge variant="secondary" className="gap-1">
                 <Mic className="h-3 w-3" />
                 Vibe Recording
+              </Badge>
+            </div>
+          </div>
+        )}
+
+        {/* Production Hub Flow Visualization */}
+        {localSelected.includes('production-hub') && (
+          <div className="p-3 rounded-lg bg-blue-500/5 border border-blue-500/20">
+            <p className="text-xs font-medium text-blue-600 mb-2">Production Workflow:</p>
+            <div className="flex items-center gap-2 text-xs flex-wrap">
+              <Badge variant="outline" className="gap-1">
+                <FileText className="h-3 w-3" />
+                Script
+              </Badge>
+              <ChevronRight className="h-3 w-3 text-muted-foreground" />
+              <Badge className="gap-1 bg-blue-500/10 text-blue-600 border-blue-500/20">
+                <Film className="h-3 w-3" />
+                Production Hub
+              </Badge>
+              <ChevronRight className="h-3 w-3 text-muted-foreground" />
+              <Badge variant="outline" className="gap-1">
+                📅 Schedule
+              </Badge>
+              <ChevronRight className="h-3 w-3 text-muted-foreground" />
+              <Badge variant="secondary" className="gap-1">
+                <Mic className="h-3 w-3" />
+                Record
               </Badge>
             </div>
           </div>

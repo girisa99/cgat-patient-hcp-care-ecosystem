@@ -29,7 +29,8 @@ import {
   Send,
   Eye,
   CheckCircle,
-  Sparkles
+  Sparkles,
+  Film
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
@@ -42,6 +43,7 @@ interface GenieSparkDraftsPanelProps {
   onExportDraft: (id: string) => void;
   onSendToEditor: (draft: GenieSparkDraft) => void;
   onSendToVibe: (draft: GenieSparkDraft) => void;
+  onSendToProductionHub?: (draft: GenieSparkDraft) => void;
   selectedDraftId?: string;
   className?: string;
 }
@@ -107,6 +109,7 @@ export function GenieSparkDraftsPanel({
   onExportDraft,
   onSendToEditor,
   onSendToVibe,
+  onSendToProductionHub,
   selectedDraftId,
   className,
 }: GenieSparkDraftsPanelProps) {
@@ -201,6 +204,12 @@ export function GenieSparkDraftsPanel({
                         <Mic className="h-4 w-4 mr-2" />
                         Send to Vibe Recording
                       </DropdownMenuItem>
+                      {onSendToProductionHub && (
+                        <DropdownMenuItem onClick={() => onSendToProductionHub(draft)}>
+                          <Film className="h-4 w-4 mr-2" />
+                          Send to Production Hub
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => onExportDraft(draft.id)}>
                         <Download className="h-4 w-4 mr-2" />
