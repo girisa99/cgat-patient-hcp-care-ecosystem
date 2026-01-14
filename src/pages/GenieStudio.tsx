@@ -110,6 +110,8 @@ import { AskGenie } from '@/components/genie-studio/AskGenie';
 import { DashboardWelcome } from '@/components/genie-studio/DashboardWelcome';
 // User Flow Tracking - DEV-ONLY journey tracking
 import { useUserFlowTracking } from '@/components/genie-studio/hooks/useUserFlowTracking';
+// HIPAA Compliance Footer - Addresses security/compliance requirement
+import { HIPAAComplianceFooter } from '@/components/genie-studio/HIPAAComplianceFooter';
 
 // ========================================
 // EXTRACTED MODULES - Phase 3 Refactoring
@@ -3739,6 +3741,9 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
 
         {/* Hidden audio element for music */}
         <audio ref={musicAudioRef} className="hidden" />
+
+        {/* HIPAA Compliance Footer - Security & Privacy Notice */}
+        <HIPAAComplianceFooter variant="compact" className="mt-4" />
 
         {/* Ask Genie - Unified AI Assistant for Genie Studio */}
         <AskGenie 
