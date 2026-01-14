@@ -26,7 +26,9 @@ import {
   Play,
   Send,
   Filter,
-  CheckCheck
+  CheckCheck,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -193,6 +195,7 @@ export const RalphWiggumGlobalPanel: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showCopyDialog, setShowCopyDialog] = useState(false);
   const [copyContent, setCopyContent] = useState('');
+  const [isExpanded, setIsExpanded] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const hasAutoAnalyzed = useRef(false);
   
@@ -525,47 +528,78 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
       {ToggleButton}
       
       <motion.div
-        drag
+        drag={!isExpanded}
         dragControls={dragControls}
         dragMomentum={false}
         dragElastic={0}
         dragConstraints={constraintsRef}
-        initial={{ x: 0, y: 0, opacity: 0, scale: 0.9 }}
-        animate={{ x: dragPosition.x, y: dragPosition.y, opacity: 1, scale: 1 }}
-        onDragEnd={(_, info) => {
-          setDragPosition(prev => ({
-            x: prev.x + info.offset.x,
-            y: prev.y + info.offset.y
-          }));
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ 
+          x: isExpanded ? 0 : dragPosition.x, 
+          y: isExpanded ? 0 : dragPosition.y, 
+          opacity: 1, 
+          scale: 1 
         }}
-        className="fixed bottom-20 left-6 z-[9998] w-80 pointer-events-auto"
+        onDragEnd={(_, info) => {
+          if (!isExpanded) {
+            setDragPosition(prev => ({
+              x: prev.x + info.offset.x,
+              y: prev.y + info.offset.y
+            }));
+          }
+        }}
+        className={`fixed z-[9998] pointer-events-auto transition-all duration-300 ${
+          isExpanded 
+            ? 'inset-4 w-auto' 
+            : 'bottom-20 left-6 w-80'
+        }`}
         style={{ touchAction: 'none' }}
       >
-        <Card className="shadow-xl border overflow-hidden">
+        <Card className={`shadow-xl border overflow-hidden h-full flex flex-col ${isExpanded ? 'max-h-full' : ''}`}>
           {/* Header - Draggable */}
           <CardHeader 
-            className="py-2 px-3 bg-gradient-to-r from-yellow-400 to-orange-500 cursor-grab active:cursor-grabbing"
-            onPointerDown={(e) => dragControls.start(e)}
+            className={`py-2 px-3 bg-gradient-to-r from-yellow-400 to-orange-500 ${!isExpanded ? 'cursor-grab active:cursor-grabbing' : ''}`}
+            onPointerDown={(e) => !isExpanded && dragControls.start(e)}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
-                <GripVertical className="h-3 w-3 text-white/70" />
+                {!isExpanded && <GripVertical className="h-3 w-3 text-white/70" />}
                 <Bug className="h-4 w-4 text-white" />
-                <CardTitle className="text-xs text-white">Ralph Wiggum</CardTitle>
+                <CardTitle className={`text-white ${isExpanded ? 'text-base' : 'text-xs'}`}>
+                  Ralph Wiggum
+                </CardTitle>
+                {isExpanded && (
+                  <Badge variant="secondary" className="text-xs ml-2">
+                    {currentPageFindings.length} findings
+                  </Badge>
+                )}
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-5 w-5 p-0 text-white hover:bg-white/20"
-                onClick={closePanel}
-              >
-                <X className="h-3 w-3" />
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 text-white hover:bg-white/20"
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  title={isExpanded ? 'Minimize' : 'Expand'}
+                >
+                  {isExpanded ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 text-white hover:bg-white/20"
+                  onClick={closePanel}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </div>
-            <p className="text-[10px] text-white/80 mt-0.5">📍 {currentPageName}</p>
+            <p className={`text-white/80 mt-0.5 ${isExpanded ? 'text-sm' : 'text-[10px]'}`}>
+              📍 {currentPageName}
+            </p>
           </CardHeader>
           
-          <CardContent className="p-2 space-y-2">
+          <CardContent className={`space-y-2 flex-1 overflow-hidden flex flex-col ${isExpanded ? 'p-4' : 'p-2'}`}>
             {/* Status Summary Badges */}
             <div className="flex flex-wrap gap-1">
               <Badge 
@@ -687,14 +721,14 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
             </div>
             
             {/* Findings List */}
-            <ScrollArea className="h-[280px]">
-              <div className="space-y-1.5 pr-2">
+            <ScrollArea className={`flex-1 ${isExpanded ? 'min-h-0' : 'h-[280px]'}`}>
+              <div className={`space-y-1.5 pr-2 ${isExpanded ? 'grid grid-cols-1 md:grid-cols-2 gap-3' : ''}`}>
                 {isLoading ? (
-                  <div className="flex items-center justify-center py-8">
+                  <div className="flex items-center justify-center py-8 col-span-full">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                   </div>
                 ) : currentPageFindings.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center py-8 text-muted-foreground col-span-full">
                     <Bug className="h-8 w-8 mx-auto mb-2 opacity-50" />
                     <p className="text-xs">No {filterStatus !== 'all' ? filterStatus : ''} findings</p>
                     <Button 
@@ -714,7 +748,7 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
                       finding={finding}
                       onStatusChange={(status) => updateFindingStatus(finding.id, status)}
                       onDelete={() => deleteFinding(finding.id)}
-                      isExpanded={expandedId === finding.id}
+                      isExpanded={isExpanded || expandedId === finding.id}
                       onToggleExpand={() => setExpandedId(expandedId === finding.id ? null : finding.id)}
                     />
                   ))
