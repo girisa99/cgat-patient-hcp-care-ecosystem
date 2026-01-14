@@ -36,33 +36,7 @@ export const GenieArchitectureHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('stage-gates');
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Layers className="h-6 w-6 text-violet-400" />
-            Genie Studio Architecture
-          </h2>
-          <p className="text-slate-400 text-sm">
-            Complete technical documentation with P0-P5 stage gate tracking
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-emerald-300 border-emerald-500/30">
-            9 Views
-          </Badge>
-          <Badge variant="outline" className="text-amber-300 border-amber-500/30">
-            P3 Complete
-          </Badge>
-          <Badge variant="outline" className="text-purple-300 border-purple-500/30">
-            Go-Live Ready
-          </Badge>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <ScrollArea className="w-full">
           <TabsList className="inline-flex h-auto p-1 bg-slate-800/50 border border-slate-700 rounded-lg">
             {architectureTabs.map((tab) => (
@@ -116,8 +90,7 @@ export const GenieArchitectureHub: React.FC = () => {
             <GenieMicroservicesDiagram />
           </TabsContent>
         </div>
-      </Tabs>
-    </div>
+    </Tabs>
   );
 };
 

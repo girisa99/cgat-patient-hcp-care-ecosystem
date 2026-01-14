@@ -313,11 +313,13 @@
 
 | Document | Purpose |
 |----------|---------|
-| `architecture/GENIE_STUDIO_OVERALL_ARCHITECTURE.md` | **NEW** Master system architecture |
-| `architecture/GENIE_MIND_ARCHITECTURE.md` | **NEW** Mind module details |
-| `architecture/GENIE_VIBE_ARCHITECTURE.md` | **NEW** Vibe module (mobile/desktop/studio) |
-| `architecture/GENIE_ARC_PRODUCTION_HUB_ARCHITECTURE.md` | **NEW** Arc & Hub details |
-| `architecture/GENIE_SPARK_ARCHITECTURE.md` | **NEW** Spark module details |
+| `architecture/GENIE_STUDIO_OVERALL_ARCHITECTURE.md` | Master system architecture |
+| `architecture/GENIE_MIND_ARCHITECTURE.md` | Mind module details |
+| `architecture/GENIE_VIBE_ARCHITECTURE.md` | Vibe module (mobile/desktop/studio) |
+| `architecture/GENIE_ARC_PRODUCTION_HUB_ARCHITECTURE.md` | Arc & Hub details |
+| `architecture/GENIE_SPARK_ARCHITECTURE.md` | Spark module details |
+| `Architecture/genie-studio-video-editing-analysis.md` | **NEW** Video editing market analysis & roadmap |
+| `Architecture/genie-vibe-cloud-integration-architecture.md` | **NEW** Cloud storage integration (OneDrive/Google/iCloud) |
 | `GENIE_STUDIO_TECHNICAL_ARCHITECTURE.md` | Technical implementation details |
 | `GENIE_STUDIO_FUNCTIONAL_ARCHITECTURE.md` | User flows and UX specifications |
 | `GENIE_PHASE_IMPLEMENTATION_ROADMAP.md` | Phase-by-phase implementation plan |

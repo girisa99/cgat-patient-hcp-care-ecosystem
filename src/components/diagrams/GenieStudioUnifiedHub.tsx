@@ -1740,16 +1740,14 @@ export const GenieStudioUnifiedHub: React.FC = () => {
         </TabsContent>
 
         {/* TECHNICAL TAB */}
-        <TabsContent value="technical" className="space-y-4 mt-4">
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Server className="h-5 w-5" />
-                Feature Modules & APIs ({filteredModules.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
+        <TabsContent value="technical" className="space-y-6 mt-4">
+          {/* Feature Modules Table */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+              <Server className="h-5 w-5" />
+              Feature Modules & APIs ({filteredModules.length})
+            </h3>
+            <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Module</TableHead>
@@ -1782,19 +1780,15 @@ export const GenieStudioUnifiedHub: React.FC = () => {
                   ))}
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
+          </div>
 
           {/* Platform Compatibility Matrix */}
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Cpu className="h-5 w-5" />
-                Platform Compatibility Matrix
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
+          <div>
+            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+              <Cpu className="h-5 w-5" />
+              Platform Compatibility Matrix
+            </h3>
+            <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Feature/App</TableHead>
@@ -1821,38 +1815,33 @@ export const GenieStudioUnifiedHub: React.FC = () => {
                   ))}
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
+          </div>
         </TabsContent>
 
         {/* FUNCTIONAL TAB */}
-        <TabsContent value="functional" className="space-y-4 mt-4">
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-yellow-500" />
-                User Pain Points ({filteredPainPoints.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {filteredPainPoints.map((pain, idx) => (
-                  <div key={idx} className="p-4 rounded-lg border border-border bg-muted/20">
-                    <div className="flex items-start gap-3">
-                      <div className="text-2xl">"</div>
-                      <div className="flex-1">
-                        <p className="italic text-sm mb-2">{pain.quote}</p>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">{pain.source}</Badge>
-                          <span className="text-xs text-muted-foreground">— {pain.painPoint}</span>
-                        </div>
+        <TabsContent value="functional" className="space-y-6 mt-4">
+          <div>
+            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-yellow-500" />
+              User Pain Points ({filteredPainPoints.length})
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredPainPoints.map((pain, idx) => (
+                <div key={idx} className="p-4 rounded-lg border border-border bg-muted/20">
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl">"</div>
+                    <div className="flex-1">
+                      <p className="italic text-sm mb-2">{pain.quote}</p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">{pain.source}</Badge>
+                        <span className="text-xs text-muted-foreground">— {pain.painPoint}</span>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </div>
+              ))}
+            </div>
+          </div>
         </TabsContent>
 
         {/* MARKET ANALYSIS TAB */}
@@ -1865,10 +1854,8 @@ export const GenieStudioUnifiedHub: React.FC = () => {
             </TabsList>
 
             <TabsContent value="competitors">
-              <Card className="bg-card border-border">
-                <CardContent className="pt-4">
-                  <ScrollArea className="h-[600px]">
-                    <Table>
+              <ScrollArea className="h-[600px]">
+                <Table>
                       <TableHeader>
                         <TableRow>
                           <TableHead>Competitor</TableHead>
@@ -1989,54 +1976,44 @@ export const GenieStudioUnifiedHub: React.FC = () => {
                       </TableBody>
                     </Table>
                   </ScrollArea>
-                </CardContent>
-              </Card>
             </TabsContent>
 
             <TabsContent value="apps">
-              <Card className="bg-card border-border">
-                <CardContent className="pt-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredApps.map(app => (
-                      <div key={app.name} className="p-4 rounded-lg border border-border">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold">{app.name}</h4>
-                          <Badge variant={app.priority === 'P0' ? 'default' : 'secondary'}>{app.priority}</Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-3">{app.description}</p>
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          {app.platforms.map(p => (
-                            <Badge key={p} variant="outline" className="text-xs">{p}</Badge>
-                          ))}
-                        </div>
-                        <p className="text-xs text-green-600">Gap: {app.marketGap}</p>
-                      </div>
-                    ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredApps.map(app => (
+                  <div key={app.name} className="p-4 rounded-lg border border-border">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-semibold">{app.name}</h4>
+                      <Badge variant={app.priority === 'P0' ? 'default' : 'secondary'}>{app.priority}</Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-3">{app.description}</p>
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {app.platforms.map(p => (
+                        <Badge key={p} variant="outline" className="text-xs">{p}</Badge>
+                      ))}
+                    </div>
+                    <p className="text-xs text-green-600">Gap: {app.marketGap}</p>
                   </div>
-                </CardContent>
-              </Card>
+                ))}
+              </div>
             </TabsContent>
 
             <TabsContent value="integrations">
-              <Card className="bg-card border-border">
-                <CardContent className="pt-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredIntegrations.map(int => (
-                      <div key={int.partner} className="p-4 rounded-lg border border-border flex items-start gap-3">
-                        <Link className="h-5 w-5 text-blue-500 mt-1" />
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-semibold">{int.partner}</h4>
-                            <Badge variant="outline">{int.type}</Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground mt-1">{int.value}</p>
-                          <Badge variant={int.priority === 'P0' ? 'default' : 'secondary'} className="mt-2">{int.priority}</Badge>
-                        </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredIntegrations.map(int => (
+                  <div key={int.partner} className="p-4 rounded-lg border border-border flex items-start gap-3">
+                    <Link className="h-5 w-5 text-blue-500 mt-1" />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-semibold">{int.partner}</h4>
+                        <Badge variant="outline">{int.type}</Badge>
                       </div>
-                    ))}
+                      <p className="text-sm text-muted-foreground mt-1">{int.value}</p>
+                      <Badge variant={int.priority === 'P0' ? 'default' : 'secondary'} className="mt-2">{int.priority}</Badge>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
+                ))}
+              </div>
             </TabsContent>
           </Tabs>
         </TabsContent>
