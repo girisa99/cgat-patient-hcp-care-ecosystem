@@ -3,10 +3,11 @@
  * 
  * UNIFIED PIPELINE: Record → Clips → Mix → Timeline → Publish
  * 
- * PHASE 1: Core recording hooks from RecordingStudio integrated
- * - Camera/Screen capture with countdown
- * - Pause/Resume/Stop
+ * PHASE 1+2 COMPLETE: Recording consolidated into VibeRecordTab
+ * - Camera/Screen/PiP recording with countdown
+ * - Pause/Resume/Stop + TTS generation
  * - Script selection (original vs enhanced)
+ * - Teleprompter sync + Background blur
  * - Mobile/Desktop views
  * - Meeting URL integration (showId, session, title)
  * 
@@ -14,13 +15,12 @@
  * INTEGRATED: Ask Genie AI assistant for context-aware help
  */
 
-import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { 
   ArrowLeft, 
@@ -33,12 +33,7 @@ import {
   Upload,
   Camera,
   ScreenShare,
-  FileText,
   Check,
-  Play,
-  Pause,
-  Square,
-  Eye,
   Wand2,
   Combine,
   Sparkles,
@@ -46,20 +41,8 @@ import {
   Zap,
   AudioWaveform,
   MapPin,
-  Edit3,
-  Mic,
-  MicOff,
-  CameraOff,
-  RefreshCw,
-  Loader2
+  Edit3
 } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useGenieScripts } from '@/components/genie-studio/useGenieScripts';
@@ -89,16 +72,8 @@ import type { TimelineClip } from '@/components/mobile/MultiClipTimeline';
 import type { PipelineStage } from '@/components/mobile/PipelineProgress';
 import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
 
-// Import recording hooks from RecordingStudio (Phase 1 consolidation)
-import {
-  useCamera,
-  useScreenShare,
-  useRecording,
-  type RecordingMode
-} from '@/components/document-processing/RecordingStudio/hooks';
-
-// Import PreRecordingDialog for script selection before recording
-import { PreRecordingDialog } from '@/components/document-processing/RecordingStudio/components/PreRecordingDialog';
+// Import extracted VibeRecordTab component (Phase 1+2 consolidation)
+import { VibeRecordTab } from '@/components/genie-vibe';
 
 // Recording result type
 interface RecordingResult {
@@ -184,134 +159,8 @@ const GenieVibe: React.FC = () => {
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const [currentPlayheadTime, setCurrentPlayheadTime] = useState(0);
   
-  // =========================================================================
-  // PHASE 1: Recording hooks from RecordingStudio
-  // =========================================================================
-  
-  // Recording mode selection
-  const [recordingMode, setRecordingMode] = useState<RecordingMode>('camera');
-  
-  // Script version selection for teleprompter
-  const [useEnhancedScript, setUseEnhancedScript] = useState(false);
-  const [showPreRecordingDialog, setShowPreRecordingDialog] = useState(false);
-  const [selectedScriptId, setSelectedScriptId] = useState<string>('');
-  
-  // Video ref for camera preview
-  const videoPreviewRef = useRef<HTMLVideoElement>(null);
-  
-  // Camera hook - handles camera initialization and controls
-  const camera = useCamera({ autoStart: activeTab === 'record' && viewMode === 'desktop' });
-  
-  // Screen share hook - handles screen sharing
-  const screenShare = useScreenShare();
-  
-  // Get the active stream based on recording mode
-  const getActiveStream = useCallback(async (): Promise<MediaStream | null> => {
-    if (recordingMode === 'camera') {
-      return camera.stream;
-    } else if (recordingMode === 'screen') {
-      // Start screen share if not already sharing
-      if (!screenShare.isSharing) {
-        return await screenShare.startScreenShare();
-      }
-      // Combine screen with mic audio from camera
-      return screenShare.combineStreams(camera.stream, screenShare.screenStream, 'screen');
-    } else if (recordingMode === 'screen+camera') {
-      if (!screenShare.isSharing) {
-        await screenShare.startScreenShare();
-      }
-      return screenShare.combineStreams(camera.stream, screenShare.screenStream, 'screen+camera');
-    }
-    return camera.stream;
-  }, [recordingMode, camera.stream, screenShare]);
-  
-  // Recording hook - handles MediaRecorder and recording state
-  const recording = useRecording(getActiveStream, {
-    countdownSeconds: 5,
-    quality: 'high',
-    enablePersistence: true,
-    onRecordingComplete: (blob, duration) => {
-      console.log('[GenieVibe] Recording complete:', blob.size, 'bytes,', duration, 'seconds');
-      
-      // Create URL for the recording
-      const url = URL.createObjectURL(blob);
-      
-      // Add to recordings
-      const newRecording: RecordingResult = {
-        id: `recording-${Date.now()}`,
-        url,
-        duration,
-        type: 'video',
-        name: productionTitle || `Recording ${recordings.length + 1}`,
-      };
-      
-      handleRecordingComplete(newRecording);
-    },
-    onRecordingStarted: () => {
-      console.log('[GenieVibe] Recording started');
-      toast.success('Recording started!');
-    }
-  });
-  
-  // Get current script for teleprompter and pre-recording dialog
-  const currentScript = useMemo(() => {
-    return savedScripts.find(s => s.id === selectedScriptId);
-  }, [savedScripts, selectedScriptId]);
-  
-  // Formatted duration for display
-  const formattedDuration = useMemo(() => {
-    const minutes = Math.floor(recording.duration / 60);
-    const seconds = recording.duration % 60;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }, [recording.duration]);
-  
-  // Handle recording mode change
-  const handleRecordingModeChange = useCallback(async (mode: RecordingMode) => {
-    // Stop any existing screen share when switching modes
-    if (mode !== 'screen' && mode !== 'screen+camera' && screenShare.isSharing) {
-      screenShare.stopScreenShare();
-    }
-    
-    setRecordingMode(mode);
-    
-    // If switching to screen mode, start screen share
-    if (mode === 'screen' || mode === 'screen+camera') {
-      await screenShare.startScreenShare();
-    }
-  }, [screenShare]);
-  
-  // Handle start recording with optional script selection dialog
-  const handleStartRecording = useCallback(() => {
-    // If script is selected and has enhanced version, show dialog
-    if (currentScript && currentScript.enhancedContent) {
-      setShowPreRecordingDialog(true);
-    } else {
-      // Start recording directly
-      recording.startRecording();
-    }
-  }, [currentScript, recording]);
-  
-  // Handle script selection from pre-recording dialog
-  const handleScriptSelected = useCallback((enhanced: boolean) => {
-    setUseEnhancedScript(enhanced);
-    
-    // Set active script content for teleprompter
-    if (currentScript) {
-      setActiveScript(enhanced && currentScript.enhancedContent 
-        ? currentScript.enhancedContent 
-        : currentScript.content || '');
-    }
-    
-    // Start recording after selection
-    recording.startRecording();
-  }, [currentScript, recording]);
-  
-  // Attach camera stream to video element
-  useEffect(() => {
-    if (videoPreviewRef.current && camera.stream) {
-      videoPreviewRef.current.srcObject = camera.stream;
-    }
-  }, [camera.stream]);
+  // Note: Recording hooks moved to VibeRecordTab component (Phase 1+2 consolidation)
+  // The VibeRecordTab handles: camera, screenShare, recording, TTS, teleprompter sync, background blur
 
   // Load production context from URL params (showId from MeetingRoom or ProductionHub)
   useEffect(() => {
@@ -638,346 +487,13 @@ const GenieVibe: React.FC = () => {
               </TabsTrigger>
             </TabsList>
 
-            {/* Record Tab - Working Camera/Screen Recording */}
+            {/* Record Tab - Uses VibeRecordTab component (Phase 1+2 consolidation) */}
             <TabsContent value="record" className="space-y-6 mt-0">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-red-500/10 flex items-center justify-center">
-                    <Video className="h-5 w-5 text-red-500" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold">Record</h2>
-                    <p className="text-sm text-muted-foreground">Capture video, audio, or screen</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {recording.isRecording && (
-                    <Badge variant="destructive" className="animate-pulse">
-                      <div className="h-2 w-2 rounded-full bg-white mr-1.5 animate-pulse" />
-                      {formattedDuration}
-                    </Badge>
-                  )}
-                  <Badge variant="outline">Step 1 of 5</Badge>
-                </div>
-              </div>
-
-              {/* Recording Mode Selection */}
-              <div className="grid md:grid-cols-3 gap-4">
-                <button 
-                  onClick={() => handleRecordingModeChange('camera')}
-                  disabled={recording.isRecording}
-                  className={cn(
-                    "p-6 text-center border-2 rounded-lg transition-all group",
-                    recordingMode === 'camera' 
-                      ? "border-primary bg-primary/5" 
-                      : "border-dashed hover:border-primary hover:bg-muted/50",
-                    recording.isRecording && "opacity-50 cursor-not-allowed"
-                  )}
-                >
-                  <Camera className={cn(
-                    "h-10 w-10 mx-auto mb-3 transition-transform",
-                    recordingMode === 'camera' ? "text-primary scale-110" : "text-blue-500 group-hover:scale-110"
-                  )} />
-                  <h3 className="font-semibold">Camera</h3>
-                  <p className="text-xs text-muted-foreground">Record from webcam</p>
-                </button>
-                <button 
-                  onClick={() => handleRecordingModeChange('screen')}
-                  disabled={recording.isRecording}
-                  className={cn(
-                    "p-6 text-center border-2 rounded-lg transition-all group",
-                    recordingMode === 'screen' 
-                      ? "border-primary bg-primary/5" 
-                      : "border-dashed hover:border-primary hover:bg-muted/50",
-                    recording.isRecording && "opacity-50 cursor-not-allowed"
-                  )}
-                >
-                  <ScreenShare className={cn(
-                    "h-10 w-10 mx-auto mb-3 transition-transform",
-                    recordingMode === 'screen' ? "text-primary scale-110" : "text-green-500 group-hover:scale-110"
-                  )} />
-                  <h3 className="font-semibold">Screen</h3>
-                  <p className="text-xs text-muted-foreground">Record screen activity</p>
-                </button>
-                <button 
-                  onClick={() => handleRecordingModeChange('screen+camera')}
-                  disabled={recording.isRecording}
-                  className={cn(
-                    "p-6 text-center border-2 rounded-lg transition-all group",
-                    recordingMode === 'screen+camera' 
-                      ? "border-primary bg-primary/5" 
-                      : "border-dashed hover:border-primary hover:bg-muted/50",
-                    recording.isRecording && "opacity-50 cursor-not-allowed"
-                  )}
-                >
-                  <div className="flex justify-center gap-1 mb-3">
-                    <Camera className={cn(
-                      "h-8 w-8 transition-transform",
-                      recordingMode === 'screen+camera' ? "text-primary scale-110" : "text-purple-500 group-hover:scale-110"
-                    )} />
-                    <ScreenShare className={cn(
-                      "h-8 w-8 transition-transform",
-                      recordingMode === 'screen+camera' ? "text-primary scale-110" : "text-purple-500 group-hover:scale-110"
-                    )} />
-                  </div>
-                  <h3 className="font-semibold">Both</h3>
-                  <p className="text-xs text-muted-foreground">Camera + Screen overlay</p>
-                </button>
-              </div>
-
-              {/* Video Preview Area - Live Camera/Screen Feed */}
-              <div className="aspect-video bg-black rounded-lg flex items-center justify-center relative overflow-hidden">
-                {/* Countdown Overlay */}
-                {recording.countdown !== null && (
-                  <div className="absolute inset-0 bg-black/80 z-20 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="text-8xl font-bold text-white animate-pulse">
-                        {recording.countdown}
-                      </div>
-                      <p className="text-white/70 mt-4">Recording starting...</p>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Recording indicator */}
-                {recording.isRecording && !recording.isPaused && (
-                  <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-red-500 text-white px-3 py-1.5 rounded-full">
-                    <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
-                    <span className="text-sm font-medium">REC {formattedDuration}</span>
-                  </div>
-                )}
-                
-                {/* Paused indicator */}
-                {recording.isPaused && (
-                  <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-amber-500 text-white px-3 py-1.5 rounded-full">
-                    <Pause className="h-3 w-3" />
-                    <span className="text-sm font-medium">PAUSED {formattedDuration}</span>
-                  </div>
-                )}
-                
-                {/* Camera/Screen Preview */}
-                {camera.isLoading ? (
-                  <div className="text-center">
-                    <Loader2 className="h-12 w-12 text-muted-foreground animate-spin mx-auto mb-4" />
-                    <p className="text-muted-foreground">Initializing camera...</p>
-                  </div>
-                ) : camera.error ? (
-                  <div className="text-center">
-                    <CameraOff className="h-16 w-16 text-red-500/50 mx-auto mb-4" />
-                    <p className="text-red-400 mb-4">{camera.error}</p>
-                    <Button variant="outline" onClick={camera.retryCamera}>
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Retry Camera
-                    </Button>
-                  </div>
-                ) : camera.stream ? (
-                  <video
-                    ref={videoPreviewRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="text-center">
-                    <Video className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
-                    <p className="text-muted-foreground">Camera not available</p>
-                    <Button variant="outline" className="mt-4" onClick={() => camera.initCamera()}>
-                      <Camera className="h-4 w-4 mr-2" />
-                      Start Camera
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              {/* Recording Controls */}
-              <div className="flex items-center justify-center gap-4">
-                {/* Camera/Mic toggles */}
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={camera.toggleCamera}
-                    className={cn(!camera.isEnabled && "bg-red-500/10 border-red-500/50")}
-                  >
-                    {camera.isEnabled ? <Camera className="h-4 w-4" /> : <CameraOff className="h-4 w-4 text-red-500" />}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={camera.toggleMic}
-                    className={cn(!camera.isMicEnabled && "bg-red-500/10 border-red-500/50")}
-                  >
-                    {camera.isMicEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4 text-red-500" />}
-                  </Button>
-                </div>
-                
-                <Separator orientation="vertical" className="h-8" />
-                
-                {/* Main recording controls */}
-                {!recording.isRecording ? (
-                  <Button 
-                    size="lg" 
-                    className="gap-2 bg-red-500 hover:bg-red-600 text-white px-8"
-                    onClick={handleStartRecording}
-                    disabled={!camera.stream || camera.isLoading}
-                  >
-                    <div className="h-3 w-3 rounded-full bg-white" />
-                    Start Recording
-                  </Button>
-                ) : (
-                  <>
-                    {/* Pause/Resume - pauseRecording toggles */}
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      onClick={recording.pauseRecording}
-                      className="gap-2"
-                    >
-                      {recording.isPaused ? (
-                        <>
-                          <Play className="h-4 w-4" />
-                          Resume
-                        </>
-                      ) : (
-                        <>
-                          <Pause className="h-4 w-4" />
-                          Pause
-                        </>
-                      )}
-                    </Button>
-                    
-                    {/* Stop */}
-                    <Button
-                      size="lg"
-                      variant="destructive"
-                      onClick={recording.stopRecording}
-                      className="gap-2"
-                    >
-                      <Square className="h-4 w-4" />
-                      Stop
-                    </Button>
-                  </>
-                )}
-              </div>
-
-              {/* Script Teleprompter Option */}
-              {scriptsForMobile.length > 0 && (
-                <div className="p-4 bg-muted/30 rounded-lg border">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Eye className="h-4 w-4 text-primary" />
-                      <span className="font-medium">Teleprompter</span>
-                    </div>
-                    <Badge variant="secondary" className="text-xs">
-                      {scriptsForMobile.length} scripts
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Select a script to use as teleprompter while recording
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <Select
-                      value={selectedScriptId}
-                      onValueChange={(value) => {
-                        if (value === '__none__') {
-                          setSelectedScriptId('');
-                          setActiveScript('');
-                        } else {
-                          setSelectedScriptId(value);
-                          const selected = savedScripts.find(s => s.id === value);
-                          if (selected) {
-                            // Use enhanced content if available, otherwise original
-                            setActiveScript(selected.enhancedContent || selected.content || '');
-                          }
-                        }
-                      }}
-                    >
-                      <SelectTrigger className="flex-1 bg-background">
-                        <SelectValue placeholder="Select a script for teleprompter..." />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover z-50 max-h-64">
-                        <SelectItem value="__none__">
-                          <span className="text-muted-foreground">No script selected</span>
-                        </SelectItem>
-                        {savedScripts.filter(script => script.id && script.id.trim() !== '').map(script => (
-                          <SelectItem key={script.id} value={script.id}>
-                            <div className="flex flex-col items-start">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium">{script.name || 'Untitled Script'}</span>
-                                {script.enhancedContent && (
-                                  <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600">
-                                    Enhanced
-                                  </Badge>
-                                )}
-                              </div>
-                              <span className="text-xs text-muted-foreground line-clamp-1">
-                                {(script.content || '').substring(0, 50)}...
-                              </span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {activeScript && (
-                      <Button 
-                        size="sm" 
-                        className="gap-2"
-                        onClick={() => setIsTeleprompterOpen(true)}
-                      >
-                        <Eye className="h-4 w-4" />
-                        Open Teleprompter
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Recent Recordings */}
-              {recordings.length > 0 && (
-                <div className="p-4 bg-muted/30 rounded-lg border">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="font-medium">Recent Recordings ({recordings.length})</span>
-                    <Button 
-                      variant="link" 
-                      size="sm" 
-                      className="h-auto p-0"
-                      onClick={() => setActiveTab('clips')}
-                    >
-                      Process with AI Clips →
-                    </Button>
-                  </div>
-                  <div className="flex gap-2 overflow-x-auto pb-2">
-                    {recordings.map(rec => (
-                      <div key={rec.id} className="flex-shrink-0">
-                        {rec.url ? (
-                          <video 
-                            src={rec.url} 
-                            className="w-24 h-16 bg-muted rounded object-cover border"
-                          />
-                        ) : (
-                          <div className="w-24 h-16 bg-muted rounded flex items-center justify-center border">
-                            <Video className="h-6 w-6 text-muted-foreground" />
-                          </div>
-                        )}
-                        <p className="text-xs text-center mt-1 text-muted-foreground truncate w-24">
-                          {rec.duration ? `${Math.floor(rec.duration / 60)}:${(rec.duration % 60).toString().padStart(2, '0')}` : 'N/A'}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {/* Pre-Recording Dialog for script selection */}
-              <PreRecordingDialog
-                isOpen={showPreRecordingDialog}
-                onClose={() => setShowPreRecordingDialog(false)}
-                onSelectScript={handleScriptSelected}
-                hasEnhancedScript={!!currentScript?.enhancedContent}
-                originalScriptPreview={currentScript?.content || ''}
-                enhancedScriptPreview={currentScript?.enhancedContent || ''}
-                scriptTitle={currentScript?.name || 'Script'}
+              <VibeRecordTab
+                productionTitle={productionTitle}
+                scripts={scriptsForMobile}
+                onRecordingComplete={handleRecordingComplete}
+                recordings={recordings}
               />
             </TabsContent>
 
