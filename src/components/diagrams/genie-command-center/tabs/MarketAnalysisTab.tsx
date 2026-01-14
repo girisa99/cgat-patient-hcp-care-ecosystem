@@ -12,12 +12,15 @@ import {
   Building2, BarChart3, Target
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   competitors,
   marketTrends,
   marketReferences,
   swotBySegment,
   gartnerPositions,
+  segments,
 } from '../data/market-data';
 
 const containerVariants = {
@@ -216,7 +219,7 @@ export const MarketAnalysisTab: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* Gartner-Style Quadrant */}
+      {/* Market Positioning Matrix by Segment */}
       <motion.div variants={itemVariants}>
         <h3 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
@@ -224,48 +227,241 @@ export const MarketAnalysisTab: React.FC = () => {
           </div>
           Market Positioning Matrix (Gartner-Style)
         </h3>
-        <div className="bg-card rounded-2xl p-8 border border-border shadow-sm">
-          <div className="relative h-[400px] border-l-2 border-b-2 border-border ml-16 mb-8">
-            {/* Axis Labels */}
-            <div className="absolute -left-16 top-1/2 -translate-y-1/2 -rotate-90 text-muted-foreground text-sm font-medium whitespace-nowrap">
-              Ability to Execute →
-            </div>
-            <div className="absolute bottom-[-40px] left-1/2 -translate-x-1/2 text-muted-foreground text-sm font-medium">
-              Completeness of Vision →
-            </div>
+        
+        <Tabs defaultValue="creator" className="w-full">
+          <TabsList className="mb-6 flex-wrap h-auto gap-1 bg-muted p-1">
+            <TabsTrigger value="creator" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">🎬 Creators</TabsTrigger>
+            <TabsTrigger value="smb" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">🏪 SMB</TabsTrigger>
+            <TabsTrigger value="healthcare" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">🏥 Healthcare</TabsTrigger>
+            <TabsTrigger value="enterprise" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">🏢 Enterprise</TabsTrigger>
+          </TabsList>
+          
+          {Object.entries(gartnerPositions).map(([segment, positions]) => (
+            <TabsContent key={segment} value={segment} className="mt-0">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Gartner Quadrant */}
+                <Card className="border-border">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Target className="w-5 h-5" />
+                      Vision vs Execution Quadrant
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="relative h-[350px] border-l-2 border-b-2 border-border ml-12 mb-10">
+                      {/* Axis Labels */}
+                      <div className="absolute -left-12 top-1/2 -translate-y-1/2 -rotate-90 text-muted-foreground text-sm font-medium whitespace-nowrap">
+                        Ability to Execute →
+                      </div>
+                      <div className="absolute bottom-[-32px] left-1/2 -translate-x-1/2 text-muted-foreground text-sm font-medium">
+                        Completeness of Vision →
+                      </div>
 
-            {/* Quadrant Labels */}
-            <div className="absolute top-4 left-4 text-muted-foreground text-sm">Niche Players</div>
-            <div className="absolute top-4 right-4 text-green-600 dark:text-green-400 text-sm font-semibold">Leaders</div>
-            <div className="absolute bottom-4 left-4 text-muted-foreground text-sm">Challengers</div>
-            <div className="absolute bottom-4 right-4 text-primary text-sm font-semibold">Visionaries</div>
+                      {/* Quadrant Labels */}
+                      <div className="absolute top-3 left-3 text-muted-foreground text-xs">Niche Players</div>
+                      <div className="absolute top-3 right-3 text-green-600 dark:text-green-400 text-xs font-semibold">Leaders</div>
+                      <div className="absolute bottom-3 left-3 text-muted-foreground text-xs">Challengers</div>
+                      <div className="absolute bottom-3 right-3 text-primary text-xs font-semibold">Visionaries</div>
 
-            {/* Quadrant Lines */}
-            <div className="absolute left-1/2 top-0 bottom-0 w-px bg-border" />
-            <div className="absolute top-1/2 left-0 right-0 h-px bg-border" />
+                      {/* Quadrant Lines */}
+                      <div className="absolute left-1/2 top-0 bottom-0 w-px bg-border" />
+                      <div className="absolute top-1/2 left-0 right-0 h-px bg-border" />
 
-            {/* Positioned Dots */}
-            {Array.isArray(gartnerPositions) && gartnerPositions.map((pos, index) => (
-              <motion.div
-                key={index}
-                className="absolute transform -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
-                style={{
-                  left: `${pos.visionScore}%`,
-                  bottom: `${pos.executionScore}%`,
-                }}
-                whileHover={{ scale: 1.3 }}
-              >
-                <div className={`w-4 h-4 rounded-full shadow-lg ${
-                  pos.name === 'Genie Suite' 
-                    ? 'bg-gradient-to-r from-primary to-accent ring-4 ring-primary/30' 
-                    : 'bg-muted-foreground/60'
-                }`} />
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-card border border-border rounded-lg text-xs text-foreground font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
-                  {pos.name}
-                </div>
-              </motion.div>
-            ))}
+                      {/* Positioned Dots */}
+                      {positions.map((pos, index) => (
+                        <motion.div
+                          key={index}
+                          className="absolute transform -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
+                          style={{
+                            left: `${pos.visionScore}%`,
+                            bottom: `${pos.executionScore}%`,
+                          }}
+                          whileHover={{ scale: 1.4 }}
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ delay: index * 0.1 }}
+                        >
+                          <div className={`w-4 h-4 rounded-full shadow-lg ${
+                            pos.name === 'Genie Suite' 
+                              ? 'bg-gradient-to-r from-primary to-accent ring-4 ring-primary/30 w-5 h-5' 
+                              : 'bg-muted-foreground/60'
+                          }`} />
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-card border border-border rounded-lg text-xs text-foreground font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-10">
+                            {pos.name}
+                            <div className="text-[10px] text-muted-foreground">
+                              Vision: {pos.visionScore} | Execution: {pos.executionScore}
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                    
+                    {/* Legend */}
+                    <div className="flex flex-wrap gap-3 text-xs">
+                      {positions.map((pos, idx) => (
+                        <div key={idx} className="flex items-center gap-1.5">
+                          <div className={`w-2.5 h-2.5 rounded-full ${
+                            pos.name === 'Genie Suite' 
+                              ? 'bg-gradient-to-r from-primary to-accent' 
+                              : 'bg-muted-foreground/60'
+                          }`} />
+                          <span className={pos.name === 'Genie Suite' ? 'text-primary font-semibold' : 'text-muted-foreground'}>
+                            {pos.name}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Competitor Comparison Bars */}
+                <Card className="border-border">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <BarChart3 className="w-5 h-5" />
+                      Competitor Scores
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {positions
+                        .sort((a, b) => (a.visionScore + a.executionScore) - (b.visionScore + b.executionScore))
+                        .reverse()
+                        .map((pos, idx) => (
+                          <div key={idx} className="space-y-1.5">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className={`font-medium ${pos.name === 'Genie Suite' ? 'text-primary' : 'text-foreground'}`}>
+                                {pos.name}
+                                {pos.name === 'Genie Suite' && <Star className="w-3.5 h-3.5 inline ml-1 text-amber-500 fill-amber-500" />}
+                              </span>
+                              <span className="text-muted-foreground text-xs">
+                                Vision: {pos.visionScore} | Execution: {pos.executionScore}
+                              </span>
+                            </div>
+                            <div className="flex gap-2">
+                              <div className="flex-1">
+                                <div className="h-2.5 bg-muted rounded-full overflow-hidden">
+                                  <motion.div 
+                                    className="h-full bg-blue-500 rounded-full"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${pos.visionScore}%` }}
+                                    transition={{ duration: 0.5, delay: idx * 0.1 }}
+                                  />
+                                </div>
+                                <div className="text-[10px] text-muted-foreground mt-0.5">Vision</div>
+                              </div>
+                              <div className="flex-1">
+                                <div className="h-2.5 bg-muted rounded-full overflow-hidden">
+                                  <motion.div 
+                                    className={`h-full rounded-full ${pos.name === 'Genie Suite' ? 'bg-amber-500' : 'bg-green-500'}`}
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${pos.executionScore}%` }}
+                                    transition={{ duration: 0.5, delay: idx * 0.1 + 0.2 }}
+                                  />
+                                </div>
+                                <div className="text-[10px] text-muted-foreground mt-0.5">Execution</div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                    
+                    {/* Genie Suite Advantage */}
+                    <div className="mt-5 p-4 bg-primary/5 rounded-xl border border-primary/20">
+                      <div className="text-sm font-medium text-primary mb-1">Genie Suite Advantage</div>
+                      <div className="text-xs text-muted-foreground">
+                        Highest vision score in segment. Building execution through phased rollout. 
+                        Unified platform vs fragmented point solutions.
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          ))}
+        </Tabs>
+      </motion.div>
+
+      {/* Segment Analysis */}
+      <motion.div variants={itemVariants}>
+        <h3 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
+            <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
           </div>
+          Market Segments by Opportunity
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {segments.slice(0, 6).map((seg, idx) => (
+            <motion.div
+              key={seg.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.1 }}
+            >
+              <Card className={`h-full ${seg.priority === 'P0' ? 'border-primary/50 bg-primary/5' : 'border-border'}`}>
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">{seg.emoji}</span>
+                      <div>
+                        <div className="font-semibold text-foreground">{seg.name}</div>
+                        <div className="text-xs text-muted-foreground">{seg.fullName}</div>
+                      </div>
+                    </div>
+                    <Badge variant={seg.priority === 'P0' ? 'default' : 'secondary'}>
+                      {seg.priority}
+                    </Badge>
+                  </div>
+                  
+                  {/* Market Size */}
+                  <div className="grid grid-cols-3 gap-2 text-center mb-4">
+                    <div className="bg-muted/50 rounded-lg p-2">
+                      <div className="text-sm font-bold text-primary">{seg.tam}</div>
+                      <div className="text-[10px] text-muted-foreground">TAM</div>
+                    </div>
+                    <div className="bg-muted/50 rounded-lg p-2">
+                      <div className="text-sm font-bold text-foreground">{seg.sam}</div>
+                      <div className="text-[10px] text-muted-foreground">SAM</div>
+                    </div>
+                    <div className="bg-muted/50 rounded-lg p-2">
+                      <div className="text-sm font-bold text-green-600 dark:text-green-400">{seg.som}</div>
+                      <div className="text-[10px] text-muted-foreground">SOM</div>
+                    </div>
+                  </div>
+                  
+                  {/* Growth & Competition */}
+                  <div className="flex items-center justify-between text-sm mb-3">
+                    <span className="text-green-600 dark:text-green-400 font-medium">{seg.growthRate}</span>
+                    <span className="text-muted-foreground">Competition: {seg.competitionLevel}</span>
+                  </div>
+                  
+                  {/* Genie Fit Score */}
+                  <div className="mb-3">
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="text-muted-foreground">Genie Fit Score</span>
+                      <span className="font-medium text-foreground">{seg.genieFit}/5</span>
+                    </div>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <div
+                          key={star}
+                          className={`h-2 flex-1 rounded-full ${
+                            star <= seg.genieFit ? 'bg-primary' : 'bg-muted'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Tagline */}
+                  <div className="text-xs text-muted-foreground italic line-clamp-2">
+                    {seg.tagline}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
         </div>
       </motion.div>
 
