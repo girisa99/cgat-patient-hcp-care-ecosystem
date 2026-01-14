@@ -700,13 +700,41 @@ export default function ProductionHub() {
                   setIsCreateDialogOpen(true);
                 }}
                 onInviteGuests={() => {
-                  if (selectedShow) setIsInviteDialogOpen(true);
+                  if (selectedShow) {
+                    setIsInviteDialogOpen(true);
+                  } else {
+                    setIsCreateDialogOpen(true);
+                  }
                 }}
                 onLinkScript={() => navigate('/genie-spark')}
                 onScheduleRehearsals={() => {
                   if (selectedShow) setIsScheduleManagementOpen(true);
                 }}
                 onStartRecording={() => navigate('/genie-vibe')}
+                onOpenScheduleDialog={() => setIsCreateDialogOpen(true)}
+                onSendFollowUp={async (participants, message) => {
+                  // Send follow-up emails to each participant
+                  for (const participant of participants) {
+                    if (participant.email) {
+                      try {
+                        await supabase.functions.invoke('send-show-invite', {
+                          body: {
+                            to: participant.email,
+                            participantName: participant.name,
+                            showTitle: selectedShow?.title || 'Session',
+                            showType: selectedShow?.show_type || 'meeting',
+                            isFollowUp: true,
+                            followUpMessage: message,
+                          },
+                        });
+                      } catch (err) {
+                        console.error('Error sending follow-up to', participant.email, err);
+                      }
+                    }
+                  }
+                  toast.success(`Follow-up sent to ${participants.length} participant(s)`);
+                }}
+                selectedShow={selectedShow}
                 currentStage={(selectedShow as any)?.stage || (selectedShow as any)?.production_stage || 'outreach'}
                 hasShow={shows.length > 0}
                 hasGuests={selectedShow?.participants?.length ? selectedShow.participants.length > 0 : false}
