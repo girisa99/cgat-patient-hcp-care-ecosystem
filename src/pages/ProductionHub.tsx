@@ -353,6 +353,8 @@ export default function ProductionHub() {
     try {
       const show = shows.find(s => s.id === showId);
       const oldDate = show?.scheduled_date;
+      const hostEmail = (show as any)?.host_email;
+      const hostName = (show as any)?.host_name;
       
       const { error } = await supabase
         .from('shows')
@@ -362,41 +364,74 @@ export default function ProductionHub() {
       if (error) throw error;
       
       // Send notification emails if requested with rate limiting
-      if (notifyParticipants && show?.participants) {
+      if (notifyParticipants) {
         const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+        let emailsSent = 0;
         
-        for (let i = 0; i < show.participants.length; i++) {
-          const participant = show.participants[i];
-          if (participant.email) {
-            try {
-              await supabase.functions.invoke('send-show-invite', {
-                body: {
-                  to: participant.email,
-                  participantName: participant.name,
-                  role: participant.role,
-                  showType: show.show_type,
-                  showTitle: show.title,
-                  hostName: (show as any)?.host_name,
-                  hostEmail: (show as any)?.host_email,
-                  category: (show as any)?.event_category || 'media_production',
-                  scheduledDate: newDate,
-                  isReschedule: true,
-                  oldScheduledDate: oldDate,
-                  newScheduledDate: newDate,
-                  joinUrl: show.meeting_link,
-                },
-              });
-              
-              // Rate limit: wait 600ms between emails
-              if (i < show.participants.length - 1) {
-                await delay(600);
+        // Send to HOST first
+        if (hostEmail) {
+          try {
+            await supabase.functions.invoke('send-show-invite', {
+              body: {
+                to: hostEmail,
+                participantName: hostName || 'Host',
+                role: 'host',
+                showType: show?.show_type,
+                showTitle: show?.title,
+                hostName: hostName,
+                hostEmail: hostEmail,
+                category: (show as any)?.event_category || 'media_production',
+                scheduledDate: newDate,
+                isReschedule: true,
+                oldScheduledDate: oldDate,
+                newScheduledDate: newDate,
+                joinUrl: show?.meeting_link,
+              },
+            });
+            emailsSent++;
+            await delay(600); // Rate limit
+          } catch (emailErr) {
+            console.error(`Failed to send reschedule email to host ${hostEmail}:`, emailErr);
+          }
+        }
+        
+        // Send to all PARTICIPANTS
+        if (show?.participants) {
+          for (let i = 0; i < show.participants.length; i++) {
+            const participant = show.participants[i];
+            // Skip if participant email is same as host email (already sent)
+            if (participant.email && participant.email !== hostEmail) {
+              try {
+                await supabase.functions.invoke('send-show-invite', {
+                  body: {
+                    to: participant.email,
+                    participantName: participant.name,
+                    role: participant.role,
+                    showType: show.show_type,
+                    showTitle: show.title,
+                    hostName: hostName,
+                    hostEmail: hostEmail,
+                    category: (show as any)?.event_category || 'media_production',
+                    scheduledDate: newDate,
+                    isReschedule: true,
+                    oldScheduledDate: oldDate,
+                    newScheduledDate: newDate,
+                    joinUrl: show.meeting_link,
+                  },
+                });
+                emailsSent++;
+                
+                // Rate limit: wait 600ms between emails
+                if (i < show.participants.length - 1) {
+                  await delay(600);
+                }
+              } catch (emailErr) {
+                console.error(`Failed to send reschedule email to ${participant.email}:`, emailErr);
               }
-            } catch (emailErr) {
-              console.error(`Failed to send reschedule email to ${participant.email}:`, emailErr);
             }
           }
         }
-        toast.success(`Rescheduled! ${show.participants.length} participant(s) notified.`);
+        toast.success(`Rescheduled! ${emailsSent} recipient(s) notified (host + participants).`);
       }
     } catch (err) {
       console.error('Reschedule error:', err);
@@ -408,14 +443,40 @@ export default function ProductionHub() {
   const handleCancelShow = async (showId: string, reason?: string) => {
     try {
       const show = shows.find(s => s.id === showId);
+      const hostEmail = (show as any)?.host_email;
+      const hostName = (show as any)?.host_name;
+      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+      let emailsSent = 0;
       
-      // Notify participants before deleting with rate limiting
+      // Send cancellation to HOST first
+      if (hostEmail) {
+        try {
+          await supabase.functions.invoke('send-show-invite', {
+            body: {
+              to: hostEmail,
+              participantName: hostName || 'Host',
+              showTitle: show?.title,
+              showType: show?.show_type,
+              hostName: hostName,
+              hostEmail: hostEmail,
+              category: (show as any)?.event_category || 'media_production',
+              isCancellation: true,
+              cancellationReason: reason,
+            },
+          });
+          emailsSent++;
+          await delay(600); // Rate limit
+        } catch (emailErr) {
+          console.error(`Failed to send cancellation email to host ${hostEmail}:`, emailErr);
+        }
+      }
+      
+      // Notify all PARTICIPANTS with rate limiting
       if (show?.participants) {
-        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-        
         for (let i = 0; i < show.participants.length; i++) {
           const participant = show.participants[i];
-          if (participant.email) {
+          // Skip if participant email is same as host email (already sent)
+          if (participant.email && participant.email !== hostEmail) {
             try {
               await supabase.functions.invoke('send-show-invite', {
                 body: {
@@ -423,13 +484,14 @@ export default function ProductionHub() {
                   participantName: participant.name,
                   showTitle: show.title,
                   showType: show.show_type,
-                  hostName: (show as any)?.host_name,
-                  hostEmail: (show as any)?.host_email,
+                  hostName: hostName,
+                  hostEmail: hostEmail,
                   category: (show as any)?.event_category || 'media_production',
                   isCancellation: true,
                   cancellationReason: reason,
                 },
               });
+              emailsSent++;
               
               // Rate limit: wait 600ms between emails
               if (i < show.participants.length - 1) {
@@ -441,6 +503,8 @@ export default function ProductionHub() {
           }
         }
       }
+      
+      console.log(`Cancellation emails sent to ${emailsSent} recipient(s)`);
       
       // Delete the show
       await deleteShow(showId);

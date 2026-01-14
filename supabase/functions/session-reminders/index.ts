@@ -47,22 +47,79 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log(`Found ${upcomingSessions?.length || 0} upcoming sessions`);
+    
+    // Helper to send reminder email to host
+    const sendHostReminder = async (session: any, reminderType: string) => {
+      if (!session.host_email || !resend) return null;
+      
+      const hostJoinUrl = `${baseUrl}/join/${session.session_token}?role=host`;
+      
+      try {
+        await resend.emails.send({
+          from: 'Genie Studio <noreply@resend.dev>',
+          to: [session.host_email],
+          subject: `⏰ Host Reminder: ${session.title} starts ${reminderType === '24h' ? 'tomorrow' : `in ${reminderType}`}`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
+              <h2>⏰ Host Reminder</h2>
+              <p>Hi ${session.host_name || 'Host'},</p>
+              <p>Your session <strong>${session.title}</strong> ${reminderType === '24h' ? 'is scheduled for tomorrow' : `starts in ${reminderType}`}.</p>
+              <p>As the host, please ensure you're ready to start on time.</p>
+              <p>
+                <a href="${hostJoinUrl}" style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #8B5CF6, #EC4899); color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                  Join as Host
+                </a>
+              </p>
+              <p style="color: #6b7280; font-size: 14px;">
+                ${session.genie_session_participants?.length || 0} participant(s) invited
+              </p>
+            </div>
+          `,
+        });
+        return { type: 'email', reminder: reminderType, participant: session.host_email, role: 'host', status: 'sent' };
+      } catch (err: any) {
+        console.error('Host reminder error:', err);
+        return { type: 'email', reminder: reminderType, participant: session.host_email, role: 'host', status: 'failed', error: err.message };
+      }
+    };
+
+    // Track which host reminders have been sent (to avoid duplicates per session)
+    const hostRemindersSent: Record<string, Set<string>> = {};
 
     for (const session of upcomingSessions || []) {
       const scheduledAt = new Date(session.scheduled_at);
       const timeDiffMinutes = Math.floor((scheduledAt.getTime() - now.getTime()) / (60 * 1000));
       
+      // Check each reminder threshold
+      const reminders = [
+        { threshold: 24 * 60, type: '24h', emailField: 'email_reminder_24h', sentField: 'reminder_24h_sent' },
+        { threshold: 60, type: '1h', emailField: 'email_reminder_1h', sentField: 'reminder_1h_sent' },
+        { threshold: 30, type: '30m', emailField: 'email_reminder_30m', sentField: 'reminder_30m_sent', smsField: 'sms_reminder_30m', smsSentField: 'sms_30m_sent' },
+        { threshold: 15, type: '15m', emailField: 'email_reminder_15m', sentField: 'reminder_15m_sent', smsField: 'sms_reminder_15m', smsSentField: 'sms_15m_sent' },
+      ];
+
+      for (const reminder of reminders) {
+        // Check if within reminder window (±5 minutes)
+        if (timeDiffMinutes <= reminder.threshold && timeDiffMinutes > reminder.threshold - 10) {
+          
+          // SEND HOST REMINDER (once per session per reminder type)
+          if (!hostRemindersSent[session.id]) {
+            hostRemindersSent[session.id] = new Set();
+          }
+          if (!hostRemindersSent[session.id].has(reminder.type) && session.host_email) {
+            const hostResult = await sendHostReminder(session, reminder.type);
+            if (hostResult) {
+              results.push(hostResult);
+              hostRemindersSent[session.id].add(reminder.type);
+            }
+          }
+        }
+      }
+      
+      // SEND PARTICIPANT REMINDERS
       for (const participant of session.genie_session_participants || []) {
         // Use dynamic base URL from environment
         const participantJoinUrl = `${baseUrl}/join/${session.session_token}?p=${participant.participant_token}`;
-
-        // Check each reminder threshold
-        const reminders = [
-          { threshold: 24 * 60, type: '24h', emailField: 'email_reminder_24h', sentField: 'reminder_24h_sent' },
-          { threshold: 60, type: '1h', emailField: 'email_reminder_1h', sentField: 'reminder_1h_sent' },
-          { threshold: 30, type: '30m', emailField: 'email_reminder_30m', sentField: 'reminder_30m_sent', smsField: 'sms_reminder_30m', smsSentField: 'sms_30m_sent' },
-          { threshold: 15, type: '15m', emailField: 'email_reminder_15m', sentField: 'reminder_15m_sent', smsField: 'sms_reminder_15m', smsSentField: 'sms_15m_sent' },
-        ];
 
         for (const reminder of reminders) {
           // Check if within reminder window (±5 minutes)
