@@ -63,10 +63,31 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`[send-show-invite] Sending invite to ${to} for ${showType}: ${showTitle}`);
     console.log(`[send-show-invite] From: ${senderName} (${senderEmail}), Host: ${hostName} (${hostEmail})`);
+    console.log(`[send-show-invite] scheduledDate received:`, scheduledDate);
 
-    const date = new Date(scheduledDate);
-    const formattedDate = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    const formattedTime = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
+    // Handle missing or invalid scheduledDate - default to now + 1 hour if not provided
+    let date: Date;
+    let formattedDate: string;
+    let formattedTime: string;
+    
+    if (scheduledDate && scheduledDate.trim() !== '') {
+      const parsedDate = new Date(scheduledDate);
+      if (isNaN(parsedDate.getTime())) {
+        console.warn(`[send-show-invite] Invalid date format: "${scheduledDate}", using fallback`);
+        date = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+        formattedDate = 'To Be Determined';
+        formattedTime = 'TBD';
+      } else {
+        date = parsedDate;
+        formattedDate = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        formattedTime = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
+      }
+    } else {
+      console.warn(`[send-show-invite] No scheduledDate provided, using fallback`);
+      date = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now for calendar event
+      formattedDate = 'To Be Determined';
+      formattedTime = 'TBD';
+    }
 
     // Category display - dynamic with fallback
     const categoryDisplay: Record<string, { name: string; emoji: string }> = {
