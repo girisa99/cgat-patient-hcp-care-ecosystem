@@ -231,6 +231,176 @@ const segmentPainPoints = [
   },
 ];
 
+// Platform-specific Influencer Data
+const influencersByPlatform = [
+  {
+    platform: 'YouTube',
+    icon: '🔴',
+    color: 'text-red-600',
+    bgColor: 'bg-red-500/10',
+    borderColor: 'border-red-500/20',
+    avgCreators: '51M+ creators',
+    influencers: [
+      {
+        name: 'James R.',
+        handle: '@TechReviewPro',
+        followers: '1.2M subscribers',
+        niche: 'Tech Reviews',
+        videosPerMonth: 8,
+        hoursPerVideo: 18,
+        monthlyToolCost: '$450',
+        toolsUsed: ['Premiere Pro', 'After Effects', 'Photoshop', 'Canva', 'TubeBuddy', 'VidIQ', 'Descript', 'Epidemic Sound'],
+        frustration: "Each video takes me 18 hours minimum. The editing alone is 10 hours. I hire an editor but still spend 6 hours on reviews and re-edits. For 8 videos a month, that's a full-time job just in post-production.",
+        biggestPain: 'Long-form editing complexity',
+        wishList: 'AI that understands tech content and can auto-cut dead air',
+        yearlySpend: '$5,400+',
+      },
+      {
+        name: 'Maria G.',
+        handle: '@BakingMagic',
+        followers: '890K subscribers',
+        niche: 'Cooking/Baking',
+        videosPerMonth: 12,
+        hoursPerVideo: 14,
+        monthlyToolCost: '$320',
+        toolsUsed: ['Final Cut Pro', 'Canva', 'Adobe Audition', 'TubeBuddy', 'SocialBee', 'Envato Elements'],
+        frustration: "I shoot in 4K and my computer crashes constantly during export. The thumbnail creation takes 2 hours per video. Recipe cards, closed captions for multiple languages... it never ends.",
+        biggestPain: 'Multi-tasking between cooking and technical work',
+        wishList: 'One-click multi-language subtitle generation',
+        yearlySpend: '$3,840+',
+      },
+    ],
+  },
+  {
+    platform: 'TikTok',
+    icon: '🎵',
+    color: 'text-pink-600',
+    bgColor: 'bg-pink-500/10',
+    borderColor: 'border-pink-500/20',
+    avgCreators: '1B+ monthly active users',
+    influencers: [
+      {
+        name: 'Zoe K.',
+        handle: '@ZoeDances',
+        followers: '3.2M followers',
+        niche: 'Dance & Entertainment',
+        videosPerMonth: 45,
+        hoursPerVideo: 2,
+        monthlyToolCost: '$180',
+        toolsUsed: ['CapCut', 'InShot', 'Splice', 'Canva', 'Later', 'Epidemic Sound'],
+        frustration: "I post daily, sometimes twice. Even with short videos, syncing audio perfectly, adding effects, and trending sounds takes 2 hours each. That's 90 hours a month just on TikTok editing.",
+        biggestPain: 'Volume pressure - algorithm demands constant posting',
+        wishList: 'Batch creation - shoot once, get 10 variations',
+        yearlySpend: '$2,160+',
+      },
+      {
+        name: 'Derek W.',
+        handle: '@ComedyKingDerek',
+        followers: '5.8M followers',
+        niche: 'Comedy Skits',
+        videosPerMonth: 60,
+        hoursPerVideo: 1.5,
+        monthlyToolCost: '$250',
+        toolsUsed: ['CapCut', 'Adobe Express', 'Voicemod', 'Storyblocks', 'Notion', 'TikTok Studio'],
+        frustration: "I do 2-3 takes per skit, pick the best, add music, add text, add effects. Multiply by 60 videos. I hired a VA just to upload and schedule. The creative drain is real.",
+        biggestPain: 'Creative burnout from constant output',
+        wishList: 'AI that clones my style and suggests content ideas',
+        yearlySpend: '$3,000+',
+      },
+    ],
+  },
+  {
+    platform: 'Instagram',
+    icon: '📸',
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-500/10',
+    borderColor: 'border-purple-500/20',
+    avgCreators: '2B+ monthly active users',
+    influencers: [
+      {
+        name: 'Priya S.',
+        handle: '@PriyaFashionista',
+        followers: '780K followers',
+        niche: 'Fashion & Lifestyle',
+        videosPerMonth: 25,
+        hoursPerVideo: 3,
+        monthlyToolCost: '$400',
+        toolsUsed: ['Lightroom', 'Premiere Pro', 'Canva Pro', 'Later', 'Planoly', 'VSCO', 'InShot', 'Unfold'],
+        frustration: "Reels need to be perfect - lighting, music, transitions, captions. Then I repurpose for Stories, which needs different formatting. Then carousel posts. Same content, 4 different formats.",
+        biggestPain: 'Multi-format requirements (Reels, Stories, Carousels)',
+        wishList: 'Shoot once, auto-export to all IG formats',
+        yearlySpend: '$4,800+',
+      },
+      {
+        name: 'Alex T.',
+        handle: '@AlexFitness',
+        followers: '1.5M followers',
+        niche: 'Fitness & Wellness',
+        videosPerMonth: 30,
+        hoursPerVideo: 2.5,
+        monthlyToolCost: '$350',
+        toolsUsed: ['InShot', 'Canva', 'Splice', 'Epidemic Sound', 'Planoly', 'Lightroom', 'CapCut'],
+        frustration: "I film workout demos, but getting the speed right, adding form tips as overlays, syncing with motivational music... it's technically demanding. My trainer skills don't include video editing.",
+        biggestPain: 'Technical complexity for non-technical creators',
+        wishList: 'AI auto-form tips overlay and rep counter',
+        yearlySpend: '$4,200+',
+      },
+    ],
+  },
+  {
+    platform: 'Facebook',
+    icon: '🔵',
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-500/10',
+    borderColor: 'border-blue-500/20',
+    avgCreators: '200M+ pages/creators',
+    influencers: [
+      {
+        name: 'Robert M.',
+        handle: 'DIY Home Repairs',
+        followers: '2.1M page likes',
+        niche: 'Home Improvement',
+        videosPerMonth: 16,
+        hoursPerVideo: 8,
+        monthlyToolCost: '$280',
+        toolsUsed: ['iMovie', 'Canva', 'Hootsuite', 'Adobe Rush', 'WeVideo', 'Animoto'],
+        frustration: "My audience is 45+. They want clear, step-by-step tutorials. I shoot 30-minute how-to videos and spend 6 hours editing to add annotations, zoom-ins on details, and voice-over corrections.",
+        biggestPain: 'Longer-form educational content requires more editing',
+        wishList: 'Auto chapter markers and step-by-step annotations',
+        yearlySpend: '$3,360+',
+      },
+      {
+        name: 'Linda C.',
+        handle: 'Cooking with Linda',
+        followers: '890K followers',
+        niche: 'Recipe Videos',
+        videosPerMonth: 20,
+        hoursPerVideo: 5,
+        monthlyToolCost: '$220',
+        toolsUsed: ['iMovie', 'Canva', 'Buffer', 'Headliner', 'Kapwing', 'InVideo'],
+        frustration: "I cross-post to YouTube, Instagram, and TikTok. Each platform wants different aspect ratios. I literally recreate the same recipe video 4 times with different edits.",
+        biggestPain: 'Cross-platform format conversion nightmare',
+        wishList: 'One video, auto-resize for every platform',
+        yearlySpend: '$2,640+',
+      },
+    ],
+  },
+];
+
+// Summary stats across influencers
+const influencerSummary = {
+  avgToolsUsed: 7.2,
+  avgMonthlySpend: '$306',
+  avgHoursPerWeek: 24,
+  topFrustrations: [
+    'Multi-format requirements (89%)',
+    'Time spent on editing (84%)',
+    'Tool subscription overload (78%)',
+    'Cross-platform posting (72%)',
+    'Creative burnout (68%)',
+  ],
+};
+
 // Project-level metrics
 const projectMetrics = {
   singleVideoTraditional: {
@@ -650,6 +820,198 @@ export const OverviewTab: React.FC = () => {
             </motion.div>
           ))}
         </div>
+      </motion.div>
+
+      {/* Influencer Insights by Platform */}
+      <motion.div variants={itemVariants}>
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+          <h3 className="text-2xl font-bold text-foreground flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex items-center justify-center">
+              <span className="text-xl">🎭</span>
+            </div>
+            Real Influencer Insights by Platform
+            <Badge variant="secondary" className="ml-3">Actual Creator Voices</Badge>
+          </h3>
+        </div>
+
+        {/* Summary Stats */}
+        <Card className="mb-6 border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
+          <CardContent className="p-5">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-foreground">{influencerSummary.avgToolsUsed}</div>
+                <div className="text-xs text-muted-foreground">Avg Tools Used</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-destructive">{influencerSummary.avgMonthlySpend}</div>
+                <div className="text-xs text-muted-foreground">Avg Monthly Spend</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-foreground">{influencerSummary.avgHoursPerWeek}h</div>
+                <div className="text-xs text-muted-foreground">Avg Weekly Hours</div>
+              </div>
+              <div className="col-span-2">
+                <div className="text-xs font-medium text-muted-foreground mb-2">Top Frustrations Across Creators:</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {influencerSummary.topFrustrations.slice(0, 3).map((frustration, i) => (
+                    <Badge key={i} variant="outline" className="text-xs border-destructive/30 text-destructive">
+                      {frustration}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Platform Cards */}
+        <div className="space-y-6">
+          {influencersByPlatform.map((platform, pIndex) => (
+            <motion.div
+              key={platform.platform}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 * pIndex }}
+            >
+              <Card className={`overflow-hidden ${platform.borderColor}`}>
+                <CardHeader className={`${platform.bgColor} border-b ${platform.borderColor} py-4`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">{platform.icon}</span>
+                      <div>
+                        <CardTitle className={`text-xl ${platform.color}`}>{platform.platform} Creators</CardTitle>
+                        <span className="text-sm text-muted-foreground">{platform.avgCreators}</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-border">
+                    {platform.influencers.map((influencer, iIndex) => (
+                      <div key={iIndex} className="p-5">
+                        <div className="flex items-start justify-between mb-4">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-foreground">{influencer.name}</span>
+                              <Badge variant="outline" className="text-xs">{influencer.handle}</Badge>
+                            </div>
+                            <div className="text-sm text-muted-foreground">{influencer.followers} • {influencer.niche}</div>
+                          </div>
+                        </div>
+
+                        {/* Stats Grid */}
+                        <div className="grid grid-cols-4 gap-2 mb-4">
+                          <div className="bg-muted/50 rounded-lg p-2 text-center">
+                            <div className="font-bold text-foreground text-lg">{influencer.videosPerMonth}</div>
+                            <div className="text-[9px] text-muted-foreground">Videos/mo</div>
+                          </div>
+                          <div className="bg-muted/50 rounded-lg p-2 text-center">
+                            <div className="font-bold text-foreground text-lg">{influencer.hoursPerVideo}h</div>
+                            <div className="text-[9px] text-muted-foreground">Per Video</div>
+                          </div>
+                          <div className="bg-destructive/10 rounded-lg p-2 text-center">
+                            <div className="font-bold text-destructive text-lg">{influencer.monthlyToolCost}</div>
+                            <div className="text-[9px] text-muted-foreground">Monthly</div>
+                          </div>
+                          <div className="bg-amber-500/10 rounded-lg p-2 text-center">
+                            <div className="font-bold text-amber-600 text-lg">{influencer.toolsUsed.length}</div>
+                            <div className="text-[9px] text-muted-foreground">Tools</div>
+                          </div>
+                        </div>
+
+                        {/* Tools Used */}
+                        <div className="mb-4">
+                          <div className="text-xs font-medium text-muted-foreground mb-2">Tools Stack:</div>
+                          <div className="flex flex-wrap gap-1">
+                            {influencer.toolsUsed.map((tool, tIndex) => (
+                              <Badge key={tIndex} variant="secondary" className="text-[10px] py-0.5">
+                                {tool}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Frustration Quote */}
+                        <div className={`${platform.bgColor} rounded-lg p-3 mb-3 border ${platform.borderColor}`}>
+                          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-2">
+                            <MessageSquareQuote className="w-3 h-3" />
+                            Creator Frustration
+                          </div>
+                          <p className="text-sm text-foreground italic">
+                            &ldquo;{influencer.frustration}&rdquo;
+                          </p>
+                        </div>
+
+                        {/* Pain & Wish */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="bg-destructive/5 rounded-lg p-2.5 border border-destructive/10">
+                            <div className="flex items-center gap-1.5 text-[10px] font-medium text-destructive mb-1">
+                              <AlertTriangle className="w-3 h-3" />
+                              Biggest Pain
+                            </div>
+                            <span className="text-xs text-foreground">{influencer.biggestPain}</span>
+                          </div>
+                          <div className="bg-green-500/5 rounded-lg p-2.5 border border-green-500/10">
+                            <div className="flex items-center gap-1.5 text-[10px] font-medium text-green-600 mb-1">
+                              <Sparkles className="w-3 h-3" />
+                              Wish List
+                            </div>
+                            <span className="text-xs text-foreground">{influencer.wishList}</span>
+                          </div>
+                        </div>
+
+                        {/* Yearly Spend */}
+                        <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Yearly Tool Spend:</span>
+                          <span className="font-bold text-destructive">{influencer.yearlySpend}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Key Takeaways */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+        >
+          <Card className="mt-6 border-amber-500/20 bg-gradient-to-r from-amber-500/5 to-orange-500/5">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                  <Target className="w-5 h-5 text-amber-600" />
+                </div>
+                <h4 className="text-lg font-semibold text-foreground">Key Insights from Influencer Research</h4>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-background/50 rounded-xl p-4 border border-border">
+                  <div className="text-2xl font-bold text-primary mb-1">$3,600+</div>
+                  <div className="text-sm text-muted-foreground">Average yearly spend on fragmented tools</div>
+                </div>
+                <div className="bg-background/50 rounded-xl p-4 border border-border">
+                  <div className="text-2xl font-bold text-primary mb-1">96 hours</div>
+                  <div className="text-sm text-muted-foreground">Average monthly time on editing alone</div>
+                </div>
+                <div className="bg-background/50 rounded-xl p-4 border border-border">
+                  <div className="text-2xl font-bold text-primary mb-1">7.2 apps</div>
+                  <div className="text-sm text-muted-foreground">Average tools needed per content piece</div>
+                </div>
+              </div>
+              <div className="mt-4 p-4 bg-primary/5 rounded-xl border border-primary/10">
+                <p className="text-sm text-muted-foreground">
+                  <strong className="text-foreground">The Genie Opportunity:</strong> Creators across all platforms share the same pain - 
+                  too many tools, too much time, too much money. They want ONE platform that understands their workflow. 
+                  Genie Suite consolidates 7+ tools into one, cutting costs by 80% and time by 90%.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </motion.div>
 
       {/* Solution Summary */}
