@@ -17,6 +17,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { GlobalAgentGeneratorProvider } from '@/hooks/useGlobalAgentGenerator';
 import { GlobalAgentGeneratorModal } from '@/components/global/GlobalAgentGeneratorModal';
 import { LazyPages, lazyWithRetry } from '@/utils/lazyWithRetry';
+import { SmartDefaultRoute, RouteTracker } from '@/components/routing/SmartDefaultRoute';
 
 // Import pages that exist
 import Index from '@/pages/Index';
@@ -119,9 +120,9 @@ const AppContent = () => {
               {/* Protected routes */}
               {isAuthenticated ? (
                 <>
-                  {/* Role-based default route */}
+                  {/* Smart default route - preserves last visited page on refresh */}
                   <Route path="/" element={
-                    <Navigate to={getDefaultRouteForRoles(normalizeRoles(userRoles))} replace />
+                    <SmartDefaultRoute userRoles={userRoles} />
                   } />
                   
                   {/* SuperAdmin & Admin & Healthcare Staff routes */}
@@ -518,7 +519,9 @@ const AppRouter = () => {
                   tenantId="default-tenant"
                   userId="current-user"
                 >
-                  <AppContent />
+                  <RouteTracker>
+                    <AppContent />
+                  </RouteTracker>
                 </AppLayoutWithEnrollment>
                 <GlobalAgentGeneratorModal />
               </GlobalAgentGeneratorProvider>

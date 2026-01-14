@@ -565,30 +565,40 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
   }, [exportFindings, currentRoute]);
   
   // Floating toggle button - positioned on LEFT to avoid Ask Genie
+  // Enhanced visibility with higher z-index and pulsing animation
   const ToggleButton = (
     <motion.div
-      initial={{ scale: 0 }}
-      animate={{ scale: 1 }}
-      className="fixed bottom-6 left-6 z-[9999]"
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ 
+        scale: 1, 
+        opacity: 1,
+        transition: { type: 'spring', stiffness: 260, damping: 20 }
+      }}
+      className="fixed bottom-6 left-6 z-[99999] pointer-events-auto"
+      style={{ isolation: 'isolate' }}
     >
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               onClick={togglePanel}
-              className="h-12 w-12 rounded-full shadow-lg bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600"
+              className="h-14 w-14 rounded-full shadow-2xl bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 border-2 border-white/30 ring-4 ring-orange-500/20 animate-pulse hover:animate-none transition-all duration-300"
+              style={{ 
+                boxShadow: '0 8px 32px rgba(251, 146, 60, 0.5), 0 0 0 3px rgba(255,255,255,0.2)'
+              }}
             >
-              <Bug className="h-6 w-6 text-white" />
+              <Bug className="h-7 w-7 text-white drop-shadow-lg" />
               {stats.byStatus.new > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center border-2 border-white shadow-lg animate-bounce">
                   {stats.byStatus.new}
                 </span>
               )}
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="right">
-            <p>Ralph Wiggum (Dev)</p>
+          <TooltipContent side="right" className="z-[99999]">
+            <p className="font-semibold">🐛 Ralph Wiggum (Dev)</p>
             <p className="text-xs text-muted-foreground">{stats.total} findings total</p>
+            <p className="text-xs text-yellow-600">Click to review UI/UX issues</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -602,7 +612,7 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
   return (
     <>
       {/* Drag constraints container */}
-      <div ref={constraintsRef} className="fixed inset-0 pointer-events-none z-[9997]" />
+      <div ref={constraintsRef} className="fixed inset-0 pointer-events-none z-[99996]" />
       
       {ToggleButton}
       
@@ -627,12 +637,12 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
             }));
           }
         }}
-        className={`fixed z-[9998] pointer-events-auto transition-all duration-300 ${
+        className={`fixed z-[99998] pointer-events-auto transition-all duration-300 ${
           isExpanded 
             ? 'inset-4 w-auto' 
-            : 'bottom-20 left-6 w-80'
+            : 'bottom-24 left-6 w-80'
         }`}
-        style={{ touchAction: 'none' }}
+        style={{ touchAction: 'none', isolation: 'isolate' }}
       >
         <Card className={`shadow-xl border overflow-hidden h-full flex flex-col ${isExpanded ? 'max-h-full' : ''}`}>
           {/* Header - Draggable */}
