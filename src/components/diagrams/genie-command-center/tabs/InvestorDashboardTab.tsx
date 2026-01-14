@@ -15,7 +15,7 @@ import {
   unitEconomics,
   goToMarketPhases,
   competitorPricing,
-  geniePricingTiers,
+  pricingTiers,
 } from '../data/financial-data';
 
 const containerVariants = {
@@ -228,12 +228,12 @@ export const InvestorDashboardTab: React.FC = () => {
               {competitorPricing.map((cp, index) => (
                 <div key={index} className="flex items-center justify-between py-2 border-b border-slate-700/30 last:border-0">
                   <div>
-                    <span className="text-white font-medium">{cp.competitor}</span>
+                    <span className="text-white font-medium">{cp.name}</span>
                     <span className="text-xs text-slate-400 ml-2">({cp.segment})</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-amber-400 font-medium">${cp.startingPrice}/mo</span>
-                    <span className="text-xs text-slate-400 ml-2">to ${cp.enterprisePrice}/mo</span>
+                    <span className="text-amber-400 font-medium">{typeof cp.price === 'number' ? `$${cp.price}/mo` : cp.price}</span>
+                    <span className="text-xs text-slate-400 ml-2">{cp.features}</span>
                   </div>
                 </div>
               ))}
@@ -243,16 +243,19 @@ export const InvestorDashboardTab: React.FC = () => {
           {/* Genie Pricing */}
           <div className="bg-violet-500/10 rounded-xl p-6 border border-violet-500/20">
             <h4 className="text-lg font-semibold text-white mb-4">Genie Suite Pricing Tiers</h4>
-            <div className="space-y-4">
-              {geniePricingTiers.map((tier, index) => (
-                <div key={index} className="flex items-center justify-between py-2 border-b border-violet-500/20 last:border-0">
-                  <div>
-                    <span className="text-white font-medium">{tier.name}</span>
-                    <div className="text-xs text-violet-300">{tier.features.slice(0, 2).join(', ')}</div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-2xl font-bold text-emerald-400">${tier.monthlyPrice}</span>
-                    <span className="text-sm text-slate-400">/mo</span>
+            <div className="space-y-3">
+              {Object.entries(pricingTiers).map(([segment, tiers], index) => (
+                <div key={index} className="border-b border-violet-500/20 last:border-0 pb-3">
+                  <div className="text-xs font-medium text-violet-400 uppercase mb-2">{segment}</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {Object.entries(tiers).map(([tierName, tierData]) => (
+                      <div key={tierName} className="flex items-center justify-between bg-slate-800/30 rounded px-3 py-2">
+                        <span className="text-white text-sm font-medium capitalize">{tierName}</span>
+                        <span className="text-emerald-400 font-bold">
+                          {typeof tierData.price === 'number' ? `$${tierData.price}/mo` : tierData.price}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}
