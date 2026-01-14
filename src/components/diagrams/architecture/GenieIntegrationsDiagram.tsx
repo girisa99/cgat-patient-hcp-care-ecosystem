@@ -14,19 +14,28 @@ import { toast } from 'sonner';
 const aiIntegrations = [
   { name: 'OpenAI', services: ['GPT-4o', 'GPT-4o Mini', 'TTS', 'Whisper'], status: 'active', type: 'AI' },
   { name: 'Anthropic', services: ['Claude 3.5 Sonnet', 'Claude 3 Opus'], status: 'active', type: 'AI' },
-  { name: 'Google AI', services: ['Gemini Pro', 'Gemini Flash', 'Gemini Vision'], status: 'active', type: 'AI' },
+  { name: 'Google Gemini', services: ['Gemini 2.5 Pro', 'Gemini 2.5 Flash', 'Gemini Vision', 'Gemini Flash Lite'], status: 'active', type: 'AI' },
   { name: 'ElevenLabs', services: ['TTS', 'Voice Cloning', 'Speech-to-Speech'], status: 'active', type: 'TTS' },
-  { name: 'Azure AI', services: ['Speech Services', 'Cognitive Services'], status: 'planned', type: 'AI' },
+  { name: 'Lovable AI Gateway', services: ['Multi-Model Router', 'Rate Limiting', 'Cost Tracking'], status: 'active', type: 'AI Gateway' },
   { name: 'AWS Bedrock', services: ['Claude', 'Titan', 'Stable Diffusion'], status: 'planned', type: 'AI' },
 ];
 
 const platformIntegrations = [
   { name: 'Supabase', services: ['Auth', 'Database', 'Storage', 'Realtime', 'Edge Functions'], status: 'active', type: 'Backend' },
-  { name: 'Stripe', services: ['Payments', 'Subscriptions', 'Invoicing'], status: 'active', type: 'Payments' },
+  { name: 'Stripe', services: ['Payments', 'Subscriptions', 'Invoicing', 'Webhooks'], status: 'active', type: 'Payments' },
+  { name: 'Resend', services: ['Transactional Email', 'Email Templates', 'Analytics'], status: 'active', type: 'Email' },
+  { name: 'n8n', services: ['Workflow Automation', 'MCP Integration', 'Webhooks'], status: 'active', type: 'Automation' },
   { name: 'YouTube', services: ['Upload API', 'Analytics', 'Live Streaming'], status: 'planned', type: 'Social' },
-  { name: 'TikTok', services: ['Video Upload', 'Creator API'], status: 'planned', type: 'Social' },
-  { name: 'Spotify/Anchor', services: ['Podcast Distribution'], status: 'planned', type: 'Social' },
   { name: 'LinkedIn', services: ['Video Upload', 'Post API'], status: 'planned', type: 'Social' },
+];
+
+const authIntegrations = [
+  { name: 'Supabase Auth', services: ['Email/Password', 'Magic Link', 'OTP', 'MFA'], status: 'active', type: 'Primary' },
+  { name: 'Google OAuth', services: ['Google Workspace', 'Gmail Sign-In', 'One Tap'], status: 'active', type: 'Social' },
+  { name: 'GitHub OAuth', services: ['Developer Auth', 'Org Access'], status: 'active', type: 'Social' },
+  { name: 'Apple Sign-In', services: ['iOS Auth', 'Web Auth'], status: 'planned', type: 'Social' },
+  { name: 'Azure AD (SAML)', services: ['Enterprise SSO', 'SCIM Provisioning'], status: 'planned', type: 'Enterprise' },
+  { name: 'Okta (OIDC)', services: ['SSO', 'MFA', 'Directory Sync'], status: 'planned', type: 'Enterprise' },
 ];
 
 const enterpriseIntegrations = [
@@ -35,7 +44,7 @@ const enterpriseIntegrations = [
   { name: 'Salesforce', services: ['CRM Sync', 'Marketing Cloud'], status: 'planned', type: 'CRM' },
   { name: 'HubSpot', services: ['CRM', 'Marketing Automation'], status: 'planned', type: 'CRM' },
   { name: 'Microsoft 365', services: ['Teams', 'SharePoint', 'OneDrive'], status: 'planned', type: 'Enterprise' },
-  { name: 'Okta/Azure AD', services: ['SSO', 'SAML', 'OIDC'], status: 'planned', type: 'Security' },
+  { name: 'Zapier', services: ['Webhook Triggers', '5000+ App Integrations'], status: 'active', type: 'Automation' },
 ];
 
 const internalApis = [
@@ -46,18 +55,19 @@ const internalApis = [
   { name: 'stripe-webhook', description: 'Payment event handling', status: 'active', method: 'POST' },
   { name: 'generate-script', description: 'AI script generation', status: 'active', method: 'POST' },
   { name: 'enhance-script', description: 'Script enhancement & polish', status: 'active', method: 'POST' },
+  { name: 'send-email', description: 'Resend email dispatch', status: 'active', method: 'POST' },
+  { name: 'n8n-webhook', description: 'n8n workflow triggers', status: 'active', method: 'POST' },
   { name: 'media-processor', description: 'Video/audio processing', status: 'partial', method: 'POST' },
-  { name: 'clip-assembly', description: 'Multi-clip video assembly', status: 'planned', method: 'POST' },
   { name: 'collaboration-sync', description: 'Real-time team sync', status: 'partial', method: 'WS' },
   { name: 'shows-api', description: 'Show/event management', status: 'partial', method: 'REST' },
-  { name: 'calendar-sync', description: 'External calendar integration', status: 'planned', method: 'REST' },
 ];
 
 const webhooks = [
   { name: 'stripe-payments', events: ['checkout.completed', 'subscription.created', 'invoice.paid'], status: 'active' },
   { name: 'auth-events', events: ['user.created', 'user.updated', 'session.ended'], status: 'active' },
+  { name: 'resend-events', events: ['email.sent', 'email.delivered', 'email.bounced'], status: 'active' },
+  { name: 'n8n-workflows', events: ['workflow.triggered', 'workflow.completed', 'workflow.failed'], status: 'active' },
   { name: 'media-events', events: ['upload.complete', 'transcode.done', 'export.ready'], status: 'partial' },
-  { name: 'distribution-events', events: ['publish.success', 'publish.failed'], status: 'planned' },
 ];
 
 export const GenieIntegrationsDiagram: React.FC = () => {
@@ -110,7 +120,7 @@ export const GenieIntegrationsDiagram: React.FC = () => {
       {/* Stats Bar */}
       <Card className="bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-950/20 dark:to-blue-950/20 border-2 border-cyan-200 dark:border-cyan-800/40">
         <CardContent className="pt-4">
-          <div className="grid grid-cols-5 gap-4 text-center">
+          <div className="grid grid-cols-6 gap-4 text-center">
             <div>
               <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">{aiIntegrations.length}</div>
               <div className="text-xs text-muted-foreground font-medium">AI Providers</div>
@@ -120,15 +130,19 @@ export const GenieIntegrationsDiagram: React.FC = () => {
               <div className="text-xs text-muted-foreground font-medium">Platform APIs</div>
             </div>
             <div>
+              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{authIntegrations.length}</div>
+              <div className="text-xs text-muted-foreground font-medium">Auth Providers</div>
+            </div>
+            <div>
               <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{enterpriseIntegrations.length}</div>
               <div className="text-xs text-muted-foreground font-medium">Enterprise</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{internalApis.length}</div>
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{internalApis.length}</div>
               <div className="text-xs text-muted-foreground font-medium">Edge Functions</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{webhooks.length}</div>
+              <div className="text-2xl font-bold text-pink-600 dark:text-pink-400">{webhooks.length}</div>
               <div className="text-xs text-muted-foreground font-medium">Webhooks</div>
             </div>
           </div>
@@ -195,12 +209,41 @@ export const GenieIntegrationsDiagram: React.FC = () => {
         </Card>
       </div>
 
-      {/* Enterprise Integrations */}
+      {/* Auth Integrations */}
       <Card className="border-2 border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/50 dark:bg-emerald-950/10">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
             <Shield className="h-5 w-5" />
-            Enterprise Integrations
+            Authentication Providers (OAuth & SSO)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-2">
+            {authIntegrations.map((integration) => (
+              <div key={integration.name} className="bg-background rounded-lg p-2 border-2 border-border shadow-sm">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-foreground font-semibold text-sm">{integration.name}</span>
+                  {getStatusBadge(integration.status)}
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {integration.services.slice(0, 3).map((service) => (
+                    <Badge key={service} variant="secondary" className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
+                      {service}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Enterprise Integrations */}
+      <Card className="border-2 border-violet-200 dark:border-violet-800/40 bg-violet-50/50 dark:bg-violet-950/10">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg text-violet-700 dark:text-violet-400 flex items-center gap-2">
+            <Globe className="h-5 w-5" />
+            Enterprise & Automation Integrations
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -211,7 +254,7 @@ export const GenieIntegrationsDiagram: React.FC = () => {
                   <span className="text-foreground font-semibold text-sm">{integration.name}</span>
                   {getStatusBadge(integration.status)}
                 </div>
-                <Badge variant="secondary" className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
+                <Badge variant="secondary" className="text-xs bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300">
                   {integration.type}
                 </Badge>
               </div>
