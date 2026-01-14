@@ -90,6 +90,7 @@ export function useShows() {
         host_name: data.host_name,
         host_email: data.host_email,
         guest_count: data.guest_info?.length || 0,
+        guest_info: data.guest_info, // Log full guest info for debugging
       });
 
       // Generate a unique show ID first, then create the meeting link using unified generator
@@ -128,6 +129,12 @@ export function useShows() {
       console.log('[useShows] Show created successfully:', newShow?.id);
 
       // Create show_participants records for each guest
+      console.log('[useShows] guest_info check:', { 
+        hasGuestInfo: !!data.guest_info, 
+        guestInfoLength: data.guest_info?.length,
+        guestInfo: data.guest_info 
+      });
+      
       if (data.guest_info && data.guest_info.length > 0) {
         console.log('[useShows] Creating participants for', data.guest_info.length, 'guests');
         
@@ -135,13 +142,18 @@ export function useShows() {
           show_id: showId,
           name: guest.name,
           email: guest.email || null,
-          role: (guest.role || 'guest') as any,
+          role: (guest.role || 'attendee') as any,
           status: 'invited' as any,
         }));
+        
+        console.log('[useShows] Participant records to insert:', participantRecords);
 
-        const { error: participantsError } = await supabase
+        const { data: insertedParticipants, error: participantsError } = await supabase
           .from('show_participants')
-          .insert(participantRecords as any);
+          .insert(participantRecords as any)
+          .select();
+        
+        console.log('[useShows] Insert result:', { insertedParticipants, participantsError });
 
         if (participantsError) {
           console.error('[useShows] Failed to create participants:', participantsError);

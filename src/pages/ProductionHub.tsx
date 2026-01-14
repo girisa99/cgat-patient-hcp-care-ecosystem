@@ -713,8 +713,12 @@ export default function ProductionHub() {
                 onStartRecording={() => navigate('/genie-vibe')}
                 onOpenScheduleDialog={() => setIsCreateDialogOpen(true)}
                 onSendFollowUp={async (participants, message) => {
-                  // Send follow-up emails to each participant
-                  for (const participant of participants) {
+                  // Send follow-up emails to each participant with rate limiting
+                  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+                  let successCount = 0;
+                  
+                  for (let i = 0; i < participants.length; i++) {
+                    const participant = participants[i];
                     if (participant.email) {
                       try {
                         await supabase.functions.invoke('send-show-invite', {
@@ -723,16 +727,26 @@ export default function ProductionHub() {
                             participantName: participant.name,
                             showTitle: selectedShow?.title || 'Session',
                             showType: selectedShow?.show_type || 'meeting',
+                            hostName: (selectedShow as any)?.host_name || 'Host',
+                            hostEmail: (selectedShow as any)?.host_email,
+                            scheduledDate: selectedShow?.scheduled_date,
+                            category: (selectedShow as any)?.event_category || 'media_production',
                             isFollowUp: true,
                             followUpMessage: message,
                           },
                         });
+                        successCount++;
+                        
+                        // Add delay between emails to avoid rate limiting (600ms)
+                        if (i < participants.length - 1) {
+                          await delay(600);
+                        }
                       } catch (err) {
                         console.error('Error sending follow-up to', participant.email, err);
                       }
                     }
                   }
-                  toast.success(`Follow-up sent to ${participants.length} participant(s)`);
+                  toast.success(`Follow-up sent to ${successCount} of ${participants.length} participant(s)`);
                 }}
                 selectedShow={selectedShow}
                 currentStage={(selectedShow as any)?.stage || (selectedShow as any)?.production_stage || 'outreach'}
@@ -1012,9 +1026,18 @@ export default function ProductionHub() {
             }
             
             // Send invites to all guests - ALWAYS send when email exists
+            // Add delay between emails to avoid Resend rate limiting (2 req/sec)
+            const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+            
             if (data.guests && data.guests.length > 0) {
               console.log('[ProductionHub] Sending invites to', data.guests.length, 'guests');
-              for (const guest of data.guests) {
+              
+              // Wait 600ms after host email before sending guest emails (rate limit protection)
+              await delay(600);
+              
+              for (let i = 0; i < data.guests.length; i++) {
+                const guest = data.guests[i];
+                
                 if (guest.email) {
                   console.log('[ProductionHub] Sending guest invite to:', guest.email);
                   try {
@@ -1026,7 +1049,7 @@ export default function ProductionHub() {
                       body: {
                         to: guest.email,
                         participantName: guest.name,
-                        role: guest.role || 'guest',
+                        role: guest.role || 'attendee',
                         showType: data.show_type || 'podcast',
                         showTitle: data.title,
                         showDescription: data.description,
@@ -1044,6 +1067,11 @@ export default function ProductionHub() {
                       },
                     });
                     console.log('[ProductionHub] Guest invite result for', guest.email, ':', guestInviteResult);
+                    
+                    // Add delay between each guest email to respect rate limits (600ms = ~1.6 req/sec, under 2/sec limit)
+                    if (i < data.guests.length - 1) {
+                      await delay(600);
+                    }
                   } catch (err) {
                     console.error('[ProductionHub] Failed to send guest invite:', err);
                   }
