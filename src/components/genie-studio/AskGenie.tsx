@@ -747,19 +747,26 @@ export const AskGenie: React.FC<AskGenieProps> = ({
   const productContext = PRODUCT_CONTEXTS[product];
   
   // Get Ralph Wiggum context to report when Ask Genie is open
-  const { setActiveOverlay, isEnabled: isRalphEnabled } = useRalphWiggumGlobal();
+  const { setActiveOverlay, isEnabled: isRalphEnabled, openPanel: openRalphPanel, isPanelOpen: isRalphPanelOpen } = useRalphWiggumGlobal();
   
   // Report open/close state to Ralph Wiggum for proper tracking
+  // Include product context so Ralph knows which page Ask Genie is on
   useEffect(() => {
     if (isRalphEnabled) {
-      setActiveOverlay(isOpen ? 'ask-genie' : null);
+      const overlayId = isOpen ? `ask-genie:${product}` : null;
+      setActiveOverlay(overlayId);
+      
+      // Debug logging in dev mode
+      if (import.meta.env.DEV && isOpen) {
+        console.log(`🐛 Ralph Wiggum: Ask Genie opened on product="${product}"`);
+      }
     }
     return () => {
       if (isRalphEnabled) {
         setActiveOverlay(null);
       }
     };
-  }, [isOpen, isRalphEnabled, setActiveOverlay]);
+  }, [isOpen, isRalphEnabled, setActiveOverlay, product]);
   
   // Memoize sessionData to prevent unnecessary recalculations
   const sessionDataKey = useMemo(() => JSON.stringify(sessionData || {}), [sessionData]);

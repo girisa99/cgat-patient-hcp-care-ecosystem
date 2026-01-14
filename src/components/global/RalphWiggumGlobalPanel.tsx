@@ -209,8 +209,15 @@ export const RalphWiggumGlobalPanel: React.FC = () => {
   if (!isDev) return null;
   
   const currentRoute = location.pathname;
-  // Include active overlay in the page name for clarity
-  const overlayLabel = activeOverlay ? ` + ${activeOverlay.charAt(0).toUpperCase() + activeOverlay.slice(1).replace('-', ' ')}` : '';
+  
+  // Parse overlay - now includes product context (e.g., "ask-genie:studio")
+  const isAskGenieActive = activeOverlay?.startsWith('ask-genie');
+  const overlayProduct = isAskGenieActive ? activeOverlay?.split(':')[1] : null;
+  const overlayLabel = isAskGenieActive 
+    ? ` + Ask Genie (${overlayProduct})` 
+    : activeOverlay 
+      ? ` + ${activeOverlay}` 
+      : '';
   const currentPageName = (pageNames[currentRoute] || currentRoute) + overlayLabel;
   
   // Filter findings moved below after runAnalysis to include activeOverlay
@@ -235,22 +242,28 @@ export const RalphWiggumGlobalPanel: React.FC = () => {
     if (isAnalyzing) return;
     setIsAnalyzing(true);
     
+    // Parse overlay info - now includes product context (e.g., "ask-genie:studio")
+    const isAskGenieOverlay = activeOverlay?.startsWith('ask-genie');
+    const overlayProduct = isAskGenieOverlay ? activeOverlay?.split(':')[1] || 'unknown' : null;
+    
     // Determine analysis context - include overlay if active
     const analysisTarget = activeOverlay 
-      ? `${currentPageName} (with ${activeOverlay} overlay open)`
+      ? `${currentPageName} (with Ask Genie open on ${overlayProduct})`
       : currentPageName;
     
-    const overlayContext = activeOverlay === 'ask-genie' 
-      ? `\n\nACTIVE OVERLAY: Ask Genie (AI Chat Assistant)
+    const overlayContext = isAskGenieOverlay 
+      ? `\n\nACTIVE OVERLAY: Ask Genie (AI Chat Assistant) on ${overlayProduct} product
 Focus on analyzing the Ask Genie chat interface specifically:
-- Chat input field usability
-- Message display and readability
-- Response loading states
-- Conversation history management
-- Help suggestions visibility
-- Error handling for AI responses
-- Accessibility of chat interface
-- Mobile responsiveness of the chat overlay` 
+- Chat input field usability and keyboard accessibility
+- Message display and readability (font sizes, contrast)
+- Response loading states and animations
+- Conversation history management and scrolling
+- Help suggestions visibility and relevance
+- Error handling for AI responses (timeouts, failures)
+- Accessibility of chat interface (ARIA labels, focus management)
+- Mobile responsiveness of the floating chat overlay
+- Context-awareness for the ${overlayProduct} product
+- Quick action buttons and their discoverability` 
       : '';
     
     try {
@@ -309,9 +322,12 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
       let addedCount = 0;
 
       // Add findings to database - use overlay-specific module name if applicable
-      const moduleName = activeOverlay 
-        ? `${currentPageName.split(' +')[0]} / ${activeOverlay.charAt(0).toUpperCase() + activeOverlay.slice(1).replace('-', ' ')}`
-        : currentPageName;
+      const basePageName = pageNames[currentRoute] || currentRoute;
+      const moduleName = isAskGenieOverlay 
+        ? `${basePageName} / Ask Genie (${overlayProduct})`
+        : activeOverlay 
+          ? `${basePageName} / ${activeOverlay}`
+          : basePageName;
       
       const addFindings = async (
         items: Array<{ title: string; description: string; recommendation?: string }>, 
@@ -375,14 +391,41 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
     hasAutoAnalyzed.current = false;
   }, [currentRoute, activeOverlay]);
   
+  // When Ask Genie opens, trigger analysis if panel is open or show hint
+  useEffect(() => {
+    if (activeOverlay?.startsWith('ask-genie')) {
+      const routeKey = `${currentRoute}#${activeOverlay}`;
+      const existingFindings = findings.filter(f => f.page_route === routeKey);
+      
+      if (import.meta.env.DEV) {
+        console.log(`🐛 Ralph Wiggum: Ask Genie detected, overlay="${activeOverlay}", existing findings=${existingFindings.length}`);
+      }
+      
+      // If panel is open and no findings exist, auto-analyze
+      if (isPanelOpen && existingFindings.length === 0 && !hasAutoAnalyzed.current) {
+        hasAutoAnalyzed.current = true;
+        const timer = setTimeout(() => {
+          runAnalysis();
+        }, 500);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [activeOverlay, currentRoute, findings, isPanelOpen, runAnalysis]);
+  
   // Filter findings for current page (including overlay-specific findings)
   const currentPageFindings = useMemo(() => {
     const routeKey = activeOverlay ? `${currentRoute}#${activeOverlay}` : currentRoute;
-    // Include both base route and overlay-specific findings
-    let result = findings.filter(f => 
-      f.page_route === currentRoute || 
-      f.page_route === routeKey
-    );
+    
+    // Include base route, overlay-specific findings, and any Ask Genie findings on this route
+    let result = findings.filter(f => {
+      // Exact match for base route
+      if (f.page_route === currentRoute) return true;
+      // Exact match for current overlay
+      if (f.page_route === routeKey) return true;
+      // If Ask Genie is active, also include all Ask Genie findings for this route
+      if (activeOverlay?.startsWith('ask-genie') && f.page_route.startsWith(`${currentRoute}#ask-genie`)) return true;
+      return false;
+    });
     
     // Apply type filter
     if (filterType !== 'all') {
