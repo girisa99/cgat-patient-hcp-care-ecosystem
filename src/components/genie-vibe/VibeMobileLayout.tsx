@@ -41,8 +41,13 @@ import {
   Trash2,
   Camera,
   Mic,
-  ScreenShare
+  ScreenShare,
+  MessageCircle,
+  Layers,
+  Music,
+  Wand2
 } from 'lucide-react';
+import { AskGenie } from '@/components/genie-studio/AskGenie';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
@@ -490,6 +495,32 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
                         />
                       </div>
                     </details>
+
+                    {/* Desktop Features Notice */}
+                    <Card className="border-primary/20 bg-primary/5">
+                      <CardContent className="py-3 px-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Monitor className="h-4 w-4 text-primary" />
+                            <div>
+                              <p className="text-xs font-medium">More editing tools on Desktop</p>
+                              <p className="text-[10px] text-muted-foreground">
+                                Merge, Voice/TTS, Transitions, Music Sync
+                              </p>
+                            </div>
+                          </div>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="h-7 text-xs gap-1"
+                            onClick={onSwitchToDesktop}
+                          >
+                            <Layers className="h-3 w-3" />
+                            Desktop
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </>
                 )}
               </div>
@@ -605,31 +636,31 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
             </TabsContent>
           </div>
 
-          {/* Simplified 3-Tab Bottom Navigation - Fixed at bottom with proper safe area */}
+          {/* Bottom Navigation - Compact with safe area */}
           <div 
-            className="flex-shrink-0 border-t bg-card"
+            className="flex-shrink-0 border-t bg-card safe-area-bottom"
             style={{ 
-              paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)'
+              paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 4px)'
             }}
           >
-            <TabsList className="h-14 rounded-none bg-transparent grid grid-cols-3 w-full border-0">
+            <TabsList className="h-16 rounded-none bg-transparent grid grid-cols-3 w-full border-0 gap-0">
               <TabsTrigger 
                 value="record" 
-                className="flex flex-col gap-0.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-none h-full border-0"
+                className="flex flex-col items-center justify-center gap-1 py-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-none h-full border-0"
               >
                 <Video className="h-5 w-5" />
-                <span className="text-[11px] font-medium">Record</span>
+                <span className="text-xs font-medium">Record</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="edit" 
-                className="flex flex-col gap-0.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-none h-full relative border-0"
+                className="flex flex-col items-center justify-center gap-1 py-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-none h-full relative border-0"
               >
                 <Scissors className="h-5 w-5" />
-                <span className="text-[11px] font-medium">Edit</span>
+                <span className="text-xs font-medium">Edit</span>
                 {timelineClips.length > 0 && (
                   <Badge 
                     variant="default" 
-                    className="absolute top-0.5 right-[20%] h-4 min-w-4 p-0.5 text-[9px] flex items-center justify-center bg-primary"
+                    className="absolute top-1 right-[25%] h-4 min-w-4 px-1 text-[10px] flex items-center justify-center bg-primary"
                   >
                     {timelineClips.length}
                   </Badge>
@@ -637,17 +668,23 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
               </TabsTrigger>
               <TabsTrigger 
                 value="export" 
-                className="flex flex-col gap-0.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-none h-full border-0"
+                className="flex flex-col items-center justify-center gap-1 py-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-none h-full border-0"
               >
                 <Upload className="h-5 w-5" />
-                <span className="text-[11px] font-medium">Export</span>
+                <span className="text-xs font-medium">Export</span>
               </TabsTrigger>
             </TabsList>
           </div>
         </Tabs>
       </div>
 
-      {/* PWA Install Prompt - Above navigation */}
+      {/* Ask Genie - Context-aware AI assistant (works on mobile) */}
+      <AskGenie 
+        product="vibe" 
+        currentTab={activeTab}
+      />
+
+      {/* PWA Install Prompt */}
       <PWAInstallPrompt variant="banner" showOnMount={true} />
     </div>
   );
