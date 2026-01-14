@@ -1,16 +1,18 @@
 /**
  * Technical Docs Tab - PRD, BRD, FRS Documentation
+ * Clean enterprise styling with proper design tokens
  */
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   FileText, Book, Layers, Target,
-  CheckCircle2, Clock, AlertCircle,
-  Users, Building2, Database, Shield
+  CheckCircle2, Clock, Shield, Users
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -88,70 +90,88 @@ export const TechnicalDocsTab: React.FC = () => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="max-w-[1920px] mx-auto space-y-6 px-6"
+      className="max-w-[1920px] mx-auto space-y-6 p-6"
     >
       {/* Document Selector */}
       <motion.div variants={itemVariants}>
         <Tabs value={activeDoc} onValueChange={setActiveDoc}>
-          <TabsList className="bg-slate-800/50 p-1">
-            <TabsTrigger value="prd" className="data-[state=active]:bg-violet-600">
-              <FileText className="w-4 h-4 mr-2" />
-              Product Requirements Document (PRD)
-            </TabsTrigger>
-            <TabsTrigger value="brd" className="data-[state=active]:bg-violet-600">
-              <Book className="w-4 h-4 mr-2" />
-              Business Requirements Document (BRD)
-            </TabsTrigger>
-            <TabsTrigger value="frs" className="data-[state=active]:bg-violet-600">
-              <Layers className="w-4 h-4 mr-2" />
-              Functional Requirements Specification (FRS)
-            </TabsTrigger>
-            <TabsTrigger value="segments" className="data-[state=active]:bg-violet-600">
-              <Users className="w-4 h-4 mr-2" />
-              Segment Feature Matrix
-            </TabsTrigger>
-          </TabsList>
+          <ScrollArea className="w-full whitespace-nowrap pb-3">
+            <TabsList className="inline-flex h-auto gap-1 bg-muted/50 p-1 rounded-lg">
+              <TabsTrigger 
+                value="prd" 
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                <FileText className="w-4 h-4" />
+                <span className="whitespace-nowrap">PRD</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="brd" 
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                <Book className="w-4 h-4" />
+                <span className="whitespace-nowrap">BRD</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="frs" 
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                <Layers className="w-4 h-4" />
+                <span className="whitespace-nowrap">FRS</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="segments" 
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                <Users className="w-4 h-4" />
+                <span className="whitespace-nowrap">Segment Matrix</span>
+              </TabsTrigger>
+            </TabsList>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
 
           {/* PRD Content */}
-          <TabsContent value="prd" className="mt-6">
-            <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
-              <h3 className="text-2xl font-semibold text-white mb-6">
-                Product Requirements Document - P0 to P5
-              </h3>
-              <div className="space-y-6">
+          <TabsContent value="prd" className="mt-6 border-0 p-0">
+            <Card>
+              <CardHeader>
+                <CardTitle>Product Requirements Document - P0 to P5</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
                 {Object.entries(prdRequirements).map(([priority, reqs]) => (
                   <div key={priority}>
                     <div className="flex items-center gap-3 mb-4">
-                      <Badge className={`${
+                      <Badge variant={
                         priority === 'P0' || priority === 'P1' || priority === 'P2'
-                          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                          : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-                      }`}>
+                          ? 'default' : 'secondary'
+                      } className={
+                        priority === 'P0' || priority === 'P1' || priority === 'P2'
+                          ? 'bg-green-500/10 text-green-600 border-green-500/30'
+                          : 'bg-amber-500/10 text-amber-600 border-amber-500/30'
+                      }>
                         {priority}
                       </Badge>
-                      <span className="text-slate-300">
+                      <span className="text-muted-foreground text-sm">
                         {reqs.filter(r => r.status === 'done').length}/{reqs.length} Complete
                       </span>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {reqs.map((req, index) => (
                         <div 
                           key={index}
                           className={`flex items-center justify-between p-3 rounded-lg border ${
                             req.status === 'done' 
-                              ? 'bg-emerald-500/10 border-emerald-500/20' 
-                              : 'bg-slate-700/30 border-slate-600/30'
+                              ? 'bg-green-500/5 border-green-500/20' 
+                              : 'bg-muted/30 border-border'
                           }`}
                         >
                           <div className="flex items-center gap-3">
                             {req.status === 'done' ? (
-                              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                              <CheckCircle2 className="w-5 h-5 text-green-600" />
                             ) : (
-                              <Clock className="w-5 h-5 text-slate-400" />
+                              <Clock className="w-5 h-5 text-muted-foreground" />
                             )}
                             <div>
-                              <span className="text-white font-medium">{req.name}</span>
-                              <span className="text-xs text-slate-400 ml-2">({req.id})</span>
+                              <span className="text-foreground font-medium text-sm">{req.name}</span>
+                              <span className="text-xs text-muted-foreground ml-2">({req.id})</span>
                             </div>
                           </div>
                           <Badge variant="outline" className="text-xs">
@@ -162,186 +182,196 @@ export const TechnicalDocsTab: React.FC = () => {
                     </div>
                   </div>
                 ))}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* BRD Content */}
-          <TabsContent value="brd" className="mt-6">
-            <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
-              <h3 className="text-2xl font-semibold text-white mb-6">
-                Business Requirements Document
-              </h3>
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h4 className="text-lg font-medium text-violet-400">Business Objectives</h4>
-                  <ul className="space-y-2">
-                    {[
-                      'Capture 2% of AI video market by 2027',
-                      'Achieve $8.5M Annual Recurring Revenue by end of Year 2',
-                      'Maintain Lifetime Value to Customer Acquisition Cost ratio above 3x',
-                      'Reduce content production time by 75% vs manual workflow',
-                      'Support 6 initial segments with segment-specific features',
-                    ].map((obj, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-slate-300">
-                        <Target className="w-4 h-4 text-violet-400 mt-1 flex-shrink-0" />
-                        {obj}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="space-y-4">
-                  <h4 className="text-lg font-medium text-emerald-400">Success Metrics</h4>
-                  <ul className="space-y-2">
-                    {[
-                      'Monthly Active Users: 50,000 by Month 18',
-                      'Conversion Rate: 5% free to paid',
-                      'Churn Rate: Below 5% monthly',
-                      'Net Promoter Score: Above 40',
-                      'Support Response Time: Under 4 hours',
-                    ].map((metric, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-slate-300">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-1 flex-shrink-0" />
-                        {metric}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* FRS Content */}
-          <TabsContent value="frs" className="mt-6">
-            <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
-              <h3 className="text-2xl font-semibold text-white mb-6">
-                Functional Requirements Specification
-              </h3>
-              <div className="grid grid-cols-3 gap-6">
-                {[
-                  {
-                    title: 'Authentication & Authorization',
-                    icon: Shield,
-                    reqs: [
-                      'Email/password authentication',
-                      'OAuth integration (Google)',
-                      'Role-based access control',
-                      'Session management',
-                      'Row Level Security on all tables',
-                    ],
-                    status: 'complete',
-                  },
-                  {
-                    title: 'Content Production',
-                    icon: Layers,
-                    reqs: [
-                      'Script CRUD operations',
-                      'Video recording with WebRTC',
-                      'Multi-format export',
-                      'Teleprompter sync',
-                      'Audio mixing & mastering',
-                    ],
-                    status: 'complete',
-                  },
-                  {
-                    title: 'AI Integration',
-                    icon: Database,
-                    reqs: [
-                      'Multi-provider TTS routing',
-                      'LLM script generation',
-                      'Scene analysis AI',
-                      'Agent orchestration',
-                      'RAG knowledge base',
-                    ],
-                    status: 'complete',
-                  },
-                ].map((section, index) => (
-                  <div key={index} className="bg-slate-700/30 rounded-xl p-5 border border-slate-600/30">
-                    <div className="flex items-center gap-3 mb-4">
-                      <section.icon className="w-6 h-6 text-violet-400" />
-                      <h4 className="text-lg font-semibold text-white">{section.title}</h4>
-                    </div>
+          <TabsContent value="brd" className="mt-6 border-0 p-0">
+            <Card>
+              <CardHeader>
+                <CardTitle>Business Requirements Document</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-medium text-primary">Business Objectives</h4>
                     <ul className="space-y-2">
-                      {section.reqs.map((req, idx) => (
-                        <li key={idx} className="flex items-center gap-2 text-sm text-slate-300">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                          {req}
+                      {[
+                        'Capture 2% of AI video market by 2027',
+                        'Achieve $8.5M Annual Recurring Revenue by end of Year 2',
+                        'Maintain Lifetime Value to Customer Acquisition Cost ratio above 3x',
+                        'Reduce content production time by 75% vs manual workflow',
+                        'Support 6 initial segments with segment-specific features',
+                      ].map((obj, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-muted-foreground text-sm">
+                          <Target className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                          {obj}
                         </li>
                       ))}
                     </ul>
-                    <Badge className="mt-4 bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
-                      {section.status}
-                    </Badge>
                   </div>
-                ))}
-              </div>
-            </div>
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-medium text-green-600">Success Metrics</h4>
+                    <ul className="space-y-2">
+                      {[
+                        'Monthly Active Users: 50,000 by Month 18',
+                        'Conversion Rate: 5% free to paid',
+                        'Churn Rate: Below 5% monthly',
+                        'Net Promoter Score: Above 40',
+                        'Support Response Time: Under 4 hours',
+                      ].map((metric, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-muted-foreground text-sm">
+                          <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          {metric}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* FRS Content */}
+          <TabsContent value="frs" className="mt-6 border-0 p-0">
+            <Card>
+              <CardHeader>
+                <CardTitle>Functional Requirements Specification</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {[
+                    {
+                      title: 'Authentication & Authorization',
+                      icon: Shield,
+                      reqs: [
+                        'Email/password authentication',
+                        'OAuth integration (Google)',
+                        'Role-based access control',
+                        'Session management',
+                        'Row Level Security on all tables',
+                      ],
+                      status: 'complete',
+                    },
+                    {
+                      title: 'Content Production',
+                      icon: Layers,
+                      reqs: [
+                        'Script CRUD operations',
+                        'Video recording with WebRTC',
+                        'Multi-format export',
+                        'Teleprompter sync',
+                        'Audio mixing & mastering',
+                      ],
+                      status: 'complete',
+                    },
+                    {
+                      title: 'AI Integration',
+                      icon: Target,
+                      reqs: [
+                        'Multi-provider TTS routing',
+                        'LLM script generation',
+                        'Scene analysis AI',
+                        'Agent orchestration',
+                        'RAG knowledge base',
+                      ],
+                      status: 'complete',
+                    },
+                  ].map((section, index) => (
+                    <Card key={index} className="border">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center gap-3">
+                          <section.icon className="w-5 h-5 text-primary" />
+                          <CardTitle className="text-base">{section.title}</CardTitle>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="space-y-2 mb-4">
+                          {section.reqs.map((req, idx) => (
+                            <li key={idx} className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+                              {req}
+                            </li>
+                          ))}
+                        </ul>
+                        <Badge className="bg-green-500/10 text-green-600 border-green-500/30">
+                          {section.status}
+                        </Badge>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Segment Feature Matrix */}
-          <TabsContent value="segments" className="mt-6">
-            <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50 overflow-hidden">
-              <h3 className="text-2xl font-semibold text-white mb-6">
-                Segment Feature Matrix
-              </h3>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-slate-700/30">
-                    <th className="text-left text-slate-300 font-medium px-4 py-3">Feature</th>
-                    <th className="text-center text-slate-300 font-medium px-4 py-3">Creators</th>
-                    <th className="text-center text-slate-300 font-medium px-4 py-3">Enterprise</th>
-                    <th className="text-center text-slate-300 font-medium px-4 py-3">Healthcare</th>
-                    <th className="text-center text-slate-300 font-medium px-4 py-3">Education</th>
-                    <th className="text-center text-slate-300 font-medium px-4 py-3">Agencies</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {segmentFeatureMatrix.map((row, index) => (
-                    <tr 
-                      key={index}
-                      className="border-t border-slate-700/30 hover:bg-slate-700/20"
-                    >
-                      <td className="px-4 py-3 text-white font-medium">{row.feature}</td>
-                      <td className="px-4 py-3 text-center">
-                        {row.creators ? (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-400 mx-auto" />
-                        ) : (
-                          <span className="text-slate-500">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        {row.enterprise ? (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-400 mx-auto" />
-                        ) : (
-                          <span className="text-slate-500">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        {row.healthcare ? (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-400 mx-auto" />
-                        ) : (
-                          <span className="text-slate-500">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        {row.education ? (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-400 mx-auto" />
-                        ) : (
-                          <span className="text-slate-500">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        {row.agencies ? (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-400 mx-auto" />
-                        ) : (
-                          <span className="text-slate-500">—</span>
-                        )}
-                      </td>
+          <TabsContent value="segments" className="mt-6 border-0 p-0">
+            <Card>
+              <CardHeader>
+                <CardTitle>Segment Feature Matrix</CardTitle>
+              </CardHeader>
+              <CardContent className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-muted/50">
+                      <th className="text-left text-muted-foreground font-medium px-4 py-3 rounded-tl-lg">Feature</th>
+                      <th className="text-center text-muted-foreground font-medium px-4 py-3">Creators</th>
+                      <th className="text-center text-muted-foreground font-medium px-4 py-3">Enterprise</th>
+                      <th className="text-center text-muted-foreground font-medium px-4 py-3">Healthcare</th>
+                      <th className="text-center text-muted-foreground font-medium px-4 py-3">Education</th>
+                      <th className="text-center text-muted-foreground font-medium px-4 py-3 rounded-tr-lg">Agencies</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {segmentFeatureMatrix.map((row, index) => (
+                      <tr 
+                        key={index}
+                        className="border-t border-border hover:bg-muted/30 transition-colors"
+                      >
+                        <td className="px-4 py-3 text-foreground font-medium">{row.feature}</td>
+                        <td className="px-4 py-3 text-center">
+                          {row.creators ? (
+                            <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto" />
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {row.enterprise ? (
+                            <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto" />
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {row.healthcare ? (
+                            <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto" />
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {row.education ? (
+                            <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto" />
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {row.agencies ? (
+                            <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto" />
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </motion.div>
