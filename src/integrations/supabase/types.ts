@@ -20858,6 +20858,7 @@ export type Database = {
         | "follow_up"
         | "completed"
         | "cancelled"
+        | "rescheduled"
       modality_type:
         | "autologous"
         | "allogeneic"
@@ -21228,6 +21229,7 @@ export const Constants = {
         "follow_up",
         "completed",
         "cancelled",
+        "rescheduled",
       ],
       modality_type: [
         "autologous",

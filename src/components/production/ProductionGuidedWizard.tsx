@@ -94,13 +94,14 @@ const STAGE_ICONS: Record<string, React.ElementType> = {
   'recording': Video,
   'post_production': Scissors,
   'published': Upload,
-  // Meeting stages - streamlined UI (confirmed/agenda_prep hidden but valid in DB)
+  // Meeting stages
   'scheduled': CalendarPlus,
   'confirmed': CheckCircle,
   'agenda_prep': FileText,
   'in_progress': Play,
   'follow_up': MessageSquare,
   'completed': CheckCircle,
+  'rescheduled': CalendarClock,
   'cancelled': XCircle,
   // Event stages
   'planning': Lightbulb,
@@ -696,6 +697,19 @@ export const ProductionGuidedWizard: React.FC<ProductionGuidedWizardProps> = ({
             Meeting Completed
           </Badge>
         );
+      case 'rescheduled':
+        return (
+          <div className="space-y-2">
+            <Badge className="bg-purple-500/10 text-purple-600 w-full justify-center py-2">
+              <CalendarClock className="h-4 w-4 mr-2" />
+              Meeting Rescheduled
+            </Badge>
+            <Button variant="outline" size="sm" className="w-full" onClick={() => openScheduleManagement('edit')}>
+              View New Schedule
+            </Button>
+          </div>
+        );
+
       // Event stages - FULLY FUNCTIONAL
       case 'planning':
         return (
