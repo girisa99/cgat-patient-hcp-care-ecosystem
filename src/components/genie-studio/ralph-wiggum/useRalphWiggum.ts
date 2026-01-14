@@ -358,11 +358,12 @@ export function useRalphWiggum(): UseRalphWiggumReturn {
       // Call the AI processor via edge function
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
+          provider: 'gemini',
           prompt,
           systemPrompt: `You are Ralph Wiggum, an AI content reviewer for Genie Studio. 
 You provide helpful, constructive feedback to improve content quality.
 Always respond with valid JSON. Be specific and actionable in your suggestions.`,
-          model: 'google/gemini-2.5-flash',
+          model: 'gemini-2.0-flash',
           maxTokens: 2000
         }
       });
