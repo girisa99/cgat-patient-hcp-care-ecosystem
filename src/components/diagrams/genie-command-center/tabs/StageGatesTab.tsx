@@ -1,15 +1,17 @@
 /**
  * Stage Gates Tab - Go-Live Readiness Checklist
+ * Clean enterprise styling with proper design tokens
  */
 
 import React from 'react';
 import { motion } from 'framer-motion';
 import {
   Shield, CheckCircle2, Clock, AlertCircle,
-  Lock, CreditCard, Server, FileText,
-  Users, Globe, Database, Zap
+  Lock, CreditCard, Server, FileText, Zap
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { stageGateChecklist } from '../data/implementation-data';
 
 const containerVariants = {
@@ -34,26 +36,26 @@ const categoryIcons: Record<string, React.ReactNode> = {
 const getStatusIcon = (status: string) => {
   switch (status) {
     case 'done':
-      return <CheckCircle2 className="w-5 h-5 text-emerald-400" />;
+      return <CheckCircle2 className="w-5 h-5 text-green-600" />;
     case 'in-progress':
-      return <Clock className="w-5 h-5 text-amber-400" />;
+      return <Clock className="w-5 h-5 text-amber-500" />;
     case 'pending':
-      return <AlertCircle className="w-5 h-5 text-slate-400" />;
+      return <AlertCircle className="w-5 h-5 text-muted-foreground" />;
     default:
-      return <AlertCircle className="w-5 h-5 text-red-400" />;
+      return <AlertCircle className="w-5 h-5 text-destructive" />;
   }
 };
 
-const getPriorityColor = (priority: string) => {
+const getPriorityBadge = (priority: string) => {
   switch (priority) {
     case 'Critical':
-      return 'bg-red-500/20 text-red-400 border-red-500/30';
+      return 'bg-red-500/10 text-red-600 border-red-500/30';
     case 'High':
-      return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+      return 'bg-amber-500/10 text-amber-600 border-amber-500/30';
     case 'Medium':
-      return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+      return 'bg-blue-500/10 text-blue-600 border-blue-500/30';
     default:
-      return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
+      return 'bg-muted text-muted-foreground border-border';
   }
 };
 
@@ -78,159 +80,161 @@ export const StageGatesTab: React.FC = () => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="max-w-[1920px] mx-auto space-y-8 px-6"
+      className="max-w-[1920px] mx-auto space-y-8 p-6"
     >
       {/* Overview */}
-      <motion.div 
-        variants={itemVariants}
-        className="bg-gradient-to-r from-violet-600/20 to-fuchsia-600/20 rounded-2xl p-8 border border-violet-500/30"
-      >
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-3xl font-bold text-white">Stage Gate Checklist</h2>
-            <p className="text-slate-300 mt-1">Pre-Launch Readiness Assessment</p>
-          </div>
-          <div className="flex items-center gap-8">
-            <div className="text-center">
-              <div className="text-4xl font-bold text-emerald-400">{doneItems}</div>
-              <div className="text-sm text-slate-400">Complete</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-amber-400">{inProgressItems}</div>
-              <div className="text-sm text-slate-400">In Progress</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-slate-400">{pendingItems}</div>
-              <div className="text-sm text-slate-400">Pending</div>
-            </div>
-            <div className="text-center">
-              <div className={`text-4xl font-bold ${criticalPending > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                {criticalPending}
+      <motion.div variants={itemVariants}>
+        <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
+          <CardContent className="p-8">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-foreground">Stage Gate Checklist</h2>
+                <p className="text-muted-foreground mt-1">Pre-Launch Readiness Assessment</p>
               </div>
-              <div className="text-sm text-slate-400">Critical Blockers</div>
+              <div className="flex items-center gap-6 md:gap-8">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-green-600">{doneItems}</div>
+                  <div className="text-sm text-muted-foreground">Complete</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-amber-500">{inProgressItems}</div>
+                  <div className="text-sm text-muted-foreground">In Progress</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-muted-foreground">{pendingItems}</div>
+                  <div className="text-sm text-muted-foreground">Pending</div>
+                </div>
+                <div className="text-center">
+                  <div className={`text-3xl font-bold ${criticalPending > 0 ? 'text-destructive' : 'text-green-600'}`}>
+                    {criticalPending}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Critical Blockers</div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-        <Progress value={overallProgress} className="h-4 bg-slate-700" />
-        <div className="flex justify-between mt-2 text-sm">
-          <span className="text-slate-400">Overall Readiness</span>
-          <span className="text-white font-medium">{overallProgress}%</span>
-        </div>
+            <Progress value={overallProgress} className="h-3" />
+            <div className="flex justify-between mt-2 text-sm">
+              <span className="text-muted-foreground">Overall Readiness</span>
+              <span className="text-foreground font-medium">{overallProgress}%</span>
+            </div>
+          </CardContent>
+        </Card>
       </motion.div>
 
       {/* Category Sections */}
-      <motion.div variants={itemVariants} className="grid grid-cols-2 gap-6">
+      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {Object.entries(groupedItems).map(([category, items]) => {
           const categoryDone = items.filter(i => i.status === 'done').length;
           const categoryProgress = Math.round((categoryDone / items.length) * 100);
 
           return (
-            <div 
+            <Card 
               key={category}
-              className={`rounded-xl p-6 border ${
-                categoryProgress === 100 
-                  ? 'bg-emerald-500/10 border-emerald-500/30' 
-                  : 'bg-slate-800/50 border-slate-700/50'
-              }`}
+              className={categoryProgress === 100 ? 'border-green-500/30 bg-green-500/5' : ''}
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                    categoryProgress === 100 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700/50 text-slate-300'
-                  }`}>
-                    {categoryIcons[category] || <Shield className="w-5 h-5" />}
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                      categoryProgress === 100 ? 'bg-green-500/10 text-green-600' : 'bg-muted text-muted-foreground'
+                    }`}>
+                      {categoryIcons[category] || <Shield className="w-5 h-5" />}
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">{category}</CardTitle>
+                      <span className="text-sm text-muted-foreground">{categoryDone}/{items.length} complete</span>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-white">{category}</h3>
-                    <span className="text-sm text-slate-400">{categoryDone}/{items.length} complete</span>
+                  <div className={`text-2xl font-bold ${categoryProgress === 100 ? 'text-green-600' : 'text-amber-500'}`}>
+                    {categoryProgress}%
                   </div>
                 </div>
-                <div className={`text-2xl font-bold ${categoryProgress === 100 ? 'text-emerald-400' : 'text-amber-400'}`}>
-                  {categoryProgress}%
-                </div>
-              </div>
-
-              <div className="space-y-3">
+              </CardHeader>
+              <CardContent className="space-y-2">
                 {items.map((item, idx) => (
                   <div 
                     key={idx}
                     className={`flex items-center justify-between p-3 rounded-lg ${
-                      item.status === 'done' ? 'bg-emerald-500/10' : 'bg-slate-700/30'
+                      item.status === 'done' ? 'bg-green-500/5' : 'bg-muted/30'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       {getStatusIcon(item.status)}
                       <div>
-                        <span className="text-white">{item.item}</span>
+                        <span className="text-foreground text-sm">{item.item}</span>
                         {item.notes && (
-                          <p className="text-xs text-slate-400 mt-0.5">{item.notes}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{item.notes}</p>
                         )}
                       </div>
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded border ${getPriorityColor(item.priority)}`}>
+                    <Badge variant="outline" className={`text-xs ${getPriorityBadge(item.priority)}`}>
                       {item.priority}
-                    </span>
+                    </Badge>
                   </div>
                 ))}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           );
         })}
       </motion.div>
 
       {/* Critical Blockers Alert */}
       {criticalPending > 0 && (
-        <motion.div 
-          variants={itemVariants}
-          className="bg-red-500/10 rounded-xl p-6 border border-red-500/30"
-        >
-          <div className="flex items-center gap-3 mb-4">
-            <AlertCircle className="w-6 h-6 text-red-400" />
-            <h3 className="text-xl font-semibold text-red-400">Critical Blockers for Go-Live</h3>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            {stageGateChecklist
-              .filter(i => i.priority === 'Critical' && i.status !== 'done')
-              .map((item, idx) => (
-                <div key={idx} className="flex items-center gap-3 bg-red-500/10 p-3 rounded-lg">
-                  <AlertCircle className="w-5 h-5 text-red-400" />
-                  <div>
-                    <span className="text-white">{item.item}</span>
-                    <span className="text-xs text-slate-400 ml-2">({item.category})</span>
-                  </div>
-                </div>
-              ))}
-          </div>
+        <motion.div variants={itemVariants}>
+          <Card className="border-destructive/30 bg-destructive/5">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-6 h-6 text-destructive" />
+                <CardTitle className="text-destructive">Critical Blockers for Go-Live</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {stageGateChecklist
+                  .filter(i => i.priority === 'Critical' && i.status !== 'done')
+                  .map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-3 bg-destructive/5 p-3 rounded-lg border border-destructive/20">
+                      <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0" />
+                      <div>
+                        <span className="text-foreground text-sm">{item.item}</span>
+                        <span className="text-xs text-muted-foreground ml-2">({item.category})</span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
         </motion.div>
       )}
 
       {/* Go-Live Recommendation */}
-      <motion.div 
-        variants={itemVariants}
-        className={`rounded-xl p-8 border text-center ${
+      <motion.div variants={itemVariants}>
+        <Card className={`text-center ${
           overallProgress >= 90 
-            ? 'bg-emerald-500/10 border-emerald-500/30' 
+            ? 'border-green-500/30 bg-green-500/5' 
             : overallProgress >= 70
-            ? 'bg-amber-500/10 border-amber-500/30'
-            : 'bg-red-500/10 border-red-500/30'
-        }`}
-      >
-        <h3 className={`text-2xl font-bold ${
-          overallProgress >= 90 ? 'text-emerald-400' : overallProgress >= 70 ? 'text-amber-400' : 'text-red-400'
+            ? 'border-amber-500/30 bg-amber-500/5'
+            : 'border-destructive/30 bg-destructive/5'
         }`}>
-          {overallProgress >= 90 
-            ? '✓ Ready for Production Launch' 
-            : overallProgress >= 70
-            ? '⚠ Soft Launch Possible with Caveats'
-            : '✗ Not Ready for Launch'}
-        </h3>
-        <p className="text-slate-300 mt-2 max-w-2xl mx-auto">
-          {overallProgress >= 90 
-            ? 'All critical requirements are met. The platform is ready for production deployment with full feature availability.'
-            : overallProgress >= 70
-            ? 'Core functionality is ready but some critical items remain. Consider a limited beta launch while completing remaining items.'
-            : `${criticalPending} critical blockers must be resolved before any public launch. Focus on authentication, authorization, and subscription systems.`}
-        </p>
+          <CardContent className="p-8">
+            <h3 className={`text-2xl font-bold ${
+              overallProgress >= 90 ? 'text-green-600' : overallProgress >= 70 ? 'text-amber-500' : 'text-destructive'
+            }`}>
+              {overallProgress >= 90 
+                ? '✓ Ready for Production Launch' 
+                : overallProgress >= 70
+                ? '⚠ Soft Launch Possible with Caveats'
+                : '✗ Not Ready for Launch'}
+            </h3>
+            <p className="text-muted-foreground mt-3 max-w-2xl mx-auto">
+              {overallProgress >= 90 
+                ? 'All critical requirements are met. The platform is ready for production deployment with full feature availability.'
+                : overallProgress >= 70
+                ? 'Core functionality is ready but some critical items remain. Consider a limited beta launch while completing remaining items.'
+                : `${criticalPending} critical blockers must be resolved before any public launch. Focus on authentication, authorization, and subscription systems.`}
+            </p>
+          </CardContent>
+        </Card>
       </motion.div>
     </motion.div>
   );
