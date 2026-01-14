@@ -21,7 +21,9 @@ import {
   swotBySegment,
   gartnerPositions,
   segments,
+  genieScoringBreakdown,
 } from '../data/market-data';
+import { ExternalLink, Info } from 'lucide-react';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -69,15 +71,24 @@ export const MarketAnalysisTab: React.FC = () => {
           ))}
         </div>
         <div className="bg-muted/50 rounded-xl p-4 border border-border">
-          <h4 className="text-sm font-semibold text-foreground mb-3">Data Sources & References</h4>
+          <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            <ExternalLink className="w-4 h-4 text-primary" />
+            Data Sources & References (Click to View)
+          </h4>
           <div className="grid grid-cols-3 gap-4">
             {marketReferences.map((ref, index) => (
-              <div key={index} className="flex items-start gap-2 text-xs">
-                <ArrowUpRight className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" />
-                <span className="text-muted-foreground">
+              <a 
+                key={index} 
+                href={ref.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-start gap-2 text-xs p-2 rounded-lg hover:bg-muted transition-colors group"
+              >
+                <ArrowUpRight className="w-3 h-3 text-primary mt-0.5 flex-shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                <span className="text-muted-foreground group-hover:text-foreground transition-colors">
                   <span className="text-foreground font-medium">{ref.source}</span> ({ref.year}): {ref.stat}
                 </span>
-              </div>
+              </a>
             ))}
           </div>
         </div>
@@ -385,6 +396,113 @@ export const MarketAnalysisTab: React.FC = () => {
         </Tabs>
       </motion.div>
 
+      {/* Genie Suite Scoring Methodology */}
+      <motion.div variants={itemVariants}>
+        <h3 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <Info className="w-5 h-5 text-primary" />
+          </div>
+          Genie Suite Vision vs Execution Scoring Methodology
+        </h3>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Vision Score Breakdown */}
+          <Card className="border-blue-500/20 bg-blue-500/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-blue-500" />
+                  Vision Score: {genieScoringBreakdown.totalVision}/100
+                </span>
+                <Badge variant="secondary" className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
+                  AI Innovation & Scope
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {Object.entries(genieScoringBreakdown.visionComponents).map(([key, comp]) => (
+                <div key={key} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                    <span className="text-muted-foreground text-xs">Weight: {comp.weight}%</span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <motion.div 
+                      className="h-full bg-blue-500 rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${comp.currentScore}%` }}
+                      transition={{ duration: 0.8 }}
+                    />
+                  </div>
+                  <div className="text-xs text-muted-foreground">{comp.description}</div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+          
+          {/* Execution Score Breakdown */}
+          <Card className="border-amber-500/20 bg-amber-500/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-amber-500" />
+                  Execution Score: {genieScoringBreakdown.totalExecution}/100
+                </span>
+                <Badge variant="secondary" className="bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300">
+                  Market Presence & Delivery
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {Object.entries(genieScoringBreakdown.executionComponents).map(([key, comp]) => (
+                <div key={key} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                    <span className="text-muted-foreground text-xs">Weight: {comp.weight}%</span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <motion.div 
+                      className="h-full bg-amber-500 rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${comp.currentScore}%` }}
+                      transition={{ duration: 0.8 }}
+                    />
+                  </div>
+                  <div className="text-xs text-muted-foreground">{comp.description}</div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Growth Path to Leaders Quadrant */}
+        <Card className="border-green-500/20 bg-green-500/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
+              Path to Leaders Quadrant (Execution Score Growth)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-4 gap-4">
+              {genieScoringBreakdown.growthPath.map((milestone, idx) => (
+                <div key={idx} className="relative">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                      idx === 0 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                    }`}>
+                      {idx + 1}
+                    </div>
+                    {idx < 3 && <div className="flex-1 h-0.5 bg-muted" />}
+                  </div>
+                  <div className="text-xs text-foreground">{milestone}</div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
       {/* Segment Analysis */}
       <motion.div variants={itemVariants}>
         <h3 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-3">
@@ -395,7 +513,7 @@ export const MarketAnalysisTab: React.FC = () => {
         </h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {segments.slice(0, 6).map((seg, idx) => (
+          {segments.map((seg, idx) => (
             <motion.div
               key={seg.id}
               initial={{ opacity: 0, y: 20 }}
