@@ -45,7 +45,8 @@ import {
   MessageCircle,
   Layers,
   Music,
-  Wand2
+  Wand2,
+  Shuffle
 } from 'lucide-react';
 import { AskGenie } from '@/components/genie-studio/AskGenie';
 import { cn } from '@/lib/utils';
@@ -90,6 +91,7 @@ interface VibeMobileLayoutProps {
 }
 
 type SimplifiedTab = 'record' | 'edit' | 'export';
+type RecordingMode = 'camera' | 'screen' | 'audio' | 'both';
 
 export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
   onSwitchToDesktop,
@@ -112,6 +114,7 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
+  const [recordingMode, setRecordingMode] = useState<RecordingMode>('camera');
 
   // Wrapped setters that also notify parent
   const setRecordings = useCallback((updater: RecordingResult[] | ((prev: RecordingResult[]) => RecordingResult[])) => {
@@ -276,32 +279,45 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
             {/* ===== RECORD TAB ===== */}
             <TabsContent value="record" className="h-full m-0 overflow-auto">
               <div className="p-4 space-y-4">
-                {/* Script Selector (if available) */}
-                {scripts.length > 0 && (
-                  <Card>
-                    <CardContent className="py-3 px-4">
-                      <div className="flex items-center gap-3">
-                        <FileText className="h-4 w-4 text-primary flex-shrink-0" />
-                        <Select
-                          value={selectedScriptId || '__none__'}
-                          onValueChange={(value) => setSelectedScriptId(value === '__none__' ? null : value)}
-                        >
-                          <SelectTrigger className="flex-1 bg-background">
-                            <SelectValue placeholder="Select script for teleprompter..." />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-64">
-                            <SelectItem value="__none__">No script</SelectItem>
-                            {scripts.filter(s => s.id).map(script => (
+                {/* Script Selector with Label */}
+                <Card>
+                  <CardContent className="py-3 px-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                        <FileText className="h-3.5 w-3.5" />
+                        Teleprompter Script
+                      </label>
+                      <Select
+                        value={selectedScriptId || '__none__'}
+                        onValueChange={(value) => setSelectedScriptId(value === '__none__' ? null : value)}
+                      >
+                        <SelectTrigger className="w-full bg-background">
+                          <SelectValue placeholder="No script selected" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-64 z-50 bg-popover border shadow-lg">
+                          <SelectItem value="__none__">No script</SelectItem>
+                          {scripts.length > 0 ? (
+                            scripts.filter(s => s.id).map(script => (
                               <SelectItem key={script.id} value={script.id}>
-                                {script.title || 'Untitled'}
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="text-[10px] px-1">
+                                    {script.title?.toLowerCase().includes('video') ? 'Video' : 
+                                     script.title?.toLowerCase().includes('audio') ? 'Audio' : 'Script'}
+                                  </Badge>
+                                  {script.title || 'Untitled'}
+                                </div>
                               </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                            ))
+                          ) : (
+                            <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                              No scripts available. Create in Desktop mode.
+                            </div>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardContent>
+                </Card>
 
                 {/* Script Preview (collapsed by default) */}
                 {selectedScript && (
@@ -316,23 +332,55 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
                   </Card>
                 )}
 
-                {/* Primary Recording Area - 60% viewport */}
-                <div className="flex flex-col items-center justify-center py-8 space-y-6">
-                  {/* Mode Selector */}
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="gap-2">
+                {/* Primary Recording Area */}
+                <div className="flex flex-col items-center justify-center py-6 space-y-5">
+                  {/* Mode Selector - 4 options including Both (PiP) */}
+                  <div className="flex flex-wrap justify-center gap-2">
+                    <Button 
+                      variant={recordingMode === 'camera' ? 'default' : 'outline'} 
+                      size="sm" 
+                      className="gap-1.5"
+                      onClick={() => setRecordingMode('camera')}
+                    >
                       <Camera className="h-4 w-4" />
                       Camera
                     </Button>
-                    <Button variant="ghost" size="sm" className="gap-2">
+                    <Button 
+                      variant={recordingMode === 'screen' ? 'default' : 'outline'} 
+                      size="sm" 
+                      className="gap-1.5"
+                      onClick={() => setRecordingMode('screen')}
+                    >
                       <ScreenShare className="h-4 w-4" />
                       Screen
                     </Button>
-                    <Button variant="ghost" size="sm" className="gap-2">
+                    <Button 
+                      variant={recordingMode === 'both' ? 'default' : 'outline'} 
+                      size="sm" 
+                      className="gap-1.5"
+                      onClick={() => setRecordingMode('both')}
+                    >
+                      <Layers className="h-4 w-4" />
+                      Both
+                    </Button>
+                    <Button 
+                      variant={recordingMode === 'audio' ? 'default' : 'outline'} 
+                      size="sm" 
+                      className="gap-1.5"
+                      onClick={() => setRecordingMode('audio')}
+                    >
                       <Mic className="h-4 w-4" />
                       Audio
                     </Button>
                   </div>
+
+                  {/* Mode Description */}
+                  <p className="text-xs text-muted-foreground text-center px-4">
+                    {recordingMode === 'camera' && 'Record with front or back camera'}
+                    {recordingMode === 'screen' && 'Capture your screen activity'}
+                    {recordingMode === 'both' && 'Screen + Camera Picture-in-Picture'}
+                    {recordingMode === 'audio' && 'Audio only recording'}
+                  </p>
 
                   {/* One-Tap Record Button */}
                   <OneTapRecordButton
@@ -402,9 +450,9 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
 
             {/* ===== EDIT TAB ===== */}
             <TabsContent value="edit" className="h-full m-0 overflow-auto">
-              <div className="p-3 space-y-3">
+              <div className="p-3 space-y-3 pb-6">
                 {timelineClips.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
                     <Scissors className="h-12 w-12 text-muted-foreground/50 mb-4" />
                     <h3 className="font-medium mb-1">No clips yet</h3>
                     <p className="text-sm text-muted-foreground mb-4">
@@ -428,10 +476,10 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
                             </span>
                           </div>
                           <div className="flex gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" title="Preview">
                               <Play className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" title="Undo">
                               <RotateCcw className="h-4 w-4" />
                             </Button>
                           </div>
@@ -449,20 +497,24 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
                       onSeek={() => {}}
                     />
 
-                    {/* Quick Actions */}
-                    <div className="grid grid-cols-3 gap-2">
-                      <Button variant="outline" size="sm" className="h-auto py-2 flex-col gap-1">
+                    {/* Primary Editing Actions - Row 1 */}
+                    <div className="grid grid-cols-4 gap-2">
+                      <Button variant="outline" size="sm" className="h-auto py-2.5 flex-col gap-1">
                         <Scissors className="h-4 w-4" />
-                        <span className="text-xs">Trim</span>
+                        <span className="text-[10px]">Trim</span>
                       </Button>
-                      <Button variant="outline" size="sm" className="h-auto py-2 flex-col gap-1">
-                        <Sparkles className="h-4 w-4" />
-                        <span className="text-xs">AI Arrange</span>
+                      <Button variant="outline" size="sm" className="h-auto py-2.5 flex-col gap-1">
+                        <Layers className="h-4 w-4" />
+                        <span className="text-[10px]">Merge</span>
+                      </Button>
+                      <Button variant="outline" size="sm" className="h-auto py-2.5 flex-col gap-1">
+                        <Shuffle className="h-4 w-4" />
+                        <span className="text-[10px]">Reorder</span>
                       </Button>
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className="h-auto py-2 flex-col gap-1 text-destructive hover:text-destructive"
+                        className="h-auto py-2.5 flex-col gap-1 text-destructive hover:text-destructive"
                         onClick={() => {
                           if (selectedClipId) {
                             setTimelineClips(prev => prev.filter(c => c.id !== selectedClipId));
@@ -473,12 +525,32 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
                         disabled={!selectedClipId}
                       >
                         <Trash2 className="h-4 w-4" />
-                        <span className="text-xs">Delete</span>
+                        <span className="text-[10px]">Delete</span>
                       </Button>
                     </div>
 
-                    {/* Quick Clips Generator (collapsed) */}
-                    <details className="group">
+                    {/* Secondary Editing Actions - Row 2 */}
+                    <div className="grid grid-cols-4 gap-2">
+                      <Button variant="outline" size="sm" className="h-auto py-2.5 flex-col gap-1">
+                        <Wand2 className="h-4 w-4" />
+                        <span className="text-[10px]">Enhance</span>
+                      </Button>
+                      <Button variant="outline" size="sm" className="h-auto py-2.5 flex-col gap-1">
+                        <Music className="h-4 w-4" />
+                        <span className="text-[10px]">Music</span>
+                      </Button>
+                      <Button variant="outline" size="sm" className="h-auto py-2.5 flex-col gap-1">
+                        <MessageCircle className="h-4 w-4" />
+                        <span className="text-[10px]">Voiceover</span>
+                      </Button>
+                      <Button variant="outline" size="sm" className="h-auto py-2.5 flex-col gap-1">
+                        <Sparkles className="h-4 w-4" />
+                        <span className="text-[10px]">AI Arrange</span>
+                      </Button>
+                    </div>
+
+                    {/* Collapsible Advanced Features */}
+                    <details className="group" open>
                       <summary className="flex items-center justify-between p-3 bg-muted/50 rounded-lg cursor-pointer">
                         <span className="text-sm font-medium">AI Quick Clips</span>
                         <Badge variant="secondary" className="text-xs">
@@ -496,6 +568,28 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
                       </div>
                     </details>
 
+                    {/* Voice Commands - P2 Feature */}
+                    <details className="group">
+                      <summary className="flex items-center justify-between p-3 bg-muted/50 rounded-lg cursor-pointer">
+                        <div className="flex items-center gap-2">
+                          <Mic className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium">Voice Editing</span>
+                        </div>
+                        <Badge variant="outline" className="text-xs bg-primary/10 text-primary">
+                          Hands-free
+                        </Badge>
+                      </summary>
+                      <div className="mt-2 p-3 bg-muted/30 rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-2">
+                          Say commands like "Trim first 5 seconds" or "Add music"
+                        </p>
+                        <Button variant="outline" size="sm" className="w-full gap-2">
+                          <Mic className="h-4 w-4" />
+                          Start Voice Editing
+                        </Button>
+                      </div>
+                    </details>
+
                     {/* Desktop Features Notice */}
                     <Card className="border-primary/20 bg-primary/5">
                       <CardContent className="py-3 px-4">
@@ -503,9 +597,9 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
                           <div className="flex items-center gap-2">
                             <Monitor className="h-4 w-4 text-primary" />
                             <div>
-                              <p className="text-xs font-medium">More editing tools on Desktop</p>
+                              <p className="text-xs font-medium">Full studio on Desktop</p>
                               <p className="text-[10px] text-muted-foreground">
-                                Merge, Voice/TTS, Transitions, Music Sync
+                                Transitions, TTS, Location Story, B-Roll
                               </p>
                             </div>
                           </div>
@@ -515,7 +609,7 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
                             className="h-7 text-xs gap-1"
                             onClick={onSwitchToDesktop}
                           >
-                            <Layers className="h-3 w-3" />
+                            <Monitor className="h-3 w-3" />
                             Desktop
                           </Button>
                         </div>
