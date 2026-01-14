@@ -7,7 +7,7 @@ import React, { useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, Maximize2, X, Layers, Brain, Film, Users, Zap, Building, Database, Cloud, Shield, Server } from 'lucide-react';
+import { Download, Maximize2, X, Layers, Brain, Film, Users, Zap, Building, Database, Cloud, Shield, Server, Key, Plug } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
 
@@ -21,9 +21,11 @@ const modules = [
 
 const techStack = {
   frontend: ['React 18', 'TypeScript', 'Tailwind CSS', 'Framer Motion', 'Radix UI'],
-  backend: ['Supabase', 'Edge Functions', 'PostgreSQL', 'Realtime'],
+  backend: ['Supabase', 'Edge Functions', 'PostgreSQL', 'Realtime', 'n8n'],
   ai: ['OpenAI GPT-4o', 'Claude 3.5', 'Gemini Pro', 'ElevenLabs', 'OpenAI TTS'],
   infra: ['Lovable Cloud', 'CDN', 'Object Storage', 'WebRTC'],
+  auth: ['Supabase Auth', 'Google OAuth', 'Email/Password', 'Magic Link'],
+  integrations: ['Stripe', 'Resend', 'n8n', 'Zapier', 'Google Gemini'],
 };
 
 const dataFlows = [
@@ -172,7 +174,7 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
       </Card>
 
       {/* Tech Stack */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <Card className="border-2 border-blue-200 dark:border-blue-800/40 bg-blue-50/50 dark:bg-blue-950/10">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-blue-700 dark:text-blue-400 flex items-center gap-2">
@@ -226,7 +228,9 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+      </div>
 
+      <div className="grid grid-cols-3 gap-4">
         <Card className="border-2 border-orange-200 dark:border-orange-800/40 bg-orange-50/50 dark:bg-orange-950/10">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-orange-700 dark:text-orange-400 flex items-center gap-2">
@@ -238,6 +242,42 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
             <div className="flex flex-wrap gap-1">
               {techStack.infra.map((tech) => (
                 <Badge key={tech} variant="secondary" className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700">
+                  {tech}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-2 border-cyan-200 dark:border-cyan-800/40 bg-cyan-50/50 dark:bg-cyan-950/10">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-cyan-700 dark:text-cyan-400 flex items-center gap-2">
+              <Key className="h-4 w-4" />
+              Authentication
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-1">
+              {techStack.auth.map((tech) => (
+                <Badge key={tech} variant="secondary" className="text-xs bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-700">
+                  {tech}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-2 border-pink-200 dark:border-pink-800/40 bg-pink-50/50 dark:bg-pink-950/10">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-pink-700 dark:text-pink-400 flex items-center gap-2">
+              <Plug className="h-4 w-4" />
+              Integrations
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-1">
+              {techStack.integrations.map((tech) => (
+                <Badge key={tech} variant="secondary" className="text-xs bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 border-pink-200 dark:border-pink-700">
                   {tech}
                 </Badge>
               ))}
