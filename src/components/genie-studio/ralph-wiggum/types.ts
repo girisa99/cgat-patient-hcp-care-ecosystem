@@ -182,7 +182,7 @@ export interface NativeFeaturesContent {
 export interface GeniePageContent {
   activeTab: string;
   visibleSections: string[];
-  userFlow: string[];
+  userFlow: Array<{ action: string; timestamp: number; tab?: string }>;
   loadedComponents: string[];
   performanceMetrics?: {
     loadTime?: number;
