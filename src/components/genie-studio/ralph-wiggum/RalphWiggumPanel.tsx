@@ -85,7 +85,13 @@ const moduleNames: Record<GenieModule, string> = {
   agents: 'Agents',
   'ask-genie': 'Ask Genie',
   arc: 'Arc',
-  dashboard: 'Dashboard'
+  dashboard: 'Dashboard',
+  subscription: 'Subscription',
+  'voice-generator': 'Voice Generator',
+  templates: 'Templates',
+  library: 'Library',
+  'native-features': 'Native Features',
+  'genie-page': 'Genie Studio Page'
 };
 
 /**

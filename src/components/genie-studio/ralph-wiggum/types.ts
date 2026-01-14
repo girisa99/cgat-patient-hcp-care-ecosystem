@@ -3,7 +3,7 @@
  * DEV-ONLY: Reviews content quality across all Genie Studio modules
  */
 
-// Module identifiers for all Genie Studio tabs
+// Module identifiers for all Genie Studio areas
 export type GenieModule = 
   | 'spark'           // Ideas/brainstorming
   | 'mind'            // Script editor, TTS, Voice
@@ -12,7 +12,14 @@ export type GenieModule =
   | 'agents'          // Running agents
   | 'ask-genie'       // AI chat interface
   | 'arc'             // Production hub
-  | 'dashboard';      // Main dashboard
+  | 'dashboard'       // Main dashboard
+  // Additional modules
+  | 'subscription'    // Subscription plans, payment, upgrade
+  | 'voice-generator' // AI Voice/TTS Generator
+  | 'templates'       // Script/content templates
+  | 'library'         // Media library (audio, video, scripts)
+  | 'native-features' // Mobile/native capabilities
+  | 'genie-page';     // Main GenieStudio page structure
 
 // Review severity levels
 export type ReviewSeverity = 'info' | 'suggestion' | 'warning' | 'critical';
@@ -108,6 +115,81 @@ export interface ArcContent {
   teamMembers: number;
 }
 
+// NEW: Subscription/Payment content
+export interface SubscriptionContent {
+  currentPlan?: string;
+  planStatus?: 'active' | 'trialing' | 'canceled' | 'past_due' | 'none';
+  availablePlans: Array<{
+    id: string;
+    name: string;
+    price: number;
+    features: string[];
+  }>;
+  paymentMethod?: 'card' | 'bank' | 'none';
+  billingCycle?: 'monthly' | 'yearly';
+  upgradeIntent?: boolean;
+}
+
+// NEW: Voice Generator content
+export interface VoiceGeneratorContent {
+  scriptText: string;
+  selectedVoice?: string;
+  selectedProvider?: 'openai' | 'elevenlabs' | 'google';
+  voiceSettings?: {
+    speed?: number;
+    pitch?: number;
+    stability?: number;
+  };
+  generatedAudioUrl?: string;
+}
+
+// NEW: Templates content
+export interface TemplatesContent {
+  selectedTemplate?: string;
+  templateCategory?: 'video' | 'audio' | 'podcast' | 'presentation' | 'social';
+  customizations: Record<string, any>;
+  templateVariables: string[];
+}
+
+// NEW: Library content
+export interface LibraryContent {
+  mediaType: 'all' | 'audio' | 'video' | 'scripts' | 'images';
+  itemCount: number;
+  recentItems: Array<{
+    id: string;
+    name: string;
+    type: string;
+    lastModified: number;
+  }>;
+  storageUsed?: number;
+  organizationMethod?: 'date' | 'type' | 'project';
+}
+
+// NEW: Native Features content
+export interface NativeFeaturesContent {
+  platform: 'web' | 'ios' | 'android' | 'pwa';
+  enabledFeatures: string[];
+  permissions: {
+    camera?: boolean;
+    microphone?: boolean;
+    notifications?: boolean;
+    location?: boolean;
+  };
+  offlineCapability?: boolean;
+}
+
+// NEW: Genie Page content
+export interface GeniePageContent {
+  activeTab: string;
+  visibleSections: string[];
+  userFlow: string[];
+  loadedComponents: string[];
+  performanceMetrics?: {
+    loadTime?: number;
+    interactionDelay?: number;
+  };
+}
+
 // Union type for all content types
 export type ModuleContent = 
   | { module: 'spark'; content: SparkContent }
@@ -117,7 +199,14 @@ export type ModuleContent =
   | { module: 'agents'; content: AgentsContent }
   | { module: 'ask-genie'; content: AskGenieContent }
   | { module: 'arc'; content: ArcContent }
-  | { module: 'dashboard'; content: Record<string, unknown> };
+  | { module: 'dashboard'; content: Record<string, unknown> }
+  // New module content types
+  | { module: 'subscription'; content: SubscriptionContent }
+  | { module: 'voice-generator'; content: VoiceGeneratorContent }
+  | { module: 'templates'; content: TemplatesContent }
+  | { module: 'library'; content: LibraryContent }
+  | { module: 'native-features'; content: NativeFeaturesContent }
+  | { module: 'genie-page'; content: GeniePageContent };
 
 // Review request
 export interface ReviewRequest {
@@ -189,7 +278,10 @@ export const DEFAULT_RALPH_CONFIG: RalphWiggumConfig = {
   maxQueueSize: 10,
   rateLimitPerMinute: 10,
   silentMode: false,
-  enabledModules: ['spark', 'mind', 'vibe', 'guided', 'agents', 'ask-genie', 'arc', 'dashboard'],
+  enabledModules: [
+    'spark', 'mind', 'vibe', 'guided', 'agents', 'ask-genie', 'arc', 'dashboard',
+    'subscription', 'voice-generator', 'templates', 'library', 'native-features', 'genie-page'
+  ],
   severityThreshold: 'info'
 };
 

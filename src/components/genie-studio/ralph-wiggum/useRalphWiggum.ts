@@ -98,6 +98,48 @@ ${JSON.stringify(moduleContent.content, null, 2)}
 Evaluate production status, scheduling, team coordination, and pending tasks.`;
       break;
       
+    case 'subscription':
+      prompt += `SUBSCRIPTION MODULE (Plans & Payment):
+${JSON.stringify(moduleContent.content, null, 2)}
+
+Evaluate pricing clarity, plan comparison, upgrade path, payment flow UX, and value proposition.`;
+      break;
+      
+    case 'voice-generator':
+      prompt += `VOICE GENERATOR MODULE (AI TTS):
+${JSON.stringify(moduleContent.content, null, 2)}
+
+Evaluate script suitability for TTS, voice selection appropriateness, pronunciation clarity, and audio quality settings.`;
+      break;
+      
+    case 'templates':
+      prompt += `TEMPLATES MODULE:
+${JSON.stringify(moduleContent.content, null, 2)}
+
+Evaluate template selection, customization completeness, variable usage, and content fit.`;
+      break;
+      
+    case 'library':
+      prompt += `LIBRARY MODULE (Media Library):
+${JSON.stringify(moduleContent.content, null, 2)}
+
+Evaluate organization, naming conventions, accessibility, and content management practices.`;
+      break;
+      
+    case 'native-features':
+      prompt += `NATIVE FEATURES MODULE:
+${JSON.stringify(moduleContent.content, null, 2)}
+
+Evaluate feature availability, permission handling, platform optimization, and offline capability.`;
+      break;
+      
+    case 'genie-page':
+      prompt += `GENIE STUDIO PAGE:
+${JSON.stringify(moduleContent.content, null, 2)}
+
+Evaluate page structure, user flow coherence, component loading, navigation clarity, and overall UX.`;
+      break;
+      
     default:
       prompt += `DASHBOARD:
 ${JSON.stringify(moduleContent.content, null, 2)}`;
