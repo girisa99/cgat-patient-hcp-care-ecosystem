@@ -186,7 +186,8 @@ export const RalphWiggumGlobalPanel: React.FC = () => {
     deleteFinding,
     exportFindings,
     addFinding,
-    stats
+    stats,
+    activeOverlay
   } = useRalphWiggumGlobal();
   
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -208,26 +209,11 @@ export const RalphWiggumGlobalPanel: React.FC = () => {
   if (!isDev) return null;
   
   const currentRoute = location.pathname;
-  const currentPageName = pageNames[currentRoute] || currentRoute;
+  // Include active overlay in the page name for clarity
+  const overlayLabel = activeOverlay ? ` + ${activeOverlay.charAt(0).toUpperCase() + activeOverlay.slice(1).replace('-', ' ')}` : '';
+  const currentPageName = (pageNames[currentRoute] || currentRoute) + overlayLabel;
   
-  // Filter findings for current page
-  const currentPageFindings = useMemo(() => {
-    let result = findings.filter(f => f.page_route === currentRoute);
-    
-    // Apply type filter
-    if (filterType !== 'all') {
-      result = result.filter(f => f.finding_type === filterType);
-    }
-    
-    // Apply status filter
-    if (filterStatus === 'active') {
-      result = result.filter(f => ['new', 'acknowledged', 'in_progress'].includes(f.status));
-    } else if (filterStatus !== 'all') {
-      result = result.filter(f => f.status === filterStatus);
-    }
-    
-    return result;
-  }, [findings, currentRoute, filterType, filterStatus]);
+  // Filter findings moved below after runAnalysis to include activeOverlay
   
   // Count by status for current page
   const statusCounts = useMemo(() => {
@@ -249,13 +235,31 @@ export const RalphWiggumGlobalPanel: React.FC = () => {
     if (isAnalyzing) return;
     setIsAnalyzing(true);
     
+    // Determine analysis context - include overlay if active
+    const analysisTarget = activeOverlay 
+      ? `${currentPageName} (with ${activeOverlay} overlay open)`
+      : currentPageName;
+    
+    const overlayContext = activeOverlay === 'ask-genie' 
+      ? `\n\nACTIVE OVERLAY: Ask Genie (AI Chat Assistant)
+Focus on analyzing the Ask Genie chat interface specifically:
+- Chat input field usability
+- Message display and readability
+- Response loading states
+- Conversation history management
+- Help suggestions visibility
+- Error handling for AI responses
+- Accessibility of chat interface
+- Mobile responsiveness of the chat overlay` 
+      : '';
+    
     try {
       const prompt = `You are Ralph Wiggum, a friendly UI/UX reviewer for a healthcare SaaS application.
 Analyze this page and provide specific, actionable feedback.
 
 Page Route: ${currentRoute}
-Page Name: ${currentPageName}
-Current Time: ${new Date().toISOString()}
+Page Name: ${analysisTarget}
+Current Time: ${new Date().toISOString()}${overlayContext}
 
 Analyze the page for:
 - Accessibility issues (WCAG compliance)
@@ -304,7 +308,11 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
       const result = JSON.parse(jsonMatch[0]);
       let addedCount = 0;
 
-      // Add findings to database
+      // Add findings to database - use overlay-specific module name if applicable
+      const moduleName = activeOverlay 
+        ? `${currentPageName.split(' +')[0]} / ${activeOverlay.charAt(0).toUpperCase() + activeOverlay.slice(1).replace('-', ' ')}`
+        : currentPageName;
+      
       const addFindings = async (
         items: Array<{ title: string; description: string; recommendation?: string }>, 
         type: FindingType, 
@@ -313,8 +321,8 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
         for (const item of items || []) {
           await addFinding({
             finding_hash: '',
-            page_route: currentRoute,
-            module_name: currentPageName,
+            page_route: activeOverlay ? `${currentRoute}#${activeOverlay}` : currentRoute,
+            module_name: moduleName,
             finding_type: type,
             severity,
             title: item.title,
@@ -324,7 +332,7 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
             ai_confidence: 0.85,
             ai_model_used: 'gemini-2.0-flash',
             raw_ai_response: data,
-            page_content_snapshot: { route: currentRoute },
+            page_content_snapshot: { route: currentRoute, overlay: activeOverlay },
             user_flow_snapshot: { timestamp: Date.now() }
           });
           addedCount++;
@@ -344,12 +352,14 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
     } finally {
       setIsAnalyzing(false);
     }
-  }, [currentRoute, currentPageName, isAnalyzing, addFinding, refreshFindings]);
+  }, [currentRoute, currentPageName, isAnalyzing, addFinding, refreshFindings, activeOverlay]);
   
   // Auto-analyze when panel opens on a new page with no findings
+  // Also re-analyze when overlay becomes active
   useEffect(() => {
     if (isPanelOpen && !hasAutoAnalyzed.current) {
-      const pageFindings = findings.filter(f => f.page_route === currentRoute);
+      const routeKey = activeOverlay ? `${currentRoute}#${activeOverlay}` : currentRoute;
+      const pageFindings = findings.filter(f => f.page_route === routeKey);
       if (pageFindings.length === 0) {
         hasAutoAnalyzed.current = true;
         const timer = setTimeout(() => {
@@ -358,12 +368,38 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
         return () => clearTimeout(timer);
       }
     }
-  }, [isPanelOpen, findings, currentRoute, runAnalysis]);
+  }, [isPanelOpen, findings, currentRoute, runAnalysis, activeOverlay]);
   
-  // Reset auto-analyze flag when route changes
+  // Reset auto-analyze flag when route or overlay changes
   useEffect(() => {
     hasAutoAnalyzed.current = false;
-  }, [currentRoute]);
+  }, [currentRoute, activeOverlay]);
+  
+  // Filter findings for current page (including overlay-specific findings)
+  const currentPageFindings = useMemo(() => {
+    const routeKey = activeOverlay ? `${currentRoute}#${activeOverlay}` : currentRoute;
+    // Include both base route and overlay-specific findings
+    let result = findings.filter(f => 
+      f.page_route === currentRoute || 
+      f.page_route === routeKey
+    );
+    
+    // Apply type filter
+    if (filterType !== 'all') {
+      result = result.filter(f => f.finding_type === filterType);
+    }
+    
+    // Apply status filter
+    if (filterStatus === 'active') {
+      result = result.filter(f => ['new', 'acknowledged', 'in_progress'].includes(f.status));
+    } else if (filterStatus !== 'all') {
+      result = result.filter(f => f.status === filterStatus);
+    }
+    
+    return result;
+  }, [findings, currentRoute, filterType, filterStatus, activeOverlay]);
+  
+  // (Old route change effect was merged into the above useEffect)
   
   // Generate Lovable prompt from findings
   const generateLovablePrompt = useCallback(() => {
