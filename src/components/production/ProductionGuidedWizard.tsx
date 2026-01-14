@@ -835,6 +835,42 @@ export const ProductionGuidedWizard: React.FC<ProductionGuidedWizardProps> = ({
         
       case 'promotion':
         // Smart Promotion Stage - share and invite
+        const handleShareLink = async () => {
+          const eventUrl = selectedShow?.meeting_link || `${window.location.origin}/events/${selectedShow?.id}`;
+          try {
+            if (navigator.share) {
+              await navigator.share({
+                title: selectedShow?.title || 'Event Invitation',
+                text: `Join us for "${selectedShow?.title}" on ${selectedShow?.scheduled_date ? new Date(selectedShow.scheduled_date).toLocaleDateString() : 'the scheduled date'}`,
+                url: eventUrl,
+              });
+              toast.success('Event shared successfully!');
+            } else {
+              await navigator.clipboard.writeText(eventUrl);
+              toast.success('Event link copied to clipboard!');
+            }
+          } catch (err) {
+            // User cancelled share or error
+            if ((err as Error).name !== 'AbortError') {
+              await navigator.clipboard.writeText(eventUrl);
+              toast.success('Event link copied to clipboard!');
+            }
+          }
+        };
+        
+        const handleLaunchPromotion = async () => {
+          if (!selectedShow?.participants?.length) {
+            // Open invite dialog if no participants
+            onInviteGuests();
+            toast.info('Add attendees to promote your event');
+            return;
+          }
+          // Send invites to all participants
+          setFollowUpMessage(`Hi,\n\nYou're invited to "${selectedShow?.title}"!\n\nDate: ${selectedShow?.scheduled_date ? new Date(selectedShow.scheduled_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'TBD'}\n${selectedShow?.meeting_link ? `\nJoin here: ${selectedShow.meeting_link}` : ''}\n\nWe look forward to seeing you there!\n\nBest regards`);
+          setSelectedParticipants(selectedShow.participants.map(p => p.id));
+          setIsFollowUpDialogOpen(true);
+        };
+        
         return (
           <div className="space-y-3">
             {selectedShow && (
@@ -850,21 +886,12 @@ export const ProductionGuidedWizard: React.FC<ProductionGuidedWizardProps> = ({
                 <Mail className="h-3 w-3 mr-1" />
                 Send Invites
               </Button>
-              <Button variant="outline" size="sm" onClick={() => {
-                if (selectedShow?.meeting_link) {
-                  navigator.clipboard.writeText(selectedShow.meeting_link);
-                  toast.success('Event link copied!');
-                } else {
-                  toast.info('No event link set. Add one in event settings.');
-                }
-              }}>
+              <Button variant="outline" size="sm" onClick={handleShareLink}>
                 <Share2 className="h-3 w-3 mr-1" />
                 Share Link
               </Button>
             </div>
-            <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500" onClick={() => {
-              toast.success('Promotion launched! Invites sent.');
-            }}>
+            <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500" onClick={handleLaunchPromotion}>
               <Megaphone className="h-4 w-4 mr-2" />
               Launch Promotion
             </Button>
