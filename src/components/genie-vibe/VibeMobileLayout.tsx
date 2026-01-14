@@ -26,6 +26,16 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { 
   Video, 
   Scissors, 
@@ -49,13 +59,26 @@ import {
   Shuffle,
   Save,
   CloudOff,
-  Check
+  Check,
+  Image,
+  ExternalLink,
+  Link2,
+  Youtube,
+  Instagram,
+  Twitter,
+  Linkedin,
+  Globe,
+  Settings,
+  Loader2
 } from 'lucide-react';
 import { AskGenie } from '@/components/genie-studio/AskGenie';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { useMobileFeatures } from '@/hooks/useMobileFeatures';
+import { useVibeThumbnails } from '@/hooks/useVibeThumbnails';
+import { useVibeProductionSync } from '@/hooks/useVibeProductionSync';
+import { useVibeSocialPublish, type SocialPlatform } from '@/hooks/useVibeSocialPublish';
 
 // Core mobile components
 import { 
@@ -109,6 +132,11 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
   const { state: syncState, syncNow, getQueuedItems } = useOfflineSync();
   const { isOnline, shareContent, vibrate } = useMobileFeatures();
   
+  // New hooks for thumbnails, production sync, and social publishing
+  const { isGenerating: isGeneratingThumbnail, generateThumbnail } = useVibeThumbnails();
+  const { isSyncing: isSyncingToHub, syncToProductionHub, getAvailableShows } = useVibeProductionSync();
+  const { isPublishing, publishTo, suggestHashtags, getCharacterLimit, setN8nWebhook, triggerN8nWorkflow } = useVibeSocialPublish();
+  
   // Simplified 3-tab state - initialize from parent's state
   const [activeTab, setActiveTab] = useState<SimplifiedTab>('record');
   const [recordings, setRecordingsInternal] = useState<RecordingResult[]>(initialRecordings);
@@ -118,6 +146,16 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
   const [recordingMode, setRecordingMode] = useState<RecordingMode>('camera');
+  
+  // Publish state
+  const [showPublishDialog, setShowPublishDialog] = useState(false);
+  const [publishCaption, setPublishCaption] = useState('');
+  const [selectedPlatforms, setSelectedPlatforms] = useState<SocialPlatform[]>([]);
+  const [availableShows, setAvailableShows] = useState<Array<{ id: string; title: string }>>([]);
+  const [selectedShowId, setSelectedShowId] = useState<string>('');
+  const [n8nWebhookUrl, setN8nWebhookUrl] = useState<string>('');
+  const [showN8nConfig, setShowN8nConfig] = useState(false);
+  const [currentThumbnail, setCurrentThumbnail] = useState<string | null>(null);
 
   // Wrapped setters that also notify parent
   const setRecordings = useCallback((updater: RecordingResult[] | ((prev: RecordingResult[]) => RecordingResult[])) => {
@@ -724,13 +762,52 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
             {/* ===== EXPORT TAB ===== */}
             <TabsContent value="export" className="h-full m-0 overflow-auto">
               <div className="p-4 space-y-4">
-                {/* Export Summary */}
+                {/* Thumbnail Preview Card */}
                 <Card>
                   <CardContent className="py-4 px-4">
-                    <div className="text-center space-y-2">
-                      <div className="text-3xl font-bold">{timelineClips.length}</div>
-                      <div className="text-sm text-muted-foreground">
-                        clips • {Math.round(totalDuration)}s duration
+                    <div className="flex items-start gap-4">
+                      {/* Thumbnail */}
+                      <div className="relative w-24 h-16 bg-muted rounded-lg overflow-hidden flex-shrink-0">
+                        {currentThumbnail || (recordings[0]?.thumbnailUrl) ? (
+                          <img 
+                            src={currentThumbnail || recordings[0]?.thumbnailUrl} 
+                            alt="Preview" 
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Video className="h-6 w-6 text-muted-foreground" />
+                          </div>
+                        )}
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="absolute bottom-1 right-1 h-6 w-6"
+                          onClick={async () => {
+                            const result = await generateThumbnail({
+                              title: `Recording ${recordings.length}`,
+                              style: 'youtube'
+                            });
+                            if (result?.thumbnailUrl) {
+                              setCurrentThumbnail(result.thumbnailUrl);
+                            }
+                          }}
+                          disabled={isGeneratingThumbnail || !isOnline}
+                        >
+                          {isGeneratingThumbnail ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Image className="h-3 w-3" />
+                          )}
+                        </Button>
+                      </div>
+                      
+                      {/* Stats */}
+                      <div className="flex-1">
+                        <div className="text-2xl font-bold">{timelineClips.length} clips</div>
+                        <div className="text-sm text-muted-foreground">
+                          {Math.round(totalDuration)}s duration
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -751,43 +828,209 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
 
                 {/* Export Options */}
                 <div className="space-y-3">
-                  <h3 className="text-sm font-medium">Export Format</h3>
+                  <h3 className="text-sm font-medium flex items-center gap-2">
+                    <Download className="h-4 w-4" />
+                    Local Export
+                  </h3>
                   <div className="grid grid-cols-2 gap-3">
                     <Button 
                       variant="outline" 
-                      className="h-auto py-4 flex-col gap-2"
+                      className="h-auto py-3 flex-col gap-1.5"
                       onClick={() => handleExport('mp4')}
                       disabled={isExporting || timelineClips.length === 0}
                     >
-                      <Download className="h-5 w-5" />
-                      <span className="font-medium">MP4</span>
-                      <span className="text-xs text-muted-foreground">Best quality</span>
+                      <Download className="h-4 w-4" />
+                      <span className="font-medium text-sm">MP4</span>
+                      <span className="text-[10px] text-muted-foreground">Best quality</span>
                     </Button>
                     <Button 
                       variant="outline" 
-                      className="h-auto py-4 flex-col gap-2"
+                      className="h-auto py-3 flex-col gap-1.5"
                       onClick={() => handleExport('webm')}
                       disabled={isExporting || timelineClips.length === 0}
                     >
-                      <Download className="h-5 w-5" />
-                      <span className="font-medium">WebM</span>
-                      <span className="text-xs text-muted-foreground">Smaller size</span>
+                      <Download className="h-4 w-4" />
+                      <span className="font-medium text-sm">WebM</span>
+                      <span className="text-[10px] text-muted-foreground">Smaller size</span>
                     </Button>
                   </div>
                 </div>
 
-                {/* Social Share */}
+                {/* Production Hub Sync */}
                 <div className="space-y-3">
-                  <h3 className="text-sm font-medium">Share</h3>
+                  <h3 className="text-sm font-medium flex items-center gap-2">
+                    <Link2 className="h-4 w-4" />
+                    Production Hub
+                  </h3>
+                  <Card className="border-primary/20 bg-primary/5">
+                    <CardContent className="py-3 px-4 space-y-3">
+                      <p className="text-xs text-muted-foreground">
+                        Sync to Production Hub for post-production, publishing, and team collaboration.
+                      </p>
+                      <Button 
+                        variant="default" 
+                        size="sm"
+                        className="w-full gap-2"
+                        onClick={async () => {
+                          const shows = await getAvailableShows();
+                          setAvailableShows(shows);
+                          setShowPublishDialog(true);
+                        }}
+                        disabled={!isOnline || timelineClips.length === 0 || isSyncingToHub}
+                      >
+                        {isSyncingToHub ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <ExternalLink className="h-4 w-4" />
+                        )}
+                        Sync to Production Hub
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Social Publish */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium flex items-center gap-2">
+                      <Share2 className="h-4 w-4" />
+                      Social Publish
+                    </h3>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => setShowN8nConfig(true)}
+                    >
+                      <Settings className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['youtube', 'instagram', 'tiktok'] as SocialPlatform[]).map(platform => (
+                      <Button
+                        key={platform}
+                        variant={selectedPlatforms.includes(platform) ? "default" : "outline"}
+                        size="sm"
+                        className="h-auto py-2 flex-col gap-1"
+                        onClick={() => {
+                          setSelectedPlatforms(prev => 
+                            prev.includes(platform) 
+                              ? prev.filter(p => p !== platform)
+                              : [...prev, platform]
+                          );
+                        }}
+                        disabled={!isOnline}
+                      >
+                        {platform === 'youtube' && <Youtube className="h-4 w-4" />}
+                        {platform === 'instagram' && <Instagram className="h-4 w-4" />}
+                        {platform === 'tiktok' && <Globe className="h-4 w-4" />}
+                        <span className="text-[10px] capitalize">{platform}</span>
+                      </Button>
+                    ))}
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['twitter', 'linkedin', 'facebook'] as SocialPlatform[]).map(platform => (
+                      <Button
+                        key={platform}
+                        variant={selectedPlatforms.includes(platform) ? "default" : "outline"}
+                        size="sm"
+                        className="h-auto py-2 flex-col gap-1"
+                        onClick={() => {
+                          setSelectedPlatforms(prev => 
+                            prev.includes(platform) 
+                              ? prev.filter(p => p !== platform)
+                              : [...prev, platform]
+                          );
+                        }}
+                        disabled={!isOnline}
+                      >
+                        {platform === 'twitter' && <Twitter className="h-4 w-4" />}
+                        {platform === 'linkedin' && <Linkedin className="h-4 w-4" />}
+                        {platform === 'facebook' && <Globe className="h-4 w-4" />}
+                        <span className="text-[10px] capitalize">{platform}</span>
+                      </Button>
+                    ))}
+                  </div>
+
+                  {selectedPlatforms.length > 0 && (
+                    <div className="space-y-2">
+                      <Textarea
+                        placeholder="Add caption..."
+                        value={publishCaption}
+                        onChange={(e) => setPublishCaption(e.target.value)}
+                        className="min-h-[60px] text-sm"
+                      />
+                      <div className="flex items-center justify-between">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs"
+                          onClick={() => {
+                            const hashtags = suggestHashtags(`Recording ${recordings.length}`);
+                            setPublishCaption(prev => prev + ' ' + hashtags.join(' '));
+                          }}
+                        >
+                          <Sparkles className="h-3 w-3 mr-1" />
+                          Add Hashtags
+                        </Button>
+                        <span className="text-[10px] text-muted-foreground">
+                          {publishCaption.length}/{getCharacterLimit(selectedPlatforms[0] || 'youtube')}
+                        </span>
+                      </div>
+                      <Button 
+                        className="w-full gap-2"
+                        onClick={async () => {
+                          for (const platform of selectedPlatforms) {
+                            await publishTo(
+                              {
+                                id: recordings[0]?.id || 'new',
+                                title: `Recording ${recordings.length}`,
+                                status: 'completed',
+                                recording_type: 'video',
+                                file_url: recordings[0]?.url,
+                                thumbnail_url: currentThumbnail || recordings[0]?.thumbnailUrl,
+                                created_at: new Date().toISOString(),
+                                updated_at: new Date().toISOString(),
+                              },
+                              { platform, caption: publishCaption }
+                            );
+                          }
+                          setSelectedPlatforms([]);
+                          setPublishCaption('');
+                        }}
+                        disabled={isPublishing || !publishCaption}
+                      >
+                        {isPublishing ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Share2 className="h-4 w-4" />
+                        )}
+                        Publish to {selectedPlatforms.length} Platform{selectedPlatforms.length > 1 ? 's' : ''}
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {!isOnline && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <CloudOff className="h-3 w-3" />
+                      Social publish requires internet connection
+                    </div>
+                  )}
+                </div>
+
+                {/* Quick Share (Native) */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium">Quick Share</h3>
                   <Button 
                     variant="outline" 
                     className="w-full gap-2"
                     onClick={handleShare}
-                    disabled={!isOnline || timelineClips.length === 0}
+                    disabled={timelineClips.length === 0}
                   >
                     <Share2 className="h-4 w-4" />
-                    Share to Social
-                    {!isOnline && <Badge variant="secondary" className="ml-2 text-xs">Offline</Badge>}
+                    Share via Device
                   </Button>
                 </div>
 
