@@ -774,7 +774,90 @@ export const swotBySegment: Record<string, SWOTItem[]> = {
 
 // =============================================================================
 // GARTNER-STYLE POSITIONING (Vision vs Execution)
+// Scoring Methodology:
+// - Vision Score (0-100): Measures innovation potential, AI capabilities, multi-segment scalability
+//   Components: AI Integration (30%), Platform Scope (25%), Innovation Pipeline (25%), Market Vision (20%)
+// - Execution Score (0-100): Measures market presence, feature completeness, revenue/users
+//   Components: Market Share (30%), Feature Completeness (30%), Revenue/Users (25%), Reliability (15%)
+// - Genie Suite scores increase as: Features are implemented (from types.ts), user base grows, 
+//   revenue milestones hit, and reliability metrics improve
 // =============================================================================
+
+export interface GenieScoringMethodology {
+  visionComponents: {
+    aiIntegration: { weight: number; description: string; currentScore: number };
+    platformScope: { weight: number; description: string; currentScore: number };
+    innovationPipeline: { weight: number; description: string; currentScore: number };
+    marketVision: { weight: number; description: string; currentScore: number };
+  };
+  executionComponents: {
+    marketShare: { weight: number; description: string; currentScore: number };
+    featureCompleteness: { weight: number; description: string; currentScore: number };
+    revenueUsers: { weight: number; description: string; currentScore: number };
+    reliability: { weight: number; description: string; currentScore: number };
+  };
+  totalVision: number;
+  totalExecution: number;
+  quadrant: string;
+  growthPath: string[];
+}
+
+export const genieScoringBreakdown: GenieScoringMethodology = {
+  visionComponents: {
+    aiIntegration: { 
+      weight: 30, 
+      description: '11 TTS providers, multi-model AI routing, script generation',
+      currentScore: 95 
+    },
+    platformScope: { 
+      weight: 25, 
+      description: '7 segments (Creator, Influencer, Knowledge, Traveler, SMB, Healthcare, Enterprise)',
+      currentScore: 90 
+    },
+    innovationPipeline: { 
+      weight: 25, 
+      description: 'MCP Integration, Label Studio, Multi-tenant architecture planned',
+      currentScore: 88 
+    },
+    marketVision: { 
+      weight: 20, 
+      description: 'Unified script-to-screen replacing 6+ fragmented tools',
+      currentScore: 92 
+    },
+  },
+  executionComponents: {
+    marketShare: { 
+      weight: 30, 
+      description: 'Early stage - building initial user base',
+      currentScore: 15 
+    },
+    featureCompleteness: { 
+      weight: 30, 
+      description: 'Phase 1-2 complete (40%), Phases 3-5 in progress (60%)',
+      currentScore: 46 
+    },
+    revenueUsers: { 
+      weight: 25, 
+      description: 'Pre-revenue, beta users',
+      currentScore: 10 
+    },
+    reliability: { 
+      weight: 15, 
+      description: 'Edge functions deployed, real-time processing working',
+      currentScore: 65 
+    },
+  },
+  totalVision: 92,
+  totalExecution: 46,
+  quadrant: 'Visionaries',
+  growthPath: [
+    'Q1 2026: Feature completeness → 65% (+19 execution points)',
+    'Q2 2026: Beta users → 1,000+ → Revenue → $10K MRR (+15 execution points)',
+    'Q3 2026: Market share → Healthcare pilot wins (+10 execution points)',
+    'Q4 2026: Target → Execution 80+ → Move to Leaders quadrant',
+  ],
+};
+
 export const gartnerPositions: Record<string, GartnerPosition[]> = {
   creator: [
     { name: 'CapCut', visionScore: 75, executionScore: 90, quadrant: 'Leaders' },
