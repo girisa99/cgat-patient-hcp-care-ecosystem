@@ -1,7 +1,7 @@
 /**
  * Ralph Wiggum Global Floating Panel
  * Dev-only UI/UX review panel with auto-analysis
- * Draggable and consolidated - single unified panel
+ * Draggable, consolidated, and simplified
  */
 
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
@@ -22,9 +22,11 @@ import {
   Trash2,
   Copy,
   GripVertical,
-  Sparkles,
   Loader2,
-  Play
+  Play,
+  Send,
+  Filter,
+  CheckCheck
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,15 +41,15 @@ import { toast } from 'sonner';
 // DEV-ONLY check
 const isDev = import.meta.env.DEV;
 
-// Status colors and icons
-const statusConfig: Record<FindingStatus, { color: string; icon: React.ReactNode; label: string }> = {
-  new: { color: 'bg-blue-500', icon: <AlertCircle className="h-3 w-3" />, label: 'New' },
-  acknowledged: { color: 'bg-yellow-500', icon: <CheckCircle className="h-3 w-3" />, label: 'Ack' },
-  in_progress: { color: 'bg-orange-500', icon: <RefreshCw className="h-3 w-3" />, label: 'WIP' },
-  fixed: { color: 'bg-green-500', icon: <CheckCircle className="h-3 w-3" />, label: 'Fixed' },
-  verified: { color: 'bg-emerald-600', icon: <CheckCircle className="h-3 w-3" />, label: 'Done' },
-  wont_fix: { color: 'bg-gray-500', icon: <X className="h-3 w-3" />, label: 'Skip' },
-  duplicate: { color: 'bg-purple-500', icon: <Copy className="h-3 w-3" />, label: 'Dup' }
+// Status colors and icons - clearer visual hierarchy
+const statusConfig: Record<FindingStatus, { color: string; bgColor: string; icon: React.ReactNode; label: string }> = {
+  new: { color: 'text-blue-600', bgColor: 'bg-blue-500', icon: <AlertCircle className="h-3 w-3" />, label: 'New' },
+  acknowledged: { color: 'text-yellow-600', bgColor: 'bg-yellow-500', icon: <CheckCircle className="h-3 w-3" />, label: 'Ack' },
+  in_progress: { color: 'text-orange-600', bgColor: 'bg-orange-500', icon: <RefreshCw className="h-3 w-3" />, label: 'WIP' },
+  fixed: { color: 'text-green-600', bgColor: 'bg-green-500', icon: <CheckCircle className="h-3 w-3" />, label: 'Fixed' },
+  verified: { color: 'text-emerald-600', bgColor: 'bg-emerald-600', icon: <CheckCheck className="h-3 w-3" />, label: 'Done' },
+  wont_fix: { color: 'text-gray-500', bgColor: 'bg-gray-500', icon: <X className="h-3 w-3" />, label: 'Skip' },
+  duplicate: { color: 'text-purple-500', bgColor: 'bg-purple-500', icon: <Copy className="h-3 w-3" />, label: 'Dup' }
 };
 
 const typeConfig: Record<FindingType, { color: string; icon: React.ReactNode; label: string }> = {
@@ -95,8 +97,11 @@ const FindingCard: React.FC<FindingCardProps> = ({
           <span className={typeInfo.color}>{typeInfo.icon}</span>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <h4 className="font-medium text-xs truncate max-w-[200px]">{finding.title}</h4>
-              <Badge variant="outline" className={`${statusInfo.color} text-white text-[10px] px-1 py-0 h-4`}>
+              <h4 className="font-medium text-xs truncate max-w-[180px]">{finding.title}</h4>
+              <Badge 
+                variant="outline" 
+                className={`${statusInfo.bgColor} text-white text-[10px] px-1 py-0 h-4 border-0`}
+              >
                 {statusInfo.label}
               </Badge>
             </div>
@@ -125,7 +130,7 @@ const FindingCard: React.FC<FindingCardProps> = ({
               
               {finding.recommendation && (
                 <div className="bg-muted/50 rounded p-1.5">
-                  <p className="text-[10px] text-muted-foreground">{finding.recommendation}</p>
+                  <p className="text-[10px] font-medium text-muted-foreground">💡 {finding.recommendation}</p>
                 </div>
               )}
               
@@ -134,13 +139,16 @@ const FindingCard: React.FC<FindingCardProps> = ({
                   value={finding.status}
                   onValueChange={(value) => onStatusChange(value as FindingStatus)}
                 >
-                  <SelectTrigger className="h-6 text-[10px] w-24">
+                  <SelectTrigger className="h-6 text-[10px] w-28">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(statusConfig).map(([key, config]) => (
                       <SelectItem key={key} value={key} className="text-xs">
-                        {config.label}
+                        <span className="flex items-center gap-1">
+                          <span className={`h-2 w-2 rounded-full ${config.bgColor}`} />
+                          {config.label}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -181,6 +189,7 @@ export const RalphWiggumGlobalPanel: React.FC = () => {
   
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<FindingType | 'all'>('all');
+  const [filterStatus, setFilterStatus] = useState<FindingStatus | 'all' | 'active'>('active');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const hasAutoAnalyzed = useRef(false);
   
@@ -198,11 +207,36 @@ export const RalphWiggumGlobalPanel: React.FC = () => {
   // Filter findings for current page
   const currentPageFindings = useMemo(() => {
     let result = findings.filter(f => f.page_route === currentRoute);
+    
+    // Apply type filter
     if (filterType !== 'all') {
       result = result.filter(f => f.finding_type === filterType);
     }
+    
+    // Apply status filter
+    if (filterStatus === 'active') {
+      result = result.filter(f => ['new', 'acknowledged', 'in_progress'].includes(f.status));
+    } else if (filterStatus !== 'all') {
+      result = result.filter(f => f.status === filterStatus);
+    }
+    
     return result;
-  }, [findings, currentRoute, filterType]);
+  }, [findings, currentRoute, filterType, filterStatus]);
+  
+  // Count by status for current page
+  const statusCounts = useMemo(() => {
+    const pageFindings = findings.filter(f => f.page_route === currentRoute);
+    const counts: Record<string, number> = { active: 0 };
+    
+    pageFindings.forEach(f => {
+      counts[f.status] = (counts[f.status] || 0) + 1;
+      if (['new', 'acknowledged', 'in_progress'].includes(f.status)) {
+        counts.active++;
+      }
+    });
+    
+    return counts;
+  }, [findings, currentRoute]);
   
   // Run AI analysis for current page
   const runAnalysis = useCallback(async () => {
@@ -306,43 +340,52 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
     }
   }, [currentRoute, currentPageName, isAnalyzing, addFinding, refreshFindings]);
   
-  // Auto-analyze when panel opens on a new page
+  // Auto-analyze when panel opens on a new page with no findings
   useEffect(() => {
-    if (isPanelOpen && !hasAutoAnalyzed.current && currentPageFindings.length === 0) {
-      hasAutoAnalyzed.current = true;
-      const timer = setTimeout(() => {
-        runAnalysis();
-      }, 1000);
-      return () => clearTimeout(timer);
+    if (isPanelOpen && !hasAutoAnalyzed.current) {
+      const pageFindings = findings.filter(f => f.page_route === currentRoute);
+      if (pageFindings.length === 0) {
+        hasAutoAnalyzed.current = true;
+        const timer = setTimeout(() => {
+          runAnalysis();
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [isPanelOpen, currentPageFindings.length, runAnalysis]);
+  }, [isPanelOpen, findings, currentRoute, runAnalysis]);
   
   // Reset auto-analyze flag when route changes
   useEffect(() => {
     hasAutoAnalyzed.current = false;
   }, [currentRoute]);
   
-  // Export to Lovable format
+  // Share to Lovable - copies ALL active findings and marks them as WIP
   const handleShareToLovable = useCallback(async () => {
-    const activeFindings = currentPageFindings.filter(f => f.status === 'new' || f.status === 'acknowledged');
+    const activeFindings = currentPageFindings.filter(
+      f => f.status === 'new' || f.status === 'acknowledged'
+    );
     
     if (activeFindings.length === 0) {
-      toast.error('No active findings to share');
+      toast.error('No active (New/Ack) findings to share');
       return;
     }
     
-    let prompt = `## Ralph Wiggum Review - ${currentPageName}\n\n`;
+    // Build Lovable-formatted prompt
+    let prompt = `## 🐛 Ralph Wiggum Review - ${currentPageName}\n\n`;
+    prompt += `**Route:** \`${currentRoute}\`\n`;
+    prompt += `**Findings:** ${activeFindings.length} items\n\n`;
     prompt += `Please implement these UI/UX improvements:\n\n`;
     
     const critical = activeFindings.filter(f => f.finding_type === 'critical');
     const warnings = activeFindings.filter(f => f.finding_type === 'warning');
     const suggestions = activeFindings.filter(f => f.finding_type === 'suggestion');
+    const journey = activeFindings.filter(f => f.finding_type === 'journey');
     
     if (critical.length > 0) {
       prompt += `### 🚨 Critical Issues\n`;
       critical.forEach((f, i) => {
         prompt += `${i + 1}. **${f.title}**: ${f.description}\n`;
-        if (f.recommendation) prompt += `   - Fix: ${f.recommendation}\n`;
+        if (f.recommendation) prompt += `   - 💡 Fix: ${f.recommendation}\n`;
       });
       prompt += '\n';
     }
@@ -351,7 +394,7 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
       prompt += `### ⚠️ Warnings\n`;
       warnings.forEach((f, i) => {
         prompt += `${i + 1}. **${f.title}**: ${f.description}\n`;
-        if (f.recommendation) prompt += `   - Fix: ${f.recommendation}\n`;
+        if (f.recommendation) prompt += `   - 💡 Fix: ${f.recommendation}\n`;
       });
       prompt += '\n';
     }
@@ -360,13 +403,53 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
       prompt += `### 💡 Suggestions\n`;
       suggestions.forEach((f, i) => {
         prompt += `${i + 1}. **${f.title}**: ${f.description}\n`;
-        if (f.recommendation) prompt += `   - Fix: ${f.recommendation}\n`;
+        if (f.recommendation) prompt += `   - 💡 Fix: ${f.recommendation}\n`;
+      });
+      prompt += '\n';
+    }
+    
+    if (journey.length > 0) {
+      prompt += `### 🗺️ Journey Improvements\n`;
+      journey.forEach((f, i) => {
+        prompt += `${i + 1}. **${f.title}**: ${f.description}\n`;
+        if (f.recommendation) prompt += `   - 💡 Fix: ${f.recommendation}\n`;
       });
     }
     
-    await navigator.clipboard.writeText(prompt);
-    toast.success('Copied to clipboard! Paste in Lovable chat', { icon: '✨' });
-  }, [currentPageFindings, currentPageName]);
+    try {
+      await navigator.clipboard.writeText(prompt);
+      
+      // Mark all shared findings as "in_progress"
+      for (const finding of activeFindings) {
+        await updateFindingStatus(finding.id, 'in_progress', 'lovable-share');
+      }
+      
+      toast.success(
+        `✨ Copied ${activeFindings.length} findings to clipboard!\nPaste in Lovable chat.\nStatus updated to WIP.`,
+        { duration: 4000 }
+      );
+    } catch (err) {
+      toast.error('Failed to copy to clipboard');
+    }
+  }, [currentPageFindings, currentPageName, currentRoute, updateFindingStatus]);
+  
+  // Bulk status update
+  const handleBulkStatusUpdate = useCallback(async (newStatus: FindingStatus) => {
+    const activeFindings = currentPageFindings.filter(
+      f => f.status === 'new' || f.status === 'acknowledged' || f.status === 'in_progress'
+    );
+    
+    if (activeFindings.length === 0) {
+      toast.error('No active findings to update');
+      return;
+    }
+    
+    for (const finding of activeFindings) {
+      await updateFindingStatus(finding.id, newStatus, 'bulk-update');
+    }
+    
+    toast.success(`Updated ${activeFindings.length} findings to ${statusConfig[newStatus].label}`);
+  }, [currentPageFindings, updateFindingStatus]);
   
   // Export as markdown file
   const handleExportMD = useCallback(async () => {
@@ -375,11 +458,11 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `ralph-wiggum-${new Date().toISOString().split('T')[0]}.md`;
+    a.download = `ralph-wiggum-${currentRoute.replace(/\//g, '-')}-${new Date().toISOString().split('T')[0]}.md`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success('Downloaded report');
-  }, [exportFindings]);
+  }, [exportFindings, currentRoute]);
   
   // Floating toggle button - positioned on LEFT to avoid Ask Genie
   const ToggleButton = (
@@ -405,7 +488,7 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
           </TooltipTrigger>
           <TooltipContent side="right">
             <p>Ralph Wiggum (Dev)</p>
-            <p className="text-xs text-muted-foreground">{stats.total} findings</p>
+            <p className="text-xs text-muted-foreground">{stats.total} findings total</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -451,9 +534,6 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
                 <GripVertical className="h-3 w-3 text-white/70" />
                 <Bug className="h-4 w-4 text-white" />
                 <CardTitle className="text-xs text-white">Ralph Wiggum</CardTitle>
-                <Badge variant="secondary" className="text-[10px] px-1.5 h-4">
-                  {currentPageFindings.length}
-                </Badge>
               </div>
               <Button
                 variant="ghost"
@@ -468,6 +548,45 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
           </CardHeader>
           
           <CardContent className="p-2 space-y-2">
+            {/* Status Summary Badges */}
+            <div className="flex flex-wrap gap-1">
+              <Badge 
+                variant={filterStatus === 'active' ? 'default' : 'outline'}
+                className="text-[10px] cursor-pointer"
+                onClick={() => setFilterStatus('active')}
+              >
+                Active: {statusCounts.active || 0}
+              </Badge>
+              <Badge 
+                variant={filterStatus === 'new' ? 'default' : 'outline'}
+                className="text-[10px] cursor-pointer bg-blue-500/10 hover:bg-blue-500/20"
+                onClick={() => setFilterStatus('new')}
+              >
+                New: {statusCounts.new || 0}
+              </Badge>
+              <Badge 
+                variant={filterStatus === 'in_progress' ? 'default' : 'outline'}
+                className="text-[10px] cursor-pointer bg-orange-500/10 hover:bg-orange-500/20"
+                onClick={() => setFilterStatus('in_progress')}
+              >
+                WIP: {statusCounts.in_progress || 0}
+              </Badge>
+              <Badge 
+                variant={filterStatus === 'fixed' ? 'default' : 'outline'}
+                className="text-[10px] cursor-pointer bg-green-500/10 hover:bg-green-500/20"
+                onClick={() => setFilterStatus('fixed')}
+              >
+                Fixed: {statusCounts.fixed || 0}
+              </Badge>
+              <Badge 
+                variant={filterStatus === 'all' ? 'default' : 'outline'}
+                className="text-[10px] cursor-pointer"
+                onClick={() => setFilterStatus('all')}
+              >
+                All
+              </Badge>
+            </div>
+            
             {/* Action Buttons */}
             <div className="flex gap-1.5">
               <Button
@@ -484,84 +603,112 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
                 )}
                 {isAnalyzing ? 'Analyzing...' : 'Analyze'}
               </Button>
+              
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="default"
+                      className="flex-1 h-7 text-xs bg-violet-600 hover:bg-violet-700"
+                      onClick={handleShareToLovable}
+                      disabled={currentPageFindings.filter(f => f.status === 'new' || f.status === 'acknowledged').length === 0}
+                    >
+                      <Send className="h-3 w-3 mr-1" />
+                      Share to Lovable
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Copies all New/Ack findings and marks them WIP</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            
+            {/* Bulk Actions */}
+            <div className="flex gap-1">
               <Button
                 size="sm"
-                variant="outline"
-                className="h-7 text-xs px-2"
-                onClick={refreshFindings}
-                disabled={isLoading}
+                variant="ghost"
+                className="h-6 text-[10px] flex-1"
+                onClick={() => handleBulkStatusUpdate('fixed')}
               >
-                <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
+                <CheckCircle className="h-3 w-3 mr-0.5 text-green-500" />
+                Mark All Fixed
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 text-[10px]"
+                onClick={handleExportMD}
+              >
+                <Download className="h-3 w-3 mr-0.5" />
+                Export
               </Button>
             </div>
             
-            {/* Filter */}
-            <Select value={filterType} onValueChange={(v) => setFilterType(v as FindingType | 'all')}>
-              <SelectTrigger className="h-7 text-xs">
-                <SelectValue placeholder="All Types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all" className="text-xs">All Types ({currentPageFindings.length})</SelectItem>
-                {Object.entries(typeConfig).map(([key, config]) => (
-                  <SelectItem key={key} value={key} className="text-xs">
-                    <span className="flex items-center gap-1">
-                      {config.icon} {config.label}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Type Filter */}
+            <div className="flex items-center gap-2">
+              <Filter className="h-3 w-3 text-muted-foreground" />
+              <Select value={filterType} onValueChange={(v) => setFilterType(v as FindingType | 'all')}>
+                <SelectTrigger className="h-6 text-[10px] flex-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" className="text-xs">All Types</SelectItem>
+                  {Object.entries(typeConfig).map(([key, config]) => (
+                    <SelectItem key={key} value={key} className="text-xs">
+                      <span className="flex items-center gap-1">
+                        <span className={config.color}>{config.icon}</span>
+                        {config.label}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             
             {/* Findings List */}
-            <ScrollArea className="h-[300px]">
+            <ScrollArea className="h-[280px]">
               <div className="space-y-1.5 pr-2">
-                {isAnalyzing && currentPageFindings.length === 0 && (
-                  <div className="text-center py-6 text-muted-foreground">
-                    <Loader2 className="h-6 w-6 mx-auto mb-2 animate-spin" />
-                    <p className="text-xs">Analyzing page...</p>
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                   </div>
-                )}
-                
-                {!isAnalyzing && currentPageFindings.length === 0 && (
-                  <div className="text-center py-6 text-muted-foreground">
-                    <Bug className="h-6 w-6 mx-auto mb-2 opacity-50" />
-                    <p className="text-xs">No findings yet</p>
-                    <p className="text-[10px]">Click Analyze to review</p>
+                ) : currentPageFindings.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Bug className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-xs">No {filterStatus !== 'all' ? filterStatus : ''} findings</p>
+                    <Button 
+                      size="sm" 
+                      variant="link" 
+                      className="text-xs mt-1"
+                      onClick={runAnalysis}
+                      disabled={isAnalyzing}
+                    >
+                      Run analysis
+                    </Button>
                   </div>
+                ) : (
+                  currentPageFindings.map(finding => (
+                    <FindingCard
+                      key={finding.id}
+                      finding={finding}
+                      onStatusChange={(status) => updateFindingStatus(finding.id, status)}
+                      onDelete={() => deleteFinding(finding.id)}
+                      isExpanded={expandedId === finding.id}
+                      onToggleExpand={() => setExpandedId(expandedId === finding.id ? null : finding.id)}
+                    />
+                  ))
                 )}
-                
-                {currentPageFindings.map((finding) => (
-                  <FindingCard
-                    key={finding.id}
-                    finding={finding}
-                    onStatusChange={(status) => updateFindingStatus(finding.id, status)}
-                    onDelete={() => deleteFinding(finding.id)}
-                    isExpanded={expandedId === finding.id}
-                    onToggleExpand={() => setExpandedId(expandedId === finding.id ? null : finding.id)}
-                  />
-                ))}
               </div>
             </ScrollArea>
             
-            {/* Export Actions */}
-            <div className="flex gap-1.5 pt-1 border-t">
-              <Button
-                size="sm"
-                variant="outline"
-                className="flex-1 h-7 text-xs"
-                onClick={handleExportMD}
-              >
-                <Download className="h-3 w-3 mr-1" />
-                Export MD
-              </Button>
-              <Button
-                size="sm"
-                className="flex-1 h-7 text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
-                onClick={handleShareToLovable}
-              >
-                <Sparkles className="h-3 w-3 mr-1" />
-                Share to Lovable
-              </Button>
+            {/* Status Legend */}
+            <div className="pt-1 border-t">
+              <p className="text-[9px] text-muted-foreground text-center">
+                New → Ack → WIP → Fixed → Done | After sharing, manually mark as Fixed when implemented
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -569,5 +716,3 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
     </>
   );
 };
-
-export default RalphWiggumGlobalPanel;

@@ -532,7 +532,7 @@ const isDev = import.meta.env.DEV;
 
 // Import Ralph Wiggum components directly (they handle dev check internally)
 import { RalphWiggumProvider } from '@/contexts/RalphWiggumContext';
-import RalphWiggumGlobalPanel from '@/components/global/RalphWiggumGlobalPanel';
+import { RalphWiggumGlobalPanel } from '@/components/global/RalphWiggumGlobalPanel';
 
 const App = () => {
   console.log('🚀 App component rendering...');
