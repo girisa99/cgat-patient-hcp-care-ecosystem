@@ -81,6 +81,9 @@ import { VibeRecordTab, VibeLibraryTab, VibeCostTracker, VibeMobileLayout } from
 // Import useMediaProject for cost tracking (Phase 3)
 import { useMediaProject } from '@/components/document-processing/RecordingStudio/hooks';
 
+// Import persistence hook for drafts/session storage
+import { useVibeRecordingPersistence } from '@/hooks/useVibeRecordingPersistence';
+
 // Recording result type - matches OneTapRecordButton.RecordingResult
 interface RecordingResult {
   id: string;
@@ -156,12 +159,52 @@ const GenieVibe: React.FC = () => {
   const { scripts: savedScripts } = useGenieScripts();
   const { voiceovers, instrumentalMusic, ttsFiles } = useGenieMediaLibrary();
   
-  // Pipeline state - shared across all tabs
+  // Recording persistence - auto-saves drafts
+  const vibePersistence = useVibeRecordingPersistence({ autoSave: true, autoSaveInterval: 3000 });
+  
+  // Pipeline state - shared across all tabs (initialized from persisted data)
   const [activeTab, setActiveTab] = useState<PipelineStage>('record');
-  const [recordings, setRecordings] = useState<RecordingResult[]>([]);
-  const [timelineClips, setTimelineClips] = useState<TimelineClip[]>([]);
+  const [recordings, setRecordingsLocal] = useState<RecordingResult[]>([]);
+  const [timelineClips, setTimelineClipsLocal] = useState<TimelineClip[]>([]);
   const [mixedMedia, setMixedMedia] = useState<MixedResult | null>(null);
   const [completedStages, setCompletedStages] = useState<PipelineStage[]>([]);
+  
+  // Sync local state with persistence layer
+  useEffect(() => {
+    if (!vibePersistence.isLoading && vibePersistence.clips.length > 0) {
+      // Load persisted clips into local state
+      const persistedRecordings: RecordingResult[] = vibePersistence.clips.map(clip => ({
+        id: clip.id,
+        url: clip.sourceUrl,
+        duration: clip.duration,
+        type: clip.type === 'image' ? 'photo' : clip.type as 'video' | 'audio' | 'photo',
+        name: clip.name,
+        thumbnailUrl: clip.thumbnailUrl,
+      }));
+      
+      if (recordings.length === 0 && persistedRecordings.length > 0) {
+        setRecordingsLocal(persistedRecordings);
+        setTimelineClipsLocal(vibePersistence.clips);
+      }
+    }
+  }, [vibePersistence.isLoading, vibePersistence.clips, recordings.length]);
+  
+  // Wrapper to update both local state and persistence
+  const setRecordings = useCallback((updater: RecordingResult[] | ((prev: RecordingResult[]) => RecordingResult[])) => {
+    setRecordingsLocal(prev => {
+      const newVal = typeof updater === 'function' ? updater(prev) : updater;
+      return newVal;
+    });
+  }, []);
+  
+  const setTimelineClips = useCallback((updater: TimelineClip[] | ((prev: TimelineClip[]) => TimelineClip[])) => {
+    setTimelineClipsLocal(prev => {
+      const newVal = typeof updater === 'function' ? updater(prev) : updater;
+      // Persist to database
+      vibePersistence.updateClips(newVal);
+      return newVal;
+    });
+  }, [vibePersistence]);
   
   // P2: Timeline Editor state
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);

@@ -46,7 +46,10 @@ import {
   Layers,
   Music,
   Wand2,
-  Shuffle
+  Shuffle,
+  Save,
+  CloudOff,
+  Check
 } from 'lucide-react';
 import { AskGenie } from '@/components/genie-studio/AskGenie';
 import { cn } from '@/lib/utils';
@@ -251,6 +254,19 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
         </div>
         
         <div className="flex items-center gap-1.5">
+          {/* Save status indicator */}
+          {recordings.length > 0 && (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              {!syncState.isOnline ? (
+                <CloudOff className="h-3.5 w-3.5 text-amber-500" />
+              ) : syncState.isSyncing ? (
+                <Save className="h-3.5 w-3.5 animate-pulse text-primary" />
+              ) : (
+                <Check className="h-3.5 w-3.5 text-green-500" />
+              )}
+            </div>
+          )}
+          
           {onSwitchToDesktop && (
             <Button 
               variant="outline" 

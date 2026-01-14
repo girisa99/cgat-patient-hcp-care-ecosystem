@@ -18025,6 +18025,131 @@ export type Database = {
         }
         Relationships: []
       }
+      vibe_recordings: {
+        Row: {
+          created_at: string
+          duration_seconds: number | null
+          file_size_bytes: number | null
+          file_url: string | null
+          id: string
+          mime_type: string | null
+          recorded_at: string | null
+          recording_type: string
+          session_data: Json | null
+          status: string
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number | null
+          file_size_bytes?: number | null
+          file_url?: string | null
+          id?: string
+          mime_type?: string | null
+          recorded_at?: string | null
+          recording_type?: string
+          session_data?: Json | null
+          status?: string
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number | null
+          file_size_bytes?: number | null
+          file_url?: string | null
+          id?: string
+          mime_type?: string | null
+          recorded_at?: string | null
+          recording_type?: string
+          session_data?: Json | null
+          status?: string
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      vibe_timeline_clips: {
+        Row: {
+          clip_type: string
+          created_at: string
+          duration: number
+          effects: Json | null
+          id: string
+          in_point: number
+          metadata: Json | null
+          name: string
+          opacity: number | null
+          order_index: number
+          out_point: number
+          recording_id: string
+          source_url: string | null
+          start_time: number
+          thumbnail_url: string | null
+          track: number
+          updated_at: string
+          user_id: string
+          volume: number | null
+        }
+        Insert: {
+          clip_type?: string
+          created_at?: string
+          duration?: number
+          effects?: Json | null
+          id?: string
+          in_point?: number
+          metadata?: Json | null
+          name?: string
+          opacity?: number | null
+          order_index?: number
+          out_point?: number
+          recording_id: string
+          source_url?: string | null
+          start_time?: number
+          thumbnail_url?: string | null
+          track?: number
+          updated_at?: string
+          user_id: string
+          volume?: number | null
+        }
+        Update: {
+          clip_type?: string
+          created_at?: string
+          duration?: number
+          effects?: Json | null
+          id?: string
+          in_point?: number
+          metadata?: Json | null
+          name?: string
+          opacity?: number | null
+          order_index?: number
+          out_point?: number
+          recording_id?: string
+          source_url?: string | null
+          start_time?: number
+          thumbnail_url?: string | null
+          track?: number
+          updated_at?: string
+          user_id?: string
+          volume?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vibe_timeline_clips_recording_id_fkey"
+            columns: ["recording_id"]
+            isOneToOne: false
+            referencedRelation: "vibe_recordings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vision_analysis_logs: {
         Row: {
           ai_model: string | null
