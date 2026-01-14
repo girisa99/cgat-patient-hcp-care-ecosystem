@@ -31,11 +31,15 @@ export interface GeneratedMeetingUrl {
 
 /**
  * Get the base URL for meeting links
- * Always uses genieaiexperimentationhub.tech for consistent meeting URLs
- * Note: Can add .com domain before go-live
+ * Uses current origin in development, or production URL when deployed
  */
 export function getMeetingBaseUrl(): string {
-  return 'https://genieaiexperimentationhub.tech';
+  // In browser context, use current origin for proper routing
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  // Fallback for server-side or edge function contexts
+  return 'https://cgat-patient-hcp-care-ecosystem.lovable.app';
 }
 
 /**
