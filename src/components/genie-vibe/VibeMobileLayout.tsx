@@ -276,13 +276,14 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
 
       {/* Responsive Header - Auto-adjusts based on screen size */}
       <div className="border-b bg-card flex-shrink-0">
-        {/* Main header row */}
-        <div className="flex items-center justify-between px-2 sm:px-4 py-2">
-          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
+        {/* Main header row - stack on very small screens */}
+        <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 px-3 sm:px-4 py-2 sm:py-3">
+          {/* Left section: Back + Branding */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0" 
+              className="h-8 w-8 flex-shrink-0" 
               onClick={onSwitchToDesktop}
               title="Back to Genie Studio"
             >
@@ -290,24 +291,24 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
             </Button>
             
             {/* Branding - responsive sizing */}
-            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-              <div className="h-7 w-7 sm:h-9 sm:w-9 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 border flex items-center justify-center flex-shrink-0">
-                <Video className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 border flex items-center justify-center flex-shrink-0">
+                <Video className="h-4 w-4 text-primary" />
               </div>
-              <div className="min-w-0">
-                <h1 className="font-semibold text-sm sm:text-base leading-tight truncate">
+              <div className="min-w-0 flex-1">
+                <h1 className="font-semibold text-sm sm:text-base leading-tight whitespace-nowrap">
                   Genie Vibe Studio
                 </h1>
-                {/* Pipeline subtitle - hidden on very small screens */}
-                <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight hidden xs:block">
-                  <span className="hidden sm:inline">Record → Clips → Mix → Timeline → Publish</span>
-                  <span className="sm:hidden">Record → Mix → Publish</span>
+                {/* Pipeline subtitle - hide on mobile, show on sm+ */}
+                <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight hidden sm:block truncate">
+                  Record → Clips → Mix → Timeline → Publish
                 </p>
               </div>
             </div>
           </div>
           
-          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          {/* Right section: Controls */}
+          <div className="flex items-center gap-2 flex-shrink-0 justify-end">
             {/* Save status indicator */}
             {recordings.length > 0 && (
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -321,34 +322,31 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
               </div>
             )}
             
-            {/* View Mode Toggle - Compact on mobile */}
-            <div className="flex items-center border rounded-md p-0.5 sm:p-1 bg-muted/30">
+            {/* View Mode Toggle */}
+            <div className="flex items-center border rounded-md p-0.5 bg-muted/30">
               <Button
                 variant="ghost"
                 size="sm"
-                className={cn(
-                  "h-6 sm:h-7 px-1.5 sm:px-2 text-[10px] sm:text-xs gap-1",
-                  "text-muted-foreground"
-                )}
+                className="h-7 px-2 text-xs gap-1 text-muted-foreground"
                 onClick={onSwitchToDesktop}
               >
-                <Monitor className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                <Monitor className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Desktop</span>
               </Button>
               <Button
                 variant="secondary"
                 size="sm"
-                className="h-6 sm:h-7 px-1.5 sm:px-2 text-[10px] sm:text-xs gap-1"
+                className="h-7 px-2 text-xs gap-1"
               >
-                <Smartphone className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                <Smartphone className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Mobile</span>
               </Button>
             </div>
             
-            {/* Recordings count - hidden on very small screens */}
-            <Badge variant="secondary" className="h-6 sm:h-7 px-1.5 sm:px-2 text-[10px] sm:text-xs">
+            {/* Recordings count */}
+            <Badge variant="secondary" className="h-7 px-2 text-xs whitespace-nowrap">
               {recordings.length}
-              <span className="hidden xs:inline ml-0.5">clips</span>
+              <span className="hidden xs:inline ml-1">clips</span>
             </Badge>
           </div>
         </div>
