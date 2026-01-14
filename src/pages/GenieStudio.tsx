@@ -107,6 +107,10 @@ import { MobileRecordingView } from '@/components/document-processing/RecordingS
 import { AskGenie } from '@/components/genie-studio/AskGenie';
 // Ralph Wiggum - DEV-ONLY AI Review System
 import { RalphWiggumIntegration } from '@/components/genie-studio/ralph-wiggum';
+// Dashboard Welcome - First-time user experience
+import { DashboardWelcome } from '@/components/genie-studio/DashboardWelcome';
+// User Flow Tracking - DEV-ONLY journey tracking
+import { useUserFlowTracking } from '@/components/genie-studio/hooks/useUserFlowTracking';
 
 // ========================================
 // EXTRACTED MODULES - Phase 3 Refactoring
@@ -164,6 +168,9 @@ export default function GenieStudio() {
   // Mobile detection for responsive experience
   const [isMobile, setIsMobile] = useState(false);
   const [forceDesktopView, setForceDesktopView] = useState(false);
+  
+  // User flow tracking for Ralph Wiggum journey analysis (DEV-ONLY)
+  const { userFlow, loadedComponents, trackAction, registerComponent } = useUserFlowTracking(activeTab);
   
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -2178,6 +2185,19 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
 
             {/* Dashboard Tab */}
             <TabsContent value="dashboard" className="space-y-8 mt-0">
+              {/* Welcome & Journey Progress - addresses Ralph Wiggum's feedback */}
+              <DashboardWelcome
+                scriptsCount={savedScripts?.length || 0}
+                voiceoversCount={mergedVoiceovers?.length || 0}
+                musicCount={mergedMusic?.length || 0}
+                recordingsCount={mediaProjects?.length || 0}
+                onNavigate={(tab) => {
+                  trackAction('dashboard_cta_clicked', { targetTab: tab });
+                  setActiveTab(tab);
+                }}
+                onTrackAction={trackAction}
+              />
+              
               {/* Feature Cards - Horizontal Scrolling with Arrows */}
               <div className="relative group/scroll">
                 {/* Left Arrow */}
@@ -3745,6 +3765,8 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
           musicCount={mergedMusic?.length || 0}
           isRecording={isRecordingInProgress}
           recordingMode={isMobile ? 'mobile' : 'desktop'}
+          userFlow={userFlow}
+          loadedComponents={loadedComponents}
         />
       </div>
     </AppLayout>

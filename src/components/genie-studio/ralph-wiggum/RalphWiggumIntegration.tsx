@@ -46,6 +46,9 @@ interface RalphWiggumIntegrationProps {
     plan?: string;
     status?: string;
   };
+  // User flow tracking (for journey analysis)
+  userFlow?: Array<{ action: string; timestamp: number; tab?: string }>;
+  loadedComponents?: Array<{ name: string; isVisible: boolean }>;
 }
 
 // Map tab names to GenieModule types
@@ -78,7 +81,9 @@ export const RalphWiggumIntegration: React.FC<RalphWiggumIntegrationProps> = ({
   musicCount = 0,
   isRecording = false,
   recordingMode = 'desktop',
-  subscriptionInfo
+  subscriptionInfo,
+  userFlow = [],
+  loadedComponents = []
 }) => {
   const ralph = useRalphWiggum();
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
@@ -184,12 +189,12 @@ export const RalphWiggumIntegration: React.FC<RalphWiggumIntegrationProps> = ({
           content: {
             activeTab,
             visibleSections: [activeTab],
-            userFlow: [],
-            loadedComponents: []
+            userFlow: userFlow.map(e => ({ action: e.action, timestamp: e.timestamp, tab: e.tab })),
+            loadedComponents: loadedComponents.map(c => c.name)
           } as GeniePageContent
         };
     }
-  }, [activeTab, scriptContent, scriptName, voiceSettings, scriptsCount, voiceoversCount, musicCount, isRecording, recordingMode, subscriptionInfo]);
+  }, [activeTab, scriptContent, scriptName, voiceSettings, scriptsCount, voiceoversCount, musicCount, isRecording, recordingMode, subscriptionInfo, userFlow, loadedComponents]);
   
   // Auto-trigger review on tab change or significant content change
   useEffect(() => {
