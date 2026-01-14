@@ -1,10 +1,11 @@
 /**
  * Ralph Wiggum Global Floating Panel
  * Dev-only UI/UX review panel accessible from all pages
+ * Now draggable and consolidated with all features
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
+import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import {
   Bug,
@@ -25,7 +26,8 @@ import {
   Clock,
   Trash2,
   Copy,
-  ExternalLink
+  ExternalLink,
+  GripVertical
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -211,6 +213,11 @@ export const RalphWiggumGlobalPanel: React.FC = () => {
   const [filterType, setFilterType] = useState<FindingType | 'all'>('all');
   const [filterStatus, setFilterStatus] = useState<FindingStatus | 'all'>('all');
   
+  // Drag controls for the panel
+  const dragControls = useDragControls();
+  const constraintsRef = useRef<HTMLDivElement>(null);
+  const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
+  
   // Don't render in production
   if (!isDev) return null;
   
@@ -252,12 +259,12 @@ export const RalphWiggumGlobalPanel: React.FC = () => {
     URL.revokeObjectURL(url);
   }, [exportFindings, findings.length]);
   
-  // Floating toggle button
+  // Floating toggle button - positioned on the LEFT to avoid overlapping with Ask Genie on the right
   const ToggleButton = (
     <motion.div
       initial={{ scale: 0 }}
       animate={{ scale: 1 }}
-      className="fixed bottom-4 right-4 z-[9999]"
+      className="fixed bottom-6 left-6 z-[9999]"
     >
       <TooltipProvider>
         <Tooltip>
@@ -274,7 +281,7 @@ export const RalphWiggumGlobalPanel: React.FC = () => {
               )}
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="left">
+          <TooltipContent side="right">
             <p>Ralph Wiggum (Dev Only)</p>
             <p className="text-xs text-muted-foreground">{stats.total} findings</p>
           </TooltipContent>
@@ -289,18 +296,39 @@ export const RalphWiggumGlobalPanel: React.FC = () => {
   
   return (
     <>
+      {/* Drag constraints container - covers the viewport */}
+      <div 
+        ref={constraintsRef} 
+        className="fixed inset-0 pointer-events-none z-[9997]"
+      />
+      
       {ToggleButton}
       
       <motion.div
-        initial={{ x: 400, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        exit={{ x: 400, opacity: 0 }}
-        className="fixed bottom-20 right-4 z-[9998] w-96 max-h-[80vh]"
+        drag
+        dragControls={dragControls}
+        dragMomentum={false}
+        dragElastic={0}
+        dragConstraints={constraintsRef}
+        initial={{ x: 0, y: 0, opacity: 0, scale: 0.9 }}
+        animate={{ x: dragPosition.x, y: dragPosition.y, opacity: 1, scale: 1 }}
+        onDragEnd={(_, info) => {
+          setDragPosition(prev => ({
+            x: prev.x + info.offset.x,
+            y: prev.y + info.offset.y
+          }));
+        }}
+        className="fixed bottom-20 left-6 z-[9998] w-96 max-h-[80vh] pointer-events-auto"
+        style={{ touchAction: 'none' }}
       >
         <Card className="shadow-2xl border-2 overflow-hidden">
-          <CardHeader className="py-2 px-3 bg-gradient-to-r from-yellow-400 to-orange-500">
+          <CardHeader 
+            className="py-2 px-3 bg-gradient-to-r from-yellow-400 to-orange-500 cursor-grab active:cursor-grabbing"
+            onPointerDown={(e) => dragControls.start(e)}
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
+                <GripVertical className="h-4 w-4 text-white/70" />
                 <Bug className="h-4 w-4 text-white" />
                 <CardTitle className="text-sm text-white">Ralph Wiggum</CardTitle>
                 <Badge variant="secondary" className="text-xs">
