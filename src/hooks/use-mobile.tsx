@@ -4,8 +4,12 @@ import * as React from "react"
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1024
 
+// Helper to get initial value synchronously (avoids flash)
+const getInitialMobile = () => typeof window !== 'undefined' ? window.innerWidth < MOBILE_BREAKPOINT : false
+const getInitialMobileOrTablet = () => typeof window !== 'undefined' ? window.innerWidth < TABLET_BREAKPOINT : false
+
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
+  const [isMobile, setIsMobile] = React.useState<boolean>(getInitialMobile)
 
   React.useEffect(() => {
     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
@@ -17,12 +21,12 @@ export function useIsMobile() {
     return () => mql.removeEventListener("change", onChange)
   }, [])
 
-  return !!isMobile
+  return isMobile
 }
 
 // Hook to detect if device is tablet (768-1023px) or smaller
 export function useIsMobileOrTablet() {
-  const [isMobileOrTablet, setIsMobileOrTablet] = React.useState<boolean | undefined>(undefined)
+  const [isMobileOrTablet, setIsMobileOrTablet] = React.useState<boolean>(getInitialMobileOrTablet)
 
   React.useEffect(() => {
     const mql = window.matchMedia(`(max-width: ${TABLET_BREAKPOINT - 1}px)`)
@@ -34,7 +38,7 @@ export function useIsMobileOrTablet() {
     return () => mql.removeEventListener("change", onChange)
   }, [])
 
-  return !!isMobileOrTablet
+  return isMobileOrTablet
 }
 
 // Hook to get device type
