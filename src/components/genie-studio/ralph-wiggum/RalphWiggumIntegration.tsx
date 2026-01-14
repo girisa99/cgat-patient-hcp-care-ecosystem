@@ -200,6 +200,52 @@ export const RalphWiggumIntegration: React.FC<RalphWiggumIntegrationProps> = ({
           } as TemplatesContent
         };
         
+      case 'ask-genie':
+        return {
+          module: 'ask-genie' as const,
+          content: {
+            conversationHistory: [],
+            currentQuery: undefined
+          } as import('./types').AskGenieContent
+        };
+        
+      case 'guided':
+        return {
+          module: 'guided' as const,
+          content: {
+            currentStep: 1,
+            totalSteps: 5,
+            completedSteps: [],
+            pendingActions: []
+          } as import('./types').GuidedContent
+        };
+        
+      case 'agents':
+        return {
+          module: 'agents' as const,
+          content: {
+            activeAgents: [],
+            conversationCount: 0
+          } as import('./types').AgentsContent
+        };
+        
+      case 'arc':
+        return {
+          module: 'arc' as const,
+          content: {
+            productionStatus: 'planning' as const,
+            scheduledShows: 0,
+            pendingTasks: [],
+            teamMembers: 0
+          } as import('./types').ArcContent
+        };
+        
+      case 'dashboard':
+        return {
+          module: 'dashboard' as const,
+          content: {}
+        };
+        
       default:
         return {
           module: 'genie-page' as const,
