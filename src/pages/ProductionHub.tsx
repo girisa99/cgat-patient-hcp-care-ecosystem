@@ -821,19 +821,19 @@ export default function ProductionHub() {
                     setIsCreateDialogOpen(true);
                   }
                 }}
-                onLinkScript={() => navigate('/genie-spark')}
+                onLinkScript={() => {
+                  // Script dialog is now handled inline by the wizard
+                }}
                 onScheduleRehearsals={() => {
                   if (selectedShow) setIsScheduleManagementOpen(true);
                 }}
                 onStartRecording={() => navigate('/genie-vibe')}
                 onOpenScheduleDialog={() => setIsCreateDialogOpen(true)}
                 onSendFollowUp={async (participants, message) => {
-                  // Send follow-up emails to each participant with rate limiting
                   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
                   let successCount = 0;
                   const { hostName, hostEmail } = getHostInfo(selectedShow);
                   
-                  // Send to host first if they have an email
                   if (hostEmail) {
                     try {
                       await supabase.functions.invoke('send-show-invite', {
@@ -857,10 +857,8 @@ export default function ProductionHub() {
                     }
                   }
                   
-                  // Send to all participants (except host if already sent)
                   for (let i = 0; i < participants.length; i++) {
                     const participant = participants[i];
-                    // Skip host (already sent) and participants without email
                     if (participant.email && participant.email !== hostEmail) {
                       try {
                         await supabase.functions.invoke('send-show-invite', {
@@ -878,8 +876,6 @@ export default function ProductionHub() {
                           },
                         });
                         successCount++;
-                        
-                        // Add delay between emails to avoid rate limiting (600ms)
                         if (i < participants.length - 1) {
                           await delay(600);
                         }
@@ -890,6 +886,13 @@ export default function ProductionHub() {
                   }
                   toast.success(`Follow-up sent to ${successCount} recipient(s) (host + participants)`);
                 }}
+                onUpdateShow={async (showId, updates) => {
+                  const { error } = await supabase.from('shows').update(updates).eq('id', showId);
+                  if (error) throw error;
+                  toast.success('Show updated');
+                }}
+                onCancelShow={handleCancelShow}
+                onRescheduleShow={handleReschedule}
                 selectedShow={selectedShow}
                 currentStage={(selectedShow as any)?.stage || (selectedShow as any)?.production_stage || 'outreach'}
                 hasShow={shows.length > 0}

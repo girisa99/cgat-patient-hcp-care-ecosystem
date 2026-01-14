@@ -19,7 +19,8 @@ export type ShowType =
 
 // Stage types per category
 export type ProductionStage = 'outreach' | 'script' | 'rehearsal' | 'recording' | 'post_production' | 'published';
-export type MeetingStage = 'scheduled' | 'confirmed' | 'agenda_prep' | 'in_progress' | 'follow_up' | 'completed' | 'cancelled';
+// Streamlined meeting stages - removed redundant 'confirmed' and 'agenda_prep' (captured during scheduling)
+export type MeetingStage = 'scheduled' | 'in_progress' | 'follow_up' | 'completed' | 'rescheduled' | 'cancelled';
 export type EventStage = 'planning' | 'promotion' | 'registration' | 'live' | 'wrap_up' | 'archived' | 'cancelled';
 // DemoStage matches the production_stage enum values in database
 export type DemoStage = 'demo_scheduled' | 'demo_prep' | 'demo_live' | 'demo_followup' | 'demo_closed';
@@ -144,7 +145,7 @@ export const PRODUCTION_STAGES: {
   { id: 'published', label: 'Published', description: 'Live & available', icon: 'Globe', color: 'bg-green-500' },
 ];
 
-// Stage configuration for Business Meetings
+// Stage configuration for Business Meetings - Streamlined (confirmation/agenda captured during scheduling)
 export const MEETING_STAGES: { 
   id: MeetingStage; 
   label: string; 
@@ -152,12 +153,11 @@ export const MEETING_STAGES: {
   icon: string;
   color: string;
 }[] = [
-  { id: 'scheduled', label: 'Scheduled', description: 'Meeting booked', icon: 'CalendarPlus', color: 'bg-blue-500' },
-  { id: 'confirmed', label: 'Confirmed', description: 'Attendees confirmed', icon: 'CheckCircle', color: 'bg-cyan-500' },
-  { id: 'agenda_prep', label: 'Agenda Prep', description: 'Prepare agenda & materials', icon: 'FileText', color: 'bg-purple-500' },
+  { id: 'scheduled', label: 'Scheduled', description: 'Meeting booked & confirmed', icon: 'CalendarCheck', color: 'bg-blue-500' },
   { id: 'in_progress', label: 'In Progress', description: 'Meeting ongoing', icon: 'Play', color: 'bg-yellow-500' },
   { id: 'follow_up', label: 'Follow Up', description: 'Action items & notes', icon: 'MessageSquare', color: 'bg-orange-500' },
   { id: 'completed', label: 'Completed', description: 'Meeting finished', icon: 'CheckCircle2', color: 'bg-green-500' },
+  { id: 'rescheduled', label: 'Rescheduled', description: 'Meeting moved to new time', icon: 'CalendarClock', color: 'bg-purple-500' },
   { id: 'cancelled', label: 'Cancelled', description: 'Meeting cancelled', icon: 'XCircle', color: 'bg-gray-500' },
 ];
 
