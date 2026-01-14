@@ -14255,6 +14255,87 @@ export type Database = {
           },
         ]
       }
+      ralph_wiggum_findings: {
+        Row: {
+          ai_confidence: number | null
+          ai_model_used: string | null
+          created_at: string
+          description: string
+          export_format: string | null
+          exported_at: string | null
+          finding_hash: string
+          finding_type: string
+          first_detected_at: string
+          id: string
+          last_seen_at: string
+          module_name: string
+          occurrence_count: number
+          page_content_snapshot: Json | null
+          page_route: string
+          raw_ai_response: Json | null
+          recommendation: string | null
+          severity: string
+          status: string
+          status_changed_at: string | null
+          status_changed_by: string | null
+          title: string
+          updated_at: string
+          user_flow_snapshot: Json | null
+        }
+        Insert: {
+          ai_confidence?: number | null
+          ai_model_used?: string | null
+          created_at?: string
+          description: string
+          export_format?: string | null
+          exported_at?: string | null
+          finding_hash: string
+          finding_type: string
+          first_detected_at?: string
+          id?: string
+          last_seen_at?: string
+          module_name: string
+          occurrence_count?: number
+          page_content_snapshot?: Json | null
+          page_route: string
+          raw_ai_response?: Json | null
+          recommendation?: string | null
+          severity: string
+          status?: string
+          status_changed_at?: string | null
+          status_changed_by?: string | null
+          title: string
+          updated_at?: string
+          user_flow_snapshot?: Json | null
+        }
+        Update: {
+          ai_confidence?: number | null
+          ai_model_used?: string | null
+          created_at?: string
+          description?: string
+          export_format?: string | null
+          exported_at?: string | null
+          finding_hash?: string
+          finding_type?: string
+          first_detected_at?: string
+          id?: string
+          last_seen_at?: string
+          module_name?: string
+          occurrence_count?: number
+          page_content_snapshot?: Json | null
+          page_route?: string
+          raw_ai_response?: Json | null
+          recommendation?: string | null
+          severity?: string
+          status?: string
+          status_changed_at?: string | null
+          status_changed_by?: string | null
+          title?: string
+          updated_at?: string
+          user_flow_snapshot?: Json | null
+        }
+        Relationships: []
+      }
       rate_limit_tracking: {
         Row: {
           created_at: string | null
