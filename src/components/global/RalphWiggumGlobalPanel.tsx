@@ -1,20 +1,17 @@
 /**
  * Ralph Wiggum Global Floating Panel
- * Dev-only UI/UX review panel accessible from all pages
- * Now draggable and consolidated with all features
+ * Dev-only UI/UX review panel with auto-analysis
+ * Draggable and consolidated - single unified panel
  */
 
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import {
   Bug,
   X,
-  Minimize2,
-  Maximize2,
   RefreshCw,
   Download,
-  Filter,
   ChevronDown,
   ChevronUp,
   CheckCircle,
@@ -22,21 +19,21 @@ import {
   AlertCircle,
   Lightbulb,
   Map,
-  Eye,
-  Clock,
   Trash2,
   Copy,
-  ExternalLink,
-  GripVertical
+  GripVertical,
+  Sparkles,
+  Loader2,
+  Play
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { useRalphWiggumGlobal, FindingStatus, FindingType, RalphFinding } from '@/contexts/RalphWiggumContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 // DEV-ONLY check
@@ -44,13 +41,13 @@ const isDev = import.meta.env.DEV;
 
 // Status colors and icons
 const statusConfig: Record<FindingStatus, { color: string; icon: React.ReactNode; label: string }> = {
-  new: { color: 'bg-blue-500', icon: <Eye className="h-3 w-3" />, label: 'New' },
-  acknowledged: { color: 'bg-yellow-500', icon: <Eye className="h-3 w-3" />, label: 'Acknowledged' },
-  in_progress: { color: 'bg-orange-500', icon: <Clock className="h-3 w-3" />, label: 'In Progress' },
+  new: { color: 'bg-blue-500', icon: <AlertCircle className="h-3 w-3" />, label: 'New' },
+  acknowledged: { color: 'bg-yellow-500', icon: <CheckCircle className="h-3 w-3" />, label: 'Ack' },
+  in_progress: { color: 'bg-orange-500', icon: <RefreshCw className="h-3 w-3" />, label: 'WIP' },
   fixed: { color: 'bg-green-500', icon: <CheckCircle className="h-3 w-3" />, label: 'Fixed' },
-  verified: { color: 'bg-emerald-600', icon: <CheckCircle className="h-3 w-3" />, label: 'Verified' },
-  wont_fix: { color: 'bg-gray-500', icon: <X className="h-3 w-3" />, label: "Won't Fix" },
-  duplicate: { color: 'bg-purple-500', icon: <Copy className="h-3 w-3" />, label: 'Duplicate' }
+  verified: { color: 'bg-emerald-600', icon: <CheckCircle className="h-3 w-3" />, label: 'Done' },
+  wont_fix: { color: 'bg-gray-500', icon: <X className="h-3 w-3" />, label: 'Skip' },
+  duplicate: { color: 'bg-purple-500', icon: <Copy className="h-3 w-3" />, label: 'Dup' }
 };
 
 const typeConfig: Record<FindingType, { color: string; icon: React.ReactNode; label: string }> = {
@@ -70,9 +67,7 @@ const pageNames: Record<string, string> = {
   '/production-hub': 'Production Hub',
   '/agents': 'Agents',
   '/admin': 'Admin',
-  '/login': 'Login',
-  '/genie-studio-pricing': 'Pricing',
-  '/genie-studio-auth': 'Auth'
+  '/dashboard': 'Dashboard'
 };
 
 interface FindingCardProps {
@@ -94,40 +89,26 @@ const FindingCard: React.FC<FindingCardProps> = ({
   const statusInfo = statusConfig[finding.status];
   
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="border rounded-lg p-3 bg-card hover:bg-accent/5 transition-colors"
-    >
+    <div className="border rounded-lg p-2 bg-card hover:bg-accent/5 transition-colors text-sm">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-start gap-2 flex-1 min-w-0">
           <span className={typeInfo.color}>{typeInfo.icon}</span>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h4 className="font-medium text-sm truncate">{finding.title}</h4>
-              <Badge variant="outline" className={`${statusInfo.color} text-white text-xs px-1.5 py-0`}>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <h4 className="font-medium text-xs truncate max-w-[200px]">{finding.title}</h4>
+              <Badge variant="outline" className={`${statusInfo.color} text-white text-[10px] px-1 py-0 h-4`}>
                 {statusInfo.label}
               </Badge>
-              {finding.occurrence_count > 1 && (
-                <Badge variant="secondary" className="text-xs px-1.5 py-0">
-                  ×{finding.occurrence_count}
-                </Badge>
-              )}
             </div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {pageNames[finding.page_route] || finding.page_route} • {finding.module_name}
-            </p>
           </div>
         </div>
         <Button
           variant="ghost"
           size="sm"
-          className="h-6 w-6 p-0 shrink-0"
+          className="h-5 w-5 p-0 shrink-0"
           onClick={onToggleExpand}
         >
-          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
         </Button>
       </div>
       
@@ -139,13 +120,12 @@ const FindingCard: React.FC<FindingCardProps> = ({
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="mt-3 pt-3 border-t space-y-3">
-              <p className="text-sm text-muted-foreground">{finding.description}</p>
+            <div className="mt-2 pt-2 border-t space-y-2">
+              <p className="text-xs text-muted-foreground">{finding.description}</p>
               
               {finding.recommendation && (
-                <div className="bg-muted/50 rounded p-2">
-                  <p className="text-xs font-medium mb-1">Recommendation:</p>
-                  <p className="text-xs text-muted-foreground">{finding.recommendation}</p>
+                <div className="bg-muted/50 rounded p-1.5">
+                  <p className="text-[10px] text-muted-foreground">{finding.recommendation}</p>
                 </div>
               )}
               
@@ -154,15 +134,13 @@ const FindingCard: React.FC<FindingCardProps> = ({
                   value={finding.status}
                   onValueChange={(value) => onStatusChange(value as FindingStatus)}
                 >
-                  <SelectTrigger className="h-7 text-xs w-32">
+                  <SelectTrigger className="h-6 text-[10px] w-24">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(statusConfig).map(([key, config]) => (
                       <SelectItem key={key} value={key} className="text-xs">
-                        <span className="flex items-center gap-1">
-                          {config.icon} {config.label}
-                        </span>
+                        {config.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -171,24 +149,17 @@ const FindingCard: React.FC<FindingCardProps> = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 text-xs text-destructive hover:text-destructive"
+                  className="h-6 text-[10px] text-destructive hover:text-destructive px-2"
                   onClick={onDelete}
                 >
-                  <Trash2 className="h-3 w-3 mr-1" />
-                  Delete
+                  <Trash2 className="h-3 w-3" />
                 </Button>
-              </div>
-              
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span>First seen: {new Date(finding.first_detected_at).toLocaleDateString()}</span>
-                <span>•</span>
-                <span>Last seen: {new Date(finding.last_seen_at).toLocaleDateString()}</span>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 };
 
@@ -204,14 +175,14 @@ export const RalphWiggumGlobalPanel: React.FC = () => {
     updateFindingStatus,
     deleteFinding,
     exportFindings,
+    addFinding,
     stats
   } = useRalphWiggumGlobal();
   
-  const [isMinimized, setIsMinimized] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'all' | 'current' | 'stats'>('current');
   const [filterType, setFilterType] = useState<FindingType | 'all'>('all');
-  const [filterStatus, setFilterStatus] = useState<FindingStatus | 'all'>('all');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const hasAutoAnalyzed = useRef(false);
   
   // Drag controls for the panel
   const dragControls = useDragControls();
@@ -222,44 +193,195 @@ export const RalphWiggumGlobalPanel: React.FC = () => {
   if (!isDev) return null;
   
   const currentRoute = location.pathname;
+  const currentPageName = pageNames[currentRoute] || currentRoute;
   
-  // Filter findings
-  const filteredFindings = useMemo(() => {
-    let result = findings;
-    
-    if (activeTab === 'current') {
-      result = result.filter(f => f.page_route === currentRoute);
-    }
-    
+  // Filter findings for current page
+  const currentPageFindings = useMemo(() => {
+    let result = findings.filter(f => f.page_route === currentRoute);
     if (filterType !== 'all') {
       result = result.filter(f => f.finding_type === filterType);
     }
+    return result;
+  }, [findings, currentRoute, filterType]);
+  
+  // Run AI analysis for current page
+  const runAnalysis = useCallback(async () => {
+    if (isAnalyzing) return;
+    setIsAnalyzing(true);
     
-    if (filterStatus !== 'all') {
-      result = result.filter(f => f.status === filterStatus);
+    try {
+      const prompt = `You are Ralph Wiggum, a friendly UI/UX reviewer for a healthcare SaaS application.
+Analyze this page and provide specific, actionable feedback.
+
+Page Route: ${currentRoute}
+Page Name: ${currentPageName}
+Current Time: ${new Date().toISOString()}
+
+Analyze the page for:
+- Accessibility issues (WCAG compliance)
+- UX flow problems
+- Missing error states or empty states
+- Loading state issues
+- Navigation confusion
+- Mobile responsiveness
+- Healthcare compliance (HIPAA considerations)
+- Content clarity and readability
+
+Provide your analysis in this JSON format:
+{
+  "criticalIssues": [{"title": "Short title", "description": "Detailed description", "recommendation": "How to fix"}],
+  "warnings": [{"title": "...", "description": "...", "recommendation": "..."}],
+  "suggestions": [{"title": "...", "description": "...", "recommendation": "..."}],
+  "journeyImprovements": [{"title": "...", "description": "...", "recommendation": "..."}]
+}
+
+Be specific and helpful. Include 2-5 items total. Only include actual potential issues.`;
+
+      const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+        body: {
+          provider: 'gemini',
+          prompt,
+          systemPrompt: 'You are Ralph Wiggum, a helpful UI/UX reviewer. Respond ONLY with valid JSON.',
+          model: 'gemini-2.0-flash',
+          maxTokens: 2000
+        }
+      });
+
+      if (error) {
+        toast.error('Analysis failed: ' + error.message);
+        return;
+      }
+
+      // Parse response
+      const responseText = data?.response || data?.text || data?.content || '';
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      
+      if (!jsonMatch) {
+        toast.error('Could not parse AI response');
+        return;
+      }
+
+      const result = JSON.parse(jsonMatch[0]);
+      let addedCount = 0;
+
+      // Add findings to database
+      const addFindings = async (
+        items: Array<{ title: string; description: string; recommendation?: string }>, 
+        type: FindingType, 
+        severity: 'high' | 'medium' | 'low'
+      ) => {
+        for (const item of items || []) {
+          await addFinding({
+            finding_hash: '',
+            page_route: currentRoute,
+            module_name: currentPageName,
+            finding_type: type,
+            severity,
+            title: item.title,
+            description: item.description,
+            recommendation: item.recommendation,
+            status: 'new',
+            ai_confidence: 0.85,
+            ai_model_used: 'gemini-2.0-flash',
+            raw_ai_response: data,
+            page_content_snapshot: { route: currentRoute },
+            user_flow_snapshot: { timestamp: Date.now() }
+          });
+          addedCount++;
+        }
+      };
+
+      await addFindings(result.criticalIssues, 'critical', 'high');
+      await addFindings(result.warnings, 'warning', 'medium');
+      await addFindings(result.suggestions, 'suggestion', 'low');
+      await addFindings(result.journeyImprovements, 'journey', 'medium');
+
+      toast.success(`🐛 Found ${addedCount} items to review`);
+      await refreshFindings();
+    } catch (error) {
+      console.error('Ralph Wiggum analysis error:', error);
+      toast.error('Analysis failed');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, [currentRoute, currentPageName, isAnalyzing, addFinding, refreshFindings]);
+  
+  // Auto-analyze when panel opens on a new page
+  useEffect(() => {
+    if (isPanelOpen && !hasAutoAnalyzed.current && currentPageFindings.length === 0) {
+      hasAutoAnalyzed.current = true;
+      const timer = setTimeout(() => {
+        runAnalysis();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isPanelOpen, currentPageFindings.length, runAnalysis]);
+  
+  // Reset auto-analyze flag when route changes
+  useEffect(() => {
+    hasAutoAnalyzed.current = false;
+  }, [currentRoute]);
+  
+  // Export to Lovable format
+  const handleShareToLovable = useCallback(async () => {
+    const activeFindings = currentPageFindings.filter(f => f.status === 'new' || f.status === 'acknowledged');
+    
+    if (activeFindings.length === 0) {
+      toast.error('No active findings to share');
+      return;
     }
     
-    return result;
-  }, [findings, activeTab, currentRoute, filterType, filterStatus]);
+    let prompt = `## Ralph Wiggum Review - ${currentPageName}\n\n`;
+    prompt += `Please implement these UI/UX improvements:\n\n`;
+    
+    const critical = activeFindings.filter(f => f.finding_type === 'critical');
+    const warnings = activeFindings.filter(f => f.finding_type === 'warning');
+    const suggestions = activeFindings.filter(f => f.finding_type === 'suggestion');
+    
+    if (critical.length > 0) {
+      prompt += `### 🚨 Critical Issues\n`;
+      critical.forEach((f, i) => {
+        prompt += `${i + 1}. **${f.title}**: ${f.description}\n`;
+        if (f.recommendation) prompt += `   - Fix: ${f.recommendation}\n`;
+      });
+      prompt += '\n';
+    }
+    
+    if (warnings.length > 0) {
+      prompt += `### ⚠️ Warnings\n`;
+      warnings.forEach((f, i) => {
+        prompt += `${i + 1}. **${f.title}**: ${f.description}\n`;
+        if (f.recommendation) prompt += `   - Fix: ${f.recommendation}\n`;
+      });
+      prompt += '\n';
+    }
+    
+    if (suggestions.length > 0) {
+      prompt += `### 💡 Suggestions\n`;
+      suggestions.forEach((f, i) => {
+        prompt += `${i + 1}. **${f.title}**: ${f.description}\n`;
+        if (f.recommendation) prompt += `   - Fix: ${f.recommendation}\n`;
+      });
+    }
+    
+    await navigator.clipboard.writeText(prompt);
+    toast.success('Copied to clipboard! Paste in Lovable chat', { icon: '✨' });
+  }, [currentPageFindings, currentPageName]);
   
-  const handleExport = useCallback(async (format: 'json' | 'markdown' | 'lovable') => {
-    const content = await exportFindings(format);
-    
-    // Copy to clipboard
-    await navigator.clipboard.writeText(content);
-    toast.success(`Exported ${findings.length} findings to clipboard as ${format.toUpperCase()}`);
-    
-    // Also download as file
-    const blob = new Blob([content], { type: format === 'json' ? 'application/json' : 'text/markdown' });
+  // Export as markdown file
+  const handleExportMD = useCallback(async () => {
+    const content = await exportFindings('markdown');
+    const blob = new Blob([content], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `ralph-wiggum-findings-${new Date().toISOString().split('T')[0]}.${format === 'json' ? 'json' : 'md'}`;
+    a.download = `ralph-wiggum-${new Date().toISOString().split('T')[0]}.md`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [exportFindings, findings.length]);
+    toast.success('Downloaded report');
+  }, [exportFindings]);
   
-  // Floating toggle button - positioned on the LEFT to avoid overlapping with Ask Genie on the right
+  // Floating toggle button - positioned on LEFT to avoid Ask Genie
   const ToggleButton = (
     <motion.div
       initial={{ scale: 0 }}
@@ -282,7 +404,7 @@ export const RalphWiggumGlobalPanel: React.FC = () => {
             </Button>
           </TooltipTrigger>
           <TooltipContent side="right">
-            <p>Ralph Wiggum (Dev Only)</p>
+            <p>Ralph Wiggum (Dev)</p>
             <p className="text-xs text-muted-foreground">{stats.total} findings</p>
           </TooltipContent>
         </Tooltip>
@@ -296,11 +418,8 @@ export const RalphWiggumGlobalPanel: React.FC = () => {
   
   return (
     <>
-      {/* Drag constraints container - covers the viewport */}
-      <div 
-        ref={constraintsRef} 
-        className="fixed inset-0 pointer-events-none z-[9997]"
-      />
+      {/* Drag constraints container */}
+      <div ref={constraintsRef} className="fixed inset-0 pointer-events-none z-[9997]" />
       
       {ToggleButton}
       
@@ -318,244 +437,133 @@ export const RalphWiggumGlobalPanel: React.FC = () => {
             y: prev.y + info.offset.y
           }));
         }}
-        className="fixed bottom-20 left-6 z-[9998] w-96 max-h-[80vh] pointer-events-auto"
+        className="fixed bottom-20 left-6 z-[9998] w-80 pointer-events-auto"
         style={{ touchAction: 'none' }}
       >
-        <Card className="shadow-2xl border-2 overflow-hidden">
+        <Card className="shadow-xl border overflow-hidden">
+          {/* Header - Draggable */}
           <CardHeader 
             className="py-2 px-3 bg-gradient-to-r from-yellow-400 to-orange-500 cursor-grab active:cursor-grabbing"
             onPointerDown={(e) => dragControls.start(e)}
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <GripVertical className="h-4 w-4 text-white/70" />
+              <div className="flex items-center gap-1.5">
+                <GripVertical className="h-3 w-3 text-white/70" />
                 <Bug className="h-4 w-4 text-white" />
-                <CardTitle className="text-sm text-white">Ralph Wiggum</CardTitle>
-                <Badge variant="secondary" className="text-xs">
-                  {stats.total} findings
+                <CardTitle className="text-xs text-white">Ralph Wiggum</CardTitle>
+                <Badge variant="secondary" className="text-[10px] px-1.5 h-4">
+                  {currentPageFindings.length}
                 </Badge>
               </div>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 text-white hover:bg-white/20"
-                  onClick={() => setIsMinimized(!isMinimized)}
-                >
-                  {isMinimized ? <Maximize2 className="h-3 w-3" /> : <Minimize2 className="h-3 w-3" />}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 text-white hover:bg-white/20"
-                  onClick={closePanel}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-5 w-5 p-0 text-white hover:bg-white/20"
+                onClick={closePanel}
+              >
+                <X className="h-3 w-3" />
+              </Button>
             </div>
-            
-            {/* Current page indicator */}
-            {!isMinimized && (
-              <p className="text-xs text-white/80 mt-1">
-                📍 {pageNames[currentRoute] || currentRoute}
-              </p>
-            )}
+            <p className="text-[10px] text-white/80 mt-0.5">📍 {currentPageName}</p>
           </CardHeader>
           
-          {!isMinimized && (
-            <CardContent className="p-0 max-h-[60vh] flex flex-col">
-              {/* Tabs */}
-              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="flex-1 flex flex-col min-h-0">
-                <div className="px-3 pt-2 border-b">
-                  <TabsList className="w-full h-8">
-                    <TabsTrigger value="current" className="flex-1 text-xs">
-                      This Page ({findings.filter(f => f.page_route === currentRoute).length})
-                    </TabsTrigger>
-                    <TabsTrigger value="all" className="flex-1 text-xs">
-                      All ({stats.total})
-                    </TabsTrigger>
-                    <TabsTrigger value="stats" className="flex-1 text-xs">
-                      Stats
-                    </TabsTrigger>
-                  </TabsList>
-                </div>
-                
-                {/* Filters */}
-                {activeTab !== 'stats' && (
-                  <div className="px-3 py-2 border-b flex items-center gap-2">
-                    <Filter className="h-3 w-3 text-muted-foreground" />
-                    <Select value={filterType} onValueChange={(v) => setFilterType(v as FindingType | 'all')}>
-                      <SelectTrigger className="h-7 text-xs flex-1">
-                        <SelectValue placeholder="Type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all" className="text-xs">All Types</SelectItem>
-                        {Object.entries(typeConfig).map(([key, config]) => (
-                          <SelectItem key={key} value={key} className="text-xs">
-                            <span className="flex items-center gap-1">
-                              {config.icon} {config.label}
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as FindingStatus | 'all')}>
-                      <SelectTrigger className="h-7 text-xs flex-1">
-                        <SelectValue placeholder="Status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all" className="text-xs">All Status</SelectItem>
-                        {Object.entries(statusConfig).map(([key, config]) => (
-                          <SelectItem key={key} value={key} className="text-xs">
-                            <span className="flex items-center gap-1">
-                              {config.icon} {config.label}
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+          <CardContent className="p-2 space-y-2">
+            {/* Action Buttons */}
+            <div className="flex gap-1.5">
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 h-7 text-xs"
+                onClick={runAnalysis}
+                disabled={isAnalyzing}
+              >
+                {isAnalyzing ? (
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                ) : (
+                  <Play className="h-3 w-3 mr-1" />
+                )}
+                {isAnalyzing ? 'Analyzing...' : 'Analyze'}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs px-2"
+                onClick={refreshFindings}
+                disabled={isLoading}
+              >
+                <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
+            
+            {/* Filter */}
+            <Select value={filterType} onValueChange={(v) => setFilterType(v as FindingType | 'all')}>
+              <SelectTrigger className="h-7 text-xs">
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="text-xs">All Types ({currentPageFindings.length})</SelectItem>
+                {Object.entries(typeConfig).map(([key, config]) => (
+                  <SelectItem key={key} value={key} className="text-xs">
+                    <span className="flex items-center gap-1">
+                      {config.icon} {config.label}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {/* Findings List */}
+            <ScrollArea className="h-[300px]">
+              <div className="space-y-1.5 pr-2">
+                {isAnalyzing && currentPageFindings.length === 0 && (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <Loader2 className="h-6 w-6 mx-auto mb-2 animate-spin" />
+                    <p className="text-xs">Analyzing page...</p>
                   </div>
                 )}
                 
-                {/* Findings list */}
-                <TabsContent value="current" className="flex-1 m-0 min-h-0">
-                  <ScrollArea className="h-[40vh] overflow-x-auto">
-                    <div className="p-3 space-y-2 min-w-[350px]">
-                      {filteredFindings.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <Bug className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">No findings for this page</p>
-                          <p className="text-xs">Run an analysis to check for issues</p>
-                        </div>
-                      ) : (
-                        filteredFindings.map((finding) => (
-                          <FindingCard
-                            key={finding.id}
-                            finding={finding}
-                            onStatusChange={(status) => updateFindingStatus(finding.id, status)}
-                            onDelete={() => deleteFinding(finding.id)}
-                            isExpanded={expandedId === finding.id}
-                            onToggleExpand={() => setExpandedId(expandedId === finding.id ? null : finding.id)}
-                          />
-                        ))
-                      )}
-                    </div>
-                  </ScrollArea>
-                </TabsContent>
+                {!isAnalyzing && currentPageFindings.length === 0 && (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <Bug className="h-6 w-6 mx-auto mb-2 opacity-50" />
+                    <p className="text-xs">No findings yet</p>
+                    <p className="text-[10px]">Click Analyze to review</p>
+                  </div>
+                )}
                 
-                <TabsContent value="all" className="flex-1 m-0 min-h-0">
-                  <ScrollArea className="h-[40vh] overflow-x-auto">
-                    <div className="p-3 space-y-2 min-w-[350px]">
-                      {filteredFindings.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <Bug className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">No findings yet</p>
-                        </div>
-                      ) : (
-                        filteredFindings.map((finding) => (
-                          <FindingCard
-                            key={finding.id}
-                            finding={finding}
-                            onStatusChange={(status) => updateFindingStatus(finding.id, status)}
-                            onDelete={() => deleteFinding(finding.id)}
-                            isExpanded={expandedId === finding.id}
-                            onToggleExpand={() => setExpandedId(expandedId === finding.id ? null : finding.id)}
-                          />
-                        ))
-                      )}
-                    </div>
-                  </ScrollArea>
-                </TabsContent>
-                
-                <TabsContent value="stats" className="flex-1 m-0 min-h-0">
-                  <ScrollArea className="h-[40vh] overflow-x-auto">
-                    <div className="p-3 space-y-4 min-w-[350px]">
-                      {/* By Status */}
-                      <div>
-                        <h4 className="text-xs font-medium mb-2">By Status</h4>
-                        <div className="grid grid-cols-2 gap-2">
-                          {Object.entries(stats.byStatus).map(([status, count]) => (
-                            <div key={status} className="flex items-center justify-between bg-muted/50 rounded px-2 py-1">
-                              <span className="flex items-center gap-1 text-xs">
-                                {statusConfig[status as FindingStatus].icon}
-                                {statusConfig[status as FindingStatus].label}
-                              </span>
-                              <Badge variant="secondary" className="text-xs">{count}</Badge>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      {/* By Type */}
-                      <div>
-                        <h4 className="text-xs font-medium mb-2">By Type</h4>
-                        <div className="grid grid-cols-2 gap-2">
-                          {Object.entries(stats.byType).map(([type, count]) => (
-                            <div key={type} className="flex items-center justify-between bg-muted/50 rounded px-2 py-1">
-                              <span className={`flex items-center gap-1 text-xs ${typeConfig[type as FindingType].color}`}>
-                                {typeConfig[type as FindingType].icon}
-                                {typeConfig[type as FindingType].label}
-                              </span>
-                              <Badge variant="secondary" className="text-xs">{count}</Badge>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      {/* By Page */}
-                      <div>
-                        <h4 className="text-xs font-medium mb-2">By Page</h4>
-                        <div className="space-y-1">
-                          {Object.entries(stats.byPage).map(([route, count]) => (
-                            <div key={route} className="flex items-center justify-between bg-muted/50 rounded px-2 py-1">
-                              <span className="text-xs truncate">{pageNames[route] || route}</span>
-                              <Badge variant="secondary" className="text-xs shrink-0">{count}</Badge>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </ScrollArea>
-                </TabsContent>
-              </Tabs>
-              
-              {/* Actions */}
-              <div className="p-2 border-t bg-muted/30 flex items-center justify-between gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={() => refreshFindings()}
-                  disabled={isLoading}
-                >
-                  <RefreshCw className={`h-3 w-3 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
-                  Refresh
-                </Button>
-                
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={() => handleExport('markdown')}
-                  >
-                    <Download className="h-3 w-3 mr-1" />
-                    Export MD
-                  </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="h-7 text-xs bg-gradient-to-r from-pink-500 to-violet-500"
-                    onClick={() => handleExport('lovable')}
-                  >
-                    <ExternalLink className="h-3 w-3 mr-1" />
-                    Share to Lovable
-                  </Button>
-                </div>
+                {currentPageFindings.map((finding) => (
+                  <FindingCard
+                    key={finding.id}
+                    finding={finding}
+                    onStatusChange={(status) => updateFindingStatus(finding.id, status)}
+                    onDelete={() => deleteFinding(finding.id)}
+                    isExpanded={expandedId === finding.id}
+                    onToggleExpand={() => setExpandedId(expandedId === finding.id ? null : finding.id)}
+                  />
+                ))}
               </div>
-            </CardContent>
-          )}
+            </ScrollArea>
+            
+            {/* Export Actions */}
+            <div className="flex gap-1.5 pt-1 border-t">
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 h-7 text-xs"
+                onClick={handleExportMD}
+              >
+                <Download className="h-3 w-3 mr-1" />
+                Export MD
+              </Button>
+              <Button
+                size="sm"
+                className="flex-1 h-7 text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+                onClick={handleShareToLovable}
+              >
+                <Sparkles className="h-3 w-3 mr-1" />
+                Share to Lovable
+              </Button>
+            </div>
+          </CardContent>
         </Card>
       </motion.div>
     </>
