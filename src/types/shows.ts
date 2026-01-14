@@ -21,7 +21,8 @@ export type ShowType =
 export type ProductionStage = 'outreach' | 'script' | 'rehearsal' | 'recording' | 'post_production' | 'published';
 // Meeting stages - matches database enum. UI shows streamlined version (confirmed/agenda_prep auto-handled during scheduling)
 export type MeetingStage = 'scheduled' | 'confirmed' | 'agenda_prep' | 'in_progress' | 'follow_up' | 'completed' | 'cancelled' | 'rescheduled';
-export type EventStage = 'planning' | 'promotion' | 'registration' | 'live' | 'wrap_up' | 'archived' | 'cancelled';
+// Event stages - logical flow with postponed option
+export type EventStage = 'planning' | 'promotion' | 'registration' | 'live' | 'wrap_up' | 'archived' | 'postponed' | 'cancelled';
 // DemoStage matches the production_stage enum values in database
 export type DemoStage = 'demo_scheduled' | 'demo_prep' | 'demo_live' | 'demo_followup' | 'demo_closed';
 
@@ -161,7 +162,7 @@ export const MEETING_STAGES: {
   { id: 'cancelled', label: 'Cancelled', description: 'Meeting cancelled', icon: 'XCircle', color: 'bg-gray-500' },
 ];
 
-// Stage configuration for Events
+// Stage configuration for Events - Logical workflow with clear actions
 export const EVENT_STAGES: { 
   id: EventStage; 
   label: string; 
@@ -169,12 +170,13 @@ export const EVENT_STAGES: {
   icon: string;
   color: string;
 }[] = [
-  { id: 'planning', label: 'Planning', description: 'Event planning phase', icon: 'Lightbulb', color: 'bg-blue-500' },
-  { id: 'promotion', label: 'Promotion', description: 'Marketing & outreach', icon: 'Megaphone', color: 'bg-purple-500' },
-  { id: 'registration', label: 'Registration', description: 'Open for registration', icon: 'UserPlus', color: 'bg-cyan-500' },
-  { id: 'live', label: 'Live', description: 'Event is happening', icon: 'Radio', color: 'bg-red-500' },
-  { id: 'wrap_up', label: 'Wrap Up', description: 'Post-event tasks', icon: 'Package', color: 'bg-orange-500' },
-  { id: 'archived', label: 'Archived', description: 'Event completed', icon: 'Archive', color: 'bg-green-500' },
+  { id: 'planning', label: 'Planning', description: 'Configure event details, schedule & agenda', icon: 'Settings', color: 'bg-blue-500' },
+  { id: 'promotion', label: 'Promotion', description: 'Share event & send invitations', icon: 'Share2', color: 'bg-purple-500' },
+  { id: 'registration', label: 'Registration', description: 'Manage attendees & track signups', icon: 'Users', color: 'bg-cyan-500' },
+  { id: 'live', label: 'Live', description: 'Event in progress - join & manage', icon: 'Radio', color: 'bg-red-500' },
+  { id: 'wrap_up', label: 'Wrap Up', description: 'Send recordings, feedback & follow-ups', icon: 'MessageSquare', color: 'bg-orange-500' },
+  { id: 'archived', label: 'Archived', description: 'Event completed & archived', icon: 'CheckCircle', color: 'bg-green-500' },
+  { id: 'postponed', label: 'Postponed', description: 'Event moved to new date', icon: 'CalendarClock', color: 'bg-amber-500' },
   { id: 'cancelled', label: 'Cancelled', description: 'Event cancelled', icon: 'XCircle', color: 'bg-gray-500' },
 ];
 
