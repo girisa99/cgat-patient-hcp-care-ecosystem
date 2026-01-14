@@ -22,12 +22,26 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
 
-// Enhanced Journey Steps with detailed metrics
+// Enhanced Journey Steps with correct Genie Product mapping
+// Based on src/constants/genie-products.ts:
+// - Genie Spark: "Ignite your Ideas" - AI script generation, story development, content ideation
+// - Genie Mind: "AI that understands" - Contextual AI, script editing, TTS, templates
+// - Genie Vibe: "Script to Screen" - Audio/video recording, editing, production
+// - Genie Arc: "Your Production Journey" - Production workflow, team collaboration, scheduling
+// - Ask Genie: "Your wish is my command" - Universal AI assistant throughout
+
 const journeySteps = [
   {
     step: 1,
     title: 'Ideation & Scripting',
     icon: FileText,
+    product: {
+      name: 'Genie Spark',
+      tagline: 'Ignite your Ideas',
+      emoji: '✨',
+      color: 'text-amber-600',
+      bgColor: 'bg-amber-500/10',
+    },
     before: { 
       time: '2-4 hours', 
       timePercent: 18,
@@ -38,8 +52,8 @@ const journeySteps = [
     },
     after: { 
       time: '15-30 min', 
-      tools: 'Genie Mind', 
-      wow: 'AI writes, refines, and organizes in one place',
+      tools: 'Genie Spark', 
+      wow: 'AI script generation, story development & content ideation',
       output: '3-5 script variants'
     },
     criticalPain: true,
@@ -67,8 +81,61 @@ const journeySteps = [
   },
   {
     step: 2,
-    title: 'Voice & Audio',
+    title: 'Script Editing & Enhancement',
+    icon: FileText,
+    product: {
+      name: 'Genie Mind',
+      tagline: 'AI that understands',
+      emoji: '🧠',
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-500/10',
+    },
+    before: { 
+      time: '1-2 hours', 
+      timePercent: 10,
+      cost: '$25-50',
+      tools: 'Manual editing + Grammarly + Style guides', 
+      pain: 'Inconsistent tone, missing context',
+      output: '1 refined script'
+    },
+    after: { 
+      time: '10 min', 
+      tools: 'Genie Mind', 
+      wow: 'Contextual AI understanding with cross-product memory',
+      output: 'Polished multi-format scripts'
+    },
+    criticalPain: false,
+    timeWasted: '83%',
+    segmentPains: [
+      { segment: 'Content Creators', emoji: '🎬', pain: 'Maintaining consistent voice across videos', severity: 70 },
+      { segment: 'Corporate L&D', emoji: '🏢', pain: 'Policy compliance verification', severity: 80 },
+      { segment: 'Marketing Teams', emoji: '📈', pain: 'Brand guidelines enforcement', severity: 75 },
+      { segment: 'Healthcare', emoji: '🏥', pain: 'Medical terminology accuracy', severity: 92 },
+      { segment: 'Educators', emoji: '📚', pain: 'Learning objective alignment', severity: 65 },
+      { segment: 'Knowledge Sharers', emoji: '💡', pain: 'Translating expertise to simple language', severity: 85 },
+    ],
+    vocQuotes: [
+      { quote: "I spend 2 hours polishing a script, then realize the tone is all wrong for my audience.", author: "Lisa P.", role: "Lifestyle Vlogger" },
+      { quote: "Our brand voice guide is 40 pages. No one follows it consistently.", author: "Amanda S.", role: "Brand Manager" },
+      { quote: "I know the material, but I can't make it sound engaging for video.", author: "Prof. David H.", role: "University Professor" },
+      { quote: "Compliance check takes longer than writing the content.", author: "Michael R.", role: "L&D Director" },
+    ],
+    influencerVoices: [
+      { name: 'Emma L.', platform: 'TikTok', handle: '@LearnWithEmma', followers: '1.5M', quote: "Making complex topics simple AND entertaining is brutal. I rewrite each script 5 times." },
+      { name: 'Mark S.', platform: 'LinkedIn', handle: '@StartupStories', followers: '250K', quote: "Professional tone for LinkedIn, casual for TikTok - same content, completely different scripts." },
+    ],
+  },
+  {
+    step: 3,
+    title: 'Voice & Audio Production',
     icon: Mic,
+    product: {
+      name: 'Genie Vibe',
+      tagline: 'Script to Screen',
+      emoji: '🎬',
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-500/10',
+    },
     before: { 
       time: '1-3 hours', 
       timePercent: 12,
@@ -80,7 +147,7 @@ const journeySteps = [
     after: { 
       time: '5 min', 
       tools: 'Genie Vibe', 
-      wow: '11 TTS providers, auto-sync with script',
+      wow: '11 TTS providers, audio recording & multi-track editing',
       output: 'Multi-language audio'
     },
     criticalPain: false,
@@ -106,9 +173,16 @@ const journeySteps = [
     ],
   },
   {
-    step: 3,
-    title: 'Recording & Production',
+    step: 4,
+    title: 'Video Recording & Production',
     icon: Video,
+    product: {
+      name: 'Genie Vibe',
+      tagline: 'Script to Screen',
+      emoji: '🎬',
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-500/10',
+    },
     before: { 
       time: '3-6 hours', 
       timePercent: 28,
@@ -119,8 +193,8 @@ const journeySteps = [
     },
     after: { 
       time: '20 min', 
-      tools: 'Genie Arc', 
-      wow: 'Smart teleprompter, AI-powered scene cuts',
+      tools: 'Genie Vibe', 
+      wow: 'Video capture, real-time effects & script-to-screen workflow',
       output: 'Polished recording'
     },
     criticalPain: true,
@@ -146,9 +220,16 @@ const journeySteps = [
     ],
   },
   {
-    step: 4,
+    step: 5,
     title: 'Editing & Assembly',
     icon: Layers,
+    product: {
+      name: 'Genie Vibe',
+      tagline: 'Script to Screen',
+      emoji: '🎬',
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-500/10',
+    },
     before: { 
       time: '4-10 hours', 
       timePercent: 35,
@@ -159,8 +240,8 @@ const journeySteps = [
     },
     after: { 
       time: '30 min', 
-      tools: 'Genie Spark', 
-      wow: 'AI edits, auto-captions, one-click polish',
+      tools: 'Genie Vibe', 
+      wow: 'Multi-track editing, real-time effects & auto-captions',
       output: 'Platform-ready video'
     },
     criticalPain: true,
@@ -186,9 +267,62 @@ const journeySteps = [
     ],
   },
   {
-    step: 5,
+    step: 6,
+    title: 'Production Pipeline & Collaboration',
+    icon: Users,
+    product: {
+      name: 'Genie Arc',
+      tagline: 'Your Production Journey',
+      emoji: '🔄',
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-500/10',
+    },
+    before: { 
+      time: '2-4 hours', 
+      timePercent: 15,
+      cost: '$50-100',
+      tools: 'Slack + Trello + Frame.io + Email chains', 
+      pain: 'Scattered feedback, version confusion',
+      output: 'Approved final cut'
+    },
+    after: { 
+      time: '15 min', 
+      tools: 'Genie Arc', 
+      wow: 'Team collaboration, resource management & live coordination',
+      output: 'Streamlined approval workflow'
+    },
+    criticalPain: false,
+    timeWasted: '88%',
+    segmentPains: [
+      { segment: 'Content Creators', emoji: '🎬', pain: 'Managing client feedback chaos', severity: 72 },
+      { segment: 'Corporate L&D', emoji: '🏢', pain: 'Stakeholder alignment across departments', severity: 85 },
+      { segment: 'Marketing Teams', emoji: '📈', pain: 'Campaign coordination across teams', severity: 80 },
+      { segment: 'Healthcare', emoji: '🏥', pain: 'Multi-department compliance review', severity: 90 },
+      { segment: 'Educators', emoji: '📚', pain: 'Peer review and feedback integration', severity: 60 },
+      { segment: 'Knowledge Sharers', emoji: '💡', pain: 'No team, doing everything solo', severity: 65 },
+    ],
+    vocQuotes: [
+      { quote: "Feedback comes through 5 different channels. I miss half of it.", author: "Marcus T.", role: "Creative Director" },
+      { quote: "Approval chains take 3 weeks. The content is stale by then.", author: "Karen L.", role: "Training Manager" },
+      { quote: "Legal, compliance, marketing all need to sign off. It's a nightmare to coordinate.", author: "Michael R.", role: "L&D Director, Fortune 500" },
+      { quote: "I work alone. Hiring a team would cost more than I make.", author: "Sarah K.", role: "YouTube Creator, 250K subs" },
+    ],
+    influencerVoices: [
+      { name: 'James R.', platform: 'YouTube', handle: '@TechReviewPro', followers: '1.2M', quote: "I have an editor, thumbnail designer, and SEO person. Coordinating them is a part-time job." },
+      { name: 'Derek W.', platform: 'TikTok', handle: '@ComedyKingDerek', followers: '5.8M', quote: "My team is 6 people. We use 8 different tools just to stay coordinated." },
+    ],
+  },
+  {
+    step: 7,
     title: 'Distribution & Publishing',
     icon: Globe,
+    product: {
+      name: 'Genie Arc',
+      tagline: 'Your Production Journey',
+      emoji: '🔄',
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-500/10',
+    },
     before: { 
       time: '1-2 hours', 
       timePercent: 7,
@@ -199,8 +333,8 @@ const journeySteps = [
     },
     after: { 
       time: '2 min', 
-      tools: 'Genie Suite', 
-      wow: 'One-click multi-platform publish',
+      tools: 'Genie Arc', 
+      wow: 'Show scheduling, resource management & multi-platform publish',
       output: '6+ platforms'
     },
     criticalPain: false,
@@ -644,7 +778,7 @@ export const OverviewTab: React.FC = () => {
       {/* Content Creation Journey - Horizontal Scrollable Per Step */}
       <SectionWrapper title="Content Creation Journey" downloadFileName="content-creation-journey">
         <motion.div variants={itemVariants}>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
             <h3 className="text-xl font-bold text-foreground flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-primary" />
@@ -652,6 +786,29 @@ export const OverviewTab: React.FC = () => {
               Content Creation Journey
               <Badge variant="secondary" className="text-xs">Scroll horizontally →</Badge>
             </h3>
+            {/* Product Legend */}
+            <div className="flex flex-wrap gap-2">
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-amber-500/10 rounded-md">
+                <span className="text-sm">✨</span>
+                <span className="text-xs font-medium text-amber-600">Spark</span>
+                <span className="text-[10px] text-muted-foreground">Ideation</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-500/10 rounded-md">
+                <span className="text-sm">🧠</span>
+                <span className="text-xs font-medium text-blue-600">Mind</span>
+                <span className="text-[10px] text-muted-foreground">Enhancement</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-purple-500/10 rounded-md">
+                <span className="text-sm">🎬</span>
+                <span className="text-xs font-medium text-purple-600">Vibe</span>
+                <span className="text-[10px] text-muted-foreground">Production</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-500/10 rounded-md">
+                <span className="text-sm">🔄</span>
+                <span className="text-xs font-medium text-emerald-600">Arc</span>
+                <span className="text-[10px] text-muted-foreground">Workflow</span>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-6">
@@ -666,21 +823,26 @@ export const OverviewTab: React.FC = () => {
                   {/* Step Header */}
                   <CardHeader className="pb-2 pt-4 px-4">
                     <div className="flex items-center gap-3">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                        step.criticalPain 
-                          ? 'bg-destructive text-destructive-foreground' 
-                          : 'bg-primary text-primary-foreground'
-                      }`}>
-                        <step.icon className="w-6 h-6" />
+                      {/* Product Icon */}
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${step.product.bgColor}`}>
+                        <span className="text-2xl">{step.product.emoji}</span>
                       </div>
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 flex-wrap">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <CardTitle className="text-base">Step {step.step}: {step.title}</CardTitle>
+                          <Badge className={`text-[10px] ${step.product.bgColor} ${step.product.color} border-0`}>
+                            {step.product.name}
+                          </Badge>
                           {step.criticalPain && (
                             <Badge variant="destructive" className="text-[10px]">Critical Pain</Badge>
                           )}
-                          <Badge variant="outline" className="text-[10px]">{step.before.timePercent}% of time</Badge>
-                          <Badge variant="outline" className="text-[10px] text-green-600 border-green-500/30">{step.timeWasted} saved</Badge>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                          <span className={step.product.color}>"{step.product.tagline}"</span>
+                          <span>•</span>
+                          <span>{step.before.timePercent}% of time</span>
+                          <span>•</span>
+                          <span className="text-green-600">{step.timeWasted} saved</span>
                         </div>
                       </div>
                       {/* Before/After Quick Metrics */}
@@ -690,9 +852,9 @@ export const OverviewTab: React.FC = () => {
                           <div className="text-[9px] text-muted-foreground">Before</div>
                         </div>
                         <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                        <div className="text-center px-3 py-1 bg-green-500/10 rounded-lg">
-                          <div className="text-sm font-bold text-green-600">{step.after.time}</div>
-                          <div className="text-[9px] text-muted-foreground">After</div>
+                        <div className={`text-center px-3 py-1 ${step.product.bgColor} rounded-lg`}>
+                          <div className={`text-sm font-bold ${step.product.color}`}>{step.after.time}</div>
+                          <div className="text-[9px] text-muted-foreground">{step.product.name}</div>
                         </div>
                       </div>
                     </div>
