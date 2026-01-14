@@ -114,6 +114,10 @@ import { useUserFlowTracking } from '@/components/genie-studio/hooks/useUserFlow
 import { HIPAAComplianceFooter } from '@/components/genie-studio/HIPAAComplianceFooter';
 // Accessibility Enhancements - Addresses color contrast, readability
 import { AccessibilityToggle } from '@/components/genie-studio/AccessibilityEnhancements';
+// Info Banner - Addresses Ralph Wiggum: "What is Genie Studio?" clarity
+import { GenieStudioInfoBanner } from '@/components/genie-studio/GenieStudioInfoBanner';
+// Loading Spinner - Enhanced loading state feedback
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 // ========================================
 // EXTRACTED MODULES - Phase 3 Refactoring
@@ -2153,6 +2157,9 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
 
         {/* Main Content */}
         <div className="max-w-7xl mx-auto px-6 py-8">
+          {/* Info Banner - Explains what Genie Studio is (Ralph Wiggum: Navigation Clarity) */}
+          <GenieStudioInfoBanner className="mb-6" />
+          
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             {/* Compact Tabs */}
             <TabsList className="bg-muted/50 border border-border/50 p-1 grid grid-cols-7 w-full">
@@ -2191,18 +2198,30 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
 
             {/* Dashboard Tab */}
             <TabsContent value="dashboard" className="space-y-8 mt-0">
+              {/* Loading State - Ralph Wiggum: Loading State Indication */}
+              {(isScriptsLoading || isProjectsLoading || isDbLoading) && (
+                <div className="flex items-center justify-center py-8">
+                  <LoadingSpinner 
+                    size="lg" 
+                    label="Loading your creative workspace..." 
+                  />
+                </div>
+              )}
+              
               {/* Welcome & Journey Progress - addresses Ralph Wiggum's feedback */}
-              <DashboardWelcome
-                scriptsCount={savedScripts?.length || 0}
-                voiceoversCount={mergedVoiceovers?.length || 0}
-                musicCount={mergedMusic?.length || 0}
-                recordingsCount={mediaProjects?.length || 0}
-                onNavigate={(tab) => {
-                  trackAction('dashboard_cta_clicked', { targetTab: tab });
-                  setActiveTab(tab);
-                }}
-                onTrackAction={trackAction}
-              />
+              {!isScriptsLoading && !isProjectsLoading && (
+                <DashboardWelcome
+                  scriptsCount={savedScripts?.length || 0}
+                  voiceoversCount={mergedVoiceovers?.length || 0}
+                  musicCount={mergedMusic?.length || 0}
+                  recordingsCount={mediaProjects?.length || 0}
+                  onNavigate={(tab) => {
+                    trackAction('dashboard_cta_clicked', { targetTab: tab });
+                    setActiveTab(tab);
+                  }}
+                  onTrackAction={trackAction}
+                />
+              )}
               
               {/* Feature Cards - Horizontal Scrolling with Arrows */}
               <div className="relative group/scroll">
