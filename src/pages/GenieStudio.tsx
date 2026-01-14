@@ -112,6 +112,8 @@ import { DashboardWelcome } from '@/components/genie-studio/DashboardWelcome';
 import { useUserFlowTracking } from '@/components/genie-studio/hooks/useUserFlowTracking';
 // HIPAA Compliance Footer - Addresses security/compliance requirement
 import { HIPAAComplianceFooter } from '@/components/genie-studio/HIPAAComplianceFooter';
+// Accessibility Enhancements - Addresses color contrast, readability
+import { AccessibilityToggle } from '@/components/genie-studio/AccessibilityEnhancements';
 
 // ========================================
 // EXTRACTED MODULES - Phase 3 Refactoring
@@ -2116,6 +2118,9 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
                       <span className="text-[10px] font-normal text-muted-foreground">View Pricing</span>
                     </div>
                   </Button>
+                  
+                  {/* Accessibility Toggle - Ralph Wiggum: Color Contrast Fix */}
+                  <AccessibilityToggle />
                   
                   {/* Mobile Features Button */}
                   <NativeFeatureButton variant="outline" className="h-auto py-2.5" />
