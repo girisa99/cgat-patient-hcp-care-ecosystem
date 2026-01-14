@@ -41,6 +41,13 @@ interface RalphWiggumIntegrationProps {
   // Recording state
   isRecording?: boolean;
   recordingMode?: 'mobile' | 'desktop' | 'full-suite';
+  // Vibe/Recording studio data
+  vibeData?: {
+    clipCount?: number;
+    totalDuration?: number;
+    hasAudio?: boolean;
+    projectName?: string;
+  };
   // Subscription info (if available)
   subscriptionInfo?: {
     plan?: string;
@@ -81,6 +88,7 @@ export const RalphWiggumIntegration: React.FC<RalphWiggumIntegrationProps> = ({
   musicCount = 0,
   isRecording = false,
   recordingMode = 'desktop',
+  vibeData,
   subscriptionInfo,
   userFlow = [],
   loadedComponents = []
@@ -149,7 +157,16 @@ export const RalphWiggumIntegration: React.FC<RalphWiggumIntegrationProps> = ({
           module: 'vibe' as const,
           content: {
             mode: recordingMode,
-            recordingStatus: isRecording ? 'recording' : 'idle'
+            recordingStatus: isRecording ? 'recording' : 'idle',
+            clips: vibeData?.clipCount ? Array(vibeData.clipCount).fill(null).map((_, i) => ({
+              id: `clip-${i}`,
+              duration: (vibeData.totalDuration || 0) / (vibeData.clipCount || 1),
+              hasAudio: vibeData.hasAudio || false
+            })) : undefined,
+            timeline: vibeData ? {
+              totalDuration: vibeData.totalDuration || 0,
+              clipCount: vibeData.clipCount || 0
+            } : undefined
           } as VibeContent
         };
         

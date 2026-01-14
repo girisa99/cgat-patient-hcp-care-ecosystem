@@ -439,9 +439,10 @@ Please implement the following improvements identified by the AI review system:
           </div>
         </CardHeader>
         
-        {/* Content */}
+        {/* Content - with max height and scrolling */}
         {!isMinimized && (
-          <CardContent className="p-3 pt-0 space-y-3">
+          <CardContent className="p-3 pt-0 max-h-[70vh] overflow-hidden flex flex-col">
+            <div className="space-y-3 flex-shrink-0">
             {/* Settings Panel */}
             <AnimatePresence>
               {showSettings && (
@@ -482,14 +483,15 @@ Please implement the following improvements identified by the AI review system:
             {isReviewing && (
               <div className="flex items-center gap-2 p-2 bg-primary/5 rounded-lg">
                 <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                <span className="text-xs">Analyzing content...</span>
-              </div>
+              <span className="text-xs">Analyzing content...</span>
+            </div>
             )}
+            </div>
             
-            {/* Review Results */}
+            {/* Review Results - Scrollable */}
             {currentReview && !isReviewing && (
-              <ScrollArea className="max-h-[400px]">
-                <div className="space-y-3">
+              <ScrollArea className="flex-1 min-h-0 max-h-[50vh] pr-2">
+                <div className="space-y-3 pb-2">
                   {/* Summary */}
                   <div className="flex items-center justify-between p-2 bg-muted/30 rounded-lg">
                     <div className="flex items-center gap-2">

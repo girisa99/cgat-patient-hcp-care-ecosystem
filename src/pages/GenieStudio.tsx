@@ -3765,6 +3765,12 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
           musicCount={mergedMusic?.length || 0}
           isRecording={isRecordingInProgress}
           recordingMode={isMobile ? 'mobile' : 'desktop'}
+          vibeData={{
+            clipCount: mediaProjects?.length || 0,
+            totalDuration: 0,
+            hasAudio: true,
+            projectName: mediaProjects?.[0]?.name
+          }}
           userFlow={userFlow}
           loadedComponents={loadedComponents}
         />
