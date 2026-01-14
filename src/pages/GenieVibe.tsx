@@ -513,6 +513,8 @@ const GenieVibe: React.FC = () => {
               <VibeRecordTab
                 productionTitle={productionTitle}
                 scripts={scriptsForMobile}
+                voiceovers={allVoiceovers.map(v => ({ id: v.id, name: v.name, url: v.url, scriptText: v.scriptText, metadataType: v.metadataType as 'tts' | 'voiceover' | undefined }))}
+                music={musicForMobile}
                 onRecordingComplete={handleRecordingComplete}
                 recordings={recordings}
               />
