@@ -9,7 +9,7 @@ import {
   TrendingUp, Globe,
   Monitor, Smartphone, Cloud,
   Star, Check, X, Minus, ArrowUpRight,
-  Building2, BarChart3, Target
+  Building2, BarChart3, Target, ExternalLink, Info
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +23,6 @@ import {
   segments,
   genieScoringBreakdown,
 } from '../data/market-data';
-import { ExternalLink, Info } from 'lucide-react';
 
 const containerVariants = {
   hidden: { opacity: 0 },
