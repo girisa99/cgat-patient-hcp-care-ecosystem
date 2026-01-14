@@ -216,11 +216,11 @@ const journeySteps = [
     title: "Voice & Audio Production",
     icon: Mic,
     product: {
-      name: "Genie Vibe",
-      tagline: "Script to Screen",
-      emoji: "🎬",
-      color: "text-purple-600",
-      bgColor: "bg-purple-500/10",
+      name: "Genie Mind",
+      tagline: "AI that understands",
+      emoji: "🧠",
+      color: "text-blue-600",
+      bgColor: "bg-blue-500/10",
     },
     before: { 
       time: "1-3 hours", 
@@ -232,8 +232,8 @@ const journeySteps = [
     },
     after: { 
       time: "5 min", 
-      tools: "Genie Vibe", 
-      wow: "11 TTS providers, audio recording & multi-track editing",
+      tools: "Genie Mind TTS", 
+      wow: "11 TTS providers, voice synthesis & script-to-audio",
       output: "Multi-language audio"
     },
     criticalPain: false,
