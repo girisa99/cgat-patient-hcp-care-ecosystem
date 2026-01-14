@@ -231,6 +231,9 @@ export const MarketAnalysisTab: React.FC = () => {
         <Tabs defaultValue="creator" className="w-full">
           <TabsList className="mb-6 flex-wrap h-auto gap-1 bg-muted p-1">
             <TabsTrigger value="creator" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">🎬 Creators</TabsTrigger>
+            <TabsTrigger value="influencer" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">📱 Influencers</TabsTrigger>
+            <TabsTrigger value="knowledge" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">💡 Knowledge Sharers</TabsTrigger>
+            <TabsTrigger value="traveler" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">✈️ Travelers</TabsTrigger>
             <TabsTrigger value="smb" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">🏪 SMB</TabsTrigger>
             <TabsTrigger value="healthcare" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">🏥 Healthcare</TabsTrigger>
             <TabsTrigger value="enterprise" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">🏢 Enterprise</TabsTrigger>
