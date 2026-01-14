@@ -5,3 +5,4 @@
 
 export * from './types';
 export * from './data';
+export { GenieCommandCenter } from './GenieCommandCenter';
