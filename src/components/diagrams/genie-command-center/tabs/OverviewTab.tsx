@@ -958,36 +958,88 @@ const HorizontalScrollCards: React.FC<{ children: React.ReactNode }> = ({ childr
 };
 
 export const OverviewTab: React.FC = () => {
+  const fullPageRef = useRef<HTMLDivElement>(null);
+  const [isFullPageFullscreen, setIsFullPageFullscreen] = useState(false);
+  
+  const handleFullPageDownload = async () => {
+    if (!fullPageRef.current) return;
+    try {
+      toast.info('Generating full page PNG... This may take a moment.');
+      const canvas = await html2canvas(fullPageRef.current, {
+        backgroundColor: '#0f172a',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        windowHeight: fullPageRef.current.scrollHeight,
+        height: fullPageRef.current.scrollHeight,
+      });
+      const link = document.createElement('a');
+      link.download = 'genie-suite-overview.png';
+      link.href = canvas.toDataURL('image/png', 1.0);
+      link.click();
+      toast.success('Full page downloaded!');
+    } catch (error) {
+      toast.error('Download failed');
+    }
+  };
+
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="max-w-[1920px] mx-auto space-y-8 p-6"
-    >
-      {/* Hero Problem Statement */}
-      <motion.div variants={itemVariants} className="text-center py-4">
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.6, type: "spring" }}
-        >
-          <Badge variant="destructive" className="mb-4 px-4 py-2">
-            <AlertTriangle className="w-4 h-4 mr-2" />
-            The Content Production Crisis
-          </Badge>
+    <>
+      <motion.div
+        ref={fullPageRef}
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="max-w-[1920px] mx-auto space-y-8 p-6"
+      >
+        {/* Full Page Actions */}
+        <div className="flex items-center justify-between">
+          <div></div>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleFullPageDownload}
+              className="gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Download Full Overview
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setIsFullPageFullscreen(true)}
+              className="gap-2"
+            >
+              <Maximize2 className="h-4 w-4" />
+              Fullscreen
+            </Button>
+          </div>
+        </div>
+
+        {/* Hero Problem Statement */}
+        <motion.div variants={itemVariants} className="text-center py-4">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.6, type: "spring" }}
+          >
+            <Badge variant="destructive" className="mb-4 px-4 py-2">
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              The Content Production Crisis
+            </Badge>
+          </motion.div>
+          
+          <h2 className="text-3xl font-bold text-foreground mb-3">
+            Creators waste{' '}
+            <span className="text-primary">25+ hours per week</span>{' '}
+            juggling fragmented tools
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+            The average content professional uses <strong>8-12 disconnected applications</strong> to produce 
+            a single piece of content, spending <strong>$270-615 per video</strong> in tool costs and labor.
+          </p>
         </motion.div>
-        
-        <h2 className="text-3xl font-bold text-foreground mb-3">
-          Creators waste{' '}
-          <span className="text-primary">25+ hours per week</span>{' '}
-          juggling fragmented tools
-        </h2>
-        <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-          The average content professional uses <strong>8-12 disconnected applications</strong> to produce 
-          a single piece of content, spending <strong>$270-615 per video</strong> in tool costs and labor.
-        </p>
-      </motion.div>
 
       {/* Compact Project Comparison */}
       <SectionWrapper title="Workflow Comparison" downloadFileName="workflow-comparison">
@@ -1355,5 +1407,167 @@ export const OverviewTab: React.FC = () => {
         </Card>
       </motion.div>
     </motion.div>
+
+    {/* Full Page Fullscreen Modal */}
+    {isFullPageFullscreen && (
+      <div className="fixed inset-0 z-50 bg-background overflow-auto">
+        <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-3 flex items-center justify-between">
+          <h2 className="text-foreground font-semibold text-lg">Genie Suite Overview</h2>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleFullPageDownload}>
+              <Download className="h-4 w-4 mr-2" />
+              Download PNG
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setIsFullPageFullscreen(false)}>
+              <X className="h-4 w-4 mr-2" />
+              Close
+            </Button>
+          </div>
+        </div>
+        <div className="p-8">
+          {/* Duplicate all content for fullscreen - rendered fresh */}
+          <div className="max-w-[1920px] mx-auto space-y-8">
+            {/* Hero Problem Statement */}
+            <div className="text-center py-4">
+              <Badge variant="destructive" className="mb-4 px-4 py-2">
+                <AlertTriangle className="w-4 h-4 mr-2" />
+                The Content Production Crisis
+              </Badge>
+              <h2 className="text-3xl font-bold text-foreground mb-3">
+                Creators waste <span className="text-primary">25+ hours per week</span> juggling fragmented tools
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+                The average content professional uses <strong>8-12 disconnected applications</strong> to produce 
+                a single piece of content, spending <strong>$270-615 per video</strong> in tool costs and labor.
+              </p>
+            </div>
+
+            {/* Workflow Comparison */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="border-destructive/30 bg-destructive/5">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <XCircle className="w-5 h-5 text-destructive" />
+                    <span className="font-semibold text-destructive">Traditional (1 Video)</span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2 text-center">
+                    <div className="bg-background/50 rounded-lg p-2">
+                      <div className="text-lg font-bold text-destructive">{projectMetrics.singleVideoTraditional.totalHours}</div>
+                      <div className="text-[10px] text-muted-foreground">Time</div>
+                    </div>
+                    <div className="bg-background/50 rounded-lg p-2">
+                      <div className="text-lg font-bold text-destructive">{projectMetrics.singleVideoTraditional.totalCost}</div>
+                      <div className="text-[10px] text-muted-foreground">Cost</div>
+                    </div>
+                    <div className="bg-background/50 rounded-lg p-2">
+                      <div className="text-lg font-bold text-foreground">{projectMetrics.singleVideoTraditional.toolsRequired}</div>
+                      <div className="text-[10px] text-muted-foreground">Tools</div>
+                    </div>
+                    <div className="bg-background/50 rounded-lg p-2">
+                      <div className="text-lg font-bold text-foreground">{projectMetrics.singleVideoTraditional.outputFormats}</div>
+                      <div className="text-[10px] text-muted-foreground">Output</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-green-500/30 bg-green-500/5">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    <span className="font-semibold text-green-600">With Genie Suite (1 Video)</span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2 text-center">
+                    <div className="bg-background/50 rounded-lg p-2">
+                      <div className="text-lg font-bold text-green-600">{projectMetrics.singleVideoGenie.totalHours}</div>
+                      <div className="text-[10px] text-muted-foreground">Time</div>
+                    </div>
+                    <div className="bg-background/50 rounded-lg p-2">
+                      <div className="text-lg font-bold text-green-600">{projectMetrics.singleVideoGenie.totalCost}</div>
+                      <div className="text-[10px] text-muted-foreground">Cost</div>
+                    </div>
+                    <div className="bg-background/50 rounded-lg p-2">
+                      <div className="text-lg font-bold text-foreground">{projectMetrics.singleVideoGenie.toolsRequired}</div>
+                      <div className="text-[10px] text-muted-foreground">Tools</div>
+                    </div>
+                    <div className="bg-background/50 rounded-lg p-2">
+                      <div className="text-lg font-bold text-foreground">{projectMetrics.singleVideoGenie.outputFormats}+</div>
+                      <div className="text-[10px] text-muted-foreground">Outputs</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Journey Steps Summary */}
+            <Card className="border-primary/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Content Creation Journey - All Steps</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {journeySteps.map((step) => (
+                    <div key={step.step} className="p-4 bg-muted/30 rounded-xl">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className={`w-8 h-8 rounded-lg ${step.product.bgColor} flex items-center justify-center`}>
+                          <span className="text-lg">{step.product.emoji}</span>
+                        </div>
+                        <div>
+                          <div className="font-semibold text-foreground">Step {step.step}: {step.title}</div>
+                          <div className="text-xs text-muted-foreground">{step.product.name} - {step.product.tagline}</div>
+                        </div>
+                        <Badge variant="outline" className="ml-auto text-green-600 border-green-500/30">
+                          {step.timeWasted} time saved
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-7 gap-2">
+                        {step.segmentPains.map((seg) => (
+                          <div key={seg.segment} className="text-center p-2 bg-background/50 rounded-lg">
+                            <div className="text-lg mb-1">{seg.emoji}</div>
+                            <div className="text-[9px] font-medium text-foreground truncate">{seg.segment}</div>
+                            <div className="text-[8px] text-muted-foreground">{seg.severity}% pain</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Genie Suite Summary */}
+            <Card className="border-primary/30 bg-gradient-to-br from-primary/10 to-background">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center">
+                      <Target className="w-7 h-7 text-primary-foreground" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-foreground">Genie Suite: One Platform, Complete Workflow</h3>
+                      <p className="text-sm text-muted-foreground">From idea to published content in minutes, not days.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-center px-4 py-2 bg-background/50 rounded-xl">
+                      <div className="text-xl font-bold text-primary">289</div>
+                      <div className="text-[10px] text-muted-foreground">Scenarios</div>
+                    </div>
+                    <div className="text-center px-4 py-2 bg-background/50 rounded-xl">
+                      <div className="text-xl font-bold text-primary">6</div>
+                      <div className="text-[10px] text-muted-foreground">Products</div>
+                    </div>
+                    <div className="text-center px-4 py-2 bg-background/50 rounded-xl">
+                      <div className="text-xl font-bold text-primary">90%</div>
+                      <div className="text-[10px] text-muted-foreground">Time Saved</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
