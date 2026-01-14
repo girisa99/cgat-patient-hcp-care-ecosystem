@@ -10,6 +10,7 @@ import { PageLoading } from '@/components/ui/LoadingStates';
 import { initializeStabilityFramework } from '@/utils/framework/init';
 import { AppLayoutWithEnrollment } from '@/components/layout/AppLayoutWithEnrollment';
 import { StabilityProvider } from '@/components/stability/StabilityProvider';
+import { AccessibilityProvider } from '@/components/genie-studio/AccessibilityEnhancements';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { TenantProvider } from '@/contexts/TenantContext';
 import { HelmetProvider } from 'react-helmet-async';
@@ -507,21 +508,23 @@ const AppRouter = () => {
   return (
     <MasterAuthProvider>
       <TenantProvider>
-        <TooltipProvider>
-          <HelmetProvider>
-            <GlobalAgentGeneratorProvider>
-              <Toaster />
-              <AppLayoutWithEnrollment 
-                showUniversalGenie={true}
-                tenantId="default-tenant"
-                userId="current-user"
-              >
-                <AppContent />
-              </AppLayoutWithEnrollment>
-              <GlobalAgentGeneratorModal />
-            </GlobalAgentGeneratorProvider>
-          </HelmetProvider>
-        </TooltipProvider>
+        <AccessibilityProvider>
+          <TooltipProvider>
+            <HelmetProvider>
+              <GlobalAgentGeneratorProvider>
+                <Toaster />
+                <AppLayoutWithEnrollment 
+                  showUniversalGenie={true}
+                  tenantId="default-tenant"
+                  userId="current-user"
+                >
+                  <AppContent />
+                </AppLayoutWithEnrollment>
+                <GlobalAgentGeneratorModal />
+              </GlobalAgentGeneratorProvider>
+            </HelmetProvider>
+          </TooltipProvider>
+        </AccessibilityProvider>
       </TenantProvider>
     </MasterAuthProvider>
   );
