@@ -22,6 +22,7 @@ export { VibeMeetingIntelligence } from './VibeMeetingIntelligence';
 export { VibeKeyboardShortcuts } from './VibeKeyboardShortcuts';
 export { VibePopoutButton } from './VibePopoutButton';
 export { VibeMobileLayout } from './VibeMobileLayout';
+export type { RecordingResult as VibeRecordingResult } from './VibeMobileLayout';
 
 // Re-export unified cost panel
 export { UnifiedCostPanel } from '@/components/shared/UnifiedCostPanel';
