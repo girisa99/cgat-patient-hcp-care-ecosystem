@@ -191,6 +191,9 @@ export const RalphWiggumGlobalPanel: React.FC = () => {
   const [filterType, setFilterType] = useState<FindingType | 'all'>('all');
   const [filterStatus, setFilterStatus] = useState<FindingStatus | 'all' | 'active'>('active');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showCopyDialog, setShowCopyDialog] = useState(false);
+  const [copyContent, setCopyContent] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const hasAutoAnalyzed = useRef(false);
   
   // Drag controls for the panel
@@ -359,18 +362,16 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
     hasAutoAnalyzed.current = false;
   }, [currentRoute]);
   
-  // Share to Lovable - copies ALL active findings and marks them as WIP
-  const handleShareToLovable = useCallback(async () => {
+  // Generate Lovable prompt from findings
+  const generateLovablePrompt = useCallback(() => {
     const activeFindings = currentPageFindings.filter(
       f => f.status === 'new' || f.status === 'acknowledged'
     );
     
     if (activeFindings.length === 0) {
-      toast.error('No active (New/Ack) findings to share');
-      return;
+      return '';
     }
     
-    // Build Lovable-formatted prompt
     let prompt = `## 🐛 Ralph Wiggum Review - ${currentPageName}\n\n`;
     prompt += `**Route:** \`${currentRoute}\`\n`;
     prompt += `**Findings:** ${activeFindings.length} items\n\n`;
@@ -416,62 +417,39 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
       });
     }
     
-    // Log to console so user can copy from there
-    console.log('=== RALPH WIGGUM FINDINGS ===');
-    console.log(prompt);
-    console.log('=== END FINDINGS ===');
+    return prompt;
+  }, [currentPageFindings, currentPageName, currentRoute]);
+  
+  // Share to Lovable - opens simple dialog with content
+  const handleShareToLovable = useCallback(async () => {
+    const activeFindings = currentPageFindings.filter(
+      f => f.status === 'new' || f.status === 'acknowledged'
+    );
     
-    // Try multiple clipboard methods
-    let copied = false;
-    
-    try {
-      // Method 1: Modern Clipboard API
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(prompt);
-        copied = true;
-      }
-    } catch (err) {
-      console.warn('Clipboard API failed:', err);
+    if (activeFindings.length === 0) {
+      toast.error('No active (New/Ack) findings to share');
+      return;
     }
     
-    if (!copied) {
-      try {
-        // Method 2: Fallback using textarea
-        const textArea = document.createElement('textarea');
-        textArea.value = prompt;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
-        textArea.style.top = '-999999px';
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        copied = document.execCommand('copy');
-        document.body.removeChild(textArea);
-      } catch (err) {
-        console.warn('Fallback clipboard failed:', err);
-      }
-    }
+    const prompt = generateLovablePrompt();
+    setCopyContent(prompt);
+    setShowCopyDialog(true);
     
     // Mark all shared findings as "in_progress"
     for (const finding of activeFindings) {
       await updateFindingStatus(finding.id, 'in_progress', 'lovable-share');
     }
     
-    if (copied) {
-      toast.success(
-        `✨ Copied ${activeFindings.length} findings!\nPaste (Ctrl+V) in Lovable chat.\nStatus → WIP`,
-        { duration: 5000 }
-      );
-    } else {
-      // Show the content so user can manually copy
-      toast.info(
-        'Clipboard blocked. Check console (F12) for findings to copy.',
-        { duration: 8000 }
-      );
-      // Also show in an alert as last resort
-      alert(`COPY THIS TO LOVABLE:\n\n${prompt}`);
+    toast.success(`Status updated to WIP for ${activeFindings.length} findings`);
+  }, [currentPageFindings, generateLovablePrompt, updateFindingStatus]);
+  
+  // Select all text in textarea
+  const handleSelectAll = useCallback(() => {
+    if (textareaRef.current) {
+      textareaRef.current.select();
+      toast.success('Selected! Now press Ctrl+C to copy');
     }
-  }, [currentPageFindings, currentPageName, currentRoute, updateFindingStatus]);
+  }, []);
   
   // Bulk status update
   const handleBulkStatusUpdate = useCallback(async (newStatus: FindingStatus) => {
@@ -753,6 +731,77 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
           </CardContent>
         </Card>
       </motion.div>
+      
+      {/* Simple Copy Dialog - No iframe issues */}
+      <AnimatePresence>
+        {showCopyDialog && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-[10000] flex items-center justify-center p-4"
+            onClick={() => setShowCopyDialog(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-card rounded-lg shadow-xl max-w-lg w-full max-h-[80vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-3 border-b flex items-center justify-between bg-gradient-to-r from-violet-500 to-purple-600 rounded-t-lg">
+                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                  <Send className="h-4 w-4" />
+                  Copy to Lovable
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 text-white hover:bg-white/20"
+                  onClick={() => setShowCopyDialog(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <div className="p-3 flex-1 overflow-hidden flex flex-col gap-2">
+                <p className="text-xs text-muted-foreground">
+                  Select all text below (Ctrl+A), copy (Ctrl+C), then paste in Lovable chat:
+                </p>
+                <textarea
+                  ref={textareaRef}
+                  value={copyContent}
+                  readOnly
+                  className="flex-1 min-h-[300px] p-2 text-xs font-mono bg-muted rounded border resize-none focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={handleSelectAll}
+                  >
+                    <Copy className="h-3 w-3 mr-1" />
+                    Select All
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="default"
+                    className="flex-1 bg-violet-600 hover:bg-violet-700"
+                    onClick={() => {
+                      setShowCopyDialog(false);
+                      toast.success('Now paste (Ctrl+V) in this chat!');
+                    }}
+                  >
+                    Done
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };
