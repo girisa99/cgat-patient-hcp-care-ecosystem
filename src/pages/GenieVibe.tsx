@@ -75,7 +75,8 @@ import type { PipelineStage } from '@/components/mobile/PipelineProgress';
 import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
 
 // Import extracted VibeRecordTab component (Phase 1+2 consolidation)
-import { VibeRecordTab, VibeLibraryTab, VibeCostTracker } from '@/components/genie-vibe';
+// Import VibeMobileLayout (Phase 5 - simplified 3-tab mobile UX)
+import { VibeRecordTab, VibeLibraryTab, VibeCostTracker, VibeMobileLayout } from '@/components/genie-vibe';
 
 // Import useMediaProject for cost tracking (Phase 3)
 import { useMediaProject } from '@/components/document-processing/RecordingStudio/hooks';
@@ -352,17 +353,15 @@ const GenieVibe: React.FC = () => {
   const showMobileView = viewMode === 'mobile';
 
   // ============================================================
-  // MOBILE VIEW - Streamlined recording-first experience
+  // MOBILE VIEW - Simplified 3-Tab Experience (Record | Edit | Export)
+  // Phase 5: Auto-detected, offline status, sync queue visibility
   // ============================================================
   if (showMobileView) {
     return (
-      <MobileRecordingView
-        isOpen={true}
-        onClose={() => navigate('/genie-studio')}
-        scripts={scriptsForMobile}
-        music={musicForMobile}
+      <VibeMobileLayout
         onSwitchToDesktop={() => setViewMode('desktop')}
         onRecordingComplete={handleRecordingComplete}
+        scripts={scriptsForMobile}
       />
     );
   }
