@@ -5,7 +5,7 @@ import { useMasterToast } from './useMasterToast';
 interface UniversalSaveData {
   id?: string;
   user_id: string;
-  session_type: 'patient_enrollment' | 'agent_session' | 'onboarding' | 'npi_verification';
+  session_type: 'patient_enrollment' | 'agent_session' | 'onboarding' | 'npi_verification' | 'production_workflow';
   current_step: string;
   form_data: Record<string, any>;
   progress_percentage: number;

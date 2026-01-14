@@ -49,6 +49,7 @@ interface ScheduleManagementDialogProps {
   onUpdate: (showId: string, updates: Partial<ShowWithParticipants>) => Promise<void>;
   onCancel: (showId: string, reason?: string) => Promise<void>;
   onReschedule: (showId: string, newDate: string, notifyParticipants: boolean) => Promise<void>;
+  initialTab?: 'edit' | 'reschedule' | 'cancel';
 }
 
 export function ScheduleManagementDialog({
@@ -58,6 +59,7 @@ export function ScheduleManagementDialog({
   onUpdate,
   onCancel,
   onReschedule,
+  initialTab,
 }: ScheduleManagementDialogProps) {
   const [activeTab, setActiveTab] = useState<'edit' | 'reschedule' | 'cancel'>('edit');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -90,6 +92,13 @@ export function ScheduleManagementDialog({
       setCancelReason('');
     }
   }, [show]);
+
+  // Set initial tab when dialog opens
+  useEffect(() => {
+    if (open && initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [open, initialTab]);
 
   const handleEdit = async () => {
     if (!show) return;
