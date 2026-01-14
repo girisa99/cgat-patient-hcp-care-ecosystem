@@ -12,15 +12,35 @@ import {
   Sparkles, Users, Layers, MessageSquareQuote,
   Video, FileText, Mic, Globe, BarChart3,
   Download, Maximize2, X, ChevronLeft, ChevronRight,
-  Code, Wrench, Calculator, GraduationCap, Heart, Lightbulb
+  Code, Wrench, Calculator, GraduationCap, Heart, Lightbulb,
+  TrendingDown, Star
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
+import { 
+  ResponsiveContainer, 
+  ScatterChart, 
+  Scatter, 
+  XAxis, 
+  YAxis, 
+  Tooltip, 
+  Cell,
+  BarChart,
+  Bar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  Legend
+} from 'recharts';
+import { gartnerPositions, competitors, segments } from '../data/market-data';
 
 // Enhanced Journey Steps with correct Genie Product mapping
 // Based on src/constants/genie-products.ts:
@@ -1116,6 +1136,263 @@ export const OverviewTab: React.FC = () => {
           </Card>
         ))}
       </motion.div>
+
+      {/* Market Positioning Matrix */}
+      <SectionWrapper title="Market Positioning" downloadFileName="market-positioning">
+        <motion.div variants={itemVariants}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-foreground flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center">
+                <Target className="w-5 h-5 text-accent" />
+              </div>
+              Market Positioning Matrix
+            </h3>
+          </div>
+          
+          <Tabs defaultValue="creator" className="w-full">
+            <TabsList className="mb-4 flex-wrap h-auto gap-1">
+              <TabsTrigger value="creator" className="text-xs">🎬 Creators</TabsTrigger>
+              <TabsTrigger value="smb" className="text-xs">🏪 SMB</TabsTrigger>
+              <TabsTrigger value="healthcare" className="text-xs">🏥 Healthcare</TabsTrigger>
+              <TabsTrigger value="enterprise" className="text-xs">🏢 Enterprise</TabsTrigger>
+            </TabsList>
+            
+            {Object.entries(gartnerPositions).map(([segment, positions]) => (
+              <TabsContent key={segment} value={segment} className="mt-0">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Gartner Quadrant */}
+                  <Card className="border-border">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Target className="w-4 h-4" />
+                        Vision vs Execution Quadrant
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="relative h-[280px] border-l-2 border-b-2 border-border ml-8 mb-6">
+                        {/* Axis Labels */}
+                        <div className="absolute -left-8 top-1/2 -translate-y-1/2 -rotate-90 text-muted-foreground text-[10px] font-medium whitespace-nowrap">
+                          Execution →
+                        </div>
+                        <div className="absolute bottom-[-24px] left-1/2 -translate-x-1/2 text-muted-foreground text-[10px] font-medium">
+                          Vision →
+                        </div>
+
+                        {/* Quadrant Labels */}
+                        <div className="absolute top-2 left-2 text-muted-foreground text-[9px]">Niche</div>
+                        <div className="absolute top-2 right-2 text-green-600 text-[9px] font-semibold">Leaders</div>
+                        <div className="absolute bottom-2 left-2 text-muted-foreground text-[9px]">Challengers</div>
+                        <div className="absolute bottom-2 right-2 text-primary text-[9px] font-semibold">Visionaries</div>
+
+                        {/* Quadrant Lines */}
+                        <div className="absolute left-1/2 top-0 bottom-0 w-px bg-border" />
+                        <div className="absolute top-1/2 left-0 right-0 h-px bg-border" />
+
+                        {/* Positioned Dots */}
+                        {positions.map((pos, index) => (
+                          <motion.div
+                            key={index}
+                            className="absolute transform -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
+                            style={{
+                              left: `${pos.visionScore}%`,
+                              bottom: `${pos.executionScore}%`,
+                            }}
+                            whileHover={{ scale: 1.4 }}
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: index * 0.1 }}
+                          >
+                            <div className={`w-3.5 h-3.5 rounded-full shadow-lg ${
+                              pos.name === 'Genie Suite' 
+                                ? 'bg-gradient-to-r from-primary to-accent ring-4 ring-primary/30 w-5 h-5' 
+                                : 'bg-muted-foreground/60'
+                            }`} />
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-card border border-border rounded text-[10px] text-foreground font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-10">
+                              {pos.name}
+                              <div className="text-[8px] text-muted-foreground">
+                                V:{pos.visionScore} E:{pos.executionScore}
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                      
+                      {/* Legend */}
+                      <div className="flex flex-wrap gap-2 text-[9px]">
+                        {positions.map((pos, idx) => (
+                          <div key={idx} className="flex items-center gap-1">
+                            <div className={`w-2 h-2 rounded-full ${
+                              pos.name === 'Genie Suite' 
+                                ? 'bg-gradient-to-r from-primary to-accent' 
+                                : 'bg-muted-foreground/60'
+                            }`} />
+                            <span className={pos.name === 'Genie Suite' ? 'text-primary font-semibold' : 'text-muted-foreground'}>
+                              {pos.name}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Competitor Comparison Bars */}
+                  <Card className="border-border">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4" />
+                        Competitor Scores
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {positions
+                          .sort((a, b) => (a.visionScore + a.executionScore) - (b.visionScore + b.executionScore))
+                          .reverse()
+                          .map((pos, idx) => {
+                            const totalScore = (pos.visionScore + pos.executionScore) / 2;
+                            return (
+                              <div key={idx} className="space-y-1">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className={`font-medium ${pos.name === 'Genie Suite' ? 'text-primary' : 'text-foreground'}`}>
+                                    {pos.name}
+                                    {pos.name === 'Genie Suite' && <Star className="w-3 h-3 inline ml-1 text-amber-500" />}
+                                  </span>
+                                  <span className="text-muted-foreground text-[10px]">
+                                    V:{pos.visionScore} E:{pos.executionScore}
+                                  </span>
+                                </div>
+                                <div className="flex gap-1">
+                                  <div className="flex-1">
+                                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                      <motion.div 
+                                        className="h-full bg-blue-500 rounded-full"
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${pos.visionScore}%` }}
+                                        transition={{ duration: 0.5, delay: idx * 0.1 }}
+                                      />
+                                    </div>
+                                    <div className="text-[8px] text-muted-foreground mt-0.5">Vision</div>
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                      <motion.div 
+                                        className={`h-full rounded-full ${pos.name === 'Genie Suite' ? 'bg-amber-500' : 'bg-green-500'}`}
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${pos.executionScore}%` }}
+                                        transition={{ duration: 0.5, delay: idx * 0.1 + 0.2 }}
+                                      />
+                                    </div>
+                                    <div className="text-[8px] text-muted-foreground mt-0.5">Execution</div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
+                      
+                      {/* Genie Suite Advantage */}
+                      <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                        <div className="text-xs font-medium text-primary mb-1">Genie Suite Advantage</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          Highest vision score in segment. Building execution through phased rollout. 
+                          Unified platform vs fragmented point solutions.
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
+        </motion.div>
+      </SectionWrapper>
+
+      {/* Segment Analysis */}
+      <SectionWrapper title="Segment Analysis" downloadFileName="segment-analysis">
+        <motion.div variants={itemVariants}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-foreground flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-green-500/10 flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-green-600" />
+              </div>
+              Market Segments by Opportunity
+            </h3>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {segments.slice(0, 6).map((seg, idx) => (
+              <motion.div
+                key={seg.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+              >
+                <Card className={`h-full ${seg.priority === 'P0' ? 'border-primary/50 bg-primary/5' : 'border-border'}`}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">{seg.emoji}</span>
+                        <div>
+                          <div className="font-semibold text-foreground text-sm">{seg.name}</div>
+                          <div className="text-[10px] text-muted-foreground">{seg.fullName}</div>
+                        </div>
+                      </div>
+                      <Badge variant={seg.priority === 'P0' ? 'default' : 'secondary'} className="text-[10px]">
+                        {seg.priority}
+                      </Badge>
+                    </div>
+                    
+                    {/* Market Size */}
+                    <div className="grid grid-cols-3 gap-2 text-center mb-3">
+                      <div className="bg-muted/50 rounded-lg p-2">
+                        <div className="text-sm font-bold text-primary">{seg.tam}</div>
+                        <div className="text-[8px] text-muted-foreground">TAM</div>
+                      </div>
+                      <div className="bg-muted/50 rounded-lg p-2">
+                        <div className="text-sm font-bold text-foreground">{seg.sam}</div>
+                        <div className="text-[8px] text-muted-foreground">SAM</div>
+                      </div>
+                      <div className="bg-muted/50 rounded-lg p-2">
+                        <div className="text-sm font-bold text-green-600">{seg.som}</div>
+                        <div className="text-[8px] text-muted-foreground">SOM</div>
+                      </div>
+                    </div>
+                    
+                    {/* Growth & Competition */}
+                    <div className="flex items-center justify-between text-xs mb-2">
+                      <span className="text-green-600 font-medium">{seg.growthRate}</span>
+                      <span className="text-muted-foreground">Competition: {seg.competitionLevel}</span>
+                    </div>
+                    
+                    {/* Genie Fit Score */}
+                    <div className="mb-2">
+                      <div className="flex items-center justify-between text-[10px] mb-1">
+                        <span className="text-muted-foreground">Genie Fit Score</span>
+                        <span className="font-medium text-foreground">{seg.genieFit}/5</span>
+                      </div>
+                      <div className="flex gap-0.5">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <div
+                            key={star}
+                            className={`h-1.5 flex-1 rounded-full ${
+                              star <= seg.genieFit ? 'bg-primary' : 'bg-muted'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Tagline */}
+                    <div className="text-[10px] text-muted-foreground italic mt-2 line-clamp-2">
+                      {seg.tagline}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      </SectionWrapper>
 
       {/* Content Creation Journey - Horizontal Scrollable Per Step */}
       <SectionWrapper title="Content Creation Journey" downloadFileName="content-creation-journey">
