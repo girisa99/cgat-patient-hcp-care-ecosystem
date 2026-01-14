@@ -232,7 +232,7 @@ export const MarketAnalysisTab: React.FC = () => {
             <div className="absolute top-1/2 left-0 right-0 h-px bg-slate-600/50" />
 
             {/* Positioned Dots */}
-            {gartnerPositions.map((pos, index) => (
+            {Array.isArray(gartnerPositions) && gartnerPositions.map((pos, index) => (
               <div
                 key={index}
                 className="absolute transform -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
