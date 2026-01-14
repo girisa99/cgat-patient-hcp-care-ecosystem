@@ -7,101 +7,129 @@
  * Last Updated: 2026-01-14
  */
 
-// Base URL for hosted assets (using GitHub raw or CDN)
-const ASSET_BASE_URL = 'https://raw.githubusercontent.com/genieaiexperimentationhub/assets/main/logos';
-// Fallback: Use the production site assets
+/**
+ * LOGO ASSETS - Hosted on production site
+ * These map exactly to src/assets/logos/ from the frontend
+ * IMPORTANT: Keep taglines in sync with src/constants/genie-products.ts
+ */
 const SITE_ASSET_URL = 'https://cgat-patient-hcp-care-ecosystem.lovable.app';
 
+// Logo paths matching src/assets/logos/
+const LOGOS = {
+  askGenie: `${SITE_ASSET_URL}/src/assets/logos/ask-genie-combined.png`,
+  genieMind: `${SITE_ASSET_URL}/src/assets/logos/genie-mind-combined.png`,
+  genieSpark: `${SITE_ASSET_URL}/src/assets/logos/genie-spark-combined.png`,
+  genieVibe: `${SITE_ASSET_URL}/src/assets/logos/genie-vibe-combined.png`,
+  genieStudio: `${SITE_ASSET_URL}/src/assets/logos/genie-studio-combined.png`,
+  genieStudioBanner: `${SITE_ASSET_URL}/src/assets/logos/genie-studio-banner.png`,
+  genieStudioHorizontal: `${SITE_ASSET_URL}/src/assets/logos/genie-studio-horizontal.png`,
+  genieArc: `${SITE_ASSET_URL}/src/assets/logos/genie-arc-combined.png`,
+};
+
 export const GENIE_BRANDING = {
-  // Company/Platform
+  // Company/Platform - EXACT match to src/constants/genie-products.ts
   platform: {
     name: 'Genie Studio',
-    tagline: 'Mind to Media',
+    tagline: 'Mind to Media', // From GENIE_PRODUCTS.studio.tagline
     description: 'AI-Powered Production Platform',
-    emoji: '✨',
+    emoji: '🎨',
     url: 'https://genieaiexperimentationhub.tech',
     email: 'info@genieaiexperimentationhub.tech',
     colors: {
-      primary: '#8B5CF6', // Purple
+      primary: '#8B5CF6',
       secondary: '#7C3AED',
       accent: '#A855F7',
       gradient: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
     },
     logo: {
-      banner: `${SITE_ASSET_URL}/placeholder.svg`, // Will use emoji fallback
-      horizontal: `${SITE_ASSET_URL}/placeholder.svg`,
-      icon: `${SITE_ASSET_URL}/placeholder.svg`,
+      combined: LOGOS.genieStudio,
+      banner: LOGOS.genieStudioBanner,
+      horizontal: LOGOS.genieStudioHorizontal,
     }
   },
   
-  // Products with logos and proper branding
+  /**
+   * Products - EXACT taglines from src/constants/genie-products.ts
+   * 
+   * - Genie Mind: "AI that understands"
+   * - Genie Vibe: "Script to Screen"
+   * - Genie Spark: "Ignite your Ideas"
+   * - Genie Studio: "Mind to Media"
+   * - Genie Arc: "Your Production Journey With Infinite Possibilities"
+   */
   products: {
     mind: {
       name: 'Genie Mind',
-      tagline: 'AI that understands',
+      tagline: 'AI that understands', // EXACT from central repository
       emoji: '🧠',
       color: '#0EA5E9',
-      gradientFrom: '#0EA5E9',
-      gradientTo: '#06B6D4',
+      gradientFrom: '#3B82F6', // from-blue-500
+      gradientTo: '#06B6D4', // to-cyan-500
       description: 'Your intelligent AI companion that truly understands context and provides meaningful insights.',
       url: 'https://genieaiexperimentationhub.tech/genie-mind',
+      logo: LOGOS.genieMind,
       features: ['Contextual AI understanding', 'Multi-modal intelligence', 'Personalized learning']
     },
     spark: {
       name: 'Genie Spark',
-      tagline: 'Ignite your Ideas',
-      emoji: '⚡',
+      tagline: 'Ignite your Ideas', // EXACT from central repository
+      emoji: '✨',
       color: '#F59E0B',
-      gradientFrom: '#F59E0B',
-      gradientTo: '#F97316',
+      gradientFrom: '#F59E0B', // from-amber-500
+      gradientTo: '#F97316', // to-orange-500
       description: 'Transform your creative sparks into brilliant content with AI-powered inspiration.',
       url: 'https://genieaiexperimentationhub.tech/genie-spark',
+      logo: LOGOS.genieSpark,
       features: ['AI script generation', 'Story development', 'Creative brainstorming']
     },
     vibe: {
       name: 'Genie Vibe',
-      tagline: 'Script to Screen',
-      emoji: '🎭',
-      color: '#10B981',
-      gradientFrom: '#10B981',
-      gradientTo: '#14B8A6',
+      tagline: 'Script to Screen', // EXACT from central repository
+      emoji: '🎬',
+      color: '#A855F7',
+      gradientFrom: '#A855F7', // from-purple-500
+      gradientTo: '#EC4899', // to-pink-500
       description: 'Bring your scripts to life with seamless audio and video production tools.',
       url: 'https://genieaiexperimentationhub.tech/genie-vibe',
+      logo: LOGOS.genieVibe,
       features: ['Audio recording & editing', 'Video capture', 'Real-time effects']
     },
     studio: {
       name: 'Genie Studio',
-      tagline: 'Mind to Media',
+      tagline: 'Mind to Media', // EXACT from central repository
       emoji: '🎨',
       color: '#8B5CF6',
-      gradientFrom: '#8B5CF6',
-      gradientTo: '#7C3AED',
+      gradientFrom: '#6366F1', // from-indigo-500
+      gradientTo: '#8B5CF6', // to-violet-500
       description: 'The complete creative studio that transforms your ideas into polished media.',
       url: 'https://genieaiexperimentationhub.tech/genie-studio',
+      logo: LOGOS.genieStudio,
       features: ['Integrated creative suite', 'Asset management', 'Cross-product workflows']
     },
     arc: {
       name: 'Genie Arc',
-      tagline: 'Your Production Journey',
+      tagline: 'Your Production Journey With Infinite Possibilities', // EXACT from central repository
       emoji: '🎯',
-      color: '#6366F1',
-      gradientFrom: '#6366F1',
-      gradientTo: '#8B5CF6',
+      color: '#10B981',
+      gradientFrom: '#10B981', // from-emerald-500
+      gradientTo: '#14B8A6', // to-teal-500
       description: 'Orchestrate your production workflow with powerful scheduling and team collaboration.',
       url: 'https://genieaiexperimentationhub.tech/genie-arc',
+      logo: LOGOS.genieArc,
       features: ['Show scheduling', 'Team collaboration', 'Production pipeline']
     }
   },
   
-  // Ask Genie (AI Assistant)
+  // Ask Genie - EXACT tagline from ASK_GENIE constant
   askGenie: {
     name: 'Ask Genie',
-    tagline: 'Your wish is my command',
+    tagline: 'Your wish is my command', // EXACT from ASK_GENIE.tagline
     emoji: '🧞',
     color: '#A855F7',
-    gradientFrom: '#A855F7',
-    gradientTo: '#EC4899',
-    description: 'Your intelligent AI companion that guides you through the entire Genie Studio experience.'
+    gradientFrom: '#8B5CF6', // from-violet-500
+    gradientTo: '#D946EF', // to-fuchsia-500
+    description: 'Your intelligent AI companion that guides you through the entire Genie Studio experience.',
+    logo: LOGOS.askGenie,
   },
   
   // Production Hub
@@ -112,7 +140,8 @@ export const GENIE_BRANDING = {
     color: '#EC4899',
     gradientFrom: '#EC4899',
     gradientTo: '#F43F5E',
-    description: 'Your centralized command center for managing all production activities.'
+    description: 'Your centralized command center for managing all production activities.',
+    logo: LOGOS.genieStudioBanner, // Uses studio banner
   },
   
   // Email Templates Configuration
@@ -356,11 +385,12 @@ export const getResponsiveEmailWrapper = (content: string, title: string) => `
 `;
 
 /**
- * Generate the Genie Products section for emails
+ * Generate the Genie Products section for emails with ACTUAL LOGOS
  */
 export const getProductsSection = () => {
   const { products, platform, askGenie, productionHub } = GENIE_BRANDING;
   
+  // Products with logos
   const productItems = [
     { key: 'studio', ...products.studio },
     { key: 'mind', ...products.mind },
@@ -369,18 +399,22 @@ export const getProductsSection = () => {
     { key: 'arc', ...products.arc },
   ];
   
+  // Generate product cards with logos (fallback to emoji if logo fails)
   const productCards = productItems.map(p => `
     <tr>
       <td style="padding: 6px 0;">
         <a href="${p.url}" style="text-decoration: none; display: block; background: rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px; border: 1px solid rgba(255,255,255,0.15);">
           <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
             <tr>
-              <td width="44" style="vertical-align: middle;">
-                <div style="width: 40px; height: 40px; background: linear-gradient(135deg, ${p.gradientFrom}, ${p.gradientTo}); border-radius: 10px; text-align: center; line-height: 40px; font-size: 20px;">${p.emoji}</div>
+              <td width="48" style="vertical-align: middle;">
+                <!-- Logo with gradient background fallback -->
+                <div style="width: 44px; height: 44px; background: linear-gradient(135deg, ${p.gradientFrom}, ${p.gradientTo}); border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                  <img src="${(p as any).logo || ''}" alt="${p.name}" width="44" height="44" style="display: block; border-radius: 10px; object-fit: contain;" onerror="this.style.display='none';this.parentElement.innerHTML='<span style=\\'font-size:24px;line-height:44px;text-align:center;display:block;\\'>${p.emoji}</span>';" />
+                </div>
               </td>
               <td style="padding-left: 12px; vertical-align: middle;">
                 <p style="color: #ffffff; margin: 0 0 2px; font-weight: 600; font-size: 15px;">${p.name}</p>
-                <p style="color: #a5b4fc; margin: 0; font-size: 12px; line-height: 1.4;">${p.tagline}</p>
+                <p style="color: #a5b4fc; margin: 0; font-size: 12px; line-height: 1.4; word-wrap: break-word;">${p.tagline}</p>
               </td>
             </tr>
           </table>
@@ -395,6 +429,8 @@ export const getProductsSection = () => {
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
           <tr>
             <td style="text-align: center; padding-bottom: 20px;">
+              <!-- Platform logo -->
+              <img src="${platform.logo.combined}" alt="${platform.name}" width="120" height="auto" style="display: inline-block; margin-bottom: 12px;" onerror="this.style.display='none';" />
               <p style="color: #c4b5fd; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 6px;">Explore</p>
               <h3 style="color: #ffffff; margin: 0; font-size: 20px; font-weight: 700;">${platform.name} Products</h3>
               <p style="color: #a5b4fc; margin: 6px 0 0; font-size: 13px;">${platform.tagline}</p>
@@ -402,18 +438,27 @@ export const getProductsSection = () => {
           </tr>
           ${productCards}
           <tr>
-            <td style="padding: 12px 0 0; text-align: center;">
+            <td style="padding: 16px 0 0; text-align: center;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
                 <tr>
                   <td style="padding: 0 8px;">
-                    <div style="width: 36px; height: 36px; background: linear-gradient(135deg, ${askGenie.gradientFrom}, ${askGenie.gradientTo}); border-radius: 50%; text-align: center; line-height: 36px; font-size: 18px;" title="${askGenie.name}">${askGenie.emoji}</div>
+                    <!-- Ask Genie logo -->
+                    <div style="width: 40px; height: 40px; background: linear-gradient(135deg, ${askGenie.gradientFrom}, ${askGenie.gradientTo}); border-radius: 50%; overflow: hidden;">
+                      <img src="${askGenie.logo}" alt="${askGenie.name}" width="40" height="40" style="display: block; border-radius: 50%; object-fit: contain;" onerror="this.outerHTML='<span style=\\'font-size:20px;line-height:40px;text-align:center;display:block;\\'>${askGenie.emoji}</span>';" />
+                    </div>
                   </td>
                   <td style="padding: 0 8px;">
-                    <div style="width: 36px; height: 36px; background: linear-gradient(135deg, ${productionHub.gradientFrom}, ${productionHub.gradientTo}); border-radius: 50%; text-align: center; line-height: 36px; font-size: 18px;" title="${productionHub.name}">${productionHub.emoji}</div>
+                    <!-- Production Hub logo -->
+                    <div style="width: 40px; height: 40px; background: linear-gradient(135deg, ${productionHub.gradientFrom}, ${productionHub.gradientTo}); border-radius: 50%; text-align: center; line-height: 40px; font-size: 20px;">
+                      ${productionHub.emoji}
+                    </div>
                   </td>
                 </tr>
               </table>
-              <p style="color: #818cf8; font-size: 11px; margin: 8px 0 0;">${askGenie.name} • ${productionHub.name}</p>
+              <p style="color: #818cf8; font-size: 11px; margin: 10px 0 0;">
+                <span style="color: #c4b5fd;">${askGenie.name}</span> - ${askGenie.tagline}<br/>
+                <span style="color: #c4b5fd;">${productionHub.name}</span> - ${productionHub.tagline}
+              </p>
             </td>
           </tr>
         </table>
