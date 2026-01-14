@@ -105,8 +105,7 @@ import { ProductionStage } from '@/types/shows';
 import { MobileRecordingView } from '@/components/document-processing/RecordingStudio/components/MobileRecordingView';
 // Ask Genie - Unified AI Assistant
 import { AskGenie } from '@/components/genie-studio/AskGenie';
-// Ralph Wiggum - DEV-ONLY AI Review System
-import { RalphWiggumIntegration } from '@/components/genie-studio/ralph-wiggum';
+// Ralph Wiggum is now global (see App.tsx) - RalphWiggumGlobalPanel
 // Dashboard Welcome - First-time user experience
 import { DashboardWelcome } from '@/components/genie-studio/DashboardWelcome';
 // User Flow Tracking - DEV-ONLY journey tracking
@@ -3748,32 +3747,7 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
           sessionData={{ scriptsCount: savedScripts?.length || 0 }}
         />
         
-        {/* Ralph Wiggum - DEV-ONLY AI Review System */}
-        {/* Automatically reviews UI/UX, content quality, and journey flow */}
-        {/* Click "Copy for Lovable" to get implementation prompts */}
-        <RalphWiggumIntegration
-          activeTab={activeTab}
-          scriptContent={scriptContent}
-          scriptName={scriptName}
-          voiceSettings={{
-            provider: selectedProvider,
-            voice: selectedVoice,
-            text: voiceText
-          }}
-          scriptsCount={savedScripts?.length || 0}
-          voiceoversCount={mergedVoiceovers?.length || 0}
-          musicCount={mergedMusic?.length || 0}
-          isRecording={isRecordingInProgress}
-          recordingMode={isMobile ? 'mobile' : 'desktop'}
-          vibeData={{
-            clipCount: mediaProjects?.length || 0,
-            totalDuration: 0,
-            hasAudio: true,
-            projectName: mediaProjects?.[0]?.name
-          }}
-          userFlow={userFlow}
-          loadedComponents={loadedComponents}
-        />
+        {/* Ralph Wiggum is now rendered globally from App.tsx */}
       </div>
     </AppLayout>
   );
