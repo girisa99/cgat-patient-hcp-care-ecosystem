@@ -348,9 +348,12 @@ export default function ProductionHub() {
     toast.success('Meeting URL copied to clipboard');
   };
   
-  // Reschedule show handler
+  // Reschedule show handler - with rate limiting for email sends
   const handleReschedule = async (showId: string, newDate: string, notifyParticipants: boolean) => {
     try {
+      const show = shows.find(s => s.id === showId);
+      const oldDate = show?.scheduled_date;
+      
       const { error } = await supabase
         .from('shows')
         .update({ scheduled_date: newDate })
@@ -358,12 +361,14 @@ export default function ProductionHub() {
       
       if (error) throw error;
       
-      // Send notification emails if requested
-      if (notifyParticipants) {
-        const show = shows.find(s => s.id === showId);
-        if (show?.participants) {
-          for (const participant of show.participants) {
-            if (participant.email) {
+      // Send notification emails if requested with rate limiting
+      if (notifyParticipants && show?.participants) {
+        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+        
+        for (let i = 0; i < show.participants.length; i++) {
+          const participant = show.participants[i];
+          if (participant.email) {
+            try {
               await supabase.functions.invoke('send-show-invite', {
                 body: {
                   to: participant.email,
@@ -371,14 +376,27 @@ export default function ProductionHub() {
                   role: participant.role,
                   showType: show.show_type,
                   showTitle: show.title,
+                  hostName: (show as any)?.host_name,
+                  hostEmail: (show as any)?.host_email,
+                  category: (show as any)?.event_category || 'media_production',
                   scheduledDate: newDate,
                   isReschedule: true,
+                  oldScheduledDate: oldDate,
+                  newScheduledDate: newDate,
                   joinUrl: show.meeting_link,
                 },
               });
+              
+              // Rate limit: wait 600ms between emails
+              if (i < show.participants.length - 1) {
+                await delay(600);
+              }
+            } catch (emailErr) {
+              console.error(`Failed to send reschedule email to ${participant.email}:`, emailErr);
             }
           }
         }
+        toast.success(`Rescheduled! ${show.participants.length} participant(s) notified.`);
       }
     } catch (err) {
       console.error('Reschedule error:', err);
@@ -386,25 +404,40 @@ export default function ProductionHub() {
     }
   };
   
-  // Cancel show handler
+  // Cancel show handler - with rate limiting for email sends
   const handleCancelShow = async (showId: string, reason?: string) => {
     try {
       const show = shows.find(s => s.id === showId);
       
-      // Notify participants before deleting
+      // Notify participants before deleting with rate limiting
       if (show?.participants) {
-        for (const participant of show.participants) {
+        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+        
+        for (let i = 0; i < show.participants.length; i++) {
+          const participant = show.participants[i];
           if (participant.email) {
-            await supabase.functions.invoke('send-show-invite', {
-              body: {
-                to: participant.email,
-                participantName: participant.name,
-                showTitle: show.title,
-                showType: show.show_type,
-                isCancellation: true,
-                cancellationReason: reason,
-              },
-            });
+            try {
+              await supabase.functions.invoke('send-show-invite', {
+                body: {
+                  to: participant.email,
+                  participantName: participant.name,
+                  showTitle: show.title,
+                  showType: show.show_type,
+                  hostName: (show as any)?.host_name,
+                  hostEmail: (show as any)?.host_email,
+                  category: (show as any)?.event_category || 'media_production',
+                  isCancellation: true,
+                  cancellationReason: reason,
+                },
+              });
+              
+              // Rate limit: wait 600ms between emails
+              if (i < show.participants.length - 1) {
+                await delay(600);
+              }
+            } catch (emailErr) {
+              console.error(`Failed to send cancellation email to ${participant.email}:`, emailErr);
+            }
           }
         }
       }
