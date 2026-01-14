@@ -258,6 +258,9 @@ export default function GenieStudio() {
   const [selectedProvider, setSelectedProvider] = useState<'openai' | 'elevenlabs'>('elevenlabs');
   const [selectedVoice, setSelectedVoice] = useState('');
   
+  // Ask Genie State - Track when floating overlay is open for Ralph Wiggum
+  const [isAskGenieOpen, setIsAskGenieOpen] = useState(false);
+  
   // Music Studio State
   const [musicPrompt, setMusicPrompt] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);

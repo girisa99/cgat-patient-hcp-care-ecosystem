@@ -52,6 +52,7 @@ export interface RalphWiggumContextValue {
   currentPageRoute: string;
   isPanelOpen: boolean;
   isEnabled: boolean;
+  activeOverlay: string | null; // Track floating overlays like "ask-genie"
   
   // Actions
   togglePanel: () => void;
@@ -63,6 +64,7 @@ export interface RalphWiggumContextValue {
   deleteFinding: (id: string) => Promise<void>;
   exportFindings: (format: 'json' | 'markdown' | 'lovable') => Promise<string>;
   triggerAnalysis: (pageContent: Record<string, unknown>) => void;
+  setActiveOverlay: (overlay: string | null) => void; // Set active overlay
   
   // Filters
   filterByPage: (route: string) => RalphFinding[];
@@ -86,6 +88,7 @@ const defaultContextValue: RalphWiggumContextValue = {
   currentPageRoute: '',
   isPanelOpen: false,
   isEnabled: false,
+  activeOverlay: null,
   togglePanel: () => {},
   openPanel: () => {},
   closePanel: () => {},
@@ -95,6 +98,7 @@ const defaultContextValue: RalphWiggumContextValue = {
   deleteFinding: async () => {},
   exportFindings: async () => '',
   triggerAnalysis: () => {},
+  setActiveOverlay: () => {},
   filterByPage: () => [],
   filterByStatus: () => [],
   filterByType: () => [],
@@ -135,6 +139,7 @@ const DevProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [activeOverlay, setActiveOverlay] = useState<string | null>(null);
   const location = useLocation();
   
   const currentPageRoute = location.pathname;
@@ -373,6 +378,7 @@ const DevProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     currentPageRoute,
     isPanelOpen,
     isEnabled: true,
+    activeOverlay,
     togglePanel: () => setIsPanelOpen(p => !p),
     openPanel: () => setIsPanelOpen(true),
     closePanel: () => setIsPanelOpen(false),
@@ -382,6 +388,7 @@ const DevProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     deleteFinding,
     exportFindings,
     triggerAnalysis,
+    setActiveOverlay,
     filterByPage,
     filterByStatus,
     filterByType,

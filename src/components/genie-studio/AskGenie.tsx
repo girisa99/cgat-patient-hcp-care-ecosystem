@@ -51,6 +51,7 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { toast } from 'sonner';
+import { useRalphWiggumGlobal } from '@/contexts/RalphWiggumContext';
 
 // Import centralized product definitions - SINGLE SOURCE OF TRUTH
 import { 
@@ -744,6 +745,21 @@ export const AskGenie: React.FC<AskGenieProps> = ({
   
   const { generateResponse } = useUniversalAI();
   const productContext = PRODUCT_CONTEXTS[product];
+  
+  // Get Ralph Wiggum context to report when Ask Genie is open
+  const { setActiveOverlay, isEnabled: isRalphEnabled } = useRalphWiggumGlobal();
+  
+  // Report open/close state to Ralph Wiggum for proper tracking
+  useEffect(() => {
+    if (isRalphEnabled) {
+      setActiveOverlay(isOpen ? 'ask-genie' : null);
+    }
+    return () => {
+      if (isRalphEnabled) {
+        setActiveOverlay(null);
+      }
+    };
+  }, [isOpen, isRalphEnabled, setActiveOverlay]);
   
   // Memoize sessionData to prevent unnecessary recalculations
   const sessionDataKey = useMemo(() => JSON.stringify(sessionData || {}), [sessionData]);
