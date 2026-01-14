@@ -826,6 +826,74 @@ export function VibeRecordTab({
         </div>
       </div>
 
+      {/* Quick Actions - Streamlined UX flows */}
+      {!recording.isRecording && scripts.length > 0 && (
+        <div className="flex flex-wrap gap-2 p-3 bg-muted/30 rounded-lg border border-dashed">
+          <span className="text-xs text-muted-foreground self-center mr-2">Quick Start:</span>
+          
+          {/* Quick Record with Script */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => {
+              // Auto-select first script if none selected
+              if (!selectedScriptId && scripts.length > 0) {
+                setSelectedScriptId(scripts[0].id);
+              }
+              // Auto-open teleprompter
+              setIsTeleprompterVisible(true);
+              // Start recording after short delay
+              setTimeout(() => {
+                handleStartRecording();
+              }, 500);
+            }}
+            disabled={!camera.stream && recordingMode === 'camera'}
+          >
+            <FileText className="h-3.5 w-3.5" />
+            Record with Script
+          </Button>
+          
+          {/* Quick TTS + Record */}
+          {selectedScriptId && !ttsAudioUrl && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={async () => {
+                await handleGenerateTTS();
+                toast.info('TTS ready! Click "Start Recording" when ready.');
+              }}
+              disabled={tts.isGenerating}
+            >
+              {tts.isGenerating ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Wand2 className="h-3.5 w-3.5" />
+              )}
+              Generate TTS First
+            </Button>
+          )}
+          
+          {/* Screen + Teleprompter */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => {
+              handleRecordingModeChange('screen+camera');
+              if (selectedScriptId) {
+                setIsTeleprompterVisible(true);
+              }
+            }}
+            disabled={recording.isRecording}
+          >
+            <ScreenShare className="h-3.5 w-3.5" />
+            PiP Mode
+          </Button>
+        </div>
+      )}
+
       {/* Recording Mode Selection */}
       <div className="grid md:grid-cols-3 gap-4">
         <button 
