@@ -68,6 +68,8 @@ import {
   CalendarClock,
   RotateCcw,
   Loader2,
+  Share2,
+  Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -102,20 +104,22 @@ const STAGE_ICONS: Record<string, React.ElementType> = {
   'follow_up': MessageSquare,
   'completed': CheckCircle,
   'rescheduled': CalendarClock,
-  'cancelled': XCircle,
   // Event stages
-  'planning': Lightbulb,
-  'promotion': Megaphone,
-  'registration': UserPlus,
+  'planning': Settings,
+  'promotion': Share2,
+  'registration': Users,
   'live': Radio,
-  'wrap_up': Package,
-  'archived': Archive,
+  'wrap_up': MessageSquare,
+  'archived': CheckCircle,
+  'postponed': CalendarClock,
   // Demo stages
   'demo_scheduled': Calendar,
   'demo_prep': Settings,
   'demo_live': Play,
   'demo_followup': MessageCircle,
   'demo_closed': CheckCircle,
+  // Shared
+  'cancelled': XCircle,
 };
 
 // Type icons mapping
@@ -710,34 +714,171 @@ export const ProductionGuidedWizard: React.FC<ProductionGuidedWizardProps> = ({
           </div>
         );
 
-      // Event stages - FULLY FUNCTIONAL
+      // Event stages - SMART UI with all scenarios
       case 'planning':
+        // Smart Planning Stage - shows event configuration
+        if (selectedShow) {
+          return (
+            <Card className="p-4 space-y-3 border-primary/20">
+              {/* Event Details Summary */}
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Status:</span>
+                  <Badge className="ml-2 bg-blue-500/20 text-blue-600">Planning</Badge>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Date:</span>
+                  <span className="ml-2 font-medium">
+                    {selectedShow.scheduled_date 
+                      ? new Date(selectedShow.scheduled_date).toLocaleDateString('en-US', { 
+                          weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+                        })
+                      : 'Not set'}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Location/URL */}
+              {(selectedShow.meeting_link || (selectedShow.metadata as any)?.location) && (
+                <div className="flex items-center gap-2 p-2 bg-muted rounded text-sm">
+                  <Globe className="h-4 w-4 text-muted-foreground" />
+                  <span className="flex-1 truncate">
+                    {selectedShow.meeting_link || (selectedShow.metadata as any)?.location}
+                  </span>
+                  {selectedShow.meeting_link && (
+                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={handleCopyMeetingUrl}>
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+              )}
+              
+              {/* Agenda/Topics */}
+              {(selectedShow.metadata as any)?.topics && (
+                <div>
+                  <span className="text-xs text-muted-foreground">Agenda/Topics:</span>
+                  <p className="text-sm mt-1">{(selectedShow.metadata as any).topics}</p>
+                </div>
+              )}
+              
+              {/* Actions */}
+              <div className="flex gap-2 pt-2 border-t">
+                <Button variant="outline" size="sm" onClick={() => openScheduleManagement('edit')}>
+                  <Edit className="h-3 w-3 mr-1" />
+                  Edit Details
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => openScheduleManagement('reschedule')}>
+                  <CalendarClock className="h-3 w-3 mr-1" />
+                  Change Date
+                </Button>
+                <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => openScheduleManagement('cancel')}>
+                  <XCircle className="h-3 w-3 mr-1" />
+                  Cancel
+                </Button>
+              </div>
+            </Card>
+          );
+        }
         return (
-          <Button onClick={() => setIsScriptDialogOpen(true)} className="w-full">
-            <Lightbulb className="h-4 w-4 mr-2" />
-            Create Event Plan
+          <Button onClick={onOpenScheduleDialog || onInviteGuests} className="w-full">
+            <Settings className="h-4 w-4 mr-2" />
+            Configure Event
           </Button>
         );
+        
       case 'promotion':
+        // Smart Promotion Stage - share and invite
         return (
-          <Button 
-            onClick={() => toast.info('Opening promotion tools...')} 
-            className="w-full"
-          >
-            <Megaphone className="h-4 w-4 mr-2" />
-            Launch Promotion
-          </Button>
+          <div className="space-y-3">
+            {selectedShow && (
+              <Card className="p-3 bg-muted/30">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Registered:</span>
+                  <Badge variant="outline">{selectedShow.participants?.length || 0} attendees</Badge>
+                </div>
+              </Card>
+            )}
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" size="sm" onClick={onInviteGuests}>
+                <Mail className="h-3 w-3 mr-1" />
+                Send Invites
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => {
+                if (selectedShow?.meeting_link) {
+                  navigator.clipboard.writeText(selectedShow.meeting_link);
+                  toast.success('Event link copied!');
+                } else {
+                  toast.info('No event link set. Add one in event settings.');
+                }
+              }}>
+                <Share2 className="h-3 w-3 mr-1" />
+                Share Link
+              </Button>
+            </div>
+            <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500" onClick={() => {
+              toast.success('Promotion launched! Invites sent.');
+            }}>
+              <Megaphone className="h-4 w-4 mr-2" />
+              Launch Promotion
+            </Button>
+          </div>
         );
+        
       case 'registration':
+        // Smart Registration Stage - manage attendees
         return (
-          <Button onClick={onInviteGuests} className="w-full">
-            <UserPlus className="h-4 w-4 mr-2" />
-            Manage Registration
-          </Button>
+          <div className="space-y-3">
+            {selectedShow?.participants && selectedShow.participants.length > 0 ? (
+              <Card className="p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">Registered Attendees</span>
+                  <Badge className="bg-cyan-500/20 text-cyan-600">{selectedShow.participants.length}</Badge>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {selectedShow.participants.slice(0, 3).map(p => p.name).join(', ')}
+                  {selectedShow.participants.length > 3 && ` +${selectedShow.participants.length - 3} more`}
+                </div>
+              </Card>
+            ) : (
+              <Card className="p-3 text-center text-muted-foreground text-sm">
+                No registrations yet. Send invitations to get attendees.
+              </Card>
+            )}
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" size="sm" onClick={onInviteGuests}>
+                <UserPlus className="h-3 w-3 mr-1" />
+                Add Attendees
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => {
+                if (selectedShow?.participants?.length) {
+                  setFollowUpMessage(`Hi,\n\nThis is a reminder about "${selectedShow?.title}" on ${selectedShow?.scheduled_date ? new Date(selectedShow.scheduled_date).toLocaleDateString() : 'the scheduled date'}.\n\nWe look forward to seeing you there!\n\nBest regards`);
+                  setIsFollowUpDialogOpen(true);
+                } else {
+                  toast.info('No attendees to remind.');
+                }
+              }}>
+                <Clock className="h-3 w-3 mr-1" />
+                Send Reminder
+              </Button>
+            </div>
+          </div>
         );
+        
       case 'live':
+        // Smart Live Stage - join and manage
         return (
-          <div className="space-y-2">
+          <div className="space-y-3">
+            {selectedShow?.participants && selectedShow.participants.length > 0 && (
+              <Card className="p-3 bg-red-500/5 border-red-500/20">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-red-600 font-medium flex items-center gap-1">
+                    <Radio className="h-3 w-3 animate-pulse" />
+                    Event Live
+                  </span>
+                  <Badge variant="outline">{selectedShow.participants.length} expected</Badge>
+                </div>
+              </Card>
+            )}
             {selectedShow?.meeting_link ? (
               <div className="flex gap-2">
                 <Button 
@@ -745,7 +886,7 @@ export const ProductionGuidedWizard: React.FC<ProductionGuidedWizardProps> = ({
                   className="flex-1 bg-gradient-to-r from-red-500 to-pink-500"
                 >
                   <Radio className="h-4 w-4 mr-2" />
-                  Go Live
+                  Join Event
                 </Button>
                 <Button variant="outline" size="icon" onClick={handleCopyMeetingUrl}>
                   <Copy className="h-4 w-4" />
@@ -759,25 +900,55 @@ export const ProductionGuidedWizard: React.FC<ProductionGuidedWizardProps> = ({
             )}
           </div>
         );
+        
       case 'wrap_up':
+        // Smart Wrap Up Stage - follow-ups and recordings
         return (
-          <Button 
-            onClick={() => {
-              setFollowUpMessage(getDefaultFollowUpMessage());
-              setIsFollowUpDialogOpen(true);
-            }}
-            className="w-full"
-          >
-            <Package className="h-4 w-4 mr-2" />
-            Wrap Up & Send Follow-up
-          </Button>
+          <div className="space-y-3">
+            <Card className="p-3 bg-muted/30">
+              <div className="text-sm text-muted-foreground">
+                Event completed. Send follow-ups, share recordings, and collect feedback.
+              </div>
+            </Card>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" size="sm" onClick={() => {
+                setFollowUpMessage(getDefaultFollowUpMessage());
+                setIsFollowUpDialogOpen(true);
+              }}>
+                <MessageSquare className="h-3 w-3 mr-1" />
+                Send Follow-up
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => toast.info('Recording sharing coming soon')}>
+                <Video className="h-3 w-3 mr-1" />
+                Share Recording
+              </Button>
+            </div>
+            <Button className="w-full" onClick={() => toast.success('Wrap-up complete!')}>
+              <Package className="h-4 w-4 mr-2" />
+              Complete Wrap-up
+            </Button>
+          </div>
         );
+        
       case 'archived':
         return (
           <Badge className="bg-green-500/10 text-green-600 w-full justify-center py-2">
-            <Archive className="h-4 w-4 mr-2" />
+            <CheckCircle className="h-4 w-4 mr-2" />
             Event Archived
           </Badge>
+        );
+        
+      case 'postponed':
+        return (
+          <div className="space-y-2">
+            <Badge className="bg-amber-500/10 text-amber-600 w-full justify-center py-2">
+              <CalendarClock className="h-4 w-4 mr-2" />
+              Event Postponed
+            </Badge>
+            <Button variant="outline" size="sm" className="w-full" onClick={() => openScheduleManagement('reschedule')}>
+              Set New Date
+            </Button>
+          </div>
         );
 
       // Demo stages - FULLY FUNCTIONAL

@@ -20835,6 +20835,7 @@ export type Database = {
         | "wrap_up"
         | "archived"
         | "cancelled"
+        | "postponed"
       facility_type:
         | "treatmentFacility"
         | "referralFacility"
@@ -21203,6 +21204,7 @@ export const Constants = {
         "wrap_up",
         "archived",
         "cancelled",
+        "postponed",
       ],
       facility_type: [
         "treatmentFacility",
