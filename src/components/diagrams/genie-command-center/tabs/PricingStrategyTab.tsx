@@ -21,7 +21,7 @@ import {
   Heart, GraduationCap, Plane, Camera, BookOpen, Smartphone, Target, BarChart3, 
   Plus, Trash2, Coins, Receipt, ArrowUpRight, ArrowDownRight, AlertCircle, 
   Lightbulb, CheckCircle2, Sparkles, TrendingDown, Calendar, Edit2, ChevronRight,
-  ChevronLeft, Info, Award, Percent, RefreshCw, Settings, HelpCircle, Play
+  ChevronLeft, Info, Award, Percent, RefreshCw, Settings, HelpCircle, Play, Gauge
 } from 'lucide-react';
 import {
   segmentPricingProfiles,
@@ -1022,9 +1022,20 @@ interface ExtendedCompetitor extends CompetitorBenchmark {
     hipaCompliant: boolean;
     approvalWorkflow: boolean;
   };
+  // User base estimates per tier
+  userBaseEstimates?: {
+    free: number;
+    starter: number;
+    pro: number;
+    enterprise: number;
+  };
+  // Average videos per user per month
+  avgVideosPerUser?: number;
+  // Estimated cost per video for them
+  estimatedCostPerVideo?: number;
 }
 
-// Prepopulated competitor data from market analysis
+// Prepopulated competitor data from market analysis with user base estimates
 const marketCompetitors: ExtendedCompetitor[] = [
   { 
     name: 'CapCut', 
@@ -1037,7 +1048,10 @@ const marketCompetitors: ExtendedCompetitor[] = [
     strengths: ['Free tier dominates', 'TikTok ecosystem', 'Best mobile UX'],
     weaknesses: ['No AI voiceover', 'Limited collaboration', 'Consumer focus only'],
     genieDifferentiator: 'Script-first workflow, enterprise-grade security',
-    features: { aiVoiceover: false, scriptGeneration: false, mobileApp: true, teamCollab: false, hipaCompliant: false, approvalWorkflow: false }
+    features: { aiVoiceover: false, scriptGeneration: false, mobileApp: true, teamCollab: false, hipaCompliant: false, approvalWorkflow: false },
+    userBaseEstimates: { free: 200000000, starter: 4000000, pro: 0, enterprise: 0 },
+    avgVideosPerUser: 15,
+    estimatedCostPerVideo: 0.02,
   },
   { 
     name: 'Descript', 
@@ -1050,7 +1064,10 @@ const marketCompetitors: ExtendedCompetitor[] = [
     strengths: ['Transcription-first editing', 'Overdub voice cloning', 'Word-based editing'],
     weaknesses: ['Expensive for features', 'Complex UI', 'No mobile app'],
     genieDifferentiator: 'Mobile-first, 50% cheaper, unified script-to-publish',
-    features: { aiVoiceover: true, scriptGeneration: false, mobileApp: false, teamCollab: true, hipaCompliant: false, approvalWorkflow: false }
+    features: { aiVoiceover: true, scriptGeneration: false, mobileApp: false, teamCollab: true, hipaCompliant: false, approvalWorkflow: false },
+    userBaseEstimates: { free: 500000, starter: 150000, pro: 50000, enterprise: 5000 },
+    avgVideosPerUser: 8,
+    estimatedCostPerVideo: 0.35,
   },
   { 
     name: 'Loom', 
@@ -1063,7 +1080,10 @@ const marketCompetitors: ExtendedCompetitor[] = [
     strengths: ['Frictionless recording', 'Quick sharing', 'Viewer analytics'],
     weaknesses: ['No real editing', 'No AI features', 'No TTS'],
     genieDifferentiator: 'Full AI editing suite, script generation, approval workflows',
-    features: { aiVoiceover: false, scriptGeneration: false, mobileApp: true, teamCollab: true, hipaCompliant: false, approvalWorkflow: false }
+    features: { aiVoiceover: false, scriptGeneration: false, mobileApp: true, teamCollab: true, hipaCompliant: false, approvalWorkflow: false },
+    userBaseEstimates: { free: 21000000, starter: 700000, pro: 200000, enterprise: 50000 },
+    avgVideosPerUser: 20,
+    estimatedCostPerVideo: 0.05,
   },
   { 
     name: 'Synthesia', 
@@ -1076,7 +1096,10 @@ const marketCompetitors: ExtendedCompetitor[] = [
     strengths: ['AI avatars (150+)', 'Multi-language (140)', 'Enterprise ready'],
     weaknesses: ['Expensive ($67/mo Teams)', 'Robotic feel', 'No mobile'],
     genieDifferentiator: '70% cheaper, natural TTS, real presenter + AI hybrid',
-    features: { aiVoiceover: true, scriptGeneration: true, mobileApp: false, teamCollab: true, hipaCompliant: false, approvalWorkflow: true }
+    features: { aiVoiceover: true, scriptGeneration: true, mobileApp: false, teamCollab: true, hipaCompliant: false, approvalWorkflow: true },
+    userBaseEstimates: { free: 100000, starter: 25000, pro: 8000, enterprise: 1500 },
+    avgVideosPerUser: 5,
+    estimatedCostPerVideo: 1.25,
   },
   { 
     name: 'HeyGen', 
@@ -1089,7 +1112,10 @@ const marketCompetitors: ExtendedCompetitor[] = [
     strengths: ['High-quality avatars', 'Good voice quality', 'API access'],
     weaknesses: ['Very expensive', 'Limited free tier', 'Complex pricing'],
     genieDifferentiator: 'More affordable, integrated workflow, HIPAA option',
-    features: { aiVoiceover: true, scriptGeneration: true, mobileApp: false, teamCollab: true, hipaCompliant: false, approvalWorkflow: true }
+    features: { aiVoiceover: true, scriptGeneration: true, mobileApp: false, teamCollab: true, hipaCompliant: false, approvalWorkflow: true },
+    userBaseEstimates: { free: 50000, starter: 15000, pro: 5000, enterprise: 800 },
+    avgVideosPerUser: 6,
+    estimatedCostPerVideo: 1.50,
   },
   { 
     name: 'Pictory', 
@@ -1102,7 +1128,10 @@ const marketCompetitors: ExtendedCompetitor[] = [
     strengths: ['Blog-to-video', 'Auto-captions', 'Stock media'],
     weaknesses: ['Limited editing', 'No live recording', 'Basic TTS'],
     genieDifferentiator: 'Live recording, better TTS, healthcare compliant',
-    features: { aiVoiceover: true, scriptGeneration: true, mobileApp: false, teamCollab: false, hipaCompliant: false, approvalWorkflow: false }
+    features: { aiVoiceover: true, scriptGeneration: true, mobileApp: false, teamCollab: false, hipaCompliant: false, approvalWorkflow: false },
+    userBaseEstimates: { free: 80000, starter: 20000, pro: 6000, enterprise: 500 },
+    avgVideosPerUser: 4,
+    estimatedCostPerVideo: 0.85,
   },
   { 
     name: 'Canva Video', 
@@ -1115,7 +1144,10 @@ const marketCompetitors: ExtendedCompetitor[] = [
     strengths: ['Brand kits', 'Design ecosystem', 'Huge template library'],
     weaknesses: ['Basic video editing', 'No AI narration', 'Not video-first'],
     genieDifferentiator: 'AI TTS, script-first workflow, advanced video editing',
-    features: { aiVoiceover: false, scriptGeneration: false, mobileApp: true, teamCollab: true, hipaCompliant: false, approvalWorkflow: false }
+    features: { aiVoiceover: false, scriptGeneration: false, mobileApp: true, teamCollab: true, hipaCompliant: false, approvalWorkflow: false },
+    userBaseEstimates: { free: 170000000, starter: 15000000, pro: 3000000, enterprise: 100000 },
+    avgVideosPerUser: 3,
+    estimatedCostPerVideo: 0.08,
   },
   { 
     name: 'VIDIZMO', 
@@ -1128,7 +1160,10 @@ const marketCompetitors: ExtendedCompetitor[] = [
     strengths: ['Enterprise security', 'Compliance features', 'Large deployments'],
     weaknesses: ['Very expensive', 'Complex setup', 'Overkill for small teams'],
     genieDifferentiator: '90% cost savings, HIPAA at $50-200/mo vs $1000+',
-    features: { aiVoiceover: false, scriptGeneration: false, mobileApp: false, teamCollab: true, hipaCompliant: true, approvalWorkflow: true }
+    features: { aiVoiceover: false, scriptGeneration: false, mobileApp: false, teamCollab: true, hipaCompliant: true, approvalWorkflow: true },
+    userBaseEstimates: { free: 0, starter: 200, pro: 500, enterprise: 300 },
+    avgVideosPerUser: 25,
+    estimatedCostPerVideo: 2.50,
   },
 ];
 
@@ -1140,6 +1175,48 @@ const genieFeatures = {
   teamCollab: true,
   hipaCompliant: true,
   approvalWorkflow: true,
+};
+
+// Genie estimated cost per video (based on AI costs)
+const genieCostPerVideo = 0.15; // Average including TTS, AI processing
+
+// Beta user benefits configuration
+interface BetaBenefits {
+  yearlyFreeMonths: number; // 3-4 months free for yearly
+  discountPercent: number;
+  earlyAdopterBonus: number; // Extra credits/videos
+}
+
+const betaBenefits: BetaBenefits = {
+  yearlyFreeMonths: 4, // Get 4 months free on yearly (pay for 8, get 12)
+  discountPercent: 33, // Effective discount
+  earlyAdopterBonus: 50, // Extra 50 videos/credits
+};
+
+// Usage caps per tier
+interface UsageCaps {
+  tierName: string;
+  videosPerMonth: number;
+  tokensPerMonth: number;
+  storageGB: number;
+  teamMembers: number;
+  apiCallsPerDay: number;
+}
+
+const tierUsageCaps: UsageCaps[] = [
+  { tierName: 'Free', videosPerMonth: 3, tokensPerMonth: 10000, storageGB: 1, teamMembers: 1, apiCallsPerDay: 50 },
+  { tierName: 'Starter', videosPerMonth: 20, tokensPerMonth: 100000, storageGB: 10, teamMembers: 3, apiCallsPerDay: 500 },
+  { tierName: 'Pro', videosPerMonth: 100, tokensPerMonth: 500000, storageGB: 50, teamMembers: 10, apiCallsPerDay: 2000 },
+  { tierName: 'Enterprise', videosPerMonth: 500, tokensPerMonth: 2000000, storageGB: 200, teamMembers: 50, apiCallsPerDay: 10000 },
+  { tierName: 'Healthcare', videosPerMonth: 200, tokensPerMonth: 1000000, storageGB: 100, teamMembers: 25, apiCallsPerDay: 5000 },
+];
+
+// Helper to format large numbers
+const formatLargeNumber = (num: number): string => {
+  if (num >= 1000000000) return `${(num / 1000000000).toFixed(1)}B`;
+  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+  return num.toString();
 };
 
 const CompetitorBenchmarkEditor: React.FC<{
@@ -1300,16 +1377,17 @@ const CompetitorBenchmarkEditor: React.FC<{
         </div>
       </div>
 
-      {/* Feature Comparison Matrix */}
+      {/* Feature Comparison Matrix - Enhanced with User Base & Cost per Video */}
       {showFeatureComparison && (
         <Card className="border-2 border-primary/30">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-primary" />
-              Feature Comparison Matrix
+              Feature Comparison Matrix with User Base & Cost Analysis
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            {/* Features Table */}
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
@@ -1349,11 +1427,213 @@ const CompetitorBenchmarkEditor: React.FC<{
                 </tbody>
               </table>
             </div>
+
+            {/* User Base Estimates Table */}
+            <div className="overflow-x-auto">
+              <h5 className="text-xs font-semibold mb-2 flex items-center gap-2">
+                <Users className="w-4 h-4 text-blue-500" />
+                Estimated User Base per Tier (Monthly)
+              </h5>
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b bg-blue-50/50 dark:bg-blue-950/20">
+                    <th className="text-left py-2 px-2 font-medium">Tier</th>
+                    <th className="text-center py-2 px-2 font-medium bg-primary/10">Genie (Target)</th>
+                    {marketCompetitors.filter(c => competitors.some(cc => cc.name === c.name)).map(c => (
+                      <th key={c.name} className="text-center py-2 px-2 font-medium">{c.name}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {['free', 'starter', 'pro', 'enterprise'].map((tier) => (
+                    <tr key={tier} className="border-b border-muted">
+                      <td className="py-2 px-2 capitalize font-medium">{tier}</td>
+                      <td className="text-center py-2 px-2 bg-primary/5 font-semibold">
+                        {tier === 'free' && '10K'}
+                        {tier === 'starter' && '2K'}
+                        {tier === 'pro' && '500'}
+                        {tier === 'enterprise' && '50'}
+                      </td>
+                      {marketCompetitors.filter(c => competitors.some(cc => cc.name === c.name)).map(c => (
+                        <td key={c.name} className="text-center py-2 px-2">
+                          {c.userBaseEstimates?.[tier as keyof typeof c.userBaseEstimates] 
+                            ? formatLargeNumber(c.userBaseEstimates[tier as keyof typeof c.userBaseEstimates])
+                            : '-'}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Cost per Video Comparison */}
+            <div className="overflow-x-auto">
+              <h5 className="text-xs font-semibold mb-2 flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-green-500" />
+                Cost per Video Analysis
+              </h5>
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b bg-green-50/50 dark:bg-green-950/20">
+                    <th className="text-left py-2 px-2 font-medium">Metric</th>
+                    <th className="text-center py-2 px-2 font-medium bg-primary/10">Genie</th>
+                    {marketCompetitors.filter(c => competitors.some(cc => cc.name === c.name)).map(c => (
+                      <th key={c.name} className="text-center py-2 px-2 font-medium">{c.name}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-muted">
+                    <td className="py-2 px-2 font-medium">Avg Videos/User/Mo</td>
+                    <td className="text-center py-2 px-2 bg-primary/5">12</td>
+                    {marketCompetitors.filter(c => competitors.some(cc => cc.name === c.name)).map(c => (
+                      <td key={c.name} className="text-center py-2 px-2">{c.avgVideosPerUser || '-'}</td>
+                    ))}
+                  </tr>
+                  <tr className="border-b border-muted">
+                    <td className="py-2 px-2 font-medium">Est. Cost/Video</td>
+                    <td className="text-center py-2 px-2 bg-primary/5 text-green-600 font-bold">${genieCostPerVideo.toFixed(2)}</td>
+                    {marketCompetitors.filter(c => competitors.some(cc => cc.name === c.name)).map(c => (
+                      <td key={c.name} className="text-center py-2 px-2">
+                        ${c.estimatedCostPerVideo?.toFixed(2) || '-'}
+                        {c.estimatedCostPerVideo && c.estimatedCostPerVideo > genieCostPerVideo && (
+                          <span className="ml-1 text-red-500 text-[10px]">
+                            ({((c.estimatedCostPerVideo - genieCostPerVideo) / c.estimatedCostPerVideo * 100).toFixed(0)}% more)
+                          </span>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr className="border-b border-muted bg-amber-50/50 dark:bg-amber-950/20">
+                    <td className="py-2 px-2 font-medium">Monthly Cost @ 20 videos</td>
+                    <td className="text-center py-2 px-2 bg-primary/5 text-green-600 font-bold">${(genieCostPerVideo * 20).toFixed(2)}</td>
+                    {marketCompetitors.filter(c => competitors.some(cc => cc.name === c.name)).map(c => (
+                      <td key={c.name} className="text-center py-2 px-2">
+                        ${((c.estimatedCostPerVideo || 0) * 20).toFixed(2)}
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
             <div className="mt-3 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-500/30">
               <p className="text-xs font-medium text-green-700 dark:text-green-400">
                 💡 Genie Advantage: All 6 features at ${yourStarterPrice}/mo vs competitors averaging ${avgStarterPrice.toFixed(0)}/mo with fewer features
               </p>
             </div>
+
+            {/* Beta User Benefits & Yearly Subscription */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <Card className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 border-purple-500/30">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Gift className="w-4 h-4 text-purple-500" />
+                    Beta User Benefits (Yearly)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-xs space-y-2">
+                  <div className="flex justify-between items-center p-2 bg-purple-100/50 dark:bg-purple-900/30 rounded">
+                    <span>Free Months on Yearly</span>
+                    <Badge className="bg-purple-500">{betaBenefits.yearlyFreeMonths} months</Badge>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-purple-100/50 dark:bg-purple-900/30 rounded">
+                    <span>Effective Discount</span>
+                    <Badge className="bg-purple-500">{betaBenefits.discountPercent}% off</Badge>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-purple-100/50 dark:bg-purple-900/30 rounded">
+                    <span>Early Adopter Bonus</span>
+                    <Badge className="bg-purple-500">+{betaBenefits.earlyAdopterBonus} videos</Badge>
+                  </div>
+                  <div className="mt-2 p-2 bg-green-100/50 dark:bg-green-900/30 rounded text-green-700 dark:text-green-400">
+                    <p className="font-medium">💰 Example: Starter ($9.99/mo)</p>
+                    <p>Monthly: $9.99 × 12 = $119.88/yr</p>
+                    <p>Beta Yearly: $9.99 × 8 = <strong>$79.92/yr</strong></p>
+                    <p className="text-green-600 font-bold">Save $39.96/year!</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 border-orange-500/30">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Gauge className="w-4 h-4 text-orange-500" />
+                    Usage Caps per Tier
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-xs">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b text-[10px]">
+                          <th className="text-left py-1 px-1">Tier</th>
+                          <th className="text-center py-1 px-1">Videos</th>
+                          <th className="text-center py-1 px-1">Tokens</th>
+                          <th className="text-center py-1 px-1">Storage</th>
+                          <th className="text-center py-1 px-1">API/day</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {tierUsageCaps.map((cap) => (
+                          <tr key={cap.tierName} className="border-b border-muted">
+                            <td className="py-1 px-1 font-medium">{cap.tierName}</td>
+                            <td className="text-center py-1 px-1">{cap.videosPerMonth}</td>
+                            <td className="text-center py-1 px-1">{formatLargeNumber(cap.tokensPerMonth)}</td>
+                            <td className="text-center py-1 px-1">{cap.storageGB}GB</td>
+                            <td className="text-center py-1 px-1">{formatLargeNumber(cap.apiCallsPerDay)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="mt-2 p-2 bg-amber-100/50 dark:bg-amber-900/30 rounded text-amber-700 dark:text-amber-400">
+                    <p className="font-medium text-[10px]">⚠️ API Rate Limits: Will be implemented after pricing finalization</p>
+                    <p className="text-[10px]">Includes notifications when users approach limits</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Subscription Model Recommendation */}
+            <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 border-blue-500/30 mt-4">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-blue-500" />
+                  Recommended Subscription Models
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-xs">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="p-3 bg-white dark:bg-gray-900 rounded-lg border">
+                    <h6 className="font-semibold text-green-600 mb-2">✅ Recommended: Monthly + Yearly</h6>
+                    <ul className="space-y-1 text-[10px]">
+                      <li>• Monthly: Full price, flexibility</li>
+                      <li>• Yearly: 33% off (4 months free)</li>
+                      <li>• Beta: Extra 50 videos bonus</li>
+                      <li>• <strong>Expect 40% yearly adoption</strong></li>
+                    </ul>
+                  </div>
+                  <div className="p-3 bg-white dark:bg-gray-900 rounded-lg border">
+                    <h6 className="font-semibold text-blue-600 mb-2">💡 Usage-Based Add-ons</h6>
+                    <ul className="space-y-1 text-[10px]">
+                      <li>• Extra video packs: $5/10 videos</li>
+                      <li>• Token top-up: $10/100K tokens</li>
+                      <li>• Storage: $2/10GB</li>
+                      <li>• <strong>Prevents churn at limits</strong></li>
+                    </ul>
+                  </div>
+                  <div className="p-3 bg-white dark:bg-gray-900 rounded-lg border">
+                    <h6 className="font-semibold text-purple-600 mb-2">🎯 Retention Strategy</h6>
+                    <ul className="space-y-1 text-[10px]">
+                      <li>• Alert at 80% usage</li>
+                      <li>• Upgrade prompts at limit</li>
+                      <li>• Loyalty rewards (6mo+)</li>
+                      <li>• <strong>Target 85% retention</strong></li>
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </CardContent>
         </Card>
       )}
