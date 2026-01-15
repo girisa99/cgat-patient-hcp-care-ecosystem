@@ -75,13 +75,18 @@ export const implementationPhases: ImplementationPhase[] = [
   },
   {
     id: 'P3',
-    name: 'Differentiators',
+    name: 'Differentiators & Go-Live',
     weeks: '13-18',
     status: 'planned',
     completion: 0,
-    scenariosTotal: 58,
+    scenariosTotal: 72, // 58 original + 14 Go-Live Website scenarios
     scenariosComplete: 0,
     features: [
+      { name: 'Landing Page (Genie Suite Marketing Website)', status: 'pending' },
+      { name: 'Custom Domain & SSL Setup', status: 'pending' },
+      { name: 'Login/Signup with Subscription Plans', status: 'pending' },
+      { name: 'Stripe Checkout Integration (Landing)', status: 'pending' },
+      { name: 'Feature Access Based on Plan', status: 'pending' },
       { name: 'Bulk Video Generation', status: 'pending' },
       { name: 'Auto Thumbnail Creation (edge function exists)', status: 'pending' },
       { name: 'SEO Optimization Tools', status: 'pending' },
@@ -240,6 +245,22 @@ export const stageGateChecklist: StageGateItem[] = [
   { category: 'Legal', item: 'Cookie Consent', status: 'pending', priority: 'High' },
   { category: 'Legal', item: 'GDPR Compliance', status: 'pending', priority: 'High' },
   { category: 'Legal', item: 'HIPAA Documentation (Healthcare)', status: 'pending', priority: 'Medium', notes: 'Required for Healthcare segment' },
+  
+  // Go-Live Website & Presentation - PENDING (P3 - Critical for Launch)
+  { category: 'Go-Live Website', item: 'Landing Page (Genie Suite Marketing)', status: 'pending', priority: 'Critical', notes: 'Public-facing marketing website' },
+  { category: 'Go-Live Website', item: 'Product Features Showcase', status: 'pending', priority: 'Critical', notes: 'Highlight Genie Mind, Vibe, Spark, Arc, Hub' },
+  { category: 'Go-Live Website', item: 'Pricing Page with Plan Comparison', status: 'pending', priority: 'Critical', notes: 'Clear tier differentiation' },
+  { category: 'Go-Live Website', item: 'Login/Signup Page (Dedicated Auth Flow)', status: 'pending', priority: 'Critical', notes: 'Connected to subscription plans' },
+  { category: 'Go-Live Website', item: 'Custom Domain Setup', status: 'pending', priority: 'Critical', notes: 'geniesuite.com or similar' },
+  { category: 'Go-Live Website', item: 'SSL Certificate', status: 'pending', priority: 'Critical', notes: 'Auto-provisioned with custom domain' },
+  { category: 'Go-Live Website', item: 'Stripe Checkout Integration (Landing)', status: 'pending', priority: 'Critical', notes: 'Direct subscription from landing page' },
+  { category: 'Go-Live Website', item: 'Customer Portal Link', status: 'pending', priority: 'High', notes: 'Manage subscription post-signup' },
+  { category: 'Go-Live Website', item: 'Feature Access Based on Plan', status: 'pending', priority: 'Critical', notes: 'Hide features based on subscription tier' },
+  { category: 'Go-Live Website', item: 'Non-Genie Features Hidden', status: 'pending', priority: 'High', notes: 'Only Genie Suite visible in production' },
+  { category: 'Go-Live Website', item: 'SEO Optimization (Meta, OG Tags)', status: 'pending', priority: 'High', notes: 'Search engine visibility' },
+  { category: 'Go-Live Website', item: 'Analytics Integration (GA4)', status: 'pending', priority: 'Medium', notes: 'Track visitor behavior' },
+  { category: 'Go-Live Website', item: 'Contact/Support Form', status: 'pending', priority: 'Medium', notes: 'User inquiries channel' },
+  { category: 'Go-Live Website', item: 'Demo/Trial Signup Flow', status: 'pending', priority: 'High', notes: 'Free trial with Stripe' },
 ];
 
 // =============================================================================

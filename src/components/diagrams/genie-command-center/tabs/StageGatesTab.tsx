@@ -1,13 +1,14 @@
 /**
  * Stage Gates Tab - Go-Live Readiness Checklist
  * Clean enterprise styling with proper design tokens
+ * Includes Go-Live Website requirements for P3
  */
 
 import React from 'react';
 import { motion } from 'framer-motion';
 import {
   Shield, CheckCircle2, Clock, AlertCircle,
-  Lock, CreditCard, Server, FileText, Zap
+  Lock, CreditCard, Server, FileText, Zap, Globe
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,6 +32,7 @@ const categoryIcons: Record<string, React.ReactNode> = {
   'Core Features': <Zap className="w-5 h-5" />,
   Infrastructure: <Server className="w-5 h-5" />,
   Legal: <FileText className="w-5 h-5" />,
+  'Go-Live Website': <Globe className="w-5 h-5" />,
 };
 
 const getStatusIcon = (status: string) => {
