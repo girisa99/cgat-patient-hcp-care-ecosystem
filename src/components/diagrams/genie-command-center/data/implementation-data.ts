@@ -405,12 +405,55 @@ export const getPhaseStats = (phaseId: string) => {
   return { total, implemented, partial, pending, completion: total > 0 ? Math.round(((implemented + partial) / total) * 100) : 0 };
 };
 
-// Infrastructure counts (verified from codebase audit 2026-01-15)
-export const edgeFunctionCount = 140; // Updated: 140+ edge functions deployed
-export const hooksCount = 280;         // Updated: 280+ custom React hooks
-export const databaseTablesCount = 180; // 180+ database tables
-export const mobileComponentCount = 23; // 23 mobile components (100% P1/P2)
-export const aiAgentCount = 15;         // 15+ AI agents implemented
+// =============================================================================
+// INFRASTRUCTURE METRICS - GENIE STUDIO SPECIFIC vs TOTAL
+// Source: Verified from codebase audit 2026-01-15
+// =============================================================================
+export const infrastructureMetrics = {
+  edgeFunctions: {
+    total: 140,
+    genieStudio: 45,  // TTS, voice, video, script, scene, music, export, social-publish
+    healthcare: 35,   // Patient, enrollment, HIPAA, fax, therapy
+    shared: 60,       // Auth, AI providers, MCP, data processing, analytics
+  },
+  hooks: {
+    total: 280,
+    genieStudio: 85,  // useScript*, useVoice*, useVideo*, useExport*, useRecording*
+    healthcare: 65,   // usePatient*, useEnrollment*, useFacility*, useTherapy*
+    shared: 130,      // useAuth*, useSubscription*, useAI*, useSupabase*
+  },
+  databaseTables: {
+    total: 180,
+    genieStudio: 42,  // scripts, recordings, exports, bulk_jobs, social_*
+    healthcare: 55,   // patients, enrollments, facilities, sessions, therapy_*
+    shared: 83,       // profiles, agents, ai_*, subscriptions, auth_*
+  },
+  aiAgents: {
+    total: 15,
+    genieStudio: 12,  // Voice coach, scene analyzer, music composer, auto-editor, etc.
+    healthcare: 3,    // Patient assistant, enrollment guide, therapy coach
+    shared: 0,        // All agents are product-specific
+  },
+  mobileComponents: {
+    total: 23,
+    genieStudio: 18,  // Recording, playback, teleprompter, export
+    healthcare: 5,    // Patient mobile, enrollment, consent
+    shared: 0,
+  },
+  apiServices: {
+    total: 25,        // External API integrations
+    genieStudio: 15,  // TTS providers, video APIs, social platforms
+    healthcare: 5,    // HIPAA, NPI, pharmacy
+    shared: 5,        // Stripe, Twilio, SendGrid
+  }
+};
+
+// Legacy exports for backward compatibility
+export const edgeFunctionCount = infrastructureMetrics.edgeFunctions.total;
+export const hooksCount = infrastructureMetrics.hooks.total;
+export const databaseTablesCount = infrastructureMetrics.databaseTables.total;
+export const mobileComponentCount = infrastructureMetrics.mobileComponents.total;
+export const aiAgentCount = infrastructureMetrics.aiAgents.total;
 
 // Product-Scenario Cross-Reference (which scenarios belong to which product)
 export const productScenarioMapping = {

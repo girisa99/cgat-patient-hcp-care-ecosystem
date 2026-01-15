@@ -50,6 +50,36 @@ export function getReplicateToken(): string | undefined {
 }
 
 // =============================================================================
+// OAUTH HELPERS - UNIFIED ACROSS ALL EDGE FUNCTIONS
+// =============================================================================
+/**
+ * Get Google OAuth Client ID - SINGLE SOURCE for all OAuth flows
+ * Uses GOOGLE_CLIENT_ID (OAuth) with fallback to GOOGLE_API_KEY
+ */
+export function getGoogleClientId(): string | undefined {
+  return getApiKey('GOOGLE_CLIENT_ID', 'GOOGLE_API_KEY');
+}
+
+export function getGoogleClientSecret(): string | undefined {
+  return getApiKey('GOOGLE_CLIENT_SECRET');
+}
+
+export function getLinkedInCredentials() {
+  return {
+    clientId: Deno.env.get('LINKEDIN_CLIENT_ID'),
+    clientSecret: Deno.env.get('LINKEDIN_CLIENT_SECRET'),
+  };
+}
+
+export function getYouTubeCredentials() {
+  return {
+    clientId: getGoogleClientId(), // Reuse Google OAuth
+    clientSecret: getGoogleClientSecret(),
+    apiKey: Deno.env.get('YOUTUBE_API_KEY') || getApiKey('GOOGLE_API_KEY'),
+  };
+}
+
+// =============================================================================
 // COMMUNICATION HELPERS
 // =============================================================================
 export function getTwilioCredentials() {
