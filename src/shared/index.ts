@@ -14,6 +14,7 @@
 // CONFIGURATION
 // =============================================================================
 export * from './config/product-config';
+export * from './config/secret-keys';
 
 // =============================================================================
 // SHARED HOOKS (Re-exports from current locations)

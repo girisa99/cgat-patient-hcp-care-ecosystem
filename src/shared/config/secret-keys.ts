@@ -1,0 +1,139 @@
+/**
+ * UNIFIED SECRET KEY CONFIGURATION
+ * 
+ * This file provides a centralized configuration for all API keys and secrets
+ * used across Genie Studio and shared infrastructure.
+ * 
+ * IMPORTANT: All edge functions should use this pattern to retrieve secrets
+ * instead of duplicating the logic.
+ * 
+ * @see docs/architecture/P3_API_DEPENDENCIES_GUIDE.md for full key documentation
+ */
+
+// =============================================================================
+// AI PROVIDER KEYS - Canonical Names (use these in edge functions)
+// =============================================================================
+export const AI_PROVIDER_KEYS = {
+  // Primary AI Keys
+  OPENAI: 'OPENAI_API_KEY',
+  ANTHROPIC: 'ANTHROPIC_API_KEY',     // Canonical name for Claude
+  CLAUDE: 'CLAUDE_API_KEY',           // Alias (deprecated - use ANTHROPIC)
+  GEMINI: 'GEMINI_API_KEY',           // Primary Gemini key
+  GOOGLE: 'GOOGLE_API_KEY',           // Google services (TTS, etc.)
+  LOVABLE: 'LOVABLE_API_KEY',         // Lovable AI (managed by connector)
+  
+  // Voice & Media Keys
+  ELEVENLABS: 'ELEVENLABS_API_KEY',
+  REPLICATE: 'REPLICATE_API_TOKEN',
+  HUGGINGFACE: 'HUGGING_FACE_ACCESS_TOKEN',
+} as const;
+
+// =============================================================================
+// COMMUNICATION KEYS
+// =============================================================================
+export const COMMUNICATION_KEYS = {
+  TWILIO_SID: 'TWILIO_ACCOUNT_SID',
+  TWILIO_TOKEN: 'TWILIO_AUTH_TOKEN',
+  TWILIO_PHONE: 'TWILIO_PHONE_NUMBER',
+  TWILIO_WHATSAPP: 'TWILIO_WHATSAPP_NUMBER',
+  RESEND: 'RESEND_API_KEY',
+  SENDGRID: 'SENDGRID_API_KEY',
+  SENDGRID_FROM: 'SENDGRID_FROM_EMAIL',
+} as const;
+
+// =============================================================================
+// BUSINESS SERVICE KEYS
+// =============================================================================
+export const BUSINESS_KEYS = {
+  STRIPE: 'STRIPE_SECRET_KEY',        // Managed by connector
+  DOCUSIGN: 'DOCUSIGN_API_KEY',
+  ARIZE: 'ARIZE_API_KEY',
+  LANGWATCH: 'LANGWATCH_API_KEY',
+} as const;
+
+// =============================================================================
+// OAUTH KEYS
+// =============================================================================
+export const OAUTH_KEYS = {
+  GOOGLE_CLIENT_SECRET: 'GOOGLE_CLIENT_SECRET',
+  LINKEDIN_CLIENT_ID: 'LINKEDIN_CLIENT_ID',
+  LINKEDIN_CLIENT_SECRET: 'LINKEDIN_CLIENT_SECRET',
+} as const;
+
+// =============================================================================
+// ALL SECRETS (for validation)
+// =============================================================================
+export const ALL_SECRET_KEYS = {
+  ...AI_PROVIDER_KEYS,
+  ...COMMUNICATION_KEYS,
+  ...BUSINESS_KEYS,
+  ...OAUTH_KEYS,
+} as const;
+
+// =============================================================================
+// HELPER TYPES
+// =============================================================================
+export type AIProviderKey = keyof typeof AI_PROVIDER_KEYS;
+export type CommunicationKey = keyof typeof COMMUNICATION_KEYS;
+export type BusinessKey = keyof typeof BUSINESS_KEYS;
+export type OAuthKey = keyof typeof OAUTH_KEYS;
+export type SecretKey = keyof typeof ALL_SECRET_KEYS;
+
+// =============================================================================
+// SECRET KEY ALIASES (for backward compatibility)
+// =============================================================================
+export const SECRET_ALIASES: Record<string, string> = {
+  // Claude can be accessed via ANTHROPIC or CLAUDE
+  'CLAUDE_API_KEY': 'ANTHROPIC_API_KEY',
+  // Gemini can be accessed via GEMINI or GOOGLE (for AI specifically)
+  'GOOGLE_API_KEY': 'GEMINI_API_KEY', // For AI usage, prefer GEMINI_API_KEY
+};
+
+// =============================================================================
+// EDGE FUNCTION HELPER - Copy this to edge functions
+// =============================================================================
+/**
+ * Get API key with fallback aliases (for edge functions)
+ * 
+ * Usage in edge functions:
+ * ```typescript
+ * const getApiKey = (primary: string, ...aliases: string[]): string | undefined => {
+ *   const key = Deno.env.get(primary);
+ *   if (key) return key;
+ *   for (const alias of aliases) {
+ *     const aliasKey = Deno.env.get(alias);
+ *     if (aliasKey) return aliasKey;
+ *   }
+ *   return undefined;
+ * };
+ * 
+ * // Get Gemini key (checks GEMINI_API_KEY first, then GOOGLE_API_KEY)
+ * const geminiKey = getApiKey('GEMINI_API_KEY', 'GOOGLE_API_KEY');
+ * 
+ * // Get Claude key (checks ANTHROPIC_API_KEY first, then CLAUDE_API_KEY)
+ * const claudeKey = getApiKey('ANTHROPIC_API_KEY', 'CLAUDE_API_KEY');
+ * ```
+ */
+export const SECRET_KEY_DOCS = `
+All secrets are stored in Supabase Edge Function secrets.
+Access via: Deno.env.get('SECRET_NAME')
+
+Configured secrets (25 total):
+- AI: OPENAI_API_KEY, ANTHROPIC_API_KEY, CLAUDE_API_KEY, GEMINI_API_KEY, GOOGLE_API_KEY
+- Voice: ELEVENLABS_API_KEY, REPLICATE_API_TOKEN, HUGGING_FACE_ACCESS_TOKEN
+- Comms: TWILIO_*, RESEND_API_KEY, SENDGRID_API_KEY
+- Business: STRIPE_SECRET_KEY, DOCUSIGN_API_KEY
+- Observability: ARIZE_API_KEY, LANGWATCH_API_KEY
+- OAuth: LINKEDIN_CLIENT_ID/SECRET, GOOGLE_CLIENT_SECRET
+`;
+
+// =============================================================================
+// VALIDATION HELPER
+// =============================================================================
+export function validateSecretExists(secretName: string): boolean {
+  return Object.values(ALL_SECRET_KEYS).includes(secretName as any);
+}
+
+export function getCanonicalSecretName(alias: string): string {
+  return SECRET_ALIASES[alias] || alias;
+}
