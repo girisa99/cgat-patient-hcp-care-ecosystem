@@ -70,7 +70,7 @@ const diagramCategories = {
       // Genie Command Center - Enterprise Dashboard with 8 professional tabs:
       // Overview, Market Analysis, Product Suite, Architecture, Technical Docs, 
       // Roadmap, Investor Dashboard, Stage Gates
-      { id: 'genie-hub', label: 'Command Center (289 Scenarios)', icon: Sparkles },
+      { id: 'genie-hub', label: 'Command Center (305 Scenarios)', icon: Sparkles },
     ]
   }
 };

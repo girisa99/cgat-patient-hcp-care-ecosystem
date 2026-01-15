@@ -1392,7 +1392,7 @@ export const OverviewTab: React.FC = () => {
               </div>
               <div className="flex items-center gap-3">
                 <div className="text-center px-4 py-2 bg-background/50 rounded-xl">
-                  <div className="text-xl font-bold text-primary">289</div>
+                  <div className="text-xl font-bold text-primary">305</div>
                   <div className="text-[10px] text-muted-foreground">Scenarios</div>
                 </div>
                 <div className="text-center px-4 py-2 bg-background/50 rounded-xl">
@@ -1592,7 +1592,7 @@ export const OverviewTab: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-center px-4 py-2 bg-background/50 rounded-xl">
-                      <div className="text-xl font-bold text-primary">289</div>
+                      <div className="text-xl font-bold text-primary">305</div>
                       <div className="text-[10px] text-muted-foreground">Scenarios</div>
                     </div>
                     <div className="text-center px-4 py-2 bg-background/50 rounded-xl">

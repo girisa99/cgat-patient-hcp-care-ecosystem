@@ -265,8 +265,8 @@ export const TechnicalDocsTab: React.FC = () => {
       {/* Summary Stats */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         {[
-          { label: 'Total Scenarios', value: '289', color: 'primary' },
-          { label: 'Implemented', value: '165 (57%)', color: 'green' },
+          { label: 'Total Scenarios', value: '305', color: 'primary' },
+          { label: 'Implemented', value: '185 (61%)', color: 'green' },
           { label: 'PRD Items', value: `${donePrdItems}/${totalPrdItems}`, color: 'blue' },
           { label: 'FRS Modules', value: '6/6', color: 'purple' },
           { label: 'Segments', value: '6', color: 'amber' },
@@ -335,7 +335,7 @@ export const TechnicalDocsTab: React.FC = () => {
                   </Badge>
                 </CardTitle>
                 <CardDescription>
-                  289 Total Scenarios | 165 Implemented | P0-P2 100% Complete
+                  305 Total Scenarios | 185 Implemented (61%) | P0-P2 100% Complete
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">

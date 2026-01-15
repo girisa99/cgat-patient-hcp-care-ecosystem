@@ -71,7 +71,7 @@ export const GenieCommandCenter: React.FC = () => {
                   Genie Suite Command Center
                 </h1>
                 <p className="text-sm text-muted-foreground mt-0.5">
-                  Enterprise Content Production Platform • 289 Scenarios Defined
+                  Enterprise Content Production Platform • 305 Scenarios Defined
                 </p>
               </div>
             </div>
@@ -112,14 +112,14 @@ export const GenieCommandCenter: React.FC = () => {
                       className="text-primary"
                       strokeDasharray={100}
                       initial={{ strokeDashoffset: 100 }}
-                      animate={{ strokeDashoffset: 54 }}
+                      animate={{ strokeDashoffset: 39 }}
                       transition={{ duration: 1.5, delay: 0.6 }}
                     />
                   </svg>
-                  <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-primary">46%</span>
+                  <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-primary">61%</span>
                 </div>
                 <div className="text-sm">
-                  <div className="font-semibold text-foreground">133 / 289</div>
+                  <div className="font-semibold text-foreground">185 / 305</div>
                   <div className="text-xs text-muted-foreground">Scenarios Done</div>
                 </div>
               </motion.div>

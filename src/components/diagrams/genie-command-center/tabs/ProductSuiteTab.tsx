@@ -258,7 +258,7 @@ export const ProductSuiteTab: React.FC = () => {
         className="grid grid-cols-2 md:grid-cols-5 gap-4"
       >
         {[
-          { label: 'Total Scenarios', value: '289', color: 'primary' },
+          { label: 'Total Scenarios', value: '305', color: 'primary' },
           { label: 'AI Agents', value: '15+', color: 'purple' },
           { label: 'Edge Functions', value: '140+', color: 'green' },
           { label: 'Custom Hooks', value: '280+', color: 'blue' },
