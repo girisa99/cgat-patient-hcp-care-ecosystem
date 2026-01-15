@@ -1567,54 +1567,105 @@ const ConnectedModelsTab: React.FC<{ calculations: any }> = ({ calculations }) =
 // ==================== CONNECTED MOBILE TAB ====================
 const ConnectedMobileTab: React.FC<{ pricingTiers: PricingTier[]; calculations: any }> = ({ pricingTiers, calculations }) => {
   const mobileTiers = [
-    { name: 'Free', price: 0, features: ['3 videos/month', '720p export', '5 TTS voices'], match: pricingTiers.find(t => t.isFreeTier) },
-    { name: 'Mobile Pro', price: 4.99, features: ['Unlimited videos', '4K export', 'All TTS voices'], match: pricingTiers.find(t => t.price > 0 && t.price < 15) },
-    { name: 'Desktop + Mobile', price: 12.99, features: ['Full desktop access', 'Full mobile access', 'Cross-device sync'], match: pricingTiers.find(t => t.price >= 15 && t.price < 30) },
+    { 
+      name: 'Free', 
+      price: 0, 
+      yearlyPrice: 0,
+      features: ['3 videos/month', '720p export', '5 TTS voices'], 
+      match: pricingTiers.find(t => t.isFreeTier) 
+    },
+    { 
+      name: 'Mobile Pro', 
+      price: 4.99, 
+      yearlyPrice: 49,
+      features: ['Unlimited videos', '4K export', 'All TTS voices'], 
+      match: pricingTiers.find(t => t.price > 0 && t.price < 15) 
+    },
+    { 
+      name: 'Desktop + Mobile', 
+      price: 12.99, 
+      yearlyPrice: 129,
+      features: ['Full desktop access', 'Full mobile access', 'Cross-device sync'], 
+      match: pricingTiers.find(t => t.price >= 15 && t.price < 30) 
+    },
   ];
 
   return (
-    <Card className="border-2 border-primary/30">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Smartphone className="w-5 h-5 text-primary" />
-          Mobile App Pricing Strategy
-        </CardTitle>
-        <CardDescription>
-          Mobile pricing is derived from your calculator settings. Desktop tier customers: {calculations.totalPaidCustomers || 0}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {mobileTiers.map((tier, idx) => (
-            <div key={idx} className={`p-4 rounded-xl border ${idx === 1 ? 'border-2 border-primary bg-primary/5 relative' : 'bg-muted/30'}`}>
-              {idx === 1 && <Badge className="absolute -top-2 right-4">Popular</Badge>}
-              <div className="flex items-center gap-2 mb-3">
-                {tier.price === 0 ? <Gift className="w-5 h-5 text-green-500" /> : 
-                 idx === 1 ? <Zap className="w-5 h-5 text-primary" /> : 
-                 <Crown className="w-5 h-5 text-amber-500" />}
-                <h4 className="font-semibold">{tier.name}</h4>
-              </div>
-              <p className={`text-2xl font-bold ${idx === 1 ? 'text-primary' : ''} mb-4`}>
-                ${tier.price}<span className="text-sm text-muted-foreground">/mo</span>
-              </p>
-              <ul className="space-y-2 text-sm">
-                {tier.features.map((feature, fidx) => (
-                  <li key={fidx} className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              {tier.match && (
-                <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
-                  Maps to: <span className="text-primary font-medium">{tier.match.name}</span>
-                </div>
-              )}
+    <div className="space-y-6">
+      {/* Synced Data Summary */}
+      <Card className="bg-primary/5 border-primary/30">
+        <CardContent className="pt-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div>
+              <p className="text-xs text-muted-foreground">Desktop Paid</p>
+              <p className="text-xl font-bold">{calculations.totalPaidCustomers || 0}</p>
             </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+            <div>
+              <p className="text-xs text-muted-foreground">Desktop MRR</p>
+              <p className="text-xl font-bold">${(calculations.totalMRR || 0).toFixed(0)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Yearly Customers</p>
+              <p className="text-xl font-bold">{calculations.yearlyCustomers || 0}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Yearly Upfront</p>
+              <p className="text-xl font-bold text-green-600">${(calculations.yearlyUpfrontCash || 0).toFixed(0)}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-2 border-primary/30">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Smartphone className="w-5 h-5 text-primary" />
+            Mobile App Pricing Strategy
+          </CardTitle>
+          <CardDescription>
+            Derived from calculator. Yearly adoption at {calculations.yearlyAdoptionPercent || 0}% with {calculations.yearlyDiscountPercent || 0}% discount.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {mobileTiers.map((tier, idx) => (
+              <div key={idx} className={`p-4 rounded-xl border ${idx === 1 ? 'border-2 border-primary bg-primary/5 relative' : 'bg-muted/30'}`}>
+                {idx === 1 && <Badge className="absolute -top-2 right-4">Popular</Badge>}
+                <div className="flex items-center gap-2 mb-3">
+                  {tier.price === 0 ? <Gift className="w-5 h-5 text-green-500" /> : 
+                   idx === 1 ? <Zap className="w-5 h-5 text-primary" /> : 
+                   <Crown className="w-5 h-5 text-amber-500" />}
+                  <h4 className="font-semibold">{tier.name}</h4>
+                </div>
+                <div className="flex items-baseline gap-2 mb-4">
+                  <p className={`text-2xl font-bold ${idx === 1 ? 'text-primary' : ''}`}>
+                    ${tier.price}<span className="text-sm text-muted-foreground">/mo</span>
+                  </p>
+                  {tier.yearlyPrice > 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      or ${tier.yearlyPrice}/yr
+                    </p>
+                  )}
+                </div>
+                <ul className="space-y-2 text-sm">
+                  {tier.features.map((feature, fidx) => (
+                    <li key={fidx} className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-500" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                {tier.match && (
+                  <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
+                    Maps to: <span className="text-primary font-medium">{tier.match.name}</span> (${tier.match.price}/mo)
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
@@ -1622,31 +1673,161 @@ const ConnectedMobileTab: React.FC<{ pricingTiers: PricingTier[]; calculations: 
 const ConnectedComparisonTab: React.FC<{ calculations: any; recommendations: Recommendation[] }> = ({ calculations, recommendations }) => {
   return (
     <div className="space-y-6">
+      {/* Key Metrics Summary */}
+      <Card className="bg-gradient-to-r from-primary/10 to-accent/10">
+        <CardContent className="pt-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+            <div>
+              <p className="text-xs text-muted-foreground">MRR</p>
+              <p className="text-lg font-bold">${(calculations.totalMRR || 0).toFixed(0)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Gross Margin</p>
+              <p className="text-lg font-bold">{(calculations.grossMargin || 0).toFixed(1)}%</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">LTV:CAC</p>
+              <p className="text-lg font-bold">{(calculations.ltvCacRatio || 0).toFixed(2)}x</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Break-even</p>
+              <p className="text-lg font-bold">{calculations.monthsToBreakeven === Infinity ? '∞' : `${calculations.monthsToBreakeven} mo`}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Yearly Cash</p>
+              <p className="text-lg font-bold text-green-600">${(calculations.yearlyUpfrontCash || 0).toFixed(0)}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Dynamic Recommendations from Calculator */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-primary" />
-            Strategic Recommendations
+            <Lightbulb className="w-5 h-5 text-amber-500" />
+            Smart Recommendations (Based on Your Data)
           </CardTitle>
           <CardDescription>
-            Based on your current metrics: MRR ${calculations.totalMRR?.toFixed(0)}, Gross Margin {calculations.grossMargin?.toFixed(1)}%, LTV:CAC {calculations.ltvCacRatio?.toFixed(1)}x
+            {recommendations.length} recommendations based on your current tier structure and metrics
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {pricingRecommendations.map((rec) => (
-              <div key={rec.priority} className={`p-4 rounded-lg border ${rec.priority === 1 ? 'border-primary bg-primary/5' : 'bg-muted/30'}`}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Badge variant={rec.priority === 1 ? 'default' : 'secondary'}>#{rec.priority}</Badge>
-                    <h4 className="font-semibold">{rec.option}</h4>
+          {recommendations.length > 0 ? (
+            <div className="space-y-3">
+              {recommendations.map((rec, idx) => (
+                <div key={idx} className={`p-4 rounded-lg border ${
+                  rec.priority === 1 ? 'border-red-500 bg-red-50 dark:bg-red-950/20' :
+                  rec.priority === 2 ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/20' :
+                  rec.positive ? 'border-green-500 bg-green-50 dark:bg-green-950/20' :
+                  'bg-muted/30'
+                }`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      {rec.positive ? <CheckCircle2 className="w-4 h-4 text-green-500" /> :
+                       rec.priority === 1 ? <AlertCircle className="w-4 h-4 text-red-500" /> :
+                       <Lightbulb className="w-4 h-4 text-amber-500" />}
+                      <h4 className="font-semibold text-sm">{rec.title}</h4>
+                    </div>
+                    <Badge variant={
+                      rec.impact === 'Critical' ? 'destructive' :
+                      rec.impact === 'High' ? 'default' : 'secondary'
+                    }>
+                      {rec.impact}
+                    </Badge>
                   </div>
-                  <Badge variant="outline">{rec.implementationComplexity}</Badge>
+                  <p className="text-sm text-muted-foreground mb-2">{rec.issue}</p>
+                  <div className="flex flex-wrap gap-1">
+                    {rec.actions.slice(0, 3).map((action, aidx) => (
+                      <Badge key={aidx} variant="outline" className="text-xs">
+                        {action}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
-                <p className="text-sm text-muted-foreground">{rec.reasoning}</p>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-8">
+              Enter data in the Calculator tab to see personalized recommendations
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Yearly vs Monthly Comparison */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-primary" />
+            Monthly vs Yearly Subscription Analysis
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 rounded-lg bg-muted/50">
+              <h4 className="font-semibold mb-3">Monthly Subscriptions</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Customers</span>
+                  <span className="font-medium">{calculations.monthlyCustomers || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Monthly Revenue</span>
+                  <span className="font-medium">${(calculations.monthlyRevenue || 0).toFixed(0)}/mo</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Annual Value</span>
+                  <span className="font-medium">${((calculations.monthlyRevenue || 0) * 12).toFixed(0)}/yr</span>
+                </div>
               </div>
-            ))}
+            </div>
+            <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-500/30">
+              <h4 className="font-semibold mb-3 text-green-700 dark:text-green-400">Yearly Subscriptions</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Customers ({calculations.yearlyAdoptionPercent || 0}%)</span>
+                  <span className="font-medium">{calculations.yearlyCustomers || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Upfront Cash</span>
+                  <span className="font-medium text-green-600">${(calculations.yearlyUpfrontCash || 0).toFixed(0)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Discount Given</span>
+                  <span className="font-medium">{calculations.yearlyDiscountPercent || 0}%</span>
+                </div>
+              </div>
+            </div>
           </div>
+          
+          {calculations.yearlySavingsPerCustomer && calculations.yearlySavingsPerCustomer.length > 0 && (
+            <div className="mt-4">
+              <h5 className="text-sm font-medium mb-2">Per-Tier Yearly Savings</h5>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2">Tier</th>
+                      <th className="text-right py-2">Monthly</th>
+                      <th className="text-right py-2">Yearly</th>
+                      <th className="text-right py-2">Savings</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {calculations.yearlySavingsPerCustomer.filter((t: any) => t.monthlyPrice > 0).map((tier: any, idx: number) => (
+                      <tr key={idx} className="border-b border-muted">
+                        <td className="py-2">{tier.tier}</td>
+                        <td className="text-right">${tier.monthlyPrice}/mo</td>
+                        <td className="text-right">${tier.yearlyPrice}/yr</td>
+                        <td className="text-right text-green-600">{tier.savingsPercent.toFixed(0)}% off</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -1688,12 +1869,15 @@ const ConnectedComparisonTab: React.FC<{ calculations: any; recommendations: Rec
   );
 };
 
-// ==================== MAIN CALCULATOR COMPONENT ====================
-const ComprehensivePLCalculator: React.FC = () => {
-  // State
+
+
+// ==================== MAIN TAB COMPONENT ====================
+export const PricingStrategyTab: React.FC = () => {
+  const [subTab, setSubTab] = useState('calculator');
   const [wizardMode, setWizardMode] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
 
+  // LIFTED STATE - shared across all tabs
   const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([
     { id: 1, name: 'Free', price: 0, yearlyPrice: 0, customers: 5000, inputTokens: 50000, outputTokens: 25000, ttsMinutes: 1, storageGB: 1, videosPerMonth: 3, isFreeTier: true },
     { id: 2, name: 'Starter', price: 9.99, yearlyPrice: 99, customers: 500, inputTokens: 200000, outputTokens: 100000, ttsMinutes: 10, storageGB: 5, videosPerMonth: 15, isFreeTier: false },
@@ -1749,7 +1933,7 @@ const ComprehensivePLCalculator: React.FC = () => {
 
   const storageCostPerGB = 0.023;
 
-  // Calculations
+  // SHARED CALCULATIONS
   const calculations = useMemo(() => {
     const totalCustomers = pricingTiers.reduce((sum, t) => sum + t.customers, 0);
     const paidTiers = pricingTiers.filter(t => !t.isFreeTier);
@@ -1841,6 +2025,30 @@ const ComprehensivePLCalculator: React.FC = () => {
     const totalAICosts = tierAnalysis.reduce((sum, t) => sum + (t.aiCostPerUser * t.subscribers), 0);
     const aiCostPercent = totalMRR > 0 ? (totalAICosts / totalMRR) * 100 : 0;
 
+    // YEARLY SUBSCRIPTION ANALYSIS
+    const yearlyCustomers = Math.round(totalPaidCustomers * (acquisition.yearlyAdoptionPercent / 100));
+    const monthlyCustomers = totalPaidCustomers - yearlyCustomers;
+    const yearlyMRREquivalent = paidTiers.reduce((sum, tier) => {
+      const tierYearlyCustomers = Math.round(tier.customers * (acquisition.yearlyAdoptionPercent / 100));
+      return sum + ((tier.yearlyPrice / 12) * tierYearlyCustomers);
+    }, 0);
+    const yearlyUpfrontCash = paidTiers.reduce((sum, tier) => {
+      const tierYearlyCustomers = Math.round(tier.customers * (acquisition.yearlyAdoptionPercent / 100));
+      return sum + (tier.yearlyPrice * tierYearlyCustomers);
+    }, 0);
+    const monthlyRevenue = paidTiers.reduce((sum, tier) => {
+      const tierMonthlyCustomers = tier.customers - Math.round(tier.customers * (acquisition.yearlyAdoptionPercent / 100));
+      return sum + (tier.price * tierMonthlyCustomers);
+    }, 0);
+    const yearlySavingsPerCustomer = paidTiers.map(tier => ({
+      tier: tier.name,
+      monthlyPrice: tier.price,
+      yearlyPrice: tier.yearlyPrice,
+      monthlyAnnualized: tier.price * 12,
+      savings: (tier.price * 12) - tier.yearlyPrice,
+      savingsPercent: tier.price > 0 ? (((tier.price * 12) - tier.yearlyPrice) / (tier.price * 12)) * 100 : 0,
+    }));
+
     // 12-month projection
     const monthlyProjection = Array.from({ length: 12 }, (_, i) => {
       const month = i + 1;
@@ -1900,10 +2108,19 @@ const ComprehensivePLCalculator: React.FC = () => {
       firstProfitableMonth,
       freeTierCost,
       freeToPaidConversion,
+      // Yearly subscription data
+      yearlyCustomers,
+      monthlyCustomers,
+      yearlyMRREquivalent,
+      yearlyUpfrontCash,
+      monthlyRevenue,
+      yearlySavingsPerCustomer,
+      yearlyDiscountPercent: acquisition.yearlyDiscountPercent,
+      yearlyAdoptionPercent: acquisition.yearlyAdoptionPercent,
     };
   }, [pricingTiers, aiProviders, ttsProviders, fixedCosts, acquisition]);
 
-  // Recommendations
+  // SHARED RECOMMENDATIONS
   const recommendations = useMemo((): Recommendation[] => {
     const recs: Recommendation[] = [];
 
@@ -1929,6 +2146,24 @@ const ComprehensivePLCalculator: React.FC = () => {
       }
     }
 
+    // Yearly subscription benefit
+    if (calculations.totalPaidCustomers > 0) {
+      recs.push({
+        priority: 3,
+        category: 'Revenue',
+        title: 'Yearly Subscription Strategy',
+        issue: `With ${acquisition.yearlyDiscountPercent}% discount, ${acquisition.yearlyAdoptionPercent}% adopt yearly = $${calculations.yearlyUpfrontCash.toFixed(0)} upfront cash.`,
+        actions: [
+          `Monthly revenue: $${calculations.monthlyRevenue.toFixed(0)}/mo`,
+          `Yearly upfront: $${calculations.yearlyUpfrontCash.toFixed(0)} (${calculations.yearlyCustomers} customers)`,
+          'Reduces churn - locked in for 12 months',
+          'Use upfront cash for growth investment',
+        ],
+        impact: 'High',
+        positive: true,
+      });
+    }
+
     // Free to paid conversion
     if (calculations.freeToPaidConversion < 3) {
       recs.push({
@@ -1940,28 +2175,8 @@ const ComprehensivePLCalculator: React.FC = () => {
           'Add upgrade prompts when users hit limits',
           'Offer limited-time discounts for first upgrade',
           'Show premium features with "upgrade to unlock"',
-          'Send targeted email sequences based on usage'
         ],
         impact: 'High',
-      });
-    }
-
-    // Yearly subscription benefit
-    if (calculations.totalPaidCustomers > 0) {
-      const yearlyUplift = calculations.totalMRR * 12 * (acquisition.yearlyAdoptionPercent / 100) * (1 - acquisition.yearlyDiscountPercent / 100);
-      recs.push({
-        priority: 3,
-        category: 'Revenue',
-        title: 'Push Yearly Subscriptions',
-        issue: `With ${acquisition.yearlyDiscountPercent}% discount and ${acquisition.yearlyAdoptionPercent}% adoption, you'd get $${yearlyUplift.toFixed(0)} upfront.`,
-        actions: [
-          'Highlight savings prominently ("Save $X/year!")',
-          'Offer exclusive yearly-only features',
-          'Add 1-2 months free messaging',
-          'Reduces churn as users are locked in for 12 months'
-        ],
-        impact: 'Medium',
-        positive: true,
       });
     }
 
@@ -1975,125 +2190,46 @@ const ComprehensivePLCalculator: React.FC = () => {
           priority: 3,
           category: 'Pricing',
           title: 'Price Below Market - Room to Increase',
-          issue: `Your starter price ($${yourStarterPrice}) is ${((1 - yourStarterPrice / avgCompStarterPrice) * 100).toFixed(0)}% below competitor average ($${avgCompStarterPrice.toFixed(0)}).`,
+          issue: `Your starter price ($${yourStarterPrice}) is ${((1 - yourStarterPrice / avgCompStarterPrice) * 100).toFixed(0)}% below avg ($${avgCompStarterPrice.toFixed(0)}).`,
           actions: [
-            `Consider raising to $${(avgCompStarterPrice * 0.9).toFixed(0)} for better margins`,
-            'Test higher price with new customers first',
-            'Add features to justify price increase',
-            'Current position may signal lower quality'
+            `Consider raising to $${(avgCompStarterPrice * 0.9).toFixed(0)}`,
+            'Test higher price with new customers',
+            'Add features to justify increase',
           ],
           impact: 'Medium',
-        });
-      } else if (yourStarterPrice > avgCompStarterPrice * 1.3) {
-        recs.push({
-          priority: 2,
-          category: 'Pricing',
-          title: 'Premium Pricing - Justify Value',
-          issue: `Your starter price ($${yourStarterPrice}) is ${((yourStarterPrice / avgCompStarterPrice - 1) * 100).toFixed(0)}% above competitor average.`,
-          actions: [
-            'Ensure features clearly exceed competitors',
-            'Focus marketing on differentiation',
-            'Consider premium positioning strategy',
-            'May need to lower for volume'
-          ],
-          impact: 'High',
         });
       }
     }
 
     // LTV:CAC
-    if (calculations.ltvCacRatio < 1) {
+    if (calculations.ltvCacRatio < 3) {
       recs.push({
-        priority: 1,
+        priority: calculations.ltvCacRatio < 1 ? 1 : 2,
         category: 'Unit Economics',
-        title: 'Critical: Unsustainable Acquisition',
-        issue: `LTV:CAC is ${calculations.ltvCacRatio.toFixed(2)}x - spending more than customers generate.`,
+        title: calculations.ltvCacRatio < 1 ? 'Critical: Unsustainable Acquisition' : 'Improve LTV:CAC Ratio',
+        issue: `LTV:CAC is ${calculations.ltvCacRatio.toFixed(2)}x - ${calculations.ltvCacRatio < 1 ? 'spending more than customers generate' : 'below 3x benchmark'}.`,
         actions: [
           `Reduce CAC from $${calculations.cac.toFixed(0)} to under $${(calculations.ltv / 3).toFixed(0)}`,
           'Shift to organic/content marketing',
-          'Implement referral program',
-          'Increase prices 20-30%',
+          'Increase prices or reduce churn',
         ],
-        impact: 'Critical',
-      });
-    } else if (calculations.ltvCacRatio < 3) {
-      recs.push({
-        priority: 2,
-        category: 'Unit Economics',
-        title: 'Improve LTV:CAC Ratio',
-        issue: `LTV:CAC of ${calculations.ltvCacRatio.toFixed(2)}x is below 3x benchmark.`,
-        actions: [
-          'Reduce churn to extend lifetime',
-          'Add expansion revenue (upsells)',
-          'Optimize ad spend',
-        ],
-        impact: 'High',
+        impact: calculations.ltvCacRatio < 1 ? 'Critical' : 'High',
       });
     }
 
     // Gross margin
-    if (calculations.grossMargin < 50) {
+    if (calculations.grossMargin < 70) {
       recs.push({
-        priority: 1,
+        priority: calculations.grossMargin < 50 ? 1 : 2,
         category: 'Profitability',
-        title: 'Critical: Low Gross Margin',
-        issue: `${calculations.grossMargin.toFixed(1)}% gross margin is well below 70% benchmark.`,
+        title: calculations.grossMargin < 50 ? 'Critical: Low Gross Margin' : 'Optimize Gross Margin',
+        issue: `${calculations.grossMargin.toFixed(1)}% gross margin is ${calculations.grossMargin < 50 ? 'well ' : ''}below 70% benchmark.`,
         actions: [
           `AI costs are ${calculations.aiCostPercent.toFixed(1)}% of revenue`,
           'Route to cheaper models for simple tasks',
           'Implement token caching',
-          `Raise ARPU from $${calculations.arpu.toFixed(0)}`,
         ],
-        impact: 'Critical',
-      });
-    } else if (calculations.grossMargin < 70) {
-      recs.push({
-        priority: 2,
-        category: 'Profitability',
-        title: 'Optimize Gross Margin',
-        issue: `${calculations.grossMargin.toFixed(1)}% margin is below 70% target.`,
-        actions: [
-          'Use smaller models for 80% of requests',
-          'Negotiate volume discounts',
-          'Set usage limits on lower tiers',
-        ],
-        impact: 'High',
-      });
-    }
-
-    // Unprofitable tiers
-    const unprofitableTiers = calculations.tierAnalysis?.filter((t: TierAnalysis) => t.marginPercent < 0 && t.subscribers > 0 && !t.isFreeTier) || [];
-    unprofitableTiers.forEach((tier: TierAnalysis) => {
-      recs.push({
-        priority: 1,
-        category: 'Pricing',
-        title: `Fix Unprofitable: ${tier.tier}`,
-        issue: `${tier.tier} loses $${Math.abs(tier.contribution).toFixed(2)}/user.`,
-        actions: [
-          `Increase price to $${Math.ceil(tier.variableCostPerUser * 1.4)}+`,
-          `Reduce AI allocation ($${tier.aiCostPerUser.toFixed(2)}/user)`,
-          'Limit tokens/storage on this tier',
-        ],
-        impact: 'Critical',
-        tier: tier.tier,
-      });
-    });
-
-    // Churn
-    if (acquisition.churnRatePercent > 5) {
-      const churnCost = calculations.monthlyChurn * calculations.arpu;
-      recs.push({
-        priority: 2,
-        category: 'Retention',
-        title: 'Reduce Customer Churn',
-        issue: `${acquisition.churnRatePercent}% monthly churn = $${churnCost.toFixed(0)}/mo lost.`,
-        actions: [
-          'Implement churn prediction',
-          'Add onboarding sequences',
-          'Create switching costs',
-          `1% reduction saves $${(churnCost / acquisition.churnRatePercent).toFixed(0)}/mo`,
-        ],
-        impact: 'High',
+        impact: calculations.grossMargin < 50 ? 'Critical' : 'High',
       });
     }
 
@@ -2107,7 +2243,6 @@ const ComprehensivePLCalculator: React.FC = () => {
         actions: [
           'Increase marketing spend',
           'Expand to new markets',
-          'Invest in product development',
           'Consider raising prices for more margin',
         ],
         impact: 'Medium',
@@ -2118,6 +2253,118 @@ const ComprehensivePLCalculator: React.FC = () => {
     return recs.sort((a, b) => a.priority - b.priority);
   }, [calculations, acquisition, competitors, pricingTiers]);
 
+  return (
+    <div className="h-full flex flex-col">
+      <div className="flex items-center justify-between mb-4 flex-shrink-0">
+        <div>
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <DollarSign className="w-5 h-5 text-primary" />
+            Pricing Strategy & Unit Economics
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            P&L Calculator • Breakeven Analysis • All tabs auto-sync from calculator
+          </p>
+        </div>
+        <Badge variant="outline" className="gap-1">
+          <RefreshCw className="w-3 h-3" />
+          Auto-synced: {calculations.totalPaidCustomers} paid, ${calculations.totalMRR.toFixed(0)} MRR
+        </Badge>
+      </div>
+
+      <div className="flex items-center gap-2 mb-4 flex-shrink-0 p-1 bg-muted rounded-lg w-fit">
+        {[
+          { id: 'calculator', label: 'Calculator', icon: Calculator },
+          { id: 'segments', label: 'Segments', icon: Users },
+          { id: 'models', label: 'Models', icon: Layers },
+          { id: 'mobile', label: 'Mobile', icon: Smartphone },
+          { id: 'comparison', label: 'Compare', icon: BarChart3 },
+        ].map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => setSubTab(id)}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              subTab === id 
+                ? 'bg-background text-foreground shadow-sm' 
+                : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex-1 overflow-y-auto min-h-0">
+        {subTab === 'calculator' && (
+          <SharedCalculatorView
+            wizardMode={wizardMode}
+            setWizardMode={setWizardMode}
+            currentStep={currentStep}
+            setCurrentStep={setCurrentStep}
+            pricingTiers={pricingTiers}
+            setPricingTiers={setPricingTiers}
+            aiProviders={aiProviders}
+            setAiProviders={setAiProviders}
+            ttsProviders={ttsProviders}
+            setTtsProviders={setTtsProviders}
+            fixedCosts={fixedCosts}
+            setFixedCosts={setFixedCosts}
+            acquisition={acquisition}
+            setAcquisition={setAcquisition}
+            competitors={competitors}
+            setCompetitors={setCompetitors}
+            calculations={calculations}
+            recommendations={recommendations}
+          />
+        )}
+        
+        {subTab === 'segments' && (
+          <ConnectedSegmentsTab calculations={calculations} pricingTiers={pricingTiers} />
+        )}
+        
+        {subTab === 'models' && (
+          <ConnectedModelsTab calculations={calculations} />
+        )}
+        
+        {subTab === 'mobile' && (
+          <ConnectedMobileTab pricingTiers={pricingTiers} calculations={calculations} />
+        )}
+        
+        {subTab === 'comparison' && (
+          <ConnectedComparisonTab calculations={calculations} recommendations={recommendations} />
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ==================== SHARED CALCULATOR VIEW ====================
+const SharedCalculatorView: React.FC<{
+  wizardMode: boolean;
+  setWizardMode: (mode: boolean) => void;
+  currentStep: number;
+  setCurrentStep: (step: number) => void;
+  pricingTiers: PricingTier[];
+  setPricingTiers: React.Dispatch<React.SetStateAction<PricingTier[]>>;
+  aiProviders: AIProvider[];
+  setAiProviders: React.Dispatch<React.SetStateAction<AIProvider[]>>;
+  ttsProviders: TTSProvider[];
+  setTtsProviders: React.Dispatch<React.SetStateAction<TTSProvider[]>>;
+  fixedCosts: FixedCost[];
+  setFixedCosts: React.Dispatch<React.SetStateAction<FixedCost[]>>;
+  acquisition: Acquisition;
+  setAcquisition: React.Dispatch<React.SetStateAction<Acquisition>>;
+  competitors: CompetitorBenchmark[];
+  setCompetitors: React.Dispatch<React.SetStateAction<CompetitorBenchmark[]>>;
+  calculations: any;
+  recommendations: Recommendation[];
+}> = ({ 
+  wizardMode, setWizardMode, currentStep, setCurrentStep,
+  pricingTiers, setPricingTiers, aiProviders, setAiProviders,
+  ttsProviders, setTtsProviders, fixedCosts, setFixedCosts,
+  acquisition, setAcquisition, competitors, setCompetitors,
+  calculations, recommendations
+}) => {
   return (
     <div className="space-y-6">
       {/* Mode Toggle */}
@@ -2140,7 +2387,7 @@ const ComprehensivePLCalculator: React.FC = () => {
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <HelpCircle className="w-4 h-4" />
-          <span>Use Guided Setup to configure step-by-step, or Dashboard for full control</span>
+          <span>Changes here auto-update Segments, Models, Mobile, Compare tabs</span>
         </div>
       </div>
 
@@ -2169,73 +2416,6 @@ const ComprehensivePLCalculator: React.FC = () => {
           pricingTiers={pricingTiers}
         />
       )}
-    </div>
-  );
-};
-
-// ==================== MAIN TAB COMPONENT ====================
-export const PricingStrategyTab: React.FC = () => {
-  const [subTab, setSubTab] = useState('calculator');
-
-  // Shared state that syncs across tabs
-  const [sharedState, setSharedState] = useState<any>(null);
-
-  return (
-    <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between mb-4 flex-shrink-0">
-        <div>
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            <DollarSign className="w-5 h-5 text-primary" />
-            Pricing Strategy & Unit Economics
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            P&L Calculator • Breakeven Analysis • Smart Recommendations • All tabs auto-sync
-          </p>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2 mb-4 flex-shrink-0 p-1 bg-muted rounded-lg w-fit">
-        {[
-          { id: 'calculator', label: 'Calculator', icon: Calculator },
-          { id: 'segments', label: 'Segments', icon: Users },
-          { id: 'models', label: 'Models', icon: Layers },
-          { id: 'mobile', label: 'Mobile', icon: Smartphone },
-          { id: 'comparison', label: 'Compare', icon: BarChart3 },
-        ].map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            onClick={() => setSubTab(id)}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-              subTab === id 
-                ? 'bg-background text-foreground shadow-sm' 
-                : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
-            }`}
-          >
-            <Icon className="w-4 h-4" />
-            {label}
-          </button>
-        ))}
-      </div>
-
-      <div className="flex-1 overflow-y-auto min-h-0">
-        {subTab === 'calculator' && <ComprehensivePLCalculator />}
-        
-        {subTab === 'segments' && (
-          <ConnectedSegmentsTab calculations={{}} pricingTiers={[]} />
-        )}
-        
-        {subTab === 'models' && (
-          <ConnectedModelsTab calculations={{}} />
-        )}
-        
-        {subTab === 'mobile' && (
-          <ConnectedMobileTab pricingTiers={[]} calculations={{}} />
-        )}
-        
-        {subTab === 'comparison' && (
-          <ConnectedComparisonTab calculations={{}} recommendations={[]} />
-        )}
-      </div>
     </div>
   );
 };
