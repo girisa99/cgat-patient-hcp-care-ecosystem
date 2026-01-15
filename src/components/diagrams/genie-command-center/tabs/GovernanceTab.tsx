@@ -547,7 +547,7 @@ export const GovernanceTab: React.FC = () => {
               <div className="space-y-3 text-sm">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-600" />
-                  <span>Phase totals must sum to 305 total scenarios</span>
+                  <span>Phase totals are dynamically calculated (currently {metrics.scenarios.total})</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-600" />

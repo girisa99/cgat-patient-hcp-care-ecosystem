@@ -1,6 +1,7 @@
 /**
  * Overview Tab - Problem Statement & User Journey
  * Restructured with horizontal scrollable cards per step with auto-scrolling VoC
+ * DYNAMIC DATA: Metrics sourced from governance-data.ts
  */
 
 import React, { useRef, useState, useEffect } from 'react';
@@ -23,6 +24,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
+import { masterScenarioCounts, masterInfrastructureCounts } from '../data/governance-data';
 
 // Enhanced Journey Steps with correct Genie Product mapping
 // Based on src/constants/genie-products.ts:
@@ -1392,11 +1394,11 @@ export const OverviewTab: React.FC = () => {
               </div>
               <div className="flex items-center gap-3">
                 <div className="text-center px-4 py-2 bg-background/50 rounded-xl">
-                  <div className="text-xl font-bold text-primary">305</div>
+                  <div className="text-xl font-bold text-primary">{masterScenarioCounts.totalScenarios}</div>
                   <div className="text-[10px] text-muted-foreground">Scenarios</div>
                 </div>
                 <div className="text-center px-4 py-2 bg-background/50 rounded-xl">
-                  <div className="text-xl font-bold text-primary">6</div>
+                  <div className="text-xl font-bold text-primary">{masterInfrastructureCounts.products}</div>
                   <div className="text-[10px] text-muted-foreground">Products</div>
                 </div>
                 <div className="text-center px-4 py-2 bg-background/50 rounded-xl">

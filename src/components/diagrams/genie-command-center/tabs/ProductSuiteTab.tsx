@@ -1,6 +1,7 @@
 /**
  * Product Suite Tab - Genie Products with Features & WoW Factors
  * Clean enterprise styling with proper design tokens
+ * DYNAMIC DATA: Metrics sourced from governance-data.ts
  */
 
 import React, { useState } from 'react';
@@ -12,6 +13,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { products } from '../data/implementation-data';
+import { masterScenarioCounts, masterInfrastructureCounts } from '../data/governance-data';
 
 const productIcons: Record<string, React.ReactNode> = {
   mind: <Brain className="w-8 h-8" />,
@@ -258,11 +260,11 @@ export const ProductSuiteTab: React.FC = () => {
         className="grid grid-cols-2 md:grid-cols-5 gap-4"
       >
         {[
-          { label: 'Total Scenarios', value: '305', color: 'primary' },
-          { label: 'AI Agents', value: '15+', color: 'purple' },
-          { label: 'Edge Functions', value: '140+', color: 'green' },
-          { label: 'Custom Hooks', value: '280+', color: 'blue' },
-          { label: 'Database Tables', value: '180+', color: 'amber' },
+          { label: 'Total Scenarios', value: String(masterScenarioCounts.totalScenarios), color: 'primary' },
+          { label: 'AI Agents', value: `${masterInfrastructureCounts.aiAgents}+`, color: 'purple' },
+          { label: 'Edge Functions', value: `${masterInfrastructureCounts.edgeFunctions}+`, color: 'green' },
+          { label: 'Custom Hooks', value: `${masterInfrastructureCounts.customHooks}+`, color: 'blue' },
+          { label: 'Database Tables', value: `${masterInfrastructureCounts.databaseTables}+`, color: 'amber' },
         ].map((stat, index) => (
           <Card key={index} className="text-center">
             <CardContent className="p-5">

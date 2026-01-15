@@ -1,6 +1,7 @@
 /**
  * Investor Dashboard Tab - Complete Investor Package
  * All critical metrics investors need for funding decisions
+ * DYNAMIC DATA: Metrics sourced from governance-data.ts
  */
 
 import React, { useState } from 'react';
@@ -21,6 +22,7 @@ import {
   competitorPricing,
   pricingTiers,
 } from '../data/financial-data';
+import { masterScenarioCounts, masterFinancialMetrics } from '../data/governance-data';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -139,8 +141,8 @@ export const InvestorDashboardTab: React.FC = () => {
                 { label: 'Serviceable (SAM)', value: '$37B', sublabel: 'AI Video Tools', icon: Target, color: 'text-primary' },
                 { label: 'Obtainable (SOM)', value: '$1.85B', sublabel: '3-5 Year Target', icon: Zap, color: 'text-amber-600' },
                 { label: 'LTV:CAC Ratio', value: '12:1', sublabel: 'Excellent', icon: TrendingUp, color: 'text-green-600' },
-                { label: 'Gross Margin', value: '75%', sublabel: 'SaaS Standard', icon: PieChart, color: 'text-blue-600' },
-                { label: 'Product Progress', value: '61%', sublabel: '185/305 Scenarios', icon: CheckCircle, color: 'text-primary' },
+                { label: 'Gross Margin', value: `${masterFinancialMetrics.unitEconomics.grossMargin}%`, sublabel: 'SaaS Standard', icon: PieChart, color: 'text-blue-600' },
+                { label: 'Product Progress', value: `${masterScenarioCounts.completionPercentage}%`, sublabel: `${masterScenarioCounts.implementedScenarios}/${masterScenarioCounts.totalScenarios} Scenarios`, icon: CheckCircle, color: 'text-primary' },
               ].map((item, index) => (
                 <motion.div 
                   key={index} 
@@ -622,7 +624,7 @@ export const InvestorDashboardTab: React.FC = () => {
             <h3 className="text-lg font-bold text-foreground mb-4">Milestones for Series A</h3>
             <div className="grid grid-cols-3 gap-4">
               {[
-                { milestone: 'Product Complete', metric: '305/305 Scenarios', status: 'Q4 2026' },
+                { milestone: 'Product Complete', metric: `${masterScenarioCounts.totalScenarios}/${masterScenarioCounts.totalScenarios} Scenarios`, status: 'Q4 2026' },
                 { milestone: 'ARR Target', metric: '$3M ARR', status: 'Q4 2026' },
                 { milestone: 'User Base', metric: '25K+ Users', status: 'Q4 2026' },
                 { milestone: 'Healthcare Pilots', metric: '5+ Hospital Systems', status: 'Q3 2026' },

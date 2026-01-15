@@ -1,8 +1,7 @@
 /**
  * Technical Docs Tab - PRD, BRD, FRS Documentation
- * Updated: 2026-01-15 with accurate implementation status
- * 305 Total Scenarios | 185 Implemented (61%) | P0-P2 Complete
- * Includes 16 new editing scenarios (Categories AE + AF)
+ * DYNAMIC DATA: Metrics sourced from governance-data.ts
+ * All scenario counts update automatically from single source of truth
  */
 
 import React, { useState } from 'react';
@@ -11,13 +10,15 @@ import {
   FileText, Book, Layers, Target,
   CheckCircle2, Clock, Shield, Users,
   TrendingUp, BarChart3, Zap, Globe,
-  Brain, Video, Sparkles, MessageSquare
+  Brain, Video, Sparkles, MessageSquare,
+  Code, Database, Server, AlertCircle, Settings
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
+import { masterScenarioCounts } from '../data/governance-data';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -265,8 +266,8 @@ export const TechnicalDocsTab: React.FC = () => {
       {/* Summary Stats */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         {[
-          { label: 'Total Scenarios', value: '305', color: 'primary' },
-          { label: 'Implemented', value: '185 (61%)', color: 'green' },
+          { label: 'Total Scenarios', value: String(masterScenarioCounts.totalScenarios), color: 'primary' },
+          { label: 'Implemented', value: `${masterScenarioCounts.implementedScenarios} (${masterScenarioCounts.completionPercentage}%)`, color: 'green' },
           { label: 'PRD Items', value: `${donePrdItems}/${totalPrdItems}`, color: 'blue' },
           { label: 'FRS Modules', value: '6/6', color: 'purple' },
           { label: 'Segments', value: '6', color: 'amber' },

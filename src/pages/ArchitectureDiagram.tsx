@@ -38,6 +38,7 @@ interface DiagramVersion {
 // Define diagram categories for cleaner organization
 // CONSOLIDATED: Genie Studio now uses single Unified Hub as source of truth
 // (Script Gallery, Visual Assets, Recording Studio, Market Analysis are all tabs within Unified Hub)
+// NOTE: Command Center label is static here but actual metrics are dynamic within the component
 const diagramCategories = {
   overview: {
     label: 'Overview',
@@ -67,10 +68,11 @@ const diagramCategories = {
     label: 'Genie Suite',
     icon: Sparkles,
     diagrams: [
-      // Genie Command Center - Enterprise Dashboard with 8 professional tabs:
+      // Genie Command Center - Enterprise Dashboard with 9 professional tabs:
       // Overview, Market Analysis, Product Suite, Architecture, Technical Docs, 
-      // Roadmap, Investor Dashboard, Stage Gates
-      { id: 'genie-hub', label: 'Command Center (305 Scenarios)', icon: Sparkles },
+      // Roadmap, Investor Dashboard, Stage Gates, Governance
+      // Scenario count is dynamic within the component
+      { id: 'genie-hub', label: 'Command Center', icon: Sparkles },
     ]
   }
 };
