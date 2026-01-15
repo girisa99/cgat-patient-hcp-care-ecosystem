@@ -13,6 +13,7 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
+import BulkQueueStatusMobile from '@/components/bulk-processing/BulkQueueStatusMobile';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -1042,6 +1043,15 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
                     <Share2 className="h-4 w-4" />
                     Share via Device
                   </Button>
+                </div>
+
+                {/* Bulk Queue Status - P3 Feature */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium flex items-center gap-2">
+                    <Layers className="h-4 w-4" />
+                    Bulk Processing
+                  </h3>
+                  <BulkQueueStatusMobile />
                 </div>
 
                 {/* Sync Status */}
