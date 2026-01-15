@@ -62,9 +62,10 @@ export const GENIE_STUDIO_PRODUCT = {
 } as const;
 
 // =============================================================================
-// METRICS - Single Source of Truth for all counts
+// GOVERNANCE - Registry & Metrics (SINGLE SOURCE OF TRUTH)
 // =============================================================================
-export { GENIE_STUDIO_METRICS, PLATFORM_TOTALS, getGenieStudioPercentage } from './metrics';
+export * from './governance';
+export { GENIE_STUDIO_METRICS, PLATFORM_TOTALS, getGenieStudioPercentage, GENIE_DYNAMIC_METRICS } from './metrics';
 
 // =============================================================================
 // MODULE EXPORTS (Phase 2 - Organized by domain)
