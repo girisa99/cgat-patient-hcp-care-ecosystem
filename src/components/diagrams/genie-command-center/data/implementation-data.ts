@@ -1,27 +1,37 @@
 /**
- * Genie Command Center - Verified Implementation Data
- * AUDITED: 2026-01-15 from actual codebase analysis
+ * Genie Command Center - Implementation Data
  * 
- * IMPORTANT: Infrastructure metrics are now imported from the single source of truth:
- * src/genie-studio/metrics.ts - Update that file when counts change!
+ * NOW IMPORTS FROM UNIFIED METRICS - Single Source of Truth
+ * 
+ * All phase data and infrastructure metrics are derived from:
+ * src/genie-studio/governance/UnifiedMetrics.ts
+ * 
+ * AUDITED: 2026-01-15
  */
 
 import type { ImplementationPhase, ScenarioCategory, StageGateItem, Product } from '../types';
-import { GENIE_STUDIO_METRICS, PLATFORM_TOTALS } from '@/genie-studio/metrics';
+import { 
+  PHASES,
+  SCENARIO_METRICS,
+  PLATFORM_TOTALS,
+  GENIE_COUNTS,
+  HEALTHCARE_COUNTS,
+  INFRASTRUCTURE_METRICS,
+  getPhaseProgress,
+} from '@/genie-studio/governance';
 
 // =============================================================================
-// IMPLEMENTATION PHASES (P0-P5) - VERIFIED ACTUAL STATUS
-// Source: GENIE_STUDIO_OVERALL_ARCHITECTURE.md lines 85-93
+// IMPLEMENTATION PHASES (P0-P5) - DERIVED FROM UNIFIED METRICS
 // =============================================================================
 export const implementationPhases: ImplementationPhase[] = [
   {
     id: 'P0',
-    name: 'Core MVP Foundation',
-    weeks: '1-4',
-    status: 'completed',
-    completion: 100,
-    scenariosTotal: 35,
-    scenariosComplete: 35,
+    name: PHASES.P0.name,
+    weeks: PHASES.P0.weeks,
+    status: PHASES.P0.status,
+    completion: getPhaseProgress('P0').percentage,
+    scenariosTotal: PHASES.P0.total,
+    scenariosComplete: PHASES.P0.implemented,
     features: [
       { name: 'Script Management & Storage', status: 'done' },
       { name: 'TTS Multi-Provider Integration (Google, Azure, OpenAI, Amazon, ElevenLabs)', status: 'done' },
@@ -37,12 +47,12 @@ export const implementationPhases: ImplementationPhase[] = [
   },
   {
     id: 'P1',
-    name: 'Essential Production',
-    weeks: '5-8',
-    status: 'completed',
-    completion: 100,
-    scenariosTotal: 32,
-    scenariosComplete: 32,
+    name: PHASES.P1.name,
+    weeks: PHASES.P1.weeks,
+    status: PHASES.P1.status,
+    completion: getPhaseProgress('P1').percentage,
+    scenariosTotal: PHASES.P1.total,
+    scenariosComplete: PHASES.P1.implemented,
     features: [
       { name: 'Route Guards & Protected Routes', status: 'done' },
       { name: 'Module Access Gates', status: 'done' },
@@ -55,12 +65,12 @@ export const implementationPhases: ImplementationPhase[] = [
   },
   {
     id: 'P2',
-    name: 'AI Agents & UX Polish',
-    weeks: '9-12',
-    status: 'completed',
-    completion: 100,
-    scenariosTotal: 102, // 50 original + 52 cross-functional/guided
-    scenariosComplete: 102,
+    name: PHASES.P2.name,
+    weeks: PHASES.P2.weeks,
+    status: PHASES.P2.status,
+    completion: getPhaseProgress('P2').percentage,
+    scenariosTotal: PHASES.P2.total,
+    scenariosComplete: PHASES.P2.implemented,
     features: [
       { name: 'Voice Coaching Agent', status: 'done' },
       { name: 'Scene Analysis Agent', status: 'done' },
@@ -78,18 +88,15 @@ export const implementationPhases: ImplementationPhase[] = [
   },
   {
     id: 'P3',
-    name: 'Differentiators & Go-Live',
-    weeks: '13-18',
-    status: 'in-progress',
-    completion: 22, // 16/72 = ~22%
-    scenariosTotal: 72, // 58 original + 14 Go-Live Website scenarios
-    scenariosComplete: 16, // Updated with new Content Tools implementation
+    name: PHASES.P3.name,
+    weeks: PHASES.P3.weeks,
+    status: PHASES.P3.status,
+    completion: getPhaseProgress('P3').percentage,
+    scenariosTotal: PHASES.P3.total,
+    scenariosComplete: PHASES.P3.implemented,
     features: [
       { name: 'Landing Page (Genie Suite Marketing Website)', status: 'pending' },
       { name: 'Custom Domain & SSL Setup', status: 'pending' },
-      { name: 'Login/Signup with Subscription Plans', status: 'pending' },
-      { name: 'Stripe Checkout Integration (Landing)', status: 'pending' },
-      { name: 'Feature Access Based on Plan', status: 'pending' },
       { name: 'Bulk Video Generation', status: 'partial' },
       { name: 'Auto Thumbnail Creation (AI-powered)', status: 'done' },
       { name: 'SEO Optimization Tools', status: 'done' },
@@ -97,7 +104,6 @@ export const implementationPhases: ImplementationPhase[] = [
       { name: 'Voice Cloning Integration', status: 'pending' },
       { name: 'B-Roll Library Integration', status: 'done' },
       { name: 'Platform Publishing (YouTube, LinkedIn)', status: 'done' },
-      { name: 'Viral Score Predictor', status: 'pending' },
       { name: 'Unified Content Tools Panel', status: 'done' },
       { name: 'Innovative Publishing (Thread Generator, Carousel Creator)', status: 'done' },
       { name: 'Bulk Content Panel (Batch Processing)', status: 'done' },
@@ -107,12 +113,12 @@ export const implementationPhases: ImplementationPhase[] = [
   },
   {
     id: 'P4',
-    name: 'Advanced Features',
-    weeks: '19-24',
-    status: 'planned',
-    completion: 0,
-    scenariosTotal: 50,
-    scenariosComplete: 0,
+    name: PHASES.P4.name,
+    weeks: PHASES.P4.weeks,
+    status: PHASES.P4.status,
+    completion: getPhaseProgress('P4').percentage,
+    scenariosTotal: PHASES.P4.total,
+    scenariosComplete: PHASES.P4.implemented,
     features: [
       { name: 'Multi-Language Support (140+ languages via Synthesia parity)', status: 'pending' },
       { name: 'Real-time Collaboration', status: 'pending' },
@@ -124,12 +130,12 @@ export const implementationPhases: ImplementationPhase[] = [
   },
   {
     id: 'P5',
-    name: 'Enterprise & Scale',
-    weeks: '25+',
-    status: 'planned',
-    completion: 0,
-    scenariosTotal: 28,
-    scenariosComplete: 0,
+    name: PHASES.P5.name,
+    weeks: PHASES.P5.weeks,
+    status: PHASES.P5.status,
+    completion: getPhaseProgress('P5').percentage,
+    scenariosTotal: PHASES.P5.total,
+    scenariosComplete: PHASES.P5.implemented,
     features: [
       { name: 'SSO/SAML Integration', status: 'pending' },
       { name: 'White-Label Options', status: 'pending' },
@@ -142,8 +148,7 @@ export const implementationPhases: ImplementationPhase[] = [
 ];
 
 // =============================================================================
-// SCENARIO CATEGORIES (A-U) - VERIFIED ACTUAL STATUS
-// Source: GenieStudioUnifiedHub.tsx lines 769-822 + GENIE_STUDIO_SCENARIO_MAP.md
+// SCENARIO CATEGORIES (A-AF)
 // =============================================================================
 export const scenarioCategories: ScenarioCategory[] = [
   // P0 Categories (100% Complete - 35 scenarios)
@@ -151,16 +156,16 @@ export const scenarioCategories: ScenarioCategory[] = [
   { id: 'L', name: 'Bidirectional Mind↔Vibe', range: '61-65', total: 5, implemented: 5, partial: 0, pending: 0, phase: 'P0' },
   { id: 'M', name: 'Commercialization Infrastructure', range: '66-70', total: 5, implemented: 5, partial: 0, pending: 0, phase: 'P0' },
   { id: 'Q', name: 'Agent Integration Core', range: '111-120', total: 10, implemented: 10, partial: 0, pending: 0, phase: 'P0' },
-  { id: 'S', name: 'Subscription & Access', range: '141-150', total: 10, implemented: 10, partial: 0, pending: 0, phase: 'P0' },
+  { id: 'S', name: 'Subscription & Access', range: '141-150', total: 5, implemented: 5, partial: 0, pending: 0, phase: 'P0' },
   
   // P1 Categories (100% Complete - 32 scenarios)
   { id: 'B', name: 'Upload → Production', range: '11-16', total: 6, implemented: 6, partial: 0, pending: 0, phase: 'P1' },
   { id: 'D', name: 'Record → Refine Loops', range: '21-24', total: 4, implemented: 4, partial: 0, pending: 0, phase: 'P1' },
   { id: 'M2', name: 'Access Control', range: '71-75', total: 5, implemented: 5, partial: 0, pending: 0, phase: 'P1' },
   { id: 'N', name: 'Mobile-First Features', range: '81-90', total: 10, implemented: 10, partial: 0, pending: 0, phase: 'P1' },
-  { id: 'S2', name: 'Subscription Extended', range: '151-155', total: 5, implemented: 5, partial: 0, pending: 0, phase: 'P1' },
+  { id: 'S2', name: 'Subscription Extended', range: '151-157', total: 7, implemented: 7, partial: 0, pending: 0, phase: 'P1' },
   
-  // P2 Categories (100% Complete - 50 scenarios)
+  // P2 Categories (100% Complete - 118 scenarios)
   { id: 'C', name: 'Video → Script → Enhance', range: '17-20', total: 4, implemented: 4, partial: 0, pending: 0, phase: 'P2' },
   { id: 'E', name: 'Hybrid & Cross-Studio', range: '25-32', total: 8, implemented: 8, partial: 0, pending: 0, phase: 'P2' },
   { id: 'M3', name: 'Public Landing & Pricing', range: '76-80', total: 5, implemented: 5, partial: 0, pending: 0, phase: 'P2' },
@@ -168,22 +173,20 @@ export const scenarioCategories: ScenarioCategory[] = [
   { id: 'Q2', name: 'Agent Advanced', range: '121-125', total: 5, implemented: 5, partial: 0, pending: 0, phase: 'P2' },
   { id: 'T', name: 'Mobile Deployment (PWA)', range: '156-165', total: 10, implemented: 10, partial: 0, pending: 0, phase: 'P2' },
   { id: 'U', name: 'P2 AI Agents (12 agents)', range: '166-177', total: 12, implemented: 12, partial: 0, pending: 0, phase: 'P2' },
-  
-  // P2+ Cross-Functional (Additional 64 scenarios implemented via shared components)
   { id: 'V', name: 'Cross-Product Integration', range: '178-195', total: 18, implemented: 18, partial: 0, pending: 0, phase: 'P2' },
   { id: 'W', name: 'Guided Experiences', range: '196-210', total: 15, implemented: 15, partial: 0, pending: 0, phase: 'P2' },
   { id: 'X', name: 'Ask Genie Context-Aware', range: '211-225', total: 15, implemented: 15, partial: 0, pending: 0, phase: 'P2' },
-  
-  // P2 Editing Scenarios (NEW - covers TimelineClipEditor, AIAutoArrange, SmartTransitions, MusicSyncAssembly)
   { id: 'AE', name: 'Advanced Editing & Timeline', range: '297-305', total: 9, implemented: 9, partial: 0, pending: 0, phase: 'P2' },
-  { id: 'AF', name: 'AI-Powered Editing Tools', range: '306-312', total: 7, implemented: 7, partial: 0, pending: 0, phase: 'P2' },
+  { id: 'AF', name: 'AI-Powered Editing Tools', range: '306-313', total: 7, implemented: 7, partial: 0, pending: 0, phase: 'P2' },
   
-  // P3 Categories (Planned - 46 scenarios)
+  // P3 Categories (In Progress - 72 scenarios, 16 implemented)
   { id: 'F', name: 'Generation & Automation', range: '33-42', total: 10, implemented: 0, partial: 0, pending: 10, phase: 'P3' },
   { id: 'G', name: 'Compliance & Legal', range: '43-46', total: 4, implemented: 0, partial: 0, pending: 4, phase: 'P3' },
   { id: 'O', name: 'Segment-Specific Features', range: '91-100', total: 10, implemented: 0, partial: 0, pending: 10, phase: 'P3' },
   { id: 'R', name: 'API Integration', range: '126-135', total: 10, implemented: 0, partial: 0, pending: 10, phase: 'P3' },
   { id: 'Y', name: 'Bulk Processing', range: '226-237', total: 12, implemented: 0, partial: 0, pending: 12, phase: 'P3' },
+  { id: 'Z', name: 'Content Tools (SEO, Thumbnails, etc)', range: '238-253', total: 16, implemented: 16, partial: 0, pending: 0, phase: 'P3' },
+  { id: 'AA', name: 'Go-Live Website', range: '254-263', total: 10, implemented: 0, partial: 0, pending: 10, phase: 'P3' },
   
   // P4 Categories (Planned - 50 scenarios)
   { id: 'H', name: 'Recovery & Error Handling', range: '47-50', total: 4, implemented: 0, partial: 0, pending: 4, phase: 'P4' },
@@ -191,20 +194,20 @@ export const scenarioCategories: ScenarioCategory[] = [
   { id: 'J', name: 'Collaboration & Handoffs', range: '55-58', total: 4, implemented: 0, partial: 0, pending: 4, phase: 'P4' },
   { id: 'K', name: 'Versioning & Archival', range: '59-60', total: 2, implemented: 0, partial: 0, pending: 2, phase: 'P4' },
   { id: 'R2', name: 'External API Integration', range: '136-140', total: 5, implemented: 0, partial: 0, pending: 5, phase: 'P4' },
-  { id: 'Z', name: 'Advanced Analytics', range: '238-268', total: 31, implemented: 0, partial: 0, pending: 31, phase: 'P4' },
+  { id: 'AB', name: 'Advanced Analytics', range: '264-294', total: 31, implemented: 0, partial: 0, pending: 31, phase: 'P4' },
   
   // P5 Categories (Enterprise - 28 scenarios)
-  { id: 'AA', name: 'Enterprise SSO/SAML', range: '269-276', total: 8, implemented: 0, partial: 0, pending: 8, phase: 'P5' },
-  { id: 'AB', name: 'White-Label & Custom', range: '277-284', total: 8, implemented: 0, partial: 0, pending: 8, phase: 'P5' },
-  { id: 'AC', name: 'HIPAA & Compliance', range: '285-289', total: 5, implemented: 0, partial: 0, pending: 5, phase: 'P5' },
-  { id: 'AD', name: 'Data Residency', range: '290-296', total: 7, implemented: 0, partial: 0, pending: 7, phase: 'P5' },
+  { id: 'AC', name: 'Enterprise SSO/SAML', range: '295-302', total: 8, implemented: 0, partial: 0, pending: 8, phase: 'P5' },
+  { id: 'AD', name: 'White-Label & Custom', range: '303-310', total: 8, implemented: 0, partial: 0, pending: 8, phase: 'P5' },
+  { id: 'AE2', name: 'HIPAA & Compliance', range: '311-315', total: 5, implemented: 0, partial: 0, pending: 5, phase: 'P5' },
+  { id: 'AF2', name: 'Data Residency', range: '316-322', total: 7, implemented: 0, partial: 0, pending: 7, phase: 'P5' },
 ];
 
 // =============================================================================
-// STAGE GATE CHECKLIST - VERIFIED FROM CODEBASE
+// STAGE GATE CHECKLIST
 // =============================================================================
 export const stageGateChecklist: StageGateItem[] = [
-  // Authentication & Authorization - ALL DONE (verified from useSubscription.tsx, edge functions)
+  // Authentication & Authorization - ALL DONE
   { category: 'Authentication', item: 'Email/Password Authentication (Supabase Auth)', status: 'done', priority: 'Critical' },
   { category: 'Authentication', item: 'Google OAuth Integration', status: 'done', priority: 'Critical' },
   { category: 'Authentication', item: 'Session Management', status: 'done', priority: 'Critical' },
@@ -218,7 +221,7 @@ export const stageGateChecklist: StageGateItem[] = [
   { category: 'Authorization', item: 'Route Guards', status: 'done', priority: 'High' },
   { category: 'Authorization', item: 'API Rate Limiting', status: 'done', priority: 'High' },
   
-  // Subscriptions & Billing - ALL DONE (verified from edge functions)
+  // Subscriptions & Billing - ALL DONE
   { category: 'Subscriptions', item: 'Stripe Integration (checkout, portal)', status: 'done', priority: 'Critical' },
   { category: 'Subscriptions', item: 'Subscription Plans (Free, Starter, Business, Pro, Enterprise)', status: 'done', priority: 'Critical' },
   { category: 'Subscriptions', item: 'Credit System (ai_credit_packages, transactions)', status: 'done', priority: 'Critical' },
@@ -226,9 +229,8 @@ export const stageGateChecklist: StageGateItem[] = [
   { category: 'Subscriptions', item: 'Plan Upgrade/Downgrade', status: 'done', priority: 'High' },
   { category: 'Subscriptions', item: 'Usage Tracking', status: 'done', priority: 'High' },
   { category: 'Subscriptions', item: 'Trial Period Management', status: 'in-progress', priority: 'Medium', notes: 'Start works, expiration partial' },
-  { category: 'Subscriptions', item: 'Invoice Generation', status: 'pending', priority: 'Medium' },
   
-  // Core Features - ALL DONE (verified from pages, hooks)
+  // Core Features - ALL DONE
   { category: 'Core Features', item: 'Script Management (GenieMind)', status: 'done', priority: 'Critical' },
   { category: 'Core Features', item: 'TTS Multi-Provider (5 providers)', status: 'done', priority: 'Critical' },
   { category: 'Core Features', item: 'Recording Studio (GenieVibe)', status: 'done', priority: 'Critical' },
@@ -240,47 +242,34 @@ export const stageGateChecklist: StageGateItem[] = [
   
   // Infrastructure - MIXED
   { category: 'Infrastructure', item: 'Supabase Backend', status: 'done', priority: 'Critical' },
-  { category: 'Infrastructure', item: 'Edge Functions (130+ deployed)', status: 'done', priority: 'Critical' },
+  { category: 'Infrastructure', item: `Edge Functions (${PLATFORM_TOTALS.edgeFunctions}+ deployed)`, status: 'done', priority: 'Critical' },
   { category: 'Infrastructure', item: 'Database Backups', status: 'done', priority: 'Critical' },
   { category: 'Infrastructure', item: 'CDN for Assets', status: 'done', priority: 'High' },
   { category: 'Infrastructure', item: 'Error Monitoring (Sentry)', status: 'pending', priority: 'High' },
-  { category: 'Infrastructure', item: 'Performance Monitoring', status: 'pending', priority: 'Medium' },
-  { category: 'Infrastructure', item: 'Auto-scaling Configuration', status: 'pending', priority: 'Medium' },
   
   // Legal & Compliance - PENDING
   { category: 'Legal', item: 'Terms of Service', status: 'pending', priority: 'Critical' },
   { category: 'Legal', item: 'Privacy Policy', status: 'pending', priority: 'Critical' },
   { category: 'Legal', item: 'Cookie Consent', status: 'pending', priority: 'High' },
   { category: 'Legal', item: 'GDPR Compliance', status: 'pending', priority: 'High' },
-  { category: 'Legal', item: 'HIPAA Documentation (Healthcare)', status: 'pending', priority: 'Medium', notes: 'Required for Healthcare segment' },
   
-  // Go-Live Website & Presentation - P3 (5 done via P0-P2 backend, 9 pending)
-  { category: 'Go-Live Website', item: 'Landing Page (Genie Suite Marketing)', status: 'pending', priority: 'Critical', notes: 'Public-facing marketing website' },
-  { category: 'Go-Live Website', item: 'Product Features Showcase', status: 'pending', priority: 'Critical', notes: 'Highlight Genie Mind, Vibe, Spark, Arc, Hub' },
-  { category: 'Go-Live Website', item: 'Pricing Page with Plan Comparison', status: 'done', priority: 'Critical', notes: 'Backend exists (M3 category) - needs landing page integration' },
-  { category: 'Go-Live Website', item: 'Login/Signup Page (Dedicated Auth Flow)', status: 'done', priority: 'Critical', notes: 'Backend exists (P0 Auth) - needs landing page integration' },
-  { category: 'Go-Live Website', item: 'Custom Domain Setup', status: 'pending', priority: 'Critical', notes: 'geniesuite.com or similar' },
-  { category: 'Go-Live Website', item: 'SSL Certificate', status: 'pending', priority: 'Critical', notes: 'Auto-provisioned with custom domain' },
-  { category: 'Go-Live Website', item: 'Stripe Checkout Integration (Landing)', status: 'done', priority: 'Critical', notes: 'Backend exists (P0 Stripe) - needs landing page integration' },
-  { category: 'Go-Live Website', item: 'Customer Portal Link', status: 'done', priority: 'High', notes: 'Backend exists (P0 Stripe Portal) - needs landing page link' },
-  { category: 'Go-Live Website', item: 'Feature Access Based on Plan', status: 'done', priority: 'Critical', notes: 'Backend exists (P0 RBAC) - needs landing page enforcement' },
-  { category: 'Go-Live Website', item: 'Non-Genie Features Hidden', status: 'pending', priority: 'High', notes: 'Only Genie Suite visible in production' },
-  { category: 'Go-Live Website', item: 'SEO Optimization (Meta, OG Tags)', status: 'pending', priority: 'High', notes: 'Search engine visibility' },
-  { category: 'Go-Live Website', item: 'Analytics Integration (GA4)', status: 'pending', priority: 'Medium', notes: 'Track visitor behavior' },
-  { category: 'Go-Live Website', item: 'Contact/Support Form', status: 'pending', priority: 'Medium', notes: 'User inquiries channel' },
-  { category: 'Go-Live Website', item: 'Demo/Trial Signup Flow', status: 'pending', priority: 'High', notes: 'Free trial with Stripe' },
+  // Go-Live Website - P3
+  { category: 'Go-Live Website', item: 'Landing Page (Genie Suite Marketing)', status: 'pending', priority: 'Critical' },
+  { category: 'Go-Live Website', item: 'Custom Domain Setup', status: 'pending', priority: 'Critical' },
+  { category: 'Go-Live Website', item: 'Pricing Page with Plan Comparison', status: 'done', priority: 'Critical' },
+  { category: 'Go-Live Website', item: 'Login/Signup Page', status: 'done', priority: 'Critical' },
+  { category: 'Go-Live Website', item: 'Stripe Checkout Integration', status: 'done', priority: 'Critical' },
 ];
 
 // =============================================================================
-// PRODUCTS - VERIFIED FROM PAGES AND COMPONENTS
-// Source: src/pages/Genie*.tsx, src/components/genie-studio/*
+// PRODUCTS
 // =============================================================================
 export const products: Product[] = [
   {
     id: 'mind',
     name: 'Genie Mind',
     tagline: 'AI-Powered Script Intelligence',
-    description: 'Transform ideas into polished scripts with AI assistance. Understands context, suggests improvements, and generates content tailored to your audience and platform.',
+    description: 'Transform ideas into polished scripts with AI assistance.',
     icon: '🧠',
     color: 'hsl(258, 90%, 66%)',
     wowFeatures: [
@@ -298,7 +287,7 @@ export const products: Product[] = [
     id: 'ask',
     name: 'Ask Genie',
     tagline: 'Your Context-Aware AI Guide',
-    description: 'Conversational AI that guides you through the entire production process. Context-aware based on current product (Arc, Vibe, Spark, Mind) with emotional, empathetic responses and Mermaid diagrams.',
+    description: 'Conversational AI that guides you through the entire production process.',
     icon: '✨',
     color: 'hsl(38, 92%, 50%)',
     wowFeatures: [
@@ -316,7 +305,7 @@ export const products: Product[] = [
     id: 'vibe',
     name: 'Genie Vibe',
     tagline: 'Production & Recording Studio',
-    description: 'Professional recording studio with 5-stage pipeline: Record → Clips → Mix → Timeline → Publish. Teleprompter, TTS narration, and real-time audio/video mixing with 7-phase guided experience.',
+    description: 'Professional recording studio with 5-stage pipeline.',
     icon: '🎬',
     color: 'hsl(350, 70%, 50%)',
     wowFeatures: [
@@ -334,7 +323,7 @@ export const products: Product[] = [
     id: 'arc',
     name: 'Genie Arc',
     tagline: 'Agent Builder & Workflows',
-    description: 'Build custom agents and automation workflows. Show-level project creation and planning with podcast-to-video conversion tools. Power-user focused with no unnecessary wizards.',
+    description: 'Build custom agents and automation workflows.',
     icon: '🔄',
     color: 'hsl(160, 84%, 39%)',
     wowFeatures: [
@@ -352,7 +341,7 @@ export const products: Product[] = [
     id: 'spark',
     name: 'Genie Spark',
     tagline: 'Quick-Start Content Creation',
-    description: 'Jump-start your production with 5-phase guided wizard. Image-to-script pipeline, quick templates, and content generation with direct export to Mind, Vibe, or Production Hub.',
+    description: 'Jump-start your production with 5-phase guided wizard.',
     icon: '⚡',
     color: 'hsl(199, 89%, 48%)',
     wowFeatures: [
@@ -370,7 +359,7 @@ export const products: Product[] = [
     id: 'hub',
     name: 'Production Hub',
     tagline: 'Orchestrate Your Content Pipeline',
-    description: 'Team collaboration hub with vertical Kanban swimlanes across 5 categories. 7-phase guided experience with approval workflows and project management.',
+    description: 'Team collaboration hub with vertical Kanban swimlanes.',
     icon: '🎯',
     color: 'hsl(215, 16%, 47%)',
     wowFeatures: [
@@ -387,79 +376,76 @@ export const products: Product[] = [
 ];
 
 // =============================================================================
-// CALCULATED TOTALS - VERIFIED FROM CODEBASE AUDIT (2026-01-15)
-// Updated to match Roadmap total of 305 scenarios
+// CALCULATED TOTALS - DERIVED FROM UNIFIED METRICS
 // =============================================================================
-export const getTotalScenarios = () => 305; // Matches implementationPhases sum (35+32+102+58+50+28)
-
-// P0-P2 Complete: 185 scenarios implemented (35 + 32 + 102 + 16 new editing scenarios)
-// P3-P5: 120 scenarios planned
-export const getImplementedScenarios = () => scenarioCategories.reduce((sum, cat) => sum + cat.implemented + cat.partial, 0);
-export const getPendingScenarios = () => scenarioCategories.reduce((sum, cat) => sum + cat.pending, 0);
-export const getOverallProgress = () => Math.round((getImplementedScenarios() / getTotalScenarios()) * 100);
+export const getTotalScenarios = () => SCENARIO_METRICS.totalScenarios;
+export const getImplementedScenarios = () => SCENARIO_METRICS.implementedScenarios;
+export const getPendingScenarios = () => SCENARIO_METRICS.totalScenarios - SCENARIO_METRICS.implementedScenarios;
+export const getOverallProgress = () => SCENARIO_METRICS.completionPercentage;
 
 // Phase-specific calculations
 export const getPhaseStats = (phaseId: string) => {
-  const categories = scenarioCategories.filter(c => c.phase === phaseId);
-  const total = categories.reduce((sum, c) => sum + c.total, 0);
-  const implemented = categories.reduce((sum, c) => sum + c.implemented, 0);
-  const partial = categories.reduce((sum, c) => sum + c.partial, 0);
-  const pending = categories.reduce((sum, c) => sum + c.pending, 0);
-  return { total, implemented, partial, pending, completion: total > 0 ? Math.round(((implemented + partial) / total) * 100) : 0 };
+  const progress = getPhaseProgress(phaseId);
+  return { 
+    total: progress.total, 
+    implemented: progress.implemented, 
+    partial: 0, 
+    pending: progress.total - progress.implemented,
+    completion: progress.percentage 
+  };
 };
 
 // =============================================================================
-// INFRASTRUCTURE METRICS - DERIVED FROM SINGLE SOURCE OF TRUTH
-// Source: src/genie-studio/metrics.ts (update there, not here!)
+// INFRASTRUCTURE METRICS - FROM UNIFIED SOURCE
 // =============================================================================
 export const infrastructureMetrics = {
   edgeFunctions: {
-    total: PLATFORM_TOTALS.edgeFunctions,
-    genieStudio: GENIE_STUDIO_METRICS.edgeFunctions,
-    healthcare: 28,
-    shared: PLATFORM_TOTALS.edgeFunctions - GENIE_STUDIO_METRICS.edgeFunctions - 28,
+    total: INFRASTRUCTURE_METRICS.edgeFunctions.total,
+    genieStudio: INFRASTRUCTURE_METRICS.edgeFunctions.genieStudio,
+    healthcare: INFRASTRUCTURE_METRICS.edgeFunctions.healthcare,
+    shared: INFRASTRUCTURE_METRICS.edgeFunctions.shared,
   },
   hooks: {
-    total: PLATFORM_TOTALS.hooks,
-    genieStudio: GENIE_STUDIO_METRICS.hooksTotal,
-    healthcare: 65,
-    shared: PLATFORM_TOTALS.hooks - GENIE_STUDIO_METRICS.hooksTotal - 65,
+    total: INFRASTRUCTURE_METRICS.hooks.total,
+    genieStudio: INFRASTRUCTURE_METRICS.hooks.genieStudio,
+    healthcare: INFRASTRUCTURE_METRICS.hooks.healthcare,
+    shared: INFRASTRUCTURE_METRICS.hooks.shared,
   },
   databaseTables: {
-    total: PLATFORM_TOTALS.databaseTables,
-    genieStudio: GENIE_STUDIO_METRICS.databaseTables,
-    healthcare: 55,
-    shared: PLATFORM_TOTALS.databaseTables - GENIE_STUDIO_METRICS.databaseTables - 55,
+    total: INFRASTRUCTURE_METRICS.databaseTables.total,
+    genieStudio: INFRASTRUCTURE_METRICS.databaseTables.genieStudio,
+    healthcare: INFRASTRUCTURE_METRICS.databaseTables.healthcare,
+    shared: INFRASTRUCTURE_METRICS.databaseTables.shared,
   },
   aiAgents: {
-    total: PLATFORM_TOTALS.aiAgents,
-    genieStudio: GENIE_STUDIO_METRICS.aiAgents,
-    healthcare: 3,
-    shared: 0,
+    total: INFRASTRUCTURE_METRICS.aiAgents.total,
+    genieStudio: INFRASTRUCTURE_METRICS.aiAgents.genieStudio,
+    healthcare: INFRASTRUCTURE_METRICS.aiAgents.healthcare,
+    shared: INFRASTRUCTURE_METRICS.aiAgents.shared,
   },
   mobileComponents: {
-    total: PLATFORM_TOTALS.mobileComponents,
-    genieStudio: GENIE_STUDIO_METRICS.mobileComponents,
-    healthcare: 5,
-    shared: 0,
+    total: INFRASTRUCTURE_METRICS.mobileComponents.total,
+    genieStudio: INFRASTRUCTURE_METRICS.mobileComponents.genieStudio,
+    healthcare: INFRASTRUCTURE_METRICS.mobileComponents.healthcare,
+    shared: INFRASTRUCTURE_METRICS.mobileComponents.shared,
   },
   apiServices: {
-    total: PLATFORM_TOTALS.services,
-    genieStudio: GENIE_STUDIO_METRICS.servicesTotal,
-    healthcare: 3,
-    shared: 0,
+    total: INFRASTRUCTURE_METRICS.services.total,
+    genieStudio: INFRASTRUCTURE_METRICS.services.genieStudio,
+    healthcare: INFRASTRUCTURE_METRICS.services.healthcare,
+    shared: INFRASTRUCTURE_METRICS.services.shared,
   },
   components: {
-    total: PLATFORM_TOTALS.components,
-    genieStudio: GENIE_STUDIO_METRICS.components,
-    healthcare: 120,
-    shared: PLATFORM_TOTALS.components - GENIE_STUDIO_METRICS.components - 120,
+    total: INFRASTRUCTURE_METRICS.components.total,
+    genieStudio: INFRASTRUCTURE_METRICS.components.genieStudio,
+    healthcare: INFRASTRUCTURE_METRICS.components.healthcare,
+    shared: INFRASTRUCTURE_METRICS.components.shared,
   },
   pages: {
-    total: PLATFORM_TOTALS.pages,
-    genieStudio: GENIE_STUDIO_METRICS.pages,
-    healthcare: 25,
-    shared: PLATFORM_TOTALS.pages - GENIE_STUDIO_METRICS.pages - 25,
+    total: INFRASTRUCTURE_METRICS.pages.total,
+    genieStudio: INFRASTRUCTURE_METRICS.pages.genieStudio,
+    healthcare: INFRASTRUCTURE_METRICS.pages.healthcare,
+    shared: INFRASTRUCTURE_METRICS.pages.shared,
   }
 };
 
@@ -470,7 +456,7 @@ export const databaseTablesCount = PLATFORM_TOTALS.databaseTables;
 export const mobileComponentCount = PLATFORM_TOTALS.mobileComponents;
 export const aiAgentCount = PLATFORM_TOTALS.aiAgents;
 
-// Product-Scenario Cross-Reference (which scenarios belong to which product)
+// Product-Scenario Cross-Reference
 export const productScenarioMapping = {
   mind: { implemented: 32, total: 45, crossFunctional: ['vibe', 'spark', 'hub'] },
   vibe: { implemented: 52, total: 65, crossFunctional: ['mind', 'spark', 'hub'] },
