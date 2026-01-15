@@ -20020,6 +20020,45 @@ export type Database = {
         }
         Relationships: []
       }
+      youtube_oauth_tokens: {
+        Row: {
+          access_token: string
+          channel_id: string | null
+          channel_name: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          refresh_token: string | null
+          scope: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          access_token: string
+          channel_id?: string | null
+          channel_name?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          refresh_token?: string | null
+          scope?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          access_token?: string
+          channel_id?: string | null
+          channel_name?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          refresh_token?: string | null
+          scope?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       consolidated_node_catalog: {
