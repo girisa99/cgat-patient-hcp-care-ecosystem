@@ -800,6 +800,10 @@ export default function ProductionHub() {
                   <Globe className="h-3.5 w-3.5" />
                   Publish
                 </TabsTrigger>
+                <TabsTrigger value="bulk" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex items-center gap-1 px-2 py-1.5 text-xs rounded-md whitespace-nowrap">
+                  <FileText className="h-3.5 w-3.5" />
+                  Bulk
+                </TabsTrigger>
               </TabsList>
             </div>
             
@@ -1037,6 +1041,13 @@ export default function ProductionHub() {
                   toast.success(`Published to ${successCount} platforms!`);
                 }}
               />
+            </TabsContent>
+            
+            {/* Bulk Processing Tab */}
+            <TabsContent value="bulk" className="flex-1 p-4 mt-0">
+              <React.Suspense fallback={<div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+                {React.createElement(React.lazy(() => import('@/components/bulk-processing/BulkJobManager')))}
+              </React.Suspense>
             </TabsContent>
           </Tabs>
         </div>
