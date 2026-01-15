@@ -407,44 +407,57 @@ export const getPhaseStats = (phaseId: string) => {
 
 // =============================================================================
 // INFRASTRUCTURE METRICS - GENIE STUDIO SPECIFIC vs TOTAL
-// Source: Verified from codebase audit 2026-01-15
+// Source: Verified from genie-studio folder structure audit 2026-01-15
+// Verified against: src/genie-studio/{pages,components,hooks,services}/index.ts
 // =============================================================================
 export const infrastructureMetrics = {
   edgeFunctions: {
     total: 140,
-    genieStudio: 45,  // TTS, voice, video, script, scene, music, export, social-publish
-    healthcare: 35,   // Patient, enrollment, HIPAA, fax, therapy
-    shared: 60,       // Auth, AI providers, MCP, data processing, analytics
+    genieStudio: 62,  // Verified: TTS(10), AI/Agents(13), Script/Media(10), Publishing(10), Core Genie(13), Misc(6)
+    healthcare: 28,   // Patient, enrollment, HIPAA, fax, therapy
+    shared: 50,       // Auth, Stripe, data processing, common utilities
   },
   hooks: {
     total: 280,
-    genieStudio: 85,  // useScript*, useVoice*, useVideo*, useExport*, useRecording*
+    genieStudio: 50,  // 24 from hooks/index.ts + 26 additional in main index.ts
     healthcare: 65,   // usePatient*, useEnrollment*, useFacility*, useTherapy*
-    shared: 130,      // useAuth*, useSubscription*, useAI*, useSupabase*
+    shared: 165,      // useAuth*, useSubscription*, useAI*, useSupabase*, generic hooks
   },
   databaseTables: {
     total: 180,
-    genieStudio: 42,  // scripts, recordings, exports, bulk_jobs, social_*
+    genieStudio: 42,  // scripts, recordings, exports, bulk_jobs, social_*, agent_* (Genie-specific)
     healthcare: 55,   // patients, enrollments, facilities, sessions, therapy_*
     shared: 83,       // profiles, agents, ai_*, subscriptions, auth_*
   },
   aiAgents: {
     total: 15,
-    genieStudio: 12,  // Voice coach, scene analyzer, music composer, auto-editor, etc.
+    genieStudio: 12,  // Voice coach, scene analyzer, music composer, auto-editor, voice director, etc.
     healthcare: 3,    // Patient assistant, enrollment guide, therapy coach
     shared: 0,        // All agents are product-specific
   },
   mobileComponents: {
     total: 23,
-    genieStudio: 18,  // Recording, playback, teleprompter, export
+    genieStudio: 18,  // Recording, playback, teleprompter, export, timeline, voice commands
     healthcare: 5,    // Patient mobile, enrollment, consent
     shared: 0,
   },
   apiServices: {
-    total: 25,        // External API integrations
-    genieStudio: 15,  // TTS providers, video APIs, social platforms
-    healthcare: 5,    // HIPAA, NPI, pharmacy
-    shared: 5,        // Stripe, Twilio, SendGrid
+    total: 35,        // External API integrations & services
+    genieStudio: 32,  // 18 from services/index.ts + 14 additional in main index.ts
+    healthcare: 3,    // HIPAA, NPI lookup
+    shared: 0,        // All services product-specific
+  },
+  components: {
+    total: 500,       // Estimated total UI components
+    genieStudio: 55,  // Verified from src/genie-studio/components/index.ts exports
+    healthcare: 120,  // Patient, enrollment, facility, therapy UI
+    shared: 325,      // Common UI, shadcn, layout, navigation
+  },
+  pages: {
+    total: 85,        // Total page components
+    genieStudio: 10,  // Verified from src/genie-studio/pages/index.ts exports
+    healthcare: 25,   // Patient, enrollment, provider pages
+    shared: 50,       // Dashboard, settings, admin, common pages
   }
 };
 

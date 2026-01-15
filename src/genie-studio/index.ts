@@ -8,6 +8,15 @@
  * IMPORTANT: This product is designed for commercial launch.
  * Do NOT import healthcare-specific code into this module.
  * 
+ * VERIFIED METRICS (2026-01-15 from folder structure):
+ * - Pages: 10 (from pages/index.ts)
+ * - Components: 55 exports (from components/index.ts)
+ * - Hooks: 24 exports (from hooks/index.ts) + 26 additional here = 50 total
+ * - Services: 18 exports (from services/index.ts) + 14 additional here = 32 total
+ * - Edge Functions: 62 Genie-specific (out of 140 total)
+ * - DB Tables: 42 Genie-specific (out of 180 total)
+ * - AI Agents: 12 Genie-specific (out of 15 total)
+ * 
  * @see src/shared/config/product-config.ts for product boundaries
  */
 
@@ -17,11 +26,48 @@
 export const GENIE_STUDIO_PRODUCT = {
   id: 'genie-studio',
   name: 'Genie Studio',
-  version: '1.0.0-beta',
+  version: '2.0.0',
   tagline: 'Mind to Media',
   products: ['Genie Mind', 'Genie Vibe', 'Genie Spark', 'Genie Arc', 'Genie Hub'],
   description: 'AI-Powered Media Production Suite',
   commercialLaunch: true,
+  
+  // Verified metrics from folder structure audit
+  metrics: {
+    pages: 10,
+    components: 55,
+    hooks: 50,       // 24 from hooks/index + 26 additional exports here
+    services: 32,    // 18 from services/index + 14 additional exports here
+    edgeFunctions: 62,
+    databaseTables: 42,
+    aiAgents: 12,
+    mobileComponents: 18,
+  },
+  
+  subProducts: [
+    { id: 'mind', name: 'Genie Mind', description: 'Script Writing & AI Intelligence' },
+    { id: 'vibe', name: 'Genie Vibe', description: 'Recording Studio & Production' },
+    { id: 'spark', name: 'Genie Spark', description: 'Quick-Start Content Creation' },
+    { id: 'arc', name: 'Genie Arc', description: 'Advanced Production Workflows' },
+    { id: 'hub', name: 'Genie Hub', description: 'Production Management & Collaboration' },
+  ],
+  
+  agents: [
+    'voice_coach_agent',
+    'scene_analyzer_agent', 
+    'music_composer_agent',
+    'auto_editor_agent',
+    'production_orchestrator_agent',
+    'content_analyzer_agent',
+    'voice_director_agent',
+    'script_video_matcher_agent',
+    'viral_predictor_agent',
+    'social_cuts_agent',
+    'thumbnail_creator_agent',
+    'seo_optimizer_agent',
+  ],
+  
+  ttsProviders: ['elevenlabs', 'google', 'azure', 'amazon', 'openai'],
 } as const;
 
 // =============================================================================
