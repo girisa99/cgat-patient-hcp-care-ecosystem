@@ -393,6 +393,13 @@ const AppContent = () => {
                       <Governance />
                     </ProtectedRoute>
                   } />
+                  <Route path="/settings/integrations" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
+                      <Suspense fallback={<PageLoading message="Loading Integrations..." />}>
+                        {React.createElement(React.lazy(() => import('@/components/settings/IntegrationsSettingsPage')))}
+                      </Suspense>
+                    </ProtectedRoute>
+                  } />
                   <Route path="/healthcare-ai" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
                       <Suspense fallback={<PageLoading message="Loading healthcare AI..." />}>
