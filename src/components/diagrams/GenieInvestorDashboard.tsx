@@ -383,6 +383,8 @@ export const GenieInvestorDashboard: React.FC = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-4 flex gap-1 bg-muted/50 p-1 rounded-lg w-fit flex-wrap">
           <TabsTrigger value="overview" className="px-4">Overview</TabsTrigger>
+          <TabsTrigger value="unit-economics" className="px-4">Unit Economics</TabsTrigger>
+          <TabsTrigger value="financials" className="px-4">Financials</TabsTrigger>
           <TabsTrigger value="traction" className="px-4">Traction</TabsTrigger>
           <TabsTrigger value="technology" className="px-4">Technology</TabsTrigger>
           <TabsTrigger value="segments" className="px-4">Segments</TabsTrigger>
@@ -509,6 +511,484 @@ export const GenieInvestorDashboard: React.FC = () => {
                   <div className="text-xs text-muted-foreground">Strong unit economics</div>
                 </div>
               </div>
+            </div>
+          </TabsContent>
+
+          {/* UNIT ECONOMICS TAB - Critical for Investors */}
+          <TabsContent value="unit-economics" className="mt-0 space-y-6">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-primary" />
+              Unit Economics by Segment
+            </h2>
+
+            {/* Key Metrics Overview */}
+            <div className="grid grid-cols-5 gap-4">
+              <div className="p-4 border rounded-lg text-center bg-green-50 dark:bg-green-900/20">
+                <div className="text-3xl font-bold text-green-600">$420</div>
+                <div className="text-sm font-medium">Blended LTV</div>
+                <div className="text-xs text-muted-foreground">24mo avg lifetime</div>
+              </div>
+              <div className="p-4 border rounded-lg text-center bg-amber-50 dark:bg-amber-900/20">
+                <div className="text-3xl font-bold text-amber-600">$35</div>
+                <div className="text-sm font-medium">Blended CAC</div>
+                <div className="text-xs text-muted-foreground">PLG + Outbound</div>
+              </div>
+              <div className="p-4 border rounded-lg text-center bg-primary/10">
+                <div className="text-3xl font-bold text-primary">12:1</div>
+                <div className="text-sm font-medium">LTV:CAC Ratio</div>
+                <div className="text-xs text-muted-foreground">Target: 3:1+</div>
+              </div>
+              <div className="p-4 border rounded-lg text-center bg-blue-50 dark:bg-blue-900/20">
+                <div className="text-3xl font-bold text-blue-600">$17.50</div>
+                <div className="text-sm font-medium">Blended ARPU</div>
+                <div className="text-xs text-muted-foreground">Monthly</div>
+              </div>
+              <div className="p-4 border rounded-lg text-center bg-red-50 dark:bg-red-900/20">
+                <div className="text-3xl font-bold text-red-600">5%</div>
+                <div className="text-sm font-medium">Monthly Churn</div>
+                <div className="text-xs text-muted-foreground">Industry avg: 5-7%</div>
+              </div>
+            </div>
+
+            {/* Detailed Unit Economics by Segment */}
+            <div>
+              <h3 className="font-semibold mb-3">Segment-Specific Unit Economics</h3>
+              <Table className="border">
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead>Segment</TableHead>
+                    <TableHead className="text-right">ARPU</TableHead>
+                    <TableHead className="text-right">CAC</TableHead>
+                    <TableHead className="text-right">LTV</TableHead>
+                    <TableHead className="text-right">LTV:CAC</TableHead>
+                    <TableHead className="text-right">Churn</TableHead>
+                    <TableHead className="text-right">Payback</TableHead>
+                    <TableHead>Avg Lifetime</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-medium flex items-center gap-2">
+                      <Users className="h-4 w-4" />Creator
+                    </TableCell>
+                    <TableCell className="text-right font-semibold">$12/mo</TableCell>
+                    <TableCell className="text-right text-amber-600">$45</TableCell>
+                    <TableCell className="text-right text-green-600 font-bold">$216</TableCell>
+                    <TableCell className="text-right">
+                      <Badge variant={4.8 >= 3 ? 'default' : 'outline'}>4.8x</Badge>
+                    </TableCell>
+                    <TableCell className="text-right text-red-500">5.5%</TableCell>
+                    <TableCell className="text-right">3.75 mo</TableCell>
+                    <TableCell className="text-muted-foreground">18 months</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium flex items-center gap-2">
+                      <Briefcase className="h-4 w-4" />SMB
+                    </TableCell>
+                    <TableCell className="text-right font-semibold">$35/mo</TableCell>
+                    <TableCell className="text-right text-amber-600">$120</TableCell>
+                    <TableCell className="text-right text-green-600 font-bold">$840</TableCell>
+                    <TableCell className="text-right">
+                      <Badge>7.0x</Badge>
+                    </TableCell>
+                    <TableCell className="text-right text-red-500">4.0%</TableCell>
+                    <TableCell className="text-right">3.4 mo</TableCell>
+                    <TableCell className="text-muted-foreground">24 months</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium flex items-center gap-2">
+                      <GraduationCap className="h-4 w-4" />Education
+                    </TableCell>
+                    <TableCell className="text-right font-semibold">$25/mo</TableCell>
+                    <TableCell className="text-right text-amber-600">$80</TableCell>
+                    <TableCell className="text-right text-green-600 font-bold">$600</TableCell>
+                    <TableCell className="text-right">
+                      <Badge>7.5x</Badge>
+                    </TableCell>
+                    <TableCell className="text-right text-red-500">3.5%</TableCell>
+                    <TableCell className="text-right">3.2 mo</TableCell>
+                    <TableCell className="text-muted-foreground">24 months</TableCell>
+                  </TableRow>
+                  <TableRow className="bg-green-50/50 dark:bg-green-900/10">
+                    <TableCell className="font-medium flex items-center gap-2">
+                      <Heart className="h-4 w-4" />Healthcare
+                    </TableCell>
+                    <TableCell className="text-right font-semibold">$75/mo</TableCell>
+                    <TableCell className="text-right text-amber-600">$300</TableCell>
+                    <TableCell className="text-right text-green-600 font-bold">$2,700</TableCell>
+                    <TableCell className="text-right">
+                      <Badge className="bg-green-600">9.0x</Badge>
+                    </TableCell>
+                    <TableCell className="text-right text-green-600">2.5%</TableCell>
+                    <TableCell className="text-right">4.0 mo</TableCell>
+                    <TableCell className="text-muted-foreground">36 months</TableCell>
+                  </TableRow>
+                  <TableRow className="bg-green-50/50 dark:bg-green-900/10">
+                    <TableCell className="font-medium flex items-center gap-2">
+                      <Building className="h-4 w-4" />Enterprise
+                    </TableCell>
+                    <TableCell className="text-right font-semibold">$500/mo</TableCell>
+                    <TableCell className="text-right text-amber-600">$2,000</TableCell>
+                    <TableCell className="text-right text-green-600 font-bold">$18,000</TableCell>
+                    <TableCell className="text-right">
+                      <Badge className="bg-green-600">9.0x</Badge>
+                    </TableCell>
+                    <TableCell className="text-right text-green-600">2.0%</TableCell>
+                    <TableCell className="text-right">4.0 mo</TableCell>
+                    <TableCell className="text-muted-foreground">36 months</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* LTV Analysis Visual */}
+            <div>
+              <h3 className="font-semibold mb-3">LTV Breakdown by Segment</h3>
+              <div className="grid grid-cols-5 gap-4">
+                {[
+                  { segment: 'Creator', ltv: 216, color: 'bg-blue-500', icon: Users },
+                  { segment: 'SMB', ltv: 840, color: 'bg-purple-500', icon: Briefcase },
+                  { segment: 'Education', ltv: 600, color: 'bg-amber-500', icon: GraduationCap },
+                  { segment: 'Healthcare', ltv: 2700, color: 'bg-green-500', icon: Heart },
+                  { segment: 'Enterprise', ltv: 18000, color: 'bg-primary', icon: Building },
+                ].map((item) => (
+                  <div key={item.segment} className="p-4 border rounded-lg text-center">
+                    <item.icon className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+                    <div className="text-sm font-medium mb-2">{item.segment}</div>
+                    <div className="text-2xl font-bold text-primary">${item.ltv.toLocaleString()}</div>
+                    <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full ${item.color}`} 
+                        style={{ width: `${Math.min((item.ltv / 18000) * 100, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Key Investor Metrics */}
+            <div>
+              <h3 className="font-semibold mb-3">Key SaaS Metrics for Investors</h3>
+              <Table className="border">
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead>Metric</TableHead>
+                    <TableHead>Genie Value</TableHead>
+                    <TableHead>Industry Benchmark</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Notes</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-medium">LTV:CAC Ratio</TableCell>
+                    <TableCell className="text-lg font-bold text-primary">12:1</TableCell>
+                    <TableCell>&gt;3:1 (Good)</TableCell>
+                    <TableCell><Badge className="bg-green-600">Excellent</Badge></TableCell>
+                    <TableCell className="text-sm text-muted-foreground">Strong unit economics</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">CAC Payback Period</TableCell>
+                    <TableCell className="text-lg font-bold text-primary">3.5 months</TableCell>
+                    <TableCell>&lt;12 months</TableCell>
+                    <TableCell><Badge className="bg-green-600">Excellent</Badge></TableCell>
+                    <TableCell className="text-sm text-muted-foreground">Recover cost in &lt;1 quarter</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Net Revenue Retention</TableCell>
+                    <TableCell className="text-lg font-bold text-primary">115%</TableCell>
+                    <TableCell>&gt;100% (Good)</TableCell>
+                    <TableCell><Badge className="bg-green-600">Excellent</Badge></TableCell>
+                    <TableCell className="text-sm text-muted-foreground">Expansion exceeds churn</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Gross Margin</TableCell>
+                    <TableCell className="text-lg font-bold text-primary">75%</TableCell>
+                    <TableCell>&gt;70% (SaaS)</TableCell>
+                    <TableCell><Badge className="bg-green-600">Excellent</Badge></TableCell>
+                    <TableCell className="text-sm text-muted-foreground">AI costs optimized</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Monthly Churn Rate</TableCell>
+                    <TableCell className="text-lg font-bold text-primary">5%</TableCell>
+                    <TableCell>&lt;7% (SMB SaaS)</TableCell>
+                    <TableCell><Badge className="bg-green-600">Good</Badge></TableCell>
+                    <TableCell className="text-sm text-muted-foreground">Industry average</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Free-to-Paid Conversion</TableCell>
+                    <TableCell className="text-lg font-bold text-primary">3%</TableCell>
+                    <TableCell>2-5% (Industry)</TableCell>
+                    <TableCell><Badge>On Target</Badge></TableCell>
+                    <TableCell className="text-sm text-muted-foreground">Mid-range for PLG</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+
+          {/* FINANCIALS TAB - Cost Structure */}
+          <TabsContent value="financials" className="mt-0 space-y-6">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-primary" />
+              Financial Projections & Cost Structure
+            </h2>
+
+            {/* Revenue Projections */}
+            <div>
+              <h3 className="font-semibold mb-3">Quarterly Revenue Projections (2026-2028)</h3>
+              <Table className="border">
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead>Period</TableHead>
+                    <TableHead className="text-right">Users</TableHead>
+                    <TableHead className="text-right">MRR</TableHead>
+                    <TableHead className="text-right">ARR</TableHead>
+                    <TableHead className="text-right">Total Costs</TableHead>
+                    <TableHead className="text-right">Net Income</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-medium">Q2 2026</TableCell>
+                    <TableCell className="text-right">500</TableCell>
+                    <TableCell className="text-right">$7,500</TableCell>
+                    <TableCell className="text-right">$90K</TableCell>
+                    <TableCell className="text-right text-amber-600">$83K</TableCell>
+                    <TableCell className="text-right text-red-600">-$75.5K</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Q3 2026</TableCell>
+                    <TableCell className="text-right">2,500</TableCell>
+                    <TableCell className="text-right">$37,500</TableCell>
+                    <TableCell className="text-right">$450K</TableCell>
+                    <TableCell className="text-right text-amber-600">$133K</TableCell>
+                    <TableCell className="text-right text-red-600">-$95.5K</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Q4 2026</TableCell>
+                    <TableCell className="text-right">8,000</TableCell>
+                    <TableCell className="text-right">$120,000</TableCell>
+                    <TableCell className="text-right">$1.44M</TableCell>
+                    <TableCell className="text-right text-amber-600">$240K</TableCell>
+                    <TableCell className="text-right text-red-600">-$120K</TableCell>
+                  </TableRow>
+                  <TableRow className="bg-muted/30">
+                    <TableCell className="font-bold">2026 Total</TableCell>
+                    <TableCell className="text-right font-bold">8,000</TableCell>
+                    <TableCell className="text-right font-bold">$120K/mo</TableCell>
+                    <TableCell className="text-right font-bold">$1.44M</TableCell>
+                    <TableCell className="text-right font-bold text-amber-600">$456K</TableCell>
+                    <TableCell className="text-right font-bold text-red-600">-$291K</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Q1 2027</TableCell>
+                    <TableCell className="text-right">18,000</TableCell>
+                    <TableCell className="text-right">$270,000</TableCell>
+                    <TableCell className="text-right">$3.24M</TableCell>
+                    <TableCell className="text-right text-amber-600">$370K</TableCell>
+                    <TableCell className="text-right text-red-600">-$100K</TableCell>
+                  </TableRow>
+                  <TableRow className="bg-green-50/50 dark:bg-green-900/10">
+                    <TableCell className="font-medium">Q2 2027</TableCell>
+                    <TableCell className="text-right">35,000</TableCell>
+                    <TableCell className="text-right">$525,000</TableCell>
+                    <TableCell className="text-right">$6.3M</TableCell>
+                    <TableCell className="text-right text-amber-600">$530K</TableCell>
+                    <TableCell className="text-right text-amber-600">-$5K</TableCell>
+                  </TableRow>
+                  <TableRow className="bg-green-50/50 dark:bg-green-900/10">
+                    <TableCell className="font-medium">Q3 2027</TableCell>
+                    <TableCell className="text-right">55,000</TableCell>
+                    <TableCell className="text-right">$825,000</TableCell>
+                    <TableCell className="text-right">$9.9M</TableCell>
+                    <TableCell className="text-right text-amber-600">$690K</TableCell>
+                    <TableCell className="text-right text-green-600">+$135K</TableCell>
+                  </TableRow>
+                  <TableRow className="bg-green-50/50 dark:bg-green-900/10">
+                    <TableCell className="font-medium">Q4 2027</TableCell>
+                    <TableCell className="text-right">80,000</TableCell>
+                    <TableCell className="text-right">$1.2M</TableCell>
+                    <TableCell className="text-right">$14.4M</TableCell>
+                    <TableCell className="text-right text-amber-600">$880K</TableCell>
+                    <TableCell className="text-right text-green-600">+$320K</TableCell>
+                  </TableRow>
+                  <TableRow className="bg-primary/10">
+                    <TableCell className="font-bold">2028 Full Year</TableCell>
+                    <TableCell className="text-right font-bold">200,000</TableCell>
+                    <TableCell className="text-right font-bold">$3M/mo</TableCell>
+                    <TableCell className="text-right font-bold text-primary">$36M</TableCell>
+                    <TableCell className="text-right font-bold text-amber-600">$8.4M</TableCell>
+                    <TableCell className="text-right font-bold text-green-600">+$8M</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Cost Structure Breakdown */}
+            <div>
+              <h3 className="font-semibold mb-3">Monthly Cost Structure (at Scale - 50K Users)</h3>
+              <div className="grid grid-cols-2 gap-6">
+                <Table className="border">
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead>Cost Category</TableHead>
+                      <TableHead className="text-right">Monthly</TableHead>
+                      <TableHead className="text-right">% of Rev</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="font-medium">🎯 Marketing & Sales</TableCell>
+                      <TableCell className="text-right font-semibold">$250,000</TableCell>
+                      <TableCell className="text-right text-muted-foreground">30%</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">🧠 AI Model Costs (OpenAI, ElevenLabs)</TableCell>
+                      <TableCell className="text-right font-semibold">$200,000</TableCell>
+                      <TableCell className="text-right text-muted-foreground">24%</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">👨‍💻 Development Team</TableCell>
+                      <TableCell className="text-right font-semibold">$140,000</TableCell>
+                      <TableCell className="text-right text-muted-foreground">17%</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">☁️ Cloud Hosting (Supabase, Vercel)</TableCell>
+                      <TableCell className="text-right font-semibold">$100,000</TableCell>
+                      <TableCell className="text-right text-muted-foreground">12%</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">📞 Support & Success</TableCell>
+                      <TableCell className="text-right font-semibold">$60,000</TableCell>
+                      <TableCell className="text-right text-muted-foreground">7%</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">🏢 Office & Operations</TableCell>
+                      <TableCell className="text-right font-semibold">$40,000</TableCell>
+                      <TableCell className="text-right text-muted-foreground">5%</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">📜 Licenses & Subscriptions</TableCell>
+                      <TableCell className="text-right font-semibold">$25,000</TableCell>
+                      <TableCell className="text-right text-muted-foreground">3%</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">🔒 Security & Compliance</TableCell>
+                      <TableCell className="text-right font-semibold">$15,000</TableCell>
+                      <TableCell className="text-right text-muted-foreground">2%</TableCell>
+                    </TableRow>
+                    <TableRow className="bg-muted/50">
+                      <TableCell className="font-bold">Total Monthly Costs</TableCell>
+                      <TableCell className="text-right font-bold text-primary">$830,000</TableCell>
+                      <TableCell className="text-right font-bold">100%</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+
+                {/* Cost Visual Breakdown */}
+                <div className="space-y-4">
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-semibold mb-3">Cost Distribution</h4>
+                    {[
+                      { name: 'Marketing', pct: 30, color: 'bg-blue-500' },
+                      { name: 'AI Models', pct: 24, color: 'bg-purple-500' },
+                      { name: 'Development', pct: 17, color: 'bg-green-500' },
+                      { name: 'Hosting', pct: 12, color: 'bg-amber-500' },
+                      { name: 'Support', pct: 7, color: 'bg-red-500' },
+                      { name: 'Other', pct: 10, color: 'bg-gray-500' },
+                    ].map((item) => (
+                      <div key={item.name} className="mb-2">
+                        <div className="flex justify-between text-sm mb-1">
+                          <span>{item.name}</span>
+                          <span className="font-medium">{item.pct}%</span>
+                        </div>
+                        <div className="h-3 bg-muted rounded-full overflow-hidden">
+                          <div className={`h-full ${item.color}`} style={{ width: `${item.pct}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="p-4 border rounded-lg bg-green-50 dark:bg-green-900/20">
+                    <h4 className="font-semibold mb-2 text-green-700 dark:text-green-400">Gross Margin Analysis</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Revenue (50K users)</span>
+                        <span className="font-semibold">$825,000</span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>COGS (AI + Hosting)</span>
+                        <span>-$300,000</span>
+                      </div>
+                      <div className="flex justify-between border-t pt-2 font-bold text-green-600">
+                        <span>Gross Profit</span>
+                        <span>$525,000 (64%)</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Scaling Costs */}
+            <div>
+              <h3 className="font-semibold mb-3">Cost Scaling Analysis</h3>
+              <Table className="border">
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead>Users</TableHead>
+                    <TableHead className="text-right">AI Model Cost</TableHead>
+                    <TableHead className="text-right">Hosting Cost</TableHead>
+                    <TableHead className="text-right">Storage Cost</TableHead>
+                    <TableHead className="text-right">Cost/User</TableHead>
+                    <TableHead className="text-right">Revenue/User</TableHead>
+                    <TableHead className="text-right">Unit Margin</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-medium">1,000</TableCell>
+                    <TableCell className="text-right">$5,000</TableCell>
+                    <TableCell className="text-right">$3,000</TableCell>
+                    <TableCell className="text-right">$500</TableCell>
+                    <TableCell className="text-right text-amber-600">$8.50</TableCell>
+                    <TableCell className="text-right text-primary">$17.50</TableCell>
+                    <TableCell className="text-right text-green-600">51%</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">10,000</TableCell>
+                    <TableCell className="text-right">$40,000</TableCell>
+                    <TableCell className="text-right">$20,000</TableCell>
+                    <TableCell className="text-right">$4,000</TableCell>
+                    <TableCell className="text-right text-amber-600">$6.40</TableCell>
+                    <TableCell className="text-right text-primary">$17.50</TableCell>
+                    <TableCell className="text-right text-green-600">63%</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">50,000</TableCell>
+                    <TableCell className="text-right">$150,000</TableCell>
+                    <TableCell className="text-right">$80,000</TableCell>
+                    <TableCell className="text-right">$15,000</TableCell>
+                    <TableCell className="text-right text-amber-600">$4.90</TableCell>
+                    <TableCell className="text-right text-primary">$17.50</TableCell>
+                    <TableCell className="text-right text-green-600">72%</TableCell>
+                  </TableRow>
+                  <TableRow className="bg-green-50/50 dark:bg-green-900/10">
+                    <TableCell className="font-medium">200,000</TableCell>
+                    <TableCell className="text-right">$400,000</TableCell>
+                    <TableCell className="text-right">$250,000</TableCell>
+                    <TableCell className="text-right">$50,000</TableCell>
+                    <TableCell className="text-right text-amber-600">$3.50</TableCell>
+                    <TableCell className="text-right text-primary">$17.50</TableCell>
+                    <TableCell className="text-right text-green-600 font-bold">80%</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+              <p className="text-sm text-muted-foreground mt-2">
+                * Economies of scale: Cost per user decreases 59% from 1K to 200K users due to volume discounts and infrastructure efficiency
+              </p>
             </div>
           </TabsContent>
 
