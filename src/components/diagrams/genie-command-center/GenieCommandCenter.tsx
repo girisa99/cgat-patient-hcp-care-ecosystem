@@ -144,27 +144,23 @@ export const GenieCommandCenter: React.FC = () => {
 
       {/* Tab Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="border-b border-border bg-muted/30">
+        <div className="border-b border-border bg-card shadow-sm relative z-40">
           <div className="max-w-[1920px] mx-auto px-6">
-            <TabsList className="h-auto p-0 bg-transparent border-0 flex gap-1 overflow-x-auto no-scrollbar">
+            <TabsList className="h-auto p-0 bg-transparent border-0 flex gap-0 overflow-x-auto no-scrollbar">
               {tabs.map((tab, index) => (
-                <motion.div
+                <TabsTrigger
                   key={tab.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
+                  value={tab.id}
+                  className="flex items-center gap-2 px-4 py-3 rounded-none border-b-2 border-transparent 
+                    bg-transparent
+                    data-[state=active]:border-primary data-[state=active]:bg-primary/5
+                    data-[state=active]:text-primary data-[state=inactive]:text-muted-foreground
+                    hover:text-foreground hover:bg-muted/50 transition-all whitespace-nowrap
+                    text-sm font-medium"
                 >
-                  <TabsTrigger
-                    value={tab.id}
-                    className="flex items-center gap-2 px-5 py-4 rounded-none border-b-2 border-transparent 
-                      data-[state=active]:border-primary data-[state=active]:bg-transparent
-                      data-[state=active]:text-primary data-[state=inactive]:text-muted-foreground
-                      hover:text-foreground hover:bg-muted/50 transition-all whitespace-nowrap"
-                  >
-                    <tab.icon className="w-4 h-4" />
-                    <span className="font-medium">{tab.label}</span>
-                  </TabsTrigger>
-                </motion.div>
+                  <tab.icon className="w-4 h-4 shrink-0" />
+                  <span>{tab.label}</span>
+                </TabsTrigger>
               ))}
             </TabsList>
           </div>
