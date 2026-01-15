@@ -1,74 +1,84 @@
 /**
  * Genie Integrations Architecture Diagram
  * All APIs, External Services, and Integration Points
+ * 
+ * GENIE-SPECIFIC: Shows implemented vs roadmap for Genie Suite only
+ * Updated: 2026-01-15
  */
 
 import React, { useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, Maximize2, X, Plug, Globe, Cloud, Database, Shield, Zap, Radio } from 'lucide-react';
+import { Download, Maximize2, X, Plug, Globe, Cloud, Database, Shield, Zap, Radio, CheckCircle, Clock } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
+import { GENIE_COUNTS, GENIE_EDGE_FUNCTIONS, PHASES } from '@/genie-studio/governance';
 
+// Genie-Specific AI Integrations (implemented for Genie Studio)
 const aiIntegrations = [
-  { name: 'OpenAI', services: ['GPT-4o', 'GPT-4o Mini', 'TTS', 'Whisper'], status: 'active', type: 'AI' },
-  { name: 'Anthropic', services: ['Claude 3.5 Sonnet', 'Claude 3 Opus'], status: 'active', type: 'AI' },
-  { name: 'Google Gemini', services: ['Gemini 2.5 Pro', 'Gemini 2.5 Flash', 'Gemini Vision', 'Gemini Flash Lite'], status: 'active', type: 'AI' },
-  { name: 'ElevenLabs', services: ['TTS', 'Voice Cloning', 'Speech-to-Speech'], status: 'active', type: 'TTS' },
-  { name: 'Lovable AI Gateway', services: ['Multi-Model Router', 'Rate Limiting', 'Cost Tracking'], status: 'active', type: 'AI Gateway' },
-  { name: 'AWS Bedrock', services: ['Claude', 'Titan', 'Stable Diffusion'], status: 'planned', type: 'AI' },
+  { name: 'OpenAI', services: ['GPT-4o', 'GPT-4o Mini', 'TTS', 'Whisper'], status: 'active', type: 'AI', phase: 'P0' },
+  { name: 'Anthropic', services: ['Claude 3.5 Sonnet', 'Claude 3 Opus'], status: 'active', type: 'AI', phase: 'P2' },
+  { name: 'Google Gemini', services: ['Gemini 2.5 Pro', 'Gemini 2.5 Flash', 'Gemini Vision'], status: 'active', type: 'AI', phase: 'P2' },
+  { name: 'ElevenLabs', services: ['TTS', 'Voice Cloning'], status: 'active', type: 'TTS', phase: 'P0' },
+  { name: 'Lovable AI Gateway', services: ['Multi-Model Router', 'Cost Tracking'], status: 'active', type: 'AI Gateway', phase: 'P2' },
+  { name: 'AWS Bedrock', services: ['Claude', 'Titan', 'Stable Diffusion'], status: 'planned', type: 'AI', phase: 'P4' },
 ];
 
 const platformIntegrations = [
-  { name: 'Supabase', services: ['Auth', 'Database', 'Storage', 'Realtime', 'Edge Functions'], status: 'active', type: 'Backend' },
-  { name: 'Stripe', services: ['Payments', 'Subscriptions', 'Invoicing', 'Webhooks'], status: 'active', type: 'Payments' },
-  { name: 'Resend', services: ['Transactional Email', 'Email Templates', 'Analytics'], status: 'active', type: 'Email' },
-  { name: 'n8n', services: ['Workflow Automation', 'MCP Integration', 'Webhooks'], status: 'active', type: 'Automation' },
-  { name: 'YouTube', services: ['Upload API', 'Analytics', 'Live Streaming'], status: 'planned', type: 'Social' },
-  { name: 'LinkedIn', services: ['Video Upload', 'Post API'], status: 'planned', type: 'Social' },
+  { name: 'Supabase', services: ['Auth', 'Database', 'Storage', 'Edge Functions'], status: 'active', type: 'Backend', phase: 'P0' },
+  { name: 'Stripe', services: ['Payments', 'Subscriptions', 'Webhooks'], status: 'active', type: 'Payments', phase: 'P0' },
+  { name: 'Resend', services: ['Transactional Email', 'Templates'], status: 'active', type: 'Email', phase: 'P1' },
+  { name: 'n8n', services: ['Workflow Automation', 'MCP Integration'], status: 'active', type: 'Automation', phase: 'P2' },
+  { name: 'YouTube', services: ['Upload API', 'Analytics'], status: 'partial', type: 'Social', phase: 'P3' },
+  { name: 'LinkedIn', services: ['Video Upload', 'Post API'], status: 'partial', type: 'Social', phase: 'P3' },
 ];
 
 const authIntegrations = [
-  { name: 'Supabase Auth', services: ['Email/Password', 'Magic Link', 'OTP', 'MFA'], status: 'active', type: 'Primary' },
-  { name: 'Google OAuth', services: ['Google Workspace', 'Gmail Sign-In', 'One Tap'], status: 'active', type: 'Social' },
-  { name: 'GitHub OAuth', services: ['Developer Auth', 'Org Access'], status: 'active', type: 'Social' },
-  { name: 'Apple Sign-In', services: ['iOS Auth', 'Web Auth'], status: 'planned', type: 'Social' },
-  { name: 'Azure AD (SAML)', services: ['Enterprise SSO', 'SCIM Provisioning'], status: 'planned', type: 'Enterprise' },
-  { name: 'Okta (OIDC)', services: ['SSO', 'MFA', 'Directory Sync'], status: 'planned', type: 'Enterprise' },
+  { name: 'Supabase Auth', services: ['Email/Password', 'Magic Link', 'OTP'], status: 'active', type: 'Primary', phase: 'P0' },
+  { name: 'Google OAuth', services: ['Google Workspace', 'Gmail'], status: 'active', type: 'Social', phase: 'P0' },
+  { name: 'GitHub OAuth', services: ['Developer Auth'], status: 'active', type: 'Social', phase: 'P1' },
+  { name: 'Apple Sign-In', services: ['iOS Auth'], status: 'planned', type: 'Social', phase: 'P4' },
+  { name: 'Azure AD (SAML)', services: ['Enterprise SSO', 'SCIM'], status: 'planned', type: 'Enterprise', phase: 'P5' },
+  { name: 'Okta (OIDC)', services: ['SSO', 'MFA'], status: 'planned', type: 'Enterprise', phase: 'P5' },
 ];
 
 const enterpriseIntegrations = [
-  { name: 'Epic FHIR', services: ['Patient Data', 'Clinical Documents'], status: 'planned', type: 'Healthcare' },
-  { name: 'Cerner', services: ['EHR Integration'], status: 'planned', type: 'Healthcare' },
-  { name: 'Salesforce', services: ['CRM Sync', 'Marketing Cloud'], status: 'planned', type: 'CRM' },
-  { name: 'HubSpot', services: ['CRM', 'Marketing Automation'], status: 'planned', type: 'CRM' },
-  { name: 'Microsoft 365', services: ['Teams', 'SharePoint', 'OneDrive'], status: 'planned', type: 'Enterprise' },
-  { name: 'Zapier', services: ['Webhook Triggers', '5000+ App Integrations'], status: 'active', type: 'Automation' },
+  { name: 'Epic FHIR', services: ['Patient Data'], status: 'planned', type: 'Healthcare', phase: 'P5' },
+  { name: 'Cerner', services: ['EHR Integration'], status: 'planned', type: 'Healthcare', phase: 'P5' },
+  { name: 'Salesforce', services: ['CRM Sync'], status: 'planned', type: 'CRM', phase: 'P4' },
+  { name: 'Microsoft 365', services: ['Teams', 'SharePoint'], status: 'planned', type: 'Enterprise', phase: 'P4' },
+  { name: 'Zapier', services: ['5000+ App Integrations'], status: 'active', type: 'Automation', phase: 'P2' },
 ];
 
-const internalApis = [
-  { name: 'ai-universal-processor', description: 'Multi-model AI orchestration', status: 'active', method: 'POST' },
-  { name: 'tts-generate', description: 'Text-to-speech generation', status: 'active', method: 'POST' },
-  { name: 'process-documents', description: 'Document parsing & extraction', status: 'active', method: 'POST' },
-  { name: 'elevenlabs-tts', description: 'ElevenLabs TTS wrapper', status: 'active', method: 'POST' },
-  { name: 'stripe-webhook', description: 'Payment event handling', status: 'active', method: 'POST' },
-  { name: 'generate-script', description: 'AI script generation', status: 'active', method: 'POST' },
-  { name: 'enhance-script', description: 'Script enhancement & polish', status: 'active', method: 'POST' },
-  { name: 'send-email', description: 'Resend email dispatch', status: 'active', method: 'POST' },
-  { name: 'n8n-webhook', description: 'n8n workflow triggers', status: 'active', method: 'POST' },
-  { name: 'media-processor', description: 'Video/audio processing', status: 'partial', method: 'POST' },
-  { name: 'collaboration-sync', description: 'Real-time team sync', status: 'partial', method: 'WS' },
-  { name: 'shows-api', description: 'Show/event management', status: 'partial', method: 'REST' },
+// GENIE-SPECIFIC Edge Functions (from registry)
+const genieEdgeFunctions = [
+  { name: 'ai-universal-processor', description: 'Multi-model AI orchestration', status: 'active', method: 'POST', phase: 'P0' },
+  { name: 'tts-generate', description: 'Text-to-speech generation', status: 'active', method: 'POST', phase: 'P0' },
+  { name: 'elevenlabs-tts', description: 'ElevenLabs TTS wrapper', status: 'active', method: 'POST', phase: 'P0' },
+  { name: 'generate-script', description: 'AI script generation', status: 'active', method: 'POST', phase: 'P0' },
+  { name: 'enhance-script', description: 'Script enhancement', status: 'active', method: 'POST', phase: 'P1' },
+  { name: 'stripe-webhook', description: 'Payment event handling', status: 'active', method: 'POST', phase: 'P0' },
+  { name: 'n8n-webhook', description: 'n8n workflow triggers', status: 'active', method: 'POST', phase: 'P2' },
+  { name: 'send-email', description: 'Resend email dispatch', status: 'active', method: 'POST', phase: 'P1' },
+  { name: 'process-documents', description: 'Document parsing', status: 'active', method: 'POST', phase: 'P1' },
+  { name: 'media-processor', description: 'Video/audio processing', status: 'partial', method: 'POST', phase: 'P3' },
+  { name: 'bulk-video-generator', description: 'Batch video generation', status: 'partial', method: 'POST', phase: 'P3' },
+  { name: 'publish-to-youtube', description: 'YouTube publishing', status: 'planned', method: 'POST', phase: 'P3' },
 ];
 
 const webhooks = [
-  { name: 'stripe-payments', events: ['checkout.completed', 'subscription.created', 'invoice.paid'], status: 'active' },
-  { name: 'auth-events', events: ['user.created', 'user.updated', 'session.ended'], status: 'active' },
-  { name: 'resend-events', events: ['email.sent', 'email.delivered', 'email.bounced'], status: 'active' },
-  { name: 'n8n-workflows', events: ['workflow.triggered', 'workflow.completed', 'workflow.failed'], status: 'active' },
-  { name: 'media-events', events: ['upload.complete', 'transcode.done', 'export.ready'], status: 'partial' },
+  { name: 'stripe-payments', events: ['checkout.completed', 'subscription.created'], status: 'active', phase: 'P0' },
+  { name: 'auth-events', events: ['user.created', 'session.ended'], status: 'active', phase: 'P0' },
+  { name: 'resend-events', events: ['email.sent', 'email.bounced'], status: 'active', phase: 'P1' },
+  { name: 'n8n-workflows', events: ['workflow.triggered', 'workflow.completed'], status: 'active', phase: 'P2' },
+  { name: 'media-events', events: ['upload.complete', 'transcode.done'], status: 'partial', phase: 'P3' },
 ];
+
+// Calculate implementation stats
+const getImplementedCount = (items: { status: string }[]) => items.filter(i => i.status === 'active').length;
+const getPartialCount = (items: { status: string }[]) => items.filter(i => i.status === 'partial').length;
+const getPlannedCount = (items: { status: string }[]) => items.filter(i => i.status === 'planned').length;
 
 export const GenieIntegrationsDiagram: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -112,38 +122,60 @@ export const GenieIntegrationsDiagram: React.FC = () => {
       <div className="text-center border-b border-border pb-4">
         <h2 className="text-2xl font-bold text-foreground flex items-center justify-center gap-3">
           <Plug className="h-8 w-8 text-cyan-500" />
-          Genie Integrations Architecture
+          Genie Suite Integration Architecture
         </h2>
-        <p className="text-muted-foreground mt-2">APIs • External Services • Webhooks • Data Flow</p>
+        <p className="text-muted-foreground mt-2">Genie-Specific APIs • External Services • Implementation Status</p>
       </div>
 
-      {/* Stats Bar */}
+      {/* Stats Bar - Genie Specific with Implemented/Roadmap */}
       <Card className="bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-950/20 dark:to-blue-950/20 border-2 border-cyan-200 dark:border-cyan-800/40">
         <CardContent className="pt-4">
-          <div className="grid grid-cols-6 gap-4 text-center">
+          <div className="grid grid-cols-8 gap-3 text-center">
             <div>
-              <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">{aiIntegrations.length}</div>
+              <div className="text-xl font-bold text-green-600 dark:text-green-400">
+                {getImplementedCount(aiIntegrations)}/{aiIntegrations.length}
+              </div>
               <div className="text-xs text-muted-foreground font-medium">AI Providers</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{platformIntegrations.length}</div>
+              <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                {getImplementedCount(platformIntegrations)}/{platformIntegrations.length}
+              </div>
               <div className="text-xs text-muted-foreground font-medium">Platform APIs</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{authIntegrations.length}</div>
+              <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
+                {getImplementedCount(authIntegrations)}/{authIntegrations.length}
+              </div>
               <div className="text-xs text-muted-foreground font-medium">Auth Providers</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{enterpriseIntegrations.length}</div>
+              <div className="text-xl font-bold text-purple-600 dark:text-purple-400">
+                {getImplementedCount(enterpriseIntegrations)}/{enterpriseIntegrations.length}
+              </div>
               <div className="text-xs text-muted-foreground font-medium">Enterprise</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{internalApis.length}</div>
+              <div className="text-xl font-bold text-orange-600 dark:text-orange-400">
+                {getImplementedCount(genieEdgeFunctions)}/{genieEdgeFunctions.length}
+              </div>
               <div className="text-xs text-muted-foreground font-medium">Edge Functions</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-pink-600 dark:text-pink-400">{webhooks.length}</div>
+              <div className="text-xl font-bold text-pink-600 dark:text-pink-400">
+                {getImplementedCount(webhooks)}/{webhooks.length}
+              </div>
               <div className="text-xs text-muted-foreground font-medium">Webhooks</div>
+            </div>
+            <div className="col-span-2 bg-primary/10 rounded-lg p-2">
+              <div className="flex items-center justify-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-600" />
+                <span className="text-sm font-medium text-foreground">P0-P2 Complete</span>
+              </div>
+              <div className="flex items-center justify-center gap-2 mt-1">
+                <Clock className="w-4 h-4 text-amber-600" />
+                <span className="text-xs text-muted-foreground">P3 In Progress</span>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -263,21 +295,29 @@ export const GenieIntegrationsDiagram: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Internal APIs (Edge Functions) */}
+      {/* Internal APIs (Edge Functions) - GENIE SPECIFIC */}
       <Card className="border-2 border-orange-200 dark:border-orange-800/40 bg-orange-50/50 dark:bg-orange-950/10">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg text-orange-700 dark:text-orange-400 flex items-center gap-2">
-            <Cloud className="h-5 w-5" />
-            Internal Edge Functions (Microservices)
+          <CardTitle className="text-lg text-orange-700 dark:text-orange-400 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Cloud className="h-5 w-5" />
+              Genie Edge Functions ({getImplementedCount(genieEdgeFunctions)}/{genieEdgeFunctions.length} Active)
+            </div>
+            <Badge className="bg-green-100 text-green-700">
+              {GENIE_COUNTS.edgeFunctions} Genie-Specific
+            </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-3 gap-2">
-            {internalApis.map((api) => (
+            {genieEdgeFunctions.map((api) => (
               <div key={api.name} className="bg-background rounded-lg p-2 border-2 border-border shadow-sm">
                 <div className="flex items-center justify-between mb-1">
                   <code className="text-orange-600 dark:text-orange-400 text-xs font-semibold">{api.name}</code>
-                  {getStatusBadge(api.status)}
+                  <div className="flex items-center gap-1">
+                    <Badge variant="outline" className="text-[10px] px-1">{api.phase}</Badge>
+                    {getStatusBadge(api.status)}
+                  </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground text-xs">{api.description}</span>
