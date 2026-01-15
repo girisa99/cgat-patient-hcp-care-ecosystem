@@ -1,9 +1,10 @@
 /**
  * Bulk Job Manager - Desktop Full UI
  * Connected to bulk_jobs database table
+ * Complete implementation with CSV parsing
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,16 +12,103 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   FileSpreadsheet, Play, Pause, Trash2, 
   CheckCircle, AlertCircle, Clock, Loader2,
-  Download, RefreshCw, Video, FileText, Image, LayoutGrid
+  Download, RefreshCw, Video, FileText, Image, LayoutGrid,
+  Upload, HelpCircle
 } from 'lucide-react';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { useBulkJobs } from '@/hooks/useBulkJobs';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+// CSV field mapping for video generation
+interface VideoItem {
+  title: string;
+  prompt: string;
+  duration?: number;
+  aspectRatio?: string;
+  style?: string;
+  voiceId?: string;
+  script?: string;
+}
+
+type OperationType = 'video_generation' | 'audio_processing' | 'image_resize' | 'content_publish';
+
+const OPERATION_CONFIGS: Record<OperationType, { label: string; requiredFields: string[]; optionalFields: string[] }> = {
+  video_generation: {
+    label: 'Video Generation',
+    requiredFields: ['title', 'prompt'],
+    optionalFields: ['duration', 'aspectRatio', 'style', 'voiceId', 'script']
+  },
+  audio_processing: {
+    label: 'Audio Processing',
+    requiredFields: ['title', 'text'],
+    optionalFields: ['voiceId', 'speed', 'format']
+  },
+  image_resize: {
+    label: 'Image Resize',
+    requiredFields: ['source_url', 'width', 'height'],
+    optionalFields: ['format', 'quality']
+  },
+  content_publish: {
+    label: 'Content Publish',
+    requiredFields: ['title', 'content', 'platform'],
+    optionalFields: ['scheduled_at', 'hashtags']
+  }
+};
+
+// CSV Parser utility
+const parseCSV = (content: string): Record<string, string>[] => {
+  const lines = content.split('\n').filter(line => line.trim());
+  if (lines.length < 2) return [];
+  
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
+  const rows: Record<string, string>[] = [];
+  
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseCSVLine(lines[i]);
+    if (values.length === headers.length) {
+      const row: Record<string, string> = {};
+      headers.forEach((header, idx) => {
+        row[header] = values[idx]?.trim().replace(/^["']|["']$/g, '') || '';
+      });
+      rows.push(row);
+    }
+  }
+  
+  return rows;
+};
+
+// Handle quoted CSV values properly
+const parseCSVLine = (line: string): string[] => {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"' && (i === 0 || line[i-1] !== '\\')) {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current);
+  return result;
+};
 
 const BulkJobManager: React.FC = () => {
-  const { showSuccess, showError } = useMasterToast();
+  const { showSuccess, showError, showInfo } = useMasterToast();
   const { 
     activeJobs, 
     completedJobs, 
@@ -35,7 +123,88 @@ const BulkJobManager: React.FC = () => {
   } = useBulkJobs();
   
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [parsedItems, setParsedItems] = useState<Record<string, string>[]>([]);
+  const [operationType, setOperationType] = useState<OperationType>('video_generation');
   const [isCreating, setIsCreating] = useState(false);
+  const [parseError, setParseError] = useState<string | null>(null);
+
+  const validateItems = useCallback((items: Record<string, string>[], opType: OperationType): { valid: boolean; errors: string[] } => {
+    const config = OPERATION_CONFIGS[opType];
+    const errors: string[] = [];
+    
+    items.forEach((item, index) => {
+      config.requiredFields.forEach(field => {
+        if (!item[field] || item[field].trim() === '') {
+          errors.push(`Row ${index + 1}: Missing required field "${field}"`);
+        }
+      });
+    });
+    
+    return { valid: errors.length === 0, errors };
+  }, []);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setParseError(null);
+    setParsedItems([]);
+    
+    if (file) {
+      if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+        setSelectedFile(file);
+        
+        try {
+          const content = await file.text();
+          const items = parseCSV(content);
+          
+          if (items.length === 0) {
+            setParseError('CSV file is empty or has invalid format');
+            return;
+          }
+          
+          const validation = validateItems(items, operationType);
+          if (!validation.valid) {
+            setParseError(validation.errors.slice(0, 3).join('; ') + (validation.errors.length > 3 ? ` (+${validation.errors.length - 3} more)` : ''));
+            return;
+          }
+          
+          setParsedItems(items);
+          showSuccess(`Parsed ${items.length} items from CSV`);
+        } catch (err) {
+          setParseError('Failed to parse CSV file');
+          showError('Failed to parse CSV');
+        }
+      } else {
+        showError('Please upload a CSV file');
+      }
+    }
+  };
+
+  const handleCreateJob = async () => {
+    if (!selectedFile || parsedItems.length === 0) {
+      showError('Please upload a valid CSV file first');
+      return;
+    }
+    
+    setIsCreating(true);
+    try {
+      await createJob({
+        operation_type: operationType,
+        items: parsedItems,
+        options: { 
+          name: selectedFile.name.replace('.csv', ''),
+          source_file: selectedFile.name,
+          created_from: 'bulk_manager'
+        }
+      });
+      setSelectedFile(null);
+      setParsedItems([]);
+      showSuccess(`Bulk job created with ${parsedItems.length} items`);
+    } catch (error) {
+      showError('Failed to create job');
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -63,40 +232,6 @@ const BulkJobManager: React.FC = () => {
       case 'audio_processing': return <FileText className="h-4 w-4" />;
       case 'image_resize': return <Image className="h-4 w-4" />;
       default: return <LayoutGrid className="h-4 w-4" />;
-    }
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
-        setSelectedFile(file);
-        showSuccess(`CSV loaded: ${file.name}`);
-      } else {
-        showError('Please upload a CSV file');
-      }
-    }
-  };
-
-  const handleCreateJob = async () => {
-    if (!selectedFile) {
-      showError('Please upload a CSV file first');
-      return;
-    }
-    
-    setIsCreating(true);
-    try {
-      await createJob({
-        operation_type: 'video_generation',
-        items: [], // Would parse CSV here
-        options: { name: selectedFile.name.replace('.csv', '') }
-      });
-      setSelectedFile(null);
-      showSuccess('Bulk job created and queued');
-    } catch (error) {
-      showError('Failed to create job');
-    } finally {
-      setIsCreating(false);
     }
   };
 
@@ -146,21 +281,78 @@ const BulkJobManager: React.FC = () => {
           <CardTitle className="text-lg flex items-center gap-2">
             <FileSpreadsheet className="h-5 w-5" />
             Create Bulk Job
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-sm">
+                  <p className="font-medium mb-1">CSV Format for Video Generation:</p>
+                  <p className="text-xs">Required columns: title, prompt</p>
+                  <p className="text-xs">Optional: duration, aspectRatio, style, voiceId, script</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </CardTitle>
-          <CardDescription>Upload a CSV with video data to generate multiple videos at once</CardDescription>
+          <CardDescription>Upload a CSV to batch process multiple items at once</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex gap-4 items-end">
-            <div className="flex-1 space-y-2">
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Operation Type</label>
+              <Select value={operationType} onValueChange={(v) => setOperationType(v as OperationType)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(OPERATION_CONFIGS).map(([key, config]) => (
+                    <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <label className="text-sm font-medium">CSV File</label>
               <div className="flex gap-2">
                 <Input type="file" accept=".csv" onChange={handleFileUpload} className="flex-1" />
-                {selectedFile && <Badge variant="secondary" className="px-3">{selectedFile.name}</Badge>}
               </div>
             </div>
-            <Button onClick={handleCreateJob} disabled={!selectedFile || isCreating} className="gap-2">
-              {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-              Start Batch
+          </div>
+          
+          {parseError && (
+            <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-md flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-destructive mt-0.5" />
+              <p className="text-sm text-destructive">{parseError}</p>
+            </div>
+          )}
+          
+          {parsedItems.length > 0 && (
+            <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-800">
+                    {parsedItems.length} items ready for processing
+                  </span>
+                </div>
+                <div className="text-xs text-green-600">
+                  Columns: {Object.keys(parsedItems[0] || {}).join(', ')}
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <div className="flex justify-between items-center pt-2">
+            <div className="text-xs text-muted-foreground">
+              Required fields: {OPERATION_CONFIGS[operationType].requiredFields.join(', ')}
+            </div>
+            <Button 
+              onClick={handleCreateJob} 
+              disabled={parsedItems.length === 0 || isCreating}
+              className="gap-2"
+            >
+              {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              Start Batch ({parsedItems.length} items)
             </Button>
           </div>
         </CardContent>

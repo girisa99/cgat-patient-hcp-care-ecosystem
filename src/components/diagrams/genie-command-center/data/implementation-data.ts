@@ -97,7 +97,7 @@ export const implementationPhases: ImplementationPhase[] = [
     features: [
       { name: 'Landing Page (Genie Suite Marketing Website)', status: 'pending' },
       { name: 'Custom Domain & SSL Setup', status: 'pending' },
-      { name: 'Bulk Video Generation', status: 'partial' },
+      { name: 'Bulk Video Generation', status: 'done' },
       { name: 'Auto Thumbnail Creation (AI-powered)', status: 'done' },
       { name: 'SEO Optimization Tools', status: 'done' },
       { name: 'Social Cuts (Auto-format for TikTok/Reels)', status: 'done' },
