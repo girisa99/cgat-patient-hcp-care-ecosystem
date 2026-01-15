@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { infrastructureMetrics } from '../data/implementation-data';
 
 // Import all architecture diagrams
 import { GenieStudioOverallArchitectureDiagram } from '@/components/diagrams/architecture/GenieStudioOverallArchitectureDiagram';
@@ -345,27 +347,55 @@ const BackendServicesArchitecture: React.FC = () => {
           ))}
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-5 gap-4 text-center">
+        {/* Stats - Genie Studio Specific vs Total */}
+        <div className="grid grid-cols-6 gap-3 text-center">
           <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-3 border-2 border-green-200 dark:border-green-800/40">
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">140+</div>
+            <div className="text-xl font-bold text-green-600 dark:text-green-400">
+              {infrastructureMetrics.edgeFunctions.genieStudio}
+              <span className="text-sm text-muted-foreground">/{infrastructureMetrics.edgeFunctions.total}</span>
+            </div>
             <div className="text-xs text-muted-foreground font-medium">Edge Functions</div>
+            <Badge variant="secondary" className="mt-1 text-[10px]">Genie Studio</Badge>
           </div>
           <div className="bg-purple-50 dark:bg-purple-950/20 rounded-lg p-3 border-2 border-purple-200 dark:border-purple-800/40">
-            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">25+</div>
-            <div className="text-xs text-muted-foreground font-medium">AI Functions</div>
+            <div className="text-xl font-bold text-purple-600 dark:text-purple-400">
+              {infrastructureMetrics.hooks.genieStudio}
+              <span className="text-sm text-muted-foreground">/{infrastructureMetrics.hooks.total}</span>
+            </div>
+            <div className="text-xs text-muted-foreground font-medium">Custom Hooks</div>
+            <Badge variant="secondary" className="mt-1 text-[10px]">Genie Studio</Badge>
           </div>
-          <div className="bg-cyan-50 dark:bg-cyan-950/20 rounded-lg p-3 border-2 border-cyan-200 dark:border-cyan-800/40">
-            <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">15+</div>
-            <div className="text-xs text-muted-foreground font-medium">Voice/Audio</div>
+          <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3 border-2 border-blue-200 dark:border-blue-800/40">
+            <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
+              {infrastructureMetrics.databaseTables.genieStudio}
+              <span className="text-sm text-muted-foreground">/{infrastructureMetrics.databaseTables.total}</span>
+            </div>
+            <div className="text-xs text-muted-foreground font-medium">DB Tables</div>
+            <Badge variant="secondary" className="mt-1 text-[10px]">Genie Studio</Badge>
           </div>
           <div className="bg-orange-50 dark:bg-orange-950/20 rounded-lg p-3 border-2 border-orange-200 dark:border-orange-800/40">
-            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">30+</div>
-            <div className="text-xs text-muted-foreground font-medium">Automation</div>
+            <div className="text-xl font-bold text-orange-600 dark:text-orange-400">
+              {infrastructureMetrics.aiAgents.genieStudio}
+              <span className="text-sm text-muted-foreground">/{infrastructureMetrics.aiAgents.total}</span>
+            </div>
+            <div className="text-xs text-muted-foreground font-medium">AI Agents</div>
+            <Badge variant="secondary" className="mt-1 text-[10px]">Genie Studio</Badge>
+          </div>
+          <div className="bg-cyan-50 dark:bg-cyan-950/20 rounded-lg p-3 border-2 border-cyan-200 dark:border-cyan-800/40">
+            <div className="text-xl font-bold text-cyan-600 dark:text-cyan-400">
+              {infrastructureMetrics.apiServices.genieStudio}
+              <span className="text-sm text-muted-foreground">/{infrastructureMetrics.apiServices.total}</span>
+            </div>
+            <div className="text-xs text-muted-foreground font-medium">API Services</div>
+            <Badge variant="secondary" className="mt-1 text-[10px]">Genie Studio</Badge>
           </div>
           <div className="bg-pink-50 dark:bg-pink-950/20 rounded-lg p-3 border-2 border-pink-200 dark:border-pink-800/40">
-            <div className="text-2xl font-bold text-pink-600 dark:text-pink-400">10+</div>
-            <div className="text-xs text-muted-foreground font-medium">Billing</div>
+            <div className="text-xl font-bold text-pink-600 dark:text-pink-400">
+              {infrastructureMetrics.mobileComponents.genieStudio}
+              <span className="text-sm text-muted-foreground">/{infrastructureMetrics.mobileComponents.total}</span>
+            </div>
+            <div className="text-xs text-muted-foreground font-medium">Mobile</div>
+            <Badge variant="secondary" className="mt-1 text-[10px]">Genie Studio</Badge>
           </div>
         </div>
       </CardContent>

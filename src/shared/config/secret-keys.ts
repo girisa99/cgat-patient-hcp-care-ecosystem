@@ -1,14 +1,24 @@
 /**
  * UNIFIED SECRET KEY CONFIGURATION
  * 
- * This file provides a centralized configuration for all API keys and secrets
- * used across Genie Studio and shared infrastructure.
+ * Single source of truth for all API keys and secrets used across
+ * Genie Studio, Healthcare, and shared infrastructure.
  * 
  * IMPORTANT: All edge functions should use this pattern to retrieve secrets
  * instead of duplicating the logic.
  * 
+ * @see supabase/functions/_shared/api-keys.ts for edge function equivalents
  * @see docs/architecture/P3_API_DEPENDENCIES_GUIDE.md for full key documentation
  */
+
+// =============================================================================
+// GOOGLE OAUTH - SHARED ACROSS ALL GOOGLE SERVICES (YouTube, Calendar, etc.)
+// =============================================================================
+export const GOOGLE_OAUTH_KEYS = {
+  CLIENT_ID: 'GOOGLE_CLIENT_ID',         // OAuth Client ID - SHARED for YouTube, Calendar
+  CLIENT_SECRET: 'GOOGLE_CLIENT_SECRET', // OAuth Client Secret
+  API_KEY: 'GOOGLE_API_KEY',             // General API key (fallback for OAuth)
+} as const;
 
 // =============================================================================
 // AI PROVIDER KEYS - Canonical Names (use these in edge functions)
@@ -52,10 +62,14 @@ export const BUSINESS_KEYS = {
 } as const;
 
 // =============================================================================
-// OAUTH KEYS
+// OAUTH KEYS - Unified for all OAuth flows
 // =============================================================================
 export const OAUTH_KEYS = {
+  // Google OAuth (YouTube, Calendar, etc.) - SINGLE CLIENT ID
+  GOOGLE_CLIENT_ID: 'GOOGLE_CLIENT_ID',
   GOOGLE_CLIENT_SECRET: 'GOOGLE_CLIENT_SECRET',
+  
+  // LinkedIn OAuth
   LINKEDIN_CLIENT_ID: 'LINKEDIN_CLIENT_ID',
   LINKEDIN_CLIENT_SECRET: 'LINKEDIN_CLIENT_SECRET',
 } as const;
@@ -86,7 +100,7 @@ export const SECRET_ALIASES: Record<string, string> = {
   // Claude can be accessed via ANTHROPIC or CLAUDE
   'CLAUDE_API_KEY': 'ANTHROPIC_API_KEY',
   // Gemini can be accessed via GEMINI or GOOGLE (for AI specifically)
-  'GOOGLE_API_KEY': 'GEMINI_API_KEY', // For AI usage, prefer GEMINI_API_KEY
+  'GOOGLE_API_KEY': 'GEMINI_API_KEY',
 };
 
 // =============================================================================
@@ -112,23 +126,26 @@ export const SECRET_ALIASES: Record<string, string> = {
  * 
  * // Get Claude key (checks ANTHROPIC_API_KEY first, then CLAUDE_API_KEY)
  * const claudeKey = getApiKey('ANTHROPIC_API_KEY', 'CLAUDE_API_KEY');
+ * 
+ * // Get Google OAuth Client ID (for YouTube, Calendar - SHARED)
+ * const googleClientId = getApiKey('GOOGLE_CLIENT_ID', 'GOOGLE_API_KEY');
  * ```
  */
 export const SECRET_KEY_DOCS = `
 All secrets are stored in Supabase Edge Function secrets.
 Access via: Deno.env.get('SECRET_NAME')
 
-Configured secrets (25 total):
+Configured secrets (25+ total):
 - AI: OPENAI_API_KEY, ANTHROPIC_API_KEY, CLAUDE_API_KEY, GEMINI_API_KEY, GOOGLE_API_KEY
 - Voice: ELEVENLABS_API_KEY, REPLICATE_API_TOKEN, HUGGING_FACE_ACCESS_TOKEN
 - Comms: TWILIO_*, RESEND_API_KEY, SENDGRID_API_KEY
 - Business: STRIPE_SECRET_KEY, DOCUSIGN_API_KEY
 - Observability: ARIZE_API_KEY, LANGWATCH_API_KEY
-- OAuth: LINKEDIN_CLIENT_ID/SECRET, GOOGLE_CLIENT_SECRET
+- OAuth: GOOGLE_CLIENT_ID/SECRET (shared for YouTube, Calendar), LINKEDIN_CLIENT_ID/SECRET
 `;
 
 // =============================================================================
-// VALIDATION HELPER
+// VALIDATION HELPERS
 // =============================================================================
 export function validateSecretExists(secretName: string): boolean {
   return Object.values(ALL_SECRET_KEYS).includes(secretName as any);
@@ -136,4 +153,12 @@ export function validateSecretExists(secretName: string): boolean {
 
 export function getCanonicalSecretName(alias: string): string {
   return SECRET_ALIASES[alias] || alias;
+}
+
+/**
+ * Get the unified Google OAuth Client ID
+ * This should be used by all Google OAuth flows (YouTube, Calendar, etc.)
+ */
+export function getGoogleOAuthClientId(): string {
+  return OAUTH_KEYS.GOOGLE_CLIENT_ID;
 }
