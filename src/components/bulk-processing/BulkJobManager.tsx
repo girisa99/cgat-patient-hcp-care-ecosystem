@@ -1,7 +1,10 @@
 /**
  * Bulk Job Manager - Desktop Full UI
  * Connected to bulk_jobs database table
- * Complete implementation with CSV parsing
+ * 
+ * CREATE BULK JOBS:
+ * 1. Template-Based (Recommended): Clone from existing shows/templates
+ * 2. CSV Import (Advanced): For power users with spreadsheet data
  */
 
 import React, { useState, useCallback } from 'react';
@@ -13,11 +16,12 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { 
   FileSpreadsheet, Play, Pause, Trash2, 
   CheckCircle, AlertCircle, Clock, Loader2,
   Download, RefreshCw, Video, FileText, Image, LayoutGrid,
-  Upload, HelpCircle
+  Upload, HelpCircle, Copy, Layers, Plus, ChevronRight
 } from 'lucide-react';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { useBulkJobs } from '@/hooks/useBulkJobs';
@@ -40,6 +44,7 @@ interface VideoItem {
 }
 
 type OperationType = 'video_generation' | 'audio_processing' | 'image_resize' | 'content_publish';
+type CreateMethod = 'template' | 'csv';
 
 const OPERATION_CONFIGS: Record<OperationType, { label: string; requiredFields: string[]; optionalFields: string[] }> = {
   video_generation: {
@@ -127,6 +132,9 @@ const BulkJobManager: React.FC = () => {
   const [operationType, setOperationType] = useState<OperationType>('video_generation');
   const [isCreating, setIsCreating] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
+  const [createMethod, setCreateMethod] = useState<CreateMethod>('template');
+  const [templateCount, setTemplateCount] = useState(5);
+  const [templateTitle, setTemplateTitle] = useState('');
 
   const validateItems = useCallback((items: Record<string, string>[], opType: OperationType): { valid: boolean; errors: string[] } => {
     const config = OPERATION_CONFIGS[opType];
@@ -279,82 +287,212 @@ const BulkJobManager: React.FC = () => {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
-            <FileSpreadsheet className="h-5 w-5" />
+            <Layers className="h-5 w-5" />
             Create Bulk Job
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent className="max-w-sm">
-                  <p className="font-medium mb-1">CSV Format for Video Generation:</p>
-                  <p className="text-xs">Required columns: title, prompt</p>
-                  <p className="text-xs">Optional: duration, aspectRatio, style, voiceId, script</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
           </CardTitle>
-          <CardDescription>Upload a CSV to batch process multiple items at once</CardDescription>
+          <CardDescription>Create multiple items at once using templates or CSV import</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Operation Type</label>
-              <Select value={operationType} onValueChange={(v) => setOperationType(v as OperationType)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(OPERATION_CONFIGS).map(([key, config]) => (
-                    <SelectItem key={key} value={key}>{config.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">CSV File</label>
-              <div className="flex gap-2">
-                <Input type="file" accept=".csv" onChange={handleFileUpload} className="flex-1" />
-              </div>
-            </div>
-          </div>
-          
-          {parseError && (
-            <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-md flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 text-destructive mt-0.5" />
-              <p className="text-sm text-destructive">{parseError}</p>
-            </div>
-          )}
-          
-          {parsedItems.length > 0 && (
-            <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-medium text-green-800">
-                    {parsedItems.length} items ready for processing
-                  </span>
-                </div>
-                <div className="text-xs text-green-600">
-                  Columns: {Object.keys(parsedItems[0] || {}).join(', ')}
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <div className="flex justify-between items-center pt-2">
-            <div className="text-xs text-muted-foreground">
-              Required fields: {OPERATION_CONFIGS[operationType].requiredFields.join(', ')}
-            </div>
-            <Button 
-              onClick={handleCreateJob} 
-              disabled={parsedItems.length === 0 || isCreating}
-              className="gap-2"
+          {/* Method Selection */}
+          <div className="grid grid-cols-2 gap-3">
+            <Card 
+              className={`p-3 cursor-pointer transition-all ${createMethod === 'template' ? 'border-primary ring-1 ring-primary' : 'hover:bg-muted/50'}`}
+              onClick={() => setCreateMethod('template')}
             >
-              {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-              Start Batch ({parsedItems.length} items)
-            </Button>
+              <div className="flex items-center gap-3">
+                <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${createMethod === 'template' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                  <Copy className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">Template Based</p>
+                  <p className="text-xs text-muted-foreground">Quick batch from template</p>
+                </div>
+                {createMethod === 'template' && <CheckCircle className="h-4 w-4 text-primary" />}
+              </div>
+            </Card>
+            
+            <Card 
+              className={`p-3 cursor-pointer transition-all ${createMethod === 'csv' ? 'border-primary ring-1 ring-primary' : 'hover:bg-muted/50'}`}
+              onClick={() => setCreateMethod('csv')}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${createMethod === 'csv' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                  <FileSpreadsheet className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">CSV Import</p>
+                  <p className="text-xs text-muted-foreground">Advanced spreadsheet upload</p>
+                </div>
+                {createMethod === 'csv' && <CheckCircle className="h-4 w-4 text-primary" />}
+              </div>
+            </Card>
           </div>
+          
+          {/* Template Method */}
+          {createMethod === 'template' && (
+            <div className="space-y-4 pt-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Operation Type</Label>
+                  <Select value={operationType} onValueChange={(v) => setOperationType(v as OperationType)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(OPERATION_CONFIGS).map(([key, config]) => (
+                        <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Number of Items</Label>
+                  <Select value={String(templateCount)} onValueChange={(v) => setTemplateCount(Number(v))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[5, 10, 20, 50, 100].map((n) => (
+                        <SelectItem key={n} value={String(n)}>{n} items</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Base Title (items will be numbered)</Label>
+                <Input 
+                  value={templateTitle} 
+                  onChange={(e) => setTemplateTitle(e.target.value)}
+                  placeholder="e.g., Product Video, Episode, Training Module"
+                />
+              </div>
+              
+              <div className="p-3 bg-muted/30 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <HelpCircle className="h-4 w-4 text-muted-foreground mt-0.5" />
+                  <div className="text-xs text-muted-foreground">
+                    <p className="font-medium text-foreground mb-1">How it works:</p>
+                    <p>Creates {templateCount} items named "{templateTitle || 'Item'} 1", "{templateTitle || 'Item'} 2", etc.</p>
+                    <p className="mt-1">Each item will use the selected operation type with placeholder content you can edit later.</p>
+                  </div>
+                </div>
+              </div>
+              
+              <Button 
+                onClick={async () => {
+                  if (!templateTitle.trim()) {
+                    showError('Please enter a base title');
+                    return;
+                  }
+                  setIsCreating(true);
+                  try {
+                    const items = Array.from({ length: templateCount }, (_, i) => ({
+                      title: `${templateTitle} ${i + 1}`,
+                      prompt: `Placeholder prompt for ${templateTitle} ${i + 1}`,
+                    }));
+                    await createJob({
+                      operation_type: operationType,
+                      items,
+                      options: { 
+                        name: `${templateTitle} Batch (${templateCount} items)`,
+                        source_file: 'template',
+                        created_from: 'bulk_manager_template'
+                      }
+                    });
+                    setTemplateTitle('');
+                    showSuccess(`Created batch job with ${templateCount} items`);
+                  } catch (error) {
+                    showError('Failed to create batch job');
+                  } finally {
+                    setIsCreating(false);
+                  }
+                }}
+                disabled={!templateTitle.trim() || isCreating}
+                className="w-full gap-2"
+              >
+                {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                Create Batch ({templateCount} items)
+              </Button>
+            </div>
+          )}
+          
+          {/* CSV Method */}
+          {createMethod === 'csv' && (
+            <div className="space-y-4 pt-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    Operation Type
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-sm">
+                          <p className="font-medium mb-1">CSV Format:</p>
+                          <p className="text-xs">Required: {OPERATION_CONFIGS[operationType].requiredFields.join(', ')}</p>
+                          <p className="text-xs">Optional: {OPERATION_CONFIGS[operationType].optionalFields.join(', ')}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </Label>
+                  <Select value={operationType} onValueChange={(v) => setOperationType(v as OperationType)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(OPERATION_CONFIGS).map(([key, config]) => (
+                        <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>CSV File</Label>
+                  <Input type="file" accept=".csv" onChange={handleFileUpload} />
+                </div>
+              </div>
+              
+              {parseError && (
+                <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-md flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-destructive mt-0.5" />
+                  <p className="text-sm text-destructive">{parseError}</p>
+                </div>
+              )}
+              
+              {parsedItems.length > 0 && (
+                <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-md">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <span className="text-sm font-medium">
+                        {parsedItems.length} items ready for processing
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Columns: {Object.keys(parsedItems[0] || {}).join(', ')}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex justify-between items-center pt-2">
+                <div className="text-xs text-muted-foreground">
+                  Required: {OPERATION_CONFIGS[operationType].requiredFields.join(', ')}
+                </div>
+                <Button 
+                  onClick={handleCreateJob} 
+                  disabled={parsedItems.length === 0 || isCreating}
+                  className="gap-2"
+                >
+                  {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  Start Batch ({parsedItems.length} items)
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
