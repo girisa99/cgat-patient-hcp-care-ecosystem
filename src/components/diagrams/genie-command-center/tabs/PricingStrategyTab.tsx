@@ -38,11 +38,82 @@ import {
   type MonthlyEconomics,
 } from '../data/infrastructure-costs';
 
+// Production capacity calculation type
+interface ProductionCapacity {
+  tier: string;
+  videosPerMonth: number;
+  scriptsPerMonth: number;
+  ttsMinutesPerMonth: number;
+  storageGB: number;
+}
+
+// Custom cost item type
+interface CustomCostItem {
+  id: string;
+  name: string;
+  type: 'variable' | 'fixed';
+  costPerUnit: number;
+  unitType: string;
+  category: string;
+  capacityMin?: string;
+  capacityMax?: string;
+  scaleFactor?: string;
+  unitsPerTier: Record<string, number>;
+}
+
 // ==================== COMPREHENSIVE P&L CALCULATOR ====================
 const ComprehensivePLCalculator: React.FC = () => {
   // Editable AI Models
   const [aiModels, setAiModels] = useState<AIModelCost[]>([...defaultAIModels]);
   const [ttsProviders, setTtsProviders] = useState<TTSCost[]>([...defaultTTSCosts]);
+  
+  // Custom cost items
+  const [customCosts, setCustomCosts] = useState<CustomCostItem[]>([
+    {
+      id: 'video-storage',
+      name: 'Video Storage',
+      type: 'variable',
+      costPerUnit: 0.023,
+      unitType: 'GB',
+      category: 'Storage',
+      capacityMin: '0',
+      capacityMax: '5TB/mo',
+      scaleFactor: '$0.023/GB',
+      unitsPerTier: { free: 1, starter: 10, creator: 50, business: 200, pro: 500, healthcare: 1000 }
+    },
+    {
+      id: 'video-encoding',
+      name: 'Video Encoding',
+      type: 'variable',
+      costPerUnit: 0.015,
+      unitType: 'minute',
+      category: 'Processing',
+      capacityMin: '0',
+      capacityMax: 'Unlimited',
+      scaleFactor: '$0.015/min',
+      unitsPerTier: { free: 5, starter: 30, creator: 120, business: 500, pro: 1200, healthcare: 2400 }
+    },
+    {
+      id: 'cdn-bandwidth',
+      name: 'CDN Bandwidth',
+      type: 'variable',
+      costPerUnit: 0.08,
+      unitType: 'GB',
+      category: 'Delivery',
+      capacityMin: '0',
+      capacityMax: '10TB/mo',
+      scaleFactor: '$0.08/GB',
+      unitsPerTier: { free: 5, starter: 50, creator: 200, business: 1000, pro: 2500, healthcare: 5000 }
+    },
+  ]);
+
+  // Dialog states
+  const [showAddCost, setShowAddCost] = useState(false);
+  const [newCost, setNewCost] = useState<Partial<CustomCostItem>>({
+    name: '', type: 'variable', costPerUnit: 0, unitType: 'unit', category: '',
+    capacityMin: '', capacityMax: '', scaleFactor: '',
+    unitsPerTier: { free: 0, starter: 0, creator: 0, business: 0, pro: 0, healthcare: 0 }
+  });
   
   // Editable Fixed Costs with capacity info
   const [fixedCosts, setFixedCosts] = useState<(MonthlyEconomics & { 
@@ -137,6 +208,18 @@ const ComprehensivePLCalculator: React.FC = () => {
     }
   };
 
+  const handleAddCustomCost = () => {
+    if (newCost.name && newCost.category) {
+      setCustomCosts([...customCosts, { ...newCost, id: `custom-${Date.now()}` } as CustomCostItem]);
+      setNewCost({
+        name: '', type: 'variable', costPerUnit: 0, unitType: 'unit', category: '',
+        capacityMin: '', capacityMax: '', scaleFactor: '',
+        unitsPerTier: { free: 0, starter: 0, creator: 0, business: 0, pro: 0, healthcare: 0 }
+      });
+      setShowAddCost(false);
+    }
+  };
+
   const updateFixedCost = (index: number, field: string, value: number | string) => {
     setFixedCosts(prev => prev.map((c, i) => i === index ? { ...c, [field]: value } : c));
   };
@@ -153,17 +236,52 @@ const ComprehensivePLCalculator: React.FC = () => {
     setTtsProviders(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Calculate unit economics per tier
+  const deleteCustomCost = (id: string) => {
+    setCustomCosts(prev => prev.filter(c => c.id !== id));
+  };
+
+  const updateCustomCost = (id: string, field: string, value: any) => {
+    setCustomCosts(prev => prev.map(c => c.id === id ? { ...c, [field]: value } : c));
+  };
+
+  const updateCustomCostTierUnits = (id: string, tier: string, value: number) => {
+    setCustomCosts(prev => prev.map(c => 
+      c.id === id ? { ...c, unitsPerTier: { ...c.unitsPerTier, [tier]: value } } : c
+    ));
+  };
+
+  // Production capacity by tier
+  const productionCapacity = useMemo((): ProductionCapacity[] => {
+    return tierAllocations.map(tier => ({
+      tier: tier.tier,
+      videosPerMonth: tier.tier === 'Free' ? 3 : tier.tier === 'Starter' ? 15 : tier.tier === 'Creator' ? 50 : tier.tier === 'Business' ? 150 : tier.tier === 'Pro' ? 500 : 1000,
+      scriptsPerMonth: tier.tier === 'Free' ? 5 : tier.tier === 'Starter' ? 30 : tier.tier === 'Creator' ? 100 : tier.tier === 'Business' ? 300 : tier.tier === 'Pro' ? 1000 : 2500,
+      ttsMinutesPerMonth: tier.ttsMinutes,
+      storageGB: tier.tier === 'Free' ? 1 : tier.tier === 'Starter' ? 10 : tier.tier === 'Creator' ? 50 : tier.tier === 'Business' ? 200 : tier.tier === 'Pro' ? 500 : 1000,
+    }));
+  }, []);
+
+  // Calculate unit economics per tier including custom costs
   const tierEconomics = useMemo(() => {
     return tierAllocations.map(tier => {
-      const subscribers = subscriberCounts[tier.tier.toLowerCase() as keyof typeof subscriberCounts] || 0;
-      const price = prices[tier.tier.toLowerCase() as keyof typeof prices] || tier.monthlyPrice;
+      const tierKey = tier.tier.toLowerCase() as keyof typeof subscriberCounts;
+      const subscribers = subscriberCounts[tierKey] || 0;
+      const price = prices[tierKey as keyof typeof prices] || tier.monthlyPrice;
       
       const aiCostPerUser = (tier.tokensPerMonth / 1000000) * (aiModel.inputCostPer1MTok + aiModel.outputCostPer1MTok) / 2;
       const ttsCostPerUser = tier.ttsMinutes * ttsModel.costPerMinute;
-      const variableCost = aiCostPerUser + ttsCostPerUser;
+      
+      // Calculate custom variable costs per user
+      const customVariableCostPerUser = customCosts
+        .filter(c => c.type === 'variable')
+        .reduce((sum, cost) => sum + (cost.unitsPerTier[tierKey] || 0) * cost.costPerUnit, 0);
+      
+      const variableCost = aiCostPerUser + ttsCostPerUser + customVariableCostPerUser;
       const contribution = price - variableCost;
       const marginPercent = price > 0 ? ((contribution / price) * 100) : (tier.tier === 'Free' ? -100 : 0);
+      
+      // Get production capacity for this tier
+      const capacity = productionCapacity.find(p => p.tier === tier.tier);
       
       return {
         ...tier,
@@ -171,15 +289,17 @@ const ComprehensivePLCalculator: React.FC = () => {
         price,
         aiCostPerUser,
         ttsCostPerUser,
+        customVariableCostPerUser,
         variableCost,
         contribution,
         marginPercent,
         totalRevenue: subscribers * price,
         totalVariableCost: subscribers * variableCost,
         totalContribution: subscribers * contribution,
+        capacity,
       };
     });
-  }, [subscriberCounts, prices, aiModel, ttsModel]);
+  }, [subscriberCounts, prices, aiModel, ttsModel, customCosts, productionCapacity]);
 
   const totalAdSpend = useMemo(() => Object.values(adSpend).reduce((sum, val) => sum + val, 0), [adSpend]);
 
@@ -192,6 +312,10 @@ const ComprehensivePLCalculator: React.FC = () => {
   }, [adSpend]);
 
   const totalFixedCosts = useMemo(() => fixedCosts.reduce((sum, c) => sum + c.fixedCosts, 0), [fixedCosts]);
+  
+  const totalCustomFixedCosts = useMemo(() => 
+    customCosts.filter(c => c.type === 'fixed').reduce((sum, c) => c.costPerUnit, 0), 
+  [customCosts]);
 
   // P&L Summary
   const plSummary = useMemo(() => {
@@ -200,7 +324,8 @@ const ComprehensivePLCalculator: React.FC = () => {
     const grossProfit = totalRevenue - totalVariableCosts;
     const grossMarginPercent = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
     
-    const operatingExpenses = totalFixedCosts + totalAdSpend;
+    const allFixedCosts = totalFixedCosts + totalCustomFixedCosts;
+    const operatingExpenses = allFixedCosts + totalAdSpend;
     const netProfit = grossProfit - operatingExpenses;
     const netMarginPercent = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
     
@@ -213,13 +338,21 @@ const ComprehensivePLCalculator: React.FC = () => {
     const ltv = arpu * 12; // Assuming 12 month average lifetime
     const ltvCacRatio = blendedCAC > 0 ? ltv / blendedCAC : 0;
     
+    // Production totals
+    const totalVideosProduced = tierEconomics.reduce((sum, t) => 
+      sum + (t.capacity?.videosPerMonth || 0) * t.subscribers, 0);
+    const totalScriptsProduced = tierEconomics.reduce((sum, t) => 
+      sum + (t.capacity?.scriptsPerMonth || 0) * t.subscribers, 0);
+    const totalTTSMinutes = tierEconomics.reduce((sum, t) => 
+      sum + (t.capacity?.ttsMinutesPerMonth || 0) * t.subscribers, 0);
+    
     return {
       totalRevenue,
       totalVariableCosts,
       grossProfit,
       grossMarginPercent,
       operatingExpenses,
-      totalFixedCosts,
+      totalFixedCosts: allFixedCosts,
       totalAdSpend,
       netProfit,
       netMarginPercent,
@@ -229,9 +362,12 @@ const ComprehensivePLCalculator: React.FC = () => {
       blendedCAC,
       ltv,
       ltvCacRatio,
-      breakEvenUsers: grossProfit > 0 ? Math.ceil(totalFixedCosts / (grossProfit / totalPaidSubscribers)) : Infinity,
+      breakEvenUsers: grossProfit > 0 ? Math.ceil(allFixedCosts / (grossProfit / totalPaidSubscribers)) : Infinity,
+      totalVideosProduced,
+      totalScriptsProduced,
+      totalTTSMinutes,
     };
-  }, [tierEconomics, totalFixedCosts, totalAdSpend, subscriberCounts]);
+  }, [tierEconomics, totalFixedCosts, totalCustomFixedCosts, totalAdSpend, subscriberCounts]);
 
   return (
     <div className="space-y-6">
@@ -500,16 +636,16 @@ const ComprehensivePLCalculator: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Middle: Unit Economics Per Tier */}
+        {/* Middle: Unit Economics Per Tier with Production Capacity */}
         <Card className="flex flex-col">
           <CardHeader className="pb-3 flex-shrink-0">
             <CardTitle className="text-base flex items-center gap-2">
               <PieChart className="w-4 h-4 text-primary" />
-              Unit Economics by Tier
+              Unit Economics & Capacity by Tier
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 overflow-hidden">
-            <div className="h-[400px] overflow-y-auto pr-2 space-y-3">
+          <CardContent className="flex-1 min-h-0">
+            <div className="h-[400px] overflow-y-auto space-y-3 pr-1">
               {tierEconomics.map((tier) => (
                 <div key={tier.tier} className={`p-3 rounded-lg border ${
                   tier.marginPercent >= 40 ? 'border-green-500/30 bg-green-500/5' :
@@ -522,6 +658,8 @@ const ComprehensivePLCalculator: React.FC = () => {
                       {tier.marginPercent.toFixed(0)}% margin
                     </Badge>
                   </div>
+                  
+                  {/* Economics */}
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                     <span className="text-muted-foreground">Price:</span>
                     <span className="text-right">${tier.price.toFixed(2)}</span>
@@ -529,11 +667,44 @@ const ComprehensivePLCalculator: React.FC = () => {
                     <span className="text-right">${tier.aiCostPerUser.toFixed(4)}</span>
                     <span className="text-muted-foreground">TTS Cost:</span>
                     <span className="text-right">${tier.ttsCostPerUser.toFixed(2)}</span>
+                    {tier.customVariableCostPerUser > 0 && (
+                      <>
+                        <span className="text-muted-foreground">Other Variable:</span>
+                        <span className="text-right">${tier.customVariableCostPerUser.toFixed(2)}</span>
+                      </>
+                    )}
                     <span className="text-muted-foreground font-medium">Contribution:</span>
                     <span className={`text-right font-medium ${tier.contribution >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                       ${tier.contribution.toFixed(2)}
                     </span>
                   </div>
+                  
+                  {/* Production Capacity */}
+                  {tier.capacity && (
+                    <div className="mt-2 pt-2 border-t border-border/50 space-y-1">
+                      <p className="text-[10px] font-medium text-muted-foreground uppercase">Production Capacity/User</p>
+                      <div className="grid grid-cols-4 gap-1 text-[10px]">
+                        <div className="text-center p-1 bg-background rounded">
+                          <p className="font-bold text-foreground">{tier.capacity.videosPerMonth}</p>
+                          <p className="text-muted-foreground">videos</p>
+                        </div>
+                        <div className="text-center p-1 bg-background rounded">
+                          <p className="font-bold text-foreground">{tier.capacity.scriptsPerMonth}</p>
+                          <p className="text-muted-foreground">scripts</p>
+                        </div>
+                        <div className="text-center p-1 bg-background rounded">
+                          <p className="font-bold text-foreground">{tier.capacity.ttsMinutesPerMonth}</p>
+                          <p className="text-muted-foreground">TTS min</p>
+                        </div>
+                        <div className="text-center p-1 bg-background rounded">
+                          <p className="font-bold text-foreground">{tier.capacity.storageGB}</p>
+                          <p className="text-muted-foreground">GB</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Total for tier */}
                   <div className="mt-2 pt-2 border-t border-border/50">
                     <div className="flex justify-between text-xs">
                       <span className="text-muted-foreground">{tier.subscribers} users →</span>
@@ -548,44 +719,148 @@ const ComprehensivePLCalculator: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Right: Fixed & Variable Cost Breakdown */}
+        {/* Right: Comprehensive Cost Breakdown */}
         <Card className="flex flex-col">
           <CardHeader className="pb-3 flex-shrink-0">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Receipt className="w-4 h-4 text-primary" />
-              Cost Breakdown
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Receipt className="w-4 h-4 text-primary" />
+                Cost Breakdown
+              </CardTitle>
+              <Dialog open={showAddCost} onOpenChange={setShowAddCost}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-7 text-xs">
+                    <Plus className="w-3 h-3 mr-1" /> Add Cost
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-background max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>Add Custom Cost Item</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">Name</Label>
+                      <Input value={newCost.name || ''} onChange={e => setNewCost(p => ({ ...p, name: e.target.value }))} placeholder="Video Encoding" className="h-8" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Category</Label>
+                      <Input value={newCost.category || ''} onChange={e => setNewCost(p => ({ ...p, category: e.target.value }))} placeholder="Processing" className="h-8" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Type</Label>
+                      <Select value={newCost.type} onValueChange={(v: 'variable' | 'fixed') => setNewCost(p => ({ ...p, type: v }))}>
+                        <SelectTrigger className="h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="variable">Variable (per user)</SelectItem>
+                          <SelectItem value="fixed">Fixed (monthly)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Cost per Unit ($)</Label>
+                      <Input type="number" step="0.001" value={newCost.costPerUnit || 0} onChange={e => setNewCost(p => ({ ...p, costPerUnit: parseFloat(e.target.value) || 0 }))} className="h-8" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Unit Type</Label>
+                      <Input value={newCost.unitType || ''} onChange={e => setNewCost(p => ({ ...p, unitType: e.target.value }))} placeholder="minute, GB, etc." className="h-8" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Scale Factor</Label>
+                      <Input value={newCost.scaleFactor || ''} onChange={e => setNewCost(p => ({ ...p, scaleFactor: e.target.value }))} placeholder="$0.01/unit" className="h-8" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Min Capacity</Label>
+                      <Input value={newCost.capacityMin || ''} onChange={e => setNewCost(p => ({ ...p, capacityMin: e.target.value }))} placeholder="0" className="h-8" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Max Capacity</Label>
+                      <Input value={newCost.capacityMax || ''} onChange={e => setNewCost(p => ({ ...p, capacityMax: e.target.value }))} placeholder="Unlimited" className="h-8" />
+                    </div>
+                  </div>
+                  {newCost.type === 'variable' && (
+                    <div className="mt-3 p-3 bg-muted/50 rounded-lg">
+                      <Label className="text-xs font-medium">Units per Tier (for variable costs)</Label>
+                      <div className="grid grid-cols-3 gap-2 mt-2">
+                        {['free', 'starter', 'creator', 'business', 'pro', 'healthcare'].map(tier => (
+                          <div key={tier}>
+                            <Label className="text-[10px] capitalize">{tier}</Label>
+                            <Input 
+                              type="number" 
+                              value={newCost.unitsPerTier?.[tier] || 0} 
+                              onChange={e => setNewCost(p => ({ 
+                                ...p, 
+                                unitsPerTier: { ...p.unitsPerTier, [tier]: parseInt(e.target.value) || 0 } 
+                              }))} 
+                              className="h-7 text-xs" 
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <Button onClick={handleAddCustomCost} className="w-full mt-2">Add Cost Item</Button>
+                </DialogContent>
+              </Dialog>
+            </div>
           </CardHeader>
-          <CardContent className="flex-1 overflow-hidden">
-            <div className="h-[400px] overflow-y-auto pr-2 space-y-4">
-              {/* Variable Costs Summary */}
+          <CardContent className="flex-1 min-h-0">
+            <div className="h-[400px] overflow-y-auto space-y-3 pr-1">
+              
+              {/* Variable Costs Section */}
               <div className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/5">
                 <h4 className="text-xs font-semibold text-amber-600 dark:text-amber-400 mb-2 flex items-center gap-1">
                   <TrendingUp className="w-3 h-3" />
-                  VARIABLE COSTS (Per User)
+                  VARIABLE COSTS (Scales with Usage)
                 </h4>
-                <div className="space-y-1 text-xs">
-                  <div className="flex justify-between">
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between items-center">
                     <span>AI ({selectedAIModel})</span>
-                    <span>${((aiModel.inputCostPer1MTok + aiModel.outputCostPer1MTok) / 2).toFixed(4)}/1M tok</span>
+                    <span className="text-muted-foreground">${((aiModel.inputCostPer1MTok + aiModel.outputCostPer1MTok) / 2).toFixed(4)}/1M tok</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center">
                     <span>TTS ({selectedTTS})</span>
-                    <span>${ttsModel.costPerMinute.toFixed(2)}/min</span>
+                    <span className="text-muted-foreground">${ttsModel.costPerMinute.toFixed(2)}/min</span>
                   </div>
-                  <div className="flex justify-between font-medium pt-1 border-t mt-1">
+                  
+                  {/* Custom variable costs */}
+                  {customCosts.filter(c => c.type === 'variable').map(cost => (
+                    <div key={cost.id} className="group">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-1">
+                          <span>{cost.name}</span>
+                          <Badge variant="outline" className="text-[9px] h-4 px-1">{cost.category}</Badge>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-muted-foreground">${cost.costPerUnit}/{cost.unitType}</span>
+                          <Button variant="ghost" size="sm" className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100" onClick={() => deleteCustomCost(cost.id)}>
+                            <Trash2 className="w-3 h-3 text-destructive" />
+                          </Button>
+                        </div>
+                      </div>
+                      {(cost.capacityMin || cost.capacityMax) && (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          Capacity: {cost.capacityMin || '0'} - {cost.capacityMax || '∞'} {cost.scaleFactor && `• ${cost.scaleFactor}`}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                  
+                  <Separator className="my-2" />
+                  <div className="flex justify-between font-medium">
                     <span>Total Variable/Month</span>
                     <span className="text-amber-600">${plSummary.totalVariableCosts.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Fixed Costs - Editable */}
+              {/* Fixed Costs Section */}
               <div className="p-3 rounded-lg border border-blue-500/30 bg-blue-500/5">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-xs font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1">
                     <Server className="w-3 h-3" />
-                    FIXED COSTS (Monthly)
+                    FIXED COSTS (Monthly Infrastructure)
                   </h4>
                   <Dialog open={showAddFixed} onOpenChange={setShowAddFixed}>
                     <DialogTrigger asChild>
@@ -595,20 +870,20 @@ const ComprehensivePLCalculator: React.FC = () => {
                     </DialogTrigger>
                     <DialogContent className="bg-background">
                       <DialogHeader>
-                        <DialogTitle>Add Fixed Cost</DialogTitle>
+                        <DialogTitle>Add Fixed Infrastructure Cost</DialogTitle>
                       </DialogHeader>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <Label className="text-xs">Category</Label>
+                          <Label className="text-xs">Category/Service</Label>
                           <Input value={newFixed.category} onChange={e => setNewFixed(p => ({ ...p, category: e.target.value }))} placeholder="AWS S3" className="h-8" />
                         </div>
                         <div>
                           <Label className="text-xs">Monthly Cost ($)</Label>
                           <Input type="number" value={newFixed.fixedCosts} onChange={e => setNewFixed(p => ({ ...p, fixedCosts: parseFloat(e.target.value) || 0 }))} className="h-8" />
                         </div>
-                        <div>
+                        <div className="col-span-2">
                           <Label className="text-xs">Description</Label>
-                          <Input value={newFixed.description} onChange={e => setNewFixed(p => ({ ...p, description: e.target.value }))} placeholder="Storage" className="h-8" />
+                          <Input value={newFixed.description} onChange={e => setNewFixed(p => ({ ...p, description: e.target.value }))} placeholder="Object storage for videos" className="h-8" />
                         </div>
                         <div>
                           <Label className="text-xs">Min Capacity</Label>
@@ -618,9 +893,9 @@ const ComprehensivePLCalculator: React.FC = () => {
                           <Label className="text-xs">Max Capacity</Label>
                           <Input value={newFixed.maxCapacity} onChange={e => setNewFixed(p => ({ ...p, maxCapacity: e.target.value }))} placeholder="100K users" className="h-8" />
                         </div>
-                        <div>
-                          <Label className="text-xs">Scale Factor</Label>
-                          <Input value={newFixed.scaleFactor} onChange={e => setNewFixed(p => ({ ...p, scaleFactor: e.target.value }))} placeholder="$0.10/GB" className="h-8" />
+                        <div className="col-span-2">
+                          <Label className="text-xs">Scale Factor (overage pricing)</Label>
+                          <Input value={newFixed.scaleFactor} onChange={e => setNewFixed(p => ({ ...p, scaleFactor: e.target.value }))} placeholder="$0.10/GB after limit" className="h-8" />
                         </div>
                       </div>
                       <Button onClick={handleAddFixed} className="w-full mt-2">Add Fixed Cost</Button>
@@ -630,8 +905,10 @@ const ComprehensivePLCalculator: React.FC = () => {
                 <div className="space-y-2 text-xs">
                   {fixedCosts.map((cost, idx) => (
                     <div key={idx} className="group">
-                      <div className="flex items-center gap-2">
-                        <span className="flex-1 truncate" title={cost.description}>{cost.category}</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <span title={cost.description}>{cost.category}</span>
+                        </div>
                         <div className="flex items-center gap-1">
                           <span className="text-muted-foreground">$</span>
                           <Input
@@ -640,27 +917,20 @@ const ComprehensivePLCalculator: React.FC = () => {
                             onChange={(e) => updateFixedCost(idx, 'fixedCosts', parseFloat(e.target.value) || 0)}
                             className="h-6 w-16 text-xs text-right"
                           />
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100"
-                            onClick={() => deleteFixedCost(idx)}
-                          >
+                          <Button variant="ghost" size="sm" className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100" onClick={() => deleteFixedCost(idx)}>
                             <Trash2 className="w-3 h-3 text-destructive" />
                           </Button>
                         </div>
                       </div>
-                      {(cost.minCapacity || cost.maxCapacity) && (
-                        <div className="text-[10px] text-muted-foreground pl-2 mt-0.5">
-                          {cost.minCapacity && <span>Min: {cost.minCapacity}</span>}
-                          {cost.minCapacity && cost.maxCapacity && <span> • </span>}
-                          {cost.maxCapacity && <span>Max: {cost.maxCapacity}</span>}
-                          {cost.scaleFactor && cost.scaleFactor !== '—' && <span> • Scale: {cost.scaleFactor}</span>}
-                        </div>
+                      {(cost.minCapacity && cost.minCapacity !== '—') && (
+                        <p className="text-[10px] text-muted-foreground mt-0.5 pl-1">
+                          {cost.minCapacity} → {cost.maxCapacity} {cost.scaleFactor && cost.scaleFactor !== '—' && `• Overage: ${cost.scaleFactor}`}
+                        </p>
                       )}
                     </div>
                   ))}
-                  <div className="flex justify-between font-medium pt-1 border-t mt-1">
+                  <Separator className="my-2" />
+                  <div className="flex justify-between font-medium">
                     <span>Total Fixed/Month</span>
                     <span className="text-blue-600">${totalFixedCosts.toLocaleString()}</span>
                   </div>
@@ -671,18 +941,17 @@ const ComprehensivePLCalculator: React.FC = () => {
               <div className="p-3 rounded-lg border border-purple-500/30 bg-purple-500/5">
                 <h4 className="text-xs font-semibold text-purple-600 dark:text-purple-400 mb-2 flex items-center gap-1">
                   <Megaphone className="w-3 h-3" />
-                  CUSTOMER ACQUISITION
+                  CUSTOMER ACQUISITION (Marketing)
                 </h4>
                 <div className="space-y-1 text-xs">
                   {cacByChannel.filter(c => c.spend > 0).map((ch, idx) => (
                     <div key={idx} className="flex justify-between">
                       <span>{ch.channel}</span>
-                      <span className="text-muted-foreground">
-                        ~{ch.estimatedCustomers} @ ${ch.estimatedCAC}
-                      </span>
+                      <span className="text-muted-foreground">~{ch.estimatedCustomers} users @ ${ch.estimatedCAC}/user</span>
                     </div>
                   ))}
-                  <div className="flex justify-between font-medium pt-1 border-t mt-1">
+                  <Separator className="my-2" />
+                  <div className="flex justify-between font-medium">
                     <span>Total CAC/Month</span>
                     <span className="text-purple-600">${totalAdSpend.toLocaleString()}</span>
                   </div>
@@ -694,24 +963,25 @@ const ComprehensivePLCalculator: React.FC = () => {
               </div>
 
               {/* Total Cost Summary */}
-              <div className="p-3 rounded-lg border-2 border-red-500/30 bg-red-500/5">
-                <h4 className="text-xs font-semibold text-red-600 dark:text-red-400 mb-2">TOTAL MONTHLY COSTS</h4>
+              <div className="p-3 rounded-lg border-2 border-primary/30 bg-primary/5">
+                <h4 className="text-xs font-semibold mb-2">TOTAL MONTHLY COSTS SUMMARY</h4>
                 <div className="space-y-1 text-xs">
                   <div className="flex justify-between">
-                    <span>Variable Costs</span>
+                    <span className="text-muted-foreground">Variable Costs</span>
                     <span>${plSummary.totalVariableCosts.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Fixed Infrastructure</span>
-                    <span>${totalFixedCosts.toLocaleString()}</span>
+                    <span className="text-muted-foreground">Fixed Infrastructure</span>
+                    <span>${plSummary.totalFixedCosts.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Marketing/Ads</span>
+                    <span className="text-muted-foreground">Marketing/Ads</span>
                     <span>${totalAdSpend.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between font-bold pt-1 border-t mt-1 text-red-600">
+                  <Separator className="my-2" />
+                  <div className="flex justify-between font-bold text-base">
                     <span>TOTAL</span>
-                    <span>${(plSummary.totalVariableCosts + plSummary.operatingExpenses).toLocaleString()}</span>
+                    <span className="text-destructive">${(plSummary.totalVariableCosts + plSummary.operatingExpenses).toLocaleString()}</span>
                   </div>
                 </div>
               </div>
@@ -719,6 +989,36 @@ const ComprehensivePLCalculator: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Production Capacity Overview */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2">
+            <Zap className="w-5 h-5 text-primary" />
+            Total Production Capacity (All Subscribers)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-4 rounded-lg bg-muted/50 text-center">
+              <p className="text-3xl font-bold text-primary">{plSummary.totalVideosProduced.toLocaleString()}</p>
+              <p className="text-sm text-muted-foreground">Videos/Month</p>
+            </div>
+            <div className="p-4 rounded-lg bg-muted/50 text-center">
+              <p className="text-3xl font-bold text-primary">{plSummary.totalScriptsProduced.toLocaleString()}</p>
+              <p className="text-sm text-muted-foreground">Scripts/Month</p>
+            </div>
+            <div className="p-4 rounded-lg bg-muted/50 text-center">
+              <p className="text-3xl font-bold text-primary">{plSummary.totalTTSMinutes.toLocaleString()}</p>
+              <p className="text-sm text-muted-foreground">TTS Minutes/Month</p>
+            </div>
+            <div className="p-4 rounded-lg bg-muted/50 text-center">
+              <p className="text-3xl font-bold text-primary">${(plSummary.totalVariableCosts / Math.max(plSummary.totalVideosProduced, 1)).toFixed(2)}</p>
+              <p className="text-sm text-muted-foreground">Cost/Video</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Full P&L Statement */}
       <Card>
