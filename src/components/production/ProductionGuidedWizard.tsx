@@ -256,7 +256,7 @@ export const ProductionGuidedWizard: React.FC<ProductionGuidedWizardProps> = ({
       selectedShowId: selectedShow?.id,
     };
     
-    const progress = ((currentPhase + 1) / Math.max(phases.length, 1)) * 100;
+    const progress = Math.round(((currentPhase + 1) / Math.max(phases.length, 1)) * 100);
     
     try {
       await saveProgress(

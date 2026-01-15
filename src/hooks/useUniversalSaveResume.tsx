@@ -34,12 +34,15 @@ export const useUniversalSaveResume = (sessionType: UniversalSaveData['session_t
       const user = await supabase.auth.getUser();
       if (!user.data.user) throw new Error('User not authenticated');
 
+      // Round progress to integer - database column expects integer type
+      const roundedProgress = Math.round(progressPercentage);
+      
       const saveData: Partial<UniversalSaveData> = {
         user_id: user.data.user.id,
         session_type: sessionType,
         current_step: currentStep,
         form_data: formData,
-        progress_percentage: progressPercentage,
+        progress_percentage: roundedProgress,
         channel_type: channelType,
         metadata: metadata || {}
       };
