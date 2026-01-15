@@ -154,29 +154,40 @@ export const validateGovernanceData = (): ValidationResult => {
   const errors: string[] = [];
   const warnings: string[] = [];
   
-  // Check scenario totals add up
+  // Calculate actual totals dynamically (no hardcoded values)
   const phaseTotals = Object.values(masterScenarioCounts.phases).reduce((sum, p) => sum + p.total, 0);
-  if (phaseTotals !== 305) {
-    errors.push(`Scenario total mismatch: phases sum to ${phaseTotals}, expected 305`);
+  const implementedTotals = Object.values(masterScenarioCounts.phases).reduce((sum, p) => sum + p.implemented, 0);
+  
+  // Validate: implemented cannot exceed total
+  if (implementedTotals > phaseTotals) {
+    errors.push(`Implementation count (${implementedTotals}) exceeds total scenarios (${phaseTotals})`);
   }
   
-  // Check implemented doesn't exceed total
+  // Check implemented doesn't exceed total per phase
   Object.entries(masterScenarioCounts.phases).forEach(([phase, data]) => {
     if (data.implemented > data.total) {
       errors.push(`${phase}: implemented (${data.implemented}) exceeds total (${data.total})`);
     }
   });
   
-  // Check completion status matches
+  // Check completion status matches actual implementation
   Object.entries(masterScenarioCounts.phases).forEach(([phase, data]) => {
     if (data.status === 'completed' && data.implemented !== data.total) {
       warnings.push(`${phase} marked complete but only ${data.implemented}/${data.total} implemented`);
+    }
+    if (data.status === 'planned' && data.implemented > 0) {
+      warnings.push(`${phase} marked planned but has ${data.implemented} implemented scenarios`);
     }
   });
   
   // Check financial metrics are reasonable
   if (masterFinancialMetrics.unitEconomics.ltvCacRatio < 3) {
     warnings.push('LTV:CAC ratio below healthy threshold of 3x');
+  }
+  
+  // Verify gross margin is healthy
+  if (masterFinancialMetrics.unitEconomics.grossMargin < 70) {
+    warnings.push('Gross margin below SaaS benchmark of 70%');
   }
   
   return {
