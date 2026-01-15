@@ -1,10 +1,13 @@
 /**
  * Genie Command Center - Verified Implementation Data
- * AUDITED: 2026-01-14 from actual codebase analysis
- * Source: docs/architecture/GENIE_STUDIO_OVERALL_ARCHITECTURE.md + codebase search
+ * AUDITED: 2026-01-15 from actual codebase analysis
+ * 
+ * IMPORTANT: Infrastructure metrics are now imported from the single source of truth:
+ * src/genie-studio/metrics.ts - Update that file when counts change!
  */
 
 import type { ImplementationPhase, ScenarioCategory, StageGateItem, Product } from '../types';
+import { GENIE_STUDIO_METRICS, PLATFORM_TOTALS } from '@/genie-studio/metrics';
 
 // =============================================================================
 // IMPLEMENTATION PHASES (P0-P5) - VERIFIED ACTUAL STATUS
@@ -406,67 +409,66 @@ export const getPhaseStats = (phaseId: string) => {
 };
 
 // =============================================================================
-// INFRASTRUCTURE METRICS - GENIE STUDIO SPECIFIC vs TOTAL
-// Source: Verified from genie-studio folder structure audit 2026-01-15
-// Verified against: src/genie-studio/{pages,components,hooks,services}/index.ts
+// INFRASTRUCTURE METRICS - DERIVED FROM SINGLE SOURCE OF TRUTH
+// Source: src/genie-studio/metrics.ts (update there, not here!)
 // =============================================================================
 export const infrastructureMetrics = {
   edgeFunctions: {
-    total: 140,
-    genieStudio: 62,  // Verified: TTS(10), AI/Agents(13), Script/Media(10), Publishing(10), Core Genie(13), Misc(6)
-    healthcare: 28,   // Patient, enrollment, HIPAA, fax, therapy
-    shared: 50,       // Auth, Stripe, data processing, common utilities
+    total: PLATFORM_TOTALS.edgeFunctions,
+    genieStudio: GENIE_STUDIO_METRICS.edgeFunctions,
+    healthcare: 28,
+    shared: PLATFORM_TOTALS.edgeFunctions - GENIE_STUDIO_METRICS.edgeFunctions - 28,
   },
   hooks: {
-    total: 280,
-    genieStudio: 50,  // 24 from hooks/index.ts + 26 additional in main index.ts
-    healthcare: 65,   // usePatient*, useEnrollment*, useFacility*, useTherapy*
-    shared: 165,      // useAuth*, useSubscription*, useAI*, useSupabase*, generic hooks
+    total: PLATFORM_TOTALS.hooks,
+    genieStudio: GENIE_STUDIO_METRICS.hooksTotal,
+    healthcare: 65,
+    shared: PLATFORM_TOTALS.hooks - GENIE_STUDIO_METRICS.hooksTotal - 65,
   },
   databaseTables: {
-    total: 180,
-    genieStudio: 42,  // scripts, recordings, exports, bulk_jobs, social_*, agent_* (Genie-specific)
-    healthcare: 55,   // patients, enrollments, facilities, sessions, therapy_*
-    shared: 83,       // profiles, agents, ai_*, subscriptions, auth_*
+    total: PLATFORM_TOTALS.databaseTables,
+    genieStudio: GENIE_STUDIO_METRICS.databaseTables,
+    healthcare: 55,
+    shared: PLATFORM_TOTALS.databaseTables - GENIE_STUDIO_METRICS.databaseTables - 55,
   },
   aiAgents: {
-    total: 15,
-    genieStudio: 12,  // Voice coach, scene analyzer, music composer, auto-editor, voice director, etc.
-    healthcare: 3,    // Patient assistant, enrollment guide, therapy coach
-    shared: 0,        // All agents are product-specific
+    total: PLATFORM_TOTALS.aiAgents,
+    genieStudio: GENIE_STUDIO_METRICS.aiAgents,
+    healthcare: 3,
+    shared: 0,
   },
   mobileComponents: {
-    total: 23,
-    genieStudio: 18,  // Recording, playback, teleprompter, export, timeline, voice commands
-    healthcare: 5,    // Patient mobile, enrollment, consent
+    total: PLATFORM_TOTALS.mobileComponents,
+    genieStudio: GENIE_STUDIO_METRICS.mobileComponents,
+    healthcare: 5,
     shared: 0,
   },
   apiServices: {
-    total: 35,        // External API integrations & services
-    genieStudio: 32,  // 18 from services/index.ts + 14 additional in main index.ts
-    healthcare: 3,    // HIPAA, NPI lookup
-    shared: 0,        // All services product-specific
+    total: PLATFORM_TOTALS.services,
+    genieStudio: GENIE_STUDIO_METRICS.servicesTotal,
+    healthcare: 3,
+    shared: 0,
   },
   components: {
-    total: 500,       // Estimated total UI components
-    genieStudio: 55,  // Verified from src/genie-studio/components/index.ts exports
-    healthcare: 120,  // Patient, enrollment, facility, therapy UI
-    shared: 325,      // Common UI, shadcn, layout, navigation
+    total: PLATFORM_TOTALS.components,
+    genieStudio: GENIE_STUDIO_METRICS.components,
+    healthcare: 120,
+    shared: PLATFORM_TOTALS.components - GENIE_STUDIO_METRICS.components - 120,
   },
   pages: {
-    total: 85,        // Total page components
-    genieStudio: 10,  // Verified from src/genie-studio/pages/index.ts exports
-    healthcare: 25,   // Patient, enrollment, provider pages
-    shared: 50,       // Dashboard, settings, admin, common pages
+    total: PLATFORM_TOTALS.pages,
+    genieStudio: GENIE_STUDIO_METRICS.pages,
+    healthcare: 25,
+    shared: PLATFORM_TOTALS.pages - GENIE_STUDIO_METRICS.pages - 25,
   }
 };
 
 // Legacy exports for backward compatibility
-export const edgeFunctionCount = infrastructureMetrics.edgeFunctions.total;
-export const hooksCount = infrastructureMetrics.hooks.total;
-export const databaseTablesCount = infrastructureMetrics.databaseTables.total;
-export const mobileComponentCount = infrastructureMetrics.mobileComponents.total;
-export const aiAgentCount = infrastructureMetrics.aiAgents.total;
+export const edgeFunctionCount = PLATFORM_TOTALS.edgeFunctions;
+export const hooksCount = PLATFORM_TOTALS.hooks;
+export const databaseTablesCount = PLATFORM_TOTALS.databaseTables;
+export const mobileComponentCount = PLATFORM_TOTALS.mobileComponents;
+export const aiAgentCount = PLATFORM_TOTALS.aiAgents;
 
 // Product-Scenario Cross-Reference (which scenarios belong to which product)
 export const productScenarioMapping = {
