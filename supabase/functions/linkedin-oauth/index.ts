@@ -57,7 +57,9 @@ serve(async (req) => {
           'openid',
           'profile',
           'email',
-          'w_member_social'  // Required for posting
+          'w_member_social',        // Required for personal posting
+          'r_organization_social',  // Read company pages
+          'w_organization_social'   // Post to company pages
         ].join(' ');
 
         const authUrl = new URL('https://www.linkedin.com/oauth/v2/authorization');
@@ -120,9 +122,35 @@ serve(async (req) => {
         });
 
         let linkedinId = null;
+        let profileName = null;
         if (profileResponse.ok) {
           const profile: LinkedInProfileResponse = await profileResponse.json();
           linkedinId = profile.sub;
+          profileName = profile.name;
+        }
+
+        // Get company pages the user can post on
+        let companyPages: Array<{ id: string; name: string; logoUrl?: string }> = [];
+        try {
+          const orgsResponse = await fetch(
+            'https://api.linkedin.com/v2/organizationalEntityAcls?q=roleAssignee&role=ADMINISTRATOR&projection=(elements*(organizationalTarget~(localizedName,logoV2(original~:playableStreams))))',
+            {
+              headers: {
+                'Authorization': `Bearer ${tokens.access_token}`,
+              },
+            }
+          );
+          
+          if (orgsResponse.ok) {
+            const orgsData = await orgsResponse.json();
+            companyPages = (orgsData.elements || []).map((el: any) => ({
+              id: el.organizationalTarget?.split(':').pop() || '',
+              name: el['organizationalTarget~']?.localizedName || 'Unknown Company',
+              logoUrl: el['organizationalTarget~']?.logoV2?.['original~']?.elements?.[0]?.identifiers?.[0]?.identifier
+            })).filter((p: any) => p.id);
+          }
+        } catch (e) {
+          console.log('Could not fetch company pages:', e);
         }
 
         // Store tokens in database
@@ -138,6 +166,9 @@ serve(async (req) => {
             refresh_token: tokens.refresh_token || null,
             expires_at: expiresAt.toISOString(),
             scope: tokens.scope,
+            linkedin_id: linkedinId,
+            profile_name: profileName,
+            company_pages: companyPages
           }, {
             onConflict: 'user_id'
           });

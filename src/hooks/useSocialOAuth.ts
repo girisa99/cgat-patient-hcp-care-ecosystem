@@ -4,11 +4,20 @@ import { toast } from 'sonner';
 
 export type SocialPlatform = 'linkedin' | 'youtube' | 'tiktok' | 'twitter' | 'instagram' | 'facebook';
 
+interface CompanyPage {
+  id: string;
+  name: string;
+  logoUrl?: string;
+}
+
 interface ConnectionStatus {
   connected: boolean;
   expiresAt?: string;
   channelName?: string;
   channelId?: string;
+  profileName?: string;
+  linkedinId?: string;
+  companyPages?: CompanyPage[];
 }
 
 interface UseSocialOAuthReturn {
@@ -40,33 +49,37 @@ export const useSocialOAuth = (): UseSocialOAuthReturn => {
         return;
       }
 
-      // Check LinkedIn status
-      const linkedinResponse = await supabase.functions.invoke('linkedin-oauth', {
-        body: {},
-        headers: { 'Authorization': `Bearer ${session.access_token}` }
-      });
+      // Check LinkedIn status - query from DB directly for company pages
+      const { data: linkedinTokens } = await supabase
+        .from('linkedin_oauth_tokens')
+        .select('expires_at, linkedin_id, profile_name, company_pages')
+        .eq('user_id', session.user.id)
+        .single();
 
-      // Check YouTube status  
-      const youtubeResponse = await supabase.functions.invoke('youtube-oauth', {
-        body: {},
-        headers: { 'Authorization': `Bearer ${session.access_token}` }
-      });
+      // Check YouTube status from DB
+      const { data: youtubeTokens } = await supabase
+        .from('youtube_oauth_tokens')
+        .select('expires_at, channel_id, channel_name')
+        .eq('user_id', session.user.id)
+        .single();
 
-      // Parse responses (need to handle the URL params for status check)
-      const linkedinStatus = linkedinResponse.data || { connected: false };
-      const youtubeStatus = youtubeResponse.data || { connected: false };
+      const linkedinConnected = linkedinTokens && new Date(linkedinTokens.expires_at) > new Date();
+      const youtubeConnected = youtubeTokens && new Date(youtubeTokens.expires_at) > new Date();
 
       setConnections(prev => ({
         ...prev,
         linkedin: {
-          connected: linkedinStatus.connected || false,
-          expiresAt: linkedinStatus.expiresAt
+          connected: linkedinConnected || false,
+          expiresAt: linkedinTokens?.expires_at,
+          linkedinId: linkedinTokens?.linkedin_id,
+          profileName: linkedinTokens?.profile_name,
+          companyPages: (linkedinTokens?.company_pages as unknown as CompanyPage[]) || []
         },
         youtube: {
-          connected: youtubeStatus.connected || false,
-          expiresAt: youtubeStatus.expiresAt,
-          channelId: youtubeStatus.channelId,
-          channelName: youtubeStatus.channelName
+          connected: youtubeConnected || false,
+          expiresAt: youtubeTokens?.expires_at,
+          channelId: youtubeTokens?.channel_id,
+          channelName: youtubeTokens?.channel_name
         }
       }));
     } catch (error) {

@@ -10084,9 +10084,12 @@ export type Database = {
       linkedin_oauth_tokens: {
         Row: {
           access_token: string
+          company_pages: Json | null
           created_at: string
           expires_at: string
           id: string
+          linkedin_id: string | null
+          profile_name: string | null
           refresh_token: string | null
           scope: string | null
           updated_at: string
@@ -10094,9 +10097,12 @@ export type Database = {
         }
         Insert: {
           access_token: string
+          company_pages?: Json | null
           created_at?: string
           expires_at: string
           id?: string
+          linkedin_id?: string | null
+          profile_name?: string | null
           refresh_token?: string | null
           scope?: string | null
           updated_at?: string
@@ -10104,9 +10110,12 @@ export type Database = {
         }
         Update: {
           access_token?: string
+          company_pages?: Json | null
           created_at?: string
           expires_at?: string
           id?: string
+          linkedin_id?: string | null
+          profile_name?: string | null
           refresh_token?: string | null
           scope?: string | null
           updated_at?: string
@@ -15441,6 +15450,96 @@ export type Database = {
           stat_name?: string
           stat_value?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      social_publish_analytics: {
+        Row: {
+          caption: string | null
+          comments_count: number | null
+          content_type: string | null
+          created_at: string
+          engagement_rate: number | null
+          feedback_notes: string | null
+          feedback_rating: number | null
+          id: string
+          last_metrics_update: string | null
+          likes_count: number | null
+          media_url: string | null
+          platform: string
+          post_id: string
+          post_url: string | null
+          published_at: string | null
+          scheduled_at: string | null
+          shares_count: number | null
+          status: string | null
+          target_id: string | null
+          target_name: string | null
+          target_type: string | null
+          thumbnail_url: string | null
+          title: string | null
+          updated_at: string
+          user_id: string | null
+          views_count: number | null
+          visibility: string | null
+        }
+        Insert: {
+          caption?: string | null
+          comments_count?: number | null
+          content_type?: string | null
+          created_at?: string
+          engagement_rate?: number | null
+          feedback_notes?: string | null
+          feedback_rating?: number | null
+          id?: string
+          last_metrics_update?: string | null
+          likes_count?: number | null
+          media_url?: string | null
+          platform: string
+          post_id: string
+          post_url?: string | null
+          published_at?: string | null
+          scheduled_at?: string | null
+          shares_count?: number | null
+          status?: string | null
+          target_id?: string | null
+          target_name?: string | null
+          target_type?: string | null
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string | null
+          views_count?: number | null
+          visibility?: string | null
+        }
+        Update: {
+          caption?: string | null
+          comments_count?: number | null
+          content_type?: string | null
+          created_at?: string
+          engagement_rate?: number | null
+          feedback_notes?: string | null
+          feedback_rating?: number | null
+          id?: string
+          last_metrics_update?: string | null
+          likes_count?: number | null
+          media_url?: string | null
+          platform?: string
+          post_id?: string
+          post_url?: string | null
+          published_at?: string | null
+          scheduled_at?: string | null
+          shares_count?: number | null
+          status?: string | null
+          target_id?: string | null
+          target_name?: string | null
+          target_type?: string | null
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string | null
+          views_count?: number | null
+          visibility?: string | null
         }
         Relationships: []
       }
