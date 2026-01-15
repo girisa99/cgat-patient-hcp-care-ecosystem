@@ -148,9 +148,9 @@ export const GenieMicroservicesDiagram: React.FC = () => {
       <div className="text-center border-b border-border pb-4">
         <h2 className="text-2xl font-bold text-foreground flex items-center justify-center gap-3">
           <Layers className="h-8 w-8 text-violet-500" />
-          Microservices Architecture
+          Genie Suite Microservices Architecture
         </h2>
-        <p className="text-muted-foreground mt-2">Domain-Driven Design • Edge Functions • Event-Driven • Scalable</p>
+        <p className="text-muted-foreground mt-2">Genie-Specific Services • P0-P2 Complete • P3 In Progress</p>
       </div>
 
       {/* Architecture Stats */}
