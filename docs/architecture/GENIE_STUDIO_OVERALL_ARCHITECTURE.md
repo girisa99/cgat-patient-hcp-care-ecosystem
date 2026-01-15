@@ -1,8 +1,8 @@
 # Genie Studio: Overall System Architecture
 
-> **Version:** 2.0  
-> **Last Updated:** 2026-01-13  
-> **Status:** ✅ P0-P2 Complete | 253 Scenarios | 65% Implemented  
+> **Version:** 2.1  
+> **Last Updated:** 2026-01-15  
+> **Status:** ✅ P0-P2 Complete | 305 Scenarios | 61% Implemented  
 > **Next Phase:** P3 Planning
 
 ---
@@ -86,11 +86,11 @@ Genie Studio is a comprehensive AI-powered media production suite that transform
 |-------|-----------|-------------|--------|
 | **P0** | 35 | 35 (100%) | ✅ **COMPLETE** |
 | **P1** | 32 | 32 (100%) | ✅ **COMPLETE** |
-| **P2** | 102 | 102 (100%) | ✅ **COMPLETE** |
+| **P2** | 118 | 118 (100%) | ✅ **COMPLETE** (includes 16 editing scenarios) |
 | **P3** | 58 | 0 (0%) | ⏳ Planned |
 | **P4** | 50 | 0 (0%) | ⏳ Planned |
 | **P5** | 28 | 0 (0%) | ⏳ Planned |
-| **Total** | **289** | **165 (57%)** | P0-P2 Complete |
+| **Total** | **305** | **185 (61%)** | P0-P2 Complete |
 
 ### Infrastructure Counts (Verified 2026-01-15)
 

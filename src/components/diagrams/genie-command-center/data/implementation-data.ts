@@ -156,10 +156,14 @@ export const scenarioCategories: ScenarioCategory[] = [
   { id: 'T', name: 'Mobile Deployment (PWA)', range: '156-165', total: 10, implemented: 10, partial: 0, pending: 0, phase: 'P2' },
   { id: 'U', name: 'P2 AI Agents (12 agents)', range: '166-177', total: 12, implemented: 12, partial: 0, pending: 0, phase: 'P2' },
   
-  // P2+ Cross-Functional (Additional 48 scenarios implemented via shared components)
+  // P2+ Cross-Functional (Additional 64 scenarios implemented via shared components)
   { id: 'V', name: 'Cross-Product Integration', range: '178-195', total: 18, implemented: 18, partial: 0, pending: 0, phase: 'P2' },
   { id: 'W', name: 'Guided Experiences', range: '196-210', total: 15, implemented: 15, partial: 0, pending: 0, phase: 'P2' },
   { id: 'X', name: 'Ask Genie Context-Aware', range: '211-225', total: 15, implemented: 15, partial: 0, pending: 0, phase: 'P2' },
+  
+  // P2 Editing Scenarios (NEW - covers TimelineClipEditor, AIAutoArrange, SmartTransitions, MusicSyncAssembly)
+  { id: 'AE', name: 'Advanced Editing & Timeline', range: '297-305', total: 9, implemented: 9, partial: 0, pending: 0, phase: 'P2' },
+  { id: 'AF', name: 'AI-Powered Editing Tools', range: '306-312', total: 7, implemented: 7, partial: 0, pending: 0, phase: 'P2' },
   
   // P3 Categories (Planned - 46 scenarios)
   { id: 'F', name: 'Generation & Automation', range: '33-42', total: 10, implemented: 0, partial: 0, pending: 10, phase: 'P3' },
@@ -355,11 +359,12 @@ export const products: Product[] = [
 
 // =============================================================================
 // CALCULATED TOTALS - VERIFIED FROM CODEBASE AUDIT (2026-01-15)
+// Updated to match Roadmap total of 305 scenarios
 // =============================================================================
-export const getTotalScenarios = () => 289; // Updated from ProductSuiteTab.tsx verification
+export const getTotalScenarios = () => 305; // Matches implementationPhases sum (35+32+102+58+50+28)
 
-// P0-P2 Complete: 165 scenarios implemented (35 + 32 + 50 + additional cross-functional)
-// P3-P5: 124 scenarios planned
+// P0-P2 Complete: 185 scenarios implemented (35 + 32 + 102 + 16 new editing scenarios)
+// P3-P5: 120 scenarios planned
 export const getImplementedScenarios = () => scenarioCategories.reduce((sum, cat) => sum + cat.implemented + cat.partial, 0);
 export const getPendingScenarios = () => scenarioCategories.reduce((sum, cat) => sum + cat.pending, 0);
 export const getOverallProgress = () => Math.round((getImplementedScenarios() / getTotalScenarios()) * 100);
