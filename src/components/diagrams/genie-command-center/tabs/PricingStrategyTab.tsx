@@ -1,10 +1,9 @@
 /**
  * Genie Command Center - Pricing Strategy Tab
- * Interactive pricing explorer with comprehensive cost analysis
+ * Comprehensive P&L calculator with unit economics
  */
 
 import React, { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,12 +12,16 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import {
   Calculator, Users, Layers, DollarSign, Sparkles,
-  Check, X, TrendingUp, Zap, Crown, Gift, Building,
+  Check, X, TrendingUp, TrendingDown, Zap, Crown, Gift, Building,
   Heart, GraduationCap, Plane, Camera, BookOpen,
   Smartphone, Target, BarChart3, Server,
-  Megaphone, CreditCard, AlertTriangle
+  Megaphone, CreditCard, AlertTriangle, PieChart,
+  Coins, Receipt, ArrowUpRight, ArrowDownRight
 } from 'lucide-react';
 import {
   segmentPricingProfiles,
@@ -26,7 +29,6 @@ import {
   pricingPermutations,
   pricingRecommendations,
   segmentBundles,
-  type SegmentPricingProfile,
 } from '../data/pricing-options-data';
 import {
   aiModelCosts,
@@ -36,217 +38,497 @@ import {
   tierAllocations,
   assetProductionCosts,
   monthlyFixedCosts,
-  calculateMonthlyBreakeven,
 } from '../data/infrastructure-costs';
 
-// Mobile app specific pricing
-const mobileAppPricing = {
-  freemium: {
-    name: 'Free',
-    price: 0,
-    features: [
-      '3 videos/month',
-      'Basic editing',
-      '720p export',
-      'Watermark',
-      '5 TTS voices',
-      'Offline recording',
-    ],
-    limitations: ['Watermark', '3 exports/mo', '720p max'],
-  },
-  pro: {
-    name: 'Mobile Pro',
-    price: 4.99,
-    features: [
-      'Unlimited videos',
-      'Full editing suite',
-      '4K export',
-      'No watermark',
-      'All TTS voices',
-      'Cloud sync',
-      'Location Story Mode',
-      'Quick Templates',
-    ],
-    limitations: [],
-  },
-  bundle: {
-    name: 'Desktop + Mobile',
-    price: 12.99,
-    savings: '$2/mo',
-    description: 'Full access on all platforms',
-  },
-};
+// ==================== COMPREHENSIVE P&L CALCULATOR ====================
+const ComprehensivePLCalculator: React.FC = () => {
+  // Subscriber counts by tier
+  const [subscriberCounts, setSubscriberCounts] = useState({
+    free: 5000,
+    starter: 500,
+    creator: 200,
+    business: 50,
+    pro: 20,
+    healthcare: 10,
+  });
 
-// Segment icons mapping
-const segmentIcons: Record<string, React.ReactNode> = {
-  creator: <Camera className="w-5 h-5" />,
-  influencer: <Users className="w-5 h-5" />,
-  knowledge: <BookOpen className="w-5 h-5" />,
-  traveler: <Plane className="w-5 h-5" />,
-  smb: <Building className="w-5 h-5" />,
-  education: <GraduationCap className="w-5 h-5" />,
-  healthcare: <Heart className="w-5 h-5" />,
-  enterprise: <Crown className="w-5 h-5" />,
-};
+  // Pricing inputs (editable)
+  const [prices, setPrices] = useState({
+    starter: 9.99,
+    creator: 19.99,
+    business: 49.99,
+    pro: 99.99,
+    healthcare: 199.99,
+  });
 
-// Calculator Component
-const PricingCalculator: React.FC = () => {
-  const [scriptsPerMonth, setScriptsPerMonth] = useState(50);
-  const [ttsMinutes, setTtsMinutes] = useState(30);
-  const [teamMembers, setTeamMembers] = useState(1);
-  const [selectedSegment, setSelectedSegment] = useState('creator');
-  const [needsHIPAA, setNeedsHIPAA] = useState(false);
-  const [needsAPI, setNeedsAPI] = useState(false);
-  const [includeMobile, setIncludeMobile] = useState(false);
+  // Acquisition spend
+  const [adSpend, setAdSpend] = useState({
+    youtube: 2000,
+    tiktok: 1500,
+    instagram: 1000,
+    google: 1500,
+    seo: 500,
+    affiliate: 300,
+  });
 
-  const recommendedTier = useMemo(() => {
-    let tier = 'starter';
-    let price = 9.99;
-    let reasoning = [];
+  // AI Provider selection
+  const [selectedAIModel, setSelectedAIModel] = useState('Gemini 2.0 Flash');
+  const [selectedTTS, setSelectedTTS] = useState('ElevenLabs Pro');
 
-    if (needsHIPAA) {
-      tier = 'healthcare';
-      price = 49.99;
-      reasoning.push('HIPAA compliance required');
-    } else if (teamMembers > 5 || needsAPI) {
-      tier = 'pro';
-      price = 79.99;
-      reasoning.push(teamMembers > 5 ? `${teamMembers} team members` : 'API access needed');
-    } else if (scriptsPerMonth > 100 || teamMembers > 1) {
-      tier = 'business';
-      price = 29.99;
-      reasoning.push(scriptsPerMonth > 100 ? 'High script volume' : 'Team collaboration');
-    } else {
-      reasoning.push('Best for individual creators');
-    }
+  const aiModel = aiModelCosts.find(m => m.model === selectedAIModel) || aiModelCosts[0];
+  const ttsModel = ttsCosts.find(t => `${t.provider} ${t.tier}` === selectedTTS) || ttsCosts[1];
 
-    if (includeMobile) {
-      price += 2.99; // Bundle discount
-      reasoning.push('Mobile app included');
-    }
+  // Calculate unit economics per tier
+  const tierEconomics = useMemo(() => {
+    return tierAllocations.map(tier => {
+      const subscribers = subscriberCounts[tier.tier.toLowerCase() as keyof typeof subscriberCounts] || 0;
+      const price = prices[tier.tier.toLowerCase() as keyof typeof prices] || tier.monthlyPrice;
+      
+      // Calculate actual AI cost based on selected model
+      const aiCostPerUser = (tier.tokensPerMonth / 1000000) * (aiModel.inputCostPer1MTok + aiModel.outputCostPer1MTok) / 2;
+      
+      // Calculate TTS cost
+      const ttsCostPerUser = tier.ttsMinutes * ttsModel.costPerMinute;
+      
+      // Total variable cost
+      const variableCost = aiCostPerUser + ttsCostPerUser;
+      
+      // Contribution margin
+      const contribution = price - variableCost;
+      const marginPercent = price > 0 ? ((contribution / price) * 100) : (tier.tier === 'Free' ? -100 : 0);
+      
+      return {
+        ...tier,
+        subscribers,
+        price,
+        aiCostPerUser,
+        ttsCostPerUser,
+        variableCost,
+        contribution,
+        marginPercent,
+        totalRevenue: subscribers * price,
+        totalVariableCost: subscribers * variableCost,
+        totalContribution: subscribers * contribution,
+      };
+    });
+  }, [subscriberCounts, prices, aiModel, ttsModel]);
 
-    const monthlyCost = price;
-    const yearlyCost = price * 10; // 2 months free
-    const yearlySavings = price * 2;
+  // Calculate total acquisition cost
+  const totalAdSpend = useMemo(() => 
+    Object.values(adSpend).reduce((sum, val) => sum + val, 0),
+  [adSpend]);
 
-    return { tier, price: monthlyCost, yearly: yearlyCost, savings: yearlySavings, reasoning };
-  }, [scriptsPerMonth, ttsMinutes, teamMembers, needsHIPAA, needsAPI, includeMobile]);
+  // Calculate CAC by channel
+  const cacByChannel = useMemo(() => {
+    const totalNewCustomers = Object.values(subscriberCounts).reduce((sum, val) => sum + val, 0) * 0.1; // Assume 10% new
+    return acquisitionChannels.map(ch => ({
+      ...ch,
+      spend: adSpend[ch.channel.toLowerCase().replace(' ads', '').replace(' (organic)', '').replace('/', '') as keyof typeof adSpend] || 0,
+      estimatedCustomers: Math.floor((adSpend[ch.channel.toLowerCase().replace(' ads', '').replace(' (organic)', '').replace('/', '') as keyof typeof adSpend] || 0) / ch.estimatedCAC),
+    }));
+  }, [adSpend]);
+
+  // Fixed costs
+  const totalFixedCosts = useMemo(() => 
+    monthlyFixedCosts.reduce((sum, c) => sum + c.fixedCosts, 0),
+  []);
+
+  // P&L Summary
+  const plSummary = useMemo(() => {
+    const totalRevenue = tierEconomics.reduce((sum, t) => sum + t.totalRevenue, 0);
+    const totalVariableCosts = tierEconomics.reduce((sum, t) => sum + t.totalVariableCost, 0);
+    const grossProfit = totalRevenue - totalVariableCosts;
+    const grossMarginPercent = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
+    
+    const operatingExpenses = totalFixedCosts + totalAdSpend;
+    const netProfit = grossProfit - operatingExpenses;
+    const netMarginPercent = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+    
+    const totalPaidSubscribers = Object.entries(subscriberCounts)
+      .filter(([key]) => key !== 'free')
+      .reduce((sum, [, val]) => sum + val, 0);
+    
+    const arpu = totalPaidSubscribers > 0 ? totalRevenue / totalPaidSubscribers : 0;
+    const blendedCAC = totalPaidSubscribers > 0 ? totalAdSpend / (totalPaidSubscribers * 0.1) : 0; // Assuming 10% new monthly
+    const ltv = arpu * 12; // Assuming 12 month average lifetime
+    const ltvCacRatio = blendedCAC > 0 ? ltv / blendedCAC : 0;
+    
+    return {
+      totalRevenue,
+      totalVariableCosts,
+      grossProfit,
+      grossMarginPercent,
+      operatingExpenses,
+      totalFixedCosts,
+      totalAdSpend,
+      netProfit,
+      netMarginPercent,
+      totalSubscribers: Object.values(subscriberCounts).reduce((sum, val) => sum + val, 0),
+      totalPaidSubscribers,
+      arpu,
+      blendedCAC,
+      ltv,
+      ltvCacRatio,
+      breakEvenUsers: grossProfit > 0 ? Math.ceil(totalFixedCosts / (grossProfit / totalPaidSubscribers)) : Infinity,
+    };
+  }, [tierEconomics, totalFixedCosts, totalAdSpend, subscriberCounts]);
 
   return (
-    <Card className="border-primary/20">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calculator className="w-5 h-5 text-primary" />
-          Interactive Pricing Calculator
-        </CardTitle>
-        <CardDescription>
-          Tell us about your needs and we'll recommend the perfect plan
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Sliders */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="space-y-3">
-            <Label className="text-sm font-medium flex items-center justify-between">
-              <span>Scripts per month</span>
-              <Badge variant="secondary">{scriptsPerMonth}</Badge>
-            </Label>
-            <Slider
-              value={[scriptsPerMonth]}
-              onValueChange={(v) => setScriptsPerMonth(v[0])}
-              min={5}
-              max={500}
-              step={5}
-              className="w-full"
-            />
-            <p className="text-xs text-muted-foreground">AI-generated video scripts</p>
-          </div>
-
-          <div className="space-y-3">
-            <Label className="text-sm font-medium flex items-center justify-between">
-              <span>TTS Minutes</span>
-              <Badge variant="secondary">{ttsMinutes}</Badge>
-            </Label>
-            <Slider
-              value={[ttsMinutes]}
-              onValueChange={(v) => setTtsMinutes(v[0])}
-              min={5}
-              max={300}
-              step={5}
-              className="w-full"
-            />
-            <p className="text-xs text-muted-foreground">Text-to-speech narration</p>
-          </div>
-
-          <div className="space-y-3">
-            <Label className="text-sm font-medium flex items-center justify-between">
-              <span>Team Members</span>
-              <Badge variant="secondary">{teamMembers}</Badge>
-            </Label>
-            <Slider
-              value={[teamMembers]}
-              onValueChange={(v) => setTeamMembers(v[0])}
-              min={1}
-              max={50}
-              step={1}
-              className="w-full"
-            />
-            <p className="text-xs text-muted-foreground">Collaborative workspace</p>
-          </div>
-        </div>
-
-        {/* Toggles */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="flex items-center space-x-2">
-            <Switch id="hipaa" checked={needsHIPAA} onCheckedChange={setNeedsHIPAA} />
-            <Label htmlFor="hipaa" className="text-sm">HIPAA Compliance</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch id="api" checked={needsAPI} onCheckedChange={setNeedsAPI} />
-            <Label htmlFor="api" className="text-sm">API Access</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch id="mobile" checked={includeMobile} onCheckedChange={setIncludeMobile} />
-            <Label htmlFor="mobile" className="text-sm flex items-center gap-1">
-              <Smartphone className="w-3 h-3" /> Mobile App
-            </Label>
-          </div>
-        </div>
-
-        {/* Recommendation */}
-        <motion.div
-          key={recommendedTier.tier}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Recommended Plan</p>
-              <h3 className="text-2xl font-bold text-foreground capitalize">{recommendedTier.tier}</h3>
+    <div className="space-y-6">
+      {/* P&L Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <Card className={plSummary.netProfit >= 0 ? 'border-green-500/50' : 'border-red-500/50'}>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-muted-foreground">Net Profit/Loss</span>
+              {plSummary.netProfit >= 0 ? 
+                <ArrowUpRight className="w-4 h-4 text-green-500" /> : 
+                <ArrowDownRight className="w-4 h-4 text-red-500" />
+              }
             </div>
-            <div className="text-right">
-              <p className="text-3xl font-bold text-primary">${recommendedTier.price.toFixed(2)}<span className="text-sm text-muted-foreground">/mo</span></p>
-              <p className="text-sm text-muted-foreground">or ${recommendedTier.yearly.toFixed(2)}/yr (save ${recommendedTier.savings.toFixed(2)})</p>
+            <p className={`text-xl font-bold ${plSummary.netProfit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              ${plSummary.netProfit.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            </p>
+            <p className="text-xs text-muted-foreground">{plSummary.netMarginPercent.toFixed(1)}% margin</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-muted-foreground">Monthly Revenue</span>
+              <DollarSign className="w-4 h-4 text-primary" />
+            </div>
+            <p className="text-xl font-bold text-foreground">${plSummary.totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+            <p className="text-xs text-muted-foreground">{plSummary.totalPaidSubscribers} paid users</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-muted-foreground">Gross Profit</span>
+              <Coins className="w-4 h-4 text-amber-500" />
+            </div>
+            <p className="text-xl font-bold text-foreground">${plSummary.grossProfit.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+            <p className="text-xs text-muted-foreground">{plSummary.grossMarginPercent.toFixed(1)}% margin</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-muted-foreground">ARPU</span>
+              <Receipt className="w-4 h-4 text-blue-500" />
+            </div>
+            <p className="text-xl font-bold text-foreground">${plSummary.arpu.toFixed(2)}</p>
+            <p className="text-xs text-muted-foreground">Avg revenue/user</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-muted-foreground">LTV:CAC Ratio</span>
+              <Target className="w-4 h-4 text-purple-500" />
+            </div>
+            <p className={`text-xl font-bold ${plSummary.ltvCacRatio >= 3 ? 'text-green-500' : plSummary.ltvCacRatio >= 1 ? 'text-amber-500' : 'text-red-500'}`}>
+              {plSummary.ltvCacRatio.toFixed(1)}x
+            </p>
+            <p className="text-xs text-muted-foreground">{plSummary.ltvCacRatio >= 3 ? 'Healthy' : 'Needs work'}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-muted-foreground">Break-Even</span>
+              <BarChart3 className="w-4 h-4 text-orange-500" />
+            </div>
+            <p className="text-xl font-bold text-foreground">{plSummary.breakEvenUsers === Infinity ? '∞' : plSummary.breakEvenUsers}</p>
+            <p className="text-xs text-muted-foreground">paid users needed</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Three-Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left: Subscriber & Pricing Inputs */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Users className="w-4 h-4 text-primary" />
+              Subscriber Mix & Pricing
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              {Object.entries(subscriberCounts).map(([tier, count]) => (
+                <div key={tier} className="grid grid-cols-3 gap-2 items-center">
+                  <Label className="text-xs capitalize">{tier}</Label>
+                  <Input
+                    type="number"
+                    value={count}
+                    onChange={(e) => setSubscriberCounts(prev => ({ ...prev, [tier]: parseInt(e.target.value) || 0 }))}
+                    className="h-8 text-xs"
+                  />
+                  {tier !== 'free' && (
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground">$</span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={prices[tier as keyof typeof prices]}
+                        onChange={(e) => setPrices(prev => ({ ...prev, [tier]: parseFloat(e.target.value) || 0 }))}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                  )}
+                  {tier === 'free' && <span className="text-xs text-muted-foreground">$0</span>}
+                </div>
+              ))}
+            </div>
+
+            <Separator />
+
+            {/* AI Model Selection */}
+            <div className="space-y-2">
+              <Label className="text-xs">AI Model</Label>
+              <Select value={selectedAIModel} onValueChange={setSelectedAIModel}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {aiModelCosts.map(m => (
+                    <SelectItem key={m.model} value={m.model} className="text-xs">
+                      {m.provider} {m.model} (${m.costPerScript.toFixed(4)}/script)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs">TTS Provider</Label>
+              <Select value={selectedTTS} onValueChange={setSelectedTTS}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ttsCosts.map(t => (
+                    <SelectItem key={`${t.provider} ${t.tier}`} value={`${t.provider} ${t.tier}`} className="text-xs">
+                      {t.provider} {t.tier} (${t.costPerMinute}/min)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Middle: Unit Economics Per Tier */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <PieChart className="w-4 h-4 text-primary" />
+              Unit Economics by Tier
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-80">
+              <div className="space-y-3">
+                {tierEconomics.map((tier) => (
+                  <div key={tier.tier} className={`p-3 rounded-lg border ${
+                    tier.marginPercent >= 40 ? 'border-green-500/30 bg-green-500/5' :
+                    tier.marginPercent >= 0 ? 'border-amber-500/30 bg-amber-500/5' :
+                    'border-red-500/30 bg-red-500/5'
+                  }`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-sm">{tier.tier}</span>
+                      <Badge variant={tier.marginPercent >= 40 ? 'default' : tier.marginPercent >= 0 ? 'secondary' : 'destructive'}>
+                        {tier.marginPercent.toFixed(0)}% margin
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                      <span className="text-muted-foreground">Price:</span>
+                      <span className="text-right">${tier.price.toFixed(2)}</span>
+                      <span className="text-muted-foreground">AI Cost:</span>
+                      <span className="text-right">${tier.aiCostPerUser.toFixed(4)}</span>
+                      <span className="text-muted-foreground">TTS Cost:</span>
+                      <span className="text-right">${tier.ttsCostPerUser.toFixed(2)}</span>
+                      <span className="text-muted-foreground font-medium">Contribution:</span>
+                      <span className={`text-right font-medium ${tier.contribution >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        ${tier.contribution.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-border/50">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">{tier.subscribers} users →</span>
+                        <span className={tier.totalContribution >= 0 ? 'text-green-500' : 'text-red-500'}>
+                          ${tier.totalContribution.toLocaleString(undefined, { maximumFractionDigits: 0 })}/mo
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+
+        {/* Right: Costs Breakdown */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Receipt className="w-4 h-4 text-primary" />
+              Cost Breakdown
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-80">
+              <div className="space-y-4">
+                {/* Fixed Costs */}
+                <div>
+                  <h4 className="text-xs font-medium text-muted-foreground mb-2">Fixed Infrastructure (${totalFixedCosts}/mo)</h4>
+                  <div className="space-y-1">
+                    {monthlyFixedCosts.map((cost, idx) => (
+                      <div key={idx} className="flex justify-between text-xs">
+                        <span>{cost.category}</span>
+                        <span className="text-muted-foreground">${cost.fixedCosts}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Ad Spend */}
+                <div>
+                  <h4 className="text-xs font-medium text-muted-foreground mb-2">Customer Acquisition (${totalAdSpend}/mo)</h4>
+                  <div className="space-y-2">
+                    {Object.entries(adSpend).map(([channel, spend]) => (
+                      <div key={channel} className="grid grid-cols-2 gap-2 items-center">
+                        <Label className="text-xs capitalize">{channel}</Label>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-muted-foreground">$</span>
+                          <Input
+                            type="number"
+                            value={spend}
+                            onChange={(e) => setAdSpend(prev => ({ ...prev, [channel]: parseInt(e.target.value) || 0 }))}
+                            className="h-7 text-xs"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* CAC Analysis */}
+                <div>
+                  <h4 className="text-xs font-medium text-muted-foreground mb-2">Estimated CAC by Channel</h4>
+                  <div className="space-y-1">
+                    {cacByChannel.filter(c => c.spend > 0).map((ch, idx) => (
+                      <div key={idx} className="flex justify-between text-xs">
+                        <span>{ch.channel}</span>
+                        <span className="text-muted-foreground">
+                          ~{ch.estimatedCustomers} users @ ${ch.estimatedCAC}/user
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Full P&L Statement */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-primary" />
+            Monthly P&L Statement
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Revenue Section */}
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm text-green-500 border-b pb-1">REVENUE</h4>
+              {tierEconomics.filter(t => t.price > 0).map(tier => (
+                <div key={tier.tier} className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{tier.tier} ({tier.subscribers})</span>
+                  <span>${tier.totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                </div>
+              ))}
+              <div className="flex justify-between text-sm font-bold pt-2 border-t">
+                <span>Total Revenue</span>
+                <span className="text-green-500">${plSummary.totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+              </div>
+            </div>
+
+            {/* COGS Section */}
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm text-amber-500 border-b pb-1">COST OF GOODS SOLD</h4>
+              {tierEconomics.map(tier => (
+                <div key={tier.tier} className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{tier.tier} Variable</span>
+                  <span>${tier.totalVariableCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                </div>
+              ))}
+              <div className="flex justify-between text-sm font-bold pt-2 border-t">
+                <span>Total COGS</span>
+                <span className="text-amber-500">${plSummary.totalVariableCosts.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+              </div>
+              <div className="flex justify-between text-sm font-bold text-blue-500">
+                <span>Gross Profit</span>
+                <span>${plSummary.grossProfit.toLocaleString(undefined, { maximumFractionDigits: 0 })} ({plSummary.grossMarginPercent.toFixed(0)}%)</span>
+              </div>
+            </div>
+
+            {/* Operating Expenses */}
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm text-red-500 border-b pb-1">OPERATING EXPENSES</h4>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Infrastructure</span>
+                <span>${totalFixedCosts.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Marketing/Ads</span>
+                <span>${totalAdSpend.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-sm font-bold pt-2 border-t">
+                <span>Total OpEx</span>
+                <span className="text-red-500">${plSummary.operatingExpenses.toLocaleString()}</span>
+              </div>
+              <div className={`flex justify-between text-sm font-bold pt-2 border-t-2 ${plSummary.netProfit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                <span>NET PROFIT</span>
+                <span>${plSummary.netProfit.toLocaleString(undefined, { maximumFractionDigits: 0 })} ({plSummary.netMarginPercent.toFixed(0)}%)</span>
+              </div>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {recommendedTier.reasoning.map((reason, idx) => (
-              <Badge key={idx} variant="outline" className="bg-background">
-                <Check className="w-3 h-3 mr-1 text-green-500" />
-                {reason}
-              </Badge>
-            ))}
-          </div>
-        </motion.div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
-// Segment Profile Card
-const SegmentProfileCard: React.FC<{ segment: SegmentPricingProfile }> = ({ segment }) => {
+// ==================== SEGMENT CARDS ====================
+const SegmentProfileCard: React.FC<{ segment: typeof segmentPricingProfiles[0] }> = ({ segment }) => {
   const bundle = segmentBundles.find(b => b.segment === segment.id);
+  const segmentIcons: Record<string, React.ReactNode> = {
+    creator: <Camera className="w-5 h-5" />,
+    influencer: <Users className="w-5 h-5" />,
+    knowledge: <BookOpen className="w-5 h-5" />,
+    traveler: <Plane className="w-5 h-5" />,
+    smb: <Building className="w-5 h-5" />,
+    education: <GraduationCap className="w-5 h-5" />,
+    healthcare: <Heart className="w-5 h-5" />,
+    enterprise: <Crown className="w-5 h-5" />,
+  };
   
   return (
     <Card className="h-full hover:shadow-lg transition-shadow">
@@ -280,14 +562,6 @@ const SegmentProfileCard: React.FC<{ segment: SegmentPricingProfile }> = ({ segm
             <p className="text-muted-foreground text-xs">Price Threshold</p>
             <p className="font-medium">{segment.priceThreshold}</p>
           </div>
-          <div>
-            <p className="text-muted-foreground text-xs">Competitors</p>
-            <p className="font-medium text-xs">{segment.competitorPrice}</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground text-xs">Decision Maker</p>
-            <p className="font-medium">{segment.decisionMaker}</p>
-          </div>
         </div>
 
         {bundle && (
@@ -297,7 +571,6 @@ const SegmentProfileCard: React.FC<{ segment: SegmentPricingProfile }> = ({ segm
               <Badge variant="default" className="bg-green-600">{bundle.price}</Badge>
             </div>
             <p className="text-xs text-muted-foreground">{bundle.valueProposition}</p>
-            <p className="text-xs text-green-600 dark:text-green-400 mt-1">{bundle.competitorSavings}</p>
           </div>
         )}
       </CardContent>
@@ -305,56 +578,7 @@ const SegmentProfileCard: React.FC<{ segment: SegmentPricingProfile }> = ({ segm
   );
 };
 
-// Pricing Model Comparison Card
-const PricingModelCard: React.FC<{ model: typeof pricingModels[0] }> = ({ model }) => (
-  <Card className="h-full">
-    <CardHeader>
-      <div className="flex items-center justify-between">
-        <CardTitle className="text-lg">{model.name}</CardTitle>
-        <Badge variant={model.complexity === 'Low' ? 'secondary' : model.complexity === 'Medium' ? 'outline' : 'destructive'}>
-          {model.complexity} Complexity
-        </Badge>
-      </div>
-      <CardDescription>{model.description}</CardDescription>
-    </CardHeader>
-    <CardContent className="space-y-4">
-      <div className="p-2 rounded bg-muted/50 font-mono text-sm">{model.example}</div>
-      
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <p className="text-xs font-medium text-green-600 mb-2">Pros</p>
-          <ul className="space-y-1">
-            {model.pros.slice(0, 3).map((pro, idx) => (
-              <li key={idx} className="text-xs flex items-start gap-1">
-                <Check className="w-3 h-3 text-green-500 mt-0.5 shrink-0" />
-                <span>{pro}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div>
-          <p className="text-xs font-medium text-red-600 mb-2">Cons</p>
-          <ul className="space-y-1">
-            {model.cons.slice(0, 3).map((con, idx) => (
-              <li key={idx} className="text-xs flex items-start gap-1">
-                <X className="w-3 h-3 text-red-500 mt-0.5 shrink-0" />
-                <span>{con}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap gap-1">
-        {model.bestFor.map((segment, idx) => (
-          <Badge key={idx} variant="outline" className="text-xs">{segment}</Badge>
-        ))}
-      </div>
-    </CardContent>
-  </Card>
-);
-
-// Mobile App Pricing Section
+// ==================== MOBILE PRICING ====================
 const MobileAppPricingSection: React.FC = () => (
   <Card className="border-2 border-primary/30">
     <CardHeader>
@@ -362,239 +586,98 @@ const MobileAppPricingSection: React.FC = () => (
         <Smartphone className="w-5 h-5 text-primary" />
         Mobile App Pricing Strategy
       </CardTitle>
-      <CardDescription>
-        iOS & Android app pricing - standalone or bundled with desktop
-      </CardDescription>
     </CardHeader>
     <CardContent>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Free Tier */}
         <div className="p-4 rounded-xl border bg-muted/30">
           <div className="flex items-center gap-2 mb-3">
             <Gift className="w-5 h-5 text-green-500" />
-            <h4 className="font-semibold">{mobileAppPricing.freemium.name}</h4>
+            <h4 className="font-semibold">Free</h4>
           </div>
-          <p className="text-2xl font-bold text-foreground mb-4">Free</p>
-          <ul className="space-y-2">
-            {mobileAppPricing.freemium.features.map((f, idx) => (
-              <li key={idx} className="text-sm flex items-center gap-2">
-                <Check className="w-4 h-4 text-green-500" />
-                {f}
-              </li>
-            ))}
+          <p className="text-2xl font-bold text-foreground mb-4">$0</p>
+          <ul className="space-y-2 text-sm">
+            <li className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" />3 videos/month</li>
+            <li className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" />720p export</li>
+            <li className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" />5 TTS voices</li>
           </ul>
-          <div className="mt-4 p-2 rounded bg-amber-100 dark:bg-amber-950/30">
-            <p className="text-xs text-amber-700 dark:text-amber-300">
-              Limitations: {mobileAppPricing.freemium.limitations.join(', ')}
-            </p>
-          </div>
         </div>
 
-        {/* Pro Tier */}
         <div className="p-4 rounded-xl border-2 border-primary bg-primary/5 relative">
           <Badge className="absolute -top-2 right-4">Popular</Badge>
           <div className="flex items-center gap-2 mb-3">
             <Zap className="w-5 h-5 text-primary" />
-            <h4 className="font-semibold">{mobileAppPricing.pro.name}</h4>
+            <h4 className="font-semibold">Mobile Pro</h4>
           </div>
-          <p className="text-2xl font-bold text-primary mb-4">
-            ${mobileAppPricing.pro.price}<span className="text-sm text-muted-foreground">/mo</span>
-          </p>
-          <ul className="space-y-2">
-            {mobileAppPricing.pro.features.map((f, idx) => (
-              <li key={idx} className="text-sm flex items-center gap-2">
-                <Check className="w-4 h-4 text-green-500" />
-                {f}
-              </li>
-            ))}
+          <p className="text-2xl font-bold text-primary mb-4">$4.99<span className="text-sm text-muted-foreground">/mo</span></p>
+          <ul className="space-y-2 text-sm">
+            <li className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" />Unlimited videos</li>
+            <li className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" />4K export</li>
+            <li className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" />All TTS voices</li>
           </ul>
         </div>
 
-        {/* Bundle */}
         <div className="p-4 rounded-xl border bg-gradient-to-br from-primary/10 to-accent/10">
           <div className="flex items-center gap-2 mb-3">
             <Crown className="w-5 h-5 text-amber-500" />
-            <h4 className="font-semibold">{mobileAppPricing.bundle.name}</h4>
+            <h4 className="font-semibold">Desktop + Mobile</h4>
           </div>
-          <p className="text-2xl font-bold text-foreground mb-1">
-            ${mobileAppPricing.bundle.price}<span className="text-sm text-muted-foreground">/mo</span>
-          </p>
-          <Badge variant="secondary" className="mb-4">Save {mobileAppPricing.bundle.savings}</Badge>
-          <p className="text-sm text-muted-foreground">{mobileAppPricing.bundle.description}</p>
-          <ul className="space-y-2 mt-4">
-            <li className="text-sm flex items-center gap-2">
-              <Check className="w-4 h-4 text-green-500" />
-              Full desktop access
-            </li>
-            <li className="text-sm flex items-center gap-2">
-              <Check className="w-4 h-4 text-green-500" />
-              Full mobile access
-            </li>
-            <li className="text-sm flex items-center gap-2">
-              <Check className="w-4 h-4 text-green-500" />
-              Cross-device sync
-            </li>
-            <li className="text-sm flex items-center gap-2">
-              <Check className="w-4 h-4 text-green-500" />
-              Cloud projects
-            </li>
+          <p className="text-2xl font-bold text-foreground mb-1">$12.99<span className="text-sm text-muted-foreground">/mo</span></p>
+          <Badge variant="secondary" className="mb-4">Save $2/mo</Badge>
+          <ul className="space-y-2 text-sm">
+            <li className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" />Full desktop access</li>
+            <li className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" />Full mobile access</li>
+            <li className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" />Cross-device sync</li>
           </ul>
         </div>
-      </div>
-
-      <div className="mt-6 p-4 rounded-lg bg-muted/50">
-        <h5 className="font-medium mb-2 flex items-center gap-2">
-          <Target className="w-4 h-4" />
-          Mobile App Target Segments
-        </h5>
-        <div className="flex flex-wrap gap-2">
-          <Badge variant="outline">
-            <Plane className="w-3 h-3 mr-1" /> Travelers (P1)
-          </Badge>
-          <Badge variant="outline">
-            <Camera className="w-3 h-3 mr-1" /> Creators (P0)
-          </Badge>
-          <Badge variant="outline">
-            <Users className="w-3 h-3 mr-1" /> Influencers (P0)
-          </Badge>
-          <Badge variant="outline">
-            <BookOpen className="w-3 h-3 mr-1" /> Knowledge Sharers (P0)
-          </Badge>
-        </div>
-        <p className="text-sm text-muted-foreground mt-2">
-          Mobile-first users who need quick content creation on-the-go. 
-          Travelers especially benefit from Location Story Mode and offline recording.
-        </p>
       </div>
     </CardContent>
   </Card>
 );
 
-// Main Tab Component
+// ==================== MAIN TAB COMPONENT ====================
 export const PricingStrategyTab: React.FC = () => {
   const [subTab, setSubTab] = useState('calculator');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between"
-      >
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <DollarSign className="w-6 h-6 text-primary" />
-            Pricing Strategy & Permutations
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <DollarSign className="w-5 h-5 text-primary" />
+            Pricing Strategy & Unit Economics
           </h2>
-          <p className="text-muted-foreground mt-1">
-            8 segments • 6 pricing models • Interactive calculator
+          <p className="text-sm text-muted-foreground">
+            P&L Calculator • Cost Analysis • Segment Pricing
           </p>
         </div>
-        <div className="flex gap-2">
-          {pricingRecommendations.slice(0, 2).map((rec, idx) => (
-            <Badge key={idx} variant={idx === 0 ? 'default' : 'secondary'}>
-              #{rec.priority}: {rec.option.split(':')[0]}
-            </Badge>
-          ))}
-        </div>
-      </motion.div>
+      </div>
 
-      {/* Sub-tabs */}
-      <Tabs value={subTab} onValueChange={setSubTab}>
-        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
-          <TabsTrigger value="calculator" className="flex items-center gap-1">
+      {/* Sub-tabs - Fixed styling */}
+      <Tabs value={subTab} onValueChange={setSubTab} className="w-full">
+        <TabsList className="inline-flex h-9 items-center justify-start gap-1 rounded-lg bg-muted p-1 w-auto">
+          <TabsTrigger value="calculator" className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium">
             <Calculator className="w-4 h-4" /> Calculator
           </TabsTrigger>
-          <TabsTrigger value="segments" className="flex items-center gap-1">
+          <TabsTrigger value="segments" className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium">
             <Users className="w-4 h-4" /> Segments
           </TabsTrigger>
-          <TabsTrigger value="models" className="flex items-center gap-1">
+          <TabsTrigger value="models" className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium">
             <Layers className="w-4 h-4" /> Models
           </TabsTrigger>
-          <TabsTrigger value="mobile" className="flex items-center gap-1">
+          <TabsTrigger value="mobile" className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium">
             <Smartphone className="w-4 h-4" /> Mobile
           </TabsTrigger>
-          <TabsTrigger value="comparison" className="flex items-center gap-1">
+          <TabsTrigger value="comparison" className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium">
             <BarChart3 className="w-4 h-4" /> Compare
           </TabsTrigger>
         </TabsList>
 
-        {/* Calculator Tab */}
-        <TabsContent value="calculator" className="mt-6">
-          <PricingCalculator />
-          
-          {/* AI Cost Transparency - Using new data */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                  AI Model Costs (Real Pricing)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-64">
-                  <div className="space-y-3">
-                    {aiModelCosts.map((model, idx) => (
-                      <div key={idx} className="p-3 rounded-lg bg-muted/50">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-medium text-sm">{model.provider} {model.model}</span>
-                          <Badge variant="outline" className="text-xs">{model.contextWindow}</Badge>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                          <span>Input: ${model.inputCostPer1MTok}/1M tok</span>
-                          <span>Output: ${model.outputCostPer1MTok}/1M tok</span>
-                        </div>
-                        <div className="flex items-center justify-between mt-1">
-                          <span className="text-xs text-muted-foreground">{model.bestFor}</span>
-                          <Badge variant="secondary" className="text-xs">${model.costPerScript.toFixed(4)}/script</Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  🎙️ TTS Voice Pricing (Real Costs)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-64">
-                  <div className="space-y-3">
-                    {ttsCosts.map((tts, idx) => (
-                      <div key={idx} className="p-3 rounded-lg bg-muted/50">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-medium text-sm">{tts.provider} ({tts.tier})</span>
-                          <Badge variant={
-                            tts.quality === 'Ultra' ? 'default' : 
-                            tts.quality === 'Premium' ? 'secondary' : 'outline'
-                          }>{tts.quality}</Badge>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
-                          <span>{tts.voiceCount} voices</span>
-                          <span>{tts.languages} languages</span>
-                          <span className="font-medium text-foreground">${tts.costPerMinute}/min</span>
-                        </div>
-                        <div className="flex gap-2 mt-2">
-                          {tts.cloning && <Badge variant="outline" className="text-xs">Voice Clone</Badge>}
-                          {tts.emotionControl && <Badge variant="outline" className="text-xs">Emotion</Badge>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </div>
+        <TabsContent value="calculator" className="mt-4">
+          <ComprehensivePLCalculator />
         </TabsContent>
 
-        {/* Segments Tab */}
-        <TabsContent value="segments" className="mt-6">
+        <TabsContent value="segments" className="mt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {segmentPricingProfiles.map((segment) => (
               <SegmentProfileCard key={segment.id} segment={segment} />
@@ -602,24 +685,57 @@ export const PricingStrategyTab: React.FC = () => {
           </div>
         </TabsContent>
 
-        {/* Models Tab */}
-        <TabsContent value="models" className="mt-6">
+        <TabsContent value="models" className="mt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {pricingModels.map((model) => (
-              <PricingModelCard key={model.id} model={model} />
+              <Card key={model.id} className="h-full">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">{model.name}</CardTitle>
+                    <Badge variant={model.complexity === 'Low' ? 'secondary' : model.complexity === 'Medium' ? 'outline' : 'destructive'}>
+                      {model.complexity}
+                    </Badge>
+                  </div>
+                  <CardDescription>{model.description}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="p-2 rounded bg-muted/50 font-mono text-sm">{model.example}</div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs font-medium text-green-600 mb-2">Pros</p>
+                      <ul className="space-y-1">
+                        {model.pros.slice(0, 3).map((pro, idx) => (
+                          <li key={idx} className="text-xs flex items-start gap-1">
+                            <Check className="w-3 h-3 text-green-500 mt-0.5 shrink-0" />
+                            <span>{pro}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-red-600 mb-2">Cons</p>
+                      <ul className="space-y-1">
+                        {model.cons.slice(0, 3).map((con, idx) => (
+                          <li key={idx} className="text-xs flex items-start gap-1">
+                            <X className="w-3 h-3 text-red-500 mt-0.5 shrink-0" />
+                            <span>{con}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </TabsContent>
 
-        {/* Mobile Tab */}
-        <TabsContent value="mobile" className="mt-6">
+        <TabsContent value="mobile" className="mt-4">
           <MobileAppPricingSection />
         </TabsContent>
 
-        {/* Comparison Tab */}
-        <TabsContent value="comparison" className="mt-6">
+        <TabsContent value="comparison" className="mt-4">
           <div className="space-y-6">
-            {/* Recommendations */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -630,23 +746,13 @@ export const PricingStrategyTab: React.FC = () => {
               <CardContent>
                 <div className="space-y-4">
                   {pricingRecommendations.map((rec) => (
-                    <div 
-                      key={rec.priority} 
-                      className={`p-4 rounded-lg border ${
-                        rec.priority === 1 ? 'border-primary bg-primary/5' : 'bg-muted/30'
-                      }`}
-                    >
+                    <div key={rec.priority} className={`p-4 rounded-lg border ${rec.priority === 1 ? 'border-primary bg-primary/5' : 'bg-muted/30'}`}>
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <Badge variant={rec.priority === 1 ? 'default' : 'secondary'}>
-                            #{rec.priority}
-                          </Badge>
+                          <Badge variant={rec.priority === 1 ? 'default' : 'secondary'}>#{rec.priority}</Badge>
                           <h4 className="font-semibold">{rec.option}</h4>
                         </div>
-                        <div className="flex gap-2">
-                          <Badge variant="outline">{rec.implementationComplexity} Complexity</Badge>
-                          <Badge variant="outline">{rec.timeToMarket}</Badge>
-                        </div>
+                        <Badge variant="outline">{rec.implementationComplexity}</Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">{rec.reasoning}</p>
                     </div>
@@ -655,29 +761,23 @@ export const PricingStrategyTab: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Permutation Overview */}
             <Card>
               <CardHeader>
                 <CardTitle>All Pricing Permutations</CardTitle>
-                <CardDescription>6 different pricing models analyzed</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {pricingPermutations.map((perm) => (
-                    <div 
-                      key={perm.id}
-                      className={`p-4 rounded-lg border ${
-                        perm.recommendation === 'Strong' ? 'border-green-500 bg-green-50 dark:bg-green-950/20' :
-                        perm.recommendation === 'Medium' ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/20' :
-                        'border-red-500 bg-red-50 dark:bg-red-950/20'
-                      }`}
-                    >
+                    <div key={perm.id} className={`p-4 rounded-lg border ${
+                      perm.recommendation === 'Strong' ? 'border-green-500 bg-green-50 dark:bg-green-950/20' :
+                      perm.recommendation === 'Medium' ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/20' :
+                      'border-red-500 bg-red-50 dark:bg-red-950/20'
+                    }`}>
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-semibold text-sm">{perm.name}</h4>
-                        <Badge variant={
-                          perm.recommendation === 'Strong' ? 'default' :
-                          perm.recommendation === 'Medium' ? 'secondary' : 'destructive'
-                        }>{perm.recommendation}</Badge>
+                        <Badge variant={perm.recommendation === 'Strong' ? 'default' : perm.recommendation === 'Medium' ? 'secondary' : 'destructive'}>
+                          {perm.recommendation}
+                        </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground mb-2">{perm.structure}</p>
                       <div className="flex items-center justify-between text-xs">
