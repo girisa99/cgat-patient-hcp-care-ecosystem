@@ -116,6 +116,11 @@ const AppContent = () => {
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/email-confirmation" element={<EmailConfirmation />} />
+              <Route path="/social-oauth-callback" element={
+                <Suspense fallback={<PageLoading message="Processing..." />}>
+                  {React.createElement(React.lazy(() => import('@/pages/SocialOAuthCallback')))}
+                </Suspense>
+              } />
               
               {/* Protected routes */}
               {isAuthenticated ? (

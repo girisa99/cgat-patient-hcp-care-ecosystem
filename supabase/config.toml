@@ -260,3 +260,9 @@ verify_jwt = false
 
 [functions.notify-recording-consent]
 verify_jwt = false
+
+[functions.linkedin-oauth]
+verify_jwt = false
+
+[functions.youtube-oauth]
+verify_jwt = false
