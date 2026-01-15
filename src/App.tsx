@@ -400,6 +400,13 @@ const AppContent = () => {
                       </Suspense>
                     </ProtectedRoute>
                   } />
+                  <Route path="/content-tools" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
+                      <Suspense fallback={<PageLoading message="Loading Content Tools..." />}>
+                        {React.createElement(React.lazy(() => import('@/pages/ContentTools')))}
+                      </Suspense>
+                    </ProtectedRoute>
+                  } />
                   <Route path="/healthcare-ai" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
                       <Suspense fallback={<PageLoading message="Loading healthcare AI..." />}>
