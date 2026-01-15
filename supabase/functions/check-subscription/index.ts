@@ -67,14 +67,44 @@ serve(async (req) => {
           tier: dbSub.subscription_tiers?.name || 'beta',
           product_id: dbSub.subscription_tiers?.stripe_product_id,
           subscription_end: dbSub.current_period_end,
-          source: 'database'
+          source: 'database',
+          isTrialActive: false,
+          trialEndsAt: null
         }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 200,
         });
       }
 
-      return new Response(JSON.stringify({ subscribed: false }), {
+      // Check for trial in user_segments table
+      const { data: userSegment } = await supabaseClient
+        .from('user_segments')
+        .select('trial_started_at, trial_ends_at, subscription_status')
+        .eq('user_id', user.id)
+        .single();
+
+      const isTrialActive = userSegment?.subscription_status === 'trial' && 
+        userSegment?.trial_ends_at && 
+        new Date(userSegment.trial_ends_at) > new Date();
+
+      const trialExpired = userSegment?.trial_ends_at && 
+        new Date(userSegment.trial_ends_at) <= new Date();
+
+      // Auto-expire trial if needed
+      if (trialExpired && userSegment?.subscription_status === 'trial') {
+        await supabaseClient
+          .from('user_segments')
+          .update({ subscription_status: 'expired' })
+          .eq('user_id', user.id);
+        logStep("Trial expired, status updated");
+      }
+
+      return new Response(JSON.stringify({ 
+        subscribed: false,
+        tier: 'free',
+        isTrialActive,
+        trialEndsAt: userSegment?.trial_ends_at || null
+      }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
