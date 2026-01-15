@@ -2,6 +2,7 @@
  * Genie Command Center - Enterprise Dashboard
  * Clean, professional investor-ready dashboard
  * Using proper design system tokens with WOW animations
+ * DYNAMIC DATA: All metrics sourced from governance-data.ts
  */
 
 import React, { useState } from 'react';
@@ -25,6 +26,9 @@ import { InvestorDashboardTab } from './tabs/InvestorDashboardTab';
 import { StageGatesTab } from './tabs/StageGatesTab';
 import { GovernanceTab } from './tabs/GovernanceTab';
 
+// Import governance data for dynamic metrics
+import { masterScenarioCounts } from './data/governance-data';
+
 const tabs = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
   { id: 'market', label: 'Market Analysis', icon: TrendingUp },
@@ -39,6 +43,12 @@ const tabs = [
 
 export const GenieCommandCenter: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
+  
+  // Dynamic metrics from single source of truth
+  const totalScenarios = masterScenarioCounts.totalScenarios;
+  const implementedScenarios = masterScenarioCounts.implementedScenarios;
+  const completionPercentage = masterScenarioCounts.completionPercentage;
+  const progressOffset = 100 - completionPercentage;
 
   return (
     <div className="min-h-screen bg-background">
@@ -73,7 +83,7 @@ export const GenieCommandCenter: React.FC = () => {
                   Genie Suite Command Center
                 </h1>
                 <p className="text-sm text-muted-foreground mt-0.5">
-                  Enterprise Content Production Platform • 305 Scenarios Defined
+                  Enterprise Content Production Platform • {totalScenarios} Scenarios Defined
                 </p>
               </div>
             </div>
@@ -114,14 +124,14 @@ export const GenieCommandCenter: React.FC = () => {
                       className="text-primary"
                       strokeDasharray={100}
                       initial={{ strokeDashoffset: 100 }}
-                      animate={{ strokeDashoffset: 39 }}
+                      animate={{ strokeDashoffset: progressOffset }}
                       transition={{ duration: 1.5, delay: 0.6 }}
                     />
                   </svg>
-                  <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-primary">61%</span>
+                  <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-primary">{completionPercentage}%</span>
                 </div>
                 <div className="text-sm">
-                  <div className="font-semibold text-foreground">185 / 305</div>
+                  <div className="font-semibold text-foreground">{implementedScenarios} / {totalScenarios}</div>
                   <div className="text-xs text-muted-foreground">Scenarios Done</div>
                 </div>
               </motion.div>
