@@ -1,53 +1,34 @@
 /**
- * Genie Studio Metrics - Single Source of Truth
+ * Genie Studio Metrics - Re-exports from Unified Metrics
  * 
- * IMPORTANT: Metrics are now DYNAMICALLY CALCULATED from the registry!
- * To update counts, modify: src/genie-studio/governance/GenieStudioRegistry.ts
- * 
- * This file re-exports the calculated metrics for backward compatibility.
+ * This file now re-exports from the SINGLE SOURCE OF TRUTH:
+ * src/genie-studio/governance/UnifiedMetrics.ts
  * 
  * Last verified: 2026-01-15
  */
 
-import { GENIE_DYNAMIC_METRICS, calculateGenieMetrics } from './governance/GenieStudioRegistry';
+export {
+  GENIE_COUNTS as GENIE_STUDIO_METRICS,
+  PLATFORM_TOTALS,
+  INFRASTRUCTURE_METRICS,
+  SCENARIO_METRICS,
+  PHASES,
+  GENIE_DYNAMIC_METRICS,
+  getPhaseProgress,
+  getPhaseDisplayString,
+  getScenarioDisplayString,
+  getCompletionDisplayString,
+  validateMetrics,
+} from './governance/UnifiedMetrics';
 
-// Re-export dynamic metrics
-export const GENIE_STUDIO_METRICS = {
-  // Dynamically calculated from registry
-  pages: GENIE_DYNAMIC_METRICS.pages,
-  components: 55, // Components require manual count (barrel exports complex)
-  hooksBarrel: 24,
-  hooksLegacy: GENIE_DYNAMIC_METRICS.hooks - 24,
-  hooksTotal: GENIE_DYNAMIC_METRICS.hooks,
-  servicesBarrel: 18,
-  servicesLegacy: GENIE_DYNAMIC_METRICS.services - 18,
-  servicesTotal: GENIE_DYNAMIC_METRICS.services,
-  edgeFunctions: GENIE_DYNAMIC_METRICS.edgeFunctions,
-  databaseTables: GENIE_DYNAMIC_METRICS.databaseTables,
-  aiAgents: GENIE_DYNAMIC_METRICS.aiAgents,
-  mobileComponents: 18, // From mobile/index.ts - manual count
-} as const;
+// For backward compatibility
+export { calculateGenieMetrics } from './governance/GenieStudioRegistry';
 
-// Platform totals (Genie + Healthcare + Shared)
-export const PLATFORM_TOTALS = {
-  edgeFunctions: 140,
-  hooks: 280,
-  databaseTables: 180,
-  aiAgents: 15,
-  mobileComponents: 23,
-  pages: 85,
-  components: 500,
-  services: 35,
-} as const;
+// Percentage calculator
+import { GENIE_COUNTS, PLATFORM_TOTALS } from './governance/UnifiedMetrics';
 
-// Calculated percentages
 export const getGenieStudioPercentage = (metric: keyof typeof PLATFORM_TOTALS) => {
-  const genieValue = metric === 'hooks' ? GENIE_STUDIO_METRICS.hooksTotal :
-                     metric === 'services' ? GENIE_STUDIO_METRICS.servicesTotal :
-                     GENIE_STUDIO_METRICS[metric as keyof typeof GENIE_STUDIO_METRICS] || 0;
+  const genieValue = GENIE_COUNTS[metric as keyof typeof GENIE_COUNTS] || 0;
   const total = PLATFORM_TOTALS[metric];
   return Math.round((Number(genieValue) / total) * 100);
 };
-
-// Re-export for convenience
-export { calculateGenieMetrics, GENIE_DYNAMIC_METRICS } from './governance/GenieStudioRegistry';
