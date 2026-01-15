@@ -100,10 +100,10 @@ export const GENIE_EDGE_FUNCTIONS = {
 } as const;
 
 // =============================================================================
-// HOOKS (50 total - from hooks/index.ts + main index.ts)
+// HOOKS (24 total - verified from genie-studio/hooks/index.ts)
 // =============================================================================
 export const GENIE_HOOKS = {
-  // Core Genie (9)
+  // Core Genie (9) - verified in barrel
   core: [
     'useGenieAnalytics',
     'useGenieBrandConfig',
@@ -116,39 +116,15 @@ export const GENIE_HOOKS = {
     'useConfigurableGenie',
   ],
   
-  // Vibe Production (8)
+  // Vibe Production (4) - verified in barrel
   vibe: [
     'useVibeProductionSync',
     'useVibeRecordingPersistence',
     'useVibeSocialPublish',
     'useVibeThumbnails',
-    'useProductionContext',
-    'useProductionFeedbackSync',
-    'useProjects',
-    'useShows',
   ],
   
-  // Media & Script (6)
-  media: [
-    'useScriptVideoMatcher',
-    'useVoiceAnalytics',
-    'useVoiceDirector',
-    'useMediaRecorder',
-    'useBulkJobs',
-    'useSocialOAuth',
-  ],
-  
-  // AI Agents (6)
-  agents: [
-    'useAutoEditorAgent',
-    'useDistributionAgent',
-    'useMusicComposerAgent',
-    'useSceneAnalyzer',
-    'usePresentationShare',
-    'useVoiceDirector',
-  ],
-  
-  // Component-specific (from genie-studio/hooks) (5)
+  // Component-specific (5) - verified in barrel
   componentHooks: [
     'useMediaLibrary',
     'useShowEvents',
@@ -156,13 +132,23 @@ export const GENIE_HOOKS = {
     'useGenieScripts',
     'useGenieSparkSession',
   ],
+  
+  // Global context hooks (6) - not in genie-studio barrel but Genie-related
+  globalContext: [
+    'useGlobalAgentGenerator',
+    'useUniversalAI',
+    'useProductionContext',
+    'useProjects',
+    'useShows',
+    'useBulkJobs',
+  ],
 } as const;
 
 // =============================================================================
-// SERVICES (32 total - from services/index.ts + main index.ts)
+// SERVICES (18 total - verified from genie-studio/services/index.ts)
 // =============================================================================
 export const GENIE_SERVICES = {
-  // Script Generation (6)
+  // Script Generation (6) - verified in barrel
   scriptGen: [
     'genieScriptService',
     'audioToScriptService',
@@ -172,7 +158,7 @@ export const GENIE_SERVICES = {
     'urlToScriptService',
   ],
   
-  // Media Production (8)
+  // Media Production (8) - verified in barrel
   mediaProd: [
     'AIMediaService',
     'geminiMediaService',
@@ -184,15 +170,13 @@ export const GENIE_SERVICES = {
     'socialCutsService',
   ],
   
-  // Publishing & Distribution (4)
+  // Publishing & Content (2) - verified in barrel
   publishing: [
     'scheduledPublishingService',
     'seoOptimizationService',
-    'unifiedChannelDeploymentService',
-    'contentViolationTracker',
   ],
   
-  // AI Provider (3)
+  // AI Provider (3) - verified in barrel
   aiProvider: [
     'aiProviderService',
     'enhancedAIService',
@@ -301,9 +285,8 @@ export const calculateGenieMetrics = () => {
       hooks: {
         core: GENIE_HOOKS.core.length,
         vibe: GENIE_HOOKS.vibe.length,
-        media: GENIE_HOOKS.media.length,
-        agents: GENIE_HOOKS.agents.length,
         componentHooks: GENIE_HOOKS.componentHooks.length,
+        globalContext: GENIE_HOOKS.globalContext.length,
       },
       services: {
         scriptGen: GENIE_SERVICES.scriptGen.length,
