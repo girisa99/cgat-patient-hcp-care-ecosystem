@@ -43,7 +43,7 @@ const phases: Record<string, PhaseData> = {
   P0: { total: 35, implemented: 35, status: 'completed' },
   P1: { total: 32, implemented: 32, status: 'completed' },
   P2: { total: 118, implemented: 118, status: 'completed' }, // 50 original + 52 cross-functional + 16 editing
-  P3: { total: 72, implemented: 0, status: 'planned' }, // 58 original + 14 Go-Live Website scenarios
+  P3: { total: 72, implemented: 5, status: 'in-progress' }, // 58 original + 14 Go-Live Website (5 done via P0-P2 backend)
   P4: { total: 50, implemented: 0, status: 'planned' },
   P5: { total: 28, implemented: 0, status: 'planned' },
 };
