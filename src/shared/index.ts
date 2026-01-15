@@ -1,24 +1,10 @@
 /**
  * SHARED - Cross-Product Infrastructure Index
- * 
- * This module contains shared infrastructure used by both 
- * Genie Studio and Healthcare products.
- * 
- * IMPORTANT: Code in this module should be product-agnostic.
- * Do NOT add product-specific logic here.
- * 
- * @see src/shared/config/product-config.ts for product boundaries
  */
 
-// =============================================================================
-// CONFIGURATION
-// =============================================================================
+// Configuration
 export * from './config/product-config';
 export * from './config/secret-keys';
-
-// =============================================================================
-// SHARED HOOKS (Re-exports from current locations)
-// =============================================================================
 
 // Authentication & Authorization
 export { useMasterAuth } from '@/hooks/useMasterAuth';
@@ -57,19 +43,14 @@ export { useObservabilityConfig } from '@/hooks/useObservabilityConfig';
 export { useMasterToast } from '@/hooks/useMasterToast';
 export { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
-// =============================================================================
-// SHARED SERVICES
-// =============================================================================
+// Services
 export { intentDetectionService } from '@/services/intentDetectionService';
-export type { ResponseIntent } from '@/services/intentDetectionService';
-
 export { agentArchitectureIntelligence } from '@/services/agentArchitectureIntelligence';
-export type { 
-  AgentArchitectureType, 
-  ArchitectureRecommendation, 
-  ArchitectureAnalysis,
-  InputFactor 
-} from '@/services/agentArchitectureIntelligence';
-
 export { ModelRoutingService } from '@/services/ModelRoutingService';
 export { analyticsIntegrationService } from '@/services/analyticsIntegrationService';
+
+// Shared Constants
+export const SHARED_INFRASTRUCTURE = {
+  products: ['genie-studio', 'healthcare', 'document-processing'],
+  version: '1.0.0',
+} as const;
