@@ -46,7 +46,7 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 15 },
-  visible: { opacity: 1, y: 0 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
 };
 
 export const ArchitectureTab: React.FC = () => {
@@ -86,6 +86,7 @@ export const ArchitectureTab: React.FC = () => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
+      key="architecture-container"
       className="max-w-[1920px] mx-auto space-y-6 p-6"
     >
       {/* Diagram Selector with Horizontal Scroll */}
