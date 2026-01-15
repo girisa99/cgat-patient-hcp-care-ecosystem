@@ -2,6 +2,9 @@
  * Investor Dashboard Tab - Complete Investor Package
  * All critical metrics investors need for funding decisions
  * DYNAMIC DATA: Metrics sourced from governance-data.ts
+ * 
+ * DISPLAYS: Genie-specific metrics with scalability context
+ * This is an INVESTOR view showing product maturity + market potential.
  */
 
 import React, { useState } from 'react';
@@ -13,7 +16,7 @@ import {
   DollarSign, TrendingUp, Users, Building, Heart, GraduationCap, Briefcase, Plane,
   BarChart3, PieChart, Target, Zap, Shield, Globe, Clock, CheckCircle,
   ArrowUpRight, ArrowDownRight, Rocket, AlertTriangle, Award, Layers,
-  Lightbulb, Lock, Server, Database, Cpu, MessageSquare
+  Lightbulb, Lock, Server, Database, Cpu, MessageSquare, Code, Box
 } from 'lucide-react';
 import {
   financialProjections,
@@ -23,6 +26,13 @@ import {
   pricingTiers,
 } from '../data/financial-data';
 import { masterScenarioCounts, masterFinancialMetrics } from '../data/governance-data';
+import { 
+  GENIE_COUNTS, 
+  PLATFORM_TOTALS, 
+  SCENARIO_METRICS, 
+  PHASES,
+  GENIE_DYNAMIC_METRICS,
+} from '@/genie-studio/governance';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -254,6 +264,54 @@ export const InvestorDashboardTab: React.FC = () => {
                   <div className="text-xs text-green-600 mt-2 font-medium">{item.competitors}</div>
                 </div>
               ))}
+            </div>
+          </motion.div>
+
+          {/* Genie Suite Platform Scalability - Investor View */}
+          <motion.div variants={itemVariants}>
+            <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+              <Server className="w-5 h-5 text-primary" />
+              Platform Scalability (Genie Suite Infrastructure)
+            </h3>
+            <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
+              {[
+                { label: 'Edge Functions', genie: GENIE_COUNTS.edgeFunctions, total: PLATFORM_TOTALS.edgeFunctions, icon: Zap, color: 'green' },
+                { label: 'Custom Hooks', genie: GENIE_COUNTS.hooks, total: PLATFORM_TOTALS.hooks, icon: Code, color: 'purple' },
+                { label: 'DB Tables', genie: GENIE_COUNTS.databaseTables, total: PLATFORM_TOTALS.databaseTables, icon: Database, color: 'blue' },
+                { label: 'AI Agents', genie: GENIE_COUNTS.aiAgents, total: PLATFORM_TOTALS.aiAgents, icon: Cpu, color: 'amber' },
+                { label: 'Services', genie: GENIE_COUNTS.services, total: PLATFORM_TOTALS.services, icon: Server, color: 'cyan' },
+                { label: 'Components', genie: GENIE_COUNTS.components, total: PLATFORM_TOTALS.components, icon: Layers, color: 'pink' },
+                { label: 'Pages', genie: GENIE_COUNTS.pages, total: PLATFORM_TOTALS.pages, icon: Box, color: 'indigo' },
+                { label: 'Mobile', genie: GENIE_COUNTS.mobileComponents, total: PLATFORM_TOTALS.mobileComponents, icon: Globe, color: 'orange' },
+              ].map((item, i) => (
+                <div key={i} className={`p-3 rounded-lg border text-center bg-${item.color}-50/50 dark:bg-${item.color}-900/10 border-${item.color}-200 dark:border-${item.color}-800/40`}>
+                  <item.icon className={`w-4 h-4 mx-auto mb-1 text-${item.color}-600 dark:text-${item.color}-400`} />
+                  <div className="text-lg font-bold text-foreground">
+                    {item.genie}
+                    <span className="text-xs text-muted-foreground font-normal">/{item.total}</span>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">{item.label}</div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 p-4 bg-primary/5 rounded-xl border border-primary/20">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-5 h-5 text-primary" />
+                  <div>
+                    <div className="font-semibold text-foreground">
+                      {SCENARIO_METRICS.implementedScenarios}/{SCENARIO_METRICS.totalScenarios} Scenarios Implemented
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      P0-P2 Complete ({PHASES.P0.implemented + PHASES.P1.implemented + PHASES.P2.implemented} scenarios) • P3 In Progress ({PHASES.P3.implemented}/{PHASES.P3.total})
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-primary">{SCENARIO_METRICS.completionPercentage}%</div>
+                  <div className="text-xs text-muted-foreground">Platform Complete</div>
+                </div>
+              </div>
             </div>
           </motion.div>
         </TabsContent>

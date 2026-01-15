@@ -2,6 +2,9 @@
  * Product Suite Tab - Genie Products with Features & WoW Factors
  * Clean enterprise styling with proper design tokens
  * DYNAMIC DATA: Metrics sourced from governance-data.ts
+ * 
+ * DISPLAYS: Genie-specific metrics (not platform totals)
+ * This is a PRODUCT view for stakeholders interested in Genie Suite only.
  */
 
 import React, { useState } from 'react';
@@ -12,8 +15,9 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { products } from '../data/implementation-data';
-import { masterScenarioCounts, masterInfrastructureCounts } from '../data/governance-data';
+import { products, infrastructureMetrics } from '../data/implementation-data';
+import { masterScenarioCounts } from '../data/governance-data';
+import { GENIE_COUNTS, SCENARIO_METRICS, PLATFORM_TOTALS } from '@/genie-studio/governance';
 
 const productIcons: Record<string, React.ReactNode> = {
   mind: <Brain className="w-8 h-8" />,
@@ -254,25 +258,80 @@ export const ProductSuiteTab: React.FC = () => {
         </Card>
       </motion.div>
 
-      {/* Total Stats */}
-      <motion.div 
-        variants={itemVariants}
-        className="grid grid-cols-2 md:grid-cols-5 gap-4"
-      >
-        {[
-          { label: 'Total Scenarios', value: String(masterScenarioCounts.totalScenarios), color: 'primary' },
-          { label: 'AI Agents', value: `${masterInfrastructureCounts.aiAgents}+`, color: 'purple' },
-          { label: 'Edge Functions', value: `${masterInfrastructureCounts.edgeFunctions}+`, color: 'green' },
-          { label: 'Custom Hooks', value: `${masterInfrastructureCounts.customHooks}+`, color: 'blue' },
-          { label: 'Database Tables', value: `${masterInfrastructureCounts.databaseTables}+`, color: 'amber' },
-        ].map((stat, index) => (
-          <Card key={index} className="text-center">
-            <CardContent className="p-5">
-              <div className="text-3xl font-bold text-foreground">{stat.value}</div>
-              <div className="text-sm text-muted-foreground mt-1">{stat.label}</div>
-            </CardContent>
-          </Card>
-        ))}
+      {/* Genie-Specific Stats - Product View */}
+      <motion.div variants={itemVariants}>
+        <h3 className="text-lg font-semibold text-foreground mb-4 text-center">
+          Genie Suite Infrastructure
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          {[
+            { 
+              label: 'Scenarios', 
+              genie: SCENARIO_METRICS.implementedScenarios,
+              total: SCENARIO_METRICS.totalScenarios,
+              color: 'primary',
+              showProgress: true,
+            },
+            { 
+              label: 'AI Agents', 
+              genie: GENIE_COUNTS.aiAgents,
+              total: PLATFORM_TOTALS.aiAgents,
+              color: 'purple',
+            },
+            { 
+              label: 'Edge Functions', 
+              genie: GENIE_COUNTS.edgeFunctions,
+              total: PLATFORM_TOTALS.edgeFunctions,
+              color: 'green',
+            },
+            { 
+              label: 'Custom Hooks', 
+              genie: GENIE_COUNTS.hooks,
+              total: PLATFORM_TOTALS.hooks,
+              color: 'blue',
+            },
+            { 
+              label: 'Database Tables', 
+              genie: GENIE_COUNTS.databaseTables,
+              total: PLATFORM_TOTALS.databaseTables,
+              color: 'amber',
+            },
+          ].map((stat, index) => (
+            <Card key={index} className="text-center border-2 hover:shadow-md transition-shadow">
+              <CardContent className="p-5">
+                <div className="text-2xl font-bold text-foreground">
+                  {stat.genie}
+                  <span className="text-sm font-normal text-muted-foreground">/{stat.total}</span>
+                </div>
+                <div className="text-sm text-muted-foreground mt-1">{stat.label}</div>
+                <div className="mt-2 text-xs text-primary">
+                  {Math.round((stat.genie / stat.total) * 100)}% of platform
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Additional Genie-Specific Metrics */}
+      <motion.div variants={itemVariants}>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: 'Pages', genie: GENIE_COUNTS.pages, total: PLATFORM_TOTALS.pages },
+            { label: 'Services', genie: GENIE_COUNTS.services, total: PLATFORM_TOTALS.services },
+            { label: 'Components', genie: GENIE_COUNTS.components, total: PLATFORM_TOTALS.components },
+            { label: 'Mobile', genie: GENIE_COUNTS.mobileComponents, total: PLATFORM_TOTALS.mobileComponents },
+          ].map((stat, index) => (
+            <Card key={index} className="text-center bg-muted/30">
+              <CardContent className="p-4">
+                <div className="text-lg font-semibold text-foreground">
+                  {stat.genie}<span className="text-xs text-muted-foreground">/{stat.total}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">{stat.label}</div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </motion.div>
     </motion.div>
   );

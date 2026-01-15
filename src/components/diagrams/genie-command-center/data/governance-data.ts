@@ -53,7 +53,12 @@ export const masterScenarioCounts = {
 // =============================================================================
 // MASTER INFRASTRUCTURE COUNTS - DERIVED FROM UNIFIED METRICS
 // =============================================================================
+/**
+ * Master Infrastructure Counts now include both platform totals and Genie-specific counts.
+ * Use genieSpecific for Genie-focused views, platform for overall views.
+ */
 export const masterInfrastructureCounts = {
+  // Platform-wide totals
   edgeFunctions: PLATFORM_TOTALS.edgeFunctions,
   customHooks: PLATFORM_TOTALS.hooks,
   databaseTables: PLATFORM_TOTALS.databaseTables,
@@ -61,6 +66,9 @@ export const masterInfrastructureCounts = {
   aiAgents: PLATFORM_TOTALS.aiAgents,
   ttsProviders: PLATFORM_TOTALS.ttsProviders,
   products: PLATFORM_TOTALS.products,
+  
+  // Genie-specific counts (for product-focused views)
+  genieSpecific: INFRASTRUCTURE_METRICS,
   
   // Last verification dates
   verifiedAt: {
