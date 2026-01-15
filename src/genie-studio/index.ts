@@ -32,17 +32,8 @@ export const GENIE_STUDIO_PRODUCT = {
   description: 'AI-Powered Media Production Suite',
   commercialLaunch: true,
   
-  // Verified metrics from folder structure audit
-  metrics: {
-    pages: 10,
-    components: 55,
-    hooks: 50,       // 24 from hooks/index + 26 additional exports here
-    services: 32,    // 18 from services/index + 14 additional exports here
-    edgeFunctions: 62,
-    databaseTables: 42,
-    aiAgents: 12,
-    mobileComponents: 18,
-  },
+  // NOTE: For actual metrics, import from src/genie-studio/metrics.ts
+  // This is kept for backward compatibility only
   
   subProducts: [
     { id: 'mind', name: 'Genie Mind', description: 'Script Writing & AI Intelligence' },
@@ -69,6 +60,11 @@ export const GENIE_STUDIO_PRODUCT = {
   
   ttsProviders: ['elevenlabs', 'google', 'azure', 'amazon', 'openai'],
 } as const;
+
+// =============================================================================
+// METRICS - Single Source of Truth for all counts
+// =============================================================================
+export { GENIE_STUDIO_METRICS, PLATFORM_TOTALS, getGenieStudioPercentage } from './metrics';
 
 // =============================================================================
 // MODULE EXPORTS (Phase 2 - Organized by domain)
