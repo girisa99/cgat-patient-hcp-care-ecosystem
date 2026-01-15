@@ -78,23 +78,28 @@ export const implementationPhases: ImplementationPhase[] = [
     name: 'Differentiators & Go-Live',
     weeks: '13-18',
     status: 'in-progress',
-    completion: 7, // 5/72 = ~7%
+    completion: 22, // 16/72 = ~22%
     scenariosTotal: 72, // 58 original + 14 Go-Live Website scenarios
-    scenariosComplete: 5, // 5 backend items done via P0-P2
+    scenariosComplete: 16, // Updated with new Content Tools implementation
     features: [
       { name: 'Landing Page (Genie Suite Marketing Website)', status: 'pending' },
       { name: 'Custom Domain & SSL Setup', status: 'pending' },
       { name: 'Login/Signup with Subscription Plans', status: 'pending' },
       { name: 'Stripe Checkout Integration (Landing)', status: 'pending' },
       { name: 'Feature Access Based on Plan', status: 'pending' },
-      { name: 'Bulk Video Generation', status: 'pending' },
-      { name: 'Auto Thumbnail Creation (edge function exists)', status: 'pending' },
-      { name: 'SEO Optimization Tools', status: 'pending' },
-      { name: 'Social Cuts (Auto-format for TikTok/Reels)', status: 'pending' },
+      { name: 'Bulk Video Generation', status: 'partial' },
+      { name: 'Auto Thumbnail Creation (AI-powered)', status: 'done' },
+      { name: 'SEO Optimization Tools', status: 'done' },
+      { name: 'Social Cuts (Auto-format for TikTok/Reels)', status: 'done' },
       { name: 'Voice Cloning Integration', status: 'pending' },
-      { name: 'B-Roll Library Integration', status: 'pending' },
-      { name: 'Platform Publishing (YouTube, LinkedIn)', status: 'pending' },
+      { name: 'B-Roll Library Integration', status: 'done' },
+      { name: 'Platform Publishing (YouTube, LinkedIn)', status: 'done' },
       { name: 'Viral Score Predictor', status: 'pending' },
+      { name: 'Unified Content Tools Panel', status: 'done' },
+      { name: 'Innovative Publishing (Thread Generator, Carousel Creator)', status: 'done' },
+      { name: 'Bulk Content Panel (Batch Processing)', status: 'done' },
+      { name: 'Integrations Settings Hub (OAuth Management)', status: 'done' },
+      { name: 'Bulk Job Manager (DB-backed)', status: 'done' },
     ],
   },
   {

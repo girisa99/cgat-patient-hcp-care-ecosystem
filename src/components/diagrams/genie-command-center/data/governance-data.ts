@@ -43,7 +43,7 @@ const phases: Record<string, PhaseData> = {
   P0: { total: 35, implemented: 35, status: 'completed' },
   P1: { total: 32, implemented: 32, status: 'completed' },
   P2: { total: 118, implemented: 118, status: 'completed' }, // 50 original + 52 cross-functional + 16 editing
-  P3: { total: 72, implemented: 8, status: 'in-progress' }, // 5 backend + 3 UI wiring (Bulk Queue, Integrations Settings, API Hub)
+  P3: { total: 72, implemented: 16, status: 'in-progress' }, // Content Tools: SEO, Thumbnails, Social Cuts, Publishing, Bulk, Innovative Publishing
   P4: { total: 50, implemented: 0, status: 'planned' },
   P5: { total: 28, implemented: 0, status: 'planned' },
 };
@@ -268,6 +268,9 @@ export const updateChecklist = [
   { file: 'tabs/OverviewTab.tsx', section: 'Header stats', priority: 3, description: 'Verify overview numbers' },
   { file: 'docs/GENIE_STUDIO_SCENARIO_MAP.md', section: 'All', priority: 4, description: 'Update documentation' },
   { file: 'docs/AI_Coverage_Summary.md', section: 'Totals', priority: 4, description: 'Update documentation' },
+  { file: 'docs/FEATURE_DIFFERENTIATION_MATRIX.md', section: 'All', priority: 4, description: 'Update differentiators and competitive analysis' },
+  { file: 'docs/MARKET_COMPETITIVE_ANALYSIS.md', section: 'P3 Status', priority: 4, description: 'Update feature implementation status' },
+  { file: 'data/market-data.ts', section: 'genieDifferentiator fields', priority: 5, description: 'Update competitor differentiator messages' },
 ];
 
 // =============================================================================
