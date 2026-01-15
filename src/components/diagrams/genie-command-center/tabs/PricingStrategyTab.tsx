@@ -1009,12 +1009,147 @@ const AcquisitionEditor: React.FC<{
 };
 
 // ==================== COMPETITOR BENCHMARK EDITOR ====================
+interface ExtendedCompetitor extends CompetitorBenchmark {
+  segment?: string;
+  strengths?: string[];
+  weaknesses?: string[];
+  genieDifferentiator?: string;
+  features?: {
+    aiVoiceover: boolean;
+    scriptGeneration: boolean;
+    mobileApp: boolean;
+    teamCollab: boolean;
+    hipaCompliant: boolean;
+    approvalWorkflow: boolean;
+  };
+}
+
+// Prepopulated competitor data from market analysis
+const marketCompetitors: ExtendedCompetitor[] = [
+  { 
+    name: 'CapCut', 
+    freeLimit: 'Unlimited (basic)', 
+    starterPrice: 7.99, 
+    proPrice: 7.99, 
+    enterprisePrice: 0, 
+    freeToPaidRate: 2,
+    segment: 'Creator',
+    strengths: ['Free tier dominates', 'TikTok ecosystem', 'Best mobile UX'],
+    weaknesses: ['No AI voiceover', 'Limited collaboration', 'Consumer focus only'],
+    genieDifferentiator: 'Script-first workflow, enterprise-grade security',
+    features: { aiVoiceover: false, scriptGeneration: false, mobileApp: true, teamCollab: false, hipaCompliant: false, approvalWorkflow: false }
+  },
+  { 
+    name: 'Descript', 
+    freeLimit: '1 hour/mo', 
+    starterPrice: 12, 
+    proPrice: 24, 
+    enterprisePrice: 40, 
+    freeToPaidRate: 5,
+    segment: 'Creator',
+    strengths: ['Transcription-first editing', 'Overdub voice cloning', 'Word-based editing'],
+    weaknesses: ['Expensive for features', 'Complex UI', 'No mobile app'],
+    genieDifferentiator: 'Mobile-first, 50% cheaper, unified script-to-publish',
+    features: { aiVoiceover: true, scriptGeneration: false, mobileApp: false, teamCollab: true, hipaCompliant: false, approvalWorkflow: false }
+  },
+  { 
+    name: 'Loom', 
+    freeLimit: '25 videos', 
+    starterPrice: 12.50, 
+    proPrice: 12.50, 
+    enterprisePrice: 25, 
+    freeToPaidRate: 8,
+    segment: 'SMB',
+    strengths: ['Frictionless recording', 'Quick sharing', 'Viewer analytics'],
+    weaknesses: ['No real editing', 'No AI features', 'No TTS'],
+    genieDifferentiator: 'Full AI editing suite, script generation, approval workflows',
+    features: { aiVoiceover: false, scriptGeneration: false, mobileApp: true, teamCollab: true, hipaCompliant: false, approvalWorkflow: false }
+  },
+  { 
+    name: 'Synthesia', 
+    freeLimit: '3 mins free', 
+    starterPrice: 22, 
+    proPrice: 67, 
+    enterprisePrice: 249, 
+    freeToPaidRate: 3,
+    segment: 'SMB',
+    strengths: ['AI avatars (150+)', 'Multi-language (140)', 'Enterprise ready'],
+    weaknesses: ['Expensive ($67/mo Teams)', 'Robotic feel', 'No mobile'],
+    genieDifferentiator: '70% cheaper, natural TTS, real presenter + AI hybrid',
+    features: { aiVoiceover: true, scriptGeneration: true, mobileApp: false, teamCollab: true, hipaCompliant: false, approvalWorkflow: true }
+  },
+  { 
+    name: 'HeyGen', 
+    freeLimit: '1 min/mo', 
+    starterPrice: 29, 
+    proPrice: 89, 
+    enterprisePrice: 199, 
+    freeToPaidRate: 4,
+    segment: 'Enterprise',
+    strengths: ['High-quality avatars', 'Good voice quality', 'API access'],
+    weaknesses: ['Very expensive', 'Limited free tier', 'Complex pricing'],
+    genieDifferentiator: 'More affordable, integrated workflow, HIPAA option',
+    features: { aiVoiceover: true, scriptGeneration: true, mobileApp: false, teamCollab: true, hipaCompliant: false, approvalWorkflow: true }
+  },
+  { 
+    name: 'Pictory', 
+    freeLimit: '3 videos/mo', 
+    starterPrice: 23, 
+    proPrice: 47, 
+    enterprisePrice: 119, 
+    freeToPaidRate: 3,
+    segment: 'SMB',
+    strengths: ['Blog-to-video', 'Auto-captions', 'Stock media'],
+    weaknesses: ['Limited editing', 'No live recording', 'Basic TTS'],
+    genieDifferentiator: 'Live recording, better TTS, healthcare compliant',
+    features: { aiVoiceover: true, scriptGeneration: true, mobileApp: false, teamCollab: false, hipaCompliant: false, approvalWorkflow: false }
+  },
+  { 
+    name: 'Canva Video', 
+    freeLimit: 'Limited exports', 
+    starterPrice: 12.99, 
+    proPrice: 12.99, 
+    enterprisePrice: 30, 
+    freeToPaidRate: 6,
+    segment: 'SMB',
+    strengths: ['Brand kits', 'Design ecosystem', 'Huge template library'],
+    weaknesses: ['Basic video editing', 'No AI narration', 'Not video-first'],
+    genieDifferentiator: 'AI TTS, script-first workflow, advanced video editing',
+    features: { aiVoiceover: false, scriptGeneration: false, mobileApp: true, teamCollab: true, hipaCompliant: false, approvalWorkflow: false }
+  },
+  { 
+    name: 'VIDIZMO', 
+    freeLimit: 'None', 
+    starterPrice: 500, 
+    proPrice: 1000, 
+    enterprisePrice: 2000, 
+    freeToPaidRate: 0,
+    segment: 'Healthcare',
+    strengths: ['Enterprise security', 'Compliance features', 'Large deployments'],
+    weaknesses: ['Very expensive', 'Complex setup', 'Overkill for small teams'],
+    genieDifferentiator: '90% cost savings, HIPAA at $50-200/mo vs $1000+',
+    features: { aiVoiceover: false, scriptGeneration: false, mobileApp: false, teamCollab: true, hipaCompliant: true, approvalWorkflow: true }
+  },
+];
+
+// Genie features for comparison
+const genieFeatures = {
+  aiVoiceover: true,
+  scriptGeneration: true,
+  mobileApp: true,
+  teamCollab: true,
+  hipaCompliant: true,
+  approvalWorkflow: true,
+};
+
 const CompetitorBenchmarkEditor: React.FC<{
   competitors: CompetitorBenchmark[];
   setCompetitors: React.Dispatch<React.SetStateAction<CompetitorBenchmark[]>>;
   pricingTiers: PricingTier[];
 }> = ({ competitors, setCompetitors, pricingTiers }) => {
   const [showAddCompetitor, setShowAddCompetitor] = useState(false);
+  const [showFeatureComparison, setShowFeatureComparison] = useState(false);
+  const [selectedSegment, setSelectedSegment] = useState<string>('all');
   const [newCompetitor, setNewCompetitor] = useState<Partial<CompetitorBenchmark>>({
     name: '', freeLimit: '', starterPrice: 0, proPrice: 0, enterprisePrice: 0, freeToPaidRate: 0
   });
@@ -1027,124 +1162,320 @@ const CompetitorBenchmarkEditor: React.FC<{
     }
   };
 
+  const addFromMarket = (marketComp: ExtendedCompetitor) => {
+    const exists = competitors.some(c => c.name === marketComp.name);
+    if (!exists) {
+      setCompetitors(prev => [...prev, {
+        name: marketComp.name,
+        freeLimit: marketComp.freeLimit,
+        starterPrice: marketComp.starterPrice,
+        proPrice: marketComp.proPrice,
+        enterprisePrice: marketComp.enterprisePrice,
+        freeToPaidRate: marketComp.freeToPaidRate,
+      }]);
+    }
+  };
+
+  const segments = ['all', ...new Set(marketCompetitors.map(c => c.segment).filter(Boolean))];
+  const filteredMarketCompetitors = selectedSegment === 'all' 
+    ? marketCompetitors 
+    : marketCompetitors.filter(c => c.segment === selectedSegment);
+
   const avgStarterPrice = competitors.length > 0 ? competitors.reduce((sum, c) => sum + c.starterPrice, 0) / competitors.length : 0;
   const avgProPrice = competitors.length > 0 ? competitors.reduce((sum, c) => sum + c.proPrice, 0) / competitors.length : 0;
+  const avgEnterprisePrice = competitors.length > 0 ? competitors.reduce((sum, c) => sum + c.enterprisePrice, 0) / competitors.length : 0;
   const yourStarterPrice = pricingTiers.find(t => !t.isFreeTier)?.price || 0;
   const yourProPrice = pricingTiers.filter(t => !t.isFreeTier)[1]?.price || 0;
+  const yourEnterprisePrice = pricingTiers.filter(t => !t.isFreeTier).slice(-1)[0]?.price || 0;
+
+  // Calculate sweet spot
+  const sweetSpotStarter = { min: avgStarterPrice * 0.7, max: avgStarterPrice * 0.95 };
+  const sweetSpotPro = { min: avgProPrice * 0.7, max: avgProPrice * 0.95 };
+
+  // Feature comparison data
+  const featureLabels: Record<string, string> = {
+    aiVoiceover: 'AI Voiceover/TTS',
+    scriptGeneration: 'Script Generation',
+    mobileApp: 'Mobile App',
+    teamCollab: 'Team Collaboration',
+    hipaCompliant: 'HIPAA Compliant',
+    approvalWorkflow: 'Approval Workflow',
+  };
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Award className="w-4 h-4 text-primary" />
           <span className="text-sm text-muted-foreground">Benchmark against competitors to find optimal pricing</span>
         </div>
-        <Dialog open={showAddCompetitor} onOpenChange={setShowAddCompetitor}>
-          <DialogTrigger asChild>
-            <Button size="sm" variant="outline">
-              <Plus className="w-4 h-4 mr-1" /> Add Competitor
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Competitor</DialogTitle>
-            </DialogHeader>
-            <div className="grid grid-cols-2 gap-4 pt-4">
-              <div className="col-span-2">
-                <Label>Competitor Name</Label>
-                <Input value={newCompetitor.name || ''} onChange={(e) => setNewCompetitor(prev => ({ ...prev, name: e.target.value }))} />
+        <div className="flex items-center gap-2">
+          <Button 
+            size="sm" 
+            variant={showFeatureComparison ? 'default' : 'outline'}
+            onClick={() => setShowFeatureComparison(!showFeatureComparison)}
+          >
+            <Layers className="w-4 h-4 mr-1" /> Feature Matrix
+          </Button>
+          <Dialog open={showAddCompetitor} onOpenChange={setShowAddCompetitor}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline">
+                <Plus className="w-4 h-4 mr-1" /> Add Custom
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add Competitor</DialogTitle>
+              </DialogHeader>
+              <div className="grid grid-cols-2 gap-4 pt-4">
+                <div className="col-span-2">
+                  <Label>Competitor Name</Label>
+                  <Input value={newCompetitor.name || ''} onChange={(e) => setNewCompetitor(prev => ({ ...prev, name: e.target.value }))} />
+                </div>
+                <div className="col-span-2">
+                  <Label>Free Tier Limit</Label>
+                  <Input value={newCompetitor.freeLimit || ''} onChange={(e) => setNewCompetitor(prev => ({ ...prev, freeLimit: e.target.value }))} placeholder="e.g., 5 videos/mo" />
+                </div>
+                <div>
+                  <Label>Starter Price</Label>
+                  <Input type="number" value={newCompetitor.starterPrice || 0} onChange={(e) => setNewCompetitor(prev => ({ ...prev, starterPrice: parseFloat(e.target.value) || 0 }))} />
+                </div>
+                <div>
+                  <Label>Pro Price</Label>
+                  <Input type="number" value={newCompetitor.proPrice || 0} onChange={(e) => setNewCompetitor(prev => ({ ...prev, proPrice: parseFloat(e.target.value) || 0 }))} />
+                </div>
+                <div>
+                  <Label>Enterprise Price</Label>
+                  <Input type="number" value={newCompetitor.enterprisePrice || 0} onChange={(e) => setNewCompetitor(prev => ({ ...prev, enterprisePrice: parseFloat(e.target.value) || 0 }))} />
+                </div>
+                <div>
+                  <Label>Free→Paid Rate %</Label>
+                  <Input type="number" value={newCompetitor.freeToPaidRate || 0} onChange={(e) => setNewCompetitor(prev => ({ ...prev, freeToPaidRate: parseFloat(e.target.value) || 0 }))} />
+                </div>
               </div>
-              <div className="col-span-2">
-                <Label>Free Tier Limit</Label>
-                <Input value={newCompetitor.freeLimit || ''} onChange={(e) => setNewCompetitor(prev => ({ ...prev, freeLimit: e.target.value }))} placeholder="e.g., 5 videos/mo" />
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setShowAddCompetitor(false)}>Cancel</Button>
+                <Button onClick={addCompetitor}>Add</Button>
               </div>
-              <div>
-                <Label>Starter Price</Label>
-                <Input type="number" value={newCompetitor.starterPrice || 0} onChange={(e) => setNewCompetitor(prev => ({ ...prev, starterPrice: parseFloat(e.target.value) || 0 }))} />
-              </div>
-              <div>
-                <Label>Pro Price</Label>
-                <Input type="number" value={newCompetitor.proPrice || 0} onChange={(e) => setNewCompetitor(prev => ({ ...prev, proPrice: parseFloat(e.target.value) || 0 }))} />
-              </div>
-              <div>
-                <Label>Enterprise Price</Label>
-                <Input type="number" value={newCompetitor.enterprisePrice || 0} onChange={(e) => setNewCompetitor(prev => ({ ...prev, enterprisePrice: parseFloat(e.target.value) || 0 }))} />
-              </div>
-              <div>
-                <Label>Free→Paid Rate %</Label>
-                <Input type="number" value={newCompetitor.freeToPaidRate || 0} onChange={(e) => setNewCompetitor(prev => ({ ...prev, freeToPaidRate: parseFloat(e.target.value) || 0 }))} />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => setShowAddCompetitor(false)}>Cancel</Button>
-              <Button onClick={addCompetitor}>Add</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      {/* Price Comparison */}
+      {/* Market Competitors to Add */}
+      <div className="p-4 bg-muted/30 rounded-lg">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-medium">📊 Market Analysis Data (Click to Add)</h4>
+          <Select value={selectedSegment} onValueChange={setSelectedSegment}>
+            <SelectTrigger className="w-32 h-7 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {segments.map(seg => (
+                <SelectItem key={seg} value={seg} className="text-xs">
+                  {seg === 'all' ? 'All Segments' : seg}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {filteredMarketCompetitors.map(comp => {
+            const isAdded = competitors.some(c => c.name === comp.name);
+            return (
+              <Button
+                key={comp.name}
+                size="sm"
+                variant={isAdded ? 'secondary' : 'outline'}
+                className="text-xs h-7"
+                onClick={() => !isAdded && addFromMarket(comp)}
+                disabled={isAdded}
+              >
+                {isAdded ? <Check className="w-3 h-3 mr-1" /> : <Plus className="w-3 h-3 mr-1" />}
+                {comp.name} (${comp.starterPrice})
+                <Badge variant="outline" className="ml-1 text-[10px]">{comp.segment}</Badge>
+              </Button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Feature Comparison Matrix */}
+      {showFeatureComparison && (
+        <Card className="border-2 border-primary/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              Feature Comparison Matrix
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-2 px-1 font-medium">Feature</th>
+                    <th className="text-center py-2 px-1 font-medium bg-primary/10">Genie</th>
+                    {marketCompetitors.filter(c => competitors.some(cc => cc.name === c.name)).map(c => (
+                      <th key={c.name} className="text-center py-2 px-1 font-medium">{c.name}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(featureLabels).map(([key, label]) => (
+                    <tr key={key} className="border-b border-muted">
+                      <td className="py-2 px-1">{label}</td>
+                      <td className="text-center py-2 px-1 bg-primary/5">
+                        {genieFeatures[key as keyof typeof genieFeatures] ? 
+                          <Check className="w-4 h-4 text-green-500 mx-auto" /> : 
+                          <X className="w-4 h-4 text-red-400 mx-auto" />}
+                      </td>
+                      {marketCompetitors.filter(c => competitors.some(cc => cc.name === c.name)).map(c => (
+                        <td key={c.name} className="text-center py-2 px-1">
+                          {c.features?.[key as keyof typeof genieFeatures] ? 
+                            <Check className="w-4 h-4 text-green-500 mx-auto" /> : 
+                            <X className="w-4 h-4 text-red-400 mx-auto" />}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                  <tr className="border-t-2 border-primary/30 bg-muted/30">
+                    <td className="py-2 px-1 font-medium">Starter Price</td>
+                    <td className="text-center py-2 px-1 font-bold text-primary">${yourStarterPrice}</td>
+                    {marketCompetitors.filter(c => competitors.some(cc => cc.name === c.name)).map(c => (
+                      <td key={c.name} className="text-center py-2 px-1">${c.starterPrice}</td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-3 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-500/30">
+              <p className="text-xs font-medium text-green-700 dark:text-green-400">
+                💡 Genie Advantage: All 6 features at ${yourStarterPrice}/mo vs competitors averaging ${avgStarterPrice.toFixed(0)}/mo with fewer features
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Sweet Spot Analysis */}
       {competitors.length > 0 && (
-        <div className="grid grid-cols-3 gap-4 p-4 bg-muted/30 rounded-lg">
-          <div className="text-center">
-            <p className="text-xs text-muted-foreground mb-1">Competitor Avg (Starter)</p>
-            <p className="text-xl font-bold">${avgStarterPrice.toFixed(0)}</p>
-            <Badge variant={yourStarterPrice < avgStarterPrice ? 'default' : yourStarterPrice > avgStarterPrice * 1.2 ? 'destructive' : 'secondary'}>
-              You: ${yourStarterPrice}
-            </Badge>
-          </div>
-          <div className="text-center">
-            <p className="text-xs text-muted-foreground mb-1">Competitor Avg (Pro)</p>
-            <p className="text-xl font-bold">${avgProPrice.toFixed(0)}</p>
-            <Badge variant={yourProPrice < avgProPrice ? 'default' : yourProPrice > avgProPrice * 1.2 ? 'destructive' : 'secondary'}>
-              You: ${yourProPrice}
-            </Badge>
-          </div>
-          <div className="text-center">
-            <p className="text-xs text-muted-foreground mb-1">Sweet Spot Range</p>
-            <p className="text-xl font-bold">${(avgStarterPrice * 0.85).toFixed(0)} - ${(avgStarterPrice * 1.15).toFixed(0)}</p>
-            <p className="text-xs text-muted-foreground">Based on market</p>
-          </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-500/30">
+            <CardContent className="pt-4 text-center">
+              <p className="text-xs text-muted-foreground mb-1">Sweet Spot (Starter)</p>
+              <p className="text-lg font-bold text-green-700 dark:text-green-400">
+                ${sweetSpotStarter.min.toFixed(0)} - ${sweetSpotStarter.max.toFixed(0)}
+              </p>
+              <Badge variant={yourStarterPrice >= sweetSpotStarter.min && yourStarterPrice <= sweetSpotStarter.max ? 'default' : 'secondary'} className="mt-1">
+                You: ${yourStarterPrice} {yourStarterPrice < sweetSpotStarter.min ? '↓ Low' : yourStarterPrice > sweetSpotStarter.max ? '↑ High' : '✓ Optimal'}
+              </Badge>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-500/30">
+            <CardContent className="pt-4 text-center">
+              <p className="text-xs text-muted-foreground mb-1">Sweet Spot (Pro)</p>
+              <p className="text-lg font-bold text-blue-700 dark:text-blue-400">
+                ${sweetSpotPro.min.toFixed(0)} - ${sweetSpotPro.max.toFixed(0)}
+              </p>
+              <Badge variant={yourProPrice >= sweetSpotPro.min && yourProPrice <= sweetSpotPro.max ? 'default' : 'secondary'} className="mt-1">
+                You: ${yourProPrice} {yourProPrice < sweetSpotPro.min ? '↓ Low' : yourProPrice > sweetSpotPro.max ? '↑ High' : '✓ Optimal'}
+              </Badge>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4 text-center">
+              <p className="text-xs text-muted-foreground mb-1">Competitor Avg (Starter)</p>
+              <p className="text-lg font-bold">${avgStarterPrice.toFixed(0)}</p>
+              <p className="text-xs text-muted-foreground">
+                Your discount: {avgStarterPrice > 0 ? ((1 - yourStarterPrice / avgStarterPrice) * 100).toFixed(0) : 0}%
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4 text-center">
+              <p className="text-xs text-muted-foreground mb-1">Competitor Avg (Pro)</p>
+              <p className="text-lg font-bold">${avgProPrice.toFixed(0)}</p>
+              <p className="text-xs text-muted-foreground">
+                Your discount: {avgProPrice > 0 ? ((1 - yourProPrice / avgProPrice) * 100).toFixed(0) : 0}%
+              </p>
+            </CardContent>
+          </Card>
         </div>
       )}
 
-      {/* Competitor Cards */}
+      {/* Competitor Cards with Details */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {competitors.map((comp, idx) => (
-          <Card key={idx}>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm">{comp.name}</CardTitle>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setCompetitors(prev => prev.filter((_, i) => i !== idx))}>
-                  <Trash2 className="w-3 h-3" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="text-xs space-y-2">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Free:</span>
-                <span>{comp.freeLimit}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Starter:</span>
-                <span>${comp.starterPrice}/mo</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Pro:</span>
-                <span>${comp.proPrice}/mo</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Enterprise:</span>
-                <span>${comp.enterprisePrice}/mo</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Free→Paid:</span>
-                <span>{comp.freeToPaidRate}%</span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        {competitors.map((comp, idx) => {
+          const marketData = marketCompetitors.find(m => m.name === comp.name);
+          return (
+            <Card key={idx} className="relative">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="text-sm">{comp.name}</CardTitle>
+                    {marketData?.segment && (
+                      <Badge variant="outline" className="text-[10px]">{marketData.segment}</Badge>
+                    )}
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setCompetitors(prev => prev.filter((_, i) => i !== idx))}>
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="text-xs space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Free:</span>
+                    <span>{comp.freeLimit}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Free→Paid:</span>
+                    <span>{comp.freeToPaidRate}%</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 p-2 bg-muted/50 rounded">
+                  <div className="text-center">
+                    <p className="text-[10px] text-muted-foreground">Starter</p>
+                    <p className="font-bold">${comp.starterPrice}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[10px] text-muted-foreground">Pro</p>
+                    <p className="font-bold">${comp.proPrice}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[10px] text-muted-foreground">Enterprise</p>
+                    <p className="font-bold">${comp.enterprisePrice}</p>
+                  </div>
+                </div>
+                {marketData && (
+                  <>
+                    {marketData.weaknesses && (
+                      <div className="p-2 bg-amber-50 dark:bg-amber-950/20 rounded text-[10px]">
+                        <p className="font-medium text-amber-700 dark:text-amber-400 mb-1">Their Gaps:</p>
+                        <p className="text-muted-foreground">{marketData.weaknesses.slice(0, 2).join(', ')}</p>
+                      </div>
+                    )}
+                    {marketData.genieDifferentiator && (
+                      <div className="p-2 bg-green-50 dark:bg-green-950/20 rounded text-[10px]">
+                        <p className="font-medium text-green-700 dark:text-green-400 mb-1">Our Advantage:</p>
+                        <p className="text-muted-foreground">{marketData.genieDifferentiator}</p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
+
+      {competitors.length === 0 && (
+        <div className="text-center py-8 text-muted-foreground">
+          <Award className="w-8 h-8 mx-auto mb-2 opacity-50" />
+          <p>No competitors added yet. Click buttons above to add from market data.</p>
+        </div>
+      )}
     </div>
   );
 };
