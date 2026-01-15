@@ -1,10 +1,10 @@
 # Genie Studio & Recording Studio: Complete Scenario Map
 
-> **Version:** 3.0  
-> **Last Updated:** 2026-01-13  
-> **Total Scenarios:** 253 (Categories A-W across P0-P5 phases)  
-> **Phase Distribution:** P0 (35), P1 (32), P2 (50), P3 (46), P4 (50), P5 (40)  
-> **Implementation:** ✅ 117 Complete (46%) | 🔶 0 Partial | ⏳ 136 Planned (54%)  
+> **Version:** 4.0  
+> **Last Updated:** 2026-01-15  
+> **Total Scenarios:** 289 (Categories A-AD across P0-P5 phases)  
+> **Phase Distribution:** P0 (35), P1 (32), P2 (102), P3 (58), P4 (50), P5 (28)  
+> **Implementation:** ✅ 165 Complete (57%) | 🔶 0 Partial | ⏳ 124 Planned (43%)  
 > **Status:** ✅ P0-P2 COMPLETE - Ready for P3 Planning
 
 ---
@@ -13,43 +13,45 @@
 
 This document catalogs all identified user journeys and scenarios for the Genie Studio and Recording Studio integration. It covers the complete production pipeline from imagination to final output, including edge cases, error recovery, bidirectional Vibe ↔ Mind flows, advanced AI capabilities, market-driven feature priorities, agent assignments, API integrations, session management for live productions, P2 AI agents, guided experiences, and automation opportunities.
 
-### P0-P2 CLOSEOUT STATUS: ✅ COMPLETE (2026-01-13)
+### P0-P2 CLOSEOUT STATUS: ✅ COMPLETE (2026-01-15)
 
 All P0-P2 scenarios have been implemented and tested. Documentation updated to reflect current state.
 
-### Implementation Overview (Updated 2026-01-13)
+### Implementation Overview (Updated 2026-01-15)
 
 | Status | Count | Percentage | Description |
 |--------|-------|------------|-------------|
-| ✅ **Implemented** | 117 | 46% | Fully functional in codebase |
+| ✅ **Implemented** | 165 | 57% | Fully functional in codebase |
 | 🔶 **Partial** | 0 | 0% | All partial items completed |
-| ⏳ **Planned** | 136 | 54% | P3-P5 roadmap |
-| **Total** | **253** | **100%** | All scenarios across P0-P5 phases |
+| ⏳ **Planned** | 124 | 43% | P3-P5 roadmap |
+| **Total** | **289** | **100%** | All scenarios across P0-P5 phases |
 
 ### Phase Distribution Summary
 
 | Phase | Scenarios | Count | Implemented | Status |
 |-------|-----------|-------|-------------|--------|
-| **P0** | 1-10, 61-70, 111-115, 141-150 | 35 | 35 (100%) | ✅ **COMPLETE** |
-| **P1** | 11-16, 21-24, 71-75, 83-90, 116-120, 151-155 | 32 | 32 (100%) | ✅ **COMPLETE** |
-| **P2** | 17-32, 76-80, 101-110, 121-125, 156-177 | 50 | 50 (100%) | ✅ **COMPLETE** |
-| **P3** | 33-46, 91-97, 126-135, 178-200 | 46 | 0 (0%) | ⏳ Planned |
-| **P4** | 47-60, 98-100, 136-140, 201-230 | 50 | 0 (0%) | ⏳ Planned |
-| **P5** | Enterprise (SSO, HIPAA, White-label, 231-253) | 40 | 0 (0%) | ⏳ Planned |
+| **P0** | 1-10, 61-70, 111-120, 141-150 | 35 | 35 (100%) | ✅ **COMPLETE** |
+| **P1** | 11-16, 21-24, 71-75, 81-90, 116-120, 151-155 | 32 | 32 (100%) | ✅ **COMPLETE** |
+| **P2** | 17-32, 76-80, 101-110, 121-125, 156-225 | 102 | 102 (100%) | ✅ **COMPLETE** |
+| **P3** | 33-46, 91-100, 126-135, 226-237 | 58 | 0 (0%) | ⏳ Planned |
+| **P4** | 47-60, 136-140, 238-268 | 50 | 0 (0%) | ⏳ Planned |
+| **P5** | Enterprise (SSO, HIPAA, White-label, 269-296) | 28 | 0 (0%) | ⏳ Planned |
 
 ### P2 AI Agents & Guided Experiences ✅ ALL COMPLETE
 
 | Component | Scenario IDs | Status |
 |-----------|--------------|--------|
-| Voice Director Agent | 141-142 | ✅ Complete |
-| Scene Analyzer Agent | 143-144 | ✅ Complete |
-| Distribution Agent | 145-146 | ✅ Complete |
-| Script-to-Video Matcher | 147 | ✅ Complete |
-| Music Composer Agent | 148 | ✅ Complete |
-| Auto-Editor Agent | 149-150 | ✅ Complete |
-| **Vibe Guided Experience** | 166-170 | ✅ Complete |
-| **Spark Guided Wizard** | 171-173 | ✅ Complete |
-| **Hub Guided Wizard** | 174-177 | ✅ Complete |
+| Voice Director Agent | 166-167 | ✅ Complete |
+| Scene Analyzer Agent | 168-169 | ✅ Complete |
+| Distribution Agent | 170-171 | ✅ Complete |
+| Script-to-Video Matcher | 172 | ✅ Complete |
+| Music Composer Agent | 173-174 | ✅ Complete |
+| Auto-Editor Agent | 175-176 | ✅ Complete |
+| **Vibe Guided Experience (7-phase)** | 177-183 | ✅ Complete |
+| **Spark Guided Wizard (5-phase)** | 184-188 | ✅ Complete |
+| **Hub Guided Wizard (7-phase)** | 189-195 | ✅ Complete |
+| **Cross-Product Integration** | 196-210 | ✅ Complete |
+| **Ask Genie Context-Aware** | 211-225 | ✅ Complete |
 
 ---
 
@@ -1652,6 +1654,7 @@ Each phase has:
 ---
 
 *Document maintained by Genie Studio Development Team*  
-*Total Scenarios: 177 | Phase Distribution: P0(35), P1(32), P2(50), P3(26), P4(24), P5(10)*  
-*Implementation: 43 Complete (24%) | 7 Partial (4%) | 127 Planned (72%)*  
+*Total Scenarios: 289 | Phase Distribution: P0(35), P1(32), P2(102), P3(58), P4(50), P5(28)*  
+*Implementation: 165 Complete (57%) | 0 Partial (0%) | 124 Planned (43%)*  
+*Infrastructure: 140+ Edge Functions | 280+ Hooks | 180+ DB Tables | 23 Mobile Components | 15+ AI Agents*  
 *See: COMPREHENSIVE_177_SCENARIO_PHASE_REVIEW.md for detailed phase mapping*
