@@ -25,12 +25,26 @@ export const GENIE_STUDIO_PRODUCT = {
 } as const;
 
 // =============================================================================
-// RE-EXPORTS FROM EXISTING LOCATIONS (Phase 1 - Aliases)
-// Components will be consolidated in Phase 2
+// MODULE EXPORTS (Phase 2 - Organized by domain)
 // =============================================================================
 
-// Genie Vibe Components (has index.ts)
-export * from '@/components/genie-vibe';
+// Pages - All Genie Studio pages
+export * from './pages';
+
+// Components - All Genie Studio components
+export * from './components';
+
+// Hooks - All Genie Studio hooks
+export * from './hooks';
+
+// Services - All Genie Studio services
+export * from './services';
+
+// Diagrams - Architecture and documentation
+export * from './diagrams';
+
+// =============================================================================
+// ADDITIONAL RE-EXPORTS (Legacy compatibility)
 
 // Key Genie Studio Components (individual exports - no index.ts yet)
 export { AskGenie } from '@/components/genie-studio/AskGenie';
