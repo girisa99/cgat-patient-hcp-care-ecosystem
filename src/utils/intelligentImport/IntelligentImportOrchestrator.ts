@@ -553,11 +553,3 @@ Intelligent Import Analysis Summary:
 
 // Export singleton instance
 export const intelligentImportOrchestrator = new IntelligentImportOrchestrator();
-        recommendations: validationResult.recommendations.length
-      },
-      monitoring_active: this.backgroundMonitoring !== null
-    };
-  }
-}
-
-export const intelligentImportOrchestrator = new IntelligentImportOrchestrator();
