@@ -3,7 +3,7 @@
  * Integrated with all architecture diagram components
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Layers, Server, Database, Cloud, Shield,
@@ -52,45 +52,40 @@ const itemVariants = {
 export const ArchitectureTab: React.FC = () => {
   const [selectedDiagram, setSelectedDiagram] = useState('full-suite');
 
-  const renderDiagram = () => {
+  // Memoize the diagram component to prevent unnecessary re-renders
+  const DiagramComponent = useMemo(() => {
     switch (selectedDiagram) {
       case 'full-suite':
-        return <GenieStudioOverallArchitectureDiagram />;
+        return GenieStudioOverallArchitectureDiagram;
       case 'mind':
-        return <GenieMindArchitectureDiagram />;
+        return GenieMindArchitectureDiagram;
       case 'vibe':
-        return <GenieVibeArchitectureDiagram />;
+        return GenieVibeArchitectureDiagram;
       case 'spark':
-        return <GenieSparkArchitectureDiagram />;
+        return GenieSparkArchitectureDiagram;
       case 'arc':
-        return <GenieArcProductionHubDiagram />;
+        return GenieArcProductionHubDiagram;
       case 'ask':
-        return <AskGenieArchitecture />;
+        return AskGenieArchitecture;
       case 'backend':
-        return <BackendServicesArchitecture />;
+        return BackendServicesArchitecture;
       case 'integrations':
-        return <GenieIntegrationsDiagram />;
+        return GenieIntegrationsDiagram;
       case 'microservices':
-        return <GenieMicroservicesDiagram />;
+        return GenieMicroservicesDiagram;
       case 'database':
-        return <GenieDataArchitectureDiagram />;
+        return GenieDataArchitectureDiagram;
       case 'security':
-        return <GenieSecurityArchitectureDiagram />;
+        return GenieSecurityArchitectureDiagram;
       default:
-        return <GenieStudioOverallArchitectureDiagram />;
+        return GenieStudioOverallArchitectureDiagram;
     }
-  };
+  }, [selectedDiagram]);
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      key="architecture-container"
-      className="max-w-[1920px] mx-auto space-y-6 p-6"
-    >
+    <div className="max-w-[1920px] mx-auto space-y-6 p-6">
       {/* Diagram Selector with Horizontal Scroll */}
-      <motion.div variants={itemVariants}>
+      <div>
         <ScrollArea className="w-full whitespace-nowrap pb-3">
           <div className="flex gap-2">
             {architectureDiagrams.map((diagram) => (
@@ -110,10 +105,10 @@ export const ArchitectureTab: React.FC = () => {
           </div>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
-      </motion.div>
+      </div>
 
       {/* Selected Diagram Description */}
-      <motion.div variants={itemVariants}>
+      <div>
         <Card>
           <CardContent className="py-3 px-4">
             <p className="text-muted-foreground text-sm">
@@ -121,13 +116,13 @@ export const ArchitectureTab: React.FC = () => {
             </p>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
 
       {/* Architecture Diagram Content */}
-      <motion.div variants={itemVariants}>
-        {renderDiagram()}
-      </motion.div>
-    </motion.div>
+      <div>
+        <DiagramComponent />
+      </div>
+    </div>
   );
 };
 

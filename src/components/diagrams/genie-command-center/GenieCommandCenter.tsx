@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   BarChart3, TrendingUp, 
@@ -168,45 +168,35 @@ export const GenieCommandCenter: React.FC = () => {
           </div>
         </div>
 
-        {/* Tab Content */}
+        {/* Tab Content - Stable rendering without animation flickering */}
         <div className="max-w-[1920px] mx-auto py-8 px-6">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-            >
-              <TabsContent value="overview" className="mt-0" forceMount={activeTab === 'overview' ? true : undefined}>
-                {activeTab === 'overview' && <OverviewTab />}
-              </TabsContent>
-              <TabsContent value="market" className="mt-0" forceMount={activeTab === 'market' ? true : undefined}>
-                {activeTab === 'market' && <MarketAnalysisTab />}
-              </TabsContent>
-              <TabsContent value="products" className="mt-0" forceMount={activeTab === 'products' ? true : undefined}>
-                {activeTab === 'products' && <ProductSuiteTab />}
-              </TabsContent>
-              <TabsContent value="architecture" className="mt-0" forceMount={activeTab === 'architecture' ? true : undefined}>
-                {activeTab === 'architecture' && <ArchitectureTab />}
-              </TabsContent>
-              <TabsContent value="technical" className="mt-0" forceMount={activeTab === 'technical' ? true : undefined}>
-                {activeTab === 'technical' && <TechnicalDocsTab />}
-              </TabsContent>
-              <TabsContent value="roadmap" className="mt-0" forceMount={activeTab === 'roadmap' ? true : undefined}>
-                {activeTab === 'roadmap' && <RoadmapTab />}
-              </TabsContent>
-              <TabsContent value="investor" className="mt-0" forceMount={activeTab === 'investor' ? true : undefined}>
-                {activeTab === 'investor' && <InvestorDashboardTab />}
-              </TabsContent>
-              <TabsContent value="stagegates" className="mt-0" forceMount={activeTab === 'stagegates' ? true : undefined}>
-                {activeTab === 'stagegates' && <StageGatesTab />}
-              </TabsContent>
-              <TabsContent value="governance" className="mt-0" forceMount={activeTab === 'governance' ? true : undefined}>
-                {activeTab === 'governance' && <GovernanceTab />}
-              </TabsContent>
-            </motion.div>
-          </AnimatePresence>
+          <TabsContent value="overview" className="mt-0">
+            <OverviewTab />
+          </TabsContent>
+          <TabsContent value="market" className="mt-0">
+            <MarketAnalysisTab />
+          </TabsContent>
+          <TabsContent value="products" className="mt-0">
+            <ProductSuiteTab />
+          </TabsContent>
+          <TabsContent value="architecture" className="mt-0">
+            <ArchitectureTab />
+          </TabsContent>
+          <TabsContent value="technical" className="mt-0">
+            <TechnicalDocsTab />
+          </TabsContent>
+          <TabsContent value="roadmap" className="mt-0">
+            <RoadmapTab />
+          </TabsContent>
+          <TabsContent value="investor" className="mt-0">
+            <InvestorDashboardTab />
+          </TabsContent>
+          <TabsContent value="stagegates" className="mt-0">
+            <StageGatesTab />
+          </TabsContent>
+          <TabsContent value="governance" className="mt-0">
+            <GovernanceTab />
+          </TabsContent>
         </div>
       </Tabs>
     </div>
