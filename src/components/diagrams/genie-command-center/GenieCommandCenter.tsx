@@ -142,24 +142,22 @@ export const GenieCommandCenter: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* Tab Navigation */}
+      {/* Tab Navigation - Fixed z-index and layout */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="border-b border-border bg-card shadow-sm relative z-40">
+        <div className="border-b border-border bg-background sticky top-[88px] z-40">
           <div className="max-w-[1920px] mx-auto px-6">
-            <TabsList className="h-auto p-0 bg-transparent border-0 flex gap-0 overflow-x-auto no-scrollbar">
-              {tabs.map((tab, index) => (
+            <TabsList className="h-12 p-0 bg-transparent border-0 flex gap-1 overflow-x-auto scrollbar-none">
+              {tabs.map((tab) => (
                 <TabsTrigger
                   key={tab.id}
                   value={tab.id}
-                  className="flex items-center gap-2 px-4 py-3 rounded-none border-b-2 border-transparent 
-                    bg-transparent
-                    data-[state=active]:border-primary data-[state=active]:bg-primary/5
-                    data-[state=active]:text-primary data-[state=inactive]:text-muted-foreground
-                    hover:text-foreground hover:bg-muted/50 transition-all whitespace-nowrap
-                    text-sm font-medium"
+                  className="flex items-center gap-1.5 px-3 py-2 h-10 rounded-md
+                    data-[state=active]:bg-primary data-[state=active]:text-primary-foreground
+                    data-[state=inactive]:bg-transparent data-[state=inactive]:text-muted-foreground
+                    hover:bg-muted transition-colors whitespace-nowrap text-sm font-medium"
                 >
                   <tab.icon className="w-4 h-4 shrink-0" />
-                  <span>{tab.label}</span>
+                  <span className="hidden sm:inline">{tab.label}</span>
                 </TabsTrigger>
               ))}
             </TabsList>
