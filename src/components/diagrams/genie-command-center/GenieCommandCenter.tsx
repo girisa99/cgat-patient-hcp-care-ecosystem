@@ -129,9 +129,9 @@ export const GenieCommandCenter: React.FC = () => {
       </motion.div>
 
       {/* Tab Navigation */}
-      <div className="border-b border-border bg-muted/30">
-        <div className="max-w-[1920px] mx-auto px-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <div className="border-b border-border bg-muted/30">
+          <div className="max-w-[1920px] mx-auto px-6">
             <TabsList className="h-auto p-0 bg-transparent border-0 flex gap-1 overflow-x-auto no-scrollbar">
               {tabs.map((tab, index) => (
                 <motion.div
@@ -153,47 +153,47 @@ export const GenieCommandCenter: React.FC = () => {
                 </motion.div>
               ))}
             </TabsList>
-
-            {/* Tab Content */}
-            <div className="py-8">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeTab}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
-                >
-                  <TabsContent value="overview" className="mt-0">
-                    <OverviewTab />
-                  </TabsContent>
-                  <TabsContent value="market" className="mt-0">
-                    <MarketAnalysisTab />
-                  </TabsContent>
-                  <TabsContent value="products" className="mt-0">
-                    <ProductSuiteTab />
-                  </TabsContent>
-                  <TabsContent value="architecture" className="mt-0">
-                    <ArchitectureTab />
-                  </TabsContent>
-                  <TabsContent value="technical" className="mt-0">
-                    <TechnicalDocsTab />
-                  </TabsContent>
-                  <TabsContent value="roadmap" className="mt-0">
-                    <RoadmapTab />
-                  </TabsContent>
-                  <TabsContent value="investor" className="mt-0">
-                    <InvestorDashboardTab />
-                  </TabsContent>
-                  <TabsContent value="stagegates" className="mt-0">
-                    <StageGatesTab />
-                  </TabsContent>
-                </motion.div>
-              </AnimatePresence>
-            </div>
-          </Tabs>
+          </div>
         </div>
-      </div>
+
+        {/* Tab Content */}
+        <div className="max-w-[1920px] mx-auto py-8 px-6">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              <TabsContent value="overview" className="mt-0" forceMount={activeTab === 'overview' ? true : undefined}>
+                {activeTab === 'overview' && <OverviewTab />}
+              </TabsContent>
+              <TabsContent value="market" className="mt-0" forceMount={activeTab === 'market' ? true : undefined}>
+                {activeTab === 'market' && <MarketAnalysisTab />}
+              </TabsContent>
+              <TabsContent value="products" className="mt-0" forceMount={activeTab === 'products' ? true : undefined}>
+                {activeTab === 'products' && <ProductSuiteTab />}
+              </TabsContent>
+              <TabsContent value="architecture" className="mt-0" forceMount={activeTab === 'architecture' ? true : undefined}>
+                {activeTab === 'architecture' && <ArchitectureTab />}
+              </TabsContent>
+              <TabsContent value="technical" className="mt-0" forceMount={activeTab === 'technical' ? true : undefined}>
+                {activeTab === 'technical' && <TechnicalDocsTab />}
+              </TabsContent>
+              <TabsContent value="roadmap" className="mt-0" forceMount={activeTab === 'roadmap' ? true : undefined}>
+                {activeTab === 'roadmap' && <RoadmapTab />}
+              </TabsContent>
+              <TabsContent value="investor" className="mt-0" forceMount={activeTab === 'investor' ? true : undefined}>
+                {activeTab === 'investor' && <InvestorDashboardTab />}
+              </TabsContent>
+              <TabsContent value="stagegates" className="mt-0" forceMount={activeTab === 'stagegates' ? true : undefined}>
+                {activeTab === 'stagegates' && <StageGatesTab />}
+              </TabsContent>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </Tabs>
     </div>
   );
 };
