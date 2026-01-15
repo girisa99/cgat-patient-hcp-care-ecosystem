@@ -18,6 +18,9 @@ interface SocialPublishRequest {
   hashtags?: string[];
   scheduledAt?: string;
   userId?: string;
+  targetType?: 'personal' | 'company'; // For LinkedIn - personal profile or company page
+  targetId?: string; // Company page ID if posting to company
+  targetName?: string; // Company name for display
   metadata?: {
     title?: string;
     description?: string;
@@ -75,6 +78,33 @@ serve(async (req) => {
     // Platform-specific publishing logic
     const publishResult = await publishToPlatform(request, userId);
 
+    // Store analytics record
+    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    try {
+      await supabaseAdmin.from('social_publish_analytics').insert({
+        user_id: userId,
+        platform: request.platform,
+        post_id: publishResult.postId,
+        post_url: publishResult.postUrl,
+        content_type: request.contentType,
+        target_type: request.targetType || 'personal',
+        target_id: request.targetId,
+        target_name: request.targetName,
+        title: request.metadata?.title,
+        caption: request.caption,
+        thumbnail_url: request.metadata?.thumbnailUrl,
+        media_url: request.mediaUrl,
+        status: request.scheduledAt ? 'scheduled' : 'published',
+        visibility: request.metadata?.visibility,
+        scheduled_at: request.scheduledAt,
+        published_at: request.scheduledAt ? null : new Date().toISOString()
+      });
+      console.log('📊 Analytics record created for:', request.platform);
+    } catch (analyticsError) {
+      console.error('Failed to store analytics:', analyticsError);
+      // Don't fail the publish if analytics fails
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -130,28 +160,56 @@ async function publishToLinkedIn(
   request: SocialPublishRequest, 
   accessToken: string
 ): Promise<{ postId: string; postUrl: string; metadata: Record<string, unknown> }> {
-  // Get user's LinkedIn URN
-  const profileResponse = await fetch('https://api.linkedin.com/v2/userinfo', {
-    headers: { 'Authorization': `Bearer ${accessToken}` }
-  });
+  // Determine if posting to personal profile or company page
+  const isCompanyPost = request.targetType === 'company' && request.targetId;
   
-  if (!profileResponse.ok) {
-    throw new Error('Failed to get LinkedIn profile');
+  let authorUrn: string;
+  
+  if (isCompanyPost) {
+    // Posting to company page
+    authorUrn = `urn:li:organization:${request.targetId}`;
+    console.log('📢 Posting to LinkedIn company page:', request.targetId);
+  } else {
+    // Posting to personal profile - get user's LinkedIn URN
+    const profileResponse = await fetch('https://api.linkedin.com/v2/userinfo', {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+    
+    if (!profileResponse.ok) {
+      throw new Error('Failed to get LinkedIn profile');
+    }
+    
+    const profile = await profileResponse.json();
+    authorUrn = `urn:li:person:${profile.sub}`;
+    console.log('👤 Posting to personal LinkedIn profile:', profile.sub);
   }
   
-  const profile = await profileResponse.json();
-  const personUrn = `urn:li:person:${profile.sub}`;
+  // Build the full caption with hashtags
+  const fullCaption = request.caption + (request.hashtags?.length ? '\n\n' + request.hashtags.map(h => `#${h}`).join(' ') : '');
   
-  // Prepare post content
+  // Prepare post content based on media type
+  let shareMediaCategory = 'NONE';
+  let media: Array<Record<string, unknown>> = [];
+  
+  if (request.contentType === 'video' && request.mediaUrl) {
+    shareMediaCategory = 'VIDEO';
+    // For video, we'd need to register and upload the asset first
+    // This is simplified - full implementation would handle asset upload
+  } else if (request.contentType === 'image' && (request.mediaUrl || request.metadata?.thumbnailUrl)) {
+    shareMediaCategory = 'IMAGE';
+    // Similar asset registration needed for images
+  }
+  
   const postBody: Record<string, unknown> = {
-    author: personUrn,
+    author: authorUrn,
     lifecycleState: 'PUBLISHED',
     specificContent: {
       'com.linkedin.ugc.ShareContent': {
         shareCommentary: {
-          text: request.caption + (request.hashtags?.length ? '\n\n' + request.hashtags.map(h => `#${h}`).join(' ') : '')
+          text: fullCaption
         },
-        shareMediaCategory: request.mediaUrl ? 'VIDEO' : 'NONE'
+        shareMediaCategory,
+        ...(media.length > 0 && { media })
       }
     },
     visibility: {
@@ -183,11 +241,16 @@ async function publishToLinkedIn(
   
   return {
     postId,
-    postUrl: `https://www.linkedin.com/feed/update/${postId}`,
+    postUrl: isCompanyPost 
+      ? `https://www.linkedin.com/company/${request.targetId}/posts/`
+      : `https://www.linkedin.com/feed/update/${postId}`,
     metadata: {
       visibility: 'PUBLIC',
       lifecycleState: 'PUBLISHED',
-      author: personUrn
+      author: authorUrn,
+      targetType: isCompanyPost ? 'company' : 'personal',
+      targetId: request.targetId,
+      targetName: request.targetName
     }
   };
 }
@@ -269,6 +332,36 @@ async function publishToYouTube(
 
   console.log('✅ YouTube video uploaded:', videoId);
 
+  // Upload thumbnail if provided
+  if (request.metadata?.thumbnailUrl && videoId) {
+    try {
+      console.log('📷 Uploading custom thumbnail...');
+      const thumbnailResponse = await fetch(request.metadata.thumbnailUrl);
+      if (thumbnailResponse.ok) {
+        const thumbnailBlob = await thumbnailResponse.blob();
+        const thumbnailUpload = await fetch(
+          `https://www.googleapis.com/upload/youtube/v3/thumbnails/set?videoId=${videoId}`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': thumbnailBlob.type || 'image/jpeg'
+            },
+            body: thumbnailBlob
+          }
+        );
+        if (thumbnailUpload.ok) {
+          console.log('✅ Thumbnail uploaded successfully');
+        } else {
+          console.log('⚠️ Thumbnail upload failed:', await thumbnailUpload.text());
+        }
+      }
+    } catch (thumbError) {
+      console.error('Thumbnail upload error:', thumbError);
+      // Don't fail the video upload if thumbnail fails
+    }
+  }
+
   return {
     postId: videoId,
     postUrl: `https://youtube.com/watch?v=${videoId}`,
@@ -276,7 +369,8 @@ async function publishToYouTube(
       title: metadata.snippet.title,
       visibility: metadata.status.privacyStatus,
       categoryId: metadata.snippet.categoryId,
-      channelId: uploadResult.snippet?.channelId
+      channelId: uploadResult.snippet?.channelId,
+      thumbnailUploaded: !!request.metadata?.thumbnailUrl
     }
   };
 }
