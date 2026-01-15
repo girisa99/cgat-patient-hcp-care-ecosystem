@@ -11,7 +11,7 @@ import {
   BarChart3, TrendingUp, 
   Rocket, Settings, DollarSign,
   Shield, Layers, FileText,
-  Sparkles, CheckCircle, Clock
+  Sparkles, CheckCircle, Clock, Database
 } from 'lucide-react';
 
 // Tab Components
@@ -23,6 +23,7 @@ import { TechnicalDocsTab } from './tabs/TechnicalDocsTab';
 import { RoadmapTab } from './tabs/RoadmapTab';
 import { InvestorDashboardTab } from './tabs/InvestorDashboardTab';
 import { StageGatesTab } from './tabs/StageGatesTab';
+import { GovernanceTab } from './tabs/GovernanceTab';
 
 const tabs = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -33,6 +34,7 @@ const tabs = [
   { id: 'roadmap', label: 'Roadmap', icon: Rocket },
   { id: 'investor', label: 'Investor Dashboard', icon: DollarSign },
   { id: 'stagegates', label: 'Stage Gates', icon: Shield },
+  { id: 'governance', label: 'Governance', icon: Database },
 ];
 
 export const GenieCommandCenter: React.FC = () => {
@@ -189,6 +191,9 @@ export const GenieCommandCenter: React.FC = () => {
               </TabsContent>
               <TabsContent value="stagegates" className="mt-0" forceMount={activeTab === 'stagegates' ? true : undefined}>
                 {activeTab === 'stagegates' && <StageGatesTab />}
+              </TabsContent>
+              <TabsContent value="governance" className="mt-0" forceMount={activeTab === 'governance' ? true : undefined}>
+                {activeTab === 'governance' && <GovernanceTab />}
               </TabsContent>
             </motion.div>
           </AnimatePresence>
