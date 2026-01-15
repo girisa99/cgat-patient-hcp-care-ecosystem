@@ -25,6 +25,7 @@ import { RoadmapTab } from './tabs/RoadmapTab';
 import { InvestorDashboardTab } from './tabs/InvestorDashboardTab';
 import { StageGatesTab } from './tabs/StageGatesTab';
 import { GovernanceTab } from './tabs/GovernanceTab';
+import { PricingStrategyTab } from './tabs/PricingStrategyTab';
 
 // Import governance data for dynamic metrics
 import { masterScenarioCounts } from './data/governance-data';
@@ -33,10 +34,11 @@ const tabs = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
   { id: 'market', label: 'Market Analysis', icon: TrendingUp },
   { id: 'products', label: 'Product Suite', icon: Layers },
+  { id: 'pricing', label: 'Pricing Strategy', icon: DollarSign },
   { id: 'architecture', label: 'Architecture', icon: Settings },
   { id: 'technical', label: 'Technical Docs', icon: FileText },
   { id: 'roadmap', label: 'Roadmap', icon: Rocket },
-  { id: 'investor', label: 'Investor Dashboard', icon: DollarSign },
+  { id: 'investor', label: 'Investor Dashboard', icon: Sparkles },
   { id: 'stagegates', label: 'Stage Gates', icon: Shield },
   { id: 'governance', label: 'Governance', icon: Database },
 ];
@@ -178,6 +180,9 @@ export const GenieCommandCenter: React.FC = () => {
           </TabsContent>
           <TabsContent value="products" className="mt-0">
             <ProductSuiteTab />
+          </TabsContent>
+          <TabsContent value="pricing" className="mt-0">
+            <PricingStrategyTab />
           </TabsContent>
           <TabsContent value="architecture" className="mt-0">
             <ArchitectureTab />
