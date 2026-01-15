@@ -254,193 +254,252 @@ const ComprehensivePLCalculator: React.FC = () => {
       {/* Three-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Subscriber & Pricing Inputs */}
-        <Card>
-          <CardHeader className="pb-3">
+        <Card className="flex flex-col">
+          <CardHeader className="pb-3 flex-shrink-0">
             <CardTitle className="text-base flex items-center gap-2">
               <Users className="w-4 h-4 text-primary" />
               Subscriber Mix & Pricing
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              {Object.entries(subscriberCounts).map(([tier, count]) => (
-                <div key={tier} className="grid grid-cols-3 gap-2 items-center">
-                  <Label className="text-xs capitalize">{tier}</Label>
-                  <Input
-                    type="number"
-                    value={count}
-                    onChange={(e) => setSubscriberCounts(prev => ({ ...prev, [tier]: parseInt(e.target.value) || 0 }))}
-                    className="h-8 text-xs"
-                  />
-                  {tier !== 'free' && (
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs text-muted-foreground">$</span>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={prices[tier as keyof typeof prices]}
-                        onChange={(e) => setPrices(prev => ({ ...prev, [tier]: parseFloat(e.target.value) || 0 }))}
-                        className="h-8 text-xs"
-                      />
+          <CardContent className="flex-1 overflow-hidden">
+            <div className="h-[400px] overflow-y-auto pr-2 space-y-4">
+              <div className="space-y-3">
+                {Object.entries(subscriberCounts).map(([tier, count]) => (
+                  <div key={tier} className="grid grid-cols-3 gap-2 items-center">
+                    <Label className="text-xs capitalize">{tier}</Label>
+                    <Input
+                      type="number"
+                      value={count}
+                      onChange={(e) => setSubscriberCounts(prev => ({ ...prev, [tier]: parseInt(e.target.value) || 0 }))}
+                      className="h-8 text-xs"
+                    />
+                    {tier !== 'free' && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground">$</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={prices[tier as keyof typeof prices]}
+                          onChange={(e) => setPrices(prev => ({ ...prev, [tier]: parseFloat(e.target.value) || 0 }))}
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                    )}
+                    {tier === 'free' && <span className="text-xs text-muted-foreground">$0</span>}
+                  </div>
+                ))}
+              </div>
+
+              <Separator />
+
+              {/* AI Model Selection */}
+              <div className="space-y-2">
+                <Label className="text-xs">AI Model</Label>
+                <Select value={selectedAIModel} onValueChange={setSelectedAIModel}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border shadow-lg z-50">
+                    {aiModelCosts.map(m => (
+                      <SelectItem key={m.model} value={m.model} className="text-xs">
+                        {m.provider} {m.model} (${m.costPerScript.toFixed(4)}/script)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">TTS Provider</Label>
+                <Select value={selectedTTS} onValueChange={setSelectedTTS}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border shadow-lg z-50">
+                    {ttsCosts.map(t => (
+                      <SelectItem key={`${t.provider} ${t.tier}`} value={`${t.provider} ${t.tier}`} className="text-xs">
+                        {t.provider} {t.tier} (${t.costPerMinute}/min)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Separator />
+
+              {/* Ad Spend Inputs */}
+              <div>
+                <h4 className="text-xs font-medium text-muted-foreground mb-2">Ad Spend (${totalAdSpend}/mo)</h4>
+                <div className="space-y-2">
+                  {Object.entries(adSpend).map(([channel, spend]) => (
+                    <div key={channel} className="grid grid-cols-2 gap-2 items-center">
+                      <Label className="text-xs capitalize">{channel}</Label>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground">$</span>
+                        <Input
+                          type="number"
+                          value={spend}
+                          onChange={(e) => setAdSpend(prev => ({ ...prev, [channel]: parseInt(e.target.value) || 0 }))}
+                          className="h-7 text-xs"
+                        />
+                      </div>
                     </div>
-                  )}
-                  {tier === 'free' && <span className="text-xs text-muted-foreground">$0</span>}
+                  ))}
                 </div>
-              ))}
-            </div>
-
-            <Separator />
-
-            {/* AI Model Selection */}
-            <div className="space-y-2">
-              <Label className="text-xs">AI Model</Label>
-              <Select value={selectedAIModel} onValueChange={setSelectedAIModel}>
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {aiModelCosts.map(m => (
-                    <SelectItem key={m.model} value={m.model} className="text-xs">
-                      {m.provider} {m.model} (${m.costPerScript.toFixed(4)}/script)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs">TTS Provider</Label>
-              <Select value={selectedTTS} onValueChange={setSelectedTTS}>
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ttsCosts.map(t => (
-                    <SelectItem key={`${t.provider} ${t.tier}`} value={`${t.provider} ${t.tier}`} className="text-xs">
-                      {t.provider} {t.tier} (${t.costPerMinute}/min)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Middle: Unit Economics Per Tier */}
-        <Card>
-          <CardHeader className="pb-3">
+        <Card className="flex flex-col">
+          <CardHeader className="pb-3 flex-shrink-0">
             <CardTitle className="text-base flex items-center gap-2">
               <PieChart className="w-4 h-4 text-primary" />
               Unit Economics by Tier
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-80">
-              <div className="space-y-3">
-                {tierEconomics.map((tier) => (
-                  <div key={tier.tier} className={`p-3 rounded-lg border ${
-                    tier.marginPercent >= 40 ? 'border-green-500/30 bg-green-500/5' :
-                    tier.marginPercent >= 0 ? 'border-amber-500/30 bg-amber-500/5' :
-                    'border-red-500/30 bg-red-500/5'
-                  }`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-sm">{tier.tier}</span>
-                      <Badge variant={tier.marginPercent >= 40 ? 'default' : tier.marginPercent >= 0 ? 'secondary' : 'destructive'}>
-                        {tier.marginPercent.toFixed(0)}% margin
-                      </Badge>
-                    </div>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                      <span className="text-muted-foreground">Price:</span>
-                      <span className="text-right">${tier.price.toFixed(2)}</span>
-                      <span className="text-muted-foreground">AI Cost:</span>
-                      <span className="text-right">${tier.aiCostPerUser.toFixed(4)}</span>
-                      <span className="text-muted-foreground">TTS Cost:</span>
-                      <span className="text-right">${tier.ttsCostPerUser.toFixed(2)}</span>
-                      <span className="text-muted-foreground font-medium">Contribution:</span>
-                      <span className={`text-right font-medium ${tier.contribution >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                        ${tier.contribution.toFixed(2)}
+          <CardContent className="flex-1 overflow-hidden">
+            <div className="h-[400px] overflow-y-auto pr-2 space-y-3">
+              {tierEconomics.map((tier) => (
+                <div key={tier.tier} className={`p-3 rounded-lg border ${
+                  tier.marginPercent >= 40 ? 'border-green-500/30 bg-green-500/5' :
+                  tier.marginPercent >= 0 ? 'border-amber-500/30 bg-amber-500/5' :
+                  'border-red-500/30 bg-red-500/5'
+                }`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium text-sm">{tier.tier}</span>
+                    <Badge variant={tier.marginPercent >= 40 ? 'default' : tier.marginPercent >= 0 ? 'secondary' : 'destructive'}>
+                      {tier.marginPercent.toFixed(0)}% margin
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                    <span className="text-muted-foreground">Price:</span>
+                    <span className="text-right">${tier.price.toFixed(2)}</span>
+                    <span className="text-muted-foreground">AI Cost:</span>
+                    <span className="text-right">${tier.aiCostPerUser.toFixed(4)}</span>
+                    <span className="text-muted-foreground">TTS Cost:</span>
+                    <span className="text-right">${tier.ttsCostPerUser.toFixed(2)}</span>
+                    <span className="text-muted-foreground font-medium">Contribution:</span>
+                    <span className={`text-right font-medium ${tier.contribution >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      ${tier.contribution.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="mt-2 pt-2 border-t border-border/50">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">{tier.subscribers} users →</span>
+                      <span className={tier.totalContribution >= 0 ? 'text-green-500' : 'text-red-500'}>
+                        ${tier.totalContribution.toLocaleString(undefined, { maximumFractionDigits: 0 })}/mo
                       </span>
                     </div>
-                    <div className="mt-2 pt-2 border-t border-border/50">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">{tier.subscribers} users →</span>
-                        <span className={tier.totalContribution >= 0 ? 'text-green-500' : 'text-red-500'}>
-                          ${tier.totalContribution.toLocaleString(undefined, { maximumFractionDigits: 0 })}/mo
-                        </span>
-                      </div>
-                    </div>
                   </div>
-                ))}
-              </div>
-            </ScrollArea>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
-        {/* Right: Costs Breakdown */}
-        <Card>
-          <CardHeader className="pb-3">
+        {/* Right: Fixed & Variable Cost Breakdown */}
+        <Card className="flex flex-col">
+          <CardHeader className="pb-3 flex-shrink-0">
             <CardTitle className="text-base flex items-center gap-2">
               <Receipt className="w-4 h-4 text-primary" />
               Cost Breakdown
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-80">
-              <div className="space-y-4">
-                {/* Fixed Costs */}
-                <div>
-                  <h4 className="text-xs font-medium text-muted-foreground mb-2">Fixed Infrastructure (${totalFixedCosts}/mo)</h4>
-                  <div className="space-y-1">
-                    {monthlyFixedCosts.map((cost, idx) => (
-                      <div key={idx} className="flex justify-between text-xs">
-                        <span>{cost.category}</span>
-                        <span className="text-muted-foreground">${cost.fixedCosts}</span>
-                      </div>
-                    ))}
+          <CardContent className="flex-1 overflow-hidden">
+            <div className="h-[400px] overflow-y-auto pr-2 space-y-4">
+              {/* Variable Costs Summary */}
+              <div className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/5">
+                <h4 className="text-xs font-semibold text-amber-600 dark:text-amber-400 mb-2 flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3" />
+                  VARIABLE COSTS (Per User)
+                </h4>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between">
+                    <span>AI ({selectedAIModel})</span>
+                    <span>${((aiModel.inputCostPer1MTok + aiModel.outputCostPer1MTok) / 2).toFixed(4)}/1M tok</span>
                   </div>
-                </div>
-
-                <Separator />
-
-                {/* Ad Spend */}
-                <div>
-                  <h4 className="text-xs font-medium text-muted-foreground mb-2">Customer Acquisition (${totalAdSpend}/mo)</h4>
-                  <div className="space-y-2">
-                    {Object.entries(adSpend).map(([channel, spend]) => (
-                      <div key={channel} className="grid grid-cols-2 gap-2 items-center">
-                        <Label className="text-xs capitalize">{channel}</Label>
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs text-muted-foreground">$</span>
-                          <Input
-                            type="number"
-                            value={spend}
-                            onChange={(e) => setAdSpend(prev => ({ ...prev, [channel]: parseInt(e.target.value) || 0 }))}
-                            className="h-7 text-xs"
-                          />
-                        </div>
-                      </div>
-                    ))}
+                  <div className="flex justify-between">
+                    <span>TTS ({selectedTTS})</span>
+                    <span>${ttsModel.costPerMinute.toFixed(2)}/min</span>
                   </div>
-                </div>
-
-                <Separator />
-
-                {/* CAC Analysis */}
-                <div>
-                  <h4 className="text-xs font-medium text-muted-foreground mb-2">Estimated CAC by Channel</h4>
-                  <div className="space-y-1">
-                    {cacByChannel.filter(c => c.spend > 0).map((ch, idx) => (
-                      <div key={idx} className="flex justify-between text-xs">
-                        <span>{ch.channel}</span>
-                        <span className="text-muted-foreground">
-                          ~{ch.estimatedCustomers} users @ ${ch.estimatedCAC}/user
-                        </span>
-                      </div>
-                    ))}
+                  <div className="flex justify-between font-medium pt-1 border-t mt-1">
+                    <span>Total Variable/Month</span>
+                    <span className="text-amber-600">${plSummary.totalVariableCosts.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
-            </ScrollArea>
+
+              {/* Fixed Costs */}
+              <div className="p-3 rounded-lg border border-blue-500/30 bg-blue-500/5">
+                <h4 className="text-xs font-semibold text-blue-600 dark:text-blue-400 mb-2 flex items-center gap-1">
+                  <Server className="w-3 h-3" />
+                  FIXED COSTS (Monthly)
+                </h4>
+                <div className="space-y-1 text-xs">
+                  {monthlyFixedCosts.map((cost, idx) => (
+                    <div key={idx} className="flex justify-between">
+                      <span>{cost.category}</span>
+                      <span className="text-muted-foreground">${cost.fixedCosts}</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between font-medium pt-1 border-t mt-1">
+                    <span>Total Fixed/Month</span>
+                    <span className="text-blue-600">${totalFixedCosts.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Customer Acquisition */}
+              <div className="p-3 rounded-lg border border-purple-500/30 bg-purple-500/5">
+                <h4 className="text-xs font-semibold text-purple-600 dark:text-purple-400 mb-2 flex items-center gap-1">
+                  <Megaphone className="w-3 h-3" />
+                  CUSTOMER ACQUISITION
+                </h4>
+                <div className="space-y-1 text-xs">
+                  {cacByChannel.filter(c => c.spend > 0).map((ch, idx) => (
+                    <div key={idx} className="flex justify-between">
+                      <span>{ch.channel}</span>
+                      <span className="text-muted-foreground">
+                        ~{ch.estimatedCustomers} @ ${ch.estimatedCAC}
+                      </span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between font-medium pt-1 border-t mt-1">
+                    <span>Total CAC/Month</span>
+                    <span className="text-purple-600">${totalAdSpend.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Blended CAC</span>
+                    <span>${plSummary.blendedCAC.toFixed(2)}/user</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Total Cost Summary */}
+              <div className="p-3 rounded-lg border-2 border-red-500/30 bg-red-500/5">
+                <h4 className="text-xs font-semibold text-red-600 dark:text-red-400 mb-2">TOTAL MONTHLY COSTS</h4>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between">
+                    <span>Variable Costs</span>
+                    <span>${plSummary.totalVariableCosts.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Fixed Infrastructure</span>
+                    <span>${totalFixedCosts.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Marketing/Ads</span>
+                    <span>${totalAdSpend.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between font-bold pt-1 border-t mt-1 text-red-600">
+                    <span>TOTAL</span>
+                    <span>${(plSummary.totalVariableCosts + plSummary.operatingExpenses).toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -639,9 +698,9 @@ export const PricingStrategyTab: React.FC = () => {
   const [subTab, setSubTab] = useState('calculator');
 
   return (
-    <div className="space-y-4">
+    <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <div>
           <h2 className="text-xl font-bold flex items-center gap-2">
             <DollarSign className="w-5 h-5 text-primary" />
@@ -653,39 +712,43 @@ export const PricingStrategyTab: React.FC = () => {
         </div>
       </div>
 
-      {/* Sub-tabs - Fixed styling */}
-      <Tabs value={subTab} onValueChange={setSubTab} className="w-full">
-        <TabsList className="inline-flex h-9 items-center justify-start gap-1 rounded-lg bg-muted p-1 w-auto">
-          <TabsTrigger value="calculator" className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium">
-            <Calculator className="w-4 h-4" /> Calculator
-          </TabsTrigger>
-          <TabsTrigger value="segments" className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium">
-            <Users className="w-4 h-4" /> Segments
-          </TabsTrigger>
-          <TabsTrigger value="models" className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium">
-            <Layers className="w-4 h-4" /> Models
-          </TabsTrigger>
-          <TabsTrigger value="mobile" className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium">
-            <Smartphone className="w-4 h-4" /> Mobile
-          </TabsTrigger>
-          <TabsTrigger value="comparison" className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium">
-            <BarChart3 className="w-4 h-4" /> Compare
-          </TabsTrigger>
-        </TabsList>
+      {/* Sub-navigation - Simple button style, no nested tabs */}
+      <div className="flex items-center gap-2 mb-4 flex-shrink-0 p-1 bg-muted rounded-lg w-fit">
+        {[
+          { id: 'calculator', label: 'Calculator', icon: Calculator },
+          { id: 'segments', label: 'Segments', icon: Users },
+          { id: 'models', label: 'Models', icon: Layers },
+          { id: 'mobile', label: 'Mobile', icon: Smartphone },
+          { id: 'comparison', label: 'Compare', icon: BarChart3 },
+        ].map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => setSubTab(id)}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              subTab === id 
+                ? 'bg-background text-foreground shadow-sm' 
+                : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+            {label}
+          </button>
+        ))}
+      </div>
 
-        <TabsContent value="calculator" className="mt-4">
-          <ComprehensivePLCalculator />
-        </TabsContent>
-
-        <TabsContent value="segments" className="mt-4">
+      {/* Content Area - Scrollable */}
+      <div className="flex-1 overflow-y-auto min-h-0">
+        {subTab === 'calculator' && <ComprehensivePLCalculator />}
+        
+        {subTab === 'segments' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {segmentPricingProfiles.map((segment) => (
               <SegmentProfileCard key={segment.id} segment={segment} />
             ))}
           </div>
-        </TabsContent>
-
-        <TabsContent value="models" className="mt-4">
+        )}
+        
+        {subTab === 'models' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {pricingModels.map((model) => (
               <Card key={model.id} className="h-full">
@@ -728,13 +791,11 @@ export const PricingStrategyTab: React.FC = () => {
               </Card>
             ))}
           </div>
-        </TabsContent>
-
-        <TabsContent value="mobile" className="mt-4">
-          <MobileAppPricingSection />
-        </TabsContent>
-
-        <TabsContent value="comparison" className="mt-4">
+        )}
+        
+        {subTab === 'mobile' && <MobileAppPricingSection />}
+        
+        {subTab === 'comparison' && (
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -775,14 +836,17 @@ export const PricingStrategyTab: React.FC = () => {
                     }`}>
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-semibold text-sm">{perm.name}</h4>
-                        <Badge variant={perm.recommendation === 'Strong' ? 'default' : perm.recommendation === 'Medium' ? 'secondary' : 'destructive'}>
+                        <Badge variant={
+                          perm.recommendation === 'Strong' ? 'default' :
+                          perm.recommendation === 'Medium' ? 'secondary' : 'destructive'
+                        }>
                           {perm.recommendation}
                         </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground mb-2">{perm.structure}</p>
+                      <p className="text-xs text-muted-foreground mb-2">{perm.model} • {perm.structure}</p>
                       <div className="flex items-center justify-between text-xs">
-                        <span>Conversion: {perm.estimatedConversion}</span>
-                        <span>{perm.tiers.length} tiers</span>
+                        <span className="text-muted-foreground">{perm.targetSegments.join(', ')}</span>
+                        <span className="font-medium">{perm.estimatedConversion}</span>
                       </div>
                     </div>
                   ))}
@@ -790,10 +854,11 @@ export const PricingStrategyTab: React.FC = () => {
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
-      </Tabs>
+        )}
+      </div>
     </div>
   );
 };
 
 export default PricingStrategyTab;
+
