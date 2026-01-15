@@ -1,36 +1,43 @@
 /**
  * Genie Command Center - Pricing Strategy Tab
- * Interactive pricing explorer with calculator and segment analysis
+ * Interactive pricing explorer with comprehensive cost analysis
  */
 
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Progress } from '@/components/ui/progress';
 import {
   Calculator, Users, Layers, DollarSign, Sparkles,
   Check, X, TrendingUp, Zap, Crown, Gift, Building,
   Heart, GraduationCap, Plane, Camera, BookOpen,
-  Smartphone, ChevronRight, Target, BarChart3
+  Smartphone, Target, BarChart3, Server,
+  Megaphone, CreditCard, AlertTriangle
 } from 'lucide-react';
 import {
   segmentPricingProfiles,
   pricingModels,
-  productModules,
   pricingPermutations,
   pricingRecommendations,
   segmentBundles,
-  aiModelTokenInfo,
-  ttsVoiceInfo,
   type SegmentPricingProfile,
-  type PricingPermutation,
 } from '../data/pricing-options-data';
+import {
+  aiModelCosts,
+  ttsCosts,
+  infrastructureCosts,
+  acquisitionChannels,
+  tierAllocations,
+  assetProductionCosts,
+  monthlyFixedCosts,
+  calculateMonthlyBreakeven,
+} from '../data/infrastructure-costs';
 
 // Mobile app specific pricing
 const mobileAppPricing = {
@@ -517,29 +524,32 @@ export const PricingStrategyTab: React.FC = () => {
         <TabsContent value="calculator" className="mt-6">
           <PricingCalculator />
           
-          {/* AI Cost Transparency */}
+          {/* AI Cost Transparency - Using new data */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-primary" />
-                  AI Model Costs (Transparency)
+                  AI Model Costs (Real Pricing)
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-64">
                   <div className="space-y-3">
-                    {aiModelTokenInfo.map((model, idx) => (
+                    {aiModelCosts.map((model, idx) => (
                       <div key={idx} className="p-3 rounded-lg bg-muted/50">
                         <div className="flex items-center justify-between mb-1">
                           <span className="font-medium text-sm">{model.provider} {model.model}</span>
                           <Badge variant="outline" className="text-xs">{model.contextWindow}</Badge>
                         </div>
                         <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                          <span>Input: {model.inputCostPer1K}/1K</span>
-                          <span>Output: {model.outputCostPer1K}/1K</span>
+                          <span>Input: ${model.inputCostPer1MTok}/1M tok</span>
+                          <span>Output: ${model.outputCostPer1MTok}/1M tok</span>
                         </div>
-                        <p className="text-xs mt-1">{model.recommendation}</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-xs text-muted-foreground">{model.bestFor}</span>
+                          <Badge variant="secondary" className="text-xs">${model.costPerScript.toFixed(4)}/script</Badge>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -550,16 +560,16 @@ export const PricingStrategyTab: React.FC = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  🎙️ TTS Voice Pricing
+                  🎙️ TTS Voice Pricing (Real Costs)
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-64">
                   <div className="space-y-3">
-                    {ttsVoiceInfo.map((tts, idx) => (
+                    {ttsCosts.map((tts, idx) => (
                       <div key={idx} className="p-3 rounded-lg bg-muted/50">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="font-medium text-sm">{tts.provider}</span>
+                          <span className="font-medium text-sm">{tts.provider} ({tts.tier})</span>
                           <Badge variant={
                             tts.quality === 'Ultra' ? 'default' : 
                             tts.quality === 'Premium' ? 'secondary' : 'outline'
@@ -568,12 +578,11 @@ export const PricingStrategyTab: React.FC = () => {
                         <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
                           <span>{tts.voiceCount} voices</span>
                           <span>{tts.languages} languages</span>
-                          <span>{tts.costPerMinute}/min</span>
+                          <span className="font-medium text-foreground">${tts.costPerMinute}/min</span>
                         </div>
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {tts.tierAvailability.slice(0, 3).map((tier, i) => (
-                            <Badge key={i} variant="outline" className="text-xs">{tier}</Badge>
-                          ))}
+                        <div className="flex gap-2 mt-2">
+                          {tts.cloning && <Badge variant="outline" className="text-xs">Voice Clone</Badge>}
+                          {tts.emotionControl && <Badge variant="outline" className="text-xs">Emotion</Badge>}
                         </div>
                       </div>
                     ))}
