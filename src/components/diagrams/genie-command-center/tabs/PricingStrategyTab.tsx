@@ -6,22 +6,19 @@
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
-  Calculator, Users, Layers, DollarSign, Sparkles,
-  Check, X, TrendingUp, TrendingDown, Zap, Crown, Gift, Building,
+  Calculator, Users, Layers, DollarSign,
+  Check, X, TrendingUp, Zap, Crown, Gift, Building,
   Heart, GraduationCap, Plane, Camera, BookOpen,
   Smartphone, Target, BarChart3, Server,
-  Megaphone, CreditCard, AlertTriangle, PieChart,
-  Coins, Receipt, ArrowUpRight, ArrowDownRight
+  Megaphone, PieChart, Plus, Trash2, Edit2,
+  Coins, Receipt, ArrowUpRight, ArrowDownRight, Settings
 } from 'lucide-react';
 import {
   segmentPricingProfiles,
@@ -31,17 +28,52 @@ import {
   segmentBundles,
 } from '../data/pricing-options-data';
 import {
-  aiModelCosts,
-  ttsCosts,
-  infrastructureCosts,
+  aiModelCosts as defaultAIModels,
+  ttsCosts as defaultTTSCosts,
   acquisitionChannels,
   tierAllocations,
-  assetProductionCosts,
-  monthlyFixedCosts,
+  monthlyFixedCosts as defaultFixedCosts,
+  type AIModelCost,
+  type TTSCost,
+  type MonthlyEconomics,
 } from '../data/infrastructure-costs';
 
 // ==================== COMPREHENSIVE P&L CALCULATOR ====================
 const ComprehensivePLCalculator: React.FC = () => {
+  // Editable AI Models
+  const [aiModels, setAiModels] = useState<AIModelCost[]>([...defaultAIModels]);
+  const [ttsProviders, setTtsProviders] = useState<TTSCost[]>([...defaultTTSCosts]);
+  
+  // Editable Fixed Costs with capacity info
+  const [fixedCosts, setFixedCosts] = useState<(MonthlyEconomics & { 
+    minCapacity?: string; 
+    maxCapacity?: string; 
+    scaleFactor?: string;
+  })[]>(
+    defaultFixedCosts.map(c => ({
+      ...c,
+      minCapacity: c.category === 'Supabase Pro' ? '1K users' : c.category === 'Resend Pro' ? '50K emails' : '—',
+      maxCapacity: c.category === 'Supabase Pro' ? '100K users' : c.category === 'Resend Pro' ? '50K emails' : '—',
+      scaleFactor: c.category === 'Supabase Pro' ? '$0.125/GB' : c.category === 'Netlify Pro' ? '$55/100GB' : '—',
+    }))
+  );
+
+  // Dialog states for adding new items
+  const [showAddAI, setShowAddAI] = useState(false);
+  const [showAddTTS, setShowAddTTS] = useState(false);
+  const [showAddFixed, setShowAddFixed] = useState(false);
+
+  // New item forms
+  const [newAI, setNewAI] = useState<Partial<AIModelCost>>({
+    provider: '', model: '', inputCostPer1MTok: 0, outputCostPer1MTok: 0,
+    avgTokensPerScript: 2500, contextWindow: '128K', bestFor: ''
+  });
+  const [newTTS, setNewTTS] = useState<Partial<TTSCost>>({
+    provider: '', tier: '', costPerCharacter: 0, costPerMinute: 0,
+    voiceCount: 100, languages: 10, quality: 'Premium', cloning: false, emotionControl: false
+  });
+  const [newFixed, setNewFixed] = useState({ category: '', fixedCosts: 0, description: '', minCapacity: '', maxCapacity: '', scaleFactor: '' });
+
   // Subscriber counts by tier
   const [subscriberCounts, setSubscriberCounts] = useState({
     free: 5000,
@@ -75,8 +107,51 @@ const ComprehensivePLCalculator: React.FC = () => {
   const [selectedAIModel, setSelectedAIModel] = useState('Gemini 2.0 Flash');
   const [selectedTTS, setSelectedTTS] = useState('ElevenLabs Pro');
 
-  const aiModel = aiModelCosts.find(m => m.model === selectedAIModel) || aiModelCosts[0];
-  const ttsModel = ttsCosts.find(t => `${t.provider} ${t.tier}` === selectedTTS) || ttsCosts[1];
+  const aiModel = aiModels.find(m => m.model === selectedAIModel) || aiModels[0];
+  const ttsModel = ttsProviders.find(t => `${t.provider} ${t.tier}` === selectedTTS) || ttsProviders[1];
+
+  // Add handlers
+  const handleAddAI = () => {
+    if (newAI.provider && newAI.model) {
+      const costPerScript = ((newAI.avgTokensPerScript || 2500) / 1000000) * 
+        ((newAI.inputCostPer1MTok || 0) + (newAI.outputCostPer1MTok || 0)) / 2;
+      setAiModels([...aiModels, { ...newAI, costPerScript } as AIModelCost]);
+      setNewAI({ provider: '', model: '', inputCostPer1MTok: 0, outputCostPer1MTok: 0, avgTokensPerScript: 2500, contextWindow: '128K', bestFor: '' });
+      setShowAddAI(false);
+    }
+  };
+
+  const handleAddTTS = () => {
+    if (newTTS.provider && newTTS.tier) {
+      setTtsProviders([...ttsProviders, newTTS as TTSCost]);
+      setNewTTS({ provider: '', tier: '', costPerCharacter: 0, costPerMinute: 0, voiceCount: 100, languages: 10, quality: 'Premium', cloning: false, emotionControl: false });
+      setShowAddTTS(false);
+    }
+  };
+
+  const handleAddFixed = () => {
+    if (newFixed.category) {
+      setFixedCosts([...fixedCosts, newFixed]);
+      setNewFixed({ category: '', fixedCosts: 0, description: '', minCapacity: '', maxCapacity: '', scaleFactor: '' });
+      setShowAddFixed(false);
+    }
+  };
+
+  const updateFixedCost = (index: number, field: string, value: number | string) => {
+    setFixedCosts(prev => prev.map((c, i) => i === index ? { ...c, [field]: value } : c));
+  };
+
+  const deleteFixedCost = (index: number) => {
+    setFixedCosts(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const deleteAIModel = (index: number) => {
+    setAiModels(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const deleteTTSProvider = (index: number) => {
+    setTtsProviders(prev => prev.filter((_, i) => i !== index));
+  };
 
   // Calculate unit economics per tier
   const tierEconomics = useMemo(() => {
@@ -84,16 +159,9 @@ const ComprehensivePLCalculator: React.FC = () => {
       const subscribers = subscriberCounts[tier.tier.toLowerCase() as keyof typeof subscriberCounts] || 0;
       const price = prices[tier.tier.toLowerCase() as keyof typeof prices] || tier.monthlyPrice;
       
-      // Calculate actual AI cost based on selected model
       const aiCostPerUser = (tier.tokensPerMonth / 1000000) * (aiModel.inputCostPer1MTok + aiModel.outputCostPer1MTok) / 2;
-      
-      // Calculate TTS cost
       const ttsCostPerUser = tier.ttsMinutes * ttsModel.costPerMinute;
-      
-      // Total variable cost
       const variableCost = aiCostPerUser + ttsCostPerUser;
-      
-      // Contribution margin
       const contribution = price - variableCost;
       const marginPercent = price > 0 ? ((contribution / price) * 100) : (tier.tier === 'Free' ? -100 : 0);
       
@@ -113,14 +181,9 @@ const ComprehensivePLCalculator: React.FC = () => {
     });
   }, [subscriberCounts, prices, aiModel, ttsModel]);
 
-  // Calculate total acquisition cost
-  const totalAdSpend = useMemo(() => 
-    Object.values(adSpend).reduce((sum, val) => sum + val, 0),
-  [adSpend]);
+  const totalAdSpend = useMemo(() => Object.values(adSpend).reduce((sum, val) => sum + val, 0), [adSpend]);
 
-  // Calculate CAC by channel
   const cacByChannel = useMemo(() => {
-    const totalNewCustomers = Object.values(subscriberCounts).reduce((sum, val) => sum + val, 0) * 0.1; // Assume 10% new
     return acquisitionChannels.map(ch => ({
       ...ch,
       spend: adSpend[ch.channel.toLowerCase().replace(' ads', '').replace(' (organic)', '').replace('/', '') as keyof typeof adSpend] || 0,
@@ -128,10 +191,7 @@ const ComprehensivePLCalculator: React.FC = () => {
     }));
   }, [adSpend]);
 
-  // Fixed costs
-  const totalFixedCosts = useMemo(() => 
-    monthlyFixedCosts.reduce((sum, c) => sum + c.fixedCosts, 0),
-  []);
+  const totalFixedCosts = useMemo(() => fixedCosts.reduce((sum, c) => sum + c.fixedCosts, 0), [fixedCosts]);
 
   // P&L Summary
   const plSummary = useMemo(() => {
@@ -292,34 +352,123 @@ const ComprehensivePLCalculator: React.FC = () => {
 
               <Separator />
 
-              {/* AI Model Selection */}
+              {/* AI Model Selection with Add Button */}
               <div className="space-y-2">
-                <Label className="text-xs">AI Model</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs">AI Model</Label>
+                  <Dialog open={showAddAI} onOpenChange={setShowAddAI}>
+                    <DialogTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-5 px-1">
+                        <Plus className="w-3 h-3" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-background">
+                      <DialogHeader>
+                        <DialogTitle>Add AI Model</DialogTitle>
+                      </DialogHeader>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-xs">Provider</Label>
+                          <Input value={newAI.provider || ''} onChange={e => setNewAI(p => ({ ...p, provider: e.target.value }))} placeholder="OpenAI" className="h-8" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Model Name</Label>
+                          <Input value={newAI.model || ''} onChange={e => setNewAI(p => ({ ...p, model: e.target.value }))} placeholder="GPT-5" className="h-8" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Input $/1M tok</Label>
+                          <Input type="number" step="0.01" value={newAI.inputCostPer1MTok || 0} onChange={e => setNewAI(p => ({ ...p, inputCostPer1MTok: parseFloat(e.target.value) }))} className="h-8" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Output $/1M tok</Label>
+                          <Input type="number" step="0.01" value={newAI.outputCostPer1MTok || 0} onChange={e => setNewAI(p => ({ ...p, outputCostPer1MTok: parseFloat(e.target.value) }))} className="h-8" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Context Window</Label>
+                          <Input value={newAI.contextWindow || ''} onChange={e => setNewAI(p => ({ ...p, contextWindow: e.target.value }))} placeholder="128K" className="h-8" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Best For</Label>
+                          <Input value={newAI.bestFor || ''} onChange={e => setNewAI(p => ({ ...p, bestFor: e.target.value }))} placeholder="General tasks" className="h-8" />
+                        </div>
+                      </div>
+                      <Button onClick={handleAddAI} className="w-full mt-2">Add AI Model</Button>
+                    </DialogContent>
+                  </Dialog>
+                </div>
                 <Select value={selectedAIModel} onValueChange={setSelectedAIModel}>
                   <SelectTrigger className="h-8 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border shadow-lg z-50">
-                    {aiModelCosts.map(m => (
-                      <SelectItem key={m.model} value={m.model} className="text-xs">
-                        {m.provider} {m.model} (${m.costPerScript.toFixed(4)}/script)
-                      </SelectItem>
+                    {aiModels.map((m, idx) => (
+                      <div key={m.model} className="flex items-center justify-between pr-2">
+                        <SelectItem value={m.model} className="text-xs flex-1">
+                          {m.provider} {m.model} (${m.costPerScript.toFixed(4)}/script)
+                        </SelectItem>
+                        {idx >= defaultAIModels.length && (
+                          <Button variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={() => deleteAIModel(idx)}>
+                            <Trash2 className="w-3 h-3 text-destructive" />
+                          </Button>
+                        )}
+                      </div>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
+              {/* TTS Provider Selection with Add Button */}
               <div className="space-y-2">
-                <Label className="text-xs">TTS Provider</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs">TTS Provider</Label>
+                  <Dialog open={showAddTTS} onOpenChange={setShowAddTTS}>
+                    <DialogTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-5 px-1">
+                        <Plus className="w-3 h-3" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-background">
+                      <DialogHeader>
+                        <DialogTitle>Add TTS Provider</DialogTitle>
+                      </DialogHeader>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-xs">Provider</Label>
+                          <Input value={newTTS.provider || ''} onChange={e => setNewTTS(p => ({ ...p, provider: e.target.value }))} placeholder="ElevenLabs" className="h-8" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Tier</Label>
+                          <Input value={newTTS.tier || ''} onChange={e => setNewTTS(p => ({ ...p, tier: e.target.value }))} placeholder="Pro" className="h-8" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">$/minute</Label>
+                          <Input type="number" step="0.01" value={newTTS.costPerMinute || 0} onChange={e => setNewTTS(p => ({ ...p, costPerMinute: parseFloat(e.target.value) }))} className="h-8" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Voice Count</Label>
+                          <Input type="number" value={newTTS.voiceCount || 0} onChange={e => setNewTTS(p => ({ ...p, voiceCount: parseInt(e.target.value) }))} className="h-8" />
+                        </div>
+                      </div>
+                      <Button onClick={handleAddTTS} className="w-full mt-2">Add TTS Provider</Button>
+                    </DialogContent>
+                  </Dialog>
+                </div>
                 <Select value={selectedTTS} onValueChange={setSelectedTTS}>
                   <SelectTrigger className="h-8 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border shadow-lg z-50">
-                    {ttsCosts.map(t => (
-                      <SelectItem key={`${t.provider} ${t.tier}`} value={`${t.provider} ${t.tier}`} className="text-xs">
-                        {t.provider} {t.tier} (${t.costPerMinute}/min)
-                      </SelectItem>
+                    {ttsProviders.map((t, idx) => (
+                      <div key={`${t.provider} ${t.tier}`} className="flex items-center justify-between pr-2">
+                        <SelectItem value={`${t.provider} ${t.tier}`} className="text-xs flex-1">
+                          {t.provider} {t.tier} (${t.costPerMinute}/min)
+                        </SelectItem>
+                        {idx >= defaultTTSCosts.length && (
+                          <Button variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={() => deleteTTSProvider(idx)}>
+                            <Trash2 className="w-3 h-3 text-destructive" />
+                          </Button>
+                        )}
+                      </div>
                     ))}
                   </SelectContent>
                 </Select>
@@ -431,17 +580,84 @@ const ComprehensivePLCalculator: React.FC = () => {
                 </div>
               </div>
 
-              {/* Fixed Costs */}
+              {/* Fixed Costs - Editable */}
               <div className="p-3 rounded-lg border border-blue-500/30 bg-blue-500/5">
-                <h4 className="text-xs font-semibold text-blue-600 dark:text-blue-400 mb-2 flex items-center gap-1">
-                  <Server className="w-3 h-3" />
-                  FIXED COSTS (Monthly)
-                </h4>
-                <div className="space-y-1 text-xs">
-                  {monthlyFixedCosts.map((cost, idx) => (
-                    <div key={idx} className="flex justify-between">
-                      <span>{cost.category}</span>
-                      <span className="text-muted-foreground">${cost.fixedCosts}</span>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-xs font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                    <Server className="w-3 h-3" />
+                    FIXED COSTS (Monthly)
+                  </h4>
+                  <Dialog open={showAddFixed} onOpenChange={setShowAddFixed}>
+                    <DialogTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-5 px-1">
+                        <Plus className="w-3 h-3" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-background">
+                      <DialogHeader>
+                        <DialogTitle>Add Fixed Cost</DialogTitle>
+                      </DialogHeader>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-xs">Category</Label>
+                          <Input value={newFixed.category} onChange={e => setNewFixed(p => ({ ...p, category: e.target.value }))} placeholder="AWS S3" className="h-8" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Monthly Cost ($)</Label>
+                          <Input type="number" value={newFixed.fixedCosts} onChange={e => setNewFixed(p => ({ ...p, fixedCosts: parseFloat(e.target.value) || 0 }))} className="h-8" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Description</Label>
+                          <Input value={newFixed.description} onChange={e => setNewFixed(p => ({ ...p, description: e.target.value }))} placeholder="Storage" className="h-8" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Min Capacity</Label>
+                          <Input value={newFixed.minCapacity} onChange={e => setNewFixed(p => ({ ...p, minCapacity: e.target.value }))} placeholder="1K users" className="h-8" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Max Capacity</Label>
+                          <Input value={newFixed.maxCapacity} onChange={e => setNewFixed(p => ({ ...p, maxCapacity: e.target.value }))} placeholder="100K users" className="h-8" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Scale Factor</Label>
+                          <Input value={newFixed.scaleFactor} onChange={e => setNewFixed(p => ({ ...p, scaleFactor: e.target.value }))} placeholder="$0.10/GB" className="h-8" />
+                        </div>
+                      </div>
+                      <Button onClick={handleAddFixed} className="w-full mt-2">Add Fixed Cost</Button>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+                <div className="space-y-2 text-xs">
+                  {fixedCosts.map((cost, idx) => (
+                    <div key={idx} className="group">
+                      <div className="flex items-center gap-2">
+                        <span className="flex-1 truncate" title={cost.description}>{cost.category}</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-muted-foreground">$</span>
+                          <Input
+                            type="number"
+                            value={cost.fixedCosts}
+                            onChange={(e) => updateFixedCost(idx, 'fixedCosts', parseFloat(e.target.value) || 0)}
+                            className="h-6 w-16 text-xs text-right"
+                          />
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100"
+                            onClick={() => deleteFixedCost(idx)}
+                          >
+                            <Trash2 className="w-3 h-3 text-destructive" />
+                          </Button>
+                        </div>
+                      </div>
+                      {(cost.minCapacity || cost.maxCapacity) && (
+                        <div className="text-[10px] text-muted-foreground pl-2 mt-0.5">
+                          {cost.minCapacity && <span>Min: {cost.minCapacity}</span>}
+                          {cost.minCapacity && cost.maxCapacity && <span> • </span>}
+                          {cost.maxCapacity && <span>Max: {cost.maxCapacity}</span>}
+                          {cost.scaleFactor && cost.scaleFactor !== '—' && <span> • Scale: {cost.scaleFactor}</span>}
+                        </div>
+                      )}
                     </div>
                   ))}
                   <div className="flex justify-between font-medium pt-1 border-t mt-1">
