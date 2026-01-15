@@ -1,30 +1,30 @@
 # Genie Studio & Recording Studio: Complete Scenario Map
 
-> **Version:** 4.0  
+> **Version:** 4.1  
 > **Last Updated:** 2026-01-15  
-> **Total Scenarios:** 289 (Categories A-AD across P0-P5 phases)  
-> **Phase Distribution:** P0 (35), P1 (32), P2 (102), P3 (58), P4 (50), P5 (28)  
-> **Implementation:** ✅ 165 Complete (57%) | 🔶 0 Partial | ⏳ 124 Planned (43%)  
+> **Total Scenarios:** 305 (Categories A-AF across P0-P5 phases)  
+> **Phase Distribution:** P0 (35), P1 (32), P2 (118), P3 (58), P4 (50), P5 (28)  
+> **Implementation:** ✅ 185 Complete (61%) | 🔶 0 Partial | ⏳ 120 Planned (39%)  
 > **Status:** ✅ P0-P2 COMPLETE - Ready for P3 Planning
 
 ---
 
 ## Executive Summary
 
-This document catalogs all identified user journeys and scenarios for the Genie Studio and Recording Studio integration. It covers the complete production pipeline from imagination to final output, including edge cases, error recovery, bidirectional Vibe ↔ Mind flows, advanced AI capabilities, market-driven feature priorities, agent assignments, API integrations, session management for live productions, P2 AI agents, guided experiences, and automation opportunities.
+This document catalogs all identified user journeys and scenarios for the Genie Studio and Recording Studio integration. It covers the complete production pipeline from imagination to final output, including edge cases, error recovery, bidirectional Vibe ↔ Mind flows, advanced AI capabilities, market-driven feature priorities, agent assignments, API integrations, session management for live productions, P2 AI agents, guided experiences, **advanced editing scenarios**, and automation opportunities.
 
 ### P0-P2 CLOSEOUT STATUS: ✅ COMPLETE (2026-01-15)
 
-All P0-P2 scenarios have been implemented and tested. Documentation updated to reflect current state.
+All P0-P2 scenarios have been implemented and tested. Documentation updated to reflect current state including **16 new editing scenarios**.
 
 ### Implementation Overview (Updated 2026-01-15)
 
 | Status | Count | Percentage | Description |
 |--------|-------|------------|-------------|
-| ✅ **Implemented** | 165 | 57% | Fully functional in codebase |
+| ✅ **Implemented** | 185 | 61% | Fully functional in codebase |
 | 🔶 **Partial** | 0 | 0% | All partial items completed |
-| ⏳ **Planned** | 124 | 43% | P3-P5 roadmap |
-| **Total** | **289** | **100%** | All scenarios across P0-P5 phases |
+| ⏳ **Planned** | 120 | 39% | P3-P5 roadmap |
+| **Total** | **305** | **100%** | All scenarios across P0-P5 phases |
 
 ### Phase Distribution Summary
 
@@ -32,12 +32,12 @@ All P0-P2 scenarios have been implemented and tested. Documentation updated to r
 |-------|-----------|-------|-------------|--------|
 | **P0** | 1-10, 61-70, 111-120, 141-150 | 35 | 35 (100%) | ✅ **COMPLETE** |
 | **P1** | 11-16, 21-24, 71-75, 81-90, 116-120, 151-155 | 32 | 32 (100%) | ✅ **COMPLETE** |
-| **P2** | 17-32, 76-80, 101-110, 121-125, 156-225 | 102 | 102 (100%) | ✅ **COMPLETE** |
+| **P2** | 17-32, 76-80, 101-110, 121-125, 156-225, **297-312** | 118 | 118 (100%) | ✅ **COMPLETE** |
 | **P3** | 33-46, 91-100, 126-135, 226-237 | 58 | 0 (0%) | ⏳ Planned |
 | **P4** | 47-60, 136-140, 238-268 | 50 | 0 (0%) | ⏳ Planned |
 | **P5** | Enterprise (SSO, HIPAA, White-label, 269-296) | 28 | 0 (0%) | ⏳ Planned |
 
-### P2 AI Agents & Guided Experiences ✅ ALL COMPLETE
+### P2 AI Agents, Guided Experiences & Editing ✅ ALL COMPLETE
 
 | Component | Scenario IDs | Status |
 |-----------|--------------|--------|
@@ -52,6 +52,8 @@ All P0-P2 scenarios have been implemented and tested. Documentation updated to r
 | **Hub Guided Wizard (7-phase)** | 189-195 | ✅ Complete |
 | **Cross-Product Integration** | 196-210 | ✅ Complete |
 | **Ask Genie Context-Aware** | 211-225 | ✅ Complete |
+| **Advanced Timeline Editing** | 297-305 | ✅ Complete |
+| **AI-Powered Editing Tools** | 306-312 | ✅ Complete |
 
 ---
 

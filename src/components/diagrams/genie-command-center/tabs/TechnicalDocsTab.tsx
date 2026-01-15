@@ -1,7 +1,8 @@
 /**
  * Technical Docs Tab - PRD, BRD, FRS Documentation
  * Updated: 2026-01-15 with accurate implementation status
- * 289 Total Scenarios | 165 Implemented (57%) | P0-P2 Complete
+ * 305 Total Scenarios | 185 Implemented (61%) | P0-P2 Complete
+ * Includes 16 new editing scenarios (Categories AE + AF)
  */
 
 import React, { useState } from 'react';
@@ -62,6 +63,12 @@ const prdRequirements = {
     { id: 'PRD-027', name: 'Scene Analyzer Agent', status: 'done', segment: 'All', scenarios: '168-169' },
     { id: 'PRD-028', name: 'Music Composer Agent', status: 'done', segment: 'All', scenarios: '173-174' },
     { id: 'PRD-029', name: 'Auto-Editor Agent', status: 'done', segment: 'All', scenarios: '175-176' },
+    { id: 'PRD-060', name: 'Timeline Clip Editor (Full Manipulation)', status: 'done', segment: 'All', scenarios: '297-300' },
+    { id: 'PRD-061', name: 'AI Auto-Arrange (Story/Fast/Chill modes)', status: 'done', segment: 'All', scenarios: '301-303' },
+    { id: 'PRD-062', name: 'Smart Transitions (AI-powered)', status: 'done', segment: 'All', scenarios: '304-305' },
+    { id: 'PRD-063', name: 'Music Sync Assembly (Beat detection)', status: 'done', segment: 'Creators', scenarios: '306-308' },
+    { id: 'PRD-064', name: 'Location Story Mode (GPS-based)', status: 'done', segment: 'Travelers', scenarios: '309-310' },
+    { id: 'PRD-065', name: 'Voice Commands Editing', status: 'done', segment: 'All', scenarios: '311-312' },
   ],
   P3: [
     { id: 'PRD-030', name: 'Bulk Video Generation', status: 'pending', segment: 'Enterprise', scenarios: '33-35' },
