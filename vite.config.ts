@@ -2,8 +2,6 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
-// @ts-ignore
-import stabilityFrameworkPlugin from "./vite.stability-plugin.js";
 import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
@@ -28,15 +26,6 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === 'development' && componentTagger(),
-    stabilityFrameworkPlugin({
-      enabled: true,
-      failOnViolations: false,
-      warnOnDuplicates: false,
-      checkNaming: true,
-      checkComplexity: false,
-      maxComplexity: 100,
-      maxFileSize: 1000
-    }),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
