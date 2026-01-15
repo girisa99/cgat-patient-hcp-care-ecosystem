@@ -6,8 +6,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Uses existing Google OAuth credentials from login
-const GOOGLE_CLIENT_ID = Deno.env.get('GOOGLE_API_KEY'); // Same as login
+// Google OAuth credentials - GOOGLE_CLIENT_ID is separate from GOOGLE_API_KEY
+// GOOGLE_API_KEY is for Google AI/Gemini services
+// GOOGLE_CLIENT_ID/SECRET are for OAuth flows (YouTube, Calendar, etc.)
+const GOOGLE_CLIENT_ID = Deno.env.get('GOOGLE_CLIENT_ID') || Deno.env.get('GOOGLE_API_KEY'); // Fallback for backward compatibility
 const GOOGLE_CLIENT_SECRET = Deno.env.get('GOOGLE_CLIENT_SECRET');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
