@@ -27,35 +27,37 @@ export const useOptimizedPerformance = () => {
     }
   }, []);
 
-  // Aggressive memory cleanup function
+  // Safe memory cleanup function - does NOT remove styles that break animations
   const performMemoryCleanup = useCallback(() => {
-    console.log('🧹 Performing aggressive memory cleanup...');
+    console.log('🧹 Performing safe memory cleanup...');
     
     try {
-      // Clear DOM elements and cached data
-      const elementsToClean = document.querySelectorAll('[data-performance-cached]');
+      // Clear only specifically marked cached elements
+      const elementsToClean = document.querySelectorAll('[data-performance-cached="true"]');
       elementsToClean.forEach(el => el.remove());
       
-      // Clear all inline styles that might hold references
-      const styledElements = document.querySelectorAll('[style]');
-      styledElements.forEach(el => el.removeAttribute('style'));
+      // DO NOT clear inline styles - this breaks framer-motion and other animation libraries
+      // The previous implementation was removing all styles which caused UI flickering
       
-      // Force garbage collection if available
+      // Force garbage collection if available (Chrome DevTools only)
       if (typeof window !== 'undefined' && (window as any).gc) {
         (window as any).gc();
       }
       
-      // Clear React Query cache aggressively
+      // Clear stale React Query cache entries (older than 5 minutes)
       if (typeof window !== 'undefined' && (window as any).queryClient) {
-        (window as any).queryClient.removeQueries();
-        (window as any).queryClient.clear();
+        try {
+          (window as any).queryClient.invalidateQueries({ stale: true });
+        } catch {
+          // Ignore if queryClient doesn't support this
+        }
       }
       
-      // Clear localStorage of old cached data
+      // Clear only temp localStorage entries (not cache which might be needed)
       if (typeof window !== 'undefined' && window.localStorage) {
         const keys = Object.keys(localStorage);
         keys.forEach(key => {
-          if (key.includes('cache') || key.includes('temp')) {
+          if (key.startsWith('temp_') || key.includes('_temp_')) {
             localStorage.removeItem(key);
           }
         });
@@ -66,11 +68,8 @@ export const useOptimizedPerformance = () => {
         window.performance.clearResourceTimings();
       }
       
-      // Use comprehensive memory leak detector
-      MemoryLeakDetector.performCleanup();
-      
       performanceRef.current.lastCleanup = Date.now();
-      console.log('✅ Enhanced cleanup completed with leak detection');
+      console.log('✅ Safe cleanup completed');
       
     } catch (error) {
       console.warn('⚠️ Memory cleanup failed:', error);
