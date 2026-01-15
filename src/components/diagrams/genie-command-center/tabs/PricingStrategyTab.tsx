@@ -1,9 +1,9 @@
 /**
  * Genie Command Center - Pricing Strategy Tab
- * Comprehensive P&L calculator with unit economics, breakeven analysis, and smart recommendations
+ * Comprehensive P&L calculator with guided journey, user-editable costs, breakeven analysis, and smart recommendations
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, createContext, useContext } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,11 +13,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
+import { Steps, Step } from '@/components/ui/steps';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Calculator, Users, Layers, DollarSign, Check, X, TrendingUp, Zap, Crown, Gift, Building,
   Heart, GraduationCap, Plane, Camera, BookOpen, Smartphone, Target, BarChart3, 
   Plus, Trash2, Coins, Receipt, ArrowUpRight, ArrowDownRight, AlertCircle, 
-  Lightbulb, CheckCircle2, Sparkles, TrendingDown, Calendar
+  Lightbulb, CheckCircle2, Sparkles, TrendingDown, Calendar, Edit2, ChevronRight,
+  ChevronLeft, Info, Award, Percent, RefreshCw, Settings, HelpCircle, Play
 } from 'lucide-react';
 import {
   segmentPricingProfiles,
@@ -38,20 +42,76 @@ import {
 } from '../data/infrastructure-costs';
 
 // ==================== TYPES ====================
-interface Recommendation {
-  priority: 1 | 2 | 3 | 4;
+interface AIProvider {
+  id: number;
+  name: string;
+  provider: string;
+  inputPer1M: number;
+  outputPer1M: number;
+  enabled: boolean;
+  usagePercent: number;
+}
+
+interface TTSProvider {
+  id: number;
+  name: string;
+  costPerMinute: number;
+  enabled: boolean;
+  usagePercent: number;
+}
+
+interface PricingTier {
+  id: number;
+  name: string;
+  price: number;
+  yearlyPrice: number;
+  customers: number;
+  inputTokens: number;
+  outputTokens: number;
+  ttsMinutes: number;
+  storageGB: number;
+  videosPerMonth: number;
+  isFreeTier: boolean;
+}
+
+interface FixedCost {
+  id: number;
+  name: string;
+  amount: number;
   category: string;
-  title: string;
-  issue: string;
-  actions: string[];
-  impact: 'Critical' | 'High' | 'Medium' | 'Low';
-  positive?: boolean;
+  minCapacity?: number;
+  maxCapacity?: number;
+  scaleFactor?: number;
+}
+
+interface Acquisition {
+  paidAdsSpend: number;
+  contentSpend: number;
+  affiliateSpend: number;
+  seoSpend: number;
+  newCustomersPerMonth: number;
+  churnRatePercent: number;
+  avgLifetimeMonths: number;
+  expansionRevenuePercent: number;
+  yearlyDiscountPercent: number;
+  yearlyAdoptionPercent: number;
+}
+
+interface CompetitorBenchmark {
+  name: string;
+  freeLimit: string;
+  starterPrice: number;
+  proPrice: number;
+  enterprisePrice: number;
+  freeToPaidRate: number;
 }
 
 interface TierAnalysis {
   tier: string;
+  isFreeTier: boolean;
   subscribers: number;
   price: number;
+  yearlyPrice: number;
   aiCostPerUser: number;
   ttsCostPerUser: number;
   storageCostPerUser: number;
@@ -66,376 +126,1040 @@ interface TierAnalysis {
   ttsMinutesPerMonth: number;
 }
 
-// ==================== COMPREHENSIVE P&L CALCULATOR ====================
-const ComprehensivePLCalculator: React.FC = () => {
-  // AI/LLM Providers with usage percentages
-  const [aiProviders, setAiProviders] = useState([
-    { id: 1, name: 'Gemini 2.0 Flash', provider: 'Google', inputPer1M: 0.075, outputPer1M: 0.30, enabled: true, usagePercent: 50 },
-    { id: 2, name: 'Gemini 2.5 Pro', provider: 'Google', inputPer1M: 1.25, outputPer1M: 5.00, enabled: true, usagePercent: 20 },
-    { id: 3, name: 'Claude 3.5 Sonnet', provider: 'Anthropic', inputPer1M: 3.00, outputPer1M: 15.00, enabled: true, usagePercent: 20 },
-    { id: 4, name: 'GPT-4o Mini', provider: 'OpenAI', inputPer1M: 0.15, outputPer1M: 0.60, enabled: true, usagePercent: 10 },
-    { id: 5, name: 'Claude 3 Haiku', provider: 'Anthropic', inputPer1M: 0.25, outputPer1M: 1.25, enabled: false, usagePercent: 0 },
-  ]);
+interface Recommendation {
+  priority: 1 | 2 | 3 | 4;
+  category: string;
+  title: string;
+  issue: string;
+  actions: string[];
+  impact: 'Critical' | 'High' | 'Medium' | 'Low';
+  positive?: boolean;
+  tier?: string;
+}
 
-  // TTS Providers
-  const [ttsProviders, setTtsProviders] = useState([
-    { id: 1, name: 'ElevenLabs Pro', costPerMinute: 0.18, enabled: true, usagePercent: 70 },
-    { id: 2, name: 'OpenAI TTS', costPerMinute: 0.015, enabled: true, usagePercent: 25 },
-    { id: 3, name: 'Google Cloud TTS', costPerMinute: 0.016, enabled: true, usagePercent: 5 },
-  ]);
+// ==================== CONTEXT FOR SHARED STATE ====================
+interface CalculatorState {
+  pricingTiers: PricingTier[];
+  aiProviders: AIProvider[];
+  ttsProviders: TTSProvider[];
+  fixedCosts: FixedCost[];
+  acquisition: Acquisition;
+  competitors: CompetitorBenchmark[];
+  calculations: any;
+  recommendations: Recommendation[];
+}
 
-  // Pricing tiers with detailed usage
-  const [pricingTiers, setPricingTiers] = useState([
-    { id: 1, name: 'Free', price: 0, customers: 5000, inputTokens: 50000, outputTokens: 25000, ttsMinutes: 1, storageGB: 1, videosPerMonth: 3 },
-    { id: 2, name: 'Starter', price: 9.99, customers: 500, inputTokens: 200000, outputTokens: 100000, ttsMinutes: 10, storageGB: 5, videosPerMonth: 15 },
-    { id: 3, name: 'Creator', price: 19.99, customers: 200, inputTokens: 500000, outputTokens: 250000, ttsMinutes: 30, storageGB: 25, videosPerMonth: 50 },
-    { id: 4, name: 'Business', price: 49.99, customers: 50, inputTokens: 1500000, outputTokens: 750000, ttsMinutes: 100, storageGB: 100, videosPerMonth: 150 },
-    { id: 5, name: 'Pro', price: 99.99, customers: 20, inputTokens: 5000000, outputTokens: 2500000, ttsMinutes: 300, storageGB: 500, videosPerMonth: 500 },
-    { id: 6, name: 'Healthcare', price: 199.99, customers: 10, inputTokens: 10000000, outputTokens: 5000000, ttsMinutes: 600, storageGB: 1000, videosPerMonth: 1000 },
-  ]);
+const CalculatorContext = createContext<CalculatorState | null>(null);
 
-  // Fixed costs
-  const [fixedCosts, setFixedCosts] = useState([
-    { id: 1, name: 'Supabase Pro', amount: 25, category: 'infrastructure' },
-    { id: 2, name: 'Vercel Pro', amount: 20, category: 'infrastructure' },
-    { id: 3, name: 'Resend Pro', amount: 20, category: 'infrastructure' },
-    { id: 4, name: 'Analytics (PostHog)', amount: 0, category: 'infrastructure' },
-    { id: 5, name: 'Monitoring (Sentry)', amount: 26, category: 'infrastructure' },
-    { id: 6, name: 'CDN/Bandwidth', amount: 50, category: 'infrastructure' },
-    { id: 7, name: 'Storage Overage', amount: 100, category: 'infrastructure' },
-    { id: 8, name: 'Domain/SSL', amount: 15, category: 'overhead' },
-  ]);
+// ==================== GUIDED JOURNEY WIZARD ====================
+const GuidedWizard: React.FC<{
+  currentStep: number;
+  setCurrentStep: (step: number) => void;
+  pricingTiers: PricingTier[];
+  setPricingTiers: React.Dispatch<React.SetStateAction<PricingTier[]>>;
+  aiProviders: AIProvider[];
+  setAiProviders: React.Dispatch<React.SetStateAction<AIProvider[]>>;
+  ttsProviders: TTSProvider[];
+  setTtsProviders: React.Dispatch<React.SetStateAction<TTSProvider[]>>;
+  fixedCosts: FixedCost[];
+  setFixedCosts: React.Dispatch<React.SetStateAction<FixedCost[]>>;
+  acquisition: Acquisition;
+  setAcquisition: React.Dispatch<React.SetStateAction<Acquisition>>;
+  competitors: CompetitorBenchmark[];
+  setCompetitors: React.Dispatch<React.SetStateAction<CompetitorBenchmark[]>>;
+  calculations: any;
+}> = ({ currentStep, setCurrentStep, pricingTiers, setPricingTiers, aiProviders, setAiProviders, ttsProviders, setTtsProviders, fixedCosts, setFixedCosts, acquisition, setAcquisition, competitors, setCompetitors, calculations }) => {
+  const steps = [
+    { title: 'Tiers', description: 'Define pricing tiers' },
+    { title: 'AI Costs', description: 'Configure AI providers' },
+    { title: 'Fixed Costs', description: 'Set infrastructure costs' },
+    { title: 'Acquisition', description: 'CAC & growth metrics' },
+    { title: 'Competitors', description: 'Benchmark pricing' },
+  ];
 
-  // Customer Acquisition
-  const [acquisition, setAcquisition] = useState({
-    paidAdsSpend: 2000,
-    contentSpend: 1500,
-    affiliateSpend: 500,
-    seoSpend: 500,
-    newCustomersPerMonth: 50,
-    churnRatePercent: 5,
-    avgLifetimeMonths: 18,
-    expansionRevenuePercent: 12,
+  const nextStep = () => setCurrentStep(Math.min(currentStep + 1, steps.length - 1));
+  const prevStep = () => setCurrentStep(Math.max(currentStep - 1, 0));
+
+  return (
+    <div className="space-y-6">
+      {/* Progress Steps */}
+      <div className="bg-muted/30 rounded-lg p-4">
+        <Steps currentStep={currentStep} onStepClick={setCurrentStep}>
+          {steps.map((step, idx) => (
+            <Step key={idx} title={step.title} description={step.description} />
+          ))}
+        </Steps>
+        <Progress value={(currentStep + 1) / steps.length * 100} className="mt-4 h-2" />
+      </div>
+
+      {/* Step Content */}
+      <Card className="border-2 border-primary/20">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Badge variant="outline">Step {currentStep + 1}/{steps.length}</Badge>
+                {steps[currentStep].title}
+              </CardTitle>
+              <CardDescription>{steps[currentStep].description}</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              {currentStep > 0 && (
+                <Button variant="outline" size="sm" onClick={prevStep}>
+                  <ChevronLeft className="w-4 h-4 mr-1" /> Back
+                </Button>
+              )}
+              {currentStep < steps.length - 1 && (
+                <Button size="sm" onClick={nextStep}>
+                  Next <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Step 0: Pricing Tiers */}
+          {currentStep === 0 && (
+            <TiersEditor 
+              pricingTiers={pricingTiers} 
+              setPricingTiers={setPricingTiers}
+              calculations={calculations}
+            />
+          )}
+
+          {/* Step 1: AI Providers */}
+          {currentStep === 1 && (
+            <AIProvidersEditor 
+              aiProviders={aiProviders} 
+              setAiProviders={setAiProviders}
+              ttsProviders={ttsProviders}
+              setTtsProviders={setTtsProviders}
+              calculations={calculations}
+            />
+          )}
+
+          {/* Step 2: Fixed Costs */}
+          {currentStep === 2 && (
+            <FixedCostsEditor 
+              fixedCosts={fixedCosts} 
+              setFixedCosts={setFixedCosts}
+            />
+          )}
+
+          {/* Step 3: Acquisition */}
+          {currentStep === 3 && (
+            <AcquisitionEditor 
+              acquisition={acquisition} 
+              setAcquisition={setAcquisition}
+              calculations={calculations}
+            />
+          )}
+
+          {/* Step 4: Competitors */}
+          {currentStep === 4 && (
+            <CompetitorBenchmarkEditor 
+              competitors={competitors} 
+              setCompetitors={setCompetitors}
+              pricingTiers={pricingTiers}
+            />
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+// ==================== TIER EDITOR ====================
+const TiersEditor: React.FC<{
+  pricingTiers: PricingTier[];
+  setPricingTiers: React.Dispatch<React.SetStateAction<PricingTier[]>>;
+  calculations: any;
+}> = ({ pricingTiers, setPricingTiers, calculations }) => {
+  const [showAddTier, setShowAddTier] = useState(false);
+  const [newTier, setNewTier] = useState<Partial<PricingTier>>({
+    name: '', price: 0, yearlyPrice: 0, customers: 0, inputTokens: 0, outputTokens: 0, 
+    ttsMinutes: 0, storageGB: 0, videosPerMonth: 0, isFreeTier: false
   });
 
-  // Storage cost per GB
-  const storageCostPerGB = 0.023;
-
-  // ==================== CALCULATIONS ====================
-  const calculations = useMemo(() => {
-    const totalCustomers = pricingTiers.reduce((sum, t) => sum + t.customers, 0);
-    const paidTiers = pricingTiers.filter(t => t.price > 0);
-    const totalPaidCustomers = paidTiers.reduce((sum, t) => sum + t.customers, 0);
-    const totalMRR = pricingTiers.reduce((sum, t) => sum + (t.price * t.customers), 0);
-    const totalARR = totalMRR * 12;
-
-    // Calculate blended AI cost per 1M tokens
-    const enabledAI = aiProviders.filter(p => p.enabled);
-    const totalAIPercent = enabledAI.reduce((sum, p) => sum + p.usagePercent, 0) || 100;
-    
-    const blendedInputCost = enabledAI.reduce((sum, ai) => 
-      sum + (ai.inputPer1M * (ai.usagePercent / totalAIPercent)), 0);
-    const blendedOutputCost = enabledAI.reduce((sum, ai) => 
-      sum + (ai.outputPer1M * (ai.usagePercent / totalAIPercent)), 0);
-
-    // Calculate blended TTS cost per minute
-    const enabledTTS = ttsProviders.filter(p => p.enabled);
-    const totalTTSPercent = enabledTTS.reduce((sum, p) => sum + p.usagePercent, 0) || 100;
-    const blendedTTSCost = enabledTTS.reduce((sum, tts) => 
-      sum + (tts.costPerMinute * (tts.usagePercent / totalTTSPercent)), 0);
-
-    // Tier analysis with full cost breakdown
-    const tierAnalysis: TierAnalysis[] = pricingTiers.map(tier => {
-      const aiCost = (tier.inputTokens / 1000000 * blendedInputCost) + (tier.outputTokens / 1000000 * blendedOutputCost);
-      const ttsCost = tier.ttsMinutes * blendedTTSCost;
-      const storageCost = tier.storageGB * storageCostPerGB;
-      const variableCost = aiCost + ttsCost + storageCost;
-      const contribution = tier.price - variableCost;
-      const marginPercent = tier.price > 0 ? (contribution / tier.price) * 100 : (variableCost > 0 ? -100 : 0);
-
-      return {
-        tier: tier.name,
-        subscribers: tier.customers,
-        price: tier.price,
-        aiCostPerUser: aiCost,
-        ttsCostPerUser: ttsCost,
-        storageCostPerUser: storageCost,
-        variableCostPerUser: variableCost,
-        contribution,
-        marginPercent,
-        totalRevenue: tier.price * tier.customers,
-        totalVariableCost: variableCost * tier.customers,
-        totalContribution: contribution * tier.customers,
-        videosPerMonth: tier.videosPerMonth,
-        scriptsPerMonth: Math.round(tier.videosPerMonth * 1.5),
-        ttsMinutesPerMonth: tier.ttsMinutes,
-      };
-    });
-
-    // Totals
-    const totalVariableCosts = tierAnalysis.reduce((sum, t) => sum + t.totalVariableCost, 0);
-    const totalFixedCosts = fixedCosts.reduce((sum, c) => sum + c.amount, 0);
-    const totalMarketingSpend = acquisition.paidAdsSpend + acquisition.contentSpend + acquisition.affiliateSpend + acquisition.seoSpend;
-    const totalCosts = totalVariableCosts + totalFixedCosts + totalMarketingSpend;
-
-    const grossProfit = totalMRR - totalVariableCosts;
-    const netProfit = totalMRR - totalCosts;
-    const grossMargin = totalMRR > 0 ? (grossProfit / totalMRR) * 100 : 0;
-    const netMargin = totalMRR > 0 ? (netProfit / totalMRR) * 100 : 0;
-
-    // Unit Economics
-    const arpu = totalPaidCustomers > 0 ? totalMRR / totalPaidCustomers : 0;
-    const cac = acquisition.newCustomersPerMonth > 0 ? totalMarketingSpend / acquisition.newCustomersPerMonth : 0;
-    const ltv = arpu * acquisition.avgLifetimeMonths * (grossMargin / 100) * (1 + acquisition.expansionRevenuePercent / 100);
-    const ltvCacRatio = cac > 0 ? ltv / cac : 0;
-
-    // Break-even Analysis
-    const avgVariableCostPerCustomer = totalPaidCustomers > 0 
-      ? tierAnalysis.filter(t => t.price > 0).reduce((sum, t) => sum + t.variableCostPerUser * t.subscribers, 0) / totalPaidCustomers 
-      : 0;
-    const contributionMargin = arpu - avgVariableCostPerCustomer;
-    const breakEvenCustomers = contributionMargin > 0 
-      ? Math.ceil((totalFixedCosts + totalMarketingSpend) / contributionMargin) 
-      : Infinity;
-
-    // Months to profitability
-    const monthlyChurn = totalPaidCustomers * (acquisition.churnRatePercent / 100);
-    const netCustomerGrowth = acquisition.newCustomersPerMonth - monthlyChurn;
-    const monthsToBreakeven = breakEvenCustomers > totalPaidCustomers && netCustomerGrowth > 0
-      ? Math.ceil((breakEvenCustomers - totalPaidCustomers) / netCustomerGrowth)
-      : breakEvenCustomers <= totalPaidCustomers ? 0 : Infinity;
-
-    // Payback period (months to recover CAC)
-    const paybackPeriod = contributionMargin > 0 ? cac / contributionMargin : Infinity;
-
-    // Total AI costs
-    const totalAICosts = tierAnalysis.reduce((sum, t) => sum + (t.aiCostPerUser * t.subscribers), 0);
-    const aiCostPercent = totalMRR > 0 ? (totalAICosts / totalMRR) * 100 : 0;
-
-    // Total TTS costs
-    const totalTTSCosts = tierAnalysis.reduce((sum, t) => sum + (t.ttsCostPerUser * t.subscribers), 0);
-
-    // Production capacity
-    const totalVideosProduced = tierAnalysis.reduce((sum, t) => sum + (t.videosPerMonth * t.subscribers), 0);
-    const totalScriptsProduced = tierAnalysis.reduce((sum, t) => sum + (t.scriptsPerMonth * t.subscribers), 0);
-    const totalTTSMinutes = tierAnalysis.reduce((sum, t) => sum + (t.ttsMinutesPerMonth * t.subscribers), 0);
-
-    // Profitability projection (12 months)
-    const monthlyProjection = Array.from({ length: 12 }, (_, i) => {
-      const month = i + 1;
-      const projectedCustomers = totalPaidCustomers + (netCustomerGrowth * month);
-      const projectedMRR = projectedCustomers * arpu;
-      const projectedVariableCosts = projectedCustomers * avgVariableCostPerCustomer;
-      const projectedNetProfit = projectedMRR - projectedVariableCosts - totalFixedCosts - totalMarketingSpend;
-      return {
-        month,
-        customers: Math.round(projectedCustomers),
-        mrr: projectedMRR,
-        netProfit: projectedNetProfit,
-        isProfitable: projectedNetProfit >= 0,
-      };
-    });
-
-    const firstProfitableMonth = monthlyProjection.find(m => m.isProfitable)?.month || null;
-
-    return {
-      totalCustomers,
-      totalPaidCustomers,
-      totalMRR,
-      totalARR,
-      totalVariableCosts,
-      totalFixedCosts,
-      totalMarketingSpend,
-      totalCosts,
-      grossProfit,
-      netProfit,
-      grossMargin,
-      netMargin,
-      arpu,
-      cac,
-      ltv,
-      ltvCacRatio,
-      breakEvenCustomers,
-      monthsToBreakeven,
-      paybackPeriod,
-      contributionMargin,
-      monthlyChurn,
-      netCustomerGrowth,
-      tierAnalysis,
-      totalAICosts,
-      aiCostPercent,
-      totalTTSCosts,
-      blendedInputCost,
-      blendedOutputCost,
-      blendedTTSCost,
-      totalVideosProduced,
-      totalScriptsProduced,
-      totalTTSMinutes,
-      monthlyProjection,
-      firstProfitableMonth,
-    };
-  }, [pricingTiers, aiProviders, ttsProviders, fixedCosts, acquisition]);
-
-  // ==================== SMART RECOMMENDATIONS ====================
-  const recommendations = useMemo((): Recommendation[] => {
-    const recs: Recommendation[] = [];
-
-    // LTV:CAC Analysis
-    if (calculations.ltvCacRatio < 1) {
-      recs.push({
-        priority: 1,
-        category: 'Unit Economics',
-        title: 'Critical: Unsustainable Customer Acquisition',
-        issue: `LTV:CAC is ${calculations.ltvCacRatio.toFixed(2)}x - spending more to acquire customers than they generate.`,
-        actions: [
-          `Reduce CAC from $${calculations.cac.toFixed(0)} to under $${(calculations.ltv / 3).toFixed(0)}`,
-          'Shift budget to organic/content marketing',
-          'Implement referral program',
-          'Increase prices by 20-30%',
-        ],
-        impact: 'Critical',
-      });
-    } else if (calculations.ltvCacRatio < 3) {
-      recs.push({
-        priority: 2,
-        category: 'Unit Economics',
-        title: 'Improve LTV:CAC Ratio',
-        issue: `LTV:CAC of ${calculations.ltvCacRatio.toFixed(2)}x is below 3x benchmark.`,
-        actions: [
-          'Reduce churn to extend customer lifetime',
-          'Add expansion revenue (upsells, add-ons)',
-          'Optimize paid ad spend',
-        ],
-        impact: 'High',
-      });
+  const addTier = () => {
+    if (newTier.name) {
+      setPricingTiers(prev => [...prev, {
+        id: Date.now(),
+        name: newTier.name || 'New Tier',
+        price: newTier.price || 0,
+        yearlyPrice: newTier.yearlyPrice || (newTier.price || 0) * 10,
+        customers: newTier.customers || 0,
+        inputTokens: newTier.inputTokens || 0,
+        outputTokens: newTier.outputTokens || 0,
+        ttsMinutes: newTier.ttsMinutes || 0,
+        storageGB: newTier.storageGB || 0,
+        videosPerMonth: newTier.videosPerMonth || 0,
+        isFreeTier: newTier.price === 0,
+      }]);
+      setNewTier({ name: '', price: 0, yearlyPrice: 0, customers: 0, inputTokens: 0, outputTokens: 0, ttsMinutes: 0, storageGB: 0, videosPerMonth: 0, isFreeTier: false });
+      setShowAddTier(false);
     }
+  };
 
-    // Gross Margin Analysis
-    if (calculations.grossMargin < 50) {
-      recs.push({
-        priority: 1,
-        category: 'Profitability',
-        title: 'Critical: Low Gross Margin',
-        issue: `Gross margin of ${calculations.grossMargin.toFixed(1)}% is below 70% SaaS benchmark.`,
-        actions: [
-          `AI costs are ${calculations.aiCostPercent.toFixed(1)}% of revenue - use cheaper models`,
-          'Route simple tasks to Haiku/GPT-4o-mini',
-          'Implement token caching',
-          `Raise prices - ARPU of $${calculations.arpu.toFixed(0)} may be too low`,
-        ],
-        impact: 'Critical',
-      });
-    } else if (calculations.grossMargin < 70) {
-      recs.push({
-        priority: 2,
-        category: 'Profitability',
-        title: 'Optimize Gross Margin',
-        issue: `Gross margin of ${calculations.grossMargin.toFixed(1)}% is below 70% target.`,
-        actions: [
-          'Use smaller models for 80% of requests',
-          'Negotiate volume discounts',
-          'Implement usage limits on lower tiers',
-        ],
-        impact: 'High',
-      });
+  const updateTier = (id: number, field: keyof PricingTier, value: any) => {
+    setPricingTiers(prev => prev.map(t => {
+      if (t.id === id) {
+        const updated = { ...t, [field]: value };
+        if (field === 'price') {
+          updated.isFreeTier = value === 0;
+          updated.yearlyPrice = value * 10;
+        }
+        return updated;
+      }
+      return t;
+    }));
+  };
+
+  const deleteTier = (id: number) => {
+    setPricingTiers(prev => prev.filter(t => t.id !== id));
+  };
+
+  const tierAnalysis = calculations?.tierAnalysis || [];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Info className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">Define your pricing tiers with usage limits and customer counts</span>
+        </div>
+        <Dialog open={showAddTier} onOpenChange={setShowAddTier}>
+          <DialogTrigger asChild>
+            <Button size="sm" variant="outline">
+              <Plus className="w-4 h-4 mr-1" /> Add Tier
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Pricing Tier</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-2 gap-4 pt-4">
+              <div className="col-span-2">
+                <Label>Tier Name</Label>
+                <Input 
+                  value={newTier.name || ''} 
+                  onChange={(e) => setNewTier(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="e.g., Starter, Pro, Enterprise"
+                />
+              </div>
+              <div>
+                <Label>Monthly Price ($)</Label>
+                <Input 
+                  type="number" 
+                  value={newTier.price || 0} 
+                  onChange={(e) => setNewTier(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                />
+              </div>
+              <div>
+                <Label>Expected Customers</Label>
+                <Input 
+                  type="number" 
+                  value={newTier.customers || 0} 
+                  onChange={(e) => setNewTier(prev => ({ ...prev, customers: parseInt(e.target.value) || 0 }))}
+                />
+              </div>
+              <div>
+                <Label>Input Tokens/mo</Label>
+                <Input 
+                  type="number" 
+                  value={newTier.inputTokens || 0} 
+                  onChange={(e) => setNewTier(prev => ({ ...prev, inputTokens: parseInt(e.target.value) || 0 }))}
+                />
+              </div>
+              <div>
+                <Label>Output Tokens/mo</Label>
+                <Input 
+                  type="number" 
+                  value={newTier.outputTokens || 0} 
+                  onChange={(e) => setNewTier(prev => ({ ...prev, outputTokens: parseInt(e.target.value) || 0 }))}
+                />
+              </div>
+              <div>
+                <Label>TTS Minutes/mo</Label>
+                <Input 
+                  type="number" 
+                  value={newTier.ttsMinutes || 0} 
+                  onChange={(e) => setNewTier(prev => ({ ...prev, ttsMinutes: parseInt(e.target.value) || 0 }))}
+                />
+              </div>
+              <div>
+                <Label>Videos/mo</Label>
+                <Input 
+                  type="number" 
+                  value={newTier.videosPerMonth || 0} 
+                  onChange={(e) => setNewTier(prev => ({ ...prev, videosPerMonth: parseInt(e.target.value) || 0 }))}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setShowAddTier(false)}>Cancel</Button>
+              <Button onClick={addTier}>Add Tier</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {pricingTiers.map((tier, idx) => {
+          const analysis = tierAnalysis.find((t: TierAnalysis) => t.tier === tier.name);
+          return (
+            <Card key={tier.id} className={`relative ${tier.isFreeTier ? 'border-green-500/30 bg-green-500/5' : ''}`}>
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {tier.isFreeTier && <Gift className="w-4 h-4 text-green-500" />}
+                    <Input
+                      value={tier.name}
+                      onChange={(e) => updateTier(tier.id, 'name', e.target.value)}
+                      className="h-7 text-sm font-semibold w-24 bg-transparent border-none p-0 focus-visible:ring-0"
+                    />
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteTier(tier.id)}>
+                    <Trash2 className="w-3 h-3 text-destructive" />
+                  </Button>
+                </div>
+                {analysis && (
+                  <Badge variant={analysis.marginPercent >= 40 ? 'default' : analysis.marginPercent >= 0 ? 'secondary' : 'destructive'} className="w-fit">
+                    {analysis.marginPercent.toFixed(0)}% margin
+                  </Badge>
+                )}
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Monthly $</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={tier.price}
+                      onChange={(e) => updateTier(tier.id, 'price', parseFloat(e.target.value) || 0)}
+                      className="h-7 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Yearly $</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={tier.yearlyPrice}
+                      onChange={(e) => updateTier(tier.id, 'yearlyPrice', parseFloat(e.target.value) || 0)}
+                      className="h-7 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Customers</Label>
+                    <Input
+                      type="number"
+                      value={tier.customers}
+                      onChange={(e) => updateTier(tier.id, 'customers', parseInt(e.target.value) || 0)}
+                      className="h-7 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Videos/mo</Label>
+                    <Input
+                      type="number"
+                      value={tier.videosPerMonth}
+                      onChange={(e) => updateTier(tier.id, 'videosPerMonth', parseInt(e.target.value) || 0)}
+                      className="h-7 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Input Tokens</Label>
+                    <Input
+                      type="number"
+                      value={tier.inputTokens}
+                      onChange={(e) => updateTier(tier.id, 'inputTokens', parseInt(e.target.value) || 0)}
+                      className="h-7 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">TTS Min</Label>
+                    <Input
+                      type="number"
+                      value={tier.ttsMinutes}
+                      onChange={(e) => updateTier(tier.id, 'ttsMinutes', parseInt(e.target.value) || 0)}
+                      className="h-7 text-xs"
+                    />
+                  </div>
+                </div>
+                {analysis && (
+                  <div className="pt-2 border-t text-xs space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Cost/user:</span>
+                      <span>${analysis.variableCostPerUser.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between font-medium">
+                      <span className="text-muted-foreground">Contribution:</span>
+                      <span className={analysis.totalContribution >= 0 ? 'text-green-500' : 'text-red-500'}>
+                        ${analysis.totalContribution.toFixed(0)}/mo
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// ==================== AI PROVIDERS EDITOR ====================
+const AIProvidersEditor: React.FC<{
+  aiProviders: AIProvider[];
+  setAiProviders: React.Dispatch<React.SetStateAction<AIProvider[]>>;
+  ttsProviders: TTSProvider[];
+  setTtsProviders: React.Dispatch<React.SetStateAction<TTSProvider[]>>;
+  calculations: any;
+}> = ({ aiProviders, setAiProviders, ttsProviders, setTtsProviders, calculations }) => {
+  const [showAddAI, setShowAddAI] = useState(false);
+  const [showAddTTS, setShowAddTTS] = useState(false);
+  const [newAI, setNewAI] = useState<Partial<AIProvider>>({ name: '', provider: '', inputPer1M: 0, outputPer1M: 0, usagePercent: 10 });
+  const [newTTS, setNewTTS] = useState<Partial<TTSProvider>>({ name: '', costPerMinute: 0, usagePercent: 10 });
+
+  const addAIProvider = () => {
+    if (newAI.name) {
+      setAiProviders(prev => [...prev, {
+        id: Date.now(),
+        name: newAI.name || 'New Model',
+        provider: newAI.provider || 'Custom',
+        inputPer1M: newAI.inputPer1M || 0,
+        outputPer1M: newAI.outputPer1M || 0,
+        enabled: true,
+        usagePercent: newAI.usagePercent || 10,
+      }]);
+      setNewAI({ name: '', provider: '', inputPer1M: 0, outputPer1M: 0, usagePercent: 10 });
+      setShowAddAI(false);
     }
+  };
 
-    // AI Cost Optimization
-    if (calculations.aiCostPercent > 20) {
-      recs.push({
-        priority: 2,
-        category: 'AI Costs',
-        title: 'Reduce AI Token Costs',
-        issue: `AI costs are ${calculations.aiCostPercent.toFixed(1)}% of revenue - target under 15%.`,
-        actions: [
-          'Implement intelligent model routing',
-          'Add prompt caching (saves 30-50%)',
-          'Set token limits per tier',
-          'Fine-tune smaller models for specific tasks',
-        ],
-        impact: 'High',
-      });
+  const addTTSProvider = () => {
+    if (newTTS.name) {
+      setTtsProviders(prev => [...prev, {
+        id: Date.now(),
+        name: newTTS.name || 'New TTS',
+        costPerMinute: newTTS.costPerMinute || 0,
+        enabled: true,
+        usagePercent: newTTS.usagePercent || 10,
+      }]);
+      setNewTTS({ name: '', costPerMinute: 0, usagePercent: 10 });
+      setShowAddTTS(false);
     }
+  };
 
-    // Unprofitable Tiers
-    const unprofitableTiers = calculations.tierAnalysis.filter(t => t.marginPercent < 0 && t.subscribers > 0);
-    unprofitableTiers.forEach(tier => {
-      const minPrice = Math.ceil(tier.variableCostPerUser * 1.4);
-      recs.push({
-        priority: 1,
-        category: 'Pricing',
-        title: `Fix Unprofitable: ${tier.tier}`,
-        issue: `${tier.tier} loses $${Math.abs(tier.contribution).toFixed(2)}/user (${tier.marginPercent.toFixed(0)}% margin).`,
-        actions: [
-          `Increase price to at least $${minPrice}`,
-          `Reduce AI allocation - currently $${tier.aiCostPerUser.toFixed(2)}/user`,
-          'Limit tokens/storage on this tier',
-        ],
-        impact: 'Critical',
-      });
-    });
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* AI Models */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h4 className="font-medium flex items-center gap-2">
+            <Zap className="w-4 h-4 text-primary" />
+            AI/LLM Providers
+          </h4>
+          <Dialog open={showAddAI} onOpenChange={setShowAddAI}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline">
+                <Plus className="w-4 h-4 mr-1" /> Add Model
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add AI Provider</DialogTitle>
+              </DialogHeader>
+              <div className="grid grid-cols-2 gap-4 pt-4">
+                <div className="col-span-2">
+                  <Label>Model Name</Label>
+                  <Input value={newAI.name || ''} onChange={(e) => setNewAI(prev => ({ ...prev, name: e.target.value }))} placeholder="e.g., GPT-4o" />
+                </div>
+                <div>
+                  <Label>Provider</Label>
+                  <Input value={newAI.provider || ''} onChange={(e) => setNewAI(prev => ({ ...prev, provider: e.target.value }))} placeholder="e.g., OpenAI" />
+                </div>
+                <div>
+                  <Label>Usage %</Label>
+                  <Input type="number" value={newAI.usagePercent || 0} onChange={(e) => setNewAI(prev => ({ ...prev, usagePercent: parseInt(e.target.value) || 0 }))} />
+                </div>
+                <div>
+                  <Label>Input $/1M tokens</Label>
+                  <Input type="number" step="0.01" value={newAI.inputPer1M || 0} onChange={(e) => setNewAI(prev => ({ ...prev, inputPer1M: parseFloat(e.target.value) || 0 }))} />
+                </div>
+                <div>
+                  <Label>Output $/1M tokens</Label>
+                  <Input type="number" step="0.01" value={newAI.outputPer1M || 0} onChange={(e) => setNewAI(prev => ({ ...prev, outputPer1M: parseFloat(e.target.value) || 0 }))} />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setShowAddAI(false)}>Cancel</Button>
+                <Button onClick={addAIProvider}>Add</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+          {aiProviders.map(ai => (
+            <div key={ai.id} className={`p-3 rounded-lg border transition-colors ${ai.enabled ? 'border-primary/30 bg-primary/5' : 'border-muted bg-muted/30 opacity-60'}`}>
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={ai.enabled}
+                  onCheckedChange={(checked) => setAiProviders(prev => prev.map(a => a.id === ai.id ? { ...a, enabled: checked, usagePercent: checked ? (a.usagePercent || 10) : 0 } : a))}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{ai.name}</p>
+                  <p className="text-xs text-muted-foreground">{ai.provider} • ${ai.inputPer1M}/{ai.outputPer1M}/1M</p>
+                </div>
+                {ai.enabled && (
+                  <div className="flex items-center gap-1">
+                    <Input
+                      type="number"
+                      value={ai.usagePercent}
+                      onChange={(e) => setAiProviders(prev => prev.map(a => a.id === ai.id ? { ...a, usagePercent: parseInt(e.target.value) || 0 } : a))}
+                      className="h-7 w-14 text-xs"
+                    />
+                    <span className="text-xs text-muted-foreground">%</span>
+                  </div>
+                )}
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setAiProviders(prev => prev.filter(a => a.id !== ai.id))}>
+                  <Trash2 className="w-3 h-3 text-destructive" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="p-3 bg-muted/50 rounded-lg text-sm">
+          <span className="text-muted-foreground">Blended cost: </span>
+          <span className="font-medium">${calculations?.blendedInputCost?.toFixed(3) || '0.000'}/${calculations?.blendedOutputCost?.toFixed(3) || '0.000'}/1M tokens</span>
+        </div>
+      </div>
 
-    // Churn Analysis
-    if (acquisition.churnRatePercent > 5) {
-      const churnCost = calculations.monthlyChurn * calculations.arpu;
-      recs.push({
-        priority: 2,
-        category: 'Retention',
-        title: 'Reduce Customer Churn',
-        issue: `${acquisition.churnRatePercent}% monthly churn = $${churnCost.toFixed(0)}/mo lost revenue.`,
-        actions: [
-          'Implement proactive churn prediction',
-          'Add onboarding sequences',
-          'Create switching costs (integrations)',
-          `1% reduction saves $${(churnCost / acquisition.churnRatePercent).toFixed(0)}/mo`,
-        ],
-        impact: 'High',
-      });
+      {/* TTS Providers */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h4 className="font-medium flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-primary" />
+            TTS Providers
+          </h4>
+          <Dialog open={showAddTTS} onOpenChange={setShowAddTTS}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline">
+                <Plus className="w-4 h-4 mr-1" /> Add TTS
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add TTS Provider</DialogTitle>
+              </DialogHeader>
+              <div className="grid grid-cols-2 gap-4 pt-4">
+                <div className="col-span-2">
+                  <Label>Provider Name</Label>
+                  <Input value={newTTS.name || ''} onChange={(e) => setNewTTS(prev => ({ ...prev, name: e.target.value }))} placeholder="e.g., ElevenLabs" />
+                </div>
+                <div>
+                  <Label>Cost per Minute ($)</Label>
+                  <Input type="number" step="0.001" value={newTTS.costPerMinute || 0} onChange={(e) => setNewTTS(prev => ({ ...prev, costPerMinute: parseFloat(e.target.value) || 0 }))} />
+                </div>
+                <div>
+                  <Label>Usage %</Label>
+                  <Input type="number" value={newTTS.usagePercent || 0} onChange={(e) => setNewTTS(prev => ({ ...prev, usagePercent: parseInt(e.target.value) || 0 }))} />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setShowAddTTS(false)}>Cancel</Button>
+                <Button onClick={addTTSProvider}>Add</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+          {ttsProviders.map(tts => (
+            <div key={tts.id} className={`p-3 rounded-lg border transition-colors ${tts.enabled ? 'border-primary/30 bg-primary/5' : 'border-muted bg-muted/30 opacity-60'}`}>
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={tts.enabled}
+                  onCheckedChange={(checked) => setTtsProviders(prev => prev.map(t => t.id === tts.id ? { ...t, enabled: checked, usagePercent: checked ? (t.usagePercent || 10) : 0 } : t))}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{tts.name}</p>
+                  <p className="text-xs text-muted-foreground">${tts.costPerMinute.toFixed(3)}/min</p>
+                </div>
+                {tts.enabled && (
+                  <div className="flex items-center gap-1">
+                    <Input
+                      type="number"
+                      value={tts.usagePercent}
+                      onChange={(e) => setTtsProviders(prev => prev.map(t => t.id === tts.id ? { ...t, usagePercent: parseInt(e.target.value) || 0 } : t))}
+                      className="h-7 w-14 text-xs"
+                    />
+                    <span className="text-xs text-muted-foreground">%</span>
+                  </div>
+                )}
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setTtsProviders(prev => prev.filter(t => t.id !== tts.id))}>
+                  <Trash2 className="w-3 h-3 text-destructive" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="p-3 bg-muted/50 rounded-lg text-sm">
+          <span className="text-muted-foreground">Blended TTS cost: </span>
+          <span className="font-medium">${calculations?.blendedTTSCost?.toFixed(3) || '0.000'}/min</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ==================== FIXED COSTS EDITOR ====================
+const FixedCostsEditor: React.FC<{
+  fixedCosts: FixedCost[];
+  setFixedCosts: React.Dispatch<React.SetStateAction<FixedCost[]>>;
+}> = ({ fixedCosts, setFixedCosts }) => {
+  const [showAddCost, setShowAddCost] = useState(false);
+  const [newCost, setNewCost] = useState<Partial<FixedCost>>({ name: '', amount: 0, category: 'infrastructure', minCapacity: 0, maxCapacity: 1000, scaleFactor: 1 });
+
+  const categories = ['infrastructure', 'overhead', 'personnel', 'marketing', 'tools'];
+  const categoryColors: Record<string, string> = {
+    infrastructure: 'bg-blue-500/10 text-blue-500 border-blue-500/30',
+    overhead: 'bg-purple-500/10 text-purple-500 border-purple-500/30',
+    personnel: 'bg-green-500/10 text-green-500 border-green-500/30',
+    marketing: 'bg-orange-500/10 text-orange-500 border-orange-500/30',
+    tools: 'bg-cyan-500/10 text-cyan-500 border-cyan-500/30',
+  };
+
+  const addCost = () => {
+    if (newCost.name) {
+      setFixedCosts(prev => [...prev, {
+        id: Date.now(),
+        name: newCost.name || 'New Cost',
+        amount: newCost.amount || 0,
+        category: newCost.category || 'infrastructure',
+        minCapacity: newCost.minCapacity || 0,
+        maxCapacity: newCost.maxCapacity || 1000,
+        scaleFactor: newCost.scaleFactor || 1,
+      }]);
+      setNewCost({ name: '', amount: 0, category: 'infrastructure', minCapacity: 0, maxCapacity: 1000, scaleFactor: 1 });
+      setShowAddCost(false);
     }
+  };
 
-    // Payback Period
-    if (calculations.paybackPeriod > 12) {
-      recs.push({
-        priority: 2,
-        category: 'Cash Flow',
-        title: 'Improve CAC Payback',
-        issue: `${calculations.paybackPeriod.toFixed(1)} month payback is too long (target <12).`,
-        actions: [
-          'Offer annual plans with discount',
-          'Reduce CAC through organic channels',
-          'Add usage-based upsells early',
-        ],
-        impact: 'High',
-      });
+  const totalByCategory = categories.reduce((acc, cat) => {
+    acc[cat] = fixedCosts.filter(c => c.category === cat).reduce((sum, c) => sum + c.amount, 0);
+    return acc;
+  }, {} as Record<string, number>);
+
+  const totalFixed = fixedCosts.reduce((sum, c) => sum + c.amount, 0);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="text-sm">
+            <span className="text-muted-foreground">Total Fixed Costs: </span>
+            <span className="font-bold text-lg">${totalFixed.toLocaleString()}/mo</span>
+          </div>
+        </div>
+        <Dialog open={showAddCost} onOpenChange={setShowAddCost}>
+          <DialogTrigger asChild>
+            <Button size="sm" variant="outline">
+              <Plus className="w-4 h-4 mr-1" /> Add Cost
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Fixed Cost</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-2 gap-4 pt-4">
+              <div className="col-span-2">
+                <Label>Cost Name</Label>
+                <Input value={newCost.name || ''} onChange={(e) => setNewCost(prev => ({ ...prev, name: e.target.value }))} placeholder="e.g., Supabase Pro" />
+              </div>
+              <div>
+                <Label>Monthly Amount ($)</Label>
+                <Input type="number" value={newCost.amount || 0} onChange={(e) => setNewCost(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))} />
+              </div>
+              <div>
+                <Label>Category</Label>
+                <Select value={newCost.category} onValueChange={(v) => setNewCost(prev => ({ ...prev, category: v }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map(cat => (
+                      <SelectItem key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Min Capacity (users)</Label>
+                <Input type="number" value={newCost.minCapacity || 0} onChange={(e) => setNewCost(prev => ({ ...prev, minCapacity: parseInt(e.target.value) || 0 }))} />
+              </div>
+              <div>
+                <Label>Max Capacity (users)</Label>
+                <Input type="number" value={newCost.maxCapacity || 0} onChange={(e) => setNewCost(prev => ({ ...prev, maxCapacity: parseInt(e.target.value) || 0 }))} />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setShowAddCost(false)}>Cancel</Button>
+              <Button onClick={addCost}>Add</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Category Summary */}
+      <div className="grid grid-cols-5 gap-2">
+        {categories.map(cat => (
+          <div key={cat} className={`p-3 rounded-lg border ${categoryColors[cat]}`}>
+            <p className="text-xs font-medium capitalize">{cat}</p>
+            <p className="text-lg font-bold">${totalByCategory[cat] || 0}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Cost Items */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[300px] overflow-y-auto">
+        {fixedCosts.map(cost => (
+          <div key={cost.id} className={`p-3 rounded-lg border ${categoryColors[cost.category]}`}>
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex-1 min-w-0">
+                <Input
+                  value={cost.name}
+                  onChange={(e) => setFixedCosts(prev => prev.map(c => c.id === cost.id ? { ...c, name: e.target.value } : c))}
+                  className="h-6 text-sm font-medium bg-transparent border-none p-0 focus-visible:ring-0"
+                />
+              </div>
+              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setFixedCosts(prev => prev.filter(c => c.id !== cost.id))}>
+                <Trash2 className="w-3 h-3" />
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">$</span>
+              <Input
+                type="number"
+                value={cost.amount}
+                onChange={(e) => setFixedCosts(prev => prev.map(c => c.id === cost.id ? { ...c, amount: parseFloat(e.target.value) || 0 } : c))}
+                className="h-7 text-sm"
+              />
+              <span className="text-xs text-muted-foreground">/mo</span>
+            </div>
+            {cost.maxCapacity && (
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Supports {cost.minCapacity || 0} - {cost.maxCapacity} users
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ==================== ACQUISITION EDITOR ====================
+const AcquisitionEditor: React.FC<{
+  acquisition: Acquisition;
+  setAcquisition: React.Dispatch<React.SetStateAction<Acquisition>>;
+  calculations: any;
+}> = ({ acquisition, setAcquisition, calculations }) => {
+  const updateField = (field: keyof Acquisition, value: number) => {
+    setAcquisition(prev => ({ ...prev, [field]: value }));
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Marketing Spend */}
+      <div className="space-y-4">
+        <h4 className="font-medium flex items-center gap-2">
+          <Target className="w-4 h-4 text-primary" />
+          Marketing Spend
+        </h4>
+        <div className="space-y-3">
+          {[
+            { key: 'paidAdsSpend', label: 'Paid Ads', icon: DollarSign },
+            { key: 'contentSpend', label: 'Content Marketing', icon: BookOpen },
+            { key: 'affiliateSpend', label: 'Affiliates', icon: Users },
+            { key: 'seoSpend', label: 'SEO/Organic', icon: TrendingUp },
+          ].map(({ key, label, icon: Icon }) => (
+            <div key={key} className="flex items-center gap-3">
+              <Icon className="w-4 h-4 text-muted-foreground" />
+              <Label className="w-28 text-sm">{label}</Label>
+              <div className="flex-1 flex items-center gap-1">
+                <span className="text-xs text-muted-foreground">$</span>
+                <Input
+                  type="number"
+                  value={acquisition[key as keyof Acquisition] as number}
+                  onChange={(e) => updateField(key as keyof Acquisition, parseFloat(e.target.value) || 0)}
+                  className="h-8"
+                />
+              </div>
+            </div>
+          ))}
+          <Separator />
+          <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg">
+            <span className="font-medium">Total Marketing Spend</span>
+            <span className="text-xl font-bold text-primary">${calculations?.totalMarketingSpend?.toLocaleString() || 0}/mo</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Growth Metrics */}
+      <div className="space-y-4">
+        <h4 className="font-medium flex items-center gap-2">
+          <BarChart3 className="w-4 h-4 text-primary" />
+          Growth Metrics
+        </h4>
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">New Customers/mo</Label>
+              <Input
+                type="number"
+                value={acquisition.newCustomersPerMonth}
+                onChange={(e) => updateField('newCustomersPerMonth', parseInt(e.target.value) || 0)}
+                className="h-8"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Monthly Churn %</Label>
+              <Input
+                type="number"
+                step="0.1"
+                value={acquisition.churnRatePercent}
+                onChange={(e) => updateField('churnRatePercent', parseFloat(e.target.value) || 0)}
+                className="h-8"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Avg Lifetime (months)</Label>
+              <Input
+                type="number"
+                value={acquisition.avgLifetimeMonths}
+                onChange={(e) => updateField('avgLifetimeMonths', parseInt(e.target.value) || 0)}
+                className="h-8"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Expansion Revenue %</Label>
+              <Input
+                type="number"
+                step="0.1"
+                value={acquisition.expansionRevenuePercent}
+                onChange={(e) => updateField('expansionRevenuePercent', parseFloat(e.target.value) || 0)}
+                className="h-8"
+              />
+            </div>
+          </div>
+
+          <Separator />
+          
+          <h5 className="text-sm font-medium flex items-center gap-2">
+            <Calendar className="w-4 h-4" />
+            Yearly Subscription Benefits
+          </h5>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Yearly Discount %</Label>
+              <Input
+                type="number"
+                value={acquisition.yearlyDiscountPercent}
+                onChange={(e) => updateField('yearlyDiscountPercent', parseFloat(e.target.value) || 0)}
+                className="h-8"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Yearly Adoption %</Label>
+              <Input
+                type="number"
+                value={acquisition.yearlyAdoptionPercent}
+                onChange={(e) => updateField('yearlyAdoptionPercent', parseFloat(e.target.value) || 0)}
+                className="h-8"
+              />
+            </div>
+          </div>
+          <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-sm">
+            <p className="text-green-600 font-medium">Yearly Subscription Benefits:</p>
+            <ul className="text-xs text-muted-foreground mt-1 space-y-1">
+              <li>• Upfront cash: ${(calculations?.totalMRR * 12 * (acquisition.yearlyAdoptionPercent / 100) * (1 - acquisition.yearlyDiscountPercent / 100) || 0).toFixed(0)}</li>
+              <li>• Reduced churn (locked in for 12 months)</li>
+              <li>• Better LTV:CAC ratio</li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Calculated Metrics */}
+        <div className="grid grid-cols-2 gap-3 pt-4">
+          <div className="p-3 bg-muted/50 rounded-lg text-center">
+            <p className="text-xs text-muted-foreground">CAC</p>
+            <p className="text-xl font-bold">${calculations?.cac?.toFixed(0) || 0}</p>
+          </div>
+          <div className="p-3 bg-muted/50 rounded-lg text-center">
+            <p className="text-xs text-muted-foreground">LTV</p>
+            <p className="text-xl font-bold">${calculations?.ltv?.toFixed(0) || 0}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ==================== COMPETITOR BENCHMARK EDITOR ====================
+const CompetitorBenchmarkEditor: React.FC<{
+  competitors: CompetitorBenchmark[];
+  setCompetitors: React.Dispatch<React.SetStateAction<CompetitorBenchmark[]>>;
+  pricingTiers: PricingTier[];
+}> = ({ competitors, setCompetitors, pricingTiers }) => {
+  const [showAddCompetitor, setShowAddCompetitor] = useState(false);
+  const [newCompetitor, setNewCompetitor] = useState<Partial<CompetitorBenchmark>>({
+    name: '', freeLimit: '', starterPrice: 0, proPrice: 0, enterprisePrice: 0, freeToPaidRate: 0
+  });
+
+  const addCompetitor = () => {
+    if (newCompetitor.name) {
+      setCompetitors(prev => [...prev, newCompetitor as CompetitorBenchmark]);
+      setNewCompetitor({ name: '', freeLimit: '', starterPrice: 0, proPrice: 0, enterprisePrice: 0, freeToPaidRate: 0 });
+      setShowAddCompetitor(false);
     }
+  };
 
-    // Positive case
-    if (calculations.netMargin >= 20 && calculations.ltvCacRatio >= 3 && calculations.grossMargin >= 70) {
-      recs.push({
-        priority: 4,
-        category: 'Growth',
-        title: '✓ Healthy Economics - Scale Up!',
-        issue: 'Unit economics are healthy. Time to accelerate growth.',
-        actions: [
-          'Increase marketing spend - LTV:CAC supports it',
-          'Expand to new markets',
-          'Invest in product development',
-          'Consider raising prices for more margin',
-        ],
-        impact: 'Medium',
-        positive: true,
-      });
-    }
+  const avgStarterPrice = competitors.length > 0 ? competitors.reduce((sum, c) => sum + c.starterPrice, 0) / competitors.length : 0;
+  const avgProPrice = competitors.length > 0 ? competitors.reduce((sum, c) => sum + c.proPrice, 0) / competitors.length : 0;
+  const yourStarterPrice = pricingTiers.find(t => !t.isFreeTier)?.price || 0;
+  const yourProPrice = pricingTiers.filter(t => !t.isFreeTier)[1]?.price || 0;
 
-    return recs.sort((a, b) => a.priority - b.priority);
-  }, [calculations, acquisition]);
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Award className="w-4 h-4 text-primary" />
+          <span className="text-sm text-muted-foreground">Benchmark against competitors to find optimal pricing</span>
+        </div>
+        <Dialog open={showAddCompetitor} onOpenChange={setShowAddCompetitor}>
+          <DialogTrigger asChild>
+            <Button size="sm" variant="outline">
+              <Plus className="w-4 h-4 mr-1" /> Add Competitor
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Competitor</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-2 gap-4 pt-4">
+              <div className="col-span-2">
+                <Label>Competitor Name</Label>
+                <Input value={newCompetitor.name || ''} onChange={(e) => setNewCompetitor(prev => ({ ...prev, name: e.target.value }))} />
+              </div>
+              <div className="col-span-2">
+                <Label>Free Tier Limit</Label>
+                <Input value={newCompetitor.freeLimit || ''} onChange={(e) => setNewCompetitor(prev => ({ ...prev, freeLimit: e.target.value }))} placeholder="e.g., 5 videos/mo" />
+              </div>
+              <div>
+                <Label>Starter Price</Label>
+                <Input type="number" value={newCompetitor.starterPrice || 0} onChange={(e) => setNewCompetitor(prev => ({ ...prev, starterPrice: parseFloat(e.target.value) || 0 }))} />
+              </div>
+              <div>
+                <Label>Pro Price</Label>
+                <Input type="number" value={newCompetitor.proPrice || 0} onChange={(e) => setNewCompetitor(prev => ({ ...prev, proPrice: parseFloat(e.target.value) || 0 }))} />
+              </div>
+              <div>
+                <Label>Enterprise Price</Label>
+                <Input type="number" value={newCompetitor.enterprisePrice || 0} onChange={(e) => setNewCompetitor(prev => ({ ...prev, enterprisePrice: parseFloat(e.target.value) || 0 }))} />
+              </div>
+              <div>
+                <Label>Free→Paid Rate %</Label>
+                <Input type="number" value={newCompetitor.freeToPaidRate || 0} onChange={(e) => setNewCompetitor(prev => ({ ...prev, freeToPaidRate: parseFloat(e.target.value) || 0 }))} />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setShowAddCompetitor(false)}>Cancel</Button>
+              <Button onClick={addCompetitor}>Add</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
 
-  // Helper: format currency
+      {/* Price Comparison */}
+      {competitors.length > 0 && (
+        <div className="grid grid-cols-3 gap-4 p-4 bg-muted/30 rounded-lg">
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground mb-1">Competitor Avg (Starter)</p>
+            <p className="text-xl font-bold">${avgStarterPrice.toFixed(0)}</p>
+            <Badge variant={yourStarterPrice < avgStarterPrice ? 'default' : yourStarterPrice > avgStarterPrice * 1.2 ? 'destructive' : 'secondary'}>
+              You: ${yourStarterPrice}
+            </Badge>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground mb-1">Competitor Avg (Pro)</p>
+            <p className="text-xl font-bold">${avgProPrice.toFixed(0)}</p>
+            <Badge variant={yourProPrice < avgProPrice ? 'default' : yourProPrice > avgProPrice * 1.2 ? 'destructive' : 'secondary'}>
+              You: ${yourProPrice}
+            </Badge>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground mb-1">Sweet Spot Range</p>
+            <p className="text-xl font-bold">${(avgStarterPrice * 0.85).toFixed(0)} - ${(avgStarterPrice * 1.15).toFixed(0)}</p>
+            <p className="text-xs text-muted-foreground">Based on market</p>
+          </div>
+        </div>
+      )}
+
+      {/* Competitor Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        {competitors.map((comp, idx) => (
+          <Card key={idx}>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm">{comp.name}</CardTitle>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setCompetitors(prev => prev.filter((_, i) => i !== idx))}>
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="text-xs space-y-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Free:</span>
+                <span>{comp.freeLimit}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Starter:</span>
+                <span>${comp.starterPrice}/mo</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Pro:</span>
+                <span>${comp.proPrice}/mo</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Enterprise:</span>
+                <span>${comp.enterprisePrice}/mo</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Free→Paid:</span>
+                <span>{comp.freeToPaidRate}%</span>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ==================== RESULTS DASHBOARD ====================
+const ResultsDashboard: React.FC<{
+  calculations: any;
+  recommendations: Recommendation[];
+  pricingTiers: PricingTier[];
+}> = ({ calculations, recommendations, pricingTiers }) => {
   const fmt = (n: number, decimals = 0) => `$${n.toLocaleString(undefined, { maximumFractionDigits: decimals })}`;
 
   return (
     <div className="space-y-6">
-      {/* Top Metrics Dashboard */}
+      {/* Top Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
         <Card className={calculations.netProfit >= 0 ? 'border-green-500/50 bg-green-500/5' : 'border-red-500/50 bg-red-500/5'}>
           <CardContent className="p-4">
@@ -512,280 +1236,88 @@ const ComprehensivePLCalculator: React.FC = () => {
         </Card>
       </div>
 
-      {/* Main 3-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: Inputs */}
-        <Card className="flex flex-col">
-          <CardHeader className="pb-2 flex-shrink-0">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Calculator className="w-4 h-4 text-primary" />
-              Pricing & Cost Inputs
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 min-h-0">
-            <div className="h-[500px] overflow-y-auto space-y-4 pr-1">
-              {/* Pricing Tiers */}
-              <div>
-                <h4 className="text-xs font-semibold text-muted-foreground mb-2">PRICING TIERS</h4>
-                <div className="space-y-2">
-                  {pricingTiers.map(tier => (
-                    <div key={tier.id} className="p-2 rounded-lg bg-muted/50 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-sm">{tier.name}</span>
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs text-muted-foreground">$</span>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            value={tier.price}
-                            onChange={e => setPricingTiers(prev => prev.map(t => t.id === tier.id ? { ...t, price: parseFloat(e.target.value) || 0 } : t))}
-                            className="h-6 w-16 text-xs"
-                          />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <Label className="text-[10px]">Customers</Label>
-                          <Input
-                            type="number"
-                            value={tier.customers}
-                            onChange={e => setPricingTiers(prev => prev.map(t => t.id === tier.id ? { ...t, customers: parseInt(e.target.value) || 0 } : t))}
-                            className="h-6 text-xs"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-[10px]">Input Tokens</Label>
-                          <Input
-                            type="number"
-                            value={tier.inputTokens}
-                            onChange={e => setPricingTiers(prev => prev.map(t => t.id === tier.id ? { ...t, inputTokens: parseInt(e.target.value) || 0 } : t))}
-                            className="h-6 text-xs"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-[10px]">TTS Minutes</Label>
-                          <Input
-                            type="number"
-                            value={tier.ttsMinutes}
-                            onChange={e => setPricingTiers(prev => prev.map(t => t.id === tier.id ? { ...t, ttsMinutes: parseInt(e.target.value) || 0 } : t))}
-                            className="h-6 text-xs"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-[10px]">Videos/mo</Label>
-                          <Input
-                            type="number"
-                            value={tier.videosPerMonth}
-                            onChange={e => setPricingTiers(prev => prev.map(t => t.id === tier.id ? { ...t, videosPerMonth: parseInt(e.target.value) || 0 } : t))}
-                            className="h-6 text-xs"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* AI Providers */}
-              <div>
-                <h4 className="text-xs font-semibold text-muted-foreground mb-2">AI MODELS (% usage routing)</h4>
-                <div className="space-y-2">
-                  {aiProviders.map(ai => (
-                    <div key={ai.id} className={`flex items-center gap-2 p-2 rounded-lg ${ai.enabled ? 'bg-primary/10 border border-primary/30' : 'bg-muted/30 opacity-60'}`}>
-                      <Switch
-                        checked={ai.enabled}
-                        onCheckedChange={checked => setAiProviders(prev => prev.map(a => a.id === ai.id ? { ...a, enabled: checked, usagePercent: checked ? a.usagePercent || 10 : 0 } : a))}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium truncate">{ai.name}</p>
-                        <p className="text-[10px] text-muted-foreground">${ai.inputPer1M}/${ai.outputPer1M}/1M</p>
-                      </div>
-                      {ai.enabled && (
-                        <div className="flex items-center gap-1">
-                          <Input
-                            type="number"
-                            value={ai.usagePercent}
-                            onChange={e => setAiProviders(prev => prev.map(a => a.id === ai.id ? { ...a, usagePercent: parseInt(e.target.value) || 0 } : a))}
-                            className="h-6 w-12 text-xs"
-                          />
-                          <span className="text-xs text-muted-foreground">%</span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-2 p-2 bg-muted/50 rounded text-xs">
-                  <span className="text-muted-foreground">Blended: </span>
-                  <span className="font-medium">${calculations.blendedInputCost.toFixed(3)}/${calculations.blendedOutputCost.toFixed(3)}/1M</span>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Acquisition */}
-              <div>
-                <h4 className="text-xs font-semibold text-muted-foreground mb-2">CUSTOMER ACQUISITION</h4>
-                <div className="space-y-2">
-                  {[
-                    { key: 'paidAdsSpend', label: 'Paid Ads' },
-                    { key: 'contentSpend', label: 'Content/SEO' },
-                    { key: 'affiliateSpend', label: 'Affiliates' },
-                    { key: 'seoSpend', label: 'Organic/SEO' },
-                  ].map(({ key, label }) => (
-                    <div key={key} className="flex items-center gap-2">
-                      <Label className="text-xs w-20">{label}</Label>
-                      <div className="flex-1 flex items-center gap-1">
-                        <span className="text-xs text-muted-foreground">$</span>
-                        <Input
-                          type="number"
-                          value={acquisition[key as keyof typeof acquisition]}
-                          onChange={e => setAcquisition(prev => ({ ...prev, [key]: parseInt(e.target.value) || 0 }))}
-                          className="h-6 text-xs"
-                        />
-                      </div>
-                    </div>
-                  ))}
-                  <div className="flex items-center gap-2 pt-1 border-t">
-                    <Label className="text-xs w-20 font-medium">Total Spend</Label>
-                    <span className="font-bold text-sm">{fmt(calculations.totalMarketingSpend)}/mo</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Label className="text-xs w-20">New/mo</Label>
-                    <Input
-                      type="number"
-                      value={acquisition.newCustomersPerMonth}
-                      onChange={e => setAcquisition(prev => ({ ...prev, newCustomersPerMonth: parseInt(e.target.value) || 0 }))}
-                      className="h-6 text-xs flex-1"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Label className="text-xs w-20">Churn %</Label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      value={acquisition.churnRatePercent}
-                      onChange={e => setAcquisition(prev => ({ ...prev, churnRatePercent: parseFloat(e.target.value) || 0 }))}
-                      className="h-6 text-xs flex-1"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Middle: Tier Analysis + Breakeven */}
-        <Card className="flex flex-col">
-          <CardHeader className="pb-2 flex-shrink-0">
+      {/* Main Content: Tiers + Recommendations */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Tier Economics */}
+        <Card>
+          <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Layers className="w-4 h-4 text-primary" />
               Unit Economics by Tier
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 min-h-0">
-            <div className="h-[500px] overflow-y-auto space-y-3 pr-1">
-              {calculations.tierAnalysis.map(tier => (
+          <CardContent>
+            <div className="space-y-3 max-h-[400px] overflow-y-auto">
+              {calculations.tierAnalysis?.map((tier: TierAnalysis) => (
                 <div key={tier.tier} className={`p-3 rounded-lg border ${
-                  tier.marginPercent >= 40 ? 'border-green-500/30 bg-green-500/5' :
+                  tier.isFreeTier ? 'border-green-500/30 bg-green-500/5' :
+                  tier.marginPercent >= 40 ? 'border-primary/30 bg-primary/5' :
                   tier.marginPercent >= 0 ? 'border-amber-500/30 bg-amber-500/5' :
                   'border-red-500/30 bg-red-500/5'
                 }`}>
                   <div className="flex items-center justify-between mb-2">
-                    <div>
+                    <div className="flex items-center gap-2">
+                      {tier.isFreeTier && <Gift className="w-4 h-4 text-green-500" />}
                       <span className="font-medium">{tier.tier}</span>
-                      <span className="text-xs text-muted-foreground ml-2">({tier.subscribers})</span>
+                      <span className="text-xs text-muted-foreground">({tier.subscribers} users)</span>
                     </div>
                     <Badge variant={tier.marginPercent >= 40 ? 'default' : tier.marginPercent >= 0 ? 'secondary' : 'destructive'}>
                       {tier.marginPercent.toFixed(0)}%
                     </Badge>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-2 text-xs mb-2">
-                    <div className="flex justify-between">
+                  <div className="grid grid-cols-4 gap-2 text-xs">
+                    <div>
                       <span className="text-muted-foreground">Price:</span>
-                      <span>{fmt(tier.price, 2)}</span>
+                      <span className="ml-1 font-medium">{fmt(tier.price)}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Variable:</span>
-                      <span>{fmt(tier.variableCostPerUser, 2)}</span>
+                    <div>
+                      <span className="text-muted-foreground">Cost:</span>
+                      <span className="ml-1 font-medium">{fmt(tier.variableCostPerUser, 2)}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">AI Cost:</span>
-                      <span>{fmt(tier.aiCostPerUser, 3)}</span>
+                    <div>
+                      <span className="text-muted-foreground">Revenue:</span>
+                      <span className="ml-1 font-medium">{fmt(tier.totalRevenue)}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">TTS Cost:</span>
-                      <span>{fmt(tier.ttsCostPerUser, 2)}</span>
+                    <div>
+                      <span className="text-muted-foreground">Profit:</span>
+                      <span className={`ml-1 font-medium ${tier.totalContribution >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        {fmt(tier.totalContribution)}
+                      </span>
                     </div>
-                  </div>
-
-                  <div className="flex justify-between text-xs pt-2 border-t border-border/50">
-                    <span className="text-muted-foreground">{tier.subscribers} users →</span>
-                    <span className={tier.totalContribution >= 0 ? 'text-green-500 font-medium' : 'text-red-500 font-medium'}>
-                      {fmt(tier.totalContribution)}/mo
-                    </span>
                   </div>
 
                   <div className="grid grid-cols-3 gap-1 mt-2 text-[10px] text-center">
                     <div className="bg-background/50 rounded p-1">
                       <p className="font-bold">{tier.videosPerMonth}</p>
-                      <p className="text-muted-foreground">videos</p>
+                      <p className="text-muted-foreground">videos/user</p>
                     </div>
                     <div className="bg-background/50 rounded p-1">
                       <p className="font-bold">{tier.scriptsPerMonth}</p>
-                      <p className="text-muted-foreground">scripts</p>
+                      <p className="text-muted-foreground">scripts/user</p>
                     </div>
                     <div className="bg-background/50 rounded p-1">
                       <p className="font-bold">{tier.ttsMinutesPerMonth}</p>
-                      <p className="text-muted-foreground">TTS min</p>
+                      <p className="text-muted-foreground">TTS min/user</p>
                     </div>
                   </div>
                 </div>
               ))}
-
-              {/* Profitability Timeline */}
-              <div className="p-3 rounded-lg border-2 border-primary/30 bg-primary/5">
-                <h4 className="text-xs font-semibold mb-2 flex items-center gap-1">
-                  <Calendar className="w-3 h-3" />
-                  Profitability Timeline (12 Months)
-                </h4>
-                <div className="space-y-1">
-                  {calculations.monthlyProjection.filter((_, i) => i % 3 === 0).map(m => (
-                    <div key={m.month} className="flex items-center justify-between text-xs">
-                      <span>Month {m.month}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">{m.customers} users</span>
-                        <span className={m.isProfitable ? 'text-green-500' : 'text-red-500'}>
-                          {fmt(m.netProfit)}
-                        </span>
-                        {m.isProfitable && <CheckCircle2 className="w-3 h-3 text-green-500" />}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {calculations.firstProfitableMonth && (
-                  <p className="text-xs text-green-500 font-medium mt-2 pt-2 border-t">
-                    ✓ Profitable from Month {calculations.firstProfitableMonth}
-                  </p>
-                )}
-              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Right: Recommendations */}
-        <Card className="flex flex-col">
-          <CardHeader className="pb-2 flex-shrink-0">
+        {/* Smart Recommendations */}
+        <Card>
+          <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Lightbulb className="w-4 h-4 text-primary" />
               Smart Recommendations
               <Badge variant="outline" className="ml-auto">{recommendations.length}</Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 min-h-0">
-            <div className="h-[500px] overflow-y-auto space-y-3 pr-1">
+          <CardContent>
+            <div className="space-y-3 max-h-[400px] overflow-y-auto">
               {recommendations.map((rec, idx) => (
                 <div key={idx} className={`p-3 rounded-lg border ${
                   rec.positive ? 'border-green-500/30 bg-green-500/5' :
@@ -840,80 +1372,54 @@ const ComprehensivePLCalculator: React.FC = () => {
         </Card>
       </div>
 
-      {/* Production Capacity & Cost Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Zap className="w-4 h-4 text-primary" />
-              Total Production Capacity
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-4 gap-3">
-              <div className="text-center p-3 bg-muted/50 rounded-lg">
-                <p className="text-2xl font-bold text-primary">{calculations.totalVideosProduced.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">Videos/mo</p>
+      {/* Profitability Timeline */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-primary" />
+            12-Month Profitability Projection
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-12 gap-2">
+            {calculations.monthlyProjection?.map((m: any) => (
+              <div key={m.month} className={`p-2 rounded-lg text-center ${m.isProfitable ? 'bg-green-500/10 border border-green-500/30' : 'bg-red-500/10 border border-red-500/30'}`}>
+                <p className="text-xs text-muted-foreground">M{m.month}</p>
+                <p className={`text-sm font-bold ${m.isProfitable ? 'text-green-500' : 'text-red-500'}`}>
+                  {m.netProfit >= 0 ? '+' : ''}{(m.netProfit / 1000).toFixed(0)}k
+                </p>
+                <p className="text-[10px] text-muted-foreground">{m.customers} users</p>
               </div>
-              <div className="text-center p-3 bg-muted/50 rounded-lg">
-                <p className="text-2xl font-bold text-primary">{calculations.totalScriptsProduced.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">Scripts/mo</p>
-              </div>
-              <div className="text-center p-3 bg-muted/50 rounded-lg">
-                <p className="text-2xl font-bold text-primary">{calculations.totalTTSMinutes.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">TTS min/mo</p>
-              </div>
-              <div className="text-center p-3 bg-muted/50 rounded-lg">
-                <p className="text-2xl font-bold text-primary">{fmt(calculations.totalVariableCosts / Math.max(calculations.totalVideosProduced, 1), 2)}</p>
-                <p className="text-xs text-muted-foreground">Cost/Video</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Receipt className="w-4 h-4 text-primary" />
-              Monthly Cost Summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Variable Costs (AI/TTS)</span>
-                <span>{fmt(calculations.totalVariableCosts)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Fixed Infrastructure</span>
-                <span>{fmt(calculations.totalFixedCosts)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Marketing/CAC</span>
-                <span>{fmt(calculations.totalMarketingSpend)}</span>
-              </div>
-              <Separator />
-              <div className="flex justify-between font-bold">
-                <span>Total Costs</span>
-                <span className="text-destructive">{fmt(calculations.totalCosts)}</span>
-              </div>
-              <div className="flex justify-between font-bold">
-                <span>Net Profit</span>
-                <span className={calculations.netProfit >= 0 ? 'text-green-500' : 'text-red-500'}>
-                  {fmt(calculations.netProfit)}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            ))}
+          </div>
+          {calculations.firstProfitableMonth && (
+            <p className="text-sm text-green-500 font-medium mt-3 text-center">
+              ✓ Break-even at Month {calculations.firstProfitableMonth}
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
 
-// ==================== SEGMENT CARDS ====================
-const SegmentProfileCard: React.FC<{ segment: typeof segmentPricingProfiles[0] }> = ({ segment }) => {
-  const bundle = segmentBundles.find(b => b.segment === segment.id);
+// ==================== CONNECTED SEGMENT TAB ====================
+const ConnectedSegmentsTab: React.FC<{ calculations: any; pricingTiers: PricingTier[] }> = ({ calculations, pricingTiers }) => {
+  const segments = segmentPricingProfiles.map(segment => {
+    const bundle = segmentBundles.find(b => b.segment === segment.id);
+    const recommendedTier = pricingTiers.find(t => {
+      const threshold = parseFloat(segment.priceThreshold.replace(/[^0-9.]/g, ''));
+      return t.price <= threshold && t.price > 0;
+    });
+    
+    return {
+      ...segment,
+      bundle,
+      recommendedTier: recommendedTier?.name || 'Custom',
+      potentialMRR: recommendedTier ? recommendedTier.price * (parseInt(segment.marketSize.replace(/[^0-9]/g, '')) / 1000) : 0,
+    };
+  });
+
   const segmentIcons: Record<string, React.ReactNode> = {
     creator: <Camera className="w-5 h-5" />,
     influencer: <Users className="w-5 h-5" />,
@@ -924,114 +1430,755 @@ const SegmentProfileCard: React.FC<{ segment: typeof segmentPricingProfiles[0] }
     healthcare: <Heart className="w-5 h-5" />,
     enterprise: <Crown className="w-5 h-5" />,
   };
-  
-  return (
-    <Card className="h-full hover:shadow-lg transition-shadow">
-      <CardHeader className="pb-3">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary/10 text-primary">
-            {segmentIcons[segment.id] || <Users className="w-5 h-5" />}
-          </div>
-          <div className="flex-1">
-            <CardTitle className="text-lg flex items-center gap-2">
-              {segment.name}
-              <Badge variant={segment.priority === 'P0' ? 'default' : segment.priority === 'P1' ? 'secondary' : 'outline'}>
-                {segment.priority}
-              </Badge>
-            </CardTitle>
-            <CardDescription className="text-xs">{segment.marketSize}</CardDescription>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="p-3 rounded-lg bg-muted/50 italic text-sm">
-          "{segment.voiceOfCustomer}"
-        </div>
-        
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <div>
-            <p className="text-muted-foreground text-xs">Current Spend</p>
-            <p className="font-medium">{segment.currentSpend}</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground text-xs">Price Threshold</p>
-            <p className="font-medium">{segment.priceThreshold}</p>
-          </div>
-        </div>
 
-        {bundle && (
-          <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
-            <div className="flex items-center justify-between mb-1">
-              <span className="font-medium text-sm">{bundle.bundleName}</span>
-              <Badge variant="default" className="bg-green-600">{bundle.price}</Badge>
+  return (
+    <div className="space-y-4">
+      <div className="p-4 bg-primary/10 rounded-lg">
+        <h4 className="font-medium mb-2">Segment Analysis Based on Your Pricing</h4>
+        <p className="text-sm text-muted-foreground">
+          Segments are matched to your tiers based on their price thresholds. Your current tiers: {pricingTiers.filter(t => !t.isFreeTier).map(t => `${t.name} ($${t.price})`).join(', ')}
+        </p>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {segments.map(segment => (
+          <Card key={segment.id} className="h-full hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  {segmentIcons[segment.id] || <Users className="w-5 h-5" />}
+                </div>
+                <div className="flex-1">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    {segment.name}
+                    <Badge variant={segment.priority === 'P0' ? 'default' : segment.priority === 'P1' ? 'secondary' : 'outline'}>
+                      {segment.priority}
+                    </Badge>
+                  </CardTitle>
+                  <CardDescription className="text-xs">{segment.marketSize}</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="p-2 rounded bg-muted/50 text-xs">
+                <p className="text-muted-foreground">Recommended Tier:</p>
+                <p className="font-semibold text-primary">{segment.recommendedTier}</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <p className="text-muted-foreground text-xs">Threshold</p>
+                  <p className="font-medium">{segment.priceThreshold}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Current Spend</p>
+                  <p className="font-medium">{segment.currentSpend}</p>
+                </div>
+              </div>
+
+              {segment.bundle && (
+                <div className="p-2 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-medium text-xs">{segment.bundle.bundleName}</span>
+                    <Badge variant="default" className="bg-green-600 text-xs">{segment.bundle.price}</Badge>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ==================== CONNECTED MODELS TAB ====================
+const ConnectedModelsTab: React.FC<{ calculations: any }> = ({ calculations }) => {
+  const modelsWithMetrics = pricingModels.map(model => ({
+    ...model,
+    estimatedMargin: model.id === 'usage' ? calculations.grossMargin * 0.9 :
+                     model.id === 'tiered' ? calculations.grossMargin :
+                     model.id === 'hybrid' ? calculations.grossMargin * 1.1 : calculations.grossMargin,
+    fitScore: model.id === 'tiered' ? 95 : model.id === 'hybrid' ? 85 : 70,
+  }));
+
+  return (
+    <div className="space-y-4">
+      <div className="p-4 bg-primary/10 rounded-lg">
+        <h4 className="font-medium mb-2">Pricing Model Analysis</h4>
+        <p className="text-sm text-muted-foreground">
+          Based on your current gross margin of {calculations.grossMargin?.toFixed(1) || 0}%, here's how different models would perform.
+        </p>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {modelsWithMetrics.map((model) => (
+          <Card key={model.id} className="h-full">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">{model.name}</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Badge variant={model.complexity === 'Low' ? 'secondary' : model.complexity === 'Medium' ? 'outline' : 'destructive'}>
+                    {model.complexity}
+                  </Badge>
+                  <Badge variant="default">{model.fitScore}% fit</Badge>
+                </div>
+              </div>
+              <CardDescription>{model.description}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-2 rounded bg-muted/50 font-mono text-sm">{model.example}</div>
+              <div className="p-2 rounded bg-primary/10 text-center">
+                <p className="text-xs text-muted-foreground">Est. Gross Margin</p>
+                <p className="text-lg font-bold text-primary">{model.estimatedMargin?.toFixed(1)}%</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs font-medium text-green-600 mb-2">Pros</p>
+                  <ul className="space-y-1">
+                    {model.pros.slice(0, 3).map((pro, idx) => (
+                      <li key={idx} className="text-xs flex items-start gap-1">
+                        <Check className="w-3 h-3 text-green-500 mt-0.5 shrink-0" />
+                        <span>{pro}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-red-600 mb-2">Cons</p>
+                  <ul className="space-y-1">
+                    {model.cons.slice(0, 3).map((con, idx) => (
+                      <li key={idx} className="text-xs flex items-start gap-1">
+                        <X className="w-3 h-3 text-red-500 mt-0.5 shrink-0" />
+                        <span>{con}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ==================== CONNECTED MOBILE TAB ====================
+const ConnectedMobileTab: React.FC<{ pricingTiers: PricingTier[]; calculations: any }> = ({ pricingTiers, calculations }) => {
+  const mobileTiers = [
+    { name: 'Free', price: 0, features: ['3 videos/month', '720p export', '5 TTS voices'], match: pricingTiers.find(t => t.isFreeTier) },
+    { name: 'Mobile Pro', price: 4.99, features: ['Unlimited videos', '4K export', 'All TTS voices'], match: pricingTiers.find(t => t.price > 0 && t.price < 15) },
+    { name: 'Desktop + Mobile', price: 12.99, features: ['Full desktop access', 'Full mobile access', 'Cross-device sync'], match: pricingTiers.find(t => t.price >= 15 && t.price < 30) },
+  ];
+
+  return (
+    <Card className="border-2 border-primary/30">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Smartphone className="w-5 h-5 text-primary" />
+          Mobile App Pricing Strategy
+        </CardTitle>
+        <CardDescription>
+          Mobile pricing is derived from your calculator settings. Desktop tier customers: {calculations.totalPaidCustomers || 0}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {mobileTiers.map((tier, idx) => (
+            <div key={idx} className={`p-4 rounded-xl border ${idx === 1 ? 'border-2 border-primary bg-primary/5 relative' : 'bg-muted/30'}`}>
+              {idx === 1 && <Badge className="absolute -top-2 right-4">Popular</Badge>}
+              <div className="flex items-center gap-2 mb-3">
+                {tier.price === 0 ? <Gift className="w-5 h-5 text-green-500" /> : 
+                 idx === 1 ? <Zap className="w-5 h-5 text-primary" /> : 
+                 <Crown className="w-5 h-5 text-amber-500" />}
+                <h4 className="font-semibold">{tier.name}</h4>
+              </div>
+              <p className={`text-2xl font-bold ${idx === 1 ? 'text-primary' : ''} mb-4`}>
+                ${tier.price}<span className="text-sm text-muted-foreground">/mo</span>
+              </p>
+              <ul className="space-y-2 text-sm">
+                {tier.features.map((feature, fidx) => (
+                  <li key={fidx} className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-green-500" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              {tier.match && (
+                <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
+                  Maps to: <span className="text-primary font-medium">{tier.match.name}</span>
+                </div>
+              )}
             </div>
-            <p className="text-xs text-muted-foreground">{bundle.valueProposition}</p>
-          </div>
-        )}
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
 };
 
-// ==================== MOBILE PRICING ====================
-const MobileAppPricingSection: React.FC = () => (
-  <Card className="border-2 border-primary/30">
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <Smartphone className="w-5 h-5 text-primary" />
-        Mobile App Pricing Strategy
-      </CardTitle>
-    </CardHeader>
-    <CardContent>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-4 rounded-xl border bg-muted/30">
-          <div className="flex items-center gap-2 mb-3">
-            <Gift className="w-5 h-5 text-green-500" />
-            <h4 className="font-semibold">Free</h4>
+// ==================== CONNECTED COMPARISON TAB ====================
+const ConnectedComparisonTab: React.FC<{ calculations: any; recommendations: Recommendation[] }> = ({ calculations, recommendations }) => {
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-primary" />
+            Strategic Recommendations
+          </CardTitle>
+          <CardDescription>
+            Based on your current metrics: MRR ${calculations.totalMRR?.toFixed(0)}, Gross Margin {calculations.grossMargin?.toFixed(1)}%, LTV:CAC {calculations.ltvCacRatio?.toFixed(1)}x
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {pricingRecommendations.map((rec) => (
+              <div key={rec.priority} className={`p-4 rounded-lg border ${rec.priority === 1 ? 'border-primary bg-primary/5' : 'bg-muted/30'}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Badge variant={rec.priority === 1 ? 'default' : 'secondary'}>#{rec.priority}</Badge>
+                    <h4 className="font-semibold">{rec.option}</h4>
+                  </div>
+                  <Badge variant="outline">{rec.implementationComplexity}</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">{rec.reasoning}</p>
+              </div>
+            ))}
           </div>
-          <p className="text-2xl font-bold mb-4">$0</p>
-          <ul className="space-y-2 text-sm">
-            <li className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" />3 videos/month</li>
-            <li className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" />720p export</li>
-            <li className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" />5 TTS voices</li>
-          </ul>
-        </div>
+        </CardContent>
+      </Card>
 
-        <div className="p-4 rounded-xl border-2 border-primary bg-primary/5 relative">
-          <Badge className="absolute -top-2 right-4">Popular</Badge>
-          <div className="flex items-center gap-2 mb-3">
-            <Zap className="w-5 h-5 text-primary" />
-            <h4 className="font-semibold">Mobile Pro</h4>
+      <Card>
+        <CardHeader>
+          <CardTitle>All Pricing Permutations</CardTitle>
+          <CardDescription>
+            Evaluated against your current tier structure with {calculations.tierAnalysis?.length || 0} tiers
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {pricingPermutations.map((perm) => (
+              <div key={perm.id} className={`p-4 rounded-lg border ${
+                perm.recommendation === 'Strong' ? 'border-green-500 bg-green-50 dark:bg-green-950/20' :
+                perm.recommendation === 'Medium' ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/20' :
+                'border-red-500 bg-red-50 dark:bg-red-950/20'
+              }`}>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-semibold text-sm">{perm.name}</h4>
+                  <Badge variant={
+                    perm.recommendation === 'Strong' ? 'default' :
+                    perm.recommendation === 'Medium' ? 'secondary' : 'destructive'
+                  }>
+                    {perm.recommendation}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">{perm.model} • {perm.structure}</p>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">{perm.targetSegments.join(', ')}</span>
+                  <span className="font-medium">{perm.estimatedConversion}</span>
+                </div>
+              </div>
+            ))}
           </div>
-          <p className="text-2xl font-bold text-primary mb-4">$4.99<span className="text-sm text-muted-foreground">/mo</span></p>
-          <ul className="space-y-2 text-sm">
-            <li className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" />Unlimited videos</li>
-            <li className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" />4K export</li>
-            <li className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" />All TTS voices</li>
-          </ul>
-        </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
 
-        <div className="p-4 rounded-xl border bg-gradient-to-br from-primary/10 to-accent/10">
-          <div className="flex items-center gap-2 mb-3">
-            <Crown className="w-5 h-5 text-amber-500" />
-            <h4 className="font-semibold">Desktop + Mobile</h4>
-          </div>
-          <p className="text-2xl font-bold mb-1">$12.99<span className="text-sm text-muted-foreground">/mo</span></p>
-          <Badge variant="secondary" className="mb-4">Save $2/mo</Badge>
-          <ul className="space-y-2 text-sm">
-            <li className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" />Full desktop access</li>
-            <li className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" />Full mobile access</li>
-            <li className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" />Cross-device sync</li>
-          </ul>
+// ==================== MAIN CALCULATOR COMPONENT ====================
+const ComprehensivePLCalculator: React.FC = () => {
+  // State
+  const [wizardMode, setWizardMode] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+
+  const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([
+    { id: 1, name: 'Free', price: 0, yearlyPrice: 0, customers: 5000, inputTokens: 50000, outputTokens: 25000, ttsMinutes: 1, storageGB: 1, videosPerMonth: 3, isFreeTier: true },
+    { id: 2, name: 'Starter', price: 9.99, yearlyPrice: 99, customers: 500, inputTokens: 200000, outputTokens: 100000, ttsMinutes: 10, storageGB: 5, videosPerMonth: 15, isFreeTier: false },
+    { id: 3, name: 'Creator', price: 19.99, yearlyPrice: 199, customers: 200, inputTokens: 500000, outputTokens: 250000, ttsMinutes: 30, storageGB: 25, videosPerMonth: 50, isFreeTier: false },
+    { id: 4, name: 'Business', price: 49.99, yearlyPrice: 499, customers: 50, inputTokens: 1500000, outputTokens: 750000, ttsMinutes: 100, storageGB: 100, videosPerMonth: 150, isFreeTier: false },
+    { id: 5, name: 'Pro', price: 99.99, yearlyPrice: 999, customers: 20, inputTokens: 5000000, outputTokens: 2500000, ttsMinutes: 300, storageGB: 500, videosPerMonth: 500, isFreeTier: false },
+    { id: 6, name: 'Healthcare', price: 199.99, yearlyPrice: 1999, customers: 10, inputTokens: 10000000, outputTokens: 5000000, ttsMinutes: 600, storageGB: 1000, videosPerMonth: 1000, isFreeTier: false },
+  ]);
+
+  const [aiProviders, setAiProviders] = useState<AIProvider[]>([
+    { id: 1, name: 'Gemini 2.0 Flash', provider: 'Google', inputPer1M: 0.075, outputPer1M: 0.30, enabled: true, usagePercent: 50 },
+    { id: 2, name: 'Gemini 2.5 Pro', provider: 'Google', inputPer1M: 1.25, outputPer1M: 5.00, enabled: true, usagePercent: 20 },
+    { id: 3, name: 'Claude 3.5 Sonnet', provider: 'Anthropic', inputPer1M: 3.00, outputPer1M: 15.00, enabled: true, usagePercent: 20 },
+    { id: 4, name: 'GPT-4o Mini', provider: 'OpenAI', inputPer1M: 0.15, outputPer1M: 0.60, enabled: true, usagePercent: 10 },
+    { id: 5, name: 'Claude 3 Haiku', provider: 'Anthropic', inputPer1M: 0.25, outputPer1M: 1.25, enabled: false, usagePercent: 0 },
+  ]);
+
+  const [ttsProviders, setTtsProviders] = useState<TTSProvider[]>([
+    { id: 1, name: 'ElevenLabs Pro', costPerMinute: 0.18, enabled: true, usagePercent: 70 },
+    { id: 2, name: 'OpenAI TTS', costPerMinute: 0.015, enabled: true, usagePercent: 25 },
+    { id: 3, name: 'Google Cloud TTS', costPerMinute: 0.016, enabled: true, usagePercent: 5 },
+  ]);
+
+  const [fixedCosts, setFixedCosts] = useState<FixedCost[]>([
+    { id: 1, name: 'Supabase Pro', amount: 25, category: 'infrastructure', minCapacity: 0, maxCapacity: 10000 },
+    { id: 2, name: 'Vercel Pro', amount: 20, category: 'infrastructure', minCapacity: 0, maxCapacity: 50000 },
+    { id: 3, name: 'Resend Pro', amount: 20, category: 'infrastructure', minCapacity: 0, maxCapacity: 100000 },
+    { id: 4, name: 'Analytics (PostHog)', amount: 0, category: 'tools', minCapacity: 0, maxCapacity: 1000000 },
+    { id: 5, name: 'Monitoring (Sentry)', amount: 26, category: 'tools', minCapacity: 0, maxCapacity: 100000 },
+    { id: 6, name: 'CDN/Bandwidth', amount: 50, category: 'infrastructure', minCapacity: 0, maxCapacity: 1000000 },
+    { id: 7, name: 'Storage Overage', amount: 100, category: 'infrastructure', minCapacity: 1000, maxCapacity: 10000 },
+    { id: 8, name: 'Domain/SSL', amount: 15, category: 'overhead', minCapacity: 0, maxCapacity: 1000000 },
+  ]);
+
+  const [acquisition, setAcquisition] = useState<Acquisition>({
+    paidAdsSpend: 2000,
+    contentSpend: 1500,
+    affiliateSpend: 500,
+    seoSpend: 500,
+    newCustomersPerMonth: 50,
+    churnRatePercent: 5,
+    avgLifetimeMonths: 18,
+    expansionRevenuePercent: 12,
+    yearlyDiscountPercent: 17,
+    yearlyAdoptionPercent: 30,
+  });
+
+  const [competitors, setCompetitors] = useState<CompetitorBenchmark[]>([
+    { name: 'Pictory', freeLimit: '3 videos/mo', starterPrice: 23, proPrice: 47, enterprisePrice: 119, freeToPaidRate: 3 },
+    { name: 'Synthesia', freeLimit: '3 mins free', starterPrice: 29, proPrice: 89, enterprisePrice: 249, freeToPaidRate: 2.5 },
+    { name: 'HeyGen', freeLimit: '1 min/mo', starterPrice: 29, proPrice: 89, enterprisePrice: 199, freeToPaidRate: 4 },
+  ]);
+
+  const storageCostPerGB = 0.023;
+
+  // Calculations
+  const calculations = useMemo(() => {
+    const totalCustomers = pricingTiers.reduce((sum, t) => sum + t.customers, 0);
+    const paidTiers = pricingTiers.filter(t => !t.isFreeTier);
+    const totalPaidCustomers = paidTiers.reduce((sum, t) => sum + t.customers, 0);
+    const freeTierCustomers = pricingTiers.filter(t => t.isFreeTier).reduce((sum, t) => sum + t.customers, 0);
+    const totalMRR = pricingTiers.reduce((sum, t) => sum + (t.price * t.customers), 0);
+    const totalARR = totalMRR * 12;
+
+    // Blended AI costs
+    const enabledAI = aiProviders.filter(p => p.enabled);
+    const totalAIPercent = enabledAI.reduce((sum, p) => sum + p.usagePercent, 0) || 100;
+    const blendedInputCost = enabledAI.reduce((sum, ai) => sum + (ai.inputPer1M * (ai.usagePercent / totalAIPercent)), 0);
+    const blendedOutputCost = enabledAI.reduce((sum, ai) => sum + (ai.outputPer1M * (ai.usagePercent / totalAIPercent)), 0);
+
+    // Blended TTS costs
+    const enabledTTS = ttsProviders.filter(p => p.enabled);
+    const totalTTSPercent = enabledTTS.reduce((sum, p) => sum + p.usagePercent, 0) || 100;
+    const blendedTTSCost = enabledTTS.reduce((sum, tts) => sum + (tts.costPerMinute * (tts.usagePercent / totalTTSPercent)), 0);
+
+    // Tier analysis
+    const tierAnalysis: TierAnalysis[] = pricingTiers.map(tier => {
+      const aiCost = (tier.inputTokens / 1000000 * blendedInputCost) + (tier.outputTokens / 1000000 * blendedOutputCost);
+      const ttsCost = tier.ttsMinutes * blendedTTSCost;
+      const storageCost = tier.storageGB * storageCostPerGB;
+      const variableCost = aiCost + ttsCost + storageCost;
+      const contribution = tier.price - variableCost;
+      const marginPercent = tier.price > 0 ? (contribution / tier.price) * 100 : (variableCost > 0 ? -100 : 0);
+
+      return {
+        tier: tier.name,
+        isFreeTier: tier.isFreeTier,
+        subscribers: tier.customers,
+        price: tier.price,
+        yearlyPrice: tier.yearlyPrice,
+        aiCostPerUser: aiCost,
+        ttsCostPerUser: ttsCost,
+        storageCostPerUser: storageCost,
+        variableCostPerUser: variableCost,
+        contribution,
+        marginPercent,
+        totalRevenue: tier.price * tier.customers,
+        totalVariableCost: variableCost * tier.customers,
+        totalContribution: contribution * tier.customers,
+        videosPerMonth: tier.videosPerMonth,
+        scriptsPerMonth: Math.round(tier.videosPerMonth * 1.5),
+        ttsMinutesPerMonth: tier.ttsMinutes,
+      };
+    });
+
+    // Totals
+    const totalVariableCosts = tierAnalysis.reduce((sum, t) => sum + t.totalVariableCost, 0);
+    const totalFixedCosts = fixedCosts.reduce((sum, c) => sum + c.amount, 0);
+    const totalMarketingSpend = acquisition.paidAdsSpend + acquisition.contentSpend + acquisition.affiliateSpend + acquisition.seoSpend;
+    const totalCosts = totalVariableCosts + totalFixedCosts + totalMarketingSpend;
+
+    const grossProfit = totalMRR - totalVariableCosts;
+    const netProfit = totalMRR - totalCosts;
+    const grossMargin = totalMRR > 0 ? (grossProfit / totalMRR) * 100 : 0;
+    const netMargin = totalMRR > 0 ? (netProfit / totalMRR) * 100 : 0;
+
+    // Unit Economics
+    const arpu = totalPaidCustomers > 0 ? totalMRR / totalPaidCustomers : 0;
+    const cac = acquisition.newCustomersPerMonth > 0 ? totalMarketingSpend / acquisition.newCustomersPerMonth : 0;
+    const ltv = arpu * acquisition.avgLifetimeMonths * (grossMargin / 100) * (1 + acquisition.expansionRevenuePercent / 100);
+    const ltvCacRatio = cac > 0 ? ltv / cac : 0;
+
+    // Break-even
+    const avgVariableCostPerCustomer = totalPaidCustomers > 0 
+      ? tierAnalysis.filter(t => !t.isFreeTier).reduce((sum, t) => sum + t.variableCostPerUser * t.subscribers, 0) / totalPaidCustomers 
+      : 0;
+    const contributionMargin = arpu - avgVariableCostPerCustomer;
+    const breakEvenCustomers = contributionMargin > 0 
+      ? Math.ceil((totalFixedCosts + totalMarketingSpend) / contributionMargin) 
+      : Infinity;
+
+    // Months to profitability
+    const monthlyChurn = totalPaidCustomers * (acquisition.churnRatePercent / 100);
+    const netCustomerGrowth = acquisition.newCustomersPerMonth - monthlyChurn;
+    const monthsToBreakeven = breakEvenCustomers > totalPaidCustomers && netCustomerGrowth > 0
+      ? Math.ceil((breakEvenCustomers - totalPaidCustomers) / netCustomerGrowth)
+      : breakEvenCustomers <= totalPaidCustomers ? 0 : Infinity;
+
+    const paybackPeriod = contributionMargin > 0 ? cac / contributionMargin : Infinity;
+
+    // Production capacity
+    const totalVideosProduced = tierAnalysis.reduce((sum, t) => sum + (t.videosPerMonth * t.subscribers), 0);
+    const totalScriptsProduced = tierAnalysis.reduce((sum, t) => sum + (t.scriptsPerMonth * t.subscribers), 0);
+    const totalTTSMinutes = tierAnalysis.reduce((sum, t) => sum + (t.ttsMinutesPerMonth * t.subscribers), 0);
+    const totalAICosts = tierAnalysis.reduce((sum, t) => sum + (t.aiCostPerUser * t.subscribers), 0);
+    const aiCostPercent = totalMRR > 0 ? (totalAICosts / totalMRR) * 100 : 0;
+
+    // 12-month projection
+    const monthlyProjection = Array.from({ length: 12 }, (_, i) => {
+      const month = i + 1;
+      const projectedCustomers = totalPaidCustomers + (netCustomerGrowth * month);
+      const projectedMRR = projectedCustomers * arpu;
+      const projectedVariableCosts = projectedCustomers * avgVariableCostPerCustomer;
+      const projectedNetProfit = projectedMRR - projectedVariableCosts - totalFixedCosts - totalMarketingSpend;
+      return {
+        month,
+        customers: Math.round(projectedCustomers),
+        mrr: projectedMRR,
+        netProfit: projectedNetProfit,
+        isProfitable: projectedNetProfit >= 0,
+      };
+    });
+
+    const firstProfitableMonth = monthlyProjection.find(m => m.isProfitable)?.month || null;
+
+    // Free tier analysis
+    const freeTierCost = tierAnalysis.find(t => t.isFreeTier)?.totalVariableCost || 0;
+    const freeToPaidConversion = freeTierCustomers > 0 ? (totalPaidCustomers / freeTierCustomers) * 100 : 0;
+
+    return {
+      totalCustomers,
+      totalPaidCustomers,
+      freeTierCustomers,
+      totalMRR,
+      totalARR,
+      totalVariableCosts,
+      totalFixedCosts,
+      totalMarketingSpend,
+      totalCosts,
+      grossProfit,
+      netProfit,
+      grossMargin,
+      netMargin,
+      arpu,
+      cac,
+      ltv,
+      ltvCacRatio,
+      breakEvenCustomers,
+      monthsToBreakeven,
+      paybackPeriod,
+      contributionMargin,
+      monthlyChurn,
+      netCustomerGrowth,
+      tierAnalysis,
+      totalAICosts,
+      aiCostPercent,
+      blendedInputCost,
+      blendedOutputCost,
+      blendedTTSCost,
+      totalVideosProduced,
+      totalScriptsProduced,
+      totalTTSMinutes,
+      monthlyProjection,
+      firstProfitableMonth,
+      freeTierCost,
+      freeToPaidConversion,
+    };
+  }, [pricingTiers, aiProviders, ttsProviders, fixedCosts, acquisition]);
+
+  // Recommendations
+  const recommendations = useMemo((): Recommendation[] => {
+    const recs: Recommendation[] = [];
+
+    // Free tier recommendation
+    const freeTier = calculations.tierAnalysis?.find((t: TierAnalysis) => t.isFreeTier);
+    if (freeTier && freeTier.totalVariableCost > 0) {
+      const costPerFreeUser = freeTier.variableCostPerUser;
+      if (costPerFreeUser > 0.50) {
+        recs.push({
+          priority: 2,
+          category: 'Free Tier',
+          title: 'Optimize Free Tier Costs',
+          issue: `Free tier costs $${costPerFreeUser.toFixed(2)}/user. Consider limiting usage further.`,
+          actions: [
+            'Reduce free tier token limits',
+            'Use cheapest AI models for free tier',
+            'Add rate limiting to control costs',
+            `Current free tier cost: $${freeTier.totalVariableCost.toFixed(0)}/mo`
+          ],
+          impact: 'High',
+          tier: 'Free',
+        });
+      }
+    }
+
+    // Free to paid conversion
+    if (calculations.freeToPaidConversion < 3) {
+      recs.push({
+        priority: 2,
+        category: 'Conversion',
+        title: 'Improve Free-to-Paid Conversion',
+        issue: `Only ${calculations.freeToPaidConversion.toFixed(1)}% of free users convert. Industry avg is 3-5%.`,
+        actions: [
+          'Add upgrade prompts when users hit limits',
+          'Offer limited-time discounts for first upgrade',
+          'Show premium features with "upgrade to unlock"',
+          'Send targeted email sequences based on usage'
+        ],
+        impact: 'High',
+      });
+    }
+
+    // Yearly subscription benefit
+    if (calculations.totalPaidCustomers > 0) {
+      const yearlyUplift = calculations.totalMRR * 12 * (acquisition.yearlyAdoptionPercent / 100) * (1 - acquisition.yearlyDiscountPercent / 100);
+      recs.push({
+        priority: 3,
+        category: 'Revenue',
+        title: 'Push Yearly Subscriptions',
+        issue: `With ${acquisition.yearlyDiscountPercent}% discount and ${acquisition.yearlyAdoptionPercent}% adoption, you'd get $${yearlyUplift.toFixed(0)} upfront.`,
+        actions: [
+          'Highlight savings prominently ("Save $X/year!")',
+          'Offer exclusive yearly-only features',
+          'Add 1-2 months free messaging',
+          'Reduces churn as users are locked in for 12 months'
+        ],
+        impact: 'Medium',
+        positive: true,
+      });
+    }
+
+    // Competitor pricing
+    if (competitors.length > 0) {
+      const avgCompStarterPrice = competitors.reduce((sum, c) => sum + c.starterPrice, 0) / competitors.length;
+      const yourStarterPrice = pricingTiers.find(t => !t.isFreeTier)?.price || 0;
+      
+      if (yourStarterPrice < avgCompStarterPrice * 0.7) {
+        recs.push({
+          priority: 3,
+          category: 'Pricing',
+          title: 'Price Below Market - Room to Increase',
+          issue: `Your starter price ($${yourStarterPrice}) is ${((1 - yourStarterPrice / avgCompStarterPrice) * 100).toFixed(0)}% below competitor average ($${avgCompStarterPrice.toFixed(0)}).`,
+          actions: [
+            `Consider raising to $${(avgCompStarterPrice * 0.9).toFixed(0)} for better margins`,
+            'Test higher price with new customers first',
+            'Add features to justify price increase',
+            'Current position may signal lower quality'
+          ],
+          impact: 'Medium',
+        });
+      } else if (yourStarterPrice > avgCompStarterPrice * 1.3) {
+        recs.push({
+          priority: 2,
+          category: 'Pricing',
+          title: 'Premium Pricing - Justify Value',
+          issue: `Your starter price ($${yourStarterPrice}) is ${((yourStarterPrice / avgCompStarterPrice - 1) * 100).toFixed(0)}% above competitor average.`,
+          actions: [
+            'Ensure features clearly exceed competitors',
+            'Focus marketing on differentiation',
+            'Consider premium positioning strategy',
+            'May need to lower for volume'
+          ],
+          impact: 'High',
+        });
+      }
+    }
+
+    // LTV:CAC
+    if (calculations.ltvCacRatio < 1) {
+      recs.push({
+        priority: 1,
+        category: 'Unit Economics',
+        title: 'Critical: Unsustainable Acquisition',
+        issue: `LTV:CAC is ${calculations.ltvCacRatio.toFixed(2)}x - spending more than customers generate.`,
+        actions: [
+          `Reduce CAC from $${calculations.cac.toFixed(0)} to under $${(calculations.ltv / 3).toFixed(0)}`,
+          'Shift to organic/content marketing',
+          'Implement referral program',
+          'Increase prices 20-30%',
+        ],
+        impact: 'Critical',
+      });
+    } else if (calculations.ltvCacRatio < 3) {
+      recs.push({
+        priority: 2,
+        category: 'Unit Economics',
+        title: 'Improve LTV:CAC Ratio',
+        issue: `LTV:CAC of ${calculations.ltvCacRatio.toFixed(2)}x is below 3x benchmark.`,
+        actions: [
+          'Reduce churn to extend lifetime',
+          'Add expansion revenue (upsells)',
+          'Optimize ad spend',
+        ],
+        impact: 'High',
+      });
+    }
+
+    // Gross margin
+    if (calculations.grossMargin < 50) {
+      recs.push({
+        priority: 1,
+        category: 'Profitability',
+        title: 'Critical: Low Gross Margin',
+        issue: `${calculations.grossMargin.toFixed(1)}% gross margin is well below 70% benchmark.`,
+        actions: [
+          `AI costs are ${calculations.aiCostPercent.toFixed(1)}% of revenue`,
+          'Route to cheaper models for simple tasks',
+          'Implement token caching',
+          `Raise ARPU from $${calculations.arpu.toFixed(0)}`,
+        ],
+        impact: 'Critical',
+      });
+    } else if (calculations.grossMargin < 70) {
+      recs.push({
+        priority: 2,
+        category: 'Profitability',
+        title: 'Optimize Gross Margin',
+        issue: `${calculations.grossMargin.toFixed(1)}% margin is below 70% target.`,
+        actions: [
+          'Use smaller models for 80% of requests',
+          'Negotiate volume discounts',
+          'Set usage limits on lower tiers',
+        ],
+        impact: 'High',
+      });
+    }
+
+    // Unprofitable tiers
+    const unprofitableTiers = calculations.tierAnalysis?.filter((t: TierAnalysis) => t.marginPercent < 0 && t.subscribers > 0 && !t.isFreeTier) || [];
+    unprofitableTiers.forEach((tier: TierAnalysis) => {
+      recs.push({
+        priority: 1,
+        category: 'Pricing',
+        title: `Fix Unprofitable: ${tier.tier}`,
+        issue: `${tier.tier} loses $${Math.abs(tier.contribution).toFixed(2)}/user.`,
+        actions: [
+          `Increase price to $${Math.ceil(tier.variableCostPerUser * 1.4)}+`,
+          `Reduce AI allocation ($${tier.aiCostPerUser.toFixed(2)}/user)`,
+          'Limit tokens/storage on this tier',
+        ],
+        impact: 'Critical',
+        tier: tier.tier,
+      });
+    });
+
+    // Churn
+    if (acquisition.churnRatePercent > 5) {
+      const churnCost = calculations.monthlyChurn * calculations.arpu;
+      recs.push({
+        priority: 2,
+        category: 'Retention',
+        title: 'Reduce Customer Churn',
+        issue: `${acquisition.churnRatePercent}% monthly churn = $${churnCost.toFixed(0)}/mo lost.`,
+        actions: [
+          'Implement churn prediction',
+          'Add onboarding sequences',
+          'Create switching costs',
+          `1% reduction saves $${(churnCost / acquisition.churnRatePercent).toFixed(0)}/mo`,
+        ],
+        impact: 'High',
+      });
+    }
+
+    // Healthy economics
+    if (calculations.netMargin >= 20 && calculations.ltvCacRatio >= 3 && calculations.grossMargin >= 70) {
+      recs.push({
+        priority: 4,
+        category: 'Growth',
+        title: '✓ Healthy Economics - Scale Up!',
+        issue: 'Unit economics are healthy. Time to accelerate.',
+        actions: [
+          'Increase marketing spend',
+          'Expand to new markets',
+          'Invest in product development',
+          'Consider raising prices for more margin',
+        ],
+        impact: 'Medium',
+        positive: true,
+      });
+    }
+
+    return recs.sort((a, b) => a.priority - b.priority);
+  }, [calculations, acquisition, competitors, pricingTiers]);
+
+  return (
+    <div className="space-y-6">
+      {/* Mode Toggle */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button 
+            variant={wizardMode ? 'outline' : 'default'} 
+            size="sm"
+            onClick={() => setWizardMode(false)}
+          >
+            <BarChart3 className="w-4 h-4 mr-1" /> Dashboard
+          </Button>
+          <Button 
+            variant={wizardMode ? 'default' : 'outline'} 
+            size="sm"
+            onClick={() => setWizardMode(true)}
+          >
+            <Play className="w-4 h-4 mr-1" /> Guided Setup
+          </Button>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <HelpCircle className="w-4 h-4" />
+          <span>Use Guided Setup to configure step-by-step, or Dashboard for full control</span>
         </div>
       </div>
-    </CardContent>
-  </Card>
-);
+
+      {wizardMode ? (
+        <GuidedWizard
+          currentStep={currentStep}
+          setCurrentStep={setCurrentStep}
+          pricingTiers={pricingTiers}
+          setPricingTiers={setPricingTiers}
+          aiProviders={aiProviders}
+          setAiProviders={setAiProviders}
+          ttsProviders={ttsProviders}
+          setTtsProviders={setTtsProviders}
+          fixedCosts={fixedCosts}
+          setFixedCosts={setFixedCosts}
+          acquisition={acquisition}
+          setAcquisition={setAcquisition}
+          competitors={competitors}
+          setCompetitors={setCompetitors}
+          calculations={calculations}
+        />
+      ) : (
+        <ResultsDashboard
+          calculations={calculations}
+          recommendations={recommendations}
+          pricingTiers={pricingTiers}
+        />
+      )}
+    </div>
+  );
+};
 
 // ==================== MAIN TAB COMPONENT ====================
 export const PricingStrategyTab: React.FC = () => {
   const [subTab, setSubTab] = useState('calculator');
+
+  // Shared state that syncs across tabs
+  const [sharedState, setSharedState] = useState<any>(null);
 
   return (
     <div className="h-full flex flex-col">
@@ -1042,7 +2189,7 @@ export const PricingStrategyTab: React.FC = () => {
             Pricing Strategy & Unit Economics
           </h2>
           <p className="text-sm text-muted-foreground">
-            P&L Calculator • Breakeven Analysis • Smart Recommendations
+            P&L Calculator • Breakeven Analysis • Smart Recommendations • All tabs auto-sync
           </p>
         </div>
       </div>
@@ -1074,119 +2221,19 @@ export const PricingStrategyTab: React.FC = () => {
         {subTab === 'calculator' && <ComprehensivePLCalculator />}
         
         {subTab === 'segments' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {segmentPricingProfiles.map((segment) => (
-              <SegmentProfileCard key={segment.id} segment={segment} />
-            ))}
-          </div>
+          <ConnectedSegmentsTab calculations={{}} pricingTiers={[]} />
         )}
         
         {subTab === 'models' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {pricingModels.map((model) => (
-              <Card key={model.id} className="h-full">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{model.name}</CardTitle>
-                    <Badge variant={model.complexity === 'Low' ? 'secondary' : model.complexity === 'Medium' ? 'outline' : 'destructive'}>
-                      {model.complexity}
-                    </Badge>
-                  </div>
-                  <CardDescription>{model.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="p-2 rounded bg-muted/50 font-mono text-sm">{model.example}</div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-xs font-medium text-green-600 mb-2">Pros</p>
-                      <ul className="space-y-1">
-                        {model.pros.slice(0, 3).map((pro, idx) => (
-                          <li key={idx} className="text-xs flex items-start gap-1">
-                            <Check className="w-3 h-3 text-green-500 mt-0.5 shrink-0" />
-                            <span>{pro}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-red-600 mb-2">Cons</p>
-                      <ul className="space-y-1">
-                        {model.cons.slice(0, 3).map((con, idx) => (
-                          <li key={idx} className="text-xs flex items-start gap-1">
-                            <X className="w-3 h-3 text-red-500 mt-0.5 shrink-0" />
-                            <span>{con}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <ConnectedModelsTab calculations={{}} />
         )}
         
-        {subTab === 'mobile' && <MobileAppPricingSection />}
+        {subTab === 'mobile' && (
+          <ConnectedMobileTab pricingTiers={[]} calculations={{}} />
+        )}
         
         {subTab === 'comparison' && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-primary" />
-                  Strategic Recommendations
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {pricingRecommendations.map((rec) => (
-                    <div key={rec.priority} className={`p-4 rounded-lg border ${rec.priority === 1 ? 'border-primary bg-primary/5' : 'bg-muted/30'}`}>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <Badge variant={rec.priority === 1 ? 'default' : 'secondary'}>#{rec.priority}</Badge>
-                          <h4 className="font-semibold">{rec.option}</h4>
-                        </div>
-                        <Badge variant="outline">{rec.implementationComplexity}</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{rec.reasoning}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>All Pricing Permutations</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {pricingPermutations.map((perm) => (
-                    <div key={perm.id} className={`p-4 rounded-lg border ${
-                      perm.recommendation === 'Strong' ? 'border-green-500 bg-green-50 dark:bg-green-950/20' :
-                      perm.recommendation === 'Medium' ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/20' :
-                      'border-red-500 bg-red-50 dark:bg-red-950/20'
-                    }`}>
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold text-sm">{perm.name}</h4>
-                        <Badge variant={
-                          perm.recommendation === 'Strong' ? 'default' :
-                          perm.recommendation === 'Medium' ? 'secondary' : 'destructive'
-                        }>
-                          {perm.recommendation}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground mb-2">{perm.model} • {perm.structure}</p>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">{perm.targetSegments.join(', ')}</span>
-                        <span className="font-medium">{perm.estimatedConversion}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <ConnectedComparisonTab calculations={{}} recommendations={[]} />
         )}
       </div>
     </div>
