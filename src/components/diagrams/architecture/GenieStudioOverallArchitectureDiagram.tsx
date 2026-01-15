@@ -37,16 +37,16 @@ const dataFlows = [
 ];
 
 const scenarioSummary = {
-  total: 177,
-  implemented: 43,
-  partial: 7,
-  planned: 127,
-  p0: { total: 35, done: 33 },
-  p1: { total: 32, done: 5 },
-  p2: { total: 50, done: 12 },
-  p3: { total: 30, done: 0 },
-  p4: { total: 20, done: 0 },
-  p5: { total: 10, done: 0 },
+  total: 305,
+  implemented: 185,
+  partial: 0,
+  planned: 120,
+  p0: { total: 35, done: 35 },
+  p1: { total: 32, done: 32 },
+  p2: { total: 118, done: 118 },
+  p3: { total: 58, done: 0 },
+  p4: { total: 50, done: 0 },
+  p5: { total: 28, done: 0 },
 };
 
 const moduleColorClasses: Record<string, { border: string; bg: string; text: string; progress: string }> = {

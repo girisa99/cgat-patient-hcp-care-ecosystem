@@ -291,7 +291,7 @@ const projections = {
     users: '50K',
     arr: '$2.5M',
     segments: 'Creator, SMB, Healthcare (P0)',
-    scenarios: '150/253',
+    scenarios: '185/305',
     milestones: ['HIPAA certification', 'Mobile app v2', 'Enterprise pilot'],
   },
   year2: {
@@ -299,7 +299,7 @@ const projections = {
     users: '250K',
     arr: '$15M',
     segments: 'All 6 segments active',
-    scenarios: '230/253',
+    scenarios: '280/305',
     milestones: ['Series A', 'International expansion', 'API marketplace'],
   },
   assumptions: [
@@ -313,12 +313,12 @@ const projections = {
 
 // Roadmap
 const roadmapPhases = [
-  { phase: 'P0', name: 'Core MVP (43 Scenarios)', quarter: 'Q1 2026', completion: 100, status: 'completed' },
-  { phase: 'P1', name: 'Essential Production (38 Scenarios)', quarter: 'Q1 2026', completion: 100, status: 'completed' },
-  { phase: 'P2', name: 'AI Agents & UX (55 Scenarios)', quarter: 'Q2 2026', completion: 100, status: 'completed' },
-  { phase: 'P3', name: 'Differentiators (52 Scenarios)', quarter: 'Q2 2026', completion: 100, status: 'completed' },
-  { phase: 'P4', name: 'Enterprise (35 Scenarios)', quarter: 'Q3 2026', completion: 0, status: 'planned' },
-  { phase: 'P5', name: 'Innovation (30 Scenarios)', quarter: 'Q4 2026', completion: 0, status: 'planned' },
+  { phase: 'P0', name: 'Core MVP (35 Scenarios)', quarter: 'Q1 2026', completion: 100, status: 'completed' },
+  { phase: 'P1', name: 'Essential Production (32 Scenarios)', quarter: 'Q1 2026', completion: 100, status: 'completed' },
+  { phase: 'P2', name: 'AI Agents & UX (118 Scenarios)', quarter: 'Q2 2026', completion: 100, status: 'completed' },
+  { phase: 'P3', name: 'Differentiators (58 Scenarios)', quarter: 'Q3 2026', completion: 0, status: 'planned' },
+  { phase: 'P4', name: 'Enterprise (50 Scenarios)', quarter: 'Q4 2026', completion: 0, status: 'planned' },
+  { phase: 'P5', name: 'Innovation (28 Scenarios)', quarter: 'Q1 2027', completion: 0, status: 'planned' },
 ];
 
 export const GenieInvestorDashboard: React.FC = () => {
@@ -381,8 +381,10 @@ export const GenieInvestorDashboard: React.FC = () => {
 
       {/* Tabs - Simpler with fewer tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4 flex gap-1 bg-muted/50 p-1 rounded-lg w-fit">
+        <TabsList className="mb-4 flex gap-1 bg-muted/50 p-1 rounded-lg w-fit flex-wrap">
           <TabsTrigger value="overview" className="px-4">Overview</TabsTrigger>
+          <TabsTrigger value="traction" className="px-4">Traction</TabsTrigger>
+          <TabsTrigger value="technology" className="px-4">Technology</TabsTrigger>
           <TabsTrigger value="segments" className="px-4">Segments</TabsTrigger>
           <TabsTrigger value="competitors" className="px-4">Competitors</TabsTrigger>
           <TabsTrigger value="swot" className="px-4">SWOT</TabsTrigger>
@@ -505,6 +507,315 @@ export const GenieInvestorDashboard: React.FC = () => {
                   <div className="text-3xl font-bold text-blue-600">12:1</div>
                   <div className="text-sm font-medium">LTV:CAC Ratio</div>
                   <div className="text-xs text-muted-foreground">Strong unit economics</div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* TRACTION TAB - Critical for Investors */}
+          <TabsContent value="traction" className="mt-0 space-y-6">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              Product Traction & Milestones
+            </h2>
+
+            {/* Key Metrics Grid */}
+            <div className="grid grid-cols-4 gap-4">
+              <div className="p-4 border rounded-lg text-center bg-green-50 dark:bg-green-900/20">
+                <div className="text-3xl font-bold text-green-600">305</div>
+                <div className="text-sm font-medium">Total Scenarios</div>
+                <div className="text-xs text-muted-foreground">Comprehensive coverage</div>
+              </div>
+              <div className="p-4 border rounded-lg text-center bg-primary/10">
+                <div className="text-3xl font-bold text-primary">185</div>
+                <div className="text-sm font-medium">Implemented</div>
+                <div className="text-xs text-muted-foreground">61% complete</div>
+              </div>
+              <div className="p-4 border rounded-lg text-center bg-blue-50 dark:bg-blue-900/20">
+                <div className="text-3xl font-bold text-blue-600">6</div>
+                <div className="text-sm font-medium">Products</div>
+                <div className="text-xs text-muted-foreground">Full suite launched</div>
+              </div>
+              <div className="p-4 border rounded-lg text-center bg-purple-50 dark:bg-purple-900/20">
+                <div className="text-3xl font-bold text-purple-600">15+</div>
+                <div className="text-sm font-medium">AI Agents</div>
+                <div className="text-xs text-muted-foreground">Intelligent automation</div>
+              </div>
+            </div>
+
+            {/* Implementation Roadmap */}
+            <div>
+              <h3 className="font-semibold mb-3">Implementation Roadmap</h3>
+              <Table className="border">
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead>Phase</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Scenarios</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Progress</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {roadmapPhases.map((phase) => (
+                    <TableRow key={phase.phase} className={phase.status === 'completed' ? 'bg-green-50/50 dark:bg-green-900/10' : ''}>
+                      <TableCell className="font-bold">{phase.phase}</TableCell>
+                      <TableCell>{phase.name}</TableCell>
+                      <TableCell>{phase.quarter}</TableCell>
+                      <TableCell>
+                        <Badge variant={phase.status === 'completed' ? 'default' : 'outline'}>
+                          {phase.status === 'completed' ? '✅ Complete' : '⏳ Planned'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Progress value={phase.completion} className="h-2 w-20" />
+                          <span className="text-sm font-medium">{phase.completion}%</span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Key Milestones */}
+            <div>
+              <h3 className="font-semibold mb-3">Key Achievements (P0-P2)</h3>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Check className="h-5 w-5 text-green-600" />
+                    <span className="font-semibold">Core Platform</span>
+                  </div>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li>• Script Generation Engine</li>
+                    <li>• 5-Provider TTS Integration</li>
+                    <li>• Recording Studio + Teleprompter</li>
+                    <li>• Mind↔Vibe Bidirectional Bridge</li>
+                  </ul>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Check className="h-5 w-5 text-green-600" />
+                    <span className="font-semibold">AI & Automation</span>
+                  </div>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li>• 15+ AI Agents Deployed</li>
+                    <li>• Ask Genie Context-Aware</li>
+                    <li>• Auto-Editor Agent</li>
+                    <li>• Voice Director Agent</li>
+                  </ul>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Check className="h-5 w-5 text-green-600" />
+                    <span className="font-semibold">Business Infrastructure</span>
+                  </div>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li>• Stripe Billing Integration</li>
+                    <li>• 5-Tier Subscription System</li>
+                    <li>• Credit System</li>
+                    <li>• PWA Mobile App</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Upcoming Milestones */}
+            <div>
+              <h3 className="font-semibold mb-3">Upcoming Milestones (P3-P5)</h3>
+              <Table className="border">
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead>Milestone</TableHead>
+                    <TableHead>Timeline</TableHead>
+                    <TableHead>Impact</TableHead>
+                    <TableHead>Priority</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-medium">Bulk Video Generation</TableCell>
+                    <TableCell>Q3 2026</TableCell>
+                    <TableCell>10x content output for enterprises</TableCell>
+                    <TableCell><Badge>P3</Badge></TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">HIPAA Certification</TableCell>
+                    <TableCell>Q3 2026</TableCell>
+                    <TableCell>Unlock $1B+ healthcare market</TableCell>
+                    <TableCell><Badge variant="destructive">Critical</Badge></TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Multi-Language (140+)</TableCell>
+                    <TableCell>Q4 2026</TableCell>
+                    <TableCell>Global expansion capability</TableCell>
+                    <TableCell><Badge>P4</Badge></TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">SSO/SAML Integration</TableCell>
+                    <TableCell>Q1 2027</TableCell>
+                    <TableCell>Enterprise sales acceleration</TableCell>
+                    <TableCell><Badge>P5</Badge></TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+
+          {/* TECHNOLOGY TAB - Technical Depth for Investors */}
+          <TabsContent value="technology" className="mt-0 space-y-6">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Zap className="h-5 w-5 text-primary" />
+              Technology Stack & Infrastructure
+            </h2>
+
+            {/* Tech Stats Grid */}
+            <div className="grid grid-cols-5 gap-4">
+              <div className="p-4 border rounded-lg text-center">
+                <div className="text-3xl font-bold text-primary">140+</div>
+                <div className="text-sm font-medium">Edge Functions</div>
+                <div className="text-xs text-muted-foreground">Serverless APIs</div>
+              </div>
+              <div className="p-4 border rounded-lg text-center">
+                <div className="text-3xl font-bold text-green-600">280+</div>
+                <div className="text-sm font-medium">Custom Hooks</div>
+                <div className="text-xs text-muted-foreground">React logic</div>
+              </div>
+              <div className="p-4 border rounded-lg text-center">
+                <div className="text-3xl font-bold text-blue-600">180+</div>
+                <div className="text-sm font-medium">Database Tables</div>
+                <div className="text-xs text-muted-foreground">PostgreSQL</div>
+              </div>
+              <div className="p-4 border rounded-lg text-center">
+                <div className="text-3xl font-bold text-purple-600">23</div>
+                <div className="text-sm font-medium">Mobile Components</div>
+                <div className="text-xs text-muted-foreground">PWA ready</div>
+              </div>
+              <div className="p-4 border rounded-lg text-center">
+                <div className="text-3xl font-bold text-amber-600">5</div>
+                <div className="text-sm font-medium">TTS Providers</div>
+                <div className="text-xs text-muted-foreground">Multi-vendor</div>
+              </div>
+            </div>
+
+            {/* Technology Stack */}
+            <div>
+              <h3 className="font-semibold mb-3">Core Technology Stack</h3>
+              <Table className="border">
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead>Layer</TableHead>
+                    <TableHead>Technology</TableHead>
+                    <TableHead>Purpose</TableHead>
+                    <TableHead>Scalability</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-medium">Frontend</TableCell>
+                    <TableCell>React 18 + TypeScript + Vite</TableCell>
+                    <TableCell>Type-safe, fast builds, modern DX</TableCell>
+                    <TableCell className="text-green-600">✓ Unlimited</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Backend</TableCell>
+                    <TableCell>Supabase (PostgreSQL + Edge Functions)</TableCell>
+                    <TableCell>Real-time, RLS security, serverless</TableCell>
+                    <TableCell className="text-green-600">✓ Auto-scale</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">AI Processing</TableCell>
+                    <TableCell>OpenAI + Anthropic + Custom Models</TableCell>
+                    <TableCell>Script generation, analysis, agents</TableCell>
+                    <TableCell className="text-green-600">✓ API-based</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">TTS</TableCell>
+                    <TableCell>ElevenLabs, Google, Azure, Amazon, OpenAI</TableCell>
+                    <TableCell>Multi-provider redundancy</TableCell>
+                    <TableCell className="text-green-600">✓ Failover</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Media Processing</TableCell>
+                    <TableCell>FFmpeg.wasm (client-side)</TableCell>
+                    <TableCell>Zero server load for video processing</TableCell>
+                    <TableCell className="text-green-600">✓ Client-side</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Payments</TableCell>
+                    <TableCell>Stripe</TableCell>
+                    <TableCell>Subscriptions, credits, invoicing</TableCell>
+                    <TableCell className="text-green-600">✓ Enterprise</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* AI Agents */}
+            <div>
+              <h3 className="font-semibold mb-3">AI Agent Architecture</h3>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-semibold text-primary mb-2">Content Agents</h4>
+                  <ul className="text-sm space-y-1">
+                    <li className="flex justify-between"><span>Script Generator</span><span className="text-green-600">✓</span></li>
+                    <li className="flex justify-between"><span>Content Analyzer</span><span className="text-green-600">✓</span></li>
+                    <li className="flex justify-between"><span>SEO Optimizer</span><span className="text-green-600">✓</span></li>
+                    <li className="flex justify-between"><span>Scene Analyzer</span><span className="text-green-600">✓</span></li>
+                  </ul>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-semibold text-purple-600 mb-2">Production Agents</h4>
+                  <ul className="text-sm space-y-1">
+                    <li className="flex justify-between"><span>Voice Director</span><span className="text-green-600">✓</span></li>
+                    <li className="flex justify-between"><span>Auto-Editor</span><span className="text-green-600">✓</span></li>
+                    <li className="flex justify-between"><span>Music Composer</span><span className="text-green-600">✓</span></li>
+                    <li className="flex justify-between"><span>Distribution</span><span className="text-green-600">✓</span></li>
+                  </ul>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-semibold text-amber-600 mb-2">Orchestration</h4>
+                  <ul className="text-sm space-y-1">
+                    <li className="flex justify-between"><span>Ask Genie (Context-Aware)</span><span className="text-green-600">✓</span></li>
+                    <li className="flex justify-between"><span>Workflow Executor</span><span className="text-green-600">✓</span></li>
+                    <li className="flex justify-between"><span>TTS Orchestrator</span><span className="text-green-600">✓</span></li>
+                    <li className="flex justify-between"><span>Production Hub</span><span className="text-green-600">✓</span></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Security & Compliance */}
+            <div>
+              <h3 className="font-semibold mb-3">Security & Compliance</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-semibold text-green-600 mb-2 flex items-center gap-2">
+                    <Shield className="h-4 w-4" />
+                    Implemented
+                  </h4>
+                  <ul className="text-sm space-y-1">
+                    <li>• Row Level Security (RLS) on all tables</li>
+                    <li>• Role-Based Access Control (RBAC)</li>
+                    <li>• API Rate Limiting</li>
+                    <li>• Encrypted data at rest & in transit</li>
+                    <li>• OAuth 2.0 (Google, Email)</li>
+                  </ul>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-semibold text-amber-600 mb-2 flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4" />
+                    Roadmap (P3-P5)
+                  </h4>
+                  <ul className="text-sm space-y-1">
+                    <li>• HIPAA Certification (Q3 2026)</li>
+                    <li>• SOC 2 Type II (Q4 2026)</li>
+                    <li>• GDPR Compliance (Q4 2026)</li>
+                    <li>• SSO/SAML (Q1 2027)</li>
+                    <li>• Data Residency Controls (Q1 2027)</li>
+                  </ul>
                 </div>
               </div>
             </div>
