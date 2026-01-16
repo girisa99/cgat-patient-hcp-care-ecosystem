@@ -7,35 +7,39 @@
 import React from 'react';
 import { PresentationWizard } from '@/components/genie-studio/presentation-generator/PresentationWizard';
 import { GENIE_PRODUCTS } from '@/constants/genie-products';
+import { ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import genieDeckLogo from '@/assets/logos/genie-deck-combined.png';
 
 export default function GenieDeck() {
   const product = GENIE_PRODUCTS.deck;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <div className="border-b bg-gradient-to-r from-cyan-50 to-teal-50 dark:from-cyan-950/20 dark:to-teal-950/20">
-        <div className="container mx-auto px-4 py-4">
+      <div className="border-b bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 flex-shrink-0">
+        <div className="px-6 py-3">
           <div className="flex items-center gap-4">
+            <Link to="/genie-studio">
+              <Button variant="ghost" size="sm" className="gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Genie Studio
+              </Button>
+            </Link>
+            <div className="h-6 w-px bg-border" />
             <img 
               src={genieDeckLogo} 
               alt="Genie Deck" 
-              className="h-12 w-auto"
+              className="h-14 w-auto"
             />
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-teal-600 bg-clip-text text-transparent">
-                {product.name}
-              </h1>
-              <p className="text-sm text-muted-foreground">{product.tagline}</p>
-            </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-6">
-        <PresentationWizard />
+      {/* Main Content - Full Height */}
+      <div className="flex-1 overflow-hidden">
+        <PresentationWizard className="h-full" />
       </div>
     </div>
   );

@@ -656,11 +656,11 @@ export function PresentationWizard({
   const progressPercent = ((currentStep + 1) / WIZARD_STEPS.length) * 100;
 
   return (
-    <div className={cn("flex h-full gap-4", className)}>
+    <div className={cn("flex h-full", className)}>
       {/* Left Panel - Wizard Steps */}
-      <div className="w-[400px] flex-shrink-0 flex flex-col border-r pr-4">
+      <div className="w-[420px] min-w-[380px] flex-shrink-0 flex flex-col border-r bg-muted/30">
         {/* Progress Header */}
-        <div className="mb-4">
+        <div className="p-4 border-b bg-background">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-lg font-semibold">Create Presentation</h2>
             {lastSaved && (
@@ -676,37 +676,39 @@ export function PresentationWizard({
           </p>
         </div>
 
-        {/* Step Navigator */}
-        <div className="flex gap-1 mb-4 overflow-x-auto pb-2">
-          {WIZARD_STEPS.map((step, idx) => {
-            const StepIcon = step.icon;
-            const isActive = currentStep === idx;
-            const isComplete = isStepComplete(idx);
-            return (
-              <Button
-                key={step.id}
-                variant={isActive ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => goToStep(idx)}
-                className={cn(
-                  "flex-shrink-0 gap-1 px-2",
-                  isComplete && !isActive && "text-green-600"
-                )}
-              >
-                {isComplete ? (
-                  <CheckCircle2 className="h-3 w-3" />
-                ) : (
-                  <Circle className="h-3 w-3" />
-                )}
-                <span className="text-xs">{step.label}</span>
-              </Button>
-            );
-          })}
+        {/* Step Navigator - Horizontal Scrollable Tabs */}
+        <div className="p-3 border-b bg-background">
+          <div className="flex gap-1 overflow-x-auto scrollbar-thin scrollbar-thumb-muted">
+            {WIZARD_STEPS.map((step, idx) => {
+              const StepIcon = step.icon;
+              const isActive = currentStep === idx;
+              const isComplete = isStepComplete(idx);
+              return (
+                <Button
+                  key={step.id}
+                  variant={isActive ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => goToStep(idx)}
+                  className={cn(
+                    "flex-shrink-0 gap-1.5 px-3 h-9",
+                    isComplete && !isActive && "border-green-500/50 text-green-600"
+                  )}
+                >
+                  {isComplete ? (
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                  ) : (
+                    <StepIcon className="h-3.5 w-3.5" />
+                  )}
+                  <span className="text-xs font-medium">{step.label}</span>
+                </Button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Step Content */}
-        <ScrollArea className="flex-1">
-          <div className="pr-4 space-y-4">
+        <ScrollArea className="flex-1 px-4">
+          <div className="py-4 space-y-4">
             {/* Step 0: Content Input */}
             {currentStep === 0 && (
               <Card>
@@ -1135,7 +1137,7 @@ export function PresentationWizard({
         </ScrollArea>
 
         {/* Navigation Footer */}
-        <div className="flex items-center justify-between pt-4 mt-4 border-t">
+        <div className="flex items-center justify-between p-4 border-t bg-background">
           <Button
             variant="outline"
             size="sm"
@@ -1173,7 +1175,7 @@ export function PresentationWizard({
       </div>
 
       {/* Right Panel - Preview */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 p-4 bg-background">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <Eye className="h-5 w-5" />
