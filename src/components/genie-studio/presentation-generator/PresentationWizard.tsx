@@ -87,26 +87,80 @@ import { BrandingCustomizer, BrandConfig, DEFAULT_BRAND_CONFIG } from './Brandin
 import { MultiLanguageGenerator, useMultiLanguageGeneration, SUPPORTED_LANGUAGES, LanguageGenerationStatus } from './MultiLanguageGenerator';
 import { TableEditor, ChartEditor } from './TableChartEditor';
 import { DraggableSlideLayout, LayoutElement } from './DraggableSlideLayout';
-import { useUniversalPresentation } from '@/hooks/useUniversalPresentation';
-import { PresentationRequest, universalPresentationService } from '@/services/universalPresentationService';
+import { useUniversalPresentation, DownloadFormat } from '@/hooks/useUniversalPresentation';
+import { 
+  PresentationRequest,
+  InputSource,
+  OutputFormat,
+  PresentationLength,
+  CollateralType,
+  ImageSourceType,
+  ImageStyleType,
+  VoiceProviderType,
+  PresentationTone,
+  ContentEnhancement,
+} from '@/services/universalPresentationService';
 import { 
   PresentationSlide, 
   SlideEnhancementType, 
   PresentationTemplate, 
   PresentationTheme,
-  CollateralType,
-  ImageSourceType,
-  ImageStyleType,
 } from './types';
 
-// Local type definitions for wizard
-type InputSource = 'document' | 'image' | 'text' | 'prompt' | 'url';
-type OutputFormat = 'pptx' | 'social' | 'infographic';
-type PresentationLength = 'short' | 'standard' | 'long';
-type PresentationTone = 'professional' | 'balanced' | 'engagement' | 'scientific' | 'inspirational';
-type ContentEnhancement = 'data-verification' | 'statistics' | 'case-examples' | 'comparison-tables' | 'timeline';
-type VoiceProviderType = 'openai' | 'elevenlabs';
-type DownloadFormat = 'pptx' | 'pdf' | 'images' | 'json';
+// Confidence scoring types
+export interface SlideConfidence {
+  overall: number;           // 0-100 score
+  contentAccuracy: number;   // Content quality
+  visualRelevance: number;   // Image relevance
+  languageQuality: number;   // Grammar/clarity
+  model: string;             // Model used
+  suggestedModel?: string;   // Better model if available
+}
+
+// Calculate confidence score based on model and content
+const calculateSlideConfidence = (
+  slide: PresentationSlide,
+  model: string = 'auto'
+): SlideConfidence => {
+  // Base scores by model
+  const modelScores: Record<string, number> = {
+    'auto': 85,
+    'google/gemini-3-flash-preview': 90,
+    'google/gemini-2.5-pro': 95,
+    'openai/gpt-5': 98,
+  };
+
+  const baseScore = modelScores[model] || 80;
+
+  // Content quality factors
+  const hasTitle = slide.title ? 10 : 0;
+  const hasBullets = (slide.content?.bullets?.length || 0) > 0 ? 10 : 0;
+  const hasImage = slide.image ? 10 : 0;
+  const hasNotes = slide.speakerNotes ? 5 : 0;
+
+  const contentScore = Math.min(100, baseScore + hasTitle + hasBullets);
+  const visualScore = hasImage ? baseScore + 10 : baseScore - 10;
+  const languageScore = baseScore + hasNotes;
+
+  const overall = Math.round((contentScore + visualScore + languageScore) / 3);
+
+  return {
+    overall: Math.min(100, overall),
+    contentAccuracy: Math.min(100, contentScore),
+    visualRelevance: Math.min(100, visualScore),
+    languageQuality: Math.min(100, languageScore),
+    model,
+    suggestedModel: overall < 85 ? 'google/gemini-2.5-pro' : undefined,
+  };
+};
+
+// Confidence badge color based on score
+const getConfidenceColor = (score: number): string => {
+  if (score >= 90) return 'text-green-500 bg-green-500/10';
+  if (score >= 75) return 'text-yellow-500 bg-yellow-500/10';
+  if (score >= 60) return 'text-orange-500 bg-orange-500/10';
+  return 'text-red-500 bg-red-500/10';
+};
 
 // Wizard Steps - Extended with branding
 const WIZARD_STEPS = [
@@ -227,12 +281,17 @@ export function PresentationWizard({
     lastSaved,
   } = usePresentationSession(sessionId);
 
-  const presentationHook = useUniversalPresentation();
-  const isGenerating = presentationHook.isGenerating;
-  const isDownloading = presentationHook.isDownloading || false;
-  const generatePresentation = presentationHook.generatePresentation;
-  const downloadPPTX = presentationHook.downloadPPTX;
-  const reset = presentationHook.reset;
+  const {
+    isGenerating,
+    isDownloading,
+    isSavingToRAG,
+    generatePresentation,
+    download,
+    downloadPPTX,
+    downloadPDF,
+    saveToRAG,
+    reset,
+  } = useUniversalPresentation();
 
   // Local state for form fields
   const [currentStep, setCurrentStep] = useState(0);
@@ -1205,6 +1264,7 @@ export function PresentationWizard({
                 >
                   <SlideCard
                     slide={slide}
+                    confidence={calculateSlideConfidence(slide, selectedAIModel)}
                     onUpdate={(slideId: string, updates: Partial<PresentationSlide>) => handleSlideUpdate(slideId, updates)}
                     onAccept={(slideId: string) => handleSlideAccept(slideId)}
                     onSkip={(slideId: string) => handleSlideSkip(slideId)}

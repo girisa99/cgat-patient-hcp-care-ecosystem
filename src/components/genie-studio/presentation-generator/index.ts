@@ -14,6 +14,7 @@ export * from './types';
 export { SlideAIEnhancer } from './SlideAIEnhancer';
 export { BulletPointEditor } from './BulletPointEditor';
 export { SlideCard } from './SlideCard';
+export type { SlideConfidence } from './SlideCard';
 export { PresentationGeneratorPanel } from './PresentationGeneratorPanel';
 export { PresentationWizard } from './PresentationWizard';
 export { VideoExportPanel } from './VideoExportPanel';

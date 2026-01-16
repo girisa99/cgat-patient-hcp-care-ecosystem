@@ -30,8 +30,19 @@ import { PresentationSlide, SlideEnhancementType } from './types';
 import { SlideAIEnhancer } from './SlideAIEnhancer';
 import { BulletPointEditor } from './BulletPointEditor';
 
+// Confidence score interface
+export interface SlideConfidence {
+  overall: number;
+  contentAccuracy: number;
+  visualRelevance: number;
+  languageQuality: number;
+  model: string;
+  suggestedModel?: string;
+}
+
 interface SlideCardProps {
   slide: PresentationSlide;
+  confidence?: SlideConfidence;
   onUpdate: (slideId: string, updates: Partial<PresentationSlide>) => void;
   onAccept: (slideId: string) => void;
   onSkip: (slideId: string) => void;
@@ -48,6 +59,14 @@ interface SlideCardProps {
   className?: string;
 }
 
+// Confidence badge color based on score
+const getConfidenceColor = (score: number): string => {
+  if (score >= 90) return 'text-green-600 bg-green-100 border-green-200';
+  if (score >= 75) return 'text-yellow-600 bg-yellow-100 border-yellow-200';
+  if (score >= 60) return 'text-orange-600 bg-orange-100 border-orange-200';
+  return 'text-red-600 bg-red-100 border-red-200';
+};
+
 const slideTypeIcons: Record<string, React.ReactNode> = {
   title: <Presentation className="h-4 w-4" />,
   content: <FileText className="h-4 w-4" />,
@@ -61,6 +80,7 @@ const slideTypeIcons: Record<string, React.ReactNode> = {
 
 export function SlideCard({
   slide,
+  confidence,
   onUpdate,
   onAccept,
   onSkip,
@@ -77,6 +97,7 @@ export function SlideCard({
   className,
 }: SlideCardProps) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [showConfidenceDetails, setShowConfidenceDetails] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(slide.title);
   const [showEnhancer, setShowEnhancer] = useState(false);
@@ -110,7 +131,7 @@ export function SlideCard({
       <CardHeader className="p-3 pb-0">
         <div className="flex items-center justify-between gap-2">
           {/* Slide number and type */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="outline" className="text-xs font-mono">
               {slide.slideNumber}
             </Badge>
@@ -118,6 +139,56 @@ export function SlideCard({
               {slideTypeIcons[slide.type] || <FileText className="h-4 w-4" />}
               <span className="text-xs capitalize">{slide.type}</span>
             </div>
+            {/* Confidence Score Badge */}
+            {confidence && (
+              <div className="relative">
+                <Badge 
+                  variant="outline" 
+                  className={cn(
+                    "text-[10px] cursor-pointer border",
+                    getConfidenceColor(confidence.overall)
+                  )}
+                  onClick={() => setShowConfidenceDetails(!showConfidenceDetails)}
+                  title={`Confidence: ${confidence.overall}%\nContent: ${confidence.contentAccuracy}%\nVisual: ${confidence.visualRelevance}%\nLanguage: ${confidence.languageQuality}%\nModel: ${confidence.model}`}
+                >
+                  {confidence.overall}% confidence
+                </Badge>
+                {/* Confidence Details Dropdown */}
+                {showConfidenceDetails && (
+                  <div className="absolute top-full left-0 mt-1 z-50 bg-background border rounded-lg shadow-lg p-3 min-w-[200px]">
+                    <div className="text-xs font-medium mb-2">Confidence Breakdown</div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Content Accuracy</span>
+                        <span className={cn("font-medium", confidence.contentAccuracy >= 85 ? "text-green-600" : "text-yellow-600")}>
+                          {confidence.contentAccuracy}%
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Visual Relevance</span>
+                        <span className={cn("font-medium", confidence.visualRelevance >= 85 ? "text-green-600" : "text-yellow-600")}>
+                          {confidence.visualRelevance}%
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Language Quality</span>
+                        <span className={cn("font-medium", confidence.languageQuality >= 85 ? "text-green-600" : "text-yellow-600")}>
+                          {confidence.languageQuality}%
+                        </span>
+                      </div>
+                      <div className="pt-2 border-t text-[10px] text-muted-foreground">
+                        Model: {confidence.model}
+                        {confidence.suggestedModel && (
+                          <div className="text-orange-600 mt-1">
+                            Suggest: {confidence.suggestedModel}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             {slide.importance === 'high' && (
               <Badge variant="destructive" className="text-[10px]">Important</Badge>
             )}
