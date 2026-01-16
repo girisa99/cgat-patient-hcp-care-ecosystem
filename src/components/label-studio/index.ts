@@ -8,3 +8,16 @@ export { LSCustomTemplates } from './LSCustomTemplates';
 export { LSWorkflowAutomation } from './LSWorkflowAutomation';
 export { LSDashboardWidget } from './LSDashboardWidget';
 export { LabelStudioTrainingIntegration, useTrainingDataCapture } from './LabelStudioTrainingIntegration';
+export { 
+  GenieStudioLSIntegration, 
+  LS_INTEGRATIONS,
+  useScriptTraining,
+  useVideoTrimmingTraining,
+  useClipRanking,
+  useAudioTraining,
+  useContentTagging,
+  type LSIntegrationType,
+  type LSAnnotationTask,
+  type LSIntegrationConfig,
+} from './GenieStudioLSIntegration';
+export { LSQuickActions } from './LSQuickActions';
