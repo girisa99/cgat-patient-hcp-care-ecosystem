@@ -2490,16 +2490,6 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
                     toast.success(`Script saved to Knowledge Base for future AI reference!`);
                   }}
                 />
-
-                {/* Universal Presentation Generator */}
-                <PresentationGeneratorPanel
-                  onComplete={(presentation) => {
-                    toast.success(`Presentation "${presentation.title}" ready!`);
-                  }}
-                  onSaveToKnowledgeBase={(title, content) => {
-                    toast.success(`Presentation saved to Knowledge Base!`);
-                  }}
-                />
               </div>
             </TabsContent>
 
