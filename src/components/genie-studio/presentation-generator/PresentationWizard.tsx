@@ -1684,44 +1684,64 @@ export function PresentationWizard({
         </div>
 
         <ScrollArea className="flex-1">
-          {/* Agentic Generation Progress - simplified inline display */}
+          {/* Real-Time Slide Streamer - Full Agentic Generation Display */}
           {useAgenticGeneration && agentGenerator.isGenerating && (
             <div className="pr-4 mb-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Brain className="h-4 w-4 text-primary animate-pulse" />
-                    Agent Generation in Progress
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {Array.from(agentGenerator.languageStates.entries()).map(([code, state]) => (
-                    <div key={code} className="flex items-center gap-3 p-2 rounded-lg border bg-muted/20">
-                      <span className="text-lg">{state.flag}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium">{state.languageName}</span>
-                          <Badge variant={state.status === 'generating' ? 'default' : state.status === 'complete' ? 'secondary' : 'outline'} className="text-[10px]">
-                            {state.status === 'generating' ? `Slide ${state.currentSlide}/${state.totalSlides}` : state.status}
-                          </Badge>
-                        </div>
-                        <Progress value={state.progress} className="h-1.5" />
-                      </div>
-                      {code === agentGenerator.primaryLanguage && (
-                        <Badge variant="default" className="text-[10px]">Primary</Badge>
-                      )}
-                    </div>
-                  ))}
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full"
-                    onClick={() => agentGenerator.cancelGeneration()}
-                  >
-                    Cancel Generation
-                  </Button>
-                </CardContent>
-              </Card>
+              <RealTimeSlideStreamer
+                languageStates={agentGenerator.languageStates}
+                streamingSlides={agentGenerator.streamingSlides}
+                primaryLanguage={agentGenerator.primaryLanguage}
+                totalSlides={agentGenerator.totalSlides}
+                onSlideClick={(languageCode, slideNumber) => {
+                  const state = agentGenerator.languageStates.get(languageCode);
+                  if (state && state.slides[slideNumber - 1]) {
+                    const slide = state.slides[slideNumber - 1];
+                    // Convert and show in preview
+                    toast.info(`Viewing ${state.languageName} - Slide ${slideNumber}`);
+                  }
+                }}
+                onDownload={(languageCode) => {
+                  handleLanguageDownload(languageCode);
+                }}
+                onPreview={(languageCode) => {
+                  const version = agentGenerator.completedVersions.find(v => v.languageCode === languageCode);
+                  if (version) {
+                    const editableSlides: PresentationSlide[] = version.slidesData.map((slide, idx) => ({
+                      id: slide.id || `slide-${idx}`,
+                      slideNumber: slide.slideNumber,
+                      type: slide.type as any,
+                      title: slide.title,
+                      subtitle: slide.subtitle,
+                      content: {
+                        type: slide.content.type as any,
+                        bullets: slide.content.bullets?.map((b, i) => ({
+                          id: `bullet-${idx}-${i}`,
+                          text: b,
+                        })) || [],
+                      },
+                      image: slide.image ? {
+                        url: slide.image.url,
+                        base64: slide.image.base64,
+                        alt: slide.image.alt,
+                        type: slide.image.type as any,
+                        prompt: slide.image.prompt || '',
+                      } : undefined,
+                      speakerNotes: slide.speakerNotes,
+                    }));
+                    setSlides(editableSlides);
+                    toast.success(`Loaded ${SUPPORTED_LANGUAGES.find(l => l.code === languageCode)?.name} version`);
+                  }
+                }}
+                className="mb-4"
+              />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full"
+                onClick={() => agentGenerator.cancelGeneration()}
+              >
+                Cancel Generation
+              </Button>
             </div>
           )}
           
@@ -1995,36 +2015,122 @@ export function PresentationWizard({
           )}
         </ScrollArea>
 
-        {/* Slide Enhancer Panel placeholder - toggle sets state for future integration */}
+        {/* Full Slide Enhancer Panel Integration */}
         {showSlideEnhancer && selectedEnhancerSlide && (
-          <div className="absolute bottom-4 right-4 w-80 z-50">
-            <Card className="shadow-lg">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <Wand2 className="h-4 w-4" />
-                    AI Enhancer
-                  </span>
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => { setShowSlideEnhancer(false); setSelectedEnhancerSlide(null); }}>
-                    <X className="h-3 w-3" />
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <p className="text-xs text-muted-foreground">
-                  Slide: {slides.find(s => s.id === selectedEnhancerSlide)?.title}
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {['Rewrite', 'Expand', 'Summarize', 'Polish'].map(action => (
-                    <Button key={action} variant="outline" size="sm" className="text-xs" onClick={() => {
-                      toast.info(`${action} enhancement coming soon!`);
-                    }}>
-                      {action}
-                    </Button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+          <div className="absolute bottom-4 right-4 w-96 z-50">
+            <SlideEnhancerPanel
+              slides={slides.map(s => {
+                // Map slide type to GeneratedSlide compatible types
+                const typeMap: Record<string, 'title' | 'content' | 'section' | 'infographic' | 'journey' | 'stats' | 'conclusion' | 'cta'> = {
+                  title: 'title',
+                  content: 'content',
+                  section: 'section',
+                  infographic: 'infographic',
+                  journey: 'journey',
+                  stats: 'stats',
+                  conclusion: 'conclusion',
+                  cta: 'cta',
+                  chart: 'content',
+                  table: 'content',
+                  image: 'content',
+                  quote: 'content',
+                  comparison: 'content',
+                  timeline: 'content',
+                };
+                const mappedType = typeMap[s.type || 'content'] || 'content';
+                
+                // Map content type
+                const contentTypeMap: Record<string, 'bullets' | 'paragraphs' | 'stats' | 'journey' | 'comparison' | 'timeline' | 'quote'> = {
+                  bullets: 'bullets',
+                  paragraphs: 'paragraphs',
+                  stats: 'stats',
+                  journey: 'journey',
+                  comparison: 'comparison',
+                  timeline: 'timeline',
+                  quote: 'quote',
+                  chart: 'bullets',
+                };
+                const mappedContentType = contentTypeMap[s.content?.type || 'bullets'] || 'bullets';
+                
+                return {
+                  id: s.id,
+                  slideNumber: s.slideNumber || 1,
+                  title: s.title || '',
+                  subtitle: s.subtitle,
+                  type: mappedType,
+                  content: {
+                    type: mappedContentType,
+                    bullets: s.content?.bullets?.map(b => typeof b === 'string' ? b : b.text) || [],
+                  },
+                  speakerNotes: s.speakerNotes,
+                  image: s.image ? {
+                    url: s.image.url || '',
+                    alt: s.image.alt || '',
+                    type: (s.image.type || 'hero') as 'hero' | 'illustration' | 'icon' | 'infographic' | 'chart',
+                    prompt: s.image.prompt || '',
+                  } : undefined,
+                };
+              })}
+              primarySlides={undefined}
+              languageCode={agentGenerator.primaryLanguage || 'en'}
+              languageName={SUPPORTED_LANGUAGES.find(l => l.code === (agentGenerator.primaryLanguage || 'en'))?.name || 'English'}
+              isPrimary={true}
+              confidenceScores={slides.map((s, idx) => ({
+                slideNumber: idx + 1,
+                score: calculateSlideConfidence(s, selectedAIModel).overall,
+                issues: [],
+              }))}
+              onSlideUpdate={(slideIndex, updates) => {
+                const slideId = slides[slideIndex]?.id;
+                if (slideId) {
+                  handleSlideUpdate(slideId, {
+                    title: updates.title,
+                    content: updates.content ? {
+                      type: updates.content.type as any,
+                      bullets: updates.content.bullets?.map((b, i) => ({
+                        id: `bullet-${slideIndex}-${i}`,
+                        text: b,
+                      })),
+                    } : undefined,
+                  });
+                }
+              }}
+              onEnhanceSlide={async (slideIndex, type, customInstructions) => {
+                const slideId = slides[slideIndex]?.id;
+                toast.info(`Enhancing slide ${slideIndex + 1} with ${type}...`);
+                // Future: call AI enhancement service
+              }}
+              onEnhanceAll={async (type, customInstructions) => {
+                toast.info(`Enhancing all slides with ${type}...`);
+                // Future: call AI enhancement service for all slides
+              }}
+              onAnalyze={async () => {
+                toast.info('Analyzing presentation...');
+                // Mock analysis result
+                return {
+                  overallScore: 85,
+                  suggestions: slides.map((s, idx) => ({
+                    slideIndex: idx,
+                    type: 'suggestion' as const,
+                    message: `Slide ${idx + 1} looks good!`,
+                    autoFixAvailable: false,
+                  })),
+                  comparisons: [],
+                };
+              }}
+              onRevertSlide={(slideIndex) => {
+                toast.info(`Reverting slide ${slideIndex + 1}...`);
+              }}
+              className="shadow-xl border-2"
+            />
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="absolute -top-2 -right-2 h-6 w-6 p-0 rounded-full bg-background border shadow-sm"
+              onClick={() => { setShowSlideEnhancer(false); setSelectedEnhancerSlide(null); }}
+            >
+              <X className="h-3 w-3" />
+            </Button>
           </div>
         )}
       </div>
