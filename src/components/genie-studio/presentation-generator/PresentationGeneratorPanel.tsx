@@ -58,15 +58,6 @@ import {
 } from './types';
 import { SlideCard } from './SlideCard';
 import { VideoExportPanel } from './VideoExportPanel';
-import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
-import { 
-  PresentationSlide, 
-  PresentationData, 
-  SlideEnhancementType,
-  BulletPoint 
-} from './types';
-import { SlideCard } from './SlideCard';
 import { useUniversalPresentation, DownloadFormat } from '@/hooks/useUniversalPresentation';
 import { 
   PresentationRequest, 
