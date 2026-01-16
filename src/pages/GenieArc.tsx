@@ -41,6 +41,7 @@ import { useShows } from '@/hooks/useShows';
 import { toast } from 'sonner';
 import { PodcastToVideoConverter } from '@/components/shared';
 import { AskGenie } from '@/components/genie-studio/AskGenie';
+import { InlineTrainAIFeedback } from '@/components/genie-studio/InlineTrainAIFeedback';
 import genieArcLogo from '@/assets/logos/genie-arc-combined.png';
 import { AutoPublishScheduler } from '@/components/genie-studio/publishing/AutoPublishScheduler';
 
@@ -358,11 +359,21 @@ const GenieArc: React.FC = () => {
             ))}
             
             {/* Podcast to Video Converter Tab */}
-            <TabsContent value="podcast-to-video" className="mt-6">
+            <TabsContent value="podcast-to-video" className="mt-6 space-y-4">
               <PodcastToVideoConverter
                 onConversionComplete={(result) => {
                   toast.success(`Video conversion complete!`);
                 }}
+              />
+              {/* Feedback after conversion */}
+              <InlineTrainAIFeedback
+                data={{
+                  context: 'podcast_conversion',
+                  product: 'arc',
+                  metadata: { tab: 'podcast-to-video' }
+                }}
+                variant="compact"
+                showTextFeedback={true}
               />
             </TabsContent>
 

@@ -45,9 +45,12 @@ import {
   CheckCircle2,
   AlertCircle,
   Hand,
-  Map
+  Map,
+  ThumbsUp,
+  ThumbsDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { InlineTrainAIFeedback } from './InlineTrainAIFeedback';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { toast } from 'sonner';
@@ -1265,6 +1268,21 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
                       {/* Show diagram if applicable */}
                       {message.showMermaid && showDiagram && (
                         <MermaidDiagramDisplay diagram={showDiagram} />
+                      )}
+                      {/* Inline feedback for AI responses */}
+                      {message.role === 'assistant' && index === messages.length - 1 && (
+                        <div className="mt-2">
+                          <InlineTrainAIFeedback
+                            data={{
+                              context: 'ask_genie_response',
+                              product: 'ask_genie',
+                              originalContent: message.content,
+                              metadata: { product, currentTab }
+                            }}
+                            variant="minimal"
+                            showTextFeedback={false}
+                          />
+                        </div>
                       )}
                     </div>
                   </motion.div>

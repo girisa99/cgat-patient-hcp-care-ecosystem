@@ -47,6 +47,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { InlineTrainAIFeedback } from '@/components/genie-studio/InlineTrainAIFeedback';
 import { useGenieScripts } from '@/components/genie-studio/useGenieScripts';
 import { useGenieMediaLibrary } from '@/components/genie-studio/useGenieMediaLibrary';
 import { useIsMobileOrTablet } from '@/hooks/use-mobile';
@@ -326,6 +327,8 @@ const GenieVibe: React.FC = () => {
         onClick: () => setActiveTab('clips')
       }
     });
+    
+    // Note: Feedback will be shown after clip generation in handleClipsReady
   }, [recordings.length, timelineClips, markStageCompleted]);
 
   // Handle clips generated - advance to mix

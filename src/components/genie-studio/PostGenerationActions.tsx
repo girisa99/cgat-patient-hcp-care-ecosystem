@@ -29,6 +29,7 @@ import {
   Wand2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { InlineTrainAIFeedback } from './InlineTrainAIFeedback';
 
 export interface GeneratedContent {
   script: string;
@@ -256,6 +257,23 @@ export function PostGenerationActions({
             {content.type.replace('_', ' ')}
           </Badge>
         </div>
+        
+        {/* Inline feedback for generated content */}
+        <InlineTrainAIFeedback
+          data={{
+            context: 'content_generation',
+            product: 'spark',
+            originalContent: content.script?.slice(0, 500),
+            contentId: content.title,
+            metadata: { 
+              type: content.type,
+              sourceType: content.sourceType,
+              wordCount: content.metadata?.wordCount 
+            }
+          }}
+          variant="compact"
+          showTextFeedback={true}
+        />
 
         <Separator />
 
