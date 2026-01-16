@@ -67,7 +67,7 @@ import {
 
 
 // Genie Product Context Types
-export type GenieProduct = 'arc' | 'vibe' | 'spark' | 'mind' | 'studio';
+export type GenieProduct = 'arc' | 'vibe' | 'spark' | 'mind' | 'studio' | 'deck';
 
 interface GenieContext {
   product: GenieProduct;
@@ -373,6 +373,38 @@ const WORKFLOW_DIAGRAMS: Record<GenieProduct, { id: string; title: string; diagr
     style A fill:#8b5cf6
     style G fill:#22c55e`
     }
+  ],
+  deck: [
+    {
+      id: 'presentation-creation-flow',
+      title: 'Create Presentation',
+      diagram: `graph TD
+    A[📝 Add Content] --> B{Input Type?}
+    B --> |Text/Prompt| C[Enter Description]
+    B --> |Document| D[Upload File]
+    B --> |URL| E[Paste Link]
+    C --> F[⚙️ Configure Style]
+    D --> F
+    E --> F
+    F --> G[🎨 Choose Template]
+    G --> H[🖼️ Set Image Options]
+    H --> I[✨ Generate Slides!]
+    I --> J[📥 Download PPTX]
+    
+    style A fill:#8b5cf6
+    style J fill:#22c55e`
+    },
+    {
+      id: 'multilang-export',
+      title: 'Multi-Language Export',
+      diagram: `graph LR
+    A[📊 Generated Deck] --> B[🌍 Select Languages]
+    B --> C[🔄 AI Translates]
+    C --> D[📦 Download All]
+    
+    style A fill:#8b5cf6
+    style D fill:#22c55e`
+    }
   ]
 };
 
@@ -621,6 +653,51 @@ TONE: Welcoming, knowledgeable, encouraging, warm, the ultimate helpful friend`,
       { id: 'get-started', title: 'Getting Started', description: 'Learn what each Genie product can do for you', steps: ['Explore Arc for production', 'Discover Spark for creation', 'Try Vibe for recording', 'Use Mind for AI power'] },
       { id: 'full-production', title: 'Full Production Workflow', description: 'Create content from idea to finished product', steps: ['Ideate in Spark', 'Plan in Arc', 'Record in Vibe', 'Optimize in Mind', 'Publish everywhere!'] }
     ]
+  },
+  deck: {
+    name: 'Genie Deck',
+    icon: <PenTool className="h-4 w-4" />,
+    color: 'from-purple-500 to-violet-500',
+    tagline: 'Ideas to Impact',
+    description: 'Transform ideas into stunning AI-powered presentations with smart visual design and multi-language support.',
+    emoji: '📊',
+    systemContext: `You are Ask Genie, a creative and articulate AI assistant for Genie Deck - the AI Presentation Generator.
+
+TAGLINE: "Ideas to Impact" - This is sacred, never change it!
+DESCRIPTION: Transform ideas into stunning AI-powered presentations with smart visual design and multi-language support.
+
+PERSONALITY CORE:
+- Be creative, articulate, and passionate about visual communication
+- Help users craft compelling presentations
+- Suggest design tips and layout improvements
+- Celebrate when presentations come together beautifully
+- Be patient with customization requests
+
+EMOTIONAL INTELLIGENCE:
+- If user is unsure about content: "Great presentations start with clarity! What's the ONE key message you want your audience to remember? 🎯"
+- If user is happy with result: "This is going to make an impact! Your presentation looks fantastic! 🌟"
+- If user needs help: "Don't worry, I'll help you create something memorable! Let's start with your core message 💜"
+
+YOU HELP WITH:
+- Presentation creation from text, documents, or prompts
+- Template and theme selection
+- Brand customization (logos, colors)
+- Multi-language parallel generation
+- Slide layout and design suggestions
+- PPTX export and download
+
+CROSS-PRODUCT NAVIGATION:
+- Need a script first? → "Genie Spark can help you draft content before presenting! ✨"
+- Want to record the presentation? → "Take your deck to Genie Vibe for a video walkthrough! 🎥"
+- Need AI optimization? → "Genie Mind can refine your messaging! 🧠"
+
+GUIDED FLOWS: Offer visual workflow diagrams. Say "Want to see the presentation creation flow? It's simple and elegant! 📊"
+
+TONE: Creative, articulate, encouraging, design-savvy, genuinely helpful`,
+    workflows: [
+      { id: 'create-presentation', title: 'Create Presentation', description: 'Generate slides from your content', steps: ['Add content (text/doc/URL)', 'Choose template & theme', 'Configure image settings', 'Select languages', 'Generate and download!'] },
+      { id: 'brand-customize', title: 'Brand Your Deck', description: 'Add company branding to presentations', steps: ['Upload your logo', 'Set brand colors', 'Choose fonts', 'Preview branding', 'Apply to all slides!'] }
+    ]
   }
 };
 
@@ -830,8 +907,8 @@ export const AskGenie: React.FC<AskGenieProps> = ({
   useEffect(() => {
     if (!isOpen) return;
     
-    const productKey = product === 'studio' ? 'mind' : product;
-    const hints = getHints(productKey, { currentTab, sessionData, subscriptionTier });
+    const productKey = product === 'studio' || product === 'deck' ? 'mind' : product;
+    const hints = getHints(productKey as 'mind' | 'spark' | 'vibe' | 'arc' | 'hub', { currentTab, sessionData, subscriptionTier });
     if (hints && hints.length > 0) {
       setInlineHints(hints);
     }
@@ -972,7 +1049,7 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
       recordEvent({
         eventType: 'script_enhancement_accepted',
         context: {
-          product: product === 'studio' ? 'mind' : product,
+          product: (product === 'studio' || product === 'deck') ? 'mind' : product as 'mind' | 'spark' | 'vibe' | 'arc' | 'hub',
           contentType: 'conversation',
           originalValue: text,
           selectedValue: responseContent.slice(0, 200),
