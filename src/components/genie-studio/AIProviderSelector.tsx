@@ -85,7 +85,7 @@ const AI_PROVIDERS: AIProvider[] = [
 interface AIProviderSelectorProps {
   selectedProvider: AIProviderType;
   onProviderChange: (provider: AIProviderType) => void;
-  contentType?: 'document' | 'image' | 'audio' | 'video' | 'url' | 'text' | 'full-pipeline';
+  contentType?: 'document' | 'image' | 'audio' | 'video' | 'url' | 'text' | 'presentation' | 'full-pipeline';
   className?: string;
   showLabel?: boolean;
 }
@@ -110,6 +110,8 @@ export function AIProviderSelector({
         return 'claude';
       case 'url':
         return 'gemini';
+      case 'presentation':
+        return 'openai'; // Best for presentations due to structured output
       case 'full-pipeline':
         return 'openai';
       default:

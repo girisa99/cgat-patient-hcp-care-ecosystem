@@ -69,6 +69,7 @@ import { PresentationScriptView } from './PresentationScriptView';
 import { VideoContentAnalyzer, VideoAnalysisResult, VideoScriptOptions, DetectedContentType } from './VideoContentAnalyzer';
 import { URLContentAnalyzer, URLAnalysisResult, URLScriptOptions, DetectedURLContentType } from './URLContentAnalyzer';
 import { SlideScript } from './SlideScriptCard';
+import { PresentationGeneratorPanel } from './presentation-generator';
 import { 
   SegmentedScriptEditor, 
   SegmentedScriptData, 
@@ -77,8 +78,8 @@ import {
   MediaContentType 
 } from './segmented-editor';
 
-// Content type options
-type ContentType = 'document' | 'image' | 'audio' | 'video' | 'url' | 'full-pipeline';
+// Content type options - now includes Presentation as a highlighted option
+type ContentType = 'document' | 'image' | 'audio' | 'video' | 'url' | 'presentation' | 'full-pipeline';
 
 interface ContentTypeOption {
   id: ContentType;
@@ -89,9 +90,30 @@ interface ContentTypeOption {
   outputFormats: { value: string; label: string; icon: React.ReactNode }[];
   defaultTone: string;
   defaultDuration: number;
+  isHighlighted?: boolean;
+  badge?: string;
 }
 
 const CONTENT_TYPES: ContentTypeOption[] = [
+  // PRESENTATION - Highlighted as primary option
+  {
+    id: 'presentation',
+    label: 'Generate Presentation',
+    description: 'AI-powered slides with rich content',
+    icon: <Presentation className="h-4 w-4" />,
+    acceptedFiles: '.pdf,.docx,.pptx,.txt,.md,.jpg,.jpeg,.png',
+    outputFormats: [
+      { value: 'presentation', label: 'Presentation Slides', icon: <Presentation className="h-4 w-4" /> },
+      { value: 'marketing', label: 'Marketing Deck', icon: <Sparkles className="h-4 w-4" /> },
+      { value: 'sales', label: 'Sales Pitch', icon: <Film className="h-4 w-4" /> },
+      { value: 'training', label: 'Training Material', icon: <GraduationCap className="h-4 w-4" /> },
+      { value: 'investor', label: 'Investor Deck', icon: <Layers className="h-4 w-4" /> },
+    ],
+    defaultTone: 'professional',
+    defaultDuration: 300,
+    isHighlighted: true,
+    badge: 'NEW',
+  },
   {
     id: 'document',
     label: 'Document → Script',
@@ -1619,114 +1641,190 @@ export function SmartContentPipeline({
             <CardContent className="space-y-6">
           {/* Content Safety Notice */}
           <ContentSafetyBanner variant="compact" />
-          {/* Step 1: Content Type Selection */}
-          <div className="space-y-2">
+          {/* Step 1: Content Type Selection - Visual Grid with Highlighted Option */}
+          <div className="space-y-3">
             <Label className="text-sm font-semibold">1. Select Content Type</Label>
-            <Select value={contentType} onValueChange={(v) => handleContentTypeChange(v as ContentType)}>
-              <SelectTrigger className="w-full">
-                <SelectValue>
+            
+            {/* Highlighted Presentation Option */}
+            <div 
+              onClick={() => handleContentTypeChange('presentation')}
+              className={cn(
+                "p-4 rounded-xl border-2 cursor-pointer transition-all",
+                contentType === 'presentation' 
+                  ? "border-primary bg-primary/10 ring-2 ring-primary/30"
+                  : "border-amber-500/50 bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:border-amber-500 hover:shadow-md"
+              )}
+            >
+              <div className="flex items-center gap-4">
+                <div className={cn(
+                  "h-12 w-12 rounded-xl flex items-center justify-center",
+                  contentType === 'presentation' 
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-gradient-to-br from-amber-500 to-orange-600 text-white"
+                )}>
+                  <Presentation className="h-6 w-6" />
+                </div>
+                <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    {selectedContentType.icon}
-                    <span>{selectedContentType.label}</span>
-                    <Badge variant="secondary" className="text-[10px] ml-2">
-                      {selectedContentType.description}
-                    </Badge>
+                    <span className="font-semibold text-base">Generate Presentation</span>
+                    <Badge className="bg-amber-500 text-white text-[10px]">NEW</Badge>
                   </div>
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {CONTENT_TYPES.map((ct) => (
-                  <SelectItem key={ct.id} value={ct.id}>
-                    <div className="flex items-center gap-3 py-1">
-                      <div className="h-8 w-8 rounded-lg bg-secondary flex items-center justify-center">
-                        {ct.icon}
-                      </div>
-                      <div>
-                        <div className="font-medium">{ct.label}</div>
-                        <div className="text-xs text-muted-foreground">{ct.description}</div>
-                      </div>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                  <p className="text-sm text-muted-foreground">AI-powered slides with rich content, images & speaker notes</p>
+                </div>
+                {contentType === 'presentation' && (
+                  <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center">
+                    <CheckCircle className="h-4 w-4 text-primary-foreground" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Other Content Types - Compact Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {CONTENT_TYPES.filter(ct => ct.id !== 'presentation').map((ct) => (
+                <div
+                  key={ct.id}
+                  onClick={() => handleContentTypeChange(ct.id)}
+                  className={cn(
+                    "p-3 rounded-lg border cursor-pointer transition-all flex items-center gap-3",
+                    contentType === ct.id 
+                      ? "border-primary bg-primary/10 ring-1 ring-primary/30"
+                      : "border-border hover:border-primary/50 hover:bg-secondary/50"
+                  )}
+                >
+                  <div className={cn(
+                    "h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
+                    contentType === ct.id ? "bg-primary text-primary-foreground" : "bg-secondary"
+                  )}>
+                    {ct.icon}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm truncate">{ct.label}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{ct.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <Separator />
-
-          {/* Step 2: Upload/Input based on content type */}
-          <div className="space-y-3">
-            <Label className="text-sm font-semibold">2. {contentType === 'url' ? 'Enter URL' : contentType === 'image' ? 'Upload or Generate Image' : 'Upload File'}</Label>
-            
-            {/* URL Input */}
-            {contentType === 'url' && (
-              <div className="space-y-3">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="https://example.com/article or document URL"
-                    value={urlInput}
-                    onChange={(e) => setUrlInput(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button
-                    variant="secondary"
-                    onClick={() => {
-                      if (!urlInput.trim()) {
-                        toast.error('Please enter a URL first');
-                        return;
-                      }
-                      setShowURLAnalyzer(true);
-                    }}
-                    disabled={!urlInput.trim()}
-                    className="gap-2"
-                  >
-                    <Search className="h-4 w-4" />
-                    Smart Analyze
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Click "Smart Analyze" to detect content type and get optimized script options, or use "Generate Script" for quick generation
-                </p>
+          {/* Presentation Generator - Full Integrated Panel */}
+          {contentType === 'presentation' && (
+            <>
+              <Separator />
+              <div className="py-2">
+                <PresentationGeneratorPanel
+                  onComplete={(presentation) => {
+                    toast.success(`Presentation "${presentation.title}" generated!`);
+                    // Handle completion - could switch to drafts view
+                  }}
+                  onSaveToKnowledgeBase={onSaveToKnowledgeBase ? (title, content) => {
+                    const generatedContent: GeneratedContent = {
+                      id: `presentation-${Date.now()}`,
+                      title,
+                      script: content,
+                      type: 'presentation',
+                      createdAt: new Date().toISOString(),
+                    };
+                    onSaveToKnowledgeBase(generatedContent);
+                  } : undefined}
+                />
               </div>
-            )}
+            </>
+          )}
 
-            {/* Image: Toggle between upload and generate */}
-            {contentType === 'image' && (
-              <div className="space-y-4">
-                <div className="flex gap-2">
-                  <Button
-                    variant={!generateImage ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setGenerateImage(false)}
-                  >
-                    <Upload className="h-4 w-4 mr-1" />
-                    Upload Image
-                  </Button>
-                  <Button
-                    variant={generateImage ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setGenerateImage(true)}
-                  >
-                    <Sparkles className="h-4 w-4 mr-1" />
-                    Generate Image
-                  </Button>
-                </div>
+          {/* Regular Script Generation Flow (non-presentation) */}
+          {contentType !== 'presentation' && (
+            <>
+              <Separator />
 
-                {generateImage ? (
-                  <div className="space-y-4">
-                    <Textarea
-                      placeholder="Describe the image you want to generate..."
-                      value={imagePrompt}
-                      onChange={(e) => setImagePrompt(e.target.value)}
-                      className="min-h-[100px]"
-                    />
-                    <ImageModelSelector
-                      selectedModel={selectedImageModel}
-                      onModelChange={setSelectedImageModel}
-                      showLabel={true}
-                    />
+              {/* Step 2: Upload/Input based on content type */}
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold">2. {contentType === 'url' ? 'Enter URL' : contentType === 'image' ? 'Upload or Generate Image' : 'Upload File'}</Label>
+                
+                {/* URL Input */}
+                {contentType === 'url' && (
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="https://example.com/article or document URL"
+                        value={urlInput}
+                        onChange={(e) => setUrlInput(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Button
+                        variant="secondary"
+                        onClick={() => {
+                          if (!urlInput.trim()) {
+                            toast.error('Please enter a URL first');
+                            return;
+                          }
+                          setShowURLAnalyzer(true);
+                        }}
+                        disabled={!urlInput.trim()}
+                        className="gap-2"
+                      >
+                        <Search className="h-4 w-4" />
+                        Smart Analyze
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Click "Smart Analyze" to detect content type and get optimized script options, or use "Generate Script" for quick generation
+                    </p>
                   </div>
-                ) : (
+                )}
+
+                {/* Image: Toggle between upload and generate */}
+                {contentType === 'image' && (
+                  <div className="space-y-4">
+                    <div className="flex gap-2">
+                      <Button
+                        variant={!generateImage ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setGenerateImage(false)}
+                      >
+                        <Upload className="h-4 w-4 mr-1" />
+                        Upload Image
+                      </Button>
+                      <Button
+                        variant={generateImage ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setGenerateImage(true)}
+                      >
+                        <Sparkles className="h-4 w-4 mr-1" />
+                        Generate Image
+                      </Button>
+                    </div>
+
+                    {generateImage ? (
+                      <div className="space-y-4">
+                        <Textarea
+                          placeholder="Describe the image you want to generate..."
+                          value={imagePrompt}
+                          onChange={(e) => setImagePrompt(e.target.value)}
+                          className="min-h-[100px]"
+                        />
+                        <ImageModelSelector
+                          selectedModel={selectedImageModel}
+                          onModelChange={setSelectedImageModel}
+                          showLabel={true}
+                        />
+                      </div>
+                    ) : (
+                      <UploadZone 
+                        getRootProps={getRootProps}
+                        getInputProps={getInputProps}
+                        isDragActive={isDragActive}
+                        uploadedFiles={uploadedFiles}
+                        onRemoveFile={removeFile}
+                        acceptedTypes={selectedContentType.description}
+                        isImage
+                      />
+                    )}
+                  </div>
+                )}
+
+                {/* Document, Audio, Video: File Upload */}
+                {(contentType === 'document' || contentType === 'audio' || contentType === 'video') && (
                   <UploadZone 
                     getRootProps={getRootProps}
                     getInputProps={getInputProps}
@@ -1734,66 +1832,51 @@ export function SmartContentPipeline({
                     uploadedFiles={uploadedFiles}
                     onRemoveFile={removeFile}
                     acceptedTypes={selectedContentType.description}
-                    isImage
+                    isMultiple={false}
                   />
                 )}
               </div>
-            )}
 
-            {/* Document, Audio, Video: File Upload */}
-            {(contentType === 'document' || contentType === 'audio' || contentType === 'video') && (
-              <UploadZone 
-                getRootProps={getRootProps}
-                getInputProps={getInputProps}
-                isDragActive={isDragActive}
-                uploadedFiles={uploadedFiles}
-                onRemoveFile={removeFile}
-                acceptedTypes={selectedContentType.description}
-                isMultiple={false}
-              />
-            )}
-          </div>
+              <Separator />
 
-          <Separator />
-
-          {/* Step 3: AI Provider Selection */}
-          <div className="space-y-3">
-            <Label className="text-sm font-semibold">3. AI Provider</Label>
-            <AIProviderSelector
-              selectedProvider={selectedProvider}
-              onProviderChange={setSelectedProvider}
-              contentType={contentType}
-              showLabel={false}
-            />
-            
-            {/* Knowledge Search Enhancement Toggle */}
-            <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-md bg-primary/10">
-                  <Database className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium cursor-pointer" htmlFor="knowledge-search-toggle">
-                    Knowledge Search Enhancement
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Auto-enhance script with relevant knowledge base content
-                  </p>
+              {/* Step 3: AI Provider Selection */}
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold">3. AI Provider</Label>
+                <AIProviderSelector
+                  selectedProvider={selectedProvider}
+                  onProviderChange={setSelectedProvider}
+                  contentType={contentType}
+                  showLabel={false}
+                />
+                
+                {/* Knowledge Search Enhancement Toggle */}
+                <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-md bg-primary/10">
+                      <Database className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium cursor-pointer" htmlFor="knowledge-search-toggle">
+                        Knowledge Search Enhancement
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Auto-enhance script with relevant knowledge base content
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    id="knowledge-search-toggle"
+                    checked={enableKnowledgeSearch}
+                    onCheckedChange={setEnableKnowledgeSearch}
+                  />
                 </div>
               </div>
-              <Switch
-                id="knowledge-search-toggle"
-                checked={enableKnowledgeSearch}
-                onCheckedChange={setEnableKnowledgeSearch}
-              />
-            </div>
-          </div>
 
-          <Separator />
+              <Separator />
 
-          {/* Step 4: Output Options */}
-          <div className="space-y-4">
-            <Label className="text-sm font-semibold">4. Output Options</Label>
+              {/* Step 4: Output Options */}
+              <div className="space-y-4">
+                <Label className="text-sm font-semibold">4. Output Options</Label>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {/* Output Format */}
