@@ -1,21 +1,24 @@
 /**
- * Stage Gates Tab - Go-Live Readiness Checklist
- * Clean enterprise styling with proper design tokens
- * Includes Go-Live Website requirements for P3
- * UPDATED: 2026-01-16 - Added API Production Readiness section
+ * Stage Gates Tab - Comprehensive Go-Live Readiness Checklist
+ * 150+ items across 22 categories for production launch
+ * UPDATED: 2026-01-16 - Added all production readiness categories:
+ *   Core, Legal, Business, Content, Ops, API
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Shield, CheckCircle2, Clock, AlertCircle,
-  Lock, CreditCard, Server, FileText, Zap, Globe,
-  Plug, Eye, BookOpen, TestTube, DollarSign, AlertTriangle
+  Shield, CheckCircle2, Clock, AlertCircle, Lock, CreditCard, Server, 
+  FileText, Zap, Globe, Plug, Eye, BookOpen, TestTube, DollarSign, 
+  AlertTriangle, Scale, Link2, Wallet, Copyright, Bot, UserX,
+  LayoutDashboard, Headphones, Megaphone, ClipboardCheck, Filter
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { stageGateChecklist, apiProductionMetrics } from '../data/implementation-data';
 
 const containerVariants = {
@@ -28,13 +31,23 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
+// Comprehensive category icons for all 22 categories
 const categoryIcons: Record<string, React.ReactNode> = {
   Authentication: <Lock className="w-5 h-5" />,
   Authorization: <Shield className="w-5 h-5" />,
   Subscriptions: <CreditCard className="w-5 h-5" />,
   'Core Features': <Zap className="w-5 h-5" />,
   Infrastructure: <Server className="w-5 h-5" />,
-  Legal: <FileText className="w-5 h-5" />,
+  Legal: <Scale className="w-5 h-5" />,
+  Domain: <Link2 className="w-5 h-5" />,
+  Payments: <Wallet className="w-5 h-5" />,
+  Copyright: <Copyright className="w-5 h-5" />,
+  'AI Content': <Bot className="w-5 h-5" />,
+  Restrictions: <UserX className="w-5 h-5" />,
+  Website: <LayoutDashboard className="w-5 h-5" />,
+  Support: <Headphones className="w-5 h-5" />,
+  Marketing: <Megaphone className="w-5 h-5" />,
+  Compliance: <ClipboardCheck className="w-5 h-5" />,
   'Go-Live Website': <Globe className="w-5 h-5" />,
   Testing: <TestTube className="w-5 h-5" />,
   Monitoring: <Eye className="w-5 h-5" />,
@@ -42,6 +55,24 @@ const categoryIcons: Record<string, React.ReactNode> = {
   Documentation: <BookOpen className="w-5 h-5" />,
   DevOps: <Server className="w-5 h-5" />,
   Configuration: <Plug className="w-5 h-5" />,
+};
+
+// Category groupings for tabs
+const CATEGORY_GROUPS = {
+  core: ['Authentication', 'Authorization', 'Subscriptions', 'Core Features', 'Infrastructure'],
+  legal: ['Legal', 'Copyright', 'Compliance', 'Restrictions'],
+  business: ['Payments', 'Domain', 'Marketing', 'Support'],
+  content: ['AI Content', 'Website', 'Go-Live Website'],
+  ops: ['Testing', 'Monitoring', 'Security', 'Documentation', 'DevOps'],
+};
+
+const GROUP_LABELS: Record<string, { label: string; icon: React.ReactNode }> = {
+  core: { label: 'Core Platform', icon: <Server className="w-4 h-4" /> },
+  legal: { label: 'Legal & Compliance', icon: <Scale className="w-4 h-4" /> },
+  business: { label: 'Business & Ops', icon: <Wallet className="w-4 h-4" /> },
+  content: { label: 'Content & Website', icon: <Globe className="w-4 h-4" /> },
+  ops: { label: 'DevOps & QA', icon: <TestTube className="w-4 h-4" /> },
+  api: { label: 'API Production', icon: <Plug className="w-4 h-4" /> },
 };
 
 const getStatusIcon = (status: string) => {
@@ -71,6 +102,8 @@ const getPriorityBadge = (priority: string) => {
 };
 
 export const StageGatesTab: React.FC = () => {
+  const [filterStatus, setFilterStatus] = useState<string | null>(null);
+
   // Group by category
   const groupedItems = stageGateChecklist.reduce((acc, item) => {
     if (!acc[item.category]) acc[item.category] = [];
@@ -86,14 +119,26 @@ export const StageGatesTab: React.FC = () => {
   const criticalPending = stageGateChecklist.filter(i => i.priority === 'Critical' && i.status !== 'done').length;
   const overallProgress = Math.round((doneItems / totalItems) * 100);
 
-  // Filter out API categories for separate display
-  const coreCategories = ['Authentication', 'Authorization', 'Subscriptions', 'Core Features', 
-    'Infrastructure', 'Legal', 'Go-Live Website', 'Testing', 'Monitoring', 'Security', 
-    'Documentation', 'DevOps'];
+  // Get all known categories from groups
+  const allGroupedCategories = Object.values(CATEGORY_GROUPS).flat();
   
-  const coreChecklist = stageGateChecklist.filter(item => coreCategories.includes(item.category));
-  const apiChecklist = stageGateChecklist.filter(item => item.category.includes('Configuration') || 
-    item.category.includes('API'));
+  // API categories are everything else
+  const apiCategories = Object.keys(groupedItems).filter(
+    cat => !allGroupedCategories.includes(cat)
+  );
+
+  // Filter items based on current filter
+  const filterItems = (items: typeof stageGateChecklist) => {
+    if (!filterStatus) return items;
+    return items.filter(item => item.status === filterStatus);
+  };
+
+  // Calculate stats for a group
+  const getGroupStats = (categories: string[]) => {
+    const items = stageGateChecklist.filter(item => categories.includes(item.category));
+    const done = items.filter(i => i.status === 'done').length;
+    return { total: items.length, done, percentage: items.length ? Math.round((done / items.length) * 100) : 0 };
+  };
 
   return (
     <motion.div
@@ -207,133 +252,193 @@ export const StageGatesTab: React.FC = () => {
         </Card>
       </motion.div>
 
-      {/* Tabs for Core vs API Stage Gates */}
-      <Tabs defaultValue="core" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="core">Core Stage Gates ({coreChecklist.length})</TabsTrigger>
-          <TabsTrigger value="api">API Stage Gates ({apiChecklist.length})</TabsTrigger>
+      {/* Tabs for All Stage Gate Groups */}
+      <Tabs defaultValue="all" className="w-full">
+        <TabsList className="grid w-full max-w-4xl grid-cols-7 h-auto">
+          <TabsTrigger value="all" className="text-xs px-2">
+            All ({totalItems})
+          </TabsTrigger>
+          {Object.entries(GROUP_LABELS).map(([key, { label, icon }]) => {
+            const categories = key === 'api' ? apiCategories : (CATEGORY_GROUPS as Record<string, string[]>)[key] || [];
+            const stats = getGroupStats(categories);
+            return (
+              <TabsTrigger key={key} value={key} className="text-xs px-2 gap-1">
+                {icon}
+                <span className="hidden md:inline">{label.split(' ')[0]}</span>
+                <span className="text-muted-foreground">({stats.done}/{stats.total})</span>
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
-        
-        <TabsContent value="core" className="mt-6">
-          {/* Category Sections */}
-          <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {Object.entries(groupedItems)
-              .filter(([category]) => coreCategories.includes(category))
-              .map(([category, items]) => {
-              const categoryDone = items.filter(i => i.status === 'done').length;
-              const categoryProgress = Math.round((categoryDone / items.length) * 100);
 
-              return (
-                <Card 
-                  key={category}
-                  className={categoryProgress === 100 ? 'border-green-500/30 bg-green-500/5' : ''}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          categoryProgress === 100 ? 'bg-green-500/10 text-green-600' : 'bg-muted text-muted-foreground'
-                        }`}>
-                          {categoryIcons[category] || <Shield className="w-5 h-5" />}
-                        </div>
-                        <div>
-                          <CardTitle className="text-base">{category}</CardTitle>
-                          <span className="text-sm text-muted-foreground">{categoryDone}/{items.length} complete</span>
-                        </div>
-                      </div>
-                      <div className={`text-2xl font-bold ${categoryProgress === 100 ? 'text-green-600' : 'text-amber-500'}`}>
-                        {categoryProgress}%
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {items.map((item, idx) => (
-                      <div 
-                        key={idx}
-                        className={`flex items-center justify-between p-3 rounded-lg ${
-                          item.status === 'done' ? 'bg-green-500/5' : 'bg-muted/30'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          {getStatusIcon(item.status)}
+        {/* Filter buttons */}
+        <div className="flex gap-2 mt-4 mb-2">
+          <Button 
+            size="sm" 
+            variant={filterStatus === null ? 'default' : 'outline'}
+            onClick={() => setFilterStatus(null)}
+          >
+            All
+          </Button>
+          <Button 
+            size="sm" 
+            variant={filterStatus === 'pending' ? 'default' : 'outline'}
+            onClick={() => setFilterStatus('pending')}
+            className="gap-1"
+          >
+            <AlertCircle className="w-3 h-3" /> Pending
+          </Button>
+          <Button 
+            size="sm" 
+            variant={filterStatus === 'in-progress' ? 'default' : 'outline'}
+            onClick={() => setFilterStatus('in-progress')}
+            className="gap-1"
+          >
+            <Clock className="w-3 h-3" /> In Progress
+          </Button>
+          <Button 
+            size="sm" 
+            variant={filterStatus === 'done' ? 'default' : 'outline'}
+            onClick={() => setFilterStatus('done')}
+            className="gap-1"
+          >
+            <CheckCircle2 className="w-3 h-3" /> Done
+          </Button>
+        </div>
+        
+        {/* All Categories Tab */}
+        <TabsContent value="all" className="mt-6">
+          <ScrollArea className="h-[600px]">
+            <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pr-4">
+              {Object.entries(groupedItems).map(([category, items]) => {
+                const filteredItems = filterItems(items);
+                if (filteredItems.length === 0) return null;
+                const categoryDone = items.filter(i => i.status === 'done').length;
+                const categoryProgress = Math.round((categoryDone / items.length) * 100);
+
+                return (
+                  <Card 
+                    key={category}
+                    className={categoryProgress === 100 ? 'border-green-500/30 bg-green-500/5' : ''}
+                  >
+                    <CardHeader className="pb-2 pt-4 px-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                            categoryProgress === 100 ? 'bg-green-500/10 text-green-600' : 'bg-muted text-muted-foreground'
+                          }`}>
+                            {categoryIcons[category] || <Shield className="w-4 h-4" />}
+                          </div>
                           <div>
-                            <span className="text-foreground text-sm">{item.item}</span>
-                            {item.notes && (
-                              <p className="text-xs text-muted-foreground mt-0.5">{item.notes}</p>
-                            )}
+                            <CardTitle className="text-sm">{category}</CardTitle>
+                            <span className="text-xs text-muted-foreground">{categoryDone}/{items.length}</span>
                           </div>
                         </div>
-                        <Badge variant="outline" className={`text-xs ${getPriorityBadge(item.priority)}`}>
-                          {item.priority}
+                        <Badge variant={categoryProgress === 100 ? 'default' : 'secondary'} className="text-xs">
+                          {categoryProgress}%
                         </Badge>
                       </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </motion.div>
-        </TabsContent>
-        
-        <TabsContent value="api" className="mt-6">
-          <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {Object.entries(groupedItems)
-              .filter(([category]) => !coreCategories.includes(category))
-              .map(([category, items]) => {
-              const categoryDone = items.filter(i => i.status === 'done').length;
-              const categoryProgress = Math.round((categoryDone / items.length) * 100);
-
-              return (
-                <Card 
-                  key={category}
-                  className={categoryProgress === 100 ? 'border-green-500/30 bg-green-500/5' : ''}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          categoryProgress === 100 ? 'bg-green-500/10 text-green-600' : 'bg-blue-500/10 text-blue-600'
-                        }`}>
-                          <Plug className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-base">{category}</CardTitle>
-                          <span className="text-sm text-muted-foreground">{categoryDone}/{items.length} complete</span>
-                        </div>
-                      </div>
-                      <div className={`text-2xl font-bold ${categoryProgress === 100 ? 'text-green-600' : 'text-amber-500'}`}>
-                        {categoryProgress}%
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {items.map((item, idx) => (
-                      <div 
-                        key={idx}
-                        className={`flex items-center justify-between p-3 rounded-lg ${
-                          item.status === 'done' ? 'bg-green-500/5' : 'bg-muted/30'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          {getStatusIcon(item.status)}
-                          <div>
-                            <span className="text-foreground text-sm">{item.item}</span>
-                            {item.notes && (
-                              <p className="text-xs text-muted-foreground mt-0.5">{item.notes}</p>
-                            )}
+                    </CardHeader>
+                    <CardContent className="space-y-1 px-4 pb-4 max-h-[300px] overflow-y-auto">
+                      {filteredItems.map((item, idx) => (
+                        <div 
+                          key={idx}
+                          className={`flex items-start justify-between p-2 rounded-lg text-xs ${
+                            item.status === 'done' ? 'bg-green-500/5' : 'bg-muted/30'
+                          }`}
+                        >
+                          <div className="flex items-start gap-2 flex-1">
+                            <div className="mt-0.5">{getStatusIcon(item.status)}</div>
+                            <div className="flex-1 min-w-0">
+                              <span className="text-foreground">{item.item}</span>
+                              {item.notes && (
+                                <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{item.notes}</p>
+                              )}
+                            </div>
                           </div>
+                          <Badge variant="outline" className={`text-[10px] ml-2 flex-shrink-0 ${getPriorityBadge(item.priority)}`}>
+                            {item.priority}
+                          </Badge>
                         </div>
-                        <Badge variant="outline" className={`text-xs ${getPriorityBadge(item.priority)}`}>
-                          {item.priority}
-                        </Badge>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </motion.div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </motion.div>
+          </ScrollArea>
         </TabsContent>
+
+        {/* Individual Group Tabs */}
+        {Object.keys(GROUP_LABELS).map((groupKey) => {
+          const categories = groupKey === 'api' ? apiCategories : (CATEGORY_GROUPS as Record<string, string[]>)[groupKey] || [];
+          
+          return (
+            <TabsContent key={groupKey} value={groupKey} className="mt-6">
+              <ScrollArea className="h-[600px]">
+                <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-4">
+                  {categories.map((category) => {
+                    const items = groupedItems[category] || [];
+                    const filteredItems = filterItems(items);
+                    if (filteredItems.length === 0 && filterStatus) return null;
+                    const categoryDone = items.filter(i => i.status === 'done').length;
+                    const categoryProgress = items.length ? Math.round((categoryDone / items.length) * 100) : 0;
+
+                    return (
+                      <Card 
+                        key={category}
+                        className={categoryProgress === 100 ? 'border-green-500/30 bg-green-500/5' : ''}
+                      >
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                                categoryProgress === 100 ? 'bg-green-500/10 text-green-600' : 'bg-muted text-muted-foreground'
+                              }`}>
+                                {categoryIcons[category] || <Shield className="w-5 h-5" />}
+                              </div>
+                              <div>
+                                <CardTitle className="text-base">{category}</CardTitle>
+                                <span className="text-sm text-muted-foreground">{categoryDone}/{items.length} complete</span>
+                              </div>
+                            </div>
+                            <div className={`text-2xl font-bold ${categoryProgress === 100 ? 'text-green-600' : 'text-amber-500'}`}>
+                              {categoryProgress}%
+                            </div>
+                          </div>
+                          <Progress value={categoryProgress} className="h-2 mt-2" />
+                        </CardHeader>
+                        <CardContent className="space-y-2 max-h-[400px] overflow-y-auto">
+                          {(filterStatus ? filteredItems : items).map((item, idx) => (
+                            <div 
+                              key={idx}
+                              className={`flex items-center justify-between p-3 rounded-lg ${
+                                item.status === 'done' ? 'bg-green-500/5' : 'bg-muted/30'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                {getStatusIcon(item.status)}
+                                <div>
+                                  <span className="text-foreground text-sm">{item.item}</span>
+                                  {item.notes && (
+                                    <p className="text-xs text-muted-foreground mt-0.5">{item.notes}</p>
+                                  )}
+                                </div>
+                              </div>
+                              <Badge variant="outline" className={`text-xs ${getPriorityBadge(item.priority)}`}>
+                                {item.priority}
+                              </Badge>
+                            </div>
+                          ))}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </motion.div>
+              </ScrollArea>
+            </TabsContent>
+          );
+        })}
       </Tabs>
 
       {/* Critical Blockers Alert */}
