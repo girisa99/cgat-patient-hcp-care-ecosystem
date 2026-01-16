@@ -50,20 +50,52 @@ serve(async (req) => {
     // Test connection / health check
     if (action === 'health' || action === 'test') {
       try {
-        // HumanSignal uses Bearer auth for JWT tokens, Token auth for legacy tokens
-        const authHeader = LABEL_STUDIO_ACCESS_TOKEN.startsWith('eyJ') 
-          ? `Bearer ${LABEL_STUDIO_ACCESS_TOKEN}`
-          : `Token ${LABEL_STUDIO_ACCESS_TOKEN}`;
+        // Try multiple auth formats - HumanSignal docs show different formats
+        // Format 1: Raw token (as shown in user's working curl)
+        // Format 2: Token prefix (as shown in Label Studio docs)
+        // Format 3: Bearer prefix (for JWT tokens)
+        const authFormats = [
+          LABEL_STUDIO_ACCESS_TOKEN, // Raw token (user's working example)
+          `Token ${LABEL_STUDIO_ACCESS_TOKEN}`,
+          `Bearer ${LABEL_STUDIO_ACCESS_TOKEN}`
+        ];
         
-        console.log('🔐 Using auth type:', authHeader.split(' ')[0]);
+        let healthResponse: Response | null = null;
+        let usedFormat = '';
         
-        const healthResponse = await fetch(`${baseUrl}/api/projects`, {
-          method: 'GET',
-          headers: {
-            'Authorization': authHeader,
-            'Content-Type': 'application/json',
-          },
-        });
+        for (const authValue of authFormats) {
+          console.log('🔐 Trying auth format:', authValue.substring(0, 20) + '...');
+          const resp = await fetch(`${baseUrl}/api/projects`, {
+            method: 'GET',
+            headers: {
+              'Authorization': authValue,
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (resp.ok) {
+            healthResponse = resp;
+            usedFormat = authValue.substring(0, 10);
+            console.log('✅ Auth format worked:', usedFormat + '...');
+            break;
+          } else if (resp.status !== 401) {
+            // If we get a non-auth error, use this response
+            healthResponse = resp;
+            usedFormat = authValue.substring(0, 10);
+            break;
+          }
+        }
+        
+        if (!healthResponse) {
+          // All formats failed, use last attempt's response for error
+          healthResponse = await fetch(`${baseUrl}/api/projects`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Token ${LABEL_STUDIO_ACCESS_TOKEN}`,
+              'Content-Type': 'application/json',
+            },
+          });
+        }
 
         if (!healthResponse.ok) {
           const errorText = await healthResponse.text();
