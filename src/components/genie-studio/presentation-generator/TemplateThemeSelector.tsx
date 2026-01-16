@@ -307,80 +307,80 @@ export function TemplateThemeSelector({
   const [activeTab, setActiveTab] = useState('templates');
 
   return (
-    <div className={cn("space-y-3", className)}>
+    <div className={cn("space-y-4", className)}>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full h-9 bg-muted/50">
-          <TabsTrigger value="templates" className="text-xs flex-1 gap-1.5">
+        <TabsList className="w-full h-10 p-1 bg-muted/60">
+          <TabsTrigger value="templates" className="flex-1 text-xs h-8 gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Layout className="h-3.5 w-3.5" />
             Templates
           </TabsTrigger>
-          <TabsTrigger value="colors" className="text-xs flex-1 gap-1.5">
+          <TabsTrigger value="colors" className="flex-1 text-xs h-8 gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Palette className="h-3.5 w-3.5" />
             Colors
           </TabsTrigger>
-          <TabsTrigger value="fonts" className="text-xs flex-1 gap-1.5">
+          <TabsTrigger value="fonts" className="flex-1 text-xs h-8 gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Type className="h-3.5 w-3.5" />
             Fonts
           </TabsTrigger>
         </TabsList>
 
         {/* Templates Tab */}
-        <TabsContent value="templates" className="mt-3 space-y-0">
+        <TabsContent value="templates" className="mt-4">
           <div className="grid grid-cols-2 gap-3">
-              {TEMPLATES.map((template) => (
-                <Card
-                  key={template.id}
-                  className={cn(
-                    "cursor-pointer transition-all hover:border-primary/50",
-                    selectedTemplate?.id === template.id && "border-primary ring-1 ring-primary"
-                  )}
-                  onClick={() => onTemplateChange(template)}
-                >
-                  <CardContent className="p-3">
-                    {/* Template preview */}
+            {TEMPLATES.map((template) => (
+              <Card
+                key={template.id}
+                className={cn(
+                  "cursor-pointer transition-all hover:border-primary/50 hover:shadow-sm",
+                  selectedTemplate?.id === template.id && "border-primary ring-2 ring-primary/20"
+                )}
+                onClick={() => onTemplateChange(template)}
+              >
+                <CardContent className="p-3">
+                  {/* Template preview */}
+                  <div 
+                    className="h-14 rounded-md mb-2 flex items-center justify-center relative overflow-hidden"
+                    style={{ 
+                      backgroundColor: template.theme.colors.background,
+                      border: `1px solid ${template.theme.colors.border}`
+                    }}
+                  >
                     <div 
-                      className="h-16 rounded mb-2 flex items-center justify-center relative overflow-hidden"
-                      style={{ 
-                        backgroundColor: template.theme.colors.background,
-                        border: `1px solid ${template.theme.colors.border}`
-                      }}
-                    >
+                      className="absolute top-0 left-0 right-0 h-3"
+                      style={{ backgroundColor: template.theme.colors.primary }}
+                    />
+                    <div className="flex flex-col items-center gap-0.5 mt-1">
                       <div 
-                        className="absolute top-0 left-0 right-0 h-4"
-                        style={{ backgroundColor: template.theme.colors.primary }}
+                        className="h-1.5 w-10 rounded-sm"
+                        style={{ backgroundColor: template.theme.colors.foreground }}
                       />
-                      <div className="flex flex-col items-center gap-0.5 mt-2">
-                        <div 
-                          className="h-2 w-12 rounded-sm"
-                          style={{ backgroundColor: template.theme.colors.foreground }}
-                        />
-                        <div 
-                          className="h-1.5 w-8 rounded-sm opacity-50"
-                          style={{ backgroundColor: template.theme.colors.foreground }}
-                        />
-                      </div>
-                      {selectedTemplate?.id === template.id && (
-                        <div className="absolute top-1 right-1 bg-primary rounded-full p-0.5">
-                          <Check className="h-2.5 w-2.5 text-primary-foreground" />
-                        </div>
-                      )}
+                      <div 
+                        className="h-1 w-6 rounded-sm opacity-50"
+                        style={{ backgroundColor: template.theme.colors.foreground }}
+                      />
                     </div>
-                    
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="text-xs font-medium">{template.name}</p>
-                        <p className="text-[10px] text-muted-foreground line-clamp-1">
-                          {template.description}
-                        </p>
+                    {selectedTemplate?.id === template.id && (
+                      <div className="absolute top-1 right-1 bg-primary rounded-full p-0.5">
+                        <Check className="h-2.5 w-2.5 text-primary-foreground" />
                       </div>
-                      <Badge variant="outline" className="text-[9px] px-1">
-                        {categoryIcons[template.category]}
-                      </Badge>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium truncate">{template.name}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">
+                        {template.description}
+                      </p>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    <Badge variant="outline" className="text-[9px] px-1.5 shrink-0">
+                      {categoryIcons[template.category]}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </TabsContent>
 
         {/* Colors Tab */}

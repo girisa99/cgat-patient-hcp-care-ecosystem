@@ -57,6 +57,10 @@ export const SUPPORTED_LANGUAGES: LanguageConfig[] = [
   { code: 'ko', name: 'Korean', nativeName: '한국어', flag: '🇰🇷' },
   { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇸🇦', rtl: true },
   { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳' },
+  { code: 'te', name: 'Telugu', nativeName: 'తెలుగు', flag: '🇮🇳' },
+  { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்', flag: '🇮🇳' },
+  { code: 'bn', name: 'Bengali', nativeName: 'বাংলা', flag: '🇮🇳' },
+  { code: 'mr', name: 'Marathi', nativeName: 'मराठी', flag: '🇮🇳' },
   { code: 'ru', name: 'Russian', nativeName: 'Русский', flag: '🇷🇺' },
   { code: 'nl', name: 'Dutch', nativeName: 'Nederlands', flag: '🇳🇱' },
   { code: 'pl', name: 'Polish', nativeName: 'Polski', flag: '🇵🇱' },
@@ -194,30 +198,30 @@ export function MultiLanguageGenerator({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className="grid grid-cols-2 gap-2">
             {displayedLanguages.map(lang => (
               <div
                 key={lang.code}
                 className={cn(
-                  "flex items-center gap-2 p-1.5 rounded border cursor-pointer transition-colors",
+                  "flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all",
                   selectedLanguages.includes(lang.code) 
-                    ? "border-primary bg-primary/5" 
-                    : "border-transparent hover:border-muted-foreground/30",
-                  lang.code === primaryLanguage && "ring-1 ring-primary"
+                    ? "border-primary bg-primary/10 shadow-sm" 
+                    : "border-muted hover:border-muted-foreground/40 hover:bg-muted/50",
+                  lang.code === primaryLanguage && "ring-2 ring-primary/30"
                 )}
                 onClick={() => toggleLanguage(lang.code)}
               >
                 <Checkbox 
                   checked={selectedLanguages.includes(lang.code)}
-                  className="h-3.5 w-3.5"
+                  className="h-4 w-4"
                 />
-                <span className="text-sm">{lang.flag}</span>
+                <span className="text-base">{lang.flag}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium truncate">{lang.name}</p>
-                  <p className="text-[10px] text-muted-foreground truncate">{lang.nativeName}</p>
+                  <p className="text-sm font-medium truncate">{lang.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{lang.nativeName}</p>
                 </div>
                 {lang.code === primaryLanguage && (
-                  <Badge className="text-[9px] px-1">Primary</Badge>
+                  <Badge className="text-[10px] px-1.5 bg-primary/20 text-primary border-0">Primary</Badge>
                 )}
               </div>
             ))}

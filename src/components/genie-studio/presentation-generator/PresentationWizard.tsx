@@ -722,12 +722,12 @@ export function PresentationWizard({
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Tabs value={inputSource} onValueChange={(v) => setInputSource(v as InputSource)}>
-                    <TabsList className="grid grid-cols-5 h-8">
-                      <TabsTrigger value="prompt" className="text-xs px-2">Prompt</TabsTrigger>
-                      <TabsTrigger value="text" className="text-xs px-2">Text</TabsTrigger>
-                      <TabsTrigger value="document" className="text-xs px-2">Doc</TabsTrigger>
-                      <TabsTrigger value="image" className="text-xs px-2">Image</TabsTrigger>
-                      <TabsTrigger value="url" className="text-xs px-2">URL</TabsTrigger>
+                    <TabsList className="w-full h-10 p-1 bg-muted/60">
+                      <TabsTrigger value="prompt" className="flex-1 text-xs h-8 data-[state=active]:bg-background data-[state=active]:shadow-sm">Prompt</TabsTrigger>
+                      <TabsTrigger value="text" className="flex-1 text-xs h-8 data-[state=active]:bg-background data-[state=active]:shadow-sm">Text</TabsTrigger>
+                      <TabsTrigger value="document" className="flex-1 text-xs h-8 data-[state=active]:bg-background data-[state=active]:shadow-sm">Doc</TabsTrigger>
+                      <TabsTrigger value="image" className="flex-1 text-xs h-8 data-[state=active]:bg-background data-[state=active]:shadow-sm">Image</TabsTrigger>
+                      <TabsTrigger value="url" className="flex-1 text-xs h-8 data-[state=active]:bg-background data-[state=active]:shadow-sm">URL</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="prompt" className="mt-3">
