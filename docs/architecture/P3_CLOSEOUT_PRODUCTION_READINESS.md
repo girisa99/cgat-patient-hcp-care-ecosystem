@@ -1,9 +1,11 @@
 # P3 Closeout & Production Readiness Report
 
-> **Version:** 1.0  
-> **Updated:** 2026-01-13  
-> **Status:** P3 COMPLETE ✅  
-> **Production Target:** Week 19
+> **Version:** 2.0  
+> **Updated:** 2026-01-16  
+> **Status:** P3 IN PROGRESS 🔄 (32/140 scenarios implemented)  
+> **Production Target:** Week 19  
+> **API Readiness:** 75% (12/16 APIs production-ready)  
+> **Source of Truth:** `src/genie-studio/governance/ApiProductionConfig.ts`
 
 ---
 
@@ -45,6 +47,21 @@ P3 implementation is now **100% complete** with all 5 major features fully imple
 | `marketplace_templates` | Template store | ✅ | category, status, featured |
 | `template_reviews` | Template ratings | ✅ | template_id |
 | `template_installations` | User installations | ✅ | user_id |
+
+---
+
+## 🚨 API Production Actions Required
+
+**Before Go-Live, these APIs MUST be upgraded:**
+
+| API | Current State | Required Action | Priority |
+|-----|---------------|-----------------|----------|
+| Gemini | v1beta endpoint | Switch to v1 production endpoint | Critical |
+| DocuSign | Demo environment | Switch to production endpoint, upgrade tier | Critical |
+| Label Studio | localhost | Deploy production instance, configure SSO | High |
+| Resend | Free tier (3k/mo) | Upgrade to Pro tier (50k/mo) | High |
+
+**Estimated Monthly API Cost:** ~$592/month at production load
 
 ---
 

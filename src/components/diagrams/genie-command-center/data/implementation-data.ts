@@ -7,6 +7,7 @@
  * src/genie-studio/governance/UnifiedMetrics.ts
  * 
  * AUDITED: 2026-01-16 - Stage Gates expanded from 30 to 80+ items
+ * UPDATED: 2026-01-16 - Added API Production Readiness tracking (29 items)
  */
 
 import type { ImplementationPhase, ScenarioCategory, StageGateItem, Product } from '../types';
@@ -18,6 +19,10 @@ import {
   HEALTHCARE_COUNTS,
   INFRASTRUCTURE_METRICS,
   getPhaseProgress,
+  API_CONFIGURATIONS,
+  API_STAGE_GATE_CHECKLIST,
+  API_CONFIG_METADATA,
+  getApiProductionReadiness,
 } from '@/genie-studio/governance';
 
 // =============================================================================
@@ -333,7 +338,29 @@ export const stageGateChecklist: StageGateItem[] = [
   { category: 'DevOps', item: 'Blue-Green Deployment Ready', status: 'pending', priority: 'Medium' },
   { category: 'DevOps', item: 'Feature Flags System', status: 'pending', priority: 'Medium' },
   { category: 'DevOps', item: 'Auto-scaling Configuration', status: 'pending', priority: 'Medium' },
+  
+  // ==================== API PRODUCTION READINESS (From ApiProductionConfig.ts) ====================
+  ...API_STAGE_GATE_CHECKLIST.map(item => ({
+    category: item.category.replace('API ', '') as string,
+    item: item.item,
+    status: item.status,
+    priority: item.priority,
+    notes: item.notes,
+  })),
 ];
+
+// =============================================================================
+// API PRODUCTION METRICS (Exported for UI consumption)
+// =============================================================================
+export const apiProductionMetrics = {
+  totalApis: API_CONFIG_METADATA.totalApis,
+  configuredApis: API_CONFIG_METADATA.configuredApis,
+  needsUpgrade: API_CONFIG_METADATA.needsUpgrade,
+  estimatedMonthlyCost: API_CONFIG_METADATA.estimatedMonthlyCost,
+  stageGateProgress: API_CONFIG_METADATA.stageGateProgress,
+  productionReadiness: getApiProductionReadiness(),
+  configurations: API_CONFIGURATIONS,
+};
 
 // =============================================================================
 // PRODUCTS
