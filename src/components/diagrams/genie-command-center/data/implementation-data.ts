@@ -6,7 +6,7 @@
  * All phase data and infrastructure metrics are derived from:
  * src/genie-studio/governance/UnifiedMetrics.ts
  * 
- * AUDITED: 2026-01-15
+ * AUDITED: 2026-01-16 - Stage Gates expanded from 30 to 80+ items
  */
 
 import type { ImplementationPhase, ScenarioCategory, StageGateItem, Product } from '../types';
@@ -209,61 +209,130 @@ export const scenarioCategories: ScenarioCategory[] = [
 ];
 
 // =============================================================================
-// STAGE GATE CHECKLIST
+// STAGE GATE CHECKLIST - COMPREHENSIVE PRODUCTION READINESS
+// Categories: Auth, Authorization, Subscriptions, Core, Infrastructure, 
+//             Legal, Go-Live, Testing, Monitoring, Documentation, Security, DevOps
 // =============================================================================
 export const stageGateChecklist: StageGateItem[] = [
-  // Authentication & Authorization - ALL DONE
+  // ==================== AUTHENTICATION & AUTHORIZATION ====================
   { category: 'Authentication', item: 'Email/Password Authentication (Supabase Auth)', status: 'done', priority: 'Critical' },
   { category: 'Authentication', item: 'Google OAuth Integration', status: 'done', priority: 'Critical' },
-  { category: 'Authentication', item: 'Session Management', status: 'done', priority: 'Critical' },
+  { category: 'Authentication', item: 'Session Management & Refresh Tokens', status: 'done', priority: 'Critical' },
   { category: 'Authentication', item: 'Password Reset Flow', status: 'done', priority: 'High' },
   { category: 'Authentication', item: 'MFA/2FA Support', status: 'pending', priority: 'Medium' },
+  { category: 'Authentication', item: 'Email Verification Flow', status: 'done', priority: 'High' },
+  { category: 'Authentication', item: 'Social Login (LinkedIn, Apple)', status: 'pending', priority: 'Low' },
   
-  // Authorization - ALL DONE
   { category: 'Authorization', item: 'Role-Based Access Control (RBAC)', status: 'done', priority: 'Critical' },
   { category: 'Authorization', item: 'Row Level Security (RLS) Policies', status: 'done', priority: 'Critical' },
   { category: 'Authorization', item: 'Module Access Gates (useModuleAccess)', status: 'done', priority: 'Critical' },
   { category: 'Authorization', item: 'Route Guards', status: 'done', priority: 'High' },
   { category: 'Authorization', item: 'API Rate Limiting', status: 'done', priority: 'High' },
+  { category: 'Authorization', item: 'Per-Subscription Feature Gating', status: 'done', priority: 'High' },
   
-  // Subscriptions & Billing - ALL DONE
+  // ==================== SUBSCRIPTIONS & BILLING ====================
   { category: 'Subscriptions', item: 'Stripe Integration (checkout, portal)', status: 'done', priority: 'Critical' },
   { category: 'Subscriptions', item: 'Subscription Plans (Free, Starter, Business, Pro, Enterprise)', status: 'done', priority: 'Critical' },
   { category: 'Subscriptions', item: 'Credit System (ai_credit_packages, transactions)', status: 'done', priority: 'Critical' },
   { category: 'Subscriptions', item: 'Credit Purchase Flow', status: 'done', priority: 'High' },
   { category: 'Subscriptions', item: 'Plan Upgrade/Downgrade', status: 'done', priority: 'High' },
-  { category: 'Subscriptions', item: 'Usage Tracking', status: 'done', priority: 'High' },
+  { category: 'Subscriptions', item: 'Usage Tracking & Metering', status: 'done', priority: 'High' },
   { category: 'Subscriptions', item: 'Trial Period Management', status: 'in-progress', priority: 'Medium', notes: 'Start works, expiration partial' },
+  { category: 'Subscriptions', item: 'Invoice & Receipt Generation', status: 'done', priority: 'High' },
+  { category: 'Subscriptions', item: 'Proration for Mid-Cycle Changes', status: 'done', priority: 'Medium' },
+  { category: 'Subscriptions', item: 'Cancellation & Churn Prevention Flow', status: 'pending', priority: 'High' },
   
-  // Core Features - ALL DONE
+  // ==================== CORE FEATURES ====================
   { category: 'Core Features', item: 'Script Management (GenieMind)', status: 'done', priority: 'Critical' },
   { category: 'Core Features', item: 'TTS Multi-Provider (5 providers)', status: 'done', priority: 'Critical' },
   { category: 'Core Features', item: 'Recording Studio (GenieVibe)', status: 'done', priority: 'Critical' },
   { category: 'Core Features', item: 'Export Pipeline (MP4, WAV, SRT)', status: 'done', priority: 'Critical' },
-  { category: 'Core Features', item: 'Agent System (agent_sessions, agents tables)', status: 'done', priority: 'High' },
+  { category: 'Core Features', item: 'Agent System (agent_sessions, agents)', status: 'done', priority: 'High' },
   { category: 'Core Features', item: 'Ask Genie AI Assistant', status: 'done', priority: 'High' },
-  { category: 'Core Features', item: 'Mobile Responsive (23 components)', status: 'done', priority: 'High' },
+  { category: 'Core Features', item: 'Mobile Responsive (18 Genie components)', status: 'done', priority: 'High' },
   { category: 'Core Features', item: 'PWA Installation', status: 'done', priority: 'Medium' },
+  { category: 'Core Features', item: 'Bulk Operations Engine', status: 'done', priority: 'High' },
+  { category: 'Core Features', item: 'Label Studio ML Integration', status: 'done', priority: 'Medium' },
   
-  // Infrastructure - MIXED
-  { category: 'Infrastructure', item: 'Supabase Backend', status: 'done', priority: 'Critical' },
-  { category: 'Infrastructure', item: `Edge Functions (${PLATFORM_TOTALS.edgeFunctions}+ deployed)`, status: 'done', priority: 'Critical' },
-  { category: 'Infrastructure', item: 'Database Backups', status: 'done', priority: 'Critical' },
-  { category: 'Infrastructure', item: 'CDN for Assets', status: 'done', priority: 'High' },
-  { category: 'Infrastructure', item: 'Error Monitoring (Sentry)', status: 'pending', priority: 'High' },
+  // ==================== INFRASTRUCTURE ====================
+  { category: 'Infrastructure', item: 'Supabase Backend Configured', status: 'done', priority: 'Critical' },
+  { category: 'Infrastructure', item: `Edge Functions (${GENIE_COUNTS.edgeFunctions} Genie / ${PLATFORM_TOTALS.edgeFunctions} Total)`, status: 'done', priority: 'Critical' },
+  { category: 'Infrastructure', item: `Database Tables (${GENIE_COUNTS.databaseTables} Genie / ${PLATFORM_TOTALS.databaseTables} Total)`, status: 'done', priority: 'Critical' },
+  { category: 'Infrastructure', item: `Custom Hooks (${GENIE_COUNTS.hooks} Genie / ${PLATFORM_TOTALS.hooks} Total)`, status: 'done', priority: 'Critical' },
+  { category: 'Infrastructure', item: `AI Agents (${GENIE_COUNTS.aiAgents} Genie / ${PLATFORM_TOTALS.aiAgents} Total)`, status: 'done', priority: 'High' },
+  { category: 'Infrastructure', item: 'Database Backups (Automated)', status: 'done', priority: 'Critical' },
+  { category: 'Infrastructure', item: 'CDN for Static Assets', status: 'done', priority: 'High' },
+  { category: 'Infrastructure', item: 'Storage Buckets (Media, Exports, Avatars)', status: 'done', priority: 'High' },
+  { category: 'Infrastructure', item: 'Environment Variables Configured', status: 'done', priority: 'Critical' },
   
-  // Legal & Compliance - PENDING
+  // ==================== TESTING & QA ====================
+  { category: 'Testing', item: 'Unit Tests for Critical Hooks', status: 'pending', priority: 'High' },
+  { category: 'Testing', item: 'E2E Tests for User Journeys', status: 'pending', priority: 'High' },
+  { category: 'Testing', item: 'API Integration Tests', status: 'pending', priority: 'High' },
+  { category: 'Testing', item: 'Load Testing (100 concurrent users)', status: 'pending', priority: 'Medium' },
+  { category: 'Testing', item: 'Mobile Device Testing (iOS/Android)', status: 'in-progress', priority: 'High' },
+  { category: 'Testing', item: 'Cross-Browser Testing', status: 'done', priority: 'Medium' },
+  { category: 'Testing', item: 'Accessibility Testing (WCAG 2.1)', status: 'pending', priority: 'High' },
+  
+  // ==================== MONITORING & OBSERVABILITY ====================
+  { category: 'Monitoring', item: 'Error Tracking (Sentry/LogRocket)', status: 'pending', priority: 'Critical' },
+  { category: 'Monitoring', item: 'Performance Monitoring (Web Vitals)', status: 'pending', priority: 'High' },
+  { category: 'Monitoring', item: 'API Response Time Alerts', status: 'pending', priority: 'High' },
+  { category: 'Monitoring', item: 'Database Query Performance', status: 'pending', priority: 'Medium' },
+  { category: 'Monitoring', item: 'Uptime Monitoring (Pingdom/UptimeRobot)', status: 'pending', priority: 'Critical' },
+  { category: 'Monitoring', item: 'User Analytics (Mixpanel/Amplitude)', status: 'pending', priority: 'High' },
+  { category: 'Monitoring', item: 'AI Cost Tracking Dashboard', status: 'done', priority: 'High' },
+  
+  // ==================== LEGAL & COMPLIANCE ====================
   { category: 'Legal', item: 'Terms of Service', status: 'pending', priority: 'Critical' },
   { category: 'Legal', item: 'Privacy Policy', status: 'pending', priority: 'Critical' },
-  { category: 'Legal', item: 'Cookie Consent', status: 'pending', priority: 'High' },
-  { category: 'Legal', item: 'GDPR Compliance', status: 'pending', priority: 'High' },
+  { category: 'Legal', item: 'Cookie Consent Banner', status: 'pending', priority: 'High' },
+  { category: 'Legal', item: 'GDPR Compliance (Data Export/Delete)', status: 'pending', priority: 'High' },
+  { category: 'Legal', item: 'CCPA Compliance', status: 'pending', priority: 'Medium' },
+  { category: 'Legal', item: 'HIPAA BAA (Healthcare Segment)', status: 'pending', priority: 'High', notes: 'Required for Healthcare customers' },
+  { category: 'Legal', item: 'Content Licensing Terms', status: 'pending', priority: 'Medium' },
+  { category: 'Legal', item: 'AI Generated Content Disclaimer', status: 'pending', priority: 'High' },
   
-  // Go-Live Website - P3
+  // ==================== SECURITY ====================
+  { category: 'Security', item: 'SSL/TLS Certificates', status: 'done', priority: 'Critical' },
+  { category: 'Security', item: 'API Key Encryption', status: 'done', priority: 'Critical' },
+  { category: 'Security', item: 'XSS Protection', status: 'done', priority: 'Critical' },
+  { category: 'Security', item: 'CSRF Protection', status: 'done', priority: 'Critical' },
+  { category: 'Security', item: 'SQL Injection Prevention (RLS)', status: 'done', priority: 'Critical' },
+  { category: 'Security', item: 'Security Headers (CSP, HSTS)', status: 'pending', priority: 'High' },
+  { category: 'Security', item: 'Penetration Testing', status: 'pending', priority: 'High' },
+  { category: 'Security', item: 'Vulnerability Scanning', status: 'pending', priority: 'High' },
+  { category: 'Security', item: 'Secret Key Rotation Policy', status: 'pending', priority: 'Medium' },
+  
+  // ==================== GO-LIVE WEBSITE ====================
   { category: 'Go-Live Website', item: 'Landing Page (Genie Suite Marketing)', status: 'pending', priority: 'Critical' },
   { category: 'Go-Live Website', item: 'Custom Domain Setup', status: 'pending', priority: 'Critical' },
   { category: 'Go-Live Website', item: 'Pricing Page with Plan Comparison', status: 'done', priority: 'Critical' },
   { category: 'Go-Live Website', item: 'Login/Signup Page', status: 'done', priority: 'Critical' },
   { category: 'Go-Live Website', item: 'Stripe Checkout Integration', status: 'done', priority: 'Critical' },
+  { category: 'Go-Live Website', item: 'SEO Meta Tags & OpenGraph', status: 'done', priority: 'High' },
+  { category: 'Go-Live Website', item: 'Sitemap.xml & Robots.txt', status: 'pending', priority: 'Medium' },
+  { category: 'Go-Live Website', item: 'Contact/Support Page', status: 'pending', priority: 'High' },
+  { category: 'Go-Live Website', item: 'FAQ/Help Center', status: 'pending', priority: 'High' },
+  { category: 'Go-Live Website', item: 'Blog/Content Hub', status: 'pending', priority: 'Medium' },
+  
+  // ==================== DOCUMENTATION ====================
+  { category: 'Documentation', item: 'API Documentation', status: 'pending', priority: 'High' },
+  { category: 'Documentation', item: 'User Onboarding Guide', status: 'pending', priority: 'High' },
+  { category: 'Documentation', item: 'Integration Guides', status: 'pending', priority: 'Medium' },
+  { category: 'Documentation', item: 'Admin/Support Runbook', status: 'pending', priority: 'High' },
+  { category: 'Documentation', item: 'Incident Response Playbook', status: 'pending', priority: 'Critical' },
+  { category: 'Documentation', item: 'Architecture Decision Records', status: 'done', priority: 'Medium' },
+  
+  // ==================== DEVOPS & DEPLOYMENT ====================
+  { category: 'DevOps', item: 'CI/CD Pipeline (GitHub Actions)', status: 'done', priority: 'Critical' },
+  { category: 'DevOps', item: 'Staging Environment', status: 'done', priority: 'High' },
+  { category: 'DevOps', item: 'Production Environment', status: 'done', priority: 'Critical' },
+  { category: 'DevOps', item: 'Database Migration Strategy', status: 'done', priority: 'Critical' },
+  { category: 'DevOps', item: 'Rollback Procedures', status: 'pending', priority: 'Critical' },
+  { category: 'DevOps', item: 'Blue-Green Deployment Ready', status: 'pending', priority: 'Medium' },
+  { category: 'DevOps', item: 'Feature Flags System', status: 'pending', priority: 'Medium' },
+  { category: 'DevOps', item: 'Auto-scaling Configuration', status: 'pending', priority: 'Medium' },
 ];
 
 // =============================================================================
