@@ -36,6 +36,10 @@ export const AI_PROVIDER_KEYS = {
   ELEVENLABS: 'ELEVENLABS_API_KEY',
   REPLICATE: 'REPLICATE_API_TOKEN',
   HUGGINGFACE: 'HUGGING_FACE_ACCESS_TOKEN',
+  
+  // Data Annotation & Training
+  LABEL_STUDIO_URL: 'LABEL_STUDIO_API_URL',
+  LABEL_STUDIO_TOKEN: 'LABEL_STUDIO_ACCESS_TOKEN',
 } as const;
 
 // =============================================================================

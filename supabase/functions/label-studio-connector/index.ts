@@ -48,14 +48,15 @@ serve(async (req) => {
     }
 
     const LS_API_URL = Deno.env.get("LABEL_STUDIO_API_URL");
-    const LS_API_KEY = Deno.env.get("LABEL_STUDIO_API_KEY");
+    // Support both ACCESS_TOKEN (preferred) and legacy API_KEY naming
+    const LS_ACCESS_TOKEN = Deno.env.get("LABEL_STUDIO_ACCESS_TOKEN") || Deno.env.get("LABEL_STUDIO_API_KEY");
 
-    if (!LS_API_URL || !LS_API_KEY) {
-      console.error("[LabelStudio] Missing LABEL_STUDIO_API_URL or LABEL_STUDIO_API_KEY");
+    if (!LS_API_URL || !LS_ACCESS_TOKEN) {
+      console.error("[LabelStudio] Missing LABEL_STUDIO_API_URL or LABEL_STUDIO_ACCESS_TOKEN");
       return new Response(
         JSON.stringify({
           error:
-            "Label Studio secrets not configured. Please set LABEL_STUDIO_API_URL and LABEL_STUDIO_API_KEY in Supabase Function secrets.",
+            "Label Studio secrets not configured. Please set LABEL_STUDIO_API_URL and LABEL_STUDIO_ACCESS_TOKEN in Supabase Function secrets.",
         }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -73,7 +74,7 @@ serve(async (req) => {
       const res = await fetch(url, {
         ...init,
         headers: {
-          Authorization: `Token ${LS_API_KEY}`,
+          Authorization: `Token ${LS_ACCESS_TOKEN}`,
           "Content-Type": "application/json",
           ...(init?.headers || {}),
         },
