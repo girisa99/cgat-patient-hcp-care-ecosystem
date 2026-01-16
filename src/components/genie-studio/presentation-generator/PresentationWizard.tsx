@@ -722,12 +722,12 @@ export function PresentationWizard({
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Tabs value={inputSource} onValueChange={(v) => setInputSource(v as InputSource)}>
-                    <TabsList className="grid grid-cols-5 w-full h-11 p-1 bg-muted rounded-lg">
-                      <TabsTrigger value="prompt" className="text-xs font-medium h-9 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-foreground">Prompt</TabsTrigger>
-                      <TabsTrigger value="text" className="text-xs font-medium h-9 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-foreground">Text</TabsTrigger>
-                      <TabsTrigger value="document" className="text-xs font-medium h-9 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-foreground">Doc</TabsTrigger>
-                      <TabsTrigger value="image" className="text-xs font-medium h-9 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-foreground">Image</TabsTrigger>
-                      <TabsTrigger value="url" className="text-xs font-medium h-9 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-foreground">URL</TabsTrigger>
+                    <TabsList className="!grid !grid-cols-5 !w-full !h-10 !p-1 !bg-muted !rounded-lg !gap-0 !min-h-0 !overflow-visible !border-0 !shadow-none">
+                      <TabsTrigger value="prompt" className="!text-xs !font-medium !h-8 !rounded-md !px-2 !py-1 !min-w-0 !scale-100 data-[state=active]:!bg-primary data-[state=active]:!text-primary-foreground data-[state=active]:!shadow-sm data-[state=active]:!scale-100 !text-foreground !border-0">Prompt</TabsTrigger>
+                      <TabsTrigger value="text" className="!text-xs !font-medium !h-8 !rounded-md !px-2 !py-1 !min-w-0 !scale-100 data-[state=active]:!bg-primary data-[state=active]:!text-primary-foreground data-[state=active]:!shadow-sm data-[state=active]:!scale-100 !text-foreground !border-0">Text</TabsTrigger>
+                      <TabsTrigger value="document" className="!text-xs !font-medium !h-8 !rounded-md !px-2 !py-1 !min-w-0 !scale-100 data-[state=active]:!bg-primary data-[state=active]:!text-primary-foreground data-[state=active]:!shadow-sm data-[state=active]:!scale-100 !text-foreground !border-0">Doc</TabsTrigger>
+                      <TabsTrigger value="image" className="!text-xs !font-medium !h-8 !rounded-md !px-2 !py-1 !min-w-0 !scale-100 data-[state=active]:!bg-primary data-[state=active]:!text-primary-foreground data-[state=active]:!shadow-sm data-[state=active]:!scale-100 !text-foreground !border-0">Image</TabsTrigger>
+                      <TabsTrigger value="url" className="!text-xs !font-medium !h-8 !rounded-md !px-2 !py-1 !min-w-0 !scale-100 data-[state=active]:!bg-primary data-[state=active]:!text-primary-foreground data-[state=active]:!shadow-sm data-[state=active]:!scale-100 !text-foreground !border-0">URL</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="prompt" className="mt-3">
