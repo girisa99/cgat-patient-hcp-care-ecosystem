@@ -311,6 +311,75 @@ function selectBestModel(documentTypeId: string, documentCategory: string, ocrTe
   return { config: categoryConfig, reason: 'category_default', confidence: 0.8 };
 }
 
+// ============= SHARED AI VISION HELPER =============
+// Uses Lovable AI Gateway (same as ai-universal-processor) - NO DUPLICATION
+async function callUniversalAIVision(
+  prompt: string,
+  imageBase64: string,
+  mimeType: string,
+  options?: { maxTokens?: number; model?: string }
+): Promise<{ content: string; success: boolean }> {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  
+  if (!LOVABLE_API_KEY) {
+    console.error('[UniversalAI-Vision] LOVABLE_API_KEY not configured');
+    return { content: '', success: false };
+  }
+
+  const model = options?.model || "google/gemini-2.5-flash";
+  const maxTokens = options?.maxTokens || 2000;
+
+  console.log(`[UniversalAI-Vision] Calling with model: ${model}`);
+
+  try {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: prompt },
+              {
+                type: "image_url",
+                image_url: { url: `data:${mimeType || 'image/png'};base64,${imageBase64}` }
+              }
+            ]
+          }
+        ],
+        max_tokens: maxTokens
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[UniversalAI-Vision] Error (${response.status}):`, errorText);
+      
+      if (response.status === 429) {
+        throw new Error('Rate limit exceeded. Please try again later.');
+      }
+      if (response.status === 402) {
+        throw new Error('API credits exhausted. Please add funds.');
+      }
+      
+      return { content: '', success: false };
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || '';
+    
+    return { content, success: true };
+  } catch (error) {
+    console.error('[UniversalAI-Vision] Error:', error);
+    return { content: '', success: false };
+  }
+}
+
 // ============= ANALYTICS LOGGING =============
 interface AnalyticsEntry {
   document_id?: string;
@@ -590,33 +659,15 @@ async function handleUploadWithAutoDetect(supabase: any, request: ProcessingRequ
   "suggested_fields": ["list of expected fields for this document type"]
 }`;
 
-        const classifyResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-flash",
-            messages: [
-              {
-                role: "user",
-                content: [
-                  { type: "text", text: classificationPrompt },
-                  {
-                    type: "image_url",
-                    image_url: { url: `data:${mimeType || 'image/png'};base64,${fileBase64}` }
-                  }
-                ]
-              }
-            ],
-            max_tokens: 1000
-          })
-        });
+        // Use shared Universal AI Vision helper (no duplication!)
+        const classifyResult = await callUniversalAIVision(
+          classificationPrompt,
+          fileBase64,
+          mimeType || 'image/png',
+          { maxTokens: 1000, model: 'google/gemini-2.5-flash' }
+        );
 
-        if (classifyResponse.ok) {
-          const classifyData = await classifyResponse.json();
-          const content = classifyData.choices?.[0]?.message?.content || '';
+        if (classifyResult.success && classifyResult.content) {
           
           // Parse JSON from response
           const jsonMatch = content.match(/\{[\s\S]*\}/);
@@ -767,34 +818,16 @@ Provide analysis in this JSON format:
 }`;
 
   try {
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: analysisPrompt },
-              {
-                type: "image_url",
-                image_url: { url: `data:${mimeType};base64,${imageBase64}` }
-              }
-            ]
-          }
-        ],
-        max_tokens: 2000
-      })
-    });
+    // Use shared Universal AI Vision helper (no duplication!)
+    const result = await callUniversalAIVision(
+      analysisPrompt,
+      imageBase64,
+      mimeType,
+      { maxTokens: 2000, model: 'google/gemini-2.5-flash' }
+    );
 
-    if (response.ok) {
-      const data = await response.json();
-      const content = data.choices?.[0]?.message?.content || '';
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (result.success && result.content) {
+      const jsonMatch = result.content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const analysis = JSON.parse(jsonMatch[0]);
         return {
