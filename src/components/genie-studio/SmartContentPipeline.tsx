@@ -1641,47 +1641,13 @@ export function SmartContentPipeline({
             <CardContent className="space-y-6">
           {/* Content Safety Notice */}
           <ContentSafetyBanner variant="compact" />
-          {/* Step 1: Content Type Selection - Visual Grid with Highlighted Option */}
+          {/* Step 1: Content Type Selection - Unified Grid */}
           <div className="space-y-3">
             <Label className="text-sm font-semibold">1. Select Content Type</Label>
             
-            {/* Highlighted Presentation Option */}
-            <div 
-              onClick={() => handleContentTypeChange('presentation')}
-              className={cn(
-                "p-4 rounded-xl border-2 cursor-pointer transition-all",
-                contentType === 'presentation' 
-                  ? "border-primary bg-primary/10 ring-2 ring-primary/30"
-                  : "border-amber-500/50 bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:border-amber-500 hover:shadow-md"
-              )}
-            >
-              <div className="flex items-center gap-4">
-                <div className={cn(
-                  "h-12 w-12 rounded-xl flex items-center justify-center",
-                  contentType === 'presentation' 
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-gradient-to-br from-amber-500 to-orange-600 text-white"
-                )}>
-                  <Presentation className="h-6 w-6" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-base">Generate Presentation</span>
-                    <Badge className="bg-amber-500 text-white text-[10px]">NEW</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">AI-powered slides with rich content, images & speaker notes</p>
-                </div>
-                {contentType === 'presentation' && (
-                  <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center">
-                    <CheckCircle className="h-4 w-4 text-primary-foreground" />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Other Content Types - Compact Grid */}
+            {/* All Content Types - Unified Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {CONTENT_TYPES.filter(ct => ct.id !== 'presentation').map((ct) => (
+              {CONTENT_TYPES.map((ct) => (
                 <div
                   key={ct.id}
                   onClick={() => handleContentTypeChange(ct.id)}
@@ -1689,17 +1655,28 @@ export function SmartContentPipeline({
                     "p-3 rounded-lg border cursor-pointer transition-all flex items-center gap-3",
                     contentType === ct.id 
                       ? "border-primary bg-primary/10 ring-1 ring-primary/30"
-                      : "border-border hover:border-primary/50 hover:bg-secondary/50"
+                      : ct.isHighlighted
+                        ? "border-amber-500/50 bg-gradient-to-r from-amber-500/5 to-orange-500/5 hover:border-amber-500/70 hover:shadow-sm"
+                        : "border-border hover:border-primary/50 hover:bg-secondary/50"
                   )}
                 >
                   <div className={cn(
                     "h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
-                    contentType === ct.id ? "bg-primary text-primary-foreground" : "bg-secondary"
+                    contentType === ct.id 
+                      ? "bg-primary text-primary-foreground" 
+                      : ct.isHighlighted 
+                        ? "bg-gradient-to-br from-amber-500 to-orange-600 text-white"
+                        : "bg-secondary"
                   )}>
                     {ct.icon}
                   </div>
-                  <div className="min-w-0">
-                    <p className="font-medium text-sm truncate">{ct.label}</p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1">
+                      <p className="font-medium text-sm truncate">{ct.label}</p>
+                      {ct.badge && (
+                        <Badge className="bg-amber-500 text-white text-[9px] px-1 py-0">{ct.badge}</Badge>
+                      )}
+                    </div>
                     <p className="text-[10px] text-muted-foreground truncate">{ct.description}</p>
                   </div>
                 </div>
