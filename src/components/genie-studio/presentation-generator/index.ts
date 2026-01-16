@@ -42,3 +42,14 @@ export { VersionComparisonPanel } from './VersionComparisonPanel';
 export { SlideEnhancerPanel } from './SlideEnhancerPanel';
 export type { SlideEnhancementType } from './SlideEnhancerPanel';
 export { RealTimeSlideStreamer } from './RealTimeSlideStreamer';
+
+// Agent architecture definitions
+export { 
+  AGENT_TYPES, 
+  AGENT_CATALOG,
+  type AgentType,
+  type AgentConfig,
+  type AgentMessageType,
+  type AgentMessage,
+  type AgentExecutionContext,
+} from './AgentArchitecture';
