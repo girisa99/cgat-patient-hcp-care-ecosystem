@@ -179,14 +179,19 @@ export const scenarioCategories: ScenarioCategory[] = [
   { id: 'AE', name: 'Advanced Editing & Timeline', range: '297-305', total: 9, implemented: 9, partial: 0, pending: 0, phase: 'P2' },
   { id: 'AF', name: 'AI-Powered Editing Tools', range: '306-313', total: 7, implemented: 7, partial: 0, pending: 0, phase: 'P2' },
   
-  // P3 Categories (In Progress - 72 scenarios, 16 implemented)
-  { id: 'F', name: 'Generation & Automation', range: '33-42', total: 10, implemented: 0, partial: 0, pending: 10, phase: 'P3' },
-  { id: 'G', name: 'Compliance & Legal', range: '43-46', total: 4, implemented: 0, partial: 0, pending: 4, phase: 'P3' },
-  { id: 'O', name: 'Segment-Specific Features', range: '91-100', total: 10, implemented: 0, partial: 0, pending: 10, phase: 'P3' },
-  { id: 'R', name: 'API Integration', range: '126-135', total: 10, implemented: 0, partial: 0, pending: 10, phase: 'P3' },
-  { id: 'Y', name: 'Bulk Processing', range: '226-237', total: 12, implemented: 0, partial: 0, pending: 12, phase: 'P3' },
-  { id: 'Z', name: 'Content Tools (SEO, Thumbnails, etc)', range: '238-253', total: 16, implemented: 16, partial: 0, pending: 0, phase: 'P3' },
-  { id: 'AA', name: 'Go-Live Website', range: '254-263', total: 10, implemented: 0, partial: 0, pending: 10, phase: 'P3' },
+  // P3 Categories (In Progress - 140 scenarios, 32 implemented)
+  // Categories from UnifiedMetrics: Quick Wins(5✅) + Generation(12) + Compliance(8) + Analytics(10) + 
+  // Segment-Specific(22) + Integrations(8) + Enterprise(18) + Label Studio(10✅) + Implemented(17✅) + misc(30)
+  { id: 'P3-QW', name: 'Quick Wins (Priority 1)', range: '1-5', total: 5, implemented: 5, partial: 0, pending: 0, phase: 'P3' },
+  { id: 'P3-LS', name: 'Label Studio Integration', range: '6-15', total: 10, implemented: 10, partial: 0, pending: 0, phase: 'P3' },
+  { id: 'P3-IMP', name: 'Originally Implemented', range: '16-32', total: 17, implemented: 17, partial: 0, pending: 0, phase: 'P3' },
+  { id: 'F', name: 'Generation & Automation (Priority 2)', range: '33-44', total: 12, implemented: 0, partial: 0, pending: 12, phase: 'P3' },
+  { id: 'G', name: 'Compliance & Legal (Priority 3)', range: '45-52', total: 8, implemented: 0, partial: 0, pending: 8, phase: 'P3' },
+  { id: 'P3-ANA', name: 'Analytics & Insights (Priority 4)', range: '53-62', total: 10, implemented: 0, partial: 0, pending: 10, phase: 'P3' },
+  { id: 'O', name: 'Segment-Specific Features (Priority 5)', range: '63-84', total: 22, implemented: 0, partial: 0, pending: 22, phase: 'P3' },
+  { id: 'R', name: 'External Integrations (Priority 6)', range: '85-92', total: 8, implemented: 0, partial: 0, pending: 8, phase: 'P3' },
+  { id: 'P3-ENT', name: 'Enterprise Features (Priority 7)', range: '93-110', total: 18, implemented: 0, partial: 0, pending: 18, phase: 'P3' },
+  { id: 'AA', name: 'Go-Live Website & Misc', range: '111-140', total: 30, implemented: 0, partial: 0, pending: 30, phase: 'P3' },
   
   // P4 Categories (Planned - 50 scenarios)
   { id: 'H', name: 'Recovery & Error Handling', range: '47-50', total: 4, implemented: 0, partial: 0, pending: 4, phase: 'P4' },
