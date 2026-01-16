@@ -936,6 +936,95 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_generation_tasks: {
+        Row: {
+          agent_name: string | null
+          agent_type: string
+          completed_at: string | null
+          content_type_decision: string | null
+          created_at: string
+          decision_confidence: number | null
+          decision_reasoning: string | null
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          input_data: Json | null
+          language_code: string | null
+          max_retries: number | null
+          model_name: string | null
+          model_provider: string | null
+          output_data: Json | null
+          progress: number | null
+          retry_count: number | null
+          slide_number: number | null
+          started_at: string | null
+          status: string | null
+          task_type: string
+          updated_at: string
+          version_id: string
+        }
+        Insert: {
+          agent_name?: string | null
+          agent_type: string
+          completed_at?: string | null
+          content_type_decision?: string | null
+          created_at?: string
+          decision_confidence?: number | null
+          decision_reasoning?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          input_data?: Json | null
+          language_code?: string | null
+          max_retries?: number | null
+          model_name?: string | null
+          model_provider?: string | null
+          output_data?: Json | null
+          progress?: number | null
+          retry_count?: number | null
+          slide_number?: number | null
+          started_at?: string | null
+          status?: string | null
+          task_type: string
+          updated_at?: string
+          version_id: string
+        }
+        Update: {
+          agent_name?: string | null
+          agent_type?: string
+          completed_at?: string | null
+          content_type_decision?: string | null
+          created_at?: string
+          decision_confidence?: number | null
+          decision_reasoning?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          input_data?: Json | null
+          language_code?: string | null
+          max_retries?: number | null
+          model_name?: string | null
+          model_provider?: string | null
+          output_data?: Json | null
+          progress?: number | null
+          retry_count?: number | null
+          slide_number?: number | null
+          started_at?: string | null
+          status?: string | null
+          task_type?: string
+          updated_at?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_generation_tasks_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "presentation_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_health_checks: {
         Row: {
           agent_id: string
@@ -13219,6 +13308,95 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "presentation_shares_presentation_id_fkey"
+            columns: ["presentation_id"]
+            isOneToOne: false
+            referencedRelation: "presentations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      presentation_versions: {
+        Row: {
+          confidence_scores: Json | null
+          content_decisions: Json | null
+          created_at: string
+          current_slide: number | null
+          download_url: string | null
+          error_details: Json | null
+          error_message: string | null
+          file_name: string | null
+          generation_completed_at: string | null
+          generation_progress: number | null
+          generation_started_at: string | null
+          id: string
+          is_primary: boolean | null
+          language_code: string
+          model_config: Json | null
+          presentation_id: string
+          slides_data: Json | null
+          status: string | null
+          thumbnail_url: string | null
+          thumbnails: Json | null
+          total_slides: number | null
+          updated_at: string
+          user_id: string
+          voiceover_data: Json | null
+        }
+        Insert: {
+          confidence_scores?: Json | null
+          content_decisions?: Json | null
+          created_at?: string
+          current_slide?: number | null
+          download_url?: string | null
+          error_details?: Json | null
+          error_message?: string | null
+          file_name?: string | null
+          generation_completed_at?: string | null
+          generation_progress?: number | null
+          generation_started_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          language_code: string
+          model_config?: Json | null
+          presentation_id: string
+          slides_data?: Json | null
+          status?: string | null
+          thumbnail_url?: string | null
+          thumbnails?: Json | null
+          total_slides?: number | null
+          updated_at?: string
+          user_id: string
+          voiceover_data?: Json | null
+        }
+        Update: {
+          confidence_scores?: Json | null
+          content_decisions?: Json | null
+          created_at?: string
+          current_slide?: number | null
+          download_url?: string | null
+          error_details?: Json | null
+          error_message?: string | null
+          file_name?: string | null
+          generation_completed_at?: string | null
+          generation_progress?: number | null
+          generation_started_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          language_code?: string
+          model_config?: Json | null
+          presentation_id?: string
+          slides_data?: Json | null
+          status?: string | null
+          thumbnail_url?: string | null
+          thumbnails?: Json | null
+          total_slides?: number | null
+          updated_at?: string
+          user_id?: string
+          voiceover_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presentation_versions_presentation_id_fkey"
             columns: ["presentation_id"]
             isOneToOne: false
             referencedRelation: "presentations"
