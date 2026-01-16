@@ -50,10 +50,17 @@ serve(async (req) => {
     // Test connection / health check
     if (action === 'health' || action === 'test') {
       try {
+        // HumanSignal uses Bearer auth for JWT tokens, Token auth for legacy tokens
+        const authHeader = LABEL_STUDIO_ACCESS_TOKEN.startsWith('eyJ') 
+          ? `Bearer ${LABEL_STUDIO_ACCESS_TOKEN}`
+          : `Token ${LABEL_STUDIO_ACCESS_TOKEN}`;
+        
+        console.log('🔐 Using auth type:', authHeader.split(' ')[0]);
+        
         const healthResponse = await fetch(`${baseUrl}/api/projects`, {
           method: 'GET',
           headers: {
-            'Authorization': `Token ${LABEL_STUDIO_ACCESS_TOKEN}`,
+            'Authorization': authHeader,
             'Content-Type': 'application/json',
           },
         });
@@ -103,11 +110,16 @@ serve(async (req) => {
     }
 
     // List projects
+    // Build auth header based on token type
+    const authHeader = LABEL_STUDIO_ACCESS_TOKEN.startsWith('eyJ') 
+      ? `Bearer ${LABEL_STUDIO_ACCESS_TOKEN}`
+      : `Token ${LABEL_STUDIO_ACCESS_TOKEN}`;
+
     if (action === 'list-projects') {
       const response = await fetch(`${baseUrl}/api/projects`, {
         method: 'GET',
         headers: {
-          'Authorization': `Token ${LABEL_STUDIO_ACCESS_TOKEN}`,
+          'Authorization': authHeader,
           'Content-Type': 'application/json',
         },
       });
@@ -131,7 +143,7 @@ serve(async (req) => {
       const response = await fetch(`${baseUrl}/api/projects/${projectId}/tasks?page_size=100`, {
         method: 'GET',
         headers: {
-          'Authorization': `Token ${LABEL_STUDIO_ACCESS_TOKEN}`,
+          'Authorization': authHeader,
           'Content-Type': 'application/json',
         },
       });
@@ -182,7 +194,7 @@ serve(async (req) => {
       const response = await fetch(`${baseUrl}/api/projects/${projectId}/export?exportType=JSON`, {
         method: 'GET',
         headers: {
-          'Authorization': `Token ${LABEL_STUDIO_ACCESS_TOKEN}`,
+          'Authorization': authHeader,
           'Content-Type': 'application/json',
         },
       });
