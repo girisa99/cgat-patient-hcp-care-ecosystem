@@ -90,6 +90,14 @@ import { TableEditor, ChartEditor } from './TableChartEditor';
 import { DraggableSlideLayout, LayoutElement } from './DraggableSlideLayout';
 import { useUniversalPresentation, DownloadFormat } from '@/hooks/useUniversalPresentation';
 import { GenerationProgressPanel, SlideGenerationStatus } from './GenerationProgressPanel';
+import { LanguageConfigPopup } from './LanguageConfigPopup';
+import { GenerationSummaryPanel } from './GenerationSummaryPanel';
+import { VersionComparisonPanel } from './VersionComparisonPanel';
+import { SlideEnhancerPanel } from './SlideEnhancerPanel';
+import { RealTimeSlideStreamer } from './RealTimeSlideStreamer';
+import { useAgentPresentationGenerator, LanguageGenerationState } from '@/hooks/useAgentPresentationGenerator';
+import { LanguageModelConfig } from '@/services/agentPresentationGeneratorService';
+import { AGENT_CATALOG, AGENT_TYPES } from './AgentArchitecture';
 import { InlineTrainAIFeedback } from '../InlineTrainAIFeedback';
 import { 
   PresentationRequest,
@@ -334,8 +342,19 @@ export function PresentationWizard({
   const [selectedSlideId, setSelectedSlideId] = useState<string | null>(null);
   const [editingMode, setEditingMode] = useState<'preview' | 'layout'>('preview');
 
-  // Multi-language generation
+  // Multi-language generation - Legacy hook
   const { statuses: languageStatuses, isGenerating: isMultiLangGenerating, generateAll: generateMultiLang, reset: resetMultiLang } = useMultiLanguageGeneration();
+
+  // Agent-based multi-language generation - New agentic system
+  const agentGenerator = useAgentPresentationGenerator();
+  
+  // Language model configurations per language
+  const [languageModelConfigs, setLanguageModelConfigs] = useState<LanguageModelConfig[]>([]);
+  const [showLanguageConfigPopup, setShowLanguageConfigPopup] = useState<string | null>(null);
+  const [showVersionComparison, setShowVersionComparison] = useState(false);
+  const [showSlideEnhancer, setShowSlideEnhancer] = useState(false);
+  const [selectedEnhancerSlide, setSelectedEnhancerSlide] = useState<string | null>(null);
+  const [useAgenticGeneration, setUseAgenticGeneration] = useState(true);
 
   // Generation progress tracking
   const [generationPhase, setGenerationPhase] = useState<'analyzing' | 'structuring' | 'generating' | 'images' | 'complete'>('analyzing');
@@ -691,14 +710,53 @@ export function PresentationWizard({
     await downloadPPTX(serviceSlides as any, presentationTitle);
   };
 
-  // Multi-language generation handler
+  // Multi-language generation handler - Updated to use agentic system
   const handleMultiLanguageGenerate = async (languages: string[]) => {
     if (!inputContent.trim()) {
       toast.error('Please enter content first');
       return;
     }
 
-    // Generate for each language using the hook
+    if (useAgenticGeneration) {
+      // Use new agent-based generation
+      const request: PresentationRequest = {
+        inputSource,
+        content: inputContent,
+        contentType: uploadedFile?.type,
+        collateralType,
+        outputFormat,
+        length,
+        imageSource,
+        imageStyles: selectedImageStyles,
+        generateImages: imageSource !== 'placeholder',
+        includeJourneyMaps,
+        includeInfographics,
+        targetAudience: targetAudience || undefined,
+        voiceProvider,
+        tones: selectedTones,
+        contentEnhancements: selectedEnhancements,
+      };
+
+      await agentGenerator.startGeneration({
+        presentationId: session?.id || `pres-${Date.now()}`,
+        userId: 'current-user', // Would come from auth
+        request,
+        languages,
+        primaryLanguage,
+        modelConfigs: languageModelConfigs.length > 0 
+          ? languageModelConfigs 
+          : languages.map(lang => ({
+              languageCode: lang,
+              textModel: 'google/gemini-3-flash-preview',
+              imageModel: 'google/gemini-2.5-flash-image-preview',
+              voiceModel: 'openai',
+              voiceId: 'alloy',
+            })),
+      });
+      return;
+    }
+
+    // Legacy generation for each language using the hook
     await generateMultiLang(languages, async (langCode: string) => {
       const lang = SUPPORTED_LANGUAGES.find(l => l.code === langCode);
       
@@ -733,6 +791,26 @@ export function PresentationWizard({
         return { success: false, error: `Failed to generate for ${lang?.name || langCode}` };
       }
     });
+  };
+
+  // Handle language config update
+  const handleLanguageConfigUpdate = (langCode: string, config: LanguageModelConfig) => {
+    setLanguageModelConfigs(prev => {
+      const existing = prev.findIndex(c => c.languageCode === langCode);
+      if (existing >= 0) {
+        const updated = [...prev];
+        updated[existing] = config;
+        return updated;
+      }
+      return [...prev, config];
+    });
+    setShowLanguageConfigPopup(null);
+  };
+
+  // Handle slide enhancement
+  const handleSlideEnhance = async (slideId: string, enhancementType: string) => {
+    setSelectedEnhancerSlide(slideId);
+    setShowSlideEnhancer(true);
   };
 
   // Download specific language version
@@ -1148,16 +1226,98 @@ export function PresentationWizard({
             {/* Step 3: Languages - Multi-Language Generation */}
             {currentStep === 3 && (
               <div className="space-y-4">
+                {/* Agentic Generation Toggle */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Brain className="h-4 w-4" />
+                      Generation Mode
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between p-3 rounded-lg border bg-gradient-to-r from-primary/5 to-accent/5">
+                      <div className="space-y-0.5">
+                        <Label className="text-xs font-medium">Use Agentic AI Generation</Label>
+                        <p className="text-[10px] text-muted-foreground">
+                          Parallel agents with real-time streaming & per-language model selection
+                        </p>
+                      </div>
+                      <Switch checked={useAgenticGeneration} onCheckedChange={setUseAgenticGeneration} />
+                    </div>
+                    
+                    {useAgenticGeneration && (
+                      <div className="grid grid-cols-3 gap-2 text-xs">
+                        {Object.entries(AGENT_CATALOG).slice(0, 6).map(([key, agent]) => (
+                          <div key={key} className="p-2 rounded border bg-muted/30">
+                            <div className="font-medium truncate">{agent.name.split(' ').slice(-2).join(' ')}</div>
+                            <div className="text-[10px] text-muted-foreground truncate">{agent.description.split(' ').slice(0, 3).join(' ')}...</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
                 <MultiLanguageGenerator
                   selectedLanguages={selectedLanguages}
                   onLanguagesChange={setSelectedLanguages}
                   primaryLanguage={primaryLanguage}
                   onPrimaryLanguageChange={setPrimaryLanguage}
                   onGenerateAll={handleMultiLanguageGenerate}
-                  generationStatuses={languageStatuses}
+                  generationStatuses={useAgenticGeneration 
+                    ? Array.from(agentGenerator.languageStates.entries()).map(([code, state]) => ({
+                        languageCode: code,
+                        status: (state.status === 'complete' ? 'completed' : state.status) as 'completed' | 'error' | 'generating' | 'pending',
+                        progress: state.progress,
+                        fileName: state.fileName,
+                        downloadUrl: state.downloadUrl,
+                      }))
+                    : Object.entries(languageStatuses).map(([code, status]) => ({
+                        languageCode: code,
+                        ...status,
+                      }))}
                   onDownload={handleLanguageDownload}
-                  isGenerating={isMultiLangGenerating}
+                  isGenerating={useAgenticGeneration ? agentGenerator.isGenerating : isMultiLangGenerating}
                 />
+
+                {/* Per-Language Model Configuration */}
+                {useAgenticGeneration && selectedLanguages.length > 0 && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Settings2 className="h-4 w-4" />
+                        Per-Language Model Config
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {selectedLanguages.map(langCode => {
+                        const lang = SUPPORTED_LANGUAGES.find(l => l.code === langCode);
+                        const config = languageModelConfigs.find(c => c.languageCode === langCode);
+                        return (
+                          <div 
+                            key={langCode}
+                            className="flex items-center justify-between p-2 rounded border bg-muted/20 hover:bg-muted/40 cursor-pointer"
+                            onClick={() => setShowLanguageConfigPopup(langCode)}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg">{lang?.flag}</span>
+                              <span className="text-sm font-medium">{lang?.name}</span>
+                              {langCode === primaryLanguage && (
+                                <Badge variant="default" className="text-[10px]">Primary</Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">
+                                {config?.textModel?.split('/').pop() || 'Default Model'}
+                              </span>
+                              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </CardContent>
+                  </Card>
+                )}
 
                 {/* Advanced Tone & Enhancements */}
                 <Card>
@@ -1222,6 +1382,21 @@ export function PresentationWizard({
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Language Config Popup */}
+                <LanguageConfigPopup
+                  open={!!showLanguageConfigPopup}
+                  onOpenChange={(open) => !open && setShowLanguageConfigPopup(null)}
+                  language={showLanguageConfigPopup ? SUPPORTED_LANGUAGES.find(l => l.code === showLanguageConfigPopup) || null : null}
+                  isPrimary={showLanguageConfigPopup === primaryLanguage}
+                  existingConfig={showLanguageConfigPopup ? languageModelConfigs.find(c => c.languageCode === showLanguageConfigPopup) : undefined}
+                  onConfirm={(config) => {
+                    if (showLanguageConfigPopup) {
+                      handleLanguageConfigUpdate(showLanguageConfigPopup, config);
+                    }
+                  }}
+                  onSkip={() => setShowLanguageConfigPopup(null)}
+                />
               </div>
             )}
 
