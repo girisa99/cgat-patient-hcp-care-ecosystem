@@ -933,14 +933,12 @@ export function PresentationWizard({
                 <SlideCard
                   key={slide.id}
                   slide={slide}
-                  isSelected={selectedSlideId === slide.id}
-                  onSelect={() => setSelectedSlideId(slide.id)}
-                  onUpdate={(updates: Partial<PresentationSlide>) => handleSlideUpdate(slide.id, updates)}
-                  onAccept={() => handleSlideAccept(slide.id)}
-                  onSkip={() => handleSlideSkip(slide.id)}
+                  onUpdate={(slideId: string, updates: Partial<PresentationSlide>) => handleSlideUpdate(slideId, updates)}
+                  onAccept={(slideId: string) => handleSlideAccept(slideId)}
+                  onSkip={(slideId: string) => handleSlideSkip(slideId)}
                   onEnhance={async (slideId: string, type: SlideEnhancementType) => {}}
                   onRefresh={async (slideId: string) => {}}
-                  onRevert={() => {}}
+                  onRevert={(slideId: string) => {}}
                   onRegenerateImage={async (slideId: string) => {}}
                   onBulletUpdate={(slideId: string, bulletId: string, text: string) => {}}
                   onBulletAccept={(slideId: string, bulletId: string) => {}}
