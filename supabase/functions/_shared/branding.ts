@@ -24,6 +24,7 @@ const LOGOS = {
   genieStudioBanner: `${SITE_ASSET_URL}/src/assets/logos/genie-studio-banner.png`,
   genieStudioHorizontal: `${SITE_ASSET_URL}/src/assets/logos/genie-studio-horizontal.png`,
   genieArc: `${SITE_ASSET_URL}/src/assets/logos/genie-arc-combined.png`,
+  genieDeck: `${SITE_ASSET_URL}/src/assets/logos/genie-deck-combined.png`,
 };
 
 export const GENIE_BRANDING = {

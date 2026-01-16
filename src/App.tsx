@@ -268,6 +268,13 @@ const AppContent = () => {
                       </Suspense>
                     </ProtectedRoute>
                   } />
+                  <Route path="/genie-deck" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
+                      <Suspense fallback={<PageLoading message="Loading Genie Deck..." />}>
+                        {React.createElement(React.lazy(() => import('@/pages/GenieDeck')))}
+                      </Suspense>
+                    </ProtectedRoute>
+                  } />
                   <Route path="/genie-studio/productions" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
                       <Suspense fallback={<PageLoading message="Loading Production Hub..." />}>
