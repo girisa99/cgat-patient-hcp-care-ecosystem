@@ -266,3 +266,12 @@ verify_jwt = false
 
 [functions.youtube-oauth]
 verify_jwt = false
+
+[functions.ai-caption-generator]
+verify_jwt = false
+
+[functions.accessibility-checker]
+verify_jwt = false
+
+[functions.brand-guidelines-checker]
+verify_jwt = false
