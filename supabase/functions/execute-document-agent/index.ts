@@ -143,6 +143,25 @@ function getModelRouting(agentId: string, preferredProvider?: AIProvider): Model
   return baseRouting;
 }
 
+// ============================================
+// MULTI-AGENT PROVIDER CONFIGURATION
+// Allows separate provider selection per agent
+// ============================================
+
+interface MultiAgentConfig {
+  agentId: string;
+  provider: AIProvider;
+  model?: string;
+  enabled: boolean;
+}
+
+interface AgentExecutionOptions {
+  multiAgentConfig?: MultiAgentConfig[];
+  storeResults?: boolean;
+  updateLabelStudio?: boolean;
+  executionMode?: 'instant' | 'guided' | 'background';
+}
+
 interface AgentConfig {
   name: string;
   architectureType: 'single' | 'agentic' | 'a2a' | 'multi-agent';
@@ -156,13 +175,17 @@ interface DocumentContext {
   rawText?: string;
   fileName?: string;
   imageBase64?: string;
+  documentId?: string;
   preferredProvider?: 'claude' | 'gemini' | 'openai';
+  // Multi-agent provider overrides
+  agentProviders?: Record<string, AIProvider>;
 }
 
 interface ExecutionRequest {
   agentId: string;
   agentConfig: AgentConfig;
   documentContext: DocumentContext;
+  options?: AgentExecutionOptions;
 }
 
 interface AgentFinding {
@@ -175,6 +198,90 @@ interface AgentFinding {
   model?: string;
   provider?: string;
   dataSource?: string;
+}
+
+// ============================================
+// SIG CODE INTERPRETATION
+// Parse pharmacy SIG abbreviations to plain English
+// ============================================
+
+const SIG_ABBREVIATIONS: Record<string, string> = {
+  // Frequency
+  'qd': 'once daily',
+  'bid': 'twice daily',
+  'tid': 'three times daily',
+  'qid': 'four times daily',
+  'q4h': 'every 4 hours',
+  'q6h': 'every 6 hours',
+  'q8h': 'every 8 hours',
+  'q12h': 'every 12 hours',
+  'qhs': 'at bedtime',
+  'qam': 'every morning',
+  'qpm': 'every evening',
+  'prn': 'as needed',
+  'stat': 'immediately',
+  'qod': 'every other day',
+  'qwk': 'weekly',
+  'biw': 'twice weekly',
+  // Route
+  'po': 'by mouth',
+  'sl': 'under the tongue',
+  'top': 'topically',
+  'pr': 'rectally',
+  'im': 'intramuscularly',
+  'iv': 'intravenously',
+  'sc': 'subcutaneously',
+  'inh': 'by inhalation',
+  'gtts': 'drops',
+  'ou': 'both eyes',
+  'od': 'right eye',
+  'os': 'left eye',
+  'au': 'both ears',
+  'ad': 'right ear',
+  'as': 'left ear',
+  // Quantity
+  'tab': 'tablet',
+  'tabs': 'tablets',
+  'cap': 'capsule',
+  'caps': 'capsules',
+  'ml': 'milliliter',
+  'mg': 'milligram',
+  'tsp': 'teaspoon',
+  'tbsp': 'tablespoon',
+  'gtt': 'drop',
+  // Timing
+  'ac': 'before meals',
+  'pc': 'after meals',
+  'hs': 'at bedtime',
+  'ud': 'as directed',
+  'c': 'with',
+  's': 'without',
+  'wf': 'with food',
+  'wo': 'without food'
+};
+
+function interpretSigCode(sig: string): { interpretation: string; components: Array<{ abbreviation: string; meaning: string }> } {
+  if (!sig) return { interpretation: 'No directions provided', components: [] };
+  
+  const components: Array<{ abbreviation: string; meaning: string }> = [];
+  let interpretation = sig.toLowerCase();
+  
+  // Sort by length (longest first) to avoid partial replacements
+  const sortedAbbreviations = Object.entries(SIG_ABBREVIATIONS).sort((a, b) => b[0].length - a[0].length);
+  
+  for (const [abbr, meaning] of sortedAbbreviations) {
+    const regex = new RegExp(`\\b${abbr}\\b`, 'gi');
+    if (regex.test(interpretation)) {
+      components.push({ abbreviation: abbr.toUpperCase(), meaning });
+      interpretation = interpretation.replace(regex, meaning);
+    }
+  }
+  
+  // Clean up and capitalize
+  interpretation = interpretation.trim().replace(/\s+/g, ' ');
+  interpretation = interpretation.charAt(0).toUpperCase() + interpretation.slice(1);
+  
+  return { interpretation, components };
 }
 
 // ============================================
@@ -2298,8 +2405,440 @@ function executeGenericAgent(agentConfig: AgentConfig, context: DocumentContext)
 }
 
 // ============================================
-// MAIN ROUTER
+// RCM ANALYSIS AGENTS
+// Revenue Cycle Management for invoices/billing
 // ============================================
+
+async function executeRCMAnalysis(context: DocumentContext): Promise<AgentFinding> {
+  const fields = context.extractedFields || {};
+  const fieldSummary = Object.entries(fields)
+    .slice(0, 20)
+    .map(([k, v]) => `${k}: ${typeof v === 'object' ? v.value : v}`)
+    .join('\n');
+
+  const prompt = `Analyze this healthcare billing/invoice document for Revenue Cycle Management (RCM).
+
+DOCUMENT TYPE: ${context.documentType}
+EXTRACTED DATA:
+${fieldSummary}
+
+Perform comprehensive RCM analysis in JSON format:
+{
+  "summary": "Brief RCM assessment summary",
+  "totalBilled": "amount",
+  "totalAllowed": "amount",
+  "totalPaid": "amount",
+  "patientResponsibility": "amount",
+  "collectionRate": "percentage",
+  "claimStatus": "clean|pending|denied|partial",
+  "cptCodes": [{"code": "code", "description": "desc", "billed": 0, "allowed": 0, "modifier": ""}],
+  "icdCodes": [{"code": "code", "description": "desc", "primary": true/false}],
+  "codingIssues": [{"issue": "description", "severity": "low|medium|high", "recommendation": "fix"}],
+  "denialRisks": [{"reason": "description", "probability": "low|medium|high", "prevention": "action"}],
+  "agingBucket": "0-30|31-60|61-90|90+",
+  "payerType": "Medicare|Medicaid|Commercial|Self-Pay",
+  "recommendations": ["3-5 actionable RCM recommendations"],
+  "alerts": [{"level": "info|warning|error", "message": "message"}],
+  "confidence": 0.0 to 1.0
+}
+
+Focus on revenue optimization and denial prevention. Respond ONLY with JSON.`;
+
+  try {
+    const aiResult = await callUniversalAI('rcm-analysis', prompt, undefined, context.preferredProvider);
+    const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        summary: parsed.summary || `RCM Analysis: ${parsed.claimStatus || 'analyzed'}`,
+        details: {
+          totalBilled: parsed.totalBilled,
+          totalAllowed: parsed.totalAllowed,
+          totalPaid: parsed.totalPaid,
+          patientResponsibility: parsed.patientResponsibility,
+          collectionRate: parsed.collectionRate,
+          claimStatus: parsed.claimStatus,
+          cptCodes: parsed.cptCodes || [],
+          icdCodes: parsed.icdCodes || [],
+          codingIssues: parsed.codingIssues || [],
+          denialRisks: parsed.denialRisks || [],
+          agingBucket: parsed.agingBucket,
+          payerType: parsed.payerType,
+          aiAnalysis: true
+        },
+        recommendations: parsed.recommendations || ['Review coding accuracy'],
+        alerts: parsed.alerts || [],
+        confidence: parsed.confidence || 0.82,
+        aiPowered: true,
+        provider: aiResult.provider,
+        model: aiResult.model,
+        dataSource: `Universal AI (${aiResult.provider})`
+      };
+    }
+    throw new Error('Failed to parse AI response');
+  } catch (error) {
+    console.error('[rcm-analysis] Error:', error);
+    return {
+      summary: 'RCM Analysis: Failed',
+      details: { error: error instanceof Error ? error.message : 'Unknown' },
+      recommendations: ['Manual RCM review required'],
+      alerts: [{ level: 'warning', message: 'AI analysis unavailable' }],
+      confidence: 0.3,
+      aiPowered: false,
+      dataSource: 'Fallback'
+    };
+  }
+}
+
+async function executeCodingValidation(context: DocumentContext): Promise<AgentFinding> {
+  const fields = context.extractedFields || {};
+  const cptCodes = fields.cpt_codes || fields.procedure_codes || [];
+  const icdCodes = fields.icd_codes || fields.diagnosis_codes || [];
+  
+  const prompt = `Validate the medical coding for this billing document.
+
+CPT/HCPCS CODES: ${JSON.stringify(cptCodes)}
+ICD-10 CODES: ${JSON.stringify(icdCodes)}
+DOCUMENT TYPE: ${context.documentType}
+
+Provide coding validation in JSON format:
+{
+  "summary": "Coding validation summary",
+  "cptValidation": [{"code": "code", "valid": true/false, "description": "desc", "issues": []}],
+  "icdValidation": [{"code": "code", "valid": true/false, "description": "desc", "issues": []}],
+  "cptIcdCompatibility": {"compatible": true/false, "issues": []},
+  "modifierAnalysis": [{"modifier": "mod", "appropriate": true/false, "reason": ""}],
+  "upcoding_downcoding_risk": "none|low|medium|high",
+  "bundlingIssues": [{"issue": "description", "codes": ["affected codes"]}],
+  "ncdLcdCompliance": {"compliant": true/false, "issues": []},
+  "recommendations": ["2-3 recommendations"],
+  "alerts": [{"level": "info|warning|error", "message": "message"}],
+  "confidence": 0.0 to 1.0
+}
+
+Respond ONLY with JSON.`;
+
+  try {
+    const aiResult = await callUniversalAI('coding-validation', prompt, undefined, context.preferredProvider);
+    const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        summary: parsed.summary || 'Coding validation complete',
+        details: {
+          cptValidation: parsed.cptValidation || [],
+          icdValidation: parsed.icdValidation || [],
+          cptIcdCompatibility: parsed.cptIcdCompatibility,
+          modifierAnalysis: parsed.modifierAnalysis || [],
+          upcoding_downcoding_risk: parsed.upcoding_downcoding_risk,
+          bundlingIssues: parsed.bundlingIssues || [],
+          ncdLcdCompliance: parsed.ncdLcdCompliance,
+          aiAnalysis: true
+        },
+        recommendations: parsed.recommendations || ['Review coding accuracy'],
+        alerts: parsed.alerts || [],
+        confidence: parsed.confidence || 0.85,
+        aiPowered: true,
+        provider: aiResult.provider,
+        model: aiResult.model,
+        dataSource: `Universal AI (${aiResult.provider})`
+      };
+    }
+    throw new Error('Failed to parse AI response');
+  } catch (error) {
+    console.error('[coding-validation] Error:', error);
+    return {
+      summary: 'Coding Validation: Failed',
+      details: { error: error instanceof Error ? error.message : 'Unknown' },
+      recommendations: ['Manual coding review required'],
+      alerts: [{ level: 'warning', message: 'AI analysis unavailable' }],
+      confidence: 0.3,
+      aiPowered: false,
+      dataSource: 'Fallback'
+    };
+  }
+}
+
+async function executeDenialPrevention(context: DocumentContext): Promise<AgentFinding> {
+  const fields = context.extractedFields || {};
+  const fieldSummary = Object.entries(fields)
+    .slice(0, 15)
+    .map(([k, v]) => `${k}: ${typeof v === 'object' ? v.value : v}`)
+    .join('\n');
+
+  const prompt = `Analyze this claim/billing document for denial risks and prevention strategies.
+
+DOCUMENT DATA:
+${fieldSummary}
+
+Provide denial prevention analysis in JSON format:
+{
+  "summary": "Denial risk assessment summary",
+  "overallDenialRisk": "low|medium|high",
+  "denialCategories": [
+    {"category": "category name", "risk": "low|medium|high", "reason": "explanation", "prevention": "action"}
+  ],
+  "missingDocumentation": ["list missing required documentation"],
+  "timingIssues": {"atRisk": true/false, "deadlines": ["list any filing deadlines"]},
+  "priorAuthStatus": "not_required|required_obtained|required_missing|expired",
+  "medicalNecessityRisk": "low|medium|high",
+  "appealStrategies": ["strategies if denied"],
+  "recommendations": ["3-5 actionable prevention steps"],
+  "alerts": [{"level": "info|warning|error", "message": "message"}],
+  "confidence": 0.0 to 1.0
+}
+
+Focus on actionable denial prevention. Respond ONLY with JSON.`;
+
+  try {
+    const aiResult = await callUniversalAI('denial-prevention', prompt, undefined, context.preferredProvider);
+    const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        summary: parsed.summary || `Denial Risk: ${parsed.overallDenialRisk || 'assessed'}`,
+        details: {
+          overallDenialRisk: parsed.overallDenialRisk,
+          denialCategories: parsed.denialCategories || [],
+          missingDocumentation: parsed.missingDocumentation || [],
+          timingIssues: parsed.timingIssues,
+          priorAuthStatus: parsed.priorAuthStatus,
+          medicalNecessityRisk: parsed.medicalNecessityRisk,
+          appealStrategies: parsed.appealStrategies || [],
+          aiAnalysis: true
+        },
+        recommendations: parsed.recommendations || ['Review claim for completeness'],
+        alerts: parsed.alerts || [],
+        confidence: parsed.confidence || 0.8,
+        aiPowered: true,
+        provider: aiResult.provider,
+        model: aiResult.model,
+        dataSource: `Universal AI (${aiResult.provider})`
+      };
+    }
+    throw new Error('Failed to parse AI response');
+  } catch (error) {
+    console.error('[denial-prevention] Error:', error);
+    return {
+      summary: 'Denial Prevention: Failed',
+      details: { error: error instanceof Error ? error.message : 'Unknown' },
+      recommendations: ['Manual denial risk review required'],
+      alerts: [{ level: 'warning', message: 'AI analysis unavailable' }],
+      confidence: 0.3,
+      aiPowered: false,
+      dataSource: 'Fallback'
+    };
+  }
+}
+
+// ============================================
+// SIG CODE ANALYSIS AGENT
+// Full SIG interpretation with clinical context
+// ============================================
+
+async function executeSigCodeAnalysis(context: DocumentContext): Promise<AgentFinding> {
+  const fields = context.extractedFields || {};
+  const medications = extractAllMedications(fields);
+  
+  if (medications.length === 0) {
+    return {
+      summary: 'SIG Analysis: No medications found',
+      details: { medicationCount: 0 },
+      recommendations: ['Verify medication extraction'],
+      alerts: [{ level: 'warning', message: 'No SIG codes to analyze' }],
+      confidence: 0.2,
+      aiPowered: false,
+      dataSource: 'No data'
+    };
+  }
+
+  // Interpret all SIG codes
+  const sigAnalysis = medications.map(med => {
+    const interpretation = interpretSigCode(med.sig || '');
+    return {
+      medication: med.name,
+      originalSig: med.sig || 'Not specified',
+      interpretation: interpretation.interpretation,
+      components: interpretation.components,
+      strength: med.strength,
+      route: med.route,
+      quantity: med.quantity,
+      refills: med.refills
+    };
+  });
+
+  // Get AI enhancement for clinical context
+  const sigSummary = sigAnalysis.map(s => `${s.medication}: ${s.originalSig} → ${s.interpretation}`).join('\n');
+  
+  const prompt = `Review these medication SIG code interpretations and provide clinical context.
+
+SIG INTERPRETATIONS:
+${sigSummary}
+
+Provide enhanced analysis in JSON format:
+{
+  "summary": "Overall SIG analysis summary",
+  "interpretations": [
+    {
+      "medication": "name",
+      "plainEnglish": "full plain English instructions for patient",
+      "clinicalNotes": "any clinical considerations",
+      "patientEducation": "key points to tell patient",
+      "administrationTiming": "specific timing guidance"
+    }
+  ],
+  "interactionTimingRisks": ["any timing conflicts between medications"],
+  "adherenceConsiderations": ["factors affecting adherence"],
+  "recommendations": ["2-3 recommendations"],
+  "alerts": [{"level": "info|warning", "message": "message"}],
+  "confidence": 0.0 to 1.0
+}
+
+Respond ONLY with JSON.`;
+
+  try {
+    const aiResult = await callUniversalAI('sig-analysis', prompt, undefined, context.preferredProvider);
+    const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        summary: parsed.summary || `SIG Analysis: ${medications.length} medication(s) interpreted`,
+        details: {
+          medicationCount: medications.length,
+          sigAnalysis,
+          aiInterpretations: parsed.interpretations || [],
+          interactionTimingRisks: parsed.interactionTimingRisks || [],
+          adherenceConsiderations: parsed.adherenceConsiderations || [],
+          aiEnhanced: true
+        },
+        recommendations: parsed.recommendations || ['Review SIG with patient'],
+        alerts: parsed.alerts || [],
+        confidence: parsed.confidence || 0.88,
+        aiPowered: true,
+        provider: aiResult.provider,
+        model: aiResult.model,
+        dataSource: `SIG Parser + Universal AI (${aiResult.provider})`
+      };
+    }
+    throw new Error('Failed to parse AI response');
+  } catch (error) {
+    // Return rule-based interpretation as fallback
+    return {
+      summary: `SIG Analysis: ${medications.length} medication(s) interpreted (rule-based)`,
+      details: {
+        medicationCount: medications.length,
+        sigAnalysis,
+        aiEnhanced: false
+      },
+      recommendations: ['Review SIG codes with patient', 'Verify interpretation accuracy'],
+      alerts: [{ level: 'info', message: 'Using rule-based SIG interpretation' }],
+      confidence: 0.75,
+      aiPowered: false,
+      dataSource: 'SIG Parser (rule-based)'
+    };
+  }
+}
+
+// ============================================
+// RESULT STORAGE & LABEL STUDIO UPDATE
+// ============================================
+
+async function storeAgentResults(
+  documentId: string,
+  agentId: string,
+  findings: AgentFinding
+): Promise<boolean> {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !documentId) {
+    console.log('[storeAgentResults] Missing required parameters, skipping storage');
+    return false;
+  }
+  
+  try {
+    // Store in document_agent_results table (if exists)
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/document_agent_results`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        document_id: documentId,
+        agent_id: agentId,
+        findings: findings,
+        ai_powered: findings.aiPowered,
+        provider: findings.provider,
+        model: findings.model,
+        confidence: findings.confidence,
+        executed_at: new Date().toISOString()
+      })
+    });
+    
+    if (response.ok || response.status === 201) {
+      console.log(`[storeAgentResults] Stored results for agent ${agentId} on document ${documentId}`);
+      return true;
+    } else {
+      console.warn(`[storeAgentResults] Storage failed: ${response.status}`);
+      return false;
+    }
+  } catch (error) {
+    console.warn('[storeAgentResults] Error:', error);
+    return false;
+  }
+}
+
+async function updateLabelStudioWithResults(
+  documentId: string,
+  agentId: string,
+  findings: AgentFinding,
+  documentType: string
+): Promise<boolean> {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return false;
+  
+  try {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/label-studio-connector`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        action: 'recordTrainingEvents',
+        events: [{
+          eventType: 'agent_execution',
+          context: {
+            document_id: documentId,
+            agent_id: agentId,
+            document_type: documentType,
+            success: findings.confidence > 0.5,
+            confidence: findings.confidence,
+            ai_powered: findings.aiPowered,
+            provider: findings.provider
+          },
+          metadata: {
+            summary: findings.summary,
+            alerts_count: findings.alerts?.length || 0,
+            recommendations_count: findings.recommendations?.length || 0,
+            timestamp: new Date().toISOString()
+          }
+        }]
+      })
+    });
+    
+    if (response.ok) {
+      console.log(`[updateLabelStudio] Recorded agent execution for ${agentId}`);
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.warn('[updateLabelStudio] Error:', error);
+    return false;
+  }
+}
+
+// ============================================
+// MAIN ROUTER
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -2307,13 +2846,20 @@ serve(async (req) => {
   }
 
   try {
-    const { agentId, agentConfig, documentContext } = await req.json() as ExecutionRequest;
+    const { agentId, agentConfig, documentContext, options } = await req.json() as ExecutionRequest;
     
     console.log(`[execute-document-agent] Executing agent: ${agentId}`);
     console.log(`[execute-document-agent] Document type: ${documentContext.documentType}`);
     console.log(`[execute-document-agent] Fields count: ${Object.keys(documentContext.extractedFields || {}).length}`);
     
-    const routing = getModelRouting(agentId);
+    // Check for agent-specific provider override
+    const agentProvider = documentContext.agentProviders?.[agentId];
+    if (agentProvider) {
+      console.log(`[execute-document-agent] Using agent-specific provider: ${agentProvider}`);
+      documentContext.preferredProvider = agentProvider;
+    }
+    
+    const routing = getModelRouting(agentId, documentContext.preferredProvider);
     console.log(`[execute-document-agent] Model routing: ${routing.provider}/${routing.model} (fallback: ${routing.fallbackProvider}/${routing.fallbackModel})`);
 
     let findings: AgentFinding;
@@ -2332,7 +2878,7 @@ serve(async (req) => {
         findings = await executeDrugLookup(documentContext);
         break;
 
-      // ===== NEW MEDICATION AGENTS =====
+      // ===== MEDICATION AGENTS =====
       case 'ndc-lookup':
         findings = await executeNDCLookup(documentContext);
         break;
@@ -2355,6 +2901,13 @@ serve(async (req) => {
       
       case 'cost-analysis':
         findings = await executeCostAnalysis(documentContext);
+        break;
+      
+      // ===== SIG CODE ANALYSIS =====
+      case 'sig-analysis':
+      case 'sig-interpretation':
+      case 'sig-code':
+        findings = await executeSigCodeAnalysis(documentContext);
         break;
 
       // ===== UNIVERSAL AI AGENTS =====
@@ -2394,6 +2947,25 @@ serve(async (req) => {
         findings = await executeDataValidation(documentContext);
         break;
 
+      // ===== RCM & BILLING AGENTS =====
+      case 'rcm-analysis':
+      case 'revenue-cycle':
+      case 'billing-analysis':
+        findings = await executeRCMAnalysis(documentContext);
+        break;
+      
+      case 'coding-validation':
+      case 'cpt-validation':
+      case 'icd-validation':
+        findings = await executeCodingValidation(documentContext);
+        break;
+      
+      case 'denial-prevention':
+      case 'denial-risk':
+      case 'claim-scrubbing':
+        findings = await executeDenialPrevention(documentContext);
+        break;
+
       // ===== CONFIGURATION-REQUIRED AGENTS =====
       case 'insurance-verification':
       case 'eligibility-check':
@@ -2412,12 +2984,31 @@ serve(async (req) => {
 
     console.log(`[execute-document-agent] Agent ${agentId} completed - AI: ${findings.aiPowered}, Provider: ${findings.provider || 'N/A'}, Source: ${findings.dataSource}, Confidence: ${findings.confidence}`);
 
+    // Store results if requested and document ID provided
+    if (options?.storeResults && documentContext.documentId) {
+      await storeAgentResults(documentContext.documentId, agentId, findings);
+    }
+    
+    // Update Label Studio if requested
+    if (options?.updateLabelStudio && documentContext.documentId) {
+      await updateLabelStudioWithResults(
+        documentContext.documentId,
+        agentId,
+        findings,
+        documentContext.documentType
+      );
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         agentId,
         findings,
-        executedAt: new Date().toISOString()
+        provider: findings.provider,
+        model: findings.model,
+        executedAt: new Date().toISOString(),
+        resultsStored: options?.storeResults && documentContext.documentId ? true : false,
+        labelStudioUpdated: options?.updateLabelStudio && documentContext.documentId ? true : false
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
