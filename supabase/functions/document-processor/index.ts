@@ -311,54 +311,88 @@ function selectBestModel(documentTypeId: string, documentCategory: string, ocrTe
   return { config: categoryConfig, reason: 'category_default', confidence: 0.8 };
 }
 
-// ============= SHARED AI VISION HELPER =============
-// Uses Lovable AI Gateway (same as ai-universal-processor) - NO DUPLICATION
+// ============= UNIFIED AI VISION HELPER =============
+// Routes through ai-universal-processor - NO duplicate Lovable AI Gateway calls
+// Uses the same infrastructure as useUniversalAI hook
 async function callUniversalAIVision(
   prompt: string,
   imageBase64: string,
   mimeType: string,
-  options?: { maxTokens?: number; model?: string }
-): Promise<{ content: string; success: boolean }> {
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  options?: { 
+    maxTokens?: number; 
+    model?: string; 
+    provider?: 'gemini' | 'claude' | 'openai';
+    documentType?: string;
+  }
+): Promise<{ content: string; success: boolean; provider?: string; model?: string }> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
   
-  if (!LOVABLE_API_KEY) {
-    console.error('[UniversalAI-Vision] LOVABLE_API_KEY not configured');
+  if (!supabaseUrl || !supabaseServiceKey) {
+    console.error('[UniversalAI-Vision] Supabase not configured');
     return { content: '', success: false };
   }
 
-  const model = options?.model || "google/gemini-2.5-flash";
-  const maxTokens = options?.maxTokens || 2000;
+  // Determine provider based on document type (intelligent routing)
+  let provider = options?.provider || 'gemini';
+  let model = options?.model;
+  
+  // Apply intelligent routing based on document type
+  if (options?.documentType) {
+    const docType = options.documentType.toLowerCase();
+    // Healthcare documents → Claude for clinical reasoning
+    if (['prescription', 'rx', 'insurance', 'lab_result', 'medical_record'].some(t => docType.includes(t))) {
+      provider = 'claude';
+      model = model || 'claude-3-5-sonnet-20241022';
+    }
+    // Financial documents → OpenAI for structured extraction
+    else if (['invoice', 'receipt', 'claim', 'billing'].some(t => docType.includes(t))) {
+      provider = 'openai';
+      model = model || 'gpt-4o';
+    }
+    // Medical imaging, forms, identity → Gemini for vision
+    else if (['xray', 'ct_scan', 'mri', 'ecg', 'ultrasound', 'passport', 'drivers_license', 'form'].some(t => docType.includes(t))) {
+      provider = 'gemini';
+      model = model || 'gemini-2.0-flash-exp';
+    }
+  }
 
-  console.log(`[UniversalAI-Vision] Calling with model: ${model}`);
+  // Default model per provider
+  if (!model) {
+    switch (provider) {
+      case 'claude': model = 'claude-3-5-sonnet-20241022'; break;
+      case 'openai': model = 'gpt-4o'; break;
+      case 'gemini': 
+      default: model = 'gemini-2.0-flash-exp'; break;
+    }
+  }
+
+  console.log(`[UniversalAI-Vision] Routing to ai-universal-processor - Provider: ${provider}, Model: ${model}`);
 
   try {
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // Call ai-universal-processor edge function internally
+    const response = await fetch(`${supabaseUrl}/functions/v1/ai-universal-processor`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${supabaseServiceKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        provider,
         model,
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: prompt },
-              {
-                type: "image_url",
-                image_url: { url: `data:${mimeType || 'image/png'};base64,${imageBase64}` }
-              }
-            ]
-          }
-        ],
-        max_tokens: maxTokens
+        prompt,
+        action: 'analyze_scene',
+        context: {
+          image: imageBase64,
+          analysisDepth: 'detailed'
+        },
+        maxTokens: options?.maxTokens || 2000
       })
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`[UniversalAI-Vision] Error (${response.status}):`, errorText);
+      console.error(`[UniversalAI-Vision] ai-universal-processor error (${response.status}):`, errorText);
       
       if (response.status === 429) {
         throw new Error('Rate limit exceeded. Please try again later.');
@@ -367,13 +401,28 @@ async function callUniversalAIVision(
         throw new Error('API credits exhausted. Please add funds.');
       }
       
+      // Try fallback provider
+      if (provider !== 'gemini') {
+        console.log('[UniversalAI-Vision] Attempting fallback to Gemini...');
+        return callUniversalAIVision(prompt, imageBase64, mimeType, {
+          ...options,
+          provider: 'gemini',
+          model: 'gemini-2.0-flash-exp'
+        });
+      }
+      
       return { content: '', success: false };
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || '';
+    const content = data.content || '';
     
-    return { content, success: true };
+    return { 
+      content, 
+      success: true, 
+      provider,
+      model 
+    };
   } catch (error) {
     console.error('[UniversalAI-Vision] Error:', error);
     return { content: '', success: false };
@@ -611,11 +660,13 @@ async function handleUploadWithAutoDetect(supabase: any, request: ProcessingRequ
     fallbacksAttempted: [] as AIProvider[]
   };
 
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  // AI processing is now routed through ai-universal-processor (no direct Lovable AI Gateway)
+  // Check if we have Supabase configured (required for internal function calls)
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
   
-  if (LOVABLE_API_KEY && (isImage || isPdf || isDicom)) {
+  if (supabaseUrl && (isImage || isPdf || isDicom)) {
     try {
-      console.log(`[AutoDetect] Running Gemini Vision auto-detection...`);
+      console.log(`[AutoDetect] Starting 2-stage processing pipeline...`);
       
       // For DICOM, extract metadata first then analyze
       if (isDicom) {
@@ -630,10 +681,10 @@ async function handleUploadWithAutoDetect(supabase: any, request: ProcessingRequ
           is_medical: true
         };
         
-        // Use two-stage pipeline for medical imaging
+        // Use two-stage pipeline for medical imaging: Gemini (OCR) → Claude (Clinical)
         modelRoutingInfo = {
           primaryModel: 'gemini',
-          modelUsed: 'gemini',
+          modelUsed: 'claude',  // Stage 2 uses Claude for clinical analysis
           selectionReason: 'explicit_config',
           confidence: 0.98,
           pipelineType: 'sequential-hybrid',
@@ -642,13 +693,13 @@ async function handleUploadWithAutoDetect(supabase: any, request: ProcessingRequ
           fallbacksAttempted: []
         };
         
-        // Run medical image analysis if enabled
+        // Run medical image analysis if enabled (Stage 2 with Claude)
         if (autoAnalyzeMedical) {
-          console.log(`[AutoDetect] Running medical imaging analysis for DICOM...`);
-          medicalAnalysisResult = await runMedicalImageAnalysis(fileBase64, mimeType || 'application/dicom', dicomMetadata, LOVABLE_API_KEY);
+          console.log(`[AutoDetect] Stage 2 - Running clinical analysis for DICOM with Claude...`);
+          medicalAnalysisResult = await runMedicalImageAnalysis(fileBase64, mimeType || 'application/dicom', dicomMetadata);
         }
       } else if (isImage || isPdf) {
-        // Use Gemini to classify the document
+        // Use Gemini to classify the document - Stage 1 (OCR + Classification)
         const classificationPrompt = `Analyze this document/image and classify it. Return ONLY a JSON object:
 {
   "detected_type": "one of: invoice, receipt, prescription, lab_result, medical_record, insurance_card, identification, form, contract, medical_imaging, xray, ct_scan, mri, ultrasound, ecg, unknown",
@@ -656,52 +707,56 @@ async function handleUploadWithAutoDetect(supabase: any, request: ProcessingRequ
   "is_medical": true/false,
   "medical_modality": "if medical imaging, specify: xray, ct, mri, ultrasound, ecg, or null",
   "key_indicators": ["list of visual cues that led to this classification"],
-  "suggested_fields": ["list of expected fields for this document type"]
+  "suggested_fields": ["list of expected fields for this document type"],
+  "ocr_text_preview": "first 500 chars of extracted text if readable"
 }`;
 
-        // Use shared Universal AI Vision helper (no duplication!)
+        // Stage 1: Use Gemini for initial classification (fast, vision-optimized)
         const classifyResult = await callUniversalAIVision(
           classificationPrompt,
           fileBase64,
           mimeType || 'image/png',
-          { maxTokens: 1000, model: 'google/gemini-2.5-flash' }
+          { 
+            maxTokens: 1500, 
+            provider: 'gemini',  // Stage 1 always uses Gemini for vision/OCR
+            documentType: undefined  // No type yet, determining now
+          }
         );
 
         if (classifyResult.success && classifyResult.content) {
           
-          // Parse JSON from response
-          const jsonMatch = content.match(/\{[\s\S]*\}/);
+          // Parse JSON from response (fixed: use classifyResult.content)
+          const jsonMatch = classifyResult.content.match(/\{[\s\S]*\}/);
           if (jsonMatch) {
             autoDetectionResult = JSON.parse(jsonMatch[0]);
             detectedDocumentType = autoDetectionResult.detected_type || 'unknown';
             
-            console.log(`[AutoDetect] Detected type: ${detectedDocumentType}, confidence: ${autoDetectionResult.confidence}`);
+            console.log(`[AutoDetect] Stage 1 Complete - Detected type: ${detectedDocumentType}, confidence: ${autoDetectionResult.confidence}, provider: ${classifyResult.provider}`);
             
-            // Determine model routing based on detected type
+            // Determine Stage 2 model routing based on detected type
             const category = getDocumentCategory(detectedDocumentType);
             const routingConfig = selectBestModel(detectedDocumentType, category);
             
-            // Always use sequential-hybrid with Google Vision OCR as stage 1
-            // Stage 2 uses the appropriate clinical model based on document type
+            // Two-stage pipeline: Stage 1 = Gemini Vision OCR → Stage 2 = Intelligent Model
             modelRoutingInfo = {
               primaryModel: routingConfig.config.primaryModel,
               modelUsed: routingConfig.config.stage2Model || routingConfig.config.primaryModel,
               selectionReason: routingConfig.reason as any,
               confidence: routingConfig.confidence,
               pipelineType: 'sequential-hybrid',
-              stage1Model: 'google_vision_ocr',
+              stage1Model: 'gemini',  // Always Gemini for OCR/classification
               stage2Model: routingConfig.config.stage2Model || routingConfig.config.primaryModel,
               fallbacksAttempted: []
             };
             
             // Run medical image analysis if it's a medical image
+            // Stage 2: Uses Claude for clinical reasoning on medical content
             if (autoAnalyzeMedical && autoDetectionResult.is_medical) {
-              console.log(`[AutoDetect] Medical content detected, running analysis...`);
+              console.log(`[AutoDetect] Stage 2 - Medical content detected, running clinical analysis with Claude...`);
               medicalAnalysisResult = await runMedicalImageAnalysis(
                 fileBase64, 
                 mimeType || 'image/png', 
-                { modality: autoDetectionResult.medical_modality },
-                LOVABLE_API_KEY
+                { modality: autoDetectionResult.medical_modality }
               );
             }
           }
@@ -794,11 +849,11 @@ async function handleUploadWithAutoDetect(supabase: any, request: ProcessingRequ
   );
 }
 
-// Helper: Run medical image analysis with Gemini
-async function runMedicalImageAnalysis(imageBase64: string, mimeType: string, metadata: any, apiKey: string): Promise<any> {
+// Helper: Run medical image analysis - Stage 2 uses Claude for clinical reasoning
+async function runMedicalImageAnalysis(imageBase64: string, mimeType: string, metadata: any): Promise<any> {
   const modality = metadata?.modality || metadata?.Modality || 'unknown';
   
-  const analysisPrompt = `You are a medical imaging AI assistant. Analyze this ${modality} medical image and provide a structured assessment.
+  const analysisPrompt = `You are a medical imaging AI assistant with clinical expertise. Analyze this ${modality} medical image and provide a structured clinical assessment.
 
 IMPORTANT: This is for educational/informational purposes only. Always recommend professional medical review.
 
@@ -808,22 +863,29 @@ Provide analysis in this JSON format:
   "modality_detected": "xray/ct/mri/ultrasound/ecg/dicom/other",
   "anatomical_region": "identified body region",
   "technical_observations": ["list of technical image quality notes"],
-  "anatomical_findings": ["list of visible anatomical structures"],
-  "potential_observations": ["list of any notable findings - be conservative"],
-  "measurements": {"any measurable findings": "value"},
-  "comparison_notes": "notes about positioning, technique",
-  "recommendations": ["suggested follow-up or additional views if applicable"],
+  "anatomical_findings": ["list of visible anatomical structures with clinical context"],
+  "clinical_observations": ["list of clinically relevant findings with anatomical descriptions"],
+  "potential_diagnoses": ["differential diagnoses to consider - be conservative"],
+  "measurements": {"any measurable findings": "value with normal ranges"},
+  "comparison_notes": "notes about positioning, technique, and comparison with normal",
+  "recommendations": ["suggested follow-up, additional views, or clinical correlation"],
+  "urgency_level": "routine/urgent/emergent",
   "confidence_level": 0.0 to 1.0,
   "disclaimer": "This is an AI-assisted preliminary analysis. Professional radiologist review is required for clinical decisions."
 }`;
 
   try {
-    // Use shared Universal AI Vision helper (no duplication!)
+    // Stage 2: Use Claude for clinical reasoning on medical images
+    // Claude excels at medical terminology and clinical interpretation
     const result = await callUniversalAIVision(
       analysisPrompt,
       imageBase64,
       mimeType,
-      { maxTokens: 2000, model: 'google/gemini-2.5-flash' }
+      { 
+        maxTokens: 2500, 
+        provider: 'claude',  // Claude for clinical reasoning
+        documentType: 'medical_imaging'
+      }
     );
 
     if (result.success && result.content) {
@@ -833,13 +895,16 @@ Provide analysis in this JSON format:
         return {
           ...analysis,
           analyzed_at: new Date().toISOString(),
-          source_metadata: metadata
+          analysis_provider: result.provider,
+          analysis_model: result.model,
+          source_metadata: metadata,
+          pipeline_stage: 'stage_2_clinical'
         };
       }
     }
     return null;
   } catch (error) {
-    console.error('[MedicalAnalysis] Error:', error);
+    console.error('[MedicalAnalysis] Stage 2 Error:', error);
     return null;
   }
 }
