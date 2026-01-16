@@ -95,6 +95,7 @@ import { useGenieScripts, type GenieScript } from '@/components/genie-studio/use
 // Genie Spark - Smart Content Pipeline
 import { SmartContentPipeline } from '@/components/genie-studio/SmartContentPipeline';
 import type { GeneratedContent } from '@/components/genie-studio/PostGenerationActions';
+import { PresentationGeneratorPanel } from '@/components/genie-studio/presentation-generator';
 import { supabase } from '@/integrations/supabase/client';
 import { useGenieSession } from '@/hooks/useGenieSession';
 import { SessionCalendarButtons } from '@/components/genie-studio/SessionCalendarButtons';
@@ -2487,6 +2488,16 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
                   onSaveToKnowledgeBase={(content: GeneratedContent) => {
                     // Save to knowledge base (would call actual KB service)
                     toast.success(`Script saved to Knowledge Base for future AI reference!`);
+                  }}
+                />
+
+                {/* Universal Presentation Generator */}
+                <PresentationGeneratorPanel
+                  onComplete={(presentation) => {
+                    toast.success(`Presentation "${presentation.title}" ready!`);
+                  }}
+                  onSaveToKnowledgeBase={(title, content) => {
+                    toast.success(`Presentation saved to Knowledge Base!`);
                   }}
                 />
               </div>

@@ -8,3 +8,4 @@ export { SlideAIEnhancer } from './SlideAIEnhancer';
 export { BulletPointEditor } from './BulletPointEditor';
 export { SlideCard } from './SlideCard';
 export { PresentationGeneratorPanel } from './PresentationGeneratorPanel';
+export { VideoExportPanel } from './VideoExportPanel';
