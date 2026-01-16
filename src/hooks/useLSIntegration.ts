@@ -517,6 +517,136 @@ export const useLSArchIntegration = () => {
   };
 };
 
+// ============================================================================
+// DOCUMENT PROCESSING INTEGRATION - OCR, Extraction, Field Mapping
+// ============================================================================
+
+export const useLSDocumentProcessingIntegration = () => {
+  const ls = useLSUniversalOptional();
+
+  const captureOCRResult = useCallback((
+    documentId: string,
+    documentType: string,
+    ocrText: string,
+    confidence: number,
+    wasAccurate?: boolean
+  ) => {
+    ls?.captureData({
+      type: 'transcription_accuracy',
+      source: 'production',
+      platform: 'desktop',
+      data: {
+        documentId,
+        documentType,
+        ocrText,
+        confidence,
+        textLength: ocrText.length,
+      },
+      labels: wasAccurate !== undefined ? { ocr_accurate: wasAccurate } : undefined,
+    });
+  }, [ls]);
+
+  const captureFieldExtraction = useCallback((
+    documentId: string,
+    documentType: string,
+    extractedFields: Record<string, { value: string; confidence: number }>,
+    modelUsed: string,
+    wasAccepted?: boolean
+  ) => {
+    const fieldCount = Object.keys(extractedFields).length;
+    const avgConfidence = Object.values(extractedFields).reduce((sum, f) => sum + f.confidence, 0) / fieldCount;
+    
+    ls?.captureData({
+      type: 'content_tagging',
+      source: 'production',
+      platform: 'desktop',
+      data: {
+        documentId,
+        documentType,
+        extractedFields,
+        fieldCount,
+        avgConfidence,
+        modelUsed,
+      },
+      labels: wasAccepted !== undefined ? { extraction_accepted: wasAccepted } : undefined,
+    });
+  }, [ls]);
+
+  const captureFieldCorrection = useCallback((
+    documentId: string,
+    fieldName: string,
+    originalValue: string,
+    correctedValue: string,
+    originalConfidence: number
+  ) => {
+    ls?.captureData({
+      type: 'script_enhancement',
+      source: 'production',
+      platform: 'desktop',
+      data: {
+        documentId,
+        fieldName,
+        originalValue,
+        correctedValue,
+        originalConfidence,
+        wasCorrection: originalValue !== correctedValue,
+      },
+      labels: { field_corrected: originalValue !== correctedValue },
+    });
+  }, [ls]);
+
+  const captureModelRouting = useCallback((
+    documentType: string,
+    selectedModel: string,
+    alternativeModels: string[],
+    routingConfidence: number,
+    wasOptimal?: boolean
+  ) => {
+    ls?.captureData({
+      type: 'suggestion_relevance',
+      source: 'production',
+      platform: 'desktop',
+      data: {
+        documentType,
+        selectedModel,
+        alternativeModels,
+        routingConfidence,
+      },
+      labels: wasOptimal !== undefined ? { routing_optimal: wasOptimal } : undefined,
+    });
+  }, [ls]);
+
+  const captureDocumentClassification = useCallback((
+    documentId: string,
+    predictedType: string,
+    actualType: string,
+    confidence: number
+  ) => {
+    ls?.captureData({
+      type: 'content_tagging',
+      source: 'production',
+      platform: 'desktop',
+      data: {
+        documentId,
+        predictedType,
+        actualType,
+        confidence,
+        wasCorrect: predictedType === actualType,
+      },
+      labels: { classification_correct: predictedType === actualType },
+    });
+  }, [ls]);
+
+  return {
+    captureOCRResult,
+    captureFieldExtraction,
+    captureFieldCorrection,
+    captureModelRouting,
+    captureDocumentClassification,
+    isEnabled: ls?.isEnabled ?? false,
+  };
+};
+
 // Re-export all hooks
 export {
   useLSSparkIntegration as useSparkLS,
@@ -527,4 +657,5 @@ export {
   useLSProductionIntegration as useProductionLS,
   useLSAskGenieIntegration as useAskGenieLS,
   useLSArchIntegration as useArchLS,
+  useLSDocumentProcessingIntegration as useDocumentProcessingLS,
 };
