@@ -18,6 +18,7 @@ import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
 import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
 import genieStudioBanner from '@/assets/logos/genie-studio-banner.png';
 import genieArcLogo from '@/assets/logos/genie-arc-combined.png';
+import genieDeckLogo from '@/assets/logos/genie-deck-combined.png';
 
 // Category info with branding
 export interface CategoryEmailConfig {
@@ -298,6 +299,7 @@ export const PRODUCT_LOGOS = {
   vibe: genieVibeLogo,
   studio: genieStudioBanner,
   arc: genieArcLogo,
+  deck: genieDeckLogo,
 };
 
 // Get all demo types with their product branding

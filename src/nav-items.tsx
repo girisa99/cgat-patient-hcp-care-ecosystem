@@ -153,6 +153,11 @@ export const navItems = [
   },
   // ARCHITECTURE & DIAGRAMS SECTION
   {
+    title: "Genie Deck",
+    url: "/genie-deck",
+    icon: Layers,
+  },
+  {
     title: "Presentations",
     url: "/presentations",
     icon: Layers,

@@ -15,8 +15,9 @@ import genieStudioBanner from '@/assets/logos/genie-studio-banner.png';
 import genieStudioHorizontal from '@/assets/logos/genie-studio-horizontal.png';
 import genieArcLogo from '@/assets/logos/genie-arc-combined.png';
 import askGenieLogo from '@/assets/logos/ask-genie-combined.png';
+import genieDeckLogo from '@/assets/logos/genie-deck-combined.png';
 
-export type GenieProduct = 'mind' | 'spark' | 'vibe' | 'studio' | 'arc';
+export type GenieProduct = 'mind' | 'spark' | 'vibe' | 'studio' | 'arc' | 'deck';
 
 export interface GenieProductInfo {
   id: GenieProduct;
@@ -64,6 +65,7 @@ export const ASK_GENIE = {
  * - Genie Spark: "Ignite your Ideas"
  * - Genie Studio: "Mind to Media"
  * - Genie Arc: "Your Production Journey With Infinite Possibilities"
+ * - Genie Deck: "Ideas to Impact"
  */
 export const GENIE_PRODUCTS: Record<GenieProduct, GenieProductInfo> = {
   mind: {
@@ -165,6 +167,26 @@ export const GENIE_PRODUCTS: Record<GenieProduct, GenieProductInfo> = {
     ],
     logos: {
       combined: genieArcLogo
+    }
+  },
+  deck: {
+    id: 'deck',
+    name: 'Genie Deck',
+    tagline: 'Ideas to Impact',
+    description: 'Transform your ideas into stunning presentations with AI-powered slide generation, multi-language support, and smart visual design.',
+    emoji: '📊',
+    color: 'from-cyan-500 to-teal-500',
+    bgColor: 'bg-cyan-50 dark:bg-cyan-950/20',
+    borderColor: 'border-cyan-200 dark:border-cyan-800',
+    features: [
+      'AI slide generation',
+      'Multi-language export',
+      'Smart visual layouts',
+      'Brand customization',
+      'Drag-and-drop editing'
+    ],
+    logos: {
+      combined: genieDeckLogo
     }
   }
 };
