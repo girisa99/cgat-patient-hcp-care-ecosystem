@@ -33,7 +33,8 @@ import {
   Trash2,
   Play,
   Edit,
-  FolderOpen
+  FolderOpen,
+  Send
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useShows } from '@/hooks/useShows';
@@ -41,6 +42,7 @@ import { toast } from 'sonner';
 import { PodcastToVideoConverter } from '@/components/shared';
 import { AskGenie } from '@/components/genie-studio/AskGenie';
 import genieArcLogo from '@/assets/logos/genie-arc-combined.png';
+import { AutoPublishScheduler } from '@/components/genie-studio/publishing/AutoPublishScheduler';
 
 const SHOW_TYPES = [
   { value: 'podcast', label: 'Podcast', icon: Podcast, color: 'from-purple-500 to-pink-500' },
@@ -165,6 +167,10 @@ const GenieArc: React.FC = () => {
               <TabsTrigger value="podcast-to-video" className="gap-2">
                 <Video className="h-4 w-4" />
                 Podcast→Video
+              </TabsTrigger>
+              <TabsTrigger value="auto-publish" className="gap-2">
+                <Send className="h-4 w-4" />
+                Auto-Publish
               </TabsTrigger>
             </TabsList>
             
@@ -358,6 +364,11 @@ const GenieArc: React.FC = () => {
                   toast.success(`Video conversion complete!`);
                 }}
               />
+            </TabsContent>
+
+            {/* Auto-Publish Scheduling Tab */}
+            <TabsContent value="auto-publish" className="mt-6">
+              <AutoPublishScheduler />
             </TabsContent>
           </Tabs>
         </div>
