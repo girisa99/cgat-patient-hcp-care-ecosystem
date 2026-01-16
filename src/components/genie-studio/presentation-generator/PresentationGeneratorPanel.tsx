@@ -61,6 +61,7 @@ import { VideoExportPanel } from './VideoExportPanel';
 import { LanguageSelector } from './LanguageSelector';
 import { AIProviderPanel } from './AIProviderPanel';
 import { GenerationProgressPanel, SlideGenerationStatus } from './GenerationProgressPanel';
+import { ComplianceChecker } from './ComplianceChecker';
 import { useUniversalPresentation, DownloadFormat } from '@/hooks/useUniversalPresentation';
 import { 
   PresentationRequest, 
@@ -139,6 +140,14 @@ export function PresentationGeneratorPanel({
   const [slideEstimate, setSlideEstimate] = useState<SlideCountEstimate | null>(null);
   const [contentRecommendation, setContentRecommendation] = useState<ContentRecommendation | null>(null);
   const [showRecommendations, setShowRecommendations] = useState(false);
+  
+  // Multi-Language state
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['en']);
+  const [primaryLanguage, setPrimaryLanguage] = useState('en');
+  const [includeVoiceover, setIncludeVoiceover] = useState(false);
+  
+  // Compliance state
+  const [showComplianceCheck, setShowComplianceCheck] = useState(false);
 
   // Get voice providers, image styles, tones, and enhancements
   const voiceProviders = universalPresentationService.getVoiceProviders();
@@ -1080,6 +1089,40 @@ export function PresentationGeneratorPanel({
               </Card>
             )}
 
+            {/* Multi-Language Generation */}
+            <LanguageSelector
+              selectedLanguages={selectedLanguages}
+              onLanguagesChange={setSelectedLanguages}
+              primaryLanguage={primaryLanguage}
+              onPrimaryLanguageChange={setPrimaryLanguage}
+              includeVoiceover={includeVoiceover}
+              onIncludeVoiceoverChange={setIncludeVoiceover}
+            />
+
+            {/* Compliance Check Toggle */}
+            <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-medium cursor-pointer" htmlFor="compliance-toggle">
+                  Run Compliance Check
+                </Label>
+                <Badge variant="outline" className="text-[10px]">HIPAA / GDPR / WCAG</Badge>
+              </div>
+              <Switch
+                id="compliance-toggle"
+                checked={showComplianceCheck}
+                onCheckedChange={setShowComplianceCheck}
+              />
+            </div>
+
+            {/* Compliance Checker Panel */}
+            {showComplianceCheck && slides.length > 0 && (
+              <ComplianceChecker
+                content={slides.map(s => `${s.title}\n${s.content.bullets?.map(b => b.text).join('\n') || ''}`).join('\n\n')}
+                contentType="document"
+                industry="healthcare"
+              />
+            )}
+
             {/* Generate Button */}
             <Button 
               onClick={handleGenerate} 
@@ -1089,12 +1132,13 @@ export function PresentationGeneratorPanel({
               {isGenerating ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Generating Presentation...
+                  Generating {selectedLanguages.length > 1 ? `in ${selectedLanguages.length} languages...` : 'Presentation...'}
                 </>
               ) : (
                 <>
                   <Wand2 className="h-4 w-4 mr-2" />
                   Generate {slideEstimate ? `${slideEstimate.recommended} Slides` : 'Presentation'}
+                  {selectedLanguages.length > 1 && ` (${selectedLanguages.length} languages)`}
                 </>
               )}
             </Button>
