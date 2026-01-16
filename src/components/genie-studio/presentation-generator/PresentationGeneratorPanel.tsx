@@ -58,6 +58,9 @@ import {
 } from './types';
 import { SlideCard } from './SlideCard';
 import { VideoExportPanel } from './VideoExportPanel';
+import { LanguageSelector } from './LanguageSelector';
+import { AIProviderPanel } from './AIProviderPanel';
+import { GenerationProgressPanel, SlideGenerationStatus } from './GenerationProgressPanel';
 import { useUniversalPresentation, DownloadFormat } from '@/hooks/useUniversalPresentation';
 import { 
   PresentationRequest, 
