@@ -12,47 +12,204 @@ serve(async (req) => {
   }
 
   try {
-    const { query } = await req.json();
-    
-    if (!query) {
+    const LABEL_STUDIO_API_URL = Deno.env.get('LABEL_STUDIO_API_URL');
+    const LABEL_STUDIO_ACCESS_TOKEN = Deno.env.get('LABEL_STUDIO_ACCESS_TOKEN');
+
+    if (!LABEL_STUDIO_API_URL || !LABEL_STUDIO_ACCESS_TOKEN) {
+      console.error('❌ Missing Label Studio configuration');
       return new Response(
-        JSON.stringify({ error: 'Query is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          error: 'Label Studio not configured',
+          details: {
+            hasUrl: !!LABEL_STUDIO_API_URL,
+            hasToken: !!LABEL_STUDIO_ACCESS_TOKEN
+          }
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Mock Label Studio search functionality
-    // In production, this would connect to actual Label Studio API
-    const mockAnnotations = [
-      `Medical Context: Patient presenting symptoms related to "${query}"`,
-      `Clinical Notes: Previous observations for "${query}" cases`,
-      `Treatment Protocol: Standard procedures for "${query}" related conditions`,
-    ].filter(annotation => 
-      query.toLowerCase().split(' ').some((term: string) => 
-        annotation.toLowerCase().includes(term)
-      )
-    );
+    const { query, projectId, action = 'search' } = await req.json();
 
-    console.log(`Label Studio search for "${query}" found ${mockAnnotations.length} annotations`);
+    // Clean up the API URL (remove trailing slash if present)
+    const baseUrl = LABEL_STUDIO_API_URL.replace(/\/$/, '');
+    
+    console.log(`🔍 Label Studio ${action} request:`, { query, projectId, baseUrl: baseUrl.substring(0, 30) + '...' });
 
+    // Test connection / health check
+    if (action === 'health' || action === 'test') {
+      try {
+        const healthResponse = await fetch(`${baseUrl}/api/projects`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Token ${LABEL_STUDIO_ACCESS_TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!healthResponse.ok) {
+          const errorText = await healthResponse.text();
+          console.error('❌ Label Studio health check failed:', healthResponse.status, errorText);
+          return new Response(
+            JSON.stringify({ 
+              connected: false,
+              status: healthResponse.status,
+              error: `Connection failed: ${healthResponse.statusText}`,
+              details: errorText
+            }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const projects = await healthResponse.json();
+        console.log('✅ Label Studio connected successfully, projects:', projects?.results?.length || projects?.length || 0);
+        
+        return new Response(
+          JSON.stringify({ 
+            connected: true,
+            status: 200,
+            projectCount: projects?.results?.length || projects?.length || 0,
+            projects: (projects?.results || projects || []).slice(0, 10).map((p: any) => ({
+              id: p.id,
+              title: p.title,
+              task_count: p.task_number || p.num_tasks_with_annotations || 0
+            })),
+            timestamp: new Date().toISOString()
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } catch (fetchError) {
+        console.error('❌ Label Studio connection error:', fetchError);
+        return new Response(
+          JSON.stringify({ 
+            connected: false,
+            error: fetchError instanceof Error ? fetchError.message : 'Connection failed',
+            timestamp: new Date().toISOString()
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // List projects
+    if (action === 'list-projects') {
+      const response = await fetch(`${baseUrl}/api/projects`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Token ${LABEL_STUDIO_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to list projects: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return new Response(
+        JSON.stringify({ 
+          projects: data?.results || data || [],
+          timestamp: new Date().toISOString()
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Search annotations in a specific project
+    if (action === 'search' && projectId) {
+      const response = await fetch(`${baseUrl}/api/projects/${projectId}/tasks?page_size=100`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Token ${LABEL_STUDIO_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch tasks: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const tasks = data?.results || data || [];
+      
+      // Filter tasks that match the query
+      const matchingAnnotations = tasks
+        .filter((task: any) => {
+          const taskText = JSON.stringify(task.data || {}).toLowerCase();
+          const annotationText = JSON.stringify(task.annotations || []).toLowerCase();
+          const searchTerms = (query || '').toLowerCase().split(' ');
+          return searchTerms.some((term: string) => 
+            taskText.includes(term) || annotationText.includes(term)
+          );
+        })
+        .flatMap((task: any) => 
+          (task.annotations || []).map((ann: any) => ({
+            taskId: task.id,
+            annotationId: ann.id,
+            result: ann.result,
+            createdAt: ann.created_at,
+            data: task.data
+          }))
+        );
+
+      console.log(`📊 Found ${matchingAnnotations.length} matching annotations for query: "${query}"`);
+
+      return new Response(
+        JSON.stringify({ 
+          annotations: matchingAnnotations,
+          query,
+          projectId,
+          totalTasks: tasks.length,
+          timestamp: new Date().toISOString()
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get training data for ML backend
+    if (action === 'get-training-data' && projectId) {
+      const response = await fetch(`${baseUrl}/api/projects/${projectId}/export?exportType=JSON`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Token ${LABEL_STUDIO_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to export training data: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log(`📦 Exported ${data?.length || 0} annotated tasks for training`);
+
+      return new Response(
+        JSON.stringify({ 
+          trainingData: data || [],
+          projectId,
+          count: data?.length || 0,
+          timestamp: new Date().toISOString()
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Default: return error for unknown action
     return new Response(
       JSON.stringify({ 
-        annotations: mockAnnotations,
-        query,
+        error: 'Invalid action or missing required parameters',
+        supportedActions: ['health', 'test', 'list-projects', 'search', 'get-training-data'],
         timestamp: new Date().toISOString()
       }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
-      }
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Label Studio search error:', error);
+    console.error('❌ Label Studio error:', error);
     return new Response(
       JSON.stringify({ 
         error: error instanceof Error ? error.message : 'Internal server error',
-        annotations: [] 
+        timestamp: new Date().toISOString()
       }),
       { 
         status: 500, 
