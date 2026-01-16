@@ -45,11 +45,12 @@ export const PHASES: Record<string, PhaseData> = {
     name: 'AI Agents & UX Polish'
   },
   P3: { 
-    // UPDATED: 72 original + 58 consolidated = 130 total
-    // Categories: Generation (12), Compliance (8), Session Advanced (10), 
-    // Integrations (8), Analytics (10), Segment-Specific (22), Enterprise (18)
-    total: 130, 
-    implemented: 17, 
+    // CONSOLIDATED: 130 original + 10 Label Studio (new) = 140 total
+    // Categories: Quick Wins (5✅), Generation (6), Compliance (5), Analytics (6), 
+    // Segment-Specific (9), Integrations (5), Enterprise (6), Label Studio (10✅), + 88 misc
+    // IMPLEMENTED: Quick Wins (5) + Label Studio (10) + Original (17) = 32
+    total: 140, 
+    implemented: 32, 
     status: 'in-progress', 
     weeks: '13-20',
     name: 'Differentiators & Go-Live'
@@ -148,14 +149,40 @@ export const P3_SCENARIO_BREAKDOWN = {
     customBranding: { id: 'P3-ENT-06', name: 'Custom Branding Portal', status: 'pending', priority: 7 },
   },
   
-  // ALREADY IMPLEMENTED (17 scenarios)
+  // ALREADY IMPLEMENTED (32 scenarios = 5 Quick Wins + 10 Label Studio + 17 Original)
   implemented: {
+    // Original P3 (17)
     legalReviewGate: { id: 'P3-IMP-01', name: 'Legal Review Gate', status: 'complete', priority: 0 },
     bulkOperations: { id: 'P3-IMP-02', name: 'Bulk Operations', status: 'complete', priority: 0 },
     workspaceCollaboration: { id: 'P3-IMP-03', name: 'Workspace Collaboration', status: 'complete', priority: 0 },
     advancedAnalyticsDashboard: { id: 'P3-IMP-04', name: 'Advanced Analytics Dashboard', status: 'complete', priority: 0 },
     templateMarketplace: { id: 'P3-IMP-05', name: 'Template Marketplace', status: 'complete', priority: 0 },
-    // Plus 12 more from original P3
+    ragKnowledgeBase: { id: 'P3-IMP-06', name: 'RAG Knowledge Base', status: 'complete', priority: 0 },
+    aiCreditSystem: { id: 'P3-IMP-07', name: 'AI Credit System', status: 'complete', priority: 0 },
+    workflowExecutor: { id: 'P3-IMP-08', name: 'Workflow Executor Engine', status: 'complete', priority: 0 },
+    recurringScheduler: { id: 'P3-IMP-09', name: 'Recurring Scheduler', status: 'complete', priority: 0 },
+    viralScorePredictor: { id: 'P3-IMP-10', name: 'Viral Score Predictor', status: 'complete', priority: 0 },
+    seoOptimizationService: { id: 'P3-IMP-11', name: 'SEO Optimization Service', status: 'complete', priority: 0 },
+    threadGenerator: { id: 'P3-IMP-12', name: 'Thread Generator', status: 'complete', priority: 0 },
+    carouselCreator: { id: 'P3-IMP-13', name: 'Carousel Creator', status: 'complete', priority: 0 },
+    shortsGenerator: { id: 'P3-IMP-14', name: 'Shorts Generator', status: 'complete', priority: 0 },
+    quizVideoGenerator: { id: 'P3-IMP-15', name: 'Quiz Video Generator', status: 'complete', priority: 0 },
+    unifiedContentTools: { id: 'P3-IMP-16', name: 'Unified Content Tools', status: 'complete', priority: 0 },
+    contextualToolsPanel: { id: 'P3-IMP-17', name: 'Contextual Tools Panel', status: 'complete', priority: 0 },
+  },
+
+  // LABEL STUDIO INTEGRATION (10 new scenarios - NOT in original roadmap)
+  labelStudio: {
+    lsUniversalProvider: { id: 'P3-LS-01', name: 'LS Universal Provider', status: 'complete', priority: 0, addedDate: '2026-01-14' },
+    lsBackgroundService: { id: 'P3-LS-02', name: 'LS Background Service', status: 'complete', priority: 0, addedDate: '2026-01-14' },
+    lsSparkIntegration: { id: 'P3-LS-03', name: 'LS Spark Integration Hook', status: 'complete', priority: 0, addedDate: '2026-01-14' },
+    lsVibeIntegration: { id: 'P3-LS-04', name: 'LS Vibe Recording Capture', status: 'complete', priority: 0, addedDate: '2026-01-14' },
+    lsTTSIntegration: { id: 'P3-LS-05', name: 'LS TTS Quality Training', status: 'complete', priority: 0, addedDate: '2026-01-14' },
+    lsDocumentProcessing: { id: 'P3-LS-06', name: 'LS Document Processing', status: 'complete', priority: 0, addedDate: '2026-01-14' },
+    lsEcosystemWidget: { id: 'P3-LS-07', name: 'LS Ecosystem Widget', status: 'complete', priority: 0, addedDate: '2026-01-14' },
+    lsInlineHints: { id: 'P3-LS-08', name: 'LS Inline Content Hints', status: 'complete', priority: 0, addedDate: '2026-01-14' },
+    lsEdgeFunctionConnector: { id: 'P3-LS-09', name: 'LS Edge Function Connector', status: 'complete', priority: 0, addedDate: '2026-01-14' },
+    lsAskGenieIntegration: { id: 'P3-LS-10', name: 'LS Ask Genie Training', status: 'complete', priority: 0, addedDate: '2026-01-14' },
   },
 } as const;
 
