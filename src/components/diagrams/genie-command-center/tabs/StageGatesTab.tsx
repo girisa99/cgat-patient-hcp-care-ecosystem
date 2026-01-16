@@ -31,7 +31,7 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
-// Comprehensive category icons for all 22 categories
+// Comprehensive category icons for all 23 categories
 const categoryIcons: Record<string, React.ReactNode> = {
   Authentication: <Lock className="w-5 h-5" />,
   Authorization: <Shield className="w-5 h-5" />,
@@ -55,6 +55,7 @@ const categoryIcons: Record<string, React.ReactNode> = {
   Documentation: <BookOpen className="w-5 h-5" />,
   DevOps: <Server className="w-5 h-5" />,
   Configuration: <Plug className="w-5 h-5" />,
+  'Live Service': <Headphones className="w-5 h-5" />,
 };
 
 // Category groupings for tabs
@@ -64,6 +65,7 @@ const CATEGORY_GROUPS = {
   business: ['Payments', 'Domain', 'Marketing', 'Support'],
   content: ['AI Content', 'Website', 'Go-Live Website'],
   ops: ['Testing', 'Monitoring', 'Security', 'Documentation', 'DevOps'],
+  service: ['Live Service'], // New Live Service group
 };
 
 const GROUP_LABELS: Record<string, { label: string; icon: React.ReactNode }> = {
@@ -72,6 +74,7 @@ const GROUP_LABELS: Record<string, { label: string; icon: React.ReactNode }> = {
   business: { label: 'Business & Ops', icon: <Wallet className="w-4 h-4" /> },
   content: { label: 'Content & Website', icon: <Globe className="w-4 h-4" /> },
   ops: { label: 'DevOps & QA', icon: <TestTube className="w-4 h-4" /> },
+  service: { label: 'Live Service', icon: <Headphones className="w-4 h-4" /> },
   api: { label: 'API Production', icon: <Plug className="w-4 h-4" /> },
 };
 
@@ -343,22 +346,31 @@ export const StageGatesTab: React.FC = () => {
                       {filteredItems.map((item, idx) => (
                         <div 
                           key={idx}
-                          className={`flex items-start justify-between p-2 rounded-lg text-xs ${
+                          className={`flex flex-col p-2 rounded-lg text-xs ${
                             item.status === 'done' ? 'bg-green-500/5' : 'bg-muted/30'
                           }`}
                         >
-                          <div className="flex items-start gap-2 flex-1">
-                            <div className="mt-0.5">{getStatusIcon(item.status)}</div>
-                            <div className="flex-1 min-w-0">
-                              <span className="text-foreground">{item.item}</span>
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-2 flex-1">
+                              <div className="mt-0.5">{getStatusIcon(item.status)}</div>
+                              <span className="text-foreground flex-1">{item.item}</span>
+                            </div>
+                            <Badge variant="outline" className={`text-[10px] ml-2 flex-shrink-0 ${getPriorityBadge(item.priority)}`}>
+                              {item.priority}
+                            </Badge>
+                          </div>
+                          {(item.notes || item.location) && (
+                            <div className="ml-7 mt-1 space-y-0.5">
                               {item.notes && (
-                                <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{item.notes}</p>
+                                <p className="text-[10px] text-muted-foreground truncate">{item.notes}</p>
+                              )}
+                              {item.location && (
+                                <p className="text-[9px] text-blue-500 font-mono truncate">
+                                  📍 {item.location}
+                                </p>
                               )}
                             </div>
-                          </div>
-                          <Badge variant="outline" className={`text-[10px] ml-2 flex-shrink-0 ${getPriorityBadge(item.priority)}`}>
-                            {item.priority}
-                          </Badge>
+                          )}
                         </div>
                       ))}
                     </CardContent>
@@ -412,22 +424,31 @@ export const StageGatesTab: React.FC = () => {
                           {(filterStatus ? filteredItems : items).map((item, idx) => (
                             <div 
                               key={idx}
-                              className={`flex items-center justify-between p-3 rounded-lg ${
+                              className={`flex flex-col p-3 rounded-lg ${
                                 item.status === 'done' ? 'bg-green-500/5' : 'bg-muted/30'
                               }`}
                             >
-                              <div className="flex items-center gap-3">
-                                {getStatusIcon(item.status)}
-                                <div>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  {getStatusIcon(item.status)}
                                   <span className="text-foreground text-sm">{item.item}</span>
+                                </div>
+                                <Badge variant="outline" className={`text-xs ${getPriorityBadge(item.priority)}`}>
+                                  {item.priority}
+                                </Badge>
+                              </div>
+                              {(item.notes || item.location) && (
+                                <div className="ml-8 mt-1 space-y-0.5">
                                   {item.notes && (
-                                    <p className="text-xs text-muted-foreground mt-0.5">{item.notes}</p>
+                                    <p className="text-xs text-muted-foreground">{item.notes}</p>
+                                  )}
+                                  {item.location && (
+                                    <p className="text-[10px] text-blue-500 font-mono">
+                                      📍 {item.location}
+                                    </p>
                                   )}
                                 </div>
-                              </div>
-                              <Badge variant="outline" className={`text-xs ${getPriorityBadge(item.priority)}`}>
-                                {item.priority}
-                              </Badge>
+                              )}
                             </div>
                           ))}
                         </CardContent>

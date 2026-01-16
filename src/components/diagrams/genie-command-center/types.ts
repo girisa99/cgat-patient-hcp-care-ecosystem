@@ -151,4 +151,8 @@ export interface StageGateItem {
   status: 'done' | 'in-progress' | 'pending' | 'blocked';
   priority: 'Critical' | 'High' | 'Medium' | 'Low';
   notes?: string;
+  /** Where to update this item (file path, doc, or external system) */
+  location?: string;
+  /** Link to documentation or resource */
+  docLink?: string;
 }
