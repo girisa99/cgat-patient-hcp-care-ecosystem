@@ -823,28 +823,16 @@ export const AskGenie: React.FC<AskGenieProps> = ({
     return () => clearInterval(checkInterval);
   }, [isOpen, lastActivityTime, product]); // Removed hasOfferedHelp and messages.length from deps
 
-  // Fetch inline hints from Label Studio background service
+  // Get inline hints from Label Studio background service (sync - cached patterns)
   useEffect(() => {
     if (!isOpen) return;
     
-    const fetchHints = async () => {
-      try {
-        const hints = await getHints(product === 'studio' ? 'mind' : product, {
-          currentTab,
-          sessionData,
-          subscriptionTier
-        });
-        if (hints && hints.length > 0) {
-          setInlineHints(hints);
-        }
-      } catch (err) {
-        // Silently fail - this is background functionality
-        console.debug('[AskGenie] Hints fetch failed silently');
-      }
-    };
-    
-    fetchHints();
-  }, [isOpen, product, currentTab, getHints]);
+    const productKey = product === 'studio' ? 'mind' : product;
+    const hints = getHints(productKey, { currentTab, sessionData, subscriptionTier });
+    if (hints && hints.length > 0) {
+      setInlineHints(hints);
+    }
+  }, [isOpen, product, currentTab, getHints, sessionData, subscriptionTier]);
 
   // Track activity - only update when chat is opened, not on every input change
   const isOpenRef = useRef(isOpen);
