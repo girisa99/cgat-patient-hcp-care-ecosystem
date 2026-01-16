@@ -1719,11 +1719,10 @@ export function SmartContentPipeline({
                   }}
                   onSaveToKnowledgeBase={onSaveToKnowledgeBase ? (title, content) => {
                     const generatedContent: GeneratedContent = {
-                      id: `presentation-${Date.now()}`,
                       title,
                       script: content,
-                      type: 'presentation',
-                      createdAt: new Date().toISOString(),
+                      type: 'presentation_script',
+                      sourceType: 'document',
                     };
                     onSaveToKnowledgeBase(generatedContent);
                   } : undefined}
@@ -1942,43 +1941,45 @@ export function SmartContentPipeline({
                   onChange={(e) => setTargetAudience(e.target.value)}
                 />
               </div>
+              </div>
             </div>
-          </div>
 
-          {/* Generate Button */}
-          <Button
-            onClick={handleGenerate}
-            disabled={isProcessing}
-            className="w-full"
-            size="lg"
-          >
-            {isProcessing ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Wand2 className="h-4 w-4 mr-2" />
-                Generate Script
-              </>
+            {/* Generate Button */}
+            <Button
+              onClick={handleGenerate}
+              disabled={isProcessing}
+              className="w-full"
+              size="lg"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Wand2 className="h-4 w-4 mr-2" />
+                  Generate Script
+                </>
+              )}
+            </Button>
+
+            {/* Progress */}
+            {isProcessing && (
+              <div className="space-y-2">
+                <Progress value={progress} />
+                <p className="text-sm text-muted-foreground text-center">{progressMessage}</p>
+              </div>
             )}
-          </Button>
 
-          {/* Progress */}
-          {isProcessing && (
-            <div className="space-y-2">
-              <Progress value={progress} />
-              <p className="text-sm text-muted-foreground text-center">{progressMessage}</p>
-            </div>
-          )}
-
-          {/* Error */}
-          {error && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive">
-              <AlertCircle className="h-5 w-5" />
-              <span className="text-sm">{error}</span>
-            </div>
+            {/* Error */}
+            {error && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive">
+                <AlertCircle className="h-5 w-5" />
+                <span className="text-sm">{error}</span>
+              </div>
+            )}
+            </>
           )}
         </CardContent>
           </Card>
