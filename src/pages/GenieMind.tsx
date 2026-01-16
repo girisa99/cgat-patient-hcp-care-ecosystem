@@ -25,7 +25,8 @@ import {
   Headphones,
   Music,
   Film,
-  Zap
+  Zap,
+  Files
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -35,6 +36,7 @@ import { useGenieScripts, type GenieScript } from '@/components/genie-studio/use
 import { useGenieMediaLibrary } from '@/components/genie-studio/useGenieMediaLibrary';
 import { AskGenie } from '@/components/genie-studio/AskGenie';
 import genieMindLogo from '@/assets/logos/genie-mind-combined.png';
+import { BatchScriptGenerationWorkflow } from '@/components/genie-studio/batch/BatchScriptGenerationWorkflow';
 
 const GenieMind: React.FC = () => {
   const navigate = useNavigate();
@@ -155,6 +157,10 @@ const GenieMind: React.FC = () => {
               <TabsTrigger value="script-editor" className="gap-2">
                 <PenTool className="h-4 w-4" />
                 Script Editor
+              </TabsTrigger>
+              <TabsTrigger value="batch-generation" className="gap-2">
+                <Files className="h-4 w-4" />
+                Batch Generation
               </TabsTrigger>
               <TabsTrigger value="library" className="gap-2">
                 <Library className="h-4 w-4" />
@@ -293,6 +299,11 @@ const GenieMind: React.FC = () => {
                   url: v.url || ''
                 }))}
               />
+            </TabsContent>
+
+            {/* Batch Generation Tab */}
+            <TabsContent value="batch-generation" className="mt-0">
+              <BatchScriptGenerationWorkflow />
             </TabsContent>
 
             {/* Media Library Tab */}
