@@ -977,6 +977,7 @@ export function PresentationGeneratorPanel({
                 <Label className="text-xs">Journey Maps</Label>
               </div>
             </div>
+            </div>
 
             {/* Slide Count Estimate */}
             {slideEstimate && (
