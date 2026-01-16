@@ -257,22 +257,26 @@ export const StageGatesTab: React.FC = () => {
 
       {/* Tabs for All Stage Gate Groups */}
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full max-w-4xl grid-cols-7 h-auto">
-          <TabsTrigger value="all" className="text-xs px-2">
-            All ({totalItems})
-          </TabsTrigger>
-          {Object.entries(GROUP_LABELS).map(([key, { label, icon }]) => {
-            const categories = key === 'api' ? apiCategories : (CATEGORY_GROUPS as Record<string, string[]>)[key] || [];
-            const stats = getGroupStats(categories);
-            return (
-              <TabsTrigger key={key} value={key} className="text-xs px-2 gap-1">
-                {icon}
-                <span className="hidden md:inline">{label.split(' ')[0]}</span>
-                <span className="text-muted-foreground">({stats.done}/{stats.total})</span>
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
+        <ScrollArea className="w-full">
+          <TabsList className="inline-flex h-auto p-1.5 gap-1 bg-muted/50 rounded-lg w-max min-w-full">
+            <TabsTrigger value="all" className="text-xs px-3 py-2 whitespace-nowrap">
+              All ({totalItems})
+            </TabsTrigger>
+            {Object.entries(GROUP_LABELS).map(([key, { label, icon }]) => {
+              const categories = key === 'api' ? apiCategories : (CATEGORY_GROUPS as Record<string, string[]>)[key] || [];
+              const stats = getGroupStats(categories);
+              return (
+                <TabsTrigger key={key} value={key} className="text-xs px-3 py-2 gap-1.5 whitespace-nowrap">
+                  {icon}
+                  <span className="hidden sm:inline">{label}</span>
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 ml-1">
+                    {stats.done}/{stats.total}
+                  </Badge>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+        </ScrollArea>
 
         {/* Filter buttons */}
         <div className="flex gap-2 mt-4 mb-2">
