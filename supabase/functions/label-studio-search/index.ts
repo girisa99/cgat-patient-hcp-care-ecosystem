@@ -34,7 +34,18 @@ serve(async (req) => {
     // Clean up the API URL (remove trailing slash if present)
     const baseUrl = LABEL_STUDIO_API_URL.replace(/\/$/, '');
     
-    console.log(`🔍 Label Studio ${action} request:`, { query, projectId, baseUrl: baseUrl.substring(0, 30) + '...' });
+    // Debug: check token format (first 10 chars only for security)
+    const tokenPreview = LABEL_STUDIO_ACCESS_TOKEN.substring(0, 10);
+    const tokenLength = LABEL_STUDIO_ACCESS_TOKEN.length;
+    console.log(`🔍 Label Studio ${action} request:`, { 
+      query, 
+      projectId, 
+      baseUrl,
+      tokenPreview: tokenPreview + '...',
+      tokenLength,
+      startsWithToken: LABEL_STUDIO_ACCESS_TOKEN.toLowerCase().startsWith('token'),
+      startsWithBearer: LABEL_STUDIO_ACCESS_TOKEN.toLowerCase().startsWith('bearer')
+    });
 
     // Test connection / health check
     if (action === 'health' || action === 'test') {
