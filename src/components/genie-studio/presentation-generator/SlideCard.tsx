@@ -29,6 +29,7 @@ import { cn } from '@/lib/utils';
 import { PresentationSlide, SlideEnhancementType } from './types';
 import { SlideAIEnhancer } from './SlideAIEnhancer';
 import { BulletPointEditor } from './BulletPointEditor';
+import { InlineTrainAIFeedback } from '../InlineTrainAIFeedback';
 
 // Confidence score interface
 export interface SlideConfidence {
@@ -427,6 +428,27 @@ export function SlideCard({
               <span className="font-medium">Notes:</span> {slide.speakerNotes}
             </div>
           )}
+
+          {/* Label Studio Feedback - Thumbs up/down */}
+          <div className="pt-2 border-t">
+            <InlineTrainAIFeedback
+              data={{
+                context: slide.enhancementApplied ? 'slide_enhancement' : 'slide_generation',
+                product: 'deck',
+                contentId: slide.id,
+                originalContent: `${slide.title}\n${slide.content.bullets?.map(b => b.text).join('\n') || ''}`,
+                metadata: {
+                  slideNumber: slide.slideNumber,
+                  slideType: slide.type,
+                  isAccepted: slide.isAccepted,
+                  enhancementApplied: slide.enhancementApplied,
+                  confidence: confidence?.overall
+                }
+              }}
+              variant="minimal"
+              showTextFeedback={true}
+            />
+          </div>
         </CardContent>
       )}
     </Card>

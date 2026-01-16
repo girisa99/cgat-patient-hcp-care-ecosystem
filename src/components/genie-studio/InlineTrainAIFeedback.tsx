@@ -28,11 +28,14 @@ export type FeedbackContext =
   | 'podcast_conversion' // Arc - after podcast to video
   | 'auto_publish' // Arc - after scheduling
   | 'ask_genie_response' // Ask Genie - after AI response
-  | 'document_extraction'; // Document Processing - after OCR/extraction
+  | 'document_extraction' // Document Processing - after OCR/extraction
+  | 'slide_generation' // Deck - after AI generates slide
+  | 'slide_enhancement' // Deck - after AI enhances slide
+  | 'presentation_complete'; // Deck - after full presentation generated
 
 export interface FeedbackData {
   context: FeedbackContext;
-  product: 'spark' | 'mind' | 'vibe' | 'arc' | 'hub' | 'ask_genie' | 'document';
+  product: 'spark' | 'mind' | 'vibe' | 'arc' | 'hub' | 'ask_genie' | 'document' | 'deck';
   contentId?: string; // Reference to the content being rated
   originalContent?: string; // The AI output being rated
   userInput?: string; // What the user asked for
