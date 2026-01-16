@@ -31,6 +31,44 @@ export type ImageSourceType = 'ai-generated' | 'stock-upload' | 'placeholder' | 
 export type ImageStyleType = 'sketch' | 'ai-realistic' | 'illustration' | 'infographic' | 'workflow' | 'icons' | 'charts' | 'abstract';
 export type VoiceProviderType = 'openai' | 'elevenlabs' | 'amazon-polly' | 'google';
 
+// Tone/Style options for presentation
+export type PresentationTone = 'professional' | 'humor' | 'empathy' | 'engagement' | 'balanced' | 'scientific' | 'research' | 'inspirational';
+
+// Content enhancement types
+export type ContentEnhancement = 
+  | 'data-verification'     // Include verified data points
+  | 'architecture-diagrams' // System/process architecture
+  | 'workflows'             // Workflow diagrams
+  | 'comparison-tables'     // Before/after comparisons
+  | 'timeline'              // Historical/future timeline
+  | 'case-examples'         // Real-world examples
+  | 'statistics'            // Key statistics
+  | 'quotes'                // Expert quotes
+  | 'research-citations';   // Academic citations
+
+// Slide count estimation
+export interface SlideCountEstimate {
+  min: number;
+  max: number;
+  recommended: number;
+  breakdown: {
+    title: number;
+    content: number;
+    infographic: number;
+    journey: number;
+    conclusion: number;
+  };
+}
+
+// Smart recommendations based on content analysis
+export interface ContentRecommendation {
+  tones: { tone: PresentationTone; score: number; reason: string }[];
+  enhancements: { type: ContentEnhancement; score: number; reason: string }[];
+  suggestedSlideCount: SlideCountEstimate;
+  audienceInsight: string;
+  keyTopics: string[];
+}
+
 export interface AIModelSuggestion {
   textModel: string;
   imageModel: string;
@@ -79,6 +117,12 @@ export interface PresentationRequest {
   // Segmentation
   autoSegment?: boolean; // Auto-divide content into logical slides
   segmentBy?: 'topics' | 'agenda' | 'paragraphs' | 'ai-analysis';
+  
+  // Tone & Style
+  tones?: PresentationTone[];
+  
+  // Content enhancements
+  contentEnhancements?: ContentEnhancement[];
 }
 
 export interface GeneratedSlide {
@@ -377,10 +421,336 @@ class UniversalPresentationService {
       }
     ];
   }
-  
+
   /**
-   * Main entry point: Generate presentation from any source
+   * Get tone options with descriptions
    */
+  getToneOptions(): Array<{
+    id: PresentationTone;
+    name: string;
+    description: string;
+    icon: string;
+    bestFor: CollateralType[];
+  }> {
+    return [
+      {
+        id: 'professional',
+        name: 'Professional',
+        description: 'Formal and business-focused',
+        icon: 'briefcase',
+        bestFor: ['investor', 'whitepaper', 'case-study']
+      },
+      {
+        id: 'humor',
+        name: 'Humor',
+        description: 'Light-hearted with tasteful jokes',
+        icon: 'smile',
+        bestFor: ['presentation', 'training', 'conference']
+      },
+      {
+        id: 'empathy',
+        name: 'Empathy',
+        description: 'Understanding and compassionate',
+        icon: 'heart',
+        bestFor: ['training', 'case-study', 'website']
+      },
+      {
+        id: 'engagement',
+        name: 'Engagement',
+        description: 'Interactive and attention-grabbing',
+        icon: 'zap',
+        bestFor: ['marketing', 'conference', 'product-launch']
+      },
+      {
+        id: 'balanced',
+        name: 'Balanced',
+        description: 'Mix of professional and approachable',
+        icon: 'scale',
+        bestFor: ['presentation', 'sales', 'website']
+      },
+      {
+        id: 'scientific',
+        name: 'Scientific',
+        description: 'Data-driven and evidence-based',
+        icon: 'flask',
+        bestFor: ['whitepaper', 'training', 'case-study']
+      },
+      {
+        id: 'research',
+        name: 'Research',
+        description: 'Academic with citations',
+        icon: 'book-open',
+        bestFor: ['whitepaper', 'case-study', 'investor']
+      },
+      {
+        id: 'inspirational',
+        name: 'Inspirational',
+        description: 'Motivating and uplifting',
+        icon: 'star',
+        bestFor: ['conference', 'marketing', 'product-launch']
+      }
+    ];
+  }
+
+  /**
+   * Get content enhancement options
+   */
+  getContentEnhancements(): Array<{
+    id: ContentEnhancement;
+    name: string;
+    description: string;
+    icon: string;
+  }> {
+    return [
+      {
+        id: 'data-verification',
+        name: 'Data Verification',
+        description: 'Verified data points and sources',
+        icon: 'check-circle'
+      },
+      {
+        id: 'architecture-diagrams',
+        name: 'Architecture Diagrams',
+        description: 'System and process architecture visuals',
+        icon: 'layers'
+      },
+      {
+        id: 'workflows',
+        name: 'Workflows',
+        description: 'Step-by-step process flows',
+        icon: 'git-branch'
+      },
+      {
+        id: 'comparison-tables',
+        name: 'Comparison Tables',
+        description: 'Before/after or feature comparisons',
+        icon: 'columns'
+      },
+      {
+        id: 'timeline',
+        name: 'Timeline',
+        description: 'Historical or future milestones',
+        icon: 'clock'
+      },
+      {
+        id: 'case-examples',
+        name: 'Case Examples',
+        description: 'Real-world use cases',
+        icon: 'folder'
+      },
+      {
+        id: 'statistics',
+        name: 'Statistics',
+        description: 'Key metrics and numbers',
+        icon: 'bar-chart-2'
+      },
+      {
+        id: 'quotes',
+        name: 'Expert Quotes',
+        description: 'Industry expert opinions',
+        icon: 'quote'
+      },
+      {
+        id: 'research-citations',
+        name: 'Research Citations',
+        description: 'Academic and research references',
+        icon: 'file-text'
+      }
+    ];
+  }
+
+  /**
+   * Estimate slide count based on length and content
+   */
+  estimateSlideCount(length: PresentationLength, content?: string, enhancements?: ContentEnhancement[]): SlideCountEstimate {
+    const baseCounts: Record<PresentationLength, { min: number; max: number; recommended: number }> = {
+      'short': { min: 5, max: 8, recommended: 6 },
+      'standard': { min: 10, max: 15, recommended: 12 },
+      'long': { min: 18, max: 25, recommended: 20 }
+    };
+
+    const base = baseCounts[length];
+    let adjustedRecommended = base.recommended;
+
+    // Adjust based on content length
+    if (content) {
+      const wordCount = content.split(/\s+/).length;
+      if (wordCount > 2000) adjustedRecommended += 3;
+      else if (wordCount > 1000) adjustedRecommended += 2;
+      else if (wordCount < 200) adjustedRecommended -= 2;
+    }
+
+    // Adjust based on enhancements
+    if (enhancements) {
+      if (enhancements.includes('architecture-diagrams')) adjustedRecommended += 2;
+      if (enhancements.includes('workflows')) adjustedRecommended += 2;
+      if (enhancements.includes('timeline')) adjustedRecommended += 1;
+      if (enhancements.includes('comparison-tables')) adjustedRecommended += 1;
+      if (enhancements.includes('case-examples')) adjustedRecommended += 2;
+    }
+
+    // Clamp to min/max based on length
+    const finalRecommended = Math.max(base.min, Math.min(base.max + 5, adjustedRecommended));
+
+    // Calculate breakdown
+    const breakdown = {
+      title: 1,
+      content: Math.floor(finalRecommended * 0.6),
+      infographic: Math.floor(finalRecommended * 0.15),
+      journey: Math.floor(finalRecommended * 0.1),
+      conclusion: 1
+    };
+
+    return {
+      min: base.min,
+      max: Math.max(base.max, finalRecommended),
+      recommended: finalRecommended,
+      breakdown
+    };
+  }
+
+  /**
+   * Analyze content and provide smart recommendations
+   */
+  analyzeContentForRecommendations(content: string, collateralType?: CollateralType): ContentRecommendation {
+    const contentLower = content.toLowerCase();
+    const wordCount = content.split(/\s+/).length;
+
+    // Detect tone suitability
+    const toneScores: { tone: PresentationTone; score: number; reason: string }[] = [];
+
+    // Professional detection
+    const professionalWords = ['strategy', 'enterprise', 'roi', 'stakeholder', 'kpi', 'objectives'];
+    const professionalScore = professionalWords.filter(w => contentLower.includes(w)).length / professionalWords.length;
+    toneScores.push({ tone: 'professional', score: Math.min(1, professionalScore + 0.3), reason: 'Business terminology detected' });
+
+    // Scientific detection
+    const scientificWords = ['research', 'study', 'analysis', 'methodology', 'hypothesis', 'data', 'evidence'];
+    const scientificScore = scientificWords.filter(w => contentLower.includes(w)).length / scientificWords.length;
+    toneScores.push({ tone: 'scientific', score: Math.min(1, scientificScore + 0.2), reason: 'Research-oriented content' });
+
+    // Empathy detection
+    const empathyWords = ['patient', 'care', 'support', 'help', 'understand', 'experience', 'journey'];
+    const empathyScore = empathyWords.filter(w => contentLower.includes(w)).length / empathyWords.length;
+    toneScores.push({ tone: 'empathy', score: Math.min(1, empathyScore + 0.2), reason: 'Human-centered content' });
+
+    // Engagement detection
+    const engagementWords = ['exciting', 'new', 'innovative', 'transform', 'revolutionize', 'breakthrough'];
+    const engagementScore = engagementWords.filter(w => contentLower.includes(w)).length / engagementWords.length;
+    toneScores.push({ tone: 'engagement', score: Math.min(1, engagementScore + 0.3), reason: 'Exciting language detected' });
+
+    // Inspirational detection
+    const inspirationalWords = ['vision', 'future', 'inspire', 'achieve', 'success', 'mission', 'impact'];
+    const inspirationalScore = inspirationalWords.filter(w => contentLower.includes(w)).length / inspirationalWords.length;
+    toneScores.push({ tone: 'inspirational', score: Math.min(1, inspirationalScore + 0.25), reason: 'Visionary content' });
+
+    // Humor - lower default, only if casual detected
+    const humorScore = contentLower.includes('fun') || contentLower.includes('enjoy') ? 0.4 : 0.2;
+    toneScores.push({ tone: 'humor', score: humorScore, reason: 'Can lighten the mood' });
+
+    // Balanced is always moderate
+    toneScores.push({ tone: 'balanced', score: 0.65, reason: 'Universal appeal' });
+
+    // Research detection
+    const researchScore = scientificScore > 0.3 && contentLower.includes('citation') ? 0.8 : scientificScore * 0.7;
+    toneScores.push({ tone: 'research', score: researchScore, reason: 'Academic references suggested' });
+
+    // Sort by score
+    toneScores.sort((a, b) => b.score - a.score);
+
+    // Detect content enhancements
+    const enhancementScores: { type: ContentEnhancement; score: number; reason: string }[] = [];
+
+    // Statistics detection
+    const hasNumbers = /\d+%|\$\d+|\d+\.\d+/.test(content);
+    enhancementScores.push({ 
+      type: 'statistics', 
+      score: hasNumbers ? 0.9 : 0.4, 
+      reason: hasNumbers ? 'Numerical data found' : 'Could strengthen with data' 
+    });
+
+    // Workflow detection
+    const workflowWords = ['process', 'step', 'workflow', 'flow', 'procedure', 'sequence'];
+    const workflowScore = workflowWords.filter(w => contentLower.includes(w)).length / workflowWords.length;
+    enhancementScores.push({ type: 'workflows', score: Math.min(1, workflowScore + 0.3), reason: 'Process-oriented content' });
+
+    // Architecture detection
+    const archWords = ['architecture', 'system', 'platform', 'infrastructure', 'integration', 'api'];
+    const archScore = archWords.filter(w => contentLower.includes(w)).length / archWords.length;
+    enhancementScores.push({ type: 'architecture-diagrams', score: Math.min(1, archScore + 0.2), reason: 'Technical systems mentioned' });
+
+    // Timeline detection
+    const timelineWords = ['milestone', 'phase', 'quarter', 'roadmap', 'timeline', 'history'];
+    const timelineScore = timelineWords.filter(w => contentLower.includes(w)).length / timelineWords.length;
+    enhancementScores.push({ type: 'timeline', score: Math.min(1, timelineScore + 0.25), reason: 'Time-based content' });
+
+    // Case examples
+    const caseWords = ['example', 'case', 'scenario', 'real-world', 'implementation'];
+    const caseScore = caseWords.filter(w => contentLower.includes(w)).length / caseWords.length;
+    enhancementScores.push({ type: 'case-examples', score: Math.min(1, caseScore + 0.35), reason: 'Examples would help illustrate' });
+
+    // Comparison
+    const comparisonWords = ['vs', 'versus', 'compared', 'before', 'after', 'difference'];
+    const comparisonScore = comparisonWords.filter(w => contentLower.includes(w)).length / comparisonWords.length;
+    enhancementScores.push({ type: 'comparison-tables', score: Math.min(1, comparisonScore + 0.25), reason: 'Comparative content' });
+
+    // Data verification
+    enhancementScores.push({ type: 'data-verification', score: hasNumbers ? 0.7 : 0.3, reason: 'Adds credibility' });
+
+    // Quotes
+    enhancementScores.push({ type: 'quotes', score: 0.5, reason: 'Expert opinions add authority' });
+
+    // Research citations
+    enhancementScores.push({ type: 'research-citations', score: scientificScore > 0.3 ? 0.7 : 0.3, reason: 'Academic backing' });
+
+    enhancementScores.sort((a, b) => b.score - a.score);
+
+    // Extract key topics
+    const keyTopics = this.extractKeyTopics(content);
+
+    // Audience insight
+    let audienceInsight = 'General business audience';
+    if (collateralType === 'investor') audienceInsight = 'Investors and stakeholders focused on ROI and growth';
+    else if (collateralType === 'training') audienceInsight = 'Learners seeking practical knowledge';
+    else if (collateralType === 'marketing') audienceInsight = 'Prospects and potential customers';
+    else if (collateralType === 'conference') audienceInsight = 'Industry professionals and thought leaders';
+    else if (contentLower.includes('healthcare') || contentLower.includes('patient')) {
+      audienceInsight = 'Healthcare professionals and decision-makers';
+    }
+
+    // Estimate slide count
+    const suggestedSlideCount = this.estimateSlideCount('standard', content, enhancementScores.slice(0, 3).map(e => e.type));
+
+    return {
+      tones: toneScores.slice(0, 5),
+      enhancements: enhancementScores.slice(0, 6),
+      suggestedSlideCount,
+      audienceInsight,
+      keyTopics
+    };
+  }
+
+  /**
+   * Extract key topics from content
+   */
+  private extractKeyTopics(content: string): string[] {
+    const words = content.toLowerCase().split(/\s+/);
+    const stopWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'can', 'this', 'that', 'these', 'those', 'it', 'its']);
+    
+    const wordFreq: Record<string, number> = {};
+    words.forEach(word => {
+      const cleaned = word.replace(/[^a-z]/g, '');
+      if (cleaned.length > 4 && !stopWords.has(cleaned)) {
+        wordFreq[cleaned] = (wordFreq[cleaned] || 0) + 1;
+      }
+    });
+
+    return Object.entries(wordFreq)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([word]) => word.charAt(0).toUpperCase() + word.slice(1));
+  }
+  
   async generatePresentation(request: PresentationRequest): Promise<PresentationResult> {
     const startTime = Date.now();
     
