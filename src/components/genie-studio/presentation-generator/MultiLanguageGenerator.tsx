@@ -20,7 +20,8 @@ import {
   Download,
   Sparkles,
   Clock,
-  FileText
+  FileText,
+  Star,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -199,32 +200,62 @@ export function MultiLanguageGenerator({
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            {displayedLanguages.map(lang => (
-              <div
-                key={lang.code}
-                className={cn(
-                  "flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all",
-                  selectedLanguages.includes(lang.code) 
-                    ? "border-primary bg-primary/10 shadow-sm" 
-                    : "border-muted hover:border-muted-foreground/40 hover:bg-muted/50",
-                  lang.code === primaryLanguage && "ring-2 ring-primary/30"
-                )}
-                onClick={() => toggleLanguage(lang.code)}
-              >
-                <Checkbox 
-                  checked={selectedLanguages.includes(lang.code)}
-                  className="h-4 w-4"
-                />
-                <span className="text-base">{lang.flag}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{lang.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{lang.nativeName}</p>
+            {displayedLanguages.map(lang => {
+              const isSelected = selectedLanguages.includes(lang.code);
+              const isPrimary = lang.code === primaryLanguage;
+              
+              return (
+                <div
+                  key={lang.code}
+                  className={cn(
+                    "flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all",
+                    isSelected 
+                      ? "border-primary bg-primary/10 shadow-sm" 
+                      : "border-muted hover:border-muted-foreground/40 hover:bg-muted/50",
+                    isPrimary && "ring-2 ring-primary/30"
+                  )}
+                  onClick={() => toggleLanguage(lang.code)}
+                >
+                  <Checkbox 
+                    checked={isSelected}
+                    className="h-4 w-4"
+                  />
+                  <span className="text-base">{lang.flag}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{lang.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{lang.nativeName}</p>
+                  </div>
+                  {isSelected && (
+                    <Button
+                      variant={isPrimary ? "default" : "ghost"}
+                      size="sm"
+                      className={cn(
+                        "h-5 text-[9px] px-1.5",
+                        isPrimary 
+                          ? "bg-primary/20 text-primary border-0 pointer-events-none" 
+                          : "hover:bg-primary/10"
+                      )}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!isPrimary) {
+                          onPrimaryLanguageChange(lang.code);
+                          toast.success(`${lang.name} set as primary language`);
+                        }
+                      }}
+                    >
+                      {isPrimary ? (
+                        <>
+                          <Star className="h-2.5 w-2.5 mr-0.5 fill-current" />
+                          Primary
+                        </>
+                      ) : (
+                        'Set Primary'
+                      )}
+                    </Button>
+                  )}
                 </div>
-                {lang.code === primaryLanguage && (
-                  <Badge className="text-[10px] px-1.5 bg-primary/20 text-primary border-0">Primary</Badge>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {SUPPORTED_LANGUAGES.length > 8 && (
