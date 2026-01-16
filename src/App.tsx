@@ -16,6 +16,7 @@ import { TenantProvider } from '@/contexts/TenantContext';
 import { HelmetProvider } from 'react-helmet-async';
 import { GlobalAgentGeneratorProvider } from '@/hooks/useGlobalAgentGenerator';
 import { GlobalAgentGeneratorModal } from '@/components/global/GlobalAgentGeneratorModal';
+import { LSUniversalProvider } from '@/components/label-studio/LSUniversalProvider';
 import { LazyPages, lazyWithRetry } from '@/utils/lazyWithRetry';
 import { SmartDefaultRoute, RouteTracker } from '@/components/routing/SmartDefaultRoute';
 
@@ -532,17 +533,19 @@ const AppRouter = () => {
           <TooltipProvider>
             <HelmetProvider>
               <GlobalAgentGeneratorProvider>
-                <Toaster />
-                <AppLayoutWithEnrollment 
-                  showUniversalGenie={true}
-                  tenantId="default-tenant"
-                  userId="current-user"
-                >
-                  <RouteTracker>
-                    <AppContent />
-                  </RouteTracker>
-                </AppLayoutWithEnrollment>
-                <GlobalAgentGeneratorModal />
+                <LSUniversalProvider autoEnable={false}>
+                  <Toaster />
+                  <AppLayoutWithEnrollment 
+                    showUniversalGenie={true}
+                    tenantId="default-tenant"
+                    userId="current-user"
+                  >
+                    <RouteTracker>
+                      <AppContent />
+                    </RouteTracker>
+                  </AppLayoutWithEnrollment>
+                  <GlobalAgentGeneratorModal />
+                </LSUniversalProvider>
               </GlobalAgentGeneratorProvider>
             </HelmetProvider>
           </TooltipProvider>

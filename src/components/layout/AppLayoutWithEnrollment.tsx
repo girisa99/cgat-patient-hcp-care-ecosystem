@@ -10,6 +10,7 @@ import { useLocation } from 'react-router-dom';
 import { GlobalConversationalEnrollmentProvider } from '@/hooks/useGlobalConversationalEnrollment';
 import { lazyWithRetry } from '@/utils/lazyWithRetry';
 import { usePageAwareEnrollment } from '@/hooks/usePageAwareEnrollment';
+import { LSEcosystemWidget } from '@/components/label-studio/LSEcosystemWidget';
 
 // Lazy load heavy global components with retry to prevent startup failures
 const GlobalConversationalEnrollmentModalLazy = lazyWithRetry(() =>
@@ -50,6 +51,9 @@ export const AppLayoutWithEnrollment: React.FC<AppLayoutWithEnrollmentProps> = (
   );
   const shouldShowGenie = showUniversalGenie && !isGenieStudioPage;
 
+  // Show LS widget on Genie Studio pages for training
+  const showLSWidget = isGenieStudioPage;
+
   return (
     <GlobalConversationalEnrollmentProvider>
       <div className="min-h-screen bg-background">
@@ -70,6 +74,14 @@ export const AppLayoutWithEnrollment: React.FC<AppLayoutWithEnrollmentProps> = (
             />
           )}
         </Suspense>
+        
+        {/* Label Studio Ecosystem Widget - Shown on Genie Studio pages */}
+        {showLSWidget && (
+          <LSEcosystemWidget 
+            position="bottom-left"
+            showDifferentiators={true}
+          />
+        )}
       </div>
     </GlobalConversationalEnrollmentProvider>
   );
