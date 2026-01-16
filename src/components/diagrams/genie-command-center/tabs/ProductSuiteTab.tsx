@@ -11,7 +11,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Brain, Sparkles, Mic, Workflow, Zap, Target,
-  Star, ArrowRight, Users, Settings, Globe, ChevronDown
+  Star, ArrowRight, Users, Settings, Globe, ChevronDown, Presentation
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -26,6 +26,7 @@ const productIcons: Record<string, React.ReactNode> = {
   arc: <Workflow className="w-8 h-8" />,
   spark: <Zap className="w-8 h-8" />,
   hub: <Target className="w-8 h-8" />,
+  deck: <Presentation className="w-8 h-8" />,
 };
 
 const containerVariants = {
@@ -226,6 +227,7 @@ export const ProductSuiteTab: React.FC = () => {
               {[
                 { name: 'Spark', icon: <Zap className="w-6 h-6" />, color: 'hsl(199, 89%, 48%)', desc: 'Quick Start' },
                 { name: 'Mind', icon: <Brain className="w-6 h-6" />, color: 'hsl(258, 90%, 66%)', desc: 'Script' },
+                { name: 'Deck', icon: <Presentation className="w-6 h-6" />, color: 'hsl(175, 77%, 45%)', desc: 'Present' },
                 { name: 'Vibe', icon: <Mic className="w-6 h-6" />, color: 'hsl(350, 70%, 50%)', desc: 'Record' },
                 { name: 'Arc', icon: <Workflow className="w-6 h-6" />, color: 'hsl(160, 84%, 39%)', desc: 'Automate' },
                 { name: 'Hub', icon: <Target className="w-6 h-6" />, color: 'hsl(215, 16%, 47%)', desc: 'Manage' },
