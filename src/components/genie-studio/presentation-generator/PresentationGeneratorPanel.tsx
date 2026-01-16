@@ -83,12 +83,14 @@ import {
 interface PresentationGeneratorPanelProps {
   onComplete?: (presentation: PresentationData) => void;
   onSaveToKnowledgeBase?: (title: string, content: string) => void;
+  hideHeader?: boolean;
   className?: string;
 }
 
 export function PresentationGeneratorPanel({
   onComplete,
   onSaveToKnowledgeBase,
+  hideHeader = false,
   className
 }: PresentationGeneratorPanelProps) {
   const { 
@@ -628,14 +630,16 @@ export function PresentationGeneratorPanel({
     <div className={cn("space-y-4", className)}>
       {/* Input Section */}
       {slides.length === 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              Generate Presentation
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <Card className={hideHeader ? "border-0 shadow-none" : undefined}>
+          {!hideHeader && (
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Generate Presentation
+              </CardTitle>
+            </CardHeader>
+          )}
+          <CardContent className={cn("space-y-4", hideHeader && "px-0")}>
             {/* Input Source Tabs */}
             <Tabs value={inputSource} onValueChange={(v) => setInputSource(v as InputSource)}>
               <TabsList className="grid grid-cols-5">

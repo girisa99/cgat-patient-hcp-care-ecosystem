@@ -1641,72 +1641,71 @@ export function SmartContentPipeline({
             <CardContent className="space-y-6">
           {/* Content Safety Notice */}
           <ContentSafetyBanner variant="compact" />
-          {/* Step 1: Content Type Selection - Unified Grid */}
+          
+          {/* Step 1: Content Type Selection - Dropdown */}
           <div className="space-y-3">
             <Label className="text-sm font-semibold">1. Select Content Type</Label>
-            
-            {/* All Content Types - Unified Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {CONTENT_TYPES.map((ct) => (
-                <div
-                  key={ct.id}
-                  onClick={() => handleContentTypeChange(ct.id)}
-                  className={cn(
-                    "p-3 rounded-lg border cursor-pointer transition-all flex items-center gap-3",
-                    contentType === ct.id 
-                      ? "border-primary bg-primary/10 ring-1 ring-primary/30"
-                      : ct.isHighlighted
-                        ? "border-amber-500/50 bg-gradient-to-r from-amber-500/5 to-orange-500/5 hover:border-amber-500/70 hover:shadow-sm"
-                        : "border-border hover:border-primary/50 hover:bg-secondary/50"
-                  )}
-                >
-                  <div className={cn(
-                    "h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
-                    contentType === ct.id 
-                      ? "bg-primary text-primary-foreground" 
-                      : ct.isHighlighted 
-                        ? "bg-gradient-to-br from-amber-500 to-orange-600 text-white"
-                        : "bg-secondary"
-                  )}>
-                    {ct.icon}
+            <Select value={contentType} onValueChange={(v) => handleContentTypeChange(v as ContentType)}>
+              <SelectTrigger className="w-full">
+                <SelectValue>
+                  <div className="flex items-center gap-2">
+                    {selectedContentType.icon}
+                    <span>{selectedContentType.label}</span>
+                    {selectedContentType.badge && (
+                      <Badge className="bg-amber-500 text-white text-[9px] px-1 py-0 ml-1">
+                        {selectedContentType.badge}
+                      </Badge>
+                    )}
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1">
-                      <p className="font-medium text-sm truncate">{ct.label}</p>
-                      {ct.badge && (
-                        <Badge className="bg-amber-500 text-white text-[9px] px-1 py-0">{ct.badge}</Badge>
-                      )}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="bg-popover border shadow-lg z-50">
+                {CONTENT_TYPES.map((ct) => (
+                  <SelectItem key={ct.id} value={ct.id}>
+                    <div className="flex items-center gap-3 py-1">
+                      <div className={cn(
+                        "h-8 w-8 rounded-lg flex items-center justify-center",
+                        ct.isHighlighted 
+                          ? "bg-gradient-to-br from-amber-500 to-orange-600 text-white"
+                          : "bg-secondary"
+                      )}>
+                        {ct.icon}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium">{ct.label}</span>
+                          {ct.badge && (
+                            <Badge className="bg-amber-500 text-white text-[9px] px-1 py-0">{ct.badge}</Badge>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground">{ct.description}</div>
+                      </div>
                     </div>
-                    <p className="text-[10px] text-muted-foreground truncate">{ct.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Presentation Generator - Full Integrated Panel */}
-          {contentType === 'presentation' && (
-            <>
-              <Separator />
-              <div className="py-2">
-                <PresentationGeneratorPanel
-                  onComplete={(presentation) => {
-                    toast.success(`Presentation "${presentation.title}" generated!`);
-                    // Handle completion - could switch to drafts view
-                  }}
-                  onSaveToKnowledgeBase={onSaveToKnowledgeBase ? (title, content) => {
-                    const generatedContent: GeneratedContent = {
-                      title,
-                      script: content,
-                      type: 'presentation_script',
-                      sourceType: 'document',
-                    };
-                    onSaveToKnowledgeBase(generatedContent);
-                  } : undefined}
-                />
-              </div>
-            </>
-          )}
+          {/* Dynamic Content Based on Selection */}
+          {contentType === 'presentation' ? (
+            /* Presentation Generator - Integrated directly */
+            <PresentationGeneratorPanel
+              onComplete={(presentation) => {
+                toast.success(`Presentation "${presentation.title}" generated!`);
+              }}
+              onSaveToKnowledgeBase={onSaveToKnowledgeBase ? (title, content) => {
+                const generatedContent: GeneratedContent = {
+                  title,
+                  script: content,
+                  type: 'presentation_script',
+                  sourceType: 'document',
+                };
+                onSaveToKnowledgeBase(generatedContent);
+              } : undefined}
+              hideHeader={true}
+            />
+          ) : null}
 
           {/* Regular Script Generation Flow (non-presentation) */}
           {contentType !== 'presentation' && (
