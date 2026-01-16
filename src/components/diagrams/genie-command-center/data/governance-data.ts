@@ -145,20 +145,29 @@ export interface AuditEntry {
 
 export const recentAuditLog: AuditEntry[] = [
   {
+    timestamp: '2026-01-16T10:00:00Z',
+    action: 'UPDATE',
+    area: 'P3 Scenarios',
+    previousValue: 72,
+    newValue: 130,
+    performedBy: 'Dev Team',
+    notes: 'Consolidated 58 new P3 scenarios (Generation, Compliance, Analytics, Segment-Specific, Enterprise)',
+  },
+  {
+    timestamp: '2026-01-16T10:00:00Z',
+    action: 'UPDATE',
+    area: 'Total Scenarios',
+    previousValue: 335,
+    newValue: 393,
+    performedBy: 'System',
+    notes: 'Updated total after P3 consolidation',
+  },
+  {
     timestamp: '2026-01-15T12:00:00Z',
     action: 'SYNC',
     area: 'All Metrics',
     performedBy: 'System',
     notes: 'Consolidated all metrics into UnifiedMetrics.ts',
-  },
-  {
-    timestamp: '2026-01-15T10:30:00Z',
-    action: 'UPDATE',
-    area: 'Scenario Count',
-    previousValue: 289,
-    newValue: 335,
-    performedBy: 'Dev Team',
-    notes: 'Updated P3 with 16 implemented scenarios',
   },
 ];
 

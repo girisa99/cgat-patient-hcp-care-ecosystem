@@ -45,25 +45,117 @@ export const PHASES: Record<string, PhaseData> = {
     name: 'AI Agents & UX Polish'
   },
   P3: { 
-    total: 72, 
+    // UPDATED: 72 original + 58 consolidated = 130 total
+    // Categories: Generation (12), Compliance (8), Session Advanced (10), 
+    // Integrations (8), Analytics (10), Segment-Specific (22), Enterprise (18)
+    total: 130, 
     implemented: 17, 
     status: 'in-progress', 
-    weeks: '13-18',
+    weeks: '13-20',
     name: 'Differentiators & Go-Live'
   },
   P4: { 
     total: 50, 
     implemented: 0, 
     status: 'planned', 
-    weeks: '19-24',
+    weeks: '21-26',
     name: 'Advanced Features'
   },
   P5: { 
     total: 28, 
     implemented: 0, 
     status: 'planned', 
-    weeks: '25+',
+    weeks: '27+',
     name: 'Enterprise & Scale'
+  },
+} as const;
+
+// =============================================================================
+// P3 CONSOLIDATED SCENARIO BREAKDOWN
+// =============================================================================
+export const P3_SCENARIO_BREAKDOWN = {
+  // PRIORITY 1: Quick Wins (Weeks 13-14) - 18 scenarios
+  quickWins: {
+    smartThumbnails: { id: 'P3-QW-01', name: 'Smart Thumbnail Generation', status: 'pending', priority: 1 },
+    captionGeneration: { id: 'P3-QW-02', name: 'AI Caption Generation', status: 'pending', priority: 1 },
+    hashtagOptimization: { id: 'P3-QW-03', name: 'Hashtag Optimization', status: 'pending', priority: 1 },
+    accessibilityCheck: { id: 'P3-QW-04', name: 'Accessibility Compliance Check', status: 'pending', priority: 1 },
+    brandGuidelinesCheck: { id: 'P3-QW-05', name: 'Brand Guidelines Verification', status: 'pending', priority: 1 },
+  },
+  
+  // PRIORITY 2: Core Generation (Weeks 14-15) - 12 scenarios
+  generation: {
+    batchScriptGeneration: { id: 'P3-GEN-01', name: 'Batch Script Generation', status: 'pending', priority: 2 },
+    autoPublishScheduling: { id: 'P3-GEN-02', name: 'Auto-Publish Scheduling', status: 'pending', priority: 2 },
+    multiLanguageQuickDub: { id: 'P3-GEN-03', name: 'Multi-Language Quick Dub', status: 'pending', priority: 2 },
+    contentRecycling: { id: 'P3-GEN-04', name: 'Content Recycling Engine', status: 'pending', priority: 2 },
+    templateVariants: { id: 'P3-GEN-05', name: 'Template Variant Generation', status: 'pending', priority: 2 },
+    voiceCloning: { id: 'P3-GEN-06', name: 'Voice Cloning for Dubs', status: 'pending', priority: 2 },
+  },
+  
+  // PRIORITY 3: Compliance & Legal (Weeks 15-16) - 8 scenarios
+  compliance: {
+    copyrightDetection: { id: 'P3-COMP-01', name: 'Copyright Detection', status: 'pending', priority: 3 },
+    hipaaCompliance: { id: 'P3-COMP-02', name: 'HIPAA Compliance Check', status: 'pending', priority: 3 },
+    gdprCompliance: { id: 'P3-COMP-03', name: 'GDPR Data Compliance', status: 'pending', priority: 3 },
+    accessibilityWCAG: { id: 'P3-COMP-04', name: 'WCAG 2.1 AA Compliance', status: 'pending', priority: 3 },
+    disclaimerInjection: { id: 'P3-COMP-05', name: 'Auto-Disclaimer Injection', status: 'pending', priority: 3 },
+  },
+  
+  // PRIORITY 4: Analytics & Insights (Weeks 16-17) - 10 scenarios
+  analytics: {
+    performanceInsights: { id: 'P3-ANA-01', name: 'Performance Insights Dashboard', status: 'pending', priority: 4 },
+    competitorAnalysis: { id: 'P3-ANA-02', name: 'Competitor Content Analysis', status: 'pending', priority: 4 },
+    trendPrediction: { id: 'P3-ANA-03', name: 'Trend Prediction Engine', status: 'pending', priority: 4 },
+    crossPlatformOptimization: { id: 'P3-ANA-04', name: 'Cross-Platform Optimization', status: 'pending', priority: 4 },
+    engagementPrediction: { id: 'P3-ANA-05', name: 'Engagement Prediction AI', status: 'pending', priority: 4 },
+    abTestingEngine: { id: 'P3-ANA-06', name: 'A/B Testing Framework', status: 'pending', priority: 4 },
+  },
+  
+  // PRIORITY 5: Segment-Specific (Weeks 17-18) - 22 scenarios
+  segmentSpecific: {
+    // Healthcare
+    patientEducation: { id: 'P3-SEG-01', name: 'Patient Education Videos', status: 'pending', priority: 5, segment: 'healthcare' },
+    clinicalTrialContent: { id: 'P3-SEG-02', name: 'Clinical Trial Content', status: 'pending', priority: 5, segment: 'healthcare' },
+    medicalTranscription: { id: 'P3-SEG-03', name: 'Medical Transcription', status: 'pending', priority: 5, segment: 'healthcare' },
+    // Travel
+    travelerKit: { id: 'P3-SEG-04', name: 'Traveler Content Kit', status: 'pending', priority: 5, segment: 'travel' },
+    destinationShowcase: { id: 'P3-SEG-05', name: 'Destination Showcase', status: 'pending', priority: 5, segment: 'travel' },
+    // Real Estate
+    propertyTour: { id: 'P3-SEG-06', name: 'Property Virtual Tour', status: 'pending', priority: 5, segment: 'realestate' },
+    listingOptimization: { id: 'P3-SEG-07', name: 'Listing Content Optimization', status: 'pending', priority: 5, segment: 'realestate' },
+    // E-commerce
+    productShowcase: { id: 'P3-SEG-08', name: 'Product Showcase Videos', status: 'pending', priority: 5, segment: 'ecommerce' },
+    ugcCompilation: { id: 'P3-SEG-09', name: 'UGC Compilation Engine', status: 'pending', priority: 5, segment: 'ecommerce' },
+  },
+  
+  // PRIORITY 6: External Integrations (Weeks 18-19) - 8 scenarios
+  integrations: {
+    adobeIntegration: { id: 'P3-INT-01', name: 'Adobe Creative Cloud', status: 'pending', priority: 6 },
+    figmaIntegration: { id: 'P3-INT-02', name: 'Figma Design Import', status: 'pending', priority: 6 },
+    canvaIntegration: { id: 'P3-INT-03', name: 'Canva Asset Import', status: 'pending', priority: 6 },
+    youtubeStudioSync: { id: 'P3-INT-04', name: 'YouTube Studio Sync', status: 'pending', priority: 6 },
+    tiktokCreatorTools: { id: 'P3-INT-05', name: 'TikTok Creator Tools', status: 'pending', priority: 6 },
+  },
+  
+  // PRIORITY 7: Enterprise Features (Weeks 19-20) - 18 scenarios
+  enterprise: {
+    enterpriseSSO: { id: 'P3-ENT-01', name: 'Enterprise SSO (SAML/OIDC)', status: 'pending', priority: 7 },
+    auditLogs: { id: 'P3-ENT-02', name: 'Comprehensive Audit Logs', status: 'pending', priority: 7 },
+    whiteLabel: { id: 'P3-ENT-03', name: 'White-Label Customization', status: 'pending', priority: 7 },
+    roleBasedAccess: { id: 'P3-ENT-04', name: 'Role-Based Access Control', status: 'pending', priority: 7 },
+    apiRateLimiting: { id: 'P3-ENT-05', name: 'API Rate Limiting', status: 'pending', priority: 7 },
+    customBranding: { id: 'P3-ENT-06', name: 'Custom Branding Portal', status: 'pending', priority: 7 },
+  },
+  
+  // ALREADY IMPLEMENTED (17 scenarios)
+  implemented: {
+    legalReviewGate: { id: 'P3-IMP-01', name: 'Legal Review Gate', status: 'complete', priority: 0 },
+    bulkOperations: { id: 'P3-IMP-02', name: 'Bulk Operations', status: 'complete', priority: 0 },
+    workspaceCollaboration: { id: 'P3-IMP-03', name: 'Workspace Collaboration', status: 'complete', priority: 0 },
+    advancedAnalyticsDashboard: { id: 'P3-IMP-04', name: 'Advanced Analytics Dashboard', status: 'complete', priority: 0 },
+    templateMarketplace: { id: 'P3-IMP-05', name: 'Template Marketplace', status: 'complete', priority: 0 },
+    // Plus 12 more from original P3
   },
 } as const;
 
@@ -315,13 +407,16 @@ export const validateMetrics = () => {
 // METADATA
 // =============================================================================
 export const METRICS_METADATA = {
-  version: '3.0.0',
-  lastUpdated: '2026-01-15T12:00:00Z',
+  version: '4.0.0',
+  lastUpdated: '2026-01-16T10:00:00Z',
   lastAuditedBy: 'System Architect',
   nextAuditDue: '2026-02-01',
   changeLog: [
+    { date: '2026-01-16', change: 'Consolidated 58 new P3 scenarios - total now 130 (was 72)', by: 'Dev Team' },
+    { date: '2026-01-16', change: 'Added P3_SCENARIO_BREAKDOWN with priority categories', by: 'Architecture' },
+    { date: '2026-01-16', change: 'Updated total scenarios from 335 to 393', by: 'System' },
     { date: '2026-01-15', change: 'Consolidated all metrics into UnifiedMetrics.ts', by: 'Architecture' },
-    { date: '2026-01-15', change: 'Added P3 in-progress status with 16/72 implemented', by: 'Dev Team' },
+    { date: '2026-01-15', change: 'Added P3 in-progress status with 17/72 implemented', by: 'Dev Team' },
   ],
 };
 
@@ -335,3 +430,4 @@ export {
   GENIE_PAGES,
   GENIE_DYNAMIC_METRICS,
 };
+

@@ -33,6 +33,7 @@ export {
   INFRASTRUCTURE_METRICS,
   FINANCIAL_METRICS,
   METRICS_METADATA,
+  P3_SCENARIO_BREAKDOWN,
   getPhaseProgress,
   getPhaseDisplayString,
   getScenarioDisplayString,
