@@ -15,6 +15,57 @@ export type SlideEnhancementType =
   | 'add_visuals'   // Enhance visual descriptions
   | 'simplify';     // Simplify language
 
+// Collateral types for different use cases
+export type CollateralType = 
+  | 'presentation'      // Standard presentation
+  | 'marketing'         // Marketing materials
+  | 'website'           // Website collateral
+  | 'conference'        // Conference materials
+  | 'investor'          // Investor pitch deck
+  | 'sales'             // Sales enablement
+  | 'training'          // Training materials
+  | 'product-launch'    // Product launch
+  | 'case-study'        // Case studies
+  | 'whitepaper';       // White papers
+
+// Image source options
+export type ImageSourceType = 
+  | 'ai-generated'      // Full AI generation
+  | 'stock-upload'      // User uploads stock images
+  | 'placeholder'       // Leave placeholders for later
+  | 'mixed';            // Mix of AI and uploads
+
+// Image style types
+export type ImageStyleType = 
+  | 'sketch'            // Hand-drawn sketches
+  | 'ai-realistic'      // Photorealistic AI images
+  | 'illustration'      // Illustrations
+  | 'infographic'       // Infographic style
+  | 'workflow'          // Workflow diagrams
+  | 'icons'             // Icon-based
+  | 'charts'            // Charts and graphs
+  | 'abstract';         // Abstract visuals
+
+// Voice provider options
+export type VoiceProviderType = 'openai' | 'elevenlabs' | 'amazon-polly' | 'google';
+
+// AI Model suggestions based on content type
+export interface AIModelSuggestion {
+  textModel: string;
+  imageModel: string;
+  reason: string;
+  confidence: number;
+}
+
+// Collateral configuration
+export interface CollateralConfig {
+  type: CollateralType;
+  imageSource: ImageSourceType;
+  imageStyles: ImageStyleType[];
+  voiceProvider?: VoiceProviderType;
+  suggestedModel?: AIModelSuggestion;
+}
+
 export interface PresentationSlide {
   id: string;
   slideNumber: number;

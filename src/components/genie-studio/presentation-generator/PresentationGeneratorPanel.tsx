@@ -63,7 +63,13 @@ import {
   PresentationRequest, 
   InputSource, 
   OutputFormat, 
-  PresentationLength 
+  PresentationLength,
+  CollateralType,
+  ImageSourceType,
+  ImageStyleType,
+  VoiceProviderType,
+  AIModelSuggestion,
+  universalPresentationService
 } from '@/services/universalPresentationService';
 
 interface PresentationGeneratorPanelProps {
@@ -95,18 +101,63 @@ export function PresentationGeneratorPanel({
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   
   // Configuration state
+  const [collateralType, setCollateralType] = useState<CollateralType>('presentation');
   const [outputFormat, setOutputFormat] = useState<OutputFormat>('pptx');
   const [length, setLength] = useState<PresentationLength>('standard');
+  
+  // Image configuration
+  const [imageSource, setImageSource] = useState<ImageSourceType>('ai-generated');
+  const [selectedImageStyles, setSelectedImageStyles] = useState<ImageStyleType[]>(['ai-realistic']);
   const [generateImages, setGenerateImages] = useState(true);
   const [imageStyle, setImageStyle] = useState<string>('professional');
   const [includeJourneyMaps, setIncludeJourneyMaps] = useState(false);
   const [includeInfographics, setIncludeInfographics] = useState(true);
   const [targetAudience, setTargetAudience] = useState('');
   
+  // Voice configuration
+  const [voiceProvider, setVoiceProvider] = useState<VoiceProviderType>('openai');
+  
+  // AI Model suggestion
+  const [suggestedModel, setSuggestedModel] = useState<AIModelSuggestion | null>(null);
+  const [useCustomModel, setUseCustomModel] = useState(false);
+  
   // Slides state (editable)
   const [slides, setSlides] = useState<PresentationSlide[]>([]);
   const [presentationTitle, setPresentationTitle] = useState('');
   const [showVideoExport, setShowVideoExport] = useState(false);
+
+  // Get voice providers and image styles
+  const voiceProviders = universalPresentationService.getVoiceProviders();
+  const imageStyleOptions = universalPresentationService.getImageStyleOptions();
+
+  // Update model suggestion when collateral type or content changes
+  const updateModelSuggestion = useCallback((type: CollateralType, content?: string) => {
+    const suggestion = universalPresentationService.suggestAIModels(type, content);
+    setSuggestedModel(suggestion);
+  }, []);
+
+  // Handle collateral type change
+  const handleCollateralTypeChange = (type: CollateralType) => {
+    setCollateralType(type);
+    updateModelSuggestion(type, inputContent);
+    
+    // Suggest best image styles for this collateral
+    const bestStyles = imageStyleOptions
+      .filter(style => style.bestFor.includes(type))
+      .map(style => style.id);
+    if (bestStyles.length > 0) {
+      setSelectedImageStyles(bestStyles.slice(0, 2));
+    }
+  };
+
+  // Toggle image style selection
+  const toggleImageStyle = (style: ImageStyleType) => {
+    setSelectedImageStyles(prev => 
+      prev.includes(style) 
+        ? prev.filter(s => s !== style)
+        : [...prev, style]
+    );
+  };
 
   // Handle file upload
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -140,13 +191,19 @@ export function PresentationGeneratorPanel({
       inputSource,
       content: inputContent,
       contentType: uploadedFile?.type,
+      collateralType,
       outputFormat,
       length,
-      generateImages,
+      imageSource,
+      imageStyles: selectedImageStyles,
+      generateImages: imageSource !== 'placeholder',
       imageStyle: imageStyle as any,
       includeJourneyMaps,
       includeInfographics,
       targetAudience: targetAudience || undefined,
+      voiceProvider,
+      suggestedModel: suggestedModel || undefined,
+      useCustomModel,
       autoSegment: true,
     };
 
@@ -179,7 +236,7 @@ export function PresentationGeneratorPanel({
         speakerNotes: slide.speakerNotes,
         topic: slide.metadata?.topic,
         importance: slide.metadata?.importance as any,
-        imagePrompt: slide.metadata?.imagePrompt,
+        imagePrompt: (slide.metadata as any)?.imagePrompt,
       }));
       
       setSlides(editableSlides);
@@ -555,7 +612,71 @@ export function PresentationGeneratorPanel({
               </TabsContent>
             </Tabs>
 
-            {/* Configuration */}
+            {/* Collateral Type Selection */}
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Collateral Type</Label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { id: 'presentation', label: 'Presentation' },
+                  { id: 'marketing', label: 'Marketing' },
+                  { id: 'website', label: 'Website' },
+                  { id: 'conference', label: 'Conference' },
+                  { id: 'investor', label: 'Investor Deck' },
+                  { id: 'sales', label: 'Sales' },
+                  { id: 'training', label: 'Training' },
+                  { id: 'product-launch', label: 'Product Launch' },
+                  { id: 'case-study', label: 'Case Study' },
+                  { id: 'whitepaper', label: 'White Paper' },
+                ].map(type => (
+                  <Badge
+                    key={type.id}
+                    variant={collateralType === type.id ? 'default' : 'outline'}
+                    className={cn(
+                      'cursor-pointer transition-colors text-xs',
+                      collateralType === type.id && 'bg-primary'
+                    )}
+                    onClick={() => handleCollateralTypeChange(type.id as CollateralType)}
+                  >
+                    {type.label}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {/* AI Model Suggestion */}
+            {suggestedModel && (
+              <Card className="border-primary/30 bg-primary/5">
+                <CardContent className="py-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      <div>
+                        <p className="text-xs font-medium">Suggested AI Models</p>
+                        <p className="text-[10px] text-muted-foreground">{suggestedModel.reason}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-[10px]">
+                        {Math.round(suggestedModel.confidence * 100)}% match
+                      </Badge>
+                      <Switch
+                        checked={!useCustomModel}
+                        onCheckedChange={(checked) => setUseCustomModel(!checked)}
+                      />
+                      <Label className="text-[10px]">Use suggested</Label>
+                    </div>
+                  </div>
+                  {!useCustomModel && (
+                    <div className="mt-2 flex gap-2 text-[10px]">
+                      <Badge variant="outline">Text: {suggestedModel.textModel.split('/')[1]}</Badge>
+                      <Badge variant="outline">Image: {suggestedModel.imageModel.split('/')[1]}</Badge>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Configuration Row 1 */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Output Format</Label>
@@ -588,7 +709,79 @@ export function PresentationGeneratorPanel({
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs">Image Style</Label>
+                <Label className="text-xs">Image Source</Label>
+                <Select value={imageSource} onValueChange={(v) => setImageSource(v as ImageSourceType)}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ai-generated">AI Generated</SelectItem>
+                    <SelectItem value="stock-upload">Upload Stock</SelectItem>
+                    <SelectItem value="placeholder">Placeholders</SelectItem>
+                    <SelectItem value="mixed">Mixed (AI + Upload)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs">Voice Provider</Label>
+                <Select value={voiceProvider} onValueChange={(v) => setVoiceProvider(v as VoiceProviderType)}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {voiceProviders.map(provider => (
+                      <SelectItem key={provider.id} value={provider.id}>
+                        {provider.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Image Style Selection */}
+            {imageSource !== 'placeholder' && (
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Image Styles (select multiple)</Label>
+                <div className="flex flex-wrap gap-2">
+                  {imageStyleOptions.map(style => (
+                    <Badge
+                      key={style.id}
+                      variant={selectedImageStyles.includes(style.id) ? 'default' : 'outline'}
+                      className={cn(
+                        'cursor-pointer transition-colors text-xs',
+                        selectedImageStyles.includes(style.id) && 'bg-primary',
+                        style.bestFor.includes(collateralType) && !selectedImageStyles.includes(style.id) && 'border-primary/50'
+                      )}
+                      onClick={() => toggleImageStyle(style.id)}
+                    >
+                      {style.name}
+                      {style.bestFor.includes(collateralType) && (
+                        <Check className="h-3 w-3 ml-1" />
+                      )}
+                    </Badge>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  ✓ = Recommended for {collateralType}
+                </p>
+              </div>
+            )}
+
+            {/* Additional Options */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Target Audience</Label>
+                <Input
+                  placeholder="e.g., Healthcare execs, Investors"
+                  value={targetAudience}
+                  onChange={(e) => setTargetAudience(e.target.value)}
+                  className="h-8 text-xs"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Visual Style</Label>
                 <Select value={imageStyle} onValueChange={setImageStyle}>
                   <SelectTrigger className="h-8 text-xs">
                     <SelectValue />
@@ -603,24 +796,10 @@ export function PresentationGeneratorPanel({
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs">Target Audience</Label>
-                <Input
-                  placeholder="e.g., Healthcare execs"
-                  value={targetAudience}
-                  onChange={(e) => setTargetAudience(e.target.value)}
-                  className="h-8 text-xs"
-                />
-              </div>
             </div>
 
-            {/* Options */}
+            {/* Toggle Options */}
             <div className="flex flex-wrap gap-4">
-              <div className="flex items-center gap-2">
-                <Switch checked={generateImages} onCheckedChange={setGenerateImages} />
-                <Label className="text-xs">Generate Images</Label>
-              </div>
               <div className="flex items-center gap-2">
                 <Switch checked={includeInfographics} onCheckedChange={setIncludeInfographics} />
                 <Label className="text-xs">Include Infographics</Label>
