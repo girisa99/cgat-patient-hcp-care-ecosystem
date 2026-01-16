@@ -309,16 +309,16 @@ export function TemplateThemeSelector({
   return (
     <div className={cn("space-y-4", className)}>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full h-10 p-1 bg-muted/60">
-          <TabsTrigger value="templates" className="flex-1 text-xs h-8 gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+        <TabsList className="grid grid-cols-3 w-full h-11 p-1 bg-muted rounded-lg">
+          <TabsTrigger value="templates" className="text-xs font-medium h-9 gap-1.5 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-foreground">
             <Layout className="h-3.5 w-3.5" />
             Templates
           </TabsTrigger>
-          <TabsTrigger value="colors" className="flex-1 text-xs h-8 gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+          <TabsTrigger value="colors" className="text-xs font-medium h-9 gap-1.5 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-foreground">
             <Palette className="h-3.5 w-3.5" />
             Colors
           </TabsTrigger>
-          <TabsTrigger value="fonts" className="flex-1 text-xs h-8 gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+          <TabsTrigger value="fonts" className="text-xs font-medium h-9 gap-1.5 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-foreground">
             <Type className="h-3.5 w-3.5" />
             Fonts
           </TabsTrigger>

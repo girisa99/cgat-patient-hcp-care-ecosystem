@@ -722,12 +722,12 @@ export function PresentationWizard({
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Tabs value={inputSource} onValueChange={(v) => setInputSource(v as InputSource)}>
-                    <TabsList className="w-full h-10 p-1 bg-muted/60">
-                      <TabsTrigger value="prompt" className="flex-1 text-xs h-8 data-[state=active]:bg-background data-[state=active]:shadow-sm">Prompt</TabsTrigger>
-                      <TabsTrigger value="text" className="flex-1 text-xs h-8 data-[state=active]:bg-background data-[state=active]:shadow-sm">Text</TabsTrigger>
-                      <TabsTrigger value="document" className="flex-1 text-xs h-8 data-[state=active]:bg-background data-[state=active]:shadow-sm">Doc</TabsTrigger>
-                      <TabsTrigger value="image" className="flex-1 text-xs h-8 data-[state=active]:bg-background data-[state=active]:shadow-sm">Image</TabsTrigger>
-                      <TabsTrigger value="url" className="flex-1 text-xs h-8 data-[state=active]:bg-background data-[state=active]:shadow-sm">URL</TabsTrigger>
+                    <TabsList className="grid grid-cols-5 w-full h-11 p-1 bg-muted rounded-lg">
+                      <TabsTrigger value="prompt" className="text-xs font-medium h-9 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-foreground">Prompt</TabsTrigger>
+                      <TabsTrigger value="text" className="text-xs font-medium h-9 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-foreground">Text</TabsTrigger>
+                      <TabsTrigger value="document" className="text-xs font-medium h-9 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-foreground">Doc</TabsTrigger>
+                      <TabsTrigger value="image" className="text-xs font-medium h-9 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-foreground">Image</TabsTrigger>
+                      <TabsTrigger value="url" className="text-xs font-medium h-9 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-foreground">URL</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="prompt" className="mt-3">
