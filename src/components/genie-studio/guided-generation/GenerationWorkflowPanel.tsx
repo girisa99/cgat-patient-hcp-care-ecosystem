@@ -83,7 +83,7 @@ export function GenerationWorkflowPanel({
           <div>
             <CardTitle className="text-lg flex items-center gap-2">
               Advanced Generation
-              <Badge variant="outline" className="text-xs font-normal">P3</Badge>
+              <Badge variant="outline" className="text-xs font-normal">P2</Badge>
             </CardTitle>
             <CardDescription>
               AI-powered generation workflows for your content
