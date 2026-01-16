@@ -1,8 +1,25 @@
 # P3 API Dependencies & Configuration Guide
 
-> **Version:** 1.0  
-> **Updated:** 2026-01-13  
-> **Purpose:** Complete guide to API keys and external dependencies for P3 features
+> **Version:** 2.0  
+> **Updated:** 2026-01-16  
+> **Purpose:** Complete guide to API keys and external dependencies for P3 features  
+> **Source of Truth:** `src/genie-studio/governance/ApiProductionConfig.ts`
+
+## 🚨 Production Readiness Summary
+
+| Metric | Value |
+|--------|-------|
+| Total APIs Configured | 16 |
+| Production Ready | 12 (75%) |
+| Needs Upgrade | 4 (Gemini, DocuSign, Label Studio, Resend) |
+| Estimated Monthly Cost | ~$592 |
+| Stage Gate Progress | 17/29 (59%) |
+
+**⚠️ PROD ACTIONS REQUIRED:**
+1. **Gemini**: Switch v1beta → v1 endpoint
+2. **DocuSign**: Switch demo → production endpoint, upgrade tier
+3. **Label Studio**: Deploy production instance, configure SSO
+4. **Resend**: Upgrade Free → Pro tier (3000/mo limit too low)
 
 ---
 
