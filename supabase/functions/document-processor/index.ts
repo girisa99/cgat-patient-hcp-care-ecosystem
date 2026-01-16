@@ -314,6 +314,7 @@ function selectBestModel(documentTypeId: string, documentCategory: string, ocrTe
 // ============= UNIFIED AI VISION HELPER =============
 // Routes through ai-universal-processor - NO duplicate Lovable AI Gateway calls
 // Uses the same infrastructure as useUniversalAI hook
+// Supports multi-model Stage 2 for hybrid vision+clinical documents
 async function callUniversalAIVision(
   prompt: string,
   imageBase64: string,
@@ -323,8 +324,15 @@ async function callUniversalAIVision(
     model?: string; 
     provider?: 'gemini' | 'claude' | 'openai';
     documentType?: string;
+    multiModel?: boolean; // Enable multi-model Stage 2 (vision + clinical)
   }
-): Promise<{ content: string; success: boolean; provider?: string; model?: string }> {
+): Promise<{ 
+  content: string; 
+  success: boolean; 
+  provider?: string; 
+  model?: string;
+  multiModelResults?: { vision?: any; clinical?: any };
+}> {
   const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
   
@@ -336,14 +344,25 @@ async function callUniversalAIVision(
   // Determine provider based on document type (intelligent routing)
   let provider = options?.provider || 'gemini';
   let model = options?.model;
+  let needsMultiModel = options?.multiModel || false;
   
   // Apply intelligent routing based on document type
   if (options?.documentType) {
     const docType = options.documentType.toLowerCase();
+    
+    // Check if document needs BOTH vision AND clinical analysis
+    const needsVision = ['xray', 'ct_scan', 'mri', 'ecg', 'ultrasound', 'medical_imaging', 'dicom'].some(t => docType.includes(t));
+    const needsClinical = ['prescription', 'rx', 'lab_result', 'medical_record', 'clinical'].some(t => docType.includes(t)) || needsVision;
+    
+    // Enable multi-model for documents that need both
+    if (needsVision && needsClinical) {
+      needsMultiModel = true;
+    }
+    
     // Healthcare documents → Claude for clinical reasoning
     if (['prescription', 'rx', 'insurance', 'lab_result', 'medical_record'].some(t => docType.includes(t))) {
       provider = 'claude';
-      model = model || 'claude-3-5-sonnet-20241022';
+      model = model || 'claude-sonnet-4-5';
     }
     // Financial documents → OpenAI for structured extraction
     else if (['invoice', 'receipt', 'claim', 'billing'].some(t => docType.includes(t))) {
@@ -360,17 +379,85 @@ async function callUniversalAIVision(
   // Default model per provider
   if (!model) {
     switch (provider) {
-      case 'claude': model = 'claude-3-5-sonnet-20241022'; break;
+      case 'claude': model = 'claude-sonnet-4-5'; break;
       case 'openai': model = 'gpt-4o'; break;
       case 'gemini': 
       default: model = 'gemini-2.0-flash-exp'; break;
     }
   }
 
-  console.log(`[UniversalAI-Vision] Routing to ai-universal-processor - Provider: ${provider}, Model: ${model}`);
+  console.log(`[UniversalAI-Vision] Routing to ai-universal-processor - Provider: ${provider}, Model: ${model}, MultiModel: ${needsMultiModel}`);
 
   try {
-    // Call ai-universal-processor edge function internally
+    // ============= MULTI-MODEL STAGE 2 =============
+    // For documents needing both vision AND clinical analysis
+    if (needsMultiModel) {
+      console.log('[UniversalAI-Vision] Multi-model Stage 2: Vision (Gemini) + Clinical (Claude)');
+      
+      // Step 1: Vision analysis with Gemini
+      const visionResponse = await fetch(`${supabaseUrl}/functions/v1/ai-universal-processor`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${supabaseServiceKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          provider: 'gemini',
+          model: 'gemini-2.0-flash-exp',
+          prompt: `Analyze this medical image. Extract all visible findings, measurements, anatomical structures, and technical quality observations. Return structured JSON with: image_quality, modality, anatomical_region, visual_findings[], measurements{}, technical_notes[].`,
+          action: 'analyze_scene',
+          context: { image: imageBase64, analysisDepth: 'detailed' },
+          maxTokens: 2000
+        })
+      });
+      
+      let visionResult = null;
+      if (visionResponse.ok) {
+        const visionData = await visionResponse.json();
+        visionResult = visionData.content;
+        console.log('[UniversalAI-Vision] Vision analysis complete');
+      }
+      
+      // Step 2: Clinical reasoning with Claude, incorporating vision findings
+      const clinicalPrompt = visionResult 
+        ? `${prompt}\n\nVision Analysis Results:\n${visionResult}\n\nBased on the above vision analysis, provide clinical interpretation, differential diagnoses, and recommendations.`
+        : prompt;
+      
+      const clinicalResponse = await fetch(`${supabaseUrl}/functions/v1/ai-universal-processor`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${supabaseServiceKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          provider: 'claude',
+          model: 'claude-sonnet-4-5',
+          prompt: clinicalPrompt,
+          action: 'analyze_scene',
+          context: { image: imageBase64, analysisDepth: 'detailed' },
+          maxTokens: options?.maxTokens || 2500
+        })
+      });
+      
+      if (!clinicalResponse.ok) {
+        throw new Error(`Clinical analysis failed: ${clinicalResponse.status}`);
+      }
+      
+      const clinicalData = await clinicalResponse.json();
+      
+      return {
+        content: clinicalData.content || '',
+        success: true,
+        provider: 'multi-model',
+        model: 'gemini+claude',
+        multiModelResults: {
+          vision: visionResult,
+          clinical: clinicalData.content
+        }
+      };
+    }
+
+    // ============= SINGLE MODEL STAGE 2 =============
     const response = await fetch(`${supabaseUrl}/functions/v1/ai-universal-processor`, {
       method: "POST",
       headers: {
@@ -417,7 +504,7 @@ async function callUniversalAIVision(
     const data = await response.json();
     const content = data.content || '';
     
-    return { 
+    return {
       content, 
       success: true, 
       provider,
@@ -429,7 +516,94 @@ async function callUniversalAIVision(
   }
 }
 
-// ============= ANALYTICS LOGGING =============
+// ============= LABEL STUDIO INTEGRATION =============
+// Records document processing events for ML training pipeline
+// Uses templates and tags for structured annotation
+
+interface LabelStudioTrainingEvent {
+  eventType: 'document_classification' | 'ocr_extraction' | 'field_extraction' | 'model_routing' | 'medical_analysis';
+  context: Record<string, any>;
+  metadata?: Record<string, any>;
+}
+
+// Get Label Studio template based on document type
+function getLabelStudioTemplate(documentType: string): { templateId: string; tags: string[] } {
+  const templates: Record<string, { templateId: string; tags: string[] }> = {
+    // Medical documents
+    'prescription': { templateId: 'healthcare_rx', tags: ['medical', 'prescription', 'clinical'] },
+    'lab_result': { templateId: 'healthcare_labs', tags: ['medical', 'lab', 'clinical'] },
+    'medical_record': { templateId: 'healthcare_emr', tags: ['medical', 'emr', 'clinical'] },
+    'insurance_card': { templateId: 'healthcare_insurance', tags: ['medical', 'insurance'] },
+    // Medical imaging
+    'xray': { templateId: 'medical_imaging', tags: ['radiology', 'xray', 'imaging'] },
+    'ct_scan': { templateId: 'medical_imaging', tags: ['radiology', 'ct', 'imaging'] },
+    'mri': { templateId: 'medical_imaging', tags: ['radiology', 'mri', 'imaging'] },
+    'ultrasound': { templateId: 'medical_imaging', tags: ['radiology', 'ultrasound', 'imaging'] },
+    'ecg': { templateId: 'medical_cardio', tags: ['cardiology', 'ecg', 'imaging'] },
+    'medical_imaging': { templateId: 'medical_imaging', tags: ['radiology', 'imaging'] },
+    // Financial
+    'invoice': { templateId: 'financial_invoice', tags: ['financial', 'invoice', 'billing'] },
+    'receipt': { templateId: 'financial_receipt', tags: ['financial', 'receipt'] },
+    'claim': { templateId: 'financial_claim', tags: ['financial', 'claim', 'insurance'] },
+    // Identity
+    'passport': { templateId: 'identity_doc', tags: ['identity', 'passport', 'kyc'] },
+    'drivers_license': { templateId: 'identity_doc', tags: ['identity', 'license', 'kyc'] },
+    'identification': { templateId: 'identity_doc', tags: ['identity', 'id', 'kyc'] },
+    // General
+    'form': { templateId: 'general_form', tags: ['form', 'document'] },
+    'contract': { templateId: 'legal_contract', tags: ['legal', 'contract'] },
+  };
+  
+  return templates[documentType.toLowerCase()] || { templateId: 'general_document', tags: ['document', 'unclassified'] };
+}
+
+// Send training events to Label Studio connector
+async function recordLabelStudioEvent(
+  supabaseUrl: string,
+  supabaseServiceKey: string,
+  events: LabelStudioTrainingEvent[],
+  projectContext?: { documentType: string; templateId: string; tags: string[] }
+): Promise<boolean> {
+  try {
+    console.log(`[LabelStudio] Recording ${events.length} training events for ML pipeline`);
+    
+    // Call label-studio-connector edge function
+    const response = await fetch(`${supabaseUrl}/functions/v1/label-studio-connector`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${supabaseServiceKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action: 'recordTrainingEvents',
+        events: events.map(e => ({
+          ...e,
+          metadata: {
+            ...e.metadata,
+            template: projectContext?.templateId,
+            tags: projectContext?.tags,
+            timestamp: new Date().toISOString()
+          }
+        }))
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.warn(`[LabelStudio] Failed to record events (${response.status}):`, errorText);
+      return false;
+    }
+
+    console.log('[LabelStudio] Training events recorded successfully');
+    return true;
+  } catch (error) {
+    // Don't fail document processing if Label Studio integration fails
+    console.warn('[LabelStudio] Error recording events (non-critical):', error);
+    return false;
+  }
+}
+
+
 interface AnalyticsEntry {
   document_id?: string;
   user_id?: string;
@@ -830,7 +1004,89 @@ async function handleUploadWithAutoDetect(supabase: any, request: ProcessingRequ
     confidence_score: autoDetectionResult?.confidence
   });
 
-  console.log(`[AutoDetect] Upload complete. DocumentId: ${record.id}, DetectedType: ${detectedDocumentType}, Model: ${modelRoutingInfo.modelUsed}`);
+  // ============= LABEL STUDIO ML PIPELINE INTEGRATION =============
+  // Record training events with templates and tags for model improvement
+  const lsTemplate = getLabelStudioTemplate(detectedDocumentType);
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
+  
+  const trainingEvents: LabelStudioTrainingEvent[] = [
+    // Document classification event
+    {
+      eventType: 'document_classification',
+      context: {
+        document_id: record.id,
+        detected_type: detectedDocumentType,
+        confidence: autoDetectionResult?.confidence || 0,
+        key_indicators: autoDetectionResult?.key_indicators || [],
+        category: category
+      },
+      metadata: {
+        file_name: fileName,
+        mime_type: mimeType,
+        is_medical: autoDetectionResult?.is_medical || false
+      }
+    },
+    // Model routing event
+    {
+      eventType: 'model_routing',
+      context: {
+        document_id: record.id,
+        document_type: detectedDocumentType,
+        stage1_model: modelRoutingInfo.stage1Model,
+        stage2_model: modelRoutingInfo.stage2Model,
+        pipeline_type: modelRoutingInfo.pipelineType,
+        routing_confidence: modelRoutingInfo.confidence
+      },
+      metadata: {
+        selection_reason: modelRoutingInfo.selectionReason,
+        fallbacks_attempted: modelRoutingInfo.fallbacksAttempted
+      }
+    }
+  ];
+  
+  // Add OCR extraction event if available
+  if (autoDetectionResult?.ocr_text_preview) {
+    trainingEvents.push({
+      eventType: 'ocr_extraction',
+      context: {
+        document_id: record.id,
+        document_type: detectedDocumentType,
+        ocr_text_preview: autoDetectionResult.ocr_text_preview,
+        suggested_fields: autoDetectionResult.suggested_fields || []
+      }
+    });
+  }
+  
+  // Add medical analysis event if available
+  if (medicalAnalysisResult) {
+    trainingEvents.push({
+      eventType: 'medical_analysis',
+      context: {
+        document_id: record.id,
+        modality: medicalAnalysisResult.modality_detected,
+        anatomical_region: medicalAnalysisResult.anatomical_region,
+        findings_count: (medicalAnalysisResult.anatomical_findings?.length || 0) + 
+                       (medicalAnalysisResult.clinical_observations?.length || 0),
+        confidence: medicalAnalysisResult.confidence_level,
+        urgency: medicalAnalysisResult.urgency_level
+      },
+      metadata: {
+        analysis_provider: medicalAnalysisResult.analysis_provider,
+        analysis_model: medicalAnalysisResult.analysis_model
+      }
+    });
+  }
+  
+  // Send events to Label Studio (non-blocking, don't await)
+  recordLabelStudioEvent(supabaseUrl, supabaseServiceKey, trainingEvents, {
+    documentType: detectedDocumentType,
+    templateId: lsTemplate.templateId,
+    tags: lsTemplate.tags
+  }).catch(err => console.warn('[LabelStudio] Background recording failed:', err));
+
+  console.log(`[AutoDetect] Upload complete. DocumentId: ${record.id}, DetectedType: ${detectedDocumentType}, Model: ${modelRoutingInfo.modelUsed}, LabelStudio: ${lsTemplate.templateId}`);
+
 
   return new Response(
     JSON.stringify({ 
