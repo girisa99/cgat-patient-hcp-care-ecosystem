@@ -69,6 +69,10 @@ import {
   ImageStyleType,
   VoiceProviderType,
   AIModelSuggestion,
+  PresentationTone,
+  ContentEnhancement,
+  SlideCountEstimate,
+  ContentRecommendation,
   universalPresentationService
 } from '@/services/universalPresentationService';
 
@@ -125,10 +129,35 @@ export function PresentationGeneratorPanel({
   const [slides, setSlides] = useState<PresentationSlide[]>([]);
   const [presentationTitle, setPresentationTitle] = useState('');
   const [showVideoExport, setShowVideoExport] = useState(false);
+  
+  // Tone and Enhancement state
+  const [selectedTones, setSelectedTones] = useState<PresentationTone[]>(['balanced']);
+  const [selectedEnhancements, setSelectedEnhancements] = useState<ContentEnhancement[]>([]);
+  const [slideEstimate, setSlideEstimate] = useState<SlideCountEstimate | null>(null);
+  const [contentRecommendation, setContentRecommendation] = useState<ContentRecommendation | null>(null);
+  const [showRecommendations, setShowRecommendations] = useState(false);
 
-  // Get voice providers and image styles
+  // Get voice providers, image styles, tones, and enhancements
   const voiceProviders = universalPresentationService.getVoiceProviders();
   const imageStyleOptions = universalPresentationService.getImageStyleOptions();
+  const toneOptions = universalPresentationService.getToneOptions();
+  const enhancementOptions = universalPresentationService.getContentEnhancements();
+
+  // Update slide estimate when length or enhancements change
+  const updateSlideEstimate = useCallback(() => {
+    const estimate = universalPresentationService.estimateSlideCount(length, inputContent, selectedEnhancements);
+    setSlideEstimate(estimate);
+  }, [length, inputContent, selectedEnhancements]);
+
+  // Update recommendations when content changes
+  const updateRecommendations = useCallback(() => {
+    if (inputContent.length > 50) {
+      const recommendations = universalPresentationService.analyzeContentForRecommendations(inputContent, collateralType);
+      setContentRecommendation(recommendations);
+      setSlideEstimate(recommendations.suggestedSlideCount);
+      setShowRecommendations(true);
+    }
+  }, [inputContent, collateralType]);
 
   // Update model suggestion when collateral type or content changes
   const updateModelSuggestion = useCallback((type: CollateralType, content?: string) => {
@@ -148,6 +177,19 @@ export function PresentationGeneratorPanel({
     if (bestStyles.length > 0) {
       setSelectedImageStyles(bestStyles.slice(0, 2));
     }
+    
+    // Update recommendations
+    if (inputContent.length > 50) {
+      updateRecommendations();
+    }
+    
+    // Suggest best tones for this collateral
+    const bestTones = toneOptions
+      .filter(tone => tone.bestFor.includes(type))
+      .map(tone => tone.id);
+    if (bestTones.length > 0 && selectedTones.length <= 1) {
+      setSelectedTones(bestTones.slice(0, 2));
+    }
   };
 
   // Toggle image style selection
@@ -157,6 +199,66 @@ export function PresentationGeneratorPanel({
         ? prev.filter(s => s !== style)
         : [...prev, style]
     );
+  };
+  
+  // Toggle tone selection
+  const toggleTone = (tone: PresentationTone) => {
+    setSelectedTones(prev => 
+      prev.includes(tone) 
+        ? prev.filter(t => t !== tone)
+        : [...prev, tone]
+    );
+    updateSlideEstimate();
+  };
+  
+  // Toggle enhancement selection
+  const toggleEnhancement = (enhancement: ContentEnhancement) => {
+    setSelectedEnhancements(prev => {
+      const newEnhancements = prev.includes(enhancement) 
+        ? prev.filter(e => e !== enhancement)
+        : [...prev, enhancement];
+      return newEnhancements;
+    });
+    // Update slide estimate after a brief delay
+    setTimeout(updateSlideEstimate, 100);
+  };
+  
+  // Handle content input change with debounced analysis
+  const handleContentChange = (value: string) => {
+    setInputContent(value);
+    // Debounced recommendation update
+    if (value.length > 100) {
+      const timer = setTimeout(() => {
+        updateRecommendations();
+        updateSlideEstimate();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  };
+  
+  // Apply recommended tones
+  const applyRecommendedTones = () => {
+    if (contentRecommendation) {
+      const topTones = contentRecommendation.tones
+        .filter(t => t.score > 0.5)
+        .slice(0, 2)
+        .map(t => t.tone);
+      setSelectedTones(topTones);
+      toast.success('Applied recommended tones');
+    }
+  };
+  
+  // Apply recommended enhancements
+  const applyRecommendedEnhancements = () => {
+    if (contentRecommendation) {
+      const topEnhancements = contentRecommendation.enhancements
+        .filter(e => e.score > 0.5)
+        .slice(0, 3)
+        .map(e => e.type);
+      setSelectedEnhancements(topEnhancements);
+      updateSlideEstimate();
+      toast.success('Applied recommended enhancements');
+    }
   };
 
   // Handle file upload
@@ -205,6 +307,8 @@ export function PresentationGeneratorPanel({
       suggestedModel: suggestedModel || undefined,
       useCustomModel,
       autoSegment: true,
+      tones: selectedTones,
+      contentEnhancements: selectedEnhancements,
     };
 
     const result = await generatePresentation(request);
@@ -810,6 +914,169 @@ export function PresentationGeneratorPanel({
               </div>
             </div>
 
+            {/* Slide Count Estimate */}
+            {slideEstimate && (
+              <Card className="border-accent/30 bg-accent/5">
+                <CardContent className="py-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Presentation className="h-4 w-4 text-accent-foreground" />
+                      <p className="text-xs font-medium">Estimated Slides</p>
+                    </div>
+                    <Badge className="text-sm font-bold">{slideEstimate.recommended} slides</Badge>
+                  </div>
+                  <div className="grid grid-cols-5 gap-1 text-[10px] text-muted-foreground">
+                    <div className="text-center">
+                      <div className="font-semibold text-foreground">{slideEstimate.breakdown.title}</div>
+                      <div>Title</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-semibold text-foreground">{slideEstimate.breakdown.content}</div>
+                      <div>Content</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-semibold text-foreground">{slideEstimate.breakdown.infographic}</div>
+                      <div>Infographic</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-semibold text-foreground">{slideEstimate.breakdown.journey}</div>
+                      <div>Journey</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-semibold text-foreground">{slideEstimate.breakdown.conclusion}</div>
+                      <div>Conclusion</div>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-2">
+                    Range: {slideEstimate.min}-{slideEstimate.max} slides based on your selections
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Tone & Style Selection */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-medium">Tone & Style (select multiple)</Label>
+                {contentRecommendation && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-6 text-[10px]"
+                    onClick={applyRecommendedTones}
+                  >
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    Apply Recommended
+                  </Button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {toneOptions.map(tone => {
+                  const isRecommended = contentRecommendation?.tones.find(t => t.tone === tone.id && t.score > 0.5);
+                  return (
+                    <Badge
+                      key={tone.id}
+                      variant={selectedTones.includes(tone.id) ? 'default' : 'outline'}
+                      className={cn(
+                        'cursor-pointer transition-colors text-xs',
+                        selectedTones.includes(tone.id) && 'bg-primary',
+                        isRecommended && !selectedTones.includes(tone.id) && 'border-primary/50'
+                      )}
+                      onClick={() => toggleTone(tone.id)}
+                    >
+                      {tone.name}
+                      {isRecommended && (
+                        <span className="ml-1 text-[8px]">({Math.round((isRecommended.score || 0) * 100)}%)</span>
+                      )}
+                    </Badge>
+                  );
+                })}
+              </div>
+              {contentRecommendation?.audienceInsight && (
+                <p className="text-[10px] text-muted-foreground">
+                  🎯 Audience: {contentRecommendation.audienceInsight}
+                </p>
+              )}
+            </div>
+
+            {/* Content Enhancements */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-medium">Content Enhancements</Label>
+                {contentRecommendation && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-6 text-[10px]"
+                    onClick={applyRecommendedEnhancements}
+                  >
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    Apply Recommended
+                  </Button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {enhancementOptions.map(enhancement => {
+                  const isRecommended = contentRecommendation?.enhancements.find(e => e.type === enhancement.id && e.score > 0.5);
+                  return (
+                    <Badge
+                      key={enhancement.id}
+                      variant={selectedEnhancements.includes(enhancement.id) ? 'default' : 'outline'}
+                      className={cn(
+                        'cursor-pointer transition-colors text-xs',
+                        selectedEnhancements.includes(enhancement.id) && 'bg-primary',
+                        isRecommended && !selectedEnhancements.includes(enhancement.id) && 'border-primary/50'
+                      )}
+                      onClick={() => toggleEnhancement(enhancement.id)}
+                    >
+                      {enhancement.name}
+                      {isRecommended && (
+                        <span className="ml-1 text-[8px]">({Math.round((isRecommended.score || 0) * 100)}%)</span>
+                      )}
+                    </Badge>
+                  );
+                })}
+              </div>
+              {selectedEnhancements.length > 0 && (
+                <p className="text-[10px] text-muted-foreground">
+                  Selected: {selectedEnhancements.join(', ')}
+                </p>
+              )}
+            </div>
+
+            {/* Smart Recommendations Panel */}
+            {showRecommendations && contentRecommendation && contentRecommendation.keyTopics.length > 0 && (
+              <Card className="border-secondary/30 bg-secondary/5">
+                <CardContent className="py-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    <p className="text-xs font-medium">Content Analysis</p>
+                  </div>
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-[10px] text-muted-foreground mb-1">Key Topics Detected:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {contentRecommendation.keyTopics.map((topic, idx) => (
+                          <Badge key={idx} variant="secondary" className="text-[10px]">
+                            {topic}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-[10px] text-muted-foreground">Top recommended tone:</p>
+                      <Badge variant="outline" className="text-[10px]">
+                        {contentRecommendation.tones[0]?.tone || 'balanced'}
+                      </Badge>
+                      <span className="text-[9px] text-muted-foreground">
+                        {contentRecommendation.tones[0]?.reason}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Generate Button */}
             <Button 
               onClick={handleGenerate} 
@@ -824,7 +1091,7 @@ export function PresentationGeneratorPanel({
               ) : (
                 <>
                   <Wand2 className="h-4 w-4 mr-2" />
-                  Generate Presentation
+                  Generate {slideEstimate ? `${slideEstimate.recommended} Slides` : 'Presentation'}
                 </>
               )}
             </Button>
