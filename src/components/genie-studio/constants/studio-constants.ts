@@ -14,7 +14,8 @@ import {
   Users,
   Film,
   Podcast,
-  Tv
+  Tv,
+  Presentation
 } from 'lucide-react';
 import type { FeatureCard, QuickTip, MusicGenre, ScriptTemplate } from '../types/studio-types';
 
@@ -30,7 +31,7 @@ export const MUSIC_GENRES: MusicGenre[] = [
   { id: 'acoustic', name: 'Acoustic', prompt: 'Warm acoustic guitar melody, natural and organic, coffeehouse atmosphere', color: 'amber' }
 ];
 
-// Feature cards for the dashboard - Workflow order: Script → Voice → Music → Record
+// Feature cards for the dashboard - Workflow order: Script → Voice → Music → Record → Deck
 export const FEATURES: FeatureCard[] = [
   {
     id: 'productions',
@@ -83,6 +84,18 @@ export const FEATURES: FeatureCard[] = [
     badge: 'Popular',
     stats: { label: 'Quick Start', value: '< 10s' },
     tab: 'record'
+  },
+  {
+    id: 'deck',
+    title: 'Genie Deck',
+    description: 'AI-powered presentations with multi-language export',
+    icon: Presentation,
+    color: 'from-purple-500 to-violet-500',
+    badge: 'New',
+    stats: { label: 'Languages', value: '10+' },
+    tab: 'deck',
+    isExternal: true,
+    route: '/genie-deck'
   },
   {
     id: 'publish',
