@@ -323,8 +323,8 @@
 | `GENIE_STUDIO_TECHNICAL_ARCHITECTURE.md` | Technical implementation details |
 | `GENIE_STUDIO_FUNCTIONAL_ARCHITECTURE.md` | User flows and UX specifications |
 | `GENIE_PHASE_IMPLEMENTATION_ROADMAP.md` | Phase-by-phase implementation plan |
-| `GENIE_STUDIO_SCENARIO_MAP.md` | All 177 user scenarios |
-| `COMPREHENSIVE_177_SCENARIO_PHASE_REVIEW.md` | Complete phase-to-scenario mapping |
+| `GENIE_STUDIO_SCENARIO_MAP.md` | All 403 user scenarios (P0-P5) |
+| `src/genie-studio/governance/UnifiedMetrics.ts` | **SINGLE SOURCE OF TRUTH** for all metrics |
 
 ---
 
