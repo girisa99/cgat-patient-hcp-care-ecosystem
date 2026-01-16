@@ -73,7 +73,8 @@ import {
   Layout,
   Table,
   BarChart3,
-  Move
+  Move,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -1635,41 +1636,97 @@ export function PresentationWizard({
             <Eye className="h-5 w-5" />
             Preview
           </h3>
-          {slides.length > 0 && (
-            <div className="flex items-center gap-2">
-              {/* Editing Mode Toggle */}
-              <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
-                <Button
-                  variant={editingMode === 'preview' ? 'default' : 'ghost'}
-                  size="sm"
-                  className="h-7 px-2 text-xs"
-                  onClick={() => setEditingMode('preview')}
-                >
-                  <Eye className="h-3 w-3 mr-1" />
-                  Preview
-                </Button>
-                <Button
-                  variant={editingMode === 'layout' ? 'default' : 'ghost'}
-                  size="sm"
-                  className="h-7 px-2 text-xs"
-                  onClick={() => setEditingMode('layout')}
-                  disabled={!selectedSlideId}
-                >
-                  <Move className="h-3 w-3 mr-1" />
-                  Layout
-                </Button>
-              </div>
-              <Badge variant="outline">{slides.length} slides</Badge>
-              <Button variant="ghost" size="sm" onClick={() => { setSlides([]); reset(); resetMultiLang(); }}>
-                <RefreshCw className="h-4 w-4" />
+          <div className="flex items-center gap-2">
+            {/* Version Comparison Toggle - only when multiple language versions exist */}
+            {agentGenerator.completedVersions.length > 1 && (
+              <Button
+                variant={showVersionComparison ? 'default' : 'outline'}
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => setShowVersionComparison(!showVersionComparison)}
+              >
+                <Languages className="h-3 w-3 mr-1" />
+                Compare Versions
               </Button>
-            </div>
-          )}
+            )}
+            
+            {slides.length > 0 && (
+              <>
+                {/* Editing Mode Toggle */}
+                <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
+                  <Button
+                    variant={editingMode === 'preview' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => setEditingMode('preview')}
+                  >
+                    <Eye className="h-3 w-3 mr-1" />
+                    Preview
+                  </Button>
+                  <Button
+                    variant={editingMode === 'layout' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => setEditingMode('layout')}
+                    disabled={!selectedSlideId}
+                  >
+                    <Move className="h-3 w-3 mr-1" />
+                    Layout
+                  </Button>
+                </div>
+                <Badge variant="outline">{slides.length} slides</Badge>
+                <Button variant="ghost" size="sm" onClick={() => { setSlides([]); reset(); resetMultiLang(); agentGenerator.reset(); }}>
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+          </div>
         </div>
 
         <ScrollArea className="flex-1">
-          {/* Generation Progress Panel */}
-          {isGenerating && (
+          {/* Agentic Generation Progress - simplified inline display */}
+          {useAgenticGeneration && agentGenerator.isGenerating && (
+            <div className="pr-4 mb-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Brain className="h-4 w-4 text-primary animate-pulse" />
+                    Agent Generation in Progress
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {Array.from(agentGenerator.languageStates.entries()).map(([code, state]) => (
+                    <div key={code} className="flex items-center gap-3 p-2 rounded-lg border bg-muted/20">
+                      <span className="text-lg">{state.flag}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium">{state.languageName}</span>
+                          <Badge variant={state.status === 'generating' ? 'default' : state.status === 'complete' ? 'secondary' : 'outline'} className="text-[10px]">
+                            {state.status === 'generating' ? `Slide ${state.currentSlide}/${state.totalSlides}` : state.status}
+                          </Badge>
+                        </div>
+                        <Progress value={state.progress} className="h-1.5" />
+                      </div>
+                      {code === agentGenerator.primaryLanguage && (
+                        <Badge variant="default" className="text-[10px]">Primary</Badge>
+                      )}
+                    </div>
+                  ))}
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => agentGenerator.cancelGeneration()}
+                  >
+                    Cancel Generation
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+          
+          {/* Standard Generation Progress Panel - for non-agentic mode */}
+          {!useAgenticGeneration && isGenerating && (
             <div className="pr-4 mb-4">
               <GenerationProgressPanel
                 isGenerating={isGenerating}
@@ -1691,8 +1748,91 @@ export function PresentationWizard({
               />
             </div>
           )}
+
+          {/* Version Comparison Panel - simplified */}
+          {showVersionComparison && agentGenerator.completedVersions.length > 1 && (
+            <div className="pr-4 mb-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Languages className="h-4 w-4" />
+                    Compare Language Versions
+                    <Button variant="ghost" size="sm" className="ml-auto h-6 px-2" onClick={() => setShowVersionComparison(false)}>
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    {agentGenerator.completedVersions.map((version) => {
+                      const lang = SUPPORTED_LANGUAGES.find(l => l.code === version.languageCode);
+                      return (
+                        <div 
+                          key={version.id}
+                          className={cn(
+                            "p-3 rounded-lg border cursor-pointer transition-all hover:border-primary",
+                            version.isPrimary && "border-primary bg-primary/5"
+                          )}
+                          onClick={() => {
+                            const editableSlides: PresentationSlide[] = version.slidesData.map((slide, idx) => ({
+                              id: slide.id || `slide-${idx}`,
+                              slideNumber: slide.slideNumber,
+                              type: slide.type as any,
+                              title: slide.title,
+                              subtitle: slide.subtitle,
+                              content: {
+                                type: slide.content.type as any,
+                                bullets: slide.content.bullets?.map((b, i) => ({
+                                  id: `bullet-${idx}-${i}`,
+                                  text: b,
+                                })) || [],
+                              },
+                              image: slide.image ? {
+                                url: slide.image.url,
+                                base64: slide.image.base64,
+                                alt: slide.image.alt,
+                                type: slide.image.type as any,
+                                prompt: slide.image.prompt || '',
+                              } : undefined,
+                              speakerNotes: slide.speakerNotes,
+                            }));
+                            setSlides(editableSlides);
+                            setShowVersionComparison(false);
+                          }}
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-lg">{lang?.flag}</span>
+                            <span className="text-sm font-medium">{lang?.name}</span>
+                            {version.isPrimary && <Badge variant="default" className="text-[10px]">Primary</Badge>}
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span>{version.slidesData.length} slides</span>
+                            <Badge variant="outline" className="text-[10px]">
+                              {Math.round(version.confidenceScores.overall)}% confidence
+                            </Badge>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full mt-2 h-7 text-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleLanguageDownload(version.languageCode);
+                            }}
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            Download
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
           
-          {slides.length === 0 && !isGenerating ? (
+          {slides.length === 0 && !isGenerating && !agentGenerator.isGenerating ? (
             <div className="h-full flex items-center justify-center">
               <div className="text-center text-muted-foreground">
                 <Presentation className="h-16 w-16 mx-auto mb-4 opacity-20" />
@@ -1750,7 +1890,9 @@ export function PresentationWizard({
                     onAccept={(slideId: string) => handleSlideAccept(slideId)}
                     onSkip={(slideId: string) => handleSlideSkip(slideId)}
                     onEnhance={async (slideId: string, type: SlideEnhancementType) => {
-                      toast.info(`Enhancing slide with ${type}...`);
+                      setSelectedEnhancerSlide(slideId);
+                      setShowSlideEnhancer(true);
+                      toast.info(`Opening enhancer for ${type}...`);
                     }}
                     onRefresh={async (slideId: string) => {
                       toast.info('Refreshing slide...');
@@ -1852,6 +1994,39 @@ export function PresentationWizard({
             </div>
           )}
         </ScrollArea>
+
+        {/* Slide Enhancer Panel placeholder - toggle sets state for future integration */}
+        {showSlideEnhancer && selectedEnhancerSlide && (
+          <div className="absolute bottom-4 right-4 w-80 z-50">
+            <Card className="shadow-lg">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <Wand2 className="h-4 w-4" />
+                    AI Enhancer
+                  </span>
+                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => { setShowSlideEnhancer(false); setSelectedEnhancerSlide(null); }}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  Slide: {slides.find(s => s.id === selectedEnhancerSlide)?.title}
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {['Rewrite', 'Expand', 'Summarize', 'Polish'].map(action => (
+                    <Button key={action} variant="outline" size="sm" className="text-xs" onClick={() => {
+                      toast.info(`${action} enhancement coming soon!`);
+                    }}>
+                      {action}
+                    </Button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );
