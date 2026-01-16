@@ -2838,6 +2838,805 @@ async function updateLabelStudioWithResults(
 }
 
 // ============================================
+// ALL DOCUMENT TYPE AGENTS
+// Insurance, Patient Onboarding, Medical Imaging, Billing/Invoice
+// ============================================
+
+/**
+ * Insurance Verification AI Agent
+ * Handles: Insurance cards, EOB, claims, coverage documents
+ */
+async function executeInsuranceVerificationAI(context: DocumentContext): Promise<AgentFinding> {
+  const fields = context.extractedFields || {};
+  
+  const insuranceInfo = {
+    memberId: getFieldValue(fields, 'member_id', 'subscriber_id', 'policy_number', 'id_number') || '',
+    groupNumber: getFieldValue(fields, 'group_number', 'group_id', 'group') || '',
+    planName: getFieldValue(fields, 'plan_name', 'insurance_plan', 'plan_type') || '',
+    payerName: getFieldValue(fields, 'payer_name', 'insurance_company', 'carrier', 'insurer') || '',
+    effectiveDate: getFieldValue(fields, 'effective_date', 'start_date', 'coverage_start') || '',
+    terminationDate: getFieldValue(fields, 'termination_date', 'end_date', 'coverage_end') || '',
+    copay: getFieldValue(fields, 'copay', 'copayment', 'office_visit_copay') || '',
+    deductible: getFieldValue(fields, 'deductible', 'annual_deductible') || '',
+    bin: getFieldValue(fields, 'bin', 'rx_bin') || '',
+    pcn: getFieldValue(fields, 'pcn', 'rx_pcn') || '',
+    rxGroup: getFieldValue(fields, 'rx_group', 'pharmacy_group') || ''
+  };
+
+  const prompt = `Analyze this insurance document and verify coverage details.
+
+INSURANCE DOCUMENT DATA:
+- Member ID: ${insuranceInfo.memberId || 'Not extracted'}
+- Group Number: ${insuranceInfo.groupNumber || 'Not extracted'}
+- Plan Name: ${insuranceInfo.planName || 'Not extracted'}
+- Payer/Carrier: ${insuranceInfo.payerName || 'Not extracted'}
+- Effective Date: ${insuranceInfo.effectiveDate || 'Not extracted'}
+- Termination Date: ${insuranceInfo.terminationDate || 'Not extracted'}
+- Copay: ${insuranceInfo.copay || 'Not extracted'}
+- Deductible: ${insuranceInfo.deductible || 'Not extracted'}
+- RX BIN: ${insuranceInfo.bin || 'Not extracted'}
+- RX PCN: ${insuranceInfo.pcn || 'Not extracted'}
+- RX Group: ${insuranceInfo.rxGroup || 'Not extracted'}
+
+Document Type: ${context.documentType}
+${context.rawText ? `Additional text: ${context.rawText.slice(0, 600)}` : ''}
+
+Provide insurance analysis in JSON format:
+{
+  "summary": "Brief coverage summary",
+  "coverageStatus": "active|inactive|pending|unknown",
+  "coverageType": "PPO|HMO|EPO|POS|Medicare|Medicaid|Commercial|Unknown",
+  "validationResults": {
+    "memberIdValid": true/false,
+    "groupNumberValid": true/false,
+    "datesValid": true/false,
+    "rxBenefitsPresent": true/false
+  },
+  "benefits": {
+    "medicalCopay": "amount",
+    "specialistCopay": "amount",
+    "deductible": "amount",
+    "outOfPocketMax": "amount",
+    "rxTier1": "amount",
+    "rxTier2": "amount",
+    "rxTier3": "amount"
+  },
+  "networkRestrictions": ["in-network requirements"],
+  "priorAuthRequired": ["services requiring PA"],
+  "missingFields": ["list of missing critical fields"],
+  "recommendations": ["2-4 recommendations"],
+  "alerts": [{"level": "info|warning|error", "message": "message"}],
+  "confidence": 0.0 to 1.0
+}
+
+Validate all fields and identify any coverage gaps. Respond ONLY with JSON.`;
+
+  try {
+    const aiResult = await callUniversalAI('insurance-verification-ai', prompt, undefined, context.preferredProvider);
+    const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        summary: parsed.summary || `Insurance: ${insuranceInfo.payerName || 'Unknown'} - ${parsed.coverageStatus || 'Verified'}`,
+        details: {
+          ...insuranceInfo,
+          coverageStatus: parsed.coverageStatus,
+          coverageType: parsed.coverageType,
+          validationResults: parsed.validationResults,
+          benefits: parsed.benefits,
+          networkRestrictions: parsed.networkRestrictions,
+          priorAuthRequired: parsed.priorAuthRequired,
+          missingFields: parsed.missingFields,
+          aiAnalysis: true
+        },
+        recommendations: parsed.recommendations || ['Verify coverage with payer'],
+        alerts: parsed.alerts || [],
+        confidence: parsed.confidence || 0.85,
+        aiPowered: true,
+        provider: aiResult.provider,
+        model: aiResult.model,
+        dataSource: `Universal AI (${aiResult.provider})`
+      };
+    }
+    throw new Error('Failed to parse AI response');
+  } catch (error) {
+    console.error('[insurance-verification-ai] Error:', error);
+    return {
+      summary: 'Insurance Verification: Analysis failed',
+      details: { ...insuranceInfo, error: error instanceof Error ? error.message : 'Unknown' },
+      recommendations: ['Manual verification required'],
+      alerts: [{ level: 'warning', message: 'AI analysis unavailable' }],
+      confidence: 0.3,
+      aiPowered: false,
+      dataSource: 'Fallback'
+    };
+  }
+}
+
+/**
+ * Patient Onboarding AI Agent
+ * Handles: Enrollment forms, demographics, consent, history
+ */
+async function executePatientOnboardingAI(context: DocumentContext): Promise<AgentFinding> {
+  const fields = context.extractedFields || {};
+  
+  const patientInfo = {
+    firstName: getFieldValue(fields, 'first_name', 'patient_first_name', 'given_name') || '',
+    lastName: getFieldValue(fields, 'last_name', 'patient_last_name', 'family_name') || '',
+    dob: getFieldValue(fields, 'date_of_birth', 'dob', 'birth_date') || '',
+    ssn: getFieldValue(fields, 'ssn', 'social_security', 'ssn_last4') || '',
+    address: getFieldValue(fields, 'address', 'street_address', 'home_address') || '',
+    city: getFieldValue(fields, 'city') || '',
+    state: getFieldValue(fields, 'state') || '',
+    zip: getFieldValue(fields, 'zip', 'zip_code', 'postal_code') || '',
+    phone: getFieldValue(fields, 'phone', 'phone_number', 'mobile') || '',
+    email: getFieldValue(fields, 'email', 'email_address') || '',
+    emergencyContact: getFieldValue(fields, 'emergency_contact', 'emergency_name') || '',
+    emergencyPhone: getFieldValue(fields, 'emergency_phone', 'emergency_number') || '',
+    allergies: getFieldValue(fields, 'allergies', 'drug_allergies', 'known_allergies') || '',
+    medications: getFieldValue(fields, 'current_medications', 'medications', 'med_list') || '',
+    conditions: getFieldValue(fields, 'medical_conditions', 'conditions', 'diagnoses') || '',
+    consentSigned: fields.consent_signed?.value || fields.signature_present?.value || false,
+    hipaaAcknowledged: fields.hipaa_acknowledged?.value || fields.hipaa_signed?.value || false
+  };
+
+  const prompt = `Analyze this patient onboarding document and validate completeness.
+
+PATIENT ONBOARDING DATA:
+- Name: ${patientInfo.firstName} ${patientInfo.lastName}
+- DOB: ${patientInfo.dob || 'Not provided'}
+- SSN (last 4): ${patientInfo.ssn ? '****' + patientInfo.ssn.slice(-4) : 'Not provided'}
+- Address: ${patientInfo.address}, ${patientInfo.city}, ${patientInfo.state} ${patientInfo.zip}
+- Phone: ${patientInfo.phone || 'Not provided'}
+- Email: ${patientInfo.email || 'Not provided'}
+- Emergency Contact: ${patientInfo.emergencyContact || 'Not provided'} - ${patientInfo.emergencyPhone || 'No phone'}
+- Allergies: ${patientInfo.allergies || 'None reported'}
+- Current Medications: ${patientInfo.medications || 'None reported'}
+- Medical Conditions: ${patientInfo.conditions || 'None reported'}
+- Consent Signed: ${patientInfo.consentSigned ? 'Yes' : 'No'}
+- HIPAA Acknowledged: ${patientInfo.hipaaAcknowledged ? 'Yes' : 'No'}
+
+Document Type: ${context.documentType}
+${context.rawText ? `Additional text: ${context.rawText.slice(0, 500)}` : ''}
+
+Provide onboarding analysis in JSON format:
+{
+  "summary": "Brief onboarding status",
+  "completenessScore": 0-100,
+  "status": "complete|incomplete|needs_review",
+  "validationResults": {
+    "nameValid": true/false,
+    "dobValid": true/false,
+    "addressValid": true/false,
+    "phoneValid": true/false,
+    "emailValid": true/false,
+    "emergencyContactPresent": true/false,
+    "consentObtained": true/false,
+    "hipaaCompliant": true/false
+  },
+  "missingRequired": ["list of missing required fields"],
+  "missingOptional": ["list of missing optional fields"],
+  "dataQualityIssues": [{"field": "name", "issue": "description"}],
+  "complianceStatus": {
+    "hipaa": "compliant|non-compliant|pending",
+    "consent": "obtained|missing|partial",
+    "idVerification": "verified|pending|failed"
+  },
+  "nextSteps": ["list of next steps to complete onboarding"],
+  "recommendations": ["2-4 recommendations"],
+  "alerts": [{"level": "info|warning|error", "message": "message"}],
+  "confidence": 0.0 to 1.0
+}
+
+Identify any compliance gaps or missing information. Respond ONLY with JSON.`;
+
+  try {
+    const aiResult = await callUniversalAI('patient-onboarding-ai', prompt, undefined, context.preferredProvider);
+    const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        summary: parsed.summary || `Onboarding: ${patientInfo.firstName} ${patientInfo.lastName} - ${parsed.status || 'Analyzed'}`,
+        details: {
+          ...patientInfo,
+          completenessScore: parsed.completenessScore,
+          status: parsed.status,
+          validationResults: parsed.validationResults,
+          missingRequired: parsed.missingRequired,
+          missingOptional: parsed.missingOptional,
+          dataQualityIssues: parsed.dataQualityIssues,
+          complianceStatus: parsed.complianceStatus,
+          nextSteps: parsed.nextSteps,
+          aiAnalysis: true
+        },
+        recommendations: parsed.recommendations || ['Complete missing fields'],
+        alerts: parsed.alerts || [],
+        confidence: parsed.confidence || 0.88,
+        aiPowered: true,
+        provider: aiResult.provider,
+        model: aiResult.model,
+        dataSource: `Universal AI (${aiResult.provider})`
+      };
+    }
+    throw new Error('Failed to parse AI response');
+  } catch (error) {
+    console.error('[patient-onboarding-ai] Error:', error);
+    return {
+      summary: 'Patient Onboarding: Analysis failed',
+      details: { ...patientInfo, error: error instanceof Error ? error.message : 'Unknown' },
+      recommendations: ['Manual review required'],
+      alerts: [{ level: 'warning', message: 'AI analysis unavailable' }],
+      confidence: 0.3,
+      aiPowered: false,
+      dataSource: 'Fallback'
+    };
+  }
+}
+
+/**
+ * Medical Imaging AI Agent - Enhanced with Abnormality & Measurement Detection
+ * Handles: X-ray, CT, MRI, ECG, Ultrasound, Mammogram with highlighting
+ */
+async function executeMedicalImagingAI(context: DocumentContext): Promise<AgentFinding> {
+  const fields = context.extractedFields || {};
+  const docType = context.documentType?.toLowerCase() || 'unknown';
+  
+  const imagingInfo = {
+    modality: getFieldValue(fields, 'modality', 'imaging_type', 'study_type') || 
+      (docType.includes('xray') || docType.includes('x-ray') ? 'X-Ray' :
+       docType.includes('ct') ? 'CT Scan' :
+       docType.includes('mri') ? 'MRI' :
+       docType.includes('ecg') || docType.includes('ekg') ? 'ECG/EKG' :
+       docType.includes('ultrasound') ? 'Ultrasound' :
+       docType.includes('mammogram') ? 'Mammogram' : 'Unknown'),
+    bodyPart: getFieldValue(fields, 'body_part', 'anatomy', 'region', 'study_area') || '',
+    indication: getFieldValue(fields, 'clinical_indication', 'indication', 'reason') || '',
+    findings: getFieldValue(fields, 'findings', 'impression', 'report_text') || '',
+    technique: getFieldValue(fields, 'technique', 'protocol') || '',
+    comparison: getFieldValue(fields, 'comparison', 'prior_study') || '',
+    radiologist: getFieldValue(fields, 'radiologist', 'interpreting_physician') || ''
+  };
+
+  const prompt = `Analyze this ${imagingInfo.modality} study and identify abnormalities with measurements.
+
+IMAGING STUDY DATA:
+- Modality: ${imagingInfo.modality}
+- Body Part/Region: ${imagingInfo.bodyPart || 'Not specified'}
+- Clinical Indication: ${imagingInfo.indication || 'Not provided'}
+- Technique: ${imagingInfo.technique || 'Standard protocol'}
+- Comparison: ${imagingInfo.comparison || 'No prior studies'}
+- Reported Findings: ${imagingInfo.findings || 'None extracted'}
+- Interpreting Radiologist: ${imagingInfo.radiologist || 'Not specified'}
+
+${context.rawText ? `Full Report Text: ${context.rawText.slice(0, 1000)}` : ''}
+
+Provide comprehensive imaging analysis in JSON format:
+{
+  "summary": "Brief overall impression",
+  "studyQuality": "diagnostic|adequate|limited|non-diagnostic",
+  "abnormalityDetection": {
+    "abnormalitiesFound": true/false,
+    "totalAbnormalities": 0,
+    "findings": [
+      {
+        "id": "ABN-001",
+        "type": "mass|fracture|effusion|nodule|lesion|calcification|opacity|other",
+        "location": "anatomic location",
+        "description": "detailed description",
+        "severity": "mild|moderate|severe|critical",
+        "characteristics": ["list of imaging characteristics"],
+        "boundingBox": {"x": 0, "y": 0, "width": 100, "height": 100, "unit": "percent"},
+        "confidence": 0.0-1.0
+      }
+    ]
+  },
+  "measurements": {
+    "measuredValues": [
+      {
+        "name": "measurement name (e.g., nodule size, heart size)",
+        "value": "numeric value",
+        "unit": "mm|cm|ratio|other",
+        "referenceRange": {"min": 0, "max": 0, "unit": "same"},
+        "status": "normal|abnormal|borderline|critical",
+        "percentileOrRatio": "if applicable"
+      }
+    ],
+    "comparedToPrior": [
+      {"measurement": "name", "priorValue": "x", "currentValue": "y", "change": "increased|decreased|stable", "percentChange": 0}
+    ]
+  },
+  "modalitySpecific": {
+    "ecgFindings": {"rhythm": "", "rate": "", "intervals": {}, "axisDeviation": "", "stChanges": ""},
+    "mammogramBIRADS": "0|1|2|3|4A|4B|4C|5|6",
+    "ctHounsfieldUnits": [],
+    "mriSignalCharacteristics": []
+  },
+  "differentialDiagnosis": ["list of differential diagnoses in order of likelihood"],
+  "criticalFindings": [{"finding": "description", "urgency": "emergent|urgent|routine"}],
+  "followUpRecommendations": {
+    "timing": "immediate|24-48h|1-2weeks|3months|6months|annual|none",
+    "modality": "recommended follow-up modality",
+    "reason": "reason for follow-up"
+  },
+  "labelStudioAnnotations": {
+    "highlightRegions": [{"id": "ABN-001", "color": "#FF0000", "label": "Abnormality"}],
+    "measurementLines": [{"id": "MEAS-001", "startPoint": [0,0], "endPoint": [100,100], "label": "10mm"}]
+  },
+  "recommendations": ["2-4 clinical recommendations"],
+  "alerts": [{"level": "info|warning|error", "message": "message"}],
+  "confidence": 0.0 to 1.0
+}
+
+IMPORTANT: For ${imagingInfo.modality}:
+- Identify ALL visible abnormalities with bounding box coordinates for Label Studio highlighting
+- Provide measurements with reference ranges for comparison
+- Flag any CRITICAL findings requiring immediate attention
+- Generate coordinates suitable for image annotation overlay
+
+Respond ONLY with JSON.`;
+
+  try {
+    const aiResult = await callUniversalAI('medical-imaging-ai', prompt, undefined, context.preferredProvider);
+    const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      
+      // Build alerts based on critical findings
+      const alerts = parsed.alerts || [];
+      if (parsed.criticalFindings?.length > 0) {
+        const emergentFindings = parsed.criticalFindings.filter((f: any) => f.urgency === 'emergent');
+        if (emergentFindings.length > 0) {
+          alerts.unshift({ level: 'error', message: `EMERGENT: ${emergentFindings[0].finding}` });
+        }
+      }
+      if (parsed.abnormalityDetection?.abnormalitiesFound) {
+        alerts.push({ level: 'warning', message: `${parsed.abnormalityDetection.totalAbnormalities} abnormality(s) detected` });
+      }
+      
+      return {
+        summary: parsed.summary || `${imagingInfo.modality} Analysis: ${parsed.abnormalityDetection?.abnormalitiesFound ? 'Abnormalities detected' : 'Normal study'}`,
+        details: {
+          ...imagingInfo,
+          studyQuality: parsed.studyQuality,
+          abnormalityDetection: parsed.abnormalityDetection,
+          measurements: parsed.measurements,
+          modalitySpecific: parsed.modalitySpecific,
+          differentialDiagnosis: parsed.differentialDiagnosis,
+          criticalFindings: parsed.criticalFindings,
+          followUpRecommendations: parsed.followUpRecommendations,
+          labelStudioAnnotations: parsed.labelStudioAnnotations,
+          aiAnalysis: true
+        },
+        recommendations: parsed.recommendations || ['Review with radiologist'],
+        alerts,
+        confidence: parsed.confidence || 0.82,
+        aiPowered: true,
+        provider: aiResult.provider,
+        model: aiResult.model,
+        dataSource: `Universal AI (${aiResult.provider}) - Gemini Vision + Clinical Analysis`
+      };
+    }
+    throw new Error('Failed to parse AI response');
+  } catch (error) {
+    console.error('[medical-imaging-ai] Error:', error);
+    return {
+      summary: `${imagingInfo.modality} Analysis: Failed`,
+      details: { ...imagingInfo, error: error instanceof Error ? error.message : 'Unknown' },
+      recommendations: ['Manual radiologist review required'],
+      alerts: [{ level: 'warning', message: 'AI imaging analysis unavailable' }],
+      confidence: 0.3,
+      aiPowered: false,
+      dataSource: 'Fallback'
+    };
+  }
+}
+
+/**
+ * Invoice & Billing Analysis AI Agent
+ * Handles: Medical invoices, EOB, claims, billing statements
+ */
+async function executeInvoiceBillingAI(context: DocumentContext): Promise<AgentFinding> {
+  const fields = context.extractedFields || {};
+  
+  const billingInfo = {
+    invoiceNumber: getFieldValue(fields, 'invoice_number', 'claim_number', 'statement_number') || '',
+    patientName: getFieldValue(fields, 'patient_name', 'subscriber_name', 'member_name') || '',
+    accountNumber: getFieldValue(fields, 'account_number', 'patient_account') || '',
+    dateOfService: getFieldValue(fields, 'date_of_service', 'service_date', 'dos') || '',
+    provider: getFieldValue(fields, 'provider_name', 'billing_provider', 'facility') || '',
+    totalCharges: getFieldValue(fields, 'total_charges', 'total_amount', 'billed_amount') || '',
+    insurancePayment: getFieldValue(fields, 'insurance_payment', 'payer_payment', 'plan_paid') || '',
+    patientResponsibility: getFieldValue(fields, 'patient_responsibility', 'patient_balance', 'amount_due') || '',
+    adjustments: getFieldValue(fields, 'adjustments', 'contractual_adjustment', 'discount') || '',
+    cptCodes: getFieldValue(fields, 'cpt_codes', 'procedure_codes', 'hcpcs') || '',
+    icdCodes: getFieldValue(fields, 'icd_codes', 'diagnosis_codes', 'icd10') || '',
+    npi: getFieldValue(fields, 'npi', 'provider_npi', 'billing_npi') || ''
+  };
+
+  const prompt = `Analyze this medical billing document for RCM analysis and validation.
+
+BILLING/INVOICE DATA:
+- Invoice/Claim #: ${billingInfo.invoiceNumber || 'Not found'}
+- Patient: ${billingInfo.patientName || 'Not found'}
+- Account #: ${billingInfo.accountNumber || 'Not found'}
+- Date of Service: ${billingInfo.dateOfService || 'Not found'}
+- Provider: ${billingInfo.provider || 'Not found'}
+- Provider NPI: ${billingInfo.npi || 'Not found'}
+- Total Charges: ${billingInfo.totalCharges || 'Not found'}
+- Insurance Payment: ${billingInfo.insurancePayment || 'Not found'}
+- Adjustments: ${billingInfo.adjustments || 'Not found'}
+- Patient Responsibility: ${billingInfo.patientResponsibility || 'Not found'}
+- CPT/HCPCS Codes: ${billingInfo.cptCodes || 'Not found'}
+- ICD-10 Codes: ${billingInfo.icdCodes || 'Not found'}
+
+Document Type: ${context.documentType}
+${context.rawText ? `Additional text: ${context.rawText.slice(0, 800)}` : ''}
+
+Provide comprehensive billing analysis in JSON format:
+{
+  "summary": "Brief billing summary",
+  "documentType": "invoice|claim|eob|statement|superbill",
+  "financialSummary": {
+    "totalBilled": 0,
+    "insurancePaid": 0,
+    "adjustments": 0,
+    "patientOwes": 0,
+    "collectionRate": 0
+  },
+  "codingAnalysis": {
+    "cptCodes": [{"code": "code", "description": "desc", "units": 1, "charge": 0}],
+    "icdCodes": [{"code": "code", "description": "desc"}],
+    "modifiers": ["list of modifiers"],
+    "cptIcdLinkageValid": true/false,
+    "bundlingIssues": [{"codes": ["code1", "code2"], "issue": "description"}],
+    "upcoding": {"risk": "none|low|medium|high", "flaggedCodes": []},
+    "missingCodes": ["list of potentially missing codes"]
+  },
+  "denialRiskAssessment": {
+    "overallRisk": "low|medium|high|critical",
+    "riskFactors": [{"factor": "description", "impact": "dollar amount or percentage", "prevention": "action"}],
+    "commonDenialReasons": ["list of likely denial reasons"],
+    "priorAuthRequired": true/false,
+    "timely Filing": true/false
+  },
+  "complianceFlags": {
+    "ncdLcdCompliance": "compliant|non-compliant|review_needed",
+    "medicalNecessity": "documented|unclear|missing",
+    "modifierUsage": "correct|incorrect|missing"
+  },
+  "rcmMetrics": {
+    "daysInAR": 0,
+    "cleanClaimRate": 0,
+    "expectedReimbursement": 0,
+    "varianceFromExpected": 0
+  },
+  "actionItems": [{"priority": "high|medium|low", "action": "description", "deadline": "timeframe"}],
+  "recommendations": ["2-4 recommendations"],
+  "alerts": [{"level": "info|warning|error", "message": "message"}],
+  "confidence": 0.0 to 1.0
+}
+
+Identify coding issues, denial risks, and compliance concerns. Respond ONLY with JSON.`;
+
+  try {
+    const aiResult = await callUniversalAI('invoice-billing-ai', prompt, undefined, context.preferredProvider);
+    const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      
+      const alerts = parsed.alerts || [];
+      if (parsed.denialRiskAssessment?.overallRisk === 'critical' || parsed.denialRiskAssessment?.overallRisk === 'high') {
+        alerts.unshift({ level: 'error', message: `High denial risk: ${parsed.denialRiskAssessment.riskFactors?.[0]?.factor || 'Review required'}` });
+      }
+      if (parsed.codingAnalysis?.bundlingIssues?.length > 0) {
+        alerts.push({ level: 'warning', message: `${parsed.codingAnalysis.bundlingIssues.length} potential bundling issue(s)` });
+      }
+      
+      return {
+        summary: parsed.summary || `Billing Analysis: $${billingInfo.totalCharges || '0'} - ${parsed.denialRiskAssessment?.overallRisk || 'Low'} denial risk`,
+        details: {
+          ...billingInfo,
+          documentType: parsed.documentType,
+          financialSummary: parsed.financialSummary,
+          codingAnalysis: parsed.codingAnalysis,
+          denialRiskAssessment: parsed.denialRiskAssessment,
+          complianceFlags: parsed.complianceFlags,
+          rcmMetrics: parsed.rcmMetrics,
+          actionItems: parsed.actionItems,
+          aiAnalysis: true
+        },
+        recommendations: parsed.recommendations || ['Review coding accuracy'],
+        alerts,
+        confidence: parsed.confidence || 0.87,
+        aiPowered: true,
+        provider: aiResult.provider,
+        model: aiResult.model,
+        dataSource: `Universal AI (${aiResult.provider}) - RCM Analysis`
+      };
+    }
+    throw new Error('Failed to parse AI response');
+  } catch (error) {
+    console.error('[invoice-billing-ai] Error:', error);
+    return {
+      summary: 'Billing Analysis: Failed',
+      details: { ...billingInfo, error: error instanceof Error ? error.message : 'Unknown' },
+      recommendations: ['Manual billing review required'],
+      alerts: [{ level: 'warning', message: 'AI billing analysis unavailable' }],
+      confidence: 0.3,
+      aiPowered: false,
+      dataSource: 'Fallback'
+    };
+  }
+}
+
+// ============================================
+// MCP SDK DATA PUSH WITH LABEL STUDIO MAPPING
+// Pushes processed data to target systems (SF, Veeva, HubSpot, Supabase)
+// ============================================
+
+interface MCPDataPushOptions {
+  targetSystem: 'salesforce' | 'veeva' | 'hubspot' | 'supabase' | 'webhook';
+  objectType?: string; // Salesforce object, Veeva vault type, HubSpot object
+  operation?: 'create' | 'update' | 'upsert';
+  fieldMapping?: Record<string, string>; // Source field -> Target field
+  labelStudioSync?: boolean; // Also record to Label Studio
+  labelStudioProject?: number | string;
+}
+
+async function pushDataViaMCP(
+  documentId: string,
+  documentType: string,
+  extractedData: Record<string, any>,
+  agentResults: Record<string, AgentFinding>,
+  options: MCPDataPushOptions
+): Promise<{ success: boolean; recordId?: string; error?: string; labelStudioTaskId?: string }> {
+  console.log(`[MCP-DataPush] Pushing ${documentType} to ${options.targetSystem}`);
+  
+  try {
+    // Build payload based on document type and target system
+    const payload = buildMCPPayload(documentType, extractedData, agentResults, options);
+    
+    // Call MCP CRM Tools edge function
+    const mcpResult = await callEdgeFunction('mcp-crm-tools', {
+      method: 'tools/call',
+      params: {
+        name: getMCPToolName(options.targetSystem, options.operation || 'create'),
+        arguments: {
+          ...payload,
+          objectType: options.objectType,
+          operation: options.operation
+        }
+      },
+      id: Date.now()
+    });
+    
+    let recordId: string | undefined;
+    if (mcpResult.result?.content?.[0]?.text) {
+      try {
+        const parsed = JSON.parse(mcpResult.result.content[0].text);
+        recordId = parsed.id;
+      } catch (e) {
+        console.log('[MCP-DataPush] Could not parse record ID');
+      }
+    }
+    
+    // Sync to Label Studio if enabled
+    let labelStudioTaskId: string | undefined;
+    if (options.labelStudioSync) {
+      try {
+        const lsResult = await callEdgeFunction('label-studio-connector', {
+          action: 'createTask',
+          projectId: options.labelStudioProject,
+          taskData: {
+            data: {
+              document_id: documentId,
+              document_type: documentType,
+              target_system: options.targetSystem,
+              record_id: recordId,
+              extracted_data: extractedData,
+              agent_results: Object.fromEntries(
+                Object.entries(agentResults).map(([k, v]) => [k, v.summary])
+              ),
+              pushed_at: new Date().toISOString()
+            },
+            meta: {
+              source: 'mcp_data_push',
+              target: options.targetSystem,
+              document_type: documentType
+            }
+          }
+        });
+        labelStudioTaskId = lsResult.data?.id;
+      } catch (lsError) {
+        console.warn('[MCP-DataPush] Label Studio sync failed:', lsError);
+      }
+    }
+    
+    console.log(`[MCP-DataPush] Success - Record ID: ${recordId}, LS Task: ${labelStudioTaskId}`);
+    
+    return {
+      success: true,
+      recordId,
+      labelStudioTaskId
+    };
+  } catch (error) {
+    console.error('[MCP-DataPush] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+function getMCPToolName(targetSystem: string, operation: string): string {
+  switch (targetSystem) {
+    case 'salesforce':
+      return operation === 'update' ? 'salesforce_update_record' : 'salesforce_create_record';
+    case 'veeva':
+      return 'veeva_create_record';
+    case 'hubspot':
+      return operation === 'update' ? 'hubspot_update_contact' : 'hubspot_create_contact';
+    case 'supabase':
+      return 'sync_to_database';
+    default:
+      return 'generic_api_call';
+  }
+}
+
+function buildMCPPayload(
+  documentType: string,
+  extractedData: Record<string, any>,
+  agentResults: Record<string, AgentFinding>,
+  options: MCPDataPushOptions
+): Record<string, any> {
+  const docTypeLower = documentType.toLowerCase();
+  
+  // Base payload from extracted data
+  let payload: Record<string, any> = {};
+  
+  // Apply field mapping if provided
+  if (options.fieldMapping) {
+    for (const [sourceField, targetField] of Object.entries(options.fieldMapping)) {
+      const value = extractedData[sourceField]?.value || extractedData[sourceField];
+      if (value) {
+        payload[targetField] = value;
+      }
+    }
+  } else {
+    // Default mappings based on document type and target system
+    if (docTypeLower.includes('prescription') || docTypeLower.includes('rx')) {
+      payload = {
+        patient_name: extractedData.patient_name?.value || extractedData.patient_name,
+        medication_name: extractedData.medication?.value || extractedData.medication,
+        prescriber_name: extractedData.prescriber_name?.value || extractedData.prescriber,
+        prescriber_npi: extractedData.npi?.value || extractedData.npi,
+        sig_code: extractedData.sig?.value || extractedData.sig,
+        quantity: extractedData.quantity?.value || extractedData.quantity,
+        refills: extractedData.refills?.value || extractedData.refills,
+        date_written: extractedData.date_written?.value || extractedData.date,
+        // Add agent analysis
+        clinical_review: agentResults['clinical-review']?.summary,
+        drug_interactions: agentResults['drug-interaction']?.details?.drugDrugInteractionCount || 0,
+        npi_verified: agentResults['npi-verification']?.details?.verified,
+        confidence_score: Object.values(agentResults).reduce((sum, r) => sum + (r.confidence || 0), 0) / Object.keys(agentResults).length
+      };
+    } else if (docTypeLower.includes('insurance')) {
+      payload = {
+        member_id: extractedData.member_id?.value || extractedData.member_id,
+        group_number: extractedData.group_number?.value || extractedData.group_number,
+        payer_name: extractedData.payer_name?.value || extractedData.insurance_company,
+        plan_name: extractedData.plan_name?.value || extractedData.plan,
+        effective_date: extractedData.effective_date?.value || extractedData.effective_date,
+        coverage_status: agentResults['insurance-verification-ai']?.details?.coverageStatus,
+        rx_bin: extractedData.bin?.value || extractedData.rx_bin,
+        rx_pcn: extractedData.pcn?.value || extractedData.rx_pcn
+      };
+    } else if (docTypeLower.includes('patient') || docTypeLower.includes('onboarding')) {
+      payload = {
+        first_name: extractedData.first_name?.value || extractedData.first_name,
+        last_name: extractedData.last_name?.value || extractedData.last_name,
+        date_of_birth: extractedData.dob?.value || extractedData.date_of_birth,
+        email: extractedData.email?.value || extractedData.email,
+        phone: extractedData.phone?.value || extractedData.phone,
+        address: extractedData.address?.value || extractedData.address,
+        onboarding_status: agentResults['patient-onboarding-ai']?.details?.status,
+        completeness_score: agentResults['patient-onboarding-ai']?.details?.completenessScore
+      };
+    } else if (docTypeLower.includes('imaging') || docTypeLower.includes('xray') || docTypeLower.includes('mri') || docTypeLower.includes('ct')) {
+      payload = {
+        modality: extractedData.modality?.value || documentType,
+        body_part: extractedData.body_part?.value || extractedData.anatomy,
+        findings: extractedData.findings?.value || extractedData.findings,
+        impression: extractedData.impression?.value || extractedData.impression,
+        abnormalities_detected: agentResults['medical-imaging-ai']?.details?.abnormalityDetection?.abnormalitiesFound,
+        abnormality_count: agentResults['medical-imaging-ai']?.details?.abnormalityDetection?.totalAbnormalities,
+        critical_findings: agentResults['medical-imaging-ai']?.details?.criticalFindings?.length || 0,
+        measurements: JSON.stringify(agentResults['medical-imaging-ai']?.details?.measurements?.measuredValues || [])
+      };
+    } else if (docTypeLower.includes('invoice') || docTypeLower.includes('billing') || docTypeLower.includes('claim')) {
+      payload = {
+        invoice_number: extractedData.invoice_number?.value || extractedData.claim_number,
+        total_charges: extractedData.total_charges?.value || extractedData.total_amount,
+        insurance_paid: extractedData.insurance_payment?.value,
+        patient_responsibility: extractedData.patient_responsibility?.value,
+        cpt_codes: extractedData.cpt_codes?.value,
+        icd_codes: extractedData.icd_codes?.value,
+        denial_risk: agentResults['invoice-billing-ai']?.details?.denialRiskAssessment?.overallRisk,
+        collection_rate: agentResults['invoice-billing-ai']?.details?.financialSummary?.collectionRate
+      };
+    }
+  }
+  
+  // Add common metadata
+  payload.source = 'document_processing';
+  payload.processed_at = new Date().toISOString();
+  payload.document_type = documentType;
+  
+  return payload;
+}
+
+// ============================================
+// INTELLIGENT OCR ROUTING
+// Gemini Vision for handwritten, Label Studio for review/training
+// ============================================
+
+interface OCRRoutingResult {
+  ocrProvider: 'gemini_vision' | 'label_studio' | 'hybrid';
+  isHandwritten: boolean;
+  confidence: number;
+  processingPath: string[];
+}
+
+function determineOCRRouting(documentType: string, imageData?: string): OCRRoutingResult {
+  const docTypeLower = documentType.toLowerCase();
+  
+  // Default to hybrid for most healthcare documents
+  let isHandwritten = false;
+  let ocrProvider: 'gemini_vision' | 'label_studio' | 'hybrid' = 'hybrid';
+  let processingPath: string[] = [];
+  
+  // Document types that commonly have handwritten content
+  const handwrittenDocTypes = [
+    'prescription', 'rx', 'prescription_form', 'handwritten',
+    'notes', 'clinical_notes', 'physician_notes', 'chart_notes'
+  ];
+  
+  // Document types that are typically typed/printed
+  const typedDocTypes = [
+    'insurance_card', 'eob', 'invoice', 'billing', 'lab_result',
+    'electronic', 'printed', 'pdf', 'claim'
+  ];
+  
+  // Determine handwritten likelihood
+  if (handwrittenDocTypes.some(t => docTypeLower.includes(t))) {
+    isHandwritten = true;
+    ocrProvider = 'gemini_vision'; // Gemini Vision excels at handwriting
+    processingPath = ['gemini_vision_ocr', 'text_extraction', 'label_studio_review'];
+  } else if (typedDocTypes.some(t => docTypeLower.includes(t))) {
+    isHandwritten = false;
+    ocrProvider = 'hybrid'; // Use standard OCR + AI verification
+    processingPath = ['standard_ocr', 'gemini_verification', 'label_studio_training'];
+  } else {
+    // For medical imaging and mixed content
+    ocrProvider = 'hybrid';
+    processingPath = ['gemini_vision_analysis', 'text_extraction', 'label_studio_annotation'];
+  }
+  
+  // Medical imaging always uses Gemini Vision first
+  if (['xray', 'x-ray', 'ct', 'mri', 'ecg', 'ultrasound', 'mammogram', 'dicom'].some(t => docTypeLower.includes(t))) {
+    ocrProvider = 'gemini_vision';
+    processingPath = ['gemini_vision_analysis', 'abnormality_detection', 'measurement_extraction', 'label_studio_annotation'];
+  }
+  
+  return {
+    ocrProvider,
+    isHandwritten,
+    confidence: 0.85,
+    processingPath
+  };
+}
+
+// ============================================
 // MAIN ROUTER
 
 serve(async (req) => {
@@ -2966,7 +3765,38 @@ serve(async (req) => {
         findings = await executeDenialPrevention(documentContext);
         break;
 
-      // ===== CONFIGURATION-REQUIRED AGENTS =====
+      // ===== ALL DOCUMENT TYPE AI AGENTS =====
+      case 'insurance-verification-ai':
+      case 'insurance-analysis':
+      case 'coverage-verification':
+        findings = await executeInsuranceVerificationAI(documentContext);
+        break;
+      
+      case 'patient-onboarding-ai':
+      case 'enrollment-analysis':
+      case 'demographics-validation':
+        findings = await executePatientOnboardingAI(documentContext);
+        break;
+      
+      case 'medical-imaging-ai':
+      case 'xray-analysis':
+      case 'ct-analysis-ai':
+      case 'mri-analysis-ai':
+      case 'ecg-analysis':
+      case 'ultrasound-analysis-ai':
+      case 'mammogram-analysis-ai':
+      case 'dicom-analysis':
+        findings = await executeMedicalImagingAI(documentContext);
+        break;
+      
+      case 'invoice-billing-ai':
+      case 'claim-analysis':
+      case 'eob-analysis':
+      case 'superbill-analysis':
+        findings = await executeInvoiceBillingAI(documentContext);
+        break;
+
+      // ===== CONFIGURATION-REQUIRED AGENTS (Legacy) =====
       case 'insurance-verification':
       case 'eligibility-check':
       case 'benefits-verification':
