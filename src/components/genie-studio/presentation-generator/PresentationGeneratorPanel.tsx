@@ -20,6 +20,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Switch } from '@/components/ui/switch';
 import { 
   Sparkles, 
@@ -37,7 +43,9 @@ import {
   Presentation,
   Share2,
   BarChart3,
-  Map
+  Map,
+  Save,
+  ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -48,7 +56,7 @@ import {
   BulletPoint 
 } from './types';
 import { SlideCard } from './SlideCard';
-import { useUniversalPresentation } from '@/hooks/useUniversalPresentation';
+import { useUniversalPresentation, DownloadFormat } from '@/hooks/useUniversalPresentation';
 import { 
   PresentationRequest, 
   InputSource, 
@@ -58,14 +66,26 @@ import {
 
 interface PresentationGeneratorPanelProps {
   onComplete?: (presentation: PresentationData) => void;
+  onSaveToKnowledgeBase?: (title: string, content: string) => void;
   className?: string;
 }
 
 export function PresentationGeneratorPanel({
   onComplete,
+  onSaveToKnowledgeBase,
   className
 }: PresentationGeneratorPanelProps) {
-  const { isGenerating, result, generatePresentation, downloadPPTX, reset } = useUniversalPresentation();
+  const { 
+    isGenerating, 
+    isDownloading, 
+    isSavingToRAG,
+    result, 
+    generatePresentation, 
+    download,
+    downloadPPTX, 
+    saveToRAG,
+    reset 
+  } = useUniversalPresentation();
   
   // Input state
   const [inputSource, setInputSource] = useState<InputSource>('prompt');
@@ -360,6 +380,69 @@ export function PresentationGeneratorPanel({
     toast.success('All slides accepted');
   };
 
+  // Save to RAG/Knowledge Base
+  const handleSaveToRAG = async () => {
+    if (slides.length === 0) return;
+    
+    const serviceSlides = slides.filter(s => !s.isSkipped).map(s => ({
+      id: s.id,
+      slideNumber: s.slideNumber,
+      type: s.type,
+      title: s.title,
+      subtitle: s.subtitle,
+      content: {
+        type: s.content.type,
+        bullets: s.content.bullets?.map(b => b.text) || [],
+        stats: s.content.stats,
+        journeySteps: s.content.journeySteps,
+      },
+      speakerNotes: s.speakerNotes,
+      metadata: { topic: s.topic, importance: s.importance },
+    }));
+    
+    await saveToRAG(serviceSlides as any, presentationTitle, {
+      sourceType: inputSource,
+      sourceContent: inputContent.slice(0, 500),
+      tags: ['presentation', outputFormat, length]
+    });
+    
+    if (onSaveToKnowledgeBase) {
+      const content = slides.map(s => `${s.title}\n${s.content.bullets?.map(b => b.text).join('\n') || ''}`).join('\n\n');
+      onSaveToKnowledgeBase(presentationTitle, content);
+    }
+  };
+
+  // Download with format selection
+  const handleDownloadFormat = async (format: DownloadFormat) => {
+    if (slides.length === 0) {
+      toast.error('No slides to download');
+      return;
+    }
+    
+    const serviceSlides = slides.filter(s => !s.isSkipped).map(s => ({
+      id: s.id,
+      slideNumber: s.slideNumber,
+      type: s.type,
+      title: s.title,
+      subtitle: s.subtitle,
+      content: {
+        type: s.content.type,
+        bullets: s.content.bullets?.map(b => b.text) || [],
+        stats: s.content.stats,
+        journeySteps: s.content.journeySteps,
+      },
+      image: s.image,
+      speakerNotes: s.speakerNotes,
+      metadata: { topic: s.topic, importance: s.importance },
+    }));
+    
+    await download(serviceSlides as any, presentationTitle, format, {
+      slideCount: slides.length,
+      outputFormat,
+      length
+    });
+  };
+
   // Stats
   const acceptedCount = slides.filter(s => s.isAccepted).length;
   const skippedCount = slides.filter(s => s.isSkipped).length;
@@ -598,19 +681,56 @@ export function PresentationGeneratorPanel({
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Button variant="outline" size="sm" onClick={handleAcceptAll}>
                     <Check className="h-3 w-3 mr-1" />
                     Accept All
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleSaveToRAG} disabled={isSavingToRAG}>
+                    {isSavingToRAG ? (
+                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                    ) : (
+                      <Save className="h-3 w-3 mr-1" />
+                    )}
+                    Save to KB
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => { setSlides([]); reset(); }}>
                     <RefreshCw className="h-3 w-3 mr-1" />
                     Restart
                   </Button>
-                  <Button size="sm" onClick={handleDownload}>
-                    <Download className="h-3 w-3 mr-1" />
-                    Download PPTX
-                  </Button>
+                  
+                  {/* Download dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="sm" disabled={isDownloading}>
+                        {isDownloading ? (
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        ) : (
+                          <Download className="h-3 w-3 mr-1" />
+                        )}
+                        Download
+                        <ChevronDown className="h-3 w-3 ml-1" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleDownloadFormat('pptx')}>
+                        <Presentation className="h-3 w-3 mr-2" />
+                        PowerPoint (.pptx)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDownloadFormat('pdf')}>
+                        <FileText className="h-3 w-3 mr-2" />
+                        PDF Document
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDownloadFormat('images')}>
+                        <ImageIcon className="h-3 w-3 mr-2" />
+                        Images (PNG)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDownloadFormat('json')}>
+                        <FileText className="h-3 w-3 mr-2" />
+                        JSON Export
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             </CardContent>
