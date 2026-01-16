@@ -2,6 +2,13 @@
  * Presentation Wizard - Two-Panel Split Layout
  * Left: Guided step-by-step configuration
  * Right: Live preview & editing
+ * 
+ * Features:
+ * - Templates, colors, fonts customization
+ * - Logo upload and branding
+ * - Tables and charts support
+ * - Multi-language parallel generation
+ * - Drag-and-drop layout editing
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -61,6 +68,11 @@ import {
   CheckCircle2,
   Circle,
   Clock,
+  Languages,
+  Layout,
+  Table,
+  BarChart3,
+  Move
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -70,6 +82,10 @@ import { LanguageSelector } from './LanguageSelector';
 import { MultiSelectDropdown } from '@/components/ui/multi-select-dropdown';
 import { SlideCard } from './SlideCard';
 import { ComplianceChecker } from './ComplianceChecker';
+import { TemplateThemeSelector, TEMPLATES } from './TemplateThemeSelector';
+import { BrandingCustomizer, BrandConfig, DEFAULT_BRAND_CONFIG } from './BrandingCustomizer';
+import { MultiLanguageGenerator, useMultiLanguageGeneration, SUPPORTED_LANGUAGES, LanguageGenerationStatus } from './MultiLanguageGenerator';
+import { TableEditor, ChartEditor } from './TableChartEditor';
 import { useUniversalPresentation, DownloadFormat } from '@/hooks/useUniversalPresentation';
 import {
   PresentationRequest,
@@ -84,15 +100,15 @@ import {
   ContentEnhancement,
   universalPresentationService,
 } from '@/services/universalPresentationService';
-import { PresentationSlide, SlideEnhancementType } from './types';
+import { PresentationSlide, SlideEnhancementType, PresentationTemplate, PresentationTheme, ThemeColors, ThemeFonts } from './types';
 
-// Wizard Steps
+// Wizard Steps - Extended with branding
 const WIZARD_STEPS = [
   { id: 'input', label: 'Content Input', icon: Type, description: 'Add your content' },
-  { id: 'type', label: 'Output Type', icon: Presentation, description: 'Choose format & style' },
+  { id: 'branding', label: 'Brand & Style', icon: Palette, description: 'Templates & branding' },
   { id: 'images', label: 'Image Settings', icon: ImageIcon, description: 'Configure visuals' },
-  { id: 'advanced', label: 'Advanced', icon: Settings2, description: 'Fine-tune options' },
-  { id: 'generate', label: 'Generate', icon: Wand2, description: 'Create your presentation' },
+  { id: 'languages', label: 'Languages', icon: Languages, description: 'Multi-language' },
+  { id: 'generate', label: 'Generate', icon: Wand2, description: 'Create presentation' },
 ];
 
 interface PresentationWizardProps {
@@ -153,13 +169,24 @@ export function PresentationWizard({
   const [includeInfographics, setIncludeInfographics] = useState(true);
   const [includeJourneyMaps, setIncludeJourneyMaps] = useState(false);
   const [includeVoiceover, setIncludeVoiceover] = useState(false);
+  const [includeTables, setIncludeTables] = useState(false);
+  const [includeCharts, setIncludeCharts] = useState(false);
   const [selectedAIModel, setSelectedAIModel] = useState('auto');
   const [showComplianceCheck, setShowComplianceCheck] = useState(false);
+
+  // Template and branding state
+  const [selectedTemplate, setSelectedTemplate] = useState<PresentationTemplate | undefined>(TEMPLATES[0]);
+  const [selectedTheme, setSelectedTheme] = useState<PresentationTheme | undefined>(TEMPLATES[0].theme);
+  const [brandConfig, setBrandConfig] = useState<BrandConfig>(DEFAULT_BRAND_CONFIG);
 
   // Slides state
   const [slides, setSlides] = useState<PresentationSlide[]>([]);
   const [presentationTitle, setPresentationTitle] = useState('');
   const [selectedSlideId, setSelectedSlideId] = useState<string | null>(null);
+  const [editingMode, setEditingMode] = useState<'preview' | 'layout'>('preview');
+
+  // Multi-language generation
+  const { statuses: languageStatuses, isGenerating: isMultiLangGenerating, generateAll: generateMultiLang, reset: resetMultiLang } = useMultiLanguageGeneration();
 
   // Get options from service
   const imageStyleOptions = universalPresentationService.getImageStyleOptions();
@@ -535,126 +562,126 @@ export function PresentationWizard({
               </Card>
             )}
 
-            {/* Step 1: Output Type */}
+            {/* Step 1: Brand & Style */}
             {currentStep === 1 && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Presentation className="h-4 w-4" />
-                    Output Configuration
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-xs">Collateral Type</Label>
-                    <Select value={collateralType} onValueChange={(v) => setCollateralType(v as CollateralType)}>
-                      <SelectTrigger className="h-9 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[
-                          { id: 'presentation', label: 'Presentation', desc: 'Standard slides' },
-                          { id: 'marketing', label: 'Marketing', desc: 'Campaign materials' },
-                          { id: 'investor', label: 'Investor Deck', desc: 'Pitch & financials' },
-                          { id: 'sales', label: 'Sales', desc: 'Product showcase' },
-                          { id: 'training', label: 'Training', desc: 'Educational' },
-                          { id: 'whitepaper', label: 'White Paper', desc: 'In-depth analysis' },
-                          { id: 'case-study', label: 'Case Study', desc: 'Success stories' },
-                        ].map(type => (
-                          <SelectItem key={type.id} value={type.id}>
-                            <div className="flex flex-col">
-                              <span className="font-medium text-sm">{type.label}</span>
-                              <span className="text-xs text-muted-foreground">{type.desc}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+              <div className="space-y-4">
+                {/* Template & Theme */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Layout className="h-4 w-4" />
+                      Template & Theme
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3 pt-0">
+                    <TemplateThemeSelector
+                      selectedTemplate={selectedTemplate}
+                      selectedTheme={selectedTheme}
+                      onTemplateChange={(template) => {
+                        setSelectedTemplate(template);
+                        setSelectedTheme(template.theme);
+                      }}
+                      onThemeChange={(theme) => setSelectedTheme(prev => prev ? { ...prev, ...theme } : prev)}
+                      onColorsChange={(colors) => setSelectedTheme(prev => prev ? { ...prev, colors: { ...prev.colors, ...colors } } : prev)}
+                      onFontsChange={(fonts) => setSelectedTheme(prev => prev ? { ...prev, fonts: { ...prev.fonts, ...fonts } } : prev)}
+                    />
+                  </CardContent>
+                </Card>
 
-                  <div className="space-y-2">
-                    <Label className="text-xs">Output Format & Size</Label>
-                    <Select value={outputFormat} onValueChange={(v) => setOutputFormat(v as OutputFormat)}>
-                      <SelectTrigger className="h-9 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pptx">
-                          <div className="flex flex-col">
-                            <span className="font-medium">PowerPoint</span>
-                            <span className="text-[10px] text-muted-foreground">16:9 (1920×1080)</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="social">
-                          <div className="flex flex-col">
-                            <span className="font-medium">Social Media</span>
-                            <span className="text-[10px] text-muted-foreground">1:1 (1080×1080)</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="linkedin">
-                          <div className="flex flex-col">
-                            <span className="font-medium">LinkedIn</span>
-                            <span className="text-[10px] text-muted-foreground">1.91:1 (1200×627)</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="infographic">
-                          <div className="flex flex-col">
-                            <span className="font-medium">Infographic</span>
-                            <span className="text-[10px] text-muted-foreground">Portrait (800×2000)</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="whitepaper">
-                          <div className="flex flex-col">
-                            <span className="font-medium">White Paper</span>
-                            <span className="text-[10px] text-muted-foreground">A4 (210×297mm)</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="journey-map">
-                          <div className="flex flex-col">
-                            <span className="font-medium">Journey Map</span>
-                            <span className="text-[10px] text-muted-foreground">Wide (1920×900)</span>
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                {/* Branding */}
+                <BrandingCustomizer
+                  brandConfig={brandConfig}
+                  onBrandConfigChange={setBrandConfig}
+                />
 
-                  <div className="space-y-2">
-                    <Label className="text-xs">Presentation Length</Label>
-                    <Select value={length} onValueChange={(v) => setLength(v as PresentationLength)}>
-                      <SelectTrigger className="h-9 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="short">Short (5-8 slides)</SelectItem>
-                        <SelectItem value="standard">Standard (10-15 slides)</SelectItem>
-                        <SelectItem value="long">Long (18-25 slides)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <Separator />
-
-                  <div className="space-y-2">
-                    <Label className="text-xs">AI Model for Content</Label>
-                    <Select value={selectedAIModel} onValueChange={setSelectedAIModel}>
-                      <SelectTrigger className="h-9 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {AI_MODELS.map(model => (
-                          <SelectItem key={model.id} value={model.id}>
-                            <div className="flex flex-col">
-                              <span className="font-medium text-sm">{model.name}</span>
-                              <span className="text-xs text-muted-foreground">{model.description}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </CardContent>
-              </Card>
+                {/* Output Settings */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Presentation className="h-4 w-4" />
+                      Output Settings
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Collateral Type</Label>
+                        <Select value={collateralType} onValueChange={(v) => setCollateralType(v as CollateralType)}>
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {['presentation', 'marketing', 'investor', 'sales', 'training', 'whitepaper', 'case-study'].map(type => (
+                              <SelectItem key={type} value={type} className="text-xs capitalize">{type}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Format</Label>
+                        <Select value={outputFormat} onValueChange={(v) => setOutputFormat(v as OutputFormat)}>
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pptx" className="text-xs">PowerPoint (16:9)</SelectItem>
+                            <SelectItem value="social" className="text-xs">Social (1:1)</SelectItem>
+                            <SelectItem value="infographic" className="text-xs">Infographic</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Length</Label>
+                        <Select value={length} onValueChange={(v) => setLength(v as PresentationLength)}>
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="short" className="text-xs">Short (5-8)</SelectItem>
+                            <SelectItem value="standard" className="text-xs">Standard (10-15)</SelectItem>
+                            <SelectItem value="long" className="text-xs">Long (18-25)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">AI Model</Label>
+                        <Select value={selectedAIModel} onValueChange={setSelectedAIModel}>
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {AI_MODELS.map(model => (
+                              <SelectItem key={model.id} value={model.id} className="text-xs">{model.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    {/* Content options */}
+                    <div className="grid grid-cols-2 gap-2 pt-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-[10px]">Include Tables</Label>
+                        <Switch checked={includeTables} onCheckedChange={setIncludeTables} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-[10px]">Include Charts</Label>
+                        <Switch checked={includeCharts} onCheckedChange={setIncludeCharts} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-[10px]">Infographics</Label>
+                        <Switch checked={includeInfographics} onCheckedChange={setIncludeInfographics} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-[10px]">Journey Maps</Label>
+                        <Switch checked={includeJourneyMaps} onCheckedChange={setIncludeJourneyMaps} />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             )}
 
             {/* Step 2: Image Settings */}
