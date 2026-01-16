@@ -307,27 +307,26 @@ export function TemplateThemeSelector({
   const [activeTab, setActiveTab] = useState('templates');
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn("space-y-3", className)}>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 h-9">
-          <TabsTrigger value="templates" className="text-xs">
-            <Layout className="h-3 w-3 mr-1" />
+        <TabsList className="w-full h-9 bg-muted/50">
+          <TabsTrigger value="templates" className="text-xs flex-1 gap-1.5">
+            <Layout className="h-3.5 w-3.5" />
             Templates
           </TabsTrigger>
-          <TabsTrigger value="colors" className="text-xs">
-            <Palette className="h-3 w-3 mr-1" />
+          <TabsTrigger value="colors" className="text-xs flex-1 gap-1.5">
+            <Palette className="h-3.5 w-3.5" />
             Colors
           </TabsTrigger>
-          <TabsTrigger value="fonts" className="text-xs">
-            <Type className="h-3 w-3 mr-1" />
+          <TabsTrigger value="fonts" className="text-xs flex-1 gap-1.5">
+            <Type className="h-3.5 w-3.5" />
             Fonts
           </TabsTrigger>
         </TabsList>
 
         {/* Templates Tab */}
-        <TabsContent value="templates" className="mt-3">
-          <ScrollArea className="h-[280px]">
-            <div className="grid grid-cols-2 gap-2">
+        <TabsContent value="templates" className="mt-3 space-y-0">
+          <div className="grid grid-cols-2 gap-3">
               {TEMPLATES.map((template) => (
                 <Card
                   key={template.id}
@@ -382,7 +381,6 @@ export function TemplateThemeSelector({
                 </Card>
               ))}
             </div>
-          </ScrollArea>
         </TabsContent>
 
         {/* Colors Tab */}
