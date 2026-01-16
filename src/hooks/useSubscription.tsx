@@ -149,6 +149,32 @@ export const GENIE_PRODUCTS = {
       business: ['5 shows', 'Basic scheduling', '3 team members', 'Basic feedback'],
       pro: ['Unlimited shows', '10 guests/session', 'Live streaming', 'Full dashboard', 'Full collaboration', 'Approval chains']
     }
+  },
+  deck: {
+    id: 'deck',
+    name: 'Genie Deck',
+    tagline: CENTRAL_PRODUCTS.deck.tagline, // 'Ideas to Impact' - from centralized file
+    description: 'AI Presentation Generator. Transform ideas into stunning presentations with multi-language export and smart visual design.',
+    color: 'from-purple-500 to-violet-500',
+    bgColor: 'bg-purple-500/10',
+    borderColor: 'border-purple-500/30',
+    icon: '📊',
+    features: [
+      'AI-powered slide generation',
+      'Multi-language export (10+ languages)',
+      'Smart visual layouts & templates',
+      'Brand customization',
+      'Document-to-presentation conversion',
+      'Speaker notes generation',
+      'PPTX, PDF, Google Slides export',
+      'Label Studio ML integration'
+    ],
+    capabilities: {
+      free: ['5 presentations/month', 'Basic templates'],
+      starter: ['25 presentations/month', 'All templates', '3 languages'],
+      business: ['150 presentations/month', 'Custom branding', 'All languages', 'Team sharing'],
+      pro: ['Unlimited presentations', 'API access', 'Priority generation', 'White-label']
+    }
   }
 } as const;
 

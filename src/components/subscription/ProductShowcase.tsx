@@ -13,11 +13,12 @@ const productLogos: Record<GenieProduct, string> = {
   spark: CENTRAL_PRODUCTS.spark.logos.combined,
   vibe: CENTRAL_PRODUCTS.vibe.logos.combined,
   studio: CENTRAL_PRODUCTS.studio.logos.horizontal || CENTRAL_PRODUCTS.studio.logos.combined,
-  productionHub: CENTRAL_PRODUCTS.arc.logos.combined // Arc is Production Hub
+  productionHub: CENTRAL_PRODUCTS.arc.logos.combined, // Arc is Production Hub
+  deck: CENTRAL_PRODUCTS.deck.logos.combined
 };
 
-// Display order: Mind → Spark → Studio (center) → Vibe → Production Hub
-const productDisplayOrder: GenieProduct[] = ['mind', 'spark', 'studio', 'vibe', 'productionHub'];
+// Display order: Mind → Spark → Studio (center) → Vibe → Production Hub → Deck
+const productDisplayOrder: GenieProduct[] = ['mind', 'spark', 'studio', 'vibe', 'productionHub', 'deck'];
 
 interface ProductShowcaseProps {
   includedProducts: readonly GenieProduct[];

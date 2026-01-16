@@ -215,12 +215,12 @@ export const getProductLogo = (product: GenieProduct): string => {
 /**
  * All product keys
  */
-export const PRODUCT_KEYS: GenieProduct[] = ['mind', 'spark', 'vibe', 'studio', 'arc'];
+export const PRODUCT_KEYS: GenieProduct[] = ['mind', 'spark', 'vibe', 'studio', 'arc', 'deck'];
 
 /**
- * Display order for UI: Mind → Spark → Studio (center) → Vibe → Arc
+ * Display order for UI: Mind → Spark → Studio (center) → Vibe → Arc → Deck
  */
-export const PRODUCT_DISPLAY_ORDER: GenieProduct[] = ['mind', 'spark', 'studio', 'vibe', 'arc'];
+export const PRODUCT_DISPLAY_ORDER: GenieProduct[] = ['mind', 'spark', 'studio', 'vibe', 'arc', 'deck'];
 
 /**
  * Supported Languages for Voice/TTS Features

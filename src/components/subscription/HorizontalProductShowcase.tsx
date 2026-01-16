@@ -13,13 +13,15 @@ import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
 import genieMindLogo from '@/assets/logos/genie-mind-combined.png';
 // Production Hub uses Arc logo (Arc is consolidated into Production Hub per architecture)
 import genieProductionHubLogo from '@/assets/logos/genie-arc-combined.png';
+import genieDeckLogo from '@/assets/logos/genie-deck-combined.png';
 
 const productLogos: Record<GenieProduct, string> = {
   mind: genieMindLogo,
   spark: genieSparkLogo,
   vibe: genieVibeLogo,
   studio: genieStudioLogo,
-  productionHub: genieProductionHubLogo
+  productionHub: genieProductionHubLogo,
+  deck: genieDeckLogo
 };
 
 const productRoutes: Record<GenieProduct, string> = {
@@ -27,11 +29,12 @@ const productRoutes: Record<GenieProduct, string> = {
   spark: '/genie-spark',
   vibe: '/genie-vibe',
   studio: '/genie-studio',
-  productionHub: '/production-hub'
+  productionHub: '/production-hub',
+  deck: '/genie-deck'
 };
 
-// Order: Mind (pre-prod) → Spark (generation) → Studio (center/hub) → Vibe (production) → Hub (coordination)
-const productOrder: GenieProduct[] = ['mind', 'spark', 'studio', 'vibe', 'productionHub'];
+// Order: Mind (pre-prod) → Spark (generation) → Studio (center/hub) → Vibe (production) → Hub (coordination) → Deck (presentations)
+const productOrder: GenieProduct[] = ['mind', 'spark', 'studio', 'vibe', 'productionHub', 'deck'];
 
 export const HorizontalProductShowcase = () => {
   const navigate = useNavigate();

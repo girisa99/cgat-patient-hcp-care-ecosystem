@@ -14,13 +14,15 @@ import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
 import genieMindLogo from '@/assets/logos/genie-mind-combined.png';
 // Production Hub uses Arc logo (Arc is consolidated into Production Hub per architecture)
 import genieProductionHubLogo from '@/assets/logos/genie-arc-combined.png';
+import genieDeckLogo from '@/assets/logos/genie-deck-combined.png';
 
 const productLogos: Record<GenieProduct, string> = {
   mind: genieMindLogo,
   spark: genieSparkLogo,
   vibe: genieVibeLogo,
   studio: genieStudioLogo,
-  productionHub: genieProductionHubLogo
+  productionHub: genieProductionHubLogo,
+  deck: genieDeckLogo
 };
 
 const productRoutes: Record<GenieProduct, string> = {
@@ -28,7 +30,8 @@ const productRoutes: Record<GenieProduct, string> = {
   spark: '/genie-spark',
   vibe: '/genie-vibe',
   studio: '/genie-studio',
-  productionHub: '/production-hub'
+  productionHub: '/production-hub',
+  deck: '/genie-deck'
 };
 
 export const ProductsOverview = () => {
@@ -41,7 +44,7 @@ export const ProductsOverview = () => {
       <div className="text-center">
         <h2 className="text-3xl font-bold mb-2">The Complete Genie Suite</h2>
         <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-          Five powerful products designed to work together seamlessly for AI-powered content creation
+          Six powerful products designed to work together seamlessly for AI-powered content creation
         </p>
       </div>
 
