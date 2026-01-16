@@ -4,13 +4,12 @@
  * Supports multi-user/multi-tenant conversations
  * 
  * NOTE: Genie popup is hidden on Genie Studio pages (uses Ask Genie instead)
+ * NOTE: Label Studio runs as background service (no popup widgets)
  */
 import React, { Suspense } from 'react';
 import { useLocation } from 'react-router-dom';
 import { GlobalConversationalEnrollmentProvider } from '@/hooks/useGlobalConversationalEnrollment';
 import { lazyWithRetry } from '@/utils/lazyWithRetry';
-import { usePageAwareEnrollment } from '@/hooks/usePageAwareEnrollment';
-import { LSEcosystemWidget } from '@/components/label-studio/LSEcosystemWidget';
 
 // Lazy load heavy global components with retry to prevent startup failures
 const GlobalConversationalEnrollmentModalLazy = lazyWithRetry(() =>
@@ -51,8 +50,8 @@ export const AppLayoutWithEnrollment: React.FC<AppLayoutWithEnrollmentProps> = (
   );
   const shouldShowGenie = showUniversalGenie && !isGenieStudioPage;
 
-  // Show LS widget on Genie Studio pages for training
-  const showLSWidget = isGenieStudioPage;
+  // Label Studio runs as background service - no popup widget needed
+  // Training data is captured via labelStudioBackgroundService hooks
 
   return (
     <GlobalConversationalEnrollmentProvider>
@@ -75,13 +74,8 @@ export const AppLayoutWithEnrollment: React.FC<AppLayoutWithEnrollmentProps> = (
           )}
         </Suspense>
         
-        {/* Label Studio Ecosystem Widget - Shown on Genie Studio pages */}
-        {showLSWidget && (
-          <LSEcosystemWidget 
-            position="bottom-left"
-            showDifferentiators={true}
-          />
-        )}
+        {/* Label Studio runs silently in background via labelStudioBackgroundService */}
+        {/* No popup widgets - training data captured inline via hooks */}
       </div>
     </GlobalConversationalEnrollmentProvider>
   );
