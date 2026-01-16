@@ -1576,8 +1576,9 @@ async function handleUploadWithAutoDetect(supabase: any, request: ProcessingRequ
   // ============= LABEL STUDIO ML PIPELINE INTEGRATION =============
   // Record training events with templates and tags for model improvement
   const lsTemplate = getLabelStudioTemplate(detectedDocumentType);
-  const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
-  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
+  // Use Deno.env.get() directly in function call to avoid variable shadowing issues
+  const lsSupabaseUrl = Deno.env.get("SUPABASE_URL") as string;
+  const lsSupabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
   
   const trainingEvents: LabelStudioTrainingEvent[] = [
     // Document classification event
@@ -1648,7 +1649,7 @@ async function handleUploadWithAutoDetect(supabase: any, request: ProcessingRequ
   }
   
   // Send events to Label Studio (non-blocking, don't await)
-  recordLabelStudioEvent(supabaseUrl, supabaseServiceKey, trainingEvents, {
+  recordLabelStudioEvent(lsSupabaseUrl, lsSupabaseServiceKey, trainingEvents, {
     documentType: detectedDocumentType,
     templateId: lsTemplate.templateId,
     tags: lsTemplate.tags
