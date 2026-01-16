@@ -111,20 +111,25 @@ export const implementationPhases: ImplementationPhase[] = [
     scenariosTotal: PHASES.P3.total,
     scenariosComplete: PHASES.P3.implemented,
     features: [
-      { name: 'Landing Page (Genie Suite Marketing Website)', status: 'pending' },
-      { name: 'Custom Domain & SSL Setup', status: 'pending' },
-      { name: 'Bulk Video Generation', status: 'done' },
-      { name: 'Auto Thumbnail Creation (AI-powered)', status: 'done' },
-      { name: 'SEO Optimization Tools', status: 'done' },
-      { name: 'Social Cuts (Auto-format for TikTok/Reels)', status: 'done' },
-      { name: 'Voice Cloning Integration', status: 'pending' },
-      { name: 'B-Roll Library Integration', status: 'done' },
-      { name: 'Platform Publishing (YouTube, LinkedIn)', status: 'done' },
-      { name: 'Unified Content Tools Panel', status: 'done' },
-      { name: 'Innovative Publishing (Thread Generator, Carousel Creator)', status: 'done' },
-      { name: 'Bulk Content Panel (Batch Processing)', status: 'done' },
-      { name: 'Integrations Settings Hub (OAuth Management)', status: 'done' },
-      { name: 'Bulk Job Manager (DB-backed)', status: 'done' },
+      // Quick Wins (5) ✅
+      { name: 'Smart Thumbnail Generation', status: 'done' },
+      { name: 'AI Caption Generation', status: 'done' },
+      { name: 'Hashtag Optimization', status: 'done' },
+      // Label Studio (10) ✅
+      { name: 'Label Studio ML Integration (10 scenarios)', status: 'done' },
+      // Generation P2 (2✅ + 4⏳)
+      { name: 'Batch Script Generation (n8n)', status: 'done' },
+      { name: 'Auto-Publish Scheduling (n8n)', status: 'done' },
+      { name: 'Multi-Language Quick Dub', status: 'pending' },
+      { name: 'Content Recycling Engine', status: 'pending' },
+      { name: 'Template Variant Generation', status: 'pending' },
+      { name: 'Voice Cloning for Dubs', status: 'pending' },
+      // Compliance P3 (5⏳)
+      { name: 'Copyright Detection', status: 'pending' },
+      { name: 'HIPAA Compliance Check', status: 'pending' },
+      { name: 'GDPR Data Compliance', status: 'pending' },
+      { name: 'WCAG 2.1 AA Compliance', status: 'pending' },
+      { name: 'Auto-Disclaimer Injection', status: 'pending' },
     ],
   },
   {
@@ -136,12 +141,16 @@ export const implementationPhases: ImplementationPhase[] = [
     scenariosTotal: PHASES.P4.total,
     scenariosComplete: PHASES.P4.implemented,
     features: [
-      { name: 'Multi-Language Support (140+ languages via Synthesia parity)', status: 'pending' },
+      // Deferred from P3 (requires Segment/Pricing finalization)
+      { name: 'Analytics & Insights (10 scenarios)', status: 'pending' },
+      { name: 'Segment-Specific Features (22 scenarios)', status: 'pending' },
+      { name: 'External Integrations (8 scenarios)', status: 'pending' },
+      { name: 'Enterprise Features (18 scenarios)', status: 'pending' },
+      // Original P4
+      { name: 'Multi-Language Support (140+ languages)', status: 'pending' },
       { name: 'Real-time Collaboration', status: 'pending' },
       { name: 'Version Control & History', status: 'pending' },
-      { name: 'Advanced Analytics Dashboard', status: 'pending' },
-      { name: 'Compliance & Legal Review Gates', status: 'pending' },
-      { name: 'HIPAA Full Certification', status: 'pending' },
+      { name: 'Recovery & Error Handling', status: 'pending' },
     ],
   },
   {
@@ -158,7 +167,7 @@ export const implementationPhases: ImplementationPhase[] = [
       { name: 'SLA Monitoring Dashboard', status: 'pending' },
       { name: 'Data Residency Controls', status: 'pending' },
       { name: 'Enterprise Admin Console', status: 'pending' },
-      { name: 'Custom AI Model Training', status: 'pending' },
+      { name: 'HIPAA Full Certification', status: 'pending' },
     ],
   },
 ];
@@ -195,33 +204,31 @@ export const scenarioCategories: ScenarioCategory[] = [
   { id: 'AE', name: 'Advanced Editing & Timeline', range: '297-305', total: 9, implemented: 9, partial: 0, pending: 0, phase: 'P2' },
   { id: 'AF', name: 'AI-Powered Editing Tools', range: '306-313', total: 7, implemented: 7, partial: 0, pending: 0, phase: 'P2' },
   
-  // P3 Categories (In Progress - 140 scenarios, 32 implemented)
-  // Categories from UnifiedMetrics: Quick Wins(5✅) + Generation(12) + Compliance(8) + Analytics(10) + 
-  // Segment-Specific(22) + Integrations(8) + Enterprise(18) + Label Studio(10✅) + Implemented(17✅) + misc(30)
+  // P3 Categories (In Progress - 43 scenarios, 34 implemented after reorganization)
+  // Focus: Quick Wins(5✅) + Label Studio(10✅) + Original(17✅) + Generation(2✅) + Remaining Gen(4) + Compliance(5)
   { id: 'P3-QW', name: 'Quick Wins (Priority 1)', range: '1-5', total: 5, implemented: 5, partial: 0, pending: 0, phase: 'P3' },
   { id: 'P3-LS', name: 'Label Studio Integration', range: '6-15', total: 10, implemented: 10, partial: 0, pending: 0, phase: 'P3' },
   { id: 'P3-IMP', name: 'Originally Implemented', range: '16-32', total: 17, implemented: 17, partial: 0, pending: 0, phase: 'P3' },
-  { id: 'F', name: 'Generation & Automation (Priority 2)', range: '33-44', total: 12, implemented: 0, partial: 0, pending: 12, phase: 'P3' },
-  { id: 'G', name: 'Compliance & Legal (Priority 3)', range: '45-52', total: 8, implemented: 0, partial: 0, pending: 8, phase: 'P3' },
-  { id: 'P3-ANA', name: 'Analytics & Insights (Priority 4)', range: '53-62', total: 10, implemented: 0, partial: 0, pending: 10, phase: 'P3' },
-  { id: 'O', name: 'Segment-Specific Features (Priority 5)', range: '63-84', total: 22, implemented: 0, partial: 0, pending: 22, phase: 'P3' },
-  { id: 'R', name: 'External Integrations (Priority 6)', range: '85-92', total: 8, implemented: 0, partial: 0, pending: 8, phase: 'P3' },
-  { id: 'P3-ENT', name: 'Enterprise Features (Priority 7)', range: '93-110', total: 18, implemented: 0, partial: 0, pending: 18, phase: 'P3' },
-  { id: 'AA', name: 'Go-Live Website & Misc', range: '111-140', total: 30, implemented: 0, partial: 0, pending: 30, phase: 'P3' },
+  { id: 'F', name: 'Generation & Automation (Priority 2)', range: '33-38', total: 6, implemented: 2, partial: 0, pending: 4, phase: 'P3' },
+  { id: 'G', name: 'Compliance & Legal (Priority 3)', range: '39-43', total: 5, implemented: 0, partial: 0, pending: 5, phase: 'P3' },
   
-  // P4 Categories (Planned - 50 scenarios)
-  { id: 'H', name: 'Recovery & Error Handling', range: '47-50', total: 4, implemented: 0, partial: 0, pending: 4, phase: 'P4' },
-  { id: 'I', name: 'Multi-Language & Localization', range: '51-54', total: 4, implemented: 0, partial: 0, pending: 4, phase: 'P4' },
-  { id: 'J', name: 'Collaboration & Handoffs', range: '55-58', total: 4, implemented: 0, partial: 0, pending: 4, phase: 'P4' },
-  { id: 'K', name: 'Versioning & Archival', range: '59-60', total: 2, implemented: 0, partial: 0, pending: 2, phase: 'P4' },
-  { id: 'R2', name: 'External API Integration', range: '136-140', total: 5, implemented: 0, partial: 0, pending: 5, phase: 'P4' },
-  { id: 'AB', name: 'Advanced Analytics', range: '264-294', total: 31, implemented: 0, partial: 0, pending: 31, phase: 'P4' },
+  // P4 Categories (Deferred from P3 - 108 scenarios, requires Segment/Pricing finalization)
+  { id: 'P4-ANA', name: 'Analytics & Insights (Deferred)', range: '1-10', total: 10, implemented: 0, partial: 0, pending: 10, phase: 'P4' },
+  { id: 'P4-SEG', name: 'Segment-Specific Features (Deferred)', range: '11-32', total: 22, implemented: 0, partial: 0, pending: 22, phase: 'P4' },
+  { id: 'P4-INT', name: 'External Integrations (Deferred)', range: '33-40', total: 8, implemented: 0, partial: 0, pending: 8, phase: 'P4' },
+  { id: 'P4-ENT', name: 'Enterprise Features (Deferred)', range: '41-58', total: 18, implemented: 0, partial: 0, pending: 18, phase: 'P4' },
+  { id: 'H', name: 'Recovery & Error Handling', range: '59-62', total: 4, implemented: 0, partial: 0, pending: 4, phase: 'P4' },
+  { id: 'I', name: 'Multi-Language & Localization', range: '63-66', total: 4, implemented: 0, partial: 0, pending: 4, phase: 'P4' },
+  { id: 'J', name: 'Collaboration & Handoffs', range: '67-70', total: 4, implemented: 0, partial: 0, pending: 4, phase: 'P4' },
+  { id: 'K', name: 'Versioning & Archival', range: '71-72', total: 2, implemented: 0, partial: 0, pending: 2, phase: 'P4' },
+  { id: 'R2', name: 'External API Integration', range: '73-77', total: 5, implemented: 0, partial: 0, pending: 5, phase: 'P4' },
+  { id: 'AB', name: 'Advanced Analytics', range: '78-108', total: 31, implemented: 0, partial: 0, pending: 31, phase: 'P4' },
   
   // P5 Categories (Enterprise - 28 scenarios)
-  { id: 'AC', name: 'Enterprise SSO/SAML', range: '295-302', total: 8, implemented: 0, partial: 0, pending: 8, phase: 'P5' },
-  { id: 'AD', name: 'White-Label & Custom', range: '303-310', total: 8, implemented: 0, partial: 0, pending: 8, phase: 'P5' },
-  { id: 'AE2', name: 'HIPAA & Compliance', range: '311-315', total: 5, implemented: 0, partial: 0, pending: 5, phase: 'P5' },
-  { id: 'AF2', name: 'Data Residency', range: '316-322', total: 7, implemented: 0, partial: 0, pending: 7, phase: 'P5' },
+  { id: 'AC', name: 'Enterprise SSO/SAML', range: '1-8', total: 8, implemented: 0, partial: 0, pending: 8, phase: 'P5' },
+  { id: 'AD', name: 'White-Label & Custom', range: '9-16', total: 8, implemented: 0, partial: 0, pending: 8, phase: 'P5' },
+  { id: 'AE2', name: 'HIPAA & Compliance', range: '17-21', total: 5, implemented: 0, partial: 0, pending: 5, phase: 'P5' },
+  { id: 'AF2', name: 'Data Residency', range: '22-28', total: 7, implemented: 0, partial: 0, pending: 7, phase: 'P5' },
 ];
 
 // =============================================================================
