@@ -283,7 +283,7 @@ const AppContent = () => {
                     </ProtectedRoute>
                   } />
                   <Route path="/genie-studio/feedback-analytics" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin']}>
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'healthcareProvider', 'caseManager']}>
                       <Suspense fallback={<PageLoading message="Loading Feedback Analytics..." />}>
                         <AppLayout>
                           {React.createElement(React.lazy(() => import('@/components/genie-studio/FeedbackAnalyticsDashboard').then(m => ({ default: m.FeedbackAnalyticsDashboard }))))}
