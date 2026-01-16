@@ -6,8 +6,19 @@
  * All phase data and infrastructure metrics are derived from:
  * src/genie-studio/governance/UnifiedMetrics.ts
  * 
- * AUDITED: 2026-01-16 - Stage Gates expanded from 30 to 80+ items
- * UPDATED: 2026-01-16 - Added API Production Readiness tracking (29 items)
+ * AUDITED: 2026-01-16 - Stage Gates expanded from 80 to 150+ items
+ * UPDATED: 2026-01-16 - Added comprehensive production readiness categories:
+ *   - Legal & Compliance (12 items)
+ *   - Domain & DNS (9 items)
+ *   - Payments & Banking (13 items)
+ *   - Copyright & IP (8 items)
+ *   - AI Content Moderation (10 items)
+ *   - Age & Access Restrictions (10 items)
+ *   - Website Production (15 items)
+ *   - Customer Support (10 items)
+ *   - Marketing & Launch (9 items)
+ *   - Compliance & Audit (10 items)
+ *   - API Production Readiness (29 items from ApiProductionConfig.ts)
  */
 
 import type { ImplementationPhase, ScenarioCategory, StageGateItem, Product } from '../types';
@@ -293,21 +304,126 @@ export const stageGateChecklist: StageGateItem[] = [
   { category: 'Legal', item: 'Privacy Policy', status: 'pending', priority: 'Critical' },
   { category: 'Legal', item: 'Cookie Consent Banner', status: 'pending', priority: 'High' },
   { category: 'Legal', item: 'GDPR Compliance (Data Export/Delete)', status: 'pending', priority: 'High' },
-  { category: 'Legal', item: 'CCPA Compliance', status: 'pending', priority: 'Medium' },
+  { category: 'Legal', item: 'CCPA Compliance (California)', status: 'pending', priority: 'Medium' },
   { category: 'Legal', item: 'HIPAA BAA (Healthcare Segment)', status: 'pending', priority: 'High', notes: 'Required for Healthcare customers' },
   { category: 'Legal', item: 'Content Licensing Terms', status: 'pending', priority: 'Medium' },
   { category: 'Legal', item: 'AI Generated Content Disclaimer', status: 'pending', priority: 'High' },
+  { category: 'Legal', item: 'Acceptable Use Policy', status: 'pending', priority: 'High' },
+  { category: 'Legal', item: 'Refund & Cancellation Policy', status: 'pending', priority: 'High' },
+  { category: 'Legal', item: 'Data Processing Agreement (DPA)', status: 'pending', priority: 'Medium' },
+  { category: 'Legal', item: 'SOC 2 Type II Readiness', status: 'pending', priority: 'Low', notes: 'Enterprise customers' },
   
-  // ==================== SECURITY ====================
-  { category: 'Security', item: 'SSL/TLS Certificates', status: 'done', priority: 'Critical' },
-  { category: 'Security', item: 'API Key Encryption', status: 'done', priority: 'Critical' },
-  { category: 'Security', item: 'XSS Protection', status: 'done', priority: 'Critical' },
-  { category: 'Security', item: 'CSRF Protection', status: 'done', priority: 'Critical' },
-  { category: 'Security', item: 'SQL Injection Prevention (RLS)', status: 'done', priority: 'Critical' },
-  { category: 'Security', item: 'Security Headers (CSP, HSTS)', status: 'pending', priority: 'High' },
-  { category: 'Security', item: 'Penetration Testing', status: 'pending', priority: 'High' },
-  { category: 'Security', item: 'Vulnerability Scanning', status: 'pending', priority: 'High' },
-  { category: 'Security', item: 'Secret Key Rotation Policy', status: 'pending', priority: 'Medium' },
+  // ==================== DOMAIN & DNS ====================
+  { category: 'Domain', item: 'Primary Domain Registration', status: 'pending', priority: 'Critical', notes: 'geniesuite.ai or similar' },
+  { category: 'Domain', item: 'DNS Configuration (A, CNAME, TXT)', status: 'pending', priority: 'Critical' },
+  { category: 'Domain', item: 'SSL/TLS Certificate (Auto-renew)', status: 'done', priority: 'Critical' },
+  { category: 'Domain', item: 'WWW Redirect Configuration', status: 'pending', priority: 'High' },
+  { category: 'Domain', item: 'Email Domain Authentication (SPF, DKIM, DMARC)', status: 'pending', priority: 'High', notes: 'For transactional emails' },
+  { category: 'Domain', item: 'Subdomain Strategy (app., api., docs.)', status: 'pending', priority: 'Medium' },
+  { category: 'Domain', item: 'CDN Configuration (Cloudflare/Vercel)', status: 'done', priority: 'High' },
+  { category: 'Domain', item: 'Custom Domain for Staging', status: 'pending', priority: 'Low' },
+  { category: 'Domain', item: 'Domain Expiration Alerts', status: 'pending', priority: 'High' },
+  
+  // ==================== PAYMENTS & BANKING ====================
+  { category: 'Payments', item: 'Stripe Account Verified (Business)', status: 'done', priority: 'Critical' },
+  { category: 'Payments', item: 'Stripe Webhook Configuration', status: 'done', priority: 'Critical' },
+  { category: 'Payments', item: 'Payment Failure Handling', status: 'done', priority: 'Critical' },
+  { category: 'Payments', item: 'Invoice Generation (Stripe Invoicing)', status: 'done', priority: 'High' },
+  { category: 'Payments', item: 'Tax Collection Setup (Stripe Tax)', status: 'pending', priority: 'High', notes: 'Required for compliance' },
+  { category: 'Payments', item: 'Multi-Currency Support', status: 'pending', priority: 'Medium' },
+  { category: 'Payments', item: 'Bank Account Connected for Payouts', status: 'pending', priority: 'Critical' },
+  { category: 'Payments', item: 'PCI DSS Compliance (via Stripe)', status: 'done', priority: 'Critical' },
+  { category: 'Payments', item: 'Fraud Detection Rules', status: 'pending', priority: 'High' },
+  { category: 'Payments', item: 'Chargeback Handling Process', status: 'pending', priority: 'High' },
+  { category: 'Payments', item: 'Revenue Recognition Setup', status: 'pending', priority: 'Medium' },
+  { category: 'Payments', item: 'Financial Reporting Dashboard', status: 'pending', priority: 'Medium' },
+  { category: 'Payments', item: 'Pricing Tier Testing (All Plans)', status: 'pending', priority: 'High' },
+  
+  // ==================== COPYRIGHT & INTELLECTUAL PROPERTY ====================
+  { category: 'Copyright', item: 'Website Footer Copyright Notice', status: 'pending', priority: 'High' },
+  { category: 'Copyright', item: 'Trademark Registration (Genie Suite™)', status: 'pending', priority: 'Medium' },
+  { category: 'Copyright', item: 'Logo & Brand Assets Protected', status: 'pending', priority: 'Medium' },
+  { category: 'Copyright', item: 'Third-Party License Compliance', status: 'pending', priority: 'High', notes: 'npm packages, fonts, icons' },
+  { category: 'Copyright', item: 'Open Source License Attribution', status: 'pending', priority: 'Medium' },
+  { category: 'Copyright', item: 'User Content Ownership Terms', status: 'pending', priority: 'High' },
+  { category: 'Copyright', item: 'AI Model License Compliance', status: 'pending', priority: 'High', notes: 'OpenAI, Google, Anthropic terms' },
+  { category: 'Copyright', item: 'Stock Media License Tracking', status: 'pending', priority: 'Medium' },
+  
+  // ==================== AI CONTENT MODERATION ====================
+  { category: 'AI Content', item: 'Content Moderation Service Active', status: 'done', priority: 'Critical', notes: 'ContentModerationService.ts' },
+  { category: 'AI Content', item: 'Profanity Filter Implementation', status: 'done', priority: 'High' },
+  { category: 'AI Content', item: 'AI-Generated Content Watermarking', status: 'pending', priority: 'Medium' },
+  { category: 'AI Content', item: 'Deepfake Detection (Voice Cloning)', status: 'pending', priority: 'High', notes: 'For voice features' },
+  { category: 'AI Content', item: 'Bias Detection in AI Outputs', status: 'pending', priority: 'Medium' },
+  { category: 'AI Content', item: 'Content Safety Scoring', status: 'done', priority: 'High' },
+  { category: 'AI Content', item: 'User-Reported Content Workflow', status: 'pending', priority: 'High' },
+  { category: 'AI Content', item: 'AI Transparency Labels', status: 'pending', priority: 'Medium', notes: 'EU AI Act compliance' },
+  { category: 'AI Content', item: 'Model Output Logging (Audit Trail)', status: 'done', priority: 'High' },
+  { category: 'AI Content', item: 'AI Ethics Policy Published', status: 'pending', priority: 'Medium' },
+  
+  // ==================== AGE & ACCESS RESTRICTIONS ====================
+  { category: 'Restrictions', item: 'Minimum Age Requirement (13+)', status: 'pending', priority: 'High', notes: 'COPPA compliance' },
+  { category: 'Restrictions', item: 'Age Verification UI (if needed)', status: 'pending', priority: 'Medium' },
+  { category: 'Restrictions', item: 'Adult Content Blocking', status: 'done', priority: 'Critical' },
+  { category: 'Restrictions', item: 'Violent Content Restrictions', status: 'done', priority: 'Critical' },
+  { category: 'Restrictions', item: 'Hate Speech Detection', status: 'done', priority: 'Critical' },
+  { category: 'Restrictions', item: 'Medical Content Warnings', status: 'done', priority: 'High', notes: 'Healthcare segment' },
+  { category: 'Restrictions', item: 'Financial Advice Disclaimers', status: 'done', priority: 'High' },
+  { category: 'Restrictions', item: 'Legal Advice Restrictions', status: 'done', priority: 'High' },
+  { category: 'Restrictions', item: 'Geographic Restrictions (Sanctions)', status: 'pending', priority: 'Medium' },
+  { category: 'Restrictions', item: 'Export Control Compliance', status: 'pending', priority: 'Low' },
+  
+  // ==================== WEBSITE PRODUCTION READINESS ====================
+  { category: 'Website', item: 'Landing Page Design Complete', status: 'pending', priority: 'Critical' },
+  { category: 'Website', item: 'Mobile Responsive Testing', status: 'done', priority: 'Critical' },
+  { category: 'Website', item: 'Cross-Browser Compatibility', status: 'done', priority: 'High' },
+  { category: 'Website', item: 'Page Load Speed (<3s)', status: 'pending', priority: 'High' },
+  { category: 'Website', item: 'Core Web Vitals Passing', status: 'pending', priority: 'High' },
+  { category: 'Website', item: '404 Error Page', status: 'pending', priority: 'Medium' },
+  { category: 'Website', item: '500 Error Page', status: 'pending', priority: 'Medium' },
+  { category: 'Website', item: 'Maintenance Mode Page', status: 'pending', priority: 'Medium' },
+  { category: 'Website', item: 'Favicon & App Icons (All Sizes)', status: 'done', priority: 'High' },
+  { category: 'Website', item: 'Social Share Preview Images (OG)', status: 'pending', priority: 'High' },
+  { category: 'Website', item: 'Structured Data (JSON-LD)', status: 'pending', priority: 'Medium' },
+  { category: 'Website', item: 'Google Search Console Setup', status: 'pending', priority: 'High' },
+  { category: 'Website', item: 'Google Analytics 4 Integration', status: 'pending', priority: 'High' },
+  { category: 'Website', item: 'Sitemap.xml Generation', status: 'pending', priority: 'Medium' },
+  { category: 'Website', item: 'Robots.txt Configuration', status: 'pending', priority: 'Medium' },
+  
+  // ==================== CUSTOMER SUPPORT ====================
+  { category: 'Support', item: 'Support Email Configured', status: 'pending', priority: 'Critical', notes: 'support@geniesuite.ai' },
+  { category: 'Support', item: 'Help Center / Knowledge Base', status: 'pending', priority: 'High' },
+  { category: 'Support', item: 'In-App Chat Widget', status: 'pending', priority: 'Medium' },
+  { category: 'Support', item: 'Ticket System Integration', status: 'pending', priority: 'High' },
+  { category: 'Support', item: 'FAQ Page', status: 'pending', priority: 'High' },
+  { category: 'Support', item: 'Video Tutorials', status: 'pending', priority: 'Medium' },
+  { category: 'Support', item: 'Onboarding Walkthrough', status: 'done', priority: 'High' },
+  { category: 'Support', item: 'Status Page (statuspage.io)', status: 'pending', priority: 'High' },
+  { category: 'Support', item: 'SLA Documentation', status: 'pending', priority: 'Medium' },
+  { category: 'Support', item: 'Bug Report Mechanism', status: 'pending', priority: 'High' },
+  
+  // ==================== MARKETING & LAUNCH ====================
+  { category: 'Marketing', item: 'Product Hunt Launch Prep', status: 'pending', priority: 'Medium' },
+  { category: 'Marketing', item: 'Social Media Accounts Created', status: 'pending', priority: 'High' },
+  { category: 'Marketing', item: 'Email Marketing Setup (Resend)', status: 'pending', priority: 'High' },
+  { category: 'Marketing', item: 'Welcome Email Sequence', status: 'pending', priority: 'High' },
+  { category: 'Marketing', item: 'Trial Expiration Reminders', status: 'pending', priority: 'High' },
+  { category: 'Marketing', item: 'Testimonials / Social Proof', status: 'pending', priority: 'Medium' },
+  { category: 'Marketing', item: 'Demo Video Created', status: 'pending', priority: 'High' },
+  { category: 'Marketing', item: 'Press Kit Prepared', status: 'pending', priority: 'Low' },
+  { category: 'Marketing', item: 'Beta Testers Feedback Collected', status: 'pending', priority: 'High' },
+  
+  // ==================== COMPLIANCE & AUDIT ====================
+  { category: 'Compliance', item: 'HIPAA Compliance Footer', status: 'done', priority: 'High', notes: 'HIPAAComplianceFooter.tsx' },
+  { category: 'Compliance', item: 'Audit Logging Enabled', status: 'done', priority: 'Critical' },
+  { category: 'Compliance', item: 'Data Retention Policy Defined', status: 'pending', priority: 'High' },
+  { category: 'Compliance', item: 'Right to be Forgotten (GDPR)', status: 'pending', priority: 'High' },
+  { category: 'Compliance', item: 'Data Portability (Export)', status: 'pending', priority: 'High' },
+  { category: 'Compliance', item: 'Consent Management Platform', status: 'pending', priority: 'High' },
+  { category: 'Compliance', item: 'Privacy Impact Assessment', status: 'pending', priority: 'Medium' },
+  { category: 'Compliance', item: 'Third-Party Vendor Audit', status: 'pending', priority: 'Medium' },
+  { category: 'Compliance', item: 'Incident Response Plan', status: 'pending', priority: 'Critical' },
+  { category: 'Compliance', item: 'Breach Notification Process', status: 'pending', priority: 'Critical' },
   
   // ==================== GO-LIVE WEBSITE ====================
   { category: 'Go-Live Website', item: 'Landing Page (Genie Suite Marketing)', status: 'pending', priority: 'Critical' },
@@ -316,10 +432,10 @@ export const stageGateChecklist: StageGateItem[] = [
   { category: 'Go-Live Website', item: 'Login/Signup Page', status: 'done', priority: 'Critical' },
   { category: 'Go-Live Website', item: 'Stripe Checkout Integration', status: 'done', priority: 'Critical' },
   { category: 'Go-Live Website', item: 'SEO Meta Tags & OpenGraph', status: 'done', priority: 'High' },
-  { category: 'Go-Live Website', item: 'Sitemap.xml & Robots.txt', status: 'pending', priority: 'Medium' },
   { category: 'Go-Live Website', item: 'Contact/Support Page', status: 'pending', priority: 'High' },
-  { category: 'Go-Live Website', item: 'FAQ/Help Center', status: 'pending', priority: 'High' },
+  { category: 'Go-Live Website', item: 'About Us Page', status: 'pending', priority: 'Medium' },
   { category: 'Go-Live Website', item: 'Blog/Content Hub', status: 'pending', priority: 'Medium' },
+  { category: 'Go-Live Website', item: 'Changelog/Updates Page', status: 'pending', priority: 'Low' },
   
   // ==================== DOCUMENTATION ====================
   { category: 'Documentation', item: 'API Documentation', status: 'pending', priority: 'High' },
@@ -328,6 +444,8 @@ export const stageGateChecklist: StageGateItem[] = [
   { category: 'Documentation', item: 'Admin/Support Runbook', status: 'pending', priority: 'High' },
   { category: 'Documentation', item: 'Incident Response Playbook', status: 'pending', priority: 'Critical' },
   { category: 'Documentation', item: 'Architecture Decision Records', status: 'done', priority: 'Medium' },
+  { category: 'Documentation', item: 'Release Notes Template', status: 'pending', priority: 'Medium' },
+  { category: 'Documentation', item: 'Developer Setup Guide', status: 'pending', priority: 'Medium' },
   
   // ==================== DEVOPS & DEPLOYMENT ====================
   { category: 'DevOps', item: 'CI/CD Pipeline (GitHub Actions)', status: 'done', priority: 'Critical' },
@@ -338,6 +456,8 @@ export const stageGateChecklist: StageGateItem[] = [
   { category: 'DevOps', item: 'Blue-Green Deployment Ready', status: 'pending', priority: 'Medium' },
   { category: 'DevOps', item: 'Feature Flags System', status: 'pending', priority: 'Medium' },
   { category: 'DevOps', item: 'Auto-scaling Configuration', status: 'pending', priority: 'Medium' },
+  { category: 'DevOps', item: 'Secret Management (Vault)', status: 'done', priority: 'Critical' },
+  { category: 'DevOps', item: 'Backup Verification Testing', status: 'pending', priority: 'High' },
   
   // ==================== API PRODUCTION READINESS (From ApiProductionConfig.ts) ====================
   ...API_STAGE_GATE_CHECKLIST.map(item => ({
