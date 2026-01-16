@@ -40,9 +40,19 @@ const GenieDeck = () => {
                 fallbackLabel="Studio" 
               />
               
-              <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-lg bg-white/90 backdrop-blur border border-purple-200/50 flex items-center justify-center shadow-sm overflow-hidden p-1">
-                  <img src={genieDeckLogo} alt="Genie Deck" className="h-full w-full object-contain" />
+              <div className="flex items-center gap-3 group">
+                {/* Logo with hover tooltip */}
+                <div className="relative">
+                  <div className="h-9 w-9 rounded-lg bg-white/90 backdrop-blur border border-purple-200/50 flex items-center justify-center shadow-sm overflow-hidden p-1 transition-transform group-hover:scale-110">
+                    <img src={genieDeckLogo} alt="Genie Deck" className="h-full w-full object-contain" />
+                  </div>
+                  {/* Hover tooltip with larger logo */}
+                  <div className="absolute left-0 top-12 z-50 hidden group-hover:block">
+                    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl border p-4 min-w-[180px]">
+                      <img src={genieDeckLogo} alt="Genie Deck" className="h-16 w-auto mx-auto object-contain" />
+                      <p className="text-xs text-center text-muted-foreground mt-2">AI Presentation Generator</p>
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <h1 className="text-lg font-semibold bg-gradient-to-r from-purple-600 to-violet-600 bg-clip-text text-transparent">
