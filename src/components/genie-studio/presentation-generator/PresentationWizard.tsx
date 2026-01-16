@@ -86,6 +86,7 @@ import { TemplateThemeSelector, TEMPLATES } from './TemplateThemeSelector';
 import { BrandingCustomizer, BrandConfig, DEFAULT_BRAND_CONFIG } from './BrandingCustomizer';
 import { MultiLanguageGenerator, useMultiLanguageGeneration, SUPPORTED_LANGUAGES, LanguageGenerationStatus } from './MultiLanguageGenerator';
 import { TableEditor, ChartEditor } from './TableChartEditor';
+import { DraggableSlideLayout, LayoutElement } from './DraggableSlideLayout';
 import { useUniversalPresentation, DownloadFormat } from '@/hooks/useUniversalPresentation';
 import {
   PresentationRequest,
@@ -110,6 +111,91 @@ const WIZARD_STEPS = [
   { id: 'languages', label: 'Languages', icon: Languages, description: 'Multi-language' },
   { id: 'generate', label: 'Generate', icon: Wand2, description: 'Create presentation' },
 ];
+
+// Convert slide to layout elements for drag-and-drop
+const slideToLayoutElements = (slide: PresentationSlide): import('./DraggableSlideLayout').LayoutElement[] => {
+  const elements: import('./DraggableSlideLayout').LayoutElement[] = [];
+  let yOffset = 20;
+
+  if (slide.title) {
+    elements.push({
+      id: `${slide.id}-title`,
+      type: 'title',
+      content: slide.title,
+      position: { x: 20, y: yOffset },
+      size: { width: 560, height: 50 },
+      zIndex: 1,
+      locked: false,
+      alignment: 'left'
+    });
+    yOffset += 60;
+  }
+
+  if (slide.subtitle) {
+    elements.push({
+      id: `${slide.id}-subtitle`,
+      type: 'subtitle',
+      content: slide.subtitle,
+      position: { x: 20, y: yOffset },
+      size: { width: 560, height: 30 },
+      zIndex: 1,
+      locked: false,
+      alignment: 'left'
+    });
+    yOffset += 40;
+  }
+
+  if (slide.content?.bullets && slide.content.bullets.length > 0) {
+    elements.push({
+      id: `${slide.id}-bullets`,
+      type: 'bullet-list',
+      content: slide.content.bullets.map(b => b.text),
+      position: { x: 20, y: yOffset },
+      size: { width: 350, height: Math.min(slide.content.bullets.length * 28, 200) },
+      zIndex: 1,
+      locked: false,
+      alignment: 'left'
+    });
+  }
+
+  if (slide.image?.url || slide.image?.base64) {
+    elements.push({
+      id: `${slide.id}-image`,
+      type: 'image',
+      content: { url: slide.image.base64 || slide.image.url, alt: slide.image.alt },
+      position: { x: 390, y: yOffset },
+      size: { width: 200, height: 150 },
+      zIndex: 1,
+      locked: false
+    });
+  }
+
+  if (slide.content?.table) {
+    elements.push({
+      id: `${slide.id}-table`,
+      type: 'table',
+      content: slide.content.table,
+      position: { x: 20, y: yOffset + 20 },
+      size: { width: 400, height: 150 },
+      zIndex: 1,
+      locked: false
+    });
+  }
+
+  if (slide.content?.chart) {
+    elements.push({
+      id: `${slide.id}-chart`,
+      type: 'chart',
+      content: slide.content.chart,
+      position: { x: 20, y: yOffset + 20 },
+      size: { width: 300, height: 200 },
+      zIndex: 1,
+      locked: false
+    });
+  }
+
+  return elements;
+};
 
 interface PresentationWizardProps {
   sessionId?: string;
@@ -188,19 +274,41 @@ export function PresentationWizard({
   // Multi-language generation
   const { statuses: languageStatuses, isGenerating: isMultiLangGenerating, generateAll: generateMultiLang, reset: resetMultiLang } = useMultiLanguageGeneration();
 
-  // Get options from service
-  const imageStyleOptions = universalPresentationService.getImageStyleOptions();
-  const toneOptions = universalPresentationService.getToneOptions();
-  const enhancementOptions = universalPresentationService.getContentEnhancements();
-  const voiceProviders = universalPresentationService.getVoiceProviders();
+  // Inline options (to avoid service method type issues)
+  const imageStyleOptions = [
+    { id: 'ai-realistic', name: 'AI Photorealistic', bestFor: ['marketing', 'investor'] },
+    { id: 'sketch', name: 'Hand-drawn Sketches', bestFor: ['training', 'presentation'] },
+    { id: 'illustration', name: 'Illustrations', bestFor: ['website', 'sales'] },
+    { id: 'infographic', name: 'Infographic Style', bestFor: ['whitepaper', 'case-study'] },
+    { id: 'icons', name: 'Icon-based', bestFor: ['presentation', 'website'] },
+  ];
 
-  // AI Models for text generation
+  const toneOptions = [
+    { id: 'professional', name: 'Professional', bestFor: ['investor', 'sales'] },
+    { id: 'balanced', name: 'Balanced', bestFor: ['presentation', 'training'] },
+    { id: 'engagement', name: 'Engaging', bestFor: ['marketing', 'conference'] },
+    { id: 'scientific', name: 'Scientific', bestFor: ['whitepaper', 'case-study'] },
+    { id: 'inspirational', name: 'Inspirational', bestFor: ['conference', 'product-launch'] },
+  ];
+
+  const enhancementOptions = [
+    { id: 'data-verification', name: 'Data Verification' },
+    { id: 'statistics', name: 'Key Statistics' },
+    { id: 'case-examples', name: 'Case Examples' },
+    { id: 'comparison-tables', name: 'Comparison Tables' },
+    { id: 'timeline', name: 'Timeline' },
+  ];
+
+  const voiceProviders = [
+    { id: 'openai', name: 'OpenAI TTS' },
+    { id: 'elevenlabs', name: 'ElevenLabs' },
+  ];
+
   const AI_MODELS = [
     { id: 'auto', name: 'Auto (Recommended)', description: 'AI selects best model' },
     { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash', description: 'Fast & balanced' },
     { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', description: 'High quality' },
     { id: 'openai/gpt-5', name: 'GPT-5', description: 'Premium reasoning' },
-    { id: 'openai/gpt-5-mini', name: 'GPT-5 Mini', description: 'Cost-effective' },
   ];
 
   // Initialize session
@@ -412,6 +520,76 @@ export function PresentationWizard({
       metadata: { topic: s.topic, importance: s.importance },
     }));
     await download(serviceSlides as any, presentationTitle, format, {});
+  };
+
+  // Multi-language generation handler
+  const handleMultiLanguageGenerate = async (languages: string[]) => {
+    if (!inputContent.trim()) {
+      toast.error('Please enter content first');
+      return;
+    }
+
+    // Generate for each language using the hook
+    await generateMultiLang(languages, async (langCode: string) => {
+      const lang = SUPPORTED_LANGUAGES.find(l => l.code === langCode);
+      
+      // Build content with language instruction
+      const languageInstruction = langCode === 'en' 
+        ? inputContent 
+        : `Generate this presentation in ${lang?.name || langCode} (${lang?.nativeName || langCode}):\n\n${inputContent}`;
+
+      const request: PresentationRequest = {
+        inputSource,
+        content: languageInstruction,
+        contentType: uploadedFile?.type,
+        collateralType,
+        outputFormat,
+        length,
+        imageSource,
+        imageStyles: selectedImageStyles,
+        generateImages: imageSource !== 'placeholder',
+        includeJourneyMaps,
+        includeInfographics,
+        targetAudience: targetAudience || undefined,
+        voiceProvider,
+        tones: selectedTones,
+        contentEnhancements: selectedEnhancements,
+      };
+
+      const result = await generatePresentation(request);
+
+      if (result?.success) {
+        return { success: true, downloadUrl: `presentation_${langCode}.pptx` };
+      } else {
+        return { success: false, error: `Failed to generate for ${lang?.name || langCode}` };
+      }
+    });
+  };
+
+  // Download specific language version
+  const handleLanguageDownload = async (languageCode: string) => {
+    const lang = SUPPORTED_LANGUAGES.find(l => l.code === languageCode);
+    toast.success(`Downloading ${lang?.name || languageCode} version...`);
+    await handleDownload('pptx');
+  };
+
+  // Layout elements for drag-and-drop editing
+  const [layoutElements, setLayoutElements] = useState<LayoutElement[]>([]);
+
+  // Convert selected slide to layout elements when editing mode changes
+  useEffect(() => {
+    if (editingMode === 'layout' && selectedSlideId) {
+      const slide = slides.find(s => s.id === selectedSlideId);
+      if (slide) {
+        setLayoutElements(slideToLayoutElements(slide));
+      }
+    }
+  }, [editingMode, selectedSlideId, slides]);
+
+  // Update slide from layout elements
+  const handleLayoutElementsChange = (elements: LayoutElement[]) => {
+    setLayoutElements(elements);
+    // Optionally sync back to slide data
   };
 
   const progressPercent = ((currentStep + 1) / WIZARD_STEPS.length) * 100;
@@ -757,79 +935,84 @@ export function PresentationWizard({
               </Card>
             )}
 
-            {/* Step 3: Advanced Settings */}
+            {/* Step 3: Languages - Multi-Language Generation */}
             {currentStep === 3 && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Settings2 className="h-4 w-4" />
-                    Advanced Options
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-xs">Tone & Style</Label>
-                    <MultiSelectDropdown
-                      options={toneOptions.map(tone => ({
-                        id: tone.id,
-                        label: tone.name,
-                        value: tone.id,
-                        description: tone.bestFor.includes(collateralType) 
-                          ? `Good for ${collateralType}` 
-                          : undefined
-                      }))}
-                      selectedValues={selectedTones}
-                      onSelectionChange={(values) => setSelectedTones(values as PresentationTone[])}
-                      placeholder="Select tone..."
-                      searchable
-                    />
-                  </div>
+              <div className="space-y-4">
+                <MultiLanguageGenerator
+                  selectedLanguages={selectedLanguages}
+                  onLanguagesChange={setSelectedLanguages}
+                  primaryLanguage={primaryLanguage}
+                  onPrimaryLanguageChange={setPrimaryLanguage}
+                  onGenerateAll={handleMultiLanguageGenerate}
+                  generationStatuses={languageStatuses}
+                  onDownload={handleLanguageDownload}
+                  isGenerating={isMultiLangGenerating}
+                />
 
-                  <div className="space-y-2">
-                    <Label className="text-xs">Content Enhancements</Label>
-                    <MultiSelectDropdown
-                      options={enhancementOptions.map(e => ({
-                        id: e.id,
-                        label: e.name,
-                        value: e.id,
-                      }))}
-                      selectedValues={selectedEnhancements}
-                      onSelectionChange={(values) => setSelectedEnhancements(values as ContentEnhancement[])}
-                      placeholder="Select enhancements..."
-                      searchable
-                    />
-                  </div>
-
-                  <Separator />
-
-                  <LanguageSelector
-                    selectedLanguages={selectedLanguages}
-                    onLanguagesChange={setSelectedLanguages}
-                    primaryLanguage={primaryLanguage}
-                    onPrimaryLanguageChange={setPrimaryLanguage}
-                    includeVoiceover={includeVoiceover}
-                    onIncludeVoiceoverChange={setIncludeVoiceover}
-                  />
-
-                  <div className="space-y-2">
-                    <Label className="text-xs">Target Audience</Label>
-                    <Input
-                      placeholder="e.g., Healthcare executives"
-                      value={targetAudience}
-                      onChange={(e) => setTargetAudience(e.target.value)}
-                      className="h-8 text-sm"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
-                    <div className="flex items-center gap-2">
-                      <Shield className="h-4 w-4 text-primary" />
-                      <Label className="text-xs">Run Compliance Check</Label>
+                {/* Advanced Tone & Enhancements */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Settings2 className="h-4 w-4" />
+                      Advanced Options
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs">Tone & Style</Label>
+                      <MultiSelectDropdown
+                        options={toneOptions.map(tone => ({
+                          id: tone.id,
+                          label: tone.name,
+                          value: tone.id,
+                          description: tone.bestFor.includes(collateralType) 
+                            ? `Good for ${collateralType}` 
+                            : undefined
+                        }))}
+                        selectedValues={selectedTones}
+                        onSelectionChange={(values) => setSelectedTones(values as PresentationTone[])}
+                        placeholder="Select tone..."
+                        searchable
+                      />
                     </div>
-                    <Switch checked={showComplianceCheck} onCheckedChange={setShowComplianceCheck} />
-                  </div>
-                </CardContent>
-              </Card>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs">Content Enhancements</Label>
+                      <MultiSelectDropdown
+                        options={enhancementOptions.map(e => ({
+                          id: e.id,
+                          label: e.name,
+                          value: e.id,
+                        }))}
+                        selectedValues={selectedEnhancements}
+                        onSelectionChange={(values) => setSelectedEnhancements(values as ContentEnhancement[])}
+                        placeholder="Select enhancements..."
+                        searchable
+                      />
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-2">
+                      <Label className="text-xs">Target Audience</Label>
+                      <Input
+                        placeholder="e.g., Healthcare executives"
+                        value={targetAudience}
+                        onChange={(e) => setTargetAudience(e.target.value)}
+                        className="h-8 text-sm"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                      <div className="flex items-center gap-2">
+                        <Shield className="h-4 w-4 text-primary" />
+                        <Label className="text-xs">Run Compliance Check</Label>
+                      </div>
+                      <Switch checked={showComplianceCheck} onCheckedChange={setShowComplianceCheck} />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             )}
 
             {/* Step 4: Generate */}
@@ -937,8 +1120,30 @@ export function PresentationWizard({
           </h3>
           {slides.length > 0 && (
             <div className="flex items-center gap-2">
+              {/* Editing Mode Toggle */}
+              <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
+                <Button
+                  variant={editingMode === 'preview' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => setEditingMode('preview')}
+                >
+                  <Eye className="h-3 w-3 mr-1" />
+                  Preview
+                </Button>
+                <Button
+                  variant={editingMode === 'layout' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => setEditingMode('layout')}
+                  disabled={!selectedSlideId}
+                >
+                  <Move className="h-3 w-3 mr-1" />
+                  Layout
+                </Button>
+              </div>
               <Badge variant="outline">{slides.length} slides</Badge>
-              <Button variant="ghost" size="sm" onClick={() => { setSlides([]); reset(); }}>
+              <Button variant="ghost" size="sm" onClick={() => { setSlides([]); reset(); resetMultiLang(); }}>
                 <RefreshCw className="h-4 w-4" />
               </Button>
             </div>
@@ -954,26 +1159,110 @@ export function PresentationWizard({
                 <p className="text-xs mt-1">Complete the steps on the left to generate</p>
               </div>
             </div>
+          ) : editingMode === 'layout' && selectedSlideId ? (
+            // Draggable Layout Mode
+            <div className="pr-4">
+              <div className="mb-4 p-3 rounded-lg border bg-muted/30">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">
+                    Editing: {slides.find(s => s.id === selectedSlideId)?.title || 'Slide'}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setEditingMode('preview');
+                      setSelectedSlideId(null);
+                    }}
+                  >
+                    <ArrowLeft className="h-3 w-3 mr-1" />
+                    Back to Preview
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Drag elements to reposition. Use alignment tools for precision.
+                </p>
+              </div>
+              <DraggableSlideLayout
+                elements={layoutElements}
+                onElementsChange={handleLayoutElementsChange}
+                slideSize={{ width: 600, height: 340 }}
+                showGrid
+              />
+            </div>
           ) : (
+            // Standard Preview Mode
             <div className="space-y-4 pr-4">
               {slides.map((slide) => (
-                <SlideCard
+                <div
                   key={slide.id}
-                  slide={slide}
-                  onUpdate={(slideId: string, updates: Partial<PresentationSlide>) => handleSlideUpdate(slideId, updates)}
-                  onAccept={(slideId: string) => handleSlideAccept(slideId)}
-                  onSkip={(slideId: string) => handleSlideSkip(slideId)}
-                  onEnhance={async (slideId: string, type: SlideEnhancementType) => {}}
-                  onRefresh={async (slideId: string) => {}}
-                  onRevert={(slideId: string) => {}}
-                  onRegenerateImage={async (slideId: string) => {}}
-                  onBulletUpdate={(slideId: string, bulletId: string, text: string) => {}}
-                  onBulletAccept={(slideId: string, bulletId: string) => {}}
-                  onBulletSkip={(slideId: string, bulletId: string) => {}}
-                  onBulletEnhance={async (slideId: string, bulletId: string, type: SlideEnhancementType) => {}}
-                  onBulletRefresh={async (slideId: string, bulletId: string) => {}}
-                  onBulletRevert={(slideId: string, bulletId: string) => {}}
-                />
+                  className={cn(
+                    "cursor-pointer transition-all",
+                    selectedSlideId === slide.id && "ring-2 ring-primary ring-offset-2"
+                  )}
+                  onClick={() => setSelectedSlideId(slide.id)}
+                >
+                  <SlideCard
+                    slide={slide}
+                    onUpdate={(slideId: string, updates: Partial<PresentationSlide>) => handleSlideUpdate(slideId, updates)}
+                    onAccept={(slideId: string) => handleSlideAccept(slideId)}
+                    onSkip={(slideId: string) => handleSlideSkip(slideId)}
+                    onEnhance={async (slideId: string, type: SlideEnhancementType) => {
+                      toast.info(`Enhancing slide with ${type}...`);
+                    }}
+                    onRefresh={async (slideId: string) => {
+                      toast.info('Refreshing slide...');
+                    }}
+                    onRevert={(slideId: string) => {
+                      toast.info('Reverting slide...');
+                    }}
+                    onRegenerateImage={async (slideId: string) => {
+                      toast.info('Regenerating image...');
+                    }}
+                    onBulletUpdate={(slideId: string, bulletId: string, text: string) => {
+                      setSlides(prev => prev.map(s => {
+                        if (s.id === slideId && s.content?.bullets) {
+                          return {
+                            ...s,
+                            content: {
+                              ...s.content,
+                              bullets: s.content.bullets.map(b => 
+                                b.id === bulletId ? { ...b, text } : b
+                              )
+                            }
+                          };
+                        }
+                        return s;
+                      }));
+                    }}
+                    onBulletAccept={(slideId: string, bulletId: string) => {
+                      toast.success('Bullet accepted');
+                    }}
+                    onBulletSkip={(slideId: string, bulletId: string) => {
+                      setSlides(prev => prev.map(s => {
+                        if (s.id === slideId && s.content?.bullets) {
+                          return {
+                            ...s,
+                            content: {
+                              ...s.content,
+                              bullets: s.content.bullets.filter(b => b.id !== bulletId)
+                            }
+                          };
+                        }
+                        return s;
+                      }));
+                    }}
+                    onBulletEnhance={async (slideId: string, bulletId: string, type: SlideEnhancementType) => {
+                      toast.info(`Enhancing bullet with ${type}...`);
+                    }}
+                    onBulletRefresh={async (slideId: string, bulletId: string) => {
+                      toast.info('Refreshing bullet...');
+                    }}
+                    onBulletRevert={(slideId: string, bulletId: string) => {
+                      toast.info('Reverting bullet...');
+                    }}
+                  />
+                </div>
               ))}
             </div>
           )}
