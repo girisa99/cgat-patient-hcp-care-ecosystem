@@ -118,6 +118,8 @@ import { AccessibilityToggle } from '@/components/genie-studio/AccessibilityEnha
 import { GenieStudioInfoBanner } from '@/components/genie-studio/GenieStudioInfoBanner';
 // Loading Spinner - Enhanced loading state feedback
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+// Resume Download - Platform documentation
+import { GenieResumeDownload } from '@/components/genie/GenieResumeDownload';
 
 // ========================================
 // EXTRACTED MODULES - Phase 3 Refactoring
@@ -2404,7 +2406,7 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
                 </div>
 
                 {/* Quick Tips */}
-                <div>
+                <div className="space-y-6">
                   <Card className="border-border/50 bg-gradient-to-br from-card/80 to-primary/5 backdrop-blur">
                     <CardContent className="p-6">
                       <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -2426,6 +2428,9 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
                       </div>
                     </CardContent>
                   </Card>
+                  
+                  {/* Resume & Documentation Download */}
+                  <GenieResumeDownload />
                 </div>
               </div>
             </TabsContent>
