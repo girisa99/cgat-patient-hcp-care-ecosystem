@@ -845,138 +845,215 @@ export function PresentationGeneratorPanel({
               </div>
 
               {/* Configuration Row 1 */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Output Format</Label>
-                <Select value={outputFormat} onValueChange={(v) => setOutputFormat(v as OutputFormat)}>
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pptx">PowerPoint</SelectItem>
-                    <SelectItem value="social">Social Media</SelectItem>
-                    <SelectItem value="infographic">Infographic</SelectItem>
-                    <SelectItem value="whitepaper">White Paper</SelectItem>
-                    <SelectItem value="journey-map">Journey Map</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs">Length</Label>
-                <Select value={length} onValueChange={(v) => setLength(v as PresentationLength)}>
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="short">Short (5-8)</SelectItem>
-                    <SelectItem value="standard">Standard (10-15)</SelectItem>
-                    <SelectItem value="long">Long (18-25)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs">Image Source</Label>
-                <Select value={imageSource} onValueChange={(v) => setImageSource(v as ImageSourceType)}>
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ai-generated">AI Generated</SelectItem>
-                    <SelectItem value="stock-upload">Upload Stock</SelectItem>
-                    <SelectItem value="placeholder">Placeholders</SelectItem>
-                    <SelectItem value="mixed">Mixed (AI + Upload)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs">Voice Provider</Label>
-                <Select value={voiceProvider} onValueChange={(v) => setVoiceProvider(v as VoiceProviderType)}>
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {voiceProviders.map(provider => (
-                      <SelectItem key={provider.id} value={provider.id}>
-                        {provider.name}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Output Format & Size</Label>
+                  <Select value={outputFormat} onValueChange={(v) => setOutputFormat(v as OutputFormat)}>
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover z-[9999]">
+                      <SelectItem value="pptx">
+                        <div className="flex flex-col">
+                          <span className="font-medium">PowerPoint</span>
+                          <span className="text-[10px] text-muted-foreground">16:9 (1920×1080)</span>
+                        </div>
                       </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Image Style Selection */}
-            {imageSource !== 'placeholder' && (
-              <div className="space-y-2">
-                <Label className="text-xs font-medium">Image Styles (select multiple)</Label>
-                <div className="flex flex-wrap gap-2">
-                  {imageStyleOptions.map(style => (
-                    <Badge
-                      key={style.id}
-                      variant={selectedImageStyles.includes(style.id) ? 'default' : 'outline'}
-                      className={cn(
-                        'cursor-pointer transition-colors text-xs',
-                        selectedImageStyles.includes(style.id) && 'bg-primary',
-                        style.bestFor.includes(collateralType) && !selectedImageStyles.includes(style.id) && 'border-primary/50'
-                      )}
-                      onClick={() => toggleImageStyle(style.id)}
-                    >
-                      {style.name}
-                      {style.bestFor.includes(collateralType) && (
-                        <Check className="h-3 w-3 ml-1" />
-                      )}
-                    </Badge>
-                  ))}
+                      <SelectItem value="social">
+                        <div className="flex flex-col">
+                          <span className="font-medium">Social Media</span>
+                          <span className="text-[10px] text-muted-foreground">1:1 (1080×1080)</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="linkedin">
+                        <div className="flex flex-col">
+                          <span className="font-medium">LinkedIn</span>
+                          <span className="text-[10px] text-muted-foreground">1.91:1 (1200×627)</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="infographic">
+                        <div className="flex flex-col">
+                          <span className="font-medium">Infographic</span>
+                          <span className="text-[10px] text-muted-foreground">Portrait (800×2000)</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="whitepaper">
+                        <div className="flex flex-col">
+                          <span className="font-medium">White Paper</span>
+                          <span className="text-[10px] text-muted-foreground">A4 (210×297mm)</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="journey-map">
+                        <div className="flex flex-col">
+                          <span className="font-medium">Journey Map</span>
+                          <span className="text-[10px] text-muted-foreground">Wide (1920×900)</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <p className="text-[10px] text-muted-foreground">
-                  ✓ = Recommended for {collateralType}
-                </p>
-              </div>
-            )}
 
-            {/* Additional Options */}
-            <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Length</Label>
+                  <Select value={length} onValueChange={(v) => setLength(v as PresentationLength)}>
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover z-[9999]">
+                      <SelectItem value="short">Short (5-8)</SelectItem>
+                      <SelectItem value="standard">Standard (10-15)</SelectItem>
+                      <SelectItem value="long">Long (18-25)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Image Source</Label>
+                  <Select value={imageSource} onValueChange={(v) => setImageSource(v as ImageSourceType)}>
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover z-[9999]">
+                      <SelectItem value="ai-generated">AI Generated</SelectItem>
+                      <SelectItem value="stock-upload">Upload Stock</SelectItem>
+                      <SelectItem value="placeholder">Placeholders</SelectItem>
+                      <SelectItem value="mixed">Mixed (AI + Upload)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Image Styles - Multi-select Dropdown */}
+              {imageSource !== 'placeholder' && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium flex items-center gap-1">
+                    <Palette className="h-3 w-3" />
+                    Image Styles
+                  </Label>
+                  <MultiSelectDropdown
+                    options={imageStyleOptions.map(style => ({
+                      id: style.id,
+                      label: style.name,
+                      value: style.id,
+                      description: style.bestFor.includes(collateralType) ? `✓ Recommended for ${collateralType}` : undefined
+                    }))}
+                    selectedValues={selectedImageStyles}
+                    onSelectionChange={(values) => setSelectedImageStyles(values as ImageStyleType[])}
+                    placeholder="Select image styles..."
+                    searchable
+                  />
+                </div>
+              )}
+
+              {/* Tone & Style - Multi-select Dropdown */}
               <div className="space-y-1.5">
-                <Label className="text-xs">Target Audience</Label>
-                <Input
-                  placeholder="e.g., Healthcare execs, Investors"
-                  value={targetAudience}
-                  onChange={(e) => setTargetAudience(e.target.value)}
-                  className="h-8 text-xs"
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-medium">Tone & Style</Label>
+                  {contentRecommendation && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-5 text-[10px] px-2"
+                      onClick={applyRecommendedTones}
+                    >
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      Apply AI Recommended
+                    </Button>
+                  )}
+                </div>
+                <MultiSelectDropdown
+                  options={toneOptions.map(tone => {
+                    const isRecommended = contentRecommendation?.tones.find(t => t.tone === tone.id && t.score > 0.5);
+                    return {
+                      id: tone.id,
+                      label: tone.name,
+                      value: tone.id,
+                      description: isRecommended 
+                        ? `✓ Recommended (${Math.round((isRecommended.score || 0) * 100)}%)` 
+                        : tone.bestFor.includes(collateralType) ? `Good for ${collateralType}` : undefined
+                    };
+                  })}
+                  selectedValues={selectedTones}
+                  onSelectionChange={(values) => setSelectedTones(values as PresentationTone[])}
+                  placeholder="Select tone & style..."
+                  searchable
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Visual Style</Label>
-                <Select value={imageStyle} onValueChange={setImageStyle}>
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="professional">Professional</SelectItem>
-                    <SelectItem value="creative">Creative</SelectItem>
-                    <SelectItem value="minimal">Minimal</SelectItem>
-                    <SelectItem value="infographic">Infographic</SelectItem>
-                    <SelectItem value="healthcare">Healthcare</SelectItem>
-                    <SelectItem value="tech">Tech</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
 
-            {/* Toggle Options */}
-            <div className="flex flex-wrap gap-4">
-              <div className="flex items-center gap-2">
-                <Switch checked={includeInfographics} onCheckedChange={setIncludeInfographics} />
-                <Label className="text-xs">Include Infographics</Label>
+              {/* Content Enhancements - Multi-select Dropdown */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-medium">Content Enhancements</Label>
+                  {contentRecommendation && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-5 text-[10px] px-2"
+                      onClick={applyRecommendedEnhancements}
+                    >
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      Apply AI Recommended
+                    </Button>
+                  )}
+                </div>
+                <MultiSelectDropdown
+                  options={enhancementOptions.map(enhancement => {
+                    const isRecommended = contentRecommendation?.enhancements.find(e => e.type === enhancement.id && e.score > 0.5);
+                    return {
+                      id: enhancement.id,
+                      label: enhancement.name,
+                      value: enhancement.id,
+                      description: isRecommended 
+                        ? `✓ Recommended (${Math.round((isRecommended.score || 0) * 100)}%)`
+                        : undefined
+                    };
+                  })}
+                  selectedValues={selectedEnhancements}
+                  onSelectionChange={(values) => setSelectedEnhancements(values as ContentEnhancement[])}
+                  placeholder="Select content enhancements..."
+                  searchable
+                />
               </div>
-              <div className="flex items-center gap-2">
-                <Switch checked={includeJourneyMaps} onCheckedChange={setIncludeJourneyMaps} />
-                <Label className="text-xs">Journey Maps</Label>
+
+              {/* Additional Options Row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Target Audience</Label>
+                  <Input
+                    placeholder="e.g., Healthcare execs, Investors"
+                    value={targetAudience}
+                    onChange={(e) => setTargetAudience(e.target.value)}
+                    className="h-8 text-xs"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Voice Provider</Label>
+                  <Select value={voiceProvider} onValueChange={(v) => setVoiceProvider(v as VoiceProviderType)}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover z-[9999]">
+                      {voiceProviders.map(provider => (
+                        <SelectItem key={provider.id} value={provider.id}>
+                          {provider.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
+
+              {/* Toggle Options */}
+              <div className="flex flex-wrap gap-4">
+                <div className="flex items-center gap-2">
+                  <Switch checked={includeInfographics} onCheckedChange={setIncludeInfographics} />
+                  <Label className="text-xs">Include Infographics</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={includeJourneyMaps} onCheckedChange={setIncludeJourneyMaps} />
+                  <Label className="text-xs">Journey Maps</Label>
+                </div>
+              </div>
             </div>
 
             {/* Slide Count Estimate */}
@@ -1019,96 +1096,6 @@ export function PresentationGeneratorPanel({
               </Card>
             )}
 
-            {/* Tone & Style Selection */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs font-medium">Tone & Style (select multiple)</Label>
-                {contentRecommendation && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-6 text-[10px]"
-                    onClick={applyRecommendedTones}
-                  >
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    Apply Recommended
-                  </Button>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {toneOptions.map(tone => {
-                  const isRecommended = contentRecommendation?.tones.find(t => t.tone === tone.id && t.score > 0.5);
-                  return (
-                    <Badge
-                      key={tone.id}
-                      variant={selectedTones.includes(tone.id) ? 'default' : 'outline'}
-                      className={cn(
-                        'cursor-pointer transition-colors text-xs',
-                        selectedTones.includes(tone.id) && 'bg-primary',
-                        isRecommended && !selectedTones.includes(tone.id) && 'border-primary/50'
-                      )}
-                      onClick={() => toggleTone(tone.id)}
-                    >
-                      {tone.name}
-                      {isRecommended && (
-                        <span className="ml-1 text-[8px]">({Math.round((isRecommended.score || 0) * 100)}%)</span>
-                      )}
-                    </Badge>
-                  );
-                })}
-              </div>
-              {contentRecommendation?.audienceInsight && (
-                <p className="text-[10px] text-muted-foreground">
-                  🎯 Audience: {contentRecommendation.audienceInsight}
-                </p>
-              )}
-            </div>
-
-            {/* Content Enhancements */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs font-medium">Content Enhancements</Label>
-                {contentRecommendation && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-6 text-[10px]"
-                    onClick={applyRecommendedEnhancements}
-                  >
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    Apply Recommended
-                  </Button>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {enhancementOptions.map(enhancement => {
-                  const isRecommended = contentRecommendation?.enhancements.find(e => e.type === enhancement.id && e.score > 0.5);
-                  return (
-                    <Badge
-                      key={enhancement.id}
-                      variant={selectedEnhancements.includes(enhancement.id) ? 'default' : 'outline'}
-                      className={cn(
-                        'cursor-pointer transition-colors text-xs',
-                        selectedEnhancements.includes(enhancement.id) && 'bg-primary',
-                        isRecommended && !selectedEnhancements.includes(enhancement.id) && 'border-primary/50'
-                      )}
-                      onClick={() => toggleEnhancement(enhancement.id)}
-                    >
-                      {enhancement.name}
-                      {isRecommended && (
-                        <span className="ml-1 text-[8px]">({Math.round((isRecommended.score || 0) * 100)}%)</span>
-                      )}
-                    </Badge>
-                  );
-                })}
-              </div>
-              {selectedEnhancements.length > 0 && (
-                <p className="text-[10px] text-muted-foreground">
-                  Selected: {selectedEnhancements.join(', ')}
-                </p>
-              )}
-            </div>
-
             {/* Smart Recommendations Panel */}
             {showRecommendations && contentRecommendation && contentRecommendation.keyTopics.length > 0 && (
               <Card className="border-secondary/30 bg-secondary/5">
@@ -1142,19 +1129,10 @@ export function PresentationGeneratorPanel({
               </Card>
             )}
 
-            {/* Multi-Language Generation */}
-            <LanguageSelector
-              selectedLanguages={selectedLanguages}
-              onLanguagesChange={setSelectedLanguages}
-              primaryLanguage={primaryLanguage}
-              onPrimaryLanguageChange={setPrimaryLanguage}
-              includeVoiceover={includeVoiceover}
-              onIncludeVoiceoverChange={setIncludeVoiceover}
-            />
-
             {/* Compliance Check Toggle */}
             <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
               <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-primary" />
                 <Label className="text-sm font-medium cursor-pointer" htmlFor="compliance-toggle">
                   Run Compliance Check
                 </Label>
@@ -1167,10 +1145,13 @@ export function PresentationGeneratorPanel({
               />
             </div>
 
-            {/* Compliance Checker Panel */}
-            {showComplianceCheck && slides.length > 0 && (
+            {/* Compliance Checker Panel - Show even without slides if toggled on */}
+            {showComplianceCheck && (
               <ComplianceChecker
-                content={slides.map(s => `${s.title}\n${s.content.bullets?.map(b => b.text).join('\n') || ''}`).join('\n\n')}
+                content={slides.length > 0 
+                  ? slides.map(s => `${s.title}\n${s.content.bullets?.map(b => b.text).join('\n') || ''}`).join('\n\n')
+                  : inputContent || 'No content to check yet. Enter content above to run compliance check.'
+                }
                 contentType="document"
                 industry="healthcare"
               />
