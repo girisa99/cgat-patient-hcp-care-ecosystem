@@ -200,7 +200,7 @@ function SlideComparisonCard({
           <div className="p-2 bg-card rounded border text-xs">
             <div className="font-medium truncate">{primarySlide.title}</div>
             <div className="text-muted-foreground line-clamp-2 mt-1">
-              {primarySlide.bullets?.[0] || primarySlide.content || '...'}
+              {primarySlide.content?.bullets?.[0] || '...'}
             </div>
           </div>
         </div>
@@ -215,11 +215,11 @@ function SlideComparisonCard({
                 {lang?.name}
               </div>
               <div className="p-2 bg-card rounded border text-xs">
-                {slide ? (
+              {slide ? (
                   <>
                     <div className="font-medium truncate">{slide.title}</div>
                     <div className="text-muted-foreground line-clamp-2 mt-1">
-                      {slide.bullets?.[0] || slide.content || '...'}
+                      {slide.content?.bullets?.[0] || '...'}
                     </div>
                   </>
                 ) : (

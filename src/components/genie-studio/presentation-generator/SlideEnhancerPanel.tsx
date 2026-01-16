@@ -188,14 +188,20 @@ export function SlideEnhancerPanel({
   const startEditing = (slideIndex: number) => {
     const slide = slides[slideIndex];
     setEditingSlide(slideIndex);
-    setEditContent(slide.bullets?.join('\n') || slide.content || '');
+    // Access bullets from slide.content.bullets
+    const bulletText = slide.content?.bullets?.join('\n') || '';
+    setEditContent(bulletText);
   };
 
   const saveEdit = () => {
     if (editingSlide === null) return;
     
     const bullets = editContent.split('\n').filter(b => b.trim());
-    onSlideUpdate(editingSlide, { bullets });
+    // Update the content object with new bullets
+    const currentSlide = slides[editingSlide];
+    onSlideUpdate(editingSlide, { 
+      content: { ...currentSlide.content, bullets } 
+    });
     setEditingSlide(null);
     setEditContent('');
     toast.success('Slide updated!');
@@ -483,12 +489,12 @@ export function SlideEnhancerPanel({
                       />
                     ) : (
                       <div className="text-xs text-muted-foreground">
-                        {slide.bullets?.slice(0, 2).map((b, i) => (
+                        {slide.content?.bullets?.slice(0, 2).map((b, i) => (
                           <div key={i} className="truncate">• {b}</div>
                         ))}
-                        {(slide.bullets?.length || 0) > 2 && (
+                        {(slide.content?.bullets?.length || 0) > 2 && (
                           <div className="text-[10px] text-muted-foreground/70">
-                            +{(slide.bullets?.length || 0) - 2} more
+                            +{(slide.content?.bullets?.length || 0) - 2} more
                           </div>
                         )}
                       </div>

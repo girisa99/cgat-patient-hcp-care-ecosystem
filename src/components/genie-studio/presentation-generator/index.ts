@@ -8,6 +8,8 @@
  * - Table & chart editing
  * - Multi-language parallel generation
  * - Drag-and-drop layout editing
+ * - Agent-based generation with real-time streaming
+ * - Version comparison and enhancement
  */
 
 export * from './types';
@@ -31,3 +33,12 @@ export { MultiLanguageGenerator, useMultiLanguageGeneration, SUPPORTED_LANGUAGES
 export type { LanguageConfig, LanguageGenerationStatus } from './MultiLanguageGenerator';
 export { DraggableSlideLayout } from './DraggableSlideLayout';
 export type { LayoutElement } from './DraggableSlideLayout';
+
+// Agent-based multi-language generation components
+export { LanguageModelSelector } from './LanguageModelSelector';
+export { LanguageConfigPopup } from './LanguageConfigPopup';
+export { GenerationSummaryPanel } from './GenerationSummaryPanel';
+export { VersionComparisonPanel } from './VersionComparisonPanel';
+export { SlideEnhancerPanel } from './SlideEnhancerPanel';
+export type { SlideEnhancementType } from './SlideEnhancerPanel';
+export { RealTimeSlideStreamer } from './RealTimeSlideStreamer';
