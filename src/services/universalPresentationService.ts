@@ -123,6 +123,11 @@ export interface PresentationRequest {
   
   // Content enhancements
   contentEnhancements?: ContentEnhancement[];
+  
+  // Multi-language support
+  languages?: string[]; // Array of language codes for simultaneous generation
+  primaryLanguage?: string; // Source/primary language
+  generateVoiceoversForAll?: boolean; // Generate TTS for all languages
 }
 
 export interface GeneratedSlide {
