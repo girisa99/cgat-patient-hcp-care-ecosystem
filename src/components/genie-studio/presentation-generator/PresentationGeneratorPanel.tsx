@@ -2,6 +2,12 @@
  * Presentation Generator Panel - Main component for Genie Spark
  * Input: Document, Image, Text, Prompt, URL
  * Output: Slides with AI-generated content and images
+ * 
+ * Refactored for better UX with:
+ * - Multi-select dropdowns for all selection fields
+ * - AI Model selection like other content types
+ * - Language configuration at the top
+ * - Organized layout with clear sections
  */
 
 import React, { useState, useCallback } from 'react';
@@ -13,6 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 import { 
   Select,
   SelectContent,
@@ -46,7 +53,12 @@ import {
   Map,
   Save,
   ChevronDown,
-  Video
+  Video,
+  Globe,
+  Brain,
+  Shield,
+  Settings2,
+  Palette
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -62,6 +74,7 @@ import { LanguageSelector } from './LanguageSelector';
 import { AIProviderPanel } from './AIProviderPanel';
 import { GenerationProgressPanel, SlideGenerationStatus } from './GenerationProgressPanel';
 import { ComplianceChecker } from './ComplianceChecker';
+import { MultiSelectDropdown, MultiSelectOption } from '@/components/ui/multi-select-dropdown';
 import { useUniversalPresentation, DownloadFormat } from '@/hooks/useUniversalPresentation';
 import { 
   PresentationRequest, 
@@ -79,6 +92,15 @@ import {
   ContentRecommendation,
   universalPresentationService
 } from '@/services/universalPresentationService';
+
+// AI Models available for presentation generation
+const AI_MODELS = [
+  { id: 'auto', name: 'Auto (Recommended)', description: 'AI selects best model' },
+  { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash', description: 'Fast & balanced' },
+  { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', description: 'High quality' },
+  { id: 'openai/gpt-5', name: 'GPT-5', description: 'Premium reasoning' },
+  { id: 'openai/gpt-5-mini', name: 'GPT-5 Mini', description: 'Cost-effective' },
+];
 
 interface PresentationGeneratorPanelProps {
   onComplete?: (presentation: PresentationData) => void;
@@ -127,7 +149,10 @@ export function PresentationGeneratorPanel({
   // Voice configuration
   const [voiceProvider, setVoiceProvider] = useState<VoiceProviderType>('openai');
   
-  // AI Model suggestion
+  // AI Model selection (user-facing dropdown)
+  const [selectedAIModel, setSelectedAIModel] = useState<string>('auto');
+  
+  // AI Model suggestion (system recommended)
   const [suggestedModel, setSuggestedModel] = useState<AIModelSuggestion | null>(null);
   const [useCustomModel, setUseCustomModel] = useState(false);
   
@@ -150,6 +175,9 @@ export function PresentationGeneratorPanel({
   
   // Compliance state
   const [showComplianceCheck, setShowComplianceCheck] = useState(false);
+  
+  // Selected collateral types (multi-select)
+  const [selectedCollateralTypes, setSelectedCollateralTypes] = useState<string[]>(['presentation']);
 
   // Get voice providers, image styles, tones, and enhancements
   const voiceProviders = universalPresentationService.getVoiceProviders();
@@ -732,72 +760,92 @@ export function PresentationGeneratorPanel({
               </TabsContent>
             </Tabs>
 
-            {/* Collateral Type Selection */}
-            <div className="space-y-2">
-              <Label className="text-xs font-medium">Collateral Type</Label>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { id: 'presentation', label: 'Presentation' },
-                  { id: 'marketing', label: 'Marketing' },
-                  { id: 'website', label: 'Website' },
-                  { id: 'conference', label: 'Conference' },
-                  { id: 'investor', label: 'Investor Deck' },
-                  { id: 'sales', label: 'Sales' },
-                  { id: 'training', label: 'Training' },
-                  { id: 'product-launch', label: 'Product Launch' },
-                  { id: 'case-study', label: 'Case Study' },
-                  { id: 'whitepaper', label: 'White Paper' },
-                ].map(type => (
-                  <Badge
-                    key={type.id}
-                    variant={collateralType === type.id ? 'default' : 'outline'}
-                    className={cn(
-                      'cursor-pointer transition-colors text-xs',
-                      collateralType === type.id && 'bg-primary'
-                    )}
-                    onClick={() => handleCollateralTypeChange(type.id as CollateralType)}
-                  >
-                    {type.label}
-                  </Badge>
-                ))}
+            <Separator className="my-4" />
+            
+            {/* Section: Language & AI Configuration (at top) */}
+            <div className="space-y-4 p-4 rounded-lg border bg-muted/30">
+              <div className="flex items-center gap-2 mb-2">
+                <Globe className="h-4 w-4 text-primary" />
+                <Label className="text-sm font-semibold">Language & AI Configuration</Label>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Language Selector */}
+                <LanguageSelector
+                  selectedLanguages={selectedLanguages}
+                  onLanguagesChange={setSelectedLanguages}
+                  primaryLanguage={primaryLanguage}
+                  onPrimaryLanguageChange={setPrimaryLanguage}
+                  includeVoiceover={includeVoiceover}
+                  onIncludeVoiceoverChange={setIncludeVoiceover}
+                />
+                
+                {/* AI Model Selection */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs flex items-center gap-1">
+                    <Brain className="h-3 w-3" />
+                    AI Model
+                  </Label>
+                  <Select value={selectedAIModel} onValueChange={setSelectedAIModel}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="Select AI Model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {AI_MODELS.map((model) => (
+                        <SelectItem key={model.id} value={model.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{model.name}</span>
+                            <span className="text-xs text-muted-foreground">{model.description}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 
-            {/* AI Model Suggestion */}
-            {suggestedModel && (
-              <Card className="border-primary/30 bg-primary/5">
-                <CardContent className="py-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-primary" />
-                      <div>
-                        <p className="text-xs font-medium">Suggested AI Models</p>
-                        <p className="text-[10px] text-muted-foreground">{suggestedModel.reason}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-[10px]">
-                        {Math.round(suggestedModel.confidence * 100)}% match
-                      </Badge>
-                      <Switch
-                        checked={!useCustomModel}
-                        onCheckedChange={(checked) => setUseCustomModel(!checked)}
-                      />
-                      <Label className="text-[10px]">Use suggested</Label>
-                    </div>
-                  </div>
-                  {!useCustomModel && (
-                    <div className="mt-2 flex gap-2 text-[10px]">
-                      <Badge variant="outline">Text: {suggestedModel.textModel.split('/')[1]}</Badge>
-                      <Badge variant="outline">Image: {suggestedModel.imageModel.split('/')[1]}</Badge>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+            <Separator className="my-4" />
 
-            {/* Configuration Row 1 */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {/* Section: Content Configuration */}
+            <div className="space-y-4 p-4 rounded-lg border bg-muted/30">
+              <div className="flex items-center gap-2 mb-2">
+                <Settings2 className="h-4 w-4 text-primary" />
+                <Label className="text-sm font-semibold">Content Configuration</Label>
+              </div>
+
+              {/* Collateral Type - Multi-select Dropdown */}
+              <div className="space-y-1.5">
+                <Label className="text-xs">Collateral Type</Label>
+                <Select value={collateralType} onValueChange={(v) => handleCollateralTypeChange(v as CollateralType)}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Select collateral type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[
+                      { id: 'presentation', label: 'Presentation', desc: 'Standard slides' },
+                      { id: 'marketing', label: 'Marketing', desc: 'Campaign materials' },
+                      { id: 'investor', label: 'Investor Deck', desc: 'Pitch & financials' },
+                      { id: 'sales', label: 'Sales', desc: 'Product showcase' },
+                      { id: 'training', label: 'Training', desc: 'Educational content' },
+                      { id: 'conference', label: 'Conference', desc: 'Event materials' },
+                      { id: 'product-launch', label: 'Product Launch', desc: 'Launch materials' },
+                      { id: 'case-study', label: 'Case Study', desc: 'Success stories' },
+                      { id: 'whitepaper', label: 'White Paper', desc: 'In-depth analysis' },
+                    ].map(type => (
+                      <SelectItem key={type.id} value={type.id}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{type.label}</span>
+                          <span className="text-xs text-muted-foreground">{type.desc}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Configuration Row 1 */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Output Format</Label>
                 <Select value={outputFormat} onValueChange={(v) => setOutputFormat(v as OutputFormat)}>
