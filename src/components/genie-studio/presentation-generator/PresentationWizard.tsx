@@ -88,6 +88,7 @@ import { MultiLanguageGenerator, useMultiLanguageGeneration, SUPPORTED_LANGUAGES
 import { TableEditor, ChartEditor } from './TableChartEditor';
 import { DraggableSlideLayout, LayoutElement } from './DraggableSlideLayout';
 import { useUniversalPresentation, DownloadFormat } from '@/hooks/useUniversalPresentation';
+import { InlineTrainAIFeedback } from '../InlineTrainAIFeedback';
 import { 
   PresentationRequest,
   InputSource,
@@ -1325,6 +1326,34 @@ export function PresentationWizard({
                   />
                 </div>
               ))}
+              
+              {/* Overall Presentation Feedback */}
+              {slides.length > 0 && (
+                <Card className="mt-6 p-4 bg-muted/30">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <h4 className="text-sm font-medium">Rate this presentation</h4>
+                      <p className="text-xs text-muted-foreground">Help improve Genie Deck AI</p>
+                    </div>
+                    <InlineTrainAIFeedback
+                      data={{
+                        context: 'presentation_complete',
+                        product: 'deck',
+                        contentId: presentationTitle || 'presentation',
+                        originalContent: slides.map(s => s.title).join(', '),
+                        metadata: {
+                          slideCount: slides.length,
+                          template: selectedTemplate?.name,
+                          model: selectedAIModel,
+                          languages: selectedLanguages
+                        }
+                      }}
+                      variant="compact"
+                      showTextFeedback={true}
+                    />
+                  </div>
+                </Card>
+              )}
             </div>
           )}
         </ScrollArea>
