@@ -52,6 +52,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { toast } from 'sonner';
 import { useRalphWiggumGlobal } from '@/contexts/RalphWiggumContext';
+import { useLabelStudioBackground } from '@/services/labelStudioBackgroundService';
 
 // Import centralized product definitions - SINGLE SOURCE OF TRUTH
 import { 
@@ -744,7 +745,11 @@ export const AskGenie: React.FC<AskGenieProps> = ({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   
   const { generateResponse } = useUniversalAI();
+  const { recordEvent, getHints, getSuggestions } = useLabelStudioBackground();
   const productContext = PRODUCT_CONTEXTS[product];
+  
+  // State for inline hints from Label Studio
+  const [inlineHints, setInlineHints] = useState<Array<{ id: string; type: string; message: string; confidence: number; dismissable: boolean }>>([]);
   
   // Get Ralph Wiggum context to report when Ask Genie is open
   const { setActiveOverlay, isEnabled: isRalphEnabled, openPanel: openRalphPanel, isPanelOpen: isRalphPanelOpen } = useRalphWiggumGlobal();
@@ -817,6 +822,29 @@ export const AskGenie: React.FC<AskGenieProps> = ({
 
     return () => clearInterval(checkInterval);
   }, [isOpen, lastActivityTime, product]); // Removed hasOfferedHelp and messages.length from deps
+
+  // Fetch inline hints from Label Studio background service
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const fetchHints = async () => {
+      try {
+        const hints = await getHints(product === 'studio' ? 'mind' : product, {
+          currentTab,
+          sessionData,
+          subscriptionTier
+        });
+        if (hints && hints.length > 0) {
+          setInlineHints(hints);
+        }
+      } catch (err) {
+        // Silently fail - this is background functionality
+        console.debug('[AskGenie] Hints fetch failed silently');
+      }
+    };
+    
+    fetchHints();
+  }, [isOpen, product, currentTab, getHints]);
 
   // Track activity - only update when chat is opened, not on every input change
   const isOpenRef = useRef(isOpen);
@@ -948,6 +976,18 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
       if (diagram) {
         setShowDiagram(diagram);
       }
+      
+      // Record training event for ML improvement (invisible to user)
+      recordEvent({
+        eventType: 'script_enhancement_accepted',
+        context: {
+          product: product === 'studio' ? 'mind' : product,
+          contentType: 'conversation',
+          originalValue: text,
+          selectedValue: responseContent.slice(0, 200),
+          userAction: 'accept'
+        }
+      });
     } catch (error) {
       console.error('Ask Genie error:', error);
       toast.error('Oops! Something went wrong. Let me try again...');
@@ -964,7 +1004,7 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
     } finally {
       setIsLoading(false);
     }
-  }, [input, isLoading, product, productContext, currentTab, sessionData, subscriptionTier, generateResponse]);
+  }, [input, isLoading, product, productContext, currentTab, sessionData, subscriptionTier, generateResponse, recordEvent]);
 
   const handleClose = useCallback(() => {
     setIsOpen(false);
