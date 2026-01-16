@@ -1,30 +1,33 @@
 # Genie Studio & Recording Studio: Complete Scenario Map
 
-> **Version:** 4.1  
-> **Last Updated:** 2026-01-15  
-> **Total Scenarios:** 305 (Categories A-AF across P0-P5 phases)  
-> **Phase Distribution:** P0 (35), P1 (32), P2 (118), P3 (58), P4 (50), P5 (28)  
-> **Implementation:** ✅ 185 Complete (61%) | 🔶 0 Partial | ⏳ 120 Planned (39%)  
-> **Status:** ✅ P0-P2 COMPLETE - Ready for P3 Planning
+> **Version:** 5.0  
+> **Last Updated:** 2026-01-16  
+> **Total Scenarios:** 403 (Categories A-AG across P0-P5 phases)  
+> **Phase Distribution:** P0 (35), P1 (32), P2 (118), P3 (140), P4 (50), P5 (28)  
+> **Implementation:** ✅ 217 Complete (54%) | 🔶 0 Partial | ⏳ 186 Planned (46%)  
+> **Status:** ✅ P0-P2 COMPLETE | 🔄 P3 IN PROGRESS (32/140 = 23%)
 
 ---
 
 ## Executive Summary
 
-This document catalogs all identified user journeys and scenarios for the Genie Studio and Recording Studio integration. It covers the complete production pipeline from imagination to final output, including edge cases, error recovery, bidirectional Vibe ↔ Mind flows, advanced AI capabilities, market-driven feature priorities, agent assignments, API integrations, session management for live productions, P2 AI agents, guided experiences, **advanced editing scenarios**, and automation opportunities.
+This document catalogs all identified user journeys and scenarios for the Genie Studio and Recording Studio integration. It covers the complete production pipeline from imagination to final output, including edge cases, error recovery, bidirectional Vibe ↔ Mind flows, advanced AI capabilities, market-driven feature priorities, agent assignments, API integrations, session management for live productions, P2 AI agents, guided experiences, **advanced editing scenarios**, **Label Studio ML training**, and automation opportunities.
 
-### P0-P2 CLOSEOUT STATUS: ✅ COMPLETE (2026-01-15)
+### CURRENT STATUS: P3 IN PROGRESS (2026-01-16)
 
-All P0-P2 scenarios have been implemented and tested. Documentation updated to reflect current state including **16 new editing scenarios**.
+P0-P2 complete. P3 has 32/140 scenarios implemented including:
+- **Priority 1 Quick Wins (5/5)**: Smart Thumbnails, AI Captions, Hashtags, Accessibility, Brand Guidelines
+- **Label Studio Integration (10/10)**: Universal Provider, Background Service, Product Hooks, Edge Functions
+- **Original P3 (17/17)**: Legal Review, Bulk Ops, Analytics, Template Marketplace, etc.
 
-### Implementation Overview (Updated 2026-01-15)
+### Implementation Overview (Updated 2026-01-16)
 
 | Status | Count | Percentage | Description |
 |--------|-------|------------|-------------|
-| ✅ **Implemented** | 185 | 61% | Fully functional in codebase |
+| ✅ **Implemented** | 217 | 54% | Fully functional in codebase |
 | 🔶 **Partial** | 0 | 0% | All partial items completed |
-| ⏳ **Planned** | 120 | 39% | P3-P5 roadmap |
-| **Total** | **305** | **100%** | All scenarios across P0-P5 phases |
+| ⏳ **Planned** | 186 | 46% | P3 remainder + P4-P5 roadmap |
+| **Total** | **403** | **100%** | All scenarios across P0-P5 phases |
 
 ### Phase Distribution Summary
 
@@ -32,8 +35,8 @@ All P0-P2 scenarios have been implemented and tested. Documentation updated to r
 |-------|-----------|-------|-------------|--------|
 | **P0** | 1-10, 61-70, 111-120, 141-150 | 35 | 35 (100%) | ✅ **COMPLETE** |
 | **P1** | 11-16, 21-24, 71-75, 81-90, 116-120, 151-155 | 32 | 32 (100%) | ✅ **COMPLETE** |
-| **P2** | 17-32, 76-80, 101-110, 121-125, 156-225, **297-312** | 118 | 118 (100%) | ✅ **COMPLETE** |
-| **P3** | 33-46, 91-100, 126-135, 226-237 | 58 | 0 (0%) | ⏳ Planned |
+| **P2** | 17-32, 76-80, 101-110, 121-125, 156-225, 297-312 | 118 | 118 (100%) | ✅ **COMPLETE** |
+| **P3** | 33-46, 91-100, 126-135, 226-237, **313-362** | 140 | 32 (23%) | 🔄 In Progress |
 | **P4** | 47-60, 136-140, 238-268 | 50 | 0 (0%) | ⏳ Planned |
 | **P5** | Enterprise (SSO, HIPAA, White-label, 269-296) | 28 | 0 (0%) | ⏳ Planned |
 
@@ -1655,8 +1658,27 @@ Each phase has:
 
 ---
 
+## NEW: Category AG - Label Studio ML Integration (Scenarios 313-322)
+
+**Added: 2026-01-16** | **Priority: P3** | **Status: ✅ 100% COMPLETE**
+
+| # | Scenario Name | Component | Process | Output | Status |
+|---|---------------|-----------|---------|--------|--------|
+| 313 | **LS Universal Provider** | LSUniversalProvider.tsx | App-wide context for LS | Training data capture | ✅ Complete |
+| 314 | **LS Background Service** | labelStudioBackgroundService.ts | Queue events → batch flush | Training events | ✅ Complete |
+| 315 | **LS Spark Integration** | useLSSparkIntegration | Capture content generation | ML training data | ✅ Complete |
+| 316 | **LS Vibe Recording** | useLSVibeIntegration | Capture recording frames | Video quality training | ✅ Complete |
+| 317 | **LS TTS Training** | useLSTTSIntegration | Voice quality capture | Voice clone training | ✅ Complete |
+| 318 | **LS Document Processing** | useLSDocumentProcessing | OCR accuracy capture | Extraction training | ✅ Complete |
+| 319 | **LS Ecosystem Widget** | LSEcosystemWidget.tsx | Status display | Training visibility | ✅ Complete |
+| 320 | **LS Inline Hints** | InlineContentHint.tsx | Suggestion display | User feedback | ✅ Complete |
+| 321 | **LS Edge Connector** | label-studio-connector | API integration | External LS sync | ✅ Complete |
+| 322 | **LS Ask Genie Training** | useLSAskGenieIntegration | Response quality | AI training | ✅ Complete |
+
+---
+
 *Document maintained by Genie Studio Development Team*  
-*Total Scenarios: 289 | Phase Distribution: P0(35), P1(32), P2(102), P3(58), P4(50), P5(28)*  
-*Implementation: 165 Complete (57%) | 0 Partial (0%) | 124 Planned (43%)*  
+*Total Scenarios: 403 | Phase Distribution: P0(35), P1(32), P2(118), P3(140), P4(50), P5(28)*  
+*Implementation: 217 Complete (54%) | 0 Partial (0%) | 186 Planned (46%)*  
 *Infrastructure: 140+ Edge Functions | 280+ Hooks | 180+ DB Tables | 23 Mobile Components | 15+ AI Agents*  
-*See: COMPREHENSIVE_177_SCENARIO_PHASE_REVIEW.md for detailed phase mapping*
+*Source of Truth: src/genie-studio/governance/UnifiedMetrics.ts*
