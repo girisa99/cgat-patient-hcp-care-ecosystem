@@ -24,7 +24,8 @@ import {
   FileSearch,
   GitBranch,
   Sparkles,
-  Wrench
+  Wrench,
+  Presentation
 } from "lucide-react";
 
 export const navItems = [
@@ -52,6 +53,11 @@ export const navItems = [
     title: "Genie Studio",
     url: "/genie-studio",
     icon: Sparkles,
+  },
+  {
+    title: "Genie Deck",
+    url: "/genie-deck",
+    icon: Presentation,
   },
   {
     title: "Content Tools",
@@ -152,11 +158,6 @@ export const navItems = [
     icon: BarChart3,
   },
   // ARCHITECTURE & DIAGRAMS SECTION
-  {
-    title: "Genie Deck",
-    url: "/genie-deck",
-    icon: Layers,
-  },
   {
     title: "Presentations",
     url: "/presentations",

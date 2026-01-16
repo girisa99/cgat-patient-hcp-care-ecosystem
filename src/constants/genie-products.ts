@@ -175,9 +175,9 @@ export const GENIE_PRODUCTS: Record<GenieProduct, GenieProductInfo> = {
     tagline: 'Ideas to Impact',
     description: 'Transform your ideas into stunning presentations with AI-powered slide generation, multi-language support, and smart visual design.',
     emoji: '📊',
-    color: 'from-cyan-500 to-teal-500',
-    bgColor: 'bg-cyan-50 dark:bg-cyan-950/20',
-    borderColor: 'border-cyan-200 dark:border-cyan-800',
+    color: 'from-purple-500 to-violet-500',
+    bgColor: 'bg-purple-50 dark:bg-purple-950/20',
+    borderColor: 'border-purple-200 dark:border-purple-800',
     features: [
       'AI slide generation',
       'Multi-language export',
