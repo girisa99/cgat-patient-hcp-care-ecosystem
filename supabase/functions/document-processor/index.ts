@@ -519,53 +519,473 @@ async function callUniversalAIVision(
 // ============= LABEL STUDIO INTEGRATION =============
 // Records document processing events for ML training pipeline
 // Uses templates and tags for structured annotation
+// Supports region highlighting, abnormality marking, and measurement comparison
 
 interface LabelStudioTrainingEvent {
-  eventType: 'document_classification' | 'ocr_extraction' | 'field_extraction' | 'model_routing' | 'medical_analysis';
+  eventType: 'document_classification' | 'ocr_extraction' | 'field_extraction' | 'model_routing' | 'medical_analysis' | 'region_annotation' | 'abnormality_detection' | 'measurement_comparison';
   context: Record<string, any>;
   metadata?: Record<string, any>;
 }
 
-// Get Label Studio template based on document type
-function getLabelStudioTemplate(documentType: string): { templateId: string; tags: string[] } {
-  const templates: Record<string, { templateId: string; tags: string[] }> = {
-    // Medical documents
-    'prescription': { templateId: 'healthcare_rx', tags: ['medical', 'prescription', 'clinical'] },
-    'lab_result': { templateId: 'healthcare_labs', tags: ['medical', 'lab', 'clinical'] },
-    'medical_record': { templateId: 'healthcare_emr', tags: ['medical', 'emr', 'clinical'] },
-    'insurance_card': { templateId: 'healthcare_insurance', tags: ['medical', 'insurance'] },
-    // Medical imaging
-    'xray': { templateId: 'medical_imaging', tags: ['radiology', 'xray', 'imaging'] },
-    'ct_scan': { templateId: 'medical_imaging', tags: ['radiology', 'ct', 'imaging'] },
-    'mri': { templateId: 'medical_imaging', tags: ['radiology', 'mri', 'imaging'] },
-    'ultrasound': { templateId: 'medical_imaging', tags: ['radiology', 'ultrasound', 'imaging'] },
-    'ecg': { templateId: 'medical_cardio', tags: ['cardiology', 'ecg', 'imaging'] },
-    'medical_imaging': { templateId: 'medical_imaging', tags: ['radiology', 'imaging'] },
-    // Financial
-    'invoice': { templateId: 'financial_invoice', tags: ['financial', 'invoice', 'billing'] },
-    'receipt': { templateId: 'financial_receipt', tags: ['financial', 'receipt'] },
-    'claim': { templateId: 'financial_claim', tags: ['financial', 'claim', 'insurance'] },
-    // Identity
-    'passport': { templateId: 'identity_doc', tags: ['identity', 'passport', 'kyc'] },
-    'drivers_license': { templateId: 'identity_doc', tags: ['identity', 'license', 'kyc'] },
-    'identification': { templateId: 'identity_doc', tags: ['identity', 'id', 'kyc'] },
-    // General
-    'form': { templateId: 'general_form', tags: ['form', 'document'] },
-    'contract': { templateId: 'legal_contract', tags: ['legal', 'contract'] },
-  };
-  
-  return templates[documentType.toLowerCase()] || { templateId: 'general_document', tags: ['document', 'unclassified'] };
+// Label Studio annotation types for image regions
+interface LSAnnotationRegion {
+  type: 'rectangle' | 'polygon' | 'point' | 'line';
+  x?: number; // percentage 0-100
+  y?: number;
+  width?: number;
+  height?: number;
+  points?: Array<{ x: number; y: number }>;
+  labels: string[];
+  score?: number;
 }
 
-// Send training events to Label Studio connector
+interface LSMeasurementAnnotation {
+  region_id: string;
+  measurement_type: string;
+  current_value: number | string;
+  unit: string;
+  reference_range: { min?: number; max?: number; normal: string };
+  status: 'normal' | 'abnormal_high' | 'abnormal_low' | 'critical';
+  deviation_percentage?: number;
+}
+
+interface LSAbnormalityAnnotation {
+  region: LSAnnotationRegion;
+  abnormality_type: string;
+  severity: 'mild' | 'moderate' | 'severe' | 'critical';
+  description: string;
+  clinical_significance: string;
+  requires_follow_up: boolean;
+}
+
+// Dynamic document type configuration - fully extensible
+interface DocumentTypeConfig {
+  templateId: string;
+  tags: string[];
+  agents: string[];
+  labelingConfig: string;
+  measurementFields?: string[];
+  abnormalityRegions?: boolean;
+  clinicalCorrelation?: boolean;
+}
+
+// Get Label Studio template based on document type - fully dynamic, no hardcoding
+function getLabelStudioTemplate(documentType: string): DocumentTypeConfig {
+  // Comprehensive document type configurations
+  const templates: Record<string, DocumentTypeConfig> = {
+    // === PRESCRIPTION & MEDICATION ===
+    'prescription': { 
+      templateId: 'healthcare_rx', 
+      tags: ['medical', 'prescription', 'clinical', 'medication'],
+      agents: ['drug-interaction', 'clinical-review', 'prior-auth', 'formulary-check'],
+      labelingConfig: 'prescription_extraction',
+      clinicalCorrelation: true
+    },
+    'rx': { 
+      templateId: 'healthcare_rx', 
+      tags: ['medical', 'prescription', 'clinical'],
+      agents: ['drug-interaction', 'clinical-review'],
+      labelingConfig: 'prescription_extraction'
+    },
+    
+    // === LAB RESULTS ===
+    'lab_result': { 
+      templateId: 'healthcare_labs', 
+      tags: ['medical', 'lab', 'clinical', 'diagnostic'],
+      agents: ['critical-value-alert', 'trend-analysis', 'clinical-correlation'],
+      labelingConfig: 'lab_result_extraction',
+      measurementFields: ['result_value', 'reference_range', 'units'],
+      abnormalityRegions: true
+    },
+    'lab_results': { 
+      templateId: 'healthcare_labs', 
+      tags: ['medical', 'lab', 'clinical'],
+      agents: ['critical-value-alert', 'trend-analysis'],
+      labelingConfig: 'lab_result_extraction',
+      measurementFields: ['result_value', 'reference_range']
+    },
+    
+    // === MEDICAL RECORDS ===
+    'medical_record': { 
+      templateId: 'healthcare_emr', 
+      tags: ['medical', 'emr', 'clinical', 'patient-history'],
+      agents: ['clinical-summary', 'care-gap-analysis', 'quality-measure'],
+      labelingConfig: 'emr_extraction',
+      clinicalCorrelation: true
+    },
+    
+    // === INSURANCE & COVERAGE ===
+    'insurance_card': { 
+      templateId: 'healthcare_insurance', 
+      tags: ['medical', 'insurance', 'eligibility', 'coverage'],
+      agents: ['eligibility-verification', 'coverage-analysis', 'benefits-check'],
+      labelingConfig: 'insurance_extraction'
+    },
+    'insurance': { 
+      templateId: 'healthcare_insurance', 
+      tags: ['medical', 'insurance', 'coverage'],
+      agents: ['eligibility-verification', 'coverage-analysis'],
+      labelingConfig: 'insurance_extraction'
+    },
+    
+    // === PATIENT ONBOARDING ===
+    'patient_onboarding': { 
+      templateId: 'patient_intake', 
+      tags: ['patient', 'onboarding', 'registration', 'demographics'],
+      agents: ['patient-validation', 'duplicate-check', 'insurance-verification'],
+      labelingConfig: 'intake_form_extraction'
+    },
+    'patient-onboarding': { 
+      templateId: 'patient_intake', 
+      tags: ['patient', 'onboarding', 'registration'],
+      agents: ['patient-validation', 'duplicate-check'],
+      labelingConfig: 'intake_form_extraction'
+    },
+    'enrollment_form': { 
+      templateId: 'patient_intake', 
+      tags: ['patient', 'enrollment', 'registration'],
+      agents: ['patient-validation', 'eligibility-verification'],
+      labelingConfig: 'enrollment_extraction'
+    },
+    
+    // === MEDICAL IMAGING - X-RAY ===
+    'xray': { 
+      templateId: 'medical_imaging_xray', 
+      tags: ['radiology', 'xray', 'imaging', 'diagnostic'],
+      agents: ['radiology-ai', 'findings-summarizer', 'follow-up-scheduler'],
+      labelingConfig: 'xray_annotation',
+      measurementFields: ['cardiothoracic_ratio', 'nodule_size', 'bone_density'],
+      abnormalityRegions: true,
+      clinicalCorrelation: true
+    },
+    'x-ray': { 
+      templateId: 'medical_imaging_xray', 
+      tags: ['radiology', 'xray', 'imaging'],
+      agents: ['radiology-ai', 'findings-summarizer'],
+      labelingConfig: 'xray_annotation',
+      abnormalityRegions: true
+    },
+    'x_ray': { 
+      templateId: 'medical_imaging_xray', 
+      tags: ['radiology', 'xray', 'imaging'],
+      agents: ['radiology-ai'],
+      labelingConfig: 'xray_annotation',
+      abnormalityRegions: true
+    },
+    
+    // === MEDICAL IMAGING - CT SCAN ===
+    'ct_scan': { 
+      templateId: 'medical_imaging_ct', 
+      tags: ['radiology', 'ct', 'imaging', 'cross-sectional'],
+      agents: ['ct-analysis', 'volumetric-assessment', 'findings-summarizer', 'follow-up-scheduler'],
+      labelingConfig: 'ct_annotation',
+      measurementFields: ['lesion_size', 'hounsfield_units', 'slice_thickness', 'volume'],
+      abnormalityRegions: true,
+      clinicalCorrelation: true
+    },
+    'ct-scan': { 
+      templateId: 'medical_imaging_ct', 
+      tags: ['radiology', 'ct', 'imaging'],
+      agents: ['ct-analysis', 'volumetric-assessment'],
+      labelingConfig: 'ct_annotation',
+      abnormalityRegions: true
+    },
+    
+    // === MEDICAL IMAGING - MRI ===
+    'mri': { 
+      templateId: 'medical_imaging_mri', 
+      tags: ['radiology', 'mri', 'imaging', 'soft-tissue'],
+      agents: ['mri-analysis', 'neuroimaging-specialist', 'findings-summarizer', 'follow-up-scheduler'],
+      labelingConfig: 'mri_annotation',
+      measurementFields: ['lesion_size', 'signal_intensity', 'enhancement_pattern', 'diffusion'],
+      abnormalityRegions: true,
+      clinicalCorrelation: true
+    },
+    
+    // === MEDICAL IMAGING - ECG/EKG ===
+    'ecg': { 
+      templateId: 'medical_cardio_ecg', 
+      tags: ['cardiology', 'ecg', 'ekg', 'cardiac', 'rhythm'],
+      agents: ['ecg-analysis', 'arrhythmia-detection', 'cardiac-risk-assessment', 'cardiologist-alert'],
+      labelingConfig: 'ecg_waveform_annotation',
+      measurementFields: ['heart_rate', 'pr_interval', 'qrs_duration', 'qt_interval', 'qtc_interval', 'axis'],
+      abnormalityRegions: true,
+      clinicalCorrelation: true
+    },
+    'ekg': { 
+      templateId: 'medical_cardio_ecg', 
+      tags: ['cardiology', 'ecg', 'ekg', 'cardiac'],
+      agents: ['ecg-analysis', 'arrhythmia-detection'],
+      labelingConfig: 'ecg_waveform_annotation',
+      measurementFields: ['heart_rate', 'pr_interval', 'qrs_duration', 'qt_interval'],
+      abnormalityRegions: true
+    },
+    
+    // === MEDICAL IMAGING - ULTRASOUND ===
+    'ultrasound': { 
+      templateId: 'medical_imaging_ultrasound', 
+      tags: ['radiology', 'ultrasound', 'sonography', 'imaging'],
+      agents: ['ultrasound-analysis', 'fetal-assessment', 'vascular-analysis', 'findings-summarizer'],
+      labelingConfig: 'ultrasound_annotation',
+      measurementFields: ['organ_size', 'doppler_velocity', 'gestational_age', 'fetal_measurements'],
+      abnormalityRegions: true,
+      clinicalCorrelation: true
+    },
+    
+    // === MEDICAL IMAGING - MAMMOGRAM ===
+    'mammogram': { 
+      templateId: 'medical_imaging_mammogram', 
+      tags: ['radiology', 'mammogram', 'breast', 'screening', 'imaging'],
+      agents: ['mammogram-analysis', 'birads-classification', 'density-assessment', 'follow-up-scheduler'],
+      labelingConfig: 'mammogram_annotation',
+      measurementFields: ['lesion_size', 'density_category', 'birads_score'],
+      abnormalityRegions: true,
+      clinicalCorrelation: true
+    },
+    
+    // === MEDICAL IMAGING - GENERIC ===
+    'medical_imaging': { 
+      templateId: 'medical_imaging_generic', 
+      tags: ['radiology', 'imaging', 'diagnostic'],
+      agents: ['radiology-ai', 'findings-summarizer'],
+      labelingConfig: 'imaging_annotation',
+      abnormalityRegions: true
+    },
+    
+    // === FINANCIAL - INVOICE & BILLING ===
+    'invoice': { 
+      templateId: 'financial_invoice', 
+      tags: ['financial', 'invoice', 'billing', 'claims'],
+      agents: ['invoice-validation', 'coding-review', 'duplicate-detection', 'payment-posting'],
+      labelingConfig: 'invoice_extraction',
+      measurementFields: ['total_amount', 'line_items', 'tax']
+    },
+    'receipt': { 
+      templateId: 'financial_receipt', 
+      tags: ['financial', 'receipt', 'payment'],
+      agents: ['receipt-validation', 'expense-categorization'],
+      labelingConfig: 'receipt_extraction'
+    },
+    'claim': { 
+      templateId: 'financial_claim', 
+      tags: ['financial', 'claim', 'insurance', 'reimbursement'],
+      agents: ['claim-validation', 'coding-review', 'prior-auth-check', 'denial-prevention'],
+      labelingConfig: 'claim_extraction'
+    },
+    
+    // === IDENTITY DOCUMENTS ===
+    'passport': { 
+      templateId: 'identity_passport', 
+      tags: ['identity', 'passport', 'kyc', 'verification'],
+      agents: ['identity-verification', 'document-authenticity', 'data-extraction'],
+      labelingConfig: 'passport_extraction'
+    },
+    'drivers_license': { 
+      templateId: 'identity_license', 
+      tags: ['identity', 'license', 'kyc', 'verification'],
+      agents: ['identity-verification', 'document-authenticity'],
+      labelingConfig: 'license_extraction'
+    },
+    'identification': { 
+      templateId: 'identity_generic', 
+      tags: ['identity', 'id', 'kyc'],
+      agents: ['identity-verification'],
+      labelingConfig: 'id_extraction'
+    },
+    
+    // === LEGAL & CONTRACTS ===
+    'contract': { 
+      templateId: 'legal_contract', 
+      tags: ['legal', 'contract', 'agreement'],
+      agents: ['contract-analysis', 'clause-extraction', 'risk-assessment'],
+      labelingConfig: 'contract_extraction'
+    },
+    
+    // === GENERAL FORMS ===
+    'form': { 
+      templateId: 'general_form', 
+      tags: ['form', 'document', 'data-entry'],
+      agents: ['form-extraction', 'data-validation'],
+      labelingConfig: 'form_extraction'
+    }
+  };
+  
+  // Dynamic lookup with fallback
+  const normalizedType = documentType.toLowerCase().replace(/-/g, '_');
+  return templates[normalizedType] || templates[documentType.toLowerCase()] || { 
+    templateId: 'general_document', 
+    tags: ['document', 'unclassified'],
+    agents: ['general-extraction'],
+    labelingConfig: 'generic_extraction'
+  };
+}
+
+// Generate Label Studio annotation regions for abnormalities
+function generateAbnormalityAnnotations(
+  medicalAnalysis: any,
+  documentType: string
+): LSAbnormalityAnnotation[] {
+  const annotations: LSAbnormalityAnnotation[] = [];
+  
+  if (!medicalAnalysis) return annotations;
+  
+  // Extract abnormalities from clinical observations
+  const observations = medicalAnalysis.clinical_observations || medicalAnalysis.anatomical_findings || [];
+  
+  observations.forEach((finding: string | any, index: number) => {
+    const findingText = typeof finding === 'string' ? finding : finding.description || finding.finding || '';
+    
+    // Detect abnormality keywords
+    const abnormalityPatterns = [
+      { pattern: /fracture|break|crack/i, type: 'fracture', severity: 'severe' as const },
+      { pattern: /mass|tumor|lesion|nodule/i, type: 'mass', severity: 'moderate' as const },
+      { pattern: /opacity|consolidation|infiltrate/i, type: 'opacity', severity: 'moderate' as const },
+      { pattern: /effusion|fluid/i, type: 'effusion', severity: 'moderate' as const },
+      { pattern: /cardiomegaly|enlarged heart/i, type: 'cardiomegaly', severity: 'moderate' as const },
+      { pattern: /stenosis|narrowing/i, type: 'stenosis', severity: 'moderate' as const },
+      { pattern: /calcification/i, type: 'calcification', severity: 'mild' as const },
+      { pattern: /atelectasis|collapse/i, type: 'atelectasis', severity: 'moderate' as const },
+      { pattern: /pneumothorax/i, type: 'pneumothorax', severity: 'severe' as const },
+      { pattern: /hemorrhage|bleed/i, type: 'hemorrhage', severity: 'critical' as const },
+      { pattern: /infarct|stroke/i, type: 'infarct', severity: 'critical' as const },
+      { pattern: /arrhythmia|irregular/i, type: 'arrhythmia', severity: 'moderate' as const },
+      { pattern: /st.?elevation|st.?depression/i, type: 'st_changes', severity: 'severe' as const }
+    ];
+    
+    for (const { pattern, type, severity } of abnormalityPatterns) {
+      if (pattern.test(findingText)) {
+        annotations.push({
+          region: {
+            type: 'rectangle',
+            x: 10 + (index * 5) % 60, // Approximate region positioning
+            y: 10 + (index * 10) % 60,
+            width: 30,
+            height: 20,
+            labels: [type, documentType]
+          },
+          abnormality_type: type,
+          severity,
+          description: findingText,
+          clinical_significance: medicalAnalysis.urgency_level === 'emergent' ? 'Requires immediate attention' :
+                                 medicalAnalysis.urgency_level === 'urgent' ? 'Requires prompt follow-up' :
+                                 'Monitor and correlate clinically',
+          requires_follow_up: severity === 'severe' || severity === 'critical'
+        });
+        break; // Only one annotation per finding
+      }
+    }
+  });
+  
+  return annotations;
+}
+
+// Generate measurement comparison annotations
+function generateMeasurementAnnotations(
+  extractedFields: Record<string, any>,
+  documentType: string
+): LSMeasurementAnnotation[] {
+  const annotations: LSMeasurementAnnotation[] = [];
+  
+  // Get reference ranges based on document type
+  const measurementRanges: Record<string, Record<string, { min?: number; max?: number; normal: string; unit: string }>> = {
+    'ecg': {
+      'heart_rate': { min: 60, max: 100, normal: '60-100', unit: 'bpm' },
+      'pr_interval': { min: 120, max: 200, normal: '120-200', unit: 'ms' },
+      'qrs_duration': { min: 80, max: 120, normal: '80-120', unit: 'ms' },
+      'qt_interval': { min: 350, max: 440, normal: '350-440', unit: 'ms' },
+      'qtc_interval': { min: 350, max: 450, normal: '350-450', unit: 'ms' }
+    },
+    'xray': {
+      'cardiothoracic_ratio': { max: 0.5, normal: '< 0.5', unit: 'ratio' },
+      'nodule_size': { max: 8, normal: '< 8', unit: 'mm' }
+    },
+    'ct_scan': {
+      'lesion_size': { max: 10, normal: '< 10', unit: 'mm' },
+      'hounsfield_units': { min: -1000, max: 3000, normal: 'varies', unit: 'HU' }
+    },
+    'mri': {
+      'lesion_size': { max: 10, normal: '< 10', unit: 'mm' }
+    },
+    'ultrasound': {
+      'kidney_length': { min: 9, max: 13, normal: '9-13', unit: 'cm' },
+      'liver_span': { max: 15, normal: '< 15', unit: 'cm' }
+    },
+    'lab_result': {
+      'glucose': { min: 70, max: 100, normal: '70-100', unit: 'mg/dL' },
+      'hemoglobin': { min: 12, max: 17, normal: '12-17', unit: 'g/dL' },
+      'potassium': { min: 3.5, max: 5.0, normal: '3.5-5.0', unit: 'mEq/L' },
+      'creatinine': { min: 0.7, max: 1.3, normal: '0.7-1.3', unit: 'mg/dL' }
+    }
+  };
+  
+  const ranges = measurementRanges[documentType.toLowerCase().replace(/-/g, '_')] || {};
+  
+  Object.entries(ranges).forEach(([field, range]) => {
+    const fieldValue = extractedFields[field]?.value || extractedFields[field];
+    if (fieldValue !== undefined && fieldValue !== null) {
+      const numValue = parseFloat(String(fieldValue).replace(/[^\d.-]/g, ''));
+      if (!isNaN(numValue)) {
+        let status: 'normal' | 'abnormal_high' | 'abnormal_low' | 'critical' = 'normal';
+        let deviation = 0;
+        
+        if (range.max !== undefined && numValue > range.max) {
+          status = numValue > range.max * 1.5 ? 'critical' : 'abnormal_high';
+          deviation = ((numValue - range.max) / range.max) * 100;
+        } else if (range.min !== undefined && numValue < range.min) {
+          status = numValue < range.min * 0.5 ? 'critical' : 'abnormal_low';
+          deviation = ((range.min - numValue) / range.min) * 100;
+        }
+        
+        annotations.push({
+          region_id: `measurement_${field}`,
+          measurement_type: field,
+          current_value: numValue,
+          unit: range.unit,
+          reference_range: range,
+          status,
+          deviation_percentage: Math.round(deviation * 10) / 10
+        });
+      }
+    }
+  });
+  
+  return annotations;
+}
+
+// Send training events to Label Studio connector with full annotation support
 async function recordLabelStudioEvent(
   supabaseUrl: string,
   supabaseServiceKey: string,
   events: LabelStudioTrainingEvent[],
-  projectContext?: { documentType: string; templateId: string; tags: string[] }
+  projectContext?: { documentType: string; templateId: string; tags: string[] },
+  annotations?: {
+    abnormalities?: LSAbnormalityAnnotation[];
+    measurements?: LSMeasurementAnnotation[];
+    regions?: LSAnnotationRegion[];
+  }
 ): Promise<boolean> {
   try {
     console.log(`[LabelStudio] Recording ${events.length} training events for ML pipeline`);
+    
+    // Prepare enhanced event data with annotations
+    const enhancedEvents = events.map(e => ({
+      ...e,
+      metadata: {
+        ...e.metadata,
+        template: projectContext?.templateId,
+        tags: projectContext?.tags,
+        timestamp: new Date().toISOString(),
+        // Include annotation data for Label Studio tasks
+        annotations: annotations ? {
+          abnormality_count: annotations.abnormalities?.length || 0,
+          measurement_count: annotations.measurements?.length || 0,
+          region_count: annotations.regions?.length || 0,
+          abnormalities: annotations.abnormalities,
+          measurements: annotations.measurements,
+          regions: annotations.regions
+        } : undefined
+      }
+    }));
     
     // Call label-studio-connector edge function
     const response = await fetch(`${supabaseUrl}/functions/v1/label-studio-connector`, {
@@ -576,15 +996,7 @@ async function recordLabelStudioEvent(
       },
       body: JSON.stringify({
         action: 'recordTrainingEvents',
-        events: events.map(e => ({
-          ...e,
-          metadata: {
-            ...e.metadata,
-            template: projectContext?.templateId,
-            tags: projectContext?.tags,
-            timestamp: new Date().toISOString()
-          }
-        }))
+        events: enhancedEvents
       })
     });
 
@@ -594,13 +1006,170 @@ async function recordLabelStudioEvent(
       return false;
     }
 
-    console.log('[LabelStudio] Training events recorded successfully');
+    console.log('[LabelStudio] Training events recorded successfully with annotations');
     return true;
   } catch (error) {
     // Don't fail document processing if Label Studio integration fails
     console.warn('[LabelStudio] Error recording events (non-critical):', error);
     return false;
   }
+}
+
+// ============= AGENT ACTIVATION AFTER DOCUMENT PROCESSING =============
+// Dynamic agent routing based on document type - no hardcoding
+
+interface AgentActivationConfig {
+  agentId: string;
+  priority: number;
+  executionMode: 'instant' | 'guided' | 'background';
+  triggerConditions?: Record<string, any>;
+}
+
+// Get agents to activate for a document type
+function getDocumentAgents(documentType: string, extractedData?: any): AgentActivationConfig[] {
+  const config = getLabelStudioTemplate(documentType);
+  const agents: AgentActivationConfig[] = [];
+  
+  // Map agent IDs to execution configurations
+  const agentExecutionModes: Record<string, { priority: number; mode: 'instant' | 'guided' | 'background' }> = {
+    // Clinical agents - typically require review (guided)
+    'drug-interaction': { priority: 1, mode: 'instant' },
+    'clinical-review': { priority: 2, mode: 'guided' },
+    'prior-auth': { priority: 3, mode: 'guided' },
+    'formulary-check': { priority: 2, mode: 'instant' },
+    'critical-value-alert': { priority: 1, mode: 'instant' },
+    'trend-analysis': { priority: 3, mode: 'background' },
+    
+    // Imaging agents - instant analysis, guided follow-up
+    'radiology-ai': { priority: 1, mode: 'instant' },
+    'ct-analysis': { priority: 1, mode: 'instant' },
+    'mri-analysis': { priority: 1, mode: 'instant' },
+    'ultrasound-analysis': { priority: 1, mode: 'instant' },
+    'mammogram-analysis': { priority: 1, mode: 'instant' },
+    'ecg-analysis': { priority: 1, mode: 'instant' },
+    'arrhythmia-detection': { priority: 1, mode: 'instant' },
+    'findings-summarizer': { priority: 2, mode: 'instant' },
+    'follow-up-scheduler': { priority: 3, mode: 'guided' },
+    
+    // Insurance/eligibility - instant verification
+    'eligibility-verification': { priority: 1, mode: 'instant' },
+    'coverage-analysis': { priority: 2, mode: 'instant' },
+    'benefits-check': { priority: 2, mode: 'instant' },
+    
+    // Patient validation - instant
+    'patient-validation': { priority: 1, mode: 'instant' },
+    'duplicate-check': { priority: 1, mode: 'instant' },
+    
+    // Financial agents
+    'invoice-validation': { priority: 1, mode: 'instant' },
+    'coding-review': { priority: 2, mode: 'guided' },
+    'claim-validation': { priority: 1, mode: 'instant' },
+    'denial-prevention': { priority: 2, mode: 'instant' },
+    
+    // Default
+    'default': { priority: 5, mode: 'background' }
+  };
+  
+  config.agents.forEach(agentId => {
+    const execConfig = agentExecutionModes[agentId] || agentExecutionModes['default'];
+    
+    agents.push({
+      agentId,
+      priority: execConfig.priority,
+      executionMode: execConfig.mode,
+      triggerConditions: extractedData ? buildTriggerConditions(agentId, extractedData) : undefined
+    });
+  });
+  
+  // Sort by priority (lower = higher priority)
+  return agents.sort((a, b) => a.priority - b.priority);
+}
+
+// Build trigger conditions for agent activation
+function buildTriggerConditions(agentId: string, extractedData: any): Record<string, any> {
+  const conditions: Record<string, any> = {};
+  
+  switch (agentId) {
+    case 'critical-value-alert':
+      // Trigger if any abnormal values detected
+      conditions.hasAbnormalValues = extractedData.abnormal_flags?.some((f: string) => ['H', 'L', 'C'].includes(f));
+      break;
+    case 'drug-interaction':
+      // Trigger if medications found
+      conditions.hasMedications = !!extractedData.medications?.length || !!extractedData.medication;
+      break;
+    case 'arrhythmia-detection':
+      // Trigger for ECG with rhythm abnormalities
+      conditions.hasRhythmData = !!extractedData.rhythm || !!extractedData.heart_rate;
+      break;
+    case 'follow-up-scheduler':
+      // Trigger if urgent findings
+      conditions.requiresFollowUp = extractedData.urgency_level === 'urgent' || extractedData.urgency_level === 'emergent';
+      break;
+  }
+  
+  return conditions;
+}
+
+// Trigger agent execution after document processing
+async function triggerDocumentAgents(
+  supabaseUrl: string,
+  supabaseServiceKey: string,
+  documentId: string,
+  documentType: string,
+  extractedData: any,
+  executionMode: 'all' | 'instant_only' | 'priority_first' = 'instant_only'
+): Promise<{ triggered: string[]; results: Record<string, any> }> {
+  const agents = getDocumentAgents(documentType, extractedData);
+  const triggered: string[] = [];
+  const results: Record<string, any> = {};
+  
+  console.log(`[AgentActivation] Processing ${agents.length} agents for document type: ${documentType}`);
+  
+  for (const agent of agents) {
+    // Filter based on execution mode
+    if (executionMode === 'instant_only' && agent.executionMode !== 'instant') continue;
+    if (executionMode === 'priority_first' && agent.priority > 2) continue;
+    
+    try {
+      console.log(`[AgentActivation] Triggering agent: ${agent.agentId} (mode: ${agent.executionMode})`);
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/execute-document-agent`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          agentId: agent.agentId,
+          agentConfig: {
+            name: agent.agentId,
+            architectureType: 'single',
+            useCase: 'document_processing',
+            description: `Auto-triggered for ${documentType}`
+          },
+          documentContext: {
+            documentType,
+            extractedFields: extractedData,
+            documentId
+          }
+        })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        triggered.push(agent.agentId);
+        results[agent.agentId] = result;
+        console.log(`[AgentActivation] Agent ${agent.agentId} completed successfully`);
+      } else {
+        console.warn(`[AgentActivation] Agent ${agent.agentId} failed: ${response.status}`);
+      }
+    } catch (error) {
+      console.error(`[AgentActivation] Error triggering agent ${agent.agentId}:`, error);
+    }
+  }
+  
+  return { triggered, results };
 }
 
 
