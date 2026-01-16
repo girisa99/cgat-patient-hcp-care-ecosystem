@@ -1445,9 +1445,24 @@ export function PresentationWizard({
                 </div>
               ))}
               
+              {/* AI Disclaimer */}
+              {slides.length > 0 && (
+                <div className="mt-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
+                  <div className="flex items-start gap-2">
+                    <Shield className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs font-medium text-amber-800 dark:text-amber-300">AI-Generated Content</p>
+                      <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-0.5">
+                        This presentation was created by AI and may contain inaccuracies. Please review and verify all content, data, and claims before use.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               {/* Overall Presentation Feedback */}
               {slides.length > 0 && (
-                <Card className="mt-6 p-4 bg-muted/30">
+                <Card className="mt-4 p-4 bg-muted/30">
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <h4 className="text-sm font-medium">Rate this presentation</h4>
