@@ -89,6 +89,7 @@ import { MultiLanguageGenerator, useMultiLanguageGeneration, SUPPORTED_LANGUAGES
 import { TableEditor, ChartEditor } from './TableChartEditor';
 import { DraggableSlideLayout, LayoutElement } from './DraggableSlideLayout';
 import { useUniversalPresentation, DownloadFormat } from '@/hooks/useUniversalPresentation';
+import { GenerationProgressPanel, SlideGenerationStatus } from './GenerationProgressPanel';
 import { InlineTrainAIFeedback } from '../InlineTrainAIFeedback';
 import { 
   PresentationRequest,
@@ -336,6 +337,10 @@ export function PresentationWizard({
   // Multi-language generation
   const { statuses: languageStatuses, isGenerating: isMultiLangGenerating, generateAll: generateMultiLang, reset: resetMultiLang } = useMultiLanguageGeneration();
 
+  // Generation progress tracking
+  const [generationPhase, setGenerationPhase] = useState<'analyzing' | 'structuring' | 'generating' | 'images' | 'complete'>('analyzing');
+  const [slideStatuses, setSlideStatuses] = useState<SlideGenerationStatus[]>([]);
+
   // Inline options (to avoid service method type issues)
   const imageStyleOptions = [
     { id: 'ai-realistic', name: 'AI Photorealistic', bestFor: ['marketing', 'investor'] },
@@ -563,6 +568,10 @@ export function PresentationWizard({
       return;
     }
 
+    // Initialize progress tracking
+    setGenerationPhase('analyzing');
+    setSlideStatuses([]);
+
     const request = {
       inputSource,
       content: inputContent,
@@ -581,7 +590,18 @@ export function PresentationWizard({
       contentEnhancements: selectedEnhancements,
     } as PresentationRequest;
 
+    // Simulate progress phases
+    const progressTimer = setInterval(() => {
+      setGenerationPhase(prev => {
+        if (prev === 'analyzing') return 'structuring';
+        if (prev === 'structuring') return 'generating';
+        if (prev === 'generating' && imageSource !== 'placeholder') return 'images';
+        return prev;
+      });
+    }, 3000);
+
     const result = await generatePresentation(request);
+    clearInterval(progressTimer);
 
     if (result?.success && result.slides) {
       const editableSlides: PresentationSlide[] = result.slides.map((slide, idx) => ({
@@ -613,6 +633,15 @@ export function PresentationWizard({
 
       setSlides(editableSlides);
       setPresentationTitle(result.metadata.title);
+      setGenerationPhase('complete');
+      
+      // Create completed slide statuses
+      setSlideStatuses(editableSlides.map((s, i) => ({
+        slideNumber: i + 1,
+        title: s.title,
+        type: s.type,
+        status: 'complete' as const,
+      })));
 
       // Save to session
       saveSession({
@@ -621,6 +650,9 @@ export function PresentationWizard({
       });
 
       toast.success(`Generated ${editableSlides.length} slides!`);
+    } else {
+      setGenerationPhase('analyzing');
+      setSlideStatuses([]);
     }
   };
 
@@ -1203,20 +1235,151 @@ export function PresentationWizard({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="p-4 rounded-lg bg-muted/50 space-y-2">
-                    <h4 className="text-sm font-medium">Summary</h4>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="text-muted-foreground">Type:</div>
-                      <div className="font-medium capitalize">{collateralType}</div>
-                      <div className="text-muted-foreground">Format:</div>
-                      <div className="font-medium uppercase">{outputFormat}</div>
-                      <div className="text-muted-foreground">Length:</div>
-                      <div className="font-medium capitalize">{length}</div>
-                      <div className="text-muted-foreground">Images:</div>
-                      <div className="font-medium capitalize">{imageSource}</div>
-                      <div className="text-muted-foreground">Model:</div>
-                      <div className="font-medium">{IMAGE_MODELS.find(m => m.id === imageModel)?.name || 'Auto'}</div>
+                  {/* Comprehensive Options Summary */}
+                  <div className="p-4 rounded-lg bg-muted/50 space-y-3">
+                    <h4 className="text-sm font-medium flex items-center gap-2">
+                      <Settings2 className="h-4 w-4" />
+                      Selected Options
+                    </h4>
+                    
+                    {/* Basic Settings */}
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Presentation</p>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                        <div className="text-muted-foreground">Type:</div>
+                        <div className="font-medium capitalize">{collateralType}</div>
+                        <div className="text-muted-foreground">Format:</div>
+                        <div className="font-medium uppercase">{outputFormat}</div>
+                        <div className="text-muted-foreground">Length:</div>
+                        <div className="font-medium capitalize">{length}</div>
+                        {targetAudience && (
+                          <>
+                            <div className="text-muted-foreground">Audience:</div>
+                            <div className="font-medium">{targetAudience}</div>
+                          </>
+                        )}
+                      </div>
                     </div>
+
+                    <Separator className="my-2" />
+
+                    {/* Image Settings */}
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Images</p>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                        <div className="text-muted-foreground">Source:</div>
+                        <div className="font-medium capitalize">{imageSource.replace('-', ' ')}</div>
+                        <div className="text-muted-foreground">Model:</div>
+                        <div className="font-medium">{IMAGE_MODELS.find(m => m.id === imageModel)?.name || 'Auto'}</div>
+                        {selectedImageStyles.length > 0 && (
+                          <>
+                            <div className="text-muted-foreground">Styles:</div>
+                            <div className="font-medium">
+                              <div className="flex flex-wrap gap-1">
+                                {selectedImageStyles.map(style => (
+                                  <Badge key={style} variant="secondary" className="text-[10px] px-1.5 py-0">
+                                    {imageStyleOptions.find(s => s.id === style)?.name || style}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    <Separator className="my-2" />
+
+                    {/* Languages */}
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Languages</p>
+                      <div className="flex flex-wrap gap-1">
+                        {selectedLanguages.map(lang => {
+                          const langInfo = SUPPORTED_LANGUAGES.find(l => l.code === lang);
+                          return (
+                            <Badge 
+                              key={lang} 
+                              variant={lang === primaryLanguage ? 'default' : 'secondary'} 
+                              className="text-[10px] px-1.5 py-0"
+                            >
+                              {langInfo?.flag} {langInfo?.name || lang}
+                              {lang === primaryLanguage && ' (Primary)'}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <Separator className="my-2" />
+
+                    {/* Tone & Enhancements */}
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Tone & Enhancements</p>
+                      <div className="space-y-1">
+                        {selectedTones.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {selectedTones.map(tone => (
+                              <Badge key={tone} variant="outline" className="text-[10px] px-1.5 py-0">
+                                {toneOptions.find(t => t.id === tone)?.name || tone}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                        {selectedEnhancements.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {selectedEnhancements.map(enh => (
+                              <Badge key={enh} variant="outline" className="text-[10px] px-1.5 py-0 border-primary/30">
+                                {enhancementOptions.find(e => e.id === enh)?.name || enh}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <Separator className="my-2" />
+
+                    {/* Features */}
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Features</p>
+                      <div className="flex flex-wrap gap-1">
+                        {includeInfographics && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-green-500/10 text-green-700 dark:text-green-400">
+                            ✓ Infographics
+                          </Badge>
+                        )}
+                        {includeJourneyMaps && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-green-500/10 text-green-700 dark:text-green-400">
+                            ✓ Journey Maps
+                          </Badge>
+                        )}
+                        {showComplianceCheck && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-green-500/10 text-green-700 dark:text-green-400">
+                            ✓ Compliance Check
+                          </Badge>
+                        )}
+                        {!includeInfographics && !includeJourneyMaps && !showComplianceCheck && (
+                          <span className="text-xs text-muted-foreground">No additional features selected</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Template/Branding */}
+                    {selectedTemplate && (
+                      <>
+                        <Separator className="my-2" />
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Template</p>
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-4 h-4 rounded" 
+                              style={{ backgroundColor: selectedTheme?.colors?.primary || selectedTemplate.theme.colors.primary }}
+                            />
+                            <span className="text-xs font-medium">{selectedTemplate.name}</span>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {showComplianceCheck && (
@@ -1330,7 +1493,31 @@ export function PresentationWizard({
         </div>
 
         <ScrollArea className="flex-1">
-          {slides.length === 0 ? (
+          {/* Generation Progress Panel */}
+          {isGenerating && (
+            <div className="pr-4 mb-4">
+              <GenerationProgressPanel
+                isGenerating={isGenerating}
+                totalSlides={slideStatuses.length || 8}
+                currentSlide={slideStatuses.filter(s => s.status === 'complete').length + 1}
+                slideStatuses={slideStatuses.length > 0 ? slideStatuses : Array.from({ length: 8 }, (_, i) => ({
+                  slideNumber: i + 1,
+                  type: ['title', 'content', 'content', 'stats', 'content', 'journey', 'content', 'conclusion'][i] || 'content',
+                  status: i < 2 ? 'generating' as const : 'pending' as const,
+                }))}
+                phase={generationPhase}
+                overallProgress={
+                  generationPhase === 'analyzing' ? 10 :
+                  generationPhase === 'structuring' ? 30 :
+                  generationPhase === 'generating' ? 60 :
+                  generationPhase === 'images' ? 85 :
+                  100
+                }
+              />
+            </div>
+          )}
+          
+          {slides.length === 0 && !isGenerating ? (
             <div className="h-full flex items-center justify-center">
               <div className="text-center text-muted-foreground">
                 <Presentation className="h-16 w-16 mx-auto mb-4 opacity-20" />
