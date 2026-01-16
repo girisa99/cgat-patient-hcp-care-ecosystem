@@ -12,7 +12,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Zap, PenTool, Mic, Sparkles, Image, LayoutTemplate, Wand2 } from 'lucide-react';
+import { Zap, PenTool, Mic, Sparkles, Image, LayoutTemplate, Wand2, Presentation } from 'lucide-react';
 import { SmartContentPipeline } from '@/components/genie-studio/SmartContentPipeline';
 import { useGenieScripts, type GenieScript } from '@/components/genie-studio/useGenieScripts';
 import { toast } from 'sonner';
@@ -132,6 +132,14 @@ const GenieSpark: React.FC = () => {
                   <Zap className="h-3 w-3 mr-1" />
                   AI Powered
                 </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/genie-deck')}
+                >
+                  <LayoutTemplate className="h-4 w-4 mr-2" />
+                  Presentations
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"

@@ -466,6 +466,26 @@ const GenieVibe: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Quick Navigation */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5"
+                onClick={() => navigate('/genie-spark')}
+              >
+                <Zap className="h-4 w-4" />
+                <span className="hidden md:inline">Spark</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5"
+                onClick={() => navigate('/genie-deck')}
+              >
+                <Layers className="h-4 w-4" />
+                <span className="hidden md:inline">Deck</span>
+              </Button>
+              
               {/* View Mode Toggle */}
               <div className="flex items-center border rounded-lg p-1">
                 <Button

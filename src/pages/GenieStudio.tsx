@@ -156,6 +156,7 @@ import genieVibeProductLogo from '@/assets/logos/genie-vibe-combined.png';
 import genieArcProductLogo from '@/assets/logos/genie-arc-combined.png';
 import genieSparkProductLogo from '@/assets/logos/genie-spark-combined.png';
 import askGenieProductLogo from '@/assets/logos/ask-genie-combined.png';
+import genieDeckProductLogo from '@/assets/logos/genie-deck-combined.png';
 
 // ========================================
 // NOTE: Types, Constants, and Hooks are now imported from:
@@ -2081,6 +2082,20 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
                     <div className="flex flex-col items-start">
                       <span className="font-semibold">Genie Arc</span>
                       <span className="text-[10px] font-normal text-muted-foreground">Team Productions</span>
+                    </div>
+                  </Button>
+                  
+                  {/* Genie Deck Button */}
+                  <Button 
+                    size="lg" 
+                    variant="outline"
+                    onClick={() => navigate('/genie-deck')}
+                    className="border-purple-500/30 hover:border-purple-500 hover:bg-purple-500/10 flex items-center gap-3 h-auto py-2.5 px-5"
+                  >
+                    <img src={genieDeckProductLogo} alt="Genie Deck" className="h-8 w-8 object-contain rounded bg-purple-100 p-0.5" />
+                    <div className="flex flex-col items-start">
+                      <span className="font-semibold">Genie Deck</span>
+                      <span className="text-[10px] font-normal text-muted-foreground">AI Presentations</span>
                     </div>
                   </Button>
                   
