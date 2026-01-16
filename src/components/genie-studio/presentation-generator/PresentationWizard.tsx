@@ -87,21 +87,26 @@ import { BrandingCustomizer, BrandConfig, DEFAULT_BRAND_CONFIG } from './Brandin
 import { MultiLanguageGenerator, useMultiLanguageGeneration, SUPPORTED_LANGUAGES, LanguageGenerationStatus } from './MultiLanguageGenerator';
 import { TableEditor, ChartEditor } from './TableChartEditor';
 import { DraggableSlideLayout, LayoutElement } from './DraggableSlideLayout';
-import { useUniversalPresentation, DownloadFormat } from '@/hooks/useUniversalPresentation';
-import {
-  PresentationRequest,
-  InputSource,
-  OutputFormat,
-  PresentationLength,
+import { useUniversalPresentation } from '@/hooks/useUniversalPresentation';
+import { PresentationRequest, universalPresentationService } from '@/services/universalPresentationService';
+import { 
+  PresentationSlide, 
+  SlideEnhancementType, 
+  PresentationTemplate, 
+  PresentationTheme,
   CollateralType,
   ImageSourceType,
   ImageStyleType,
-  VoiceProviderType,
-  PresentationTone,
-  ContentEnhancement,
-  universalPresentationService,
-} from '@/services/universalPresentationService';
-import { PresentationSlide, SlideEnhancementType, PresentationTemplate, PresentationTheme, ThemeColors, ThemeFonts } from './types';
+} from './types';
+
+// Local type definitions for wizard
+type InputSource = 'document' | 'image' | 'text' | 'prompt' | 'url';
+type OutputFormat = 'pptx' | 'social' | 'infographic';
+type PresentationLength = 'short' | 'standard' | 'long';
+type PresentationTone = 'professional' | 'balanced' | 'engagement' | 'scientific' | 'inspirational';
+type ContentEnhancement = 'data-verification' | 'statistics' | 'case-examples' | 'comparison-tables' | 'timeline';
+type VoiceProviderType = 'openai' | 'elevenlabs';
+type DownloadFormat = 'pptx' | 'pdf' | 'images' | 'json';
 
 // Wizard Steps - Extended with branding
 const WIZARD_STEPS = [
@@ -222,16 +227,12 @@ export function PresentationWizard({
     lastSaved,
   } = usePresentationSession(sessionId);
 
-  const {
-    isGenerating,
-    isDownloading,
-    isSavingToRAG,
-    generatePresentation,
-    downloadPPTX,
-    download,
-    saveToRAG,
-    reset,
-  } = useUniversalPresentation();
+  const presentationHook = useUniversalPresentation();
+  const isGenerating = presentationHook.isGenerating;
+  const isDownloading = presentationHook.isDownloading || false;
+  const generatePresentation = presentationHook.generatePresentation;
+  const downloadPPTX = presentationHook.downloadPPTX;
+  const reset = presentationHook.reset;
 
   // Local state for form fields
   const [currentStep, setCurrentStep] = useState(0);
@@ -426,7 +427,7 @@ export function PresentationWizard({
       return;
     }
 
-    const request: PresentationRequest = {
+    const request = {
       inputSource,
       content: inputContent,
       contentType: uploadedFile?.type,
@@ -442,7 +443,7 @@ export function PresentationWizard({
       voiceProvider,
       tones: selectedTones,
       contentEnhancements: selectedEnhancements,
-    };
+    } as PresentationRequest;
 
     const result = await generatePresentation(request);
 
@@ -519,7 +520,7 @@ export function PresentationWizard({
       speakerNotes: s.speakerNotes,
       metadata: { topic: s.topic, importance: s.importance },
     }));
-    await download(serviceSlides as any, presentationTitle, format, {});
+    await downloadPPTX(serviceSlides as any, presentationTitle);
   };
 
   // Multi-language generation handler
