@@ -21,3 +21,7 @@ export {
   type LSIntegrationConfig,
 } from './GenieStudioLSIntegration';
 export { LSQuickActions } from './LSQuickActions';
+
+// Universal LS Provider & Ecosystem
+export { LSUniversalProvider, useLSUniversal, useLSUniversalOptional, type LSTrainingType, type LSTrainingData } from './LSUniversalProvider';
+export { LSEcosystemWidget } from './LSEcosystemWidget';
