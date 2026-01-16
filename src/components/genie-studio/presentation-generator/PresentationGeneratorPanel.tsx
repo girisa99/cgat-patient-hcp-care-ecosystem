@@ -45,8 +45,19 @@ import {
   BarChart3,
   Map,
   Save,
-  ChevronDown
+  ChevronDown,
+  Video
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { 
+  PresentationSlide, 
+  PresentationData, 
+  SlideEnhancementType,
+  BulletPoint 
+} from './types';
+import { SlideCard } from './SlideCard';
+import { VideoExportPanel } from './VideoExportPanel';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { 
@@ -104,6 +115,7 @@ export function PresentationGeneratorPanel({
   // Slides state (editable)
   const [slides, setSlides] = useState<PresentationSlide[]>([]);
   const [presentationTitle, setPresentationTitle] = useState('');
+  const [showVideoExport, setShowVideoExport] = useState(false);
 
   // Handle file upload
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -698,6 +710,12 @@ export function PresentationGeneratorPanel({
                     <RefreshCw className="h-3 w-3 mr-1" />
                     Restart
                   </Button>
+
+                  {/* Video Export Button */}
+                  <Button variant="outline" size="sm" onClick={() => setShowVideoExport(true)}>
+                    <Video className="h-3 w-3 mr-1" />
+                    To Video
+                  </Button>
                   
                   {/* Download dropdown */}
                   <DropdownMenu>
@@ -760,6 +778,14 @@ export function PresentationGeneratorPanel({
               ))}
             </div>
           </ScrollArea>
+
+          {/* Video Export Panel */}
+          <VideoExportPanel
+            slides={slides}
+            title={presentationTitle}
+            isOpen={showVideoExport}
+            onClose={() => setShowVideoExport(false)}
+          />
         </>
       )}
     </div>
