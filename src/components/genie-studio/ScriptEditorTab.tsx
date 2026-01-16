@@ -49,6 +49,7 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { InlineTrainAIFeedback } from './InlineTrainAIFeedback';
 import { useTTSGeneration, OPENAI_VOICES, ELEVENLABS_VOICES, GOOGLE_VOICES } from '@/components/document-processing/RecordingStudio/hooks/useTTSGeneration';
 import { ScriptModeToolbar } from './ScriptModeToolbar';
 import { VoiceSelector } from './VoiceSelector';
@@ -623,6 +624,8 @@ export function ScriptEditorTab({
       // Show results
       setShowAnalysis(true);
       toast.success(`Analysis complete! Found ${localRecommendations.length} recommendations.`);
+      
+      // Note: Inline feedback will be shown in the analysis results panel
       
     } catch (err) {
       console.error('Analysis error:', err);

@@ -17,6 +17,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { GlobalAgentGeneratorProvider } from '@/hooks/useGlobalAgentGenerator';
 import { GlobalAgentGeneratorModal } from '@/components/global/GlobalAgentGeneratorModal';
 import { LSUniversalProvider } from '@/components/label-studio/LSUniversalProvider';
+import { GenieStudioProvider } from '@/contexts/GenieStudioSharedContext';
 import { LazyPages, lazyWithRetry } from '@/utils/lazyWithRetry';
 import { SmartDefaultRoute, RouteTracker } from '@/components/routing/SmartDefaultRoute';
 
@@ -281,6 +282,15 @@ const AppContent = () => {
                       </Suspense>
                     </ProtectedRoute>
                   } />
+                  <Route path="/genie-studio/feedback-analytics" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin']}>
+                      <Suspense fallback={<PageLoading message="Loading Feedback Analytics..." />}>
+                        <AppLayout>
+                          {React.createElement(React.lazy(() => import('@/components/genie-studio/FeedbackAnalyticsDashboard').then(m => ({ default: m.FeedbackAnalyticsDashboard }))))}
+                        </AppLayout>
+                      </Suspense>
+                    </ProtectedRoute>
+                  } />
                   <Route path="/genie-vibe/mobile" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
                       <Suspense fallback={<PageLoading message="Loading Mobile Studio..." />}>
@@ -534,17 +544,19 @@ const AppRouter = () => {
             <HelmetProvider>
               <GlobalAgentGeneratorProvider>
                 <LSUniversalProvider autoEnable={false}>
-                  <Toaster />
-                  <AppLayoutWithEnrollment 
-                    showUniversalGenie={true}
-                    tenantId="default-tenant"
-                    userId="current-user"
-                  >
-                    <RouteTracker>
-                      <AppContent />
-                    </RouteTracker>
-                  </AppLayoutWithEnrollment>
-                  <GlobalAgentGeneratorModal />
+                  <GenieStudioProvider>
+                    <Toaster />
+                    <AppLayoutWithEnrollment 
+                      showUniversalGenie={true}
+                      tenantId="default-tenant"
+                      userId="current-user"
+                    >
+                      <RouteTracker>
+                        <AppContent />
+                      </RouteTracker>
+                    </AppLayoutWithEnrollment>
+                    <GlobalAgentGeneratorModal />
+                  </GenieStudioProvider>
                 </LSUniversalProvider>
               </GlobalAgentGeneratorProvider>
             </HelmetProvider>
