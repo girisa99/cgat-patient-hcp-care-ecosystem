@@ -7,3 +7,4 @@ export { LSBatchOperations } from './LSBatchOperations';
 export { LSCustomTemplates } from './LSCustomTemplates';
 export { LSWorkflowAutomation } from './LSWorkflowAutomation';
 export { LSDashboardWidget } from './LSDashboardWidget';
+export { LabelStudioTrainingIntegration, useTrainingDataCapture } from './LabelStudioTrainingIntegration';
