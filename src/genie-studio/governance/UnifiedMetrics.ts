@@ -45,29 +45,41 @@ export const PHASES: Record<string, PhaseData> = {
     name: 'AI Agents & UX Polish'
   },
   P3: { 
-    // CONSOLIDATED: 130 original + 10 Label Studio (new) = 140 total
-    // Categories: Quick Wins (5✅), Generation (6), Compliance (5), Analytics (6), 
-    // Segment-Specific (9), Integrations (5), Enterprise (6), Label Studio (10✅), + 88 misc
-    // IMPLEMENTED: Quick Wins (5) + Label Studio (10) + Original (17) = 32
-    total: 140, 
-    implemented: 32, 
+    // PHASE 3 SCOPE (After Reorganization 2026-01-16):
+    // - Quick Wins (5✅ DONE)
+    // - Label Studio (10✅ DONE)
+    // - Original Implemented (17✅ DONE)
+    // - Generation P2 (2✅ Batch+AutoPub, 4⏳ remaining)
+    // - Compliance P3 (5⏳ pending)
+    // - Segment Onboarding & Feature Gates (TBD after pricing)
+    // TOTAL: 43 in scope | IMPLEMENTED: 34 | DEFERRED TO P4: Analytics, Integrations, Enterprise
+    total: 43, 
+    implemented: 34, 
     status: 'in-progress', 
-    weeks: '13-20',
-    name: 'Differentiators & Go-Live'
+    weeks: '13-18',
+    name: 'Generation, Compliance & Segment Gates'
   },
   P4: { 
-    total: 50, 
+    // PHASE 4 (Deferred from P3 - requires Segment/Pricing finalization):
+    // - Analytics & Insights (10 scenarios)
+    // - External Integrations (8 scenarios)
+    // - Enterprise Features (18 scenarios)
+    // - Segment-Specific Features (22 scenarios) 
+    // - Recovery & Error (4), Multi-Language (4), Collaboration (4), Versioning (2), External API (5), Advanced Analytics (31)
+    total: 108, 
     implemented: 0, 
     status: 'planned', 
-    weeks: '21-26',
-    name: 'Advanced Features'
+    weeks: '19-26',
+    name: 'Advanced Features & Enterprise'
   },
   P5: { 
+    // PHASE 5 (Enterprise Scale - requires P4 completion):
+    // - SSO/SAML (8), White-Label (8), HIPAA Full (5), Data Residency (7)
     total: 28, 
     implemented: 0, 
     status: 'planned', 
     weeks: '27+',
-    name: 'Enterprise & Scale'
+    name: 'Enterprise Scale & Compliance'
   },
 } as const;
 
@@ -84,14 +96,14 @@ export const P3_SCENARIO_BREAKDOWN = {
     brandGuidelinesCheck: { id: 'P3-QW-05', name: 'Brand Guidelines Verification', status: 'complete', priority: 1 },
   },
   
-  // PRIORITY 2: Core Generation (Weeks 14-15) - 12 scenarios
+  // PRIORITY 2: Core Generation (Weeks 14-15) - 6 scenarios (2✅ + 4⏳)
   generation: {
-    batchScriptGeneration: { id: 'P3-GEN-01', name: 'Batch Script Generation', status: 'pending', priority: 2 },
-    autoPublishScheduling: { id: 'P3-GEN-02', name: 'Auto-Publish Scheduling', status: 'pending', priority: 2 },
-    multiLanguageQuickDub: { id: 'P3-GEN-03', name: 'Multi-Language Quick Dub', status: 'pending', priority: 2 },
+    batchScriptGeneration: { id: 'P3-GEN-01', name: 'Batch Script Generation', status: 'complete', priority: 2, completedDate: '2026-01-16' },
+    autoPublishScheduling: { id: 'P3-GEN-02', name: 'Auto-Publish Scheduling', status: 'complete', priority: 2, completedDate: '2026-01-16' },
+    multiLanguageQuickDub: { id: 'P3-GEN-03', name: 'Multi-Language Quick Dub', status: 'pending', priority: 2, dependency: 'ElevenLabs API' },
     contentRecycling: { id: 'P3-GEN-04', name: 'Content Recycling Engine', status: 'pending', priority: 2 },
     templateVariants: { id: 'P3-GEN-05', name: 'Template Variant Generation', status: 'pending', priority: 2 },
-    voiceCloning: { id: 'P3-GEN-06', name: 'Voice Cloning for Dubs', status: 'pending', priority: 2 },
+    voiceCloning: { id: 'P3-GEN-06', name: 'Voice Cloning for Dubs', status: 'pending', priority: 2, dependency: 'ElevenLabs Voice Clone API' },
   },
   
   // PRIORITY 3: Compliance & Legal (Weeks 15-16) - 8 scenarios
@@ -103,50 +115,54 @@ export const P3_SCENARIO_BREAKDOWN = {
     disclaimerInjection: { id: 'P3-COMP-05', name: 'Auto-Disclaimer Injection', status: 'pending', priority: 3 },
   },
   
-  // PRIORITY 4: Analytics & Insights (Weeks 16-17) - 10 scenarios
-  analytics: {
-    performanceInsights: { id: 'P3-ANA-01', name: 'Performance Insights Dashboard', status: 'pending', priority: 4 },
-    competitorAnalysis: { id: 'P3-ANA-02', name: 'Competitor Content Analysis', status: 'pending', priority: 4 },
-    trendPrediction: { id: 'P3-ANA-03', name: 'Trend Prediction Engine', status: 'pending', priority: 4 },
-    crossPlatformOptimization: { id: 'P3-ANA-04', name: 'Cross-Platform Optimization', status: 'pending', priority: 4 },
-    engagementPrediction: { id: 'P3-ANA-05', name: 'Engagement Prediction AI', status: 'pending', priority: 4 },
-    abTestingEngine: { id: 'P3-ANA-06', name: 'A/B Testing Framework', status: 'pending', priority: 4 },
+  // =========================================================================
+  // DEFERRED TO PHASE 4 (Requires Segment Selection & Pricing Finalization)
+  // =========================================================================
+  
+  // DEFERRED: Analytics & Insights → P4 (needs segment metrics)
+  analytics_DEFERRED_P4: {
+    performanceInsights: { id: 'P4-ANA-01', name: 'Performance Insights Dashboard', status: 'deferred', phase: 'P4' },
+    competitorAnalysis: { id: 'P4-ANA-02', name: 'Competitor Content Analysis', status: 'deferred', phase: 'P4' },
+    trendPrediction: { id: 'P4-ANA-03', name: 'Trend Prediction Engine', status: 'deferred', phase: 'P4' },
+    crossPlatformOptimization: { id: 'P4-ANA-04', name: 'Cross-Platform Optimization', status: 'deferred', phase: 'P4' },
+    engagementPrediction: { id: 'P4-ANA-05', name: 'Engagement Prediction AI', status: 'deferred', phase: 'P4' },
+    abTestingEngine: { id: 'P4-ANA-06', name: 'A/B Testing Framework', status: 'deferred', phase: 'P4' },
   },
   
-  // PRIORITY 5: Segment-Specific (Weeks 17-18) - 22 scenarios
-  segmentSpecific: {
+  // DEFERRED: Segment-Specific Features → P4 (needs segment selection flow)
+  segmentSpecific_DEFERRED_P4: {
     // Healthcare
-    patientEducation: { id: 'P3-SEG-01', name: 'Patient Education Videos', status: 'pending', priority: 5, segment: 'healthcare' },
-    clinicalTrialContent: { id: 'P3-SEG-02', name: 'Clinical Trial Content', status: 'pending', priority: 5, segment: 'healthcare' },
-    medicalTranscription: { id: 'P3-SEG-03', name: 'Medical Transcription', status: 'pending', priority: 5, segment: 'healthcare' },
+    patientEducation: { id: 'P4-SEG-01', name: 'Patient Education Videos', status: 'deferred', phase: 'P4', segment: 'healthcare' },
+    clinicalTrialContent: { id: 'P4-SEG-02', name: 'Clinical Trial Content', status: 'deferred', phase: 'P4', segment: 'healthcare' },
+    medicalTranscription: { id: 'P4-SEG-03', name: 'Medical Transcription', status: 'deferred', phase: 'P4', segment: 'healthcare' },
     // Travel
-    travelerKit: { id: 'P3-SEG-04', name: 'Traveler Content Kit', status: 'pending', priority: 5, segment: 'travel' },
-    destinationShowcase: { id: 'P3-SEG-05', name: 'Destination Showcase', status: 'pending', priority: 5, segment: 'travel' },
+    travelerKit: { id: 'P4-SEG-04', name: 'Traveler Content Kit', status: 'deferred', phase: 'P4', segment: 'travel' },
+    destinationShowcase: { id: 'P4-SEG-05', name: 'Destination Showcase', status: 'deferred', phase: 'P4', segment: 'travel' },
     // Real Estate
-    propertyTour: { id: 'P3-SEG-06', name: 'Property Virtual Tour', status: 'pending', priority: 5, segment: 'realestate' },
-    listingOptimization: { id: 'P3-SEG-07', name: 'Listing Content Optimization', status: 'pending', priority: 5, segment: 'realestate' },
+    propertyTour: { id: 'P4-SEG-06', name: 'Property Virtual Tour', status: 'deferred', phase: 'P4', segment: 'realestate' },
+    listingOptimization: { id: 'P4-SEG-07', name: 'Listing Content Optimization', status: 'deferred', phase: 'P4', segment: 'realestate' },
     // E-commerce
-    productShowcase: { id: 'P3-SEG-08', name: 'Product Showcase Videos', status: 'pending', priority: 5, segment: 'ecommerce' },
-    ugcCompilation: { id: 'P3-SEG-09', name: 'UGC Compilation Engine', status: 'pending', priority: 5, segment: 'ecommerce' },
+    productShowcase: { id: 'P4-SEG-08', name: 'Product Showcase Videos', status: 'deferred', phase: 'P4', segment: 'ecommerce' },
+    ugcCompilation: { id: 'P4-SEG-09', name: 'UGC Compilation Engine', status: 'deferred', phase: 'P4', segment: 'ecommerce' },
   },
   
-  // PRIORITY 6: External Integrations (Weeks 18-19) - 8 scenarios
-  integrations: {
-    adobeIntegration: { id: 'P3-INT-01', name: 'Adobe Creative Cloud', status: 'pending', priority: 6 },
-    figmaIntegration: { id: 'P3-INT-02', name: 'Figma Design Import', status: 'pending', priority: 6 },
-    canvaIntegration: { id: 'P3-INT-03', name: 'Canva Asset Import', status: 'pending', priority: 6 },
-    youtubeStudioSync: { id: 'P3-INT-04', name: 'YouTube Studio Sync', status: 'pending', priority: 6 },
-    tiktokCreatorTools: { id: 'P3-INT-05', name: 'TikTok Creator Tools', status: 'pending', priority: 6 },
+  // DEFERRED: External Integrations → P4 (needs enterprise features)
+  integrations_DEFERRED_P4: {
+    adobeIntegration: { id: 'P4-INT-01', name: 'Adobe Creative Cloud', status: 'deferred', phase: 'P4' },
+    figmaIntegration: { id: 'P4-INT-02', name: 'Figma Design Import', status: 'deferred', phase: 'P4' },
+    canvaIntegration: { id: 'P4-INT-03', name: 'Canva Asset Import', status: 'deferred', phase: 'P4' },
+    youtubeStudioSync: { id: 'P4-INT-04', name: 'YouTube Studio Sync', status: 'deferred', phase: 'P4' },
+    tiktokCreatorTools: { id: 'P4-INT-05', name: 'TikTok Creator Tools', status: 'deferred', phase: 'P4' },
   },
   
-  // PRIORITY 7: Enterprise Features (Weeks 19-20) - 18 scenarios
-  enterprise: {
-    enterpriseSSO: { id: 'P3-ENT-01', name: 'Enterprise SSO (SAML/OIDC)', status: 'pending', priority: 7 },
-    auditLogs: { id: 'P3-ENT-02', name: 'Comprehensive Audit Logs', status: 'pending', priority: 7 },
-    whiteLabel: { id: 'P3-ENT-03', name: 'White-Label Customization', status: 'pending', priority: 7 },
-    roleBasedAccess: { id: 'P3-ENT-04', name: 'Role-Based Access Control', status: 'pending', priority: 7 },
-    apiRateLimiting: { id: 'P3-ENT-05', name: 'API Rate Limiting', status: 'pending', priority: 7 },
-    customBranding: { id: 'P3-ENT-06', name: 'Custom Branding Portal', status: 'pending', priority: 7 },
+  // DEFERRED: Enterprise Features → P4 (needs pricing tiers)
+  enterprise_DEFERRED_P4: {
+    enterpriseSSO: { id: 'P4-ENT-01', name: 'Enterprise SSO (SAML/OIDC)', status: 'deferred', phase: 'P4' },
+    auditLogs: { id: 'P4-ENT-02', name: 'Comprehensive Audit Logs', status: 'deferred', phase: 'P4' },
+    whiteLabel: { id: 'P4-ENT-03', name: 'White-Label Customization', status: 'deferred', phase: 'P4' },
+    roleBasedAccess: { id: 'P4-ENT-04', name: 'Role-Based Access Control', status: 'deferred', phase: 'P4' },
+    apiRateLimiting: { id: 'P4-ENT-05', name: 'API Rate Limiting', status: 'deferred', phase: 'P4' },
+    customBranding: { id: 'P4-ENT-06', name: 'Custom Branding Portal', status: 'deferred', phase: 'P4' },
   },
   
   // ALREADY IMPLEMENTED (32 scenarios = 5 Quick Wins + 10 Label Studio + 17 Original)
