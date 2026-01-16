@@ -707,6 +707,8 @@ export default function GenieStudio() {
       navigate('/genie-studio/productions');
     } else if (featureId === 'record') {
       navigate('/genie-vibe'); // Redirect to Genie Vibe full studio
+    } else if (featureId === 'deck') {
+      navigate('/genie-deck'); // Redirect to Genie Deck presentations
     } else if (featureId === 'voice') {
       setActiveTab('voice-generator');
     } else if (featureId === 'script') {
