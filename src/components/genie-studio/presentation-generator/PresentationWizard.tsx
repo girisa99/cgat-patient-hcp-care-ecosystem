@@ -12,6 +12,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -460,23 +461,98 @@ export function PresentationWizard({
     }
   };
 
-  // File upload handler
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // File upload handler - uses existing document-processor edge function
+  const [isProcessingFile, setIsProcessingFile] = useState(false);
+  
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setUploadedFile(file);
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const content = event.target?.result as string;
-        setInputContent(content);
-      };
+    if (!file) return;
+    
+    setUploadedFile(file);
+    setIsProcessingFile(true);
+    
+    try {
+      // For images, use base64
       if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const content = event.target?.result as string;
+          setInputContent(content);
+          setInputSource('image');
+          setIsProcessingFile(false);
+        };
         reader.readAsDataURL(file);
-        setInputSource('image');
-      } else {
-        reader.readAsText(file);
-        setInputSource('document');
+        return;
       }
+      
+      // For plain text files, read directly
+      if (file.type === 'text/plain' || file.name.endsWith('.txt') || file.name.endsWith('.md')) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const content = event.target?.result as string;
+          setInputContent(content);
+          setInputSource('document');
+          setIsProcessingFile(false);
+        };
+        reader.readAsText(file);
+        return;
+      }
+      
+      // For PDF, DOCX, PPTX, XLSX - use document-processor edge function
+      const fileBase64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const base64 = (e.target?.result as string).split(',')[1];
+          resolve(base64);
+        };
+        reader.readAsDataURL(file);
+      });
+      
+      toast.info(`Processing ${file.name}...`);
+      
+      const { data, error } = await supabase.functions.invoke('document-processor', {
+        body: {
+          action: 'process',
+          file: fileBase64,
+          fileName: file.name,
+          mimeType: file.type,
+          extractText: true,
+        }
+      });
+      
+      if (error) {
+        console.error('Document processing error:', error);
+        toast.error('Failed to process document. Using filename as reference.');
+        setInputContent(`Document: ${file.name}\n\nPlease generate a presentation based on this ${file.type.split('/')[1]?.toUpperCase() || 'document'} file.`);
+      } else if (data?.extractedText || data?.content) {
+        const extractedContent = data.extractedText || data.content || '';
+        setInputContent(extractedContent);
+        toast.success(`Extracted ${extractedContent.length} characters from ${file.name}`);
+      } else {
+        // Fallback - use RAG processor for knowledge extraction
+        const { data: ragData, error: ragError } = await supabase.functions.invoke('rag-knowledge-processor', {
+          body: {
+            action: 'add_knowledge',
+            content: `Document: ${file.name}`,
+            metadata: { fileName: file.name, fileType: file.type }
+          }
+        });
+        
+        if (ragData?.processedContent) {
+          setInputContent(ragData.processedContent);
+        } else {
+          setInputContent(`Document: ${file.name}\n\nPlease analyze and create a presentation from this file.`);
+        }
+      }
+      
+      setInputSource('document');
+    } catch (err) {
+      console.error('File processing error:', err);
+      toast.error('Error processing file');
+      setInputContent(`Document: ${file.name}`);
+      setInputSource('document');
+    } finally {
+      setIsProcessingFile(false);
     }
   };
 
@@ -751,39 +827,76 @@ export function PresentationWizard({
                     </TabsContent>
 
                     <TabsContent value="document" className="mt-3">
-                      <div className="border-2 border-dashed rounded-lg p-4 text-center">
+                      <div className={cn(
+                        "border-2 border-dashed rounded-lg p-4 text-center transition-colors",
+                        isProcessingFile && "border-primary bg-primary/5"
+                      )}>
                         <input
                           type="file"
                           id="doc-upload"
-                          accept=".pdf,.docx,.pptx,.txt,.md"
+                          accept=".pdf,.docx,.doc,.pptx,.ppt,.xlsx,.xls,.txt,.md,.rtf"
                           onChange={handleFileUpload}
+                          disabled={isProcessingFile}
                           className="hidden"
                         />
-                        <label htmlFor="doc-upload" className="cursor-pointer">
-                          <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+                        <label htmlFor="doc-upload" className={cn("cursor-pointer", isProcessingFile && "cursor-wait")}>
+                          {isProcessingFile ? (
+                            <Loader2 className="h-6 w-6 mx-auto mb-2 text-primary animate-spin" />
+                          ) : (
+                            <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+                          )}
                           <p className="text-xs text-muted-foreground">
-                            {uploadedFile ? uploadedFile.name : 'Upload document'}
+                            {isProcessingFile 
+                              ? 'Processing document...' 
+                              : uploadedFile 
+                                ? uploadedFile.name 
+                                : 'Upload document'}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground mt-1">
+                            PDF, Word, PowerPoint, Excel, TXT, MD
                           </p>
                         </label>
                       </div>
+                      {uploadedFile && inputContent && !isProcessingFile && (
+                        <div className="mt-2 p-2 bg-muted/50 rounded text-xs text-muted-foreground">
+                          <Check className="h-3 w-3 inline mr-1 text-green-600" />
+                          Extracted {inputContent.length.toLocaleString()} characters
+                        </div>
+                      )}
                     </TabsContent>
 
                     <TabsContent value="image" className="mt-3">
-                      <div className="border-2 border-dashed rounded-lg p-4 text-center">
+                      <div className={cn(
+                        "border-2 border-dashed rounded-lg p-4 text-center transition-colors",
+                        isProcessingFile && "border-primary bg-primary/5"
+                      )}>
                         <input
                           type="file"
                           id="img-upload"
                           accept="image/*"
                           onChange={handleFileUpload}
+                          disabled={isProcessingFile}
                           className="hidden"
                         />
-                        <label htmlFor="img-upload" className="cursor-pointer">
-                          <ImageIcon className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+                        <label htmlFor="img-upload" className={cn("cursor-pointer", isProcessingFile && "cursor-wait")}>
+                          {isProcessingFile ? (
+                            <Loader2 className="h-6 w-6 mx-auto mb-2 text-primary animate-spin" />
+                          ) : (
+                            <ImageIcon className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+                          )}
                           <p className="text-xs text-muted-foreground">
                             {uploadedFile ? uploadedFile.name : 'Upload image'}
                           </p>
+                          <p className="text-[10px] text-muted-foreground mt-1">
+                            JPG, PNG, WEBP, GIF
+                          </p>
                         </label>
                       </div>
+                      {uploadedFile && inputContent && inputContent.startsWith('data:image') && (
+                        <div className="mt-2 rounded overflow-hidden border">
+                          <img src={inputContent} alt="Preview" className="max-h-24 mx-auto object-contain" />
+                        </div>
+                      )}
                     </TabsContent>
 
                     <TabsContent value="url" className="mt-3">
