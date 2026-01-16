@@ -22,6 +22,19 @@ export {
   GENIE_DYNAMIC_METRICS,
 } from './GenieStudioRegistry';
 
+// API Production Configuration (dev→prod tracking)
+export {
+  API_CONFIGURATIONS,
+  API_STAGE_GATE_CHECKLIST,
+  API_CONFIG_METADATA,
+  getApisByStatus,
+  getApisNeedingUpgrade,
+  getTotalEstimatedMonthlyCost,
+  getApiProductionReadiness,
+  getStageGateProgress,
+} from './ApiProductionConfig';
+export type { ApiConfig, ApiStageGateItem, ApiEnvironment } from './ApiProductionConfig';
+
 // Unified Metrics (SINGLE SOURCE OF TRUTH for all tabs)
 export {
   PHASES,
