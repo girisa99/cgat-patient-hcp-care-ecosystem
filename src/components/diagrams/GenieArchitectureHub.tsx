@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Layers, Brain, Film, Users, Zap, Plug, Server, Target, Sparkles, Database, Shield } from 'lucide-react';
+import { Layers, Brain, Film, Users, Zap, Plug, Server, Target, Sparkles, Database, Shield, GitBranch } from 'lucide-react';
 
 // Import all architecture diagrams
 import { GenieStudioOverallArchitectureDiagram } from './architecture/GenieStudioOverallArchitectureDiagram';
@@ -20,10 +20,12 @@ import { GenieDataArchitectureDiagram } from './architecture/GenieDataArchitectu
 import { GenieSecurityArchitectureDiagram } from './architecture/GenieSecurityArchitectureDiagram';
 import { GenieStageGateDashboard } from './architecture/GenieStageGateDashboard';
 import { GenieP3IntegrationDashboard } from './architecture/GenieP3IntegrationDashboard';
+import { ParallelStreamsDashboard } from './genie-command-center/tabs/ParallelStreamsDashboard';
 
 const architectureTabs = [
   { id: 'overall', label: 'Overview', icon: Layers, description: 'Complete system architecture' },
   { id: 'stage-gates', label: 'Stage Gates', icon: Target, description: 'P0-P5 Readiness' },
+  { id: 'parallel-streams', label: 'Parallel Streams', icon: GitBranch, description: 'A/B/C Implementation' },
   { id: 'p3-features', label: 'P3 Features', icon: Sparkles, description: 'Enterprise Capabilities' },
   { id: 'mind', label: 'Genie Mind', icon: Brain, description: 'AI Intelligence Layer' },
   { id: 'vibe', label: 'Genie Vibe', icon: Film, description: 'Production Layer' },
@@ -63,6 +65,10 @@ export const GenieArchitectureHub: React.FC = () => {
 
           <TabsContent value="stage-gates" className="m-0">
             <GenieStageGateDashboard />
+          </TabsContent>
+
+          <TabsContent value="parallel-streams" className="m-0">
+            <ParallelStreamsDashboard />
           </TabsContent>
 
           <TabsContent value="p3-features" className="m-0">
