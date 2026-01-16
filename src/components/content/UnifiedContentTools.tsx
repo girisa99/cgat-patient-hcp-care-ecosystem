@@ -7,11 +7,11 @@
  * - Social Cuts
  * - Bulk Processing
  * - Innovative Publishing
+ * - P3 Quick Wins: Caption Generation, Hashtag Optimization, Accessibility, Brand Guidelines
  */
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
   Search, 
@@ -21,7 +21,11 @@ import {
   Sparkles,
   TrendingUp,
   Zap,
-  Target
+  Target,
+  MessageSquare,
+  Hash,
+  Accessibility,
+  Shield
 } from 'lucide-react';
 
 // Sub-panels
@@ -30,6 +34,11 @@ import ThumbnailGeneratorPanel from './tools/ThumbnailGeneratorPanel';
 import SocialCutsPanel from './tools/SocialCutsPanel';
 import InnovativePublishingPanel from './tools/InnovativePublishingPanel';
 import BulkContentPanel from './tools/BulkContentPanel';
+// P3 Quick Win panels
+import CaptionGeneratorPanel from './tools/CaptionGeneratorPanel';
+import HashtagOptimizerPanel from './tools/HashtagOptimizerPanel';
+import AccessibilityPanel from './tools/AccessibilityPanel';
+import BrandGuidelinesPanel from './tools/BrandGuidelinesPanel';
 
 interface UnifiedContentToolsProps {
   contentId?: string;
@@ -64,11 +73,39 @@ const UnifiedContentTools: React.FC<UnifiedContentToolsProps> = ({
       badge: 'AI'
     },
     { 
+      id: 'captions', 
+      label: 'Captions', 
+      icon: MessageSquare, 
+      description: 'AI-powered caption generation',
+      badge: 'P3'
+    },
+    { 
+      id: 'hashtags', 
+      label: 'Hashtags', 
+      icon: Hash, 
+      description: 'Optimize hashtags for reach',
+      badge: 'P3'
+    },
+    { 
       id: 'social-cuts', 
       label: 'Social Cuts', 
       icon: Scissors, 
       description: 'Auto-cut for TikTok, Reels, Shorts',
       badge: 'NEW'
+    },
+    { 
+      id: 'accessibility', 
+      label: 'A11y', 
+      icon: Accessibility, 
+      description: 'WCAG compliance checking',
+      badge: 'P3'
+    },
+    { 
+      id: 'brand', 
+      label: 'Brand', 
+      icon: Shield, 
+      description: 'Brand guidelines verification',
+      badge: 'P3'
     },
     { 
       id: 'publish', 
@@ -105,7 +142,7 @@ const UnifiedContentTools: React.FC<UnifiedContentToolsProps> = ({
           </Badge>
           <Badge variant="secondary" className="gap-1">
             <TrendingUp className="h-3 w-3" />
-            5 Tools
+            9 Tools
           </Badge>
         </div>
       </div>
@@ -154,11 +191,42 @@ const UnifiedContentTools: React.FC<UnifiedContentToolsProps> = ({
             />
           </TabsContent>
 
+          <TabsContent value="captions" className="m-0 h-full">
+            <CaptionGeneratorPanel 
+              title={contentTitle}
+              description={contentDescription}
+              onCaptionGenerated={(caption, hashtags) => onToolComplete?.('captions', { caption, hashtags })}
+            />
+          </TabsContent>
+
+          <TabsContent value="hashtags" className="m-0 h-full">
+            <HashtagOptimizerPanel 
+              content={contentDescription}
+              onHashtagsOptimized={(hashtags) => onToolComplete?.('hashtags', { hashtags })}
+            />
+          </TabsContent>
+
           <TabsContent value="social-cuts" className="m-0 h-full">
             <SocialCutsPanel 
               contentId={contentId}
               videoUrl={videoUrl}
               onCutsGenerated={(result) => onToolComplete?.('social-cuts', result)}
+            />
+          </TabsContent>
+
+          <TabsContent value="accessibility" className="m-0 h-full">
+            <AccessibilityPanel 
+              contentUrl={videoUrl}
+              contentType="video"
+              onCheckComplete={(score, issues) => onToolComplete?.('accessibility', { score, issues })}
+            />
+          </TabsContent>
+
+          <TabsContent value="brand" className="m-0 h-full">
+            <BrandGuidelinesPanel 
+              contentText={contentDescription}
+              contentType="text"
+              onCheckComplete={(score, level) => onToolComplete?.('brand', { score, level })}
             />
           </TabsContent>
 
