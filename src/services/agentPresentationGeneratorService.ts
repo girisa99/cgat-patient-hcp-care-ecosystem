@@ -596,8 +596,8 @@ Respond with JSON:
     version: PresentationVersion,
     request: PresentationRequest,
     onUpdate: (update: StreamingSlideUpdate) => void,
-    onComplete: (version: PresentationVersion) => void,
-    onError: (error: string) => void
+    onComplete: (languageCode: string, version: PresentationVersion) => void,
+    onError: (languageCode: string, error: string) => void
   ): Promise<void> {
     const abortController = new AbortController();
     this.activeAgents.set(version.id, abortController);
@@ -675,7 +675,7 @@ Respond with JSON:
         confidenceScores: completedVersion.confidenceScores,
       });
 
-      onComplete(completedVersion);
+      onComplete(version.languageCode, completedVersion);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Generation failed';
       
@@ -684,7 +684,7 @@ Respond with JSON:
         errorMessage,
       });
 
-      onError(errorMessage);
+      onError(version.languageCode, errorMessage);
     } finally {
       this.activeAgents.delete(version.id);
     }
@@ -783,7 +783,7 @@ Respond with JSON:
       generationProgress: row.generation_progress,
       currentSlide: row.current_slide,
       totalSlides: row.total_slides,
-      contentDecisions: (row.content_decisions as ContentTypeDecision[]) || [],
+      contentDecisions: (row.content_decisions as unknown as ContentTypeDecision[]) || [],
       confidenceScores: row.confidence_scores as PresentationVersion['confidenceScores'],
       fileName: row.file_name,
       downloadUrl: row.download_url || undefined,
