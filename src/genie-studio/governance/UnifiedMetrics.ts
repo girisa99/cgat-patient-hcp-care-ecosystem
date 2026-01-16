@@ -49,12 +49,12 @@ export const PHASES: Record<string, PhaseData> = {
     // - Quick Wins (5✅ DONE)
     // - Label Studio (10✅ DONE)
     // - Original Implemented (17✅ DONE)
-    // - Generation P2 (2✅ Batch+AutoPub, 4⏳ remaining)
+    // - Generation P2 (6✅ ALL DONE)
     // - Compliance P3 (5⏳ pending)
     // - Segment Onboarding & Feature Gates (TBD after pricing)
-    // TOTAL: 43 in scope | IMPLEMENTED: 34 | DEFERRED TO P4: Analytics, Integrations, Enterprise
+    // TOTAL: 43 in scope | IMPLEMENTED: 38 | DEFERRED TO P4: Analytics, Integrations, Enterprise
     total: 43, 
-    implemented: 34, 
+    implemented: 38,
     status: 'in-progress', 
     weeks: '13-18',
     name: 'Generation, Compliance & Segment Gates'
@@ -100,10 +100,10 @@ export const P3_SCENARIO_BREAKDOWN = {
   generation: {
     batchScriptGeneration: { id: 'P3-GEN-01', name: 'Batch Script Generation', status: 'complete', priority: 2, completedDate: '2026-01-16' },
     autoPublishScheduling: { id: 'P3-GEN-02', name: 'Auto-Publish Scheduling', status: 'complete', priority: 2, completedDate: '2026-01-16' },
-    multiLanguageQuickDub: { id: 'P3-GEN-03', name: 'Multi-Language Quick Dub', status: 'pending', priority: 2, dependency: 'ElevenLabs API' },
-    contentRecycling: { id: 'P3-GEN-04', name: 'Content Recycling Engine', status: 'pending', priority: 2 },
-    templateVariants: { id: 'P3-GEN-05', name: 'Template Variant Generation', status: 'pending', priority: 2 },
-    voiceCloning: { id: 'P3-GEN-06', name: 'Voice Cloning for Dubs', status: 'pending', priority: 2, dependency: 'ElevenLabs Voice Clone API' },
+    multiLanguageQuickDub: { id: 'P3-GEN-03', name: 'Multi-Language Quick Dub', status: 'complete', priority: 2, completedDate: '2026-01-16' },
+    contentRecycling: { id: 'P3-GEN-04', name: 'Content Recycling Engine', status: 'complete', priority: 2, completedDate: '2026-01-16' },
+    templateVariants: { id: 'P3-GEN-05', name: 'Template Variant Generation', status: 'complete', priority: 2, completedDate: '2026-01-16' },
+    voiceCloning: { id: 'P3-GEN-06', name: 'Voice Cloning for Dubs', status: 'complete', priority: 2, completedDate: '2026-01-16' },
   },
   
   // PRIORITY 3: Compliance & Legal (Weeks 15-16) - 8 scenarios
