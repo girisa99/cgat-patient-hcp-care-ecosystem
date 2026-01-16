@@ -26,12 +26,26 @@ export type InputSource = 'document' | 'image' | 'text' | 'prompt' | 'url';
 export type OutputFormat = 'pptx' | 'social' | 'infographic' | 'whitepaper' | 'journey-map';
 export type SocialPlatform = 'linkedin' | 'twitter' | 'instagram' | 'facebook';
 export type PresentationLength = 'short' | 'standard' | 'long'; // 5-8, 10-15, 20+ slides
+export type CollateralType = 'presentation' | 'marketing' | 'website' | 'conference' | 'investor' | 'sales' | 'training' | 'product-launch' | 'case-study' | 'whitepaper';
+export type ImageSourceType = 'ai-generated' | 'stock-upload' | 'placeholder' | 'mixed';
+export type ImageStyleType = 'sketch' | 'ai-realistic' | 'illustration' | 'infographic' | 'workflow' | 'icons' | 'charts' | 'abstract';
+export type VoiceProviderType = 'openai' | 'elevenlabs' | 'amazon-polly' | 'google';
+
+export interface AIModelSuggestion {
+  textModel: string;
+  imageModel: string;
+  reason: string;
+  confidence: number;
+}
 
 export interface PresentationRequest {
   // Input source
   inputSource: InputSource;
   content: string; // URL, base64 image, or text content
   contentType?: string; // MIME type for documents/images
+  
+  // Collateral type
+  collateralType?: CollateralType;
   
   // Presentation configuration
   outputFormat: OutputFormat;
@@ -44,12 +58,23 @@ export interface PresentationRequest {
   agenda?: string[];
   targetAudience?: string;
   
-  // Visual options
+  // Image options
+  imageSource?: ImageSourceType;
+  imageStyles?: ImageStyleType[];
   generateImages: boolean;
   imageStyle?: 'professional' | 'creative' | 'minimal' | 'infographic' | 'healthcare' | 'tech';
   colorScheme?: 'default' | 'dark' | 'light' | 'brand';
   includeJourneyMaps?: boolean;
   includeInfographics?: boolean;
+  
+  // Voice options
+  voiceProvider?: VoiceProviderType;
+  
+  // AI model selection
+  suggestedModel?: AIModelSuggestion;
+  useCustomModel?: boolean;
+  customTextModel?: string;
+  customImageModel?: string;
   
   // Segmentation
   autoSegment?: boolean; // Auto-divide content into logical slides
@@ -134,6 +159,224 @@ class UniversalPresentationService {
   private readonly AI_PROVIDER = 'gemini';
   private readonly AI_MODEL = 'gemini-2.0-flash-exp';
   private readonly IMAGE_MODEL = 'google/gemini-2.5-flash-image-preview';
+  
+  // Model recommendations based on collateral type
+  private readonly MODEL_RECOMMENDATIONS: Record<CollateralType, AIModelSuggestion> = {
+    'presentation': {
+      textModel: 'google/gemini-3-flash-preview',
+      imageModel: 'google/gemini-2.5-flash-image-preview',
+      reason: 'Best balance of speed and quality for standard presentations',
+      confidence: 0.9
+    },
+    'marketing': {
+      textModel: 'google/gemini-2.5-pro',
+      imageModel: 'google/gemini-3-pro-image-preview',
+      reason: 'Premium quality for marketing materials with creative visuals',
+      confidence: 0.95
+    },
+    'website': {
+      textModel: 'google/gemini-3-flash-preview',
+      imageModel: 'google/gemini-2.5-flash-image-preview',
+      reason: 'Fast generation for web collateral with consistent branding',
+      confidence: 0.88
+    },
+    'conference': {
+      textModel: 'google/gemini-2.5-pro',
+      imageModel: 'google/gemini-3-pro-image-preview',
+      reason: 'High-impact visuals and compelling narratives for conferences',
+      confidence: 0.92
+    },
+    'investor': {
+      textModel: 'openai/gpt-5',
+      imageModel: 'google/gemini-3-pro-image-preview',
+      reason: 'Professional tone with data-driven visuals for investor pitches',
+      confidence: 0.94
+    },
+    'sales': {
+      textModel: 'google/gemini-2.5-flash',
+      imageModel: 'google/gemini-2.5-flash-image-preview',
+      reason: 'Persuasive content with quick turnaround for sales enablement',
+      confidence: 0.87
+    },
+    'training': {
+      textModel: 'google/gemini-3-flash-preview',
+      imageModel: 'google/gemini-2.5-flash-image-preview',
+      reason: 'Clear explanations with instructional diagrams',
+      confidence: 0.9
+    },
+    'product-launch': {
+      textModel: 'google/gemini-2.5-pro',
+      imageModel: 'google/gemini-3-pro-image-preview',
+      reason: 'High-quality visuals and compelling narratives for launches',
+      confidence: 0.93
+    },
+    'case-study': {
+      textModel: 'openai/gpt-5-mini',
+      imageModel: 'google/gemini-2.5-flash-image-preview',
+      reason: 'Analytical content with supporting visuals for case studies',
+      confidence: 0.88
+    },
+    'whitepaper': {
+      textModel: 'openai/gpt-5',
+      imageModel: 'google/gemini-2.5-flash-image-preview',
+      reason: 'In-depth analysis with professional charts and diagrams',
+      confidence: 0.91
+    }
+  };
+
+  /**
+   * Get AI model suggestion based on collateral type and content
+   */
+  suggestAIModels(collateralType: CollateralType, content?: string): AIModelSuggestion {
+    const baseRecommendation = this.MODEL_RECOMMENDATIONS[collateralType] || this.MODEL_RECOMMENDATIONS['presentation'];
+    
+    // Enhance recommendation based on content analysis
+    if (content) {
+      const contentLength = content.length;
+      const hasNumbers = /\d+%|\$\d+|\d+\.\d+/g.test(content);
+      const hasTechnicalTerms = /API|SDK|integration|platform|architecture/gi.test(content);
+      
+      // Adjust confidence based on content characteristics
+      let adjustedConfidence = baseRecommendation.confidence;
+      
+      if (contentLength > 5000 && baseRecommendation.textModel.includes('flash')) {
+        adjustedConfidence -= 0.05; // Long content might benefit from pro model
+      }
+      
+      if (hasNumbers || hasTechnicalTerms) {
+        adjustedConfidence += 0.02; // Content matches expected type
+      }
+      
+      return {
+        ...baseRecommendation,
+        confidence: Math.min(1, Math.max(0, adjustedConfidence))
+      };
+    }
+    
+    return baseRecommendation;
+  }
+
+  /**
+   * Get available voice providers with their capabilities
+   */
+  getVoiceProviders(): Array<{
+    id: VoiceProviderType;
+    name: string;
+    voices: Array<{ id: string; name: string; style: string }>;
+    features: string[];
+  }> {
+    return [
+      {
+        id: 'openai',
+        name: 'OpenAI TTS',
+        voices: [
+          { id: 'alloy', name: 'Alloy', style: 'Neutral' },
+          { id: 'echo', name: 'Echo', style: 'Male' },
+          { id: 'fable', name: 'Fable', style: 'Storytelling' },
+          { id: 'onyx', name: 'Onyx', style: 'Deep Male' },
+          { id: 'nova', name: 'Nova', style: 'Female' },
+          { id: 'shimmer', name: 'Shimmer', style: 'Soft Female' },
+        ],
+        features: ['Fast', 'Natural', 'Multiple voices']
+      },
+      {
+        id: 'elevenlabs',
+        name: 'ElevenLabs',
+        voices: [
+          { id: 'CwhRBWXzGAHq8TQ4Fs17', name: 'Roger', style: 'Male Narrator' },
+          { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', style: 'Female' },
+          { id: 'FGY2WhTYpPnrIDTdsKH5', name: 'Laura', style: 'Female Warm' },
+          { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George', style: 'British Male' },
+          { id: 'onwK4e9ZLuTAKqWW03F9', name: 'Daniel', style: 'Deep Male' },
+          { id: 'pFZP5JQG7iQjIQuC4Bku', name: 'Lily', style: 'Female' },
+        ],
+        features: ['Ultra-realistic', 'Voice cloning', 'Emotional range']
+      },
+      {
+        id: 'amazon-polly',
+        name: 'Amazon Polly',
+        voices: [
+          { id: 'Matthew', name: 'Matthew', style: 'Male US' },
+          { id: 'Joanna', name: 'Joanna', style: 'Female US' },
+          { id: 'Amy', name: 'Amy', style: 'Female UK' },
+          { id: 'Brian', name: 'Brian', style: 'Male UK' },
+        ],
+        features: ['Cost-effective', 'SSML support', 'Neural voices']
+      },
+      {
+        id: 'google',
+        name: 'Google Cloud TTS',
+        voices: [
+          { id: 'en-US-Neural2-D', name: 'US Male', style: 'Male' },
+          { id: 'en-US-Neural2-F', name: 'US Female', style: 'Female' },
+          { id: 'en-GB-Neural2-B', name: 'UK Male', style: 'British Male' },
+          { id: 'en-GB-Neural2-A', name: 'UK Female', style: 'British Female' },
+        ],
+        features: ['WaveNet quality', 'Multi-language', 'Custom tuning']
+      }
+    ];
+  }
+
+  /**
+   * Get image style options with descriptions
+   */
+  getImageStyleOptions(): Array<{
+    id: ImageStyleType;
+    name: string;
+    description: string;
+    bestFor: CollateralType[];
+  }> {
+    return [
+      {
+        id: 'sketch',
+        name: 'Hand-drawn Sketches',
+        description: 'Artistic sketches with a personal touch',
+        bestFor: ['training', 'presentation', 'conference']
+      },
+      {
+        id: 'ai-realistic',
+        name: 'AI Photorealistic',
+        description: 'High-quality realistic AI-generated images',
+        bestFor: ['marketing', 'investor', 'product-launch']
+      },
+      {
+        id: 'illustration',
+        name: 'Illustrations',
+        description: 'Clean vector-style illustrations',
+        bestFor: ['website', 'sales', 'training']
+      },
+      {
+        id: 'infographic',
+        name: 'Infographic Style',
+        description: 'Data visualization and info graphics',
+        bestFor: ['whitepaper', 'case-study', 'investor']
+      },
+      {
+        id: 'workflow',
+        name: 'Workflow Diagrams',
+        description: 'Process flows and system diagrams',
+        bestFor: ['training', 'case-study', 'product-launch']
+      },
+      {
+        id: 'icons',
+        name: 'Icon-based',
+        description: 'Clean icons and symbols',
+        bestFor: ['presentation', 'website', 'sales']
+      },
+      {
+        id: 'charts',
+        name: 'Charts & Graphs',
+        description: 'Data charts and statistical visualizations',
+        bestFor: ['investor', 'whitepaper', 'case-study']
+      },
+      {
+        id: 'abstract',
+        name: 'Abstract Visuals',
+        description: 'Creative abstract backgrounds and shapes',
+        bestFor: ['marketing', 'conference', 'product-launch']
+      }
+    ];
+  }
   
   /**
    * Main entry point: Generate presentation from any source
