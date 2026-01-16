@@ -25,13 +25,19 @@ import vibeCombined from '@/assets/logos/genie-vibe-combined.png';
 // Import Genie Spark logo (finalized combined)
 import sparkCombined from '@/assets/logos/genie-spark-combined.png';
 
+// Import Ask Genie logo (finalized combined)
+import askGenieCombined from '@/assets/logos/ask-genie-combined.png';
+
+// Import Genie Deck logo (finalized combined)
+import deckCombined from '@/assets/logos/genie-deck-combined.png';
+
 interface ImageAsset {
   id: string;
   title: string;
   description: string;
   src: string;
   category: 'architecture' | 'comparison' | 'flow' | 'logo';
-  brand?: 'studio' | 'mind' | 'arc' | 'vibe' | 'spark';
+  brand?: 'studio' | 'mind' | 'arc' | 'vibe' | 'spark' | 'ask-genie' | 'deck';
 }
 
 const imageAssets: ImageAsset[] = [
@@ -104,6 +110,24 @@ const logoAssets: ImageAsset[] = [
     src: vibeCombined,
     category: 'logo',
     brand: 'vibe',
+  },
+  // Ask Genie
+  {
+    id: 'ask-genie-combined',
+    title: 'Ask Genie',
+    description: 'Your wish is my command — AI Assistant (use for presentations, websites, products, icons)',
+    src: askGenieCombined,
+    category: 'logo',
+    brand: 'ask-genie',
+  },
+  // Genie Deck
+  {
+    id: 'deck-combined',
+    title: 'Genie Deck',
+    description: 'Ideas to Impact — AI Presentation Generator (use for presentations, websites, products, icons)',
+    src: deckCombined,
+    category: 'logo',
+    brand: 'deck',
   },
 ];
 

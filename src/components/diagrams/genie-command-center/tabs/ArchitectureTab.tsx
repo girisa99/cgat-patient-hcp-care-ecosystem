@@ -7,7 +7,7 @@ import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Layers, Server, Database, Cloud, Shield,
-  Monitor, Globe, GitBranch, Network, Box, Cpu, Plug, Brain, Film, Users, Zap
+  Monitor, Globe, GitBranch, Network, Box, Cpu, Plug, Brain, Film, Users, Zap, Presentation
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -31,6 +31,7 @@ const architectureDiagrams = [
   { id: 'vibe', name: 'Genie Vibe', icon: Film, description: 'Production Layer - Recording Studio, 6 AI Agents, Deployment Modes' },
   { id: 'spark', name: 'Genie Spark', icon: Zap, description: 'Quick-Start Engine - Idea to Content in Seconds' },
   { id: 'arc', name: 'Genie Arc/Hub', icon: Users, description: 'Team Collaboration & Enterprise Production Center' },
+  { id: 'deck', name: 'Genie Deck', icon: Presentation, description: 'AI Presentation Generator - Ideas to Impact' },
   { id: 'ask', name: 'Ask Genie', icon: Network, description: 'Conversational AI and context management' },
   { id: 'backend', name: 'Backend Services', icon: Server, description: 'Edge functions, APIs, and service layer (140+ functions)' },
   { id: 'integrations', name: 'Integrations', icon: Plug, description: 'External APIs - n8n, Resend, Gemini, OAuth, Stripe' },
@@ -65,6 +66,8 @@ export const ArchitectureTab: React.FC = () => {
         return GenieSparkArchitectureDiagram;
       case 'arc':
         return GenieArcProductionHubDiagram;
+      case 'deck':
+        return GenieDeckArchitecture;
       case 'ask':
         return AskGenieArchitecture;
       case 'backend':
@@ -227,6 +230,96 @@ const AskGenieArchitecture: React.FC = () => {
           </div>
           <div className="bg-amber-50 dark:bg-amber-950/20 rounded-lg p-3 border-2 border-amber-200 dark:border-amber-800/40">
             <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">70%</div>
+            <div className="text-xs text-muted-foreground font-medium">Complete</div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Genie Deck Architecture Component
+const GenieDeckArchitecture: React.FC = () => {
+  return (
+    <Card className="bg-card border-border">
+      <CardContent className="p-6 space-y-6">
+        <div className="text-center border-b border-border pb-4">
+          <h2 className="text-2xl font-bold text-foreground flex items-center justify-center gap-3">
+            <Presentation className="h-8 w-8 text-cyan-500" />
+            Genie Deck Architecture
+          </h2>
+          <p className="text-muted-foreground mt-2">Ideas to Impact • AI Presentation Generator • Multi-Language Export</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Content Generation */}
+          <Card className="border-2 border-cyan-200 dark:border-cyan-800/40 bg-cyan-50/50 dark:bg-cyan-950/10">
+            <CardContent className="p-4">
+              <h3 className="font-semibold text-cyan-700 dark:text-cyan-400 flex items-center gap-2 mb-3">
+                <Zap className="h-5 w-5" />
+                Content Generation
+              </h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>• Multi-Model AI (GPT-4o, Claude, Gemini)</li>
+                <li>• Prompt to Slides Pipeline</li>
+                <li>• Document Ingestion & Parsing</li>
+                <li>• Smart Bullet Point Extraction</li>
+                <li>• Speaker Notes Generation</li>
+              </ul>
+            </CardContent>
+          </Card>
+
+          {/* Visual Design */}
+          <Card className="border-2 border-teal-200 dark:border-teal-800/40 bg-teal-50/50 dark:bg-teal-950/10">
+            <CardContent className="p-4">
+              <h3 className="font-semibold text-teal-700 dark:text-teal-400 flex items-center gap-2 mb-3">
+                <Layers className="h-5 w-5" />
+                Visual Design
+              </h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>• Template Engine (10+ templates)</li>
+                <li>• Brand Customization</li>
+                <li>• AI Image Generation</li>
+                <li>• Infographics & Charts</li>
+                <li>• Drag-and-Drop Layout</li>
+              </ul>
+            </CardContent>
+          </Card>
+
+          {/* Export & Delivery */}
+          <Card className="border-2 border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/50 dark:bg-emerald-950/10">
+            <CardContent className="p-4">
+              <h3 className="font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-2 mb-3">
+                <Globe className="h-5 w-5" />
+                Export & Delivery
+              </h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>• PPTX, PDF, Google Slides</li>
+                <li>• Multi-Language (10+ languages)</li>
+                <li>• Parallel Translation</li>
+                <li>• Confidence Scoring</li>
+                <li>• Label Studio ML Integration</li>
+              </ul>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Feature Stats */}
+        <div className="grid grid-cols-4 gap-4 text-center">
+          <div className="bg-cyan-50 dark:bg-cyan-950/20 rounded-lg p-3 border-2 border-cyan-200 dark:border-cyan-800/40">
+            <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">10+</div>
+            <div className="text-xs text-muted-foreground font-medium">Templates</div>
+          </div>
+          <div className="bg-teal-50 dark:bg-teal-950/20 rounded-lg p-3 border-2 border-teal-200 dark:border-teal-800/40">
+            <div className="text-2xl font-bold text-teal-600 dark:text-teal-400">AI</div>
+            <div className="text-xs text-muted-foreground font-medium">Image Gen</div>
+          </div>
+          <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-lg p-3 border-2 border-emerald-200 dark:border-emerald-800/40">
+            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">10+</div>
+            <div className="text-xs text-muted-foreground font-medium">Languages</div>
+          </div>
+          <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3 border-2 border-blue-200 dark:border-blue-800/40">
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">100%</div>
             <div className="text-xs text-muted-foreground font-medium">Complete</div>
           </div>
         </div>
