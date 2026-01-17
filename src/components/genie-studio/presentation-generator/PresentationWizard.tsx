@@ -275,12 +275,14 @@ const slideToLayoutElements = (slide: PresentationSlide): import('./DraggableSli
 interface PresentationWizardProps {
   sessionId?: string;
   onComplete?: (presentation: any) => void;
+  onError?: (errorMessage: string) => void;
   className?: string;
 }
 
 export function PresentationWizard({
   sessionId,
   onComplete,
+  onError,
   className,
 }: PresentationWizardProps) {
   const {
@@ -580,6 +582,7 @@ export function PresentationWizard({
     } catch (err) {
       console.error('File processing error:', err);
       toast.error('Error processing file');
+      onError?.('Failed to process the uploaded file. Please try a different file format.');
       setInputContent(`Document: ${file.name}`);
       setInputSource('document');
     } finally {
@@ -679,6 +682,7 @@ export function PresentationWizard({
     } else {
       setGenerationPhase('analyzing');
       setSlideStatuses([]);
+      onError?.('Generation did not complete successfully. Please try again with different content or settings.');
     }
   };
 

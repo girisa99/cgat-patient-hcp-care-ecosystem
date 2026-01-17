@@ -3,20 +3,20 @@
  * "Ideas to Impact" - Transform ideas into stunning presentations
  */
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { 
   Presentation, 
   Sparkles, 
-  PenTool, 
-  Wand2, 
-  LayoutTemplate,
   Zap,
   Mic,
-  ArrowLeft
+  AlertTriangle,
+  RefreshCw,
+  Mail
 } from 'lucide-react';
 import { PresentationWizard } from '@/components/genie-studio/presentation-generator/PresentationWizard';
 import { BackToSubscription } from '@/components/subscription/BackToSubscription';
@@ -26,9 +26,77 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { toast } from 'sonner';
 import genieDeckLogo from '@/assets/logos/genie-deck-combined.png';
 
+// Error display component - friendly and not scary
+const ErrorDisplay = ({ 
+  error, 
+  onRetry, 
+  onDismiss 
+}: { 
+  error: string; 
+  onRetry: () => void; 
+  onDismiss: () => void;
+}) => (
+  <Alert className="mx-4 my-4 border-amber-200 bg-amber-50/80 dark:bg-amber-950/20 dark:border-amber-800">
+    <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+    <AlertTitle className="text-amber-800 dark:text-amber-200 font-medium">
+      Oops! Something didn't go as planned
+    </AlertTitle>
+    <AlertDescription className="mt-2 space-y-3">
+      <p className="text-amber-700 dark:text-amber-300 text-sm">
+        {error || "We encountered an issue while processing your request. Don't worry - your work is safe!"}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <Button 
+          size="sm" 
+          variant="outline" 
+          onClick={onRetry}
+          className="border-amber-300 hover:bg-amber-100 dark:border-amber-700 dark:hover:bg-amber-900/30"
+        >
+          <RefreshCw className="h-4 w-4 mr-1.5" />
+          Try Again
+        </Button>
+        <Button 
+          size="sm" 
+          variant="ghost" 
+          onClick={onDismiss}
+          className="text-amber-700 hover:text-amber-800 dark:text-amber-300"
+        >
+          Dismiss
+        </Button>
+        <Button 
+          size="sm" 
+          variant="ghost" 
+          onClick={() => window.location.href = 'mailto:support@example.com?subject=Genie Deck Issue'}
+          className="text-amber-700 hover:text-amber-800 dark:text-amber-300"
+        >
+          <Mail className="h-4 w-4 mr-1.5" />
+          Contact Support
+        </Button>
+      </div>
+    </AlertDescription>
+  </Alert>
+);
+
 const GenieDeck = () => {
   const navigate = useNavigate();
   const [hasGeneratedContent, setHasGeneratedContent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleError = useCallback((errorMessage: string) => {
+    setError(errorMessage);
+    toast.error('Generation encountered an issue', {
+      description: 'Please check the error message and try again.'
+    });
+  }, []);
+
+  const handleRetry = useCallback(() => {
+    setError(null);
+    toast.info('Ready to try again!');
+  }, []);
+
+  const handleDismiss = useCallback(() => {
+    setError(null);
+  }, []);
 
   return (
     <AppLayout>
@@ -103,14 +171,25 @@ const GenieDeck = () => {
           </div>
         </header>
 
+        {/* Error Display - Friendly and not scary */}
+        {error && (
+          <ErrorDisplay 
+            error={error} 
+            onRetry={handleRetry} 
+            onDismiss={handleDismiss} 
+          />
+        )}
+
         {/* Full-Screen Presentation Wizard */}
         <div className="h-[calc(100vh-56px)]">
           <PresentationWizard 
             className="h-full"
             onComplete={(presentation) => {
               setHasGeneratedContent(true);
+              setError(null);
               toast.success('Presentation generated successfully!');
             }}
+            onError={handleError}
           />
         </div>
 
