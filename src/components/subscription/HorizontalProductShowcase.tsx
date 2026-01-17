@@ -1,40 +1,21 @@
 import React from 'react';
-import { GENIE_PRODUCTS, GenieProduct } from '@/hooks/useSubscription';
+// Use centralized product definitions - SINGLE SOURCE OF TRUTH
+import { GENIE_PRODUCTS, GenieProduct, PRODUCT_DISPLAY_ORDER } from '@/constants/genie-products';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { ArrowRight, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
-// Import logos from assets - using horizontal/combined versions for better visibility
-import genieStudioLogo from '@/assets/logos/genie-studio-horizontal.png';
-import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
-import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
-import genieMindLogo from '@/assets/logos/genie-mind-combined.png';
-// Production Hub uses Arc logo (Arc is consolidated into Production Hub per architecture)
-import genieProductionHubLogo from '@/assets/logos/genie-arc-combined.png';
-import genieDeckLogo from '@/assets/logos/genie-deck-combined.png';
-
-const productLogos: Record<GenieProduct, string> = {
-  mind: genieMindLogo,
-  spark: genieSparkLogo,
-  vibe: genieVibeLogo,
-  studio: genieStudioLogo,
-  productionHub: genieProductionHubLogo,
-  deck: genieDeckLogo
-};
-
+// Map centralized products to routes
 const productRoutes: Record<GenieProduct, string> = {
   mind: '/genie-mind',
   spark: '/genie-spark',
   vibe: '/genie-vibe',
   studio: '/genie-studio',
-  productionHub: '/production-hub',
+  arc: '/production-hub', // Arc maps to production hub
   deck: '/genie-deck'
 };
-
-// Order: Mind (pre-prod) → Spark (generation) → Studio (center/hub) → Vibe (production) → Hub (coordination) → Deck (presentations)
-const productOrder: GenieProduct[] = ['mind', 'spark', 'studio', 'vibe', 'productionHub', 'deck'];
 
 export const HorizontalProductShowcase = () => {
   const navigate = useNavigate();
@@ -70,7 +51,7 @@ export const HorizontalProductShowcase = () => {
       {/* Header */}
       <div className="text-center">
         <h2 className="text-xl font-bold text-foreground">Complete Genie Suite</h2>
-        <p className="text-sm text-muted-foreground">Five powerful AI products working together</p>
+        <p className="text-sm text-muted-foreground">Six powerful AI products working together</p>
       </div>
 
       {/* Carousel with side navigation */}
@@ -101,7 +82,7 @@ export const HorizontalProductShowcase = () => {
           className="flex gap-4 overflow-x-auto px-12 py-2 scrollbar-hide snap-x snap-mandatory"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {productOrder.map((key) => {
+          {PRODUCT_DISPLAY_ORDER.map((key) => {
             const product = GENIE_PRODUCTS[key];
             const isStudio = key === 'studio';
             
@@ -128,7 +109,7 @@ export const HorizontalProductShowcase = () => {
                   </div>
                 )}
 
-                {/* Product Header */}
+                {/* Product Header with Logo from centralized source */}
                 <div className="flex items-center gap-3 mb-3">
                   <div className={cn(
                     "rounded-lg bg-white shadow flex items-center justify-center overflow-hidden",
@@ -136,7 +117,7 @@ export const HorizontalProductShowcase = () => {
                     isStudio ? "h-16 w-auto min-w-[100px] p-2" : "h-12 w-12 p-1.5"
                   )}>
                     <img 
-                      src={productLogos[key]} 
+                      src={product.logos.combined} 
                       alt={product.name}
                       className={cn(
                         "object-contain",

@@ -2095,7 +2095,7 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
                     <img src={genieDeckProductLogo} alt="Genie Deck" className="h-8 w-8 object-contain rounded bg-purple-100 p-0.5" />
                     <div className="flex flex-col items-start">
                       <span className="font-semibold">Genie Deck</span>
-                      <span className="text-[10px] font-normal text-muted-foreground">AI Presentations</span>
+                      <span className="text-[10px] font-normal text-muted-foreground">Ideas to Impact</span>
                     </div>
                   </Button>
                   
