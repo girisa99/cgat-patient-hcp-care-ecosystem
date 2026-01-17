@@ -19,7 +19,7 @@ export const PageEnrollmentIntegration: React.FC<PageEnrollmentIntegrationProps>
   variant = 'card',
   className = ''
 }) => {
-  const { currentPageConfig, getPageContext } = usePageAwareEnrollment();
+  const { currentPageConfig, pageContext } = usePageAwareEnrollment();
   const { openEnrollment } = useGlobalConversationalEnrollment();
 
   // Don't show if no page-specific config

@@ -832,26 +832,23 @@ export const AskGenie: React.FC<AskGenieProps> = ({
   const [inlineHints, setInlineHints] = useState<Array<{ id: string; type: string; message: string; confidence: number; dismissable: boolean }>>([]);
   
   // Get Ralph Wiggum context to report when Ask Genie is open
-  const { setActiveOverlay, isEnabled: isRalphEnabled, openPanel: openRalphPanel, isPanelOpen: isRalphPanelOpen } = useRalphWiggumGlobal();
+  // Only destructure what we need to avoid re-render cycles
+  const ralphContext = useRalphWiggumGlobal();
+  const isRalphEnabled = ralphContext.isEnabled;
   
   // Report open/close state to Ralph Wiggum for proper tracking
-  // Include product context so Ralph knows which page Ask Genie is on
+  // Use a ref to avoid re-render cycles with setActiveOverlay
   useEffect(() => {
-    if (isRalphEnabled) {
-      const overlayId = isOpen ? `ask-genie:${product}` : null;
-      setActiveOverlay(overlayId);
-      
-      // Debug logging in dev mode
-      if (import.meta.env.DEV && isOpen) {
-        console.log(`🐛 Ralph Wiggum: Ask Genie opened on product="${product}"`);
-      }
-    }
+    if (!isRalphEnabled) return;
+    
+    const overlayId = isOpen ? `ask-genie:${product}` : null;
+    ralphContext.setActiveOverlay(overlayId);
+    
     return () => {
-      if (isRalphEnabled) {
-        setActiveOverlay(null);
-      }
+      ralphContext.setActiveOverlay(null);
     };
-  }, [isOpen, isRalphEnabled, setActiveOverlay, product]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, product]); // Only depend on isOpen and product, not the context functions
   
   // Memoize sessionData to prevent unnecessary recalculations
   const sessionDataKey = useMemo(() => JSON.stringify(sessionData || {}), [sessionData]);

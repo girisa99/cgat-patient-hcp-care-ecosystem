@@ -2,7 +2,7 @@
  * PAGE-AWARE ENROLLMENT HOOK
  * Detects current page and shows relevant enrollment options only
  */
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
@@ -112,7 +112,7 @@ export const usePageAwareEnrollment = () => {
     return null;
   }, [location.pathname]);
 
-  const getAvailableModules = (): ModuleType[] => {
+  const getAvailableModules = useCallback((): ModuleType[] => {
     if (!currentPageConfig) {
       // Show all modules for general pages
       return ['patient', 'treatment_center', 'customer', 'manufacturer'];
@@ -120,24 +120,23 @@ export const usePageAwareEnrollment = () => {
     
     // Show only the relevant module for specific pages
     return [currentPageConfig.moduleType];
-  };
+  }, [currentPageConfig]);
 
-  const shouldShowFloatingButton = (): boolean => {
+  const shouldShowFloatingButton = useMemo((): boolean => {
     return currentPageConfig?.showFloating ?? false;
-  };
+  }, [currentPageConfig]);
 
-  const getPageContext = () => {
-    return {
-      isPageSpecific: !!currentPageConfig,
-      config: currentPageConfig,
-      availableModules: getAvailableModules(),
-      showFloating: shouldShowFloatingButton(),
-      pathname: location.pathname
-    };
-  };
+  // Memoize pageContext to prevent re-render loops
+  const pageContext = useMemo(() => ({
+    isPageSpecific: !!currentPageConfig,
+    config: currentPageConfig,
+    availableModules: currentPageConfig ? [currentPageConfig.moduleType] : ['patient', 'treatment_center', 'customer', 'manufacturer'],
+    showFloating: currentPageConfig?.showFloating ?? false,
+    pathname: location.pathname
+  }), [currentPageConfig, location.pathname]);
 
-  const getContextualPrompt = (moduleType: ModuleType): string => {
-    const contextPrompts = {
+  const getContextualPrompt = useCallback((moduleType: ModuleType): string => {
+    const contextPrompts: Record<ModuleType, Record<string, string>> = {
       patient: {
         patient_portal: "I see you're in the patient portal. Let me help you complete your patient enrollment quickly and easily.",
         patient_onboarding: "Welcome to patient onboarding! I'm here to guide you through your medical intake process.",
@@ -163,13 +162,13 @@ export const usePageAwareEnrollment = () => {
     const context = currentPageConfig?.context || 'dashboard';
     return contextPrompts[moduleType]?.[context] || 
            `Let me help you complete ${moduleType} enrollment through our conversational system.`;
-  };
+  }, [currentPageConfig]);
 
   return {
     currentPageConfig,
     getAvailableModules,
     shouldShowFloatingButton,
-    getPageContext,
+    pageContext,
     getContextualPrompt
   };
 };
