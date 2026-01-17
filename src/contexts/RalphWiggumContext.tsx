@@ -371,7 +371,14 @@ const DevProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     };
   }, [findings]);
   
-  const value: RalphWiggumContextValue = {
+  // Memoize callbacks to prevent unnecessary re-renders
+  const togglePanel = useCallback(() => setIsPanelOpen(p => !p), []);
+  const openPanel = useCallback(() => setIsPanelOpen(true), []);
+  const closePanel = useCallback(() => setIsPanelOpen(false), []);
+  const setActiveOverlayCallback = useCallback((overlay: string | null) => setActiveOverlay(overlay), []);
+  
+  // Memoize the context value to prevent unnecessary re-renders
+  const value: RalphWiggumContextValue = useMemo(() => ({
     findings,
     isLoading,
     isAnalyzing,
@@ -379,21 +386,42 @@ const DevProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     isPanelOpen,
     isEnabled: true,
     activeOverlay,
-    togglePanel: () => setIsPanelOpen(p => !p),
-    openPanel: () => setIsPanelOpen(true),
-    closePanel: () => setIsPanelOpen(false),
+    togglePanel,
+    openPanel,
+    closePanel,
     refreshFindings,
     addFinding,
     updateFindingStatus,
     deleteFinding,
     exportFindings,
     triggerAnalysis,
-    setActiveOverlay,
+    setActiveOverlay: setActiveOverlayCallback,
     filterByPage,
     filterByStatus,
     filterByType,
     stats
-  };
+  }), [
+    findings,
+    isLoading,
+    isAnalyzing,
+    currentPageRoute,
+    isPanelOpen,
+    activeOverlay,
+    togglePanel,
+    openPanel,
+    closePanel,
+    refreshFindings,
+    addFinding,
+    updateFindingStatus,
+    deleteFinding,
+    exportFindings,
+    triggerAnalysis,
+    setActiveOverlayCallback,
+    filterByPage,
+    filterByStatus,
+    filterByType,
+    stats
+  ]);
   
   return (
     <RalphWiggumContext.Provider value={value}>

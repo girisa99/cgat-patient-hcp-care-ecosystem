@@ -25,7 +25,7 @@ export const EnrollmentLauncher: React.FC<EnrollmentLauncherProps> = ({
   forceModule
 }) => {
   const { openEnrollment } = useGlobalConversationalEnrollment();
-  const { getAvailableModules, getPageContext } = usePageAwareEnrollment();
+  const { getAvailableModules, pageContext } = usePageAwareEnrollment();
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Determine which modules to show
@@ -81,9 +81,8 @@ export const EnrollmentLauncher: React.FC<EnrollmentLauncherProps> = ({
 
   // Get page-specific title if available
   const getContextualTitle = () => {
-    const context = getPageContext();
-    if (context.isPageSpecific && context.config) {
-      return context.config.title;
+    if (pageContext.isPageSpecific && pageContext.config) {
+      return pageContext.config.title;
     }
     return isSingleOption ? singleOption.title : 'AI Enrollment';
   };

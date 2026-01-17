@@ -2,7 +2,7 @@
  * GLOBAL CONVERSATIONAL ENROLLMENT HOOK
  * Provides global access to conversational enrollment from any page
  */
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode, useMemo, useCallback } from 'react';
 import { usePageAwareEnrollment } from './usePageAwareEnrollment';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
@@ -21,9 +21,9 @@ const GlobalConversationalEnrollmentContext = createContext<GlobalConversational
 export const GlobalConversationalEnrollmentProvider = ({ children }: { children: ReactNode }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [moduleType, setModuleType] = useState<ModuleType | null>(null);
-  const { getPageContext, getAvailableModules } = usePageAwareEnrollment();
+  const { pageContext, getAvailableModules } = usePageAwareEnrollment();
 
-  const openEnrollment = (type?: ModuleType) => {
+  const openEnrollment = useCallback((type?: ModuleType) => {
     console.log('🚀 Opening enrollment with type:', type);
     // If no type specified, use the first available module for the current page
     const availableModules = getAvailableModules();
@@ -33,16 +33,17 @@ export const GlobalConversationalEnrollmentProvider = ({ children }: { children:
     setModuleType(selectedType);
     setIsOpen(true);
     console.log('✅ Modal should be open now');
-  };
+  }, [getAvailableModules]);
 
-  const closeEnrollment = () => {
+  const closeEnrollment = useCallback(() => {
     setIsOpen(false);
     setModuleType(null);
-  };
+  }, []);
 
-  const onComplete = (result: { instanceId: string; pdfUrl: string }) => {
+  const onComplete = useCallback((result: { instanceId: string; pdfUrl: string }) => {
     console.log('Enrollment completed:', result);
-    closeEnrollment();
+    setIsOpen(false);
+    setModuleType(null);
     
     // Show success notification or redirect
     if (result.pdfUrl) {
@@ -52,19 +53,20 @@ export const GlobalConversationalEnrollmentProvider = ({ children }: { children:
       link.download = `enrollment_${result.instanceId}.pdf`;
       link.click();
     }
-  };
+  }, []);
+
+  // Memoize context value to prevent unnecessary re-renders
+  const value = useMemo(() => ({
+    isOpen,
+    moduleType,
+    openEnrollment,
+    closeEnrollment,
+    onComplete,
+    pageContext
+  }), [isOpen, moduleType, openEnrollment, closeEnrollment, onComplete, pageContext]);
 
   return (
-    <GlobalConversationalEnrollmentContext.Provider
-      value={{
-        isOpen,
-        moduleType,
-        openEnrollment,
-        closeEnrollment,
-        onComplete,
-        pageContext: getPageContext()
-      }}
-    >
+    <GlobalConversationalEnrollmentContext.Provider value={value}>
       {children}
     </GlobalConversationalEnrollmentContext.Provider>
   );

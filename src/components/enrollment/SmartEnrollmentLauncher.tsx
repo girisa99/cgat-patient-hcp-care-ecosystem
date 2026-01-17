@@ -42,8 +42,7 @@ export const SmartEnrollmentLauncher: React.FC<SmartEnrollmentLauncherProps> = (
   const [selectedMethod, setSelectedMethod] = useState<EnrollmentMethod | null>(null);
   const [selectedModule, setSelectedModule] = useState<ModuleType | null>(null);
   
-  const { getPageContext, getAvailableModules } = usePageAwareEnrollment();
-  const pageContext = getPageContext();
+  const { pageContext, getAvailableModules } = usePageAwareEnrollment();
   const availableModules = getAvailableModules();
   
   const suggestedModule = forceModule || availableModules[0] || 'patient';
