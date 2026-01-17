@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils';
 import { ArrowRight, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { GenieDeckLogo } from '@/components/genie-studio/GenieDeckLogo';
 
 // Map centralized products to routes
 const productRoutes: Record<GenieProduct, string> = {
@@ -45,32 +44,6 @@ export const HorizontalProductShowcase = () => {
 
   const handleProductClick = (key: GenieProduct) => {
     navigate(productRoutes[key], { state: { from: '/subscription' } });
-  };
-
-  // Render logo based on product type
-  const renderProductLogo = (key: GenieProduct, product: typeof GENIE_PRODUCTS[GenieProduct], isStudio: boolean) => {
-    // Use GenieDeckLogo component for deck
-    if (key === 'deck') {
-      return <GenieDeckLogo size="sm" variant="icon" showTagline={false} />;
-    }
-    
-    // Use image for other products
-    return (
-      <div className={cn(
-        "rounded-lg bg-white shadow flex items-center justify-center overflow-hidden",
-        product.borderColor, "border",
-        isStudio ? "h-16 w-auto min-w-[100px] p-2" : "h-12 w-12 p-1.5"
-      )}>
-        <img 
-          src={product.logos.combined} 
-          alt={product.name}
-          className={cn(
-            "object-contain",
-            isStudio ? "h-12 w-auto max-w-[120px]" : "h-8 w-8"
-          )}
-        />
-      </div>
-    );
   };
 
   return (
@@ -112,7 +85,6 @@ export const HorizontalProductShowcase = () => {
           {PRODUCT_DISPLAY_ORDER.map((key) => {
             const product = GENIE_PRODUCTS[key];
             const isStudio = key === 'studio';
-            const isDeck = key === 'deck';
             
             return (
               <div
@@ -137,19 +109,23 @@ export const HorizontalProductShowcase = () => {
                   </div>
                 )}
 
-                {/* Product Header with Logo */}
+                {/* Product Header with Logo from centralized source */}
                 <div className="flex items-center gap-3 mb-3">
-                  {renderProductLogo(key, product, isStudio)}
-                  {!isStudio && !isDeck && (
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground truncate text-base">
-                        {product.name}
-                      </h3>
-                      <p className="text-xs text-muted-foreground truncate">{product.tagline}</p>
-                    </div>
-                  )}
-                  {/* Deck shows name/tagline separately since logo is SVG */}
-                  {isDeck && (
+                  <div className={cn(
+                    "rounded-lg bg-white shadow flex items-center justify-center overflow-hidden",
+                    product.borderColor, "border",
+                    isStudio ? "h-16 w-auto min-w-[100px] p-2" : "h-12 w-12 p-1.5"
+                  )}>
+                    <img 
+                      src={product.logos.combined} 
+                      alt={product.name}
+                      className={cn(
+                        "object-contain",
+                        isStudio ? "h-12 w-auto max-w-[120px]" : "h-8 w-8"
+                      )}
+                    />
+                  </div>
+                  {!isStudio && (
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-foreground truncate text-base">
                         {product.name}
