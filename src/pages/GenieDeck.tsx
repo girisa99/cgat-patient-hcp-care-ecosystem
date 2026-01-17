@@ -21,6 +21,8 @@ import {
 import { PresentationWizard } from '@/components/genie-studio/presentation-generator/PresentationWizard';
 import { BackToSubscription } from '@/components/subscription/BackToSubscription';
 import { AskGenie } from '@/components/genie-studio/AskGenie';
+import { HIPAAComplianceFooter } from '@/components/genie-studio/HIPAAComplianceFooter';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import genieDeckLogo from '@/assets/logos/genie-deck-combined.png';
 
@@ -40,26 +42,38 @@ const GenieDeck = () => {
                 fallbackLabel="Studio" 
               />
               
-              <div className="flex items-center gap-3 group">
-                {/* Logo with hover tooltip */}
-                <div className="relative">
-                  <div className="h-9 w-9 rounded-lg bg-white/90 backdrop-blur border border-purple-200/50 flex items-center justify-center shadow-sm overflow-hidden p-1 transition-transform group-hover:scale-110">
-                    <img src={genieDeckLogo} alt="Genie Deck" className="h-full w-full object-contain" />
-                  </div>
-                  {/* Hover tooltip with larger logo */}
-                  <div className="absolute left-0 top-12 z-50 hidden group-hover:block">
-                    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl border p-4 min-w-[280px]">
-                      <img src={genieDeckLogo} alt="Genie Deck" className="h-20 w-auto mx-auto object-contain" />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-3 group cursor-help">
+                      {/* Logo with hover tooltip */}
+                      <div className="relative">
+                        <div className="h-9 w-9 rounded-lg bg-white/90 backdrop-blur border border-purple-200/50 flex items-center justify-center shadow-sm overflow-hidden p-1 transition-transform group-hover:scale-110">
+                          <img src={genieDeckLogo} alt="Genie Deck" className="h-full w-full object-contain" />
+                        </div>
+                        {/* Hover tooltip with larger logo */}
+                        <div className="absolute left-0 top-12 z-50 hidden group-hover:block">
+                          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl border p-4 min-w-[280px]">
+                            <img src={genieDeckLogo} alt="Genie Deck" className="h-20 w-auto mx-auto object-contain" />
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <h1 className="text-lg font-semibold bg-gradient-to-r from-purple-600 to-violet-600 bg-clip-text text-transparent">
+                          Genie Deck
+                        </h1>
+                        <p className="text-xs text-muted-foreground hidden sm:block">Ideas to Impact</p>
+                      </div>
                     </div>
-                  </div>
-                </div>
-                <div>
-                  <h1 className="text-lg font-semibold bg-gradient-to-r from-purple-600 to-violet-600 bg-clip-text text-transparent">
-                    Genie Deck
-                  </h1>
-                  <p className="text-xs text-muted-foreground hidden sm:block">Ideas to Impact</p>
-                </div>
-              </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs p-3">
+                    <p className="font-medium text-foreground">AI Presentation Generator</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Transform your ideas, notes, or documents into professional presentations with AI-powered slide generation, multi-language support, and smart visuals.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
 
             <div className="flex items-center gap-2">
@@ -99,6 +113,9 @@ const GenieDeck = () => {
             }}
           />
         </div>
+
+        {/* HIPAA Compliance Footer */}
+        <HIPAAComplianceFooter variant="compact" className="fixed bottom-4 left-4 z-30" />
 
         {/* Ask Genie - Context-aware AI for Deck */}
         <AskGenie 
