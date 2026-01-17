@@ -1104,32 +1104,26 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
           onClick={() => setIsOpen(true)}
           className={cn(
             "h-auto w-auto rounded-2xl shadow-2xl px-4 py-3 bg-white hover:bg-gray-50 border-2 transition-all duration-300 group",
-            isProductPage ? "border-purple-300 hover:border-purple-400" : "border-purple-200 hover:border-purple-300"
+            "border-purple-200 hover:border-purple-300"
           )}
           variant="ghost"
         >
           <div className="flex items-center gap-3">
-            {/* Product Logo */}
-            <div className={cn(
-              "h-12 w-12 rounded-xl flex items-center justify-center shadow-inner overflow-hidden",
-              isProductPage ? "bg-gradient-to-br from-purple-50 to-violet-50" : "bg-gradient-to-br from-purple-100 to-violet-100"
-            )}>
+            {/* Always show Ask Genie logo */}
+            <div className="h-12 w-12 rounded-xl flex items-center justify-center shadow-inner overflow-hidden bg-gradient-to-br from-purple-100 to-violet-100">
               <img 
-                src={currentProduct?.logos.combined || ASK_GENIE.logo}
-                alt={currentProduct?.name || ASK_GENIE.name}
+                src={ASK_GENIE.logo}
+                alt={ASK_GENIE.name}
                 className="h-10 w-10 object-contain"
               />
             </div>
-            {/* Text - Show product name on product pages */}
+            {/* Always show "Ask Genie" - never product-specific */}
             <div className="text-left pr-1">
-              <div className={cn(
-                "font-bold text-base bg-clip-text text-transparent flex items-center gap-1.5",
-                isProductPage ? "bg-gradient-to-r from-purple-600 to-violet-600" : "bg-gradient-to-r from-violet-600 to-fuchsia-600"
-              )}>
-                {isProductPage ? `${productContext.name} ${productContext.emoji}` : `${ASK_GENIE.name} ${ASK_GENIE.emoji}`}
+              <div className="font-bold text-base bg-clip-text text-transparent flex items-center gap-1.5 bg-gradient-to-r from-violet-600 to-fuchsia-600">
+                {ASK_GENIE.name} {ASK_GENIE.emoji}
               </div>
               <div className="text-xs text-muted-foreground italic">
-                {isProductPage ? productContext.tagline : ASK_GENIE.tagline}
+                {ASK_GENIE.tagline}
               </div>
             </div>
           </div>
@@ -1154,41 +1148,39 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
         className
       )}
     >
-      {/* Enhanced Header with Product-Specific Branding */}
+      {/* Header - Always show "Ask Genie" branding */}
       <div className={cn(
         "flex flex-col border-b overflow-hidden",
-        `bg-gradient-to-br ${product !== 'studio' ? productContext.color : ASK_GENIE.color}`
+        `bg-gradient-to-br ${ASK_GENIE.color}`
       )}>
-        {/* Hero Banner - Show product branding when on specific product page */}
+        {/* Hero Banner - Always show Ask Genie branding */}
         <div className="px-5 py-4 flex items-center gap-4">
-          {/* Large Product Logo */}
+          {/* Always show Ask Genie Logo */}
           <div className="h-16 w-16 rounded-2xl bg-white flex items-center justify-center overflow-hidden shadow-xl border-2 border-white/50 flex-shrink-0">
-            {product !== 'studio' && GENIE_PRODUCTS[product as keyof typeof GENIE_PRODUCTS] ? (
-              <img 
-                src={GENIE_PRODUCTS[product as keyof typeof GENIE_PRODUCTS].logos.combined} 
-                alt={productContext.name} 
-                className="h-14 w-14 object-contain"
-              />
-            ) : (
-              <img 
-                src={ASK_GENIE.logo} 
-                alt={ASK_GENIE.name} 
-                className="h-14 w-14 object-contain"
-              />
-            )}
+            <img 
+              src={ASK_GENIE.logo} 
+              alt={ASK_GENIE.name} 
+              className="h-14 w-14 object-contain"
+            />
           </div>
-          {/* Name & Tagline - Product specific when not studio */}
+          {/* Always show "Ask Genie" name and tagline */}
           <div className="flex-1 min-w-0">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              {product !== 'studio' ? productContext.name : ASK_GENIE.name} {product !== 'studio' ? productContext.emoji : ASK_GENIE.emoji}
+              {ASK_GENIE.name} {ASK_GENIE.emoji}
             </h2>
             <p className="text-sm text-white/90 italic font-medium mt-0.5">
-              "{product !== 'studio' ? productContext.tagline : ASK_GENIE.tagline}"
+              "{ASK_GENIE.tagline}"
             </p>
             <div className="flex items-center gap-2 mt-1.5">
               <Badge variant="outline" className="text-[10px] bg-white/20 text-white border-white/30 px-2 py-0">
-                🧞 Ask Genie Assistant
+                🧞 AI Assistant
               </Badge>
+              {/* Show context indicator for which product we're helping with */}
+              {product !== 'studio' && (
+                <Badge variant="outline" className="text-[10px] bg-white/10 text-white/90 border-white/20 px-2 py-0">
+                  Helping with: {productContext.name}
+                </Badge>
+              )}
             </div>
           </div>
           {/* Controls */}
