@@ -825,7 +825,7 @@ export const AskGenie: React.FC<AskGenieProps> = ({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   
   const { generateResponse } = useUniversalAI();
-  const { recordEvent, getHints, getSuggestions } = useLabelStudioBackground();
+  const labelStudioService = useLabelStudioBackground();
   const productContext = PRODUCT_CONTEXTS[product];
   
   // State for inline hints from Label Studio
@@ -904,15 +904,17 @@ export const AskGenie: React.FC<AskGenieProps> = ({
   }, [isOpen, lastActivityTime, product]); // Removed hasOfferedHelp and messages.length from deps
 
   // Get inline hints from Label Studio background service (sync - cached patterns)
+  // Only run once when popup opens, not on every re-render
   useEffect(() => {
     if (!isOpen) return;
     
     const productKey = product === 'studio' || product === 'deck' ? 'mind' : product;
-    const hints = getHints(productKey as 'mind' | 'spark' | 'vibe' | 'arc' | 'hub', { currentTab, sessionData, subscriptionTier });
+    const hints = labelStudioService.getHints(productKey as 'mind' | 'spark' | 'vibe' | 'arc' | 'hub', { currentTab, subscriptionTier });
     if (hints && hints.length > 0) {
       setInlineHints(hints);
     }
-  }, [isOpen, product, currentTab, getHints, sessionData, subscriptionTier]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, product, currentTab]);
 
   // Track activity - only update when chat is opened, not on every input change
   const isOpenRef = useRef(isOpen);
@@ -1046,7 +1048,7 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
       }
       
       // Record training event for ML improvement (invisible to user)
-      recordEvent({
+      labelStudioService.recordEvent({
         eventType: 'script_enhancement_accepted',
         context: {
           product: (product === 'studio' || product === 'deck') ? 'mind' : product as 'mind' | 'spark' | 'vibe' | 'arc' | 'hub',
@@ -1072,7 +1074,7 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
     } finally {
       setIsLoading(false);
     }
-  }, [input, isLoading, product, productContext, currentTab, sessionData, subscriptionTier, generateResponse, recordEvent]);
+  }, [input, isLoading, product, productContext, currentTab, sessionData, subscriptionTier, generateResponse, labelStudioService]);
 
   const handleClose = useCallback(() => {
     setIsOpen(false);

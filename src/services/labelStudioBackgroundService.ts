@@ -231,16 +231,17 @@ class LabelStudioBackgroundService {
 // Export singleton instance
 export const labelStudioService = LabelStudioBackgroundService.getInstance();
 
-// Export hook for React components
+// Stable interface for the hook
+const stableHookInterface = {
+  recordEvent: (event: TrainingEvent) => labelStudioService.recordEvent(event),
+  getHints: (product: 'mind' | 'spark' | 'vibe' | 'arc' | 'hub', context: Record<string, any>) => 
+    labelStudioService.getInlineHints(product, context),
+  getSuggestions: (type: 'caption' | 'hashtag' | 'thumbnail' | 'seo' | 'script', input: string, context?: Record<string, any>) =>
+    labelStudioService.getSuggestions(type, input, context),
+  setEnabled: (enabled: boolean) => labelStudioService.setEnabled(enabled)
+};
+
+// Export hook for React components - returns stable reference to prevent infinite loops
 export function useLabelStudioBackground() {
-  return {
-    recordEvent: (event: TrainingEvent) => labelStudioService.recordEvent(event),
-    // Sync version - returns cached hints immediately
-    getHints: (product: 'mind' | 'spark' | 'vibe' | 'arc' | 'hub', context: Record<string, any>) => 
-      labelStudioService.getInlineHints(product, context),
-    // Async version - calls Universal AI
-    getSuggestions: (type: 'caption' | 'hashtag' | 'thumbnail' | 'seo' | 'script', input: string, context?: Record<string, any>) =>
-      labelStudioService.getSuggestions(type, input, context),
-    setEnabled: (enabled: boolean) => labelStudioService.setEnabled(enabled)
-  };
+  return stableHookInterface;
 }
