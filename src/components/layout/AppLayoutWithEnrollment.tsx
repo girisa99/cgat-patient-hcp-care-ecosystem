@@ -26,6 +26,7 @@ const GENIE_STUDIO_ROUTES = [
   '/genie-arc',
   '/genie-mind',
   '/genie-vibe',
+  '/genie-deck',
   '/genie-studio/productions'
 ];
 
