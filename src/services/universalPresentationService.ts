@@ -32,7 +32,7 @@ export type ImageStyleType = 'sketch' | 'ai-realistic' | 'illustration' | 'infog
 export type VoiceProviderType = 'openai' | 'elevenlabs' | 'amazon-polly' | 'google';
 
 // Tone/Style options for presentation
-export type PresentationTone = 'professional' | 'humor' | 'empathy' | 'engagement' | 'balanced' | 'scientific' | 'research' | 'inspirational';
+export type PresentationTone = 'professional' | 'humor' | 'empathy' | 'engagement' | 'balanced' | 'scientific' | 'research' | 'inspirational' | 'storytelling' | 'empathetic' | 'conversational' | 'persuasive' | 'educational';
 
 // Content enhancement types
 export type ContentEnhancement = 
