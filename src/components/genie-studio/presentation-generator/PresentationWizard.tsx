@@ -178,13 +178,13 @@ const getConfidenceColor = (score: number): string => {
   return 'text-red-500 bg-red-500/10';
 };
 
-// Wizard Steps - Extended with branding
+// Wizard Steps - Extended with branding and clear descriptions
 const WIZARD_STEPS = [
-  { id: 'input', label: 'Content Input', icon: Type, description: 'Add your content' },
-  { id: 'branding', label: 'Brand & Style', icon: Palette, description: 'Templates & branding' },
-  { id: 'images', label: 'Image Settings', icon: ImageIcon, description: 'Configure visuals' },
-  { id: 'languages', label: 'Languages', icon: Languages, description: 'Multi-language' },
-  { id: 'generate', label: 'Generate', icon: Wand2, description: 'Create presentation' },
+  { id: 'input', label: 'Content', icon: Type, description: 'Add your source material to transform into slides' },
+  { id: 'branding', label: 'Style', icon: Palette, description: 'Choose templates, colors, and branding' },
+  { id: 'images', label: 'Visuals', icon: ImageIcon, description: 'Configure how images are generated' },
+  { id: 'languages', label: 'Languages', icon: Languages, description: 'Enable multi-language output' },
+  { id: 'generate', label: 'Create', icon: Wand2, description: 'Generate your presentation' },
 ];
 
 // Convert slide to layout elements for drag-and-drop
@@ -1053,12 +1053,23 @@ export function PresentationWizard({
             {/* Step 1: Brand & Style */}
             {currentStep === 1 && (
               <div className="space-y-4">
+                {/* Step description */}
+                <div className="bg-muted/30 rounded-lg p-3 border">
+                  <p className="text-sm text-foreground font-medium">Customize Your Look</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Select a template and customize colors to match your brand identity.
+                  </p>
+                </div>
+                
                 {/* Template & Theme */}
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <Layout className="h-4 w-4" />
-                      Template & Theme
+                      <Layout className="h-4 w-4 text-primary" />
+                      <span>Template & Theme</span>
+                      <span className="text-xs font-normal text-muted-foreground ml-1">
+                        — Choose your base design
+                      </span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-3 pt-0">
@@ -1177,11 +1188,20 @@ export function PresentationWizard({
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center gap-2">
-                    <ImageIcon className="h-4 w-4" />
-                    Image Configuration
+                    <ImageIcon className="h-4 w-4 text-primary" />
+                    <span>Visual Configuration</span>
+                    <span className="text-xs font-normal text-muted-foreground ml-1">
+                      — Set up how images appear in your slides
+                    </span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {/* Step description */}
+                  <div className="bg-muted/30 rounded-lg p-3 border">
+                    <p className="text-xs text-muted-foreground">
+                      Choose whether to use AI-generated images, upload your own, or use placeholders. Configure the visual style for consistency.
+                    </p>
+                  </div>
                   <div className="space-y-2">
                     <Label className="text-xs">Image Source</Label>
                     <Select value={imageSource} onValueChange={(v) => setImageSource(v as ImageSourceType)}>
@@ -1248,12 +1268,23 @@ export function PresentationWizard({
             {/* Step 3: Languages - Multi-Language Generation */}
             {currentStep === 3 && (
               <div className="space-y-4">
+                {/* Step description */}
+                <div className="bg-muted/30 rounded-lg p-3 border">
+                  <p className="text-sm text-foreground font-medium">Multi-Language Support</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Generate your presentation in multiple languages simultaneously. Select your primary language and any additional translations needed.
+                  </p>
+                </div>
+                
                 {/* Agentic Generation Toggle */}
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <Brain className="h-4 w-4" />
-                      Generation Mode
+                      <Brain className="h-4 w-4 text-primary" />
+                      <span>AI Generation Mode</span>
+                      <span className="text-xs font-normal text-muted-foreground ml-1">
+                        — Choose how slides are generated
+                      </span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -1427,16 +1458,27 @@ export function PresentationWizard({
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center gap-2">
-                    <Wand2 className="h-4 w-4" />
-                    Generate Presentation
+                    <Wand2 className="h-4 w-4 text-primary" />
+                    <span>Create Your Presentation</span>
+                    <span className="text-xs font-normal text-muted-foreground ml-1">
+                      — Review and generate
+                    </span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {/* Step description */}
+                  <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-3 border border-green-200 dark:border-green-800">
+                    <p className="text-sm text-green-800 dark:text-green-200 font-medium">Ready to Generate!</p>
+                    <p className="text-xs text-green-700 dark:text-green-300 mt-1">
+                      Review your settings below, then click "Generate" to create your presentation. This typically takes 1-3 minutes depending on length and options selected.
+                    </p>
+                  </div>
+                  
                   {/* Comprehensive Options Summary */}
                   <div className="p-4 rounded-lg bg-muted/50 space-y-3">
                     <h4 className="text-sm font-medium flex items-center gap-2">
                       <Settings2 className="h-4 w-4" />
-                      Selected Options
+                      Your Configuration Summary
                     </h4>
                     
                     {/* Basic Settings */}

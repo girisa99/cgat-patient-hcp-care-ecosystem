@@ -110,21 +110,13 @@ const GenieDeck = () => {
                 fallbackLabel="Studio" 
               />
               
-              <TooltipProvider>
+              <TooltipProvider delayDuration={300}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex items-center gap-3 group cursor-help">
-                      {/* Logo with hover tooltip */}
-                      <div className="relative">
-                        <div className="h-9 w-9 rounded-lg bg-white/90 backdrop-blur border border-purple-200/50 flex items-center justify-center shadow-sm overflow-hidden p-1 transition-transform group-hover:scale-110">
-                          <img src={genieDeckLogo} alt="Genie Deck" className="h-full w-full object-contain" />
-                        </div>
-                        {/* Hover tooltip with larger logo */}
-                        <div className="absolute left-0 top-12 z-50 hidden group-hover:block">
-                          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl border p-4 min-w-[280px]">
-                            <img src={genieDeckLogo} alt="Genie Deck" className="h-20 w-auto mx-auto object-contain" />
-                          </div>
-                        </div>
+                    <div className="flex items-center gap-3 cursor-help">
+                      {/* Logo - no duplicate hover, just trigger for tooltip */}
+                      <div className="h-9 w-9 rounded-lg bg-white/90 backdrop-blur border border-purple-200/50 flex items-center justify-center shadow-sm overflow-hidden p-1">
+                        <img src={genieDeckLogo} alt="Genie Deck" className="h-full w-full object-contain" />
                       </div>
                       <div>
                         <h1 className="text-lg font-semibold bg-gradient-to-r from-purple-600 to-violet-600 bg-clip-text text-transparent">
@@ -134,9 +126,13 @@ const GenieDeck = () => {
                       </div>
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-xs p-3">
-                    <p className="font-medium text-foreground">AI Presentation Generator</p>
-                    <p className="text-xs text-muted-foreground mt-1">
+                  <TooltipContent 
+                    side="bottom" 
+                    className="max-w-xs p-3 bg-white dark:bg-gray-900 border shadow-lg z-50"
+                    sideOffset={8}
+                  >
+                    <p className="font-medium text-gray-900 dark:text-white">AI Presentation Generator</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
                       Transform your ideas, notes, or documents into professional presentations with AI-powered slide generation, multi-language support, and smart visuals.
                     </p>
                   </TooltipContent>
