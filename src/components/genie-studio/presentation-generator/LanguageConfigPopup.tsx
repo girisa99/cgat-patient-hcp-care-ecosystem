@@ -2,10 +2,12 @@
  * Language Configuration Popup
  * 
  * Appears when user selects each language for generation.
- * Allows configuring AI models for text, image, and voice per language.
+ * Allows configuring AI models for text, image, voice AND translation provider per language.
+ * 
+ * Integrated with TranslationProviderSelector for intelligent provider recommendations.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -25,6 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Globe,
   Brain,
@@ -35,19 +38,35 @@ import {
   Sparkles,
   Check,
   ChevronRight,
+  Languages,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LanguageModelConfig } from '@/services/agentPresentationGeneratorService';
 import { SUPPORTED_LANGUAGES, LanguageConfig } from './MultiLanguageGenerator';
+import { TranslationProviderSelector } from './TranslationProviderSelector';
+import { 
+  TranslationProvider, 
+  IndustrySegment, 
+  TRANSLATION_PROVIDERS,
+  translationService,
+} from '@/services/translationService';
+
+export interface ExtendedLanguageModelConfig extends LanguageModelConfig {
+  translationProvider?: TranslationProvider;
+  industrySegment?: IndustrySegment;
+}
 
 interface LanguageConfigPopupProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   language: LanguageConfig | null;
   isPrimary: boolean;
-  existingConfig?: LanguageModelConfig;
-  onConfirm: (config: LanguageModelConfig) => void;
+  existingConfig?: ExtendedLanguageModelConfig;
+  onConfirm: (config: ExtendedLanguageModelConfig) => void;
   onSkip?: () => void;
+  sourceLanguage?: string;
+  industrySegment?: IndustrySegment;
+  contentType?: 'general' | 'medical' | 'legal' | 'technical' | 'marketing' | 'presentation';
 }
 
 // Available models
@@ -90,16 +109,28 @@ export function LanguageConfigPopup({
   existingConfig,
   onConfirm,
   onSkip,
+  sourceLanguage = 'en',
+  industrySegment,
+  contentType = 'presentation',
 }: LanguageConfigPopupProps) {
-  const [config, setConfig] = useState<LanguageModelConfig>({
+  const [config, setConfig] = useState<ExtendedLanguageModelConfig>({
     languageCode: language?.code || 'en',
     textModel: 'google/gemini-3-flash-preview',
     imageModel: 'google/gemini-2.5-flash-image-preview',
     voiceModel: 'openai',
     voiceId: 'alloy',
+    translationProvider: 'google_translate',
+    industrySegment: industrySegment,
   });
 
   const [includeVoiceover, setIncludeVoiceover] = useState(false);
+  const [activeTab, setActiveTab] = useState<'models' | 'translation'>('models');
+
+  // Get recommended translation provider for this language
+  const recommendedProvider = useMemo(() => {
+    if (!language) return 'google_translate';
+    return translationService.getRecommendedProvider(sourceLanguage, language.code);
+  }, [language, sourceLanguage]);
 
   // Update config when language changes
   useEffect(() => {
@@ -113,12 +144,14 @@ export function LanguageConfigPopup({
           imageModel: 'google/gemini-2.5-flash-image-preview',
           voiceModel: 'openai',
           voiceId: 'alloy',
+          translationProvider: recommendedProvider,
+          industrySegment: industrySegment,
         });
       }
     }
-  }, [language, existingConfig]);
+  }, [language, existingConfig, recommendedProvider, industrySegment]);
 
-  const updateConfig = (updates: Partial<LanguageModelConfig>) => {
+  const updateConfig = (updates: Partial<ExtendedLanguageModelConfig>) => {
     setConfig(prev => ({ ...prev, ...updates }));
   };
 
@@ -130,12 +163,13 @@ export function LanguageConfigPopup({
   const selectedTextModel = TEXT_MODELS.find(m => m.id === config.textModel);
   const selectedImageModel = IMAGE_MODELS.find(m => m.id === config.imageModel);
   const selectedVoiceProvider = VOICE_MODELS.find(m => m.id === config.voiceModel);
+  const selectedTranslationProvider = TRANSLATION_PROVIDERS.find(p => p.id === config.translationProvider);
 
   if (!language) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span className="text-2xl">{language.flag}</span>
