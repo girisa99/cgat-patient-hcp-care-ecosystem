@@ -44,7 +44,10 @@ export type ContentEnhancement =
   | 'case-examples'         // Real-world examples
   | 'statistics'            // Key statistics
   | 'quotes'                // Expert quotes
-  | 'research-citations';   // Academic citations
+  | 'research-citations'    // Academic citations
+  | 'storytelling'          // Narrative-driven content
+  | 'empathy-focus'         // Empathy-centered messaging
+  | 'emotional-hooks';      // Emotional engagement points
 
 // Slide count estimation
 export interface SlideCountEstimate {

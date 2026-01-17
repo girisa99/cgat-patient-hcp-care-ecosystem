@@ -79,11 +79,13 @@ import {
   Share2,
   Linkedin,
   Youtube,
+  Film,
+  Video,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { usePresentationSession, PresentationSessionConfig } from '@/hooks/usePresentationSession';
-import { ImageModelSelector, ImageModelType, IMAGE_MODELS } from '../ImageModelSelector';
+import { ImageModelSelector, ImageModelType, VideoModelSelector, VideoModelType, IMAGE_MODELS, VIDEO_MODELS } from '../ImageModelSelector';
 import { LanguageSelector } from './LanguageSelector';
 import { MultiSelectDropdown } from '@/components/ui/multi-select-dropdown';
 import { SlideCard } from './SlideCard';
@@ -323,6 +325,8 @@ export function PresentationWizard({
   const [length, setLength] = useState<PresentationLength>('standard');
   const [imageSource, setImageSource] = useState<ImageSourceType>('ai-generated');
   const [imageModel, setImageModel] = useState<ImageModelType>('auto');
+  const [videoModel, setVideoModel] = useState<VideoModelType>('auto');
+  const [includeVideo, setIncludeVideo] = useState(false);
   const [selectedImageStyles, setSelectedImageStyles] = useState<ImageStyleType[]>(['ai-realistic']);
   const [selectedTones, setSelectedTones] = useState<PresentationTone[]>(['balanced']);
   const [selectedEnhancements, setSelectedEnhancements] = useState<ContentEnhancement[]>([]);
@@ -393,6 +397,9 @@ export function PresentationWizard({
     { id: 'case-examples', name: 'Case Examples' },
     { id: 'comparison-tables', name: 'Comparison Tables' },
     { id: 'timeline', name: 'Timeline' },
+    { id: 'storytelling', name: 'Storytelling' },
+    { id: 'empathy-focus', name: 'Empathy Focus' },
+    { id: 'emotional-hooks', name: 'Emotional Hooks' },
   ];
 
   const voiceProviders = [
@@ -405,6 +412,7 @@ export function PresentationWizard({
     { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash', description: 'Fast & balanced' },
     { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', description: 'High quality' },
     { id: 'openai/gpt-5', name: 'GPT-5', description: 'Premium reasoning' },
+    { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', description: 'Nuanced & creative' },
   ];
 
   // Initialize session
@@ -1261,7 +1269,26 @@ export function PresentationWizard({
                       <Label className="text-xs">Include Journey Maps</Label>
                       <Switch checked={includeJourneyMaps} onCheckedChange={setIncludeJourneyMaps} />
                     </div>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs">Include Video Clips</Label>
+                      <Switch checked={includeVideo} onCheckedChange={setIncludeVideo} />
+                    </div>
                   </div>
+
+                  {/* Video Model Selector */}
+                  {includeVideo && (
+                    <div className="space-y-2 pt-2 border-t">
+                      <Label className="text-xs flex items-center gap-1">
+                        <Film className="h-3 w-3" />
+                        Video Generation Model
+                      </Label>
+                      <VideoModelSelector
+                        selectedModel={videoModel}
+                        onModelChange={setVideoModel}
+                        showLabel={false}
+                      />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
