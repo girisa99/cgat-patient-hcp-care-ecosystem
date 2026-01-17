@@ -913,43 +913,51 @@ export function PresentationWizard({
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center gap-2">
-                    <Type className="h-4 w-4" />
-                    Content Input
+                    <Type className="h-4 w-4 text-primary" />
+                    <span>Content Input</span>
+                    <span className="text-xs font-normal text-muted-foreground ml-1">
+                      — Add your source material
+                    </span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {/* Input Type Selection - Clear labels with descriptions */}
+                  <Label className="text-xs font-medium text-foreground">Choose how to add your content:</Label>
                   <Tabs value={inputSource} onValueChange={(v) => setInputSource(v as InputSource)}>
                     <TabsList className="!grid !grid-cols-5 !w-full !h-10 !p-1 !bg-muted !rounded-lg !gap-0 !min-h-0 !overflow-visible !border-0 !shadow-none">
-                      <TabsTrigger value="prompt" className="!text-xs !font-medium !h-8 !rounded-md !px-2 !py-1 !min-w-0 !scale-100 data-[state=active]:!bg-primary data-[state=active]:!text-primary-foreground data-[state=active]:!shadow-sm data-[state=active]:!scale-100 !text-foreground !border-0">Prompt</TabsTrigger>
-                      <TabsTrigger value="text" className="!text-xs !font-medium !h-8 !rounded-md !px-2 !py-1 !min-w-0 !scale-100 data-[state=active]:!bg-primary data-[state=active]:!text-primary-foreground data-[state=active]:!shadow-sm data-[state=active]:!scale-100 !text-foreground !border-0">Text</TabsTrigger>
-                      <TabsTrigger value="document" className="!text-xs !font-medium !h-8 !rounded-md !px-2 !py-1 !min-w-0 !scale-100 data-[state=active]:!bg-primary data-[state=active]:!text-primary-foreground data-[state=active]:!shadow-sm data-[state=active]:!scale-100 !text-foreground !border-0">Doc</TabsTrigger>
+                      <TabsTrigger value="prompt" className="!text-xs !font-medium !h-8 !rounded-md !px-2 !py-1 !min-w-0 !scale-100 data-[state=active]:!bg-primary data-[state=active]:!text-primary-foreground data-[state=active]:!shadow-sm data-[state=active]:!scale-100 !text-foreground !border-0">Describe</TabsTrigger>
+                      <TabsTrigger value="text" className="!text-xs !font-medium !h-8 !rounded-md !px-2 !py-1 !min-w-0 !scale-100 data-[state=active]:!bg-primary data-[state=active]:!text-primary-foreground data-[state=active]:!shadow-sm data-[state=active]:!scale-100 !text-foreground !border-0">Paste</TabsTrigger>
+                      <TabsTrigger value="document" className="!text-xs !font-medium !h-8 !rounded-md !px-2 !py-1 !min-w-0 !scale-100 data-[state=active]:!bg-primary data-[state=active]:!text-primary-foreground data-[state=active]:!shadow-sm data-[state=active]:!scale-100 !text-foreground !border-0">Upload</TabsTrigger>
                       <TabsTrigger value="image" className="!text-xs !font-medium !h-8 !rounded-md !px-2 !py-1 !min-w-0 !scale-100 data-[state=active]:!bg-primary data-[state=active]:!text-primary-foreground data-[state=active]:!shadow-sm data-[state=active]:!scale-100 !text-foreground !border-0">Image</TabsTrigger>
-                      <TabsTrigger value="url" className="!text-xs !font-medium !h-8 !rounded-md !px-2 !py-1 !min-w-0 !scale-100 data-[state=active]:!bg-primary data-[state=active]:!text-primary-foreground data-[state=active]:!shadow-sm data-[state=active]:!scale-100 !text-foreground !border-0">URL</TabsTrigger>
+                      <TabsTrigger value="url" className="!text-xs !font-medium !h-8 !rounded-md !px-2 !py-1 !min-w-0 !scale-100 data-[state=active]:!bg-primary data-[state=active]:!text-primary-foreground data-[state=active]:!shadow-sm data-[state=active]:!scale-100 !text-foreground !border-0">Link</TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="prompt" className="mt-3">
+                    <TabsContent value="prompt" className="mt-3 space-y-2">
+                      <p className="text-xs text-muted-foreground">Describe your presentation topic and the AI will generate content for you.</p>
                       <Textarea
-                        placeholder="Describe what your presentation should be about..."
+                        placeholder="Example: Create a presentation about renewable energy trends in 2024, focusing on solar and wind power adoption rates..."
                         value={inputContent}
                         onChange={(e) => setInputContent(e.target.value)}
                         rows={6}
-                        className="resize-none text-sm"
+                        className="resize-none text-sm bg-background text-foreground placeholder:text-muted-foreground border-input"
                       />
                     </TabsContent>
 
-                    <TabsContent value="text" className="mt-3">
+                    <TabsContent value="text" className="mt-3 space-y-2">
+                      <p className="text-xs text-muted-foreground">Paste existing content like notes, articles, or outlines to transform into slides.</p>
                       <Textarea
-                        placeholder="Paste your content here..."
+                        placeholder="Paste your text content here. The AI will analyze and structure it into presentation slides..."
                         value={inputContent}
                         onChange={(e) => setInputContent(e.target.value)}
                         rows={8}
-                        className="resize-none text-sm"
+                        className="resize-none text-sm bg-background text-foreground placeholder:text-muted-foreground border-input"
                       />
                     </TabsContent>
 
-                    <TabsContent value="document" className="mt-3">
+                    <TabsContent value="document" className="mt-3 space-y-2">
+                      <p className="text-xs text-muted-foreground">Upload a document and we'll extract and convert the content into slides.</p>
                       <div className={cn(
-                        "border-2 border-dashed rounded-lg p-4 text-center transition-colors",
+                        "border-2 border-dashed rounded-lg p-4 text-center transition-colors bg-background",
                         isProcessingFile && "border-primary bg-primary/5"
                       )}>
                         <input
@@ -979,16 +987,17 @@ export function PresentationWizard({
                         </label>
                       </div>
                       {uploadedFile && inputContent && !isProcessingFile && (
-                        <div className="mt-2 p-2 bg-muted/50 rounded text-xs text-muted-foreground">
+                        <div className="mt-2 p-2 bg-muted/50 rounded text-xs text-foreground">
                           <Check className="h-3 w-3 inline mr-1 text-green-600" />
                           Extracted {inputContent.length.toLocaleString()} characters
                         </div>
                       )}
                     </TabsContent>
 
-                    <TabsContent value="image" className="mt-3">
+                    <TabsContent value="image" className="mt-3 space-y-2">
+                      <p className="text-xs text-muted-foreground">Upload an image (chart, diagram, or visual) to base your presentation on.</p>
                       <div className={cn(
-                        "border-2 border-dashed rounded-lg p-4 text-center transition-colors",
+                        "border-2 border-dashed rounded-lg p-4 text-center transition-colors bg-background",
                         isProcessingFile && "border-primary bg-primary/5"
                       )}>
                         <input
@@ -1020,19 +1029,21 @@ export function PresentationWizard({
                       )}
                     </TabsContent>
 
-                    <TabsContent value="url" className="mt-3">
+                    <TabsContent value="url" className="mt-3 space-y-2">
+                      <p className="text-xs text-muted-foreground">Enter a webpage URL and we'll extract the content for your presentation.</p>
                       <Input
-                        placeholder="https://example.com/article"
+                        placeholder="https://example.com/article-to-convert"
                         value={inputContent}
                         onChange={(e) => setInputContent(e.target.value)}
-                        className="text-sm"
+                        className="text-sm bg-background text-foreground placeholder:text-muted-foreground border-input"
                       />
                     </TabsContent>
                   </Tabs>
 
                   {inputContent.length > 0 && (
-                    <div className="text-xs text-muted-foreground">
-                      {inputContent.length} characters entered
+                    <div className="text-xs text-foreground font-medium bg-muted/50 rounded px-2 py-1 inline-flex items-center gap-1">
+                      <Check className="h-3 w-3 text-green-600" />
+                      {inputContent.length.toLocaleString()} characters ready
                     </div>
                   )}
                 </CardContent>
