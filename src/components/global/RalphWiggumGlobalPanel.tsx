@@ -141,12 +141,20 @@ const FindingCard: React.FC<FindingCardProps> = ({
                   value={finding.status}
                   onValueChange={(value) => onStatusChange(value as FindingStatus)}
                 >
-                  <SelectTrigger className="h-6 text-[10px] w-28">
+                  <SelectTrigger className="h-6 text-[10px] w-28 bg-background">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent 
+                    className="z-[99999] bg-popover border shadow-xl"
+                    position="popper"
+                    sideOffset={4}
+                  >
                     {Object.entries(statusConfig).map(([key, config]) => (
-                      <SelectItem key={key} value={key} className="text-xs">
+                      <SelectItem 
+                        key={key} 
+                        value={key} 
+                        className="text-xs cursor-pointer bg-popover hover:bg-accent"
+                      >
                         <span className="flex items-center gap-1">
                           <span className={`h-2 w-2 rounded-full ${config.bgColor}`} />
                           {config.label}
