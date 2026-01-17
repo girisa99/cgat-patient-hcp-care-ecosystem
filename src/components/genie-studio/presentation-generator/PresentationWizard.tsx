@@ -1188,60 +1188,11 @@ export function PresentationWizard({
                       </div>
                     )}
 
-                    {/* Generate in multiple languages toggle */}
-                    <div className="flex items-center justify-between p-2 rounded-lg border bg-gradient-to-r from-primary/5 to-accent/5">
-                      <div className="space-y-0.5">
-                        <Label className="text-xs flex items-center gap-1">
-                          <Languages className="h-3 w-3" />
-                          Generate in multiple languages
-                        </Label>
-                        <p className="text-[10px] text-muted-foreground">
-                          Create separate presentations for each language
-                        </p>
-                      </div>
-                      <Switch checked={generateMultipleLanguages} onCheckedChange={setGenerateMultipleLanguages} />
+                    {/* Multi-language hint - configure in Step 3 */}
+                    <div className="flex items-center gap-2 p-2 rounded-lg border bg-muted/30 text-xs text-muted-foreground">
+                      <Languages className="h-3 w-3 flex-shrink-0" />
+                      <span>Need multiple output languages? Configure in <strong>Step 3: Languages</strong></span>
                     </div>
-
-                    {/* Multi-language selection */}
-                    {generateMultipleLanguages && (
-                      <div className="space-y-2 p-3 rounded-lg border bg-muted/20">
-                        <Label className="text-[10px] text-muted-foreground">Additional output languages:</Label>
-                        <div className="grid grid-cols-3 gap-1.5 max-h-32 overflow-y-auto">
-                          {SUPPORTED_LANGUAGES.filter(l => l.code !== primaryLanguage).map(lang => {
-                            const isSelected = selectedLanguages.includes(lang.code);
-                            return (
-                              <div
-                                key={lang.code}
-                                onClick={() => {
-                                  setSelectedLanguages(prev => 
-                                    isSelected 
-                                      ? prev.filter(c => c !== lang.code)
-                                      : [...prev, lang.code]
-                                  );
-                                }}
-                                className={cn(
-                                  "flex items-center gap-1 p-1.5 rounded border cursor-pointer transition-all text-xs",
-                                  isSelected 
-                                    ? "border-primary bg-primary/10" 
-                                    : "border-border hover:bg-muted/50"
-                                )}
-                              >
-                                {isSelected && <Check className="h-2.5 w-2.5 text-primary flex-shrink-0" />}
-                                <span>{lang.flag}</span>
-                                <span className="truncate">{lang.name}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        {selectedLanguages.length > 0 && (
-                          <p className="text-[10px] text-muted-foreground">
-                            Will generate: {[primaryLanguage, ...selectedLanguages.filter(l => l !== primaryLanguage)].map(c => 
-                              SUPPORTED_LANGUAGES.find(l => l.code === c)?.name
-                            ).join(', ')}
-                          </p>
-                        )}
-                      </div>
-                    )}
                   </div>
                 </CardContent>
               </Card>
