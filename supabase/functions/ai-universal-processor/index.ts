@@ -108,6 +108,11 @@ serve(async (req) => {
       console.log(`[UniversalAI] Scene analysis request - Provider: ${provider}`);
       response = await callVisionAnalysis(provider, model, prompt, systemPrompt, context.image, context);
     }
+    // Route image generation to Lovable AI (supports nano-banana model)
+    else if (imageGeneration) {
+      console.log(`[UniversalAI] Image generation request - routing to Lovable AI`);
+      response = await callLovableAI(model || 'google/gemini-2.5-flash-image', prompt, systemPrompt, true, aspectRatio, style);
+    }
     // Route to appropriate handler based on provider
     else {
       switch (provider) {
@@ -134,10 +139,13 @@ serve(async (req) => {
       provider,
       model,
       usage: response.usage,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      // Include image URL if present
+      ...(response.imageUrl && { imageUrl: response.imageUrl }),
+      ...(response.isImage && { isImage: response.isImage }),
     };
 
-    console.log(`AI response generated successfully - Provider: ${provider}, Content length: ${response.content.length}`);
+    console.log(`AI response generated successfully - Provider: ${provider}, Content length: ${response.content?.length || 0}, HasImage: ${!!response.imageUrl}`);
 
     return new Response(JSON.stringify(aiResponse), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -322,8 +330,14 @@ async function callClaude(model: string, prompt: string, systemPrompt?: string, 
 }
 
 // Normalize Gemini model names to valid API model IDs (updated for 2025+)
-function normalizeGeminiModel(model: string): string {
+function normalizeGeminiModel(model: string, isImageGeneration?: boolean): string {
   const ml = model.toLowerCase();
+  
+  // Don't normalize image generation models - they need special handling
+  if (isImageGeneration || ml.includes('image')) {
+    console.log(`[Gemini] Image model detected, skipping normalization: ${model}`);
+    return model; // Return as-is for image generation routing
+  }
   
   // Map to currently available Gemini models - gemini-2.0-flash is stable now
   if (ml.includes('gemini-2.5') || ml.includes('gemini-2.0') || ml.includes('gemini-2')) {

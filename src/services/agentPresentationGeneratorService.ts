@@ -448,11 +448,11 @@ Respond with JSON:
 }`;
 
     try {
-      // Use Lovable AI Gateway for text generation
+      // Use Universal AI processor with Gemini for text generation
       const { data: aiData, error: aiError } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
-          provider: 'lovable',
-          model: modelConfig.textModel || 'google/gemini-3-flash-preview',
+          provider: 'gemini',
+          model: modelConfig.textModel || 'gemini-2.0-flash',
           systemPrompt: 'You are a presentation content expert. Generate compelling slide content. Always respond with valid JSON.',
           prompt: slidePrompt,
         },
@@ -504,7 +504,7 @@ Respond with JSON:
         const imagePrompt = slideData.imagePrompt || `Professional ${contentDecision.contentType} for: ${slide.title}`;
         
         try {
-          // Use Lovable AI Gateway for image generation with proper image model
+          // Use Universal AI processor with Lovable for image generation (routes to nano-banana)
           const { data: imageData } = await supabase.functions.invoke('ai-universal-processor', {
             body: {
               provider: 'lovable',

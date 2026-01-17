@@ -2257,10 +2257,10 @@ Respond with JSON:
 
                   const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
                     body: {
-                      provider: 'lovable',
-                      model: 'google/gemini-3-flash-preview',
+                      provider: 'gemini',
+                      model: 'gemini-2.0-flash',
                       prompt,
-                      systemPrompt: 'You are a presentation enhancement expert. Improve slide content while maintaining the core message.',
+                      systemPrompt: 'You are a presentation enhancement expert. Improve slide content while maintaining the core message. Always respond with valid JSON.',
                     },
                   });
 
@@ -2319,10 +2319,10 @@ Respond with JSON: { "title": "...", "bullets": ["...", "..."], "speakerNotes": 
 
                     const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
                       body: {
-                        provider: 'lovable',
-                        model: 'google/gemini-3-flash-preview',
+                        provider: 'gemini',
+                        model: 'gemini-2.0-flash',
                         prompt,
-                        systemPrompt: 'You are a presentation enhancement expert.',
+                        systemPrompt: 'You are a presentation enhancement expert. Always respond with valid JSON.',
                       },
                     });
 
