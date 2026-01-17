@@ -12,6 +12,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { SocialPublisher } from '@/components/publish/SocialPublisher';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -75,6 +76,9 @@ import {
   BarChart3,
   Move,
   X,
+  Share2,
+  Linkedin,
+  Youtube,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -356,6 +360,8 @@ export function PresentationWizard({
   const [showSlideEnhancer, setShowSlideEnhancer] = useState(false);
   const [selectedEnhancerSlide, setSelectedEnhancerSlide] = useState<string | null>(null);
   const [useAgenticGeneration, setUseAgenticGeneration] = useState(true);
+  const [showPublishPanel, setShowPublishPanel] = useState(false);
+  const [exportedVideoUrl, setExportedVideoUrl] = useState<string | null>(null);
 
   // Generation progress tracking
   const [generationPhase, setGenerationPhase] = useState<'analyzing' | 'structuring' | 'generating' | 'images' | 'complete'>('analyzing');
@@ -1591,7 +1597,7 @@ export function PresentationWizard({
           </div>
         </div>
 
-        {/* Navigation Footer */}
+        {/* Navigation Footer with Download & Publish */}
         <div className="flex items-center justify-between p-4 border-t bg-background">
           <Button
             variant="outline"
@@ -1613,18 +1619,50 @@ export function PresentationWizard({
               <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
           ) : slides.length > 0 && (
-            <Button
-              size="sm"
-              onClick={() => handleDownload('pptx')}
-              disabled={isDownloading}
-            >
-              {isDownloading ? (
-                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-              ) : (
-                <Download className="h-4 w-4 mr-1" />
-              )}
-              Download
-            </Button>
+            <div className="flex items-center gap-2">
+              {/* Download Dropdown */}
+              <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-3 text-xs"
+                  onClick={() => handleDownload('pptx')}
+                  disabled={isDownloading}
+                >
+                  {isDownloading ? (
+                    <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                  ) : (
+                    <Download className="h-3.5 w-3.5 mr-1" />
+                  )}
+                  PPTX
+                </Button>
+                <Separator orientation="vertical" className="h-5" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-3 text-xs"
+                  onClick={() => handleDownload('pdf')}
+                  disabled={isDownloading}
+                >
+                  PDF
+                </Button>
+              </div>
+              
+              {/* Publish Button */}
+              <Button
+                size="sm"
+                variant={showPublishPanel ? 'default' : 'outline'}
+                className="gap-2"
+                onClick={() => setShowPublishPanel(!showPublishPanel)}
+              >
+                <Share2 className="h-4 w-4" />
+                Publish
+                <div className="flex items-center gap-0.5 ml-1">
+                  <Linkedin className="h-3 w-3 text-blue-600" />
+                  <Youtube className="h-3 w-3 text-red-500" />
+                </div>
+              </Button>
+            </div>
           )}
         </div>
       </div>
@@ -2131,6 +2169,36 @@ export function PresentationWizard({
             >
               <X className="h-3 w-3" />
             </Button>
+          </div>
+        )}
+
+        {/* Social Publish Panel - LinkedIn & YouTube */}
+        {showPublishPanel && slides.length > 0 && (
+          <div className="absolute bottom-20 right-4 w-[420px] z-50">
+            <Card className="shadow-xl border-2">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <Share2 className="h-4 w-4" />
+                    Publish Presentation
+                  </span>
+                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setShowPublishPanel(false)}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <SocialPublisher
+                  videoUrl={exportedVideoUrl || undefined}
+                  defaultTitle={presentationTitle || 'AI-Generated Presentation'}
+                  defaultDescription={`${slides.length} slides covering key insights and visual content.`}
+                  onPublishComplete={(platforms) => {
+                    toast.success(`Published to ${platforms.length} platform(s)!`);
+                    setShowPublishPanel(false);
+                  }}
+                />
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>
