@@ -2226,12 +2226,129 @@ export function PresentationWizard({
               }}
               onEnhanceSlide={async (slideIndex, type, customInstructions) => {
                 const slideId = slides[slideIndex]?.id;
+                if (!slideId) return;
+                
+                const slide = slides[slideIndex];
                 toast.info(`Enhancing slide ${slideIndex + 1} with ${type}...`);
-                // Future: call AI enhancement service
+                
+                try {
+                  const enhancementPrompts: Record<string, string> = {
+                    'polish': 'Improve the writing quality, fix grammar, and make the content more professional and engaging.',
+                    'expand': 'Add more detail, examples, and supporting points to make the content more comprehensive.',
+                    'simplify': 'Simplify the language, reduce jargon, and make the content easier to understand.',
+                    'visualize': 'Suggest visual elements, icons, or diagrams that would enhance understanding.',
+                    'tone-professional': 'Adjust the tone to be more formal and business-appropriate.',
+                    'tone-casual': 'Adjust the tone to be more conversational and approachable.',
+                  };
+                  
+                  const prompt = `Enhance this slide content. ${enhancementPrompts[type] || customInstructions || 'Improve overall quality.'}
+                  
+Current slide:
+Title: ${slide.title}
+Bullets: ${slide.content?.bullets?.map(b => b.text).join(', ') || 'None'}
+Speaker Notes: ${slide.speakerNotes || 'None'}
+
+Respond with JSON:
+{
+  "title": "enhanced title",
+  "bullets": ["enhanced point 1", "enhanced point 2", "enhanced point 3"],
+  "speakerNotes": "enhanced speaker notes"
+}`;
+
+                  const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+                    body: {
+                      provider: 'lovable',
+                      model: 'google/gemini-3-flash-preview',
+                      prompt,
+                      systemPrompt: 'You are a presentation enhancement expert. Improve slide content while maintaining the core message.',
+                    },
+                  });
+
+                  if (error) throw error;
+
+                  const content = data?.content || data?.response;
+                  if (content) {
+                    try {
+                      const jsonMatch = content.match(/\{[\s\S]*\}/);
+                      if (jsonMatch) {
+                        const enhanced = JSON.parse(jsonMatch[0]);
+                        handleSlideUpdate(slideId, {
+                          title: enhanced.title || slide.title,
+                          content: {
+                            type: slide.content?.type || 'bullets',
+                            bullets: enhanced.bullets?.map((b: string, i: number) => ({
+                              id: `bullet-${slideIndex}-${i}`,
+                              text: b,
+                            })) || slide.content?.bullets,
+                          },
+                          speakerNotes: enhanced.speakerNotes || slide.speakerNotes,
+                        });
+                        toast.success(`Slide ${slideIndex + 1} enhanced!`);
+                      }
+                    } catch (parseError) {
+                      console.error('Failed to parse enhancement response:', parseError);
+                      toast.error('Failed to parse AI response');
+                    }
+                  }
+                } catch (err) {
+                  console.error('Enhancement error:', err);
+                  toast.error('Failed to enhance slide');
+                }
               }}
               onEnhanceAll={async (type, customInstructions) => {
-                toast.info(`Enhancing all slides with ${type}...`);
-                // Future: call AI enhancement service for all slides
+                toast.info(`Enhancing all ${slides.length} slides with ${type}...`);
+                
+                // Process all slides sequentially
+                for (let i = 0; i < slides.length; i++) {
+                  const slide = slides[i];
+                  if (!slide.id) continue;
+                  
+                  try {
+                    const enhancementPrompts: Record<string, string> = {
+                      'polish': 'Improve writing quality and professionalism.',
+                      'expand': 'Add more detail and examples.',
+                      'simplify': 'Simplify language and reduce jargon.',
+                    };
+                    
+                    const prompt = `Enhance this slide. ${enhancementPrompts[type] || customInstructions || 'Improve quality.'}
+                    
+Title: ${slide.title}
+Bullets: ${slide.content?.bullets?.map(b => b.text).join(', ') || 'None'}
+
+Respond with JSON: { "title": "...", "bullets": ["...", "..."], "speakerNotes": "..." }`;
+
+                    const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+                      body: {
+                        provider: 'lovable',
+                        model: 'google/gemini-3-flash-preview',
+                        prompt,
+                        systemPrompt: 'You are a presentation enhancement expert.',
+                      },
+                    });
+
+                    if (!error && data?.content) {
+                      const jsonMatch = data.content.match(/\{[\s\S]*\}/);
+                      if (jsonMatch) {
+                        const enhanced = JSON.parse(jsonMatch[0]);
+                        handleSlideUpdate(slide.id, {
+                          title: enhanced.title || slide.title,
+                          content: {
+                            type: slide.content?.type || 'bullets',
+                            bullets: enhanced.bullets?.map((b: string, idx: number) => ({
+                              id: `bullet-${i}-${idx}`,
+                              text: b,
+                            })) || slide.content?.bullets,
+                          },
+                          speakerNotes: enhanced.speakerNotes || slide.speakerNotes,
+                        });
+                      }
+                    }
+                  } catch (err) {
+                    console.error(`Failed to enhance slide ${i + 1}:`, err);
+                  }
+                }
+                
+                toast.success('All slides enhanced!');
               }}
               onAnalyze={async () => {
                 toast.info('Analyzing presentation...');
