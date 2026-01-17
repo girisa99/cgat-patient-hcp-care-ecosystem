@@ -6,12 +6,15 @@
  * - DeepL (36+ languages, highest accuracy for EU)
  * - Microsoft Translator (135+ languages, enterprise-grade)
  * - Amazon Translate (75+ languages, high-volume)
- * - AI-based (Gemini/GPT for context-aware translation)
+ * - AI-based (Gemini/GPT/Claude for context-aware translation)
+ * - Meta NLLB (200+ languages, excellent for rare/low-resource)
+ * - Qwen-MT (Alibaba, excellent for Asian languages)
  * 
  * Features:
  * - Confidence scoring
  * - Language detection
  * - Provider routing based on language pair
+ * - Intelligent recommendations
  * - Fallback mechanisms
  * - Caching for repeated translations
  */
@@ -29,19 +32,44 @@ export type TranslationProvider =
   | 'amazon'
   | 'ai_gemini'
   | 'ai_gpt'
-  | 'ai_claude';
+  | 'ai_gpt_mini'
+  | 'ai_claude'
+  | 'ai_claude_35'
+  | 'meta_nllb'
+  | 'qwen_mt';
+
+export type ContentType = 
+  | 'general' 
+  | 'legal' 
+  | 'medical' 
+  | 'technical' 
+  | 'marketing' 
+  | 'creative' 
+  | 'educational'
+  | 'presentation';
+
+export type LanguageFamily = 
+  | 'european' 
+  | 'asian_cjk' 
+  | 'asian_sea' 
+  | 'middle_eastern' 
+  | 'african' 
+  | 'indian'
+  | 'rare';
 
 export interface TranslationProviderConfig {
   id: TranslationProvider;
   name: string;
   description: string;
   icon: string;
-  tier: 'fast' | 'balanced' | 'premium' | 'enterprise';
+  tier: 'fast' | 'balanced' | 'premium' | 'enterprise' | 'specialized';
   supportedLanguages: number;
   strengths: string[];
   weaknesses: string[];
   costPerChar: number; // Approximate cost per 1000 chars
   avgConfidence: number;
+  speedRating: number; // 1-5, 5 being fastest
+  qualityRating: number; // 1-5, 5 being highest quality
   features: {
     formality: boolean;
     glossary: boolean;
@@ -49,9 +77,23 @@ export interface TranslationProviderConfig {
     contextAware: boolean;
     batchSupport: boolean;
     realtime: boolean;
+    rareLangSupport: boolean;
   };
   bestFor: string[];
+  languageFamilyStrength: LanguageFamily[];
+  contentTypeStrength: ContentType[];
   languagePairs: { source: string[]; target: string[] };
+}
+
+export interface LanguagePairRecommendation {
+  sourceLanguage: string;
+  targetLanguage: string;
+  recommendedProvider: TranslationProvider;
+  alternativeProviders: TranslationProvider[];
+  confidenceScore: number;
+  reasoning: string;
+  considerations: string[];
+  contentTypeBonus: Partial<Record<ContentType, TranslationProvider>>;
 }
 
 export interface TranslationRequest {
@@ -62,7 +104,7 @@ export interface TranslationRequest {
   context?: string;
   formality?: 'formal' | 'informal' | 'neutral';
   glossary?: Record<string, string>;
-  domain?: 'medical' | 'legal' | 'technical' | 'marketing' | 'general';
+  domain?: ContentType;
   preserveFormatting?: boolean;
 }
 
@@ -87,6 +129,7 @@ export interface TranslationResult {
     estimatedCost: number;
     usedGlossary: boolean;
     usedContext: boolean;
+    modelUsed?: string;
   };
   warnings?: string[];
 }
@@ -97,6 +140,7 @@ export interface BatchTranslationRequest {
   targetLanguages: string[];
   provider?: TranslationProvider;
   context?: string;
+  contentType?: ContentType;
 }
 
 export interface BatchTranslationResult {
@@ -111,6 +155,49 @@ export interface LanguageDetectionResult {
   confidence: number;
   alternatives: Array<{ language: string; confidence: number }>;
 }
+
+export interface AgentExecutionStatus {
+  agentId: string;
+  agentName: string;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  progress: number;
+  currentTask?: string;
+  startTime?: Date;
+  endTime?: Date;
+  result?: TranslationResult;
+  error?: string;
+}
+
+// ============================================
+// LANGUAGE FAMILIES & MAPPINGS
+// ============================================
+
+export const LANGUAGE_FAMILIES: Record<string, LanguageFamily> = {
+  // European Languages
+  en: 'european', de: 'european', fr: 'european', es: 'european', it: 'european',
+  pt: 'european', nl: 'european', pl: 'european', ru: 'european', uk: 'european',
+  cs: 'european', da: 'european', sv: 'european', no: 'european', fi: 'european',
+  el: 'european', hu: 'european', ro: 'european', bg: 'european', hr: 'european',
+  sk: 'european', sl: 'european', et: 'european', lv: 'european', lt: 'european',
+  
+  // Asian CJK (Chinese, Japanese, Korean)
+  zh: 'asian_cjk', ja: 'asian_cjk', ko: 'asian_cjk',
+  
+  // Southeast Asian
+  vi: 'asian_sea', th: 'asian_sea', id: 'asian_sea', ms: 'asian_sea',
+  tl: 'asian_sea', my: 'asian_sea', km: 'asian_sea', lo: 'asian_sea',
+  
+  // Middle Eastern
+  ar: 'middle_eastern', he: 'middle_eastern', fa: 'middle_eastern', tr: 'middle_eastern',
+  
+  // Indian Subcontinent
+  hi: 'indian', bn: 'indian', ta: 'indian', te: 'indian', mr: 'indian',
+  gu: 'indian', kn: 'indian', ml: 'indian', pa: 'indian', ur: 'indian',
+  
+  // African
+  sw: 'african', am: 'african', ha: 'african', yo: 'african', ig: 'african',
+  zu: 'african', xh: 'african',
+};
 
 // ============================================
 // PROVIDER CONFIGURATIONS
@@ -128,6 +215,8 @@ export const TRANSLATION_PROVIDERS: TranslationProviderConfig[] = [
     weaknesses: ['Less natural for complex text', 'Limited formality control'],
     costPerChar: 0.00002, // $20 per million chars
     avgConfidence: 0.82,
+    speedRating: 5,
+    qualityRating: 3,
     features: {
       formality: false,
       glossary: true,
@@ -135,8 +224,11 @@ export const TRANSLATION_PROVIDERS: TranslationProviderConfig[] = [
       contextAware: false,
       batchSupport: true,
       realtime: true,
+      rareLangSupport: true,
     },
     bestFor: ['Global content', 'Rare languages', 'High volume', 'Real-time'],
+    languageFamilyStrength: ['european', 'asian_cjk', 'rare'],
+    contentTypeStrength: ['general', 'educational'],
     languagePairs: { source: ['*'], target: ['*'] },
   },
   {
@@ -150,6 +242,8 @@ export const TRANSLATION_PROVIDERS: TranslationProviderConfig[] = [
     weaknesses: ['Limited language support', 'No Asian language excellence'],
     costPerChar: 0.00002, // $20 per million chars (Pro)
     avgConfidence: 0.94,
+    speedRating: 4,
+    qualityRating: 5,
     features: {
       formality: true,
       glossary: true,
@@ -157,8 +251,11 @@ export const TRANSLATION_PROVIDERS: TranslationProviderConfig[] = [
       contextAware: true,
       batchSupport: true,
       realtime: true,
+      rareLangSupport: false,
     },
     bestFor: ['European languages', 'Marketing content', 'High-quality needs', 'Formal documents'],
+    languageFamilyStrength: ['european'],
+    contentTypeStrength: ['marketing', 'legal', 'creative'],
     languagePairs: {
       source: ['en', 'de', 'fr', 'es', 'it', 'pt', 'nl', 'pl', 'ru', 'ja', 'zh', 'ko'],
       target: ['en', 'de', 'fr', 'es', 'it', 'pt', 'nl', 'pl', 'ru', 'ja', 'zh', 'ko', 'cs', 'da', 'el', 'et', 'fi', 'hu', 'id', 'lt', 'lv', 'nb', 'ro', 'sk', 'sl', 'sv', 'tr', 'uk'],
@@ -175,6 +272,8 @@ export const TRANSLATION_PROVIDERS: TranslationProviderConfig[] = [
     weaknesses: ['Requires Azure subscription', 'Setup complexity'],
     costPerChar: 0.00001, // $10 per million chars
     avgConfidence: 0.86,
+    speedRating: 4,
+    qualityRating: 4,
     features: {
       formality: true,
       glossary: true,
@@ -182,8 +281,11 @@ export const TRANSLATION_PROVIDERS: TranslationProviderConfig[] = [
       contextAware: true,
       batchSupport: true,
       realtime: true,
+      rareLangSupport: true,
     },
     bestFor: ['Healthcare', 'Enterprise', 'HIPAA compliance', 'Office documents'],
+    languageFamilyStrength: ['european', 'middle_eastern', 'indian'],
+    contentTypeStrength: ['medical', 'legal', 'technical'],
     languagePairs: { source: ['*'], target: ['*'] },
   },
   {
@@ -197,6 +299,8 @@ export const TRANSLATION_PROVIDERS: TranslationProviderConfig[] = [
     weaknesses: ['Fewer languages', 'Less specialized'],
     costPerChar: 0.000015, // $15 per million chars
     avgConfidence: 0.84,
+    speedRating: 5,
+    qualityRating: 3,
     features: {
       formality: true,
       glossary: true,
@@ -204,8 +308,11 @@ export const TRANSLATION_PROVIDERS: TranslationProviderConfig[] = [
       contextAware: false,
       batchSupport: true,
       realtime: true,
+      rareLangSupport: false,
     },
     bestFor: ['AWS users', 'High volume', 'E-commerce', 'Automation'],
+    languageFamilyStrength: ['european', 'asian_cjk'],
+    contentTypeStrength: ['general', 'technical'],
     languagePairs: { source: ['*'], target: ['*'] },
   },
   {
@@ -219,6 +326,8 @@ export const TRANSLATION_PROVIDERS: TranslationProviderConfig[] = [
     weaknesses: ['Slower than dedicated APIs', 'Higher cost', 'Occasional hallucinations'],
     costPerChar: 0.00005,
     avgConfidence: 0.88,
+    speedRating: 3,
+    qualityRating: 4,
     features: {
       formality: true,
       glossary: false,
@@ -226,8 +335,11 @@ export const TRANSLATION_PROVIDERS: TranslationProviderConfig[] = [
       contextAware: true,
       batchSupport: false,
       realtime: false,
+      rareLangSupport: true,
     },
     bestFor: ['Creative content', 'Context-heavy text', 'Marketing', 'Presentations'],
+    languageFamilyStrength: ['european', 'asian_cjk', 'middle_eastern'],
+    contentTypeStrength: ['creative', 'marketing', 'presentation'],
     languagePairs: { source: ['*'], target: ['*'] },
   },
   {
@@ -241,6 +353,8 @@ export const TRANSLATION_PROVIDERS: TranslationProviderConfig[] = [
     weaknesses: ['Slower', 'More expensive', 'May over-interpret'],
     costPerChar: 0.00006,
     avgConfidence: 0.89,
+    speedRating: 3,
+    qualityRating: 5,
     features: {
       formality: true,
       glossary: false,
@@ -248,13 +362,43 @@ export const TRANSLATION_PROVIDERS: TranslationProviderConfig[] = [
       contextAware: true,
       batchSupport: false,
       realtime: false,
+      rareLangSupport: true,
     },
     bestFor: ['Complex documents', 'Legal', 'Technical', 'Tone preservation'],
+    languageFamilyStrength: ['european', 'asian_cjk'],
+    contentTypeStrength: ['legal', 'technical', 'creative'],
+    languagePairs: { source: ['*'], target: ['*'] },
+  },
+  {
+    id: 'ai_gpt_mini',
+    name: 'GPT-5 Mini',
+    description: 'Budget-friendly GPT-5 variant. Good balance of speed and quality.',
+    icon: '⚡',
+    tier: 'balanced',
+    supportedLanguages: 100,
+    strengths: ['Fast processing', 'Cost-effective', 'Good for general content', 'Maintains GPT quality'],
+    weaknesses: ['Less nuanced than full GPT-5', 'Shorter context window'],
+    costPerChar: 0.00002,
+    avgConfidence: 0.85,
+    speedRating: 4,
+    qualityRating: 4,
+    features: {
+      formality: true,
+      glossary: false,
+      domainAdaptation: true,
+      contextAware: true,
+      batchSupport: false,
+      realtime: true,
+      rareLangSupport: true,
+    },
+    bestFor: ['General content', 'Budget-conscious', 'High volume AI'],
+    languageFamilyStrength: ['european', 'asian_cjk'],
+    contentTypeStrength: ['general', 'educational', 'presentation'],
     languagePairs: { source: ['*'], target: ['*'] },
   },
   {
     id: 'ai_claude',
-    name: 'Claude Translation',
+    name: 'Claude 3 Translation',
     description: 'Anthropic Claude for accurate, thoughtful translations with reasoning.',
     icon: '🎭',
     tier: 'premium',
@@ -263,6 +407,8 @@ export const TRANSLATION_PROVIDERS: TranslationProviderConfig[] = [
     weaknesses: ['Slowest option', 'Highest cost', 'May be verbose'],
     costPerChar: 0.00008,
     avgConfidence: 0.90,
+    speedRating: 2,
+    qualityRating: 5,
     features: {
       formality: true,
       glossary: false,
@@ -270,9 +416,248 @@ export const TRANSLATION_PROVIDERS: TranslationProviderConfig[] = [
       contextAware: true,
       batchSupport: false,
       realtime: false,
+      rareLangSupport: true,
     },
     bestFor: ['Cultural content', 'Ambiguous text', 'Quality-critical', 'Explanations needed'],
+    languageFamilyStrength: ['european'],
+    contentTypeStrength: ['legal', 'creative', 'marketing'],
     languagePairs: { source: ['*'], target: ['*'] },
+  },
+  {
+    id: 'ai_claude_35',
+    name: 'Claude 3.5 Sonnet',
+    description: 'Latest Claude model. Excellent for European languages and nuanced content.',
+    icon: '🎪',
+    tier: 'premium',
+    supportedLanguages: 100,
+    strengths: ['Best-in-class for European', 'Exceptional nuance', 'Fast for premium', 'Cultural sensitivity'],
+    weaknesses: ['Expensive', 'Not as strong for CJK'],
+    costPerChar: 0.00006,
+    avgConfidence: 0.93,
+    speedRating: 3,
+    qualityRating: 5,
+    features: {
+      formality: true,
+      glossary: false,
+      domainAdaptation: true,
+      contextAware: true,
+      batchSupport: false,
+      realtime: false,
+      rareLangSupport: true,
+    },
+    bestFor: ['European languages', 'Legal documents', 'Marketing', 'Cultural content'],
+    languageFamilyStrength: ['european', 'middle_eastern'],
+    contentTypeStrength: ['legal', 'marketing', 'creative'],
+    languagePairs: { source: ['*'], target: ['*'] },
+  },
+  {
+    id: 'meta_nllb',
+    name: 'Meta NLLB-200',
+    description: 'No Language Left Behind. Best for rare/low-resource languages.',
+    icon: '🌍',
+    tier: 'specialized',
+    supportedLanguages: 200,
+    strengths: ['200+ languages', 'Best for rare languages', 'Open source', 'Ethical AI focus'],
+    weaknesses: ['Less natural for major languages', 'Requires more tuning'],
+    costPerChar: 0.00001,
+    avgConfidence: 0.78,
+    speedRating: 4,
+    qualityRating: 3,
+    features: {
+      formality: false,
+      glossary: false,
+      domainAdaptation: false,
+      contextAware: false,
+      batchSupport: true,
+      realtime: true,
+      rareLangSupport: true,
+    },
+    bestFor: ['Rare languages', 'African languages', 'Indigenous languages', 'Humanitarian'],
+    languageFamilyStrength: ['african', 'rare', 'indian'],
+    contentTypeStrength: ['general', 'educational'],
+    languagePairs: { source: ['*'], target: ['*'] },
+  },
+  {
+    id: 'qwen_mt',
+    name: 'Qwen-MT',
+    description: 'Alibaba\'s multilingual model. Excellent for Chinese and Asian languages.',
+    icon: '🐉',
+    tier: 'specialized',
+    supportedLanguages: 80,
+    strengths: ['Best for Chinese', 'Strong CJK support', 'Fast processing', 'Business terminology'],
+    weaknesses: ['Weaker for European', 'Less cultural context'],
+    costPerChar: 0.00003,
+    avgConfidence: 0.87,
+    speedRating: 4,
+    qualityRating: 4,
+    features: {
+      formality: true,
+      glossary: true,
+      domainAdaptation: true,
+      contextAware: true,
+      batchSupport: true,
+      realtime: true,
+      rareLangSupport: false,
+    },
+    bestFor: ['Chinese translation', 'Asian languages', 'E-commerce', 'Technical Chinese'],
+    languageFamilyStrength: ['asian_cjk', 'asian_sea'],
+    contentTypeStrength: ['technical', 'general', 'marketing'],
+    languagePairs: { source: ['*'], target: ['*'] },
+  },
+];
+
+// ============================================
+// LANGUAGE PAIR RECOMMENDATIONS
+// ============================================
+
+export const LANGUAGE_PAIR_RECOMMENDATIONS: LanguagePairRecommendation[] = [
+  // Chinese pairs - Qwen-MT excels
+  {
+    sourceLanguage: 'zh',
+    targetLanguage: 'en',
+    recommendedProvider: 'qwen_mt',
+    alternativeProviders: ['deepl', 'ai_gpt'],
+    confidenceScore: 0.92,
+    reasoning: 'Qwen-MT specializes in Chinese with native understanding of idioms and business terminology.',
+    considerations: ['Best for technical/business content', 'Fast processing'],
+    contentTypeBonus: { legal: 'ai_claude_35', creative: 'ai_gpt' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'zh',
+    recommendedProvider: 'qwen_mt',
+    alternativeProviders: ['deepl', 'ai_gemini'],
+    confidenceScore: 0.91,
+    reasoning: 'Qwen-MT produces natural Chinese with correct measure words and formal/informal distinctions.',
+    considerations: ['Handles simplified/traditional', 'Business terminology'],
+    contentTypeBonus: { marketing: 'ai_gemini', technical: 'qwen_mt' },
+  },
+  // European language pairs - DeepL dominates
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'de',
+    recommendedProvider: 'deepl',
+    alternativeProviders: ['ai_claude_35', 'microsoft'],
+    confidenceScore: 0.96,
+    reasoning: 'DeepL consistently outperforms all models for English-German with natural grammar.',
+    considerations: ['Excellent formality control', 'Compound word handling'],
+    contentTypeBonus: { legal: 'ai_claude_35', technical: 'microsoft' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'fr',
+    recommendedProvider: 'deepl',
+    alternativeProviders: ['ai_claude_35', 'ai_gpt'],
+    confidenceScore: 0.95,
+    reasoning: 'DeepL captures French nuances and formality levels exceptionally well.',
+    considerations: ['Gender agreement', 'Formal/informal vous/tu'],
+    contentTypeBonus: { legal: 'ai_claude_35', creative: 'ai_gpt' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'es',
+    recommendedProvider: 'deepl',
+    alternativeProviders: ['ai_claude_35', 'google_translate'],
+    confidenceScore: 0.94,
+    reasoning: 'DeepL handles Spanish regional variations well.',
+    considerations: ['Latin American vs European Spanish', 'Formality'],
+    contentTypeBonus: { marketing: 'ai_gemini', general: 'google_translate' },
+  },
+  // Japanese pairs - AI models excel
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'ja',
+    recommendedProvider: 'ai_gpt',
+    alternativeProviders: ['qwen_mt', 'deepl'],
+    confidenceScore: 0.88,
+    reasoning: 'GPT-5 handles keigo (politeness levels) and context-dependent translations well.',
+    considerations: ['Honorifics', 'Business vs casual', 'Kanji selection'],
+    contentTypeBonus: { technical: 'qwen_mt', creative: 'ai_claude' },
+  },
+  {
+    sourceLanguage: 'ja',
+    targetLanguage: 'en',
+    recommendedProvider: 'ai_gpt',
+    alternativeProviders: ['deepl', 'qwen_mt'],
+    confidenceScore: 0.87,
+    reasoning: 'GPT-5 captures subtle Japanese nuances and implied meanings.',
+    considerations: ['Context-dependent meaning', 'Politeness levels'],
+    contentTypeBonus: { legal: 'ai_claude_35', technical: 'qwen_mt' },
+  },
+  // Korean pairs
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'ko',
+    recommendedProvider: 'qwen_mt',
+    alternativeProviders: ['ai_gpt', 'deepl'],
+    confidenceScore: 0.86,
+    reasoning: 'Qwen-MT strong for CJK languages with proper honorifics.',
+    considerations: ['Formal/informal speech levels', 'Hangul accuracy'],
+    contentTypeBonus: { creative: 'ai_gpt', technical: 'qwen_mt' },
+  },
+  // Arabic pairs
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'ar',
+    recommendedProvider: 'ai_gemini',
+    alternativeProviders: ['microsoft', 'google_translate'],
+    confidenceScore: 0.85,
+    reasoning: 'Gemini handles Arabic\'s right-to-left and complex morphology well.',
+    considerations: ['MSA vs dialects', 'Diacritics', 'Gender agreement'],
+    contentTypeBonus: { legal: 'microsoft', general: 'google_translate' },
+  },
+  // Hindi/Indian languages - Meta NLLB strong
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'hi',
+    recommendedProvider: 'ai_gemini',
+    alternativeProviders: ['meta_nllb', 'google_translate'],
+    confidenceScore: 0.86,
+    reasoning: 'Gemini provides natural Hindi with correct script and grammar.',
+    considerations: ['Devanagari script', 'Hinglish handling', 'Regional dialects'],
+    contentTypeBonus: { general: 'google_translate', educational: 'meta_nllb' },
+  },
+  // Rare/African languages - Meta NLLB specializes
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'sw',
+    recommendedProvider: 'meta_nllb',
+    alternativeProviders: ['google_translate', 'ai_gemini'],
+    confidenceScore: 0.82,
+    reasoning: 'Meta NLLB was specifically designed for low-resource languages like Swahili.',
+    considerations: ['Ethical AI training', 'Community-validated translations'],
+    contentTypeBonus: { educational: 'meta_nllb', general: 'google_translate' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'am',
+    recommendedProvider: 'meta_nllb',
+    alternativeProviders: ['google_translate'],
+    confidenceScore: 0.78,
+    reasoning: 'Meta NLLB provides best coverage for Amharic and other African languages.',
+    considerations: ['Ge\'ez script support', 'Limited alternatives'],
+    contentTypeBonus: { educational: 'meta_nllb' },
+  },
+  // Southeast Asian
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'vi',
+    recommendedProvider: 'ai_gemini',
+    alternativeProviders: ['qwen_mt', 'google_translate'],
+    confidenceScore: 0.84,
+    reasoning: 'Gemini handles Vietnamese tones and diacritics accurately.',
+    considerations: ['Tone marks', 'Regional variations'],
+    contentTypeBonus: { technical: 'qwen_mt', general: 'google_translate' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'th',
+    recommendedProvider: 'ai_gemini',
+    alternativeProviders: ['google_translate', 'qwen_mt'],
+    confidenceScore: 0.83,
+    reasoning: 'Gemini manages Thai\'s lack of spaces and tone system well.',
+    considerations: ['Word segmentation', 'Politeness particles'],
+    contentTypeBonus: { technical: 'qwen_mt' },
   },
 ];
 
@@ -307,19 +692,43 @@ const PROVIDER_LANGUAGE_CONFIDENCE: Record<TranslationProvider, Record<string, R
     fr: { en: 0.85, de: 0.82, es: 0.83 },
   },
   ai_gemini: {
-    en: { de: 0.90, fr: 0.89, es: 0.90, it: 0.88, pt: 0.88, zh: 0.86, ja: 0.85, ko: 0.85, ar: 0.84, hi: 0.85 },
+    en: { de: 0.90, fr: 0.89, es: 0.90, it: 0.88, pt: 0.88, zh: 0.86, ja: 0.85, ko: 0.85, ar: 0.84, hi: 0.85, vi: 0.84, th: 0.83 },
     de: { en: 0.90, fr: 0.87, es: 0.86 },
     fr: { en: 0.89, de: 0.87, es: 0.88 },
+    ar: { en: 0.84 },
   },
   ai_gpt: {
-    en: { de: 0.91, fr: 0.90, es: 0.91, it: 0.89, pt: 0.89, zh: 0.87, ja: 0.86, ko: 0.86, ar: 0.85, hi: 0.86 },
+    en: { de: 0.91, fr: 0.90, es: 0.91, it: 0.89, pt: 0.89, zh: 0.87, ja: 0.88, ko: 0.86, ar: 0.85, hi: 0.86 },
     de: { en: 0.91, fr: 0.88, es: 0.87 },
     fr: { en: 0.90, de: 0.88, es: 0.89 },
+    ja: { en: 0.87 },
+  },
+  ai_gpt_mini: {
+    en: { de: 0.88, fr: 0.87, es: 0.88, it: 0.86, pt: 0.86, zh: 0.84, ja: 0.83, ko: 0.83, ar: 0.82, hi: 0.83 },
+    de: { en: 0.88, fr: 0.85, es: 0.84 },
+    fr: { en: 0.87, de: 0.85, es: 0.86 },
   },
   ai_claude: {
     en: { de: 0.92, fr: 0.91, es: 0.92, it: 0.90, pt: 0.90, zh: 0.88, ja: 0.87, ko: 0.87, ar: 0.86, hi: 0.87 },
     de: { en: 0.92, fr: 0.89, es: 0.88 },
     fr: { en: 0.91, de: 0.89, es: 0.90 },
+  },
+  ai_claude_35: {
+    en: { de: 0.95, fr: 0.94, es: 0.94, it: 0.93, pt: 0.93, zh: 0.89, ja: 0.88, ko: 0.88, ar: 0.89, hi: 0.88 },
+    de: { en: 0.95, fr: 0.92, es: 0.91 },
+    fr: { en: 0.94, de: 0.92, es: 0.93 },
+  },
+  meta_nllb: {
+    en: { de: 0.78, fr: 0.77, es: 0.78, it: 0.76, pt: 0.77, zh: 0.75, ja: 0.74, ko: 0.74, ar: 0.80, hi: 0.82, sw: 0.85, am: 0.83, ha: 0.82, yo: 0.81 },
+    de: { en: 0.78, fr: 0.75, es: 0.74 },
+    sw: { en: 0.85 },
+    am: { en: 0.83 },
+  },
+  qwen_mt: {
+    en: { de: 0.84, fr: 0.83, es: 0.84, it: 0.82, pt: 0.82, zh: 0.93, ja: 0.87, ko: 0.88, vi: 0.85, th: 0.84, id: 0.84 },
+    zh: { en: 0.92, ja: 0.88, ko: 0.87 },
+    ja: { en: 0.86, zh: 0.85, ko: 0.84 },
+    ko: { en: 0.87, zh: 0.85, ja: 0.84 },
   },
 };
 
@@ -349,23 +758,67 @@ class TranslationService {
   }
 
   /**
-   * Get recommended provider for a language pair
+   * Get language pair recommendation with detailed reasoning
+   */
+  getLanguagePairRecommendation(sourceLanguage: string, targetLanguage: string, contentType?: ContentType): LanguagePairRecommendation | null {
+    // First check for exact match
+    const exactMatch = LANGUAGE_PAIR_RECOMMENDATIONS.find(
+      r => r.sourceLanguage === sourceLanguage && r.targetLanguage === targetLanguage
+    );
+    if (exactMatch) return exactMatch;
+
+    // Generate recommendation based on language families
+    const sourceFamily = LANGUAGE_FAMILIES[sourceLanguage] || 'rare';
+    const targetFamily = LANGUAGE_FAMILIES[targetLanguage] || 'rare';
+
+    // Determine best provider based on language families
+    let recommendedProvider: TranslationProvider;
+    let alternativeProviders: TranslationProvider[];
+    let reasoning: string;
+    let considerations: string[];
+
+    if (sourceFamily === 'european' && targetFamily === 'european') {
+      recommendedProvider = 'deepl';
+      alternativeProviders = ['ai_claude_35', 'microsoft'];
+      reasoning = 'DeepL provides the most natural European language translations.';
+      considerations = ['Formality control available', 'High quality for business'];
+    } else if (sourceFamily === 'asian_cjk' || targetFamily === 'asian_cjk') {
+      recommendedProvider = 'qwen_mt';
+      alternativeProviders = ['ai_gpt', 'deepl'];
+      reasoning = 'Qwen-MT specializes in CJK languages with native understanding.';
+      considerations = ['Handles idioms well', 'Business terminology'];
+    } else if (sourceFamily === 'rare' || targetFamily === 'rare' || sourceFamily === 'african' || targetFamily === 'african') {
+      recommendedProvider = 'meta_nllb';
+      alternativeProviders = ['google_translate', 'ai_gemini'];
+      reasoning = 'Meta NLLB supports 200+ languages including rare/low-resource languages.';
+      considerations = ['Best coverage for rare languages', 'Ethical AI training'];
+    } else {
+      recommendedProvider = 'ai_gemini';
+      alternativeProviders = ['google_translate', 'ai_gpt'];
+      reasoning = 'Gemini provides good contextual translations for diverse language pairs.';
+      considerations = ['Context-aware', 'Good for nuanced content'];
+    }
+
+    const confidence = this.getProviderConfidence(recommendedProvider, sourceLanguage, targetLanguage);
+
+    return {
+      sourceLanguage,
+      targetLanguage,
+      recommendedProvider,
+      alternativeProviders,
+      confidenceScore: confidence,
+      reasoning,
+      considerations,
+      contentTypeBonus: contentType ? { [contentType]: recommendedProvider } : {},
+    };
+  }
+
+  /**
+   * Get recommended provider for a language pair (simple version)
    */
   getRecommendedProvider(sourceLanguage: string, targetLanguage: string): TranslationProvider {
-    // DeepL is best for European languages
-    const deeplLanguages = ['en', 'de', 'fr', 'es', 'it', 'pt', 'nl', 'pl', 'ru', 'cs', 'da', 'el', 'et', 'fi', 'hu', 'lt', 'lv', 'nb', 'ro', 'sk', 'sl', 'sv', 'tr', 'uk'];
-    if (deeplLanguages.includes(sourceLanguage) && deeplLanguages.includes(targetLanguage)) {
-      return 'deepl';
-    }
-
-    // For Asian languages, AI models often perform better
-    const asianLanguages = ['zh', 'ja', 'ko', 'vi', 'th', 'id', 'ms'];
-    if (asianLanguages.includes(sourceLanguage) || asianLanguages.includes(targetLanguage)) {
-      return 'ai_gemini';
-    }
-
-    // For rare languages, Google has best coverage
-    return 'google_translate';
+    const recommendation = this.getLanguagePairRecommendation(sourceLanguage, targetLanguage);
+    return recommendation?.recommendedProvider || 'ai_gemini';
   }
 
   /**

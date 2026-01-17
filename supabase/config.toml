@@ -275,3 +275,6 @@ verify_jwt = false
 
 [functions.brand-guidelines-checker]
 verify_jwt = false
+
+[functions.translation-service]
+verify_jwt = false
