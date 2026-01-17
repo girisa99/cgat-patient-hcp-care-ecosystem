@@ -362,6 +362,7 @@ export function PresentationWizard({
   const [showSlideEnhancer, setShowSlideEnhancer] = useState(false);
   const [selectedEnhancerSlide, setSelectedEnhancerSlide] = useState<string | null>(null);
   const [useAgenticGeneration, setUseAgenticGeneration] = useState(true);
+  const [selectedAgents, setSelectedAgents] = useState<string[]>(Object.keys(AGENT_CATALOG)); // All agents selected by default
   const [showPublishPanel, setShowPublishPanel] = useState(false);
   const [exportedVideoUrl, setExportedVideoUrl] = useState<string | null>(null);
 
@@ -1300,12 +1301,33 @@ export function PresentationWizard({
                     
                     {useAgenticGeneration && (
                       <div className="grid grid-cols-3 gap-2 text-xs">
-                        {Object.entries(AGENT_CATALOG).slice(0, 6).map(([key, agent]) => (
-                          <div key={key} className="p-2 rounded border bg-muted/30">
-                            <div className="font-medium truncate">{agent.name.split(' ').slice(-2).join(' ')}</div>
-                            <div className="text-[10px] text-muted-foreground truncate">{agent.description.split(' ').slice(0, 3).join(' ')}...</div>
-                          </div>
-                        ))}
+                        {Object.entries(AGENT_CATALOG).slice(0, 6).map(([key, agent]) => {
+                          const isSelected = selectedAgents.includes(key);
+                          return (
+                            <div 
+                              key={key} 
+                              className={cn(
+                                "p-2 rounded border cursor-pointer transition-all",
+                                isSelected 
+                                  ? "bg-primary/10 border-primary/50 ring-1 ring-primary/30" 
+                                  : "bg-muted/30 hover:bg-muted/50 border-border"
+                              )}
+                              onClick={() => {
+                                setSelectedAgents(prev => 
+                                  isSelected 
+                                    ? prev.filter(a => a !== key) 
+                                    : [...prev, key]
+                                );
+                              }}
+                            >
+                              <div className="flex items-center gap-1">
+                                {isSelected && <Check className="h-3 w-3 text-primary" />}
+                                <div className="font-medium truncate">{agent.name.split(' ').slice(-2).join(' ')}</div>
+                              </div>
+                              <div className="text-[10px] text-muted-foreground truncate">{agent.description.split(' ').slice(0, 3).join(' ')}...</div>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </CardContent>
