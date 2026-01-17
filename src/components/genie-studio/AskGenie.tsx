@@ -772,6 +772,26 @@ const getContextualSuggestions = (
       );
       break;
 
+    case 'deck':
+      // Deck-specific context awareness for presentation creation
+      if (sessionData?.hasGeneratedSlides) {
+        suggestions.push(
+          { label: '📥 Export my deck', prompt: 'Help me export my presentation as PPTX!', icon: <Film className="h-3 w-3" />, isHighlighted: true },
+          { label: '🎨 Change theme', prompt: 'I want to change the visual theme of my deck!', icon: <Wand2 className="h-3 w-3" /> }
+        );
+      } else {
+        suggestions.push(
+          { label: '📊 Create presentation', prompt: 'Help me create a stunning presentation from scratch!', icon: <Film className="h-3 w-3" />, isHighlighted: true }
+        );
+      }
+      suggestions.push(
+        { label: '🎨 Add branding', prompt: 'How do I add my company logo and colors to the deck?', icon: <Wand2 className="h-3 w-3" /> },
+        { label: '🌍 Multi-language', prompt: 'Can I generate this presentation in multiple languages at once?', icon: <Sparkles className="h-3 w-3" /> },
+        { label: '✨ Use Spark first', prompt: "I need to write the content first - should I use Genie Spark?", icon: <PenTool className="h-3 w-3" /> },
+        { label: '📊 Show deck flow', prompt: 'Show me a visual diagram of the deck creation workflow!', icon: <Map className="h-3 w-3" /> }
+      );
+      break;
+
     default: // studio
       suggestions.push(
         { label: '🚀 Getting started', prompt: "I'm new to Genie Studio! Give me a tour!", icon: <Sparkles className="h-3 w-3" />, isHighlighted: true },
