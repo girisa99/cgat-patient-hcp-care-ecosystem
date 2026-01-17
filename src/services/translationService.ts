@@ -507,20 +507,188 @@ export const TRANSLATION_PROVIDERS: TranslationProviderConfig[] = [
 ];
 
 // ============================================
+// INDUSTRY SEGMENT CONFIGURATIONS
+// ============================================
+
+export type IndustrySegment = 
+  | 'healthcare'
+  | 'pharma'
+  | 'legal'
+  | 'finance'
+  | 'technology'
+  | 'ecommerce'
+  | 'manufacturing'
+  | 'education'
+  | 'government'
+  | 'media'
+  | 'hospitality'
+  | 'retail';
+
+export interface IndustryRecommendation {
+  segment: IndustrySegment;
+  name: string;
+  icon: string;
+  primaryProvider: TranslationProvider;
+  alternativeProviders: TranslationProvider[];
+  reasoning: string;
+  considerations: string[];
+  languageOverrides: Partial<Record<string, TranslationProvider>>;
+}
+
+export const INDUSTRY_RECOMMENDATIONS: IndustryRecommendation[] = [
+  {
+    segment: 'healthcare',
+    name: 'Healthcare & Medical',
+    icon: '🏥',
+    primaryProvider: 'microsoft',
+    alternativeProviders: ['ai_claude_35', 'ai_gpt'],
+    reasoning: 'Microsoft Translator is HIPAA-compliant with medical terminology support.',
+    considerations: ['HIPAA compliance required', 'Medical terminology accuracy', 'Patient safety critical'],
+    languageOverrides: {
+      ar: 'ai_gemini', // Better for Arabic medical
+      hi: 'ai_gpt', // Better for Hindi medical
+      zh: 'qwen_mt', // Better for Chinese medical
+    },
+  },
+  {
+    segment: 'pharma',
+    name: 'Pharmaceutical',
+    icon: '💊',
+    primaryProvider: 'ai_claude_35',
+    alternativeProviders: ['microsoft', 'ai_gpt'],
+    reasoning: 'Claude 3.5 excels at precise scientific/regulatory language translation.',
+    considerations: ['Regulatory compliance', 'Drug name handling', 'Clinical trial terminology'],
+    languageOverrides: {
+      ja: 'ai_gpt', // Japanese pharma regulation
+      zh: 'qwen_mt', // Chinese pharma
+    },
+  },
+  {
+    segment: 'legal',
+    name: 'Legal & Compliance',
+    icon: '⚖️',
+    primaryProvider: 'ai_claude_35',
+    alternativeProviders: ['deepl', 'ai_gpt'],
+    reasoning: 'Claude 3.5 provides precise legal terminology with cultural adaptation.',
+    considerations: ['Legal terminology precision', 'Jurisdiction-specific terms', 'Formal register'],
+    languageOverrides: {
+      de: 'deepl', // German legal excellence
+      fr: 'deepl', // French legal excellence
+      ar: 'microsoft', // Arabic legal
+    },
+  },
+  {
+    segment: 'finance',
+    name: 'Finance & Banking',
+    icon: '🏦',
+    primaryProvider: 'microsoft',
+    alternativeProviders: ['ai_claude_35', 'deepl'],
+    reasoning: 'Microsoft offers enterprise security with financial terminology.',
+    considerations: ['Security & compliance', 'Financial terminology', 'Regulatory accuracy'],
+    languageOverrides: {
+      zh: 'qwen_mt', // Chinese finance
+      ja: 'ai_gpt', // Japanese finance
+    },
+  },
+  {
+    segment: 'technology',
+    name: 'Technology & Software',
+    icon: '💻',
+    primaryProvider: 'ai_gpt',
+    alternativeProviders: ['qwen_mt', 'google_translate'],
+    reasoning: 'GPT-5 handles technical jargon and code-mixed content well.',
+    considerations: ['Technical accuracy', 'Code/command preservation', 'API documentation'],
+    languageOverrides: {
+      zh: 'qwen_mt', // Chinese tech
+      ja: 'qwen_mt', // Japanese tech
+      ko: 'qwen_mt', // Korean tech
+    },
+  },
+  {
+    segment: 'ecommerce',
+    name: 'E-Commerce & Retail',
+    icon: '🛒',
+    primaryProvider: 'amazon',
+    alternativeProviders: ['qwen_mt', 'google_translate'],
+    reasoning: 'Amazon Translate optimized for product descriptions and commerce.',
+    considerations: ['Product terminology', 'SEO optimization', 'Localization'],
+    languageOverrides: {
+      zh: 'qwen_mt', // Chinese ecommerce
+      ja: 'qwen_mt', // Japanese ecommerce
+    },
+  },
+  {
+    segment: 'education',
+    name: 'Education & E-Learning',
+    icon: '📚',
+    primaryProvider: 'ai_gemini',
+    alternativeProviders: ['meta_nllb', 'google_translate'],
+    reasoning: 'Gemini provides clear, pedagogically appropriate translations.',
+    considerations: ['Age-appropriate language', 'Educational terminology', 'Accessibility'],
+    languageOverrides: {
+      hi: 'meta_nllb', // Indian languages education
+      sw: 'meta_nllb', // African languages education
+      bn: 'meta_nllb', // Bengali education
+    },
+  },
+  {
+    segment: 'government',
+    name: 'Government & Public Sector',
+    icon: '🏛️',
+    primaryProvider: 'microsoft',
+    alternativeProviders: ['ai_claude_35', 'google_translate'],
+    reasoning: 'Microsoft offers government-grade security and compliance.',
+    considerations: ['Security clearance', 'Official terminology', 'Accessibility requirements'],
+    languageOverrides: {
+      ar: 'ai_gemini', // Arabic government
+      hi: 'ai_gemini', // Hindi government
+    },
+  },
+  {
+    segment: 'media',
+    name: 'Media & Entertainment',
+    icon: '🎬',
+    primaryProvider: 'ai_gpt',
+    alternativeProviders: ['ai_claude', 'deepl'],
+    reasoning: 'GPT-5 captures creative nuances, humor, and cultural references.',
+    considerations: ['Creative adaptation', 'Cultural references', 'Subtitle timing'],
+    languageOverrides: {
+      ja: 'ai_claude', // Japanese creative
+      ko: 'ai_gpt', // Korean creative (K-drama)
+    },
+  },
+  {
+    segment: 'hospitality',
+    name: 'Hospitality & Tourism',
+    icon: '🏨',
+    primaryProvider: 'google_translate',
+    alternativeProviders: ['ai_gemini', 'deepl'],
+    reasoning: 'Google offers widest language coverage for global tourism.',
+    considerations: ['Wide language coverage', 'Colloquial expressions', 'Local terminology'],
+    languageOverrides: {
+      ar: 'ai_gemini', // Arabic hospitality
+      zh: 'qwen_mt', // Chinese tourism
+    },
+  },
+];
+
+// ============================================
 // LANGUAGE PAIR RECOMMENDATIONS
 // ============================================
 
 export const LANGUAGE_PAIR_RECOMMENDATIONS: LanguagePairRecommendation[] = [
-  // Chinese pairs - Qwen-MT excels
+  // ==========================================
+  // CHINESE (CJK) PAIRS - Qwen-MT excels
+  // ==========================================
   {
     sourceLanguage: 'zh',
     targetLanguage: 'en',
     recommendedProvider: 'qwen_mt',
     alternativeProviders: ['deepl', 'ai_gpt'],
     confidenceScore: 0.92,
-    reasoning: 'Qwen-MT specializes in Chinese with native understanding of idioms and business terminology.',
-    considerations: ['Best for technical/business content', 'Fast processing'],
-    contentTypeBonus: { legal: 'ai_claude_35', creative: 'ai_gpt' },
+    reasoning: 'Qwen-MT specializes in Chinese with native understanding of idioms, measure words, and business terminology.',
+    considerations: ['Best for technical/business content', 'Handles classical Chinese references', 'Fast processing'],
+    contentTypeBonus: { legal: 'ai_claude_35', creative: 'ai_gpt', medical: 'microsoft' },
   },
   {
     sourceLanguage: 'en',
@@ -528,51 +696,23 @@ export const LANGUAGE_PAIR_RECOMMENDATIONS: LanguagePairRecommendation[] = [
     recommendedProvider: 'qwen_mt',
     alternativeProviders: ['deepl', 'ai_gemini'],
     confidenceScore: 0.91,
-    reasoning: 'Qwen-MT produces natural Chinese with correct measure words and formal/informal distinctions.',
-    considerations: ['Handles simplified/traditional', 'Business terminology'],
-    contentTypeBonus: { marketing: 'ai_gemini', technical: 'qwen_mt' },
+    reasoning: 'Qwen-MT produces natural Chinese with correct measure words, formal/informal distinctions, and cultural adaptation.',
+    considerations: ['Handles simplified/traditional', 'Business terminology', 'Proper 成语 (idioms)'],
+    contentTypeBonus: { marketing: 'ai_gemini', technical: 'qwen_mt', medical: 'microsoft' },
   },
-  // European language pairs - DeepL dominates
-  {
-    sourceLanguage: 'en',
-    targetLanguage: 'de',
-    recommendedProvider: 'deepl',
-    alternativeProviders: ['ai_claude_35', 'microsoft'],
-    confidenceScore: 0.96,
-    reasoning: 'DeepL consistently outperforms all models for English-German with natural grammar.',
-    considerations: ['Excellent formality control', 'Compound word handling'],
-    contentTypeBonus: { legal: 'ai_claude_35', technical: 'microsoft' },
-  },
-  {
-    sourceLanguage: 'en',
-    targetLanguage: 'fr',
-    recommendedProvider: 'deepl',
-    alternativeProviders: ['ai_claude_35', 'ai_gpt'],
-    confidenceScore: 0.95,
-    reasoning: 'DeepL captures French nuances and formality levels exceptionally well.',
-    considerations: ['Gender agreement', 'Formal/informal vous/tu'],
-    contentTypeBonus: { legal: 'ai_claude_35', creative: 'ai_gpt' },
-  },
-  {
-    sourceLanguage: 'en',
-    targetLanguage: 'es',
-    recommendedProvider: 'deepl',
-    alternativeProviders: ['ai_claude_35', 'google_translate'],
-    confidenceScore: 0.94,
-    reasoning: 'DeepL handles Spanish regional variations well.',
-    considerations: ['Latin American vs European Spanish', 'Formality'],
-    contentTypeBonus: { marketing: 'ai_gemini', general: 'google_translate' },
-  },
-  // Japanese pairs - AI models excel
+  
+  // ==========================================
+  // JAPANESE PAIRS - AI models excel
+  // ==========================================
   {
     sourceLanguage: 'en',
     targetLanguage: 'ja',
     recommendedProvider: 'ai_gpt',
     alternativeProviders: ['qwen_mt', 'deepl'],
     confidenceScore: 0.88,
-    reasoning: 'GPT-5 handles keigo (politeness levels) and context-dependent translations well.',
-    considerations: ['Honorifics', 'Business vs casual', 'Kanji selection'],
-    contentTypeBonus: { technical: 'qwen_mt', creative: 'ai_claude' },
+    reasoning: 'GPT-5 handles keigo (politeness levels), context-dependent translations, and business Japanese exceptionally well.',
+    considerations: ['Honorifics (敬語)', 'Business vs casual register', 'Kanji selection accuracy'],
+    contentTypeBonus: { technical: 'qwen_mt', creative: 'ai_claude', legal: 'ai_claude_35' },
   },
   {
     sourceLanguage: 'ja',
@@ -580,52 +720,382 @@ export const LANGUAGE_PAIR_RECOMMENDATIONS: LanguagePairRecommendation[] = [
     recommendedProvider: 'ai_gpt',
     alternativeProviders: ['deepl', 'qwen_mt'],
     confidenceScore: 0.87,
-    reasoning: 'GPT-5 captures subtle Japanese nuances and implied meanings.',
-    considerations: ['Context-dependent meaning', 'Politeness levels'],
-    contentTypeBonus: { legal: 'ai_claude_35', technical: 'qwen_mt' },
+    reasoning: 'GPT-5 captures subtle Japanese nuances, implied meanings (空気を読む), and cultural context.',
+    considerations: ['Context-dependent meaning', 'Politeness levels', 'Implicit vs explicit'],
+    contentTypeBonus: { legal: 'ai_claude_35', technical: 'qwen_mt', creative: 'ai_claude' },
   },
-  // Korean pairs
+  
+  // ==========================================
+  // KOREAN PAIRS
+  // ==========================================
   {
     sourceLanguage: 'en',
     targetLanguage: 'ko',
     recommendedProvider: 'qwen_mt',
     alternativeProviders: ['ai_gpt', 'deepl'],
     confidenceScore: 0.86,
-    reasoning: 'Qwen-MT strong for CJK languages with proper honorifics.',
-    considerations: ['Formal/informal speech levels', 'Hangul accuracy'],
-    contentTypeBonus: { creative: 'ai_gpt', technical: 'qwen_mt' },
+    reasoning: 'Qwen-MT strong for CJK languages with proper honorifics (존댓말/반말) and speech levels.',
+    considerations: ['Formal/informal speech levels', 'Hangul accuracy', 'Konglish handling'],
+    contentTypeBonus: { creative: 'ai_gpt', technical: 'qwen_mt', marketing: 'ai_gemini' },
   },
-  // Arabic pairs
+  {
+    sourceLanguage: 'ko',
+    targetLanguage: 'en',
+    recommendedProvider: 'qwen_mt',
+    alternativeProviders: ['ai_gpt', 'deepl'],
+    confidenceScore: 0.85,
+    reasoning: 'Qwen-MT understands Korean sentence structure and cultural nuances.',
+    considerations: ['Honorific preservation', 'Cultural context', 'K-culture references'],
+    contentTypeBonus: { creative: 'ai_gpt', legal: 'ai_claude_35' },
+  },
+
+  // ==========================================
+  // ARABIC PAIRS - Critical for MENA region
+  // ==========================================
   {
     sourceLanguage: 'en',
     targetLanguage: 'ar',
     recommendedProvider: 'ai_gemini',
-    alternativeProviders: ['microsoft', 'google_translate'],
-    confidenceScore: 0.85,
-    reasoning: 'Gemini handles Arabic\'s right-to-left and complex morphology well.',
-    considerations: ['MSA vs dialects', 'Diacritics', 'Gender agreement'],
-    contentTypeBonus: { legal: 'microsoft', general: 'google_translate' },
+    alternativeProviders: ['microsoft', 'ai_claude_35'],
+    confidenceScore: 0.87,
+    reasoning: 'Gemini handles Arabic\'s complex morphology, right-to-left script, and MSA with dialect awareness.',
+    considerations: ['MSA vs dialects (Egyptian, Gulf, Levantine)', 'Diacritics (تشكيل)', 'Gender agreement'],
+    contentTypeBonus: { legal: 'microsoft', medical: 'microsoft', creative: 'ai_claude' },
   },
-  // Hindi/Indian languages - Meta NLLB strong
+  {
+    sourceLanguage: 'ar',
+    targetLanguage: 'en',
+    recommendedProvider: 'ai_gemini',
+    alternativeProviders: ['microsoft', 'ai_gpt'],
+    confidenceScore: 0.86,
+    reasoning: 'Gemini captures Arabic rhetorical style and cultural nuances.',
+    considerations: ['Classical vs modern Arabic', 'Religious terminology', 'Cultural adaptation'],
+    contentTypeBonus: { legal: 'ai_claude_35', technical: 'microsoft' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'fa',
+    recommendedProvider: 'ai_gemini',
+    alternativeProviders: ['google_translate', 'ai_gpt'],
+    confidenceScore: 0.82,
+    reasoning: 'Gemini handles Persian/Farsi script and grammar effectively.',
+    considerations: ['Persian vs Dari', 'Formal register', 'Poetic expressions'],
+    contentTypeBonus: { creative: 'ai_claude', technical: 'ai_gpt' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'he',
+    recommendedProvider: 'ai_gemini',
+    alternativeProviders: ['google_translate', 'microsoft'],
+    confidenceScore: 0.84,
+    reasoning: 'Gemini handles Hebrew script, gender system, and modern/biblical distinctions.',
+    considerations: ['Modern vs Biblical Hebrew', 'Gender agreement', 'Technical terminology'],
+    contentTypeBonus: { legal: 'microsoft', technical: 'ai_gpt' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'tr',
+    recommendedProvider: 'deepl',
+    alternativeProviders: ['ai_gemini', 'google_translate'],
+    confidenceScore: 0.88,
+    reasoning: 'DeepL provides natural Turkish with proper agglutination handling.',
+    considerations: ['Vowel harmony', 'Formal/informal register', 'Agglutination'],
+    contentTypeBonus: { legal: 'ai_claude_35', marketing: 'ai_gemini' },
+  },
+
+  // ==========================================
+  // INDIAN SUBCONTINENT LANGUAGES
+  // ==========================================
   {
     sourceLanguage: 'en',
     targetLanguage: 'hi',
     recommendedProvider: 'ai_gemini',
     alternativeProviders: ['meta_nllb', 'google_translate'],
+    confidenceScore: 0.87,
+    reasoning: 'Gemini provides natural Hindi with correct Devanagari script, grammar, and Hinglish awareness.',
+    considerations: ['Devanagari script accuracy', 'Hinglish code-switching', 'Regional dialects'],
+    contentTypeBonus: { general: 'google_translate', educational: 'meta_nllb', medical: 'microsoft' },
+  },
+  {
+    sourceLanguage: 'hi',
+    targetLanguage: 'en',
+    recommendedProvider: 'ai_gemini',
+    alternativeProviders: ['google_translate', 'ai_gpt'],
     confidenceScore: 0.86,
-    reasoning: 'Gemini provides natural Hindi with correct script and grammar.',
-    considerations: ['Devanagari script', 'Hinglish handling', 'Regional dialects'],
+    reasoning: 'Gemini captures Hindi idioms, honorifics, and cultural context.',
+    considerations: ['Honorific preservation', 'Cultural references', 'Script conversion'],
+    contentTypeBonus: { legal: 'ai_claude_35', technical: 'ai_gpt' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'bn',
+    recommendedProvider: 'meta_nllb',
+    alternativeProviders: ['ai_gemini', 'google_translate'],
+    confidenceScore: 0.84,
+    reasoning: 'Meta NLLB provides strong Bengali support with proper script and grammar.',
+    considerations: ['Bengali script (বাংলা)', 'Formal/informal register', 'Regional variations (Bangladesh vs West Bengal)'],
+    contentTypeBonus: { educational: 'meta_nllb', general: 'google_translate' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'ta',
+    recommendedProvider: 'meta_nllb',
+    alternativeProviders: ['google_translate', 'ai_gemini'],
+    confidenceScore: 0.83,
+    reasoning: 'Meta NLLB handles Tamil\'s unique script and classical language features.',
+    considerations: ['Tamil script (தமிழ்)', 'Classical vs modern', 'Honorific system'],
+    contentTypeBonus: { educational: 'meta_nllb', technical: 'ai_gemini' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'te',
+    recommendedProvider: 'meta_nllb',
+    alternativeProviders: ['google_translate', 'ai_gemini'],
+    confidenceScore: 0.82,
+    reasoning: 'Meta NLLB provides Telugu support with proper script rendering.',
+    considerations: ['Telugu script (తెలుగు)', 'Technical terminology', 'Formal register'],
+    contentTypeBonus: { educational: 'meta_nllb', technical: 'ai_gemini' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'mr',
+    recommendedProvider: 'ai_gemini',
+    alternativeProviders: ['meta_nllb', 'google_translate'],
+    confidenceScore: 0.84,
+    reasoning: 'Gemini handles Marathi with Devanagari script and formal register well.',
+    considerations: ['Devanagari script', 'Formal/informal', 'Regional variations'],
+    contentTypeBonus: { educational: 'meta_nllb', general: 'google_translate' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'gu',
+    recommendedProvider: 'meta_nllb',
+    alternativeProviders: ['google_translate', 'ai_gemini'],
+    confidenceScore: 0.81,
+    reasoning: 'Meta NLLB supports Gujarati with proper script and grammar.',
+    considerations: ['Gujarati script (ગુજરાતી)', 'Business terminology', 'Diaspora variations'],
+    contentTypeBonus: { educational: 'meta_nllb', general: 'google_translate' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'pa',
+    recommendedProvider: 'meta_nllb',
+    alternativeProviders: ['google_translate', 'ai_gemini'],
+    confidenceScore: 0.80,
+    reasoning: 'Meta NLLB handles Punjabi in both Gurmukhi and Shahmukhi scripts.',
+    considerations: ['Gurmukhi vs Shahmukhi script', 'Indian vs Pakistani Punjabi', 'Tonal distinctions'],
+    contentTypeBonus: { educational: 'meta_nllb', general: 'google_translate' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'ur',
+    recommendedProvider: 'ai_gemini',
+    alternativeProviders: ['meta_nllb', 'google_translate'],
+    confidenceScore: 0.83,
+    reasoning: 'Gemini handles Urdu\'s Nastaliq script and formal register well.',
+    considerations: ['Nastaliq script', 'Formal/literary register', 'Hindi-Urdu overlap'],
+    contentTypeBonus: { legal: 'ai_claude_35', educational: 'meta_nllb' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'kn',
+    recommendedProvider: 'meta_nllb',
+    alternativeProviders: ['google_translate', 'ai_gemini'],
+    confidenceScore: 0.81,
+    reasoning: 'Meta NLLB provides Kannada support with proper script handling.',
+    considerations: ['Kannada script (ಕನ್ನಡ)', 'Technical terminology', 'Formal register'],
+    contentTypeBonus: { educational: 'meta_nllb', technical: 'ai_gemini' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'ml',
+    recommendedProvider: 'meta_nllb',
+    alternativeProviders: ['google_translate', 'ai_gemini'],
+    confidenceScore: 0.81,
+    reasoning: 'Meta NLLB handles Malayalam\'s complex script and grammar.',
+    considerations: ['Malayalam script (മലയാളം)', 'Agglutination', 'Formal register'],
+    contentTypeBonus: { educational: 'meta_nllb', general: 'google_translate' },
+  },
+
+  // ==========================================
+  // SOUTHEAST ASIAN LANGUAGES
+  // ==========================================
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'vi',
+    recommendedProvider: 'ai_gemini',
+    alternativeProviders: ['qwen_mt', 'google_translate'],
+    confidenceScore: 0.85,
+    reasoning: 'Gemini handles Vietnamese tones, diacritics, and grammar accurately.',
+    considerations: ['Tone marks essential', 'Northern vs Southern dialect', 'Formal register'],
+    contentTypeBonus: { technical: 'qwen_mt', general: 'google_translate', medical: 'microsoft' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'th',
+    recommendedProvider: 'ai_gemini',
+    alternativeProviders: ['google_translate', 'qwen_mt'],
+    confidenceScore: 0.84,
+    reasoning: 'Gemini manages Thai\'s lack of spaces, tone system, and politeness particles well.',
+    considerations: ['Word segmentation critical', 'Politeness particles (ครับ/ค่ะ)', 'Royal vocabulary'],
+    contentTypeBonus: { technical: 'qwen_mt', general: 'google_translate' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'id',
+    recommendedProvider: 'qwen_mt',
+    alternativeProviders: ['google_translate', 'ai_gemini'],
+    confidenceScore: 0.86,
+    reasoning: 'Qwen-MT handles Indonesian with proper formal/informal distinctions.',
+    considerations: ['Formal vs colloquial', 'Malay similarities', 'Business terminology'],
+    contentTypeBonus: { technical: 'qwen_mt', general: 'google_translate' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'ms',
+    recommendedProvider: 'qwen_mt',
+    alternativeProviders: ['google_translate', 'ai_gemini'],
+    confidenceScore: 0.85,
+    reasoning: 'Qwen-MT supports Malay with proper script and grammar.',
+    considerations: ['Malay vs Indonesian differences', 'Formal register', 'Rumi script'],
+    contentTypeBonus: { technical: 'qwen_mt', general: 'google_translate' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'tl',
+    recommendedProvider: 'ai_gemini',
+    alternativeProviders: ['google_translate', 'meta_nllb'],
+    confidenceScore: 0.82,
+    reasoning: 'Gemini handles Filipino/Tagalog with Taglish awareness.',
+    considerations: ['Taglish code-switching', 'Spanish loanwords', 'Formal register'],
     contentTypeBonus: { general: 'google_translate', educational: 'meta_nllb' },
   },
-  // Rare/African languages - Meta NLLB specializes
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'my',
+    recommendedProvider: 'meta_nllb',
+    alternativeProviders: ['google_translate', 'ai_gemini'],
+    confidenceScore: 0.78,
+    reasoning: 'Meta NLLB provides best support for Burmese script and grammar.',
+    considerations: ['Burmese script', 'Tone system', 'Formal register'],
+    contentTypeBonus: { educational: 'meta_nllb', general: 'google_translate' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'km',
+    recommendedProvider: 'meta_nllb',
+    alternativeProviders: ['google_translate'],
+    confidenceScore: 0.76,
+    reasoning: 'Meta NLLB supports Khmer with proper script rendering.',
+    considerations: ['Khmer script', 'Limited alternatives', 'Formal register'],
+    contentTypeBonus: { educational: 'meta_nllb' },
+  },
+
+  // ==========================================
+  // EUROPEAN LANGUAGE PAIRS - DeepL dominates
+  // ==========================================
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'de',
+    recommendedProvider: 'deepl',
+    alternativeProviders: ['ai_claude_35', 'microsoft'],
+    confidenceScore: 0.96,
+    reasoning: 'DeepL consistently outperforms all models for English-German with natural grammar and compound word handling.',
+    considerations: ['Excellent formality control (Sie/du)', 'Compound word handling', 'Technical terminology'],
+    contentTypeBonus: { legal: 'ai_claude_35', technical: 'microsoft', medical: 'microsoft' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'fr',
+    recommendedProvider: 'deepl',
+    alternativeProviders: ['ai_claude_35', 'ai_gpt'],
+    confidenceScore: 0.95,
+    reasoning: 'DeepL captures French nuances and formality levels (vous/tu) exceptionally well.',
+    considerations: ['Gender agreement', 'Formal/informal register', 'Canadian vs European French'],
+    contentTypeBonus: { legal: 'ai_claude_35', creative: 'ai_gpt', marketing: 'ai_gemini' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'es',
+    recommendedProvider: 'deepl',
+    alternativeProviders: ['ai_claude_35', 'google_translate'],
+    confidenceScore: 0.94,
+    reasoning: 'DeepL handles Spanish regional variations and formality (usted/tú) well.',
+    considerations: ['Latin American vs European Spanish', 'Formality levels', 'Voseo handling'],
+    contentTypeBonus: { marketing: 'ai_gemini', general: 'google_translate', legal: 'ai_claude_35' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'pt',
+    recommendedProvider: 'deepl',
+    alternativeProviders: ['ai_claude_35', 'google_translate'],
+    confidenceScore: 0.93,
+    reasoning: 'DeepL distinguishes Brazilian and European Portuguese effectively.',
+    considerations: ['Brazilian vs European Portuguese', 'Formal register', 'Você/tu'],
+    contentTypeBonus: { legal: 'ai_claude_35', marketing: 'ai_gemini' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'it',
+    recommendedProvider: 'deepl',
+    alternativeProviders: ['ai_claude_35', 'google_translate'],
+    confidenceScore: 0.94,
+    reasoning: 'DeepL provides natural Italian with proper formal register.',
+    considerations: ['Formal/informal (Lei/tu)', 'Regional variations', 'Style preservation'],
+    contentTypeBonus: { legal: 'ai_claude_35', creative: 'ai_gpt' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'nl',
+    recommendedProvider: 'deepl',
+    alternativeProviders: ['ai_claude_35', 'google_translate'],
+    confidenceScore: 0.94,
+    reasoning: 'DeepL excels at Dutch with proper formality and compound words.',
+    considerations: ['Belgian vs Netherlands Dutch', 'Formal register', 'Compound words'],
+    contentTypeBonus: { legal: 'ai_claude_35', technical: 'microsoft' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'pl',
+    recommendedProvider: 'deepl',
+    alternativeProviders: ['ai_claude_35', 'google_translate'],
+    confidenceScore: 0.92,
+    reasoning: 'DeepL handles Polish\'s complex grammar and case system well.',
+    considerations: ['Case system', 'Formal register', 'Slavic grammar'],
+    contentTypeBonus: { legal: 'ai_claude_35', technical: 'microsoft' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'ru',
+    recommendedProvider: 'deepl',
+    alternativeProviders: ['ai_claude_35', 'google_translate'],
+    confidenceScore: 0.90,
+    reasoning: 'DeepL provides accurate Russian with proper Cyrillic and case handling.',
+    considerations: ['Cyrillic script', 'Case system', 'Formal/informal (Вы/ты)'],
+    contentTypeBonus: { legal: 'ai_claude_35', technical: 'microsoft' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'uk',
+    recommendedProvider: 'deepl',
+    alternativeProviders: ['ai_gemini', 'google_translate'],
+    confidenceScore: 0.88,
+    reasoning: 'DeepL distinguishes Ukrainian from Russian effectively.',
+    considerations: ['Cyrillic script', 'Ukrainian-specific vocabulary', 'Formal register'],
+    contentTypeBonus: { general: 'google_translate', legal: 'ai_claude_35' },
+  },
+
+  // ==========================================
+  // AFRICAN LANGUAGES - Meta NLLB specializes
+  // ==========================================
   {
     sourceLanguage: 'en',
     targetLanguage: 'sw',
     recommendedProvider: 'meta_nllb',
     alternativeProviders: ['google_translate', 'ai_gemini'],
-    confidenceScore: 0.82,
+    confidenceScore: 0.85,
     reasoning: 'Meta NLLB was specifically designed for low-resource languages like Swahili.',
-    considerations: ['Ethical AI training', 'Community-validated translations'],
+    considerations: ['Ethical AI training', 'Community-validated translations', 'East African coverage'],
     contentTypeBonus: { educational: 'meta_nllb', general: 'google_translate' },
   },
   {
@@ -633,31 +1103,50 @@ export const LANGUAGE_PAIR_RECOMMENDATIONS: LanguagePairRecommendation[] = [
     targetLanguage: 'am',
     recommendedProvider: 'meta_nllb',
     alternativeProviders: ['google_translate'],
-    confidenceScore: 0.78,
-    reasoning: 'Meta NLLB provides best coverage for Amharic and other African languages.',
-    considerations: ['Ge\'ez script support', 'Limited alternatives'],
+    confidenceScore: 0.80,
+    reasoning: 'Meta NLLB provides best coverage for Amharic with Ge\'ez script support.',
+    considerations: ['Ge\'ez script (ግዕዝ)', 'Limited alternatives', 'Ethiopian context'],
     contentTypeBonus: { educational: 'meta_nllb' },
   },
-  // Southeast Asian
   {
     sourceLanguage: 'en',
-    targetLanguage: 'vi',
-    recommendedProvider: 'ai_gemini',
-    alternativeProviders: ['qwen_mt', 'google_translate'],
-    confidenceScore: 0.84,
-    reasoning: 'Gemini handles Vietnamese tones and diacritics accurately.',
-    considerations: ['Tone marks', 'Regional variations'],
-    contentTypeBonus: { technical: 'qwen_mt', general: 'google_translate' },
+    targetLanguage: 'ha',
+    recommendedProvider: 'meta_nllb',
+    alternativeProviders: ['google_translate'],
+    confidenceScore: 0.78,
+    reasoning: 'Meta NLLB supports Hausa, one of Africa\'s most spoken languages.',
+    considerations: ['Latin script', 'Nigerian/Niger variations', 'Tone marking'],
+    contentTypeBonus: { educational: 'meta_nllb' },
   },
   {
     sourceLanguage: 'en',
-    targetLanguage: 'th',
-    recommendedProvider: 'ai_gemini',
-    alternativeProviders: ['google_translate', 'qwen_mt'],
-    confidenceScore: 0.83,
-    reasoning: 'Gemini manages Thai\'s lack of spaces and tone system well.',
-    considerations: ['Word segmentation', 'Politeness particles'],
-    contentTypeBonus: { technical: 'qwen_mt' },
+    targetLanguage: 'yo',
+    recommendedProvider: 'meta_nllb',
+    alternativeProviders: ['google_translate'],
+    confidenceScore: 0.77,
+    reasoning: 'Meta NLLB handles Yoruba with proper tone marks.',
+    considerations: ['Tone marks essential', 'Nigerian context', 'Cultural terminology'],
+    contentTypeBonus: { educational: 'meta_nllb' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'ig',
+    recommendedProvider: 'meta_nllb',
+    alternativeProviders: ['google_translate'],
+    confidenceScore: 0.76,
+    reasoning: 'Meta NLLB supports Igbo with proper dialect handling.',
+    considerations: ['Dialect variations', 'Tone system', 'Nigerian context'],
+    contentTypeBonus: { educational: 'meta_nllb' },
+  },
+  {
+    sourceLanguage: 'en',
+    targetLanguage: 'zu',
+    recommendedProvider: 'meta_nllb',
+    alternativeProviders: ['google_translate'],
+    confidenceScore: 0.79,
+    reasoning: 'Meta NLLB handles Zulu with proper click consonants and tone.',
+    considerations: ['Click consonants', 'Noun class system', 'South African context'],
+    contentTypeBonus: { educational: 'meta_nllb' },
   },
 ];
 
