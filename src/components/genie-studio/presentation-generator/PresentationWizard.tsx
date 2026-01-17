@@ -105,6 +105,7 @@ import { RealTimeSlideStreamer } from './RealTimeSlideStreamer';
 import { useAgentPresentationGenerator, LanguageGenerationState } from '@/hooks/useAgentPresentationGenerator';
 import { LanguageModelConfig } from '@/services/agentPresentationGeneratorService';
 import { AGENT_CATALOG, AGENT_TYPES } from './AgentArchitecture';
+import { AgentSelectorDialog, AgentCard, AgentModelConfig } from './AgentSelectorDialog';
 import { InlineTrainAIFeedback } from '../InlineTrainAIFeedback';
 import { 
   PresentationRequest,
@@ -371,6 +372,8 @@ export function PresentationWizard({
   const [selectedEnhancerSlide, setSelectedEnhancerSlide] = useState<string | null>(null);
   const [useAgenticGeneration, setUseAgenticGeneration] = useState(true);
   const [selectedAgents, setSelectedAgents] = useState<string[]>(Object.keys(AGENT_CATALOG)); // All agents selected by default
+  const [agentModelConfigs, setAgentModelConfigs] = useState<AgentModelConfig[]>([]);
+  const [showAgentConfigDialog, setShowAgentConfigDialog] = useState<string | null>(null);
   const [showPublishPanel, setShowPublishPanel] = useState(false);
   const [exportedVideoUrl, setExportedVideoUrl] = useState<string | null>(null);
 
@@ -1466,36 +1469,62 @@ export function PresentationWizard({
                     </div>
                     
                     {useAgenticGeneration && (
-                      <div className="grid grid-cols-3 gap-2 text-xs">
-                        {Object.entries(AGENT_CATALOG).slice(0, 6).map(([key, agent]) => {
-                          const isSelected = selectedAgents.includes(key);
-                          return (
-                            <div 
-                              key={key} 
-                              className={cn(
-                                "p-2 rounded border cursor-pointer transition-all",
-                                isSelected 
-                                  ? "bg-primary/10 border-primary/50 ring-1 ring-primary/30" 
-                                  : "bg-muted/30 hover:bg-muted/50 border-border"
-                              )}
-                              onClick={() => {
-                                setSelectedAgents(prev => 
-                                  isSelected 
-                                    ? prev.filter(a => a !== key) 
-                                    : [...prev, key]
-                                );
-                              }}
-                            >
-                              <div className="flex items-center gap-1">
-                                {isSelected && <Check className="h-3 w-3 text-primary" />}
-                                <div className="font-medium truncate">{agent.name.split(' ').slice(-2).join(' ')}</div>
-                              </div>
-                              <div className="text-[10px] text-muted-foreground truncate">{agent.description.split(' ').slice(0, 3).join(' ')}...</div>
-                            </div>
-                          );
-                        })}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs text-muted-foreground">
+                            Click any agent to configure its AI model
+                          </Label>
+                          <Badge variant="outline" className="text-[10px]">
+                            {selectedAgents.length}/{Object.keys(AGENT_CATALOG).length} active
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2.5">
+                          {Object.entries(AGENT_CATALOG).map(([key, agent]) => {
+                            const isSelected = selectedAgents.includes(key);
+                            const config = agentModelConfigs.find(c => c.agentKey === key);
+                            return (
+                              <AgentCard
+                                key={key}
+                                agentKey={key}
+                                agent={agent}
+                                isSelected={isSelected}
+                                config={config}
+                                onClick={() => setShowAgentConfigDialog(key)}
+                              />
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
+
+                    {/* Agent Config Dialog */}
+                    <AgentSelectorDialog
+                      open={!!showAgentConfigDialog}
+                      onOpenChange={(open) => !open && setShowAgentConfigDialog(null)}
+                      agent={showAgentConfigDialog ? AGENT_CATALOG[showAgentConfigDialog as keyof typeof AGENT_CATALOG] : null}
+                      agentKey={showAgentConfigDialog || ''}
+                      config={agentModelConfigs.find(c => c.agentKey === showAgentConfigDialog)}
+                      onConfirm={(config) => {
+                        // Update agent model config
+                        setAgentModelConfigs(prev => {
+                          const existing = prev.findIndex(c => c.agentKey === config.agentKey);
+                          if (existing >= 0) {
+                            const updated = [...prev];
+                            updated[existing] = config;
+                            return updated;
+                          }
+                          return [...prev, config];
+                        });
+                        // Update selected agents based on enabled state
+                        if (config.enabled) {
+                          setSelectedAgents(prev => 
+                            prev.includes(config.agentKey) ? prev : [...prev, config.agentKey]
+                          );
+                        } else {
+                          setSelectedAgents(prev => prev.filter(a => a !== config.agentKey));
+                        }
+                      }}
+                    />
                   </CardContent>
                 </Card>
 
