@@ -31,15 +31,16 @@ interface AIRequest {
   };
 }
 
-// Universal AI supported models registry
+// Universal AI supported models registry - ALL providers are primary, no Lovable-first dependency
 const UNIVERSAL_AI_REGISTRY = {
   llm: {
     openai: ['gpt-5-2025-08-07', 'gpt-4.1-2025-04-14', 'o3-2025-04-16', 'o4-mini-2025-04-16', 'gpt-4o', 'gpt-4o-mini'],
     claude: ['claude-opus-4-1-20250805', 'claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022'],
-    gemini: ['gemini-2.0-flash-exp', 'gemini-pro', 'gemini-1.5-pro', 'gemini-2.0-flash']
+    gemini: ['gemini-2.0-flash-exp', 'gemini-pro', 'gemini-1.5-pro', 'gemini-2.0-flash', 'google/gemini-3-flash-preview', 'google/gemini-2.5-pro']
   },
   image: {
-    lovable: ['google/gemini-2.5-flash-image-preview', 'google/gemini-3-pro-image-preview'],
+    // Primary image generation providers - try in order: gemini, openai, then lovable as fallback
+    gemini: ['google/gemini-2.5-flash-image-preview', 'google/gemini-3-pro-image-preview', 'gemini-nano-banana'],
     openai: ['dall-e-3', 'dall-e-2'],
     stability: ['stable-diffusion-xl', 'stable-diffusion-3']
   },
@@ -108,12 +109,29 @@ serve(async (req) => {
       console.log(`[UniversalAI] Scene analysis request - Provider: ${provider}`);
       response = await callVisionAnalysis(provider, model, prompt, systemPrompt, context.image, context);
     }
-    // Route image generation to Lovable AI (supports nano-banana model)
+    // Route image generation based on provider preference - Universal AI first, Lovable as fallback
     else if (imageGeneration) {
-      console.log(`[UniversalAI] Image generation request - routing to Lovable AI`);
-      response = await callLovableAI(model || 'google/gemini-2.5-flash-image', prompt, systemPrompt, true, aspectRatio, style);
+      console.log(`[UniversalAI] Image generation request - Provider: ${provider}, Model: ${model}`);
+      
+      // Try provider-specific image generation first
+      try {
+        if (provider === 'openai') {
+          // Use DALL-E for OpenAI
+          response = await callOpenAIImage(model || 'dall-e-3', prompt, aspectRatio, style);
+        } else if (provider === 'gemini') {
+          // Use Gemini image models via Lovable gateway (they support nano-banana)
+          response = await callLovableAI(model || 'google/gemini-2.5-flash-image-preview', prompt, systemPrompt, true, aspectRatio, style);
+        } else {
+          // Default: Use Lovable AI gateway for image generation
+          response = await callLovableAI(model || 'google/gemini-2.5-flash-image-preview', prompt, systemPrompt, true, aspectRatio, style);
+        }
+      } catch (imageError) {
+        // Fallback to Lovable AI if primary image generation fails
+        console.warn(`[UniversalAI] Primary image generation failed, falling back to Lovable AI:`, imageError);
+        response = await callLovableAI('google/gemini-2.5-flash-image-preview', prompt, systemPrompt, true, aspectRatio, style);
+      }
     }
-    // Route to appropriate handler based on provider
+    // Route to appropriate handler based on provider for TEXT generation
     else {
       switch (provider) {
         case 'openai':
@@ -126,11 +144,13 @@ serve(async (req) => {
           response = await callGemini(model || 'gemini-2.0-flash', prompt, systemPrompt, temperature, maxTokens);
           break;
         case 'lovable':
-          // Route through Lovable AI Gateway (for image generation or text)
-          response = await callLovableAI(model || 'google/gemini-2.5-flash', prompt, systemPrompt, imageGeneration, aspectRatio, style);
+          // Route through Lovable AI Gateway (for text generation)
+          response = await callLovableAI(model || 'google/gemini-3-flash-preview', prompt, systemPrompt, false, aspectRatio, style);
           break;
         default:
-          throw new Error(`Unsupported provider: ${provider}. Available: openai, claude, gemini, lovable`);
+          // Auto-select: use gemini as default for best balance
+          console.log(`[UniversalAI] Auto-selecting gemini for provider: ${provider}`);
+          response = await callGemini(model || 'gemini-2.0-flash', prompt, systemPrompt, temperature, maxTokens);
       }
     }
 
@@ -240,6 +260,65 @@ async function callOpenAI(model: string, prompt: string, systemPrompt?: string, 
   return {
     content: data.choices[0].message.content,
     usage: data.usage
+  };
+}
+
+/**
+ * OpenAI DALL-E Image Generation
+ * Uses DALL-E 3 or DALL-E 2 for image generation
+ */
+async function callOpenAIImage(model: string, prompt: string, aspectRatio?: string, style?: string) {
+  const apiKey = Deno.env.get('OPENAI_API_KEY');
+  if (!apiKey) {
+    throw new Error('OpenAI API key not configured for image generation.');
+  }
+
+  // Map aspect ratio to DALL-E size
+  const getSize = (ar?: string): string => {
+    switch (ar) {
+      case '16:9': return '1792x1024';
+      case '9:16': return '1024x1792';
+      case '1:1':
+      default: return '1024x1024';
+    }
+  };
+
+  const targetModel = model.includes('dall-e-2') ? 'dall-e-2' : 'dall-e-3';
+  const size = getSize(aspectRatio);
+  const imageStyle = style === 'natural' ? 'natural' : 'vivid';
+
+  console.log(`[UniversalAI-OpenAI] Generating image: model=${targetModel}, size=${size}`);
+
+  const response = await fetch('https://api.openai.com/v1/images/generations', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: targetModel,
+      prompt: `${prompt}. Professional, high quality. Safe for all audiences.`,
+      n: 1,
+      size: size,
+      quality: targetModel === 'dall-e-3' ? 'standard' : undefined,
+      style: targetModel === 'dall-e-3' ? imageStyle : undefined,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`[UniversalAI-OpenAI] DALL-E error (${response.status}):`, errorText);
+    throw new Error(`DALL-E API error: ${response.status} - ${errorText}`);
+  }
+
+  const data = await response.json();
+  const imageUrl = data.data?.[0]?.url || data.data?.[0]?.b64_json;
+
+  return {
+    content: imageUrl || '',
+    imageUrl: imageUrl,
+    isImage: !!imageUrl,
+    usage: { prompt_tokens: 0, completion_tokens: 0 }
   };
 }
 
